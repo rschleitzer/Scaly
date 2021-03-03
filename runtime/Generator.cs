@@ -1,6 +1,7 @@
 ﻿using LLVMSharp.Interop;
 using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace Scaly.Compiler
 {
@@ -41,18 +42,8 @@ namespace Scaly.Compiler
 
         internal LLVMTypeRef ResolveType(string name)
         {
-            if (Types.ContainsKey(name))
-                return Types[name];
-
-            if (ParentContext != null)
-            {
-                return ParentContext.ResolveType(name);
-            }
-            else
-            {
-                if (GlobalContext.Types.ContainsKey(name))
-                    return GlobalContext.Types[name];
-            }
+            if (GlobalContext.Types.ContainsKey(name))
+                return GlobalContext.Types[name];
 
             return null;
         }
@@ -98,7 +89,7 @@ namespace Scaly.Compiler
                 var localContext = new LocalContext { GlobalContext = context, ParentContext = null };
                 string path = null;
                 BuildDefinitionDictionary(context, path, definition);
-                BuildDefinitionTypes(localContext, definition);
+                BuildDefinitionTypes(localContext, null, definition);
                 BuildDefinitionValues(localContext, definition);
                 BuildFunctions(context, definition);
             }
@@ -134,30 +125,19 @@ namespace Scaly.Compiler
                     BuildDefinitionDictionary(context, path, definition.Value);
         }
 
-        //static void BuildGlobalTypes(GlobalContext context, Definition definition)
-        //{
-        //    //context.Types.Add("Double", LLVMTypeRef.Double);
-        //    //context.Types.Add("Long", LLVMTypeRef.Int64);
-        //    //context.Types.Add("Size", LLVMTypeRef.Int64);
-        //    //context.Types.Add("Integer", LLVMTypeRef.Int32);
-        //    //context.Types.Add("Byte", LLVMTypeRef.Int8);
-        //    //context.Types.Add("Boolean", LLVMTypeRef.Int8);
-
-        //}
-
-        static void BuildDefinitionTypes(LocalContext context, Definition definition)
+        static void BuildDefinitionTypes(LocalContext context, Source source, Definition definition)
         {
             if (definition.Sources != null)
-                foreach (var source in definition.Sources)
-                    BuildSourceTypes(context, source);
+                foreach (var definitionSource in definition.Sources)
+                    BuildSourceTypes(context, definitionSource);
 
             if (definition.Functions != null)
                 foreach (var function in definition.Functions)
-                    BuildFunctionType(context, function);
+                    BuildFunctionType(context, source, function);
 
             if (definition.Operators != null)
                 foreach (var @operator in definition.Operators)
-                    BuildOperatorType(context, @operator);
+                    BuildOperatorType(context, source, @operator);
         }
 
         static void BuildSourceTypes(LocalContext context, Source source)
@@ -167,37 +147,37 @@ namespace Scaly.Compiler
                 foreach (var definition in source.Definitions.Values)
                 {
                     if (definition.Type.Arguments == null)
-                        BuildDefinitionTypes(context, definition);
+                        BuildDefinitionTypes(context, source, definition);
                 }
             }
 
             if (source.Functions != null)
                 foreach (var function in source.Functions)
-                    BuildFunctionType(context, function);
+                    BuildFunctionType(context, source, function);
 
             if (source.Operators != null)
                 foreach (var @operator in source.Operators)
-                    BuildOperatorType(context, @operator);
+                    BuildOperatorType(context, source, @operator);
 
             if (source.Sources != null)
                 foreach (var childSource in source.Sources)
                     BuildSourceTypes(context, childSource);
         }
 
-        static void BuildFunctionType(LocalContext context, Function function)
+        static void BuildFunctionType(LocalContext context, Source source, Function function)
         {
-            var returnType = GetSingleType(context, function.Routine.Result);
-            var parameterTypes = GetTypes(context, function.Routine.Input);
+            var returnType = GetSingleType(context, source, function.Routine.Result);
+            var parameterTypes = GetTypes(context, source, function.Routine.Input);
             var functionType = LLVMTypeRef.CreateFunction(returnType, parameterTypes);
             context.GlobalContext.Types.Add(function.Name, functionType);
         }
 
-        static void BuildOperatorType(LocalContext context, Operator @operator)
+        static void BuildOperatorType(LocalContext context, Source source, Operator @operator)
         {
-            var returnType = GetSingleType(context, @operator.Routine.Result);
+            var returnType = GetSingleType(context, source, @operator.Routine.Result);
             var parameterTypes = new List<LLVMTypeRef>();
             if (@operator.Routine.Input != null)
-                parameterTypes.AddRange(GetTypes(context, @operator.Routine.Input));
+                parameterTypes.AddRange(GetTypes(context, source, @operator.Routine.Input));
             var functionType = LLVMTypeRef.CreateFunction(returnType, parameterTypes.ToArray());
             context.GlobalContext.Types.Add(@operator.Name, functionType);
         }
@@ -379,115 +359,127 @@ namespace Scaly.Compiler
             return valueRef;
         }
 
-        static LLVMTypeRef GetSingleType(LocalContext context, List<Parameter> result)
+        static LLVMTypeRef GetSingleType(LocalContext context, Source source, List<Parameter> result)
         {
             if (result == null)
                 return LLVMTypeRef.Void;
 
-            return GetType(context, result[0].TypeSpec);
+            return GetType(context, source, result[0].TypeSpec);
         }
 
-        static LLVMTypeRef GetType(LocalContext context, TypeSpec typeSpec)
+        static LLVMTypeRef GetType(LocalContext context, Source source, TypeSpec typeSpec)
         {
             if (typeSpec.Name == "Pointer")
-                return GetPointerType(context, typeSpec);
+                return GetPointerType(context, source, typeSpec);
 
-            var type = context.ResolveType(typeSpec.Name);
+            var qualifiedName = QualifyName(context, source, typeSpec.Name);
+            var typeName = AddTypeArguments(qualifiedName, typeSpec.Arguments);
+            var type = context.ResolveType(typeName);
 
             if (type == null)
-                type = CreateType(context.GlobalContext, typeSpec);
+                type = CreateType(context.GlobalContext, qualifiedName, typeSpec);
 
             return type;
         }
 
-        static LLVMTypeRef CreateType(GlobalContext context, TypeSpec typeSpec)
+        static LLVMTypeRef CreateType(GlobalContext globalContext, string qualifiedName, TypeSpec typeSpec)
         {
-            var type = CreateType(context, context.Definition, typeSpec);
-
-            if (type == null)
-                throw new CompilerException($"The type {typeSpec.Name} could not been found.", typeSpec.Span);
-
-            return type;
-        }
-
-        static LLVMTypeRef CreateType(GlobalContext context, Definition definition, TypeSpec typeSpec)
-        {
-            if (definition.Definitions != null)
+            if (!globalContext.DefinitionDictionary.ContainsKey(qualifiedName))
+                throw new CompilerException($"Tht type \"{qualifiedName}\" was not found.", typeSpec.Span);
+            var definition = globalContext.DefinitionDictionary[qualifiedName];
+ 
+            if (typeSpec.Arguments != null)
             {
-                if (definition.Definitions.ContainsKey(typeSpec.Name))
+                if (definition.Type.Arguments != null)
                 {
-                    var typeDefinition = definition.Definitions[typeSpec.Name];
-                    if (typeDefinition.Structure != null)
-                    {
-                        return CreateType(context, typeDefinition.Structure);
-                    }
+                    if (typeSpec.Arguments.Count != definition.Type.Arguments.Count)
+                        throw new CompilerException($"The generic type {qualifiedName} needs {definition.Type.Arguments.Count} type arguments, but {typeSpec.Arguments.Count} type arguments were given.", typeSpec.Span);
+                }
+                else
+                {
+                    throw new CompilerException($"The type {qualifiedName} is not a generic type.", typeSpec.Span);
+                }
+            }
+            else
+            {
+                if (definition.Type.Arguments != null)
+                {
+                    throw new CompilerException($"The type {qualifiedName} is a generic type. Generic arguments are missing.", typeSpec.Span);
                 }
             }
 
-            if (definition.Sources != null)
+            return CreateGenericType(globalContext, typeSpec, definition);
+        }
+
+        static LLVMTypeRef CreateGenericType(GlobalContext globalContext, TypeSpec typeSpec, Definition definition)
+        {
+            if (definition.Structure == null)
+                throw new CompilerException($"The type \"{definition.Type.Name}\" contains no data and can only be used as a namespace.", typeSpec.Span);
+
+            if (definition.Structure.Members.Count == 1 && definition.Structure.Members[0].Name == null)
+                throw new NotImplementedException();
+
+            return null;
+        }
+
+        static string QualifyName(LocalContext context, Source source, string name)
+        {
+            if (context.GlobalContext.Types.ContainsKey(name))
+                return name;
+
+            if (context.GlobalContext.DefinitionDictionary.ContainsKey(name))
+                return name;
+
+            if (source.Uses != null && source.Uses.ContainsKey(name))
+                return source.Uses[name].Path;
+
+            if (source.Usings != null)
             {
-                foreach (var source in definition.Sources)
+                foreach (var @using in source.Usings)
                 {
-                    var type = CreateType(context, source, typeSpec);
-                    if (type != null)
-                        return type;
+                    var usingName = @using.Path;
+                    if (!context.GlobalContext.DefinitionDictionary.ContainsKey(usingName))
+                        throw new CompilerException($"The name space {usingName} was not found.", @using.Span);
                 }
             }
 
             return null;
         }
 
-        static LLVMTypeRef CreateType(GlobalContext context, Source source, TypeSpec typeSpec)
+        static string AddTypeArguments(string name, List<TypeSpec> arguments)
         {
-            if (source.Definitions != null)
-            {
-                if (source.Definitions.ContainsKey(typeSpec.Name))
-                {
-                    var typeDefinition = source.Definitions[typeSpec.Name];
-                    if (typeDefinition.Structure != null)
-                    {
-                        return CreateType(context, typeDefinition.Structure);
-                    }
-                }
-            }
+            if (arguments == null)
+                return name;
 
-            if (source.Sources != null)
+            StringBuilder builder = new StringBuilder(name);
+            builder.Append('[');
+            bool first = true;
+            foreach (var argument in arguments)
             {
-                foreach (var childSource in source.Sources)
-                {
-                    var type = CreateType(context, childSource, typeSpec);
-                    if (type != null)
-                        return type;
-                }
+                if (first)
+                    first = false;
+                else
+                    builder.Append(',');
+                builder.Append(AddTypeArguments(argument.Name, argument.Arguments));
             }
+            name += "]";
 
-            return null;
+            return name;
         }
 
-        static LLVMTypeRef CreateType(GlobalContext context, Structure structure)
-        {
-            if (structure.Members == null)
-                return LLVMTypeRef.CreateStruct(new LLVMTypeRef[] { }, false);
-
-            if (structure.Members.Count == 1 && structure.Members[0].Name == null)
-                return CreateType(context, structure.Members[0].Type);
-
-            throw new NotImplementedException("Non singleton structures still to do.");
-        }
-
-        static LLVMTypeRef GetPointerType(LocalContext context, TypeSpec typeSpec)
+        static LLVMTypeRef GetPointerType(LocalContext context, Source source, TypeSpec typeSpec)
         {
             var firstGenericArgument = typeSpec.Arguments[0];
-            var pointerTarget = (firstGenericArgument.Name == "Pointer") ? GetPointerType(context, firstGenericArgument): GetType(context, firstGenericArgument);
+            var pointerTarget = (firstGenericArgument.Name == "Pointer") ? GetPointerType(context, source, firstGenericArgument): GetType(context, source, firstGenericArgument);
             return LLVMTypeRef.CreatePointer(pointerTarget, 0);
         }
 
-        static LLVMTypeRef[] GetTypes(LocalContext context, List<Parameter> result)
+        static LLVMTypeRef[] GetTypes(LocalContext context, Source source, List<Parameter> result)
         {
             if (result == null)
                 return new LLVMTypeRef[] { };
 
-            return result.ConvertAll(it => GetType(context, it.TypeSpec)).ToArray();
+            return result.ConvertAll(it => GetType(context, source, it.TypeSpec)).ToArray();
 
         }
 

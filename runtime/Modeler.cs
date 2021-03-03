@@ -87,14 +87,20 @@ namespace Scaly.Compiler
     public class Source
     {
         public string FileName;
-        public Dictionary<string, string[]> Uses;
-        public List<string[]> Usings;
+        public Dictionary<string, Namespace> Uses;
+        public List<Namespace> Usings;
         public Dictionary<string, Definition> Definitions;
         public List<Function> Functions;
         public List<Operator> Operators;
         public Dictionary<string, Implement> Implements;
         public List<Source> Sources;
         public List<Operation> Operations;
+    }
+
+    public class Namespace
+    {
+        public Span Span;
+        public string Path;
     }
 
     public abstract class Expression { }
@@ -515,30 +521,32 @@ namespace Scaly.Compiler
 
         static void HandleUse(Source source, UseSyntax useSyntax)
         {
-            var pathBuilder = new List<string>{ useSyntax.name.name };
+            var pathBuilder = new StringBuilder( useSyntax.name.name );
             var lastPart = useSyntax.name.name;
             if (useSyntax.name.extensions != null)
             {
                 foreach (var extension in useSyntax.name.extensions)
                 {
-                    pathBuilder.Add(extension.name);
+                    pathBuilder.Append('.');
+                    pathBuilder.Append(extension.name);
                     lastPart = extension.name;
                 }
             }
 
+            var path = pathBuilder.ToString();
             if (lastPart == "*")
             {
                 if (source.Usings == null)
-                    source.Usings = new List<string[]>();
-                source.Usings.Add(pathBuilder.ToArray());
+                    source.Usings = new List<Namespace>();
+                source.Usings.Add(new Namespace { Span = useSyntax.span, Path = string.Join('.', path.Substring(0, path.Length - 2)) });
             }
             else
             {
                 if (source.Uses == null)
-                    source.Uses = new Dictionary<string, string[]>();
+                    source.Uses = new Dictionary<string, Namespace>();
                 if (source.Uses.ContainsKey(lastPart))
                     throw new CompilerException($"{lastPart} cannot be re-used.", useSyntax.span);
-                source.Uses.Add(lastPart, pathBuilder.ToArray());
+                source.Uses.Add(lastPart, new Namespace { Span = useSyntax.span, Path = string.Join('.', pathBuilder) });
             }
         }
 
