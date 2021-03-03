@@ -28,6 +28,15 @@ namespace Scaly.Compiler
     public class Structure
     {
         public Span Span;
+        public List<Member> Members;
+    }
+
+    public class Member
+    {
+        public Span Span;
+        public bool IsPrivate;
+        public string Name;
+        public TypeSpec Type;
     }
 
     public class Function
@@ -54,14 +63,14 @@ namespace Scaly.Compiler
 
     public class Routine
     {
-        public List<Property> Input;
-        public List<Property> Result;
+        public List<Parameter> Input;
+        public List<Parameter> Result;
         public TypeSpec Error;
         public List<Operation> Operations;
         public Implementation Implementation;
     }
 
-    public class Property
+    public class Parameter
     {
         public string Name;
         public TypeSpec TypeSpec;
@@ -618,7 +627,7 @@ namespace Scaly.Compiler
             return operation;
         }
 
-        static List<Property> BuildParameters(object parameters)
+        static List<Parameter> BuildParameters(object parameters)
         {
             switch (parameters)
             {
@@ -628,17 +637,17 @@ namespace Scaly.Compiler
                     else
                         return null;
                 case PropertySyntax propertySyntax:
-                    return new List<Property> { BuildProperty(propertySyntax) };
+                    return new List<Parameter> { BuildProperty(propertySyntax) };
                 case TypeSyntax typeSyntax:
-                    return new List<Property> { new Property { TypeSpec = BuildTypeSpec(typeSyntax) } };
+                    return new List<Parameter> { new Parameter { TypeSpec = BuildTypeSpec(typeSyntax) } };
                 default:
                     throw new NotImplementedException($"{parameters.GetType()} is not implemented.");
             }
         }
 
-        static Property BuildProperty(PropertySyntax propertySyntax)
+        static Parameter BuildProperty(PropertySyntax propertySyntax)
         {
-            var property = new Property { Name = propertySyntax.name };
+            var property = new Parameter { Name = propertySyntax.name };
             
             if (propertySyntax.annotation != null)
                 property.TypeSpec = BuildTypeSpec(propertySyntax.annotation.spec);
@@ -781,7 +790,34 @@ namespace Scaly.Compiler
         static Structure HandleStructure(StructureSyntax structureSyntax)
         {
             var structure = new Structure { Span = structureSyntax.span };
+            if (structureSyntax.members != null)
+                structure.Members = BuildMembers(structureSyntax.members);
             return structure;
+        }
+
+        static List<Member> BuildMembers(object[] members)
+        {
+            return members.ToList().ConvertAll(it => BuildMember(it));
+        }
+
+        static Member BuildMember(object member)
+        {
+            switch (member)
+            {
+                case PropertySyntax propertySyntax:
+                    if (propertySyntax.annotation == null)
+                        return new Member { Span = propertySyntax.span, IsPrivate = false, Name = null, Type = new TypeSpec { Span = propertySyntax.span, Name = propertySyntax.name } };
+                    return new Member { Span = propertySyntax.span, IsPrivate = false, Name = propertySyntax.name, Type = BuildTypeAnnotation(propertySyntax.annotation) };
+                case FieldSyntax fieldSyntax:
+                    return new Member { Span = fieldSyntax.span, IsPrivate = true, Name = fieldSyntax.export.name, Type = BuildTypeAnnotation(fieldSyntax.export.annotation) };
+                default:
+                    throw new NotImplementedException($"{member.GetType()} is not implemented.");
+            }
+        }
+
+        static TypeSpec BuildTypeAnnotation(TypeAnnotationSyntax annotationSyntax)
+        {
+            return BuildTypeSpec(annotationSyntax.spec);
         }
 
         static void HandleDeclaration(Definition definition, Source source, string origin, object declaration)

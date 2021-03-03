@@ -352,7 +352,7 @@ namespace Scaly.Compiler
             return valueRef;
         }
 
-        static LLVMTypeRef GetSingleType(LocalContext context, List<Property> result)
+        static LLVMTypeRef GetSingleType(LocalContext context, List<Parameter> result)
         {
             if (result == null)
                 return LLVMTypeRef.Void;
@@ -375,7 +375,7 @@ namespace Scaly.Compiler
 
         static LLVMTypeRef CreateType(GlobalContext context, TypeSpec typeSpec)
         {
-            var type = CreateType(context.Definition, typeSpec);
+            var type = CreateType(context, context.Definition, typeSpec);
 
             if (type == null)
                 throw new CompilerException($"The type {typeSpec.Name} could not been found.", typeSpec.Span);
@@ -383,7 +383,7 @@ namespace Scaly.Compiler
             return type;
         }
 
-        static LLVMTypeRef CreateType(Definition definition, TypeSpec typeSpec)
+        static LLVMTypeRef CreateType(GlobalContext context, Definition definition, TypeSpec typeSpec)
         {
             if (definition.Definitions != null)
             {
@@ -392,7 +392,7 @@ namespace Scaly.Compiler
                     var typeDefinition = definition.Definitions[typeSpec.Name];
                     if (typeDefinition.Structure != null)
                     {
-                        return CreateType(typeDefinition.Structure);
+                        return CreateType(context, typeDefinition.Structure);
                     }
                 }
             }
@@ -401,7 +401,7 @@ namespace Scaly.Compiler
             {
                 foreach (var source in definition.Sources)
                 {
-                    var type = CreateType(source, typeSpec);
+                    var type = CreateType(context, source, typeSpec);
                     if (type != null)
                         return type;
                 }
@@ -410,7 +410,7 @@ namespace Scaly.Compiler
             return null;
         }
 
-        static LLVMTypeRef CreateType(Source source, TypeSpec typeSpec)
+        static LLVMTypeRef CreateType(GlobalContext context, Source source, TypeSpec typeSpec)
         {
             if (source.Definitions != null)
             {
@@ -419,7 +419,7 @@ namespace Scaly.Compiler
                     var typeDefinition = source.Definitions[typeSpec.Name];
                     if (typeDefinition.Structure != null)
                     {
-                        return CreateType(typeDefinition.Structure);
+                        return CreateType(context, typeDefinition.Structure);
                     }
                 }
             }
@@ -428,7 +428,7 @@ namespace Scaly.Compiler
             {
                 foreach (var childSource in source.Sources)
                 {
-                    var type = CreateType(childSource, typeSpec);
+                    var type = CreateType(context, childSource, typeSpec);
                     if (type != null)
                         return type;
                 }
@@ -437,9 +437,15 @@ namespace Scaly.Compiler
             return null;
         }
 
-        static LLVMTypeRef CreateType(Structure structure)
+        static LLVMTypeRef CreateType(GlobalContext context, Structure structure)
         {
-            return LLVMTypeRef.CreateStruct(new LLVMTypeRef[] { }, false);
+            if (structure.Members == null)
+                return LLVMTypeRef.CreateStruct(new LLVMTypeRef[] { }, false);
+
+            if (structure.Members.Count == 1 && structure.Members[0].Name == null)
+                return CreateType(context, structure.Members[0].Type);
+
+            throw new NotImplementedException("Non singleton structures still to do.");
         }
 
         static LLVMTypeRef GetPointerType(LocalContext context, TypeSpec typeSpec)
@@ -449,7 +455,7 @@ namespace Scaly.Compiler
             return LLVMTypeRef.CreatePointer(pointerTarget, 0);
         }
 
-        static LLVMTypeRef[] GetTypes(LocalContext context, List<Property> result)
+        static LLVMTypeRef[] GetTypes(LocalContext context, List<Parameter> result)
         {
             if (result == null)
                 return new LLVMTypeRef[] { };
