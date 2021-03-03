@@ -12,7 +12,7 @@ define Size (i64)
         LLVM.trunc[i64, i32](this)
 }
 
-define Pointer[T](this: i64)
+define Pointer[T] (pointer)
 {
     operator * returns T
         LLVM.load[T](this)

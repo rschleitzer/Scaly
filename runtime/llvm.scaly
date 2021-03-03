@@ -5,6 +5,7 @@ define LLVM
     define i32 intrinsic
     define i64 intrinsic
     define double intrinsic
+    define pointer intrinsic
 
     function trunc[From, To] instruction
     function load[T] instruction

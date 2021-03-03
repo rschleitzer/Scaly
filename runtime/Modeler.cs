@@ -8,6 +8,7 @@ namespace Scaly.Compiler
 {
     public class Definition
     {
+        public Span Span;
         public bool IsPublic;
         public TypeSpec Type;
         public Structure Structure;
@@ -467,6 +468,7 @@ namespace Scaly.Compiler
                     {
                         var definition = new Definition
                         {
+                            Span = moduleSyntax.span,
                             IsPublic = isPublic,
                             Type = new TypeSpec { Name = moduleSyntax.name.name },
                             Sources = null
@@ -775,7 +777,7 @@ namespace Scaly.Compiler
             TypeSpec typeModel = BuildType(definitionSyntax.type);
             if (definitions.ContainsKey(typeModel.Name))
                 throw new CompilerException($"Module {typeModel.Name} already defined.", definitionSyntax.span);
-            var definition = new Definition { Type = typeModel, Structure = structure };
+            var definition = new Definition { Span = definitionSyntax.span, Type = typeModel, Structure = structure };
             definitions.Add(typeModel.Name, definition);
 
             if ((bodySyntax != null) && (bodySyntax.declarations != null))

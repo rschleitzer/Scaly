@@ -9,6 +9,7 @@ namespace Scaly.Compiler
         public Definition Definition;
         public LLVMModuleRef Module;
         public LLVMBuilderRef Builder;
+        public Dictionary<string, Definition> DefinitionDictionary = new Dictionary<string, Definition>();
         public Dictionary<string, LLVMTypeRef> Types = new Dictionary<string, LLVMTypeRef>();
         public Dictionary<string, LLVMValueRef> Values = new Dictionary<string, LLVMValueRef>();
     }
@@ -95,10 +96,42 @@ namespace Scaly.Compiler
             {
                 var context = new GlobalContext { Definition = definition, Module = module, Builder = builder };
                 var localContext = new LocalContext { GlobalContext = context, ParentContext = null };
+                string path = null;
+                BuildDefinitionDictionary(context, path, definition);
                 BuildDefinitionTypes(localContext, definition);
-                BuildGlobalValues(context, definition);
+                BuildDefinitionValues(localContext, definition);
                 BuildFunctions(context, definition);
             }
+        }
+
+        static void BuildDefinitionDictionary(GlobalContext context, string parentPath, Definition definition)
+        {
+            var path = parentPath == null? "" : parentPath + (parentPath == "" ? "" : ".") + definition.Type.Name;
+            if (path != "")
+            {
+                if (context.DefinitionDictionary.ContainsKey(path))
+                    throw new CompilerException($"The definition {path} was already defined.", definition.Span);
+                context.DefinitionDictionary.Add(path, definition);
+            }
+
+            if (definition.Sources != null)
+                foreach (var source in definition.Sources)
+                    BuildSourceDefinitionDictionary(context, path, source);
+
+            if (definition.Definitions != null)
+                foreach (var childDefinition in definition.Definitions)
+                    BuildDefinitionDictionary(context, path, childDefinition.Value);
+        }
+
+        static void BuildSourceDefinitionDictionary(GlobalContext context, string path, Source source)
+        {
+            if (source.Sources != null)
+                foreach (var childSource in source.Sources)
+                    BuildSourceDefinitionDictionary(context, path, childSource);
+
+            if (source.Definitions != null)
+                foreach (var definition in source.Definitions)
+                    BuildDefinitionDictionary(context, path, definition.Value);
         }
 
         //static void BuildGlobalTypes(GlobalContext context, Definition definition)
@@ -169,13 +202,7 @@ namespace Scaly.Compiler
             context.GlobalContext.Types.Add(@operator.Name, functionType);
         }
 
-        static void BuildGlobalValues(GlobalContext context, Definition definition)
-        {
-            var localContext = new LocalContext { GlobalContext = context, ParentContext = null };
-            BuildValues(localContext, definition);
-        }
-
-        static void BuildValues(LocalContext context, Definition definition)
+        static void BuildDefinitionValues(LocalContext context, Definition definition)
         {
             if (definition.Sources != null)
                 foreach (var source in definition.Sources)
@@ -209,7 +236,7 @@ namespace Scaly.Compiler
                 foreach (var definition in source.Definitions.Values)
                 {
                     if (definition.Type.Arguments == null)
-                        BuildValues(context, definition);
+                        BuildDefinitionValues(context, definition);
                 }
             }
         }
