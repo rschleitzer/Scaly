@@ -335,7 +335,7 @@ namespace Scaly.Compiler
             if (valueRef != null)
                 return valueRef;
 
-            throw new CompilerException($"The name '{name.Path[0]}' could not been found.", name.Span);
+            throw new CompilerException($"The name '{name.Path[0]}' has not been found.", name.Span);
         }
 
         static LLVMValueRef BuildScope(LocalContext context, Scope scope)
