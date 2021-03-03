@@ -2,13 +2,13 @@ CFLAGS=-g `llvm-config --cflags`
 LD=clang++
 LDFLAGS=`llvm-config --cxxflags --ldflags --libs core executionengine mcjit interpreter analysis native bitwriter --system-libs`
 
-all: shortest
+all: argc
 
-shortest.o: shortest.scaly
-	dotnet ../scalyc/bin/Debug/net5.0/linux-x64/scalyc.dll -o shortest shortest.scaly
+argc.o: ../scalyc/tests/argc.scaly
+	dotnet ../scalyc/bin/Debug/net5.0/linux-x64/scalyc.dll -o argc ../scalyc/tests/argc.scaly
 
-shortest: shortest.o
+shortest: argc.o
 	$(LD) $< $(LDFLAGS) -o $@
 
 clean:
-	-rm -f shortest.o shortest
+	-rm -f argc.o argc

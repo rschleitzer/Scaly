@@ -12,8 +12,8 @@
             "program": "${workspaceFolder}/scalyc/bin/Debug/net5.0/linux-x64/scalyc.dll",
             "args": [
                 "-o",
-                "shortest",
-                "../scalyc/shortest.scaly",
+                "argc",
+                "../scalyc/tests/argc.scaly",
             ],
             "cwd": "${workspaceFolder}/runtime",
             "console": "internalConsole",
