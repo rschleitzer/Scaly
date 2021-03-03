@@ -444,13 +444,13 @@
     <syntax id = If
         <content link = if
         <content link = Operation                               property = condition
-        <content link = Operation                               property = consequent
+        <content link = Statement                               property = consequent
         <content link = Else                           optional property = alternative
 
     <syntax id = Else
         <content link = else
         <content colon                                 optional
-        <content link = Operation                               property = alternative
+        <content link = Statement                               property = alternative
 
     <syntax id = Match
         <content link = match
@@ -461,16 +461,17 @@
     <syntax id = Case                         multiple
         <content link = case
         <content link = Operation                               property = condition
-        <content link = Operation                               property = consequent
+        <content link = Statement                               property = consequent
     
     <syntax id = Default
         <content link = default
-        <content link = Operation                      optional property = alternative
+        <content link = Statement                      optional property = alternative
 
     <syntax id = Lambda
         <content link = lambda
         <content link = Operation                               property = input
-        <content link = Operation                               property = block
+        <content colon
+        <content link = Statement                               property = block
 
     <syntax id = For
         <content link = for
