@@ -10,6 +10,7 @@ namespace Scaly.Compiler
     {
         public Span Span;
         public bool IsPublic;
+        public bool IsIntrinsic;
         public TypeSpec Type;
         public Structure Structure;
         public Dictionary<string, Definition> Definitions;
@@ -765,6 +766,7 @@ namespace Scaly.Compiler
         {
             BodySyntax bodySyntax = null;
             Structure structure = null;
+            bool isIntrinsic = false;
             switch (definitionSyntax.concept)
             {
                 case ClassSyntax classSyntax:
@@ -780,12 +782,16 @@ namespace Scaly.Compiler
                 case UnionSyntax unionSyntax:
                     bodySyntax = unionSyntax.body;
                     break;
+
+                case IntrinsicSyntax _:
+                    isIntrinsic = true;
+                    break;
             }
 
             TypeSpec typeModel = BuildType(definitionSyntax.type);
             if (definitions.ContainsKey(typeModel.Name))
                 throw new CompilerException($"Module {typeModel.Name} already defined.", definitionSyntax.span);
-            var definition = new Definition { Span = definitionSyntax.span, Type = typeModel, Structure = structure };
+            var definition = new Definition { Span = definitionSyntax.span, Type = typeModel, Structure = structure, IsIntrinsic = isIntrinsic };
             definitions.Add(typeModel.Name, definition);
 
             if ((bodySyntax != null) && (bodySyntax.declarations != null))

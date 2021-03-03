@@ -11,6 +11,7 @@ namespace Scaly.Compiler
         public LLVMModuleRef Module;
         public LLVMBuilderRef Builder;
         public Dictionary<string, Definition> DefinitionDictionary = new Dictionary<string, Definition>();
+        public Dictionary<string, Source> SourceDictionary = new Dictionary<string, Source>();
         public Dictionary<string, LLVMTypeRef> Types = new Dictionary<string, LLVMTypeRef>();
         public Dictionary<string, LLVMValueRef> Values = new Dictionary<string, LLVMValueRef>();
     }
@@ -88,14 +89,14 @@ namespace Scaly.Compiler
                 var context = new GlobalContext { Definition = definition, Module = module, Builder = builder };
                 var localContext = new LocalContext { GlobalContext = context, ParentContext = null };
                 string path = null;
-                BuildDefinitionDictionary(context, path, definition);
+                BuildDefinitionDictionary(context, path, null, definition);
                 BuildDefinitionTypes(localContext, null, definition);
                 BuildDefinitionValues(localContext, definition);
                 BuildFunctions(context, definition);
             }
         }
 
-        static void BuildDefinitionDictionary(GlobalContext context, string parentPath, Definition definition)
+        static void BuildDefinitionDictionary(GlobalContext context, string parentPath, Source source, Definition definition)
         {
             var path = parentPath == null? "" : parentPath + (parentPath == "" ? "" : ".") + definition.Type.Name;
             if (path != "")
@@ -103,15 +104,16 @@ namespace Scaly.Compiler
                 if (context.DefinitionDictionary.ContainsKey(path))
                     throw new CompilerException($"The definition {path} was already defined.", definition.Span);
                 context.DefinitionDictionary.Add(path, definition);
+                context.SourceDictionary.Add(path, source);
             }
 
             if (definition.Sources != null)
-                foreach (var source in definition.Sources)
-                    BuildSourceDefinitionDictionary(context, path, source);
+                foreach (var childSource in definition.Sources)
+                    BuildSourceDefinitionDictionary(context, path, childSource);
 
             if (definition.Definitions != null)
                 foreach (var childDefinition in definition.Definitions)
-                    BuildDefinitionDictionary(context, path, childDefinition.Value);
+                    BuildDefinitionDictionary(context, path, source, childDefinition.Value);
         }
 
         static void BuildSourceDefinitionDictionary(GlobalContext context, string path, Source source)
@@ -122,7 +124,7 @@ namespace Scaly.Compiler
 
             if (source.Definitions != null)
                 foreach (var definition in source.Definitions)
-                    BuildDefinitionDictionary(context, path, definition.Value);
+                    BuildDefinitionDictionary(context, path, source, definition.Value);
         }
 
         static void BuildDefinitionTypes(LocalContext context, Source source, Definition definition)
@@ -377,16 +379,18 @@ namespace Scaly.Compiler
             var type = context.ResolveType(typeName);
 
             if (type == null)
-                type = CreateType(context.GlobalContext, qualifiedName, typeSpec);
+            {
+                type = CreateType(context, qualifiedName, context.GlobalContext.SourceDictionary[qualifiedName], typeSpec);
+            }
 
             return type;
         }
 
-        static LLVMTypeRef CreateType(GlobalContext globalContext, string qualifiedName, TypeSpec typeSpec)
+        static LLVMTypeRef CreateType(LocalContext context, string qualifiedName, Source source, TypeSpec typeSpec)
         {
-            if (!globalContext.DefinitionDictionary.ContainsKey(qualifiedName))
+            if (!context.GlobalContext.DefinitionDictionary.ContainsKey(qualifiedName))
                 throw new CompilerException($"Tht type \"{qualifiedName}\" was not found.", typeSpec.Span);
-            var definition = globalContext.DefinitionDictionary[qualifiedName];
+            var definition = context.GlobalContext.DefinitionDictionary[qualifiedName];
  
             if (typeSpec.Arguments != null)
             {
@@ -408,18 +412,38 @@ namespace Scaly.Compiler
                 }
             }
 
-            return CreateGenericType(globalContext, typeSpec, definition);
+            return CreateGenericType(context, source, typeSpec, definition);
         }
 
-        static LLVMTypeRef CreateGenericType(GlobalContext globalContext, TypeSpec typeSpec, Definition definition)
+        static LLVMTypeRef CreateGenericType(LocalContext context, Source source, TypeSpec typeSpec, Definition definition)
         {
+            if (definition.IsIntrinsic)
+                return CreateInstrinsicType(definition.Type.Name, typeSpec.Span);
+
             if (definition.Structure == null)
                 throw new CompilerException($"The type \"{definition.Type.Name}\" contains no data and can only be used as a namespace.", typeSpec.Span);
 
-            if (definition.Structure.Members.Count == 1 && definition.Structure.Members[0].Name == null)
-                throw new NotImplementedException();
+            if (definition.Structure.Members.Count == 1 && definition.Structure.Members[0].Name == null && definition.Structure.Members[0].Type.Arguments == null)
+                return GetType(context, source, definition.Structure.Members[0].Type);
 
             return null;
+        }
+
+        static LLVMTypeRef CreateInstrinsicType(string name, Span span)
+        {
+            switch (name)
+            {
+                case "i1":
+                    return LLVMTypeRef.Int1;
+                case "i8":
+                    return LLVMTypeRef.Int8;
+                case "i32":
+                    return LLVMTypeRef.Int32;
+                case "i64":
+                    return LLVMTypeRef.Int64;
+                default:
+                    throw new CompilerException($"The intrinsic type \"{name}\" is unknown.", span);
+            }
         }
 
         static string QualifyName(LocalContext context, Source source, string name)
@@ -440,6 +464,10 @@ namespace Scaly.Compiler
                     var usingName = @using.Path;
                     if (!context.GlobalContext.DefinitionDictionary.ContainsKey(usingName))
                         throw new CompilerException($"The name space {usingName} was not found.", @using.Span);
+
+                    var nameSpace = context.GlobalContext.DefinitionDictionary[usingName];
+                    if (nameSpace.Definitions.ContainsKey(name))
+                        return usingName + "." + name;
                 }
             }
 
