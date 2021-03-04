@@ -276,14 +276,25 @@ namespace Scaly.Compiler
             }
             LLVMValueRef valueRef = null;
             foreach (var operation in function.Routine.Operations)
-                valueRef = BuildOperation(localContext, operation);
+                valueRef = BuildOperands(localContext, operation.Operands);
             context.Builder.BuildRet(valueRef);
         }
 
-        static LLVMValueRef BuildOperation(LocalContext context, Operation operation)
+        static LLVMValueRef BuildFunctionCall(LocalContext context, LLVMValueRef function, Object @object)
+        {
+            var arguments = new List<LLVMValueRef>();
+            foreach (var component in @object.Components)
+            {
+                LLVMValueRef valueRef = BuildOperands(context, component.Value);
+                arguments.Add(valueRef);
+            }
+            return context.GlobalContext.Builder.BuildCall(function, arguments.ToArray());
+        }
+
+        static LLVMValueRef BuildOperands(LocalContext context, List<Operand> operands)
         {
             LLVMValueRef valueRef = null;
-            foreach (var operand in operation.Operands)
+            foreach (var operand in operands)
             {
                 valueRef = BuildOperand(context, valueRef, operand);
             }
@@ -314,21 +325,6 @@ namespace Scaly.Compiler
             return valueRef;
         }
 
-        static LLVMValueRef BuildFunctionCall(LocalContext context, LLVMValueRef function, Object @object)
-        {
-            var arguments = new List<LLVMValueRef>();
-            foreach (var component in @object.Components)
-            {
-                LLVMValueRef valueRef = null;
-                foreach (var operand in component.Value)
-                {
-                    valueRef = BuildOperand(context, valueRef, operand);
-                }
-                arguments.Add(valueRef);
-            }
-            return context.GlobalContext.Builder.BuildCall(function, arguments.ToArray());
-        }
-
         static LLVMValueRef BuildName(LocalContext context, Name name)
         {
             var valueRef = context.Resolve(name.Path[0]);
@@ -342,7 +338,7 @@ namespace Scaly.Compiler
         {
             LLVMValueRef valueRef = null;
             foreach (var operation in scope.Operations)
-                valueRef = BuildOperation(context, operation);
+                valueRef = BuildOperands(context, operation.Operands);
 
             if (scope.Binding != null)
                 valueRef = BuildBinding(context, scope.Binding);
@@ -353,10 +349,10 @@ namespace Scaly.Compiler
         static LLVMValueRef BuildBinding(LocalContext context, Binding binding)
         {
             var newContext = new LocalContext { GlobalContext = context.GlobalContext, ParentContext = context };
-            newContext.Values.Add(binding.Identifier, BuildOperation(context, binding.Operation));
+            newContext.Values.Add(binding.Identifier, BuildOperands(context, binding.Operation.Operands));
             LLVMValueRef valueRef = null;
             foreach (var operation in binding.Operations)
-                valueRef = BuildOperation(newContext, operation);
+                valueRef = BuildOperands(newContext, operation.Operands);
 
             return valueRef;
         }
