@@ -104,12 +104,12 @@ namespace Scaly.Compiler
         public string Path;
     }
 
-    public abstract class Expression { }
+    public interface Expression { }
 
     public class Name : Expression
     {
         public Span Span;
-        public List<string> Path;
+        public string Path;
     }
 
     public class Object : Expression
@@ -199,6 +199,7 @@ namespace Scaly.Compiler
 
     public class IntegerConstant : Expression
     {
+        public Span Span;
         public IntegerType Type;
         public int Value;
     }
@@ -333,12 +334,16 @@ namespace Scaly.Compiler
 
         static Expression BuildName(NameSyntax nameSyntax)
         {
-            var components = new List<string>();
-            components.Add(nameSyntax.name);
+            var pathBuilder = new StringBuilder(nameSyntax.name);
             if (nameSyntax.extensions != null)
-                components.AddRange(nameSyntax.extensions.ToList().ConvertAll(it => it.name));
-
-            return new Name { Path = components, Span = nameSyntax.span };
+            {
+                foreach (var extension in nameSyntax.extensions)
+                {
+                    pathBuilder.Append('.');
+                    pathBuilder.Append(extension.name);
+                }
+            }
+            return new Name { Path = pathBuilder.ToString(), Span = nameSyntax.span };
         }
 
         static Expression BuildBlock(BlockSyntax blockSyntax)
@@ -401,7 +406,7 @@ namespace Scaly.Compiler
             switch (literalSyntax.literal)
             {
                 case Integer integer:
-                    return new IntegerConstant { Type = IntegerType.Integer32, Value = int.Parse(integer.value) };
+                    return new IntegerConstant { Span = literalSyntax.span, Type = IntegerType.Integer32, Value = int.Parse(integer.value) };
                 default:
                     throw new NotImplementedException($"{literalSyntax.literal.GetType()} is not implemented.");
             }
