@@ -128,6 +128,32 @@ namespace Scaly.Compiler
             if (definition.Definitions != null)
                 foreach (var childDefinition in definition.Definitions)
                     BuildDefinitionDictionary(context, path, source, childDefinition.Value);
+
+            if (definition.Functions != null)
+                foreach (var function in definition.Functions)
+                    BuildFunctionDictionary(context, path, definition, source, function);
+
+            if (definition.Operators != null)
+                foreach (var @operator in definition.Operators)
+                    BuildOperatorDictionary(context, path, definition, source, @operator);
+        }
+
+        static void BuildOperatorDictionary(GlobalContext context, string parentPath, Definition definition, Source source, Operator @operator)
+        {
+            var path = parentPath == null ? "" : parentPath + (parentPath == "" ? "" : ".") + @operator.Name;
+            if (context.DefinitionDictionary.ContainsKey(path))
+                throw new CompilerException($"The operator {path} was already defined.", @operator.Span);
+            context.DefinitionDictionary.Add(path, definition);
+            context.SourceDictionary.Add(path, source);
+        }
+
+        static void BuildFunctionDictionary(GlobalContext context, string parentPath, Definition definition, Source source, Function function)
+        {
+            var path = parentPath == null ? "" : parentPath + (parentPath == "" ? "" : ".") + function.Name;
+            if (context.DefinitionDictionary.ContainsKey(path))
+                return;
+            context.DefinitionDictionary.Add(path, definition);
+            context.SourceDictionary.Add(path, source);
         }
 
         static void BuildSourceDefinitionDictionary(GlobalContext context, string path, Source source)
@@ -367,31 +393,6 @@ namespace Scaly.Compiler
             throw new NotImplementedException();
         }
 
-        static string QualifyFunctionName(LocalContext context, string name)
-        {
-            if (context.GlobalContext.Types.ContainsKey(name))
-                return name;
-
-            if (context.GlobalContext.DefinitionDictionary.ContainsKey(name))
-                return name;
-
-            if (context.Source.Uses != null && context.Source.Uses.ContainsKey(name))
-                return context.Source.Uses[name].Path;
-
-            if (context.Source.Usings != null)
-            {
-                foreach (var @using in context.Source.Usings)
-                {
-                    var usingName = @using.Path;
-                    var nameSpace = context.ResolveTypeDefinition(usingName, @using.Span);
-                    if (nameSpace.Definitions.ContainsKey(name))
-                        return usingName + "." + name;
-                }
-            }
-
-            return null;
-        }
-
         static TypeSpec GetScopeType(LocalContext context, TypeSpec previousTypeSpec, Scope scope)
         {
             TypeSpec typeSpec = null;
@@ -455,7 +456,7 @@ namespace Scaly.Compiler
             if (valueRef != null)
                 return valueRef;
 
-            throw new CompilerException($"The name '{name.Path[0]}' has not been found.", name.Span);
+            throw new CompilerException($"The name '{name.Path}' has not been found.", name.Span);
         }
 
         static LLVMValueRef BuildScope(LocalContext context, Scope scope)
