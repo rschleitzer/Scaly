@@ -1,2 +1,3 @@
+use Pointer.*
 function main('argument count': Integer, 'argument values': Pointer[Pointer[Byte]]) returns Integer
     strlen('argument values'*) 'as Integer'

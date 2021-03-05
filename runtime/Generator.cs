@@ -146,12 +146,12 @@ namespace Scaly.Compiler
             }
         }
 
-        static void BuildFunction(Context context, Function function)
+        static LLVMValueRef BuildFunction(Context context, Function function)
         {
+            var llvmFunction = ResolveFunctionValue(context, function);
+            var block = llvmFunction.AppendBasicBlock(string.Empty);
             using (var builder = context.Global.Module.Context.CreateBuilder())
             {
-                var llvmFunction = ResolveFunctionValue(context, function);
-                var block = llvmFunction.AppendBasicBlock(string.Empty);
                 builder.PositionAtEnd(block);
                 uint paramCount = 0;
                 foreach (var parameter in function.Routine.Input)
@@ -164,6 +164,7 @@ namespace Scaly.Compiler
                     valueRef = BuildOperands(context, builder, operation.Operands);
                 builder.BuildRet(valueRef);
             }
+            return llvmFunction;
         }
 
         static LLVMValueRef ResolveFunctionValue(Context context, Function function)
@@ -172,6 +173,15 @@ namespace Scaly.Compiler
             if (!context.Global.Values.ContainsKey(functionName))
                 BuildFunctionValue(context, function);
             var llvmFunction = context.Global.Values[function.Name];
+            return llvmFunction;
+        }
+
+        static LLVMValueRef ResolveOperatorValue(Context context, Operator @operator)
+        {
+            var functionName = QualifyOperatorName(context, @operator);
+            if (!context.Global.Values.ContainsKey(functionName))
+                BuildOperatorValue(context, @operator);
+            var llvmFunction = context.Global.Values[@operator.Name];
             return llvmFunction;
         }
 
@@ -217,6 +227,19 @@ namespace Scaly.Compiler
             functionNameBuilder.Append(')');
             return functionNameBuilder.ToString();
         }
+
+        static string QualifyOperatorName(Context context, Operator @operator)
+        {
+            var operatorNameBuilder = new StringBuilder();
+            if (context.Path != "")
+            {
+                operatorNameBuilder.Append(context.Path);
+                operatorNameBuilder.Append('.');
+            }
+            operatorNameBuilder.Append(@operator.Name);
+            return operatorNameBuilder.ToString();
+        }
+
 
         static LLVMTypeRef BuildFunctionType(Context context, Function function)
         {
@@ -324,7 +347,7 @@ namespace Scaly.Compiler
                     BuildFunctionDictionary(context, function);
 
             if (context.Definition.Operators != null)
-                foreach (var @operator in context.Definition.Operators)
+                foreach (var @operator in context.Definition.Operators.Values)
                     BuildOperatorDictionary(context, @operator);
         }
 
@@ -362,7 +385,7 @@ namespace Scaly.Compiler
                     BuildFunctionType(context, function);
 
             if (definition.Operators != null)
-                foreach (var @operator in definition.Operators)
+                foreach (var @operator in definition.Operators.Values)
                     BuildOperatorType(context, @operator);
         }
 
@@ -382,7 +405,7 @@ namespace Scaly.Compiler
                     BuildFunctionType(context, function);
 
             if (context.Source.Operators != null)
-                foreach (var @operator in context.Source.Operators)
+                foreach (var @operator in context.Source.Operators.Values)
                     BuildOperatorType(context, @operator);
 
             if (context.Source.Sources != null)
@@ -395,7 +418,7 @@ namespace Scaly.Compiler
             }
         }
 
-        static void BuildOperatorType(Context context, Operator @operator)
+        static LLVMTypeRef BuildOperatorType(Context context, Operator @operator)
         {
             var returnType = GetSingleType(context, @operator.Routine.Result);
             var parameterTypes = new List<LLVMTypeRef>();
@@ -403,6 +426,7 @@ namespace Scaly.Compiler
                 parameterTypes.AddRange(GetTypes(context, @operator.Routine.Input));
             var functionType = LLVMTypeRef.CreateFunction(returnType, parameterTypes.ToArray());
             context.Global.Types.Add(@operator.Name, functionType);
+            return functionType;
         }
 
         static void BuildSourceValues(Context context)
@@ -414,7 +438,7 @@ namespace Scaly.Compiler
                         BuildFunctionValue(context, function);
 
                 if (context.Source.Operators != null)
-                    foreach (var @operator in context.Source.Operators)
+                    foreach (var @operator in context.Source.Operators.Values)
                         BuildOperatorValue(context, @operator);
 
                 if (context.Source.Sources != null)
@@ -453,14 +477,25 @@ namespace Scaly.Compiler
                     BuildFunctionValue(context, function);
 
             if (definition.Operators != null)
-                foreach (var @operator in definition.Operators)
+                foreach (var @operator in definition.Operators.Values)
                     BuildOperatorValue(context, @operator);
         }
 
         static void BuildOperatorValue(Context context, Operator @operator)
         {
-            var functionType = context.ResolveType(@operator.Name);
-            context.Global.Values.Add(@operator.Name, context.Global.Module.AddFunction(@operator.Name, functionType));
+            var operatorType = ResolveOperatorType(context, @operator);
+            var operatorName = QualifyOperatorName(context, @operator);
+            context.Global.Values.Add(@operator.Name, context.Global.Module.AddFunction(operatorName, operatorType));
+        }
+
+        static LLVMTypeRef ResolveOperatorType(Context context, Operator @operator)
+        {
+            var functionName = QualifyOperatorName(context, @operator);
+            if (context.Global.Types.ContainsKey(functionName))
+                return context.Global.Types[functionName];
+            var operatorType = BuildOperatorType(context, @operator);
+            context.Global.Types.Add(functionName, operatorType);
+            return operatorType;
         }
 
         static LLVMValueRef BuildFunctionCall(Context context, LLVMValueRef function, LLVMBuilderRef builder, Object @object)
@@ -472,6 +507,11 @@ namespace Scaly.Compiler
                 arguments.Add(valueRef);
             }
             return builder.BuildCall(function, arguments.ToArray());
+        }
+
+        static LLVMValueRef BuildOperatorCall(Context context, LLVMValueRef @operator, LLVMBuilderRef builder, LLVMValueRef operand)
+        {
+            return builder.BuildCall(@operator, new LLVMValueRef[] { operand });
         }
 
         static TypeSpec GetOperandType(Context context, LLVMBuilderRef builder, TypeSpec previousTypeSpec, Operand operand)
@@ -544,7 +584,7 @@ namespace Scaly.Compiler
                     valueRef = LLVMValueRef.CreateConstInt(LLVMTypeRef.Int32, (ulong)integerConstant.Value);
                     break;
                 case Name name:
-                    valueRef = BuildName(context, name, operands);
+                    valueRef = BuildName(context, builder, name, valueRef, operands);
                     break;
                 case Scope scope:
                     valueRef = BuildScope(context, builder, scope);
@@ -560,27 +600,75 @@ namespace Scaly.Compiler
             return valueRef;
         }
 
-        static LLVMValueRef BuildName(Context context, Name name, IEnumerator<Operand> operands)
+        static LLVMValueRef BuildName(Context context, LLVMBuilderRef builder, Name name, LLVMValueRef previousValue, IEnumerator<Operand> operands)
         {
             var valueRef = context.ResolveValue(name.Path);
             if (valueRef != null)
                 return valueRef;
 
             var qualifiedName = QualifyName(context, name.Path);
-            if (!context.Global.Dictionary.Sources.ContainsKey(qualifiedName))
+            if (qualifiedName == null)
                 throw new CompilerException($"The name '{name.Path}' has not been found.", name.Span);
+            if (!context.Global.Dictionary.Sources.ContainsKey(qualifiedName))
+                throw new CompilerException($"The name '{name.Path}' was not in the dictionary.", name.Span);
 
             var definition = context.Global.Dictionary.Definitions[qualifiedName];
             var source = context.Global.Dictionary.Sources[qualifiedName];
+
+            Operator @operator = null;
             List<Function> functions = null;
             if (definition == null)
+            {
                 functions = source.Functions.Where(it => it.Name == name.Path).ToList();
+            }
             else
-                functions = definition.Functions.Where(it => it.Name == name.Path).ToList();
+            {
+                if (definition.Functions != null)
+                    functions = definition.Functions.Where(it => it.Name == name.Path).ToList();
+                if (functions == null || functions.Count == 0)
+                {
+                    if (definition.Operators != null && definition.Operators.ContainsKey(name.Path))
+                        @operator = definition.Operators[name.Path];
+                }
+            }
+
+            if (@operator != null)
+            {
+                if (previousValue == null)
+                    throw new CompilerException("An operator cannot act on nothing. It must follow an operand it can act upon.", @operator.Span);
+                var operatorValue = ResolveOperatorValue(context, @operator);
+                return BuildOperatorCall(context, operatorValue, builder, previousValue);
+            }
+
             if (functions.Count == 0)
                 throw new CompilerException($"The name '{name.Path}' has not been found.", name.Span);
 
-            throw new CompilerException($"The name '{name.Path}' has not been found.", name.Span);
+            if (!operands.MoveNext())
+                throw new CompilerException($"No function arguments for '{name.Path}' were given.", name.Span);
+
+            var operand = operands.Current;
+            switch (operand.Expression)
+            {
+                case Object @object:
+                    valueRef = FindMatchingFunction(context, functions, @object);
+                    if (valueRef == null)
+                        throw new CompilerException("No matching function has been found for the arguments.", @object.Span);
+                    return BuildFunctionCall(context, valueRef, builder, @object);
+                default:
+                    throw new CompilerException($"Only an object can be applied to function '{name.Path}'. Got an {operand.Expression.GetType()}.", @name.Span);
+            }
+        }
+
+        static LLVMValueRef FindMatchingFunction(Context context, List<Function> functions, Object @object)
+        {
+            var functionsWithSameNumberOfArguments = functions.Where(it => it.Routine.Input.Count == @object.Components.Count).ToList();
+            if (functionsWithSameNumberOfArguments.Count == 0)
+                throw new CompilerException($"No overload of the function takes {@object.Components.Count} arguments.", @object.Span);
+            if (functionsWithSameNumberOfArguments.Count > 1)
+                throw new CompilerException($"More than one overload of the function takes {@object.Components.Count} arguments.", @object.Span);
+            var function = functionsWithSameNumberOfArguments.First();
+            var functionValue = ResolveFunctionValue(context, function);
+            return functionValue;
         }
 
         static LLVMValueRef BuildScope(Context context, LLVMBuilderRef builder, Scope scope)
@@ -623,7 +711,10 @@ namespace Scaly.Compiler
                 {
                     var usingName = @using.Path;
                     var nameSpace = context.ResolveName(usingName, @using.Span);
-                    if (nameSpace.Definitions.ContainsKey(name))
+                    if (nameSpace.Definitions != null && nameSpace.Definitions.ContainsKey(name))
+                        return usingName + "." + name;
+
+                    if (nameSpace.Operators != null && nameSpace.Operators.ContainsKey(name))
                         return usingName + "." + name;
                 }
             }

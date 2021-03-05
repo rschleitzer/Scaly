@@ -15,7 +15,7 @@ namespace Scaly.Compiler
         public Structure Structure;
         public Dictionary<string, Definition> Definitions;
         public List<Function> Functions;
-        public List<Operator> Operators;
+        public Dictionary<string, Operator> Operators;
         public Dictionary<string, Implement> Implements;
         public List<Source> Sources;
     }
@@ -82,7 +82,7 @@ namespace Scaly.Compiler
     {
         public string Name;
         public List<Function> Functions;
-        public List<Operator> Operators;
+        public Dictionary<string, Operator> Operators;
     }
 
     public class Source
@@ -92,7 +92,7 @@ namespace Scaly.Compiler
         public List<Namespace> Usings;
         public Dictionary<string, Definition> Definitions;
         public List<Function> Functions;
-        public List<Operator> Operators;
+        public Dictionary<string, Operator> Operators;
         public Dictionary<string, Implement> Implements;
         public List<Source> Sources;
         public List<Operation> Operations;
@@ -445,7 +445,7 @@ namespace Scaly.Compiler
                     break;
                 case OperatorSyntax operatorSyntax:
                     if (source.Operators == null)
-                        source.Operators = new List<Operator>();
+                        source.Operators = new Dictionary<string, Operator>();
                     HandleOperator(operatorSyntax, source.Operators);
                     break;
                 case ModuleSyntax moduleSyntax:
@@ -689,7 +689,7 @@ namespace Scaly.Compiler
             return typeSpec;
         }
 
-        static void HandleOperator(OperatorSyntax operatorSyntax, List<Operator> operators)
+        static void HandleOperator(OperatorSyntax operatorSyntax, Dictionary<string, Operator> operators)
         {
             var @operator = new Operator { Span = operatorSyntax.span };
             switch (operatorSyntax.target)
@@ -701,10 +701,11 @@ namespace Scaly.Compiler
                     @operator.Name = symbolSyntax.name;
                     @operator.Routine = BuildSymbol(symbolSyntax);
                     break;
-
             }
 
-            operators.Add(@operator);
+            if (@operators.ContainsKey(@operator.Name))
+                throw new CompilerException($"The operator {@operator.Name} has already been defined.", @operator.Span);
+            operators.Add(@operator.Name, @operator);
         }
 
         static Routine BuildSymbol(SymbolSyntax symbolSyntax)
@@ -755,7 +756,7 @@ namespace Scaly.Compiler
                             break;
                         case OperatorSyntax operatorSyntax:
                             if (implementation.Operators == null)
-                                implementation.Operators = new List<Operator>();
+                                implementation.Operators = new Dictionary<string, Operator>();
                             HandleOperator(operatorSyntax, implementation.Operators);
                             break;
                         default:
@@ -863,7 +864,7 @@ namespace Scaly.Compiler
                     break;
                 case OperatorSyntax operatorSyntax:
                     if (definition.Operators == null)
-                        definition.Operators = new List<Operator>();
+                        definition.Operators = new Dictionary<string, Operator>();
                     HandleOperator(operatorSyntax, definition.Operators);
                     break;
                 case ImplementSyntax implementSyntax:
