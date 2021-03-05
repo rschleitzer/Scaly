@@ -206,11 +206,11 @@ namespace Scaly.Compiler
 
     public class Modeler
     {
-        public static Definition BuildFiles(string[] files)
+        public static List<Source> BuildFiles(string[] files)
         {
             var sources = files.ToList().ConvertAll(it => BuildSource(it));
             sources.Add(BuildRuntime());
-            return new Definition { Sources = sources };
+            return sources;
         }
 
         public static Source BuildRuntime()
@@ -449,8 +449,6 @@ namespace Scaly.Compiler
                     HandleOperator(operatorSyntax, source.Operators);
                     break;
                 case ModuleSyntax moduleSyntax:
-                    if (source.Definitions == null)
-                        source.Definitions = new Dictionary<string, Definition>();
                     HandleModule(moduleSyntax, source.Definitions, source, origin, true);
                     break;
                 case UseSyntax useSyntax:

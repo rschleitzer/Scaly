@@ -5,9 +5,22 @@ using System.Text;
 
 namespace Scaly.Compiler
 {
+    internal class NameDictionary
+    {
+        public Dictionary<string, Definition> Names = new Dictionary<string, Definition>();
+        public Dictionary<string, Source> Sources = new Dictionary<string, Source>();
+    }
+
+    internal class DictionaryContext
+    {
+        public NameDictionary Dictionary;
+        public Source Source;
+        public string Path;
+        public Definition Definition;
+    }
+
     internal class GlobalContext
     {
-        public Definition Definition;
         public LLVMModuleRef Module;
         public LLVMBuilderRef Builder;
         public Dictionary<string, Definition> DefinitionDictionary = new Dictionary<string, Definition>();
@@ -20,6 +33,7 @@ namespace Scaly.Compiler
     {
         public GlobalContext GlobalContext;
         public Source Source;
+        public string Path = "";
         public LocalContext ParentContext;
         public Dictionary<string, LLVMTypeRef> Types = new Dictionary<string, LLVMTypeRef>();
         public Dictionary<string, LLVMValueRef> Values = new Dictionary<string, LLVMValueRef>();
@@ -69,10 +83,10 @@ namespace Scaly.Compiler
     {
         public delegate int Main(int argc, string[] argv);
 
-        internal static Main JitProgram(Definition definition)
+        internal static Main JitProgram(List<Source> sources)
         {
             LLVMModuleRef module = LLVMModuleRef.CreateWithName("JIT module");
-            Generate(module, definition);
+            Generate(module, sources);
             VerifyAndInitialize(module);
             var engine = module.CreateMCJITCompiler();
             var function = module.GetNamedFunction("main");
@@ -80,10 +94,10 @@ namespace Scaly.Compiler
             return jitMain;
         }
 
-        internal static void GenerateProgram(Definition definition, string outputName)
+        internal static void GenerateProgram(List<Source> sources, string outputName)
         {
             LLVMModuleRef module = LLVMModuleRef.CreateWithName(string.Empty);
-            Generate(module, definition);
+            Generate(module, sources);
 
             VerifyAndInitialize(module);
             LLVM.InitializeAllTargetInfos();
@@ -96,75 +110,100 @@ namespace Scaly.Compiler
             targetMachine.TryEmitToFile(module, $"{outputName}.o", LLVMCodeGenFileType.LLVMObjectFile, out message);
         }
 
-        static void Generate(LLVMModuleRef module, Definition definition)
+        static void Generate(LLVMModuleRef module, List<Source> sources)
         {
             using (var builder = module.Context.CreateBuilder())
             {
-                var context = new GlobalContext { Definition = definition, Module = module, Builder = builder };
-                var localContext = new LocalContext { GlobalContext = context, Source = null, ParentContext = null };
-                string path = null;
-                BuildDefinitionDictionary(context, path, null, definition);
-                BuildDefinitionTypes(localContext, definition);
-                BuildDefinitionValues(localContext, definition);
-                BuildFunctions(context, null, definition);
+                var dictionary = new NameDictionary();
+                var context = new DictionaryContext { Dictionary = dictionary, Path = "" };
+                foreach (var source in sources)
+                {
+                    context.Source = source;
+                    BuildSourceDictionary(context);
+                }
+                //var globalContext = new GlobalContext { Definition = definition, Module = module, Builder = builder };
+                //var localContext = new LocalContext { GlobalContext = globalContext, ParentContext = null };
+                //BuildDefinitionTypes(localContext, definition);
+                //BuildDefinitionValues(localContext, definition);
+                //BuildFunctions(globalContext, null, definition);
             }
         }
 
-        static void BuildDefinitionDictionary(GlobalContext context, string parentPath, Source source, Definition definition)
+        static void BuildSourceDictionary(DictionaryContext context)
         {
-            var path = parentPath == null? "" : parentPath + (parentPath == "" ? "" : ".") + definition.Type.Name;
-            if (path != "")
+            if (context.Source.Sources != null)
             {
-                if (context.DefinitionDictionary.ContainsKey(path))
-                    throw new CompilerException($"The definition {path} was already defined.", definition.Span);
-                context.DefinitionDictionary.Add(path, definition);
-                context.SourceDictionary.Add(path, source);
+                foreach (var source in context.Source.Sources)
+                {
+                    var newContext = new DictionaryContext { Dictionary = context.Dictionary, Source = source, Path = context.Path, Definition = context.Definition };
+                    BuildSourceDictionary(newContext);
+                }
             }
 
-            if (definition.Sources != null)
-                foreach (var childSource in definition.Sources)
-                    BuildSourceDefinitionDictionary(context, path, childSource);
+            if (context.Source.Definitions != null)
+            {
+                foreach (var definition in context.Source.Definitions.Values)
+                {
+                    var newContext = new DictionaryContext { Dictionary = context.Dictionary, Source = context.Source, Path = context.Path == "" ? definition.Type.Name : context.Path + "." + definition.Type.Name, Definition = definition };
+                    BuildDefinitionDictionary(newContext);
+                }
+            }
 
-            if (definition.Definitions != null)
-                foreach (var childDefinition in definition.Definitions)
-                    BuildDefinitionDictionary(context, path, source, childDefinition.Value);
-
-            if (definition.Functions != null)
-                foreach (var function in definition.Functions)
-                    BuildFunctionDictionary(context, path, definition, source, function);
-
-            if (definition.Operators != null)
-                foreach (var @operator in definition.Operators)
-                    BuildOperatorDictionary(context, path, definition, source, @operator);
+            if (context.Source.Functions != null)
+                foreach (var function in context.Source.Functions)
+                    BuildFunctionDictionary(context, function);
         }
 
-        static void BuildOperatorDictionary(GlobalContext context, string parentPath, Definition definition, Source source, Operator @operator)
+        static void BuildDefinitionDictionary(DictionaryContext context)
         {
-            var path = parentPath == null ? "" : parentPath + (parentPath == "" ? "" : ".") + @operator.Name;
-            if (context.DefinitionDictionary.ContainsKey(path))
-                throw new CompilerException($"The operator {path} was already defined.", @operator.Span);
-            context.DefinitionDictionary.Add(path, definition);
-            context.SourceDictionary.Add(path, source);
+            if (context.Dictionary.Names.ContainsKey(context.Path))
+                throw new CompilerException($"The definition {context.Path} was already defined.", context.Definition.Span);
+            context.Dictionary.Names.Add(context.Path, context.Definition);
+            context.Dictionary.Sources.Add(context.Path, context.Source);
+
+            if (context.Definition.Sources != null)
+            {
+                foreach (var source in context.Definition.Sources)
+                {
+                    var newContext = new DictionaryContext { Dictionary = context.Dictionary, Source = source, Path = context.Path, Definition = context.Definition };
+                    BuildSourceDictionary(newContext);
+                }
+            }
+
+            if (context.Definition.Definitions != null)
+            {
+                foreach (var definition in context.Definition.Definitions.Values)
+                {
+                    var newContext = new DictionaryContext { Dictionary = context.Dictionary, Source = context.Source, Path = context.Path == "" ? definition.Type.Name : context.Path + "." + definition.Type.Name, Definition = definition };
+                    BuildDefinitionDictionary(newContext);
+                }
+            }
+
+            if (context.Definition.Functions != null)
+                foreach (var function in context.Definition.Functions)
+                    BuildFunctionDictionary(context, function);
+
+            if (context.Definition.Operators != null)
+                foreach (var @operator in context.Definition.Operators)
+                    BuildOperatorDictionary(context, @operator);
         }
 
-        static void BuildFunctionDictionary(GlobalContext context, string parentPath, Definition definition, Source source, Function function)
+        static void BuildFunctionDictionary(DictionaryContext context, Function function)
         {
-            var path = parentPath == null ? "" : parentPath + (parentPath == "" ? "" : ".") + function.Name;
-            if (context.DefinitionDictionary.ContainsKey(path))
+            var path = context.Path == "" ? function.Name : context.Path + "." + function.Name;
+            if (context.Dictionary.Names.ContainsKey(path))
                 return;
-            context.DefinitionDictionary.Add(path, definition);
-            context.SourceDictionary.Add(path, source);
+            context.Dictionary.Names.Add(path, context.Definition);
+            context.Dictionary.Sources.Add(path, context.Source);
         }
 
-        static void BuildSourceDefinitionDictionary(GlobalContext context, string path, Source source)
+        static void BuildOperatorDictionary(DictionaryContext context, Operator @operator)
         {
-            if (source.Sources != null)
-                foreach (var childSource in source.Sources)
-                    BuildSourceDefinitionDictionary(context, path, childSource);
-
-            if (source.Definitions != null)
-                foreach (var definition in source.Definitions)
-                    BuildDefinitionDictionary(context, path, source, definition.Value);
+            var path = context.Path + "." + @operator.Name;
+            if (context.Dictionary.Names.ContainsKey(path))
+                throw new CompilerException($"The operator {path} was already defined.", @operator.Span);
+            context.Dictionary.Names.Add(path, context.Definition);
+            context.Dictionary.Sources.Add(path, context.Source);
         }
 
         static void BuildDefinitionTypes(LocalContext context, Definition definition)
@@ -221,7 +260,33 @@ namespace Scaly.Compiler
             var returnType = GetSingleType(context, function.Routine.Result);
             var parameterTypes = GetTypes(context, function.Routine.Input);
             var functionType = LLVMTypeRef.CreateFunction(returnType, parameterTypes);
-            context.GlobalContext.Types.Add(function.Name, functionType);
+            context.GlobalContext.Types.Add(QualifyFunctionName(context, function), functionType);
+        }
+
+        static string QualifyFunctionName(LocalContext context, Function function)
+        {
+            if ((function.Routine.Implementation == Implementation.Extern) || (context.Path == "" && function.Name == "main"))
+                return function.Name;
+
+            var functionNameBuilder = new StringBuilder();
+            if (context.Path != "")
+            {
+                functionNameBuilder.Append(context.Path);
+                functionNameBuilder.Append('.');
+            }
+            functionNameBuilder.Append(function.Name);
+            functionNameBuilder.Append('(');
+            var first = true;
+            foreach (var parameter in function.Routine.Input)
+            {
+                if (first)
+                    first = false;
+                else
+                    functionNameBuilder.Append(',');
+                functionNameBuilder.Append(parameter.TypeSpec.Name);
+            }
+            functionNameBuilder.Append(')');
+            return functionNameBuilder.ToString();
         }
 
         static void BuildOperatorType(LocalContext context, Operator @operator)
