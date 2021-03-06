@@ -56,14 +56,6 @@ namespace Scaly.Compiler
             return null;
         }
 
-        internal LLVMTypeRef ResolveType(string name)
-        {
-            if (Global.Types.ContainsKey(name))
-                return Global.Types[name];
-
-            return null;
-        }
-
         internal Definition ResolveDefinitionName(string name, Span span)
         {
             if (!Global.Dictionary.Definitions.ContainsKey(name))
@@ -144,7 +136,13 @@ namespace Scaly.Compiler
                 foreach (var source in sources)
                 {
                     context.Source = source;
-                    BuildSourceFunctions(context);
+                    if (context.Source.Functions != null)
+                    {
+                        foreach (var function in context.Source.Functions)
+                        {
+                            BuildFunction(context, function);
+                        }
+                    }
                 }
             }
 
@@ -153,28 +151,17 @@ namespace Scaly.Compiler
             //BuildFunctions(globalContext, null, definition);
         }
 
-        static void BuildSourceFunctions(Context context)
-        {
-            if (context.Source.Functions != null)
-            {
-                foreach (var function in context.Source.Functions)
-                {
-                    BuildFunction(context, function);
-                }
-            }
-        }
-
         static LLVMValueRef BuildFunction(Context context, Function function)
         {
-            var llvmFunction = ResolveFunctionValue(context, function);
-            var block = llvmFunction.AppendBasicBlock(string.Empty);
+            var functionValue = ResolveFunctionValue(context, function);
+            var block = functionValue.AppendBasicBlock(string.Empty);
             using (var builder = context.Global.Module.Context.CreateBuilder())
             {
                 builder.PositionAtEnd(block);
                 uint paramCount = 0;
                 foreach (var parameter in function.Routine.Input)
                 {
-                    context.Values.Add(parameter.Name, llvmFunction.GetParam(paramCount));
+                    context.Values.Add(parameter.Name, functionValue.GetParam(paramCount));
                     paramCount++;
                 }
                 LLVMValueRef valueRef = null;
@@ -182,7 +169,7 @@ namespace Scaly.Compiler
                     valueRef = BuildOperands(context, builder, operation.Operands);
                 builder.BuildRet(valueRef);
             }
-            return llvmFunction;
+            return functionValue;
         }
 
         static LLVMValueRef ResolveFunctionValue(Context context, Function function)
@@ -280,22 +267,39 @@ namespace Scaly.Compiler
                 return new LLVMTypeRef[] { };
 
             return result.ConvertAll(it => ResolveType(context, it.TypeSpec)).ToArray();
-
         }
 
         static LLVMTypeRef ResolveType(Context context, TypeSpec typeSpec)
         {
-            if (typeSpec.Name == "Pointer")
-                return GetPointerType(context, typeSpec);
-
+            LLVMTypeRef type;
             var qualifiedName = QualifyName(context, typeSpec.Name);
             var typeName = AddTypeArguments(qualifiedName, typeSpec.Arguments);
-            var type = context.ResolveType(typeName);
-            if (type != null)
-                return type;
+            if (context.Global.Types.ContainsKey(typeName))
+                return context.Global.Types[typeName];
 
-            var newContext = new Context { Global = context.Global, Source = context.Global.Dictionary.Sources[qualifiedName] };
-            return CreateType(newContext, qualifiedName, typeSpec);
+            if (typeSpec.Name == "Pointer")
+            {
+                type = GetPointerType(context, typeSpec);
+            }
+            else
+            {
+                var newContext = new Context { Global = context.Global, Source = context.Global.Dictionary.Sources[qualifiedName] };
+                type = CreateType(newContext, qualifiedName, typeSpec);
+            }
+
+            context.Global.Types.Add(typeName, type);
+            return type;
+        }
+
+        static LLVMTypeRef GetPointerType(Context context, TypeSpec typeSpec)
+        {
+            if (typeSpec.Arguments == null)
+                throw new CompilerException("Pointer is a generic type which expects a type argument.", typeSpec.Span);
+            if (typeSpec.Arguments.Count != 1)
+                throw new CompilerException($"Pointer expects exactly one type argument, not {typeSpec.Arguments.Count}.", typeSpec.Span);
+            var typeArgument = typeSpec.Arguments[0];
+            var pointerTarget = (typeArgument.Name == "Pointer") ? GetPointerType(context, typeArgument) : ResolveType(context, typeArgument);
+            return LLVMTypeRef.CreatePointer(pointerTarget, 0);
         }
 
         static LLVMValueRef BuildOperands(Context context, LLVMBuilderRef builder, List<Operand> operands)
@@ -308,6 +312,128 @@ namespace Scaly.Compiler
                 valueRef = BuildOperand(context, valueRef, builder, operand, enumerator);
             }
             return valueRef;
+        }
+
+        static LLVMValueRef BuildOperand(Context context, LLVMValueRef valueRef, LLVMBuilderRef builder, Operand operand, IEnumerator<Operand> operands)
+        {
+            switch (operand.Expression)
+            {
+                case IntegerConstant integerConstant:
+                    valueRef = LLVMValueRef.CreateConstInt(LLVMTypeRef.Int32, (ulong)integerConstant.Value);
+                    break;
+                case Name name:
+                    valueRef = BuildName(context, builder, name, valueRef, operands);
+                    break;
+                case Scope scope:
+                    valueRef = BuildScope(context, builder, scope);
+                    break;
+                case Object @object:
+                    if (valueRef == null)
+                        throw new CompilerException("Objects are currently only supported as parameter lists for function calls.", @object.Span);
+                    valueRef = BuildFunctionCall(context, valueRef, builder, @object);
+                    break;
+                default:
+                    throw new NotImplementedException($"BuildOperand for expression {operand.Expression.GetType()} not implemented.");
+            }
+            return valueRef;
+        }
+
+        static LLVMValueRef BuildName(Context context, LLVMBuilderRef builder, Name name, LLVMValueRef previousValue, IEnumerator<Operand> operands)
+        {
+            var valueRef = context.ResolveValue(name.Path);
+            if (valueRef != null)
+                return valueRef;
+
+            var qualifiedName = QualifyName(context, name.Path);
+            if (qualifiedName == null)
+                throw new CompilerException($"The name '{name.Path}' has not been found.", name.Span);
+            if (!context.Global.Dictionary.Sources.ContainsKey(qualifiedName))
+                throw new CompilerException($"The name '{name.Path}' was not in the dictionary.", name.Span);
+
+            List<Function> functions = null;
+            if (context.Global.Dictionary.Functions.ContainsKey(qualifiedName))
+                functions = context.Global.Dictionary.Functions[qualifiedName];
+
+            Operator @operator = null;
+            if (context.Global.Dictionary.Operators.ContainsKey(qualifiedName))
+                @operator = context.Global.Dictionary.Operators[qualifiedName];
+
+            if (@operator != null)
+            {
+                if (previousValue == null)
+                    throw new CompilerException("An operator cannot act on nothing. It must follow an operand it can act upon.", @operator.Span);
+                var operatorValue = ResolveOperatorValue(context, @operator);
+                return BuildOperatorCall(context, operatorValue, builder, previousValue);
+            }
+
+            if (functions.Count == 0)
+                throw new CompilerException($"The name '{name.Path}' has not been found.", name.Span);
+
+            if (!operands.MoveNext())
+                throw new CompilerException($"No function arguments for '{name.Path}' were given.", name.Span);
+
+            var operand = operands.Current;
+            switch (operand.Expression)
+            {
+                case Object @object:
+                    valueRef = FindMatchingFunction(context, functions, @object);
+                    if (valueRef == null)
+                        throw new CompilerException("No matching function has been found for the arguments.", @object.Span);
+                    return BuildFunctionCall(context, valueRef, builder, @object);
+                default:
+                    throw new CompilerException($"Only an object can be applied to function '{name.Path}'. Got an {operand.Expression.GetType()}.", @name.Span);
+            }
+        }
+
+        static LLVMValueRef FindMatchingFunction(Context context, List<Function> functions, Object @object)
+        {
+            var functionsWithSameNumberOfArguments = functions.Where(it => it.Routine.Input.Count == @object.Components.Count).ToList();
+            if (functionsWithSameNumberOfArguments.Count == 0)
+                throw new CompilerException($"No overload of the function takes {@object.Components.Count} arguments.", @object.Span);
+            if (functionsWithSameNumberOfArguments.Count > 1)
+                throw new CompilerException($"More than one overload of the function takes {@object.Components.Count} arguments.", @object.Span);
+            var function = functionsWithSameNumberOfArguments.First();
+            var functionValue = ResolveFunctionValue(context, function);
+            return functionValue;
+        }
+
+        static LLVMValueRef BuildScope(Context context, LLVMBuilderRef builder, Scope scope)
+        {
+            LLVMValueRef valueRef = null;
+            foreach (var operation in scope.Operations)
+                valueRef = BuildOperands(context, builder, operation.Operands);
+
+            if (scope.Binding != null)
+                valueRef = BuildBinding(context, builder, scope.Binding);
+
+            return valueRef;
+        }
+
+        static LLVMValueRef BuildBinding(Context context, LLVMBuilderRef builder, Binding binding)
+        {
+            var newContext = new Context { Global = context.Global, Source = context.Source, ParentContext = context };
+            newContext.Values.Add(binding.Identifier, BuildOperands(context, builder, binding.Operation.Operands));
+            LLVMValueRef valueRef = null;
+            foreach (var operation in binding.Operations)
+                valueRef = BuildOperands(newContext, builder, operation.Operands);
+
+            return valueRef;
+        }
+
+        static LLVMValueRef BuildFunctionCall(Context context, LLVMValueRef function, LLVMBuilderRef builder, Object @object)
+        {
+            var arguments = new List<LLVMValueRef>();
+            foreach (var component in @object.Components)
+            {
+                LLVMValueRef valueRef = BuildOperands(context, builder, component.Value);
+                arguments.Add(valueRef);
+            }
+            return builder.BuildCall(function, arguments.ToArray());
+        }
+
+        static LLVMValueRef BuildOperatorCall(Context context, LLVMValueRef @operator, LLVMBuilderRef builder, LLVMValueRef operand)
+        {
+            return builder.BuildCall(@operator, new LLVMValueRef[] { operand });
         }
 
         static void BuildSourceDictionary(DictionaryContext context)
@@ -517,22 +643,6 @@ namespace Scaly.Compiler
             return operatorType;
         }
 
-        static LLVMValueRef BuildFunctionCall(Context context, LLVMValueRef function, LLVMBuilderRef builder, Object @object)
-        {
-            var arguments = new List<LLVMValueRef>();
-            foreach (var component in @object.Components)
-            {
-                LLVMValueRef valueRef = BuildOperands(context, builder, component.Value);
-                arguments.Add(valueRef);
-            }
-            return builder.BuildCall(function, arguments.ToArray());
-        }
-
-        static LLVMValueRef BuildOperatorCall(Context context, LLVMValueRef @operator, LLVMBuilderRef builder, LLVMValueRef operand)
-        {
-            return builder.BuildCall(@operator, new LLVMValueRef[] { operand });
-        }
-
         static TypeSpec GetOperandType(Context context, LLVMBuilderRef builder, TypeSpec previousTypeSpec, Operand operand)
         {
             switch (operand.Expression)
@@ -593,112 +703,6 @@ namespace Scaly.Compiler
                 typeSpec = GetOperandType(context, builder, typeSpec, operand);
             }
             return typeSpec;
-        }
-
-        static LLVMValueRef BuildOperand(Context context, LLVMValueRef valueRef, LLVMBuilderRef builder, Operand operand, IEnumerator<Operand> operands)
-        {
-            switch (operand.Expression)
-            {
-                case IntegerConstant integerConstant:
-                    valueRef = LLVMValueRef.CreateConstInt(LLVMTypeRef.Int32, (ulong)integerConstant.Value);
-                    break;
-                case Name name:
-                    valueRef = BuildName(context, builder, name, valueRef, operands);
-                    break;
-                case Scope scope:
-                    valueRef = BuildScope(context, builder, scope);
-                    break;
-                case Object @object:
-                    if (valueRef == null)
-                        throw new CompilerException("Objects are currently only supported as parameter lists for function calls.", @object.Span);
-                    valueRef = BuildFunctionCall(context, valueRef, builder, @object);
-                    break;
-                default:
-                    throw new NotImplementedException($"BuildOperand for expression {operand.Expression.GetType()} not implemented.");
-            }
-            return valueRef;
-        }
-
-        static LLVMValueRef BuildName(Context context, LLVMBuilderRef builder, Name name, LLVMValueRef previousValue, IEnumerator<Operand> operands)
-        {
-            var valueRef = context.ResolveValue(name.Path);
-            if (valueRef != null)
-                return valueRef;
-
-            var qualifiedName = QualifyName(context, name.Path);
-            if (qualifiedName == null)
-                throw new CompilerException($"The name '{name.Path}' has not been found.", name.Span);
-            if (!context.Global.Dictionary.Sources.ContainsKey(qualifiedName))
-                throw new CompilerException($"The name '{name.Path}' was not in the dictionary.", name.Span);
-
-            List<Function> functions = null;
-            if (context.Global.Dictionary.Functions.ContainsKey(qualifiedName))
-                functions = context.Global.Dictionary.Functions[qualifiedName];
-
-            Operator @operator = null;
-            if (context.Global.Dictionary.Operators.ContainsKey(qualifiedName))
-                @operator = context.Global.Dictionary.Operators[qualifiedName];
-
-            if (@operator != null)
-            {
-                if (previousValue == null)
-                    throw new CompilerException("An operator cannot act on nothing. It must follow an operand it can act upon.", @operator.Span);
-                var operatorValue = ResolveOperatorValue(context, @operator);
-                return BuildOperatorCall(context, operatorValue, builder, previousValue);
-            }
-
-            if (functions.Count == 0)
-                throw new CompilerException($"The name '{name.Path}' has not been found.", name.Span);
-
-            if (!operands.MoveNext())
-                throw new CompilerException($"No function arguments for '{name.Path}' were given.", name.Span);
-
-            var operand = operands.Current;
-            switch (operand.Expression)
-            {
-                case Object @object:
-                    valueRef = FindMatchingFunction(context, functions, @object);
-                    if (valueRef == null)
-                        throw new CompilerException("No matching function has been found for the arguments.", @object.Span);
-                    return BuildFunctionCall(context, valueRef, builder, @object);
-                default:
-                    throw new CompilerException($"Only an object can be applied to function '{name.Path}'. Got an {operand.Expression.GetType()}.", @name.Span);
-            }
-        }
-
-        static LLVMValueRef FindMatchingFunction(Context context, List<Function> functions, Object @object)
-        {
-            var functionsWithSameNumberOfArguments = functions.Where(it => it.Routine.Input.Count == @object.Components.Count).ToList();
-            if (functionsWithSameNumberOfArguments.Count == 0)
-                throw new CompilerException($"No overload of the function takes {@object.Components.Count} arguments.", @object.Span);
-            if (functionsWithSameNumberOfArguments.Count > 1)
-                throw new CompilerException($"More than one overload of the function takes {@object.Components.Count} arguments.", @object.Span);
-            var function = functionsWithSameNumberOfArguments.First();
-            var functionValue = ResolveFunctionValue(context, function);
-            return functionValue;
-        }
-
-        static LLVMValueRef BuildScope(Context context, LLVMBuilderRef builder, Scope scope)
-        {
-            LLVMValueRef valueRef = null;
-            foreach (var operation in scope.Operations)
-                valueRef = BuildOperands(context, builder, operation.Operands);
-
-            if (scope.Binding != null)
-                valueRef = BuildBinding(context, builder, scope.Binding);
-
-            return valueRef;
-        }
-
-        static LLVMValueRef BuildBinding(Context context, LLVMBuilderRef builder, Binding binding)
-        {
-            var newContext = new Context { Global = context.Global, Source = context.Source, ParentContext = context };
-            newContext.Values.Add(binding.Identifier, BuildOperands(context, builder, binding.Operation.Operands));
-            LLVMValueRef valueRef = null;
-            foreach (var operation in binding.Operations)
-                valueRef = BuildOperands(newContext, builder, operation.Operands);
-
-            return valueRef;
         }
 
         static string QualifyName(Context context, string name)
@@ -810,16 +814,9 @@ namespace Scaly.Compiler
                     builder.Append(',');
                 builder.Append(AddTypeArguments(argument.Name, argument.Arguments));
             }
-            name += "]";
+            builder.Append(']');
 
-            return name;
-        }
-
-        static LLVMTypeRef GetPointerType(Context context, TypeSpec typeSpec)
-        {
-            var firstGenericArgument = typeSpec.Arguments[0];
-            var pointerTarget = (firstGenericArgument.Name == "Pointer") ? GetPointerType(context, firstGenericArgument): ResolveType(context, firstGenericArgument);
-            return LLVMTypeRef.CreatePointer(pointerTarget, 0);
+            return builder.ToString();
         }
 
         static void VerifyAndInitialize(LLVMModuleRef module)
