@@ -9,6 +9,8 @@ namespace Scaly.Compiler
     internal class NameDictionary
     {
         public Dictionary<string, Definition> Definitions = new Dictionary<string, Definition>();
+        public Dictionary<string, List<Function>> Functions = new Dictionary<string, List<Function>>();
+        public Dictionary<string, Operator> Operators = new Dictionary<string, Operator>();
         public Dictionary<string, Source> Sources = new Dictionary<string, Source>();
     }
 
@@ -62,12 +64,28 @@ namespace Scaly.Compiler
             return null;
         }
 
-        internal Definition ResolveName(string name, Span span)
+        internal Definition ResolveDefinitionName(string name, Span span)
         {
             if (!Global.Dictionary.Definitions.ContainsKey(name))
-                throw new CompilerException($"Tht type \"{name}\" was not found.", span);
+                throw new CompilerException($"Tht definition \"{name}\" was not found.", span);
 
             return Global.Dictionary.Definitions[name];
+        }
+
+        internal List<Function> ResolveFunctionName(string name, Span span)
+        {
+            if (!Global.Dictionary.Functions.ContainsKey(name))
+                throw new CompilerException($"Tht function \"{name}\" was not found.", span);
+
+            return Global.Dictionary.Functions[name];
+        }
+
+        internal Operator ResolveOperatorName(string name, Span span)
+        {
+            if (!Global.Dictionary.Operators.ContainsKey(name))
+                throw new CompilerException($"Tht function \"{name}\" was not found.", span);
+
+            return Global.Dictionary.Operators[name];
         }
 
         internal TypeSpec ResolveFunctionTypeSpec(string name)
@@ -354,18 +372,19 @@ namespace Scaly.Compiler
         static void BuildFunctionDictionary(DictionaryContext context, Function function)
         {
             var path = context.Path == "" ? function.Name : context.Path + "." + function.Name;
-            if (context.Dictionary.Definitions.ContainsKey(path))
-                return;
-            context.Dictionary.Definitions.Add(path, context.Definition);
+            if (!context.Dictionary.Functions.ContainsKey(path))
+                context.Dictionary.Functions.Add(path, new List<Function>());
+
+            context.Dictionary.Functions[path].Add(function);
             context.Dictionary.Sources.Add(path, context.Source);
         }
 
         static void BuildOperatorDictionary(DictionaryContext context, Operator @operator)
         {
             var path = context.Path + "." + @operator.Name;
-            if (context.Dictionary.Definitions.ContainsKey(path))
+            if (context.Dictionary.Operators.ContainsKey(path))
                 throw new CompilerException($"The operator {path} was already defined.", @operator.Span);
-            context.Dictionary.Definitions.Add(path, context.Definition);
+            context.Dictionary.Operators.Add(path, @operator);
             context.Dictionary.Sources.Add(path, context.Source);
         }
 
@@ -612,25 +631,13 @@ namespace Scaly.Compiler
             if (!context.Global.Dictionary.Sources.ContainsKey(qualifiedName))
                 throw new CompilerException($"The name '{name.Path}' was not in the dictionary.", name.Span);
 
-            var definition = context.Global.Dictionary.Definitions[qualifiedName];
-            var source = context.Global.Dictionary.Sources[qualifiedName];
+            List<Function> functions = null;
+            if (context.Global.Dictionary.Functions.ContainsKey(qualifiedName))
+                functions = context.Global.Dictionary.Functions[qualifiedName];
 
             Operator @operator = null;
-            List<Function> functions = null;
-            if (definition == null)
-            {
-                functions = source.Functions.Where(it => it.Name == name.Path).ToList();
-            }
-            else
-            {
-                if (definition.Functions != null)
-                    functions = definition.Functions.Where(it => it.Name == name.Path).ToList();
-                if (functions == null || functions.Count == 0)
-                {
-                    if (definition.Operators != null && definition.Operators.ContainsKey(name.Path))
-                        @operator = definition.Operators[name.Path];
-                }
-            }
+            if (context.Global.Dictionary.Operators.ContainsKey(qualifiedName))
+                @operator = context.Global.Dictionary.Operators[qualifiedName];
 
             if (@operator != null)
             {
@@ -702,6 +709,12 @@ namespace Scaly.Compiler
             if (context.Global.Dictionary.Definitions.ContainsKey(name))
                 return name;
 
+            if (context.Global.Dictionary.Functions.ContainsKey(name))
+                return name;
+
+            if (context.Global.Dictionary.Operators.ContainsKey(name))
+                return name;
+
             if (context.Source.Uses != null && context.Source.Uses.ContainsKey(name))
                 return context.Source.Uses[name].Path;
 
@@ -710,11 +723,12 @@ namespace Scaly.Compiler
                 foreach (var @using in context.Source.Usings)
                 {
                     var usingName = @using.Path;
-                    var nameSpace = context.ResolveName(usingName, @using.Span);
-                    if (nameSpace.Definitions != null && nameSpace.Definitions.ContainsKey(name))
+
+                    var definition = context.ResolveDefinitionName(usingName, @using.Span);
+                    if (definition.Definitions != null && definition.Definitions.ContainsKey(name))
                         return usingName + "." + name;
 
-                    if (nameSpace.Operators != null && nameSpace.Operators.ContainsKey(name))
+                    if (definition.Operators != null && definition.Operators.ContainsKey(name))
                         return usingName + "." + name;
                 }
             }
@@ -724,7 +738,7 @@ namespace Scaly.Compiler
 
         static LLVMTypeRef CreateType(Context context, string qualifiedName, TypeSpec typeSpec)
         {
-            var definition = context.ResolveName(qualifiedName, typeSpec.Span);
+            var definition = context.ResolveDefinitionName(qualifiedName, typeSpec.Span);
  
             if (typeSpec.Arguments != null)
             {
