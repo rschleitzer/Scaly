@@ -50,6 +50,7 @@ namespace Scaly.Compiler
 
     public class Operator
     {
+        public Definition Definition;
         public Span Span;
         public string Name;
         public Routine Routine;
@@ -268,7 +269,7 @@ namespace Scaly.Compiler
             var origin = Path.GetDirectoryName(fileSyntax.span.file);
             if (fileSyntax.declarations != null)
                 foreach (var declaration in fileSyntax.declarations)
-                    HandleDeclaration(source, origin, declaration);
+                    HandleDeclaration(source, origin, declaration, null);
 
             if (fileSyntax.statements != null)
             {
@@ -421,7 +422,7 @@ namespace Scaly.Compiler
             }
         }
 
-        static void HandleDeclaration(Source source, string origin, object declaration)
+        static void HandleDeclaration(Source source, string origin, object declaration, Definition definition)
         {
             switch (declaration)
             {
@@ -446,7 +447,7 @@ namespace Scaly.Compiler
                 case OperatorSyntax operatorSyntax:
                     if (source.Operators == null)
                         source.Operators = new Dictionary<string, Operator>();
-                    HandleOperator(operatorSyntax, source.Operators);
+                    HandleOperator(operatorSyntax, source.Operators, definition);
                     break;
                 case ModuleSyntax moduleSyntax:
                     HandleModule(moduleSyntax, source.Definitions, source, origin, true);
@@ -457,7 +458,7 @@ namespace Scaly.Compiler
                 case ImplementSyntax implementSyntax:
                     if (source.Implements == null)
                         source.Implements = new Dictionary<string, Implement>();
-                    HandleImplement(implementSyntax, source.Implements);
+                    HandleImplement(implementSyntax, source.Implements, definition);
                     break;
                 default:
                     throw new NotImplementedException($"{declaration.GetType()} is not implemented.");
@@ -689,9 +690,9 @@ namespace Scaly.Compiler
             return typeSpec;
         }
 
-        static void HandleOperator(OperatorSyntax operatorSyntax, Dictionary<string, Operator> operators)
+        static void HandleOperator(OperatorSyntax operatorSyntax, Dictionary<string, Operator> operators, Definition definition)
         {
-            var @operator = new Operator { Span = operatorSyntax.span };
+            var @operator = new Operator { Definition = definition, Span = operatorSyntax.span };
             switch (operatorSyntax.target)
             {
                 case RoutineSyntax routineSyntax:
@@ -730,7 +731,7 @@ namespace Scaly.Compiler
             return routine;
         }
 
-        static void HandleImplement(ImplementSyntax implementSyntax, Dictionary<string, Implement> implementations)
+        static void HandleImplement(ImplementSyntax implementSyntax, Dictionary<string, Implement> implementations, Definition definition)
         {
             if (implementations.ContainsKey(implementSyntax.type.name.name))
                 throw new CompilerException($"An implementation with name {implementSyntax.type.name.name} already defined.", implementSyntax.span);
@@ -757,7 +758,7 @@ namespace Scaly.Compiler
                         case OperatorSyntax operatorSyntax:
                             if (implementation.Operators == null)
                                 implementation.Operators = new Dictionary<string, Operator>();
-                            HandleOperator(operatorSyntax, implementation.Operators);
+                            HandleOperator(operatorSyntax, implementation.Operators, definition);
                             break;
                         default:
                             throw new NotImplementedException($"{method.GetType()} is not implemented.");
@@ -865,12 +866,12 @@ namespace Scaly.Compiler
                 case OperatorSyntax operatorSyntax:
                     if (definition.Operators == null)
                         definition.Operators = new Dictionary<string, Operator>();
-                    HandleOperator(operatorSyntax, definition.Operators);
+                    HandleOperator(operatorSyntax, definition.Operators, definition);
                     break;
                 case ImplementSyntax implementSyntax:
                     if (definition.Implements == null)
                         definition.Implements = new Dictionary<string, Implement>();
-                    HandleImplement(implementSyntax, definition.Implements);
+                    HandleImplement(implementSyntax, definition.Implements, definition);
                     break;
                 default:
                     throw new NotImplementedException($"{declaration.GetType()} is not implemented.");

@@ -181,11 +181,11 @@ namespace Scaly.Compiler
             return llvmFunction;
         }
 
-        static KeyValuePair<TypeSpec, LLVMValueRef> ResolveOperatorValue(Context context, Operator @operator)
+        static KeyValuePair<TypeSpec, LLVMValueRef> ResolveOperatorValue(Context context, KeyValuePair<TypeSpec, LLVMValueRef> previousValue, Operator @operator)
         {
-            var functionName = QualifyOperatorName(context, @operator);
+            var functionName = QualifyOperatorName(context, previousValue.Key, @operator);
             if (!context.Global.Values.ContainsKey(functionName))
-                BuildOperatorValue(context, @operator);
+                BuildOperatorValue(context, previousValue.Key, @operator);
             var llvmFunction = context.Global.Values[@operator.Name];
             return llvmFunction;
         }
@@ -233,7 +233,7 @@ namespace Scaly.Compiler
             return functionNameBuilder.ToString();
         }
 
-        static string QualifyOperatorName(Context context, Operator @operator)
+        static string QualifyOperatorName(Context context, TypeSpec typeSpec, Operator @operator)
         {
             var operatorNameBuilder = new StringBuilder();
             if (context.Path != "")
@@ -241,10 +241,34 @@ namespace Scaly.Compiler
                 operatorNameBuilder.Append(context.Path);
                 operatorNameBuilder.Append('.');
             }
+
+            operatorNameBuilder.Append(QualifyName(context, @operator.Definition.Type.Name));
+            operatorNameBuilder.Append('.');
             operatorNameBuilder.Append(@operator.Name);
+            operatorNameBuilder.Append('[');
+            AppendGenericArguments(context, operatorNameBuilder, typeSpec, @operator.Span);
+            operatorNameBuilder.Append(']');
             return operatorNameBuilder.ToString();
         }
 
+        static void AppendGenericArguments(Context context, StringBuilder builder, TypeSpec sourceType, Span span)
+        {
+            builder.Append(QualifyName(context, sourceType.Name));
+            if (sourceType.Arguments != null)
+            {
+                builder.Append('[');
+                bool first = true;
+                foreach (var type in sourceType.Arguments)
+                {
+                    if (first)
+                        first = false;
+                    else
+                        builder.Append(',');
+                    AppendGenericArguments(context, builder, type, span);
+                }
+                builder.Append(']');
+            }
+        }
 
         static LLVMTypeRef BuildFunctionType(Context context, Function function)
         {
@@ -362,7 +386,7 @@ namespace Scaly.Compiler
             {
                 if (previousValue.Value == null)
                     throw new CompilerException("An operator cannot act on nothing. It must follow an operand it can act upon.", @operator.Span);
-                var operatorValue = ResolveOperatorValue(context, @operator);
+                var operatorValue = ResolveOperatorValue(context, previousValue, @operator);
                 return BuildOperatorCall(context, operatorValue, builder, previousValue);
             }
 
@@ -583,10 +607,6 @@ namespace Scaly.Compiler
                     foreach (var function in context.Source.Functions)
                         BuildFunctionValue(context, function);
 
-                if (context.Source.Operators != null)
-                    foreach (var @operator in context.Source.Operators.Values)
-                        BuildOperatorValue(context, @operator);
-
                 if (context.Source.Sources != null)
                 {
                     foreach (var source in context.Source.Sources)
@@ -609,34 +629,37 @@ namespace Scaly.Compiler
 
         static void BuildDefinitionValues(Context context, Definition definition)
         {
-            if (definition.Sources != null)
+            if (definition.Type.Arguments == null)
             {
-                foreach (var source in definition.Sources)
+                if (definition.Sources != null)
                 {
-                    var newContext = new Context { Global = context.Global, Source = source };
-                    BuildSourceValues(newContext);
+                    foreach (var source in definition.Sources)
+                    {
+                        var newContext = new Context { Global = context.Global, Source = source };
+                        BuildSourceValues(newContext);
+                    }
                 }
+
+                if (definition.Functions != null)
+                    foreach (var function in definition.Functions)
+                        BuildFunctionValue(context, function);
+
+                if (definition.Operators != null)
+                    foreach (var @operator in definition.Operators.Values)
+                        BuildOperatorValue(context, definition.Type, @operator);
             }
-
-            if (definition.Functions != null)
-                foreach (var function in definition.Functions)
-                    BuildFunctionValue(context, function);
-
-            if (definition.Operators != null)
-                foreach (var @operator in definition.Operators.Values)
-                    BuildOperatorValue(context, @operator);
         }
 
-        static void BuildOperatorValue(Context context, Operator @operator)
+        static void BuildOperatorValue(Context context, TypeSpec typeSpec, Operator @operator)
         {
-            var operatorType = ResolveOperatorType(context, @operator);
-            var operatorName = QualifyOperatorName(context, @operator);
+            var operatorType = ResolveOperatorType(context, typeSpec, @operator);
+            var operatorName = QualifyOperatorName(context, typeSpec, @operator);
             context.Global.Values.Add(@operator.Name, new KeyValuePair<TypeSpec, LLVMValueRef>(null, context.Global.Module.AddFunction(operatorName, operatorType)));
         }
 
-        static LLVMTypeRef ResolveOperatorType(Context context, Operator @operator)
+        static LLVMTypeRef ResolveOperatorType(Context context, TypeSpec typeSpec, Operator @operator)
         {
-            var functionName = QualifyOperatorName(context, @operator);
+            var functionName = QualifyOperatorName(context, typeSpec, @operator);
             if (context.Global.Types.ContainsKey(functionName))
                 return context.Global.Types[functionName];
             var operatorType = BuildOperatorType(context, @operator);
