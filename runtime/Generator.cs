@@ -135,17 +135,30 @@ namespace Scaly.Compiler
 
             {
                 var globalContext = new GlobalContext { Module = module, Dictionary = dictionary };
-                var context = new Context { Global = globalContext, ParentContext = null };
                 foreach (var source in sources)
                 {
-                    context.Source = source;
-                    if (context.Source.Functions != null)
-                    {
-                        foreach (var function in context.Source.Functions)
-                        {
-                            BuildFunction(context, null, function);
-                        }
-                    }
+                    var context = new Context { Global = globalContext, Source = source };
+                    BuildSourceFunctions(context);
+                }
+            }
+        }
+
+        static void BuildSourceFunctions(Context context)
+        {
+            if (context.Source.Functions != null)
+            {
+                foreach (var function in context.Source.Functions)
+                {
+                    BuildFunction(context, null, function);
+                }
+            }
+
+            if (context.Source.Sources != null)
+            {
+                foreach (var source in context.Source.Sources)
+                {
+                    var newContext = new Context { Global = context.Global, Source = source };
+                    BuildSourceFunctions(newContext);
                 }
             }
         }
@@ -191,7 +204,7 @@ namespace Scaly.Compiler
         {
             var functionType = ResolveFunctionType(context, genericTypeDictionary, function);
             var functionName = QualifyFunctionName(context, function);
-            context.Global.Values.Add(function.Name, new KeyValuePair<TypeSpec, LLVMValueRef>(null, context.Global.Module.AddFunction(functionName, functionType)));
+            context.Global.Values.Add(function.Name, new KeyValuePair<TypeSpec, LLVMValueRef>(function.Routine.Result[0].TypeSpec, context.Global.Module.AddFunction(functionName, functionType)));
         }
 
         static LLVMTypeRef ResolveFunctionType(Context context, Dictionary<string, TypeSpec> genericTypeDictionary, Function function)
@@ -351,7 +364,7 @@ namespace Scaly.Compiler
                     case Object @object:
                         if (context.TypedValue.Value == null)
                             throw new CompilerException("Objects are currently only supported as parameter lists for function calls.", @object.Span);
-                        context.TypedValue = BuildFunctionCall(context, @object);
+                        context.TypedValue = BuildFunctionCall(context, context.TypedValue, @object);
                         break;
                     default:
                         throw new NotImplementedException($"BuildOperand for expression {operand.Expression.GetType()} not implemented.");
@@ -388,9 +401,10 @@ namespace Scaly.Compiler
                     throw new CompilerException("An operator cannot act on nothing. It must follow an operand it can act upon.", @operator.Span);
                 var operatorValue = ResolveOperatorValue(context, context.TypedValue.Key, @operator);
                 BuildOperatorCall(context, operatorValue, context.TypedValue);
+                return;
             }
 
-            if (functions.Count == 0)
+            if (functions == null)
                 throw new CompilerException($"The name '{name.Path}' has not been found.", name.Span);
 
             if (!context.Operands.MoveNext())
@@ -403,7 +417,7 @@ namespace Scaly.Compiler
                     valueRef = FindMatchingFunction(context, functions, @object);
                     if (valueRef.Value == null)
                         throw new CompilerException("No matching function has been found for the arguments.", @object.Span);
-                    BuildFunctionCall(context, @object);
+                    context.TypedValue = BuildFunctionCall(context, valueRef, @object);
                     return;
                 default:
                     throw new CompilerException($"Only an object can be applied to function '{name.Path}'. Got an {operand.Expression.GetType()}.", @name.Span);
@@ -441,17 +455,16 @@ namespace Scaly.Compiler
                 BuildOperands(newContext, operation.Operands);
         }
 
-        static KeyValuePair<TypeSpec, LLVMValueRef> BuildFunctionCall(Context context, Object @object)
+        static KeyValuePair<TypeSpec, LLVMValueRef> BuildFunctionCall(Context context, KeyValuePair<TypeSpec, LLVMValueRef> function, Object @object)
         {
             var arguments = new List<LLVMValueRef>();
-            KeyValuePair<TypeSpec, LLVMValueRef> function = context.TypedValue;
             foreach (var component in @object.Components)
             {
                 BuildOperands(context, component.Value);
                 arguments.Add(context.TypedValue.Value);
             }
 
-            return new KeyValuePair<TypeSpec, LLVMValueRef>(null, context.Builder.BuildCall(function.Value, arguments.ToArray()));
+            return new KeyValuePair<TypeSpec, LLVMValueRef>(function.Key, context.Builder.BuildCall(function.Value, arguments.ToArray()));
         }
 
         static KeyValuePair<TypeSpec, LLVMValueRef> BuildOperatorCall(Context context, KeyValuePair<TypeSpec, LLVMValueRef> @operator, KeyValuePair<TypeSpec, LLVMValueRef> operand)
