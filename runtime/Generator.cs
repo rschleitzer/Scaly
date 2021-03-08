@@ -36,6 +36,9 @@ namespace Scaly.Compiler
         public Source Source;
         public string Path = "";
         public Context ParentContext;
+        public LLVMBuilderRef Builder;
+        public IEnumerator<Operand> Operands;
+        public KeyValuePair<TypeSpec, LLVMValueRef> TypedValue;
         public Dictionary<string, KeyValuePair<TypeSpec, LLVMValueRef>> Values = new Dictionary<string, KeyValuePair<TypeSpec, LLVMValueRef>>();
 
         public KeyValuePair<TypeSpec, LLVMValueRef> ResolveValue(string name)
@@ -145,10 +148,6 @@ namespace Scaly.Compiler
                     }
                 }
             }
-
-            //BuildDefinitionTypes(localContext, definition);
-            //BuildDefinitionValues(localContext, definition);
-            //BuildFunctions(globalContext, null, definition);
         }
 
         static KeyValuePair<TypeSpec, LLVMValueRef> BuildFunction(Context context, Dictionary<string, TypeSpec> genericTypeDictionary, Function function)
@@ -157,16 +156,15 @@ namespace Scaly.Compiler
             var block = functionValue.Value.AppendBasicBlock(string.Empty);
             using (var builder = context.Global.Module.Context.CreateBuilder())
             {
+                var newContext = new Context { Global = context.Global, Builder = builder, Source = context.Source, };
                 builder.PositionAtEnd(block);
                 uint paramCount = 0;
                 foreach (var parameter in function.Routine.Input)
                 {
-                    context.Values.Add(parameter.Name, new KeyValuePair<TypeSpec, LLVMValueRef>(parameter.TypeSpec, functionValue.Value.GetParam(paramCount)));
+                    newContext.Values.Add(parameter.Name, new KeyValuePair<TypeSpec, LLVMValueRef>(parameter.TypeSpec, functionValue.Value.GetParam(paramCount)));
                     paramCount++;
                 }
-                KeyValuePair<TypeSpec, LLVMValueRef> typedValue = new KeyValuePair<TypeSpec, LLVMValueRef>(null, null);
-                typedValue = BuildOperands(context, builder, function.Routine.Operation.Operands);
-                builder.BuildRet(typedValue.Value);
+                builder.BuildRet(BuildOperands(newContext, function.Routine.Operation.Operands).Value);
             }
             return functionValue;
         }
@@ -327,45 +325,48 @@ namespace Scaly.Compiler
             return LLVMTypeRef.CreatePointer(pointerTarget, 0);
         }
 
-        static KeyValuePair<TypeSpec, LLVMValueRef> BuildOperands(Context context, LLVMBuilderRef builder, List<Operand> operands)
+        static KeyValuePair<TypeSpec, LLVMValueRef> BuildOperands(Context context, List<Operand> operands)
         {
-            KeyValuePair<TypeSpec, LLVMValueRef> typedValue = new KeyValuePair<TypeSpec, LLVMValueRef>(null, null);
-            var enumerator = operands.GetEnumerator();
-            typedValue = BuildOperand(context, typedValue, builder, enumerator);
-            return typedValue;
+            var newContext = new Context { Global = context.Global, Builder = context.Builder, Operands = operands.GetEnumerator(), TypedValue = new KeyValuePair<TypeSpec, LLVMValueRef>(null, null), ParentContext = context, Source = context.Source };
+            BuildOperand(newContext);
+            return newContext.TypedValue;
         }
 
-        static KeyValuePair<TypeSpec, LLVMValueRef> BuildOperand(Context context, KeyValuePair<TypeSpec, LLVMValueRef> typedValue, LLVMBuilderRef builder, IEnumerator<Operand> operands)
+        static void BuildOperand(Context context)
         {
-            operands.MoveNext();
-            var operand = operands.Current;
-            switch (operand.Expression)
+            while (context.Operands.MoveNext())
             {
-                case IntegerConstant integerConstant:
-                    typedValue = new KeyValuePair<TypeSpec, LLVMValueRef>(context.Global.Dictionary.Definitions["Integer"].Type, LLVMValueRef.CreateConstInt(LLVMTypeRef.Int32, (ulong)integerConstant.Value));
-                    break;
-                case Name name:
-                    typedValue = BuildName(context, builder, name, typedValue, operands);
-                    break;
-                case Scope scope:
-                    typedValue = BuildScope(context, builder, scope);
-                    break;
-                case Object @object:
-                    if (typedValue.Value == null)
-                        throw new CompilerException("Objects are currently only supported as parameter lists for function calls.", @object.Span);
-                    typedValue = BuildFunctionCall(context, typedValue, builder, @object);
-                    break;
-                default:
-                    throw new NotImplementedException($"BuildOperand for expression {operand.Expression.GetType()} not implemented.");
+                var operand = context.Operands.Current;
+                switch (operand.Expression)
+                {
+                    case IntegerConstant integerConstant:
+                        context.TypedValue = new KeyValuePair<TypeSpec, LLVMValueRef>(context.Global.Dictionary.Definitions["Integer"].Type, LLVMValueRef.CreateConstInt(LLVMTypeRef.Int32, (ulong)integerConstant.Value));
+                        break;
+                    case Name name:
+                        BuildName(context, name);
+                        break;
+                    case Scope scope:
+                        BuildScope(context, scope);
+                        break;
+                    case Object @object:
+                        if (context.TypedValue.Value == null)
+                            throw new CompilerException("Objects are currently only supported as parameter lists for function calls.", @object.Span);
+                        context.TypedValue = BuildFunctionCall(context, @object);
+                        break;
+                    default:
+                        throw new NotImplementedException($"BuildOperand for expression {operand.Expression.GetType()} not implemented.");
+                }
             }
-            return typedValue;
         }
 
-        static KeyValuePair<TypeSpec, LLVMValueRef> BuildName(Context context, LLVMBuilderRef builder, Name name, KeyValuePair<TypeSpec, LLVMValueRef> previousValue, IEnumerator<Operand> operands)
+        static void BuildName(Context context, Name name)
         {
             var valueRef = context.ResolveValue(name.Path);
             if (valueRef.Value != null)
-                return valueRef;
+            {
+                context.TypedValue = valueRef;
+                return;
+            }
 
             var qualifiedName = QualifyName(context, name.Path);
             if (qualifiedName == null)
@@ -383,26 +384,27 @@ namespace Scaly.Compiler
 
             if (@operator != null)
             {
-                if (previousValue.Value == null)
+                if (context.TypedValue.Value == null)
                     throw new CompilerException("An operator cannot act on nothing. It must follow an operand it can act upon.", @operator.Span);
-                var operatorValue = ResolveOperatorValue(context, previousValue.Key, @operator);
-                return BuildOperatorCall(context, operatorValue, builder, previousValue);
+                var operatorValue = ResolveOperatorValue(context, context.TypedValue.Key, @operator);
+                BuildOperatorCall(context, operatorValue, context.TypedValue);
             }
 
             if (functions.Count == 0)
                 throw new CompilerException($"The name '{name.Path}' has not been found.", name.Span);
 
-            if (!operands.MoveNext())
+            if (!context.Operands.MoveNext())
                 throw new CompilerException($"No function arguments for '{name.Path}' were given.", name.Span);
 
-            var operand = operands.Current;
+            var operand = context.Operands.Current;
             switch (operand.Expression)
             {
                 case Object @object:
                     valueRef = FindMatchingFunction(context, functions, @object);
                     if (valueRef.Value == null)
                         throw new CompilerException("No matching function has been found for the arguments.", @object.Span);
-                    return BuildFunctionCall(context, valueRef, builder, @object);
+                    BuildFunctionCall(context, @object);
+                    return;
                 default:
                     throw new CompilerException($"Only an object can be applied to function '{name.Path}'. Got an {operand.Expression.GetType()}.", @name.Span);
             }
@@ -420,44 +422,41 @@ namespace Scaly.Compiler
             return functionValue;
         }
 
-        static KeyValuePair<TypeSpec, LLVMValueRef> BuildScope(Context context, LLVMBuilderRef builder, Scope scope)
+        static void BuildScope(Context context, Scope scope)
         {
             KeyValuePair<TypeSpec, LLVMValueRef> typedValue = new KeyValuePair<TypeSpec, LLVMValueRef>(null, null);
             foreach (var operation in scope.Operations)
-                typedValue = BuildOperands(context, builder, operation.Operands);
+                context.TypedValue = BuildOperands(context, operation.Operands);
 
             if (scope.Binding != null)
-                typedValue = BuildBinding(context, builder, scope.Binding);
-
-            return typedValue;
+                BuildBinding(context, scope.Binding);
         }
 
-        static KeyValuePair<TypeSpec, LLVMValueRef> BuildBinding(Context context, LLVMBuilderRef builder, Binding binding)
+        static void BuildBinding(Context context, Binding binding)
         {
-            var newContext = new Context { Global = context.Global, Source = context.Source, ParentContext = context };
-            newContext.Values.Add(binding.Identifier, BuildOperands(context, builder, binding.Operation.Operands));
-            KeyValuePair<TypeSpec, LLVMValueRef> valueRef = new KeyValuePair<TypeSpec, LLVMValueRef>(null, null);
+            var newContext = new Context { Global = context.Global, Source = context.Source, Operands = binding.Operation.Operands.GetEnumerator(), ParentContext = context };
+            BuildOperand(newContext);
+            newContext.Values.Add(binding.Identifier, context.TypedValue);
             foreach (var operation in binding.Operations)
-                valueRef = BuildOperands(newContext, builder, operation.Operands);
-
-            return valueRef;
+                BuildOperands(newContext, operation.Operands);
         }
 
-        static KeyValuePair<TypeSpec, LLVMValueRef> BuildFunctionCall(Context context, KeyValuePair<TypeSpec, LLVMValueRef> function, LLVMBuilderRef builder, Object @object)
+        static KeyValuePair<TypeSpec, LLVMValueRef> BuildFunctionCall(Context context, Object @object)
         {
             var arguments = new List<LLVMValueRef>();
+            KeyValuePair<TypeSpec, LLVMValueRef> function = context.TypedValue;
             foreach (var component in @object.Components)
             {
-                KeyValuePair<TypeSpec, LLVMValueRef> typedValue = BuildOperands(context, builder, component.Value);
-                arguments.Add(typedValue.Value);
+                BuildOperands(context, component.Value);
+                arguments.Add(context.TypedValue.Value);
             }
 
-            return new KeyValuePair<TypeSpec, LLVMValueRef>(null, builder.BuildCall(function.Value, arguments.ToArray()));
+            return new KeyValuePair<TypeSpec, LLVMValueRef>(null, context.Builder.BuildCall(function.Value, arguments.ToArray()));
         }
 
-        static KeyValuePair<TypeSpec, LLVMValueRef> BuildOperatorCall(Context context, KeyValuePair<TypeSpec, LLVMValueRef> @operator, LLVMBuilderRef builder, KeyValuePair<TypeSpec, LLVMValueRef> operand)
+        static KeyValuePair<TypeSpec, LLVMValueRef> BuildOperatorCall(Context context, KeyValuePair<TypeSpec, LLVMValueRef> @operator, KeyValuePair<TypeSpec, LLVMValueRef> operand)
         {
-            return new KeyValuePair<TypeSpec, LLVMValueRef>(null, builder.BuildCall(@operator.Value, new LLVMValueRef[] { operand.Value }));
+            return new KeyValuePair<TypeSpec, LLVMValueRef>(null, context.Builder.BuildCall(@operator.Value, new LLVMValueRef[] { operand.Value }));
         }
 
         static void BuildSourceDictionary(DictionaryContext context)
@@ -740,7 +739,8 @@ namespace Scaly.Compiler
         static TypeSpec GetBindingType(Context context, LLVMBuilderRef builder, Binding binding)
         {
             var newContext = new Context { Global = context.Global, Source = context.Source, ParentContext = context };
-            newContext.Values.Add(binding.Identifier, BuildOperands(context, builder, binding.Operation.Operands));
+            BuildOperands(newContext, binding.Operation.Operands);
+            newContext.Values.Add(binding.Identifier, newContext.TypedValue);
             TypeSpec typeSpec = null;
             foreach (var operation in binding.Operations)
                 typeSpec = GetOperandsType(newContext, builder, operation.Operands);
