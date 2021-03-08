@@ -331,16 +331,14 @@ namespace Scaly.Compiler
         {
             KeyValuePair<TypeSpec, LLVMValueRef> typedValue = new KeyValuePair<TypeSpec, LLVMValueRef>(null, null);
             var enumerator = operands.GetEnumerator();
-            while (enumerator.MoveNext())
-            {
-                var operand = enumerator.Current;
-                typedValue = BuildOperand(context, typedValue, builder, operand, enumerator);
-            }
+            typedValue = BuildOperand(context, typedValue, builder, enumerator);
             return typedValue;
         }
 
-        static KeyValuePair<TypeSpec, LLVMValueRef> BuildOperand(Context context, KeyValuePair<TypeSpec, LLVMValueRef> typedValue, LLVMBuilderRef builder, Operand operand, IEnumerator<Operand> operands)
+        static KeyValuePair<TypeSpec, LLVMValueRef> BuildOperand(Context context, KeyValuePair<TypeSpec, LLVMValueRef> typedValue, LLVMBuilderRef builder, IEnumerator<Operand> operands)
         {
+            operands.MoveNext();
+            var operand = operands.Current;
             switch (operand.Expression)
             {
                 case IntegerConstant integerConstant:
