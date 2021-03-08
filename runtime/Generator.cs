@@ -165,8 +165,7 @@ namespace Scaly.Compiler
                     paramCount++;
                 }
                 KeyValuePair<TypeSpec, LLVMValueRef> typedValue = new KeyValuePair<TypeSpec, LLVMValueRef>(null, null);
-                foreach (var operation in function.Routine.Operations)
-                    typedValue = BuildOperands(context, builder, operation.Operands);
+                typedValue = BuildOperands(context, builder, function.Routine.Operation.Operands);
                 builder.BuildRet(typedValue.Value);
             }
             return functionValue;

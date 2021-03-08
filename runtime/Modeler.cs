@@ -69,7 +69,7 @@ namespace Scaly.Compiler
         public List<Parameter> Input;
         public List<Parameter> Result;
         public TypeSpec Error;
-        public List<Operation> Operations;
+        public Operation Operation;
         public Implementation Implementation;
     }
 
@@ -247,7 +247,7 @@ namespace Scaly.Compiler
         static Function MakeMainFunction(List<Operation> operations)
         {
             var main = BuildSource("main.scaly").Functions[0];
-            main.Routine.Operations = operations;
+            main.Routine.Operation = new Operation { Operands = new List<Operand> { new Operand { Expression = new Scope { Operations = operations } } } };
             return main;
         }
 
@@ -612,7 +612,7 @@ namespace Scaly.Compiler
             switch (routineSyntax.implementation)
             {
                 case OperationSyntax operationSyntax:
-                    routine.Operations = new List<Operation> { BuildOperation(operationSyntax) };
+                    routine.Operation = BuildOperation(operationSyntax);
                     break;
                 case ExternSyntax _:
                     routine.Implementation = Implementation.Extern ;
@@ -722,7 +722,7 @@ namespace Scaly.Compiler
             switch (symbolSyntax.implementation)
             {
                 case OperationSyntax operationSyntax:
-                    routine.Operations = new List<Operation> { BuildOperation(operationSyntax) };
+                    routine.Operation = BuildOperation(operationSyntax);
                     break;
                 default:
                     throw new NotImplementedException($"{symbolSyntax.implementation.GetType()} is not implemented.");
