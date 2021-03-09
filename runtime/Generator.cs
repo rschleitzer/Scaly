@@ -201,7 +201,7 @@ namespace Scaly.Compiler
         {
             var functionName = QualifyFunctionName(context, function);
             if (!context.Global.Values.ContainsKey(functionName))
-                BuildFunctionValue(context, genericTypeDictionary, function);
+                CreateFunctionValue(context, genericTypeDictionary, function);
             var llvmFunction = context.Global.Values[function.Name];
             return llvmFunction;
         }
@@ -210,12 +210,12 @@ namespace Scaly.Compiler
         {
             var qualifiedName = QualifyOperatorName(context, operandType, @operator);
             if (!context.Global.Values.ContainsKey(qualifiedName))
-                BuildOperatorValue(context, operandType, @operator, qualifiedName);
+                CreateOperatorValue(context, operandType, @operator, qualifiedName);
             var llvmFunction = context.Global.Values[qualifiedName];
             return llvmFunction;
         }
 
-        static void BuildFunctionValue(Context context, Dictionary<string, TypeSpec> genericTypeDictionary, Function function)
+        static void CreateFunctionValue(Context context, Dictionary<string, TypeSpec> genericTypeDictionary, Function function)
         {
             var functionType = ResolveFunctionType(context, genericTypeDictionary, function);
             var functionName = QualifyFunctionName(context, function);
@@ -667,7 +667,7 @@ namespace Scaly.Compiler
             {
                 if (context.Source.Functions != null)
                     foreach (var function in context.Source.Functions)
-                        BuildFunctionValue(context, null, function);
+                        CreateFunctionValue(context, null, function);
 
                 if (context.Source.Sources != null)
                 {
@@ -704,15 +704,15 @@ namespace Scaly.Compiler
 
                 if (definition.Functions != null)
                     foreach (var function in definition.Functions)
-                        BuildFunctionValue(context, null, function);
+                        CreateFunctionValue(context, null, function);
 
                 if (definition.Operators != null)
                     foreach (var @operator in definition.Operators.Values)
-                        BuildOperatorValue(context, definition.Type, @operator, QualifyOperatorName(context, @operator.Definition.Type, @operator));
+                        CreateOperatorValue(context, definition.Type, @operator, QualifyOperatorName(context, @operator.Definition.Type, @operator));
             }
         }
 
-        static void BuildOperatorValue(Context context, TypeSpec operandType, Operator @operator, string qualifiedName)
+        static void CreateOperatorValue(Context context, TypeSpec operandType, Operator @operator, string qualifiedName)
         {
             var operatorType = ResolveOperatorType(context, operandType, @operator, qualifiedName);
             var operatorFunction = context.Global.Module.AddFunction(qualifiedName, operatorType);
