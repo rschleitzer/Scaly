@@ -88,7 +88,6 @@ namespace Scaly.Compiler
         }
     }
 
-
     internal class Generator
     {
         public delegate int Main(int argc, string[] argv);
@@ -205,34 +204,6 @@ namespace Scaly.Compiler
             return llvmFunction;
         }
 
-        static KeyValuePair<TypeSpec, LLVMValueRef> ResolveOperatorValue(Context context, TypeSpec operandType, Operator @operator)
-        {
-            var qualifiedName = QualifyOperatorName(context, operandType, @operator);
-            if (!context.Global.Values.ContainsKey(qualifiedName))
-                CreateOperatorValue(context, operandType, @operator, qualifiedName);
-            var llvmFunction = context.Global.Values[qualifiedName];
-            return llvmFunction;
-        }
-
-        static void CreateFunctionValue(Context context, Dictionary<string, TypeSpec> genericTypeDictionary, Function function)
-        {
-            var functionType = ResolveFunctionType(context, genericTypeDictionary, function);
-            var functionName = QualifyFunctionName(context, function);
-            if (context.Global.Values.ContainsKey(functionName))
-                throw new CompilerException($"Function {function.Name} was already defined with the same arguments.", function.Span);
-            context.Global.Values.Add(functionName, new KeyValuePair<TypeSpec, LLVMValueRef>(function.Routine.Result[0].TypeSpec, context.Global.Module.AddFunction(functionName, functionType)));
-        }
-
-        static LLVMTypeRef ResolveFunctionType(Context context, Dictionary<string, TypeSpec> genericTypeDictionary, Function function)
-        {
-            var functionName = QualifyFunctionName(context, function);
-            if (context.Global.Types.ContainsKey(functionName))
-                return context.Global.Types[functionName];
-            var functionType = CreateFunctionType(context, genericTypeDictionary, function);
-            context.Global.Types.Add(functionName, functionType);
-            return functionType;
-        }
-
         static string QualifyFunctionName(Context context, Function function)
         {
             if ((function.Routine.Implementation == Implementation.Extern) || (function.Name == "main"))
@@ -255,36 +226,23 @@ namespace Scaly.Compiler
             return functionNameBuilder.ToString();
         }
 
-        static string QualifyOperatorName(Context context, TypeSpec operandType, Operator @operator)
+        static void CreateFunctionValue(Context context, Dictionary<string, TypeSpec> genericTypeDictionary, Function function)
         {
-            var operatorNameBuilder = new StringBuilder();
-
-            operatorNameBuilder.Append(QualifyName(context, @operator.Definition.Type.Name));
-            operatorNameBuilder.Append('.');
-            operatorNameBuilder.Append(@operator.Name);
-            operatorNameBuilder.Append('[');
-            AppendGenericArguments(context, operatorNameBuilder, operandType, @operator.Span);
-            operatorNameBuilder.Append(']');
-            return operatorNameBuilder.ToString();
+            var functionType = ResolveFunctionType(context, genericTypeDictionary, function);
+            var functionName = QualifyFunctionName(context, function);
+            if (context.Global.Values.ContainsKey(functionName))
+                throw new CompilerException($"Function {function.Name} was already defined with the same arguments.", function.Span);
+            context.Global.Values.Add(functionName, new KeyValuePair<TypeSpec, LLVMValueRef>(function.Routine.Result[0].TypeSpec, context.Global.Module.AddFunction(functionName, functionType)));
         }
 
-        static void AppendGenericArguments(Context context, StringBuilder builder, TypeSpec operandType, Span span)
+        static LLVMTypeRef ResolveFunctionType(Context context, Dictionary<string, TypeSpec> genericTypeDictionary, Function function)
         {
-            builder.Append(QualifyName(context, operandType.Name));
-            if (operandType.Arguments != null)
-            {
-                builder.Append('[');
-                bool first = true;
-                foreach (var type in operandType.Arguments)
-                {
-                    if (first)
-                        first = false;
-                    else
-                        builder.Append(',');
-                    AppendGenericArguments(context, builder, type, span);
-                }
-                builder.Append(']');
-            }
+            var functionName = QualifyFunctionName(context, function);
+            if (context.Global.Types.ContainsKey(functionName))
+                return context.Global.Types[functionName];
+            var functionType = CreateFunctionType(context, genericTypeDictionary, function);
+            context.Global.Types.Add(functionName, functionType);
+            return functionType;
         }
 
         static LLVMTypeRef CreateFunctionType(Context context, Dictionary<string, TypeSpec> genericTypeDictionary, Function function)
@@ -334,6 +292,120 @@ namespace Scaly.Compiler
             return type;
         }
 
+        static string QualifyName(Context context, string name)
+        {
+            if (context.Global.Types.ContainsKey(name))
+                return name;
+
+            if (context.Global.Dictionary.Definitions.ContainsKey(name))
+                return name;
+
+            if (context.Global.Dictionary.Functions.ContainsKey(name))
+                return name;
+
+            if (context.Global.Dictionary.Operators.ContainsKey(name))
+                return name;
+
+            if (context.Source.Uses != null && context.Source.Uses.ContainsKey(name))
+                return context.Source.Uses[name].Path;
+
+            if (context.Source.Usings != null)
+            {
+                foreach (var @using in context.Source.Usings)
+                {
+                    var usingName = @using.Path;
+
+                    var definition = context.ResolveDefinitionName(usingName, @using.Span);
+                    if (definition.Definitions != null && definition.Definitions.ContainsKey(name))
+                        return usingName + "." + name;
+
+                    if (definition.Operators != null && definition.Operators.ContainsKey(name))
+                        return usingName + "." + name;
+                }
+            }
+
+            return null;
+        }
+
+        static string AddTypeArguments(string name, List<TypeSpec> arguments)
+        {
+            if (arguments == null)
+                return name;
+
+            StringBuilder builder = new StringBuilder(name);
+            builder.Append('[');
+            bool first = true;
+            foreach (var argument in arguments)
+            {
+                if (first)
+                    first = false;
+                else
+                    builder.Append(',');
+                builder.Append(AddTypeArguments(argument.Name, argument.Arguments));
+            }
+            builder.Append(']');
+
+            return builder.ToString();
+        }
+
+        static LLVMTypeRef CreateType(Context context, string qualifiedName, TypeSpec typeSpec)
+        {
+            var definition = context.ResolveDefinitionName(qualifiedName, typeSpec.Span);
+
+            if (typeSpec.Arguments != null)
+            {
+                if (definition.Type.Arguments != null)
+                {
+                    if (typeSpec.Arguments.Count != definition.Type.Arguments.Count)
+                        throw new CompilerException($"The generic type {qualifiedName} needs {definition.Type.Arguments.Count} type arguments, but {typeSpec.Arguments.Count} type arguments were given.", typeSpec.Span);
+                }
+                else
+                {
+                    throw new CompilerException($"The type {qualifiedName} is not a generic type.", typeSpec.Span);
+                }
+            }
+            else
+            {
+                if (definition.Type.Arguments != null)
+                {
+                    throw new CompilerException($"The type {qualifiedName} is a generic type. Generic arguments are missing.", typeSpec.Span);
+                }
+            }
+
+            return CreateGenericType(context, typeSpec, definition);
+        }
+
+        static LLVMTypeRef CreateGenericType(Context context, TypeSpec typeSpec, Definition definition)
+        {
+            if (definition.IsIntrinsic)
+                return CreateInstrinsicType(definition.Type.Name, typeSpec.Span);
+
+            if (definition.Structure == null)
+                throw new CompilerException($"The type \"{definition.Type.Name}\" contains no data and can only be used as a namespace.", typeSpec.Span);
+
+            if (definition.Structure.Members.Count == 1 && definition.Structure.Members[0].Name == null && definition.Structure.Members[0].Type.Arguments == null)
+                return ResolveType(context, null, definition.Structure.Members[0].Type);
+
+            return null;
+        }
+
+        static LLVMTypeRef CreateInstrinsicType(string name, Span span)
+        {
+            switch (name)
+            {
+                case "i1":
+                    return LLVMTypeRef.Int1;
+                case "i8":
+                    return LLVMTypeRef.Int8;
+                case "i32":
+                    return LLVMTypeRef.Int32;
+                case "i64":
+                    return LLVMTypeRef.Int64;
+                default:
+                    throw new CompilerException($"The intrinsic type \"{name}\" is unknown.", span);
+            }
+        }
+
         static LLVMTypeRef GetPointerType(Context context, Dictionary<string, TypeSpec> genericTypeDictionary, TypeSpec typeSpec)
         {
             if (typeSpec.Arguments == null)
@@ -343,6 +415,108 @@ namespace Scaly.Compiler
             var typeArgument = typeSpec.Arguments[0];
             var pointerTarget = (typeArgument.Name == "Pointer") ? GetPointerType(context, genericTypeDictionary, typeArgument) : ResolveType(context, genericTypeDictionary, typeArgument);
             return LLVMTypeRef.CreatePointer(pointerTarget, 0);
+        }
+
+        static KeyValuePair<TypeSpec, LLVMValueRef> ResolveOperatorValue(Context context, TypeSpec operandType, Operator @operator)
+        {
+            var qualifiedName = QualifyOperatorName(context, operandType, @operator);
+            if (!context.Global.Values.ContainsKey(qualifiedName))
+                CreateOperatorValue(context, operandType, @operator, qualifiedName);
+            var llvmFunction = context.Global.Values[qualifiedName];
+            return llvmFunction;
+        }
+
+        static string QualifyOperatorName(Context context, TypeSpec operandType, Operator @operator)
+        {
+            var operatorNameBuilder = new StringBuilder();
+
+            operatorNameBuilder.Append(QualifyName(context, @operator.Definition.Type.Name));
+            operatorNameBuilder.Append('.');
+            operatorNameBuilder.Append(@operator.Name);
+            operatorNameBuilder.Append('[');
+            AppendGenericArguments(context, operatorNameBuilder, operandType, @operator.Span);
+            operatorNameBuilder.Append(']');
+            return operatorNameBuilder.ToString();
+        }
+
+        static void CreateOperatorValue(Context context, TypeSpec operandType, Operator @operator, string qualifiedName)
+        {
+            var operatorType = ResolveOperatorType(context, operandType, @operator, qualifiedName);
+            var operatorFunction = context.Global.Module.AddFunction(qualifiedName, operatorType);
+            var operatorValue = new KeyValuePair<TypeSpec, LLVMValueRef>(@operator.Routine.Result[0].TypeSpec, operatorFunction);
+            if (context.Global.Values.ContainsKey(qualifiedName))
+                throw new CompilerException($"Operator {@operator.Name} was already defined.", @operator.Span);
+            context.Global.Values.Add(qualifiedName, operatorValue);
+        }
+
+        static LLVMTypeRef ResolveOperatorType(Context context, TypeSpec operandType, Operator @operator, string qualifiedName)
+        {
+            if (context.Global.Types.ContainsKey(qualifiedName))
+                return context.Global.Types[qualifiedName];
+            var operatorFunctionType = CreateOperatorType(context, operandType, @operator, qualifiedName);
+            context.Global.Types.Add(qualifiedName, operatorFunctionType);
+            return operatorFunctionType;
+        }
+
+        static LLVMTypeRef CreateOperatorType(Context context, TypeSpec operandTypeSpec, Operator @operator, string qualifiedName)
+        {
+            {
+                var operandTypeName = QualifyName(context, operandTypeSpec.Name);
+                var operatorDefinitionTypeName = QualifyName(context, @operator.Definition.Type.Name);
+                if (operandTypeName != operatorDefinitionTypeName)
+                    throw new CompilerException($"This operator expects a {operatorDefinitionTypeName}, and a {operandTypeName} was provided.", @operator.Span);
+            }
+
+            Dictionary<string, TypeSpec> genericTypeDictionary = null;
+            if (operandTypeSpec.Arguments == null)
+            {
+                if (@operator.Definition.Type.Arguments != null)
+                    throw new CompilerException($"This operator acts on a generic operand, and a non-generic operand was provided.", @operator.Span);
+            }
+            else
+            {
+                if (@operator.Definition.Type.Arguments == null)
+                    throw new CompilerException($"This operator acts on a non-generic operand, and a generic operand was provided.", @operator.Span);
+
+                if (operandTypeSpec.Arguments.Count != @operator.Definition.Type.Arguments.Count)
+                    throw new CompilerException($"This operator has {@operator.Definition.Type.Arguments.Count} generic type arguments, and the operand has {operandTypeSpec.Arguments.Count}.", @operator.Span);
+
+                genericTypeDictionary = new Dictionary<string, TypeSpec>();
+                var genericArgumentEnumerator = @operator.Definition.Type.Arguments.GetEnumerator();
+                foreach (var argument in operandTypeSpec.Arguments)
+                {
+                    genericArgumentEnumerator.MoveNext();
+                    var genericArgument = genericArgumentEnumerator.Current;
+                    if (genericTypeDictionary.ContainsKey(genericArgument.Name))
+                        throw new CompilerException($"The generic type argument {genericArgument.Name} was already given.", @operator.Span);
+                    genericTypeDictionary.Add(genericArgument.Name, argument);
+                }
+            }
+
+            var operandType = ResolveType(context, genericTypeDictionary, operandTypeSpec);
+            var parameterTypes = new LLVMTypeRef[] { operandType };
+            var returnType = ResolveType(context, genericTypeDictionary, @operator.Routine.Result[0].TypeSpec);
+            LLVMTypeRef operatorFunctionType = LLVMTypeRef.CreateFunction(returnType, parameterTypes.ToArray());
+            return operatorFunctionType;
+        }
+
+        static void AppendGenericArguments(Context context, StringBuilder builder, TypeSpec operandType, Span span)
+        {
+            builder.Append(QualifyName(context, operandType.Name));
+            if (operandType.Arguments != null)
+            {
+                builder.Append('[');
+                bool first = true;
+                foreach (var type in operandType.Arguments)
+                {
+                    if (first)
+                        first = false;
+                    else
+                        builder.Append(',');
+                    AppendGenericArguments(context, builder, type, span);
+                }
+                builder.Append(']');
+            }
         }
 
         static KeyValuePair<TypeSpec, LLVMValueRef> BuildOperands(Context context, List<Operand> operands)
@@ -559,244 +733,6 @@ namespace Scaly.Compiler
                 throw new CompilerException($"The operator {path} was already defined.", @operator.Span);
             context.Dictionary.Operators.Add(path, @operator);
             context.Dictionary.Sources.Add(path, context.Source);
-        }
-
-        static LLVMTypeRef CreateOperatorType(Context context, TypeSpec operandTypeSpec, Operator @operator, string qualifiedName)
-        {
-            {
-                var operandTypeName = QualifyName(context, operandTypeSpec.Name);
-                var operatorDefinitionTypeName = QualifyName(context, @operator.Definition.Type.Name);
-                if (operandTypeName != operatorDefinitionTypeName)
-                    throw new CompilerException($"This operator expects a {operatorDefinitionTypeName}, and a {operandTypeName} was provided.", @operator.Span);
-            }
-
-            Dictionary<string, TypeSpec> genericTypeDictionary = null;
-            if (operandTypeSpec.Arguments == null)
-            {
-                if (@operator.Definition.Type.Arguments != null)
-                    throw new CompilerException($"This operator acts on a generic operand, and a non-generic operand was provided.", @operator.Span);
-            }
-            else
-            {
-                if (@operator.Definition.Type.Arguments == null)
-                    throw new CompilerException($"This operator acts on a non-generic operand, and a generic operand was provided.", @operator.Span);
-
-                if (operandTypeSpec.Arguments.Count != @operator.Definition.Type.Arguments.Count)
-                    throw new CompilerException($"This operator has {@operator.Definition.Type.Arguments.Count} generic type arguments, and the operand has {operandTypeSpec.Arguments.Count}.", @operator.Span);
-
-                genericTypeDictionary = new Dictionary<string, TypeSpec>();
-                var genericArgumentEnumerator = @operator.Definition.Type.Arguments.GetEnumerator();
-                foreach (var argument in operandTypeSpec.Arguments)
-                {
-                    genericArgumentEnumerator.MoveNext();
-                    var genericArgument = genericArgumentEnumerator.Current;
-                    if (genericTypeDictionary.ContainsKey(genericArgument.Name))
-                        throw new CompilerException($"The generic type argument {genericArgument.Name} was already given.", @operator.Span);
-                    genericTypeDictionary.Add(genericArgument.Name, argument);
-                }
-            }
-
-            var operandType = ResolveType(context, genericTypeDictionary, operandTypeSpec);
-            var parameterTypes = new LLVMTypeRef[] { operandType };
-            var returnType = ResolveType(context, genericTypeDictionary, @operator.Routine.Result[0].TypeSpec);
-            LLVMTypeRef operatorFunctionType = LLVMTypeRef.CreateFunction(returnType, parameterTypes.ToArray());
-            return operatorFunctionType;
-        }
-
-        static void CreateOperatorValue(Context context, TypeSpec operandType, Operator @operator, string qualifiedName)
-        {
-            var operatorType = ResolveOperatorType(context, operandType, @operator, qualifiedName);
-            var operatorFunction = context.Global.Module.AddFunction(qualifiedName, operatorType);
-            var operatorValue = new KeyValuePair<TypeSpec, LLVMValueRef>(@operator.Routine.Result[0].TypeSpec, operatorFunction);
-            if (context.Global.Values.ContainsKey(qualifiedName))
-                throw new CompilerException($"Operator {@operator.Name} was already defined.", @operator.Span);
-            context.Global.Values.Add(qualifiedName, operatorValue);
-        }
-
-        static LLVMTypeRef ResolveOperatorType(Context context, TypeSpec operandType, Operator @operator, string qualifiedName)
-        {
-            if (context.Global.Types.ContainsKey(qualifiedName))
-                return context.Global.Types[qualifiedName];
-            var operatorFunctionType = CreateOperatorType(context, operandType, @operator, qualifiedName);
-            context.Global.Types.Add(qualifiedName, operatorFunctionType);
-            return operatorFunctionType;
-        }
-
-        static TypeSpec GetOperandType(Context context, LLVMBuilderRef builder, TypeSpec previousTypeSpec, Operand operand)
-        {
-            switch (operand.Expression)
-            {
-                //case IntegerConstant integerConstant:
-                //    valueRef = LLVMValueRef.CreateConstInt(LLVMTypeRef.Int32, (ulong)integerConstant.Value);
-                //    break;
-                case Name name:
-                    return GetNameType(context, previousTypeSpec, name);
-                case Scope scope:
-                    return GetScopeType(context, builder, previousTypeSpec, scope);
-                //case Object @object:
-                //    if (valueRef == null)
-                //        throw new CompilerException("Objects are currently only supported as parameter lists for function calls.", @object.Span);
-                //    valueRef = BuildFunctionCall(context, valueRef, @object);
-                //    break;
-                default:
-                    throw new NotImplementedException($"GetOperandType for expression {operand.Expression.GetType()} not implemented.");
-            }
-        }
-
-        static TypeSpec GetNameType(Context context, TypeSpec previousTypeSpec, Name name)
-        {
-            if (QualifyName(context, name.Path) != null)
-                throw new NotImplementedException("Object creation not yet supported.");
-
-            throw new NotImplementedException();
-        }
-
-        static TypeSpec GetScopeType(Context context, LLVMBuilderRef builder, TypeSpec previousTypeSpec, Scope scope)
-        {
-            TypeSpec typeSpec = null;
-            foreach (var operation in scope.Operations)
-                typeSpec = GetOperandsType(context, builder, operation.Operands);
-
-            if (scope.Binding != null)
-                typeSpec = GetBindingType(context, builder, scope.Binding);
-
-            return typeSpec;
-        }
-
-        static TypeSpec GetBindingType(Context context, LLVMBuilderRef builder, Binding binding)
-        {
-            var newContext = new Context { Global = context.Global, Source = context.Source, ParentContext = context };
-            BuildOperands(newContext, binding.Operation.Operands);
-            newContext.Values.Add(binding.Identifier, newContext.TypedValue);
-            TypeSpec typeSpec = null;
-            foreach (var operation in binding.Operations)
-                typeSpec = GetOperandsType(newContext, builder, operation.Operands);
-
-            return typeSpec;
-        }
-
-        static TypeSpec GetOperandsType(Context context, LLVMBuilderRef builder, List<Operand> operands)
-        {
-            TypeSpec typeSpec = null;
-            foreach (var operand in operands)
-            {
-                typeSpec = GetOperandType(context, builder, typeSpec, operand);
-            }
-            return typeSpec;
-        }
-
-        static string QualifyName(Context context, string name)
-        {
-            if (context.Global.Types.ContainsKey(name))
-                return name;
-
-            if (context.Global.Dictionary.Definitions.ContainsKey(name))
-                return name;
-
-            if (context.Global.Dictionary.Functions.ContainsKey(name))
-                return name;
-
-            if (context.Global.Dictionary.Operators.ContainsKey(name))
-                return name;
-
-            if (context.Source.Uses != null && context.Source.Uses.ContainsKey(name))
-                return context.Source.Uses[name].Path;
-
-            if (context.Source.Usings != null)
-            {
-                foreach (var @using in context.Source.Usings)
-                {
-                    var usingName = @using.Path;
-
-                    var definition = context.ResolveDefinitionName(usingName, @using.Span);
-                    if (definition.Definitions != null && definition.Definitions.ContainsKey(name))
-                        return usingName + "." + name;
-
-                    if (definition.Operators != null && definition.Operators.ContainsKey(name))
-                        return usingName + "." + name;
-                }
-            }
-
-            return null;
-        }
-
-        static LLVMTypeRef CreateType(Context context, string qualifiedName, TypeSpec typeSpec)
-        {
-            var definition = context.ResolveDefinitionName(qualifiedName, typeSpec.Span);
- 
-            if (typeSpec.Arguments != null)
-            {
-                if (definition.Type.Arguments != null)
-                {
-                    if (typeSpec.Arguments.Count != definition.Type.Arguments.Count)
-                        throw new CompilerException($"The generic type {qualifiedName} needs {definition.Type.Arguments.Count} type arguments, but {typeSpec.Arguments.Count} type arguments were given.", typeSpec.Span);
-                }
-                else
-                {
-                    throw new CompilerException($"The type {qualifiedName} is not a generic type.", typeSpec.Span);
-                }
-            }
-            else
-            {
-                if (definition.Type.Arguments != null)
-                {
-                    throw new CompilerException($"The type {qualifiedName} is a generic type. Generic arguments are missing.", typeSpec.Span);
-                }
-            }
-
-            return CreateGenericType(context, typeSpec, definition);
-        }
-
-        static LLVMTypeRef CreateGenericType(Context context, TypeSpec typeSpec, Definition definition)
-        {
-            if (definition.IsIntrinsic)
-                return CreateInstrinsicType(definition.Type.Name, typeSpec.Span);
-
-            if (definition.Structure == null)
-                throw new CompilerException($"The type \"{definition.Type.Name}\" contains no data and can only be used as a namespace.", typeSpec.Span);
-
-            if (definition.Structure.Members.Count == 1 && definition.Structure.Members[0].Name == null && definition.Structure.Members[0].Type.Arguments == null)
-                return ResolveType(context, null, definition.Structure.Members[0].Type);
-
-            return null;
-        }
-
-        static LLVMTypeRef CreateInstrinsicType(string name, Span span)
-        {
-            switch (name)
-            {
-                case "i1":
-                    return LLVMTypeRef.Int1;
-                case "i8":
-                    return LLVMTypeRef.Int8;
-                case "i32":
-                    return LLVMTypeRef.Int32;
-                case "i64":
-                    return LLVMTypeRef.Int64;
-                default:
-                    throw new CompilerException($"The intrinsic type \"{name}\" is unknown.", span);
-            }
-        }
-
-        static string AddTypeArguments(string name, List<TypeSpec> arguments)
-        {
-            if (arguments == null)
-                return name;
-
-            StringBuilder builder = new StringBuilder(name);
-            builder.Append('[');
-            bool first = true;
-            foreach (var argument in arguments)
-            {
-                if (first)
-                    first = false;
-                else
-                    builder.Append(',');
-                builder.Append(AddTypeArguments(argument.Name, argument.Arguments));
-            }
-            builder.Append(']');
-
-            return builder.ToString();
         }
 
         static void VerifyAndInitialize(LLVMModuleRef module)
