@@ -94,32 +94,37 @@ namespace Scaly.Compiler
 
         internal static Main JitProgram(List<Source> sources)
         {
-            LLVMModuleRef module = LLVMModuleRef.CreateWithName("JIT module");
-            Generate(module, sources);
-            VerifyAndInitialize(module);
+            LLVMModuleRef module = LLVMModuleRef.CreateWithName("");
+            var function = GenerateAndVerify(sources, module);
             var engine = module.CreateMCJITCompiler();
-            var function = module.GetNamedFunction("main");
             var jitMain = engine.GetPointerToGlobal<Main>(function);
             return jitMain;
         }
 
         internal static void GenerateProgram(List<Source> sources, string outputName)
         {
-            LLVMModuleRef module = LLVMModuleRef.CreateWithName(string.Empty);
-            Generate(module, sources);
-
-            VerifyAndInitialize(module);
+            LLVMModuleRef module = LLVMModuleRef.CreateWithName("");
+            GenerateAndVerify(sources, module);
             LLVM.InitializeAllTargetInfos();
             var triple = LLVMTargetRef.DefaultTriple;
             LLVMTargetRef target = LLVMTargetRef.GetTargetFromTriple(triple);
             LLVMTargetMachineRef targetMachine = target.CreateTargetMachine(triple, "", "",
                 LLVMCodeGenOptLevel.LLVMCodeGenLevelDefault, LLVMRelocMode.LLVMRelocDefault,
                 LLVMCodeModel.LLVMCodeModelDefault);
-            var message = "";
-            targetMachine.TryEmitToFile(module, $"{outputName}.o", LLVMCodeGenFileType.LLVMObjectFile, out message);
+            targetMachine.EmitToFile(module, $"{outputName}.o", LLVMCodeGenFileType.LLVMObjectFile);
         }
 
-        static void Generate(LLVMModuleRef module, List<Source> sources)
+        static LLVMValueRef GenerateAndVerify(List<Source> sources, LLVMModuleRef module)
+        {
+            var function = Generate(module, sources);
+            module.Verify(LLVMVerifierFailureAction.LLVMPrintMessageAction);
+            LLVM.InitializeNativeTarget();
+            LLVM.InitializeNativeAsmParser();
+            LLVM.InitializeNativeAsmPrinter();
+            return function;
+        }
+
+        static LLVMValueRef Generate(LLVMModuleRef module, List<Source> sources)
         {
             var dictionary = new NameDictionary();
             {
@@ -133,66 +138,12 @@ namespace Scaly.Compiler
 
             {
                 var globalContext = new GlobalContext { Module = module, Dictionary = dictionary };
-                foreach (var source in sources)
-                {
-                    var context = new Context { Global = globalContext, Source = source };
-                    BuildSourceFunctions(context);
-                }
+                var mainName = "main";
+                var context = new Context { Global = globalContext, Source = globalContext.Dictionary.Sources[mainName] };
+                var function = GetMainFunction(context, mainName);
+                var functionValue = ResolveFunctionValue(context, null, function);
+                return functionValue.Value;
             }
-        }
-
-        static void BuildSourceFunctions(Context context)
-        {
-            if (context.Source.Functions != null)
-            {
-                foreach (var function in context.Source.Functions)
-                {
-                    BuildFunction(context, null, function);
-                }
-            }
-
-            if (context.Source.Sources != null)
-            {
-                foreach (var source in context.Source.Sources)
-                {
-                    var newContext = new Context { Global = context.Global, Source = source };
-                    BuildSourceFunctions(newContext);
-                }
-            }
-        }
-
-        static KeyValuePair<TypeSpec, LLVMValueRef> BuildFunction(Context context, Dictionary<string, TypeSpec> genericTypeDictionary, Function function)
-        {
-            var functionValue = ResolveFunctionValue(context, genericTypeDictionary, function);
-            switch (function.Routine.Implementation)
-            {
-                case Implementation.Intern:
-                    {
-                        var block = functionValue.Value.AppendBasicBlock(string.Empty);
-                        using (var builder = context.Global.Module.Context.CreateBuilder())
-                        {
-                            var newContext = new Context { Global = context.Global, Builder = builder, Source = context.Source, };
-                            builder.PositionAtEnd(block);
-                            uint paramCount = 0;
-                            foreach (var parameter in function.Routine.Input)
-                            {
-                                newContext.Values.Add(parameter.Name, new KeyValuePair<TypeSpec, LLVMValueRef>(parameter.TypeSpec, functionValue.Value.GetParam(paramCount)));
-                                paramCount++;
-                            }
-                            builder.BuildRet(BuildOperands(newContext, function.Routine.Operation.Operands).Value);
-                        }
-                    }
-                    break;
-                case Implementation.Extern:
-                    {
-                        var f = functionValue.Value;
-                        f.Linkage = LLVMLinkage.LLVMExternalLinkage;
-                        break;
-                    }
-                default:
-                    throw new CompilerException($"The implementation type {function.Routine.Implementation} is not implemented.", function.Span);
-            }
-            return functionValue;
         }
 
         static KeyValuePair<TypeSpec, LLVMValueRef> ResolveFunctionValue(Context context, Dictionary<string, TypeSpec> genericTypeDictionary, Function function)
@@ -232,7 +183,35 @@ namespace Scaly.Compiler
             var functionName = QualifyFunctionName(context, function);
             if (context.Global.Values.ContainsKey(functionName))
                 throw new CompilerException($"Function {function.Name} was already defined with the same arguments.", function.Span);
-            context.Global.Values.Add(functionName, new KeyValuePair<TypeSpec, LLVMValueRef>(function.Routine.Result[0].TypeSpec, context.Global.Module.AddFunction(functionName, functionType)));
+            var functionValue = context.Global.Module.AddFunction(functionName, functionType);
+            context.Global.Values.Add(functionName, new KeyValuePair<TypeSpec, LLVMValueRef>(function.Routine.Result[0].TypeSpec, functionValue));
+            switch (function.Routine.Implementation)
+            {
+                case Implementation.Intern:
+                    {
+                        var block = functionValue.AppendBasicBlock(string.Empty);
+                        using (var builder = context.Global.Module.Context.CreateBuilder())
+                        {
+                            var newContext = new Context { Global = context.Global, Builder = builder, Source = context.Source, };
+                            builder.PositionAtEnd(block);
+                            uint paramCount = 0;
+                            foreach (var parameter in function.Routine.Input)
+                            {
+                                newContext.Values.Add(parameter.Name, new KeyValuePair<TypeSpec, LLVMValueRef>(parameter.TypeSpec, functionValue.GetParam(paramCount)));
+                                paramCount++;
+                            }
+                            builder.BuildRet(BuildOperands(newContext, function.Routine.Operation.Operands).Value);
+                        }
+                    }
+                    break;
+                case Implementation.Extern:
+                    {
+                        functionValue.Linkage = LLVMLinkage.LLVMExternalLinkage;
+                        break;
+                    }
+                default:
+                    throw new CompilerException($"The implementation type {function.Routine.Implementation} is not implemented.", function.Span);
+            }
         }
 
         static LLVMTypeRef ResolveFunctionType(Context context, Dictionary<string, TypeSpec> genericTypeDictionary, Function function)
@@ -735,12 +714,54 @@ namespace Scaly.Compiler
             context.Dictionary.Sources.Add(path, context.Source);
         }
 
-        static void VerifyAndInitialize(LLVMModuleRef module)
+        static Function GetMainFunction(Context context, string mainName)
         {
-            module.Verify(LLVMVerifierFailureAction.LLVMPrintMessageAction);
-            LLVM.InitializeNativeTarget();
-            LLVM.InitializeNativeAsmParser();
-            LLVM.InitializeNativeAsmPrinter();
+            if (!context.Global.Dictionary.Functions.ContainsKey(mainName))
+                throw new CompilerException("No main function found.", new Span { file = "", start = new Position { line = 0, column = 0 }, end = new Position { line = 0, column = 0 }, });
+            var functions = context.Global.Dictionary.Functions[mainName];
+            if (functions.Count == 0)
+                throw new CompilerException("No main function found.", new Span { file = "", start = new Position { line = 0, column = 0 }, end = new Position { line = 0, column = 0 }, });
+            if (functions.Count > 1)
+                throw new CompilerException("More than one main function found.", new Span { file = "", start = new Position { line = 0, column = 0 }, end = new Position { line = 0, column = 0 }, });
+            var function = functions.First();
+            if (function.Routine.Result == null)
+                throw new CompilerException("Main function has no return value. The return value must be Integer.", function.Span);
+            if (function.Routine.Result.Count != 1)
+                throw new CompilerException("Main function has the wrong number of results. It has to return exactly one Integer.", function.Span);
+            var result = function.Routine.Result[0].TypeSpec;
+            if (result.Name != "Integer")
+                throw new CompilerException("Main function has the wrong return value type. The return value must be of type Integer.", function.Span);
+            var argcName = "argument count";
+            var argcType = "Integer";
+            var argvName = "argument values";
+            var argvType = "Pointer";
+            var charType = "Byte";
+            var parameterSentence = $"The parameters must be '{argcName}': {argcType}, '{argvName}': {argvType}.";
+            if (function.Routine.Input == null)
+                throw new CompilerException($"Main function has no parameters. {parameterSentence}", function.Span);
+            if (function.Routine.Input.Count != 2)
+                throw new CompilerException($"Main function has the wrong number of parameters. {parameterSentence}", function.Span);
+            var argc = function.Routine.Input[0];
+            if (argc.Name != argcName)
+                throw new CompilerException($"The first parameter of the main function has the wrong name. {parameterSentence}", function.Span);
+            if (argc.TypeSpec.Name != argcType)
+                throw new CompilerException($"The first parameter of the main function has the wrong type. {parameterSentence}", function.Span);
+            var argv = function.Routine.Input[1];
+            if (argv.Name != argvName)
+                throw new CompilerException($"The second parameter of the main function has the wrong name. {parameterSentence}", function.Span);
+            if
+            (
+                argv.TypeSpec.Name == argvType
+                && argv.TypeSpec.Arguments != null 
+                && argv.TypeSpec.Arguments.Count == 1 
+                && argv.TypeSpec.Arguments[0].Name == argvType
+                && argv.TypeSpec.Arguments[0].Arguments != null 
+                && argv.TypeSpec.Arguments[0].Arguments.Count == 1 
+                && argv.TypeSpec.Arguments[0].Arguments[0].Name == charType
+            )
+                return function;
+            else
+                throw new CompilerException($"The second parameter of the main function has the wrong type. {parameterSentence}", function.Span);
         }
     }
 }
