@@ -166,18 +166,33 @@ namespace Scaly.Compiler
         static KeyValuePair<TypeSpec, LLVMValueRef> BuildFunction(Context context, Dictionary<string, TypeSpec> genericTypeDictionary, Function function)
         {
             var functionValue = ResolveFunctionValue(context, genericTypeDictionary, function);
-            var block = functionValue.Value.AppendBasicBlock(string.Empty);
-            using (var builder = context.Global.Module.Context.CreateBuilder())
+            switch (function.Routine.Implementation)
             {
-                var newContext = new Context { Global = context.Global, Builder = builder, Source = context.Source, };
-                builder.PositionAtEnd(block);
-                uint paramCount = 0;
-                foreach (var parameter in function.Routine.Input)
-                {
-                    newContext.Values.Add(parameter.Name, new KeyValuePair<TypeSpec, LLVMValueRef>(parameter.TypeSpec, functionValue.Value.GetParam(paramCount)));
-                    paramCount++;
-                }
-                builder.BuildRet(BuildOperands(newContext, function.Routine.Operation.Operands).Value);
+                case Implementation.Intern:
+                    {
+                        var block = functionValue.Value.AppendBasicBlock(string.Empty);
+                        using (var builder = context.Global.Module.Context.CreateBuilder())
+                        {
+                            var newContext = new Context { Global = context.Global, Builder = builder, Source = context.Source, };
+                            builder.PositionAtEnd(block);
+                            uint paramCount = 0;
+                            foreach (var parameter in function.Routine.Input)
+                            {
+                                newContext.Values.Add(parameter.Name, new KeyValuePair<TypeSpec, LLVMValueRef>(parameter.TypeSpec, functionValue.Value.GetParam(paramCount)));
+                                paramCount++;
+                            }
+                            builder.BuildRet(BuildOperands(newContext, function.Routine.Operation.Operands).Value);
+                        }
+                    }
+                    break;
+                case Implementation.Extern:
+                    {
+                        var f = functionValue.Value;
+                        f.Linkage = LLVMLinkage.LLVMExternalLinkage;
+                        break;
+                    }
+                default:
+                    throw new CompilerException($"The implementation type {function.Routine.Implementation} is not implemented.", function.Span);
             }
             return functionValue;
         }
@@ -404,23 +419,27 @@ namespace Scaly.Compiler
                 return;
             }
 
-            if (functions == null)
-                throw new CompilerException($"The name '{name.Path}' has not been found.", name.Span);
-
-            if (!context.Operands.MoveNext())
-                throw new CompilerException($"No function arguments for '{name.Path}' were given.", name.Span);
-
-            var operand = context.Operands.Current;
-            switch (operand.Expression)
+            if (functions != null)
             {
-                case Object @object:
-                    valueRef = FindMatchingFunction(context, functions, @object);
-                    if (valueRef.Value == null)
-                        throw new CompilerException("No matching function has been found for the arguments.", @object.Span);
-                    context.TypedValue = BuildFunctionCall(context, valueRef, @object);
-                    return;
-                default:
-                    throw new CompilerException($"Only an object can be applied to function '{name.Path}'. Got an {operand.Expression.GetType()}.", @name.Span);
+                if (!context.Operands.MoveNext())
+                    throw new CompilerException($"No function arguments for '{name.Path}' were given.", name.Span);
+
+                var operand = context.Operands.Current;
+                switch (operand.Expression)
+                {
+                    case Object @object:
+                        valueRef = FindMatchingFunction(context, functions, @object);
+                        if (valueRef.Value == null)
+                            throw new CompilerException("No matching function has been found for the arguments.", @object.Span);
+                        context.TypedValue = BuildFunctionCall(context, valueRef, @object);
+                        return;
+                    default:
+                        throw new CompilerException($"Only an object can be applied to function '{name.Path}'. Got an {operand.Expression.GetType()}.", @name.Span);
+                }
+            }
+            else
+            {
+                throw new CompilerException($"The name '{name.Path}' has not been found.", name.Span);
             }
         }
 
