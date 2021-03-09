@@ -486,9 +486,9 @@ namespace Scaly.Compiler
             return new KeyValuePair<TypeSpec, LLVMValueRef>(function.Key, context.Builder.BuildCall(function.Value, arguments.ToArray()));
         }
 
-        static KeyValuePair<TypeSpec, LLVMValueRef> BuildOperatorCall(Context context, KeyValuePair<TypeSpec, LLVMValueRef> @operator, KeyValuePair<TypeSpec, LLVMValueRef> operand)
+        static void BuildOperatorCall(Context context, KeyValuePair<TypeSpec, LLVMValueRef> @operator, KeyValuePair<TypeSpec, LLVMValueRef> operand)
         {
-            return new KeyValuePair<TypeSpec, LLVMValueRef>(null, context.Builder.BuildCall(@operator.Value, new LLVMValueRef[] { operand.Value }));
+            context.TypedValue = new KeyValuePair<TypeSpec, LLVMValueRef>(@operator.Key, context.Builder.BuildCall(@operator.Value, new LLVMValueRef[] { operand.Value }));
         }
 
         static void BuildSourceDictionary(DictionaryContext context)
@@ -588,7 +588,7 @@ namespace Scaly.Compiler
 
                 if (definition.Operators != null)
                     foreach (var @operator in definition.Operators.Values)
-                        BuildOperatorType(context, @operator.Definition.Type, @operator);
+                        BuildOperatorType(context, @operator.Definition.Type, @operator, QualifyOperatorName(context, definition.Type, @operator));
             }
         }
 
@@ -617,7 +617,7 @@ namespace Scaly.Compiler
             }
         }
 
-        static LLVMTypeRef BuildOperatorType(Context context, TypeSpec operandTypeSpec, Operator @operator)
+        static LLVMTypeRef BuildOperatorType(Context context, TypeSpec operandTypeSpec, Operator @operator, string qualifiedName)
         {
             {
                 var operandTypeName = QualifyName(context, operandTypeSpec.Name);
@@ -634,7 +634,6 @@ namespace Scaly.Compiler
             }
             else
             {
-
                 if (@operator.Definition.Type.Arguments == null)
                     throw new CompilerException($"This operator acts on a non-generic operand, and a generic operand was provided.", @operator.Span);
 
@@ -656,9 +655,8 @@ namespace Scaly.Compiler
             var operandType = ResolveType(context, genericTypeDictionary, operandTypeSpec);
             var parameterTypes = new LLVMTypeRef[] { operandType };
             var returnType = ResolveType(context, genericTypeDictionary, @operator.Routine.Result[0].TypeSpec);
-            var functionType = LLVMTypeRef.CreateFunction(returnType, parameterTypes.ToArray());
-            context.Global.Types.Add(@operator.Name, functionType);
-            return functionType;
+            LLVMTypeRef operatorFunctionType = LLVMTypeRef.CreateFunction(returnType, parameterTypes.ToArray());
+            return operatorFunctionType;
         }
 
         static void BuildSourceValues(Context context)
@@ -715,16 +713,18 @@ namespace Scaly.Compiler
         static void BuildOperatorValue(Context context, TypeSpec operandType, Operator @operator, string qualifiedName)
         {
             var operatorType = ResolveOperatorType(context, operandType, @operator, qualifiedName);
-            context.Global.Values.Add(qualifiedName, new KeyValuePair<TypeSpec, LLVMValueRef>(null, context.Global.Module.AddFunction(qualifiedName, operatorType)));
+            var operatorFunction = context.Global.Module.AddFunction(qualifiedName, operatorType);
+            var operatorValue = new KeyValuePair<TypeSpec, LLVMValueRef>(@operator.Routine.Result[0].TypeSpec, operatorFunction);
+            context.Global.Values.Add(qualifiedName, operatorValue);
         }
 
         static LLVMTypeRef ResolveOperatorType(Context context, TypeSpec operandType, Operator @operator, string qualifiedName)
         {
             if (context.Global.Types.ContainsKey(qualifiedName))
                 return context.Global.Types[qualifiedName];
-            var operatorType = BuildOperatorType(context, operandType, @operator);
-            context.Global.Types.Add(qualifiedName, operatorType);
-            return operatorType;
+            var operatorFunctionType = BuildOperatorType(context, operandType, @operator, qualifiedName);
+            context.Global.Types.Add(qualifiedName, operatorFunctionType);
+            return operatorFunctionType;
         }
 
         static TypeSpec GetOperandType(Context context, LLVMBuilderRef builder, TypeSpec previousTypeSpec, Operand operand)
