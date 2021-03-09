@@ -34,7 +34,6 @@ namespace Scaly.Compiler
     {
         public GlobalContext Global;
         public Source Source;
-        public string Path = "";
         public Context ParentContext;
         public LLVMBuilderRef Builder;
         public IEnumerator<Operand> Operands;
@@ -236,15 +235,11 @@ namespace Scaly.Compiler
 
         static string QualifyFunctionName(Context context, Function function)
         {
-            if ((function.Routine.Implementation == Implementation.Extern) || (context.Path == "" && function.Name == "main"))
+            if ((function.Routine.Implementation == Implementation.Extern) || (function.Name == "main"))
                 return function.Name;
 
             var functionNameBuilder = new StringBuilder();
-            if (context.Path != "")
-            {
-                functionNameBuilder.Append(context.Path);
-                functionNameBuilder.Append('.');
-            }
+
             functionNameBuilder.Append(function.Name);
             functionNameBuilder.Append('(');
             var first = true;
@@ -263,11 +258,6 @@ namespace Scaly.Compiler
         static string QualifyOperatorName(Context context, TypeSpec operandType, Operator @operator)
         {
             var operatorNameBuilder = new StringBuilder();
-            if (context.Path != "")
-            {
-                operatorNameBuilder.Append(context.Path);
-                operatorNameBuilder.Append('.');
-            }
 
             operatorNameBuilder.Append(QualifyName(context, @operator.Definition.Type.Name));
             operatorNameBuilder.Append('.');
@@ -571,54 +561,6 @@ namespace Scaly.Compiler
             context.Dictionary.Sources.Add(path, context.Source);
         }
 
-        static void BuildDefinitionTypes(Context context, Definition definition)
-        {
-            if (definition.Sources != null)
-            {
-                foreach (var source in definition.Sources)
-                {
-                    var newContext = new Context { Global = context.Global, Source = source };
-                    BuildSourceTypes(newContext);
-                }
-            }
-
-            if (definition.Type.Arguments == null)
-            {
-                if (definition.Functions != null)
-                    foreach (var function in definition.Functions)
-                        CreateFunctionType(context, null, function);
-
-                if (definition.Operators != null)
-                    foreach (var @operator in definition.Operators.Values)
-                        CreateOperatorType(context, @operator.Definition.Type, @operator, QualifyOperatorName(context, definition.Type, @operator));
-            }
-        }
-
-        static void BuildSourceTypes(Context context)
-        {
-            if (context.Source.Definitions != null)
-            {
-                foreach (var definition in context.Source.Definitions.Values)
-                {
-                    if (definition.Type.Arguments == null)
-                        BuildDefinitionTypes(context, definition);
-                }
-            }
-
-            if (context.Source.Functions != null)
-                foreach (var function in context.Source.Functions)
-                    CreateFunctionType(context, null, function);
-
-            if (context.Source.Sources != null)
-            {
-                foreach (var source in context.Source.Sources)
-                {
-                    var newContext = new Context { Global = context.Global, Source = source };
-                    BuildSourceTypes(newContext);
-                }
-            }
-        }
-
         static LLVMTypeRef CreateOperatorType(Context context, TypeSpec operandTypeSpec, Operator @operator, string qualifiedName)
         {
             {
@@ -659,57 +601,6 @@ namespace Scaly.Compiler
             var returnType = ResolveType(context, genericTypeDictionary, @operator.Routine.Result[0].TypeSpec);
             LLVMTypeRef operatorFunctionType = LLVMTypeRef.CreateFunction(returnType, parameterTypes.ToArray());
             return operatorFunctionType;
-        }
-
-        static void BuildSourceValues(Context context)
-        {
-            if (context.Source != null)
-            {
-                if (context.Source.Functions != null)
-                    foreach (var function in context.Source.Functions)
-                        CreateFunctionValue(context, null, function);
-
-                if (context.Source.Sources != null)
-                {
-                    foreach (var source in context.Source.Sources)
-                    {
-                        var newContext = new Context { Global = context.Global, Source = source };
-                        BuildSourceValues(newContext);
-                    }
-                }
-
-                if (context.Source.Definitions != null)
-                {
-                    foreach (var definition in context.Source.Definitions.Values)
-                    {
-                        if (definition.Type.Arguments == null)
-                            BuildDefinitionValues(context, definition);
-                    }
-                }
-            }
-        }
-
-        static void BuildDefinitionValues(Context context, Definition definition)
-        {
-            if (definition.Type.Arguments == null)
-            {
-                if (definition.Sources != null)
-                {
-                    foreach (var source in definition.Sources)
-                    {
-                        var newContext = new Context { Global = context.Global, Source = source };
-                        BuildSourceValues(newContext);
-                    }
-                }
-
-                if (definition.Functions != null)
-                    foreach (var function in definition.Functions)
-                        CreateFunctionValue(context, null, function);
-
-                if (definition.Operators != null)
-                    foreach (var @operator in definition.Operators.Values)
-                        CreateOperatorValue(context, definition.Type, @operator, QualifyOperatorName(context, @operator.Definition.Type, @operator));
-            }
         }
 
         static void CreateOperatorValue(Context context, TypeSpec operandType, Operator @operator, string qualifiedName)
