@@ -129,7 +129,7 @@ namespace Scaly.Compiler
                 foreach (var source in sources)
                 {
                     context.Source = source;
-                    BuildSourceDictionary(context);
+                    CreateSourceDictionary(context);
                 }
             }
 
@@ -229,7 +229,7 @@ namespace Scaly.Compiler
             var functionName = QualifyFunctionName(context, function);
             if (context.Global.Types.ContainsKey(functionName))
                 return context.Global.Types[functionName];
-            var functionType = BuildFunctionType(context, genericTypeDictionary, function);
+            var functionType = CreateFunctionType(context, genericTypeDictionary, function);
             context.Global.Types.Add(functionName, functionType);
             return functionType;
         }
@@ -297,7 +297,7 @@ namespace Scaly.Compiler
             }
         }
 
-        static LLVMTypeRef BuildFunctionType(Context context, Dictionary<string, TypeSpec> genericTypeDictionary, Function function)
+        static LLVMTypeRef CreateFunctionType(Context context, Dictionary<string, TypeSpec> genericTypeDictionary, Function function)
         {
             var returnType = GetSingleType(context, null, function.Routine.Result);
             var parameterTypes = GetTypes(context, genericTypeDictionary, function.Routine.Input);
@@ -493,14 +493,14 @@ namespace Scaly.Compiler
             context.TypedValue = new KeyValuePair<TypeSpec, LLVMValueRef>(@operator.Key, context.Builder.BuildCall(@operator.Value, new LLVMValueRef[] { operand.Value }));
         }
 
-        static void BuildSourceDictionary(DictionaryContext context)
+        static void CreateSourceDictionary(DictionaryContext context)
         {
             if (context.Source.Sources != null)
             {
                 foreach (var source in context.Source.Sources)
                 {
                     var newContext = new DictionaryContext { Dictionary = context.Dictionary, Source = source, Path = context.Path, Definition = context.Definition };
-                    BuildSourceDictionary(newContext);
+                    CreateSourceDictionary(newContext);
                 }
             }
 
@@ -509,16 +509,16 @@ namespace Scaly.Compiler
                 foreach (var definition in context.Source.Definitions.Values)
                 {
                     var newContext = new DictionaryContext { Dictionary = context.Dictionary, Source = context.Source, Path = context.Path == "" ? definition.Type.Name : context.Path + "." + definition.Type.Name, Definition = definition };
-                    BuildDefinitionDictionary(newContext);
+                    CreateDefinitionDictionary(newContext);
                 }
             }
 
             if (context.Source.Functions != null)
                 foreach (var function in context.Source.Functions)
-                    BuildFunctionDictionary(context, function);
+                    CreateFunctionDictionary(context, function);
         }
 
-        static void BuildDefinitionDictionary(DictionaryContext context)
+        static void CreateDefinitionDictionary(DictionaryContext context)
         {
             if (context.Dictionary.Definitions.ContainsKey(context.Path))
                 throw new CompilerException($"The definition {context.Path} was already defined.", context.Definition.Span);
@@ -530,7 +530,7 @@ namespace Scaly.Compiler
                 foreach (var source in context.Definition.Sources)
                 {
                     var newContext = new DictionaryContext { Dictionary = context.Dictionary, Source = source, Path = context.Path, Definition = context.Definition };
-                    BuildSourceDictionary(newContext);
+                    CreateSourceDictionary(newContext);
                 }
             }
 
@@ -539,20 +539,20 @@ namespace Scaly.Compiler
                 foreach (var definition in context.Definition.Definitions.Values)
                 {
                     var newContext = new DictionaryContext { Dictionary = context.Dictionary, Source = context.Source, Path = context.Path == "" ? definition.Type.Name : context.Path + "." + definition.Type.Name, Definition = definition };
-                    BuildDefinitionDictionary(newContext);
+                    CreateDefinitionDictionary(newContext);
                 }
             }
 
             if (context.Definition.Functions != null)
                 foreach (var function in context.Definition.Functions)
-                    BuildFunctionDictionary(context, function);
+                    CreateFunctionDictionary(context, function);
 
             if (context.Definition.Operators != null)
                 foreach (var @operator in context.Definition.Operators.Values)
-                    BuildOperatorDictionary(context, @operator);
+                    CreateOperatorDictionary(context, @operator);
         }
 
-        static void BuildFunctionDictionary(DictionaryContext context, Function function)
+        static void CreateFunctionDictionary(DictionaryContext context, Function function)
         {
             var path = context.Path == "" ? function.Name : context.Path + "." + function.Name;
             if (!context.Dictionary.Functions.ContainsKey(path))
@@ -562,7 +562,7 @@ namespace Scaly.Compiler
             context.Dictionary.Sources.Add(path, context.Source);
         }
 
-        static void BuildOperatorDictionary(DictionaryContext context, Operator @operator)
+        static void CreateOperatorDictionary(DictionaryContext context, Operator @operator)
         {
             var path = context.Path + "." + @operator.Name;
             if (context.Dictionary.Operators.ContainsKey(path))
@@ -586,11 +586,11 @@ namespace Scaly.Compiler
             {
                 if (definition.Functions != null)
                     foreach (var function in definition.Functions)
-                        BuildFunctionType(context, null, function);
+                        CreateFunctionType(context, null, function);
 
                 if (definition.Operators != null)
                     foreach (var @operator in definition.Operators.Values)
-                        BuildOperatorType(context, @operator.Definition.Type, @operator, QualifyOperatorName(context, definition.Type, @operator));
+                        CreateOperatorType(context, @operator.Definition.Type, @operator, QualifyOperatorName(context, definition.Type, @operator));
             }
         }
 
@@ -607,7 +607,7 @@ namespace Scaly.Compiler
 
             if (context.Source.Functions != null)
                 foreach (var function in context.Source.Functions)
-                    BuildFunctionType(context, null, function);
+                    CreateFunctionType(context, null, function);
 
             if (context.Source.Sources != null)
             {
@@ -619,7 +619,7 @@ namespace Scaly.Compiler
             }
         }
 
-        static LLVMTypeRef BuildOperatorType(Context context, TypeSpec operandTypeSpec, Operator @operator, string qualifiedName)
+        static LLVMTypeRef CreateOperatorType(Context context, TypeSpec operandTypeSpec, Operator @operator, string qualifiedName)
         {
             {
                 var operandTypeName = QualifyName(context, operandTypeSpec.Name);
@@ -726,7 +726,7 @@ namespace Scaly.Compiler
         {
             if (context.Global.Types.ContainsKey(qualifiedName))
                 return context.Global.Types[qualifiedName];
-            var operatorFunctionType = BuildOperatorType(context, operandType, @operator, qualifiedName);
+            var operatorFunctionType = CreateOperatorType(context, operandType, @operator, qualifiedName);
             context.Global.Types.Add(qualifiedName, operatorFunctionType);
             return operatorFunctionType;
         }
