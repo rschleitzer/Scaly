@@ -219,7 +219,9 @@ namespace Scaly.Compiler
         {
             var functionType = ResolveFunctionType(context, genericTypeDictionary, function);
             var functionName = QualifyFunctionName(context, function);
-            context.Global.Values.Add(function.Name, new KeyValuePair<TypeSpec, LLVMValueRef>(function.Routine.Result[0].TypeSpec, context.Global.Module.AddFunction(functionName, functionType)));
+            if (context.Global.Values.ContainsKey(functionName))
+                throw new CompilerException($"Function {function.Name} was already defined with the same arguments.", function.Span);
+            context.Global.Values.Add(functionName, new KeyValuePair<TypeSpec, LLVMValueRef>(function.Routine.Result[0].TypeSpec, context.Global.Module.AddFunction(functionName, functionType)));
         }
 
         static LLVMTypeRef ResolveFunctionType(Context context, Dictionary<string, TypeSpec> genericTypeDictionary, Function function)
@@ -715,6 +717,8 @@ namespace Scaly.Compiler
             var operatorType = ResolveOperatorType(context, operandType, @operator, qualifiedName);
             var operatorFunction = context.Global.Module.AddFunction(qualifiedName, operatorType);
             var operatorValue = new KeyValuePair<TypeSpec, LLVMValueRef>(@operator.Routine.Result[0].TypeSpec, operatorFunction);
+            if (context.Global.Values.ContainsKey(qualifiedName))
+                throw new CompilerException($"Operator {@operator.Name} was already defined.", @operator.Span);
             context.Global.Values.Add(qualifiedName, operatorValue);
         }
 
