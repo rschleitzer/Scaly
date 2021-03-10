@@ -182,7 +182,7 @@ namespace Scaly.Compiler
 
         static void CreateFunctionValue(Context context, Function function, string qualifiedName)
         {
-            var functionType = ResolveFunctionType(context, function);
+            var functionType = ResolveFunctionType(context, function, qualifiedName);
             var functionValue = context.Global.Module.AddFunction(qualifiedName, functionType);
             context.Global.Values.Add(qualifiedName, new KeyValuePair<TypeSpec, LLVMValueRef>(function.Routine.Result[0].TypeSpec, functionValue));
             ImplementRoutine(context, functionValue, function.Routine, function.Span);
@@ -197,7 +197,7 @@ namespace Scaly.Compiler
                         var block = functionValue.AppendBasicBlock(string.Empty);
                         using (var builder = context.Global.Module.Context.CreateBuilder())
                         {
-                            var newContext = new Context { Global = context.Global, Builder = builder, Source = context.Source, };
+                            var newContext = new Context { Global = context.Global, Builder = builder, Source = context.Source, GenericTypeDictionary = context.GenericTypeDictionary };
                             builder.PositionAtEnd(block);
                             uint paramCount = 0;
                             if (routine.Input != null)
@@ -228,13 +228,12 @@ namespace Scaly.Compiler
             }
         }
 
-        static LLVMTypeRef ResolveFunctionType(Context context, Function function)
+        static LLVMTypeRef ResolveFunctionType(Context context, Function function, string qualifiedName)
         {
-            var functionName = QualifyFunctionName(context, function);
-            if (context.Global.Types.ContainsKey(functionName))
-                return context.Global.Types[functionName];
+            if (context.Global.Types.ContainsKey(qualifiedName))
+                return context.Global.Types[qualifiedName];
             var functionType = CreateFunctionType(context, function);
-            context.Global.Types.Add(functionName, functionType);
+            context.Global.Types.Add(qualifiedName, functionType);
             return functionType;
         }
 
@@ -631,29 +630,29 @@ namespace Scaly.Compiler
             if (functionsWithSameNumberOfArguments.Count > 1)
                 throw new CompilerException($"More than one overload of the function takes {@object.Components.Count} arguments.", @object.Span);
             var function = functionsWithSameNumberOfArguments.First();
-            Dictionary<string, TypeSpec> genericTypeDictionary = null;
-            if (vector != null)
-                genericTypeDictionary = CreateTypeDictionaryFromVector(function.GenericArguments, vector);
+            //Dictionary<string, TypeSpec> genericTypeDictionary = null;
+            //if (vector != null)
+            //    genericTypeDictionary = CreateTypeDictionaryFromVector(function.GenericArguments, vector);
 
             var functionValue = ResolveFunctionValue(context, function);
             return functionValue;
         }
 
-        static Dictionary<string, TypeSpec> CreateTypeDictionaryFromVector(List<TypeSpec> genericArguments, Vector vector)
-        {
-            if (genericArguments == null)
-                throw new CompilerException($"Generic arguments were provided for a non-generic function.", vector.Span);
-            if (genericArguments.Count != vector.Components.Count)
-                throw new CompilerException($"This function expects {genericArguments.Count} generic type arguments, but {vector.Components.Count} type arguments were given.", vector.Span);
-            var componentIterator = vector.Components.GetEnumerator();
-            foreach (var genericArgument in genericArguments)
-            {
-                componentIterator.MoveNext();
-                var component = componentIterator.Current;
-            }
+        //static Dictionary<string, TypeSpec> CreateTypeDictionaryFromVector(List<TypeSpec> genericArguments, Vector vector)
+        //{
+        //    if (genericArguments == null)
+        //        throw new CompilerException($"Generic arguments were provided for a non-generic function.", vector.Span);
+        //    if (genericArguments.Count != vector.Components.Count)
+        //        throw new CompilerException($"This function expects {genericArguments.Count} generic type arguments, but {vector.Components.Count} type arguments were given.", vector.Span);
+        //    var componentIterator = vector.Components.GetEnumerator();
+        //    foreach (var genericArgument in genericArguments)
+        //    {
+        //        componentIterator.MoveNext();
+        //        var component = componentIterator.Current;
+        //    }
 
-            throw new NotImplementedException();
-        }
+        //    throw new NotImplementedException();
+        //}
 
         static void BuildScope(Context context, Scope scope)
         {
