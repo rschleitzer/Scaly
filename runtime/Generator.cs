@@ -423,8 +423,6 @@ namespace Scaly.Compiler
             var operatorType = ResolveOperatorType(context, operandType, @operator, qualifiedName);
             var operatorFunction = context.Global.Module.AddFunction(qualifiedName, operatorType);
             var operatorValue = new KeyValuePair<TypeSpec, LLVMValueRef>(@operator.Routine.Result[0].TypeSpec, operatorFunction);
-            if (context.Global.Values.ContainsKey(qualifiedName))
-                throw new CompilerException($"Operator {@operator.Name} was already defined.", @operator.Span);
             context.Global.Values.Add(qualifiedName, operatorValue);
         }
 
