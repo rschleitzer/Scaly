@@ -185,10 +185,10 @@ namespace Scaly.Compiler
             var functionType = ResolveFunctionType(context, function, qualifiedName);
             var functionValue = context.Global.Module.AddFunction(qualifiedName, functionType);
             context.Global.Values.Add(qualifiedName, new KeyValuePair<TypeSpec, LLVMValueRef>(function.Routine.Result[0].TypeSpec, functionValue));
-            ImplementRoutine(context, function.Source, functionValue, function.Routine, function.Span);
+            ImplementRoutine(context, function.Source, functionValue, function.Routine, null, function.Span);
         }
 
-        static void ImplementRoutine(Context context, Source source, LLVMValueRef functionValue, Routine routine, Span span)
+        static void ImplementRoutine(Context context, Source source, LLVMValueRef functionValue, Routine routine, TypeSpec operatorType, Span span)
         {
             switch (routine.Implementation)
             {
@@ -212,7 +212,7 @@ namespace Scaly.Compiler
                             else
                             {
                                 // operator case
-                                newContext.Values.Add("this", context.TypedValue);
+                                newContext.Values.Add("this", new KeyValuePair<TypeSpec, LLVMValueRef>(operatorType, functionValue.GetParam(0)));
                             }
                             builder.BuildRet(BuildOperands(newContext, routine.Operation.Operands).Value);
                         }
@@ -458,7 +458,7 @@ namespace Scaly.Compiler
             var operatorFunction = context.Global.Module.AddFunction(qualifiedName, operatorType);
             var operatorValue = new KeyValuePair<TypeSpec, LLVMValueRef>(@operator.Routine.Result[0].TypeSpec, operatorFunction);
             context.Global.Values.Add(qualifiedName, operatorValue);
-            ImplementRoutine(newContext, @operator.Definition.Source, operatorFunction, @operator.Routine, @operator.Span);
+            ImplementRoutine(newContext, @operator.Definition.Source, operatorFunction, @operator.Routine, @operator.Definition.Type, @operator.Span);
         }
 
         static Dictionary<string, TypeSpec> CreateOperatorGenericTypeDictionary(TypeSpec operandTypeSpec, Operator @operator)
@@ -592,11 +592,24 @@ namespace Scaly.Compiler
                 switch (operand.Expression)
                 {
                     case Object @object:
-                        valueRef = FindMatchingFunction(context, functions, null, @object);
-                        if (valueRef.Value == null)
-                            throw new CompilerException("No matching function has been found for the arguments.", @object.Span);
-                        context.TypedValue = BuildFunctionCall(context, valueRef, @object);
-                        return;
+                        {
+                            var function = FindMatchingFunction(context, functions, null, @object);
+                            switch (function.Routine.Implementation)
+                            {
+                                case Implementation.Intern:
+                                case Implementation.Extern:
+                                    valueRef = ResolveFunctionValue(context, function);
+                                    if (valueRef.Value == null)
+                                        throw new CompilerException("No matching function has been found for the arguments.", @object.Span);
+                                    context.TypedValue = BuildFunctionCall(context, valueRef, @object);
+                                    return;
+                                case Implementation.Instruction:
+                                    context.TypedValue = BuildInstruction(context, null, function);
+                                    return;
+                                default:
+                                    throw new CompilerException($"The '{function.Routine.Implementation}' is not implemented.", @name.Span);
+                            }
+                        }
                     case Vector vector:
                         if (!context.Operands.MoveNext())
                             throw new CompilerException($"No function arguments for '{name.Path}' were given.", name.Span);
@@ -604,11 +617,22 @@ namespace Scaly.Compiler
                         switch (genericOperand.Expression)
                         {
                             case Object @object:
-                                valueRef = FindMatchingFunction(context, functions, vector, @object);
-                                if (valueRef.Value == null)
-                                    throw new CompilerException("No matching function has been found for the arguments.", @object.Span);
-                                context.TypedValue = BuildFunctionCall(context, valueRef, @object);
-                                return;
+                                var function = FindMatchingFunction(context, functions, vector, @object);
+                                switch (function.Routine.Implementation)
+                                {
+                                    case Implementation.Intern:
+                                    case Implementation.Extern:
+                                        valueRef = ResolveFunctionValue(context, function);
+                                        if (valueRef.Value == null)
+                                            throw new CompilerException("No matching function has been found for the arguments.", @object.Span);
+                                        context.TypedValue = BuildFunctionCall(context, valueRef, @object);
+                                        return;
+                                    case Implementation.Instruction:
+                                        context.TypedValue = BuildInstruction(context, vector, function);
+                                        return;
+                                    default:
+                                        throw new CompilerException($"The '{function.Routine.Implementation}' is not implemented.", @name.Span);
+                                }
                             default:
                                 throw new CompilerException($"Only an object can be applied to function '{name.Path}'. Got an {operand.Expression.GetType()}.", @name.Span);
                         }
@@ -622,7 +646,48 @@ namespace Scaly.Compiler
             }
         }
 
-        static KeyValuePair<TypeSpec, LLVMValueRef> FindMatchingFunction(Context context, List<Function> functions, Vector vector, Object @object)
+        static KeyValuePair<TypeSpec, LLVMValueRef> BuildInstruction(Context context, Vector vector, Function function)
+        {
+            switch (function.Name)
+            {
+                case "load":
+                    {
+                        var genericType = function.Routine.Result[0].TypeSpec;
+                        if (!context.GenericTypeDictionary.ContainsKey(genericType.Name))
+                            throw new CompilerException($"The generic type {genericType.Name} is not defined here.", function.Span);
+                        return new KeyValuePair<TypeSpec, LLVMValueRef>(context.GenericTypeDictionary[genericType.Name], context.Builder.BuildLoad(context.ResolveValue("this").Value));
+                    }
+                case "trunc":
+                    {
+                        if (vector == null || vector.Components == null || vector.Components.Count != 1 || vector.Components == null || vector.Components[0].Count != 1)
+                            throw new CompilerException($"The {function.Name} instruction needs one generic argument.", function.Span);
+                        LLVMTypeRef destinationTypeRef;
+                        TypeSpec destinationType;
+                        switch (vector.Components[0][0].Expression)
+                        {
+                            case Name name:
+                                var destinationName = QualifyName(context, name.Path);
+                                switch (destinationName)
+                                {
+                                    case "LLVM.i32":
+                                        destinationTypeRef = context.Global.Types[destinationName];
+                                        destinationType = context.Global.Dictionary.Definitions[destinationName].Type;
+                                        break;
+                                    default:
+                                        throw new CompilerException($"The {name.Path} is not a valid typen argument for trunc.", function.Span);
+                                }
+                                break;
+                            default:
+                                throw new CompilerException($"The {function.Name} instruction needs a literal generic argument.", function.Span);
+                        }
+                        return new KeyValuePair<TypeSpec, LLVMValueRef>(destinationType, context.Builder.BuildTrunc(context.ResolveValue("this").Value, destinationTypeRef));
+                    }
+                default:
+                    throw new CompilerException($"The instruction {function.Name} is not implemented.", function.Span);
+            }
+        }
+
+        static Function FindMatchingFunction(Context context, List<Function> functions, Vector vector, Object @object)
         {
             var functionsWithSameNumberOfArguments = functions.Where(it => it.Routine.Input.Count == @object.Components.Count).ToList();
             if (functionsWithSameNumberOfArguments.Count == 0)
@@ -630,29 +695,8 @@ namespace Scaly.Compiler
             if (functionsWithSameNumberOfArguments.Count > 1)
                 throw new CompilerException($"More than one overload of the function takes {@object.Components.Count} arguments.", @object.Span);
             var function = functionsWithSameNumberOfArguments.First();
-            //Dictionary<string, TypeSpec> genericTypeDictionary = null;
-            //if (vector != null)
-            //    genericTypeDictionary = CreateTypeDictionaryFromVector(function.GenericArguments, vector);
-
-            var functionValue = ResolveFunctionValue(context, function);
-            return functionValue;
+            return function;
         }
-
-        //static Dictionary<string, TypeSpec> CreateTypeDictionaryFromVector(List<TypeSpec> genericArguments, Vector vector)
-        //{
-        //    if (genericArguments == null)
-        //        throw new CompilerException($"Generic arguments were provided for a non-generic function.", vector.Span);
-        //    if (genericArguments.Count != vector.Components.Count)
-        //        throw new CompilerException($"This function expects {genericArguments.Count} generic type arguments, but {vector.Components.Count} type arguments were given.", vector.Span);
-        //    var componentIterator = vector.Components.GetEnumerator();
-        //    foreach (var genericArgument in genericArguments)
-        //    {
-        //        componentIterator.MoveNext();
-        //        var component = componentIterator.Current;
-        //    }
-
-        //    throw new NotImplementedException();
-        //}
 
         static void BuildScope(Context context, Scope scope)
         {
