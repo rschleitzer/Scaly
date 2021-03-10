@@ -45,6 +45,7 @@ namespace Scaly.Compiler
     {
         public Span Span;
         public string Name;
+        public List<TypeSpec> GenericArguments;
         public Routine Routine;
     }
 
@@ -592,7 +593,9 @@ namespace Scaly.Compiler
 
         static void BuildFunction(string name, GenericArgumentsSyntax generics, RoutineSyntax routine, List<Function> functions, bool isPublic, bool isModifying)
         {
-            var function = new Function { Name = name, Span = routine.span };
+            var function = new Function { Name = name, Span = routine.span, };
+            if (generics != null)
+                function.GenericArguments = generics.generics.ToList().ConvertAll(it => BuildType(it.spec));
             function.Routine = BuildRoutine(routine);
             functions.Add(function);
         }

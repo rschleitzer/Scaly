@@ -39,6 +39,7 @@ namespace Scaly.Compiler
         public IEnumerator<Operand> Operands;
         public KeyValuePair<TypeSpec, LLVMValueRef> TypedValue;
         public Dictionary<string, KeyValuePair<TypeSpec, LLVMValueRef>> Values = new Dictionary<string, KeyValuePair<TypeSpec, LLVMValueRef>>();
+        public Dictionary<string, TypeSpec> GenericTypeDictionary;
 
         public KeyValuePair<TypeSpec, LLVMValueRef> ResolveValue(string name)
         {
@@ -51,9 +52,11 @@ namespace Scaly.Compiler
                 if (valueRef.Value != null)
                     return valueRef;
             }
-
-            if (Global.Values.ContainsKey(name))
-                return Global.Values[name];
+            else
+            {
+                if (Global.Values.ContainsKey(name))
+                    return Global.Values[name];
+            }
 
             return new KeyValuePair<TypeSpec, LLVMValueRef>(null, null);
         }
@@ -141,16 +144,16 @@ namespace Scaly.Compiler
                 var mainName = "main";
                 var context = new Context { Global = globalContext, Source = globalContext.Dictionary.Sources[mainName] };
                 var function = GetMainFunction(context, mainName);
-                var functionValue = ResolveFunctionValue(context, null, function);
+                var functionValue = ResolveFunctionValue(context, function);
                 return functionValue.Value;
             }
         }
 
-        static KeyValuePair<TypeSpec, LLVMValueRef> ResolveFunctionValue(Context context, Dictionary<string, TypeSpec> genericTypeDictionary, Function function)
+        static KeyValuePair<TypeSpec, LLVMValueRef> ResolveFunctionValue(Context context, Function function)
         {
             var functionName = QualifyFunctionName(context, function);
             if (!context.Global.Values.ContainsKey(functionName))
-                CreateFunctionValue(context, genericTypeDictionary, function, functionName);
+                CreateFunctionValue(context, function, functionName);
             var llvmFunction = context.Global.Values[function.Name];
             return llvmFunction;
         }
@@ -171,15 +174,15 @@ namespace Scaly.Compiler
                     first = false;
                 else
                     functionNameBuilder.Append(',');
-                functionNameBuilder.Append(parameter.TypeSpec.Name);
+                functionNameBuilder.Append(AddTypeArguments(parameter.TypeSpec.Name, parameter.TypeSpec.Arguments));
             }
             functionNameBuilder.Append(')');
             return functionNameBuilder.ToString();
         }
 
-        static void CreateFunctionValue(Context context, Dictionary<string, TypeSpec> genericTypeDictionary, Function function, string qualifiedName)
+        static void CreateFunctionValue(Context context, Function function, string qualifiedName)
         {
-            var functionType = ResolveFunctionType(context, genericTypeDictionary, function);
+            var functionType = ResolveFunctionType(context, function);
             var functionValue = context.Global.Module.AddFunction(qualifiedName, functionType);
             context.Global.Values.Add(qualifiedName, new KeyValuePair<TypeSpec, LLVMValueRef>(function.Routine.Result[0].TypeSpec, functionValue));
             ImplementRoutine(context, functionValue, function.Routine, function.Span);
@@ -225,44 +228,44 @@ namespace Scaly.Compiler
             }
         }
 
-        static LLVMTypeRef ResolveFunctionType(Context context, Dictionary<string, TypeSpec> genericTypeDictionary, Function function)
+        static LLVMTypeRef ResolveFunctionType(Context context, Function function)
         {
             var functionName = QualifyFunctionName(context, function);
             if (context.Global.Types.ContainsKey(functionName))
                 return context.Global.Types[functionName];
-            var functionType = CreateFunctionType(context, genericTypeDictionary, function);
+            var functionType = CreateFunctionType(context, function);
             context.Global.Types.Add(functionName, functionType);
             return functionType;
         }
 
-        static LLVMTypeRef CreateFunctionType(Context context, Dictionary<string, TypeSpec> genericTypeDictionary, Function function)
+        static LLVMTypeRef CreateFunctionType(Context context, Function function)
         {
-            var returnType = GetSingleType(context, null, function.Routine.Result);
-            var parameterTypes = GetTypes(context, genericTypeDictionary, function.Routine.Input);
+            var returnType = GetSingleType(context, function.Routine.Result);
+            var parameterTypes = GetTypes(context, function.Routine.Input);
             return LLVMTypeRef.CreateFunction(returnType, parameterTypes);
         }
 
-        static LLVMTypeRef GetSingleType(Context context, Dictionary<string, TypeSpec> genericTypeDictionary, List<Parameter> result)
+        static LLVMTypeRef GetSingleType(Context context, List<Parameter> result)
         {
             if (result == null)
                 return LLVMTypeRef.Void;
 
-            return ResolveType(context, genericTypeDictionary, result[0].TypeSpec);
+            return ResolveType(context, result[0].TypeSpec);
         }
 
-        static LLVMTypeRef[] GetTypes(Context context, Dictionary<string, TypeSpec> genericTypeDictionary, List<Parameter> result)
+        static LLVMTypeRef[] GetTypes(Context context, List<Parameter> result)
         {
             if (result == null)
                 return new LLVMTypeRef[] { };
 
-            return result.ConvertAll(it => ResolveType(context, genericTypeDictionary, it.TypeSpec)).ToArray();
+            return result.ConvertAll(it => ResolveType(context, it.TypeSpec)).ToArray();
         }
 
-        static LLVMTypeRef ResolveType(Context context, Dictionary<string, TypeSpec> genericTypeDictionary, TypeSpec typeSpec)
+        static LLVMTypeRef ResolveType(Context context, TypeSpec typeSpec)
         {
             LLVMTypeRef type;
-            if (genericTypeDictionary != null && genericTypeDictionary.ContainsKey(typeSpec.Name))
-                typeSpec = genericTypeDictionary[typeSpec.Name];
+            if (context.GenericTypeDictionary != null && context.GenericTypeDictionary.ContainsKey(typeSpec.Name))
+                typeSpec = context.GenericTypeDictionary[typeSpec.Name];
             var qualifiedName = QualifyName(context, typeSpec.Name);
             var typeName = AddTypeArguments(qualifiedName, typeSpec.Arguments);
             if (context.Global.Types.ContainsKey(typeName))
@@ -270,7 +273,7 @@ namespace Scaly.Compiler
 
             if (typeSpec.Name == "Pointer")
             {
-                type = GetPointerType(context, genericTypeDictionary, typeSpec);
+                type = GetPointerType(context, typeSpec);
             }
             else
             {
@@ -374,7 +377,7 @@ namespace Scaly.Compiler
                 throw new CompilerException($"The type \"{definition.Type.Name}\" contains no data and can only be used as a namespace.", typeSpec.Span);
 
             if (definition.Structure.Members.Count == 1 && definition.Structure.Members[0].Name == null && definition.Structure.Members[0].Type.Arguments == null)
-                return ResolveType(context, null, definition.Structure.Members[0].Type);
+                return ResolveType(context, definition.Structure.Members[0].Type);
 
             return null;
         }
@@ -396,14 +399,14 @@ namespace Scaly.Compiler
             }
         }
 
-        static LLVMTypeRef GetPointerType(Context context, Dictionary<string, TypeSpec> genericTypeDictionary, TypeSpec typeSpec)
+        static LLVMTypeRef GetPointerType(Context context, TypeSpec typeSpec)
         {
             if (typeSpec.Arguments == null)
                 throw new CompilerException("Pointer is a generic type which expects a type argument.", typeSpec.Span);
             if (typeSpec.Arguments.Count != 1)
                 throw new CompilerException($"Pointer expects exactly one type argument, not {typeSpec.Arguments.Count}.", typeSpec.Span);
             var typeArgument = typeSpec.Arguments[0];
-            var pointerTarget = (typeArgument.Name == "Pointer") ? GetPointerType(context, genericTypeDictionary, typeArgument) : ResolveType(context, genericTypeDictionary, typeArgument);
+            var pointerTarget = (typeArgument.Name == "Pointer") ? GetPointerType(context, typeArgument) : ResolveType(context, typeArgument);
             return LLVMTypeRef.CreatePointer(pointerTarget, 0);
         }
 
@@ -429,66 +432,6 @@ namespace Scaly.Compiler
             return operatorNameBuilder.ToString();
         }
 
-        static void CreateOperatorValue(Context context, TypeSpec operandType, Operator @operator, string qualifiedName)
-        {
-            var operatorType = ResolveOperatorType(context, operandType, @operator, qualifiedName);
-            var operatorFunction = context.Global.Module.AddFunction(qualifiedName, operatorType);
-            var operatorValue = new KeyValuePair<TypeSpec, LLVMValueRef>(@operator.Routine.Result[0].TypeSpec, operatorFunction);
-            context.Global.Values.Add(qualifiedName, new KeyValuePair<TypeSpec, LLVMValueRef>(@operator.Routine.Result[0].TypeSpec, operatorFunction));
-            ImplementRoutine(context, operatorFunction, @operator.Routine, @operator.Span);
-        }
-
-        static LLVMTypeRef ResolveOperatorType(Context context, TypeSpec operandType, Operator @operator, string qualifiedName)
-        {
-            if (context.Global.Types.ContainsKey(qualifiedName))
-                return context.Global.Types[qualifiedName];
-            var operatorFunctionType = CreateOperatorType(context, operandType, @operator, qualifiedName);
-            context.Global.Types.Add(qualifiedName, operatorFunctionType);
-            return operatorFunctionType;
-        }
-
-        static LLVMTypeRef CreateOperatorType(Context context, TypeSpec operandTypeSpec, Operator @operator, string qualifiedName)
-        {
-            {
-                var operandTypeName = QualifyName(context, operandTypeSpec.Name);
-                var operatorDefinitionTypeName = QualifyName(context, @operator.Definition.Type.Name);
-                if (operandTypeName != operatorDefinitionTypeName)
-                    throw new CompilerException($"This operator expects a {operatorDefinitionTypeName}, and a {operandTypeName} was provided.", @operator.Span);
-            }
-
-            Dictionary<string, TypeSpec> genericTypeDictionary = null;
-            if (operandTypeSpec.Arguments == null)
-            {
-                if (@operator.Definition.Type.Arguments != null)
-                    throw new CompilerException($"This operator acts on a generic operand, and a non-generic operand was provided.", @operator.Span);
-            }
-            else
-            {
-                if (@operator.Definition.Type.Arguments == null)
-                    throw new CompilerException($"This operator acts on a non-generic operand, and a generic operand was provided.", @operator.Span);
-
-                if (operandTypeSpec.Arguments.Count != @operator.Definition.Type.Arguments.Count)
-                    throw new CompilerException($"This operator has {@operator.Definition.Type.Arguments.Count} generic type arguments, and the operand has {operandTypeSpec.Arguments.Count}.", @operator.Span);
-
-                genericTypeDictionary = new Dictionary<string, TypeSpec>();
-                var genericArgumentEnumerator = @operator.Definition.Type.Arguments.GetEnumerator();
-                foreach (var argument in operandTypeSpec.Arguments)
-                {
-                    genericArgumentEnumerator.MoveNext();
-                    var genericArgument = genericArgumentEnumerator.Current;
-                    if (genericTypeDictionary.ContainsKey(genericArgument.Name))
-                        throw new CompilerException($"The generic type argument {genericArgument.Name} was already given.", @operator.Span);
-                    genericTypeDictionary.Add(genericArgument.Name, argument);
-                }
-            }
-
-            var operandType = ResolveType(context, genericTypeDictionary, operandTypeSpec);
-            var parameterTypes = new LLVMTypeRef[] { operandType };
-            var returnType = ResolveType(context, genericTypeDictionary, @operator.Routine.Result[0].TypeSpec);
-            LLVMTypeRef operatorFunctionType = LLVMTypeRef.CreateFunction(returnType, parameterTypes.ToArray());
-            return operatorFunctionType;
-        }
-
         static void AppendGenericArguments(Context context, StringBuilder builder, TypeSpec operandType, Span span)
         {
             builder.Append(QualifyName(context, operandType.Name));
@@ -506,6 +449,73 @@ namespace Scaly.Compiler
                 }
                 builder.Append(']');
             }
+        }
+
+        static void CreateOperatorValue(Context context, TypeSpec operandType, Operator @operator, string qualifiedName)
+        {
+            Dictionary<string, TypeSpec> genericTypeDictionary = CreateOperatorGenericTypeDictionary(operandType, @operator);
+            var newContext = new Context { Global = context.Global, Source = context.Source, ParentContext = context, GenericTypeDictionary = genericTypeDictionary };
+            var operatorType = ResolveOperatorType(newContext, operandType, @operator, qualifiedName);
+            var operatorFunction = context.Global.Module.AddFunction(qualifiedName, operatorType);
+            var operatorValue = new KeyValuePair<TypeSpec, LLVMValueRef>(@operator.Routine.Result[0].TypeSpec, operatorFunction);
+            context.Global.Values.Add(qualifiedName, operatorValue);
+            ImplementRoutine(newContext, operatorFunction, @operator.Routine, @operator.Span);
+        }
+
+        static Dictionary<string, TypeSpec> CreateOperatorGenericTypeDictionary(TypeSpec operandTypeSpec, Operator @operator)
+        {
+            if (operandTypeSpec.Arguments == null)
+            {
+                if (@operator.Definition.Type.Arguments != null)
+                    throw new CompilerException($"This operator acts on a generic operand, and a non-generic operand was provided.", @operator.Span);
+                return null;
+            }
+            else
+            {
+                if (@operator.Definition.Type.Arguments == null)
+                    throw new CompilerException($"This operator acts on a non-generic operand, and a generic operand was provided.", @operator.Span);
+
+                if (operandTypeSpec.Arguments.Count != @operator.Definition.Type.Arguments.Count)
+                    throw new CompilerException($"This operator has {@operator.Definition.Type.Arguments.Count} generic type arguments, and the operand has {operandTypeSpec.Arguments.Count}.", @operator.Span);
+
+                var genericTypeDictionary = new Dictionary<string, TypeSpec>();
+                var genericArgumentEnumerator = @operator.Definition.Type.Arguments.GetEnumerator();
+                foreach (var argument in operandTypeSpec.Arguments)
+                {
+                    genericArgumentEnumerator.MoveNext();
+                    var genericArgument = genericArgumentEnumerator.Current;
+                    if (genericTypeDictionary.ContainsKey(genericArgument.Name))
+                        throw new CompilerException($"The generic type argument {genericArgument.Name} was already given.", @operator.Span);
+                    genericTypeDictionary.Add(genericArgument.Name, argument);
+                }
+
+                return genericTypeDictionary;
+            }
+        }
+
+        static LLVMTypeRef ResolveOperatorType(Context context, TypeSpec operandType, Operator @operator, string qualifiedName)
+        {
+            if (context.Global.Types.ContainsKey(qualifiedName))
+                return context.Global.Types[qualifiedName];
+            var operatorFunctionType = CreateOperatorType(context, operandType, @operator);
+            context.Global.Types.Add(qualifiedName, operatorFunctionType);
+            return operatorFunctionType;
+        }
+
+        static LLVMTypeRef CreateOperatorType(Context context, TypeSpec operandTypeSpec, Operator @operator)
+        {
+            {
+                var operandTypeName = QualifyName(context, operandTypeSpec.Name);
+                var operatorDefinitionTypeName = QualifyName(context, @operator.Definition.Type.Name);
+                if (operandTypeName != operatorDefinitionTypeName)
+                    throw new CompilerException($"This operator expects a {operatorDefinitionTypeName}, and a {operandTypeName} was provided.", @operator.Span);
+            }
+
+            var operandType = ResolveType(context, operandTypeSpec);
+            var parameterTypes = new LLVMTypeRef[] { operandType };
+            var returnType = ResolveType(context, @operator.Routine.Result[0].TypeSpec);
+            LLVMTypeRef operatorFunctionType = LLVMTypeRef.CreateFunction(returnType, parameterTypes.ToArray());
+            return operatorFunctionType;
         }
 
         static KeyValuePair<TypeSpec, LLVMValueRef> BuildOperands(Context context, List<Operand> operands)
@@ -583,11 +593,26 @@ namespace Scaly.Compiler
                 switch (operand.Expression)
                 {
                     case Object @object:
-                        valueRef = FindMatchingFunction(context, functions, @object);
+                        valueRef = FindMatchingFunction(context, functions, null, @object);
                         if (valueRef.Value == null)
                             throw new CompilerException("No matching function has been found for the arguments.", @object.Span);
                         context.TypedValue = BuildFunctionCall(context, valueRef, @object);
                         return;
+                    case Vector vector:
+                        if (!context.Operands.MoveNext())
+                            throw new CompilerException($"No function arguments for '{name.Path}' were given.", name.Span);
+                        var genericOperand = context.Operands.Current;
+                        switch (genericOperand.Expression)
+                        {
+                            case Object @object:
+                                valueRef = FindMatchingFunction(context, functions, vector, @object);
+                                if (valueRef.Value == null)
+                                    throw new CompilerException("No matching function has been found for the arguments.", @object.Span);
+                                context.TypedValue = BuildFunctionCall(context, valueRef, @object);
+                                return;
+                            default:
+                                throw new CompilerException($"Only an object can be applied to function '{name.Path}'. Got an {operand.Expression.GetType()}.", @name.Span);
+                        }
                     default:
                         throw new CompilerException($"Only an object can be applied to function '{name.Path}'. Got an {operand.Expression.GetType()}.", @name.Span);
                 }
@@ -598,7 +623,7 @@ namespace Scaly.Compiler
             }
         }
 
-        static KeyValuePair<TypeSpec, LLVMValueRef> FindMatchingFunction(Context context, List<Function> functions, Object @object)
+        static KeyValuePair<TypeSpec, LLVMValueRef> FindMatchingFunction(Context context, List<Function> functions, Vector vector, Object @object)
         {
             var functionsWithSameNumberOfArguments = functions.Where(it => it.Routine.Input.Count == @object.Components.Count).ToList();
             if (functionsWithSameNumberOfArguments.Count == 0)
@@ -606,8 +631,28 @@ namespace Scaly.Compiler
             if (functionsWithSameNumberOfArguments.Count > 1)
                 throw new CompilerException($"More than one overload of the function takes {@object.Components.Count} arguments.", @object.Span);
             var function = functionsWithSameNumberOfArguments.First();
-            var functionValue = ResolveFunctionValue(context, null, function);
+            Dictionary<string, TypeSpec> genericTypeDictionary = null;
+            if (vector != null)
+                genericTypeDictionary = CreateTypeDictionaryFromVector(function.GenericArguments, vector);
+
+            var functionValue = ResolveFunctionValue(context, function);
             return functionValue;
+        }
+
+        static Dictionary<string, TypeSpec> CreateTypeDictionaryFromVector(List<TypeSpec> genericArguments, Vector vector)
+        {
+            if (genericArguments == null)
+                throw new CompilerException($"Generic arguments were provided for a non-generic function.", vector.Span);
+            if (genericArguments.Count != vector.Components.Count)
+                throw new CompilerException($"This function expects {genericArguments.Count} generic type arguments, but {vector.Components.Count} type arguments were given.", vector.Span);
+            var componentIterator = vector.Components.GetEnumerator();
+            foreach (var genericArgument in genericArguments)
+            {
+                componentIterator.MoveNext();
+                var component = componentIterator.Current;
+            }
+
+            throw new NotImplementedException();
         }
 
         static void BuildScope(Context context, Scope scope)
