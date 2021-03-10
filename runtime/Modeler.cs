@@ -8,6 +8,7 @@ namespace Scaly.Compiler
 {
     public class Definition
     {
+        public Source Source;
         public Span Span;
         public bool IsPublic;
         public bool IsIntrinsic;
@@ -43,6 +44,7 @@ namespace Scaly.Compiler
 
     public class Function
     {
+        public Source Source;
         public Span Span;
         public string Name;
         public List<TypeSpec> GenericArguments;
@@ -438,12 +440,12 @@ namespace Scaly.Compiler
                 case FunctionSyntax functionSyntax:
                     if (source.Functions == null)
                         source.Functions = new List<Function>();
-                    HandleFunction(functionSyntax, source.Functions, false);
+                    HandleFunction(functionSyntax, source, source.Functions, false);
                     break;
                 case ProcedureSyntax procedureSyntax:
                     if (source.Functions == null)
                         source.Functions = new List<Function>();
-                    HandleProcedure(procedureSyntax, source.Functions, false);
+                    HandleProcedure(procedureSyntax, source, source.Functions, false);
                     break;
                 case OperatorSyntax operatorSyntax:
                     if (source.Operators == null)
@@ -480,6 +482,7 @@ namespace Scaly.Compiler
                     {
                         var definition = new Definition
                         {
+                            Source = source,
                             Span = moduleSyntax.span,
                             IsPublic = isPublic,
                             Type = new TypeSpec { Name = moduleSyntax.name.name },
@@ -566,12 +569,12 @@ namespace Scaly.Compiler
                 case FunctionSyntax functionSyntax:
                     if (source.Functions == null)
                         source.Functions = new List<Function>();
-                    HandleFunction(functionSyntax, source.Functions, false);
+                    HandleFunction(functionSyntax, source, source.Functions, false);
                     break;
                 case ProcedureSyntax procedureSyntax:
                     if (source.Functions == null)
                         source.Functions = new List<Function>();
-                    HandleProcedure(procedureSyntax, source.Functions, false);
+                    HandleProcedure(procedureSyntax, source, source.Functions, false);
                     break;
                 case ModuleSyntax moduleSyntax:
                     HandleModule(moduleSyntax, source.Definitions, source, origin, false);
@@ -581,19 +584,19 @@ namespace Scaly.Compiler
             }
         }
 
-        static void HandleFunction(FunctionSyntax functionSyntax, List<Function> functions, bool isPublic)
+        static void HandleFunction(FunctionSyntax functionSyntax, Source source, List<Function> functions, bool isPublic)
         {
-            BuildFunction(functionSyntax.name, functionSyntax.generics, functionSyntax.routine, functions, isPublic, false);
+            BuildFunction(functionSyntax.name, source, functionSyntax.generics, functionSyntax.routine, functions, isPublic, false);
         }
 
-        static void HandleProcedure(ProcedureSyntax procedureSyntax, List<Function> functions, bool isPublic)
+        static void HandleProcedure(ProcedureSyntax procedureSyntax, Source source, List<Function> functions, bool isPublic)
         {
-            BuildFunction(procedureSyntax.name, procedureSyntax.generics, procedureSyntax.routine, functions, isPublic, true);
+            BuildFunction(procedureSyntax.name, source, procedureSyntax.generics, procedureSyntax.routine, functions, isPublic, true);
         }
 
-        static void BuildFunction(string name, GenericArgumentsSyntax generics, RoutineSyntax routine, List<Function> functions, bool isPublic, bool isModifying)
+        static void BuildFunction(string name, Source source, GenericArgumentsSyntax generics, RoutineSyntax routine, List<Function> functions, bool isPublic, bool isModifying)
         {
-            var function = new Function { Name = name, Span = routine.span, };
+            var function = new Function { Source = source, Name = name, Span = routine.span, };
             if (generics != null)
                 function.GenericArguments = generics.generics.ToList().ConvertAll(it => BuildType(it.spec));
             function.Routine = BuildRoutine(routine);
@@ -751,12 +754,12 @@ namespace Scaly.Compiler
                         case FunctionSyntax functionSyntax:
                             if (implementation.Functions == null)
                                 implementation.Functions = new List<Function>();
-                            HandleFunction(functionSyntax, implementation.Functions, false);
+                            HandleFunction(functionSyntax, definition.Source, implementation.Functions, false);
                             break;
                         case ProcedureSyntax procedureSyntax:
                             if (implementation.Functions == null)
                                 implementation.Functions = new List<Function>();
-                            HandleProcedure(procedureSyntax, implementation.Functions, false);
+                            HandleProcedure(procedureSyntax, definition.Source, implementation.Functions, false);
                             break;
                         case OperatorSyntax operatorSyntax:
                             if (implementation.Operators == null)
@@ -799,7 +802,7 @@ namespace Scaly.Compiler
             TypeSpec typeModel = BuildType(definitionSyntax.type);
             if (definitions.ContainsKey(typeModel.Name))
                 throw new CompilerException($"Module {typeModel.Name} already defined.", definitionSyntax.span);
-            var definition = new Definition { Span = definitionSyntax.span, Type = typeModel, Structure = structure, IsIntrinsic = isIntrinsic };
+            var definition = new Definition { Source = source, Span = definitionSyntax.span, Type = typeModel, Structure = structure, IsIntrinsic = isIntrinsic };
             definitions.Add(typeModel.Name, definition);
 
             if ((bodySyntax != null) && (bodySyntax.declarations != null))
@@ -859,12 +862,12 @@ namespace Scaly.Compiler
                 case FunctionSyntax functionSyntax:
                     if (definition.Functions == null)
                         definition.Functions = new List<Function>();
-                    HandleFunction(functionSyntax, definition.Functions, false);
+                    HandleFunction(functionSyntax, source, definition.Functions, false);
                     break;
                 case ProcedureSyntax procedureSyntax:
                     if (definition.Functions == null)
                         definition.Functions = new List<Function>();
-                    HandleProcedure(procedureSyntax, definition.Functions, false);
+                    HandleProcedure(procedureSyntax, source, definition.Functions, false);
                     break;
                 case OperatorSyntax operatorSyntax:
                     if (definition.Operators == null)
@@ -893,12 +896,12 @@ namespace Scaly.Compiler
                 case FunctionSyntax functionSyntax:
                     if (definition.Functions == null)
                         definition.Functions = new List<Function>();
-                    HandleFunction(functionSyntax, definition.Functions, false);
+                    HandleFunction(functionSyntax, source, definition.Functions, false);
                     break;
                 case ProcedureSyntax procedureSyntax:
                     if (definition.Functions == null)
                         definition.Functions = new List<Function>();
-                    HandleProcedure(procedureSyntax, definition.Functions, false);
+                    HandleProcedure(procedureSyntax, source, definition.Functions, false);
                     break;
                 case ModuleSyntax moduleSyntax:
                     HandleModule(moduleSyntax, definition.Definitions, source, origin, false);

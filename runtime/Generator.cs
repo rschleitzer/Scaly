@@ -185,10 +185,10 @@ namespace Scaly.Compiler
             var functionType = ResolveFunctionType(context, function, qualifiedName);
             var functionValue = context.Global.Module.AddFunction(qualifiedName, functionType);
             context.Global.Values.Add(qualifiedName, new KeyValuePair<TypeSpec, LLVMValueRef>(function.Routine.Result[0].TypeSpec, functionValue));
-            ImplementRoutine(context, functionValue, function.Routine, function.Span);
+            ImplementRoutine(context, function.Source, functionValue, function.Routine, function.Span);
         }
 
-        static void ImplementRoutine(Context context, LLVMValueRef functionValue, Routine routine, Span span)
+        static void ImplementRoutine(Context context, Source source, LLVMValueRef functionValue, Routine routine, Span span)
         {
             switch (routine.Implementation)
             {
@@ -197,7 +197,7 @@ namespace Scaly.Compiler
                         var block = functionValue.AppendBasicBlock(string.Empty);
                         using (var builder = context.Global.Module.Context.CreateBuilder())
                         {
-                            var newContext = new Context { Global = context.Global, Builder = builder, Source = context.Source, GenericTypeDictionary = context.GenericTypeDictionary };
+                            var newContext = new Context { Global = context.Global, Builder = builder, Source = source, GenericTypeDictionary = context.GenericTypeDictionary };
                             builder.PositionAtEnd(block);
                             uint paramCount = 0;
                             if (routine.Input != null)
@@ -458,7 +458,7 @@ namespace Scaly.Compiler
             var operatorFunction = context.Global.Module.AddFunction(qualifiedName, operatorType);
             var operatorValue = new KeyValuePair<TypeSpec, LLVMValueRef>(@operator.Routine.Result[0].TypeSpec, operatorFunction);
             context.Global.Values.Add(qualifiedName, operatorValue);
-            ImplementRoutine(newContext, operatorFunction, @operator.Routine, @operator.Span);
+            ImplementRoutine(newContext, @operator.Definition.Source, operatorFunction, @operator.Routine, @operator.Span);
         }
 
         static Dictionary<string, TypeSpec> CreateOperatorGenericTypeDictionary(TypeSpec operandTypeSpec, Operator @operator)
@@ -519,7 +519,7 @@ namespace Scaly.Compiler
 
         static KeyValuePair<TypeSpec, LLVMValueRef> BuildOperands(Context context, List<Operand> operands)
         {
-            var newContext = new Context { Global = context.Global, Builder = context.Builder, Operands = operands.GetEnumerator(), TypedValue = new KeyValuePair<TypeSpec, LLVMValueRef>(null, null), ParentContext = context, Source = context.Source };
+            var newContext = new Context { Global = context.Global, Source = context.Source, Builder = context.Builder, Operands = operands.GetEnumerator(), TypedValue = new KeyValuePair<TypeSpec, LLVMValueRef>(null, null), GenericTypeDictionary = context.GenericTypeDictionary, ParentContext = context };
             BuildOperand(newContext);
             return newContext.TypedValue;
         }
