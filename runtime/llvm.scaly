@@ -7,6 +7,6 @@ define LLVM
     define double intrinsic
     define pointer intrinsic
 
-    function trunc[From, To] From returns To instruction
-    function load[T] Pointer[T] returns T instruction
+    function trunc[From, To](from: From) returns To instruction
+    function load[T](pointer: Pointer[T]) returns T instruction
 }

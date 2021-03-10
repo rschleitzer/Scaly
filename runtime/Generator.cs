@@ -150,7 +150,7 @@ namespace Scaly.Compiler
         {
             var functionName = QualifyFunctionName(context, function);
             if (!context.Global.Values.ContainsKey(functionName))
-                CreateFunctionValue(context, genericTypeDictionary, function);
+                CreateFunctionValue(context, genericTypeDictionary, function, functionName);
             var llvmFunction = context.Global.Values[function.Name];
             return llvmFunction;
         }
@@ -177,15 +177,17 @@ namespace Scaly.Compiler
             return functionNameBuilder.ToString();
         }
 
-        static void CreateFunctionValue(Context context, Dictionary<string, TypeSpec> genericTypeDictionary, Function function)
+        static void CreateFunctionValue(Context context, Dictionary<string, TypeSpec> genericTypeDictionary, Function function, string qualifiedName)
         {
             var functionType = ResolveFunctionType(context, genericTypeDictionary, function);
-            var functionName = QualifyFunctionName(context, function);
-            if (context.Global.Values.ContainsKey(functionName))
-                throw new CompilerException($"Function {function.Name} was already defined with the same arguments.", function.Span);
-            var functionValue = context.Global.Module.AddFunction(functionName, functionType);
-            context.Global.Values.Add(functionName, new KeyValuePair<TypeSpec, LLVMValueRef>(function.Routine.Result[0].TypeSpec, functionValue));
-            switch (function.Routine.Implementation)
+            var functionValue = context.Global.Module.AddFunction(qualifiedName, functionType);
+            context.Global.Values.Add(qualifiedName, new KeyValuePair<TypeSpec, LLVMValueRef>(function.Routine.Result[0].TypeSpec, functionValue));
+            ImplementRoutine(context, functionValue, function.Routine, function.Span);
+        }
+
+        static void ImplementRoutine(Context context, LLVMValueRef functionValue, Routine routine, Span span)
+        {
+            switch (routine.Implementation)
             {
                 case Implementation.Intern:
                     {
@@ -195,12 +197,21 @@ namespace Scaly.Compiler
                             var newContext = new Context { Global = context.Global, Builder = builder, Source = context.Source, };
                             builder.PositionAtEnd(block);
                             uint paramCount = 0;
-                            foreach (var parameter in function.Routine.Input)
+                            if (routine.Input != null)
                             {
-                                newContext.Values.Add(parameter.Name, new KeyValuePair<TypeSpec, LLVMValueRef>(parameter.TypeSpec, functionValue.GetParam(paramCount)));
-                                paramCount++;
+                                // function case
+                                foreach (var parameter in routine.Input)
+                                {
+                                    newContext.Values.Add(parameter.Name, new KeyValuePair<TypeSpec, LLVMValueRef>(parameter.TypeSpec, functionValue.GetParam(paramCount)));
+                                    paramCount++;
+                                }
                             }
-                            builder.BuildRet(BuildOperands(newContext, function.Routine.Operation.Operands).Value);
+                            else
+                            {
+                                // operator case
+                                newContext.Values.Add("this", context.TypedValue);
+                            }
+                            builder.BuildRet(BuildOperands(newContext, routine.Operation.Operands).Value);
                         }
                     }
                     break;
@@ -210,7 +221,7 @@ namespace Scaly.Compiler
                         break;
                     }
                 default:
-                    throw new CompilerException($"The implementation type {function.Routine.Implementation} is not implemented.", function.Span);
+                    throw new CompilerException($"The implementation type {routine.Implementation} is not implemented.", span);
             }
         }
 
@@ -423,7 +434,8 @@ namespace Scaly.Compiler
             var operatorType = ResolveOperatorType(context, operandType, @operator, qualifiedName);
             var operatorFunction = context.Global.Module.AddFunction(qualifiedName, operatorType);
             var operatorValue = new KeyValuePair<TypeSpec, LLVMValueRef>(@operator.Routine.Result[0].TypeSpec, operatorFunction);
-            context.Global.Values.Add(qualifiedName, operatorValue);
+            context.Global.Values.Add(qualifiedName, new KeyValuePair<TypeSpec, LLVMValueRef>(@operator.Routine.Result[0].TypeSpec, operatorFunction));
+            ImplementRoutine(context, operatorFunction, @operator.Routine, @operator.Span);
         }
 
         static LLVMTypeRef ResolveOperatorType(Context context, TypeSpec operandType, Operator @operator, string qualifiedName)
