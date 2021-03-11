@@ -7,7 +7,7 @@ LDFLAGS=`llvm-config --cxxflags --ldflags --libs core executionengine mcjit inte
 all: $(PROGRAM)
 
 $(PROGRAM).o: ../scalyc/tests/$(PROGRAM).scaly
-	dotnet ../scalyc/bin/Debug/net5.0/linux-x64/scalyc.dll -o $(PROGRAM) ../scalyc/tests/$(PROGRAM).scaly
+	dotnet ../scalyc/bin/Debug/net5.0/osx-x64/scalyc.dll -o $(PROGRAM) ../scalyc/tests/$(PROGRAM).scaly
 
 $(PROGRAM): $(PROGRAM).o
 	$(LD) $< $(LDFLAGS) -o $@
