@@ -74,7 +74,7 @@ namespace Scaly.Compiler
             {
                 var value = new StringBuilder();
                 value.Append(c);
-                token = scan_numeric_literal(value);
+                token = scan_integer_literal(value);
                 return;
             }
 
@@ -98,7 +98,7 @@ namespace Scaly.Compiler
                     {
                         var value = new StringBuilder();
                         value.Append(c);
-                        token = scan_numeric_or_hex_literal(value);
+                        token = scan_numeric_literal(value);
                     }
                     break;
 
@@ -369,7 +369,7 @@ namespace Scaly.Compiler
             }
         }
 
-        Token scan_numeric_or_hex_literal(StringBuilder value)
+        Token scan_numeric_literal(StringBuilder value)
         {
             read_character();
 
@@ -381,7 +381,7 @@ namespace Scaly.Compiler
             if ((c >= '0') && (c <= '9'))
             {
                 value.Append(c);
-                return scan_numeric_literal(value);
+                return scan_integer_literal(value);
             }
 
             switch (c)
@@ -398,12 +398,15 @@ namespace Scaly.Compiler
                 case 'x':
                     return scan_hex_literal();
 
+                case 'B':
+                    return scan_boolean_literal();
+
                 default:
                     return new Integer(value.ToString());
             }
         }
 
-        Token scan_numeric_literal(StringBuilder value)
+        Token scan_integer_literal(StringBuilder value)
         {
             while (true)
             {
@@ -507,6 +510,21 @@ namespace Scaly.Compiler
                 }
 
                 return new Hex(value.ToString());
+            }
+        }
+
+        Token scan_boolean_literal()
+        {
+            while (true)
+            {
+                read_character();
+
+                if (character != '0' && character != '1')
+                    return new InvalidToken();
+
+                var ret = new Bool { value = character == '1' };
+                read_character();
+                return ret;
             }
         }
 
@@ -731,6 +749,10 @@ namespace Scaly.Compiler
                     empty();
                     return hex;
 
+                case Bool boolean:
+                    empty();
+                    return boolean;
+
                 case Fragment fragment:
                     empty();
                     return fragment;
@@ -851,6 +873,11 @@ namespace Scaly.Compiler
         {
             value = theString;
         }
+    }
+
+    public class Bool : Literal
+    {
+        public bool value;
     }
 
     public class FloatingPoint : Literal

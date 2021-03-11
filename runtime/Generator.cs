@@ -534,6 +534,9 @@ namespace Scaly.Compiler
                     case IntegerConstant integerConstant:
                         context.TypedValue = new KeyValuePair<TypeSpec, LLVMValueRef>(context.Global.Dictionary.Definitions["Integer"].Type, LLVMValueRef.CreateConstInt(LLVMTypeRef.Int32, (ulong)integerConstant.Value));
                         break;
+                    case BooleanConstant booleanConstant:
+                        context.TypedValue = new KeyValuePair<TypeSpec, LLVMValueRef>(context.Global.Dictionary.Definitions["Boolean"].Type, LLVMValueRef.CreateConstInt(LLVMTypeRef.Int1, booleanConstant.Value ? 1 : 0));
+                        break;
                     case Name name:
                         BuildName(context, name);
                         break;
@@ -690,6 +693,31 @@ namespace Scaly.Compiler
                                 throw new CompilerException($"The {function.Name} instruction needs a literal generic argument.", function.Span);
                         }
                         return new KeyValuePair<TypeSpec, LLVMValueRef>(destinationType, context.Builder.BuildTrunc(context.ResolveValue("this").Value, destinationTypeRef));
+                    }
+                case "zext":
+                    {
+                        if (vector == null || vector.Components == null || vector.Components.Count != 1 || vector.Components == null || vector.Components[0].Count != 1)
+                            throw new CompilerException($"The {function.Name} instruction needs one generic argument.", function.Span);
+                        LLVMTypeRef destinationTypeRef;
+                        TypeSpec destinationType;
+                        switch (vector.Components[0][0].Expression)
+                        {
+                            case Name name:
+                                var destinationName = QualifyName(context, name.Path);
+                                switch (destinationName)
+                                {
+                                    case "LLVM.i32":
+                                        destinationTypeRef = context.Global.Types[destinationName];
+                                        destinationType = context.Global.Dictionary.Definitions[destinationName].Type;
+                                        break;
+                                    default:
+                                        throw new CompilerException($"The {name.Path} is not a valid typen argument for trunc.", function.Span);
+                                }
+                                break;
+                            default:
+                                throw new CompilerException($"The {function.Name} instruction needs a literal generic argument.", function.Span);
+                        }
+                        return new KeyValuePair<TypeSpec, LLVMValueRef>(destinationType, context.Builder.BuildZExt(context.ResolveValue("this").Value, destinationTypeRef));
                     }
                 default:
                     throw new CompilerException($"The instruction {function.Name} is not implemented.", function.Span);

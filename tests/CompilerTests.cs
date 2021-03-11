@@ -28,8 +28,8 @@ namespace tests
         [TestMethod]
         public void TestBooleanLiterals()
         {
-            Assert.AreEqual(Compiler.compileAndRunProgram("true", new string[] { }), 1);
-            Assert.AreEqual(Compiler.compileAndRunProgram("false", new string[] { }), 0);
+            Assert.AreEqual(Compiler.compileAndRunProgram("use Boolean.*:true  'as Integer'", new string[] { }), 1);
+            Assert.AreEqual(Compiler.compileAndRunProgram("use Boolean.*:false 'as Integer'", new string[] { }), 0);
         }
     }
 }

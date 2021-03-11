@@ -209,6 +209,12 @@ namespace Scaly.Compiler
         public int Value;
     }
 
+    public class BooleanConstant : Expression
+    {
+        public Span Span;
+        public bool Value;
+    }
+
     public class Modeler
     {
         public static List<Source> BuildFiles(string[] files)
@@ -408,6 +414,8 @@ namespace Scaly.Compiler
             {
                 case Integer integer:
                     return new IntegerConstant { Span = literalSyntax.span, Type = IntegerType.Integer32, Value = int.Parse(integer.value) };
+                case Bool boolean:
+                    return new BooleanConstant { Span = literalSyntax.span, Value = boolean.value };
                 default:
                     throw new NotImplementedException($"{literalSyntax.literal.GetType()} is not implemented.");
             }
