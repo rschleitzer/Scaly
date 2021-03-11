@@ -4,7 +4,7 @@
     <TargetFramework>net5.0</TargetFramework>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>0.0.0-beta</Version>
+    <Version>0.0.2-beta</Version>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
   </PropertyGroup>
 
@@ -13,6 +13,18 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="*.scaly">
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+    </Content>
+    <Content Include="Containers\*.scaly">
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+    </Content>
+    <Content Include="IO\*.scaly">
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+    </Content>
+    <Content Include="Memory\*.scaly">
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+    </Content>
     <None Update="llvm.scaly">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
