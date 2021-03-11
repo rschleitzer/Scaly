@@ -535,7 +535,7 @@ namespace Scaly.Compiler
                         context.TypedValue = new KeyValuePair<TypeSpec, LLVMValueRef>(context.Global.Dictionary.Definitions["Integer"].Type, LLVMValueRef.CreateConstInt(LLVMTypeRef.Int32, (ulong)integerConstant.Value));
                         break;
                     case BooleanConstant booleanConstant:
-                        context.TypedValue = new KeyValuePair<TypeSpec, LLVMValueRef>(context.Global.Dictionary.Definitions["Boolean"].Type, LLVMValueRef.CreateConstInt(LLVMTypeRef.Int1, booleanConstant.Value ? 1 : 0));
+                        context.TypedValue = new KeyValuePair<TypeSpec, LLVMValueRef>(context.Global.Dictionary.Definitions["Boolean"].Type, LLVMValueRef.CreateConstInt(LLVMTypeRef.Int1, booleanConstant.Value ? 1UL : 0UL));
                         break;
                     case Name name:
                         BuildName(context, name);
