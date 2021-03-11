@@ -243,15 +243,11 @@ namespace Scaly.Compiler
 
             if (source.Functions == null)
                 source.Functions = new List<Function>();
-            source.Functions.Add(MakeMainFunction(operations));
-            return source;
-        }
-
-        static Function MakeMainFunction(List<Operation> operations)
-        {
             var main = BuildSource("main.scaly").Functions[0];
             main.Routine.Operation = new Operation { Operands = new List<Operand> { new Operand { Expression = new Scope { Operations = operations } } } };
-            return main;
+            main.Source = source;
+            source.Functions.Add(main);
+            return source;
         }
 
         static Source BuildSource(string file)
