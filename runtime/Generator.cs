@@ -722,7 +722,7 @@ namespace Scaly.Compiler
             var arguments = new List<LLVMValueRef>();
             foreach (var component in @object.Components)
             {
-                BuildOperands(context, component.Value);
+                context.TypedValue = BuildOperands(context, component.Value);
                 arguments.Add(context.TypedValue.Value);
             }
 
