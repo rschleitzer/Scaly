@@ -10,10 +10,11 @@
             "request": "launch",
             "preLaunchTask": "build",
             "program": "${workspaceFolder}/scalyc/bin/Debug/net5.0/linux-x64/scalyc.dll",
+            //"program": "${workspaceFolder}/scalyc/bin/Debug/net5.0/osx-x64/scalyc.dll",
             "args": [
                 "-o",
-                "argc",
-                "../scalyc/tests/argc.scaly",
+                "strlen",
+                "../scalyc/tests/strlen.scaly",
             ],
             "cwd": "${workspaceFolder}/runtime",
             "console": "internalConsole",
