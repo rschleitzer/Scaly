@@ -642,7 +642,16 @@ namespace Scaly.Compiler
             }
             else
             {
-                throw new CompilerException($"The name '{name.Path}' has not been found.", name.Span);
+                if (!context.Global.Dictionary.Definitions.ContainsKey(qualifiedName))
+                    throw new CompilerException($"The name '{name.Path}' has not been found.", name.Span);
+                var definition = context.Global.Dictionary.Definitions[qualifiedName];
+                if (definition.Operands != null)
+                {
+                    // Constant
+                    var constant = BuildOperands(context, definition.Operands);
+                    context.Global.Values.Add(qualifiedName, constant);
+                    context.TypedValue = constant;
+                }
             }
         }
 

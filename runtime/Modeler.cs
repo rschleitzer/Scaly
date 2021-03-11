@@ -13,6 +13,7 @@ namespace Scaly.Compiler
         public bool IsPublic;
         public bool IsIntrinsic;
         public TypeSpec Type;
+        public List<Operand> Operands = new List<Operand>();
         public Structure Structure;
         public Dictionary<string, Definition> Definitions;
         public List<Function> Functions;
@@ -771,42 +772,53 @@ namespace Scaly.Compiler
 
         static void HandleDefinition(DefinitionSyntax definitionSyntax, Dictionary<string, Definition> definitions, Source source, string origin, bool isPublic)
         {
-            BodySyntax bodySyntax = null;
-            Structure structure = null;
-            bool isIntrinsic = false;
-            switch (definitionSyntax.concept)
-            {
-                case ClassSyntax classSyntax:
-                    bodySyntax = classSyntax.body;
-                    if (classSyntax.structure.members != null)
-                        structure = HandleStructure(classSyntax.structure);
-                    break;
-
-                case NamespaceSyntax namespaceSyntax:
-                    bodySyntax = namespaceSyntax.body;
-                    break;
-
-                case UnionSyntax unionSyntax:
-                    bodySyntax = unionSyntax.body;
-                    break;
-
-                case IntrinsicSyntax _:
-                    isIntrinsic = true;
-                    break;
-            }
 
             TypeSpec typeModel = BuildType(definitionSyntax.type);
             if (definitions.ContainsKey(typeModel.Name))
                 throw new CompilerException($"Module {typeModel.Name} already defined.", definitionSyntax.span);
-            var definition = new Definition { Source = source, Span = definitionSyntax.span, Type = typeModel, Structure = structure, IsIntrinsic = isIntrinsic };
+            var definition = new Definition { Source = source, Span = definitionSyntax.span, Type = typeModel };
             definitions.Add(typeModel.Name, definition);
 
-            if ((bodySyntax != null) && (bodySyntax.declarations != null))
+            switch (definitionSyntax.concept)
             {
-                foreach (var declaration in bodySyntax.declarations)
-                {
-                    HandleDeclaration(definition, source, origin, declaration);
-                }
+                case ClassSyntax classSyntax:
+                    {
+                        var bodySyntax = classSyntax.body;
+                        if (classSyntax.structure.members != null)
+                            definition.Structure = HandleStructure(classSyntax.structure);
+                        if (bodySyntax.declarations != null)
+                            foreach (var declaration in bodySyntax.declarations)
+                                HandleDeclaration(definition, source, origin, declaration);
+                        break;
+                    }
+
+                case NamespaceSyntax namespaceSyntax:
+                    {
+                        var bodySyntax = namespaceSyntax.body;
+                        if (bodySyntax.declarations != null)
+                            foreach (var declaration in bodySyntax.declarations)
+                                HandleDeclaration(definition, source, origin, declaration);
+                        break;
+                    }
+
+                case UnionSyntax unionSyntax:
+                    {
+                        var bodySyntax = unionSyntax.body;
+                        if (bodySyntax.declarations != null)
+                            foreach (var declaration in bodySyntax.declarations)
+                                HandleDeclaration(definition, source, origin, declaration);
+                        break;
+                    }
+
+                case ConstantSyntax constantSyntax:
+                    {
+                        definition.Operands = constantSyntax.operation.operands.ToList().ConvertAll(it => BuildOperand(it));
+                        break;
+                    }
+
+                case IntrinsicSyntax _:
+                    definition.IsIntrinsic = true;
+                    break;
             }
         }
 

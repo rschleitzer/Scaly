@@ -4,7 +4,15 @@ define Double (double) {}
 define Long (i64) {}
 define Integer (i32) {}
 define Byte (i8) {}
-define Boolean (i1) {}
+
+;*define Boolean (i1)
+{
+    operator 'as Integer' returns Integer
+        LLVM.zext[i32](this)
+}*;
+
+define true 1
+define false 0
 
 define Size (i64)
 {

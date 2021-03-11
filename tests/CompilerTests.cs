@@ -10,6 +10,7 @@ namespace tests
         public void TestShortest()
         {
             Assert.AreEqual(Compiler.compileAndRunProgram("0", new string[] { }), 0);
+            Assert.AreEqual(Compiler.compileAndRunProgram("42", new string[] { }), 42);
         }
 
         [TestMethod]
@@ -22,6 +23,13 @@ namespace tests
         public void TestStrlen()
         {
             Assert.AreEqual(Compiler.compileAndRunProgram("use Pointer.*:use Size.*:strlen('argument values'*) 'as Integer'", new string[] { "bogus" }), 5);
+        }
+
+        [TestMethod]
+        public void TestBooleanLiterals()
+        {
+            Assert.AreEqual(Compiler.compileAndRunProgram("true", new string[] { }), 1);
+            Assert.AreEqual(Compiler.compileAndRunProgram("false", new string[] { }), 0);
         }
     }
 }
