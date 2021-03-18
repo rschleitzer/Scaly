@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace Scaly.Compiler
+namespace Scaly.Compiler.Model
 {
     public class Definition
     {
@@ -117,7 +117,7 @@ namespace Scaly.Compiler
         public string Path;
     }
 
-    public class Object : Expression
+    public class Tuple : Expression
     {
         public Span Span;
         public List<Component> Components;
@@ -257,7 +257,7 @@ namespace Scaly.Compiler
             return source;
         }
 
-        static Source BuildSource(string file)
+        public static Source BuildSource(string file)
         {
             var text = System.IO.File.ReadAllText(file);
             return BuildSource(text, file);
@@ -370,7 +370,7 @@ namespace Scaly.Compiler
 
         static Expression BuildObject(ObjectSyntax objectSyntax)
         {
-            var @object = new Object { Span = objectSyntax.span };
+            var @object = new Tuple { Span = objectSyntax.span };
             if (objectSyntax.components != null)
                 @object.Components = objectSyntax.components.ToList().ConvertAll(it => BuildComponent(it));
             return @object;

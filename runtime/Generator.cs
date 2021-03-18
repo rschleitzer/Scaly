@@ -1,4 +1,5 @@
 ﻿using LLVMSharp.Interop;
+using Scaly.Compiler.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -543,7 +544,7 @@ namespace Scaly.Compiler
                     case Scope scope:
                         BuildScope(context, scope);
                         break;
-                    case Object @object:
+                    case Model.Tuple @object:
                         if (context.TypedValue.Value == null)
                             throw new CompilerException("Objects are currently only supported as parameter lists for function calls.", @object.Span);
                         context.TypedValue = BuildFunctionCall(context, context.TypedValue, @object);
@@ -594,7 +595,7 @@ namespace Scaly.Compiler
                 var operand = context.Operands.Current;
                 switch (operand.Expression)
                 {
-                    case Object @object:
+                    case Model.Tuple @object:
                         {
                             var function = FindMatchingFunction(context, functions, null, @object);
                             switch (function.Routine.Implementation)
@@ -619,7 +620,7 @@ namespace Scaly.Compiler
                         var genericOperand = context.Operands.Current;
                         switch (genericOperand.Expression)
                         {
-                            case Object @object:
+                            case Model.Tuple @object:
                                 var function = FindMatchingFunction(context, functions, vector, @object);
                                 switch (function.Routine.Implementation)
                                 {
@@ -724,7 +725,7 @@ namespace Scaly.Compiler
             }
         }
 
-        static Function FindMatchingFunction(Context context, List<Function> functions, Vector vector, Object @object)
+        static Function FindMatchingFunction(Context context, List<Function> functions, Vector vector, Model.Tuple @object)
         {
             var functionsWithSameNumberOfArguments = functions.Where(it => it.Routine.Input.Count == @object.Components.Count).ToList();
             if (functionsWithSameNumberOfArguments.Count == 0)
@@ -754,7 +755,7 @@ namespace Scaly.Compiler
                 BuildOperands(newContext, operation.Operands);
         }
 
-        static KeyValuePair<TypeSpec, LLVMValueRef> BuildFunctionCall(Context context, KeyValuePair<TypeSpec, LLVMValueRef> function, Object @object)
+        static KeyValuePair<TypeSpec, LLVMValueRef> BuildFunctionCall(Context context, KeyValuePair<TypeSpec, LLVMValueRef> function, Model.Tuple @object)
         {
             var arguments = new List<LLVMValueRef>();
             foreach (var component in @object.Components)

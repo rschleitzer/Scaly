@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Scaly.Compiler.Model;
 
 namespace Scaly.Compiler
 {
@@ -14,6 +15,11 @@ namespace Scaly.Compiler
         public static int compileAndRunProgram(string program, string[] arguments)
         {
             var source = Modeler.BuildProgram(program);
+            return ExecuteModel(source, arguments);
+        }
+
+        public static int ExecuteModel(Source source, string[] arguments)
+        {
             var runtime = Modeler.BuildRuntime();
             var main = Generator.JitProgram(new List<Source> { source, runtime });
             int ret = main(arguments.Length, arguments);
