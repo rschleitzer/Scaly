@@ -1,6 +1,5 @@
 ﻿using LLVMSharp.Interop;
 using Scaly.Compiler.Model;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -544,13 +543,13 @@ namespace Scaly.Compiler
                     case Scope scope:
                         BuildScope(context, scope);
                         break;
-                    case Model.Tuple @object:
+                    case Tuple tuple:
                         if (context.TypedValue.Value == null)
-                            throw new CompilerException("Objects are currently only supported as parameter lists for function calls.", @object.Span);
-                        context.TypedValue = BuildFunctionCall(context, context.TypedValue, @object);
+                            throw new CompilerException("Objects are currently only supported as parameter lists for function calls.", tuple.Span);
+                        context.TypedValue = BuildFunctionCall(context, context.TypedValue, tuple);
                         break;
                     default:
-                        throw new NotImplementedException($"BuildOperand for expression {operand.Expression.GetType()} not implemented.");
+                        throw new System.NotImplementedException($"BuildOperand for expression {operand.Expression.GetType()} not implemented.");
                 }
             }
         }
@@ -595,17 +594,17 @@ namespace Scaly.Compiler
                 var operand = context.Operands.Current;
                 switch (operand.Expression)
                 {
-                    case Model.Tuple @object:
+                    case Tuple tuple:
                         {
-                            var function = FindMatchingFunction(context, functions, null, @object);
+                            var function = FindMatchingFunction(context, functions, null, tuple);
                             switch (function.Routine.Implementation)
                             {
                                 case Implementation.Intern:
                                 case Implementation.Extern:
                                     valueRef = ResolveFunctionValue(context, function);
                                     if (valueRef.Value == null)
-                                        throw new CompilerException("No matching function has been found for the arguments.", @object.Span);
-                                    context.TypedValue = BuildFunctionCall(context, valueRef, @object);
+                                        throw new CompilerException("No matching function has been found for the arguments.", tuple.Span);
+                                    context.TypedValue = BuildFunctionCall(context, valueRef, tuple);
                                     return;
                                 case Implementation.Instruction:
                                     context.TypedValue = BuildInstruction(context, null, function);
@@ -620,16 +619,16 @@ namespace Scaly.Compiler
                         var genericOperand = context.Operands.Current;
                         switch (genericOperand.Expression)
                         {
-                            case Model.Tuple @object:
-                                var function = FindMatchingFunction(context, functions, vector, @object);
+                            case Tuple tuple:
+                                var function = FindMatchingFunction(context, functions, vector, tuple);
                                 switch (function.Routine.Implementation)
                                 {
                                     case Implementation.Intern:
                                     case Implementation.Extern:
                                         valueRef = ResolveFunctionValue(context, function);
                                         if (valueRef.Value == null)
-                                            throw new CompilerException("No matching function has been found for the arguments.", @object.Span);
-                                        context.TypedValue = BuildFunctionCall(context, valueRef, @object);
+                                            throw new CompilerException("No matching function has been found for the arguments.", tuple.Span);
+                                        context.TypedValue = BuildFunctionCall(context, valueRef, tuple);
                                         return;
                                     case Implementation.Instruction:
                                         context.TypedValue = BuildInstruction(context, vector, function);
@@ -725,13 +724,13 @@ namespace Scaly.Compiler
             }
         }
 
-        static Function FindMatchingFunction(Context context, List<Function> functions, Vector vector, Model.Tuple @object)
+        static Function FindMatchingFunction(Context context, List<Function> functions, Vector vector, Tuple tuple)
         {
-            var functionsWithSameNumberOfArguments = functions.Where(it => it.Routine.Input.Count == @object.Components.Count).ToList();
+            var functionsWithSameNumberOfArguments = functions.Where(it => it.Routine.Input.Count == tuple.Components.Count).ToList();
             if (functionsWithSameNumberOfArguments.Count == 0)
-                throw new CompilerException($"No overload of the function takes {@object.Components.Count} arguments.", @object.Span);
+                throw new CompilerException($"No overload of the function takes {tuple.Components.Count} arguments.", tuple.Span);
             if (functionsWithSameNumberOfArguments.Count > 1)
-                throw new CompilerException($"More than one overload of the function takes {@object.Components.Count} arguments.", @object.Span);
+                throw new CompilerException($"More than one overload of the function takes {tuple.Components.Count} arguments.", tuple.Span);
             var function = functionsWithSameNumberOfArguments.First();
             return function;
         }
@@ -755,10 +754,10 @@ namespace Scaly.Compiler
                 BuildOperands(newContext, operation.Operands);
         }
 
-        static KeyValuePair<TypeSpec, LLVMValueRef> BuildFunctionCall(Context context, KeyValuePair<TypeSpec, LLVMValueRef> function, Model.Tuple @object)
+        static KeyValuePair<TypeSpec, LLVMValueRef> BuildFunctionCall(Context context, KeyValuePair<TypeSpec, LLVMValueRef> function, Tuple tuple)
         {
             var arguments = new List<LLVMValueRef>();
-            foreach (var component in @object.Components)
+            foreach (var component in tuple.Components)
             {
                 context.TypedValue = BuildOperands(context, component.Value);
                 arguments.Add(context.TypedValue.Value);
