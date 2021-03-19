@@ -367,7 +367,7 @@ namespace Scaly.Compiler
                 throw new CompilerException($"The type \"{definition.Type.Name}\" contains no data and can only be used as a namespace.", typeSpec.Span);
 
             if (definition.Structure.Members.Count == 1 && definition.Structure.Members[0].Name == null && definition.Structure.Members[0].Type.Arguments == null)
-                return ResolveType(context, definition.Structure.Members[0].Type);
+                return new NamedType(definition.Type.Name, ResolveType(context, definition.Structure.Members[0].Type).Type);
 
             return null;
         }
@@ -539,8 +539,8 @@ namespace Scaly.Compiler
                             var ret = BuildOperands(newContext, routine.Operation.SourceOperands);
                             var retName = ret.Name;
                             var functionResultName = functionType.Result.Name;
-                            //if (ret.Name != functionType.Result.Name)
-                            //    throw new CompilerException($"The returned type {ret.Name} does not match the return type {functionType.Result.Name}", routine.Span);
+                            if (retName != functionResultName)
+                                throw new CompilerException($"The returned type {retName} does not match the return type {functionResultName}", routine.Span);
                             builder.BuildRet(ret.Value);
                         }
                     }
@@ -708,7 +708,7 @@ namespace Scaly.Compiler
                         var genericType = function.Routine.Result[0].TypeSpec;
                         if (!context.GenericTypeDictionary.ContainsKey(genericType.Name))
                             throw new CompilerException($"The generic type {genericType.Name} is not defined here.", function.Span);
-                        return new TypedValue(context.GenericTypeDictionary[genericType.Name], genericType.Name, context.Builder.BuildLoad(context.ResolveValue("this").Value));
+                        return new TypedValue(context.GenericTypeDictionary[genericType.Name], ResolveType(context, genericType).Name, context.Builder.BuildLoad(context.ResolveValue("this").Value));
                     }
                 case "trunc":
                     {
