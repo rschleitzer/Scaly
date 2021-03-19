@@ -26,15 +26,28 @@ namespace Scaly.Compiler
     {
         private NamedType() { }
         public NamedType(string name, LLVMTypeRef type) { Name = name; Type = type; }
+
         public string Name;
         public LLVMTypeRef Type;
+    }
+
+    internal class FunctionType
+    {
+        private FunctionType() { }
+        public FunctionType(NamedType type, NamedType[] parameters, NamedType result) { Type = type; Parameters = parameters; Result = result; }
+
+        public NamedType Type;
+        public NamedType[] Parameters;
+        public NamedType Result;
     }
 
     internal class TypedValue
     {
         private TypedValue() { }
-        public TypedValue(TypeSpec spec, LLVMValueRef value) { TypeSpec = spec; Value = value; }
+        public TypedValue(TypeSpec spec, string name, LLVMValueRef value) { TypeSpec = spec; Name = name; Value = value; }
+
         public TypeSpec TypeSpec;
+        public string Name;
         public LLVMValueRef Value;
     }
 
@@ -42,6 +55,7 @@ namespace Scaly.Compiler
     {
         public LLVMModuleRef Module;
         public NameDictionary Dictionary;
+        public Dictionary<string, FunctionType> FunctionTypes = new Dictionary<string, FunctionType>();
         public Dictionary<string, NamedType> Types = new Dictionary<string, NamedType>();
         public Dictionary<string, TypedValue> Values = new Dictionary<string, TypedValue>();
     }
@@ -167,14 +181,14 @@ namespace Scaly.Compiler
 
         static TypedValue ResolveFunctionValue(Context context, Function function)
         {
-            var functionName = QualifyFunctionName(context, function);
+            var functionName = QualifyFunctionName(function);
             if (!context.Global.Values.ContainsKey(functionName))
                 CreateFunctionValue(context, function, functionName);
             var llvmFunction = context.Global.Values[function.Name];
             return llvmFunction;
         }
 
-        static string QualifyFunctionName(Context context, Function function)
+        static string QualifyFunctionName(Function function)
         {
             if ((function.Routine.Implementation == Implementation.Extern) || (function.Name == "main"))
                 return function.Name;
@@ -199,66 +213,26 @@ namespace Scaly.Compiler
         static void CreateFunctionValue(Context context, Function function, string qualifiedName)
         {
             var functionType = ResolveFunctionType(context, function, qualifiedName);
-            var functionValue = context.Global.Module.AddFunction(qualifiedName, functionType.Type);
-            context.Global.Values.Add(qualifiedName, new TypedValue(function.Routine.Result[0].TypeSpec, functionValue));
-            ImplementRoutine(context, function.Source, functionValue, function.Routine, null, function.Span);
+            var functionValue = context.Global.Module.AddFunction(qualifiedName, functionType.Type.Type);
+            context.Global.Values.Add(qualifiedName, new TypedValue(function.Routine.Result[0].TypeSpec, qualifiedName, functionValue));
+            ImplementRoutine(context, function.Source, functionValue, functionType, function.Routine, null, function.Span);
         }
 
-        static void ImplementRoutine(Context context, Source source, LLVMValueRef functionValue, Routine routine, TypeSpec operatorType, Span span)
+        static FunctionType ResolveFunctionType(Context context, Function function, string qualifiedName)
         {
-            switch (routine.Implementation)
-            {
-                case Implementation.Intern:
-                    {
-                        var block = functionValue.AppendBasicBlock(string.Empty);
-                        using (var builder = context.Global.Module.Context.CreateBuilder())
-                        {
-                            var newContext = new Context { Global = context.Global, Builder = builder, Source = source, GenericTypeDictionary = context.GenericTypeDictionary };
-                            builder.PositionAtEnd(block);
-                            uint paramCount = 0;
-                            if (routine.Input != null)
-                            {
-                                // function case
-                                foreach (var parameter in routine.Input)
-                                {
-                                    newContext.Values.Add(parameter.Name, new TypedValue(parameter.TypeSpec, functionValue.GetParam(paramCount)));
-                                    paramCount++;
-                                }
-                            }
-                            else
-                            {
-                                // operator case
-                                newContext.Values.Add("this", new TypedValue(operatorType, functionValue.GetParam(0)));
-                            }
-                            var ret = BuildOperands(newContext, routine.Operation.SourceOperands);
-                            builder.BuildRet(ret.Value);
-                        }
-                    }
-                    break;
-                case Implementation.Extern:
-                    {
-                        functionValue.Linkage = LLVMLinkage.LLVMExternalLinkage;
-                        break;
-                    }
-                default:
-                    throw new CompilerException($"The implementation type {routine.Implementation} is not implemented.", span);
-            }
-        }
-
-        static NamedType ResolveFunctionType(Context context, Function function, string qualifiedName)
-        {
-            if (context.Global.Types.ContainsKey(qualifiedName))
-                return context.Global.Types[qualifiedName];
-            var functionType = new NamedType(qualifiedName, CreateFunctionType(context, qualifiedName, function).Type);
-            context.Global.Types.Add(qualifiedName, functionType);
+            if (context.Global.FunctionTypes.ContainsKey(qualifiedName))
+                return context.Global.FunctionTypes[qualifiedName];
+            var functionType = CreateFunctionType(context, qualifiedName, function);
+            context.Global.FunctionTypes.Add(qualifiedName, functionType);
             return functionType;
         }
 
-        static NamedType CreateFunctionType(Context context, string qualifiedName, Function function)
+        static FunctionType CreateFunctionType(Context context, string qualifiedName, Function function)
         {
             var returnType = GetSingleType(context, function.Routine.Result);
             var parameterTypes = GetTypes(context, function.Routine.Input);
-            return new NamedType(qualifiedName, LLVMTypeRef.CreateFunction(returnType.Type, parameterTypes.ToList().ConvertAll(it => it.Type).ToArray()));
+            var functionType = new NamedType(qualifiedName, LLVMTypeRef.CreateFunction(returnType.Type, parameterTypes.ToList().ConvertAll(it => it.Type).ToArray()));
+            return new FunctionType(functionType, parameterTypes, returnType);
         }
 
         static NamedType GetSingleType(Context context, List<Parameter> result)
@@ -474,10 +448,10 @@ namespace Scaly.Compiler
             Dictionary<string, TypeSpec> genericTypeDictionary = CreateOperatorGenericTypeDictionary(operandType, @operator);
             var newContext = new Context { Global = context.Global, Source = context.Source, ParentContext = context, GenericTypeDictionary = genericTypeDictionary };
             var operatorType = ResolveOperatorType(newContext, operandType, @operator, qualifiedName);
-            var operatorFunction = context.Global.Module.AddFunction(qualifiedName, operatorType.Type);
-            var operatorValue = new TypedValue(@operator.Routine.Result[0].TypeSpec, operatorFunction);
+            var operatorFunction = context.Global.Module.AddFunction(qualifiedName, operatorType.Type.Type);
+            var operatorValue = new TypedValue(@operator.Routine.Result[0].TypeSpec, qualifiedName, operatorFunction);
             context.Global.Values.Add(qualifiedName, operatorValue);
-            ImplementRoutine(newContext, @operator.Definition.Source, operatorFunction, @operator.Routine, @operator.Definition.Type, @operator.Span);
+            ImplementRoutine(newContext, @operator.Definition.Source, operatorFunction, operatorType, @operator.Routine, @operator.Definition.Type, @operator.Span);
         }
 
         static Dictionary<string, TypeSpec> CreateOperatorGenericTypeDictionary(TypeSpec operandTypeSpec, Operator @operator)
@@ -511,30 +485,74 @@ namespace Scaly.Compiler
             }
         }
 
-        static NamedType ResolveOperatorType(Context context, TypeSpec operandType, Operator @operator, string qualifiedName)
+        static FunctionType ResolveOperatorType(Context context, TypeSpec operandType, Operator @operator, string qualifiedName)
         {
             if (context.Global.Types.ContainsKey(qualifiedName))
-                return context.Global.Types[qualifiedName];
-            var operatorFunctionType = CreateOperatorType(context, operandType, @operator, qualifiedName);
-            var namedType = new NamedType(qualifiedName, operatorFunctionType.Type);
-            context.Global.Types.Add(qualifiedName, namedType);
-            return namedType;
+                return context.Global.FunctionTypes[qualifiedName];
+            var functionType = CreateOperatorType(context, operandType, @operator, qualifiedName);
+            context.Global.FunctionTypes.Add(qualifiedName, functionType);
+            return functionType;
         }
 
-        static NamedType CreateOperatorType(Context context, TypeSpec operandTypeSpec, Operator @operator, string qualifiedName)
+        static FunctionType CreateOperatorType(Context context, TypeSpec operandTypeSpec, Operator @operator, string qualifiedName)
         {
+            var operandTypeName = QualifyName(context, operandTypeSpec.Name);
             {
-                var operandTypeName = QualifyName(context, operandTypeSpec.Name);
                 var operatorDefinitionTypeName = QualifyName(context, @operator.Definition.Type.Name);
                 if (operandTypeName != operatorDefinitionTypeName)
                     throw new CompilerException($"This operator expects a {operatorDefinitionTypeName}, and a {operandTypeName} was provided.", @operator.Span);
             }
 
             var operandType = ResolveType(context, operandTypeSpec);
-            var parameterTypes = new LLVMTypeRef[] { operandType.Type };
+            var parameterType = new NamedType(operandTypeName, operandType.Type);
             var returnType = ResolveType(context, @operator.Routine.Result[0].TypeSpec);
-            LLVMTypeRef operatorFunctionType = LLVMTypeRef.CreateFunction(returnType.Type, parameterTypes.ToArray());
-            return new NamedType(qualifiedName, operatorFunctionType);
+            var functionType = new NamedType(qualifiedName, LLVMTypeRef.CreateFunction(returnType.Type, new LLVMTypeRef[] { parameterType.Type }));
+            return new FunctionType(functionType, new NamedType[] { parameterType }, returnType);
+        }
+
+        static void ImplementRoutine(Context context, Source source, LLVMValueRef functionValue, FunctionType functionType, Routine routine, TypeSpec operatorType, Span span)
+        {
+            switch (routine.Implementation)
+            {
+                case Implementation.Intern:
+                    {
+                        var block = functionValue.AppendBasicBlock(string.Empty);
+                        using (var builder = context.Global.Module.Context.CreateBuilder())
+                        {
+                            var newContext = new Context { Global = context.Global, Builder = builder, Source = source, GenericTypeDictionary = context.GenericTypeDictionary };
+                            builder.PositionAtEnd(block);
+                            uint paramCount = 0;
+                            if (routine.Input != null)
+                            {
+                                // function case
+                                foreach (var parameter in routine.Input)
+                                {
+                                    newContext.Values.Add(parameter.Name, new TypedValue(parameter.TypeSpec, functionType.Parameters[paramCount].Name, functionValue.GetParam(paramCount)));
+                                    paramCount++;
+                                }
+                            }
+                            else
+                            {
+                                // operator case
+                                newContext.Values.Add("this", new TypedValue(operatorType, functionType.Result.Name, functionValue.GetParam(0)));
+                            }
+                            var ret = BuildOperands(newContext, routine.Operation.SourceOperands);
+                            var retName = ret.Name;
+                            var functionResultName = functionType.Result.Name;
+                            //if (ret.Name != functionType.Result.Name)
+                            //    throw new CompilerException($"The returned type {ret.Name} does not match the return type {functionType.Result.Name}", routine.Span);
+                            builder.BuildRet(ret.Value);
+                        }
+                    }
+                    break;
+                case Implementation.Extern:
+                    {
+                        functionValue.Linkage = LLVMLinkage.LLVMExternalLinkage;
+                        break;
+                    }
+                default:
+                    throw new CompilerException($"The implementation type {routine.Implementation} is not implemented.", span);
+            }
         }
 
         static TypedValue BuildOperands(Context context, List<Operand> operands)
@@ -552,10 +570,10 @@ namespace Scaly.Compiler
                 switch (operand.Expression)
                 {
                     case IntegerConstant integerConstant:
-                        context.TypedValue = new TypedValue(context.Global.Dictionary.Definitions["Integer"].Type, LLVMValueRef.CreateConstInt(LLVMTypeRef.Int32, (ulong)integerConstant.Value));
+                        context.TypedValue = new TypedValue(context.Global.Dictionary.Definitions["Integer"].Type, "Integer", LLVMValueRef.CreateConstInt(LLVMTypeRef.Int32, (ulong)integerConstant.Value));
                         break;
                     case BooleanConstant booleanConstant:
-                        context.TypedValue = new TypedValue(context.Global.Dictionary.Definitions["Boolean"].Type, LLVMValueRef.CreateConstInt(LLVMTypeRef.Int1, booleanConstant.Value ? 1UL : 0UL));
+                        context.TypedValue = new TypedValue(context.Global.Dictionary.Definitions["Boolean"].Type, "Boolean", LLVMValueRef.CreateConstInt(LLVMTypeRef.Int1, booleanConstant.Value ? 1UL : 0UL));
                         break;
                     case Name name:
                         BuildName(context, name);
@@ -566,7 +584,7 @@ namespace Scaly.Compiler
                     case Tuple tuple:
                         if (context.TypedValue == null)
                             throw new CompilerException("Objects are currently only supported as parameter lists for function calls.", tuple.Span);
-                        context.TypedValue = BuildFunctionCall(context, context.TypedValue, tuple);
+                        context.TypedValue = BuildFunctionCall(context, context.TypedValue, context.Global.FunctionTypes[context.TypedValue.Name], tuple);
                         break;
                     case If @if:
                         BuildIf(context, @if);
@@ -605,7 +623,7 @@ namespace Scaly.Compiler
                 if (context.TypedValue == null)
                     throw new CompilerException("An operator cannot act on nothing. It must follow an operand it can act upon.", @operator.Span);
                 var operatorValue = ResolveOperatorValue(context, context.TypedValue.TypeSpec, @operator);
-                BuildOperatorCall(context, operatorValue, context.TypedValue);
+                BuildOperatorCall(context, operatorValue, context.Global.FunctionTypes[operatorValue.Name], context.TypedValue);
                 return;
             }
 
@@ -627,7 +645,7 @@ namespace Scaly.Compiler
                                     valueRef = ResolveFunctionValue(context, function);
                                     if (valueRef == null)
                                         throw new CompilerException("No matching function has been found for the arguments.", tuple.Span);
-                                    context.TypedValue = BuildFunctionCall(context, valueRef, tuple);
+                                    context.TypedValue = BuildFunctionCall(context, valueRef, context.Global.FunctionTypes[valueRef.Name], tuple);
                                     return;
                                 case Implementation.Instruction:
                                     context.TypedValue = BuildInstruction(context, null, function);
@@ -651,7 +669,7 @@ namespace Scaly.Compiler
                                         valueRef = ResolveFunctionValue(context, function);
                                         if (valueRef == null)
                                             throw new CompilerException("No matching function has been found for the arguments.", tuple.Span);
-                                        context.TypedValue = BuildFunctionCall(context, valueRef, tuple);
+                                        context.TypedValue = BuildFunctionCall(context, valueRef, context.Global.FunctionTypes[valueRef.Name], tuple);
                                         return;
                                     case Implementation.Instruction:
                                         context.TypedValue = BuildInstruction(context, vector, function);
@@ -690,22 +708,24 @@ namespace Scaly.Compiler
                         var genericType = function.Routine.Result[0].TypeSpec;
                         if (!context.GenericTypeDictionary.ContainsKey(genericType.Name))
                             throw new CompilerException($"The generic type {genericType.Name} is not defined here.", function.Span);
-                        return new TypedValue(context.GenericTypeDictionary[genericType.Name], context.Builder.BuildLoad(context.ResolveValue("this").Value));
+                        return new TypedValue(context.GenericTypeDictionary[genericType.Name], genericType.Name, context.Builder.BuildLoad(context.ResolveValue("this").Value));
                     }
                 case "trunc":
                     {
                         if (vector == null || vector.Components == null || vector.Components.Count != 1 || vector.Components == null || vector.Components[0].Count != 1)
                             throw new CompilerException($"The {function.Name} instruction needs one generic argument.", function.Span);
-                        LLVMTypeRef destinationTypeRef;
                         TypeSpec destinationType;
+                        string destinationName;
+                        LLVMTypeRef destinationTypeRef;
                         switch (vector.Components[0][0].Expression)
                         {
                             case Name name:
-                                var destinationName = QualifyName(context, name.Path);
+                                destinationName = QualifyName(context, name.Path);
                                 switch (destinationName)
                                 {
                                     case "LLVM.i32":
                                         destinationTypeRef = context.Global.Types[destinationName].Type;
+                                        destinationName = "Integer";
                                         destinationType = context.Global.Dictionary.Definitions[destinationName].Type;
                                         break;
                                     default:
@@ -715,22 +735,24 @@ namespace Scaly.Compiler
                             default:
                                 throw new CompilerException($"The {function.Name} instruction needs a literal generic argument.", function.Span);
                         }
-                        return new TypedValue(destinationType, context.Builder.BuildTrunc(context.ResolveValue("this").Value, destinationTypeRef));
+                        return new TypedValue(destinationType, destinationName, context.Builder.BuildTrunc(context.ResolveValue("this").Value, destinationTypeRef));
                     }
                 case "zext":
                     {
                         if (vector == null || vector.Components == null || vector.Components.Count != 1 || vector.Components == null || vector.Components[0].Count != 1)
                             throw new CompilerException($"The {function.Name} instruction needs one generic argument.", function.Span);
                         LLVMTypeRef destinationTypeRef;
+                        string destinationName;
                         TypeSpec destinationType;
                         switch (vector.Components[0][0].Expression)
                         {
                             case Name name:
-                                var destinationName = QualifyName(context, name.Path);
+                                destinationName = QualifyName(context, name.Path);
                                 switch (destinationName)
                                 {
                                     case "LLVM.i32":
                                         destinationTypeRef = context.Global.Types[destinationName].Type;
+                                        destinationName = "Integer";
                                         destinationType = context.Global.Dictionary.Definitions[destinationName].Type;
                                         break;
                                     default:
@@ -740,7 +762,7 @@ namespace Scaly.Compiler
                             default:
                                 throw new CompilerException($"The {function.Name} instruction needs a literal generic argument.", function.Span);
                         }
-                        return new TypedValue(destinationType, context.Builder.BuildZExt(context.ResolveValue("this").Value, destinationTypeRef));
+                        return new TypedValue(destinationType, destinationName, context.Builder.BuildZExt(context.ResolveValue("this").Value, destinationTypeRef));
                     }
                 default:
                     throw new CompilerException($"The instruction {function.Name} is not implemented.", function.Span);
@@ -780,7 +802,7 @@ namespace Scaly.Compiler
         {
         }
 
-        static TypedValue BuildFunctionCall(Context context, TypedValue function, Tuple tuple)
+        static TypedValue BuildFunctionCall(Context context, TypedValue function, FunctionType functionType, Tuple tuple)
         {
             var arguments = new List<LLVMValueRef>();
             foreach (var component in tuple.Components)
@@ -789,12 +811,12 @@ namespace Scaly.Compiler
                 arguments.Add(context.TypedValue.Value);
             }
 
-            return new TypedValue(function.TypeSpec, context.Builder.BuildCall(function.Value, arguments.ToArray()));
+            return new TypedValue(function.TypeSpec, functionType.Result.Name, context.Builder.BuildCall(function.Value, arguments.ToArray()));
         }
 
-        static void BuildOperatorCall(Context context, TypedValue @operator, TypedValue operand)
+        static void BuildOperatorCall(Context context, TypedValue @operator, FunctionType functionType, TypedValue operand)
         {
-            context.TypedValue = new TypedValue(@operator.TypeSpec, context.Builder.BuildCall(@operator.Value, new LLVMValueRef[] { operand.Value }));
+            context.TypedValue = new TypedValue(@operator.TypeSpec, functionType.Result.Name, context.Builder.BuildCall(@operator.Value, new LLVMValueRef[] { operand.Value }));
         }
 
         static void CreateSourceDictionary(DictionaryContext context)
