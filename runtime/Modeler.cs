@@ -70,6 +70,7 @@ namespace Scaly.Compiler.Model
 
     public class Routine
     {
+        public Span Span;
         public List<Parameter> Input;
         public List<Parameter> Result;
         public TypeSpec Error;
@@ -154,18 +155,26 @@ namespace Scaly.Compiler.Model
         public BindingType BindingType;
         public string Identifier;
         public Operation Operation;
-        public List<Operation> Operations;
+        public List<Operation> BodyOperations;
     }
 
     public class Operation : Expression
     {
-        public List<Operand> Operands = new List<Operand>();
+        public List<Operand> TargetOperations;
+        public List<Operand> SourceOperands = new List<Operand>();
     }
 
     public class Operand
     {
         public Expression Expression;
         public List<Postfix> Postfixes;
+    }
+
+    public class If : Expression
+    {
+        public List<Operand> Condition = new List<Operand>();
+        public Operation Consequent;
+        public Operation Alternative;
     }
 
     public abstract class Postfix { }
@@ -251,7 +260,7 @@ namespace Scaly.Compiler.Model
             if (source.Functions == null)
                 source.Functions = new List<Function>();
             var main = BuildSource("main.scaly").Functions[0];
-            main.Routine.Operation = new Operation { Operands = new List<Operand> { new Operand { Expression = new Scope { Operations = operations } } } };
+            main.Routine.Operation = new Operation { SourceOperands = new List<Operand> { new Operand { Expression = new Scope { Operations = operations } } } };
             main.Source = source;
             source.Functions.Add(main);
             return source;
@@ -278,32 +287,33 @@ namespace Scaly.Compiler.Model
                     HandleDeclaration(source, origin, declaration, null);
 
             if (fileSyntax.statements != null)
-            {
-                if (source.Operations == null)
-                    source.Operations = new List<Operation>();
-                foreach (var statement in fileSyntax.statements)
-                    HandleStatement(source.Operations, statement);
-            }
+                source.Operations = BuildStatements(fileSyntax.statements.ToList());
 
             return source;
         }
 
-        static void HandleStatement(List<Operation> operations, object statement)
+        static List<Operation> BuildStatements(List<object> statements)
         {
-            switch (statement)
+            if (statements == null)
+                return null;
+
+            var operations = new List<Operation>();
+            while (statements.Count > 0)
             {
-                case OperationSyntax operationSyntax:
-                    HandleOperation(operations, operationSyntax);
-                    break;
+                var statement = statements[0];
+                statements.RemoveAt(0);
+                switch (statement)
+                {
+                    case OperationSyntax operationSyntax:
+                        operations.Add(BuildOperation(operationSyntax));
+                        break;
 
-                default:
-                    throw new NotImplementedException($"{statement.GetType()} is not implemented.");
+                    default:
+                        throw new NotImplementedException($"{statement.GetType()} is not implemented.");
+                }
             }
-        }
 
-        static void HandleOperation(List<Operation> operations, OperationSyntax operationSyntax)
-        {
-            operations.Add(BuildOperation(operationSyntax));
+            return operations;
         }
 
         static Operand BuildOperand(OperandSyntax operandSyntax)
@@ -334,6 +344,8 @@ namespace Scaly.Compiler.Model
                     return BuildObject(objectSyntax);
                 case VectorSyntax vectorSyntax:
                     return BuildVector(vectorSyntax);
+                case IfSyntax ifSyntax:
+                    return BuildIf(ifSyntax);
                 default:
                     throw new NotImplementedException($"{expression.GetType()} is not implemented.");
             }
@@ -353,18 +365,24 @@ namespace Scaly.Compiler.Model
             return new Name { Path = pathBuilder.ToString(), Span = nameSyntax.span };
         }
 
+        static Expression BuildConstant(LiteralSyntax literalSyntax)
+        {
+            switch (literalSyntax.literal)
+            {
+                case Integer integer:
+                    return new IntegerConstant { Span = literalSyntax.span, Type = IntegerType.Integer32, Value = int.Parse(integer.value) };
+                case Bool boolean:
+                    return new BooleanConstant { Span = literalSyntax.span, Value = boolean.value };
+                default:
+                    throw new NotImplementedException($"{literalSyntax.literal.GetType()} is not implemented.");
+            }
+        }
+
         static Expression BuildBlock(BlockSyntax blockSyntax)
         {
             var scope = new Scope();
             if (blockSyntax.statements != null)
-            {
-                scope.Operations = new List<Operation>();
-                foreach (var statement in blockSyntax.statements)
-                {
-                    HandleStatement(scope.Operations, statement);
-                }
-            }
-
+                scope.Operations = BuildStatements(blockSyntax.statements.ToList());
             return scope;
         }
 
@@ -408,16 +426,25 @@ namespace Scaly.Compiler.Model
             return component;
         }
 
-        static Expression BuildConstant(LiteralSyntax literalSyntax)
+        static Expression BuildIf(IfSyntax ifSyntax)
         {
-            switch (literalSyntax.literal)
+            return new If
             {
-                case Integer integer:
-                    return new IntegerConstant { Span = literalSyntax.span, Type = IntegerType.Integer32, Value = int.Parse(integer.value) };
-                case Bool boolean:
-                    return new BooleanConstant { Span = literalSyntax.span, Value = boolean.value };
+                Condition = ifSyntax.condition.operands.ToList().ConvertAll(it => BuildOperand(it)),
+                Consequent = BuildAction(ifSyntax.consequent),
+                Alternative = BuildAction(ifSyntax.alternative.alternative),
+            };
+        }
+
+        static Operation BuildAction(object action)
+        {
+            switch (action)
+            {
+                case OperationSyntax operationSyntax:
+                    return BuildOperation(operationSyntax);
+
                 default:
-                    throw new NotImplementedException($"{literalSyntax.literal.GetType()} is not implemented.");
+                    throw new NotImplementedException($"{action.GetType()} is not implemented.");
             }
         }
 
@@ -610,7 +637,7 @@ namespace Scaly.Compiler.Model
 
         static Routine BuildRoutine(RoutineSyntax routineSyntax)
         {
-            var routine = new Routine {};
+            var routine = new Routine { Span = routineSyntax.span };
             if (routineSyntax.parameters != null)
                 routine.Input = BuildParameters(routineSyntax.parameters);
 
@@ -645,10 +672,10 @@ namespace Scaly.Compiler.Model
 
         static Operation BuildOperation(OperationSyntax operationSyntax)
         {
-            var operation = new Operation { Operands = new List<Operand>() };
+            var operation = new Operation { SourceOperands = new List<Operand>() };
             foreach (var operand in operationSyntax.operands)
             {
-                operation.Operands.Add(BuildOperand(operand));
+                operation.SourceOperands.Add(BuildOperand(operand));
             }
             return operation;
         }
@@ -722,7 +749,7 @@ namespace Scaly.Compiler.Model
 
         static Routine BuildSymbol(SymbolSyntax symbolSyntax)
         {
-            var routine = new Routine { };
+            var routine = new Routine { Span = symbolSyntax.span };
 
             if (symbolSyntax.returns != null)
                 routine.Result = BuildParameters(symbolSyntax.returns.parameters);

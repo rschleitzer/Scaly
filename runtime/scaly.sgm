@@ -223,10 +223,14 @@
         <content link = Attribute             multiple optional property = attributes
 
     <syntax id = Implementation                        abstract
-        <content link = Statement
+        <content link = Action
         <content link = Extern
         <content link = Instruction
         <content link = Intrinsic
+
+    <syntax id = Action                      multiple abstract
+        <content link = Operation
+        <content link = Set
 
     <syntax id = Extern
         <content link = extern
@@ -444,13 +448,13 @@
     <syntax id = If
         <content link = if
         <content link = Operation                               property = condition
-        <content link = Statement                               property = consequent
+        <content link = Action                                  property = consequent
         <content link = Else                           optional property = alternative
 
     <syntax id = Else
         <content link = else
         <content colon                                 optional
-        <content link = Statement                               property = alternative
+        <content link = Action                                  property = alternative
 
     <syntax id = Match
         <content link = match
@@ -461,17 +465,17 @@
     <syntax id = Case                         multiple
         <content link = case
         <content link = Operation                               property = condition
-        <content link = Statement                               property = consequent
+        <content link = Action                                  property = consequent
     
     <syntax id = Default
         <content link = default
-        <content link = Statement                      optional property = alternative
+        <content link = Action                         optional property = alternative
 
     <syntax id = Lambda
         <content link = lambda
         <content link = Operation                               property = input
         <content colon
-        <content link = Statement                               property = block
+        <content link = Action                                  property = block
 
     <syntax id = For
         <content link = for

@@ -214,7 +214,8 @@ namespace Scaly.Compiler
                                 // operator case
                                 newContext.Values.Add("this", new KeyValuePair<TypeSpec, LLVMValueRef>(operatorType, functionValue.GetParam(0)));
                             }
-                            builder.BuildRet(BuildOperands(newContext, routine.Operation.Operands).Value);
+                            var ret = BuildOperands(newContext, routine.Operation.SourceOperands);
+                            builder.BuildRet(ret.Value);
                         }
                     }
                     break;
@@ -548,6 +549,9 @@ namespace Scaly.Compiler
                             throw new CompilerException("Objects are currently only supported as parameter lists for function calls.", tuple.Span);
                         context.TypedValue = BuildFunctionCall(context, context.TypedValue, tuple);
                         break;
+                    case If @if:
+                        BuildIf(context, @if);
+                        break;
                     default:
                         throw new System.NotImplementedException($"BuildOperand for expression {operand.Expression.GetType()} not implemented.");
                 }
@@ -739,7 +743,7 @@ namespace Scaly.Compiler
         {
             KeyValuePair<TypeSpec, LLVMValueRef> typedValue = new KeyValuePair<TypeSpec, LLVMValueRef>(null, null);
             foreach (var operation in scope.Operations)
-                context.TypedValue = BuildOperands(context, operation.Operands);
+                context.TypedValue = BuildOperands(context, operation.SourceOperands);
 
             if (scope.Binding != null)
                 BuildBinding(context, scope.Binding);
@@ -747,11 +751,15 @@ namespace Scaly.Compiler
 
         static void BuildBinding(Context context, Binding binding)
         {
-            var newContext = new Context { Global = context.Global, Source = context.Source, Operands = binding.Operation.Operands.GetEnumerator(), ParentContext = context };
+            var newContext = new Context { Global = context.Global, Source = context.Source, Operands = binding.Operation.SourceOperands.GetEnumerator(), ParentContext = context };
             BuildOperand(newContext);
             newContext.Values.Add(binding.Identifier, context.TypedValue);
-            foreach (var operation in binding.Operations)
-                BuildOperands(newContext, operation.Operands);
+            foreach (var operation in binding.BodyOperations)
+                BuildOperands(newContext, operation.SourceOperands);
+        }
+
+        static void BuildIf(Context context, If @if)
+        {
         }
 
         static KeyValuePair<TypeSpec, LLVMValueRef> BuildFunctionCall(Context context, KeyValuePair<TypeSpec, LLVMValueRef> function, Tuple tuple)

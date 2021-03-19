@@ -1449,7 +1449,7 @@ namespace Scaly.Compiler
         public object parse_implementation()
         {
             {
-                var node = parse_statement();
+                var node = parse_action();
                 if (node != null)
                     return node;
             }
@@ -1465,6 +1465,43 @@ namespace Scaly.Compiler
             }
             {
                 var node = parse_intrinsic();
+                if (node != null)
+                    return node;
+            }
+
+            return null;
+        }
+
+        public object[] parse_action_list()
+        {
+            List<object> list = null;
+            while (true)
+            {
+                var node = parse_action();
+                if (node == null)
+                    break;
+
+                if (list == null)
+                    list = new List<object>();
+
+                list.Add(node);
+            }
+
+            if (list != null)
+                return list.ToArray();
+            else
+                return null;
+        }
+
+        public object parse_action()
+        {
+            {
+                var node = parse_operation();
+                if (node != null)
+                    return node;
+            }
+            {
+                var node = parse_set();
                 if (node != null)
                     return node;
             }
@@ -2899,9 +2936,9 @@ namespace Scaly.Compiler
             var condition = parse_operation();
             if (condition == null)
                 throw new ParserException("Unable to parse operation.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
-            var consequent = parse_statement();
+            var consequent = parse_action();
             if (consequent == null)
-                throw new ParserException("Unable to parse statement.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
+                throw new ParserException("Unable to parse action.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
             var alternative = parse_else();
 
             var end = lexer.get_position();
@@ -2931,9 +2968,9 @@ namespace Scaly.Compiler
                     return null;
 
             lexer.parse_colon();
-            var alternative = parse_statement();
+            var alternative = parse_action();
             if (alternative == null)
-                throw new ParserException("Unable to parse statement.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
+                throw new ParserException("Unable to parse action.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var end = lexer.get_position();
 
@@ -3015,9 +3052,9 @@ namespace Scaly.Compiler
             var condition = parse_operation();
             if (condition == null)
                 throw new ParserException("Unable to parse operation.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
-            var consequent = parse_statement();
+            var consequent = parse_action();
             if (consequent == null)
-                throw new ParserException("Unable to parse statement.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
+                throw new ParserException("Unable to parse action.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var end = lexer.get_position();
 
@@ -3043,7 +3080,7 @@ namespace Scaly.Compiler
             var success_default_1 = lexer.parse_keyword("default");
             if (!success_default_1)
                     return null;
-            var alternative = parse_statement();
+            var alternative = parse_action();
 
             var end = lexer.get_position();
 
@@ -3075,9 +3112,9 @@ namespace Scaly.Compiler
             var success_colon_3 = lexer.parse_colon();
             if (!success_colon_3)
                     throw new ParserException("Unable to parse.", new Span { file = file_name, start = start, end = new Position { line = lexer.previous_line, column = lexer.previous_column } } );
-            var block = parse_statement();
+            var block = parse_action();
             if (block == null)
-                throw new ParserException("Unable to parse statement.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
+                throw new ParserException("Unable to parse action.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var end = lexer.get_position();
 

@@ -31,5 +31,14 @@ namespace tests
             Assert.AreEqual(Compiler.compileAndRunProgram("use Boolean.*:true  'as Integer'", new string[] { }), 1);
             Assert.AreEqual(Compiler.compileAndRunProgram("use Boolean.*:false 'as Integer'", new string[] { }), 0);
         }
+
+        [TestMethod]
+        public void TestIf()
+        {
+            Assert.AreEqual(Compiler.compileAndRunProgram("if true:1:else 0", new string[] { }), 1);
+            Assert.AreEqual(Compiler.compileAndRunProgram("if false:1:else 0", new string[] { }), 0);
+            Assert.AreEqual(Compiler.compileAndRunProgram("if true:0:else 1", new string[] { }), 0);
+            Assert.AreEqual(Compiler.compileAndRunProgram("if false:0:else 1", new string[] { }), 1);
+        }
     }
 }
