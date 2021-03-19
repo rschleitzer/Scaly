@@ -70,6 +70,7 @@ namespace Scaly.Compiler
         public TypedValue TypedValue;
         public Dictionary<string, TypedValue> Values = new Dictionary<string, TypedValue>();
         public Dictionary<string, TypeSpec> GenericTypeDictionary;
+        internal LLVMValueRef CurrentFunction;
 
         public TypedValue ResolveValue(string name)
         {
@@ -519,7 +520,7 @@ namespace Scaly.Compiler
                         var block = functionValue.AppendBasicBlock(string.Empty);
                         using (var builder = context.Global.Module.Context.CreateBuilder())
                         {
-                            var newContext = new Context { Global = context.Global, Builder = builder, Source = source, GenericTypeDictionary = context.GenericTypeDictionary };
+                            var newContext = new Context { Global = context.Global, Builder = builder, CurrentFunction = functionValue, Source = source, GenericTypeDictionary = context.GenericTypeDictionary };
                             builder.PositionAtEnd(block);
                             uint paramCount = 0;
                             if (routine.Input != null)
@@ -800,6 +801,23 @@ namespace Scaly.Compiler
 
         static void BuildIf(Context context, If @if)
         {
+            var conditionValue = BuildOperands(context, @if.Condition);
+            if (conditionValue.Name != "Boolean")
+                throw new CompilerException($"The condition of this if expression is of type {conditionValue.Name} where a Boolean value was expected.", @if.Span);
+
+            var consequentBlock = BuildBlock(context, @if.Consequent);
+            var alternativeBlock = BuildBlock(context, @if.Alternative);
+
+            var block = context.CurrentFunction.AppendBasicBlock(string.Empty);
+            context.Builder.PositionAtEnd(block);
+        }
+
+        static LLVMBasicBlockRef BuildBlock(Context context, Operation action)
+        {
+            var block = context.CurrentFunction.AppendBasicBlock(string.Empty);
+            context.Builder.PositionAtEnd(block);
+            BuildOperands(context, action.SourceOperands);
+            return block;
         }
 
         static TypedValue BuildFunctionCall(Context context, TypedValue function, FunctionType functionType, Tuple tuple)

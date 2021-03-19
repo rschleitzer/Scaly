@@ -172,6 +172,7 @@ namespace Scaly.Compiler.Model
 
     public class If : Expression
     {
+        public Span Span;
         public List<Operand> Condition = new List<Operand>();
         public Operation Consequent;
         public Operation Alternative;
@@ -430,6 +431,7 @@ namespace Scaly.Compiler.Model
         {
             return new If
             {
+                Span = ifSyntax.span,
                 Condition = ifSyntax.condition.operands.ToList().ConvertAll(it => BuildOperand(it)),
                 Consequent = BuildAction(ifSyntax.consequent),
                 Alternative = BuildAction(ifSyntax.alternative.alternative),
