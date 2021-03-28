@@ -62,6 +62,29 @@ namespace Scaly.Compiler
 
     internal class Context
     {
+        private Context() { }
+        public Context
+        (
+            GlobalContext globalContext,
+            Source source,
+            Context parentContext,
+            LLVMBuilderRef builder,
+            IEnumerator<Operand> operands,
+            TypedValue typedValue,
+            Dictionary<string, TypeSpec> genericTypeDictionary,
+            LLVMValueRef currentFunction
+        )
+        {
+            Global = globalContext;
+            Source = source;
+            ParentContext = parentContext;
+            Builder = builder;
+            Operands = operands;
+            TypedValue = typedValue;
+            GenericTypeDictionary = genericTypeDictionary;
+            CurrentFunction = currentFunction;
+         }
+
         public GlobalContext Global;
         public Source Source;
         public Context ParentContext;
@@ -173,7 +196,7 @@ namespace Scaly.Compiler
             {
                 var globalContext = new GlobalContext { Module = module, Dictionary = dictionary };
                 var mainName = "main";
-                var context = new Context { Global = globalContext, Source = globalContext.Dictionary.Sources[mainName] };
+                var context = new Context(globalContext, globalContext.Dictionary.Sources[mainName], null, null, null, null, null, null);
                 var function = GetMainFunction(context, mainName);
                 var functionValue = ResolveFunctionValue(context, function);
                 return functionValue.Value;
@@ -268,7 +291,7 @@ namespace Scaly.Compiler
             }
             else
             {
-                var newContext = new Context { Global = context.Global, Source = context.Global.Dictionary.Sources[qualifiedName] };
+                var newContext = new Context(context.Global, context.Global.Dictionary.Sources[qualifiedName], context, context.Builder, null, null, null, null);
                 type = CreateType(newContext, qualifiedName, typeSpec);
             }
 
@@ -447,7 +470,7 @@ namespace Scaly.Compiler
         static void CreateOperatorValue(Context context, TypeSpec operandType, Operator @operator, string qualifiedName)
         {
             Dictionary<string, TypeSpec> genericTypeDictionary = CreateOperatorGenericTypeDictionary(operandType, @operator);
-            var newContext = new Context { Global = context.Global, Source = context.Source, ParentContext = context, GenericTypeDictionary = genericTypeDictionary };
+            var newContext = new Context(context.Global, context.Source, context, context.Builder, null, null, genericTypeDictionary, null);
             var operatorType = ResolveOperatorType(newContext, operandType, @operator, qualifiedName);
             var operatorFunction = context.Global.Module.AddFunction(qualifiedName, operatorType.Type.Type);
             var operatorValue = new TypedValue(@operator.Routine.Result[0].TypeSpec, qualifiedName, operatorFunction);
@@ -520,7 +543,7 @@ namespace Scaly.Compiler
                         var block = functionValue.AppendBasicBlock(string.Empty);
                         using (var builder = context.Global.Module.Context.CreateBuilder())
                         {
-                            var newContext = new Context { Global = context.Global, Builder = builder, CurrentFunction = functionValue, Source = source, GenericTypeDictionary = context.GenericTypeDictionary };
+                            var newContext = new Context(context.Global, source, context, builder, null, null, context.GenericTypeDictionary, functionValue);
                             builder.PositionAtEnd(block);
                             uint paramCount = 0;
                             if (routine.Input != null)
@@ -558,7 +581,7 @@ namespace Scaly.Compiler
 
         static TypedValue BuildOperands(Context context, List<Operand> operands)
         {
-            var newContext = new Context { Global = context.Global, Source = context.Source, Builder = context.Builder, Operands = operands.GetEnumerator(), TypedValue = null, GenericTypeDictionary = context.GenericTypeDictionary, ParentContext = context };
+            var newContext = new Context(context.Global, context.Source, context, context.Builder, operands.GetEnumerator(), null, context.GenericTypeDictionary, context.CurrentFunction);
             BuildOperand(newContext);
             return newContext.TypedValue;
         }
@@ -792,7 +815,7 @@ namespace Scaly.Compiler
 
         static void BuildBinding(Context context, Binding binding)
         {
-            var newContext = new Context { Global = context.Global, Source = context.Source, Operands = binding.Operation.SourceOperands.GetEnumerator(), ParentContext = context };
+            var newContext = new Context(context.Global, context.Source, context, context.Builder, binding.Operation.SourceOperands.GetEnumerator(), null, context.GenericTypeDictionary, context.CurrentFunction);
             BuildOperand(newContext);
             newContext.Values.Add(binding.Identifier, context.TypedValue);
             foreach (var operation in binding.BodyOperations)
@@ -805,19 +828,24 @@ namespace Scaly.Compiler
             if (conditionValue.Name != "Boolean")
                 throw new CompilerException($"The condition of this if expression is of type {conditionValue.Name} where a Boolean value was expected.", @if.Span);
 
-            var consequentBlock = BuildBlock(context, @if.Consequent);
-            var alternativeBlock = BuildBlock(context, @if.Alternative);
+            var thenBlock = context.CurrentFunction.AppendBasicBlock(string.Empty);
+            var elseBlock = context.CurrentFunction.AppendBasicBlock(string.Empty);
+            var mergeBlock = context.CurrentFunction.AppendBasicBlock(string.Empty);
 
-            var block = context.CurrentFunction.AppendBasicBlock(string.Empty);
-            context.Builder.PositionAtEnd(block);
-        }
+            context.Builder.BuildCondBr(conditionValue.Value, thenBlock, elseBlock);
 
-        static LLVMBasicBlockRef BuildBlock(Context context, Operation action)
-        {
-            var block = context.CurrentFunction.AppendBasicBlock(string.Empty);
-            context.Builder.PositionAtEnd(block);
-            BuildOperands(context, action.SourceOperands);
-            return block;
+            context.Builder.PositionAtEnd(thenBlock);
+            var thenValue = BuildOperands(context, @if.Consequent.SourceOperands);
+            context.Builder.BuildBr(mergeBlock);
+
+            context.Builder.PositionAtEnd(elseBlock);
+            var elseValue = BuildOperands(context, @if.Alternative.SourceOperands); ;
+            context.Builder.BuildBr(mergeBlock);
+
+            context.Builder.PositionAtEnd(mergeBlock);
+            var phi = context.Builder.BuildPhi(thenValue.Value.TypeOf);
+            phi.AddIncoming(new LLVMValueRef[] { thenValue.Value, elseValue.Value }, new LLVMBasicBlockRef[] { thenBlock, elseBlock }, 2);
+            context.TypedValue = new TypedValue(thenValue.TypeSpec, thenValue.Name, phi );
         }
 
         static TypedValue BuildFunctionCall(Context context, TypedValue function, FunctionType functionType, Tuple tuple)
