@@ -368,7 +368,7 @@
 
     <syntax id = Is
         <content link = is
-        <content link = Operand               multiple          property = condition
+        <content link = Type                                    property = type
 
     <syntax id = Continue
         <content link = continue
@@ -448,8 +448,14 @@
     <syntax id = If
         <content link = if
         <content link = Operation                               property = condition
+        <content link = Alias                          optional property = alias
         <content link = Action                                  property = consequent
         <content link = Else                           optional property = alternative
+
+    <syntax id = Alias
+        <content link = as
+        <content identifier                                     property = name
+        <content colon                                 optional
 
     <syntax id = Else
         <content link = else
@@ -483,7 +489,7 @@
         <content link = in
         <content link = Operation                               property = expression
         <content link = Label                          optional property = name
-        <content link = Operation                               property = action
+        <content link = Action                                  property = action
 
     <syntax id = Label
         <content link = label
@@ -493,17 +499,18 @@
         <content link = while
         <content link = Operation                               property = condition
         <content link = Label                          optional property = name
-        <content link = Operation                               property = action
+        <content link = Action                                  property = action
 
     <syntax id = Repeat
         <content link = repeat
         <content link = Label                          optional property = name
-        <content link = Operation                               property = action
+        <content link = Action                                  property = action
 
     <syntax id = SizeOf
         <content link = sizeof
-        <content link = Type                                    property = spec
+        <content link = Type                                    property = type
 
+    <keyword id = as
     <keyword id = break
     <keyword id = catch
     <keyword id = case

@@ -9,6 +9,7 @@ namespace Scaly.Compiler
         Lexer lexer;
         string file_name = "";
         HashSet<string> keywords = new HashSet<string>(new string[] {
+            "as",
             "break",
             "catch",
             "case",
@@ -2435,9 +2436,9 @@ namespace Scaly.Compiler
             var success_is_1 = lexer.parse_keyword("is");
             if (!success_is_1)
                     return null;
-            var condition = parse_operand_list();
-            if (condition == null)
-                throw new ParserException("Unable to parse operand list.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
+            var type = parse_type();
+            if (type == null)
+                throw new ParserException("Unable to parse type.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var end = lexer.get_position();
 
@@ -2449,7 +2450,7 @@ namespace Scaly.Compiler
                     start = start,
                     end = end
                 },
-                condition = condition,
+                type = type,
             };
 
             return ret;
@@ -2936,6 +2937,7 @@ namespace Scaly.Compiler
             var condition = parse_operation();
             if (condition == null)
                 throw new ParserException("Unable to parse operation.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
+            var alias = parse_alias();
             var consequent = parse_action();
             if (consequent == null)
                 throw new ParserException("Unable to parse action.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
@@ -2952,8 +2954,48 @@ namespace Scaly.Compiler
                     end = end
                 },
                 condition = condition,
+                alias = alias,
                 consequent = consequent,
                 alternative = alternative,
+            };
+
+            return ret;
+        }
+
+        public AliasSyntax parse_alias()
+        {
+            var start = lexer.get_previous_position();
+
+            var success_as_1 = lexer.parse_keyword("as");
+            if (!success_as_1)
+                    return null;
+
+            var name = lexer.parse_identifier(keywords);
+            if (name != null)
+            {
+                if (!is_identifier(name))
+                {
+                    throw new ParserException("Unable to parse.", new Span { file = file_name, start = start, end = new Position { line = lexer.previous_line, column = lexer.previous_column } } );
+                }
+            }
+            else
+            {
+                    throw new ParserException("Unable to parse.", new Span { file = file_name, start = start, end = new Position { line = lexer.previous_line, column = lexer.previous_column } } );
+            }
+
+            lexer.parse_colon();
+
+            var end = lexer.get_position();
+
+            var ret = new AliasSyntax
+            {
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end
+                },
+                name = name,
             };
 
             return ret;
@@ -3151,9 +3193,9 @@ namespace Scaly.Compiler
             if (expression == null)
                 throw new ParserException("Unable to parse operation.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
             var name = parse_label();
-            var action = parse_operation();
+            var action = parse_action();
             if (action == null)
-                throw new ParserException("Unable to parse operation.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
+                throw new ParserException("Unable to parse action.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var end = lexer.get_position();
 
@@ -3222,9 +3264,9 @@ namespace Scaly.Compiler
             if (condition == null)
                 throw new ParserException("Unable to parse operation.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
             var name = parse_label();
-            var action = parse_operation();
+            var action = parse_action();
             if (action == null)
-                throw new ParserException("Unable to parse operation.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
+                throw new ParserException("Unable to parse action.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var end = lexer.get_position();
 
@@ -3252,9 +3294,9 @@ namespace Scaly.Compiler
             if (!success_repeat_1)
                     return null;
             var name = parse_label();
-            var action = parse_operation();
+            var action = parse_action();
             if (action == null)
-                throw new ParserException("Unable to parse operation.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
+                throw new ParserException("Unable to parse action.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var end = lexer.get_position();
 
@@ -3280,8 +3322,8 @@ namespace Scaly.Compiler
             var success_sizeof_1 = lexer.parse_keyword("sizeof");
             if (!success_sizeof_1)
                     return null;
-            var spec = parse_type();
-            if (spec == null)
+            var type = parse_type();
+            if (type == null)
                 throw new ParserException("Unable to parse type.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
 
             var end = lexer.get_position();
@@ -3294,7 +3336,7 @@ namespace Scaly.Compiler
                     start = start,
                     end = end
                 },
-                spec = spec,
+                type = type,
             };
 
             return ret;
@@ -3706,7 +3748,7 @@ namespace Scaly.Compiler
     public class IsSyntax
     {
         public Span span;
-        public OperandSyntax[] condition;
+        public TypeSyntax type;
     }
 
     public class ContinueSyntax
@@ -3790,8 +3832,15 @@ namespace Scaly.Compiler
     {
         public Span span;
         public OperationSyntax condition;
+        public AliasSyntax alias;
         public object consequent;
         public ElseSyntax alternative;
+    }
+
+    public class AliasSyntax
+    {
+        public Span span;
+        public string name;
     }
 
     public class ElseSyntax
@@ -3834,7 +3883,7 @@ namespace Scaly.Compiler
         public OperationSyntax condition;
         public OperationSyntax expression;
         public LabelSyntax name;
-        public OperationSyntax action;
+        public object action;
     }
 
     public class LabelSyntax
@@ -3848,19 +3897,19 @@ namespace Scaly.Compiler
         public Span span;
         public OperationSyntax condition;
         public LabelSyntax name;
-        public OperationSyntax action;
+        public object action;
     }
 
     public class RepeatSyntax
     {
         public Span span;
         public LabelSyntax name;
-        public OperationSyntax action;
+        public object action;
     }
 
     public class SizeOfSyntax
     {
         public Span span;
-        public TypeSyntax spec;
+        public TypeSyntax type;
     }
 }
