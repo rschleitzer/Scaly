@@ -25,3 +25,33 @@ define Pointer[T] (pointer)
     operator * returns T
         LLVM.load[T](this)
 }
+
+define Option[T] (pointer)
+{
+    operator = returns OptionComparer[T]
+        OptionComparer[T](this)
+}
+
+define OptionComparer[T] (pointer)
+{
+;    operator (other: Option[T]) returns Boolean
+;        ; pointer comparison to go here
+
+;    operator (null) returns Boolean
+;        ; pointer comparison to go here
+}
+
+define null
+{
+    operator = returns NullComparer
+        NullComparer
+}
+
+define NullComparer
+{
+;    operator (other: Option[T]) returns Boolean
+;        ; pointer comparison to go here
+
+;    operator (null) returns Boolean
+;        true
+}
