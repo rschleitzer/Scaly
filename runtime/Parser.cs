@@ -2289,11 +2289,6 @@ namespace Scaly.Compiler
                 if (node != null)
                     return node;
             }
-            {
-                var node = parse_is();
-                if (node != null)
-                    return node;
-            }
 
             return null;
         }
@@ -2424,33 +2419,6 @@ namespace Scaly.Compiler
                     end = end
                 },
                 handler = handler,
-            };
-
-            return ret;
-        }
-
-        public IsSyntax parse_is()
-        {
-            var start = lexer.get_previous_position();
-
-            var success_is_1 = lexer.parse_keyword("is");
-            if (!success_is_1)
-                    return null;
-            var type = parse_type();
-            if (type == null)
-                throw new ParserException("Unable to parse type.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
-
-            var end = lexer.get_position();
-
-            var ret = new IsSyntax
-            {
-                span = new Span
-                {
-                    file = file_name,
-                    start = start,
-                    end = end
-                },
-                type = type,
             };
 
             return ret;
@@ -2937,7 +2905,8 @@ namespace Scaly.Compiler
             var condition = parse_operation();
             if (condition == null)
                 throw new ParserException("Unable to parse operation.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
-            var alias = parse_alias();
+            var match = parse_is();
+            var alias = parse_as();
             var consequent = parse_action();
             if (consequent == null)
                 throw new ParserException("Unable to parse action.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
@@ -2954,6 +2923,7 @@ namespace Scaly.Compiler
                     end = end
                 },
                 condition = condition,
+                match = match,
                 alias = alias,
                 consequent = consequent,
                 alternative = alternative,
@@ -2962,7 +2932,34 @@ namespace Scaly.Compiler
             return ret;
         }
 
-        public AliasSyntax parse_alias()
+        public IsSyntax parse_is()
+        {
+            var start = lexer.get_previous_position();
+
+            var success_is_1 = lexer.parse_keyword("is");
+            if (!success_is_1)
+                    return null;
+            var type = parse_type();
+            if (type == null)
+                throw new ParserException("Unable to parse type.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
+
+            var end = lexer.get_position();
+
+            var ret = new IsSyntax
+            {
+                span = new Span
+                {
+                    file = file_name,
+                    start = start,
+                    end = end
+                },
+                type = type,
+            };
+
+            return ret;
+        }
+
+        public AsSyntax parse_as()
         {
             var start = lexer.get_previous_position();
 
@@ -2987,7 +2984,7 @@ namespace Scaly.Compiler
 
             var end = lexer.get_position();
 
-            var ret = new AliasSyntax
+            var ret = new AsSyntax
             {
                 span = new Span
                 {
@@ -3745,12 +3742,6 @@ namespace Scaly.Compiler
         public OperationSyntax handler;
     }
 
-    public class IsSyntax
-    {
-        public Span span;
-        public TypeSyntax type;
-    }
-
     public class ContinueSyntax
     {
         public Span span;
@@ -3832,12 +3823,19 @@ namespace Scaly.Compiler
     {
         public Span span;
         public OperationSyntax condition;
-        public AliasSyntax alias;
+        public IsSyntax match;
+        public AsSyntax alias;
         public object consequent;
         public ElseSyntax alternative;
     }
 
-    public class AliasSyntax
+    public class IsSyntax
+    {
+        public Span span;
+        public TypeSyntax type;
+    }
+
+    public class AsSyntax
     {
         public Span span;
         public string name;

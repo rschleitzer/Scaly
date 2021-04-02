@@ -347,7 +347,6 @@
     <syntax id = Postfix                      multiple abstract
         <content link = MemberAccess
         <content link = Catcher
-        <content link = Is
 
     <syntax id = MemberAccess
         <content link = dot
@@ -365,10 +364,6 @@
     <syntax id = Drop
         <content link = drop
         <content link = Operation                               property = handler
-
-    <syntax id = Is
-        <content link = is
-        <content link = Type                                    property = type
 
     <syntax id = Continue
         <content link = continue
@@ -448,11 +443,16 @@
     <syntax id = If
         <content link = if
         <content link = Operation                               property = condition
-        <content link = Alias                          optional property = alias
+        <content link = Is                             optional property = match
+        <content link = As                             optional property = alias
         <content link = Action                                  property = consequent
         <content link = Else                           optional property = alternative
 
-    <syntax id = Alias
+    <syntax id = Is
+        <content link = is
+        <content link = Type                                    property = type
+
+    <syntax id = As
         <content link = as
         <content identifier                                     property = name
         <content colon                                 optional
@@ -464,7 +464,7 @@
 
     <syntax id = Match
         <content link = match
-        <content link = Operation                               property = scrutinee        
+        <content link = Operation                               property = scrutinee
         <content link = Case                  multiple          property = cases
         <content link = Default                        optional property = alternative
 
