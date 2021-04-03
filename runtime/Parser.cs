@@ -1666,8 +1666,6 @@ namespace Scaly.Compiler
             if (name == null)
                 throw new ParserException("Unable to parse name.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
             var extension = parse_extends();
-            if (extension == null)
-                throw new ParserException("Unable to parse extends.", new Span { file = file_name, start = new Position { line = lexer.previous_line, column = lexer.previous_column }, end = new Position { line = lexer.line, column = lexer.column } } );
             var attributes = parse_attribute_list();
 
             var success_left_curly_5 = lexer.parse_punctuation("{");

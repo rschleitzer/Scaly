@@ -261,7 +261,7 @@
     <syntax id = Trait
         <content link = trait
         <content link = Name                                    property = name
-        <content link = Extends                                 property = extension
+        <content link = Extends                        optional property = extension
         <content link = Attribute             multiple optional property = attributes
         <content link = left_curly
         <content link = Method                multiple optional property = functions
