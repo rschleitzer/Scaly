@@ -390,7 +390,7 @@ namespace Scaly.Compiler
             if (definition.Structure == null)
                 throw new CompilerException($"The type \"{definition.Type.Name}\" contains no data and can only be used as a namespace.", typeSpec.Span);
 
-            if (definition.Structure.Members.Count == 1 && definition.Structure.Members[0].Name == null && definition.Structure.Members[0].Type.Arguments == null)
+            if (definition.Structure.Members.Count == 1 && definition.Structure.Members[0].Name == "this" && definition.Structure.Members[0].Type.Arguments == null)
                 return new NamedType(definition.Type.Name, ResolveType(context, definition.Structure.Members[0].Type).Type);
 
             return null;

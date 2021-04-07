@@ -1,38 +1,36 @@
-use LLVM.*
+define Double (this: LLVM.double) {}
+define Long (this: LLVM.i64) {}
+define Integer (this: LLVM.i32) {}
+define Byte (this: LLVM.i8) {}
 
-define Double (double) {}
-define Long (i64) {}
-define Integer (i32) {}
-define Byte (i8) {}
-
-define Boolean (i1)
+define Boolean (this: LLVM.i1)
 {
     operator 'as Integer' returns Integer
-        LLVM.zext[i32](this)
+        LLVM.zext[LLVM.i32](this)
 }
 
 define true 0B1
 define false 0B0
 
-define Size (i64)
+define Size (this: LLVM.i64)
 {
     operator 'as Integer' returns Integer
-        LLVM.trunc[i32](this)
+        LLVM.trunc[LLVM.i32](this)
 }
 
-define Pointer[T] (pointer)
+define Pointer[T] (this: LLVM.pointer)
 {
     operator * returns T
         LLVM.load[T](this)
 }
 
-define Option[T] (pointer)
+define Option[T] (this: LLVM.pointer)
 {
     operator = returns OptionComparer[T]
         OptionComparer[T](this)
 }
 
-define OptionComparer[T] (pointer)
+define OptionComparer[T] (this: LLVM.pointer)
 {
 ;    operator (other: Option[T]) returns Boolean
 ;        ; pointer comparison to go here

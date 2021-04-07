@@ -723,7 +723,17 @@ namespace Scaly.Compiler.Model
 
         static TypeSpec BuildType(TypeSyntax typeSyntax)
         {
-            var typeSpec = new TypeSpec { Name = typeSyntax.name.name, Span = typeSyntax.span };
+            var typeName = new StringBuilder(typeSyntax.name.name);
+            if (typeSyntax.name.extensions != null)
+            {
+                foreach (var extension in typeSyntax.name.extensions)
+                {
+                    typeName.Append('.');
+                    typeName.Append(extension.name);
+                }
+            }
+
+            var typeSpec = new TypeSpec { Name = typeName.ToString(), Span = typeSyntax.span };
             if (typeSyntax.generics != null)
                 typeSpec.Arguments = typeSyntax.generics.generics.ToList().ConvertAll(it => BuildType(it.spec));
 
