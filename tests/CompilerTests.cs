@@ -22,14 +22,14 @@ namespace tests
         [TestMethod]
         public void TestStrlen()
         {
-            Assert.AreEqual(Compiler.compileAndRunProgram("use Pointer.*:use Size.*:strlen('argument values'*) 'as Integer'", new string[] { "bogus" }), 5);
+            Assert.AreEqual(Compiler.compileAndRunProgram("use pointer.*:use size.*:strlen('argument values'*) 'as int'", new string[] { "bogus" }), 5);
         }
 
         [TestMethod]
         public void TestBooleanLiterals()
         {
-            Assert.AreEqual(Compiler.compileAndRunProgram("use Boolean.*:true  'as Integer'", new string[] { }), 1);
-            Assert.AreEqual(Compiler.compileAndRunProgram("use Boolean.*:false 'as Integer'", new string[] { }), 0);
+            Assert.AreEqual(Compiler.compileAndRunProgram("use bool.*:true  'as int'", new string[] { }), 1);
+            Assert.AreEqual(Compiler.compileAndRunProgram("use bool.*:false 'as int'", new string[] { }), 0);
         }
 
         [TestMethod]

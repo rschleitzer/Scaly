@@ -1,1 +1,1 @@
-function strlen (str: Pointer[Byte]) returns Size extern
+function strlen (str: pointer[byte]) returns size extern

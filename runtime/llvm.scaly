@@ -9,5 +9,5 @@ define LLVM
 
     function trunc[From, To](from: From) returns To instruction
     function zext[From, To](from: From) returns To instruction
-    function load[T](pointer: Pointer[T]) returns T instruction
+    function load[T](ptr: pointer[T]) returns T instruction
 }

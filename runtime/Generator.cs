@@ -285,7 +285,7 @@ namespace Scaly.Compiler
             if (context.Global.Types.ContainsKey(typeName))
                 return context.Global.Types[typeName];
 
-            if (typeSpec.Name == "Pointer")
+            if (typeSpec.Name == "pointer")
             {
                 type = GetPointerType(context, typeSpec);
             }
@@ -418,11 +418,11 @@ namespace Scaly.Compiler
             var qualifiedName = QualifyName(context, typeSpec.Name);
             var typeName = AddTypeArguments(qualifiedName, typeSpec.Arguments);
             if (typeSpec.Arguments == null)
-                throw new CompilerException("Pointer is a generic type which expects a type argument.", typeSpec.Span);
+                throw new CompilerException("pointer is a generic type which expects a type argument.", typeSpec.Span);
             if (typeSpec.Arguments.Count != 1)
-                throw new CompilerException($"Pointer expects exactly one type argument, not {typeSpec.Arguments.Count}.", typeSpec.Span);
+                throw new CompilerException($"pointer expects exactly one type argument, not {typeSpec.Arguments.Count}.", typeSpec.Span);
             var typeArgument = typeSpec.Arguments[0];
-            var pointerTarget = (typeArgument.Name == "Pointer") ? GetPointerType(context, typeArgument) : ResolveType(context, typeArgument);
+            var pointerTarget = (typeArgument.Name == "pointer") ? GetPointerType(context, typeArgument) : ResolveType(context, typeArgument);
             return new NamedType(typeName, LLVMTypeRef.CreatePointer(pointerTarget.Type, 0));
         }
 
@@ -594,10 +594,10 @@ namespace Scaly.Compiler
                 switch (operand.Expression)
                 {
                     case IntegerConstant integerConstant:
-                        context.TypedValue = new TypedValue(context.Global.Dictionary.Definitions["Integer"].Type, "Integer", LLVMValueRef.CreateConstInt(LLVMTypeRef.Int32, (ulong)integerConstant.Value));
+                        context.TypedValue = new TypedValue(context.Global.Dictionary.Definitions["int"].Type, "int", LLVMValueRef.CreateConstInt(LLVMTypeRef.Int32, (ulong)integerConstant.Value));
                         break;
                     case BooleanConstant booleanConstant:
-                        context.TypedValue = new TypedValue(context.Global.Dictionary.Definitions["Boolean"].Type, "Boolean", LLVMValueRef.CreateConstInt(LLVMTypeRef.Int1, booleanConstant.Value ? 1UL : 0UL));
+                        context.TypedValue = new TypedValue(context.Global.Dictionary.Definitions["bool"].Type, "bool", LLVMValueRef.CreateConstInt(LLVMTypeRef.Int1, booleanConstant.Value ? 1UL : 0UL));
                         break;
                     case Name name:
                         BuildName(context, name);
@@ -749,7 +749,7 @@ namespace Scaly.Compiler
                                 {
                                     case "LLVM.i32":
                                         destinationTypeRef = context.Global.Types[destinationName].Type;
-                                        destinationName = "Integer";
+                                        destinationName = "int";
                                         destinationType = context.Global.Dictionary.Definitions[destinationName].Type;
                                         break;
                                     default:
@@ -776,7 +776,7 @@ namespace Scaly.Compiler
                                 {
                                     case "LLVM.i32":
                                         destinationTypeRef = context.Global.Types[destinationName].Type;
-                                        destinationName = "Integer";
+                                        destinationName = "int";
                                         destinationType = context.Global.Dictionary.Definitions[destinationName].Type;
                                         break;
                                     default:
@@ -825,8 +825,8 @@ namespace Scaly.Compiler
         static void BuildIf(Context context, If @if)
         {
             var conditionValue = BuildOperands(context, @if.Condition);
-            if (conditionValue.Name != "Boolean")
-                throw new CompilerException($"The condition of this if expression is of type {conditionValue.Name} where a Boolean value was expected.", @if.Span);
+            if (conditionValue.Name != "bool")
+                throw new CompilerException($"The condition of this if expression is of type {conditionValue.Name} where a bool was expected.", @if.Span);
 
             var thenBlock = context.CurrentFunction.AppendBasicBlock(string.Empty);
             var elseBlock = context.CurrentFunction.AppendBasicBlock(string.Empty);
@@ -954,17 +954,17 @@ namespace Scaly.Compiler
                 throw new CompilerException("More than one main function found.", new Span { file = "", start = new Position { line = 0, column = 0 }, end = new Position { line = 0, column = 0 }, });
             var function = functions.First();
             if (function.Routine.Result == null)
-                throw new CompilerException("Main function has no return value. The return value must be Integer.", function.Span);
+                throw new CompilerException("Main function has no return value. The return value must be int.", function.Span);
             if (function.Routine.Result.Count != 1)
-                throw new CompilerException("Main function has the wrong number of results. It has to return exactly one Integer.", function.Span);
+                throw new CompilerException("Main function has the wrong number of results. It has to return exactly one int.", function.Span);
             var result = function.Routine.Result[0].TypeSpec;
-            if (result.Name != "Integer")
-                throw new CompilerException("Main function has the wrong return value type. The return value must be of type Integer.", function.Span);
+            if (result.Name != "int")
+                throw new CompilerException("Main function has the wrong return value type. The return value must be int.", function.Span);
             var argcName = "argument count";
-            var argcType = "Integer";
+            var argcType = "int";
             var argvName = "argument values";
-            var argvType = "Pointer";
-            var charType = "Byte";
+            var argvType = "pointer";
+            var charType = "byte";
             var parameterSentence = $"The parameters must be '{argcName}': {argcType}, '{argvName}': {argvType}.";
             if (function.Routine.Input == null)
                 throw new CompilerException($"Main function has no parameters. {parameterSentence}", function.Span);

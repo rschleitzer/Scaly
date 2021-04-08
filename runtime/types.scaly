@@ -1,24 +1,24 @@
-define Double (this: LLVM.double) {}
-define Long (this: LLVM.i64) {}
-define Integer (this: LLVM.i32) {}
-define Byte (this: LLVM.i8) {}
+define double (this: LLVM.double) {}
+define long (this: LLVM.i64) {}
+define int (this: LLVM.i32) {}
+define byte (this: LLVM.i8) {}
 
-define Boolean (this: LLVM.i1)
+define bool (this: LLVM.i1)
 {
-    operator 'as Integer' returns Integer
+    operator 'as int' returns int
         LLVM.zext[LLVM.i32](this)
 }
 
 define true 0B1
 define false 0B0
 
-define Size (this: LLVM.i64)
+define size (this: LLVM.i64)
 {
-    operator 'as Integer' returns Integer
+    operator 'as int' returns int
         LLVM.trunc[LLVM.i32](this)
 }
 
-define Pointer[T] (this: LLVM.pointer)
+define pointer[T] (this: LLVM.pointer)
 {
     operator * returns T
         LLVM.load[T](this)
@@ -32,10 +32,10 @@ define Option[T] (this: LLVM.pointer)
 
 define OptionComparer[T] (this: LLVM.pointer)
 {
-;    operator (other: Option[T]) returns Boolean
+;    operator (other: Option[T]) returns bool
 ;        ; pointer comparison to go here
 
-;    operator (null) returns Boolean
+;    operator (null) returns bool
 ;        ; pointer comparison to go here
 }
 
@@ -47,9 +47,9 @@ define null
 
 define NullComparer
 {
-;    operator (other: Option[T]) returns Boolean
+;    operator (other: Option[T]) returns bool
 ;        ; pointer comparison to go here
 
-;    operator (null) returns Boolean
+;    operator (null) returns bool
 ;        true
 }
