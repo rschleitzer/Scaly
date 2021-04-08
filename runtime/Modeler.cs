@@ -833,8 +833,8 @@ namespace Scaly.Compiler.Model
                         var bodySyntax = classSyntax.body;
                         if (classSyntax.structure.members != null)
                             definition.Structure = HandleStructure(classSyntax.structure);
-                        if (bodySyntax.declarations != null)
-                            foreach (var declaration in bodySyntax.declarations)
+                        if (classSyntax.body  != null && classSyntax.body.declarations != null)
+                            foreach (var declaration in classSyntax.body.declarations)
                                 HandleDeclaration(definition, source, origin, declaration);
                         break;
                     }

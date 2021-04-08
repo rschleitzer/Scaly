@@ -4,7 +4,7 @@
     <TargetFramework>net5.0</TargetFramework>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>0.0.7-beta</Version>
+    <Version>0.0.8-beta</Version>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
   </PropertyGroup>
 
@@ -13,6 +13,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="..\LICENSE">
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+    </Content>
     <Content Include="*.scaly">
       <PackageCopyToOutput>true</PackageCopyToOutput>
     </Content>

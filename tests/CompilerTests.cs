@@ -40,5 +40,11 @@ namespace tests
             Assert.AreEqual(Compiler.compileAndRunProgram("if true:0:else 1", new string[] { }), 0);
             Assert.AreEqual(Compiler.compileAndRunProgram("if false:0:else 1", new string[] { }), 1);
         }
+
+        [TestMethod]
+        public void TestEmptyClassBody()
+        {
+            Assert.AreEqual(Compiler.compileAndRunProgram("define A (this: bool) {}:0", new string[] { }), 0);
+        }
     }
 }
