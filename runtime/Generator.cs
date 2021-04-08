@@ -323,10 +323,9 @@ namespace Scaly.Compiler
                     var usingName = @using.Path;
 
                     var definition = context.ResolveDefinitionName(usingName, @using.Span);
-                    if (definition.Definitions != null && definition.Definitions.ContainsKey(name))
-                        return usingName + "." + name;
-
-                    if (definition.Operators != null && definition.Operators.ContainsKey(name))
+                    if ((definition.Definitions != null && definition.Definitions.ContainsKey(name))
+                      || (definition.Operators != null && definition.Operators.ContainsKey(name))
+                      || (definition.Functions != null && definition.Functions.Where(it => it.Name == name).Any()))
                         return usingName + "." + name;
                 }
             }
