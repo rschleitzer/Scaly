@@ -205,19 +205,26 @@ namespace Scaly.Compiler
 
         static TypedValue ResolveFunctionValue(Context context, Function function)
         {
-            var functionName = QualifyFunctionName(function);
+            var functionName = QualifyFunctionName(context, function);
             if (!context.Global.Values.ContainsKey(functionName))
                 CreateFunctionValue(context, function, functionName);
             var llvmFunction = context.Global.Values[function.Name];
             return llvmFunction;
         }
 
-        static string QualifyFunctionName(Function function)
+        static string QualifyFunctionName(Context context, Function function)
         {
             if ((function.Routine.Implementation == Implementation.Extern) || (function.Name == "main"))
                 return function.Name;
 
             var functionNameBuilder = new StringBuilder();
+
+            string nameSpace = "";
+            for (var definition = function.Definition; definition != null; definition = definition.Parent)
+                nameSpace = definition.Type.Name + "." + nameSpace;
+
+            if (nameSpace != "")
+                functionNameBuilder.Append(nameSpace);
 
             functionNameBuilder.Append(function.Name);
             functionNameBuilder.Append('(');
@@ -228,7 +235,7 @@ namespace Scaly.Compiler
                     first = false;
                 else
                     functionNameBuilder.Append(',');
-                functionNameBuilder.Append(AddTypeArguments(parameter.TypeSpec.Name, parameter.TypeSpec.Arguments));
+                functionNameBuilder.Append(AddTypeArguments(QualifyName(context, parameter.TypeSpec.Name), parameter.TypeSpec.Arguments));
             }
             functionNameBuilder.Append(')');
             return functionNameBuilder.ToString();
@@ -330,6 +337,14 @@ namespace Scaly.Compiler
                 }
             }
 
+            if (context.TypedValue != null)
+            {
+                var qualifiedTypeName = QualifyName(context, context.TypedValue.Name);
+                var operatorOrFunctionName = qualifiedTypeName + "." + name;
+                if (context.Global.Dictionary.Operators.ContainsKey(operatorOrFunctionName))
+                    return operatorOrFunctionName;
+            }
+
             return null;
         }
 
@@ -378,38 +393,45 @@ namespace Scaly.Compiler
                 }
             }
 
-            return CreateGenericType(context, typeSpec, definition);
+            return CreateGenericType(context, typeSpec, definition, qualifiedName);
         }
 
-        static NamedType CreateGenericType(Context context, TypeSpec typeSpec, Definition definition)
+        static NamedType CreateGenericType(Context context, TypeSpec typeSpec, Definition definition, string qualifiedName)
         {
             if (definition.IsIntrinsic)
-                return CreateInstrinsicType(definition.Type.Name, typeSpec.Span);
+                return CreateInstrinsicType(qualifiedName, typeSpec.Span);
 
             if (definition.Structure == null)
-                throw new CompilerException($"The type \"{definition.Type.Name}\" contains no data and can only be used as a namespace.", typeSpec.Span);
+                throw new CompilerException($"The type \"{qualifiedName}\" contains no data and can only be used as a namespace.", typeSpec.Span);
 
             if (definition.Structure.Members.Count == 1 && definition.Structure.Members[0].Name == "this" && definition.Structure.Members[0].Type.Arguments == null)
-                return new NamedType(definition.Type.Name, ResolveType(context, definition.Structure.Members[0].Type).Type);
+                return new NamedType(qualifiedName, ResolveType(context, definition.Structure.Members[0].Type).Type);
 
             return null;
         }
 
         static NamedType CreateInstrinsicType(string name, Span span)
         {
+            LLVMTypeRef intrinsicType;
             switch (name)
             {
-                case "i1":
-                    return new NamedType("LLVM.i1", LLVMTypeRef.Int1);
-                case "i8":
-                    return new NamedType("LLVM.i8", LLVMTypeRef.Int8);
-                case "i32":
-                    return new NamedType("LLVM.i32", LLVMTypeRef.Int32);
-                case "i64":
-                    return new NamedType("LLVM.i64", LLVMTypeRef.Int64);
+                case "LLVM.i1":
+                    intrinsicType = LLVMTypeRef.Int1;
+                    break;
+                case "LLVM.i8":
+                    intrinsicType = LLVMTypeRef.Int8;
+                    break;
+                case "LLVM.i32":
+                    intrinsicType = LLVMTypeRef.Int32;
+                    break;
+                case "LLVM.i64":
+                    intrinsicType = LLVMTypeRef.Int64;
+                    break;
                 default:
                     throw new CompilerException($"The intrinsic type \"{name}\" is unknown.", span);
             }
+
+            return new NamedType(name, intrinsicType);
         }
 
         static NamedType GetPointerType(Context context, TypeSpec typeSpec)
@@ -425,31 +447,26 @@ namespace Scaly.Compiler
             return new NamedType(typeName, LLVMTypeRef.CreatePointer(pointerTarget.Type, 0));
         }
 
-        static TypedValue ResolveOperatorValue(Context context, TypeSpec operandType, Operator @operator)
+        static TypedValue ResolveOperatorValue(Context context, TypeSpec operandType, Operator @operator, string qualifiedName)
         {
-            var qualifiedName = QualifyOperatorName(context, operandType, @operator);
+            var qualifiedOperatorName = QualifyOperatorName(context, operandType, @operator, qualifiedName);
             if (!context.Global.Values.ContainsKey(qualifiedName))
                 CreateOperatorValue(context, operandType, @operator, qualifiedName);
             var llvmFunction = context.Global.Values[qualifiedName];
             return llvmFunction;
         }
 
-        static string QualifyOperatorName(Context context, TypeSpec operandType, Operator @operator)
+        static string QualifyOperatorName(Context context, TypeSpec operandType, Operator @operator, string qualifiedName)
         {
             var operatorNameBuilder = new StringBuilder();
 
-            operatorNameBuilder.Append(QualifyName(context, @operator.Definition.Type.Name));
-            operatorNameBuilder.Append('.');
-            operatorNameBuilder.Append(@operator.Name);
-            operatorNameBuilder.Append('[');
+            operatorNameBuilder.Append(qualifiedName);
             AppendGenericArguments(context, operatorNameBuilder, operandType, @operator.Span);
-            operatorNameBuilder.Append(']');
             return operatorNameBuilder.ToString();
         }
 
         static void AppendGenericArguments(Context context, StringBuilder builder, TypeSpec operandType, Span span)
         {
-            builder.Append(QualifyName(context, operandType.Name));
             if (operandType.Arguments != null)
             {
                 builder.Append('[');
@@ -519,9 +536,9 @@ namespace Scaly.Compiler
 
         static FunctionType CreateOperatorType(Context context, TypeSpec operandTypeSpec, Operator @operator, string qualifiedName)
         {
-            var operandTypeName = QualifyName(context, operandTypeSpec.Name);
+            var operandTypeName = AddTypeArguments(QualifyName(context, operandTypeSpec.Name), operandTypeSpec.Arguments);
             {
-                var operatorDefinitionTypeName = QualifyName(context, @operator.Definition.Type.Name);
+                var operatorDefinitionTypeName = AddTypeArguments(QualifyName(context, @operator.Definition.Type.Name), operandTypeSpec.Arguments);
                 if (operandTypeName != operatorDefinitionTypeName)
                     throw new CompilerException($"This operator expects a {operatorDefinitionTypeName}, and a {operandTypeName} was provided.", @operator.Span);
             }
@@ -550,7 +567,7 @@ namespace Scaly.Compiler
                                 // function case
                                 foreach (var parameter in routine.Input)
                                 {
-                                    newContext.Values.Add(parameter.Name, new TypedValue(parameter.TypeSpec, functionType.Parameters[paramCount].Name, functionValue.GetParam(paramCount)));
+                                    newContext.Values.Add(parameter.Name, new TypedValue(parameter.TypeSpec, QualifyName(context, functionType.Parameters[paramCount].Name), functionValue.GetParam(paramCount)));
                                     paramCount++;
                                 }
                             }
@@ -645,7 +662,7 @@ namespace Scaly.Compiler
             {
                 if (context.TypedValue == null)
                     throw new CompilerException("An operator cannot act on nothing. It must follow an operand it can act upon.", @operator.Span);
-                var operatorValue = ResolveOperatorValue(context, context.TypedValue.TypeSpec, @operator);
+                var operatorValue = ResolveOperatorValue(context, context.TypedValue.TypeSpec, @operator, qualifiedName);
                 BuildOperatorCall(context, operatorValue, context.Global.FunctionTypes[operatorValue.Name], context.TypedValue);
                 return;
             }

@@ -1,0 +1,13 @@
+define CQL
+{
+    define Boolean (this: bool?)
+    {
+        operator value returns bool? this
+    }
+
+    function not(argument: Boolean) returns Boolean
+        if argument value as condition
+            not condition
+        else
+            Boolean(null[bool])
+}

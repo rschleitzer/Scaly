@@ -21,4 +21,13 @@
     <ProjectReference Include="..\runtime\Scaly.Compiler.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="CQL.scaly">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="cql\CQL.scaly">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
