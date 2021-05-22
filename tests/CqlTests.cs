@@ -3,10 +3,10 @@ using Scaly.Compiler;
 
 namespace tests
 {
-    [TestClass]
+    //[TestClass]
     public class CqlTests
     {
-        [TestMethod]
+        //[TestMethod]
         public void FirstNot()
         {
             Assert.AreEqual(Compiler.compileAndRunProgram("module CQL:use CQL.*:if not(true):1 else 0", new string[] { }), 0);
