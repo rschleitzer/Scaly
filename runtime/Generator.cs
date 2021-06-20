@@ -122,27 +122,6 @@ namespace Scaly.Compiler
 
             return Global.Dictionary.Definitions[name];
         }
-
-        internal List<Function> ResolveFunctionName(string name, Span span)
-        {
-            if (!Global.Dictionary.Functions.ContainsKey(name))
-                throw new CompilerException($"Tht function \"{name}\" was not found.", span);
-
-            return Global.Dictionary.Functions[name];
-        }
-
-        internal Operator ResolveOperatorName(string name, Span span)
-        {
-            if (!Global.Dictionary.Operators.ContainsKey(name))
-                throw new CompilerException($"Tht function \"{name}\" was not found.", span);
-
-            return Global.Dictionary.Operators[name];
-        }
-
-        internal TypeSpec ResolveFunctionTypeSpec(string name)
-        {
-            return null;
-        }
     }
 
     internal class Generator
