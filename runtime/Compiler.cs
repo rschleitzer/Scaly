@@ -9,7 +9,7 @@ namespace Scaly.Compiler
         public static void compileFiles(Options options)
         {
             var sources = Modeler.BuildFiles(options.files);
-            Generator.GenerateProgram(sources, options.outputName);
+            //Generator.GenerateProgram(sources, options.outputName);
         }
 
         public static int compileAndRunProgram(string program, string[] arguments)
@@ -21,9 +21,10 @@ namespace Scaly.Compiler
         public static int ExecuteModel(Source source, string[] arguments)
         {
             var runtime = Modeler.BuildRuntime();
-            var main = Generator.JitProgram(new List<Source> { source, runtime });
-            int ret = main(arguments.Length, arguments);
-            return ret;
+            //var main = Generator.JitProgram(new List<Source> { source, runtime });
+            //int ret = main(arguments.Length, arguments);
+            //return ret;
+            return 0;
         }
 
         public static void Repl()
