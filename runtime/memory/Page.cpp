@@ -1,13 +1,7 @@
-#ifndef __Scaly_Page__
-#define __Scaly_Page__
-
-#include <stdlib.h>
-
-using std::size_t;
-
 namespace scaly::memory {
 
 const int PAGE_SIZE = 0x1000;
+const size_t BUCKET_PAGES = sizeof(size_t) * 8;
 
 struct Page {
     Page* current_page;
@@ -65,7 +59,7 @@ struct Page {
             auto new_object = (this->current_page)->allocate_raw(size, align);
 
             // Possibly our current page was also full so we propagate back the new current page
-            auto allocating_page = Page::get((size_t)new_object);
+            auto allocating_page = Page::get(new_object);
             if (allocating_page != this->current_page && (!(*allocating_page).is_oversized())) {
                 this->current_page = allocating_page;
             }
@@ -74,7 +68,7 @@ struct Page {
 
         // Try to allocate from ourselves
         auto location = this->get_next_location();
-        auto aligned_location = (location + align - 1) & ~(align - 1);
+        auto aligned_location = (location + (size_t)align - 1) & ~((size_t)align - 1);
         auto next_location = aligned_location + size;
         if (next_location <= (size_t)this->get_next_exclusive_page_location()) {
             this->set_next_location(next_location);
@@ -216,11 +210,9 @@ struct Page {
         return false;
     }
 
-    static Page* get(size_t address) {
-        auto address_raw = (void*)address;
+    static Page* get(void* address) {
         auto mask = ~(size_t)(PAGE_SIZE - 1);
-        auto mask_raw = (void*)mask;
-        auto page_raw = (void*)(address & mask);
+        auto page_raw = (void*)((size_t)address & mask);
         auto page = (Page*)page_raw;
         return page;
     }
@@ -261,4 +253,3 @@ struct Page {
 };
 
 }
-#endif // __Scaly_Page__

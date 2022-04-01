@@ -1,14 +1,13 @@
-#include "Page.cpp"
+#include "Memory.cpp"
 using namespace scaly::memory;
 
 int main(int argc, char** argv)
 {
-    Page* page;
-    posix_memalign((void**)&page, PAGE_SIZE, PAGE_SIZE);
-    page->reset();
-    // let mut heap = Heap::create();
-    // let root_stack_bucket = StackBucket::create(&mut heap);
-    // let r = Region::create_from_page(&*Page::get(root_stack_bucket as usize));
+    auto heap = Heap::create();
+    auto root_stack_bucket = StackBucket::create(&heap);
+    auto r = Region::create_from_page(Page::get(root_stack_bucket));
+
+    auto page = r.page;
 
     // assert_eq!(r.page.next_object_offset, size_of::<Page>() as i32);
     if (page->next_object_offset != sizeof(Page))
@@ -34,13 +33,13 @@ int main(int argc, char** argv)
     if (location != (size_t)((char*)page + sizeof(Page)))
         return 6;
 
-    auto answer = (int*)page->allocate_raw(4, 4);
+    auto answer = (int*)page->allocate_raw(4, alignof(int));
     location += 4;
     if (page->get_next_location() != location)
         return 7;
     *answer = 42;
 
-    auto another_loc = page->allocate_raw(1, 2);
+    auto another_loc = page->allocate_raw(1, alignof(char));
     auto another = (char*)another_loc;
     location += 1;
     if (page->get_next_location() != location)
@@ -48,18 +47,18 @@ int main(int argc, char** argv)
 
     *another = 'A';
 
-    auto eau_loc = page->allocate_raw(4, 4);
+    auto eau_loc = page->allocate_raw(4, alignof(int));
     auto eau = (int*)eau_loc;
     location += 7;
     if (page->get_next_location() != location)
         return 9;
     *eau = 4711;
 
-    if (Page::get((size_t)eau) != page)
+    if (Page::get(eau) != page)
         return 10;
 
     // Allocate an oversized object which should cause allocating an exclusive page
-    auto array = (size_t*)page->allocate_raw(PAGE_SIZE, 8);
+    auto array = (size_t*)page->allocate_raw(PAGE_SIZE, alignof(size_t));
     for (int i = 0; i <= PAGE_SIZE / sizeof(size_t) - 1; i++) {
         array[i] = i;
     }
@@ -122,19 +121,16 @@ int main(int argc, char** argv)
         return 23;
 
     // The page of our array pointer shall be our exclusive page.
-    if (Page::get((size_t)array) != exclusive_page)
+    if (Page::get(array) != exclusive_page)
         return 24;
 
     // Free the array storage.
-    if (!page->reclaim_array(Page::get((size_t)array)))
+    if (!page->reclaim_array(Page::get(array)))
         return 25;
 
     // Our page shall have no more exclusive pages now.
     if (page->exclusive_pages != 0)
         return 26;
-
-    page->clear();
-    page->forget();
 
     return 0;
 }
