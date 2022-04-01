@@ -36,3 +36,4 @@ scaly/target
 scaly/.vscode
 .DS_Store
 *.bc
+bin/
