@@ -1,18 +1,15 @@
 namespace scaly::memory {
 
-struct Object {
+void* Object::operator new(size_t size, size_t align, Page* page) {
+    void* object = page->allocate_raw(size, align);
+    if (!object)
+        throw *(new std::bad_alloc());
 
-    void* operator new(size_t size, size_t align, Page* page) {
-        void* object = page->allocate_raw(size, align);
-        if (!object)
-            throw *(new std::bad_alloc());
+    return object;
+}
 
-        return object;
-    }
-
-    Page* get_page() {
-        return Page::get(this);
-    }
-};
+Page* Object::get_page() {
+    return Page::get(this);
+}
 
 }

@@ -1,27 +1,84 @@
 namespace scaly::memory {
 
-struct StackBucket {
-    Heap* heap;
-    StackBucket* next_bucket;
+Bucket* Bucket::get(void* address) {
+    auto mask = ~(size_t)(PAGE_SIZE * BUCKET_PAGES - 1);
+    auto bucket_location = (size_t)address & mask;
+    // The bucket is the first object of the first page of the bucket
+    auto bucket_object_location = bucket_location + sizeof(Page);
+    auto bucket = (Bucket*)bucket_object_location;
+    return bucket;
+}
 
-    static StackBucket* create(Heap* heap);
-    static Page* allocate_bucket();
-    static Page* new_page(Page* page);
-    Page* get_page_from_next_bucket();
-    void deallocate();
-};
+Page* Bucket::allocate_page() {
+    switch (this->tag) {
+        case Bucket::Stack:
+            return this->stack.allocate_page();
+        case Bucket::Heap:
+            return this->heap.allocate_page();
+        default:
+            return nullptr;
+    }
+}
 
-struct HeapBucket{
+void Bucket::deallocate_page(Page* page) {
+    switch (this->tag) {
+        case Bucket::Heap:
+            this->heap.deallocate_page(page);
+            return;
+        case Bucket::Stack:
+            // Tried to deallocate a page from a StackBucket."
+            exit(5);
+    }
+}
 
-};
+size_t Bucket::find_least_position(size_t n) {
+    switch (BUCKET_PAGES) {
+        case 64: return Bucket::find_least_position_64(n);
+        case 32: return Bucket::find_least_position_32(n);
+        default:
+            // Scaly currently does not support this architecture."
+            exit(6);
+    }
+}
 
-struct Bucket : Object {
-    enum { Stack, Heap } tag;
-    union {
-        StackBucket stack;
-        HeapBucket heap;
+// from http://stackoverflow.com/questions/11376288/fast-computing-of-log2-for-64-bit-integers
+size_t Bucket::find_least_position_64(size_t n) {
+    static size_t NUMBERS[64] = {
+        0, 58, 1, 59, 47, 53, 2, 60, 39, 48, 27, 54, 33, 42, 3, 61, 51, 37, 40, 49, 18, 28, 20,
+        55, 30, 34, 11, 43, 14, 22, 4, 62, 57, 46, 52, 38, 26, 32, 41, 50, 36, 17, 19, 29, 10,
+        13, 21, 56, 45, 25, 31, 35, 16, 9, 12, 44, 24, 15, 8, 23, 7, 6, 5, 63,
     };
-};
+
+    n = n | n >> 1;
+    n = n | n >> 2;
+    n = n | n >> 4;
+    n = n | n >> 8;
+    n = n | n >> 16;
+    n = n | n >> 32;
+
+    auto product = (__int128_t)n * 0x03f6eaf2cd271461;
+
+    auto log = NUMBERS[((size_t)product) >> 58];
+    return BUCKET_PAGES - log;
+}
+
+// from http://graphics.stanford.edu/~seander/bithacks.html#IntegerLogDeBruijn
+size_t Bucket::find_least_position_32(size_t n) {
+    static size_t NUMBERS[32] = {
+        0, 9, 1, 10, 13, 21, 2, 29, 11, 14, 16, 18, 22, 25, 3, 30, 8, 12, 20, 28, 15, 17, 24,
+        7, 19, 27, 23, 6, 26, 5, 4, 31,
+    };
+
+    n = n | n >> 1;
+    n = n | n >> 2;
+    n = n | n >> 4;
+    n = n | n >> 8;
+    n = n | n >> 16;
+
+    auto log = NUMBERS[(n * 0x07C4ACDD) >> 27];
+    return BUCKET_PAGES - log;
+}
+
 
 StackBucket* StackBucket::create(Heap* heap) {
     auto page = StackBucket::allocate_bucket();
@@ -34,6 +91,10 @@ StackBucket* StackBucket::create(Heap* heap) {
     };
 
     return &(bucket->stack);
+}
+
+Page* StackBucket::allocate_page() {
+    return heap->allocate_page();
 }
 
 Page* StackBucket::allocate_bucket() {
@@ -81,6 +142,45 @@ void StackBucket::deallocate() {
         // println!("StackBucket: dealloc {:X}", page as usize);
         bucket = next_bucket;
     }
+}
+
+Page* HeapBucket::allocate_page() {
+    if (this->map == 0)
+        return this->pool->allocate_page();
+
+    auto position = Bucket::find_least_position(this->map);
+    auto bit = ((size_t)1) << (BUCKET_PAGES - position);
+    this->map = this->map & ~bit;
+    if (this->map == 0)
+        this->pool->mark_as_full((size_t)Page::get(this));
+
+    auto page = (Page*)(Page::get(this) + (position - 1) * PAGE_SIZE);
+
+    // The first page of the bucket was already initialized by the pool.
+    if (position > 1)
+        page->reset();
+
+    return page;
+}
+
+void HeapBucket::deallocate_page(Page* page) {
+    auto base_page = (size_t)Page::get(this);
+    auto distance = ((size_t)page) - base_page;
+    auto index = distance / PAGE_SIZE;
+    if (index > BUCKET_PAGES - 1)
+        // Position invalid for page
+        exit(9);
+    
+    auto position = index + 1;
+    auto bit = ((size_t)1) << (BUCKET_PAGES - position);
+    if ((this->map & bit) != 0)
+        // Page was not allocated
+        exit(10);
+
+    if (this->map == 0)
+        this->pool->mark_as_free(base_page);
+
+    this->map = this->map | bit;
 }
 
 };

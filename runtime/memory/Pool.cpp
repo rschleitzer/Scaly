@@ -1,7 +1,76 @@
 namespace scaly::memory {
 
-struct Pool{
+Pool* Pool::create(Heap* heap) {
+    void* memory;
+    posix_memalign(&memory, PAGE_SIZE * BUCKET_PAGES, PAGE_SIZE * BUCKET_PAGES * BUCKET_PAGES);
 
-};
+    if (memory == nullptr)
+        // Unable to create pool: Out of memory.
+        exit(7);
+
+    Pool* pool = nullptr;
+
+    for (int i = 0; i < BUCKET_PAGES; i++) {
+        auto bucket_page = (Page*)((size_t)memory + PAGE_SIZE * BUCKET_PAGES * i);
+        bucket_page->reset();
+        auto bucket = new (alignof(Bucket), bucket_page) Bucket {
+            .tag = Bucket::Heap,
+            .heap = HeapBucket {
+                .pool = nullptr,
+                .map = std::numeric_limits<size_t>::max(),
+            }
+        };      
+
+        if (i == 0) {
+            pool = new (alignof(Pool), bucket_page) Pool {
+                .map = std::numeric_limits<size_t>::max(),
+                .heap = heap,
+            };
+        }
+
+        bucket->heap.pool = pool;
+    }
+    return pool;
+}
+
+Page* Pool::allocate_page() {
+    if (this->map == 0)
+        return this->heap->allocate_page();
+
+    auto pool_page_address = (size_t)Page::get(this);
+    auto position = Bucket::find_least_position(this->map);
+    auto bucket_page_address = pool_page_address + PAGE_SIZE * BUCKET_PAGES * (position - 1);
+    auto bucket = (Bucket*)(bucket_page_address + sizeof(Page));
+    return bucket->allocate_page();
+}
+
+size_t Pool::get_allocation_bit(size_t page) {
+    auto first_bucket_address = (size_t)Page::get(this);
+    auto distance = page - first_bucket_address;
+    auto position = distance / PAGE_SIZE / BUCKET_PAGES;
+    return (1 << (BUCKET_PAGES - 1 - position));
+}
+
+void Pool::mark_as_full(size_t page) {
+    auto bit = this->get_allocation_bit(page);
+    this->map = this->map & ~bit;
+    if (this->map == 0)
+        this->heap->mark_as_full(this);
+}
+
+void Pool::mark_as_free(size_t page) {
+    auto bit = this->get_allocation_bit(page);
+    if (this->map == 0)
+        this->heap->mark_as_free(this);
+    this->map = this->map | bit;
+}
+
+void Pool::deallocate() {
+    if (this->map != std::numeric_limits<size_t>::max())
+        // Pool is not empty.
+        exit(8);
+
+    free(Page::get(this));
+}
 
 }

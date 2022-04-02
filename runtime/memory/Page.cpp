@@ -114,14 +114,9 @@ struct Page {
     }
 
     Page* allocate_page() {
-        // let bucket = Bucket::get(self as *const Page as usize);
-        // // println!("Bucket: {:X}", bucket as usize);
-        // let page = (*bucket).allocate_page();
-        // page
-        Page* page;
-        posix_memalign((void**)&page, PAGE_SIZE, PAGE_SIZE);
-        page->reset();
-        return page;
+        auto bucket = Bucket::get(this);
+        // println!("Bucket: {:X}", bucket as usize);
+        return bucket->allocate_page();
     }
 
     Page* allocate_exclusive_page() {
@@ -178,22 +173,11 @@ struct Page {
     }
 
     void forget() {
-        //println!("Page: dealloc {:X}", self as *const Page as usize);
         if (this->current_page == nullptr) {
             free (this);
-            // dealloc(
-            //     self as *const Page as *mut u8,
-            //     Layout::from_size_align_unchecked(
-            //         self.next_object_offset as usize
-            //             + self.exclusive_pages as usize * 0x100000000,
-            //         PAGE_SIZE,
-            //     ),
-            // );
         } else {
-            free(this);
-            // let bucket = Bucket::get(self as *const Page as usize);
-            // //println!("Bucket: {:X}", bucket as usize);
-            // (*bucket).deallocate_page(self);
+            auto bucket = Bucket::get(this);
+            bucket->deallocate_page(this);
         }
     }
 
@@ -216,10 +200,6 @@ struct Page {
         auto page = (Page*)page_raw;
         return page;
     }
-
-    // pub fn own<T>(object: Ref<T>) -> *mut Page {
-    //     Page::get(object.data as usize)
-    // }
 
     bool deallocate_exclusive_page(Page* page) {
         // Find the extension Page pointer
