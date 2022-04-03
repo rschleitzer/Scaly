@@ -11,6 +11,14 @@ struct Region {
         };
     };
 
+    static Region create(Region& region) {
+        return Region::create_from_page(region.page);
+    }
+
+    void* allocate(size_t length, size_t align) {
+        return this->page->allocate_raw(length, align);
+    }
+
     ~Region() {
         page->deallocate_extensions();
     }
