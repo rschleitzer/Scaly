@@ -176,20 +176,16 @@ void test_heap()
     if (counter != pointers)
         exit (-28);
 
-    // // Walk the page chain
-    // let extension_location = r.page.get_extension_page_location();
-    // // println!("Root extension page: {:X}", *extension_location as usize);
-    // let mut page = *extension_location;
-    // let mut page_counter = 0;
-    // while !page.is_null() {
-    //     let extension_page = *(*page).get_extension_page_location();
-    //     // println!("Extension page: {:X}", extension_page as usize);
-    //     page = extension_page;
-    //     page_counter += 1;
-    // }
-    // println!("Pages counted: {}", page_counter);
-
-    // heap.empty();
+    // Walk the page chain
+    auto extension_location = page->get_extension_page_location();
+    // println!("Root extension page: {:X}", *extension_location as usize);
+    page = *extension_location;
+    auto page_counter = 0;
+    while (page) {
+        auto extension_page = *page->get_extension_page_location();
+        page = extension_page;
+        page_counter += 1;
+    }
 }
 
 int main(int argc, char** argv)

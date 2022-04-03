@@ -44,7 +44,8 @@ struct Page {
     }
 
     Page** get_next_exclusive_page_location() {
-        return this->get_extension_page_location() - this->exclusive_pages + 1;
+        // Move back one step for the extension page pointers and then by the number of exlusive pages.
+        return this->get_extension_page_location() - 1 - this->exclusive_pages;
     }
 
     size_t get_capacity(size_t align) {
@@ -70,7 +71,8 @@ struct Page {
         auto location = this->get_next_location();
         auto aligned_location = (location + (size_t)align - 1) & ~((size_t)align - 1);
         auto next_location = aligned_location + size;
-        if (next_location <= (size_t)this->get_next_exclusive_page_location()) {
+        auto next_exclusive_page_location = this->get_next_exclusive_page_location();
+        if (next_location <= (size_t)next_exclusive_page_location) {
             this->set_next_location(next_location);
             return (void*)location;
         }

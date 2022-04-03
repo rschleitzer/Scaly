@@ -53,18 +53,6 @@ struct Heap {
         this->pools[position] = nullptr;
         pool->deallocate();
     }
-
-    void empty() {
-        if (this->map != std::numeric_limits<size_t>::max()) {
-            exit(4);
-        }
-
-        for (int i = 0; i < BUCKET_PAGES; i++) {
-            if (this->pools[i] != nullptr) {
-                this->pools[i]->deallocate();
-            }
-        }
-    }
 };
 
 }
