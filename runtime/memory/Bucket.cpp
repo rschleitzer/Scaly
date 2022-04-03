@@ -152,9 +152,9 @@ Page* HeapBucket::allocate_page() {
     auto bit = ((size_t)1) << (BUCKET_PAGES - position);
     this->map = this->map & ~bit;
     if (this->map == 0)
-        this->pool->mark_as_full((size_t)Page::get(this));
+        this->pool->mark_as_full(Page::get(this));
 
-    auto page = (Page*)(Page::get(this) + (position - 1) * PAGE_SIZE);
+    auto page = (Page*)(((size_t)Page::get(this)) + (position - 1) * PAGE_SIZE);
 
     // The first page of the bucket was already initialized by the pool.
     if (position > 1)
@@ -164,8 +164,8 @@ Page* HeapBucket::allocate_page() {
 }
 
 void HeapBucket::deallocate_page(Page* page) {
-    auto base_page = (size_t)Page::get(this);
-    auto distance = ((size_t)page) - base_page;
+    auto base_page = Page::get(this);
+    auto distance = ((size_t)page) - ((size_t)base_page);
     auto index = distance / PAGE_SIZE;
     if (index > BUCKET_PAGES - 1)
         // Position invalid for page

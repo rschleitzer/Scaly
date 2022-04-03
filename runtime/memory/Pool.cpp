@@ -44,21 +44,22 @@ Page* Pool::allocate_page() {
     return bucket->allocate_page();
 }
 
-size_t Pool::get_allocation_bit(size_t page) {
-    auto first_bucket_address = (size_t)Page::get(this);
-    auto distance = page - first_bucket_address;
+size_t Pool::get_allocation_bit(Page* page) {
+    auto first_page_of_bucket = Page::get(this);
+    auto first_bucket_address = (size_t)first_page_of_bucket;
+    auto distance = ((size_t)page) - first_bucket_address;
     auto position = distance / PAGE_SIZE / BUCKET_PAGES;
-    return (1 << (BUCKET_PAGES - 1 - position));
+    return ((size_t)1 << (BUCKET_PAGES - 1 - position));
 }
 
-void Pool::mark_as_full(size_t page) {
+void Pool::mark_as_full(Page* page) {
     auto bit = this->get_allocation_bit(page);
     this->map = this->map & ~bit;
     if (this->map == 0)
         this->heap->mark_as_full(this);
 }
 
-void Pool::mark_as_free(size_t page) {
+void Pool::mark_as_free(Page* page) {
     auto bit = this->get_allocation_bit(page);
     if (this->map == 0)
         this->heap->mark_as_free(this);

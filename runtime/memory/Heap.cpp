@@ -35,7 +35,7 @@ struct Heap {
     }
 
     size_t get_allocation_bit(Pool* pool) {
-        return 1 << (BUCKET_PAGES - 1 - this->get_allocation_position(pool));
+        return ((size_t)1) << (BUCKET_PAGES - 1 - this->get_allocation_position(pool));
     }
 
     void mark_as_full(Pool* pool) {

@@ -8,9 +8,9 @@ struct Pool : Object {
 
     static Pool* create(Heap* heap);
     Page* allocate_page();
-    size_t get_allocation_bit(size_t page);
-    void mark_as_full(size_t page);
-    void mark_as_free(size_t page);
+    size_t get_allocation_bit(Page* page);
+    void mark_as_full(Page* page);
+    void mark_as_free(Page* page);
     void deallocate();
 };
 
