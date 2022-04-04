@@ -41,6 +41,51 @@ void test_array(Page* _rp)
             exit(-6);
 }
 
+void test_string(Page* _rp) {
+    auto r = Region::create_from_page(_rp);
+    auto string = String::from_c_string(r.page, "Hello world!");
+    auto length = string.get_length();
+    if (length != 12)
+        exit(-7);
+    auto long_string = String::from_c_string(r.page, "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890");
+    if (long_string.get_length() != 130)
+        exit(-8);
+    auto c_string = long_string.to_c_string(r.page);
+    auto string_c = String::from_c_string(r.page, c_string);
+
+    auto semi = String::from_c_string(r.page, ";");
+    auto dot = String::from_c_string(r.page, ".");
+    if (semi.equals(dot))
+        exit(-9);
+    auto semi2 = String::from_c_string(r.page, ";");
+    if (!semi.equals(semi2))
+        exit(-10);
+}
+
+void test_string_builder(Page* _rp) {
+    auto r = Region::create_from_page(_rp);
+    StringBuilder& string_builder = *StringBuilder::create(r.page);
+    auto length = string_builder.get_length();
+    if (length != 0)
+        exit(-11);
+    string_builder.append_character('a');
+    string_builder.append_character('b');
+    string_builder.append_character('c');
+    if (!string_builder.to_string(r.page).equals(String::from_c_string(r.page, "abc")))
+        exit(-12);
+    if (string_builder.get_length() != 3)
+        exit(-13);
+
+    StringBuilder& string_builder2 = *StringBuilder::from_character(r.page, 'd');
+    string_builder2.append_character('e');
+    string_builder2.append_character('f');
+    string_builder2.append_character('g');
+    if (!string_builder2.to_string(r.page).equals(String::from_c_string(r.page, "defg")))
+        exit(-14);
+    if (string_builder2.get_length() != 4)
+        exit(-15);
+}
+
 int main(int argc, char** argv)
 {
     auto heap = Heap::create();
@@ -49,4 +94,6 @@ int main(int argc, char** argv)
 
     test_vector(root_page);
     test_array(root_page);
+    test_string(root_page);
+    test_string_builder(root_page);
 }

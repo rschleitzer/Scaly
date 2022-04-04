@@ -7,8 +7,10 @@
 using std::memcpy;
 
 namespace scaly::containers {
+#include "String.cpp"
 #include "Vector.cpp"
 #include "Array.cpp"
+#include "StringBuilder.cpp"
 }
 
 #endif // __Scaly_Containers__
