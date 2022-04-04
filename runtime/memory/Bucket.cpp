@@ -109,7 +109,7 @@ Page* StackBucket::allocate_bucket() {
 
 Page* StackBucket::new_page(Page* page) {
     auto page_address = (size_t)page;
-    auto stack_bucket_page_address = page_address & !(PAGE_SIZE * BUCKET_PAGES - 1);
+    auto stack_bucket_page_address = page_address & ~(PAGE_SIZE * BUCKET_PAGES - 1);
     auto overflowed_page_address = stack_bucket_page_address + PAGE_SIZE * BUCKET_PAGES;
     auto our_page_address = page_address + PAGE_SIZE;
     if (overflowed_page_address == our_page_address) {

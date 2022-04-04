@@ -50,7 +50,7 @@ struct Page {
 
     size_t get_capacity(size_t align) {
         auto location = this->get_next_location();
-        auto aligned_location = (location + align - 1) & !(align - 1);
+        auto aligned_location = (location + align - 1) & ~(align - 1);
         return (size_t)(this->get_next_exclusive_page_location()) - aligned_location;
     }
 
@@ -80,31 +80,40 @@ struct Page {
         // So the space did not fit.
 
         // Calculate gross size to decide whether we're oversized
-        if (sizeof(Page) + size + sizeof(Page**) > PAGE_SIZE) {
+        auto gross_size = size + sizeof(Page);
+        if (gross_size + sizeof(Page**) > PAGE_SIZE) {
+            // Check whether we can allocate an exclusive page
             if (this->get_next_location() >= (size_t)(this->get_next_exclusive_page_location())) {
                 // Allocate an extension page and try again with it
                 return (this->allocate_extension_page())->allocate_raw(size, align);
             }
 
-            auto gross_size = size + sizeof(Page);
-            // We allocate oversized objects directly.
-            Page* page;
-            posix_memalign((void**)&page, PAGE_SIZE, size + sizeof(Page));
-
-            // Oversized pages have no current_page
-            page->current_page = nullptr;
-
-            // Set the size since we will need it when deallocating
-            page->next_object_offset = (int)(gross_size % 0x100000000);
-            page->exclusive_pages = (int)(gross_size / 0x100000000);
-
-            *(this->get_next_exclusive_page_location()) = page;
-            this->exclusive_pages += 1;
+            auto page = create_oversized_page(size);
             return page + 1;
         }
 
         // So we're not oversized. Create extension page and let it allocate.
         return (this->allocate_extension_page())->allocate_raw(size, align);
+    }
+
+    Page* create_oversized_page(size_t size)
+    {
+        auto gross_size = size + sizeof(Page);
+
+        // We allocate oversized objects directly.
+        Page* page;
+        posix_memalign((void**)&page, PAGE_SIZE, gross_size);
+
+        // Oversized pages have no current_page
+        page->current_page = nullptr;
+
+        // Set the size since we will need it when deallocating
+        page->next_object_offset = (int)(gross_size % 0x100000000);
+        page->exclusive_pages = (int)(gross_size / 0x100000000);
+
+        *(this->get_next_exclusive_page_location()) = page;
+        this->exclusive_pages += 1;
+        return page;
     }
 
     Page* allocate_extension_page() {
