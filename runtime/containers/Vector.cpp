@@ -26,7 +26,7 @@ template<class T> struct Vector : Object {
     }
 
     static Vector<T>* from_array(Page* _rp, Array<T>& array) {
-        return Vector<T>::from_raw_array(_rp, array.data, array.length);
+        return Vector<T>::from_raw_array(_rp, array.vector->data, array.length);
     }
 
     T& get(size_t i) {

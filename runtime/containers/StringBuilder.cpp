@@ -26,7 +26,7 @@ struct StringBuilder : Object {
         return this->buffer.get_length();
     }
 
-    String to_string(Page*_rp) {
+    String* to_string(Page*_rp) {
         return String::create(_rp, this->buffer.get_buffer(), this->buffer.get_length());
     }
 };

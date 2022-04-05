@@ -8,7 +8,7 @@ struct Page {
     int next_object_offset;
     int exclusive_pages;
     void reset() {
-        // *(this->get_extension_page_location()) = nullptr;
+        *(this->get_extension_page_location()) = nullptr;
         this->next_object_offset = sizeof(Page);
         this->exclusive_pages = 0;
         this->current_page = this;

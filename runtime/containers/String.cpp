@@ -2,10 +2,10 @@ using namespace scaly::memory;
 
 const size_t PACKED_SIZE = sizeof(size_t) * 8 / 7;
 
-struct String {
+struct String : Object {
     char* data;
 
-    static String create(Page* _rp, const char* data, size_t length) {
+    static String* create(Page* _rp, const char* data, size_t length) {
         char length_array[PACKED_SIZE];
         auto rest = length;
 
@@ -22,10 +22,10 @@ struct String {
         memcpy(pointer, length_array, counter + 1);
         memcpy((char*)pointer + counter + 1, data, length);
 
-        return String { .data = (char*)pointer };
+        return new (alignof(String), _rp) String { .data = (char*)pointer };
     }
 
-    static String from_c_string(Page* _rp, const char* c_string) {
+    static String* from_c_string(Page* _rp, const char* c_string) {
         auto length = strlen(c_string);
         return String::create(_rp, c_string, length);
     }
@@ -51,7 +51,7 @@ struct String {
         return String { .data = (char*)pointer };
     }
 
-    static String from_character(Page* _rp, char character) {
+    static String* from_character(Page* _rp, char character) {
         return String::create(_rp, (const char*)&character, 1);
     }
 
@@ -79,9 +79,9 @@ struct String {
         return (const char*)dest;
     }
 
-    String append_character(Page* _rp, char c) {
+    String* append_character(Page* _rp, char c) {
         auto s = String::create(_rp, this->data, this->get_length() + 1);
-        auto data = s.data;
+        auto data = s->data;
         auto char_pointer = data + this->get_length() - 1;
         *char_pointer = c;
         return s;
@@ -108,7 +108,7 @@ struct String {
         return result;
     }
 
-    bool equals(String other) {
+    bool equals(String& other) {
         size_t length = 0;
         auto bit_count = 0;
         auto index = 0;
@@ -134,8 +134,8 @@ struct String {
         return memcmp(this->data + index + 1, other.data + index + 1, length) == 0;
     }
 
-    // size_t hash() {
-    //     return HashSet::hash(this->data, this->get_length());
-    // }
+    size_t hash() {
+        return scaly::containers::hash(this->data, this->get_length());
+    }
 
 };
