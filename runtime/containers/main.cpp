@@ -86,14 +86,35 @@ void test_string_builder(Page* _rp) {
         exit(-15);
 }
 
+void test_list(Page* _rp) {
+    auto r = Region::create_from_page(_rp);
+    List<int>& list = *List<int>::create(r.page);
+
+    int huge_number = 1024 * 1024 * 63;
+    for (int i = 1; i <= huge_number ; i++)
+        list.add(i);
+
+    auto iterator = list.get_iterator();
+    for (int i = huge_number; i >= 1; i--)
+    {
+        auto p = iterator.next();
+        if (p == nullptr)
+            exit(-16);
+
+        if (*p != i)
+            exit(-17);
+    }
+}
+
 int main(int argc, char** argv)
 {
     auto heap = Heap::create();
     auto root_stack_bucket = StackBucket::create(&heap);
     auto root_page = Page::get(root_stack_bucket);
 
-    test_vector(root_page);
-    test_array(root_page);
-    test_string(root_page);
-    test_string_builder(root_page);
+    // test_vector(root_page);
+    // test_array(root_page);
+    // test_string(root_page);
+    // test_string_builder(root_page);
+    test_list(root_page);
 }
