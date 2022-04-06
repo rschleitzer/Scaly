@@ -208,33 +208,41 @@ struct Page {
     }
 
     bool deallocate_exclusive_page(Page* page) {
-        // Find the extension Page pointer
-        auto extension_pointer = this->get_extension_page_location() - 1;
-        auto next_extension_page_location = this->get_next_exclusive_page_location();
-        while (extension_pointer > next_extension_page_location) {
-            if (*extension_pointer == page) {
-                break;
+        auto current_page = this;
+        while (current_page != nullptr) {
+            // Find the extension Page pointer
+            auto extension_pointer = current_page->get_extension_page_location() - 1;
+            auto next_extension_page_location = current_page->get_next_exclusive_page_location();
+            while (extension_pointer > next_extension_page_location) {
+                if (*extension_pointer == page) {
+                    break;
+                }
+                extension_pointer = extension_pointer - 1;
             }
-            extension_pointer = extension_pointer - 1;
+
+            // Report if we could not find it
+            if (extension_pointer == next_extension_page_location) {
+                continue;
+            }
+            else {
+                // Shift the remaining array one position up
+                while (extension_pointer > next_extension_page_location) {
+                    auto pp_page = extension_pointer;
+                    *pp_page = *(pp_page - 1);
+                    extension_pointer = extension_pointer - 1;
+                }
+
+                // Make room for one more extension
+                this->exclusive_pages -= 1;
+                    page->forget();
+
+                return true;
+            }
+
+            current_page = *extension_pointer;
         }
 
-        // Report if we could not find it
-        if (extension_pointer == next_extension_page_location) {
-            return false;
-        }
-
-        // Shift the remaining array one position up
-        while (extension_pointer > next_extension_page_location) {
-            auto pp_page = extension_pointer;
-            *pp_page = *(pp_page - 1);
-            extension_pointer = extension_pointer - 1;
-        }
-
-        // Make room for one more extension
-        this->exclusive_pages -= 1;
-            page->forget();
-
-        return true;
+        return false;
     }
 };
 

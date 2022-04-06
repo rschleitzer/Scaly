@@ -58,7 +58,7 @@ template<class T> struct Array : Object {
         size_t length;
         if (this->vector == nullptr) {
             Page& exclusive_page = *_own_page->allocate_exclusive_page();
-            auto capacity = exclusive_page.get_capacity(alignof(T)) - sizeof(Vector<int>);
+            auto capacity = exclusive_page.get_capacity(alignof(T)) - sizeof(Vector<T>);
             length = capacity / size;
             this->vector = Vector<T>::create_without_buffer(_own_page, length);
             this->vector->data = (T*)exclusive_page.allocate_raw(capacity, alignof(T));             

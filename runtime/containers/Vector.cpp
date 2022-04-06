@@ -29,8 +29,8 @@ template<class T> struct Vector : Object {
         return Vector<T>::from_raw_array(_rp, array.vector->data, array.length);
     }
 
-    T& get(size_t i) {
-        return *(*this)[i];
+    T* get(size_t i) {
+        return (*this)[i];
     }
 
     void set(size_t i, T item) {

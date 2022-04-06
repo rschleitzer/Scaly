@@ -9,7 +9,7 @@ void test_vector(Page* _rp)
         Vector<int>& vector = *Vector<int>::create(r_1.page, 2);
         *vector[0] = 1;
         vector.set(1, 2);
-        if (vector.get(0) != 1)
+        if (*(vector.get(0)) != 1)
             exit(-1);
         if (*vector[1] != 2)
             exit(-2);
@@ -18,11 +18,11 @@ void test_vector(Page* _rp)
         auto r_1 = Region::create(r);
         const char* string_array[3] = {"using", "namespace", "typedef"};
         Vector<const char*>& vector = *Vector<const char*>::from_raw_array(r_1.page, (const char**)string_array, 3);
-        if (vector.get(0) != string_array[0])
+        if (*(vector.get(0)) != string_array[0])
             exit(-3);
         if (*vector[1] != string_array[1])
             exit(-4);
-        if (vector.get(2) != string_array[2])
+        if (*(vector.get(2)) != string_array[2])
             exit(-5);
     }
 }
@@ -143,6 +143,14 @@ void test_hash_map(Page* _rp) {
         exit (-20);
     if (keywords.contains(*String::from_c_string(r.page, "nix")))
         exit (-21);
+    if (*keywords[*String::from_c_string(r.page, "using")] != 1)
+        exit (-22);
+    if (*keywords[*String::from_c_string(r.page, "namespace")] != 2)
+        exit (-23);
+    if (*keywords[*String::from_c_string(r.page, "typedef")] != 3)
+        exit (-24);
+    if (keywords[*String::from_c_string(r.page, "nix")] != nullptr)
+        exit (-25);
 }
 
 int main(int argc, char** argv)
@@ -151,11 +159,11 @@ int main(int argc, char** argv)
     auto root_stack_bucket = StackBucket::create(&heap);
     auto root_page = Page::get(root_stack_bucket);
 
-    test_vector(root_page);
-    test_array(root_page);
-    test_string(root_page);
-    test_string_builder(root_page);
-    test_list(root_page);
-    test_hash_set(root_page);
+    // test_vector(root_page);
+    // test_array(root_page);
+    // test_string(root_page);
+    // test_string_builder(root_page);
+    // test_list(root_page);
+    // test_hash_set(root_page);
     test_hash_map(root_page);
 }
