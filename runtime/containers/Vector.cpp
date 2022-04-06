@@ -21,7 +21,7 @@ template<class T> struct Vector : Object {
 
     static Vector<T>* from_raw_array(Page* _rp, T* array, size_t length) {
         Vector<T>* vector = Vector<T>::create(_rp, length);
-        memcpy(vector->data, array, length * sizeof(T*));
+        memcpy(vector->data, array, length * sizeof(T));
         return vector;
     }
 

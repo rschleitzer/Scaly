@@ -91,7 +91,7 @@ void test_list(Page* _rp) {
     auto r = Region::create_from_page(_rp);
     List<int>& list = *List<int>::create(r.page);
 
-    int huge_number = 1024 * 1024 * 63;
+    int huge_number = 1024 * 1024 * 62;
     for (int i = 1; i <= huge_number ; i++)
         list.add(i);
 
@@ -126,6 +126,25 @@ void test_hash_set(Page* _rp) {
         exit (-21);
 }
 
+void test_hash_map(Page* _rp) {
+    auto r = Region::create_from_page(_rp);
+
+    Array<KeyValuePair<String, int>>& array = *Array<KeyValuePair<String, int>>::create(r.page);
+    array.add(KeyValuePair<String, int> { .key = *String::from_c_string(r.page, "using"), .value = 1 });
+    array.add(KeyValuePair<String, int> { .key = *String::from_c_string(r.page, "namespace"), .value = 2 });
+    array.add(KeyValuePair<String, int> { .key = *String::from_c_string(r.page, "typedef"), .value = 3 });
+    Vector<KeyValuePair<String, int>>& vector = *Vector<KeyValuePair<String, int>>::from_array(r.page, array);
+    HashMap<String, int>& keywords = *HashMap<String, int>::from_vector(r.page, vector);
+    if (!keywords.contains(*String::from_c_string(r.page, "using")))
+        exit (-18);
+    if (!keywords.contains(*String::from_c_string(r.page, "namespace")))
+        exit (-19);
+    if (!keywords.contains(*String::from_c_string(r.page, "typedef")))
+        exit (-20);
+    if (keywords.contains(*String::from_c_string(r.page, "nix")))
+        exit (-21);
+}
+
 int main(int argc, char** argv)
 {
     auto heap = Heap::create();
@@ -138,4 +157,5 @@ int main(int argc, char** argv)
     test_string_builder(root_page);
     test_list(root_page);
     test_hash_set(root_page);
+    test_hash_map(root_page);
 }

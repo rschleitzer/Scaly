@@ -12,6 +12,7 @@ namespace scaly::containers {
 #include "Vector.cpp"
 #include "Array.cpp"
 #include "HashSet.cpp"
+#include "HashMap.cpp"
 #include "String.cpp"
 #include "StringBuilder.cpp"
 }

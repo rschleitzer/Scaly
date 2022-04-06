@@ -38,6 +38,20 @@ template<class T> struct Array : Object {
         this->length++;
     }
 
+    T& get(size_t i) {
+        return *(*this)[i];
+    }
+
+    void set(size_t i, T item) {
+        *(*this)[i] = item;
+    }
+
+    T* operator [](size_t i) {
+        if (this->length < i + 1)
+            return nullptr;
+        return this->vector->data + i;
+    }
+
     void reallocate() {
         auto _own_page = Page::get(this);
         auto size = sizeof(T);

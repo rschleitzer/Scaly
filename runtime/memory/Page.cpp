@@ -14,11 +14,6 @@ struct Page {
         this->current_page = this;
     }
 
-    void clear() {
-        // this->deallocate_extensions();
-        this->reset();
-    }
-
     bool is_oversized() {
         return this->current_page == nullptr;
     }

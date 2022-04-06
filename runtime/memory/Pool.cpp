@@ -17,9 +17,10 @@ Pool* Pool::create(Heap* heap) {
             .tag = Bucket::Heap,
             .heap = HeapBucket {
                 .pool = nullptr,
-                .map = std::numeric_limits<size_t>::max(),
+                // We mark the first page of the bucket as full because it cannot be reset.
+                .map = 0x7FFFFFFFFFFFFFFF,
             }
-        };      
+        };
 
         if (i == 0) {
             pool = new (alignof(Pool), bucket_page) Pool {
