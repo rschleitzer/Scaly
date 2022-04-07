@@ -155,10 +155,7 @@ Page* HeapBucket::allocate_page() {
         this->pool->mark_as_full(Page::get(this));
 
     auto page = (Page*)(((size_t)Page::get(this)) + (position - 1) * PAGE_SIZE);
-
-    // The first page of the bucket was already initialized by the pool.
-    if (position > 1)
-        page->reset();
+    page->reset();
 
     return page;
 }

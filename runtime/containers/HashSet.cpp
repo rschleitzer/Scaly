@@ -88,7 +88,7 @@ template<class T> struct HashSet : Object {
             }
         }
 
-        slot_list->add(Slot<T> {
+        slot_list->add(Page::get(this), Slot<T> {
             .value = value,
             .hash_code = hash_code,
         });

@@ -2,15 +2,41 @@ using namespace scaly::memory;
 
 template<class T> struct Array;
 
+template<class T> struct Vector;
+
+template<class T> struct VectorIterator {
+    Vector<T>* vector;
+    size_t position;
+
+    static VectorIterator<T> create(Vector<T>* vector) {
+        return VectorIterator { .vector = vector, .position = 0 };
+    }
+
+    T* next() {
+        if (position == vector->length)
+            return nullptr;
+
+        position += 1;
+        return vector->get(position - 1);
+    }
+};
+
 template<class T> struct Vector : Object {
     size_t length;
     T* data;
 
     static Vector<T>* create(Page* _rp, size_t length) {
-        return new(alignof(Vector<T>), _rp) Vector<T> {
-            .length = length,
-            .data = (T*) _rp->allocate_raw(length * sizeof(T), alignof(T)),
-        };
+        auto vector = allocate(_rp, length);
+        if (length > 0)
+            std::memset(vector->data, 0, length * sizeof(T));
+        return vector;
+    }
+
+    static Vector<T>* allocate(Page* _rp, size_t length) {
+        auto vector = create_without_buffer(_rp, length);
+        if (length > 0)
+            vector->data = (T*) _rp->allocate_raw(length * sizeof(T), alignof(T));
+        return vector;
     }
 
     static Vector<T>* create_without_buffer(Page* _rp, size_t length) {
@@ -34,10 +60,14 @@ template<class T> struct Vector : Object {
     }
 
     void set(size_t i, T item) {
-        *(*this)[i] = item;
+        if (i < length)
+            *(*this)[i] = item;
     }
 
     T* operator [](size_t i) {
+        if (i >= length)
+            return nullptr;
+
         return data + i;
     }
 };

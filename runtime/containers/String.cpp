@@ -135,7 +135,27 @@ struct String : Object {
     }
 
     size_t hash() {
-        return scaly::containers::hash(this->data, this->get_length());
+        // std::string s(this->data, this->get_length());
+        // return std::hash<std::string>{}(s);
+        size_t length = 0;
+        auto bit_count = 0;
+        auto index = 0;
+        while (true) {
+            if (bit_count == PACKED_SIZE * 7) {
+                // Bad string length
+                exit(13);
+            }
+
+            char byte = *(this->data + index);
+            length |= ((size_t)(byte & 0x7F)) << bit_count;
+            if ((byte & 0x80) == 0) {
+                break;
+            }
+            bit_count += 7;
+            index += 1;
+        }
+
+        return scaly::containers::hash(this->data + index + 1, length);
     }
 
 };

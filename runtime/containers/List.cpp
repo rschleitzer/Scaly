@@ -34,10 +34,9 @@ template<class T> struct List : Object {
         };
     }
 
-    void add(T element) {
-        auto _own_page = Page::get(this);
+    void add(Page* _rp, T element) {
         auto new_node = 
-            new (alignof(Node<T>), _own_page) Node<T> {
+            new (alignof(Node<T>), _rp) Node<T> {
                 .element = element,
                 .next = this->head,
             };

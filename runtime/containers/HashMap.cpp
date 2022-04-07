@@ -9,13 +9,12 @@ struct KeyValuePair {
 template<class K, class V>
 struct HashMap : Object {
     size_t length;
-    size_t hash_size;
     Vector<List<Slot<KeyValuePair<K, V>>>>* slots;
+    Page* slots_page;
 
     static HashMap<K, V>* create(Page* _rp) {
         return new(alignof(HashMap<K, V>), _rp) HashMap<K, V> {
             .length = 0,
-            .hash_size = 0,
             .slots = nullptr,
         };
     }
@@ -35,34 +34,48 @@ struct HashMap : Object {
 
     void reallocate(size_t size)
     {
-        this->hash_size = get_prime(size);
-        Page* exclusive_page = Page::get(this)->allocate_exclusive_page();
-        if (this->hash_size < 503)
-            this->hash_size = 503;
-        Vector<List<Slot<KeyValuePair<K, V>>>>* slots = Vector<List<Slot<KeyValuePair<K, V>>>>::create(exclusive_page, this->hash_size);
-        if (this->slots != nullptr)
-            rearrange();
+        auto hash_size = get_prime(size);
+        this->slots_page = Page::get(this)->allocate_exclusive_page();
+        if (hash_size < 97)
+            hash_size = 97;
+        Vector<List<Slot<KeyValuePair<K, V>>>>* slots = Vector<List<Slot<KeyValuePair<K, V>>>>::create(this->slots_page, hash_size);
+
+        if (this->slots != nullptr) {
+            auto vector_iterator = VectorIterator<List<Slot<KeyValuePair<K, V>>>>::create(this->slots);
+            while (auto element = vector_iterator.next()) {
+                auto list_iterator = ListIterator<Slot<KeyValuePair<K, V>>>::create(element->head);
+                while (auto item = list_iterator.next())
+                {
+                    auto hash_code = item->hash_code;
+                    auto slot_number = hash_code % slots->length;
+                    auto slot_list = slots->get(slot_number);
+                    if (slot_list == nullptr)
+                    {
+                        slot_list = List<Slot<KeyValuePair<K, V>>>::create(Page::get(this->slots_page));
+                        slots->set(slot_number, *slot_list);
+                    }
+
+                    slot_list->add(this->slots_page, *item);
+                }
+            }
+            Page::get(this)->deallocate_exclusive_page(Page::get(this->slots));
+        }
         this->slots = slots;
     }
 
-    void rearrange()
-    {
-
-    }
-
-    bool add(K& key, V& value) {
+    bool add(K key, V value) {
         auto hash_size = get_prime(this->length + 1);
-        if (hash_size > this->hash_size)
+        if (this->slots == nullptr || hash_size > this->slots->length)
             reallocate(this->length + 1);
-        add_internal(key, value);
+        return add_internal(key, value);
     }
 
-    bool add_internal(K& key, V& value) {
+    bool add_internal(K key, V value) {
         auto hash_code = key.hash();
         auto slot_number = hash_code % this->slots->length;
         auto slot_list = this->slots->get(slot_number);
         if (slot_list == nullptr)
-            this->slots->set(slot_number, *List<Slot<KeyValuePair<K, V>>>::create(Page::get(this->slots)));
+            this->slots->set(slot_number, *List<Slot<KeyValuePair<K, V>>>::create(this->slots_page));
         auto iterator = slot_list->get_iterator();
         while (Slot<KeyValuePair<K, V>>* item = iterator.next()) {
             if (key.equals(item->value.key)) {
@@ -70,7 +83,7 @@ struct HashMap : Object {
             }
         }
 
-        slot_list->add(Slot<KeyValuePair<K, V>> {
+        slot_list->add(this->slots_page, Slot<KeyValuePair<K, V>> {
             .value = KeyValuePair<K, V> {
                 .key = key,
                 .value = value,
@@ -86,7 +99,9 @@ struct HashMap : Object {
         if (this->slots == nullptr)
             return false;
 
-        auto slot = this->slots->get(key.hash() % this->slots->length);
+        auto hash = key.hash();
+        auto slot_number = hash % this->slots->length;
+        auto slot = this->slots->get(slot_number);
         auto iterator = slot->get_iterator();
         while (Slot<KeyValuePair<K, V>>* item = iterator.next()) {
             if (key.equals(item->value.key)) {

@@ -222,6 +222,7 @@ struct Page {
 
             // Report if we could not find it
             if (extension_pointer == next_extension_page_location) {
+                current_page = *extension_pointer;
                 continue;
             }
             else {
