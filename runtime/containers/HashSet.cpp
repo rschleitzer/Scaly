@@ -58,44 +58,99 @@ template<class T> struct Slot {
     size_t hash_code;
 };
 
-template<class T> struct HashSet : Object {
-    Vector<List<Slot<T>>> slots;
+template<class T>
+struct HashSet : Object {
+    size_t length;
+    Vector<List<Slot<T>>>* slots;
+    Page* slots_page;
+
+    static HashSet<T>* create(Page* _rp) {
+        return new(alignof(HashSet<T>), _rp) HashSet<T> {
+            .length = 0,
+            .slots = nullptr,
+        };
+    }
 
     static HashSet<T>* from_vector(Page* _rp, Vector<T>& vector) {
-        auto hash_size = get_prime(vector.length);
-        Vector<List<Slot<T>>> slots = *Vector<List<Slot<T>>>::create(_rp, hash_size);
-        for (int i = 0; i < hash_size; i++)
-            slots.set(i, *List<Slot<T>>::create(_rp));
-        auto hash_set = new(alignof(HashSet<T>), _rp) HashSet { .slots = slots };
-        hash_set->initialize_from_vector(vector);
-        return hash_set;
-    }
-
-    void initialize_from_vector(Vector<T>& vector) {
-        for (size_t i = 0; i < vector.length; i++) {
-            this->add(*vector[i]);
-        }
-    }
-
-    void add(T& value) {
-        auto hash_code = value.hash();
-        auto slot_number = hash_code % this->slots.length;
-        auto slot_list = this->slots[slot_number];
-        auto iterator = slot_list->get_iterator();
-        while (Slot<T>* item = iterator.next()) {
-            if (value.equals(item->value)) {
-                return;
+        auto hash_set = create(_rp);
+        if (vector.length > 0)
+        {
+            hash_set->reallocate(vector.length);
+            for (size_t i = 0; i < vector.length; i++) {
+                hash_set->add_internal(*(vector[i]));
             }
         }
 
-        slot_list->add(Page::get(this), Slot<T> {
+        return hash_set;
+    }
+
+    void reallocate(size_t size)
+    {
+        auto hash_size = get_prime(size);
+        this->slots_page = Page::get(this)->allocate_exclusive_page();
+        if (hash_size < 97)
+            hash_size = 97;
+        Vector<List<Slot<T>>>* slots = Vector<List<Slot<T>>>::create(this->slots_page, hash_size);
+
+        if (this->slots != nullptr) {
+            auto vector_iterator = VectorIterator<List<Slot<T>>>::create(this->slots);
+            while (auto element = vector_iterator.next()) {
+                auto list_iterator = ListIterator<Slot<T>>::create(element->head);
+                while (auto item = list_iterator.next())
+                {
+                    auto hash_code = item->hash_code;
+                    auto slot_number = hash_code % slots->length;
+                    auto slot_list = slots->get(slot_number);
+                    if (slot_list == nullptr)
+                    {
+                        slot_list = List<Slot<T>>::create(Page::get(this->slots_page));
+                        slots->set(slot_number, *slot_list);
+                    }
+
+                    slot_list->add(this->slots_page, *item);
+                }
+            }
+            Page::get(this)->deallocate_exclusive_page(Page::get(this->slots));
+        }
+        this->slots = slots;
+    }
+
+    bool add(T value) {
+        auto hash_size = get_prime(this->length + 1);
+        if (this->slots == nullptr || hash_size > this->slots->length)
+            reallocate(this->length + 1);
+        return add_internal(value);
+    }
+
+    bool add_internal(T value) {
+        auto hash_code = value.hash();
+        auto slot_number = hash_code % this->slots->length;
+        auto slot_list = this->slots->get(slot_number);
+        if (slot_list == nullptr)
+            this->slots->set(slot_number, *List<Slot<T>>::create(this->slots_page));
+        auto iterator = slot_list->get_iterator();
+        while (Slot<T>* item = iterator.next()) {
+            if (value.equals(item->value)) {
+                return false;
+            }
+        }
+
+        slot_list->add(this->slots_page, Slot<T> {
             .value = value,
             .hash_code = hash_code,
         });
+
+        this->length++;
+        return true;
     }
 
     bool contains(T& value) {
-        auto slot = this->slots[value.hash() % this->slots.length];
+        if (this->slots == nullptr)
+            return false;
+
+        auto hash = value.hash();
+        auto slot_number = hash % this->slots->length;
+        auto slot = this->slots->get(slot_number);
         auto iterator = slot->get_iterator();
         while (Slot<T>* item = iterator.next()) {
             if (value.equals(item->value)) {

@@ -127,35 +127,36 @@ void test_hash_set(Page* _rp) {
 }
 
 void test_hash_map(Page* _rp) {
-    // {
-    //     auto r = Region::create_from_page(_rp);
+    {
+        auto r = Region::create_from_page(_rp);
 
-    //     Array<KeyValuePair<String, int>>& array = *Array<KeyValuePair<String, int>>::create(r.page);
-    //     array.add(KeyValuePair<String, int> { .key = *String::from_c_string(r.page, "using"), .value = 1 });
-    //     array.add(KeyValuePair<String, int> { .key = *String::from_c_string(r.page, "namespace"), .value = 2 });
-    //     array.add(KeyValuePair<String, int> { .key = *String::from_c_string(r.page, "typedef"), .value = 3 });
-    //     Vector<KeyValuePair<String, int>>& vector = *Vector<KeyValuePair<String, int>>::from_array(r.page, array);
-    //     HashMap<String, int>& keywords = *HashMap<String, int>::from_vector(r.page, vector);
-    //     if (!keywords.contains(*String::from_c_string(r.page, "using")))
-    //         exit (-18);
-    //     if (!keywords.contains(*String::from_c_string(r.page, "namespace")))
-    //         exit (-19);
-    //     if (!keywords.contains(*String::from_c_string(r.page, "typedef")))
-    //         exit (-20);
-    //     if (keywords.contains(*String::from_c_string(r.page, "nix")))
-    //         exit (-21);
-    //     if (*keywords[*String::from_c_string(r.page, "using")] != 1)
-    //         exit (-22);
-    //     if (*keywords[*String::from_c_string(r.page, "namespace")] != 2)
-    //         exit (-23);
-    //     if (*keywords[*String::from_c_string(r.page, "typedef")] != 3)
-    //         exit (-24);
-    //     if (keywords[*String::from_c_string(r.page, "nix")] != nullptr)
-    //         exit (-25);
-    // }
+        Array<KeyValuePair<String, int>>& array = *Array<KeyValuePair<String, int>>::create(r.page);
+        array.add(KeyValuePair<String, int> { .key = *String::from_c_string(r.page, "using"), .value = 1 });
+        array.add(KeyValuePair<String, int> { .key = *String::from_c_string(r.page, "namespace"), .value = 2 });
+        array.add(KeyValuePair<String, int> { .key = *String::from_c_string(r.page, "typedef"), .value = 3 });
+        Vector<KeyValuePair<String, int>>& vector = *Vector<KeyValuePair<String, int>>::from_array(r.page, array);
+        HashMap<String, int>& keywords = *HashMap<String, int>::from_vector(r.page, vector);
+        if (!keywords.contains(*String::from_c_string(r.page, "using")))
+            exit (-18);
+        if (!keywords.contains(*String::from_c_string(r.page, "namespace")))
+            exit (-19);
+        if (!keywords.contains(*String::from_c_string(r.page, "typedef")))
+            exit (-20);
+        if (keywords.contains(*String::from_c_string(r.page, "nix")))
+            exit (-21);
+        if (*keywords[*String::from_c_string(r.page, "using")] != 1)
+            exit (-22);
+        if (*keywords[*String::from_c_string(r.page, "namespace")] != 2)
+            exit (-23);
+        if (*keywords[*String::from_c_string(r.page, "typedef")] != 3)
+            exit (-24);
+        if (keywords[*String::from_c_string(r.page, "nix")] != nullptr)
+            exit (-25);
+    }
     {
         auto r = Region::create_from_page(_rp);
         HashMap<String, size_t>& map = *HashMap<String, size_t>::create(r.page);
+        HashSet<String>& set = *HashSet<String>::create(r.page);
         for (char i = 'A'; i <= 'Z'; i++)
         {
             for (char j = 'a'; j <= 'z'; j++)
@@ -170,6 +171,7 @@ void test_hash_map(Page* _rp) {
                         sb->append_character(k);
                         sb->append_character(l);
                         map.add(*sb->to_string(r.page), (size_t)i * j * k * l);
+                        set.add(*sb->to_string(r.page));
                     }
                 }
             }
@@ -188,10 +190,12 @@ void test_hash_map(Page* _rp) {
                         sb->append_character(k);
                         sb->append_character(l);
                         String& theString = *(sb->to_string(r.page));
+                         if (!set.contains(theString))
+                             exit(-26);
                         if (!map.contains(theString))
-                            exit(-26);
-                        if (*map[theString] != (size_t)i * j * k * l)
                             exit(-27);
+                        if (*map[theString] != (size_t)i * j * k * l)
+                            exit(-28);
                     }
                 }
             }
