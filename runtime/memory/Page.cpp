@@ -144,20 +144,6 @@ struct Page {
         return page;
     }
 
-    bool extend(size_t top, size_t size) {
-        if (top != this->get_next_location()) {
-            return false;
-        }
-
-        auto new_top = top + size;
-        if (new_top > (size_t)this->get_next_exclusive_page_location()) {
-            return false;
-        }
-        this->set_next_location(new_top);
-
-        return true;
-    }
-
     void deallocate_extensions() {
         auto page = this;
         while (page != nullptr) {
@@ -185,19 +171,6 @@ struct Page {
             auto bucket = Bucket::get(this);
             bucket->deallocate_page(this);
         }
-    }
-
-    bool reclaim_array(Page* address) {
-        auto page = this;
-        while (page != nullptr) {
-            if (page->deallocate_exclusive_page(address)) {
-                return true;
-            }
-            page = *(page->get_extension_page_location());
-        }
-
-        // If we arrive here, we have a memory leak.
-        return false;
     }
 
     static Page* get(void* address) {

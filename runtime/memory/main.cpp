@@ -133,14 +133,6 @@ void test_page()
     // The page of our array pointer shall be our exclusive page.
     if (Page::get(array) != exclusive_page)
         exit (-25);
-
-    // Free the array storage.
-    if (!page->reclaim_array(Page::get(array)))
-        exit (-26);
-
-    // Our page shall have no more exclusive pages now.
-    if (page->exclusive_pages != 0)
-        exit (-27);
 }
 
 void test_heap()
