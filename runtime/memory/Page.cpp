@@ -16,7 +16,7 @@ struct Allocator : Object {
     void* allocate_oversized(size_t size);
     Page* allocate_exclusive_page();
     void deallocate();
-    void deallocate_page(Page* page);
+    static void deallocate_page(Page* page);
 };
 
 struct Page {
@@ -148,8 +148,7 @@ void* Allocator::allocate(size_t size, size_t align)
 Page* Allocator::allocate_page()
 {
     auto page = Bucket::get(this)->allocate_page();
-    auto allocator = new(alignof(Allocator), page) Allocator {
-        .current_page = page,
+    page->allocator = new(alignof(Allocator), page) Allocator {
     };
     return page;
 }
@@ -189,7 +188,7 @@ void* Allocator::allocate_oversized(size_t size)
 Page* Allocator::allocate_exclusive_page()
 {
     auto page = this->allocate_page();
-    this->register_allocator((Allocator*)(page + 1));
+    this->register_allocator(page->allocator);
     return page;
 }
 
@@ -209,6 +208,17 @@ void Allocator::deallocate()
 
 void Allocator::deallocate_page(Page* page)
 {
+    Allocator* allocator;
+    if (page->next_object == nullptr)
+        allocator = (Allocator*)(page + 1);
+    else
+        allocator = page->allocator;
+
+    if (allocator->previous != nullptr)
+        allocator->previous->next = allocator->next;
+
+    if (allocator->next != nullptr)
+        allocator->next->previous = allocator->previous;
 }
 
 }
