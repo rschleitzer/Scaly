@@ -26,8 +26,7 @@ void Bucket::deallocate_page(Page* page) {
             this->heap.deallocate_page(page);
             return;
         case Bucket::Stack:
-            // Tried to deallocate a page from a StackBucket."
-            exit(5);
+            return;
     }
 }
 

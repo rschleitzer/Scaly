@@ -53,23 +53,22 @@ template<class T> struct Array : Object {
     }
 
     void reallocate() {
-        auto _own_page = Page::get(this);
+        auto own_page = Page::get(this);
         auto size = sizeof(T);
         size_t length;
         if (this->vector == nullptr) {
-            Page& exclusive_page = *_own_page->allocate_exclusive_page();
-            auto capacity = exclusive_page.get_capacity(alignof(T)) - sizeof(Vector<T>);
+            Page* exclusive_page = own_page->allocate_exclusive_page();
+            auto capacity = exclusive_page->get_capacity(alignof(T)) - sizeof(Vector<T>);
             length = capacity / size;
-            this->vector = Vector<T>::create_without_buffer(_own_page, length);
-            this->vector->data = (T*)exclusive_page.allocate_raw(capacity, alignof(T));             
+            this->vector = Vector<T>::create_without_buffer(own_page, length);
+            this->vector->data = (T*)exclusive_page->allocate_raw(capacity, alignof(T));             
         } else {
             length = this->vector->length * 2;
-            auto oversized_page = _own_page->create_oversized_page(length * size);
-            auto data = (T*)(oversized_page + 1);
+            auto data = (T*)own_page->allocate_raw(length * size, alignof(T));
             auto bytes_to_copy = this->vector->length * sizeof(T);
             memcpy(data, this->vector->data, bytes_to_copy);
             Page* old_exclusive_page = Page::get(this->vector->data);
-            _own_page->deallocate_exclusive_page(old_exclusive_page);
+            own_page->deallocate_exclusive_page(old_exclusive_page);
             this->vector->data = data;
             this->vector->length = length;
         }

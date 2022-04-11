@@ -9,58 +9,45 @@ void test_page()
 
     auto page = r.page;
 
-    // Our next object is located behind the data of our page
-    if (page->next_object_offset != sizeof(Page))
+    // We have no allocator yet
+    if (page->allocator != nullptr)
         exit (-1);
-
-    // We have no exclusive pages yet
-    if (page->exclusive_pages != 0)
-        exit (-2);
 
     // And we are not oversized
     if (page->is_oversized())
-        exit (-3);
-
-    // The current page is our page itself
-    if (page != page->current_page)
-        exit (-4);
-
-    // The first extension page pointer is one pointer behind the last positin
-    auto extension_page_location = page->get_extension_page_location();
-    if ((extension_page_location != (Page**)((size_t)page + PAGE_SIZE - sizeof(Page**))))
-        exit (-5);
+        exit (-2);
 
     // The next possible location is behind our data
-    auto location = page->get_next_location();
+    auto location = (size_t)page->next_object;
     if (location != (size_t)((char*)page + sizeof(Page)))
-        exit (-6);
+        exit (-3);
 
     // Allocate an int. Our location moves by bytes.
     auto answer = (int*)page->allocate_raw(4, alignof(int));
     location += 4;
-    if (page->get_next_location() != location)
-        exit (-7);
+    if ((size_t)page->next_object != location)
+        exit (-4);
     *answer = 42;
 
     // Allocate a byte character and set it to A.
     auto another_loc = page->allocate_raw(1, alignof(char));
     auto another = (char*)another_loc;
     location += 1;
-    if (page->get_next_location() != location)
-        exit (-8);
+    if ((size_t)page->next_object != location)
+        exit (-5);
     *another = 'A';
 
     // We allocate another int and move 7 bytes forward because of the 4 byte alignment.
     auto eau_loc = page->allocate_raw(4, alignof(int));
     auto eau = (int*)eau_loc;
     location += 7;
-    if (page->get_next_location() != location)
-        exit (-9);
+    if ((size_t)page->next_object != location)
+        exit (-6);
     *eau = 4711;
 
     // Ask the int for its page which shall be our own.
     if (Page::get(eau) != page)
-        exit (-10);
+        exit (-7);
 
     // Allocate an oversized object which should cause allocating an exclusive page
     auto array = (size_t*)page->allocate_raw(PAGE_SIZE, alignof(size_t));
@@ -68,72 +55,71 @@ void test_page()
         array[i] = i;
     }
     
-    // After allocating the oversized object, the location shall be the same
-    if (page->get_next_location() != location)
+    // After allocating the oversized object, the location shall be updated with the aligned allocator
+    location += sizeof(Allocator) + 4;
+    auto our_location = (size_t)page->next_object;
+    if (our_location != location)
+        exit (-8);
+
+    // Now we should have an allocator
+    if (page->allocator == nullptr)
+        exit (-9);
+
+    // Our allocator should not yet point to a current page
+    if (page->allocator->current_page != nullptr)
+        exit (-10);
+
+    // Our allocator should be the first in the chain.
+    if (page->allocator->previous != nullptr)
         exit (-11);
 
-    // The current page should be still us
-    if (page != page->current_page)
+    // Our allocator should not be the last in the chain.
+    if (page->allocator->next == nullptr)
         exit (-12);
+
+    // The allocator of our exclusive page should point back to our allocator.
+    if (page->allocator->next->previous != page->allocator)
+        exit (-14);
+
+    // Now we look at our exclusive page.
+    auto exclusive_page = Page::get(page->allocator->next);
+
+    // The lower part of the allocated size was stored in next_object_offset.
+    if (exclusive_page->next_object != nullptr)
+        exit (-15);
+
+    auto size = (size_t)exclusive_page->allocator;
+    if ((size_t)size != (size_t)(sizeof(Page) + sizeof(Allocator) + PAGE_SIZE))
+        exit (-16);
+
+    // The page of our array pointer shall be our exclusive page.
+    if (Page::get(array) != exclusive_page)
+        exit (-17);
 
     // Overflow the page
     for (int i = 0; i <= PAGE_SIZE; i++) {
         page->allocate_raw(1, 1);
     }
 
-    // Now the current page shall have switched to a new one
-    if (page == page->current_page)
-        exit (-13);
-
-    // Since we have one extension page now, our extension page shall point to our current page.
-    if (*(page->get_extension_page_location()) != page->current_page)
-        exit (-14);
-
-    // Our new current page shall not have exclusive pages yet.
-    if (page->current_page->exclusive_pages != 0)
-        exit (-15);
-
-    // The current page of our new current page shall point to itself.
-    if (page->current_page->current_page != page->current_page)
-        exit (-16);
-
-    if (page->exclusive_pages != 1)
-        exit (-17);
+    // Our allocator should now point to a current page
+    if (page->allocator->current_page == nullptr)
+        exit (-18);
 
     // The data shall be still intact.
     if (*answer != 42)
-        exit (-18);
-
-    if (*another != 'A')
         exit (-19);
 
-    if (*eau  != 4711)
+    if (*another != 'A')
         exit (-20);
+
+    if (*eau  != 4711)
+        exit (-21);
  
    for (int i = 0; i <= PAGE_SIZE / sizeof(size_t) - 1; i++) {
         if (array[i] != i)
-            exit (-21);
+            exit (-22);
     }
- 
-    // Now we look at our exclusive page which is one pointer above the location of our next exclusive page.
-    auto exclusive_page = *(page->get_next_exclusive_page_location() + 1);
-    
-    // The exclusive page shall not have a current page.
-    if (exclusive_page->current_page != nullptr)
-        exit (-22);
-
-    // The upper part of the allocated size was stored in exclusive_pages which shall be zero since we did a rather small allocation.
-    if (exclusive_page->exclusive_pages != 0)
-        exit (-23);
-
-    // The lower part of the allocated size was stored in next_object_offset.
-    if (exclusive_page->next_object_offset != sizeof(Page) + PAGE_SIZE)
-        exit (-24);
-
-    // The page of our array pointer shall be our exclusive page.
-    if (Page::get(array) != exclusive_page)
-        exit (-25);
-}
+ }
 
 void test_heap()
 {
@@ -143,41 +129,30 @@ void test_heap()
     auto r = Region::create_from_page(&*root_page);
     auto page = r.page;
 
-    size_t u_start = 0;
-    size_t* pu_previous = nullptr;
-    size_t* pu = nullptr;
-    auto pointers = 133157244;
+    size_t* start = nullptr;
+    size_t* p_previous = nullptr;
+    size_t* p = nullptr;
+    auto pointers = 128000000;
     for (int i = 1; i <= pointers; i++) {
-        pu = (size_t*)page->allocate_raw(sizeof(size_t), alignof(size_t));
-        *pu = 0;
+        p = (size_t*)page->allocate_raw(sizeof(size_t), alignof(size_t));
+        *p = 0;
         if (i == 1) {
-            u_start = (size_t)pu;
+            start = p;
         } else {
-            *pu_previous = (size_t)pu;
+            *p_previous = (size_t)p;
         }
-        pu_previous = pu;
+        p_previous = p;
     }
 
     // Check the pointer chain
     auto counter = 0;
-    auto pu_check = (size_t*)u_start;
-    while (pu_check != nullptr) {
+    p = start;
+    while (p != nullptr) {
         counter += 1;
-        pu_check = (size_t*)(*pu_check) ;
+        p = (size_t*)*p;
     }
     if (counter != pointers)
         exit (-28);
-
-    // Walk the page chain
-    auto extension_location = page->get_extension_page_location();
-    // println!("Root extension page: {:X}", *extension_location as usize);
-    page = *extension_location;
-    auto page_counter = 0;
-    while (page) {
-        auto extension_page = *page->get_extension_page_location();
-        page = extension_page;
-        page_counter += 1;
-    }
 }
 
 void test_heapbucket() {
@@ -247,7 +222,6 @@ void test_heapbucket() {
     auto _page60 = bucket->allocate_page();
     auto _page61 = bucket->allocate_page();
     auto page62 = bucket->allocate_page();
-    auto page63 = bucket->allocate_page();
 
     if (bucket->tag != Bucket::Heap)
         exit(-29);
@@ -303,9 +277,9 @@ void test_heapbucket() {
     if (bucket->heap.map != 0)
         exit(-43);
 
-    bucket->deallocate_page(&*page63);
-    auto page63a = bucket->allocate_page();
-    if (page63 != page63a)
+    bucket->deallocate_page(&*page62);
+    page62a = bucket->allocate_page();
+    if (page62 != page62a)
         exit(-44);
 
     if (bucket->tag != Bucket::Heap)
