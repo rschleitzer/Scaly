@@ -79,6 +79,26 @@ struct String : Object {
         return (const char*)dest;
     }
 
+    const char* get_buffer() {
+        size_t length = 0;
+        auto bit_count = 0;
+        size_t index = 0;
+        while (true) {
+            if (bit_count == PACKED_SIZE * 7)
+                // Bad string length
+                exit(11);
+
+            char byte = *(this->data + index);
+            length |= ((size_t)(byte & 0x7F)) << bit_count;
+            if ((byte & 0x80) == 0)
+                break;
+            bit_count += 7;
+            index += 1;
+        }
+
+        return this->data + index + 1;
+    }
+
     String* append_character(Page* _rp, char c) {
         auto s = String::create(_rp, this->data, this->get_length() + 1);
         auto data = s->data;
@@ -158,4 +178,24 @@ struct String : Object {
         return scaly::containers::hash(this->data + index + 1, length);
     }
 
+};
+
+struct StringIterator {
+    char* current;
+    char* last;
+
+    static StringIterator create(String string) {
+        auto buffer = string.get_buffer();
+        return StringIterator {
+            .current = (char*)buffer,
+            .last = (char*)buffer + string.get_length() };
+    }
+
+    char* next() {
+        if (this->current == last) {
+            return nullptr;
+        } else {
+            return this->current;
+        }
+    }
 };
