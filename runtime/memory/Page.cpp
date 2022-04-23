@@ -28,6 +28,11 @@ struct Page {
         this->next_object = this + 1;
     }
 
+    void clear() {
+        this->deallocate_extensions();
+        this->next_object = this + 1;
+    }
+
     bool is_oversized() {
         return this->next_object == nullptr;
     }
