@@ -3,8 +3,6 @@
 
 #include "../runtime/containers/Containers.cpp"
 
-namespace scaly::compiler {
 #include "Lexer.cpp"
-}
 
 #endif // __Scaly_Containers__

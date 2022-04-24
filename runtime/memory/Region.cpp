@@ -7,7 +7,6 @@ struct Region {
         auto bucket = Bucket::get(page);
         switch (bucket->tag) {
             case Bucket::Heap:
-                bucket->heap.deallocate_page(page);
                 return Region {
                     .page = bucket->heap.allocate_page(),
                 };

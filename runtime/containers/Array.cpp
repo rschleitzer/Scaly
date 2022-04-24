@@ -1,3 +1,5 @@
+namespace scaly::containers {
+
 using namespace scaly::memory;
 
 template<class T> struct Array : Object {
@@ -75,4 +77,4 @@ template<class T> struct Array : Object {
     }
 };
 
-
+}

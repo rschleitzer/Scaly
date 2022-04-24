@@ -199,15 +199,12 @@ Page* Allocator::allocate_exclusive_page()
 
 void Allocator::deallocate()
 {
-    auto allocator = this; 
-    while (true)
+    auto allocator = this->next; 
+    while (allocator != nullptr)
     {
         auto next_allocator = allocator->next;
         Page::get(allocator)->forget();
-        if (next_allocator == nullptr)
-            break;
-        else
-            allocator = next_allocator;
+        allocator = next_allocator;
     }
 }
 

@@ -1,3 +1,5 @@
+namespace scaly::containers {
+
 using namespace scaly::memory;
 
 const size_t PACKED_SIZE = sizeof(size_t) * 8 / 7;
@@ -195,7 +197,11 @@ struct StringIterator {
         if (this->current == last) {
             return nullptr;
         } else {
-            return this->current;
+            auto ret = this->current;
+            this->current++;
+            return ret;
         }
     }
 };
+
+}

@@ -1,6 +1,7 @@
+namespace scaly::compiler {
+    
 using namespace scaly::containers;
 
-namespace scaly::compiler {
 
 struct EmptyToken {};
 struct InvalidToken {};
@@ -97,7 +98,7 @@ struct Lexer : Object {
     size_t previous_position;
     size_t position;
 
-    Lexer* create(Page* _rp, String deck) {
+    static Lexer* create(Page* _rp, String& deck) {
         auto lexer = new(alignof(Lexer), _rp) Lexer();
         lexer->token = new(alignof(Token), Page::get(lexer)->allocate_exclusive_page()) Token();
         lexer->token->tag = Token::Empty;
@@ -280,6 +281,7 @@ struct Lexer : Object {
                     auto token = new (alignof(Token), _rp) Token();
                     token->tag = Token::Identifier;
                     token->identifier = IdentifierToken { .name = *name.to_string(_rp) };
+                    return token;
                 }
             }
             else

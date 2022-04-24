@@ -1,3 +1,5 @@
+namespace scaly::containers {
+
 using namespace scaly::memory;
 
 template<class T> struct List;
@@ -48,3 +50,5 @@ template<class T> struct List : Object {
         return ListIterator<T>::create(this->head);
     }
 };
+
+}

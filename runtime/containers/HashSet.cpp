@@ -1,3 +1,5 @@
+namespace scaly::containers {
+
 using namespace scaly::memory;
 
 // https://planetmath.org/goodhashtableprimes
@@ -161,3 +163,5 @@ struct HashSet : Object {
         return false;
     }
 };
+
+}

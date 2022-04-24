@@ -1,3 +1,5 @@
+namespace scaly::containers {
+
 using namespace scaly::memory;
 
 template<class K, class V>
@@ -127,3 +129,5 @@ struct HashMap : Object {
         return nullptr;
     }
 };
+
+}

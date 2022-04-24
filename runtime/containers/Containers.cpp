@@ -9,7 +9,6 @@
 
 using std::memcpy;
 
-namespace scaly::containers {
 #include "List.cpp"
 #include "Vector.cpp"
 #include "Array.cpp"
@@ -17,6 +16,5 @@ namespace scaly::containers {
 #include "HashMap.cpp"
 #include "String.cpp"
 #include "StringBuilder.cpp"
-}
 
 #endif // __Scaly_Containers__

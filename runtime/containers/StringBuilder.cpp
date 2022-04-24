@@ -1,3 +1,5 @@
+namespace scaly::containers {
+
 using namespace scaly::memory;
 
 struct StringBuilder : Object {
@@ -30,3 +32,5 @@ struct StringBuilder : Object {
         return String::create(_rp, this->buffer.get_buffer(), this->buffer.get_length());
     }
 };
+
+}
