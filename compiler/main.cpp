@@ -11,7 +11,9 @@ void test_lexer(Page* _rp) {
         Lexer& lexer = *Lexer::create(r_1.page, *String::from_c_string(r_1.page, "abc"));
         lexer.advance(r_1.page);
         if (lexer.token->tag != Token::Identifier)
-            exit (1); 
+            exit (1);
+        if (!lexer.token->identifier.name.equals(*String::from_c_string(r_1.page, "abc")))
+            exit (2);
     }
 }
 
