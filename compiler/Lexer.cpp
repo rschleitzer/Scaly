@@ -297,6 +297,7 @@ struct Lexer : Object {
                     auto token = new (alignof(Token), _rp) Token();
                     token->tag = Token::Identifier;
                     token->identifier = IdentifierToken { .name = *name.to_string(_rp) };
+                    return token;
                 }
             }
         }
@@ -621,7 +622,7 @@ struct Lexer : Object {
                     auto token = new (alignof(Token), _rp) Token();
                     token->tag = Token::Literal;
                     token->literal = LiteralToken {
-                        .tag = LiteralToken::String,
+                        .tag = LiteralToken::Integer,
                         .integer = IntegerToken {
                             .value = *value.to_string(_rp),
                         }
@@ -819,15 +820,13 @@ struct Lexer : Object {
                                         return;
                                     default:
                                     {
-                                        switch (*this->character) {
-                                            case '*':
-                                                read_character();
-                                                handle_multi_line_comment();
-                                                break;
-                                            default:
-                                                read_character();
-                                                handle_single_line_comment();
-                                                break;
+                                        if (*this->character != '*') {
+                                            read_character();
+                                            handle_single_line_comment();
+                                        }
+                                        else {
+                                            read_character();
+                                            handle_multi_line_comment();
                                         }
                                     }
                                 }
@@ -848,20 +847,15 @@ struct Lexer : Object {
                     return;
                 default:
                 {
-                    switch (*this->character)
+                    if (*this->character == '\n')
                     {
-                        case '\t':
-                            read_character();
-                            continue;
-                        case '\r':
-                            read_character();
-                            continue;
-                        case '\n':
-                            read_character();
-                            return;
-                        default:
-                            read_character();
-                            continue;
+                        read_character();
+                        return;
+                    }
+                    else
+                    {
+                        read_character();
+                        continue;
                     }
                 }
             }

@@ -30,7 +30,7 @@ struct Page {
 
     void clear() {
         this->deallocate_extensions();
-        this->next_object = this + 1;
+        this->reset();
     }
 
     bool is_oversized() {
