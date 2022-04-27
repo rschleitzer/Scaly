@@ -9,7 +9,6 @@
 
 using std::memcpy;
 
-#include "List.cpp"
 #include "Vector.cpp"
 #include "Array.cpp"
 #include "HashSet.cpp"
