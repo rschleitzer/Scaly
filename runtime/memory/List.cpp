@@ -46,6 +46,12 @@ template<class T> struct List : Object {
         this->head = new_node;
     }
 
+    T* get_head() {
+        if (this->head == nullptr)
+            return nullptr;
+        return &this->head->element;
+    }
+
     ListIterator<T> get_iterator()  {
         return ListIterator<T>::create(this->head);
     }
