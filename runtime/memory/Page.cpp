@@ -7,8 +7,8 @@ struct Page;
 
 struct Allocator : Object {
     Page* current_page;
-    Allocator* previous;
     Allocator* next;
+    // Allocator* exclusive;
 
     void* allocate(size_t size, size_t align);
     Page* allocate_page();
@@ -16,7 +16,6 @@ struct Allocator : Object {
     void* allocate_oversized(size_t size);
     Page* allocate_exclusive_page();
     void deallocate();
-    static void deallocate_page(Page* page);
 };
 
 struct Page {
@@ -46,8 +45,8 @@ struct Page {
         this->allocator = (Allocator*)aligned_location;
         this->next_object = (void*)next_location;
         this->allocator->current_page = nullptr;
-        this->allocator->previous = nullptr;
         this->allocator->next = nullptr;
+        // this->allocator->exclusive = nullptr;
     }
 
     size_t get_capacity(size_t align)
@@ -120,8 +119,7 @@ struct Page {
         return page;
     }
 
-    void deallocate_exclusive_page(Page* page) {        
-        this->allocator->deallocate_page(page);
+    void deallocate_exclusive_page(Page* page) {
     }
 };
 
@@ -153,18 +151,14 @@ void* Allocator::allocate(size_t size, size_t align)
 Page* Allocator::allocate_page()
 {
     auto page = Bucket::get(this)->allocate_page();
-    page->allocator = new(alignof(Allocator), page) Allocator {
-    };
+    page->allocator = new(alignof(Allocator), page) Allocator {};
     return page;
 }
 
 void Allocator::register_allocator(Allocator* allocator)
 {
-    allocator->previous = this;
-    if (this->next != nullptr) {
-        this->next->previous = allocator;
+    if (this->next != nullptr)
         allocator->next = this->next;
-    }
     this->next = allocator;
 }
 
@@ -193,7 +187,6 @@ void* Allocator::allocate_oversized(size_t size)
 Page* Allocator::allocate_exclusive_page()
 {
     auto page = this->allocate_page();
-    this->register_allocator(page->allocator);
     return page;
 }
 
@@ -206,21 +199,6 @@ void Allocator::deallocate()
         Page::get(allocator)->forget();
         allocator = next_allocator;
     }
-}
-
-void Allocator::deallocate_page(Page* page)
-{
-    Allocator* allocator;
-    if (page->next_object == nullptr)
-        allocator = (Allocator*)(page + 1);
-    else
-        allocator = page->allocator;
-
-    if (allocator->previous != nullptr)
-        allocator->previous->next = allocator->next;
-
-    if (allocator->next != nullptr)
-        allocator->next->previous = allocator->previous;
 }
 
 }
