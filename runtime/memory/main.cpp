@@ -292,11 +292,11 @@ void test_region() {
         *five = 5;
 
         if  (*five != 5)
-            exit(40);
+            exit(-40);
         if  (*four != 4)
-            exit(41);
+            exit(-41);
         if  (*three != 3)
-            exit(42);
+            exit(-42);
     }
     {
         auto r2b = Region::create(r1);
@@ -309,9 +309,9 @@ void test_region() {
     }
 
     if  (*two != 2)
-        exit(43);
+        exit(-43);
     if  (*one != 1)
-        exit(44);
+        exit(-44);
 }
 
 int main(int argc, char** argv)

@@ -64,7 +64,6 @@ struct LiteralToken {
 
 struct LineFeedToken {};
 struct ColonToken {};
-struct SemicolonToken {};
 
 struct Token : Object {
     enum {
@@ -76,7 +75,6 @@ struct Token : Object {
         Literal,
         LineFeed,
         Colon,
-        Semicolon,
     } tag;
     union {
         EmptyToken empty;
@@ -87,7 +85,6 @@ struct Token : Object {
         LiteralToken literal;
         LineFeedToken lineFeed;
         ColonToken colon;
-        SemicolonToken semicolon;
     };
 };
 
@@ -153,14 +150,6 @@ struct Lexer : Object {
                     Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
                 this->token = new (alignof(Token), Page::get(this)->allocate_exclusive_page()) Token();
                 this->token->tag = Token::Colon;
-                break;
-
-            case ';':
-                read_character();
-                if (this->token != nullptr)
-                    Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
-                this->token = new (alignof(Token), Page::get(this)->allocate_exclusive_page()) Token();
-                this->token->tag = Token::Semicolon;
                 break;
 
             case '0':
@@ -252,10 +241,8 @@ struct Lexer : Object {
             read_character();
             skip_whitespace(false);
             if (this->character == nullptr) {
-                if (this->token != nullptr)
-                    Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
-                this->token = new (alignof(Token), Page::get(this)->allocate_exclusive_page()) Token();
-                this->token->tag = Token::Invalid;
+                auto token = new (alignof(Token), _rp) Token();
+                this->token->tag = Token::LineFeed;
                 return this->token;
             }
 
@@ -264,6 +251,7 @@ struct Lexer : Object {
 
             auto token = new (alignof(Token), _rp) Token();
             token->tag = Token::LineFeed;
+            return this->token;
         }
     }
 
@@ -553,6 +541,8 @@ struct Lexer : Object {
 
         switch (c) {
             case '.':
+                if (value.get_length() == 0)
+                    value.append_character('0');
                 value.append_character(c);
                 return scan_fraction(_rp, value);
 
@@ -569,10 +559,12 @@ struct Lexer : Object {
 
             default:
             {
+                if (value.get_length() == 0)
+                    value.append_character('0');
                 auto token = new (alignof(Token), _rp) Token();
                 token->tag = Token::Literal;
                 token->literal = LiteralToken {
-                    .tag = LiteralToken::String,
+                    .tag = LiteralToken::Integer,
                     .integer = IntegerToken {
                         .value = *value.to_string(_rp),
                     }
