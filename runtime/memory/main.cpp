@@ -9,8 +9,8 @@ void test_page()
 
     auto page = r.page;
 
-    // We have no allocator yet
-    if (page->allocator != nullptr)
+    // We have no next page yet
+    if (page->next_page != nullptr)
         exit (-1);
 
     // And we are not oversized
@@ -49,51 +49,29 @@ void test_page()
     if (Page::get(eau) != page)
         exit (-7);
 
-    // Allocate an oversized object which should cause allocating an exclusive page
+    // Allocate an oversized object which should cause allocating an oversized page
     auto array = (size_t*)page->allocate_raw(PAGE_SIZE, alignof(size_t));
     for (int i = 0; i <= PAGE_SIZE / sizeof(size_t) - 1; i++) {
         array[i] = i;
     }
-    
-    // After allocating the oversized object, the location shall be updated with the aligned allocator
-    location += sizeof(Allocator) + 4;
-    auto our_location = (size_t)page->next_object;
-    if (our_location != location)
-        exit (-8);
 
-    // Now we should have an allocator
-    if (page->allocator == nullptr)
+    // Since an oversized page is always exclusive, we should not yet have a next page
+    if (page->next_page != nullptr)
         exit (-9);
 
     // Our allocator should not yet point to a current page
-    if (page->allocator->current_page != nullptr)
+    if (page->current_page != nullptr)
         exit (-10);
 
-    // Our allocator should be the first in the chain.
-    // if (page->allocator->previous != nullptr)
-    //     exit (-11);
+    // Now we look at our oversized page.
+    auto oversized_page = Page::get(page->exclusive_pages.head->element);
 
-    // Our allocator should not be the last in the chain.
-    if (page->allocator->next == nullptr)
-        exit (-12);
-
-    // The allocator of our exclusive page should point back to our allocator.
-    // if (page->allocator->next->previous != page->allocator)
-    //     exit (-14);
-
-    // Now we look at our exclusive page.
-    auto exclusive_page = Page::get(page->allocator->next);
-
-    // The lower part of the allocated size was stored in next_object_offset.
-    if (exclusive_page->next_object != nullptr)
+    // A null next_object indicates an oversized page.
+    if (oversized_page->next_object != nullptr)
         exit (-15);
 
-    auto size = (size_t)exclusive_page->allocator;
-    if ((size_t)size != (size_t)(sizeof(Page) + sizeof(Allocator) + PAGE_SIZE))
-        exit (-16);
-
-    // The page of our array pointer shall be our exclusive page.
-    if (Page::get(array) != exclusive_page)
+    // The page of our array pointer shall be our oversized page.
+    if (Page::get(array) != oversized_page)
         exit (-17);
 
     // Overflow the page
@@ -102,7 +80,7 @@ void test_page()
     }
 
     // Our allocator should now point to a current page
-    if (page->allocator->current_page == nullptr)
+    if (page->current_page == page)
         exit (-18);
 
     // The data shall be still intact.
@@ -115,10 +93,12 @@ void test_page()
     if (*eau  != 4711)
         exit (-21);
  
-   for (int i = 0; i <= PAGE_SIZE / sizeof(size_t) - 1; i++) {
+    for (int i = 0; i <= PAGE_SIZE / sizeof(size_t) - 1; i++) {
         if (array[i] != i)
             exit (-22);
     }
+
+    auto exclusive_page = page->allocate_exclusive_page();
  }
 
 void test_heap()

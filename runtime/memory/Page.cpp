@@ -1,30 +1,21 @@
 namespace scaly::memory {
 
+using namespace scaly::containers;
+
 const int PAGE_SIZE = 0x1000;
 const size_t BUCKET_PAGES = sizeof(size_t) * 8;
 
-struct Page;
-
-struct Allocator : Object {
-    Page* current_page;
-    Allocator* next;
-    // Allocator* exclusive;
-
-    void* allocate(size_t size, size_t align);
-    Page* allocate_page();
-    void register_allocator(Allocator* allocator);
-    void* allocate_oversized(size_t size);
-    Page* allocate_exclusive_page();
-    void deallocate();
-};
-
 struct Page {
-    Allocator* allocator;
     void* next_object;
+    Page* current_page;
+    Page* next_page;
+    List<Page*> exclusive_pages;
 
     void reset() {
-        this->allocator = nullptr;
+        this->current_page = nullptr;
+        this->next_page = nullptr;
         this->next_object = this + 1;
+        this->exclusive_pages = List<Page*> { .head = nullptr };
     }
 
     void clear() {
@@ -36,29 +27,12 @@ struct Page {
         return this->next_object == nullptr;
     }
 
-    void allocate_allocator()
-    {
-        auto location = (size_t)this->next_object;
-        auto aligned_location = (location + alignof(Allocator) - 1) & ~(alignof(Allocator) - 1);
-        auto location_after_page = (size_t)this + PAGE_SIZE;
-        auto next_location = aligned_location + sizeof(Allocator);
-        this->allocator = (Allocator*)aligned_location;
-        this->next_object = (void*)next_location;
-        this->allocator->current_page = nullptr;
-        this->allocator->next = nullptr;
-        // this->allocator->exclusive = nullptr;
-    }
-
     size_t get_capacity(size_t align)
     {
         auto location = (size_t)this->next_object;
         auto aligned_location = (location + align - 1) & ~(align - 1);
         auto location_after_page = (size_t)this + PAGE_SIZE;
         auto capacity = location_after_page - aligned_location;
-
-        if (!this->allocator)
-            capacity -= sizeof(Allocator);
-
         return capacity;
     }
 
@@ -68,14 +42,25 @@ struct Page {
         auto location_after_page = (size_t)this + PAGE_SIZE;
         auto capacity = location_after_page - aligned_location;
 
-        if (!this->allocator)
-            capacity -= sizeof(Allocator);
-
         if (capacity < size) {
-            // We are too full for this size, so we delegate to the allocator
-            if (this->allocator == nullptr)
-                this->allocate_allocator();
-            return this->allocator->allocate(size, align);
+            // We need to reserve the space for the page object
+            auto gross_size = size + sizeof(Page);
+            Page* page;
+            if (gross_size > PAGE_SIZE)
+                return allocate_oversized(gross_size);
+
+            if (this->current_page != nullptr) {
+                auto object = this->current_page->allocate_raw(size, align);
+                auto page_of_allocated_object = Page::get(object);
+                if (page_of_allocated_object != this->current_page)
+                    this->current_page = page_of_allocated_object;
+                return object;
+            }
+
+            page = this->allocate_page();
+            this->current_page = page;
+            this->next_page = page;
+            return page->allocate_raw(size, align);
         }
 
         // Allocate from ourselves
@@ -84,23 +69,54 @@ struct Page {
         return (void*)aligned_location;
     }
 
+    void* allocate_oversized(size_t size)
+    {
+        Page* page;
+        // We allocate oversized objects directly.
+        posix_memalign((void**)&page, PAGE_SIZE, size);
+
+        // Oversized pages have no next_object
+        page->next_object = nullptr;
+
+        // An oversized page is always exclusive
+        this->exclusive_pages.add(this, page);
+
+        // The page offset by the null pointer for next_object
+        return (void*)(page + 1);
+    }
+
     Page* allocate_page() {
         auto bucket = Bucket::get(this);
-        // println!("Bucket: {:X}", bucket as usize);
         return bucket->allocate_page();
     }
 
     Page* allocate_exclusive_page() {
-        if (this->allocator == nullptr)
-            allocate_allocator();
-        return allocator->allocate_exclusive_page();
+        auto page = this->allocate_page();
+        this->exclusive_pages.add(page, page);
+        return page;
     }
 
     void deallocate_extensions() {
-        if (this->allocator == nullptr)
+        auto i = this->exclusive_pages.get_iterator();
+        while (auto exclusive_page = i.next())
+        {
+            // Oversized pages cannot have extnsions
+            if ((*exclusive_page)->next_object == nullptr)
+                continue;
+            (*exclusive_page)->deallocate_extensions();
+            (*exclusive_page)->forget();
+        }
+
+        if (this->next_object == nullptr)
             return;
 
-        allocator->deallocate();
+        auto page = this->next_page; 
+        while (page != nullptr)
+        {
+            auto next_page = page->next_page;
+            page->forget();
+            page = next_page;
+        }
     }
 
     void forget() {
@@ -120,85 +136,11 @@ struct Page {
     }
 
     void deallocate_exclusive_page(Page* page) {
+        page->deallocate_extensions();
+        page->forget();
+        if (!this->exclusive_pages.remove(page))
+            exit(14);
     }
 };
-
-void* Allocator::allocate(size_t size, size_t align)
-{
-    auto gross_size = size + sizeof(Page) + sizeof(Allocator);
-    Page* page;
-    if (gross_size > PAGE_SIZE)
-        return allocate_oversized(gross_size);
-
-    if (this->current_page != nullptr) {
-        auto object = this->current_page->allocate_raw(size, align);
-        auto page_of_allocated_object = Page::get(object);
-        if (page_of_allocated_object != this->current_page)
-        {
-            this->current_page = page_of_allocated_object;
-            auto allocator = (Allocator*)(page_of_allocated_object + 1);
-            this->register_allocator(allocator);
-        }
-        return object;
-    }
-
-    page = this->allocate_page();
-    this->current_page = page;
-    return page->allocate_raw(size, align);
-}
-
-
-Page* Allocator::allocate_page()
-{
-    auto page = Bucket::get(this)->allocate_page();
-    page->allocator = new(alignof(Allocator), page) Allocator {};
-    return page;
-}
-
-void Allocator::register_allocator(Allocator* allocator)
-{
-    if (this->next != nullptr)
-        allocator->next = this->next;
-    this->next = allocator;
-}
-
-
-void* Allocator::allocate_oversized(size_t size)
-{
-    // We allocate oversized objects directly.
-    Page* page;
-    posix_memalign((void**)&page, PAGE_SIZE, size);
-
-    // Oversized pages have no current_page
-    page->next_object = nullptr;
-
-    // Set the size since we will need it when deallocating
-    page->allocator = (Allocator*)(size);
-
-    // Create an allocator at the start of the page
-    auto allocator = (Allocator*)(page + 1);
-    allocator->current_page = nullptr;
-
-    allocator = (Allocator*)(page + 1);
-    this->register_allocator(allocator);
-    return allocator + 1;
-}
-
-Page* Allocator::allocate_exclusive_page()
-{
-    auto page = this->allocate_page();
-    return page;
-}
-
-void Allocator::deallocate()
-{
-    auto allocator = this->next; 
-    while (allocator != nullptr)
-    {
-        auto next_allocator = allocator->next;
-        Page::get(allocator)->forget();
-        allocator = next_allocator;
-    }
-}
 
 }

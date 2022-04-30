@@ -46,6 +46,24 @@ template<class T> struct List : Object {
         this->head = new_node;
     }
 
+    bool remove(T element) {
+        auto node = this->head;
+        Node<T>* previous_node = nullptr;
+        while (node != nullptr) {
+            if (node->element == element) {
+                if (previous_node != nullptr)
+                    previous_node->next = node->next;
+                if (node == head)
+                    head = nullptr;
+                return true;
+            }
+            previous_node = node;
+            node = node->next;
+        }
+
+        return false;
+    }
+
     T* get_head() {
         if (this->head == nullptr)
             return nullptr;

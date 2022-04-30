@@ -128,91 +128,91 @@ struct Lexer : Object {
 
         if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z'))) {
             if (this->token != nullptr)
-                Page::get(this->token)->clear();
-            this->token = scan_identifier(this->token == nullptr ? Page::get(this)->allocate_exclusive_page() : Page::get(this->token));
+                Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
+            this->token = scan_identifier(Page::get(this)->allocate_exclusive_page());
             return;
         }
 
         if ((c >= '1') && (c <= '9')) {
             if (this->token != nullptr)
-                Page::get(this->token)->clear();
-            this->token = scan_integer_literal(this->token == nullptr ? Page::get(this)->allocate_exclusive_page() : Page::get(this->token), c);
+                Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
+            this->token = scan_integer_literal(Page::get(this)->allocate_exclusive_page(), c);
             return;
         }
 
         switch (c) {
             case '\n':
                 if (this->token != nullptr)
-                    Page::get(this->token)->clear();
-                this->token = scan_line_feed(this->token == nullptr ? Page::get(this)->allocate_exclusive_page() : Page::get(this->token));
+                    Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
+                this->token = scan_line_feed(Page::get(this)->allocate_exclusive_page());
                 break;
 
             case ':':
                 read_character();
                 if (this->token != nullptr)
-                    Page::get(this->token)->clear();
-                this->token = new (alignof(Token), this->token == nullptr ? Page::get(this)->allocate_exclusive_page() : Page::get(this->token)) Token();
+                    Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
+                this->token = new (alignof(Token), Page::get(this)->allocate_exclusive_page()) Token();
                 this->token->tag = Token::Colon;
                 break;
 
             case ';':
                 read_character();
                 if (this->token != nullptr)
-                    Page::get(this->token)->clear();
-                this->token = new (alignof(Token), this->token == nullptr ? Page::get(this)->allocate_exclusive_page() : Page::get(this->token)) Token();
+                    Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
+                this->token = new (alignof(Token), Page::get(this)->allocate_exclusive_page()) Token();
                 this->token->tag = Token::Semicolon;
                 break;
 
             case '0':
                 if (this->token != nullptr)
-                    Page::get(this->token)->clear();
+                    Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
                 {
                     auto r = Region::create_from_page(_rp);
                     StringBuilder& value = *StringBuilder::create(r.page);
-                    this->token = scan_numeric_literal(this->token == nullptr ? Page::get(this)->allocate_exclusive_page() : Page::get(this->token), value);
+                    this->token = scan_numeric_literal(Page::get(this)->allocate_exclusive_page(), value);
                 }
                 break;
 
             case '@':
                 read_character();
                 if (this->token != nullptr)
-                    Page::get(this->token)->clear();
-                this->token = scan_attribute(this->token == nullptr ? Page::get(this)->allocate_exclusive_page() : Page::get(this->token));
+                    Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
+                this->token = scan_attribute(Page::get(this)->allocate_exclusive_page());
                 break;
 
             case '+': case '-': case '*': case '/': case '=': case '%': case '&': case '|': case '^': case '~': case '<': case '>':
             {
                 if (this->token != nullptr)
-                    Page::get(this->token)->clear();
-                this->token = scan_operator(this->token == nullptr ? Page::get(this)->allocate_exclusive_page() : Page::get(this->token), c);
+                    Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
+                this->token = scan_operator(Page::get(this)->allocate_exclusive_page(), c);
                 break;
             }
 
             case '\"':
                 if (this->token != nullptr)
-                    Page::get(this->token)->clear();
-                this->token = scan_string_literal(this->token == nullptr ? Page::get(this)->allocate_exclusive_page() : Page::get(this->token));
+                    Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
+                this->token = scan_string_literal(Page::get(this)->allocate_exclusive_page());
                 break;
 
             case '\'':
                 if (this->token != nullptr)
-                    Page::get(this->token)->clear();
-                this->token = scan_string_identifier(this->token == nullptr ? Page::get(this)->allocate_exclusive_page() : Page::get(this->token));
+                    Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
+                this->token = scan_string_identifier(Page::get(this)->allocate_exclusive_page());
                 break;
 
             case '`':
                 if (this->token != nullptr)
-                    Page::get(this->token)->clear();
-                this->token = scan_fragment_literal(this->token == nullptr ? Page::get(this)->allocate_exclusive_page() : Page::get(this->token));
+                    Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
+                this->token = scan_fragment_literal(Page::get(this)->allocate_exclusive_page());
                 break;
 
             case '}': case ')': case ']': case '.': case '?':
             {
                 if (this->token != nullptr)
-                    Page::get(this->token)->clear();
-                auto punctuation_string = String::from_character(this->token == nullptr ? Page::get(this)->allocate_exclusive_page() : Page::get(this->token), c);
+                    Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
+                auto punctuation_string = String::from_character(Page::get(this)->allocate_exclusive_page(), c);
                 this->read_character();
-                this->token = new (alignof(Token), this->token == nullptr ? Page::get(this)->allocate_exclusive_page() : Page::get(this->token)) Token();
+                this->token = new (alignof(Token), Page::get(this)->allocate_exclusive_page()) Token();
                 this->token->tag = Token::Punctuation;
                 this->token->punctuation = PunctuationToken { .sign = *punctuation_string };
                 break;
@@ -221,11 +221,11 @@ struct Lexer : Object {
             case '{': case '(': case '[': case ',':
             {
                 if (this->token != nullptr)
-                    Page::get(this->token)->clear();
-                auto punctuation_string = String::from_character(this->token == nullptr ? Page::get(this)->allocate_exclusive_page() : Page::get(this->token), c);
+                    Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
+                auto punctuation_string = String::from_character(Page::get(this)->allocate_exclusive_page(), c);
                 this->read_character();
                 this->skip_whitespace(true);
-                this->token = new (alignof(Token), this->token == nullptr ? Page::get(this)->allocate_exclusive_page() : Page::get(this->token)) Token();
+                this->token = new (alignof(Token), Page::get(this)->allocate_exclusive_page()) Token();
                 this->token->tag = Token::Punctuation;
                 this->token->punctuation = PunctuationToken { .sign = *punctuation_string };
                 break;
@@ -233,8 +233,8 @@ struct Lexer : Object {
 
             default:
                 if (this->token != nullptr)
-                    Page::get(this->token)->clear();
-                this->token = new (alignof(Token), this->token == nullptr ? Page::get(this)->allocate_exclusive_page() : Page::get(this->token)) Token();
+                    Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
+                this->token = new (alignof(Token), Page::get(this)->allocate_exclusive_page()) Token();
                 this->token->tag = Token::Invalid;
                 break;
         }
@@ -242,8 +242,8 @@ struct Lexer : Object {
 
     void empty() {
             if (this->token != nullptr)
-                Page::get(this->token)->clear();
-            this->token = new (alignof(Token), this->token == nullptr ? Page::get(this)->allocate_exclusive_page() : Page::get(this->token)) Token();
+                Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
+            this->token = new (alignof(Token), Page::get(this)->allocate_exclusive_page()) Token();
             this->token->tag = Token::Empty;
     }
 
@@ -253,8 +253,8 @@ struct Lexer : Object {
             skip_whitespace(false);
             if (this->character == nullptr) {
                 if (this->token != nullptr)
-                    Page::get(this->token)->clear();
-                this->token = new (alignof(Token), this->token == nullptr ? Page::get(this)->allocate_exclusive_page() : Page::get(this->token)) Token();
+                    Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
+                this->token = new (alignof(Token), Page::get(this)->allocate_exclusive_page()) Token();
                 this->token->tag = Token::Invalid;
                 return this->token;
             }
