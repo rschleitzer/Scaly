@@ -170,6 +170,15 @@ void test_lexer(Page* _rp) {
     }
 }
 
+void test_parser(Page* _rp)
+{
+    auto r = Region::create_from_page(_rp);
+    {
+        auto r_1 = Region::create(r);
+        Parser& parser = *Parser::create(r_1.page, *String::from_c_string(r_1.page, ""));
+    }
+}
+
 
 int main(int argc, char** argv) {
     auto heap = Heap::create();
@@ -177,4 +186,5 @@ int main(int argc, char** argv) {
     auto root_page = Page::get(root_stack_bucket);
 
     test_lexer(root_page);
+    test_parser(root_page);
 }
