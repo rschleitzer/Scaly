@@ -748,33 +748,31 @@ struct Lexer : Object {
     }
 
     Token* scan_boolean_literal(Page* _rp) {
-        while (true) {
+        read_character();
+        if (character == nullptr){
+            auto token = new (alignof(Token), _rp) Token();
+            token->tag = Token::Invalid;
+            return token;
+        }
+
+        auto c = *character;
+
+        if (c != '0' && c != '1') {
+            auto token = new (alignof(Token), _rp) Token();
+            token->tag = Token::Invalid;
+            return token;
+        }
+        else {
             read_character();
-            if (character == nullptr){
-                auto token = new (alignof(Token), _rp) Token();
-                token->tag = Token::Invalid;
-                return token;
-            }
-
-            auto c = *character;
-
-            if (c != '0' && c != '1') {
-                auto token = new (alignof(Token), _rp) Token();
-                token->tag = Token::Invalid;
-                return token;
-            }
-
-            {
-                auto token = new (alignof(Token), _rp) Token();
-                token->tag = Token::Literal;
-                token->literal = LiteralToken {
-                    .tag = LiteralToken::Boolean,
-                    .boolean = BooleanToken {
-                        .value = c == '1',
-                    }
-                };
-                return token;
-            }
+            auto token = new (alignof(Token), _rp) Token();
+            token->tag = Token::Literal;
+            token->literal = LiteralToken {
+                .tag = LiteralToken::Boolean,
+                .boolean = BooleanToken {
+                    .value = c == '1',
+                }
+            };
+            return token;
         }
     }
 

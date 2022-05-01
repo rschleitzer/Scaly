@@ -21,7 +21,7 @@ void test_lexer(Page* _rp) {
 " \t\r\n;single line comment\n"
 ";*multi\nline\ncomment;*nested comment*;"
 "comment end*;"
-"abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0B0 0B1"
+"abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1"
         );
         Lexer& lexer = *Lexer::create(r_1.page, s);
         if (lexer.token->tag != Token::Empty)
@@ -89,16 +89,24 @@ void test_lexer(Page* _rp) {
         lexer.advance(r_1.page);
         if (lexer.token->tag != Token::Literal)
             exit (-28);
-        if (lexer.token->literal.tag != LiteralToken::Boolean)
+        if (lexer.token->literal.tag != LiteralToken::Hex)
             exit (-29);
-        if (!lexer.token->literal.boolean.value == '0')
+        if (!lexer.token->literal.hex.value.equals(*String::from_c_string(r_1.page, "CdEf02")))
             exit (-30);
+        lexer.advance(r_1.page);
         if (lexer.token->tag != Token::Literal)
             exit (-31);
         if (lexer.token->literal.tag != LiteralToken::Boolean)
             exit (-32);
-        if (!lexer.token->literal.boolean.value == '1')
+        if (lexer.token->literal.boolean.value)
             exit (-33);
+        lexer.advance(r_1.page);
+        if (lexer.token->tag != Token::Literal)
+            exit (-34);
+        if (lexer.token->literal.tag != LiteralToken::Boolean)
+            exit (-35);
+        if (!lexer.token->literal.boolean.value)
+            exit (-36);
     }
 }
 
