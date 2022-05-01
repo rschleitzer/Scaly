@@ -403,24 +403,19 @@ struct Lexer : Object {
                         auto c2 = *character;
                         switch (c2) {
                             case '\"': case '\\': case '\'':
-                                value.append_character('\\');
                                 value.append_character(c2);
                                 break;
                             case 'n':
-                                value.append_character('\\');
-                                value.append_character('n');
+                                value.append_character('\n');
                                 break;
                             case 'r':
-                                value.append_character('\\');
-                                value.append_character('r');
+                                value.append_character('\r');
                                 break;
                             case 't':
-                                value.append_character('\\');
-                                value.append_character('t');
+                                value.append_character('\t');
                                 break;
                             case '0':
-                                value.append_character('\\');
-                                value.append_character('0');
+                                value.append_character('\0');
                                 break;
                             default:{
                                 auto token = new (alignof(Token), _rp) Token();
@@ -471,16 +466,18 @@ struct Lexer : Object {
         StringBuilder& value = *StringBuilder::create(r.page);
         while (true) {
             read_character();
-            if (character == nullptr){
+            if (character == nullptr) {
                 auto token = new (alignof(Token), _rp) Token();
                 token->tag = Token::Invalid;
                 return token;
             }
+
             auto c = *character;
-            switch (c) {
+            switch (c)
+            {
                 case '`':
-                    read_character();
                     {
+                        read_character();
                         auto token = new (alignof(Token), _rp) Token();
                         token->tag = Token::Literal;
                         token->literal = LiteralToken {
@@ -491,27 +488,41 @@ struct Lexer : Object {
                         };
                         return token;
                     }
-                case '\\':
-                    read_character();
-                    if (character == nullptr){
-                        auto token = new (alignof(Token), _rp) Token();
-                        token->tag = Token::Invalid;
-                        return token;
-                    }
+
+                case '\\': 
                     {
-                        auto c2 = *character;
-                        switch (c2)
-                        {
-                            case '`':
-                                value.append_character(c2);
-                                break;
-                            default:
-                                value.append_character('\\');
-                                value.append_character(c2);
-                                break;
+                        read_character();
+                        if (character == nullptr) {
+                            auto token = new (alignof(Token), _rp) Token();
+                            token->tag = Token::Invalid;
+                            return token;
                         }
-                        break;
+                        auto c2 = *character;
+                        switch (c2) {
+                            case '`': case '\\': case '\'':
+                                value.append_character(c2);
+                                break;
+                            case 'n':
+                                value.append_character('\n');
+                                break;
+                            case 'r':
+                                value.append_character('\r');
+                                break;
+                            case 't':
+                                value.append_character('\t');
+                                break;
+                            case '0':
+                                value.append_character('\0');
+                                break;
+                            default:{
+                                auto token = new (alignof(Token), _rp) Token();
+                                token->tag = Token::Invalid;
+                                return token;
+                            }
+                            
+                        }
                     }
+                    break;
 
                 default:
                     value.append_character(c);

@@ -22,7 +22,8 @@ void test_lexer(Page* _rp) {
 ";*multi\nline\ncomment;*nested comment*;"
 "comment end*;"
 "abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1"
-"@ttribute + -0815 /* <> \"string\" "
+"@ttribute + -0815 /* <> \"a string\" \"\\\"\\n\\r\\t\" "
+"'a string identifier' `a string fragment \\`\\n\\r\\t`"
         );
         Lexer& lexer = *Lexer::create(r_1.page, s);
         if (lexer.token->tag != Token::Empty)
@@ -145,8 +146,27 @@ void test_lexer(Page* _rp) {
             exit (-48);
         if (lexer.token->literal.tag != LiteralToken::String)
             exit (-49);
-        if (!lexer.token->literal.hex.value.equals(*String::from_c_string(r_1.page, "string")))
+        if (!lexer.token->literal.string.value.equals(*String::from_c_string(r_1.page, "a string")))
             exit (-50);
+        lexer.advance(r_1.page);
+        if (lexer.token->tag != Token::Literal)
+            exit (-51);
+        if (lexer.token->literal.tag != LiteralToken::String)
+            exit (-52);
+        if (!lexer.token->literal.string.value.equals(*String::from_c_string(r_1.page, "\"\n\r\t")))
+            exit (-53);
+        lexer.advance(r_1.page);
+        if (lexer.token->tag != Token::Identifier)
+            exit (-54);
+        if (!lexer.token->identifier.name.equals(*String::from_c_string(r_1.page, "a string identifier")))
+            exit (-55);
+        lexer.advance(r_1.page);
+        if (lexer.token->tag != Token::Literal)
+            exit (-56);
+        if (lexer.token->literal.tag != LiteralToken::Fragment)
+            exit (-57);
+        if (!lexer.token->literal.fragment.value.equals(*String::from_c_string(r_1.page, "a string fragment `\n\r\t")))
+            exit (-58);
     }
 }
 
