@@ -8,7 +8,7 @@ void test_lexer(Page* _rp) {
     auto r = Region::create_from_page(_rp);
     {
         auto r_1 = Region::create(r);
-        Lexer& lexer = *Lexer::create(r_1.page, *String::from_c_string(r_1.page, ""));
+        Lexer& lexer = *new(alignof(Lexer), r_1.page) Lexer(*String::from_c_string(r_1.page, ""));
         if (lexer.token->tag != Token::Empty)
             exit (-1);
         lexer.advance(r_1.page);
@@ -25,7 +25,7 @@ void test_lexer(Page* _rp) {
 "@ttribute + -0815 /* <> \"a string\" \"\\\"\\n\\r\\t\" "
 "'a string identifier' `a string fragment \\`\\n\\r\\t`"
         );
-        Lexer& lexer = *Lexer::create(r_1.page, s);
+        Lexer& lexer = *new(alignof(Lexer), r_1.page) Lexer(s);
         if (lexer.token->tag != Token::Empty)
             exit (-3);
         lexer.advance(r_1.page);
@@ -175,7 +175,7 @@ void test_parser(Page* _rp)
     auto r = Region::create_from_page(_rp);
     {
         auto r_1 = Region::create(r);
-        Parser& parser = *Parser::create(r_1.page, *String::from_c_string(r_1.page, ""));
+        Parser& parser = *new (alignof(Parser), r_1.page) Parser(*String::from_c_string(r_1.page, ""));
     }
 }
 

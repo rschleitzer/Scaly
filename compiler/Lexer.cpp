@@ -95,17 +95,15 @@ struct Lexer : Object {
     size_t previous_position;
     size_t position;
 
-    static Lexer* create(Page* _rp, String& deck) {
-        auto lexer = new(alignof(Lexer), _rp) Lexer();
-        lexer->token = new(alignof(Token), Page::get(lexer)->allocate_exclusive_page()) Token();
-        lexer->token->tag = Token::Empty;
-        lexer->character = nullptr;
-        lexer->chars = StringIterator::create(deck);
-        lexer->previous_position = 0,
-        lexer->position = 0,
-        lexer->read_character();
-        lexer->skip_whitespace(true);
-        return lexer;
+    Lexer(String& deck) {
+        token = new(alignof(Token), Page::get(this)->allocate_exclusive_page()) Token();
+        token->tag = Token::Empty;
+        character = nullptr;
+        chars = StringIterator::create(deck);
+        previous_position = 0,
+        position = 0,
+        read_character();
+        skip_whitespace(true);
     }
 
     void read_character() {
