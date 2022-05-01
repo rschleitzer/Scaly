@@ -358,6 +358,7 @@ struct Lexer : Object {
                     auto token = new (alignof(Token), _rp) Token();
                     token->tag = Token::Identifier;
                     token->identifier = IdentifierToken { .name = *operation.to_string(_rp) };
+                    return token;
                 }
             }
         }

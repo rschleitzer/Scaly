@@ -22,7 +22,7 @@ void test_lexer(Page* _rp) {
 ";*multi\nline\ncomment;*nested comment*;"
 "comment end*;"
 "abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1"
-"@ttribute "
+"@ttribute + -0815 "
         );
         Lexer& lexer = *Lexer::create(r_1.page, s);
         if (lexer.token->tag != Token::Empty)
@@ -113,6 +113,23 @@ void test_lexer(Page* _rp) {
             exit (-37);
         if (!lexer.token->attribute.name.equals(*String::from_c_string(r_1.page, "ttribute")))
             exit (-38);
+        lexer.advance(r_1.page);
+        if (lexer.token->tag != Token::Identifier)
+            exit (-39);
+        if (!lexer.token->identifier.name.equals(*String::from_c_string(r_1.page, "+")))
+            exit (-40);
+        lexer.advance(r_1.page);
+        if (lexer.token->tag != Token::Identifier)
+            exit (-41);
+        if (!lexer.token->identifier.name.equals(*String::from_c_string(r_1.page, "-")))
+            exit (-42);
+        lexer.advance(r_1.page);
+        if (lexer.token->tag != Token::Literal)
+            exit (-43);
+        if (lexer.token->literal.tag != LiteralToken::Integer)
+            exit (-44);
+        if (!lexer.token->literal.integer.value.equals(*String::from_c_string(r_1.page, "815")))
+            exit (-45);
     }
 }
 
