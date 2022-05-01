@@ -22,6 +22,7 @@ void test_lexer(Page* _rp) {
 ";*multi\nline\ncomment;*nested comment*;"
 "comment end*;"
 "abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1"
+"@ttribute "
         );
         Lexer& lexer = *Lexer::create(r_1.page, s);
         if (lexer.token->tag != Token::Empty)
@@ -107,6 +108,11 @@ void test_lexer(Page* _rp) {
             exit (-35);
         if (!lexer.token->literal.boolean.value)
             exit (-36);
+        lexer.advance(r_1.page);
+        if (lexer.token->tag != Token::Attribute)
+            exit (-37);
+        if (!lexer.token->attribute.name.equals(*String::from_c_string(r_1.page, "ttribute")))
+            exit (-38);
     }
 }
 

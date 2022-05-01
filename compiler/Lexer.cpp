@@ -321,6 +321,7 @@ struct Lexer : Object {
                     auto token = new (alignof(Token), _rp) Token();
                     token->tag = Token::Attribute;
                     token->attribute = AttributeToken { .name = *name.to_string(_rp) };
+                    return token;
                 }
             }
         }
