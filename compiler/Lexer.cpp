@@ -52,12 +52,12 @@ struct LiteralToken {
         Hex,
     } tag;
     union {
-        StringToken string;
-        FragmentToken fragment;
-        IntegerToken integer;
-        BooleanToken boolean;
-        FloatingPointToken floatingPoint;
-        HexToken hex;
+        StringToken stringToken;
+        FragmentToken fragmentToken;
+        IntegerToken integerToken;
+        BooleanToken booleanToken;
+        FloatingPointToken floatingPointToken;
+        HexToken hexToken;
 
     };
 };
@@ -77,14 +77,14 @@ struct Token : Object {
         Colon,
     } tag;
     union {
-        EmptyToken empty;
-        InvalidToken invalid;
-        IdentifierToken identifier;
-        AttributeToken attribute;
-        PunctuationToken punctuation;
-        LiteralToken literal;
-        LineFeedToken lineFeed;
-        ColonToken colon;
+        EmptyToken emptyToken;
+        InvalidToken invalidToken;
+        IdentifierToken identifierToken;
+        AttributeToken attributeToken;
+        PunctuationToken punctuationToken;
+        LiteralToken literalToken;
+        LineFeedToken lineFeedToken;
+        ColonToken colonToken;
     };
 };
 
@@ -201,7 +201,7 @@ struct Lexer : Object {
                 this->read_character();
                 this->token = new (alignof(Token), Page::get(this)->allocate_exclusive_page()) Token();
                 this->token->tag = Token::Punctuation;
-                this->token->punctuation = PunctuationToken { .sign = *punctuation_string };
+                this->token->punctuationToken = PunctuationToken { .sign = *punctuation_string };
                 break;
             }
 
@@ -214,7 +214,7 @@ struct Lexer : Object {
                 this->skip_whitespace(true);
                 this->token = new (alignof(Token), Page::get(this)->allocate_exclusive_page()) Token();
                 this->token->tag = Token::Punctuation;
-                this->token->punctuation = PunctuationToken { .sign = *punctuation_string };
+                this->token->punctuationToken = PunctuationToken { .sign = *punctuation_string };
                 break;
             }
 
@@ -266,7 +266,7 @@ struct Lexer : Object {
                 else {
                     auto token = new (alignof(Token), _rp) Token();
                     token->tag = Token::Identifier;
-                    token->identifier = IdentifierToken { .name = *name.to_string(_rp) };
+                    token->identifierToken = IdentifierToken { .name = *name.to_string(_rp) };
                     return token;
                 }
             }
@@ -282,7 +282,7 @@ struct Lexer : Object {
                 {
                     auto token = new (alignof(Token), _rp) Token();
                     token->tag = Token::Identifier;
-                    token->identifier = IdentifierToken { .name = *name.to_string(_rp) };
+                    token->identifierToken = IdentifierToken { .name = *name.to_string(_rp) };
                     return token;
                 }
             }
@@ -302,7 +302,7 @@ struct Lexer : Object {
                 else {
                     auto token = new (alignof(Token), _rp) Token();
                     token->tag = Token::Attribute;
-                    token->attribute = AttributeToken { .name = *name.to_string(_rp) };
+                    token->attributeToken = AttributeToken { .name = *name.to_string(_rp) };
                     return token;
                 }
             }
@@ -318,7 +318,7 @@ struct Lexer : Object {
                 {
                     auto token = new (alignof(Token), _rp) Token();
                     token->tag = Token::Attribute;
-                    token->attribute = AttributeToken { .name = *name.to_string(_rp) };
+                    token->attributeToken = AttributeToken { .name = *name.to_string(_rp) };
                     return token;
                 }
             }
@@ -340,7 +340,7 @@ struct Lexer : Object {
                 else {
                     auto token = new (alignof(Token), _rp) Token();
                     token->tag = Token::Identifier;
-                    token->identifier = IdentifierToken { .name = *operation.to_string(_rp) };
+                    token->identifierToken = IdentifierToken { .name = *operation.to_string(_rp) };
                     return token;
                 }
             }
@@ -355,7 +355,7 @@ struct Lexer : Object {
                 default:{
                     auto token = new (alignof(Token), _rp) Token();
                     token->tag = Token::Identifier;
-                    token->identifier = IdentifierToken { .name = *operation.to_string(_rp) };
+                    token->identifierToken = IdentifierToken { .name = *operation.to_string(_rp) };
                     return token;
                 }
             }
@@ -381,9 +381,9 @@ struct Lexer : Object {
                         read_character();
                         auto token = new (alignof(Token), _rp) Token();
                         token->tag = Token::Literal;
-                        token->literal = LiteralToken {
+                        token->literalToken = LiteralToken {
                             .tag = LiteralToken::String,
-                            .string = StringToken {
+                            .stringToken = StringToken {
                                 .value = *value.to_string(_rp),
                             }
                         };
@@ -449,7 +449,7 @@ struct Lexer : Object {
                     {
                         auto token = new (alignof(Token), _rp) Token();
                         token->tag = Token::Identifier;
-                        token->identifier = IdentifierToken { .name = *value.to_string(_rp) };
+                        token->identifierToken = IdentifierToken { .name = *value.to_string(_rp) };
                         return token;
                     }
                 default:
@@ -478,9 +478,9 @@ struct Lexer : Object {
                         read_character();
                         auto token = new (alignof(Token), _rp) Token();
                         token->tag = Token::Literal;
-                        token->literal = LiteralToken {
+                        token->literalToken = LiteralToken {
                             .tag = LiteralToken::Fragment,
-                            .fragment = FragmentToken {
+                            .fragmentToken = FragmentToken {
                                 .value = *value.to_string(_rp),
                             }
                         };
@@ -534,9 +534,9 @@ struct Lexer : Object {
         if (character == nullptr) {
             auto token = new (alignof(Token), _rp) Token();
             token->tag = Token::Literal;
-            token->literal = LiteralToken {
+            token->literalToken = LiteralToken {
                 .tag = LiteralToken::String,
-                .integer = IntegerToken {
+                .integerToken = IntegerToken {
                     .value = *value.to_string(_rp),
                 }
             };
@@ -574,9 +574,9 @@ struct Lexer : Object {
                     value.append_character('0');
                 auto token = new (alignof(Token), _rp) Token();
                 token->tag = Token::Literal;
-                token->literal = LiteralToken {
+                token->literalToken = LiteralToken {
                     .tag = LiteralToken::Integer,
-                    .integer = IntegerToken {
+                    .integerToken = IntegerToken {
                         .value = *value.to_string(_rp),
                     }
                 };
@@ -594,9 +594,9 @@ struct Lexer : Object {
             if (character == nullptr) {
                 auto token = new (alignof(Token), _rp) Token();
                 token->tag = Token::Literal;
-                token->literal = LiteralToken {
+                token->literalToken = LiteralToken {
                     .tag = LiteralToken::String,
-                    .integer = IntegerToken {
+                    .integerToken = IntegerToken {
                         .value = *value.to_string(_rp),
                     }
                 };
@@ -624,9 +624,9 @@ struct Lexer : Object {
                 {
                     auto token = new (alignof(Token), _rp) Token();
                     token->tag = Token::Literal;
-                    token->literal = LiteralToken {
+                    token->literalToken = LiteralToken {
                         .tag = LiteralToken::Integer,
-                        .integer = IntegerToken {
+                        .integerToken = IntegerToken {
                             .value = *value.to_string(_rp),
                         }
                     };
@@ -643,9 +643,9 @@ struct Lexer : Object {
             if (character == nullptr) {
                 auto token = new (alignof(Token), _rp) Token();
                 token->tag = Token::Literal;
-                token->literal = LiteralToken {
+                token->literalToken = LiteralToken {
                     .tag = LiteralToken::FloatingPoint,
-                    .floatingPoint = FloatingPointToken {
+                    .floatingPointToken = FloatingPointToken {
                         .value = *value.to_string(_rp),
                     }
                 };
@@ -670,9 +670,9 @@ struct Lexer : Object {
                 {
                     auto token = new (alignof(Token), _rp) Token();
                     token->tag = Token::Literal;
-                    token->literal = LiteralToken {
+                    token->literalToken = LiteralToken {
                         .tag = LiteralToken::FloatingPoint,
-                        .floatingPoint = FloatingPointToken {
+                        .floatingPointToken = FloatingPointToken {
                             .value = *value.to_string(_rp),
                         }
                     };
@@ -688,9 +688,9 @@ struct Lexer : Object {
             if (character == nullptr) {
                 auto token = new (alignof(Token), _rp) Token();
                 token->tag = Token::Literal;
-                token->literal = LiteralToken {
+                token->literalToken = LiteralToken {
                     .tag = LiteralToken::FloatingPoint,
-                    .floatingPoint = FloatingPointToken {
+                    .floatingPointToken = FloatingPointToken {
                         .value = *value.to_string(_rp),
                     }
                 };
@@ -708,9 +708,9 @@ struct Lexer : Object {
             {
                 auto token = new (alignof(Token), _rp) Token();
                 token->tag = Token::Literal;
-                token->literal = LiteralToken {
+                token->literalToken = LiteralToken {
                     .tag = LiteralToken::FloatingPoint,
-                    .floatingPoint = FloatingPointToken {
+                    .floatingPointToken = FloatingPointToken {
                         .value = *value.to_string(_rp),
                     }
                 };
@@ -728,9 +728,9 @@ struct Lexer : Object {
             if (character == nullptr) {
                 auto token = new (alignof(Token), _rp) Token();
                 token->tag = Token::Literal;
-                token->literal = LiteralToken {
+                token->literalToken = LiteralToken {
                     .tag = LiteralToken::Hex,
-                    .hex = HexToken {
+                    .hexToken = HexToken {
                         .value = *value.to_string(_rp),
                     }
                 };
@@ -747,9 +747,9 @@ struct Lexer : Object {
             {
                 auto token = new (alignof(Token), _rp) Token();
                 token->tag = Token::Literal;
-                token->literal = LiteralToken {
+                token->literalToken = LiteralToken {
                     .tag = LiteralToken::Hex,
-                    .hex = HexToken {
+                    .hexToken = HexToken {
                         .value = *value.to_string(_rp),
                     }
                 };
@@ -777,9 +777,9 @@ struct Lexer : Object {
             read_character();
             auto token = new (alignof(Token), _rp) Token();
             token->tag = Token::Literal;
-            token->literal = LiteralToken {
+            token->literalToken = LiteralToken {
                 .tag = LiteralToken::Boolean,
-                .boolean = BooleanToken {
+                .booleanToken = BooleanToken {
                     .value = c == '1',
                 }
             };

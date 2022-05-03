@@ -1,8 +1,9 @@
 (element grammar
     (file ($ "Parser.cpp")
         ($
-"namespace scaly::compiler {"
-            ;(syntax)
+"namespace scaly::compiler {
+"
+            (syntax)
             (parser)
         )
     )

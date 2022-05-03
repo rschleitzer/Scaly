@@ -23,7 +23,7 @@
 
     <syntax id = Private
         <content link = private
-        <content link = Export                                  property = export
+        <content link = Export                                  property = export_
 
     <syntax id = Export                                abstract
         <content link = Definition
@@ -40,7 +40,7 @@
         <content link = Type                                    property = type
         <content colon                                 optional
         <content link = Attribute             multiple optional property = attributes
-        <content link = Concept                                 property = concept
+        <content link = Concept                                 property = concept_
 
     <syntax id = Name
         <content identifier                                     property = name
@@ -126,7 +126,7 @@
 
     <syntax id = Field
         <content link = private
-        <content link = Property                                property = export
+        <content link = Property                                property = property
 
     <syntax id = Property                     multiple
         <content identifier                                     property = name
@@ -222,15 +222,15 @@
         <content link = Type                                    property = type
         <content link = Attribute             multiple optional property = attributes
 
+    <syntax id = Action                       multiple abstract
+        <content link = Operation
+        <content link = Set
+
     <syntax id = Implementation                        abstract
         <content link = Action
         <content link = Extern
         <content link = Instruction
         <content link = Intrinsic
-
-    <syntax id = Action                      multiple abstract
-        <content link = Operation
-        <content link = Set
 
     <syntax id = Extern
         <content link = extern
