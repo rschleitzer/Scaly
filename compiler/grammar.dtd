@@ -1,0 +1,32 @@
+  <!ELEMENT grammar - - (syntax+, keyword*, punctuation*)>
+
+  <!ELEMENT syntax - O (content)*>
+  <!ATTLIST syntax
+    id          ID                                  #REQUIRED
+    abstract    (abstract|concrete)                 concrete
+    multiple    (multiple|single)                   single
+    top         (top|nontop)                        nontop
+    program     (program|nonprogram)                nonprogram
+  >
+
+  <!ELEMENT content - O EMPTY>
+  <!ATTLIST content
+    type        (syntax|keyword|punctuation|
+                  colon|semicolon|identifier|
+                  attribute|literal|eof)            syntax
+    link        IDREF                               #IMPLIED
+    property    CDATA                               #IMPLIED
+    multiple    (multiple|single)                   single
+    optional    (optional|required)                 required
+  >
+
+  <!ELEMENT keyword - O EMPTY>
+  <!ATTLIST keyword
+    id          ID                                  #REQUIRED
+  >
+
+  <!ELEMENT punctuation - O EMPTY>
+  <!ATTLIST punctuation
+    id          ID                                  #REQUIRED
+    value       CDATA                               #REQUIRED
+  >
