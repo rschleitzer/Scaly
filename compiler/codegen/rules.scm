@@ -1,12 +1,8 @@
 (element grammar
-    (file ($ "parser.rs")
+    (file ($ "Parser.cpp")
         ($
-"pub mod lexer;
-use lexer::Lexer;
-use lexer::Literal;
-use lexer::Position;
-use std::collections::HashSet;
-"           (syntax)
+"namespace scaly::compiler {"
+            ;(syntax)
             (parser)
         )
     )

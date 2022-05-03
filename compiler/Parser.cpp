@@ -1,5 +1,4 @@
 namespace scaly::compiler {
-    
 using namespace scaly::containers;
 
 struct Parser : Object {
@@ -13,7 +12,6 @@ struct Parser : Object {
         {
             auto r = Region::create_from_page(Page::get(this));
             Array<String>& array = *Array<String>::create(r.page);
-            array.add(*String::from_c_string(r.page, "using"));
             array.add(*String::from_c_string(r.page, "as"));
             array.add(*String::from_c_string(r.page, "break"));
             array.add(*String::from_c_string(r.page, "catch"));
@@ -61,6 +59,6 @@ struct Parser : Object {
             keywords = *HashSet<String>::from_vector(Page::get(this), vector);
 
         }
-};
+ };
 
 }
