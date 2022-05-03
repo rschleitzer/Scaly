@@ -15,5 +15,6 @@ using std::memcpy;
 #include "HashMap.cpp"
 #include "String.cpp"
 #include "StringBuilder.cpp"
+#include "Result.cpp"
 
 #endif // __Scaly_Containers__
