@@ -32,25 +32,28 @@ struct String : Object {
         return String::create(_rp, c_string, length);
     }
 
-    String copy(Page* _rp, String other) {
-        char length_array[PACKED_SIZE];
-        auto length = other.get_length();
-        auto rest = length;
+    String* copy(Page* _rp) {
+        size_t length = 0;
+        auto bit_count = 0;
+        auto index = 0;
+        while (true) {
+            if (bit_count == PACKED_SIZE * 7) {
+                // Bad string length
+                exit(12);
+            }
 
-        size_t counter = 0;
-        while (rest >= 0x80) {
-            length_array[counter] = (char)rest | 0x80;
-            rest >>= 7;
-            counter += 1;
+            char byte = *(this->data + index);
+            length |= ((size_t)(byte & 0x7F)) << bit_count;
+            if ((byte & 0x80) == 0)
+                break;
+
+            bit_count += 7;
+            index += 1;
         }
-
-        length_array[counter] = (char)rest;
-        auto overall_length = counter + 1 + length;
+        auto overall_length = index + 1 + length;
         auto pointer = _rp->allocate_raw(overall_length, 1);
-        memcpy(pointer, length_array, counter + 1);
-        memcpy((char*)pointer + counter + 1, other.data + counter + 1, length);
-
-        return String { .data = (char*)pointer };
+        memcpy(pointer, this->data, overall_length);
+        return new (alignof(String), _rp) String { .data = (char*)pointer };
     }
 
     static String* from_character(Page* _rp, char character) {

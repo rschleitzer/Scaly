@@ -42,7 +42,7 @@ struct HexToken {
     String value;
 };
 
-struct LiteralToken {
+struct LiteralToken : Object {
     enum {
         String,
         Fragment,
@@ -911,6 +911,189 @@ struct Lexer : Object {
             }
         }
     }
+
+    bool parse_keyword(Page* _rp, String& fixed_string) {
+        if (token->tag == Token::Empty)
+            advance(_rp);
+
+        switch (token->tag) {
+            case Token::Identifier:
+            {
+                auto right_keyword = (token->identifierToken.name.equals(fixed_string));
+                if (right_keyword)
+                    empty();
+
+                return right_keyword;
+            }
+
+            default:
+                return false;
+        }
+    }
+
+    String* parse_identifier(Page* _rp, HashSet<String>& keywords) {
+        if (token->tag == Token::Empty)
+            advance(_rp);
+
+        switch (token->tag) {
+            case Token::Identifier:
+            {
+                if (keywords.contains(token->identifierToken.name))
+                    return nullptr;
+                auto ret = token->identifierToken.name.copy(_rp);
+                empty();
+                return ret;
+            }
+            default:
+                return nullptr;
+        }
+    }
+
+    String* parse_attribute(Page* _rp) {
+        if (token->tag == Token::Empty)
+            advance(_rp);
+
+        switch (token->tag) {
+            case Token::Attribute:
+            {
+                auto ret = token->attributeToken.name.copy(_rp);
+                empty();
+                return ret;
+            }
+            default:
+                return nullptr;
+        }
+    }
+
+    bool parse_punctuation(Page* _rp, String& fixed_string) {
+        if (token->tag == Token::Empty)
+            advance(_rp);
+
+        switch (token->tag) {
+            case Token::Punctuation:
+            {
+                bool ret = (token->punctuationToken.sign.equals(fixed_string));
+                if (ret)
+                    empty();
+
+                return ret;
+            }
+            default:
+                return false;
+        }
+    }
+
+    LiteralToken* parse_literal(Page* _rp) {
+        if (token->tag == Token::Empty)
+            advance(_rp);
+
+        switch (token->tag)
+        {
+            case Token::Literal:
+                switch (token->literalToken.tag)
+                {
+                    case LiteralToken::String:
+                    {
+                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken {
+                            .tag = LiteralToken::String,
+                            .stringToken = StringToken {
+                                .value = *token->literalToken.stringToken.value.copy(_rp),
+                            }
+                        };
+                        empty();
+                        return ret;
+                    }
+
+                    case LiteralToken::Integer:
+                    {
+                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken {
+                            .tag = LiteralToken::Integer,
+                            .integerToken = IntegerToken {
+                                .value = *token->literalToken.integerToken.value.copy(_rp),
+                            }
+                        };
+                        empty();
+                        return ret;
+                    }
+
+                    case LiteralToken::FloatingPoint:
+                    {
+                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken {
+                            .tag = LiteralToken::FloatingPoint,
+                            .floatingPointToken = FloatingPointToken {
+                                .value = *token->literalToken.floatingPointToken.value.copy(_rp),
+                            }
+                        };
+                        empty();
+                        return ret;
+                    }
+
+                    case LiteralToken::Hex:
+                    {
+                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken {
+                            .tag = LiteralToken::Hex,
+                            .hexToken = HexToken {
+                                .value = *token->literalToken.hexToken.value.copy(_rp),
+                            }
+                        };
+                        empty();
+                        return ret;
+                    }
+
+                    case LiteralToken::Boolean:
+                    {
+                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken {
+                            .tag = LiteralToken::Boolean,
+                            .booleanToken = BooleanToken {
+                                .value = token->literalToken.booleanToken.value,
+                            }
+                        };
+                        empty();
+                        return ret;
+                    }
+
+                    case LiteralToken::Fragment:
+                    {
+                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken {
+                            .tag = LiteralToken::Fragment,
+                            .fragmentToken = FragmentToken {
+                                .value = *token->literalToken.fragmentToken.value.copy(_rp),
+                            }
+                        };
+                        empty();
+                        return ret;
+                    }
+
+                    default:
+                        return nullptr;
+                }
+            default:
+                return nullptr;
+        }
+    }
+
+    bool parse_colon(Page* _rp) {
+        if (token->tag == Token::Empty)
+            advance(_rp);
+
+        switch (token->tag)
+        {
+            case Token::Colon: case Token::LineFeed:
+                empty();
+                return true;
+
+            default:
+                return false;
+        }
+    }
+
+    bool is_at_end() {
+        if (character == nullptr)
+            return true;
+
+        return false;
+    }
+
 };
 
 }

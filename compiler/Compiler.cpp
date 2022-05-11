@@ -4,6 +4,7 @@
 #include "../runtime/containers/Containers.cpp"
 
 #include "Lexer.cpp"
+#include "Errors.cpp"
 #include "Parser.cpp"
 
 #endif // __Scaly_Containers__

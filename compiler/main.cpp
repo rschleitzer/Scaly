@@ -175,7 +175,8 @@ void test_parser(Page* _rp)
     auto r = Region::create_from_page(_rp);
     {
         auto r_1 = Region::create(r);
-        Parser& parser = *new (alignof(Parser), r_1.page) Parser(*String::from_c_string(r_1.page, ""));
+        Parser& parser = *new (alignof(Parser), r_1.page) Parser(*String::from_c_string(r_1.page, "define a 1"));
+        auto file_syntax = parser.parse_file(r_1.page, r_1.page, *String::from_c_string(r_1.page, "foo.scaly"));
     }
 }
 
@@ -185,6 +186,6 @@ int main(int argc, char** argv) {
     auto root_stack_bucket = StackBucket::create(&heap);
     auto root_page = Page::get(root_stack_bucket);
 
-    test_lexer(root_page);
+    // test_lexer(root_page);
     test_parser(root_page);
 }

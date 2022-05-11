@@ -9,9 +9,9 @@
 				"-std=c++20",
 				"-fdiagnostics-color=always",
 				"-g",
-				"${file}",
+				"${workspaceFolder}/main.cpp",
 				"-o",
-				"${fileDirname}/bin/${fileBasenameNoExtension}"
+				"${workspaceFolder}/bin/${fileBasenameNoExtension}"
 			],
 			"options": {
 				"cwd": "${fileDirname}"
