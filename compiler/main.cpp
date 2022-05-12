@@ -170,14 +170,13 @@ void test_lexer(Page* _rp) {
     }
 }
 
-void test_parser(Page* _rp)
+void test_parser(Region& _pr)
 {
-    auto r = Region::create_from_page(_rp);
-    {
-        auto r_1 = Region::create(r);
-        Parser& parser = *new (alignof(Parser), r_1.page) Parser(*String::from_c_string(r_1.page, "define a 1"));
-        auto file_syntax = parser.parse_file(r_1.page, r_1.page, *String::from_c_string(r_1.page, "foo.scaly"));
-    }
+    auto r = Region::create(_pr);
+    Parser& parser = *new (alignof(Parser), r.page) Parser(*String::from_c_string(r.page, "define a 1"));
+    auto file_syntax = parser.parse_file(r, r.page, r.page, *String::from_c_string(r.page, "foo.scaly"));
+    if (file_syntax.tag != Result<FileSyntax*, ParserError*>::Ok)
+        exit(-1);
 }
 
 
@@ -185,7 +184,8 @@ int main(int argc, char** argv) {
     auto heap = Heap::create();
     auto root_stack_bucket = StackBucket::create(&heap);
     auto root_page = Page::get(root_stack_bucket);
+    auto region = Region::create_from_page(root_page);
 
     // test_lexer(root_page);
-    test_parser(root_page);
+    test_parser(region);
 }

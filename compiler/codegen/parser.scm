@@ -33,19 +33,19 @@ struct Parser : Object {
     (apply-to-selected-children "syntax" (lambda (syntax) (if (program? syntax) "" ($
         (if (multiple? syntax) ($
 "
-    Result<""Vector<"(id syntax)"Syntax>*, ParserError*> parse_"(downcase-string (id syntax))"_list(Page* _rp, Page* _ep) {
-        auto r = Region::create_from_page(_rp);
+    Result<""Vector<"(id syntax)"Syntax>*, ParserError*> parse_"(downcase-string (id syntax))"_list(Region& _pr, Page* _rp, Page* _ep) {
+        auto _r = Region::create(_pr);
         {
-            auto r_1 = Region::create(r);
+            auto _r_1 = Region::create(_r);
             Array<"(id syntax)"Syntax>* array = nullptr;
             while(true) {
-                auto node_result = this->parse_"(downcase-string (id syntax))"(_rp, _ep);
+                auto node_result = this->parse_"(downcase-string (id syntax))"(_r_1, _rp, _ep);
                 if (node_result.tag == Result<"(id syntax)"Syntax*, ParserError*>::Error)
                     return Result<""Vector<"(id syntax)"Syntax>*, ParserError*> { .tag = Result<""Vector<"(id syntax)"Syntax>*, ParserError*>::Error, .error = node_result.error };
                 auto node = node_result.ok;
                 if (node != nullptr) {
                     if (array == nullptr)
-                        array = Array<"(id syntax)"Syntax>::create(r_1.page);
+                        array = Array<"(id syntax)"Syntax>::create(_r_1.page);
                     array->add(*node);
                 } else {
                     break;
@@ -60,13 +60,15 @@ struct Parser : Object {
     }
 "       )"")
 "
-    Result<"(id syntax)"Syntax*, ParserError*> parse_"(downcase-string (id syntax))"(Page* _rp, Page* _ep"(if (top? syntax) ", String& file_name" "")") {
+    Result<"(id syntax)"Syntax*, ParserError*> parse_"(downcase-string (id syntax))"(Region& _pr, Page* _rp, Page* _ep"(if (top? syntax) ", String& file_name" "")") {
+        auto _r = Region::create(_pr);
 "
         (if (abstract? syntax)
             ($
                 (apply-to-children-of syntax (lambda (content) ($
 "        {
-            auto node_result = this->parse_"(downcase-string (link content))"(_rp, _ep);
+            auto _r_1 = Region::create(_r);
+            auto node_result = this->parse_"(downcase-string (link content))"(_r_1, _rp, _ep);
             if (node_result.tag == Result<"(link content)"Syntax*, ParserError*>::Error)
                 return Result<"(id syntax)"Syntax*, ParserError*> { .tag = Result<"(id syntax)"Syntax*, ParserError*>::Error, .error = node_result.error };
             auto node = node_result.ok;
@@ -86,14 +88,13 @@ struct Parser : Object {
             )
             ($ ; non-abstract syntax
                 (if (top? syntax) ""
-"        auto r = Region::create_from_page(_rp);
-        auto start = this->lexer.previous_position;
+"        auto start = this->lexer.previous_position;
 "               )
                 (apply-to-children-of syntax (lambda (content) ($
                    (if (string=? "syntax" (type content))
                         ($ ; non-terminals
 "
-        auto "(property content)"_result = parse_"(downcase-string (link content))(if (multiple? content) "_list" "")"(_rp, _ep);
+        auto "(property content)"_result = this->parse_"(downcase-string (link content))(if (multiple? content) "_list" "")"(_r, _rp, _ep);
         if ("(property content)"_result.tag == Result<"(if (multiple? content) "Vector<" "")(link content)"Syntax"(if (multiple? content) ">" "")"*, ParserError*>::Error)
             return Result<"(id syntax)"Syntax*, ParserError*> { .tag = Result<"(id syntax)"Syntax*, ParserError*>::Error, .error = "(property content)"_result.error };
         auto "(property content)" = "(property content)"_result.ok;
@@ -132,10 +133,10 @@ struct Parser : Object {
                                 (("keyword" "punctuation" "colon" "semicolon") ($ "success_"(if (property content) (property content) ($ (case (type content) (("colon" "semicolon") (type content)) (else (link content)))"_"(number->string (child-number content))))))
                                 (else (property content))
                             )
-            " = this->lexer.parse_"(type content)"(r.page"
+            " = this->lexer.parse_"(type content)"(_r.page"
                             (case (type content)
-                                (("keyword")     ($ ", *String::from_c_string(r.page, \""(link content)"\")"))
-                                (("punctuation") ($ ", *String::from_c_string(r.page, \""(value (element-with-id (link content)))"\")"))
+                                (("keyword")     ($ ", *String::from_c_string(_r.page, \""(link content)"\")"))
+                                (("punctuation") ($ ", *String::from_c_string(_r.page, \""(value (element-with-id (link content)))"\")"))
                                 (("identifier")  ($ ", this->keywords"))
                                 (("attribute" "literal" "colon" "semicolon") "")
                             )");
