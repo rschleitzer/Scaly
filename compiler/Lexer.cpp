@@ -112,7 +112,8 @@ struct Lexer : Object {
             this->position++;        
     }
 
-    void advance(Page* _rp) {
+    void advance(Region& _pr) {
+        Region _r = Region::create(_pr);
         skip_whitespace(false);
         this->previous_position = this->position;
 
@@ -154,8 +155,8 @@ struct Lexer : Object {
                 if (this->token != nullptr)
                     Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
                 {
-                    auto r = Region::create_from_page(_rp);
-                    StringBuilder& value = *StringBuilder::create(r.page);
+                    auto _r_1 = Region::create(_r);
+                    StringBuilder& value = *StringBuilder::create(_r_1.page);
                     this->token = scan_numeric_literal(Page::get(this)->allocate_exclusive_page(), value);
                 }
                 break;
@@ -912,9 +913,10 @@ struct Lexer : Object {
         }
     }
 
-    bool parse_keyword(Page* _rp, String& fixed_string) {
+    bool parse_keyword(Region& _pr, Page* _rp, String& fixed_string) {
+        Region _r = Region::create(_pr);
         if (token->tag == Token::Empty)
-            advance(_rp);
+            advance(_r);
 
         switch (token->tag) {
             case Token::Identifier:
@@ -931,9 +933,10 @@ struct Lexer : Object {
         }
     }
 
-    String* parse_identifier(Page* _rp, HashSet<String>& keywords) {
+    String* parse_identifier(Region& _pr, Page* _rp, HashSet<String>& keywords) {
+        Region _r = Region::create(_pr);
         if (token->tag == Token::Empty)
-            advance(_rp);
+            advance(_r);
 
         switch (token->tag) {
             case Token::Identifier:
@@ -949,9 +952,10 @@ struct Lexer : Object {
         }
     }
 
-    String* parse_attribute(Page* _rp) {
+    String* parse_attribute(Region& _pr, Page* _rp) {
+        Region _r = Region::create(_pr);
         if (token->tag == Token::Empty)
-            advance(_rp);
+            advance(_r);
 
         switch (token->tag) {
             case Token::Attribute:
@@ -965,9 +969,10 @@ struct Lexer : Object {
         }
     }
 
-    bool parse_punctuation(Page* _rp, String& fixed_string) {
+    bool parse_punctuation(Region& _pr, Page* _rp, String& fixed_string) {
+        Region _r = Region::create(_pr);
         if (token->tag == Token::Empty)
-            advance(_rp);
+            advance(_r);
 
         switch (token->tag) {
             case Token::Punctuation:
@@ -983,9 +988,10 @@ struct Lexer : Object {
         }
     }
 
-    LiteralToken* parse_literal(Page* _rp) {
+    LiteralToken* parse_literal(Region& _pr, Page* _rp) {
+        Region _r = Region::create(_pr);
         if (token->tag == Token::Empty)
-            advance(_rp);
+            advance(_r);
 
         switch (token->tag)
         {
@@ -1072,9 +1078,10 @@ struct Lexer : Object {
         }
     }
 
-    bool parse_colon(Page* _rp) {
+    bool parse_colon(Region&_pr, Page* _rp) {
+        Region _r = Region::create(_pr);
         if (token->tag == Token::Empty)
-            advance(_rp);
+            advance(_r);
 
         switch (token->tag)
         {
