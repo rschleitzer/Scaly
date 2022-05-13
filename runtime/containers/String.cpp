@@ -1,4 +1,5 @@
-namespace scaly::containers {
+namespace scaly {
+namespace containers {
 
 using namespace scaly::memory;
 
@@ -6,6 +7,9 @@ const size_t PACKED_SIZE = sizeof(size_t) * 8 / 7;
 
 struct String : Object {
     char* data;
+
+    String(char* data)
+    : data(data) {}
 
     static String* create(Page* _rp, const char* data, size_t length) {
         char length_array[PACKED_SIZE];
@@ -24,7 +28,7 @@ struct String : Object {
         memcpy(pointer, length_array, counter + 1);
         memcpy((char*)pointer + counter + 1, data, length);
 
-        return new (alignof(String), _rp) String { .data = (char*)pointer };
+        return new (alignof(String), _rp) String((char*)pointer);
     }
 
     static String* from_c_string(Page* _rp, const char* c_string) {
@@ -53,7 +57,7 @@ struct String : Object {
         auto overall_length = index + 1 + length;
         auto pointer = _rp->allocate_raw(overall_length, 1);
         memcpy(pointer, this->data, overall_length);
-        return new (alignof(String), _rp) String { .data = (char*)pointer };
+        return new (alignof(String), _rp) String((char*)pointer);
     }
 
     static String* from_character(Page* _rp, char character) {
@@ -168,7 +172,7 @@ struct String : Object {
         while (true) {
             if (bit_count == PACKED_SIZE * 7) {
                 // Bad string length
-                exit(13);
+                exit(14);
             }
 
             char byte = *(this->data + index);
@@ -207,4 +211,5 @@ struct StringIterator {
     }
 };
 
+}
 }

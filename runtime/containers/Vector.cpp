@@ -1,4 +1,5 @@
-namespace scaly::containers {
+namespace scaly {
+namespace containers {
 
 using namespace scaly::memory;
 
@@ -27,6 +28,9 @@ template<class T> struct Vector : Object {
     size_t length;
     T* data;
 
+    Vector(size_t length)
+    : length(length) {}
+
     static Vector<T>* create(Page* _rp, size_t length) {
         auto vector = allocate(_rp, length);
         if (length > 0)
@@ -42,9 +46,7 @@ template<class T> struct Vector : Object {
     }
 
     static Vector<T>* create_without_buffer(Page* _rp, size_t length) {
-        return new(alignof(Vector<T>), _rp) Vector<T> {
-            .length = length,
-        };
+        return new(alignof(Vector<T>), _rp) Vector<T> (length);
     }
 
     static Vector<T>* from_raw_array(Page* _rp, T* array, size_t length) {
@@ -74,4 +76,5 @@ template<class T> struct Vector : Object {
     }
 };
 
+}
 }

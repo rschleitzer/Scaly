@@ -1,17 +1,16 @@
-namespace scaly::containers {
+namespace scaly {
+namespace containers {
 
 using namespace scaly::memory;
 
 struct StringBuilder : Object {
     Array<char> buffer;
 
+    StringBuilder(Array<char> _buffer)
+    :   buffer(_buffer) {}
+
     static StringBuilder* create(Page* _rp) {
-        return new(alignof(StringBuilder), _rp) StringBuilder {
-            .buffer = scaly::containers::Array<char>{
-                .length = 0,
-                .vector = nullptr,
-            },
-        };
+        return new(alignof(StringBuilder), _rp) StringBuilder(Array<char>());
     }
 
     static StringBuilder* from_character(Page* _rp, char character) {
@@ -33,4 +32,5 @@ struct StringBuilder : Object {
     }
 };
 
+}
 }

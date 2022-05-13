@@ -1,4 +1,5 @@
-namespace scaly::containers {
+namespace scaly {
+namespace containers {
 
 template<class OK, class ERROR>
 struct Result {
@@ -12,4 +13,5 @@ struct Result {
     };
 };
 
+}
 }

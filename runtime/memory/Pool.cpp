@@ -1,5 +1,10 @@
-namespace scaly::memory {
+namespace scaly {
+namespace memory {
 
+Pool::Pool(Heap* _heap)
+:   map(std::numeric_limits<size_t>::max()),
+    heap(_heap) {}
+            
 Pool* Pool::create(Heap* heap) {
     void* memory;
     posix_memalign(&memory, PAGE_SIZE * BUCKET_PAGES, PAGE_SIZE * BUCKET_PAGES * BUCKET_PAGES);
@@ -13,20 +18,16 @@ Pool* Pool::create(Heap* heap) {
     for (int i = 0; i < BUCKET_PAGES; i++) {
         auto bucket_page = (Page*)((size_t)memory + PAGE_SIZE * BUCKET_PAGES * i);
         bucket_page->reset();
-        auto bucket = new (alignof(Bucket), bucket_page) Bucket {
-            .tag = Bucket::Heap,
-            .heap = HeapBucket {
+        auto bucket = new (alignof(Bucket), bucket_page) Bucket (
+            HeapBucket {
                 .pool = nullptr,
                 // We mark the first page of the bucket as full because it cannot be reset.
                 .map = 0x7FFFFFFFFFFFFFFF,
             }
-        };
+        );
 
         if (i == 0) {
-            pool = new (alignof(Pool), bucket_page) Pool {
-                .map = std::numeric_limits<size_t>::max(),
-                .heap = heap,
-            };
+            pool = new (alignof(Pool), bucket_page) Pool(heap);
         }
 
         bucket->heap.pool = pool;
@@ -73,6 +74,8 @@ void Pool::deallocate() {
         exit(8);
 
     free(Page::get(this));
+}
+
 }
 
 }

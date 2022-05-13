@@ -1,13 +1,4 @@
 (define (parser) ($
-; "
-; pub struct ParserError {
-;     pub file_name: String,
-;     pub line: usize,
-;     pub column: usize,
-; }
-
-; "
-
 "
 using namespace scaly::containers;
 
@@ -74,10 +65,7 @@ struct Parser : Object {
             auto node = node_result.ok;
             if (node != nullptr) {
                 return Result<"(id syntax)"Syntax*, ParserError*> { .tag = Result<"(id syntax)"Syntax*, ParserError*>::Ok, .ok = 
-                    new (alignof("(id syntax)"Syntax), _rp) "(id syntax)"Syntax {
-                        .tag = "(id syntax)"Syntax::"(link content)",
-                        ."(string-firstchar-downcase (link content))"Syntax = *node,
-                    }
+                    new (alignof("(id syntax)"Syntax), _rp) "(id syntax)"Syntax("(link content)"Syntax(*node))
                 };
             }
         }
@@ -106,10 +94,7 @@ struct Parser : Object {
 "            return Result<"(id syntax)"Syntax*, ParserError*> { .tag = Result<"(id syntax)"Syntax*, ParserError*>::Ok, .ok = nullptr };
 "                                   )
                                     ($
-"            return Result<"(id syntax)"Syntax*, ParserError*> { .tag = Result<"(id syntax)"Syntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError {
-                .file_name = file_name,
-                .position = lexer.position,
-            }};
+"            return Result<"(id syntax)"Syntax*, ParserError*> { .tag = Result<"(id syntax)"Syntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(file_name, lexer.position) };
 "                                   )
                                 )
 "        }
@@ -118,10 +103,7 @@ struct Parser : Object {
 "        if ("(property content)" != nullptr) {
             if (!this->is_at_end()) {
                 auto error_pos = this->lexer.previous_position;
-                return Result<"(id syntax)"Syntax*, ParserError*> { .tag = Result<"(id syntax)"Syntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError {
-                    .file_name = file_name,
-                    .position = lexer.position,
-                }};
+                return Result<"(id syntax)"Syntax*, ParserError*> { .tag = Result<"(id syntax)"Syntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError (file_name, lexer.position) };
             };
         };
 "                           )"")
@@ -153,10 +135,7 @@ struct Parser : Object {
 "                                               )
                                                 ($
 "
-            return Result<"(id syntax)"Syntax*, ParserError*> { .tag = Result<"(id syntax)"Syntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError {
-                .file_name = file_name,
-                .position = lexer.position,
-            }};"
+            return Result<"(id syntax)"Syntax*, ParserError*> { .tag = Result<"(id syntax)"Syntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(file_name, lexer.position) };"
                                                 )
                                             )
                                         )
@@ -197,19 +176,11 @@ struct Parser : Object {
         auto end = this->lexer.position;
 "               )
 "
-        auto ret = new(alignof("(id syntax)"Syntax), _rp) "(id syntax)"Syntax {
-"
-                (if (top? syntax) 
-"            .file_name = file_name"
-"            .start = start,
-            .end = end"
-                )
+        auto ret = new(alignof("(id syntax)"Syntax), _rp) "(id syntax)"Syntax("(if (top? syntax) "file_name" "start, end")
                 (apply-to-property-children-of syntax (lambda (content) ($
-                    ",
-            ."(property content)" = "(case (type content) (("literal") "*") (else ""))(property content)
+                    ", "(case (type content) (("literal") "*") (else ""))(property content)
                 )))
-                ",
-        };
+                ");
 
         return Result<"(id syntax)"Syntax*, ParserError*> { .tag = Result<"(id syntax)"Syntax*, ParserError*>::Ok, .ok = ret };
 "
@@ -230,6 +201,6 @@ struct Parser : Object {
     }
 };
 
-}"
+"
 
 ))

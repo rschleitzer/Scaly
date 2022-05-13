@@ -1,4 +1,5 @@
-namespace scaly::containers {
+namespace scaly {
+namespace containers {
 
 using namespace scaly::memory;
 
@@ -15,10 +16,7 @@ struct HashMap : Object {
     Page* slots_page;
 
     static HashMap<K, V>* create(Page* _rp) {
-        return new(alignof(HashMap<K, V>), _rp) HashMap<K, V> {
-            .length = 0,
-            .slots = nullptr,
-        };
+        return new(alignof(HashMap<K, V>), _rp) HashMap<K, V> ();
     }
 
     static HashMap<K, V>* from_vector(Page* _rp, Vector<KeyValuePair<K, V>>& vector) {
@@ -130,4 +128,5 @@ struct HashMap : Object {
     }
 };
 
+}
 }

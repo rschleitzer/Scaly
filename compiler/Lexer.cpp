@@ -1,4 +1,5 @@
-namespace scaly::compiler {
+namespace scaly {
+namespace compiler {
     
 using namespace scaly::containers;
 
@@ -7,42 +8,57 @@ struct EmptyToken {};
 struct InvalidToken {};
 
 struct IdentifierToken {
+    IdentifierToken(String name) : name(name) {}
     String name;
 };
 
 struct AttributeToken {
+    AttributeToken(String name) : name(name) {}
     String name;
 };
 
 struct PunctuationToken {
+    PunctuationToken(String sign) : sign(sign) {}
     String sign;
 };
 
 struct StringToken {
+    StringToken(String value) : value(value) {}
     String value;
 };
 
 struct FragmentToken {
+    FragmentToken(String value) : value(value) {}
     String value;
 };
 
 struct IntegerToken {
+    IntegerToken(String value) : value(value) {}
     String value;
 };
 
 struct BooleanToken {
+    BooleanToken(bool value) : value(value) {}
     bool value;
 };
 
 struct FloatingPointToken {
+    FloatingPointToken(String value) : value(value) {}
     String value;
 };
 
 struct HexToken {
+    HexToken(String value) : value(value) {}
     String value;
 };
 
 struct LiteralToken : Object {
+    LiteralToken(StringToken stringToken) : tag(String), stringToken(stringToken) {}
+    LiteralToken(FragmentToken fragmentToken) : tag(Fragment), fragmentToken(fragmentToken) {}
+    LiteralToken(IntegerToken integerToken) : tag(Integer), integerToken(integerToken) {}
+    LiteralToken(BooleanToken booleanToken) : tag(Boolean), booleanToken(booleanToken) {}
+    LiteralToken(FloatingPointToken floatingPointToken) : tag(FloatingPoint), floatingPointToken(floatingPointToken) {}
+    LiteralToken(HexToken hexToken) : tag(Hex), hexToken(hexToken) {}
     enum {
         String,
         Fragment,
@@ -66,6 +82,14 @@ struct LineFeedToken {};
 struct ColonToken {};
 
 struct Token : Object {
+    Token(EmptyToken emptyToken) : tag(Empty) {}
+    Token(InvalidToken invalidToken) : tag(Invalid) {}
+    Token(IdentifierToken identifierToken) : tag(Identifier), identifierToken(identifierToken) {}
+    Token(AttributeToken attributeToken) : tag(Attribute), attributeToken(attributeToken) {}
+    Token(PunctuationToken punctuationToken) : tag(Colon), punctuationToken(punctuationToken) {}
+    Token(LiteralToken literalToken) : tag(Literal), literalToken(literalToken) {}
+    Token(LineFeedToken lineFeedToken) : tag(LineFeed) {}
+    Token(ColonToken colonToken) : tag(Colon) {}
     enum {
         Empty,
         Invalid,
@@ -96,7 +120,7 @@ struct Lexer : Object {
     size_t position;
 
     Lexer(String& deck) {
-        token = new(alignof(Token), Page::get(this)->allocate_exclusive_page()) Token();
+        token = new(alignof(Token), Page::get(this)->allocate_exclusive_page()) Token(EmptyToken());
         token->tag = Token::Empty;
         character = nullptr;
         chars = StringIterator::create(deck);
@@ -147,8 +171,7 @@ struct Lexer : Object {
                 read_character();
                 if (this->token != nullptr)
                     Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
-                this->token = new (alignof(Token), Page::get(this)->allocate_exclusive_page()) Token();
-                this->token->tag = Token::Colon;
+                this->token = new (alignof(Token), Page::get(this)->allocate_exclusive_page()) Token(ColonToken());
                 break;
 
             case '0':
@@ -200,9 +223,7 @@ struct Lexer : Object {
                     Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
                 auto punctuation_string = String::from_character(Page::get(this)->allocate_exclusive_page(), c);
                 this->read_character();
-                this->token = new (alignof(Token), Page::get(this)->allocate_exclusive_page()) Token();
-                this->token->tag = Token::Punctuation;
-                this->token->punctuationToken = PunctuationToken { .sign = *punctuation_string };
+                this->token = new (alignof(Token), Page::get(this)->allocate_exclusive_page()) Token(PunctuationToken(*punctuation_string));
                 break;
             }
 
@@ -213,26 +234,22 @@ struct Lexer : Object {
                 auto punctuation_string = String::from_character(Page::get(this)->allocate_exclusive_page(), c);
                 this->read_character();
                 this->skip_whitespace(true);
-                this->token = new (alignof(Token), Page::get(this)->allocate_exclusive_page()) Token();
-                this->token->tag = Token::Punctuation;
-                this->token->punctuationToken = PunctuationToken { .sign = *punctuation_string };
+                this->token = new (alignof(Token), Page::get(this)->allocate_exclusive_page()) Token(PunctuationToken(*punctuation_string));
                 break;
             }
 
             default:
                 if (this->token != nullptr)
                     Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
-                this->token = new (alignof(Token), Page::get(this)->allocate_exclusive_page()) Token();
-                this->token->tag = Token::Invalid;
+                this->token = new (alignof(Token), Page::get(this)->allocate_exclusive_page()) Token(InvalidToken());
                 break;
         }
     }
 
     void empty() {
-            if (this->token != nullptr)
-                Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
-            this->token = new (alignof(Token), Page::get(this)->allocate_exclusive_page()) Token();
-            this->token->tag = Token::Empty;
+        if (this->token != nullptr)
+            Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
+        this->token = new (alignof(Token), Page::get(this)->allocate_exclusive_page()) Token(EmptyToken());
     }
 
     Token* scan_line_feed(Page* _rp) {
@@ -240,15 +257,14 @@ struct Lexer : Object {
             read_character();
             skip_whitespace(false);
             if (this->character == nullptr) {
-                auto token = new (alignof(Token), _rp) Token();
-                this->token->tag = Token::LineFeed;
+                auto token = new (alignof(Token), _rp) Token(LineFeedToken());
                 return this->token;
             }
 
             if (*this->character == '\n')
                 continue;
 
-            auto token = new (alignof(Token), _rp) Token();
+            auto token = new (alignof(Token), _rp) Token(LineFeedToken());
             token->tag = Token::LineFeed;
             return this->token;
         }
@@ -259,20 +275,12 @@ struct Lexer : Object {
         StringBuilder& name = *StringBuilder::create(r.page);
         while (true) {
             if (character == nullptr) {
-                if (name.get_length() == 0) {
-                    auto token = new (alignof(Token), _rp) Token();
-                    token->tag = Token::Invalid;
-                    return token;
-                }
-                else {
-                    auto token = new (alignof(Token), _rp) Token();
-                    token->tag = Token::Identifier;
-                    token->identifierToken = IdentifierToken { .name = *name.to_string(_rp) };
-                    return token;
-                }
+                if (name.get_length() == 0)
+                    return new (alignof(Token), _rp) Token(InvalidToken());
+                else
+                    return new (alignof(Token), _rp) Token(IdentifierToken(*name.to_string(_rp)));
             }
-            else
-            {
+            else {
                 char c = *character;
                 if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || ((c >= '0') && (c <= '9')) || (c == '_'))
                 {
@@ -281,9 +289,7 @@ struct Lexer : Object {
                 }
                 else
                 {
-                    auto token = new (alignof(Token), _rp) Token();
-                    token->tag = Token::Identifier;
-                    token->identifierToken = IdentifierToken { .name = *name.to_string(_rp) };
+                    auto token = new (alignof(Token), _rp) Token(IdentifierToken(*name.to_string(_rp)));
                     return token;
                 }
             }
@@ -295,20 +301,12 @@ struct Lexer : Object {
         StringBuilder& name = *StringBuilder::create(r.page);
         while (true) {
             if (character == nullptr) {
-                if (name.get_length() == 0) {
-                    auto token = new (alignof(Token), _rp) Token();
-                    token->tag = Token::Invalid;
-                    return token;
-                }
-                else {
-                    auto token = new (alignof(Token), _rp) Token();
-                    token->tag = Token::Attribute;
-                    token->attributeToken = AttributeToken { .name = *name.to_string(_rp) };
-                    return token;
-                }
+                if (name.get_length() == 0)
+                    return new (alignof(Token), _rp) Token(InvalidToken());
+                else
+                    return new (alignof(Token), _rp) Token(AttributeToken(*name.to_string(_rp)));
             }
-            else
-            {
+            else {
                 char c = *character;
                 if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || ((c >= '0') && (c <= '9')) || (c == '_'))
                 {
@@ -317,9 +315,7 @@ struct Lexer : Object {
                 }
                 else
                 {
-                    auto token = new (alignof(Token), _rp) Token();
-                    token->tag = Token::Attribute;
-                    token->attributeToken = AttributeToken { .name = *name.to_string(_rp) };
+                    auto token = new (alignof(Token), _rp) Token(AttributeToken(*name.to_string(_rp)));
                     return token;
                 }
             }
@@ -333,17 +329,10 @@ struct Lexer : Object {
         while (true) {
             read_character();
             if (character == nullptr) {
-                if (operation.get_length() == 0) {
-                    auto token = new (alignof(Token), _rp) Token();
-                    token->tag = Token::Invalid;
-                    return token;
-                }
-                else {
-                    auto token = new (alignof(Token), _rp) Token();
-                    token->tag = Token::Identifier;
-                    token->identifierToken = IdentifierToken { .name = *operation.to_string(_rp) };
-                    return token;
-                }
+                if (operation.get_length() == 0)
+                    return new (alignof(Token), _rp) Token(InvalidToken());
+                else
+                    return new (alignof(Token), _rp) Token(IdentifierToken(*operation.to_string(_rp)));
             }
 
             auto c = *character;
@@ -354,9 +343,7 @@ struct Lexer : Object {
                     break;
 
                 default:{
-                    auto token = new (alignof(Token), _rp) Token();
-                    token->tag = Token::Identifier;
-                    token->identifierToken = IdentifierToken { .name = *operation.to_string(_rp) };
+                    auto token = new (alignof(Token), _rp) Token(IdentifierToken(*operation.to_string(_rp)));
                     return token;
                 }
             }
@@ -368,37 +355,22 @@ struct Lexer : Object {
         StringBuilder& value = *StringBuilder::create(r.page);
         while (true) {
             read_character();
-            if (character == nullptr) {
-                auto token = new (alignof(Token), _rp) Token();
-                token->tag = Token::Invalid;
-                return token;
-            }
+            if (character == nullptr)
+                return new (alignof(Token), _rp) Token(InvalidToken());
 
             auto c = *character;
             switch (c)
             {
                 case '\"':
-                    {
-                        read_character();
-                        auto token = new (alignof(Token), _rp) Token();
-                        token->tag = Token::Literal;
-                        token->literalToken = LiteralToken {
-                            .tag = LiteralToken::String,
-                            .stringToken = StringToken {
-                                .value = *value.to_string(_rp),
-                            }
-                        };
-                        return token;
-                    }
+                    read_character();
+                    return new (alignof(Token), _rp) Token(LiteralToken(StringToken(*value.to_string(_rp))));
 
                 case '\\': 
                     {
                         read_character();
-                        if (character == nullptr) {
-                            auto token = new (alignof(Token), _rp) Token();
-                            token->tag = Token::Invalid;
-                            return token;
-                        }
+                        if (character == nullptr)
+                            return new (alignof(Token), _rp) Token(InvalidToken());
+
                         auto c2 = *character;
                         switch (c2) {
                             case '\"': case '\\': case '\'':
@@ -416,12 +388,8 @@ struct Lexer : Object {
                             case '0':
                                 value.append_character('\0');
                                 break;
-                            default:{
-                                auto token = new (alignof(Token), _rp) Token();
-                                token->tag = Token::Invalid;
-                                return token;
-                            }
-                            
+                            default:
+                                return new (alignof(Token), _rp) Token(InvalidToken());                            
                         }
                     }
                     break;
@@ -438,19 +406,15 @@ struct Lexer : Object {
         StringBuilder& value = *StringBuilder::create(r.page);
         while (true) {
             read_character();
-            if (character == nullptr){
-                auto token = new (alignof(Token), _rp) Token();
-                token->tag = Token::Invalid;
-                return token;
-            }
+            if (character == nullptr)
+                return new (alignof(Token), _rp) Token(InvalidToken());
+
             auto c = *character;
             switch (c) {
                 case '\'':
                     read_character();
                     {
-                        auto token = new (alignof(Token), _rp) Token();
-                        token->tag = Token::Identifier;
-                        token->identifierToken = IdentifierToken { .name = *value.to_string(_rp) };
+                        auto token = new (alignof(Token), _rp) Token(IdentifierToken(*value.to_string(_rp)));
                         return token;
                     }
                 default:
@@ -465,37 +429,22 @@ struct Lexer : Object {
         StringBuilder& value = *StringBuilder::create(r.page);
         while (true) {
             read_character();
-            if (character == nullptr) {
-                auto token = new (alignof(Token), _rp) Token();
-                token->tag = Token::Invalid;
-                return token;
-            }
+            if (character == nullptr)
+                return new (alignof(Token), _rp) Token(InvalidToken());
 
             auto c = *character;
             switch (c)
             {
                 case '`':
-                    {
-                        read_character();
-                        auto token = new (alignof(Token), _rp) Token();
-                        token->tag = Token::Literal;
-                        token->literalToken = LiteralToken {
-                            .tag = LiteralToken::Fragment,
-                            .fragmentToken = FragmentToken {
-                                .value = *value.to_string(_rp),
-                            }
-                        };
-                        return token;
-                    }
+                    read_character();
+                    return new (alignof(Token), _rp) Token(LiteralToken(FragmentToken(*value.to_string(_rp))));
 
                 case '\\': 
                     {
                         read_character();
-                        if (character == nullptr) {
-                            auto token = new (alignof(Token), _rp) Token();
-                            token->tag = Token::Invalid;
-                            return token;
-                        }
+                        if (character == nullptr)
+                            return new (alignof(Token), _rp) Token(InvalidToken());
+
                         auto c2 = *character;
                         switch (c2) {
                             case '`': case '\\': case '\'':
@@ -513,12 +462,8 @@ struct Lexer : Object {
                             case '0':
                                 value.append_character('\0');
                                 break;
-                            default:{
-                                auto token = new (alignof(Token), _rp) Token();
-                                token->tag = Token::Invalid;
-                                return token;
-                            }
-                            
+                            default:
+                                return new (alignof(Token), _rp) Token(InvalidToken());                            
                         }
                     }
                     break;
@@ -532,17 +477,8 @@ struct Lexer : Object {
 
     Token* scan_numeric_literal(Page* _rp, StringBuilder& value) {
         read_character();
-        if (character == nullptr) {
-            auto token = new (alignof(Token), _rp) Token();
-            token->tag = Token::Literal;
-            token->literalToken = LiteralToken {
-                .tag = LiteralToken::String,
-                .integerToken = IntegerToken {
-                    .value = *value.to_string(_rp),
-                }
-            };
-            return token;
-        }
+        if (character == nullptr)
+            auto token = new (alignof(Token), _rp) Token(LiteralToken(IntegerToken(*value.to_string(_rp))));
 
         auto c = *character;
 
@@ -570,19 +506,9 @@ struct Lexer : Object {
                 return scan_boolean_literal(_rp);
 
             default:
-            {
                 if (value.get_length() == 0)
                     value.append_character('0');
-                auto token = new (alignof(Token), _rp) Token();
-                token->tag = Token::Literal;
-                token->literalToken = LiteralToken {
-                    .tag = LiteralToken::Integer,
-                    .integerToken = IntegerToken {
-                        .value = *value.to_string(_rp),
-                    }
-                };
-                return token;
-            }
+                return new (alignof(Token), _rp) Token(LiteralToken(IntegerToken(*value.to_string(_rp))));
         }
     }
 
@@ -592,17 +518,8 @@ struct Lexer : Object {
         value.append_character(c);
         while (true) {
             read_character();
-            if (character == nullptr) {
-                auto token = new (alignof(Token), _rp) Token();
-                token->tag = Token::Literal;
-                token->literalToken = LiteralToken {
-                    .tag = LiteralToken::String,
-                    .integerToken = IntegerToken {
-                        .value = *value.to_string(_rp),
-                    }
-                };
-                return token;
-            }
+            if (character == nullptr)
+                return new (alignof(Token), _rp) Token(LiteralToken(IntegerToken(*value.to_string(_rp))));
 
             auto c = *character;
 
@@ -622,17 +539,7 @@ struct Lexer : Object {
                     return scan_exponent(_rp, value);
 
                 default:
-                {
-                    auto token = new (alignof(Token), _rp) Token();
-                    token->tag = Token::Literal;
-                    token->literalToken = LiteralToken {
-                        .tag = LiteralToken::Integer,
-                        .integerToken = IntegerToken {
-                            .value = *value.to_string(_rp),
-                        }
-                    };
-                    return token;
-                }
+                    return new (alignof(Token), _rp) Token(LiteralToken(IntegerToken(*value.to_string(_rp))));
             }
         }
     }
@@ -641,17 +548,8 @@ struct Lexer : Object {
         while (true) {
             read_character();
 
-            if (character == nullptr) {
-                auto token = new (alignof(Token), _rp) Token();
-                token->tag = Token::Literal;
-                token->literalToken = LiteralToken {
-                    .tag = LiteralToken::FloatingPoint,
-                    .floatingPointToken = FloatingPointToken {
-                        .value = *value.to_string(_rp),
-                    }
-                };
-                return token;
-            }
+            if (character == nullptr)
+                return new (alignof(Token), _rp) Token(LiteralToken(FloatingPointToken(*value.to_string(_rp))));
 
             auto c = *character;
 
@@ -668,17 +566,7 @@ struct Lexer : Object {
                     return scan_exponent(_rp, value);
 
                 default:
-                {
-                    auto token = new (alignof(Token), _rp) Token();
-                    token->tag = Token::Literal;
-                    token->literalToken = LiteralToken {
-                        .tag = LiteralToken::FloatingPoint,
-                        .floatingPointToken = FloatingPointToken {
-                            .value = *value.to_string(_rp),
-                        }
-                    };
-                    return token;
-                }
+                    return new (alignof(Token), _rp) Token(LiteralToken(FloatingPointToken(*value.to_string(_rp))));
             }
         }
     }
@@ -686,37 +574,17 @@ struct Lexer : Object {
     Token* scan_exponent(Page* _rp, StringBuilder& value) {
         while (true) {
             read_character();
-            if (character == nullptr) {
-                auto token = new (alignof(Token), _rp) Token();
-                token->tag = Token::Literal;
-                token->literalToken = LiteralToken {
-                    .tag = LiteralToken::FloatingPoint,
-                    .floatingPointToken = FloatingPointToken {
-                        .value = *value.to_string(_rp),
-                    }
-                };
-                return token;
-            }
+            if (character == nullptr)
+                return new (alignof(Token), _rp) Token(LiteralToken(FloatingPointToken(*value.to_string(_rp))));
 
             auto c = *character;
 
-            if ((c >= '0') && (c <= '9'))
-            {
+            if ((c >= '0') && (c <= '9')) {
                 value.append_character(c);
                 continue;
             }
 
-            {
-                auto token = new (alignof(Token), _rp) Token();
-                token->tag = Token::Literal;
-                token->literalToken = LiteralToken {
-                    .tag = LiteralToken::FloatingPoint,
-                    .floatingPointToken = FloatingPointToken {
-                        .value = *value.to_string(_rp),
-                    }
-                };
-                return token;
-            }
+            return new (alignof(Token), _rp) Token(LiteralToken(FloatingPointToken(*value.to_string(_rp))));
         }
     }
 
@@ -726,17 +594,8 @@ struct Lexer : Object {
         while (true) {
             read_character();
 
-            if (character == nullptr) {
-                auto token = new (alignof(Token), _rp) Token();
-                token->tag = Token::Literal;
-                token->literalToken = LiteralToken {
-                    .tag = LiteralToken::Hex,
-                    .hexToken = HexToken {
-                        .value = *value.to_string(_rp),
-                    }
-                };
-                return token;
-            }
+            if (character == nullptr)
+                return new (alignof(Token), _rp) Token(LiteralToken(HexToken(*value.to_string(_rp))));
 
             auto c = *character;
 
@@ -745,46 +604,23 @@ struct Lexer : Object {
                 continue;
             }
 
-            {
-                auto token = new (alignof(Token), _rp) Token();
-                token->tag = Token::Literal;
-                token->literalToken = LiteralToken {
-                    .tag = LiteralToken::Hex,
-                    .hexToken = HexToken {
-                        .value = *value.to_string(_rp),
-                    }
-                };
-                return token;
-            }
+            return new (alignof(Token), _rp) Token(LiteralToken(HexToken(*value.to_string(_rp))));
         }
     }
 
     Token* scan_boolean_literal(Page* _rp) {
         read_character();
-        if (character == nullptr){
-            auto token = new (alignof(Token), _rp) Token();
-            token->tag = Token::Invalid;
-            return token;
-        }
+        if (character == nullptr)
+            return new (alignof(Token), _rp) Token(InvalidToken());
 
         auto c = *character;
 
         if (c != '0' && c != '1') {
-            auto token = new (alignof(Token), _rp) Token();
-            token->tag = Token::Invalid;
-            return token;
+            return new (alignof(Token), _rp) Token(InvalidToken());
         }
         else {
             read_character();
-            auto token = new (alignof(Token), _rp) Token();
-            token->tag = Token::Literal;
-            token->literalToken = LiteralToken {
-                .tag = LiteralToken::Boolean,
-                .booleanToken = BooleanToken {
-                    .value = c == '1',
-                }
-            };
-            return token;
+            return new (alignof(Token), _rp) Token(LiteralToken(BooleanToken(c == '1')));
         }
     }
 
@@ -1000,72 +836,42 @@ struct Lexer : Object {
                 {
                     case LiteralToken::String:
                     {
-                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken {
-                            .tag = LiteralToken::String,
-                            .stringToken = StringToken {
-                                .value = *token->literalToken.stringToken.value.copy(_rp),
-                            }
-                        };
+                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken(StringToken(*token->literalToken.stringToken.value.copy(_rp)));
                         empty();
                         return ret;
                     }
 
                     case LiteralToken::Integer:
                     {
-                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken {
-                            .tag = LiteralToken::Integer,
-                            .integerToken = IntegerToken {
-                                .value = *token->literalToken.integerToken.value.copy(_rp),
-                            }
-                        };
+                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken(IntegerToken(*token->literalToken.integerToken.value.copy(_rp)));
                         empty();
                         return ret;
                     }
 
                     case LiteralToken::FloatingPoint:
                     {
-                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken {
-                            .tag = LiteralToken::FloatingPoint,
-                            .floatingPointToken = FloatingPointToken {
-                                .value = *token->literalToken.floatingPointToken.value.copy(_rp),
-                            }
-                        };
+                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken(FloatingPointToken(*token->literalToken.floatingPointToken.value.copy(_rp)));
                         empty();
                         return ret;
                     }
 
                     case LiteralToken::Hex:
                     {
-                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken {
-                            .tag = LiteralToken::Hex,
-                            .hexToken = HexToken {
-                                .value = *token->literalToken.hexToken.value.copy(_rp),
-                            }
-                        };
+                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken(HexToken(*token->literalToken.hexToken.value.copy(_rp)));
                         empty();
                         return ret;
                     }
 
                     case LiteralToken::Boolean:
                     {
-                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken {
-                            .tag = LiteralToken::Boolean,
-                            .booleanToken = BooleanToken {
-                                .value = token->literalToken.booleanToken.value,
-                            }
-                        };
+                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken(BooleanToken(token->literalToken.booleanToken.value));
                         empty();
                         return ret;
                     }
 
                     case LiteralToken::Fragment:
                     {
-                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken {
-                            .tag = LiteralToken::Fragment,
-                            .fragmentToken = FragmentToken {
-                                .value = *token->literalToken.fragmentToken.value.copy(_rp),
-                            }
-                        };
+                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken(FragmentToken(*token->literalToken.fragmentToken.value.copy(_rp)));
                         empty();
                         return ret;
                     }
@@ -1103,4 +909,5 @@ struct Lexer : Object {
 
 };
 
+}
 }

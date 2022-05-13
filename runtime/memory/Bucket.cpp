@@ -1,4 +1,13 @@
-namespace scaly::memory {
+namespace scaly {
+namespace memory {
+
+Bucket::Bucket(HeapBucket heap)
+:   tag(Bucket::Heap),
+    heap(heap) {}
+    
+Bucket::Bucket(StackBucket stack)
+:   tag(Bucket::Stack),
+    stack(stack) {}
 
 Bucket* Bucket::get(void* address) {
     auto mask = ~(size_t)(PAGE_SIZE * BUCKET_PAGES - 1);
@@ -81,12 +90,10 @@ size_t Bucket::find_least_position_32(size_t n) {
 
 StackBucket* StackBucket::create(Heap* heap) {
     auto page = StackBucket::allocate_bucket();
-    auto bucket = new(alignof(Bucket), page) Bucket {
-        .tag = Bucket::Stack,
-        .stack = StackBucket {
+    auto bucket = new(alignof(Bucket), page) Bucket(StackBucket {
             .heap = heap,
             .next_bucket = nullptr
-        }
+        }); {
     };
 
     return &(bucket->stack);
@@ -180,3 +187,5 @@ void HeapBucket::deallocate_page(Page* page) {
 }
 
 };
+
+}

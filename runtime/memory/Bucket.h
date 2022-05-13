@@ -1,4 +1,5 @@
-namespace scaly::memory {
+namespace scaly {
+namespace memory {
 
 struct Heap;
 struct Page;
@@ -30,6 +31,8 @@ struct Bucket : Object {
         HeapBucket heap;
     };
 
+    Bucket(HeapBucket heap);
+    Bucket(StackBucket stack);
     static Bucket* get(void* address);
     Page* allocate_page();
     void deallocate_page(Page* page);
@@ -37,5 +40,7 @@ struct Bucket : Object {
     static size_t find_least_position_64(size_t n);
     static size_t find_least_position_32(size_t n);
 };
+
+}
 
 }

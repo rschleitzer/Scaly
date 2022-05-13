@@ -1,10 +1,13 @@
 (element grammar
     (file ($ "Parser.cpp")
         ($
-"namespace scaly::compiler {
+"namespace scaly {
+namespace compiler {
 "
             (syntax)
             (parser)
-        )
+"}
+}
+"        )
     )
 )

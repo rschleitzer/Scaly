@@ -1,4 +1,5 @@
-namespace scaly::containers {
+namespace scaly {
+namespace containers {
 
 using namespace scaly::memory;
 
@@ -7,10 +8,7 @@ template<class T> struct Array : Object {
     Vector<T>* vector;
 
     static Array<T>* create(Page* _rp) {
-        return new(alignof(Array<T>), _rp) Array<T> {
-            .length = 0,
-            .vector = nullptr,
-        };
+        return new(alignof(Array<T>), _rp) Array<T> ();
     }
 
     T* get_buffer() {
@@ -77,4 +75,5 @@ template<class T> struct Array : Object {
     }
 };
 
+}
 }

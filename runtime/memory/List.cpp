@@ -1,4 +1,5 @@
-namespace scaly::containers {
+namespace scaly {
+namespace containers {
 
 using namespace scaly::memory;
 
@@ -7,6 +8,9 @@ template<class T> struct List;
 template<class T> struct Node : Object {
     T element;
     Node<T>* next;
+    Node(T _element, Node<T>* _next)
+    :   element(_element),
+        next(_next) {}
 };
 
 template<class T> struct ListIterator {
@@ -31,17 +35,12 @@ template<class T> struct List : Object {
     Node<T>* head;
 
     static List<T>* create(Page* _rp) {
-        return new(alignof(List<T>), _rp) List<T> {
-             .head = nullptr
-        };
+        return new(alignof(List<T>), _rp) List<T>();
     }
 
     void add(Page* _rp, T element) {
         auto new_node = 
-            new (alignof(Node<T>), _rp) Node<T> {
-                .element = element,
-                .next = this->head,
-            };
+            new (alignof(Node<T>), _rp) Node<T>(element, this->head);
 
         this->head = new_node;
     }
@@ -74,5 +73,7 @@ template<class T> struct List : Object {
         return ListIterator<T>::create(this->head);
     }
 };
+
+}
 
 }

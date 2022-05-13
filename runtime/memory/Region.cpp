@@ -1,4 +1,5 @@
-namespace scaly::memory {
+namespace scaly {
+namespace memory {
 
 struct Region {
     Page* page;
@@ -38,5 +39,7 @@ struct Region {
         }
     }
 };
+
+}
 
 }

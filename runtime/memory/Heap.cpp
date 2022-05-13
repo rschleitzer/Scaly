@@ -1,4 +1,5 @@
-namespace scaly::memory {
+namespace scaly {
+namespace memory {
 
 struct Heap {
     size_t map;
@@ -54,5 +55,7 @@ struct Heap {
         pool->deallocate();
     }
 };
+
+}
 
 }

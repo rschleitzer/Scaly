@@ -11,7 +11,8 @@
 				"-g",
 				"${workspaceFolder}/main.cpp",
 				"-o",
-				"${workspaceFolder}/bin/${fileBasenameNoExtension}"
+				"${workspaceFolder}/bin/${fileBasenameNoExtension}",
+				"`llvm-config --cxxflags`"
 			],
 			"options": {
 				"cwd": "${fileDirname}"

@@ -1,4 +1,6 @@
-namespace scaly::memory {
+namespace scaly {
+
+namespace memory {
 
 using namespace scaly::containers;
 
@@ -15,7 +17,7 @@ struct Page {
         this->current_page = nullptr;
         this->next_page = nullptr;
         this->next_object = this + 1;
-        this->exclusive_pages = List<Page*> { .head = nullptr };
+        this->exclusive_pages = List<Page*>();
     }
 
     void clear() {
@@ -139,8 +141,10 @@ struct Page {
         page->deallocate_extensions();
         page->forget();
         if (!this->exclusive_pages.remove(page))
-            exit(14);
+            exit(15);
     }
 };
+
+}
 
 }

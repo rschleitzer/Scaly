@@ -7,7 +7,6 @@
 #include <limits>
 
 using std::size_t;
-using std::align_val_t;
 using std::alignment_of;
 
 #include "Object.h"

@@ -1,4 +1,5 @@
-namespace scaly::containers {
+namespace scaly {
+namespace containers {
 
 using namespace scaly::memory;
 
@@ -67,10 +68,7 @@ struct HashSet : Object {
     Page* slots_page;
 
     static HashSet<T>* create(Page* _rp) {
-        return new(alignof(HashSet<T>), _rp) HashSet<T> {
-            .length = 0,
-            .slots = nullptr,
-        };
+        return new(alignof(HashSet<T>), _rp) HashSet<T>();
     }
 
     static HashSet<T>* from_vector(Page* _rp, Vector<T>& vector) {
@@ -163,5 +161,7 @@ struct HashSet : Object {
         return false;
     }
 };
+
+}
 
 }
