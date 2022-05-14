@@ -12,7 +12,7 @@
 				"${workspaceFolder}/main.cpp",
 				"-o",
 				"${workspaceFolder}/bin/${fileBasenameNoExtension}",
-				"`llvm-config --cxxflags`"
+				"`llvm-config --cxxflags --ldflags --system-libs --libs core`"
 			],
 			"options": {
 				"cwd": "${fileDirname}"

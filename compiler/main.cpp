@@ -179,6 +179,13 @@ void test_parser(Region& _pr)
         exit(-1);
 }
 
+void test_generator(Region& _pr)
+{
+    auto r = Region::create(_pr);
+    InitializeModule();
+
+}
+
 
 int main(int argc, char** argv) {
     auto heap = Heap::create();
@@ -188,4 +195,5 @@ int main(int argc, char** argv) {
 
     test_lexer(root_page);
     test_parser(region);
+    test_generator(region);
 }
