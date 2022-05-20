@@ -11,8 +11,8 @@ using std::memcpy;
 
 #include "Vector.cpp"
 #include "Array.cpp"
-#include "HashSet.cpp"
-#include "HashMap.cpp"
+#include "HashSetBuilder.cpp"
+#include "HashMapBuilder.cpp"
 #include "String.cpp"
 #include "StringBuilder.cpp"
 #include "Result.cpp"
