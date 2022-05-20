@@ -207,9 +207,9 @@ int main(int argc, char** argv) {
     auto root_page = Page::get(root_stack_bucket);
     auto region = Region::create_from_page(root_page);
 
-    // test_lexer(root_page);
-    // test_parser(region);
-    // test_generator(region);
+    test_lexer(root_page);
+    test_parser(region);
+    test_generator(region);
     test_compiler(region);
 
     return 0;

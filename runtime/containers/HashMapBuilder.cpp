@@ -10,16 +10,16 @@ struct KeyValuePair {
 };
 
 template<class K, class V>
-struct HashMap : Object {
+struct HashMapBuilder : Object {
     size_t length;
     Vector<List<Slot<KeyValuePair<K, V>>>>* slots;
     Page* slots_page;
 
-    static HashMap<K, V>* create(Page* _rp) {
-        return new(alignof(HashMap<K, V>), _rp) HashMap<K, V> ();
+    static HashMapBuilder<K, V>* create(Page* _rp) {
+        return new(alignof(HashMapBuilder<K, V>), _rp) HashMapBuilder<K, V> ();
     }
 
-    static HashMap<K, V>* from_vector(Page* _rp, Vector<KeyValuePair<K, V>>& vector) {
+    static HashMapBuilder<K, V>* from_vector(Page* _rp, Vector<KeyValuePair<K, V>>& vector) {
         auto hash_map = create(_rp);
         if (vector.length > 0)
         {

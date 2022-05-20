@@ -115,7 +115,7 @@ void test_hash_set(Page* _rp) {
     array.add(*String::from_c_string(r.page, "namespace"));
     array.add(*String::from_c_string(r.page, "typedef"));
     Vector<String>& vector = *Vector<String>::from_array(r.page, array);
-    HashSet<String>& keywords = *HashSet<String>::from_vector(r.page, vector);
+    HashSetBuilder<String>& keywords = *HashSetBuilder<String>::from_vector(r.page, vector);
     if (!keywords.contains(*String::from_c_string(r.page, "using")))
         exit (-18);
     if (!keywords.contains(*String::from_c_string(r.page, "namespace")))
@@ -135,7 +135,7 @@ void test_hash_map(Page* _rp) {
         array.add(KeyValuePair<String, int> { .key = *String::from_c_string(r.page, "namespace"), .value = 2 });
         array.add(KeyValuePair<String, int> { .key = *String::from_c_string(r.page, "typedef"), .value = 3 });
         Vector<KeyValuePair<String, int>>& vector = *Vector<KeyValuePair<String, int>>::from_array(r.page, array);
-        HashMap<String, int>& keywords = *HashMap<String, int>::from_vector(r.page, vector);
+        HashMapBuilder<String, int>& keywords = *HashMapBuilder<String, int>::from_vector(r.page, vector);
         if (!keywords.contains(*String::from_c_string(r.page, "using")))
             exit (-18);
         if (!keywords.contains(*String::from_c_string(r.page, "namespace")))
@@ -155,8 +155,8 @@ void test_hash_map(Page* _rp) {
     }
     {
         auto r = Region::create_from_page(_rp);
-        HashMap<String, size_t>& map = *HashMap<String, size_t>::create(r.page);
-        HashSet<String>& set = *HashSet<String>::create(r.page);
+        HashMapBuilder<String, size_t>& map = *HashMapBuilder<String, size_t>::create(r.page);
+        HashSetBuilder<String>& set = *HashSetBuilder<String>::create(r.page);
         for (char i = 'A'; i <= 'Z'; i++)
         {
             for (char j = 'a'; j <= 'z'; j++)

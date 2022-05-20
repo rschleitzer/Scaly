@@ -62,16 +62,16 @@ template<class T> struct Slot {
 };
 
 template<class T>
-struct HashSet : Object {
+struct HashSetBuilder : Object {
     size_t length;
     Vector<List<Slot<T>>>* slots;
     Page* slots_page;
 
-    static HashSet<T>* create(Page* _rp) {
-        return new(alignof(HashSet<T>), _rp) HashSet<T>();
+    static HashSetBuilder<T>* create(Page* _rp) {
+        return new(alignof(HashSetBuilder<T>), _rp) HashSetBuilder<T>();
     }
 
-    static HashSet<T>* from_vector(Page* _rp, Vector<T>& vector) {
+    static HashSetBuilder<T>* from_vector(Page* _rp, Vector<T>& vector) {
         auto hash_set = create(_rp);
         if (vector.length > 0)
         {

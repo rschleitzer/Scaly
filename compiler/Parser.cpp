@@ -1066,7 +1066,7 @@ using namespace scaly::containers;
 struct Parser : Object {
     Lexer lexer;
     String file_name;
-    HashSet<String> keywords;
+    HashSetBuilder<String> keywords;
 
     Parser(String& deck)
       : lexer(*new(alignof(Lexer), Page::get(this)) Lexer(deck)),
@@ -1118,7 +1118,7 @@ struct Parser : Object {
         array.add(*String::from_c_string(r.page, "var"));
         array.add(*String::from_c_string(r.page, "while"));
         Vector<String>& vector = *Vector<String>::from_array(r.page, array);
-        keywords = *HashSet<String>::from_vector(Page::get(this), vector);
+        keywords = *HashSetBuilder<String>::from_vector(Page::get(this), vector);
 
     }
 

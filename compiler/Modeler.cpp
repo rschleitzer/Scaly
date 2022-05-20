@@ -77,7 +77,7 @@ struct Function : Object {
 };
 
 struct Model : Object {
-    HashMap<String, List<Function>> functions; 
+    HashMapBuilder<String, List<Function>> functions; 
 };
 
 struct ModelError : Object {
