@@ -9,4 +9,15 @@
 #include "Modeler.cpp"
 #include "Generator.cpp"
 
-#endif // __Scaly_Containers__
+
+namespace scaly {
+namespace compiler {
+
+int compile_and_run_program(Region& _pr, String& program, Vector<String>& arguments) {
+    Region _r = Region::create(_pr);
+    return 0;
+}
+
+}
+}
+#endif // __Scaly_Compiler__

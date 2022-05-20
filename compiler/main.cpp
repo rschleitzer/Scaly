@@ -186,6 +186,20 @@ void test_generator(Region& _pr)
 
 }
 
+void test_compiler(Region& _pr)
+{
+    auto r = Region::create(_pr);
+    if (compile_and_run_program(_pr, *String::from_c_string(r.page,
+" \n"
+"0"
+" \n"
+    ),
+     *Vector<String>::create(r.page, 0)
+    ) != 0)
+        exit (-60);
+
+}
+
 
 int main(int argc, char** argv) {
     auto heap = Heap::create();
@@ -193,7 +207,10 @@ int main(int argc, char** argv) {
     auto root_page = Page::get(root_stack_bucket);
     auto region = Region::create_from_page(root_page);
 
-    test_lexer(root_page);
-    test_parser(region);
-    test_generator(region);
+    // test_lexer(root_page);
+    // test_parser(region);
+    // test_generator(region);
+    test_compiler(region);
+
+    return 0;
 }
