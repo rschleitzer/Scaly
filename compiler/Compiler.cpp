@@ -14,7 +14,8 @@ namespace scaly {
 namespace compiler {
 
 int compile_and_run_program(Region& _pr, String& program, Vector<String>& arguments) {
-    Region _r = Region::create(_pr);
+    auto _r = Region::create(_pr);
+    auto definition = scaly::compiler::model::build_program_model(_r, _r.page, _r.page, program);
     return 0;
 }
 

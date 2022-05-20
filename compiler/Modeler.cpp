@@ -80,6 +80,17 @@ struct Model : Object {
     HashMap<String, List<Function>> functions; 
 };
 
+struct ModelError : Object {
+    ModelError(String file_name, size_t position) : file_name(file_name), position(position) {}
+    String file_name;
+    size_t position;
+};
+
+Result<Model*, ModelError*> build_program_model(Region& _pr, Page* _rp, Page* _ep, String& program) {
+    auto ret = new(alignof(Model), _rp) Model();
+    return Result<Model*, ModelError*> { .tag = Result<Model*, ModelError*>::Ok, .ok = ret };
+}
+
 }
 }
 }
