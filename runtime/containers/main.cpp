@@ -1,11 +1,11 @@
 #include "Containers.cpp"
 using namespace scaly::containers;
 
-void test_vector(Page* _rp)
+void test_vector(Region& _pr)
 {
-    auto r = Region::create_from_page(_rp);
+    auto _r = Region::create(_pr);
     {
-        auto r_1 = Region::create(r);
+        auto r_1 = Region::create(_r);
         Vector<int>& vector = *Vector<int>::create(r_1.page, 2);
         *vector[0] = 1;
         vector.set(1, 2);
@@ -15,7 +15,7 @@ void test_vector(Page* _rp)
             exit(-2);
     }
     {
-        auto r_1 = Region::create(r);
+        auto r_1 = Region::create(_r);
         const char* string_array[3] = {"using", "namespace", "typedef"};
         Vector<const char*>& vector = *Vector<const char*>::from_raw_array(r_1.page, (const char**)string_array, 3);
         if (*(vector.get(0)) != string_array[0])
@@ -27,10 +27,10 @@ void test_vector(Page* _rp)
     }
 }
 
-void test_array(Page* _rp)
+void test_array(Region& _pr)
 {
-    auto r = Region::create_from_page(_rp);
-    Array<int>& array = *Array<int>::create(r.page);
+    auto _r = Region::create(_pr);
+    Array<int>& array = *Array<int>::create(_r.page);
     // A quarter gigabyte worth of ints
     int huge_number = 1024 * 1024 * 64;
     for (int i = 1; i <= huge_number; i++)
@@ -42,58 +42,58 @@ void test_array(Page* _rp)
             exit(-6);
 }
 
-void test_string(Page* _rp) {
-    auto r = Region::create_from_page(_rp);
-    auto string = String::from_c_string(r.page, "Hello world!");
+void test_string(Region& _pr) {
+    auto _r = Region::create(_pr);
+    auto string = String::from_c_string(_r.page, "Hello world!");
     auto length = string->get_length();
     if (length != 12)
         exit(-7);
-    auto long_string = String::from_c_string(r.page, "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890");
+    auto long_string = String::from_c_string(_r.page, "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890");
     if (long_string->get_length() != 130)
         exit(-8);
-    auto c_string = long_string->to_c_string(r.page);
-    auto string_c = String::from_c_string(r.page, c_string);
+    auto c_string = long_string->to_c_string(_r.page);
+    auto string_c = String::from_c_string(_r.page, c_string);
 
-    auto semi = *String::from_c_string(r.page, ";");
-    auto dot = *String::from_c_string(r.page, ".");
+    auto semi = *String::from_c_string(_r.page, ";");
+    auto dot = *String::from_c_string(_r.page, ".");
     if (semi.equals(dot))
         exit(-9);
-    auto semi2 = *String::from_c_string(r.page, ";");
+    auto semi2 = *String::from_c_string(_r.page, ";");
     if (!semi.equals(semi2))
         exit(-10);
 }
 
-void test_string_builder(Page* _rp) {
-    auto r = Region::create_from_page(_rp);
-    StringBuilder& string_builder = *StringBuilder::create(r.page);
+void test_string_builder(Region& _pr) {
+    auto _r = Region::create(_pr);
+    StringBuilder& string_builder = *StringBuilder::create(_r.page);
     auto length = string_builder.get_length();
     if (length != 0)
         exit(-11);
     string_builder.append_character('a');
     string_builder.append_character('b');
     string_builder.append_character('c');
-    if (!string_builder.to_string(r.page)->equals(*String::from_c_string(r.page, "abc")))
+    if (!string_builder.to_string(_r.page)->equals(*String::from_c_string(_r.page, "abc")))
         exit(-12);
     if (string_builder.get_length() != 3)
         exit(-13);
 
-    StringBuilder& string_builder2 = *StringBuilder::from_character(r.page, 'd');
+    StringBuilder& string_builder2 = *StringBuilder::from_character(_r.page, 'd');
     string_builder2.append_character('e');
     string_builder2.append_character('f');
     string_builder2.append_character('g');
-    if (!string_builder2.to_string(r.page)->equals(*String::from_c_string(r.page, "defg")))
+    if (!string_builder2.to_string(_r.page)->equals(*String::from_c_string(_r.page, "defg")))
         exit(-14);
     if (string_builder2.get_length() != 4)
         exit(-15);
 }
 
-void test_list(Page* _rp) {
-    auto r = Region::create_from_page(_rp);
-    List<int>& list = *List<int>::create(r.page);
+void test_list(Region& _pr) {
+    auto _r = Region::create(_pr);
+    List<int>& list = *List<int>::create(_r.page);
 
     int huge_number = 1024 * 1024 * 62;
     for (int i = 1; i <= huge_number ; i++)
-        list.add(r.page, i);
+        list.add(_r.page, i);
 
     auto iterator = list.get_iterator();
     for (int i = huge_number; i >= 1; i--)
@@ -107,56 +107,65 @@ void test_list(Page* _rp) {
     }
 }
 
-void test_hash_set(Page* _rp) {
-    auto r = Region::create_from_page(_rp);
+void test_hash_set(Region& _pr) {
+    auto _r = Region::create(_pr);
 
-    Array<String>& array = *Array<String>::create(r.page);
-    array.add(*String::from_c_string(r.page, "using"));
-    array.add(*String::from_c_string(r.page, "namespace"));
-    array.add(*String::from_c_string(r.page, "typedef"));
-    Vector<String>& vector = *Vector<String>::from_array(r.page, array);
-    HashSetBuilder<String>& keywords = *HashSetBuilder<String>::from_vector(r.page, vector);
-    if (!keywords.contains(*String::from_c_string(r.page, "using")))
+    Array<String>& array = *Array<String>::create(_r.page);
+    array.add(*String::from_c_string(_r.page, "using"));
+    array.add(*String::from_c_string(_r.page, "namespace"));
+    array.add(*String::from_c_string(_r.page, "typedef"));
+    Vector<String>& vector = *Vector<String>::from_array(_r.page, array);
+    HashSetBuilder<String>& keywords_builder = *HashSetBuilder<String>::from_vector(_r.page, vector);
+    if (!keywords_builder.contains(*String::from_c_string(_r.page, "using")))
         exit (-18);
-    if (!keywords.contains(*String::from_c_string(r.page, "namespace")))
+    if (!keywords_builder.contains(*String::from_c_string(_r.page, "namespace")))
+        exit (-18);
+    if (!keywords_builder.contains(*String::from_c_string(_r.page, "typedef")))
+        exit (-18);
+    if (keywords_builder.contains(*String::from_c_string(_r.page, "nix")))
+        exit (-18);
+    HashSet<String>& keywords = *HashSet<String>::from_hash_set_builder(_r, _r.page, keywords_builder);
+    if (!keywords.contains(*String::from_c_string(_r.page, "using")))
         exit (-19);
-    if (!keywords.contains(*String::from_c_string(r.page, "typedef")))
-        exit (-20);
-    if (keywords.contains(*String::from_c_string(r.page, "nix")))
-        exit (-21);
+    if (!keywords.contains(*String::from_c_string(_r.page, "namespace")))
+        exit (-19);
+    if (!keywords.contains(*String::from_c_string(_r.page, "typedef")))
+        exit (-19);
+    if (keywords.contains(*String::from_c_string(_r.page, "nix")))
+        exit (-19);
 }
 
-void test_hash_map(Page* _rp) {
+void test_hash_map(Region& _pr) {
+    auto _r = Region::create(_pr);
     {
-        auto r = Region::create_from_page(_rp);
-
-        Array<KeyValuePair<String, int>>& array = *Array<KeyValuePair<String, int>>::create(r.page);
-        array.add(KeyValuePair<String, int> { .key = *String::from_c_string(r.page, "using"), .value = 1 });
-        array.add(KeyValuePair<String, int> { .key = *String::from_c_string(r.page, "namespace"), .value = 2 });
-        array.add(KeyValuePair<String, int> { .key = *String::from_c_string(r.page, "typedef"), .value = 3 });
-        Vector<KeyValuePair<String, int>>& vector = *Vector<KeyValuePair<String, int>>::from_array(r.page, array);
-        HashMapBuilder<String, int>& keywords = *HashMapBuilder<String, int>::from_vector(r.page, vector);
-        if (!keywords.contains(*String::from_c_string(r.page, "using")))
+        auto _r_1 = Region::create(_r);
+        Array<KeyValuePair<String, int>>& array = *Array<KeyValuePair<String, int>>::create(_r_1.page);
+        array.add(KeyValuePair<String, int> { .key = *String::from_c_string(_r_1.page, "using"), .value = 1 });
+        array.add(KeyValuePair<String, int> { .key = *String::from_c_string(_r_1.page, "namespace"), .value = 2 });
+        array.add(KeyValuePair<String, int> { .key = *String::from_c_string(_r_1.page, "typedef"), .value = 3 });
+        Vector<KeyValuePair<String, int>>& vector = *Vector<KeyValuePair<String, int>>::from_array(_r_1.page, array);
+        HashMapBuilder<String, int>& keywords = *HashMapBuilder<String, int>::from_vector(_r_1.page, vector);
+        if (!keywords.contains(*String::from_c_string(_r_1.page, "using")))
             exit (-18);
-        if (!keywords.contains(*String::from_c_string(r.page, "namespace")))
+        if (!keywords.contains(*String::from_c_string(_r_1.page, "namespace")))
             exit (-19);
-        if (!keywords.contains(*String::from_c_string(r.page, "typedef")))
+        if (!keywords.contains(*String::from_c_string(_r_1.page, "typedef")))
             exit (-20);
-        if (keywords.contains(*String::from_c_string(r.page, "nix")))
+        if (keywords.contains(*String::from_c_string(_r_1.page, "nix")))
             exit (-21);
-        if (*keywords[*String::from_c_string(r.page, "using")] != 1)
+        if (*keywords[*String::from_c_string(_r_1.page, "using")] != 1)
             exit (-22);
-        if (*keywords[*String::from_c_string(r.page, "namespace")] != 2)
+        if (*keywords[*String::from_c_string(_r_1.page, "namespace")] != 2)
             exit (-23);
-        if (*keywords[*String::from_c_string(r.page, "typedef")] != 3)
+        if (*keywords[*String::from_c_string(_r_1.page, "typedef")] != 3)
             exit (-24);
-        if (keywords[*String::from_c_string(r.page, "nix")] != nullptr)
+        if (keywords[*String::from_c_string(_r_1.page, "nix")] != nullptr)
             exit (-25);
     }
     {
-        auto r = Region::create_from_page(_rp);
-        HashMapBuilder<String, size_t>& map = *HashMapBuilder<String, size_t>::create(r.page);
-        HashSetBuilder<String>& set = *HashSetBuilder<String>::create(r.page);
+        auto _r_1 = Region::create(_r);
+        HashMapBuilder<String, size_t>& map = *HashMapBuilder<String, size_t>::create(_r_1.page);
+        HashSetBuilder<String>& set = *HashSetBuilder<String>::create(_r_1.page);
         for (char i = 'A'; i <= 'Z'; i++)
         {
             for (char j = 'a'; j <= 'z'; j++)
@@ -165,13 +174,13 @@ void test_hash_map(Page* _rp) {
                 {
                     for (char l = '!'; l <= '/'; l++)
                     {
-                        Region r_1 = Region::create(r);
-                        auto sb = StringBuilder::from_character(r_1.page, i);
+                        Region _r_2 = Region::create(_r_1);
+                        auto sb = StringBuilder::from_character(_r_2.page, i);
                         sb->append_character(j);
                         sb->append_character(k);
                         sb->append_character(l);
-                        map.add(*sb->to_string(r.page), (size_t)i * j * k * l);
-                        set.add(*sb->to_string(r.page));
+                        map.add(*sb->to_string(_r_1.page), (size_t)i * j * k * l);
+                        set.add(*sb->to_string(_r_1.page));
                     }
                 }
             }
@@ -184,12 +193,12 @@ void test_hash_map(Page* _rp) {
                 {
                     for (char l = '!'; l <= '/'; l++)
                     {
-                        Region r_1 = Region::create(r);
-                        auto sb = StringBuilder::from_character(r_1.page, i);
+                        Region _r_2 = Region::create(_r_1);
+                        auto sb = StringBuilder::from_character(_r_2.page, i);
                         sb->append_character(j);
                         sb->append_character(k);
                         sb->append_character(l);
-                        String& theString = *(sb->to_string(r.page));
+                        String& theString = *(sb->to_string(_r_1.page));
                          if (!set.contains(theString))
                              exit(-26);
                         if (!map.contains(theString))
@@ -208,12 +217,13 @@ int main(int argc, char** argv)
     auto heap = Heap::create();
     auto root_stack_bucket = StackBucket::create(&heap);
     auto root_page = Page::get(root_stack_bucket);
+    auto region = Region::create_from_page(root_page);
 
-    test_vector(root_page);
-    test_array(root_page);
-    test_string(root_page);
-    test_string_builder(root_page);
-    test_list(root_page);
-    test_hash_set(root_page);
-    test_hash_map(root_page);
+    test_vector(region);
+    test_array(region);
+    test_string(region);
+    test_string_builder(region);
+    test_list(region);
+    test_hash_set(region);
+    test_hash_map(region);
 }

@@ -769,7 +769,7 @@ struct Lexer : Object {
         }
     }
 
-    String* parse_identifier(Region& _pr, Page* _rp, HashSetBuilder<String>& keywords) {
+    String* parse_identifier(Region& _pr, Page* _rp, HashSet<String>& keywords) {
         Region _r = Region::create(_pr);
         if (token->tag == Token::Empty)
             advance(_r);

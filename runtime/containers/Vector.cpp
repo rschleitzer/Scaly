@@ -56,6 +56,8 @@ template<class T> struct Vector : Object {
     }
 
     static Vector<T>* from_array(Page* _rp, Array<T>& array) {
+        if (array.length == 0)
+            return new(alignof(Vector<T>), _rp) Vector<T>(0);
         return Vector<T>::from_raw_array(_rp, array.vector->data, array.length);
     }
 

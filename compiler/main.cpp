@@ -211,6 +211,4 @@ int main(int argc, char** argv) {
     test_parser(region);
     test_generator(region);
     test_compiler(region);
-
-    return 0;
 }

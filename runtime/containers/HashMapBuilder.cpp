@@ -36,8 +36,6 @@ struct HashMapBuilder : Object {
     {
         auto hash_size = get_prime(size);
         this->slots_page = Page::get(this)->allocate_exclusive_page();
-        if (hash_size < 97)
-            hash_size = 97;
         Vector<List<Slot<KeyValuePair<K, V>>>>* slots = Vector<List<Slot<KeyValuePair<K, V>>>>::create(this->slots_page, hash_size);
 
         if (this->slots != nullptr) {

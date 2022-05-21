@@ -72,24 +72,22 @@ struct HashSetBuilder : Object {
     }
 
     static HashSetBuilder<T>* from_vector(Page* _rp, Vector<T>& vector) {
-        auto hash_set = create(_rp);
+        auto hash_set_builder = create(_rp);
         if (vector.length > 0)
         {
-            hash_set->reallocate(vector.length);
+            hash_set_builder->reallocate(vector.length);
             for (size_t i = 0; i < vector.length; i++) {
-                hash_set->add_internal(*(vector[i]));
+                hash_set_builder->add_internal(*(vector[i]));
             }
         }
 
-        return hash_set;
+        return hash_set_builder;
     }
 
     void reallocate(size_t size)
     {
         auto hash_size = get_prime(size);
         this->slots_page = Page::get(this)->allocate_exclusive_page();
-        if (hash_size < 97)
-            hash_size = 97;
         Vector<List<Slot<T>>>* slots = Vector<List<Slot<T>>>::create(this->slots_page, hash_size);
 
         if (this->slots != nullptr) {
