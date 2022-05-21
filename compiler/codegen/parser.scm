@@ -11,14 +11,12 @@ struct Parser : Object {
       : lexer(*new(alignof(Lexer), Page::get(this)) Lexer(deck)),
         file_name(*String::from_c_string(Page::get(this), \"\"))
     {
-        auto r = Region::create_from_page(Page::get(this));
-        Array<""String>& array = *Array<""String>::create(r.page);
+        auto _r = Region::create_from_page(Page::get(this));
+        HashSetBuilder<""String>& hash_set_builder = *HashSetBuilder<""String>::create(_r.page);
 "   (apply-to-selected-children "keyword" (lambda (keyword) ($
-"        array.add(*String::from_c_string(r.page, \""(id keyword)"\"));
+"        hash_set_builder.add(*String::from_c_string(Page::get(this), \""(id keyword)"\"));
 "   )))
-"        Vector<""String>& vector = *Vector<""String>::from_array(r.page, array);
-        keywords = *HashSet<""String>::from_vector(Page::get(this), vector);
-
+"        keywords = *HashSet<""String>::from_hash_set_builder(_r, Page::get(this), hash_set_builder);
     }
 "
     (apply-to-selected-children "syntax" (lambda (syntax) (if (program? syntax) "" ($

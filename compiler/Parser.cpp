@@ -1118,7 +1118,6 @@ struct Parser : Object {
         hash_set_builder.add(*String::from_c_string(Page::get(this), "var"));
         hash_set_builder.add(*String::from_c_string(Page::get(this), "while"));
         keywords = *HashSet<String>::from_hash_set_builder(_r, Page::get(this), hash_set_builder);
-
     }
 
     Result<FileSyntax*, ParserError*> parse_file(Region& _pr, Page* _rp, Page* _ep, String& file_name) {
