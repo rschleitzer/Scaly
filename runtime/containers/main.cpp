@@ -161,7 +161,7 @@ void test_hash_map(Region& _pr) {
             exit (-24);
         if (keywords_builder[*String::from_c_string(_r_1.page, "nix")] != nullptr)
             exit (-25);
-        HashMap<String, int>& keywords = *HashMap<String, int>::from_hash_map_builder(_r, _r.page, keywords_builder);
+        HashMap<String, int>& keywords = *HashMap<String, int>::from_hash_map_builder(_r_1, _r_1.page, keywords_builder);
         if (!keywords.contains(*String::from_c_string(_r_1.page, "using")))
             exit (-18);
         if (!keywords.contains(*String::from_c_string(_r_1.page, "namespace")))
