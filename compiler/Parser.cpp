@@ -1117,6 +1117,7 @@ struct Parser : Object {
 
     Result<FileSyntax*, ParserError*> parse_file(Region& _pr, Page* _rp, Page* _ep) {
         auto _r = Region::create(_pr);
+        auto start = this->lexer.previous_position;
 
         auto declarations_result = this->parse_declaration_list(_r, _rp, _ep);
         if (declarations_result.tag == Result<Vector<DeclarationSyntax>*, ParserError*>::Error)
@@ -1127,14 +1128,10 @@ struct Parser : Object {
         if (statements_result.tag == Result<Vector<StatementSyntax>*, ParserError*>::Error)
             return Result<FileSyntax*, ParserError*> { .tag = Result<FileSyntax*, ParserError*>::Error, .error = statements_result.error };
         auto statements = statements_result.ok;
-        if (statements != nullptr) {
-            if (!this->is_at_end()) {
-                auto error_pos = this->lexer.previous_position;
-                return Result<FileSyntax*, ParserError*> { .tag = Result<FileSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*text.copy(_ep), error_pos, error_pos) };
-            };
-        };
 
-        auto ret = new(alignof(FileSyntax), _rp) FileSyntax(0, 0, declarations, statements);
+        auto end = this->lexer.position;
+
+        auto ret = new(alignof(FileSyntax), _rp) FileSyntax(start, end, declarations, statements);
 
         return Result<FileSyntax*, ParserError*> { .tag = Result<FileSyntax*, ParserError*>::Ok, .ok = ret };
     }

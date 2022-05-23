@@ -73,10 +73,8 @@ struct Parser : Object {
 "
             )
             ($ ; non-abstract syntax
-                (if (top? syntax) ""
 "        auto start = this->lexer.previous_position;
-"               )
-                (apply-to-children-of syntax (lambda (content) ($
+"               (apply-to-children-of syntax (lambda (content) ($
                    (if (string=? "syntax" (type content))
                         ($ ; non-terminals
 "
@@ -97,14 +95,6 @@ struct Parser : Object {
                                 )
 "        }
 "                           ))
-                            (if (and (top? syntax) (last-sibling? content)) ($
-"        if ("(property content)" != nullptr) {
-            if (!this->is_at_end()) {
-                auto error_pos = this->lexer.previous_position;
-                return Result<"(id syntax)"Syntax*, ParserError*> { .tag = Result<"(id syntax)"Syntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*text.copy(_ep), error_pos, error_pos) };
-            };
-        };
-"                           )"")
                         )
                         ($ ; terminals
 "
@@ -168,13 +158,10 @@ struct Parser : Object {
                         ) ; terminal
                     ) ; syntax or terminal
                 ))) ; apply to children of syntax
-
-                (if (top? syntax) ""
 "
         auto end = this->lexer.position;
-"               )
-"
-        auto ret = new(alignof("(id syntax)"Syntax), _rp) "(id syntax)"Syntax("(if (top? syntax) "0, 0" "start, end")
+
+        auto ret = new(alignof("(id syntax)"Syntax), _rp) "(id syntax)"Syntax(start, end"
                 (apply-to-property-children-of syntax (lambda (content) ($
                     ", "(case (type content) (("literal") "*") (else ""))(property content)
                 )))

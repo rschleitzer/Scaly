@@ -2,7 +2,7 @@
 
   <grammar>
 
-    <syntax id = File                                           top
+    <syntax id = File
         <content link = Declaration           multiple optional property = declarations
         <content link = Statement             multiple optional property = statements
 
