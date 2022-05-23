@@ -4,12 +4,12 @@ using namespace scaly::containers;
 
 struct Parser : Object {
     Lexer lexer;
-    String file_name;
+    String text;
     HashSet<""String> keywords;
 
-    Parser(String& deck)
-      : lexer(*new(alignof(Lexer), Page::get(this)) Lexer(deck)),
-        file_name(*String::from_c_string(Page::get(this), \"\"))
+    Parser(String text)
+      : lexer(*new(alignof(Lexer), Page::get(this)) Lexer(text)),
+        text(text)
     {
         auto _r = Region::create_from_page(Page::get(this));
         HashSetBuilder<""String>& hash_set_builder = *HashSetBuilder<""String>::create(_r.page);
@@ -49,7 +49,7 @@ struct Parser : Object {
     }
 "       )"")
 "
-    Result<"(id syntax)"Syntax*, ParserError*> parse_"(downcase-string (id syntax))"(Region& _pr, Page* _rp, Page* _ep"(if (top? syntax) ", String& file_name" "")") {
+    Result<"(id syntax)"Syntax*, ParserError*> parse_"(downcase-string (id syntax))"(Region& _pr, Page* _rp, Page* _ep"(if (top? syntax) ", String text" "")") {
         auto _r = Region::create(_pr);
 "
         (if (abstract? syntax)
@@ -92,7 +92,7 @@ struct Parser : Object {
 "            return Result<"(id syntax)"Syntax*, ParserError*> { .tag = Result<"(id syntax)"Syntax*, ParserError*>::Ok, .ok = nullptr };
 "                                   )
                                     ($
-"            return Result<"(id syntax)"Syntax*, ParserError*> { .tag = Result<"(id syntax)"Syntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(file_name, lexer.position) };
+"            return Result<"(id syntax)"Syntax*, ParserError*> { .tag = Result<"(id syntax)"Syntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*text.copy(_ep), start, lexer.position) };
 "                                   )
                                 )
 "        }
@@ -101,7 +101,7 @@ struct Parser : Object {
 "        if ("(property content)" != nullptr) {
             if (!this->is_at_end()) {
                 auto error_pos = this->lexer.previous_position;
-                return Result<"(id syntax)"Syntax*, ParserError*> { .tag = Result<"(id syntax)"Syntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError (file_name, lexer.position) };
+                return Result<"(id syntax)"Syntax*, ParserError*> { .tag = Result<"(id syntax)"Syntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*text.copy(_ep), error_pos, error_pos) };
             };
         };
 "                           )"")
@@ -133,7 +133,7 @@ struct Parser : Object {
 "                                               )
                                                 ($
 "
-            return Result<"(id syntax)"Syntax*, ParserError*> { .tag = Result<"(id syntax)"Syntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(file_name, lexer.position) };"
+            return Result<"(id syntax)"Syntax*, ParserError*> { .tag = Result<"(id syntax)"Syntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*text.copy(_ep), start, lexer.position) };"
                                                 )
                                             )
                                         )
@@ -174,7 +174,7 @@ struct Parser : Object {
         auto end = this->lexer.position;
 "               )
 "
-        auto ret = new(alignof("(id syntax)"Syntax), _rp) "(id syntax)"Syntax("(if (top? syntax) "file_name" "start, end")
+        auto ret = new(alignof("(id syntax)"Syntax), _rp) "(id syntax)"Syntax("(if (top? syntax) "*text.copy(_rp)" "start, end")
                 (apply-to-property-children-of syntax (lambda (content) ($
                     ", "(case (type content) (("literal") "*") (else ""))(property content)
                 )))

@@ -119,7 +119,7 @@ struct Lexer : Object {
     size_t previous_position;
     size_t position;
 
-    Lexer(String& deck) {
+    Lexer(String deck) {
         token = new(alignof(Token), Page::get(this)->allocate_exclusive_page()) Token(EmptyToken());
         token->tag = Token::Empty;
         character = nullptr;

@@ -190,9 +190,9 @@ void test_compiler(Region& _pr)
 {
     auto r = Region::create(_pr);
     if (compile_and_run_program(_pr, *String::from_c_string(r.page,
-" \n"
+"\n"
 "0"
-" \n"
+"\n"
     ),
      *Vector<String>::create(r.page, 0)
     ) != 0)

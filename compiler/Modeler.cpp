@@ -81,10 +81,11 @@ struct Model : Object {
 };
 
 struct ModelError : Object {
-    ModelError(String file_name, size_t position) : file_name(file_name), position(position) {}
-    ModelError(ParserError* parser_error) : file_name(parser_error->text), position(parser_error->position) {}
+    ModelError(String file_name, size_t position) : file_name(file_name), start(position), end(position) {}
+    ModelError(ParserError* parser_error) : file_name(parser_error->text), start(parser_error->start), end(parser_error->end) {}
     String file_name;
-    size_t position;
+    size_t start;
+    size_t end;
 };
 
 Result<Model*, ModelError*> build_model(Region& _pr, Page* _rp, Page* _ep, FileSyntax& file_syntax) {
