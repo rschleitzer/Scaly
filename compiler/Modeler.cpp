@@ -96,7 +96,7 @@ Result<Model*, ModelError*> build_model(Region& _pr, Page* _rp, Page* _ep, FileS
 Result<Model*, ModelError*> build_program_model(Region& _pr, Page* _rp, Page* _ep, String& program) {
     auto _r = Region::create(_pr);
     Parser& parser = *new (alignof(Parser), _r.page) Parser(program);
-    auto file_syntax_result = parser.parse_file(_r, _r.page, _r.page, *String::from_c_string(_r.page, "<test>"));
+    auto file_syntax_result = parser.parse_file(_r, _r.page, _r.page);
     if (file_syntax_result.tag == Result<FileSyntax*, ParserError*>::Error)
         return Result<Model*, ModelError*> { .tag = Result<Model*, ModelError*>::Error, .error = new(alignof(ModelError), _ep) ModelError(file_syntax_result.error) };
     auto model = build_model(_r, _rp, _ep, *file_syntax_result.ok);

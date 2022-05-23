@@ -49,7 +49,7 @@ struct Parser : Object {
     }
 "       )"")
 "
-    Result<"(id syntax)"Syntax*, ParserError*> parse_"(downcase-string (id syntax))"(Region& _pr, Page* _rp, Page* _ep"(if (top? syntax) ", String text" "")") {
+    Result<"(id syntax)"Syntax*, ParserError*> parse_"(downcase-string (id syntax))"(Region& _pr, Page* _rp, Page* _ep) {
         auto _r = Region::create(_pr);
 "
         (if (abstract? syntax)
@@ -174,7 +174,7 @@ struct Parser : Object {
         auto end = this->lexer.position;
 "               )
 "
-        auto ret = new(alignof("(id syntax)"Syntax), _rp) "(id syntax)"Syntax("(if (top? syntax) "*text.copy(_rp)" "start, end")
+        auto ret = new(alignof("(id syntax)"Syntax), _rp) "(id syntax)"Syntax("(if (top? syntax) "0, 0" "start, end")
                 (apply-to-property-children-of syntax (lambda (content) ($
                     ", "(case (type content) (("literal") "*") (else ""))(property content)
                 )))

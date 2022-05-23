@@ -99,13 +99,16 @@ struct RepeatSyntax;
 struct SizeOfSyntax; 
 
 struct ProgramSyntax : Object {
-    ProgramSyntax(Vector<FileSyntax>* files) : files(files) {}
+    ProgramSyntax(size_t start, size_t end, Vector<FileSyntax>* files) : start(start), end(end), files(files) {}
+    size_t start;
+    size_t end;
     Vector<FileSyntax>* files;
 };
 
 struct FileSyntax : Object {
-    FileSyntax(String file_name, Vector<DeclarationSyntax>* declarations, Vector<StatementSyntax>* statements) : file_name(file_name), declarations(declarations), statements(statements) {}
-    String file_name;
+    FileSyntax(size_t start, size_t end, Vector<DeclarationSyntax>* declarations, Vector<StatementSyntax>* statements) : start(start), end(end), declarations(declarations), statements(statements) {}
+    size_t start;
+    size_t end;
     Vector<DeclarationSyntax>* declarations;
     Vector<StatementSyntax>* statements;
 };
@@ -1120,7 +1123,7 @@ struct Parser : Object {
         keywords = *HashSet<String>::from_hash_set_builder(_r, Page::get(this), hash_set_builder);
     }
 
-    Result<FileSyntax*, ParserError*> parse_file(Region& _pr, Page* _rp, Page* _ep, String text) {
+    Result<FileSyntax*, ParserError*> parse_file(Region& _pr, Page* _rp, Page* _ep) {
         auto _r = Region::create(_pr);
 
         auto declarations_result = this->parse_declaration_list(_r, _rp, _ep);
@@ -1139,7 +1142,7 @@ struct Parser : Object {
             };
         };
 
-        auto ret = new(alignof(FileSyntax), _rp) FileSyntax(*text.copy(_rp), declarations, statements);
+        auto ret = new(alignof(FileSyntax), _rp) FileSyntax(0, 0, declarations, statements);
 
         return Result<FileSyntax*, ParserError*> { .tag = Result<FileSyntax*, ParserError*>::Ok, .ok = ret };
     }
