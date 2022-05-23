@@ -172,9 +172,9 @@ void test_lexer(Page* _rp) {
 
 void test_parser(Region& _pr)
 {
-    auto r = Region::create(_pr);
-    Parser& parser = *new (alignof(Parser), r.page) Parser(*String::from_c_string(r.page, "define a 1"));
-    auto file_syntax = parser.parse_file(r, r.page, r.page, *String::from_c_string(r.page, "foo.scaly"));
+    auto _r = Region::create(_pr);
+    Parser& parser = *new (alignof(Parser), _r.page) Parser(*String::from_c_string(_r.page, "define a 1"));
+    auto file_syntax = parser.parse_file(_r, _r.page, _r.page, *String::from_c_string(_r.page, "foo.scaly"));
     if (file_syntax.tag != Result<FileSyntax*, ParserError*>::Ok)
         exit(-1);
 }

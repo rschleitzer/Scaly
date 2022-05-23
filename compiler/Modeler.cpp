@@ -77,16 +77,28 @@ struct Function : Object {
 };
 
 struct Model : Object {
-    HashMapBuilder<String, List<Function>> functions; 
+    HashMap<String, List<Function>> functions; 
 };
 
 struct ModelError : Object {
     ModelError(String file_name, size_t position) : file_name(file_name), position(position) {}
+    ModelError(ParserError* parser_error) : file_name(parser_error->text), position(parser_error->position) {}
     String file_name;
     size_t position;
 };
 
+Result<Model*, ModelError*> build_model(Region& _pr, Page* _rp, Page* _ep, FileSyntax& file_syntax) {
+    auto ret = new(alignof(Model), _rp) Model();
+    return Result<Model*, ModelError*> { .tag = Result<Model*, ModelError*>::Ok, .ok = ret };
+}
+
 Result<Model*, ModelError*> build_program_model(Region& _pr, Page* _rp, Page* _ep, String& program) {
+    auto _r = Region::create(_pr);
+    Parser& parser = *new (alignof(Parser), _r.page) Parser(program);
+    auto file_syntax_result = parser.parse_file(_r, _r.page, _r.page, *String::from_c_string(_r.page, "<test>"));
+    if (file_syntax_result.tag == Result<FileSyntax*, ParserError*>::Error)
+        return Result<Model*, ModelError*> { .tag = Result<Model*, ModelError*>::Error, .error = new(alignof(ModelError), _ep) ModelError(file_syntax_result.error) };
+    auto model = build_model(_r, _rp, _ep, *file_syntax_result.ok);
     auto ret = new(alignof(Model), _rp) Model();
     return Result<Model*, ModelError*> { .tag = Result<Model*, ModelError*>::Ok, .ok = ret };
 }
