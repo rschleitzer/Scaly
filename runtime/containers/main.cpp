@@ -144,7 +144,24 @@ void test_hash_map(Region& _pr) {
         array.add(KeyValuePair<String, int> { .key = *String::from_c_string(_r_1.page, "namespace"), .value = 2 });
         array.add(KeyValuePair<String, int> { .key = *String::from_c_string(_r_1.page, "typedef"), .value = 3 });
         Vector<KeyValuePair<String, int>>& vector = *Vector<KeyValuePair<String, int>>::from_array(_r_1.page, array);
-        HashMapBuilder<String, int>& keywords = *HashMapBuilder<String, int>::from_vector(_r_1.page, vector);
+        HashMapBuilder<String, int>& keywords_builder = *HashMapBuilder<String, int>::from_vector(_r_1.page, vector);
+        if (!keywords_builder.contains(*String::from_c_string(_r_1.page, "using")))
+            exit (-18);
+        if (!keywords_builder.contains(*String::from_c_string(_r_1.page, "namespace")))
+            exit (-19);
+        if (!keywords_builder.contains(*String::from_c_string(_r_1.page, "typedef")))
+            exit (-20);
+        if (keywords_builder.contains(*String::from_c_string(_r_1.page, "nix")))
+            exit (-21);
+        if (*keywords_builder[*String::from_c_string(_r_1.page, "using")] != 1)
+            exit (-22);
+        if (*keywords_builder[*String::from_c_string(_r_1.page, "namespace")] != 2)
+            exit (-23);
+        if (*keywords_builder[*String::from_c_string(_r_1.page, "typedef")] != 3)
+            exit (-24);
+        if (keywords_builder[*String::from_c_string(_r_1.page, "nix")] != nullptr)
+            exit (-25);
+        HashMap<String, int>& keywords = *HashMap<String, int>::from_hash_map_builder(_r, _r.page, keywords_builder);
         if (!keywords.contains(*String::from_c_string(_r_1.page, "using")))
             exit (-18);
         if (!keywords.contains(*String::from_c_string(_r_1.page, "namespace")))
