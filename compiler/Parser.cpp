@@ -1,7 +1,6 @@
 namespace scaly {
 namespace compiler {
 
-struct ProgramSyntax; 
 struct FileSyntax; 
 struct DeclarationSyntax; 
 struct PrivateSyntax; 
@@ -97,13 +96,6 @@ struct LabelSyntax;
 struct WhileSyntax; 
 struct RepeatSyntax; 
 struct SizeOfSyntax; 
-
-struct ProgramSyntax : Object {
-    ProgramSyntax(size_t start, size_t end, Vector<FileSyntax>* files) : start(start), end(end), files(files) {}
-    size_t start;
-    size_t end;
-    Vector<FileSyntax>* files;
-};
 
 struct FileSyntax : Object {
     FileSyntax(size_t start, size_t end, Vector<DeclarationSyntax>* declarations, Vector<StatementSyntax>* statements) : start(start), end(end), declarations(declarations), statements(statements) {}

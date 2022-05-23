@@ -105,9 +105,6 @@
 (define (top? node)
     (string=? "top" (attribute-string "top" node)))
 
-(define (program? node)
-    (string=? "program" (attribute-string "program" node)))
-
 (define (property node)
     (attribute-string "property" node))
 

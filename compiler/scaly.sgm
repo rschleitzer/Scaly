@@ -2,9 +2,6 @@
 
   <grammar>
 
-    <syntax id = Program                                        program
-        <content link = File                  multiple          property = files
-
     <syntax id = File                                           top
         <content link = Declaration           multiple optional property = declarations
         <content link = Statement             multiple optional property = statements

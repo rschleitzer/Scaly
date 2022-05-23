@@ -19,7 +19,7 @@ struct Parser : Object {
 "        keywords = *HashSet<""String>::from_hash_set_builder(_r, Page::get(this), hash_set_builder);
     }
 "
-    (apply-to-selected-children "syntax" (lambda (syntax) (if (program? syntax) "" ($
+    (apply-to-selected-children "syntax" (lambda (syntax) ($
         (if (multiple? syntax) ($
 "
     Result<""Vector<"(id syntax)"Syntax>*, ParserError*> parse_"(downcase-string (id syntax))"_list(Region& _pr, Page* _rp, Page* _ep) {
@@ -185,7 +185,7 @@ struct Parser : Object {
             ) ; $
         ) ; abstract or not
 "    }
-"   ))))
+"   )))
 "
     bool is_at_end() {
         return this->lexer.is_at_end();
