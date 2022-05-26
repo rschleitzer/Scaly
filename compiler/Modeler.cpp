@@ -156,6 +156,8 @@ Result<FunctionSyntax*, ParserError*> parse_main_function_stub(Region& _pr, Page
 Result<Model*, ModelError*> build_program_model(Region& _pr, Page* _rp, Page* _ep, String& program) {
     auto _r = Region::create(_pr);
 
+    Array<DeclarationSyntax>* declarations = Array<DeclarationSyntax>::create(_r.page);
+    
     // Parse the scaly module inclusion
     Parser& parser_module = *new(alignof(Parser), _r.page) Parser(*String::from_c_string(_r.page, "module scaly"));
     auto module_syntax_result = parser_module.parse_module(_r, _r.page, _r.page);
@@ -165,17 +167,17 @@ Result<Model*, ModelError*> build_program_model(Region& _pr, Page* _rp, Page* _e
     DeclarationSyntax* module_declaration = nullptr;
     if (module_syntax != nullptr)
         module_declaration =  new (alignof(DeclarationSyntax), _r.page) DeclarationSyntax(ModuleSyntax(*module_syntax));
+    declarations->add(*module_declaration);
 
     // Parse the declarations of the program
     Parser& parser = *new(alignof(Parser), _r.page) Parser(program);
-    Array<DeclarationSyntax>* array = Array<DeclarationSyntax>::create(_r.page);
     while(true) {
         auto node_result = parser.parse_declaration(_r, _r.page, _r.page);
         if (node_result.tag == Result<DeclarationSyntax*, ParserError*>::Error)
             return Result<Model*, ModelError*> { .tag = Result<Model*, ModelError*>::Error, .error = new(alignof(ModelError), _ep) ModelError(node_result.error) };
         auto node = node_result.ok;
         if (node != nullptr) {
-            array->add(*node);
+            declarations->add(*node);
         } else {
             break;
         }
@@ -189,9 +191,35 @@ Result<Model*, ModelError*> build_program_model(Region& _pr, Page* _rp, Page* _e
     DeclarationSyntax* main_function_declaration = nullptr;
     if (main_function_syntax != nullptr)
         main_function_declaration =  new (alignof(DeclarationSyntax), _r.page) DeclarationSyntax(FunctionSyntax(*main_function_syntax));
+    declarations->add(*main_function_declaration);
 
-    auto declarations = Vector<DeclarationSyntax>::from_array(_rp, *array);
-    auto model_result = build_model(_r, _rp, _ep, *declarations);
+    // Parse the statements of the program and put them into the function implementation
+    auto start = parser.lexer.previous_position;
+    Array<StatementSyntax>* statements = Array<StatementSyntax>::create(_r.page);
+    while(true) {
+        auto node_result = parser.parse_statement(_r, _r.page, _r.page);
+        if (node_result.tag == Result<StatementSyntax*, ParserError*>::Error)
+            return Result<Model*, ModelError*> { .tag = Result<Model*, ModelError*>::Error, .error = new(alignof(ModelError), _ep) ModelError(node_result.error) };
+        auto node = node_result.ok;
+        if (node != nullptr) {
+            statements->add(*node);
+        } else {
+            break;
+        }
+    }
+    auto end = parser.lexer.position;
+    auto block = new(alignof(BlockSyntax), _r.page) BlockSyntax(start, end, Vector<StatementSyntax>::from_array(_r.page, *statements));
+    auto block_expression = new (alignof(ExpressionSyntax), _r.page) ExpressionSyntax(BlockSyntax(*block));
+    auto operand = new(alignof(OperandSyntax), _r.page) OperandSyntax(start, end, block_expression, nullptr);
+    Array<OperandSyntax>* operands_array = Array<OperandSyntax>::create(_r.page);;
+    operands_array->add(*operand);
+    auto operation = new(alignof(OperationSyntax), _r.page) OperationSyntax(start, end, Vector<OperandSyntax>::from_array(_r.page, *operands_array));
+    auto action = new (alignof(ActionSyntax), _r.page) ActionSyntax(OperationSyntax(*operation));
+    auto implementation = new (alignof(ImplementationSyntax), _r.page) ImplementationSyntax(ActionSyntax(*action));
+    main_function_syntax->routine->implementation = implementation;
+
+
+    auto model_result = build_model(_r, _r.page, _ep, *Vector<DeclarationSyntax>::from_array(_r.page, *declarations));
     if (model_result.tag == Result<Model*, ModelError*>::Error)
         return model_result;
     auto model = model_result.ok;
