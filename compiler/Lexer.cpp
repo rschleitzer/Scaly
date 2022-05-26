@@ -86,7 +86,7 @@ struct Token : Object {
     Token(InvalidToken invalidToken) : tag(Invalid) {}
     Token(IdentifierToken identifierToken) : tag(Identifier), identifierToken(identifierToken) {}
     Token(AttributeToken attributeToken) : tag(Attribute), attributeToken(attributeToken) {}
-    Token(PunctuationToken punctuationToken) : tag(Colon), punctuationToken(punctuationToken) {}
+    Token(PunctuationToken punctuationToken) : tag(Punctuation), punctuationToken(punctuationToken) {}
     Token(LiteralToken literalToken) : tag(Literal), literalToken(literalToken) {}
     Token(LineFeedToken lineFeedToken) : tag(LineFeed) {}
     Token(ColonToken colonToken) : tag(Colon) {}

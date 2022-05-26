@@ -103,7 +103,7 @@ struct Parser : Object {
                                 (("keyword" "punctuation" "colon" "semicolon") ($ "success_"(if (property content) (property content) ($ (case (type content) (("colon" "semicolon") (type content)) (else (link content)))"_"(number->string (child-number content))))))
                                 (else (property content))
                             )
-            " = this->lexer.parse_"(type content)"(_r, _r.page"
+            " = this->lexer.parse_"(type content)"(_r, _rp"
                             (case (type content)
                                 (("keyword")     ($ ", *String::from_c_string(_r.page, \""(link content)"\")"))
                                 (("punctuation") ($ ", *String::from_c_string(_r.page, \""(value (element-with-id (link content)))"\")"))

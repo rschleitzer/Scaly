@@ -1291,7 +1291,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_private_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "private"));
+        auto success_private_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "private"));
         if (!success_private_1) {
 
                 return Result<PrivateSyntax*, ParserError*> { .tag = Result<PrivateSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -1417,7 +1417,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_define_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "define"));
+        auto success_define_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "define"));
         if (!success_define_1) {
 
                 return Result<DefinitionSyntax*, ParserError*> { .tag = Result<DefinitionSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -1431,7 +1431,7 @@ struct Parser : Object {
             return Result<DefinitionSyntax*, ParserError*> { .tag = Result<DefinitionSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*text.copy(_ep), start, lexer.position) };
         }
 
-        auto success_colon_3 = this->lexer.parse_colon(_r, _r.page);
+        auto success_colon_3 = this->lexer.parse_colon(_r, _rp);
         if (!success_colon_3) {
 
         }
@@ -1460,7 +1460,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto name = this->lexer.parse_identifier(_r, _r.page, this->keywords);
+        auto name = this->lexer.parse_identifier(_r, _rp, this->keywords);
         if (name != nullptr) {
             if (!this->is_identifier(*name)) {
                 return Result<NameSyntax*, ParserError*> { .tag = Result<NameSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -1514,13 +1514,13 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_dot_1 = this->lexer.parse_punctuation(_r, _r.page, *String::from_c_string(_r.page, "."));
+        auto success_dot_1 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, "."));
         if (!success_dot_1) {
 
                 return Result<ExtensionSyntax*, ParserError*> { .tag = Result<ExtensionSyntax*, ParserError*>::Ok, .ok = nullptr };
         }
 
-        auto name = this->lexer.parse_identifier(_r, _r.page, this->keywords);
+        auto name = this->lexer.parse_identifier(_r, _rp, this->keywords);
         if (name != nullptr) {
             if (!this->is_identifier(*name)) {
             return Result<ExtensionSyntax*, ParserError*> { .tag = Result<ExtensionSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*text.copy(_ep), start, lexer.position) };
@@ -1567,7 +1567,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto attribute = this->lexer.parse_attribute(_r, _r.page);
+        auto attribute = this->lexer.parse_attribute(_r, _rp);
         if (attribute == nullptr) {
 
                 return Result<AttributeSyntax*, ParserError*> { .tag = Result<AttributeSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -1677,7 +1677,7 @@ struct Parser : Object {
             return Result<ClassSyntax*, ParserError*> { .tag = Result<ClassSyntax*, ParserError*>::Ok, .ok = nullptr };
         }
 
-        auto success_colon_2 = this->lexer.parse_colon(_r, _r.page);
+        auto success_colon_2 = this->lexer.parse_colon(_r, _rp);
         if (!success_colon_2) {
 
         }
@@ -1717,18 +1717,18 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_union_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "union"));
+        auto success_union_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "union"));
         if (!success_union_1) {
 
                 return Result<UnionSyntax*, ParserError*> { .tag = Result<UnionSyntax*, ParserError*>::Ok, .ok = nullptr };
         }
 
-        auto success_colon_2 = this->lexer.parse_colon(_r, _r.page);
+        auto success_colon_2 = this->lexer.parse_colon(_r, _rp);
         if (!success_colon_2) {
 
         }
 
-        auto success_left_paren_3 = this->lexer.parse_punctuation(_r, _r.page, *String::from_c_string(_r.page, "("));
+        auto success_left_paren_3 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, "("));
         if (!success_left_paren_3) {
 
             return Result<UnionSyntax*, ParserError*> { .tag = Result<UnionSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*text.copy(_ep), start, lexer.position) };        }
@@ -1741,12 +1741,12 @@ struct Parser : Object {
             return Result<UnionSyntax*, ParserError*> { .tag = Result<UnionSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*text.copy(_ep), start, lexer.position) };
         }
 
-        auto success_right_paren_5 = this->lexer.parse_punctuation(_r, _r.page, *String::from_c_string(_r.page, ")"));
+        auto success_right_paren_5 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, ")"));
         if (!success_right_paren_5) {
 
             return Result<UnionSyntax*, ParserError*> { .tag = Result<UnionSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*text.copy(_ep), start, lexer.position) };        }
 
-        auto success_colon_6 = this->lexer.parse_colon(_r, _r.page);
+        auto success_colon_6 = this->lexer.parse_colon(_r, _rp);
         if (!success_colon_6) {
 
         }
@@ -1796,7 +1796,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto name = this->lexer.parse_identifier(_r, _r.page, this->keywords);
+        auto name = this->lexer.parse_identifier(_r, _rp, this->keywords);
         if (name != nullptr) {
             if (!this->is_identifier(*name)) {
                 return Result<TagSyntax*, ParserError*> { .tag = Result<TagSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -1858,7 +1858,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_colon_1 = this->lexer.parse_colon(_r, _r.page);
+        auto success_colon_1 = this->lexer.parse_colon(_r, _rp);
         if (!success_colon_1) {
 
         }
@@ -1871,7 +1871,7 @@ struct Parser : Object {
             return Result<VariantSyntax*, ParserError*> { .tag = Result<VariantSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*text.copy(_ep), start, lexer.position) };
         }
 
-        auto success_colon_3 = this->lexer.parse_colon(_r, _r.page);
+        auto success_colon_3 = this->lexer.parse_colon(_r, _rp);
         if (!success_colon_3) {
 
         }
@@ -1881,7 +1881,7 @@ struct Parser : Object {
             return Result<VariantSyntax*, ParserError*> { .tag = Result<VariantSyntax*, ParserError*>::Error, .error = body_result.error };
         auto body = body_result.ok;
 
-        auto success_colon_5 = this->lexer.parse_colon(_r, _r.page);
+        auto success_colon_5 = this->lexer.parse_colon(_r, _rp);
         if (!success_colon_5) {
 
         }
@@ -1897,7 +1897,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto literal = this->lexer.parse_literal(_r, _r.page);
+        auto literal = this->lexer.parse_literal(_r, _rp);
         if (literal == nullptr) {
 
                 return Result<EnumSyntax*, ParserError*> { .tag = Result<EnumSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -1922,7 +1922,7 @@ struct Parser : Object {
             return Result<ConstantSyntax*, ParserError*> { .tag = Result<ConstantSyntax*, ParserError*>::Ok, .ok = nullptr };
         }
 
-        auto success_colon_2 = this->lexer.parse_colon(_r, _r.page);
+        auto success_colon_2 = this->lexer.parse_colon(_r, _rp);
         if (!success_colon_2) {
 
         }
@@ -1938,7 +1938,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_delegate_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "delegate"));
+        auto success_delegate_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "delegate"));
         if (!success_delegate_1) {
 
                 return Result<DelegateSyntax*, ParserError*> { .tag = Result<DelegateSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -1975,7 +1975,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_left_paren_1 = this->lexer.parse_punctuation(_r, _r.page, *String::from_c_string(_r.page, "("));
+        auto success_left_paren_1 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, "("));
         if (!success_left_paren_1) {
 
                 return Result<StructureSyntax*, ParserError*> { .tag = Result<StructureSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -1986,7 +1986,7 @@ struct Parser : Object {
             return Result<StructureSyntax*, ParserError*> { .tag = Result<StructureSyntax*, ParserError*>::Error, .error = members_result.error };
         auto members = members_result.ok;
 
-        auto success_right_paren_3 = this->lexer.parse_punctuation(_r, _r.page, *String::from_c_string(_r.page, ")"));
+        auto success_right_paren_3 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, ")"));
         if (!success_right_paren_3) {
 
             return Result<StructureSyntax*, ParserError*> { .tag = Result<StructureSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*text.copy(_ep), start, lexer.position) };        }
@@ -2002,7 +2002,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_left_curly_1 = this->lexer.parse_punctuation(_r, _r.page, *String::from_c_string(_r.page, "{"));
+        auto success_left_curly_1 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, "{"));
         if (!success_left_curly_1) {
 
                 return Result<BodySyntax*, ParserError*> { .tag = Result<BodySyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -2013,12 +2013,12 @@ struct Parser : Object {
             return Result<BodySyntax*, ParserError*> { .tag = Result<BodySyntax*, ParserError*>::Error, .error = declarations_result.error };
         auto declarations = declarations_result.ok;
 
-        auto success_right_curly_3 = this->lexer.parse_punctuation(_r, _r.page, *String::from_c_string(_r.page, "}"));
+        auto success_right_curly_3 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, "}"));
         if (!success_right_curly_3) {
 
             return Result<BodySyntax*, ParserError*> { .tag = Result<BodySyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*text.copy(_ep), start, lexer.position) };        }
 
-        auto success_colon_4 = this->lexer.parse_colon(_r, _r.page);
+        auto success_colon_4 = this->lexer.parse_colon(_r, _rp);
         if (!success_colon_4) {
 
         }
@@ -2089,7 +2089,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_private_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "private"));
+        auto success_private_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "private"));
         if (!success_private_1) {
 
                 return Result<FieldSyntax*, ParserError*> { .tag = Result<FieldSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -2140,7 +2140,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto name = this->lexer.parse_identifier(_r, _r.page, this->keywords);
+        auto name = this->lexer.parse_identifier(_r, _rp, this->keywords);
         if (name != nullptr) {
             if (!this->is_identifier(*name)) {
                 return Result<PropertySyntax*, ParserError*> { .tag = Result<PropertySyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -2162,12 +2162,12 @@ struct Parser : Object {
             return Result<PropertySyntax*, ParserError*> { .tag = Result<PropertySyntax*, ParserError*>::Error, .error = attributes_result.error };
         auto attributes = attributes_result.ok;
 
-        auto success_comma_4 = this->lexer.parse_punctuation(_r, _r.page, *String::from_c_string(_r.page, ","));
+        auto success_comma_4 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, ","));
         if (!success_comma_4) {
 
         }
 
-        auto success_colon_5 = this->lexer.parse_colon(_r, _r.page);
+        auto success_colon_5 = this->lexer.parse_colon(_r, _rp);
         if (!success_colon_5) {
 
         }
@@ -2183,7 +2183,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_colon_1 = this->lexer.parse_colon(_r, _r.page);
+        auto success_colon_1 = this->lexer.parse_colon(_r, _rp);
         if (!success_colon_1) {
 
                 return Result<TypeAnnotationSyntax*, ParserError*> { .tag = Result<TypeAnnotationSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -2292,7 +2292,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_left_bracket_1 = this->lexer.parse_punctuation(_r, _r.page, *String::from_c_string(_r.page, "["));
+        auto success_left_bracket_1 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, "["));
         if (!success_left_bracket_1) {
 
                 return Result<ArraySyntax*, ParserError*> { .tag = Result<ArraySyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -2303,7 +2303,7 @@ struct Parser : Object {
             return Result<ArraySyntax*, ParserError*> { .tag = Result<ArraySyntax*, ParserError*>::Error, .error = members_result.error };
         auto members = members_result.ok;
 
-        auto success_right_bracket_3 = this->lexer.parse_punctuation(_r, _r.page, *String::from_c_string(_r.page, "]"));
+        auto success_right_bracket_3 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, "]"));
         if (!success_right_bracket_3) {
 
             return Result<ArraySyntax*, ParserError*> { .tag = Result<ArraySyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*text.copy(_ep), start, lexer.position) };        }
@@ -2319,7 +2319,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_left_bracket_1 = this->lexer.parse_punctuation(_r, _r.page, *String::from_c_string(_r.page, "["));
+        auto success_left_bracket_1 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, "["));
         if (!success_left_bracket_1) {
 
                 return Result<GenericArgumentsSyntax*, ParserError*> { .tag = Result<GenericArgumentsSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -2330,7 +2330,7 @@ struct Parser : Object {
             return Result<GenericArgumentsSyntax*, ParserError*> { .tag = Result<GenericArgumentsSyntax*, ParserError*>::Error, .error = generics_result.error };
         auto generics = generics_result.ok;
 
-        auto success_right_bracket_3 = this->lexer.parse_punctuation(_r, _r.page, *String::from_c_string(_r.page, "]"));
+        auto success_right_bracket_3 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, "]"));
         if (!success_right_bracket_3) {
 
             return Result<GenericArgumentsSyntax*, ParserError*> { .tag = Result<GenericArgumentsSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*text.copy(_ep), start, lexer.position) };        }
@@ -2380,7 +2380,7 @@ struct Parser : Object {
             return Result<GenericArgumentSyntax*, ParserError*> { .tag = Result<GenericArgumentSyntax*, ParserError*>::Ok, .ok = nullptr };
         }
 
-        auto success_comma_2 = this->lexer.parse_punctuation(_r, _r.page, *String::from_c_string(_r.page, ","));
+        auto success_comma_2 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, ","));
         if (!success_comma_2) {
 
         }
@@ -2396,7 +2396,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_question_1 = this->lexer.parse_punctuation(_r, _r.page, *String::from_c_string(_r.page, "?"));
+        auto success_question_1 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, "?"));
         if (!success_question_1) {
 
                 return Result<OptionalSyntax*, ParserError*> { .tag = Result<OptionalSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -2413,13 +2413,13 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_function_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "function"));
+        auto success_function_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "function"));
         if (!success_function_1) {
 
                 return Result<FunctionSyntax*, ParserError*> { .tag = Result<FunctionSyntax*, ParserError*>::Ok, .ok = nullptr };
         }
 
-        auto name = this->lexer.parse_identifier(_r, _r.page, this->keywords);
+        auto name = this->lexer.parse_identifier(_r, _rp, this->keywords);
         if (name != nullptr) {
             if (!this->is_identifier(*name)) {
             return Result<FunctionSyntax*, ParserError*> { .tag = Result<FunctionSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*text.copy(_ep), start, lexer.position) };
@@ -2453,13 +2453,13 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_procedure_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "procedure"));
+        auto success_procedure_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "procedure"));
         if (!success_procedure_1) {
 
                 return Result<ProcedureSyntax*, ParserError*> { .tag = Result<ProcedureSyntax*, ParserError*>::Ok, .ok = nullptr };
         }
 
-        auto name = this->lexer.parse_identifier(_r, _r.page, this->keywords);
+        auto name = this->lexer.parse_identifier(_r, _rp, this->keywords);
         if (name != nullptr) {
             if (!this->is_identifier(*name)) {
             return Result<ProcedureSyntax*, ParserError*> { .tag = Result<ProcedureSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*text.copy(_ep), start, lexer.position) };
@@ -2493,7 +2493,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_operator_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "operator"));
+        auto success_operator_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "operator"));
         if (!success_operator_1) {
 
                 return Result<OperatorSyntax*, ParserError*> { .tag = Result<OperatorSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -2562,7 +2562,7 @@ struct Parser : Object {
             return Result<RoutineSyntax*, ParserError*> { .tag = Result<RoutineSyntax*, ParserError*>::Error, .error = returns_result.error };
         auto returns = returns_result.ok;
 
-        auto success_colon_4 = this->lexer.parse_colon(_r, _r.page);
+        auto success_colon_4 = this->lexer.parse_colon(_r, _rp);
         if (!success_colon_4) {
 
         }
@@ -2572,7 +2572,7 @@ struct Parser : Object {
             return Result<RoutineSyntax*, ParserError*> { .tag = Result<RoutineSyntax*, ParserError*>::Error, .error = throws_result.error };
         auto throws = throws_result.ok;
 
-        auto success_colon_6 = this->lexer.parse_colon(_r, _r.page);
+        auto success_colon_6 = this->lexer.parse_colon(_r, _rp);
         if (!success_colon_6) {
 
         }
@@ -2596,7 +2596,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto name = this->lexer.parse_identifier(_r, _r.page, this->keywords);
+        auto name = this->lexer.parse_identifier(_r, _rp, this->keywords);
         if (name != nullptr) {
             if (!this->is_identifier(*name)) {
                 return Result<SymbolSyntax*, ParserError*> { .tag = Result<SymbolSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -2618,7 +2618,7 @@ struct Parser : Object {
             return Result<SymbolSyntax*, ParserError*> { .tag = Result<SymbolSyntax*, ParserError*>::Error, .error = returns_result.error };
         auto returns = returns_result.ok;
 
-        auto success_colon_4 = this->lexer.parse_colon(_r, _r.page);
+        auto success_colon_4 = this->lexer.parse_colon(_r, _rp);
         if (!success_colon_4) {
 
         }
@@ -2628,7 +2628,7 @@ struct Parser : Object {
             return Result<SymbolSyntax*, ParserError*> { .tag = Result<SymbolSyntax*, ParserError*>::Error, .error = throws_result.error };
         auto throws = throws_result.ok;
 
-        auto success_colon_6 = this->lexer.parse_colon(_r, _r.page);
+        auto success_colon_6 = this->lexer.parse_colon(_r, _rp);
         if (!success_colon_6) {
 
         }
@@ -2681,7 +2681,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_left_paren_1 = this->lexer.parse_punctuation(_r, _r.page, *String::from_c_string(_r.page, "("));
+        auto success_left_paren_1 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, "("));
         if (!success_left_paren_1) {
 
                 return Result<ParametersSyntax*, ParserError*> { .tag = Result<ParametersSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -2692,7 +2692,7 @@ struct Parser : Object {
             return Result<ParametersSyntax*, ParserError*> { .tag = Result<ParametersSyntax*, ParserError*>::Error, .error = properties_result.error };
         auto properties = properties_result.ok;
 
-        auto success_right_paren_3 = this->lexer.parse_punctuation(_r, _r.page, *String::from_c_string(_r.page, ")"));
+        auto success_right_paren_3 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, ")"));
         if (!success_right_paren_3) {
 
             return Result<ParametersSyntax*, ParserError*> { .tag = Result<ParametersSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*text.copy(_ep), start, lexer.position) };        }
@@ -2708,7 +2708,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_returns_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "returns"));
+        auto success_returns_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "returns"));
         if (!success_returns_1) {
 
                 return Result<ReturnsSyntax*, ParserError*> { .tag = Result<ReturnsSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -2738,7 +2738,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_throws_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "throws"));
+        auto success_throws_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "throws"));
         if (!success_throws_1) {
 
                 return Result<ThrowsSyntax*, ParserError*> { .tag = Result<ThrowsSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -2876,7 +2876,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_extern_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "extern"));
+        auto success_extern_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "extern"));
         if (!success_extern_1) {
 
                 return Result<ExternSyntax*, ParserError*> { .tag = Result<ExternSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -2893,13 +2893,13 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_instruction_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "instruction"));
+        auto success_instruction_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "instruction"));
         if (!success_instruction_1) {
 
                 return Result<InstructionSyntax*, ParserError*> { .tag = Result<InstructionSyntax*, ParserError*>::Ok, .ok = nullptr };
         }
 
-        auto success_colon_2 = this->lexer.parse_colon(_r, _r.page);
+        auto success_colon_2 = this->lexer.parse_colon(_r, _rp);
         if (!success_colon_2) {
 
         }
@@ -2915,13 +2915,13 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_intrinsic_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "intrinsic"));
+        auto success_intrinsic_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "intrinsic"));
         if (!success_intrinsic_1) {
 
                 return Result<IntrinsicSyntax*, ParserError*> { .tag = Result<IntrinsicSyntax*, ParserError*>::Ok, .ok = nullptr };
         }
 
-        auto success_colon_2 = this->lexer.parse_colon(_r, _r.page);
+        auto success_colon_2 = this->lexer.parse_colon(_r, _rp);
         if (!success_colon_2) {
 
         }
@@ -2937,7 +2937,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_use_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "use"));
+        auto success_use_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "use"));
         if (!success_use_1) {
 
                 return Result<UseSyntax*, ParserError*> { .tag = Result<UseSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -2951,7 +2951,7 @@ struct Parser : Object {
             return Result<UseSyntax*, ParserError*> { .tag = Result<UseSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*text.copy(_ep), start, lexer.position) };
         }
 
-        auto success_colon_3 = this->lexer.parse_colon(_r, _r.page);
+        auto success_colon_3 = this->lexer.parse_colon(_r, _rp);
         if (!success_colon_3) {
 
         }
@@ -2967,7 +2967,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_implement_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "implement"));
+        auto success_implement_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "implement"));
         if (!success_implement_1) {
 
                 return Result<ImplementSyntax*, ParserError*> { .tag = Result<ImplementSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -2986,12 +2986,12 @@ struct Parser : Object {
             return Result<ImplementSyntax*, ParserError*> { .tag = Result<ImplementSyntax*, ParserError*>::Error, .error = attributes_result.error };
         auto attributes = attributes_result.ok;
 
-        auto success_colon_4 = this->lexer.parse_colon(_r, _r.page);
+        auto success_colon_4 = this->lexer.parse_colon(_r, _rp);
         if (!success_colon_4) {
 
         }
 
-        auto success_left_curly_5 = this->lexer.parse_punctuation(_r, _r.page, *String::from_c_string(_r.page, "{"));
+        auto success_left_curly_5 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, "{"));
         if (!success_left_curly_5) {
 
             return Result<ImplementSyntax*, ParserError*> { .tag = Result<ImplementSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*text.copy(_ep), start, lexer.position) };        }
@@ -3001,12 +3001,12 @@ struct Parser : Object {
             return Result<ImplementSyntax*, ParserError*> { .tag = Result<ImplementSyntax*, ParserError*>::Error, .error = methods_result.error };
         auto methods = methods_result.ok;
 
-        auto success_right_curly_7 = this->lexer.parse_punctuation(_r, _r.page, *String::from_c_string(_r.page, "}"));
+        auto success_right_curly_7 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, "}"));
         if (!success_right_curly_7) {
 
             return Result<ImplementSyntax*, ParserError*> { .tag = Result<ImplementSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*text.copy(_ep), start, lexer.position) };        }
 
-        auto success_colon_8 = this->lexer.parse_colon(_r, _r.page);
+        auto success_colon_8 = this->lexer.parse_colon(_r, _rp);
         if (!success_colon_8) {
 
         }
@@ -3022,7 +3022,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_trait_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "trait"));
+        auto success_trait_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "trait"));
         if (!success_trait_1) {
 
                 return Result<TraitSyntax*, ParserError*> { .tag = Result<TraitSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -3046,7 +3046,7 @@ struct Parser : Object {
             return Result<TraitSyntax*, ParserError*> { .tag = Result<TraitSyntax*, ParserError*>::Error, .error = attributes_result.error };
         auto attributes = attributes_result.ok;
 
-        auto success_left_curly_5 = this->lexer.parse_punctuation(_r, _r.page, *String::from_c_string(_r.page, "{"));
+        auto success_left_curly_5 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, "{"));
         if (!success_left_curly_5) {
 
             return Result<TraitSyntax*, ParserError*> { .tag = Result<TraitSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*text.copy(_ep), start, lexer.position) };        }
@@ -3056,12 +3056,12 @@ struct Parser : Object {
             return Result<TraitSyntax*, ParserError*> { .tag = Result<TraitSyntax*, ParserError*>::Error, .error = functions_result.error };
         auto functions = functions_result.ok;
 
-        auto success_right_curly_7 = this->lexer.parse_punctuation(_r, _r.page, *String::from_c_string(_r.page, "}"));
+        auto success_right_curly_7 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, "}"));
         if (!success_right_curly_7) {
 
             return Result<TraitSyntax*, ParserError*> { .tag = Result<TraitSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*text.copy(_ep), start, lexer.position) };        }
 
-        auto success_colon_8 = this->lexer.parse_colon(_r, _r.page);
+        auto success_colon_8 = this->lexer.parse_colon(_r, _rp);
         if (!success_colon_8) {
 
         }
@@ -3144,7 +3144,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_extends_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "extends"));
+        auto success_extends_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "extends"));
         if (!success_extends_1) {
 
                 return Result<ExtendsSyntax*, ParserError*> { .tag = Result<ExtendsSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -3200,7 +3200,7 @@ struct Parser : Object {
             return Result<ExtendSyntax*, ParserError*> { .tag = Result<ExtendSyntax*, ParserError*>::Ok, .ok = nullptr };
         }
 
-        auto success_comma_2 = this->lexer.parse_punctuation(_r, _r.page, *String::from_c_string(_r.page, ","));
+        auto success_comma_2 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, ","));
         if (!success_comma_2) {
 
         }
@@ -3216,13 +3216,13 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_macro_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "macro"));
+        auto success_macro_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "macro"));
         if (!success_macro_1) {
 
                 return Result<MacroSyntax*, ParserError*> { .tag = Result<MacroSyntax*, ParserError*>::Ok, .ok = nullptr };
         }
 
-        auto name = this->lexer.parse_identifier(_r, _r.page, this->keywords);
+        auto name = this->lexer.parse_identifier(_r, _rp, this->keywords);
         if (name != nullptr) {
             if (!this->is_identifier(*name)) {
             return Result<MacroSyntax*, ParserError*> { .tag = Result<MacroSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*text.copy(_ep), start, lexer.position) };
@@ -3259,7 +3259,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_module_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "module"));
+        auto success_module_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "module"));
         if (!success_module_1) {
 
                 return Result<ModuleSyntax*, ParserError*> { .tag = Result<ModuleSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -3273,7 +3273,7 @@ struct Parser : Object {
             return Result<ModuleSyntax*, ParserError*> { .tag = Result<ModuleSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*text.copy(_ep), start, lexer.position) };
         }
 
-        auto success_colon_3 = this->lexer.parse_colon(_r, _r.page);
+        auto success_colon_3 = this->lexer.parse_colon(_r, _rp);
         if (!success_colon_3) {
 
         }
@@ -3433,7 +3433,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_let_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "let"));
+        auto success_let_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "let"));
         if (!success_let_1) {
 
                 return Result<LetSyntax*, ParserError*> { .tag = Result<LetSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -3458,7 +3458,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_var_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "var"));
+        auto success_var_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "var"));
         if (!success_var_1) {
 
                 return Result<VarSyntax*, ParserError*> { .tag = Result<VarSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -3483,7 +3483,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_mutable_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "mutable"));
+        auto success_mutable_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "mutable"));
         if (!success_mutable_1) {
 
                 return Result<MutableSyntax*, ParserError*> { .tag = Result<MutableSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -3508,7 +3508,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto name = this->lexer.parse_identifier(_r, _r.page, this->keywords);
+        auto name = this->lexer.parse_identifier(_r, _rp, this->keywords);
         if (name != nullptr) {
             if (!this->is_identifier(*name)) {
                 return Result<BindingSyntax*, ParserError*> { .tag = Result<BindingSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -3544,7 +3544,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_colon_1 = this->lexer.parse_colon(_r, _r.page);
+        auto success_colon_1 = this->lexer.parse_colon(_r, _rp);
         if (!success_colon_1) {
 
                 return Result<BindingAnnotationSyntax*, ParserError*> { .tag = Result<BindingAnnotationSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -3636,7 +3636,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_set_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "set"));
+        auto success_set_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "set"));
         if (!success_set_1) {
 
                 return Result<SetSyntax*, ParserError*> { .tag = Result<SetSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -3677,7 +3677,7 @@ struct Parser : Object {
             return Result<OperationSyntax*, ParserError*> { .tag = Result<OperationSyntax*, ParserError*>::Ok, .ok = nullptr };
         }
 
-        auto success_colon_2 = this->lexer.parse_colon(_r, _r.page);
+        auto success_colon_2 = this->lexer.parse_colon(_r, _rp);
         if (!success_colon_2) {
 
         }
@@ -3798,7 +3798,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_dot_1 = this->lexer.parse_punctuation(_r, _r.page, *String::from_c_string(_r.page, "."));
+        auto success_dot_1 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, "."));
         if (!success_dot_1) {
 
                 return Result<MemberAccessSyntax*, ParserError*> { .tag = Result<MemberAccessSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -3873,7 +3873,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_catch_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "catch"));
+        auto success_catch_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "catch"));
         if (!success_catch_1) {
 
                 return Result<CatchSyntax*, ParserError*> { .tag = Result<CatchSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -3906,7 +3906,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_drop_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "drop"));
+        auto success_drop_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "drop"));
         if (!success_drop_1) {
 
                 return Result<DropSyntax*, ParserError*> { .tag = Result<DropSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -3931,7 +3931,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_continue_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "continue"));
+        auto success_continue_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "continue"));
         if (!success_continue_1) {
 
                 return Result<ContinueSyntax*, ParserError*> { .tag = Result<ContinueSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -3942,7 +3942,7 @@ struct Parser : Object {
             return Result<ContinueSyntax*, ParserError*> { .tag = Result<ContinueSyntax*, ParserError*>::Error, .error = name_result.error };
         auto name = name_result.ok;
 
-        auto success_colon_3 = this->lexer.parse_colon(_r, _r.page);
+        auto success_colon_3 = this->lexer.parse_colon(_r, _rp);
         if (!success_colon_3) {
 
         }
@@ -3958,13 +3958,13 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_loop_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "loop"));
+        auto success_loop_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "loop"));
         if (!success_loop_1) {
 
                 return Result<LoopSyntax*, ParserError*> { .tag = Result<LoopSyntax*, ParserError*>::Ok, .ok = nullptr };
         }
 
-        auto name = this->lexer.parse_identifier(_r, _r.page, this->keywords);
+        auto name = this->lexer.parse_identifier(_r, _rp, this->keywords);
         if (name != nullptr) {
             if (!this->is_identifier(*name)) {
             return Result<LoopSyntax*, ParserError*> { .tag = Result<LoopSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*text.copy(_ep), start, lexer.position) };
@@ -3985,7 +3985,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_break_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "break"));
+        auto success_break_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "break"));
         if (!success_break_1) {
 
                 return Result<BreakSyntax*, ParserError*> { .tag = Result<BreakSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -4001,7 +4001,7 @@ struct Parser : Object {
             return Result<BreakSyntax*, ParserError*> { .tag = Result<BreakSyntax*, ParserError*>::Error, .error = result_result.error };
         auto result = result_result.ok;
 
-        auto success_colon_4 = this->lexer.parse_colon(_r, _r.page);
+        auto success_colon_4 = this->lexer.parse_colon(_r, _rp);
         if (!success_colon_4) {
 
         }
@@ -4017,7 +4017,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_return_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "return"));
+        auto success_return_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "return"));
         if (!success_return_1) {
 
                 return Result<ReturnSyntax*, ParserError*> { .tag = Result<ReturnSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -4039,7 +4039,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_throw_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "throw"));
+        auto success_throw_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "throw"));
         if (!success_throw_1) {
 
                 return Result<ThrowSyntax*, ParserError*> { .tag = Result<ThrowSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -4258,7 +4258,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto literal = this->lexer.parse_literal(_r, _r.page);
+        auto literal = this->lexer.parse_literal(_r, _rp);
         if (literal == nullptr) {
 
                 return Result<LiteralSyntax*, ParserError*> { .tag = Result<LiteralSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -4275,7 +4275,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_left_paren_1 = this->lexer.parse_punctuation(_r, _r.page, *String::from_c_string(_r.page, "("));
+        auto success_left_paren_1 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, "("));
         if (!success_left_paren_1) {
 
                 return Result<ObjectSyntax*, ParserError*> { .tag = Result<ObjectSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -4286,7 +4286,7 @@ struct Parser : Object {
             return Result<ObjectSyntax*, ParserError*> { .tag = Result<ObjectSyntax*, ParserError*>::Error, .error = components_result.error };
         auto components = components_result.ok;
 
-        auto success_right_paren_3 = this->lexer.parse_punctuation(_r, _r.page, *String::from_c_string(_r.page, ")"));
+        auto success_right_paren_3 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, ")"));
         if (!success_right_paren_3) {
 
             return Result<ObjectSyntax*, ParserError*> { .tag = Result<ObjectSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*text.copy(_ep), start, lexer.position) };        }
@@ -4346,7 +4346,7 @@ struct Parser : Object {
             return Result<ComponentSyntax*, ParserError*> { .tag = Result<ComponentSyntax*, ParserError*>::Error, .error = value_result.error };
         auto value = value_result.ok;
 
-        auto success_comma_4 = this->lexer.parse_punctuation(_r, _r.page, *String::from_c_string(_r.page, ","));
+        auto success_comma_4 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, ","));
         if (!success_comma_4) {
 
         }
@@ -4362,7 +4362,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_colon_1 = this->lexer.parse_colon(_r, _r.page);
+        auto success_colon_1 = this->lexer.parse_colon(_r, _rp);
         if (!success_colon_1) {
 
                 return Result<ValueSyntax*, ParserError*> { .tag = Result<ValueSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -4392,7 +4392,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_left_bracket_1 = this->lexer.parse_punctuation(_r, _r.page, *String::from_c_string(_r.page, "["));
+        auto success_left_bracket_1 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, "["));
         if (!success_left_bracket_1) {
 
                 return Result<VectorSyntax*, ParserError*> { .tag = Result<VectorSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -4406,7 +4406,7 @@ struct Parser : Object {
             return Result<VectorSyntax*, ParserError*> { .tag = Result<VectorSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*text.copy(_ep), start, lexer.position) };
         }
 
-        auto success_right_bracket_3 = this->lexer.parse_punctuation(_r, _r.page, *String::from_c_string(_r.page, "]"));
+        auto success_right_bracket_3 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, "]"));
         if (!success_right_bracket_3) {
 
             return Result<VectorSyntax*, ParserError*> { .tag = Result<VectorSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*text.copy(_ep), start, lexer.position) };        }
@@ -4461,7 +4461,7 @@ struct Parser : Object {
             return Result<ElementSyntax*, ParserError*> { .tag = Result<ElementSyntax*, ParserError*>::Error, .error = attributes_result.error };
         auto attributes = attributes_result.ok;
 
-        auto success_comma_3 = this->lexer.parse_punctuation(_r, _r.page, *String::from_c_string(_r.page, ","));
+        auto success_comma_3 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, ","));
         if (!success_comma_3) {
 
         }
@@ -4477,7 +4477,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_left_curly_1 = this->lexer.parse_punctuation(_r, _r.page, *String::from_c_string(_r.page, "{"));
+        auto success_left_curly_1 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, "{"));
         if (!success_left_curly_1) {
 
                 return Result<BlockSyntax*, ParserError*> { .tag = Result<BlockSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -4488,7 +4488,7 @@ struct Parser : Object {
             return Result<BlockSyntax*, ParserError*> { .tag = Result<BlockSyntax*, ParserError*>::Error, .error = statements_result.error };
         auto statements = statements_result.ok;
 
-        auto success_right_curly_3 = this->lexer.parse_punctuation(_r, _r.page, *String::from_c_string(_r.page, "}"));
+        auto success_right_curly_3 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, "}"));
         if (!success_right_curly_3) {
 
             return Result<BlockSyntax*, ParserError*> { .tag = Result<BlockSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*text.copy(_ep), start, lexer.position) };        }
@@ -4504,7 +4504,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_if_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "if"));
+        auto success_if_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "if"));
         if (!success_if_1) {
 
                 return Result<IfSyntax*, ParserError*> { .tag = Result<IfSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -4552,7 +4552,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_is_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "is"));
+        auto success_is_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "is"));
         if (!success_is_1) {
 
                 return Result<IsSyntax*, ParserError*> { .tag = Result<IsSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -4577,13 +4577,13 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_as_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "as"));
+        auto success_as_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "as"));
         if (!success_as_1) {
 
                 return Result<AsSyntax*, ParserError*> { .tag = Result<AsSyntax*, ParserError*>::Ok, .ok = nullptr };
         }
 
-        auto name = this->lexer.parse_identifier(_r, _r.page, this->keywords);
+        auto name = this->lexer.parse_identifier(_r, _rp, this->keywords);
         if (name != nullptr) {
             if (!this->is_identifier(*name)) {
             return Result<AsSyntax*, ParserError*> { .tag = Result<AsSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*text.copy(_ep), start, lexer.position) };
@@ -4593,7 +4593,7 @@ struct Parser : Object {
             return Result<AsSyntax*, ParserError*> { .tag = Result<AsSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*text.copy(_ep), start, lexer.position) };
         }
 
-        auto success_colon_3 = this->lexer.parse_colon(_r, _r.page);
+        auto success_colon_3 = this->lexer.parse_colon(_r, _rp);
         if (!success_colon_3) {
 
         }
@@ -4609,13 +4609,13 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_else_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "else"));
+        auto success_else_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "else"));
         if (!success_else_1) {
 
                 return Result<ElseSyntax*, ParserError*> { .tag = Result<ElseSyntax*, ParserError*>::Ok, .ok = nullptr };
         }
 
-        auto success_colon_2 = this->lexer.parse_colon(_r, _r.page);
+        auto success_colon_2 = this->lexer.parse_colon(_r, _rp);
         if (!success_colon_2) {
 
         }
@@ -4639,7 +4639,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_match_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "match"));
+        auto success_match_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "match"));
         if (!success_match_1) {
 
                 return Result<MatchSyntax*, ParserError*> { .tag = Result<MatchSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -4703,7 +4703,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_case_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "case"));
+        auto success_case_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "case"));
         if (!success_case_1) {
 
                 return Result<CaseSyntax*, ParserError*> { .tag = Result<CaseSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -4736,7 +4736,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_default_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "default"));
+        auto success_default_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "default"));
         if (!success_default_1) {
 
                 return Result<DefaultSyntax*, ParserError*> { .tag = Result<DefaultSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -4758,7 +4758,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_lambda_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "lambda"));
+        auto success_lambda_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "lambda"));
         if (!success_lambda_1) {
 
                 return Result<LambdaSyntax*, ParserError*> { .tag = Result<LambdaSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -4772,7 +4772,7 @@ struct Parser : Object {
             return Result<LambdaSyntax*, ParserError*> { .tag = Result<LambdaSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*text.copy(_ep), start, lexer.position) };
         }
 
-        auto success_colon_3 = this->lexer.parse_colon(_r, _r.page);
+        auto success_colon_3 = this->lexer.parse_colon(_r, _rp);
         if (!success_colon_3) {
 
             return Result<LambdaSyntax*, ParserError*> { .tag = Result<LambdaSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*text.copy(_ep), start, lexer.position) };        }
@@ -4796,7 +4796,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_for_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "for"));
+        auto success_for_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "for"));
         if (!success_for_1) {
 
                 return Result<ForSyntax*, ParserError*> { .tag = Result<ForSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -4810,7 +4810,7 @@ struct Parser : Object {
             return Result<ForSyntax*, ParserError*> { .tag = Result<ForSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*text.copy(_ep), start, lexer.position) };
         }
 
-        auto success_in_3 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "in"));
+        auto success_in_3 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "in"));
         if (!success_in_3) {
 
             return Result<ForSyntax*, ParserError*> { .tag = Result<ForSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*text.copy(_ep), start, lexer.position) };        }
@@ -4847,13 +4847,13 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_label_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "label"));
+        auto success_label_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "label"));
         if (!success_label_1) {
 
                 return Result<LabelSyntax*, ParserError*> { .tag = Result<LabelSyntax*, ParserError*>::Ok, .ok = nullptr };
         }
 
-        auto name = this->lexer.parse_identifier(_r, _r.page, this->keywords);
+        auto name = this->lexer.parse_identifier(_r, _rp, this->keywords);
         if (name != nullptr) {
             if (!this->is_identifier(*name)) {
             return Result<LabelSyntax*, ParserError*> { .tag = Result<LabelSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*text.copy(_ep), start, lexer.position) };
@@ -4874,7 +4874,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_while_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "while"));
+        auto success_while_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "while"));
         if (!success_while_1) {
 
                 return Result<WhileSyntax*, ParserError*> { .tag = Result<WhileSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -4912,7 +4912,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_repeat_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "repeat"));
+        auto success_repeat_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "repeat"));
         if (!success_repeat_1) {
 
                 return Result<RepeatSyntax*, ParserError*> { .tag = Result<RepeatSyntax*, ParserError*>::Ok, .ok = nullptr };
@@ -4942,7 +4942,7 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_sizeof_1 = this->lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "sizeof"));
+        auto success_sizeof_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "sizeof"));
         if (!success_sizeof_1) {
 
                 return Result<SizeOfSyntax*, ParserError*> { .tag = Result<SizeOfSyntax*, ParserError*>::Ok, .ok = nullptr };
