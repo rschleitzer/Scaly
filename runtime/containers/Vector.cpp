@@ -8,19 +8,19 @@ template<class T> struct Array;
 template<class T> struct Vector;
 
 template<class T> struct VectorIterator {
-    Vector<T>* vector;
+    Vector<T>& vector;
     size_t position;
 
-    static VectorIterator<T> create(Vector<T>* vector) {
+    static VectorIterator<T> create(Vector<T>& vector) {
         return VectorIterator { .vector = vector, .position = 0 };
     }
 
     T* next() {
-        if (position == vector->length)
+        if (position == vector.length)
             return nullptr;
 
         position += 1;
-        return vector->get(position - 1);
+        return vector.get(position - 1);
     }
 };
 

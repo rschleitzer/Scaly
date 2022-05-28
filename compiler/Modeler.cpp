@@ -78,29 +78,15 @@ struct Function : Object {
 
 struct Model : Object {
     HashMap<String, Vector<Function>> functions;
-    Vector<Operation> operations;
-    Model(HashMap<String, Vector<Function>> functions, Vector<Operation> operations) : functions(functions), operations(operations) {};
+    Model(HashMap<String, Vector<Function>> functions) : functions(functions) {};
 };
 
 struct ModelError : Object {
-    ModelError(String file_name, size_t position) : file_name(file_name), start(position), end(position) {}
     ModelError(ParserError* parser_error) : file_name(parser_error->text), start(parser_error->start), end(parser_error->end) {}
     String file_name;
     size_t start;
     size_t end;
 };
-
-Result<Model*, ModelError*> build_model(Region& _pr, Page* _rp, Page* _ep, Vector<DeclarationSyntax>& declarations) {
-    auto _r = Region::create(_pr);
-    HashMapBuilder<String, Vector<Function>>& functions_builder = *new(alignof(HashMapBuilder<String, Vector<Function>>), _r.page) HashMapBuilder<String, Vector<Function>>();
-    Array<Operation>& operations_array = *new(alignof(Array<Operation>), _r.page) Array<Operation>(); 
-
-    HashMap<String, Vector<Function>>& functions = *HashMap<String, Vector<Function>>::from_hash_map_builder(_r, _rp, functions_builder);
-    Vector<Operation>& operations = *Vector<Operation>::from_array(_rp, operations_array);
-    auto ret = new(alignof(Model), _rp) Model(functions, operations);
-    return Result<Model*, ModelError*> { .tag = Result<Model*, ModelError*>::Ok, .ok = ret };
-}
-
 
 Result<RoutineSyntax*, ParserError*> parse_main_function_stub_routine(Region& _pr, Page* _rp, Page* _ep, Parser& parser) {
     auto _r = Region::create(_pr);
@@ -220,6 +206,27 @@ Result<Vector<DeclarationSyntax>*, ParserError*> parse_program(Region& _pr, Page
     return Result<Vector<DeclarationSyntax>*, ParserError*> { .tag = Result<Vector<DeclarationSyntax>*, ParserError*>::Ok, .ok = Vector<DeclarationSyntax>::from_array(_rp, *declarations) };
 }
 
+Result<Model*, ModelError*> build_model(Region& _pr, Page* _rp, Page* _ep, Vector<DeclarationSyntax>& declarations) {
+    auto _r = Region::create(_pr);
+    HashMapBuilder<String, Vector<Function>>& functions_builder = *new(alignof(HashMapBuilder<String, Vector<Function>>), _r.page) HashMapBuilder<String, Vector<Function>>();
+    auto declarations_iterator = VectorIterator<DeclarationSyntax>::create(declarations);
+    while (auto declaration = declarations_iterator.next()) {
+        switch (declaration->tag)
+        {
+            case DeclarationSyntax::Function:
+            break;
+            case DeclarationSyntax::Module:
+            break;
+            default:
+            break;
+        }
+    }
+
+    HashMap<String, Vector<Function>>& functions = *HashMap<String, Vector<Function>>::from_hash_map_builder(_r, _rp, functions_builder);
+    auto ret = new(alignof(Model), _rp) Model(functions);
+    return Result<Model*, ModelError*> { .tag = Result<Model*, ModelError*>::Ok, .ok = ret };
+}
+
 Result<Model*, ModelError*> build_program_model(Region& _pr, Page* _rp, Page* _ep, String& program) {
     auto _r = Region::create(_pr);
 
@@ -233,7 +240,7 @@ Result<Model*, ModelError*> build_program_model(Region& _pr, Page* _rp, Page* _e
         return model_result;
     auto model = model_result.ok;
 
-    auto operations = model->operations;
+    auto functions = model->functions;
 
     return Result<Model*, ModelError*> { .tag = Result<Model*, ModelError*>::Ok, .ok = model };
 }
