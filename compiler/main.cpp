@@ -200,7 +200,6 @@ void test_compiler(Region& _pr)
 
 }
 
-
 int main(int argc, char** argv) {
     auto heap = Heap::create();
     auto root_stack_bucket = StackBucket::create(&heap);

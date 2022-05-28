@@ -82,8 +82,7 @@ struct Model : Object {
 };
 
 struct ModelError : Object {
-    ModelError(ParserError* parser_error) : file_name(parser_error->text), start(parser_error->start), end(parser_error->end) {}
-    String file_name;
+    ModelError(ParserError* parser_error) : start(parser_error->start), end(parser_error->end) {}
     size_t start;
     size_t end;
 };
@@ -121,18 +120,18 @@ Result<FunctionSyntax*, ParserError*> parse_main_function_stub(Region& _pr, Page
     auto name = parser.lexer.parse_identifier(_r, _r.page, parser.keywords);
     if (name != nullptr) {
         if (!parser.is_identifier(*name)) {
-            return Result<FunctionSyntax*, ParserError*> { .tag = Result<FunctionSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*parser.text.copy(_ep), start, parser.lexer.position) };
+            return Result<FunctionSyntax*, ParserError*> { .tag = Result<FunctionSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, parser.lexer.position) };
         }
     }
     else
-        return Result<FunctionSyntax*, ParserError*> { .tag = Result<FunctionSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*parser.text.copy(_ep), start, parser.lexer.position) };
+        return Result<FunctionSyntax*, ParserError*> { .tag = Result<FunctionSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, parser.lexer.position) };
 
     auto routine_result = parse_main_function_stub_routine(_r, _rp, _ep, parser);
     if (routine_result.tag == Result<RoutineSyntax*, ParserError*>::Error)
         return Result<FunctionSyntax*, ParserError*> { .tag = Result<FunctionSyntax*, ParserError*>::Error, .error = routine_result.error };
     auto routine = routine_result.ok;
     if (routine == nullptr)
-        return Result<FunctionSyntax*, ParserError*> { .tag = Result<FunctionSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*parser.text.copy(_ep), start, parser.lexer.position) };
+        return Result<FunctionSyntax*, ParserError*> { .tag = Result<FunctionSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, parser.lexer.position) };
 
     auto end = parser.lexer.position;
     auto ret = new(alignof(FunctionSyntax), _rp) FunctionSyntax(start, end, name, nullptr, routine);

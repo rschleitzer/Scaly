@@ -4,12 +4,10 @@ using namespace scaly::containers;
 
 struct Parser : Object {
     Lexer lexer;
-    String text;
     HashSet<""String> keywords;
 
     Parser(String text)
-      : lexer(*new(alignof(Lexer), Page::get(this)) Lexer(text)),
-        text(text)
+      : lexer(*new(alignof(Lexer), Page::get(this)) Lexer(text))
     {
         auto _r = Region::create_from_page(Page::get(this));
         HashSetBuilder<""String>& hash_set_builder = *HashSetBuilder<""String>::create(_r.page);
@@ -90,7 +88,7 @@ struct Parser : Object {
 "            return Result<"(id syntax)"Syntax*, ParserError*> { .tag = Result<"(id syntax)"Syntax*, ParserError*>::Ok, .ok = nullptr };
 "                                   )
                                     ($
-"            return Result<"(id syntax)"Syntax*, ParserError*> { .tag = Result<"(id syntax)"Syntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*text.copy(_ep), start, lexer.position) };
+"            return Result<"(id syntax)"Syntax*, ParserError*> { .tag = Result<"(id syntax)"Syntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, lexer.position) };
 "                                   )
                                 )
 "        }
@@ -123,7 +121,7 @@ struct Parser : Object {
 "                                               )
                                                 ($
 "
-            return Result<"(id syntax)"Syntax*, ParserError*> { .tag = Result<"(id syntax)"Syntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(*text.copy(_ep), start, lexer.position) };"
+            return Result<"(id syntax)"Syntax*, ParserError*> { .tag = Result<"(id syntax)"Syntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, lexer.position) };"
                                                 )
                                             )
                                         )
