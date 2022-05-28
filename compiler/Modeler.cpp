@@ -81,10 +81,40 @@ struct Model : Object {
     Model(HashMap<String, Vector<Function>> functions) : functions(functions) {};
 };
 
-struct ModelError : Object {
-    ModelError(ParserError* parser_error) : start(parser_error->start), end(parser_error->end) {}
+struct IoModelError {
+    String file_name;
+};
+
+struct DuplicateNameError
+{
+    size_t file_id;
     size_t start;
     size_t end;
+};
+
+struct ModelBuilderError {
+    ModelBuilderError(DuplicateNameError& duplicateNameError) : duplicateNameError(duplicateNameError) {}
+    enum {
+        DuplicateName,
+    } tag;
+    union {
+        DuplicateNameError duplicateNameError;
+    };
+};
+
+struct ModelError : Object {
+    ModelError(ParserError& parserError) : parserError(parserError) {}
+    ModelError(ModelBuilderError& modelBuilderError) : modelBuilderError(modelBuilderError) {}
+    enum {
+        Io,
+        Parser,
+        Builder,
+    } tag;
+    union {
+        IoModelError ioModelError;
+        ParserError parserError;
+        ModelBuilderError modelBuilderError;
+    };
 };
 
 Result<RoutineSyntax*, ParserError*> parse_main_function_stub_routine(Region& _pr, Page* _rp, Page* _ep, Parser& parser) {
@@ -205,25 +235,62 @@ Result<Vector<DeclarationSyntax>*, ParserError*> parse_program(Region& _pr, Page
     return Result<Vector<DeclarationSyntax>*, ParserError*> { .tag = Result<Vector<DeclarationSyntax>*, ParserError*>::Ok, .ok = Vector<DeclarationSyntax>::from_array(_rp, *declarations) };
 }
 
+Result<Function*, ModelError*> build_function(Region& _pr, Page* _rp, Page* _ep, FunctionSyntax& functionSyntax) {
+    return Result<Function*, ModelError*> { .tag = Result<Function*, ModelError*>::Error, .error = nullptr };
+}
+
 Result<Model*, ModelError*> build_model(Region& _pr, Page* _rp, Page* _ep, Vector<DeclarationSyntax>& declarations) {
     auto _r = Region::create(_pr);
-    HashMapBuilder<String, Vector<Function>>& functions_builder = *new(alignof(HashMapBuilder<String, Vector<Function>>), _r.page) HashMapBuilder<String, Vector<Function>>();
+
+    HashMapBuilder<String, Array<Function>>& functions_builder = *new(alignof(HashMapBuilder<String, Array<Function>>), _r.page) HashMapBuilder<String, Array<Function>>();
+
     auto declarations_iterator = VectorIterator<DeclarationSyntax>::create(declarations);
     while (auto declaration = declarations_iterator.next()) {
         switch (declaration->tag)
         {
+            case DeclarationSyntax::Private:
+            break;
+            case DeclarationSyntax::Definition:
+            break;
             case DeclarationSyntax::Function:
+            {
+                auto _r_1 = Region::create(_r);
+                auto function_result = build_function(_r_1, _rp, _ep, declaration->functionSyntax);
+                if (function_result.tag == Result<Vector<DeclarationSyntax>*, ParserError*>::Error)
+                    return Result<Model*, ModelError*> { .tag = Result<Model*, ModelError*>::Error, .error = new(alignof(ModelError), _ep) ModelError(*function_result.error) };
+                auto function = function_result.ok;
+                Array<Function>* function_array = nullptr;
+                if (!functions_builder.contains(function->name))
+                {
+                    function_array = Array<Function>::create(_r.page);
+                    functions_builder.add(function->name, *function_array);
+                }
+                else
+                {
+                    function_array = functions_builder[function->name];
+                }
+            }
+            break;
+            case DeclarationSyntax::Procedure:
+            break;
+            case DeclarationSyntax::Operator:
+            break;
+            case DeclarationSyntax::Use:
+            break;
+            case DeclarationSyntax::Implement:
+            break;
+            case DeclarationSyntax::Trait:
+            break;
+            case DeclarationSyntax::Macro:
             break;
             case DeclarationSyntax::Module:
-            break;
-            default:
             break;
         }
     }
 
-    HashMap<String, Vector<Function>>& functions = *HashMap<String, Vector<Function>>::from_hash_map_builder(_r, _rp, functions_builder);
-    auto ret = new(alignof(Model), _rp) Model(functions);
-    return Result<Model*, ModelError*> { .tag = Result<Model*, ModelError*>::Ok, .ok = ret };
+    //auto function_builder_iterator = functions_builder.
+    //auto ret = new(alignof(Model), _rp) Model(functions);
+    return Result<Model*, ModelError*> { .tag = Result<Model*, ModelError*>::Ok, .ok = nullptr };
 }
 
 Result<Model*, ModelError*> build_program_model(Region& _pr, Page* _rp, Page* _ep, String& program) {
@@ -231,7 +298,7 @@ Result<Model*, ModelError*> build_program_model(Region& _pr, Page* _rp, Page* _e
 
     auto declarations_result = parse_program(_r, _r.page, _ep, program);
     if (declarations_result.tag == Result<Vector<DeclarationSyntax>*, ParserError*>::Error)
-        return Result<Model*, ModelError*> { .tag = Result<Model*, ModelError*>::Error, .error = new(alignof(ModelError), _ep) ModelError(declarations_result.error) };
+        return Result<Model*, ModelError*> { .tag = Result<Model*, ModelError*>::Error, .error = new(alignof(ModelError), _ep) ModelError(*declarations_result.error) };
     auto declarations = declarations_result.ok;
 
     auto model_result = build_model(_r, _r.page, _ep, *declarations);
