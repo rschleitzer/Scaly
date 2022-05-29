@@ -15,6 +15,8 @@ using std::memcpy;
 #include "HashSet.cpp"
 #include "HashMapBuilder.cpp"
 #include "HashMap.cpp"
+#include "MultiMapBuilder.cpp"
+#include "MultiMap.cpp"
 #include "String.cpp"
 #include "StringBuilder.cpp"
 #include "Result.cpp"

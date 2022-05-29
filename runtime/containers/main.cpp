@@ -229,6 +229,60 @@ void test_hash_map(Region& _pr) {
     }
 }
 
+void test_multi_map(Region& _pr) {
+    auto _r = Region::create(_pr);
+    {
+        auto _r_1 = Region::create(_r);
+        MultiMapBuilder<String, size_t>& map = *MultiMapBuilder<String, size_t>::create(_r_1.page);
+        for (char i = 'A'; i <= 'Z'; i++)
+        {
+            for (char j = 'a'; j <= 'z'; j++)
+            {
+                for (char k = '0'; k <= '9'; k++)
+                {
+                    for (char l = '!'; l <= '/'; l++)
+                    {
+                        Region _r_2 = Region::create(_r_1);
+                        auto sb = StringBuilder::from_character(_r_2.page, i);
+                        sb->append_character(j);
+                        sb->append_character(k);
+                        sb->append_character(l);
+                        map.add(*sb->to_string(_r_1.page), (size_t)i * j * k * l);
+                        map.add(*sb->to_string(_r_1.page), (size_t)i * j * k * l + 1);
+                        map.add(*sb->to_string(_r_1.page), (size_t)i * j * k * l + 2);
+                    }
+                }
+            }
+        }
+        for (char i = 'A'; i <= 'Z'; i++)
+        {
+            for (char j = 'a'; j <= 'z'; j++)
+            {
+                for (char k = '0'; k <= '9'; k++)
+                {
+                    for (char l = '!'; l <= '/'; l++)
+                    {
+                        Region _r_2 = Region::create(_r_1);
+                        auto sb = StringBuilder::from_character(_r_2.page, i);
+                        sb->append_character(j);
+                        sb->append_character(k);
+                        sb->append_character(l);
+                        String& theString = *(sb->to_string(_r_1.page));
+                        if (!map.contains(theString))
+                            exit(-27);
+                        if (map[theString]->get(0) != (size_t)i * j * k * l)
+                            exit(-28);
+                        if (map[theString]->get(1) != (size_t)i * j * k * l + 1)
+                            exit(-28);
+                        if (map[theString]->get(2) != (size_t)i * j * k * l + 2)
+                            exit(-28);
+                    }
+                }
+            }
+        }
+    }
+}
+
 int main(int argc, char** argv)
 {
     auto heap = Heap::create();
@@ -243,4 +297,5 @@ int main(int argc, char** argv)
     test_list(region);
     test_hash_set(region);
     test_hash_map(region);
+    test_multi_map(region);
 }
