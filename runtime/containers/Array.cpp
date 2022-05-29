@@ -38,12 +38,11 @@ template<class T> struct Array : Object {
         this->length++;
     }
 
-    T& get(size_t i) {
-        return *(*this)[i];
-    }
+    T* get(size_t i) {
+        if (i >= this->length)
+            return nullptr;
 
-    void set(size_t i, T item) {
-        *(*this)[i] = item;
+        return (*this)[i];
     }
 
     T* operator [](size_t i) {

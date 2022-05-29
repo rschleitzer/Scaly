@@ -62,6 +62,8 @@ template<class T> struct Vector : Object {
     }
 
     T* get(size_t i) {
+        if (i >= this->length)
+            return nullptr;
         return (*this)[i];
     }
 

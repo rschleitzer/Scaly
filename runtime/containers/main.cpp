@@ -233,7 +233,7 @@ void test_multi_map(Region& _pr) {
     auto _r = Region::create(_pr);
     {
         auto _r_1 = Region::create(_r);
-        MultiMapBuilder<String, size_t>& map = *MultiMapBuilder<String, size_t>::create(_r_1.page);
+        MultiMapBuilder<String, size_t>& map_builder = *MultiMapBuilder<String, size_t>::create(_r_1.page);
         for (char i = 'A'; i <= 'Z'; i++)
         {
             for (char j = 'a'; j <= 'z'; j++)
@@ -247,13 +247,14 @@ void test_multi_map(Region& _pr) {
                         sb->append_character(j);
                         sb->append_character(k);
                         sb->append_character(l);
-                        map.add(*sb->to_string(_r_1.page), (size_t)i * j * k * l);
-                        map.add(*sb->to_string(_r_1.page), (size_t)i * j * k * l + 1);
-                        map.add(*sb->to_string(_r_1.page), (size_t)i * j * k * l + 2);
+                        map_builder.add(*sb->to_string(_r_1.page), (size_t)i * j * k * l);
+                        map_builder.add(*sb->to_string(_r_1.page), (size_t)i * j * k * l + 1);
+                        map_builder.add(*sb->to_string(_r_1.page), (size_t)i * j * k * l + 2);
                     }
                 }
             }
         }
+        MultiMap<String, size_t>& map = *MultiMap<String, size_t>::from_multi_map_builder(_r_1, _r_1.page, map_builder);
         for (char i = 'A'; i <= 'Z'; i++)
         {
             for (char j = 'a'; j <= 'z'; j++)
@@ -268,13 +269,21 @@ void test_multi_map(Region& _pr) {
                         sb->append_character(k);
                         sb->append_character(l);
                         String& theString = *(sb->to_string(_r_1.page));
+                        if (!map_builder.contains(theString))
+                            exit(-27);
                         if (!map.contains(theString))
                             exit(-27);
-                        if (map[theString]->get(0) != (size_t)i * j * k * l)
+                        if (*map_builder[theString]->get(0) != (size_t)i * j * k * l)
                             exit(-28);
-                        if (map[theString]->get(1) != (size_t)i * j * k * l + 1)
+                        if (*map[theString]->get(0) != (size_t)i * j * k * l)
                             exit(-28);
-                        if (map[theString]->get(2) != (size_t)i * j * k * l + 2)
+                        if (*map_builder[theString]->get(1) != (size_t)i * j * k * l + 1)
+                            exit(-28);
+                        if (*map[theString]->get(1) != (size_t)i * j * k * l + 1)
+                            exit(-28);
+                        if (*map_builder[theString]->get(2) != (size_t)i * j * k * l + 2)
+                            exit(-28);
+                        if (*map[theString]->get(2) != (size_t)i * j * k * l + 2)
                             exit(-28);
                     }
                 }
