@@ -67,9 +67,11 @@ template<class T> struct Vector : Object {
         return (*this)[i];
     }
 
-    void set(size_t i, T item) {
-        if (i < length)
-            *(*this)[i] = item;
+    bool set(size_t i, T item) {
+        if (i >= length)
+            return false;
+        *(*this)[i] = item;
+        return true;
     }
 
     T* operator [](size_t i) {
