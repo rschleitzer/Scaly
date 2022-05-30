@@ -63,10 +63,10 @@ struct Operation : Object {
 
 struct Routine : Object {
     Span span;
-    Vector<Parameter> input;
-    Vector<Parameter> result;
-    Operation operation;
-    Routine(Span span, Vector<Parameter> input, Vector<Parameter> result, Operation operation) : span(span), input(input), result(result), operation(operation) {}
+    Vector<Parameter>* input;
+    Vector<Parameter>* result;
+    Operation* operation;
+    Routine(Span span, Vector<Parameter>* input, Vector<Parameter>* result, Operation* operation) : span(span), input(input), result(result), operation(operation) {}
 };
 
 struct Function : Object {
@@ -235,14 +235,16 @@ Result<Vector<DeclarationSyntax>*, ParserError*> parse_program(Region& _pr, Page
     return Result<Vector<DeclarationSyntax>*, ParserError*> { .tag = Result<Vector<DeclarationSyntax>*, ParserError*>::Ok, .ok = Vector<DeclarationSyntax>::from_array(_rp, *declarations) };
 }
 
-Result<Function*, ModelError*> build_function(Region& _pr, Page* _rp, Page* _ep, FunctionSyntax& functionSyntax) {
+Result<Function*, ModelError*> build_function(Region& _pr, Page* _rp, Page* _ep, FunctionSyntax& function_syntax, MultiMapBuilder<String, Array<Function>>& functions_builder) {
+    // auto function = new(alignof(Function), _rp) Function(Span(0, 0, 0), function_syntax.name, Routine(Span(0,0,0), ));
+    // functions_builder.add(*function_syntax.name, *function);
     return Result<Function*, ModelError*> { .tag = Result<Function*, ModelError*>::Error, .error = nullptr };
 }
 
 Result<Model*, ModelError*> build_model(Region& _pr, Page* _rp, Page* _ep, Vector<DeclarationSyntax>& declarations) {
     auto _r = Region::create(_pr);
 
-    HashMapBuilder<String, Array<Function>>& functions_builder = *new(alignof(HashMapBuilder<String, Array<Function>>), _r.page) HashMapBuilder<String, Array<Function>>();
+    MultiMapBuilder<String, Array<Function>>& functions_builder = *new(alignof(MultiMapBuilder<String, Array<Function>>), _r.page) MultiMapBuilder<String, Array<Function>>();
 
     auto declarations_iterator = VectorIterator<DeclarationSyntax>::create(declarations);
     while (auto declaration = declarations_iterator.next()) {
@@ -255,7 +257,7 @@ Result<Model*, ModelError*> build_model(Region& _pr, Page* _rp, Page* _ep, Vecto
             case DeclarationSyntax::Function:
             {
                 auto _r_1 = Region::create(_r);
-                auto function_result = build_function(_r_1, _rp, _ep, declaration->functionSyntax);
+                auto function_result = build_function(_r_1, _rp, _ep, declaration->functionSyntax, functions_builder);
                 if (function_result.tag == Result<Vector<DeclarationSyntax>*, ParserError*>::Error)
                     return Result<Model*, ModelError*> { .tag = Result<Model*, ModelError*>::Error, .error = new(alignof(ModelError), _ep) ModelError(*function_result.error) };
                 auto function = function_result.ok;
@@ -267,7 +269,7 @@ Result<Model*, ModelError*> build_model(Region& _pr, Page* _rp, Page* _ep, Vecto
                 }
                 else
                 {
-                    function_array = functions_builder[function->name];
+                    //function_array = functions_builder[function->name];
                 }
             }
             break;
