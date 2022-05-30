@@ -6,7 +6,6 @@ struct DeclarationSyntax;
 struct PrivateSyntax; 
 struct ExportSyntax; 
 struct DefinitionSyntax; 
-struct NameSyntax; 
 struct ExtensionSyntax; 
 struct AttributeSyntax; 
 struct ConceptSyntax; 
@@ -19,39 +18,35 @@ struct VariantSyntax;
 struct EnumSyntax; 
 struct ConstantSyntax; 
 struct DelegateSyntax; 
-struct StructureSyntax; 
 struct BodySyntax; 
 struct MemberSyntax; 
 struct FieldSyntax; 
 struct PropertySyntax; 
 struct TypeAnnotationSyntax; 
-struct TypeSpecSyntax; 
-struct TypeSyntax; 
-struct ArraySyntax; 
 struct GenericArgumentsSyntax; 
 struct GenericArgumentSyntax; 
 struct OptionalSyntax; 
+struct ReturnsSyntax; 
+struct ParameterSetSyntax; 
+struct ParametersSyntax; 
+struct ThrowsSyntax; 
+struct UseSyntax; 
+struct ImplementSyntax; 
+struct TraitSyntax; 
+struct MethodSyntax; 
 struct FunctionSyntax; 
 struct ProcedureSyntax; 
 struct OperatorSyntax; 
 struct TargetSyntax; 
 struct RoutineSyntax; 
 struct SymbolSyntax; 
-struct ParameterSetSyntax; 
-struct ParametersSyntax; 
-struct ReturnsSyntax; 
-struct ThrowsSyntax; 
-struct ActionSyntax; 
 struct ImplementationSyntax; 
 struct ExternSyntax; 
 struct InstructionSyntax; 
 struct IntrinsicSyntax; 
-struct UseSyntax; 
-struct ImplementSyntax; 
-struct TraitSyntax; 
-struct MethodSyntax; 
 struct ExtendsSyntax; 
 struct ExtendSyntax; 
+struct TypeSpecSyntax; 
 struct MacroSyntax; 
 struct ModuleSyntax; 
 struct ModelSyntax; 
@@ -62,20 +57,20 @@ struct MutableSyntax;
 struct BindingSyntax; 
 struct BindingAnnotationSyntax; 
 struct BindingSpecSyntax; 
-struct SetSyntax; 
-struct OperationSyntax; 
+struct ArraySyntax; 
+struct StructureSyntax; 
 struct OperandSyntax; 
 struct PostfixSyntax; 
 struct MemberAccessSyntax; 
 struct CatcherSyntax; 
 struct CatchSyntax; 
 struct DropSyntax; 
+struct ExpressionSyntax; 
 struct ContinueSyntax; 
-struct LoopSyntax; 
 struct BreakSyntax; 
+struct LoopSyntax; 
 struct ReturnSyntax; 
 struct ThrowSyntax; 
-struct ExpressionSyntax; 
 struct LiteralSyntax; 
 struct ObjectSyntax; 
 struct ComponentSyntax; 
@@ -95,445 +90,220 @@ struct ForSyntax;
 struct LabelSyntax; 
 struct WhileSyntax; 
 struct RepeatSyntax; 
+struct ActionSyntax; 
+struct SetSyntax; 
+struct OperationSyntax; 
 struct SizeOfSyntax; 
-
-struct FileSyntax : Object {
-    FileSyntax(size_t start, size_t end, Vector<DeclarationSyntax>* declarations, Vector<StatementSyntax>* statements) : start(start), end(end), declarations(declarations), statements(statements) {}
-    size_t start;
-    size_t end;
-    Vector<DeclarationSyntax>* declarations;
-    Vector<StatementSyntax>* statements;
-};
-
-struct PrivateSyntax : Object {
-    PrivateSyntax(size_t start, size_t end, ExportSyntax* export_) : start(start), end(end), export_(export_) {}
-    size_t start;
-    size_t end;
-    ExportSyntax* export_;
-};
-
-struct DefinitionSyntax : Object {
-    DefinitionSyntax(size_t start, size_t end, TypeSyntax* type, Vector<AttributeSyntax>* attributes, ConceptSyntax* concept_) : start(start), end(end), type(type), attributes(attributes), concept_(concept_) {}
-    size_t start;
-    size_t end;
-    TypeSyntax* type;
-    Vector<AttributeSyntax>* attributes;
-    ConceptSyntax* concept_;
-};
+struct TypeSyntax; 
+struct NameSyntax; 
 
 struct NameSyntax : Object {
-    NameSyntax(size_t start, size_t end, String* name, Vector<ExtensionSyntax>* extensions) : start(start), end(end), name(name), extensions(extensions) {}
+    NameSyntax(size_t start, size_t end, String name, Vector<ExtensionSyntax>* extensions) : start(start), end(end), name(name), extensions(extensions) {}
     size_t start;
     size_t end;
-    String* name;
+    String name;
     Vector<ExtensionSyntax>* extensions;
 };
 
-struct ExtensionSyntax : Object {
-    ExtensionSyntax(size_t start, size_t end, String* name) : start(start), end(end), name(name) {}
+struct TypeSyntax : Object {
+    TypeSyntax(size_t start, size_t end, NameSyntax name, GenericArgumentsSyntax* generics, OptionalSyntax* optional) : start(start), end(end), name(name), generics(generics), optional(optional) {}
     size_t start;
     size_t end;
-    String* name;
+    NameSyntax name;
+    GenericArgumentsSyntax* generics;
+    OptionalSyntax* optional;
 };
 
-struct AttributeSyntax : Object {
-    AttributeSyntax(size_t start, size_t end, String* attribute, ModelSyntax* value) : start(start), end(end), attribute(attribute), value(value) {}
+struct SizeOfSyntax : Object {
+    SizeOfSyntax(size_t start, size_t end, TypeSyntax type) : start(start), end(end), type(type) {}
     size_t start;
     size_t end;
-    String* attribute;
-    ModelSyntax* value;
+    TypeSyntax type;
 };
 
-struct ClassSyntax : Object {
-    ClassSyntax(size_t start, size_t end, StructureSyntax* structure, BodySyntax* body) : start(start), end(end), structure(structure), body(body) {}
+struct OperationSyntax : Object {
+    OperationSyntax(size_t start, size_t end, Vector<OperandSyntax> operands) : start(start), end(end), operands(operands) {}
     size_t start;
     size_t end;
-    StructureSyntax* structure;
-    BodySyntax* body;
+    Vector<OperandSyntax> operands;
 };
 
-struct NamespaceSyntax : Object {
-    NamespaceSyntax(size_t start, size_t end, BodySyntax* body) : start(start), end(end), body(body) {}
+struct SetSyntax : Object {
+    SetSyntax(size_t start, size_t end, OperationSyntax target, OperationSyntax source) : start(start), end(end), target(target), source(source) {}
     size_t start;
     size_t end;
-    BodySyntax* body;
+    OperationSyntax target;
+    OperationSyntax source;
 };
 
-struct UnionSyntax : Object {
-    UnionSyntax(size_t start, size_t end, Vector<TagSyntax>* tags, BodySyntax* body) : start(start), end(end), tags(tags), body(body) {}
-    size_t start;
-    size_t end;
-    Vector<TagSyntax>* tags;
-    BodySyntax* body;
+struct ActionSyntax : Object {
+    ActionSyntax(OperationSyntax operationSyntax) : tag(Operation) { operationSyntax = operationSyntax; }
+    ActionSyntax(SetSyntax setSyntax) : tag(Set) { setSyntax = setSyntax; }
+    enum {
+        Operation,
+        Set,
+    } tag;
+    union {
+        OperationSyntax operationSyntax;
+        SetSyntax setSyntax;
+    };
 };
 
-struct TagSyntax : Object {
-    TagSyntax(size_t start, size_t end, String* name, Vector<AttributeSyntax>* attributes, ItemSyntax* item) : start(start), end(end), name(name), attributes(attributes), item(item) {}
+struct RepeatSyntax : Object {
+    RepeatSyntax(size_t start, size_t end, LabelSyntax* name, ActionSyntax action) : start(start), end(end), name(name), action(action) {}
     size_t start;
     size_t end;
-    String* name;
+    LabelSyntax* name;
+    ActionSyntax action;
+};
+
+struct WhileSyntax : Object {
+    WhileSyntax(size_t start, size_t end, OperationSyntax condition, LabelSyntax* name, ActionSyntax action) : start(start), end(end), condition(condition), name(name), action(action) {}
+    size_t start;
+    size_t end;
+    OperationSyntax condition;
+    LabelSyntax* name;
+    ActionSyntax action;
+};
+
+struct LabelSyntax : Object {
+    LabelSyntax(size_t start, size_t end, String name) : start(start), end(end), name(name) {}
+    size_t start;
+    size_t end;
+    String name;
+};
+
+struct ForSyntax : Object {
+    ForSyntax(size_t start, size_t end, OperationSyntax condition, OperationSyntax expression, LabelSyntax* name, ActionSyntax action) : start(start), end(end), condition(condition), expression(expression), name(name), action(action) {}
+    size_t start;
+    size_t end;
+    OperationSyntax condition;
+    OperationSyntax expression;
+    LabelSyntax* name;
+    ActionSyntax action;
+};
+
+struct LambdaSyntax : Object {
+    LambdaSyntax(size_t start, size_t end, OperationSyntax input, ActionSyntax block) : start(start), end(end), input(input), block(block) {}
+    size_t start;
+    size_t end;
+    OperationSyntax input;
+    ActionSyntax block;
+};
+
+struct DefaultSyntax : Object {
+    DefaultSyntax(size_t start, size_t end, ActionSyntax* alternative) : start(start), end(end), alternative(alternative) {}
+    size_t start;
+    size_t end;
+    ActionSyntax* alternative;
+};
+
+struct CaseSyntax : Object {
+    CaseSyntax(size_t start, size_t end, OperationSyntax condition, ActionSyntax consequent) : start(start), end(end), condition(condition), consequent(consequent) {}
+    size_t start;
+    size_t end;
+    OperationSyntax condition;
+    ActionSyntax consequent;
+};
+
+struct MatchSyntax : Object {
+    MatchSyntax(size_t start, size_t end, OperationSyntax scrutinee, Vector<CaseSyntax> cases, DefaultSyntax* alternative) : start(start), end(end), scrutinee(scrutinee), cases(cases), alternative(alternative) {}
+    size_t start;
+    size_t end;
+    OperationSyntax scrutinee;
+    Vector<CaseSyntax> cases;
+    DefaultSyntax* alternative;
+};
+
+struct ElseSyntax : Object {
+    ElseSyntax(size_t start, size_t end, ActionSyntax alternative) : start(start), end(end), alternative(alternative) {}
+    size_t start;
+    size_t end;
+    ActionSyntax alternative;
+};
+
+struct AsSyntax : Object {
+    AsSyntax(size_t start, size_t end, String name) : start(start), end(end), name(name) {}
+    size_t start;
+    size_t end;
+    String name;
+};
+
+struct IsSyntax : Object {
+    IsSyntax(size_t start, size_t end, TypeSyntax type) : start(start), end(end), type(type) {}
+    size_t start;
+    size_t end;
+    TypeSyntax type;
+};
+
+struct IfSyntax : Object {
+    IfSyntax(size_t start, size_t end, OperationSyntax condition, IsSyntax* match, AsSyntax* alias, ActionSyntax consequent, ElseSyntax* alternative) : start(start), end(end), condition(condition), match(match), alias(alias), consequent(consequent), alternative(alternative) {}
+    size_t start;
+    size_t end;
+    OperationSyntax condition;
+    IsSyntax* match;
+    AsSyntax* alias;
+    ActionSyntax consequent;
+    ElseSyntax* alternative;
+};
+
+struct BlockSyntax : Object {
+    BlockSyntax(size_t start, size_t end, Vector<StatementSyntax>* statements) : start(start), end(end), statements(statements) {}
+    size_t start;
+    size_t end;
+    Vector<StatementSyntax>* statements;
+};
+
+struct ElementSyntax : Object {
+    ElementSyntax(size_t start, size_t end, OperationSyntax operation, Vector<AttributeSyntax>* attributes) : start(start), end(end), operation(operation), attributes(attributes) {}
+    size_t start;
+    size_t end;
+    OperationSyntax operation;
     Vector<AttributeSyntax>* attributes;
-    ItemSyntax* item;
 };
 
-struct VariantSyntax : Object {
-    VariantSyntax(size_t start, size_t end, StructureSyntax* structure, BodySyntax* body) : start(start), end(end), structure(structure), body(body) {}
+struct VectorSyntax : Object {
+    VectorSyntax(size_t start, size_t end, Vector<ElementSyntax> elements) : start(start), end(end), elements(elements) {}
     size_t start;
     size_t end;
-    StructureSyntax* structure;
-    BodySyntax* body;
+    Vector<ElementSyntax> elements;
 };
 
-struct EnumSyntax : Object {
-    EnumSyntax(size_t start, size_t end, LiteralToken literal) : start(start), end(end), literal(literal) {}
+struct ValueSyntax : Object {
+    ValueSyntax(size_t start, size_t end, OperationSyntax value, Vector<AttributeSyntax>* attributes) : start(start), end(end), value(value), attributes(attributes) {}
+    size_t start;
+    size_t end;
+    OperationSyntax value;
+    Vector<AttributeSyntax>* attributes;
+};
+
+struct ComponentSyntax : Object {
+    ComponentSyntax(size_t start, size_t end, Vector<OperandSyntax> operands, Vector<AttributeSyntax>* attributes, ValueSyntax* value) : start(start), end(end), operands(operands), attributes(attributes), value(value) {}
+    size_t start;
+    size_t end;
+    Vector<OperandSyntax> operands;
+    Vector<AttributeSyntax>* attributes;
+    ValueSyntax* value;
+};
+
+struct ObjectSyntax : Object {
+    ObjectSyntax(size_t start, size_t end, Vector<ComponentSyntax>* components) : start(start), end(end), components(components) {}
+    size_t start;
+    size_t end;
+    Vector<ComponentSyntax>* components;
+};
+
+struct LiteralSyntax : Object {
+    LiteralSyntax(size_t start, size_t end, LiteralToken literal) : start(start), end(end), literal(literal) {}
     size_t start;
     size_t end;
     LiteralToken literal;
 };
 
-struct ConstantSyntax : Object {
-    ConstantSyntax(size_t start, size_t end, OperationSyntax* operation) : start(start), end(end), operation(operation) {}
+struct ThrowSyntax : Object {
+    ThrowSyntax(size_t start, size_t end, OperationSyntax* result) : start(start), end(end), result(result) {}
     size_t start;
     size_t end;
-    OperationSyntax* operation;
-};
-
-struct DelegateSyntax : Object {
-    DelegateSyntax(size_t start, size_t end, ParameterSetSyntax* parameters, Vector<AttributeSyntax>* attributes, ReturnsSyntax* result, ThrowsSyntax* error) : start(start), end(end), parameters(parameters), attributes(attributes), result(result), error(error) {}
-    size_t start;
-    size_t end;
-    ParameterSetSyntax* parameters;
-    Vector<AttributeSyntax>* attributes;
-    ReturnsSyntax* result;
-    ThrowsSyntax* error;
-};
-
-struct StructureSyntax : Object {
-    StructureSyntax(size_t start, size_t end, Vector<MemberSyntax>* members) : start(start), end(end), members(members) {}
-    size_t start;
-    size_t end;
-    Vector<MemberSyntax>* members;
-};
-
-struct BodySyntax : Object {
-    BodySyntax(size_t start, size_t end, Vector<DeclarationSyntax>* declarations) : start(start), end(end), declarations(declarations) {}
-    size_t start;
-    size_t end;
-    Vector<DeclarationSyntax>* declarations;
-};
-
-struct FieldSyntax : Object {
-    FieldSyntax(size_t start, size_t end, PropertySyntax* property) : start(start), end(end), property(property) {}
-    size_t start;
-    size_t end;
-    PropertySyntax* property;
-};
-
-struct PropertySyntax : Object {
-    PropertySyntax(size_t start, size_t end, String* name, TypeAnnotationSyntax* annotation, Vector<AttributeSyntax>* attributes) : start(start), end(end), name(name), annotation(annotation), attributes(attributes) {}
-    size_t start;
-    size_t end;
-    String* name;
-    TypeAnnotationSyntax* annotation;
-    Vector<AttributeSyntax>* attributes;
-};
-
-struct TypeAnnotationSyntax : Object {
-    TypeAnnotationSyntax(size_t start, size_t end, TypeSpecSyntax* spec) : start(start), end(end), spec(spec) {}
-    size_t start;
-    size_t end;
-    TypeSpecSyntax* spec;
-};
-
-struct TypeSyntax : Object {
-    TypeSyntax(size_t start, size_t end, NameSyntax* name, GenericArgumentsSyntax* generics, OptionalSyntax* optional) : start(start), end(end), name(name), generics(generics), optional(optional) {}
-    size_t start;
-    size_t end;
-    NameSyntax* name;
-    GenericArgumentsSyntax* generics;
-    OptionalSyntax* optional;
-};
-
-struct ArraySyntax : Object {
-    ArraySyntax(size_t start, size_t end, Vector<TypeSpecSyntax>* members) : start(start), end(end), members(members) {}
-    size_t start;
-    size_t end;
-    Vector<TypeSpecSyntax>* members;
-};
-
-struct GenericArgumentsSyntax : Object {
-    GenericArgumentsSyntax(size_t start, size_t end, Vector<GenericArgumentSyntax>* generics) : start(start), end(end), generics(generics) {}
-    size_t start;
-    size_t end;
-    Vector<GenericArgumentSyntax>* generics;
-};
-
-struct GenericArgumentSyntax : Object {
-    GenericArgumentSyntax(size_t start, size_t end, TypeSyntax* spec) : start(start), end(end), spec(spec) {}
-    size_t start;
-    size_t end;
-    TypeSyntax* spec;
-};
-
-struct OptionalSyntax : Object {
-    OptionalSyntax(size_t start, size_t end) : start(start), end(end) {}
-    size_t start;
-    size_t end;
-};
-
-struct FunctionSyntax : Object {
-    FunctionSyntax(size_t start, size_t end, String* name, GenericArgumentsSyntax* generics, RoutineSyntax* routine) : start(start), end(end), name(name), generics(generics), routine(routine) {}
-    size_t start;
-    size_t end;
-    String* name;
-    GenericArgumentsSyntax* generics;
-    RoutineSyntax* routine;
-};
-
-struct ProcedureSyntax : Object {
-    ProcedureSyntax(size_t start, size_t end, String* name, GenericArgumentsSyntax* generics, RoutineSyntax* routine) : start(start), end(end), name(name), generics(generics), routine(routine) {}
-    size_t start;
-    size_t end;
-    String* name;
-    GenericArgumentsSyntax* generics;
-    RoutineSyntax* routine;
-};
-
-struct OperatorSyntax : Object {
-    OperatorSyntax(size_t start, size_t end, TargetSyntax* target) : start(start), end(end), target(target) {}
-    size_t start;
-    size_t end;
-    TargetSyntax* target;
-};
-
-struct RoutineSyntax : Object {
-    RoutineSyntax(size_t start, size_t end, ParameterSetSyntax* parameters, Vector<AttributeSyntax>* attributes, ReturnsSyntax* returns, ThrowsSyntax* throws, ImplementationSyntax* implementation) : start(start), end(end), parameters(parameters), attributes(attributes), returns(returns), throws(throws), implementation(implementation) {}
-    size_t start;
-    size_t end;
-    ParameterSetSyntax* parameters;
-    Vector<AttributeSyntax>* attributes;
-    ReturnsSyntax* returns;
-    ThrowsSyntax* throws;
-    ImplementationSyntax* implementation;
-};
-
-struct SymbolSyntax : Object {
-    SymbolSyntax(size_t start, size_t end, String* name, Vector<AttributeSyntax>* attributes, ReturnsSyntax* returns, ThrowsSyntax* throws, ImplementationSyntax* implementation) : start(start), end(end), name(name), attributes(attributes), returns(returns), throws(throws), implementation(implementation) {}
-    size_t start;
-    size_t end;
-    String* name;
-    Vector<AttributeSyntax>* attributes;
-    ReturnsSyntax* returns;
-    ThrowsSyntax* throws;
-    ImplementationSyntax* implementation;
-};
-
-struct ParametersSyntax : Object {
-    ParametersSyntax(size_t start, size_t end, Vector<PropertySyntax>* properties) : start(start), end(end), properties(properties) {}
-    size_t start;
-    size_t end;
-    Vector<PropertySyntax>* properties;
-};
-
-struct ReturnsSyntax : Object {
-    ReturnsSyntax(size_t start, size_t end, ParameterSetSyntax* parameters, Vector<AttributeSyntax>* attributes) : start(start), end(end), parameters(parameters), attributes(attributes) {}
-    size_t start;
-    size_t end;
-    ParameterSetSyntax* parameters;
-    Vector<AttributeSyntax>* attributes;
-};
-
-struct ThrowsSyntax : Object {
-    ThrowsSyntax(size_t start, size_t end, TypeSyntax* type, Vector<AttributeSyntax>* attributes) : start(start), end(end), type(type), attributes(attributes) {}
-    size_t start;
-    size_t end;
-    TypeSyntax* type;
-    Vector<AttributeSyntax>* attributes;
-};
-
-struct ExternSyntax : Object {
-    ExternSyntax(size_t start, size_t end) : start(start), end(end) {}
-    size_t start;
-    size_t end;
-};
-
-struct InstructionSyntax : Object {
-    InstructionSyntax(size_t start, size_t end) : start(start), end(end) {}
-    size_t start;
-    size_t end;
-};
-
-struct IntrinsicSyntax : Object {
-    IntrinsicSyntax(size_t start, size_t end) : start(start), end(end) {}
-    size_t start;
-    size_t end;
-};
-
-struct UseSyntax : Object {
-    UseSyntax(size_t start, size_t end, NameSyntax* name) : start(start), end(end), name(name) {}
-    size_t start;
-    size_t end;
-    NameSyntax* name;
-};
-
-struct ImplementSyntax : Object {
-    ImplementSyntax(size_t start, size_t end, TypeSyntax* type, Vector<AttributeSyntax>* attributes, Vector<MethodSyntax>* methods) : start(start), end(end), type(type), attributes(attributes), methods(methods) {}
-    size_t start;
-    size_t end;
-    TypeSyntax* type;
-    Vector<AttributeSyntax>* attributes;
-    Vector<MethodSyntax>* methods;
-};
-
-struct TraitSyntax : Object {
-    TraitSyntax(size_t start, size_t end, NameSyntax* name, ExtendsSyntax* extension, Vector<AttributeSyntax>* attributes, Vector<MethodSyntax>* functions) : start(start), end(end), name(name), extension(extension), attributes(attributes), functions(functions) {}
-    size_t start;
-    size_t end;
-    NameSyntax* name;
-    ExtendsSyntax* extension;
-    Vector<AttributeSyntax>* attributes;
-    Vector<MethodSyntax>* functions;
-};
-
-struct ExtendsSyntax : Object {
-    ExtendsSyntax(size_t start, size_t end, Vector<ExtendSyntax>* extensions) : start(start), end(end), extensions(extensions) {}
-    size_t start;
-    size_t end;
-    Vector<ExtendSyntax>* extensions;
-};
-
-struct ExtendSyntax : Object {
-    ExtendSyntax(size_t start, size_t end, TypeSpecSyntax* spec) : start(start), end(end), spec(spec) {}
-    size_t start;
-    size_t end;
-    TypeSpecSyntax* spec;
-};
-
-struct MacroSyntax : Object {
-    MacroSyntax(size_t start, size_t end, String* name, ModelSyntax* model, OperationSyntax* rule) : start(start), end(end), name(name), model(model), rule(rule) {}
-    size_t start;
-    size_t end;
-    String* name;
-    ModelSyntax* model;
-    OperationSyntax* rule;
-};
-
-struct ModuleSyntax : Object {
-    ModuleSyntax(size_t start, size_t end, NameSyntax* name) : start(start), end(end), name(name) {}
-    size_t start;
-    size_t end;
-    NameSyntax* name;
-};
-
-struct LetSyntax : Object {
-    LetSyntax(size_t start, size_t end, BindingSyntax* binding) : start(start), end(end), binding(binding) {}
-    size_t start;
-    size_t end;
-    BindingSyntax* binding;
-};
-
-struct VarSyntax : Object {
-    VarSyntax(size_t start, size_t end, BindingSyntax* binding) : start(start), end(end), binding(binding) {}
-    size_t start;
-    size_t end;
-    BindingSyntax* binding;
-};
-
-struct MutableSyntax : Object {
-    MutableSyntax(size_t start, size_t end, BindingSyntax* binding) : start(start), end(end), binding(binding) {}
-    size_t start;
-    size_t end;
-    BindingSyntax* binding;
-};
-
-struct BindingSyntax : Object {
-    BindingSyntax(size_t start, size_t end, String* name, BindingAnnotationSyntax* annotation, OperationSyntax* operation) : start(start), end(end), name(name), annotation(annotation), operation(operation) {}
-    size_t start;
-    size_t end;
-    String* name;
-    BindingAnnotationSyntax* annotation;
-    OperationSyntax* operation;
-};
-
-struct BindingAnnotationSyntax : Object {
-    BindingAnnotationSyntax(size_t start, size_t end, BindingSpecSyntax* spec) : start(start), end(end), spec(spec) {}
-    size_t start;
-    size_t end;
-    BindingSpecSyntax* spec;
-};
-
-struct SetSyntax : Object {
-    SetSyntax(size_t start, size_t end, OperationSyntax* target, OperationSyntax* source) : start(start), end(end), target(target), source(source) {}
-    size_t start;
-    size_t end;
-    OperationSyntax* target;
-    OperationSyntax* source;
-};
-
-struct OperationSyntax : Object {
-    OperationSyntax(size_t start, size_t end, Vector<OperandSyntax>* operands) : start(start), end(end), operands(operands) {}
-    size_t start;
-    size_t end;
-    Vector<OperandSyntax>* operands;
-};
-
-struct OperandSyntax : Object {
-    OperandSyntax(size_t start, size_t end, ExpressionSyntax* expression, Vector<PostfixSyntax>* postfixes) : start(start), end(end), expression(expression), postfixes(postfixes) {}
-    size_t start;
-    size_t end;
-    ExpressionSyntax* expression;
-    Vector<PostfixSyntax>* postfixes;
-};
-
-struct MemberAccessSyntax : Object {
-    MemberAccessSyntax(size_t start, size_t end, NameSyntax* member) : start(start), end(end), member(member) {}
-    size_t start;
-    size_t end;
-    NameSyntax* member;
-};
-
-struct CatcherSyntax : Object {
-    CatcherSyntax(size_t start, size_t end, Vector<CatchSyntax>* catchers, DropSyntax* dropper) : start(start), end(end), catchers(catchers), dropper(dropper) {}
-    size_t start;
-    size_t end;
-    Vector<CatchSyntax>* catchers;
-    DropSyntax* dropper;
-};
-
-struct CatchSyntax : Object {
-    CatchSyntax(size_t start, size_t end, OperationSyntax* condition, OperationSyntax* handler) : start(start), end(end), condition(condition), handler(handler) {}
-    size_t start;
-    size_t end;
-    OperationSyntax* condition;
-    OperationSyntax* handler;
-};
-
-struct DropSyntax : Object {
-    DropSyntax(size_t start, size_t end, OperationSyntax* handler) : start(start), end(end), handler(handler) {}
-    size_t start;
-    size_t end;
-    OperationSyntax* handler;
-};
-
-struct ContinueSyntax : Object {
-    ContinueSyntax(size_t start, size_t end, LoopSyntax* name) : start(start), end(end), name(name) {}
-    size_t start;
-    size_t end;
-    LoopSyntax* name;
-};
-
-struct LoopSyntax : Object {
-    LoopSyntax(size_t start, size_t end, String* name) : start(start), end(end), name(name) {}
-    size_t start;
-    size_t end;
-    String* name;
-};
-
-struct BreakSyntax : Object {
-    BreakSyntax(size_t start, size_t end, LoopSyntax* name, OperationSyntax* result) : start(start), end(end), name(name), result(result) {}
-    size_t start;
-    size_t end;
-    LoopSyntax* name;
     OperationSyntax* result;
 };
 
@@ -544,479 +314,45 @@ struct ReturnSyntax : Object {
     OperationSyntax* result;
 };
 
-struct ThrowSyntax : Object {
-    ThrowSyntax(size_t start, size_t end, OperationSyntax* result) : start(start), end(end), result(result) {}
+struct LoopSyntax : Object {
+    LoopSyntax(size_t start, size_t end, String name) : start(start), end(end), name(name) {}
     size_t start;
     size_t end;
+    String name;
+};
+
+struct BreakSyntax : Object {
+    BreakSyntax(size_t start, size_t end, LoopSyntax* name, OperationSyntax* result) : start(start), end(end), name(name), result(result) {}
+    size_t start;
+    size_t end;
+    LoopSyntax* name;
     OperationSyntax* result;
 };
 
-struct LiteralSyntax : Object {
-    LiteralSyntax(size_t start, size_t end, LiteralToken literal) : start(start), end(end), literal(literal) {}
+struct ContinueSyntax : Object {
+    ContinueSyntax(size_t start, size_t end, LoopSyntax* name) : start(start), end(end), name(name) {}
     size_t start;
     size_t end;
-    LiteralToken literal;
-};
-
-struct ObjectSyntax : Object {
-    ObjectSyntax(size_t start, size_t end, Vector<ComponentSyntax>* components) : start(start), end(end), components(components) {}
-    size_t start;
-    size_t end;
-    Vector<ComponentSyntax>* components;
-};
-
-struct ComponentSyntax : Object {
-    ComponentSyntax(size_t start, size_t end, Vector<OperandSyntax>* operands, Vector<AttributeSyntax>* attributes, ValueSyntax* value) : start(start), end(end), operands(operands), attributes(attributes), value(value) {}
-    size_t start;
-    size_t end;
-    Vector<OperandSyntax>* operands;
-    Vector<AttributeSyntax>* attributes;
-    ValueSyntax* value;
-};
-
-struct ValueSyntax : Object {
-    ValueSyntax(size_t start, size_t end, OperationSyntax* value, Vector<AttributeSyntax>* attributes) : start(start), end(end), value(value), attributes(attributes) {}
-    size_t start;
-    size_t end;
-    OperationSyntax* value;
-    Vector<AttributeSyntax>* attributes;
-};
-
-struct VectorSyntax : Object {
-    VectorSyntax(size_t start, size_t end, Vector<ElementSyntax>* elements) : start(start), end(end), elements(elements) {}
-    size_t start;
-    size_t end;
-    Vector<ElementSyntax>* elements;
-};
-
-struct ElementSyntax : Object {
-    ElementSyntax(size_t start, size_t end, OperationSyntax* operation, Vector<AttributeSyntax>* attributes) : start(start), end(end), operation(operation), attributes(attributes) {}
-    size_t start;
-    size_t end;
-    OperationSyntax* operation;
-    Vector<AttributeSyntax>* attributes;
-};
-
-struct BlockSyntax : Object {
-    BlockSyntax(size_t start, size_t end, Vector<StatementSyntax>* statements) : start(start), end(end), statements(statements) {}
-    size_t start;
-    size_t end;
-    Vector<StatementSyntax>* statements;
-};
-
-struct IfSyntax : Object {
-    IfSyntax(size_t start, size_t end, OperationSyntax* condition, IsSyntax* match, AsSyntax* alias, ActionSyntax* consequent, ElseSyntax* alternative) : start(start), end(end), condition(condition), match(match), alias(alias), consequent(consequent), alternative(alternative) {}
-    size_t start;
-    size_t end;
-    OperationSyntax* condition;
-    IsSyntax* match;
-    AsSyntax* alias;
-    ActionSyntax* consequent;
-    ElseSyntax* alternative;
-};
-
-struct IsSyntax : Object {
-    IsSyntax(size_t start, size_t end, TypeSyntax* type) : start(start), end(end), type(type) {}
-    size_t start;
-    size_t end;
-    TypeSyntax* type;
-};
-
-struct AsSyntax : Object {
-    AsSyntax(size_t start, size_t end, String* name) : start(start), end(end), name(name) {}
-    size_t start;
-    size_t end;
-    String* name;
-};
-
-struct ElseSyntax : Object {
-    ElseSyntax(size_t start, size_t end, ActionSyntax* alternative) : start(start), end(end), alternative(alternative) {}
-    size_t start;
-    size_t end;
-    ActionSyntax* alternative;
-};
-
-struct MatchSyntax : Object {
-    MatchSyntax(size_t start, size_t end, OperationSyntax* scrutinee, Vector<CaseSyntax>* cases, DefaultSyntax* alternative) : start(start), end(end), scrutinee(scrutinee), cases(cases), alternative(alternative) {}
-    size_t start;
-    size_t end;
-    OperationSyntax* scrutinee;
-    Vector<CaseSyntax>* cases;
-    DefaultSyntax* alternative;
-};
-
-struct CaseSyntax : Object {
-    CaseSyntax(size_t start, size_t end, OperationSyntax* condition, ActionSyntax* consequent) : start(start), end(end), condition(condition), consequent(consequent) {}
-    size_t start;
-    size_t end;
-    OperationSyntax* condition;
-    ActionSyntax* consequent;
-};
-
-struct DefaultSyntax : Object {
-    DefaultSyntax(size_t start, size_t end, ActionSyntax* alternative) : start(start), end(end), alternative(alternative) {}
-    size_t start;
-    size_t end;
-    ActionSyntax* alternative;
-};
-
-struct LambdaSyntax : Object {
-    LambdaSyntax(size_t start, size_t end, OperationSyntax* input, ActionSyntax* block) : start(start), end(end), input(input), block(block) {}
-    size_t start;
-    size_t end;
-    OperationSyntax* input;
-    ActionSyntax* block;
-};
-
-struct ForSyntax : Object {
-    ForSyntax(size_t start, size_t end, OperationSyntax* condition, OperationSyntax* expression, LabelSyntax* name, ActionSyntax* action) : start(start), end(end), condition(condition), expression(expression), name(name), action(action) {}
-    size_t start;
-    size_t end;
-    OperationSyntax* condition;
-    OperationSyntax* expression;
-    LabelSyntax* name;
-    ActionSyntax* action;
-};
-
-struct LabelSyntax : Object {
-    LabelSyntax(size_t start, size_t end, String* name) : start(start), end(end), name(name) {}
-    size_t start;
-    size_t end;
-    String* name;
-};
-
-struct WhileSyntax : Object {
-    WhileSyntax(size_t start, size_t end, OperationSyntax* condition, LabelSyntax* name, ActionSyntax* action) : start(start), end(end), condition(condition), name(name), action(action) {}
-    size_t start;
-    size_t end;
-    OperationSyntax* condition;
-    LabelSyntax* name;
-    ActionSyntax* action;
-};
-
-struct RepeatSyntax : Object {
-    RepeatSyntax(size_t start, size_t end, LabelSyntax* name, ActionSyntax* action) : start(start), end(end), name(name), action(action) {}
-    size_t start;
-    size_t end;
-    LabelSyntax* name;
-    ActionSyntax* action;
-};
-
-struct SizeOfSyntax : Object {
-    SizeOfSyntax(size_t start, size_t end, TypeSyntax* type) : start(start), end(end), type(type) {}
-    size_t start;
-    size_t end;
-    TypeSyntax* type;
-};
-
-struct DeclarationSyntax : Object {
-    DeclarationSyntax(PrivateSyntax privateSyntax) : tag(Private), privateSyntax(privateSyntax) {}
-    DeclarationSyntax(DefinitionSyntax definitionSyntax) : tag(Definition), definitionSyntax(definitionSyntax) {}
-    DeclarationSyntax(FunctionSyntax functionSyntax) : tag(Function), functionSyntax(functionSyntax) {}
-    DeclarationSyntax(ProcedureSyntax procedureSyntax) : tag(Procedure), procedureSyntax(procedureSyntax) {}
-    DeclarationSyntax(OperatorSyntax operatorSyntax) : tag(Operator), operatorSyntax(operatorSyntax) {}
-    DeclarationSyntax(UseSyntax useSyntax) : tag(Use), useSyntax(useSyntax) {}
-    DeclarationSyntax(ImplementSyntax implementSyntax) : tag(Implement), implementSyntax(implementSyntax) {}
-    DeclarationSyntax(TraitSyntax traitSyntax) : tag(Trait), traitSyntax(traitSyntax) {}
-    DeclarationSyntax(MacroSyntax macroSyntax) : tag(Macro), macroSyntax(macroSyntax) {}
-    DeclarationSyntax(ModuleSyntax moduleSyntax) : tag(Module), moduleSyntax(moduleSyntax) {}
-    enum {
-        Private,
-        Definition,
-        Function,
-        Procedure,
-        Operator,
-        Use,
-        Implement,
-        Trait,
-        Macro,
-        Module,
-    } tag;
-    union {
-        PrivateSyntax privateSyntax;
-        DefinitionSyntax definitionSyntax;
-        FunctionSyntax functionSyntax;
-        ProcedureSyntax procedureSyntax;
-        OperatorSyntax operatorSyntax;
-        UseSyntax useSyntax;
-        ImplementSyntax implementSyntax;
-        TraitSyntax traitSyntax;
-        MacroSyntax macroSyntax;
-        ModuleSyntax moduleSyntax;
-    };
-
-};
-
-struct ExportSyntax : Object {
-    ExportSyntax(DefinitionSyntax definitionSyntax) : tag(Definition), definitionSyntax(definitionSyntax) {}
-    ExportSyntax(FunctionSyntax functionSyntax) : tag(Function), functionSyntax(functionSyntax) {}
-    ExportSyntax(ProcedureSyntax procedureSyntax) : tag(Procedure), procedureSyntax(procedureSyntax) {}
-    ExportSyntax(OperatorSyntax operatorSyntax) : tag(Operator), operatorSyntax(operatorSyntax) {}
-    ExportSyntax(ImplementSyntax implementSyntax) : tag(Implement), implementSyntax(implementSyntax) {}
-    ExportSyntax(TraitSyntax traitSyntax) : tag(Trait), traitSyntax(traitSyntax) {}
-    ExportSyntax(MacroSyntax macroSyntax) : tag(Macro), macroSyntax(macroSyntax) {}
-    ExportSyntax(ModuleSyntax moduleSyntax) : tag(Module), moduleSyntax(moduleSyntax) {}
-    enum {
-        Definition,
-        Function,
-        Procedure,
-        Operator,
-        Implement,
-        Trait,
-        Macro,
-        Module,
-    } tag;
-    union {
-        DefinitionSyntax definitionSyntax;
-        FunctionSyntax functionSyntax;
-        ProcedureSyntax procedureSyntax;
-        OperatorSyntax operatorSyntax;
-        ImplementSyntax implementSyntax;
-        TraitSyntax traitSyntax;
-        MacroSyntax macroSyntax;
-        ModuleSyntax moduleSyntax;
-    };
-
-};
-
-struct ConceptSyntax : Object {
-    ConceptSyntax(ClassSyntax classSyntax) : tag(Class), classSyntax(classSyntax) {}
-    ConceptSyntax(NamespaceSyntax namespaceSyntax) : tag(Namespace), namespaceSyntax(namespaceSyntax) {}
-    ConceptSyntax(UnionSyntax unionSyntax) : tag(Union), unionSyntax(unionSyntax) {}
-    ConceptSyntax(ConstantSyntax constantSyntax) : tag(Constant), constantSyntax(constantSyntax) {}
-    ConceptSyntax(DelegateSyntax delegateSyntax) : tag(Delegate), delegateSyntax(delegateSyntax) {}
-    ConceptSyntax(IntrinsicSyntax intrinsicSyntax) : tag(Intrinsic), intrinsicSyntax(intrinsicSyntax) {}
-    enum {
-        Class,
-        Namespace,
-        Union,
-        Constant,
-        Delegate,
-        Intrinsic,
-    } tag;
-    union {
-        ClassSyntax classSyntax;
-        NamespaceSyntax namespaceSyntax;
-        UnionSyntax unionSyntax;
-        ConstantSyntax constantSyntax;
-        DelegateSyntax delegateSyntax;
-        IntrinsicSyntax intrinsicSyntax;
-    };
-
-};
-
-struct ItemSyntax : Object {
-    ItemSyntax(VariantSyntax variantSyntax) : tag(Variant), variantSyntax(variantSyntax) {}
-    ItemSyntax(EnumSyntax enumSyntax) : tag(Enum), enumSyntax(enumSyntax) {}
-    enum {
-        Variant,
-        Enum,
-    } tag;
-    union {
-        VariantSyntax variantSyntax;
-        EnumSyntax enumSyntax;
-    };
-
-};
-
-struct MemberSyntax : Object {
-    MemberSyntax(FieldSyntax fieldSyntax) : tag(Field), fieldSyntax(fieldSyntax) {}
-    MemberSyntax(PropertySyntax propertySyntax) : tag(Property), propertySyntax(propertySyntax) {}
-    enum {
-        Field,
-        Property,
-    } tag;
-    union {
-        FieldSyntax fieldSyntax;
-        PropertySyntax propertySyntax;
-    };
-
-};
-
-struct TypeSpecSyntax : Object {
-    TypeSpecSyntax(StructureSyntax structureSyntax) : tag(Structure), structureSyntax(structureSyntax) {}
-    TypeSpecSyntax(TypeSyntax typeSyntax) : tag(Type), typeSyntax(typeSyntax) {}
-    enum {
-        Structure,
-        Type,
-    } tag;
-    union {
-        StructureSyntax structureSyntax;
-        TypeSyntax typeSyntax;
-    };
-
-};
-
-struct TargetSyntax : Object {
-    TargetSyntax(SymbolSyntax symbolSyntax) : tag(Symbol), symbolSyntax(symbolSyntax) {}
-    TargetSyntax(RoutineSyntax routineSyntax) : tag(Routine), routineSyntax(routineSyntax) {}
-    enum {
-        Symbol,
-        Routine,
-    } tag;
-    union {
-        SymbolSyntax symbolSyntax;
-        RoutineSyntax routineSyntax;
-    };
-
-};
-
-struct ParameterSetSyntax : Object {
-    ParameterSetSyntax(ParametersSyntax parametersSyntax) : tag(Parameters), parametersSyntax(parametersSyntax) {}
-    ParameterSetSyntax(TypeSyntax typeSyntax) : tag(Type), typeSyntax(typeSyntax) {}
-    enum {
-        Parameters,
-        Type,
-    } tag;
-    union {
-        ParametersSyntax parametersSyntax;
-        TypeSyntax typeSyntax;
-    };
-
-};
-
-struct ActionSyntax : Object {
-    ActionSyntax(OperationSyntax operationSyntax) : tag(Operation), operationSyntax(operationSyntax) {}
-    ActionSyntax(SetSyntax setSyntax) : tag(Set), setSyntax(setSyntax) {}
-    enum {
-        Operation,
-        Set,
-    } tag;
-    union {
-        OperationSyntax operationSyntax;
-        SetSyntax setSyntax;
-    };
-
-};
-
-struct ImplementationSyntax : Object {
-    ImplementationSyntax(ActionSyntax actionSyntax) : tag(Action), actionSyntax(actionSyntax) {}
-    ImplementationSyntax(ExternSyntax externSyntax) : tag(Extern), externSyntax(externSyntax) {}
-    ImplementationSyntax(InstructionSyntax instructionSyntax) : tag(Instruction), instructionSyntax(instructionSyntax) {}
-    ImplementationSyntax(IntrinsicSyntax intrinsicSyntax) : tag(Intrinsic), intrinsicSyntax(intrinsicSyntax) {}
-    enum {
-        Action,
-        Extern,
-        Instruction,
-        Intrinsic,
-    } tag;
-    union {
-        ActionSyntax actionSyntax;
-        ExternSyntax externSyntax;
-        InstructionSyntax instructionSyntax;
-        IntrinsicSyntax intrinsicSyntax;
-    };
-
-};
-
-struct MethodSyntax : Object {
-    MethodSyntax(FunctionSyntax functionSyntax) : tag(Function), functionSyntax(functionSyntax) {}
-    MethodSyntax(ProcedureSyntax procedureSyntax) : tag(Procedure), procedureSyntax(procedureSyntax) {}
-    MethodSyntax(OperatorSyntax operatorSyntax) : tag(Operator), operatorSyntax(operatorSyntax) {}
-    enum {
-        Function,
-        Procedure,
-        Operator,
-    } tag;
-    union {
-        FunctionSyntax functionSyntax;
-        ProcedureSyntax procedureSyntax;
-        OperatorSyntax operatorSyntax;
-    };
-
-};
-
-struct ModelSyntax : Object {
-    ModelSyntax(LiteralSyntax literalSyntax) : tag(Literal), literalSyntax(literalSyntax) {}
-    ModelSyntax(NameSyntax nameSyntax) : tag(Name), nameSyntax(nameSyntax) {}
-    ModelSyntax(ObjectSyntax objectSyntax) : tag(Object), objectSyntax(objectSyntax) {}
-    ModelSyntax(VectorSyntax vectorSyntax) : tag(Vector), vectorSyntax(vectorSyntax) {}
-    enum {
-        Literal,
-        Name,
-        Object,
-        Vector,
-    } tag;
-    union {
-        LiteralSyntax literalSyntax;
-        NameSyntax nameSyntax;
-        ObjectSyntax objectSyntax;
-        VectorSyntax vectorSyntax;
-    };
-
-};
-
-struct StatementSyntax : Object {
-    StatementSyntax(OperationSyntax operationSyntax) : tag(Operation), operationSyntax(operationSyntax) {}
-    StatementSyntax(LetSyntax letSyntax) : tag(Let), letSyntax(letSyntax) {}
-    StatementSyntax(VarSyntax varSyntax) : tag(Var), varSyntax(varSyntax) {}
-    StatementSyntax(MutableSyntax mutableSyntax) : tag(Mutable), mutableSyntax(mutableSyntax) {}
-    StatementSyntax(SetSyntax setSyntax) : tag(Set), setSyntax(setSyntax) {}
-    enum {
-        Operation,
-        Let,
-        Var,
-        Mutable,
-        Set,
-    } tag;
-    union {
-        OperationSyntax operationSyntax;
-        LetSyntax letSyntax;
-        VarSyntax varSyntax;
-        MutableSyntax mutableSyntax;
-        SetSyntax setSyntax;
-    };
-
-};
-
-struct BindingSpecSyntax : Object {
-    BindingSpecSyntax(StructureSyntax structureSyntax) : tag(Structure), structureSyntax(structureSyntax) {}
-    BindingSpecSyntax(TypeSyntax typeSyntax) : tag(Type), typeSyntax(typeSyntax) {}
-    BindingSpecSyntax(ArraySyntax arraySyntax) : tag(Array), arraySyntax(arraySyntax) {}
-    enum {
-        Structure,
-        Type,
-        Array,
-    } tag;
-    union {
-        StructureSyntax structureSyntax;
-        TypeSyntax typeSyntax;
-        ArraySyntax arraySyntax;
-    };
-
-};
-
-struct PostfixSyntax : Object {
-    PostfixSyntax(MemberAccessSyntax memberAccessSyntax) : tag(MemberAccess), memberAccessSyntax(memberAccessSyntax) {}
-    PostfixSyntax(CatcherSyntax catcherSyntax) : tag(Catcher), catcherSyntax(catcherSyntax) {}
-    enum {
-        MemberAccess,
-        Catcher,
-    } tag;
-    union {
-        MemberAccessSyntax memberAccessSyntax;
-        CatcherSyntax catcherSyntax;
-    };
-
+    LoopSyntax* name;
 };
 
 struct ExpressionSyntax : Object {
-    ExpressionSyntax(LiteralSyntax literalSyntax) : tag(Literal), literalSyntax(literalSyntax) {}
-    ExpressionSyntax(NameSyntax nameSyntax) : tag(Name), nameSyntax(nameSyntax) {}
-    ExpressionSyntax(ObjectSyntax objectSyntax) : tag(Object), objectSyntax(objectSyntax) {}
-    ExpressionSyntax(VectorSyntax vectorSyntax) : tag(Vector), vectorSyntax(vectorSyntax) {}
-    ExpressionSyntax(BlockSyntax blockSyntax) : tag(Block), blockSyntax(blockSyntax) {}
-    ExpressionSyntax(IfSyntax ifSyntax) : tag(If), ifSyntax(ifSyntax) {}
-    ExpressionSyntax(MatchSyntax matchSyntax) : tag(Match), matchSyntax(matchSyntax) {}
-    ExpressionSyntax(LambdaSyntax lambdaSyntax) : tag(Lambda), lambdaSyntax(lambdaSyntax) {}
-    ExpressionSyntax(ForSyntax forSyntax) : tag(For), forSyntax(forSyntax) {}
-    ExpressionSyntax(WhileSyntax whileSyntax) : tag(While), whileSyntax(whileSyntax) {}
-    ExpressionSyntax(RepeatSyntax repeatSyntax) : tag(Repeat), repeatSyntax(repeatSyntax) {}
-    ExpressionSyntax(SizeOfSyntax sizeOfSyntax) : tag(SizeOf), sizeOfSyntax(sizeOfSyntax) {}
-    ExpressionSyntax(ContinueSyntax continueSyntax) : tag(Continue), continueSyntax(continueSyntax) {}
-    ExpressionSyntax(BreakSyntax breakSyntax) : tag(Break), breakSyntax(breakSyntax) {}
-    ExpressionSyntax(ReturnSyntax returnSyntax) : tag(Return), returnSyntax(returnSyntax) {}
-    ExpressionSyntax(ThrowSyntax throwSyntax) : tag(Throw), throwSyntax(throwSyntax) {}
+    ExpressionSyntax(LiteralSyntax literalSyntax) : tag(Literal) { literalSyntax = literalSyntax; }
+    ExpressionSyntax(NameSyntax nameSyntax) : tag(Name) { nameSyntax = nameSyntax; }
+    ExpressionSyntax(ObjectSyntax objectSyntax) : tag(Object) { objectSyntax = objectSyntax; }
+    ExpressionSyntax(VectorSyntax vectorSyntax) : tag(Vector) { vectorSyntax = vectorSyntax; }
+    ExpressionSyntax(BlockSyntax blockSyntax) : tag(Block) { blockSyntax = blockSyntax; }
+    ExpressionSyntax(IfSyntax ifSyntax) : tag(If) { ifSyntax = ifSyntax; }
+    ExpressionSyntax(MatchSyntax matchSyntax) : tag(Match) { matchSyntax = matchSyntax; }
+    ExpressionSyntax(LambdaSyntax lambdaSyntax) : tag(Lambda) { lambdaSyntax = lambdaSyntax; }
+    ExpressionSyntax(ForSyntax forSyntax) : tag(For) { forSyntax = forSyntax; }
+    ExpressionSyntax(WhileSyntax whileSyntax) : tag(While) { whileSyntax = whileSyntax; }
+    ExpressionSyntax(RepeatSyntax repeatSyntax) : tag(Repeat) { repeatSyntax = repeatSyntax; }
+    ExpressionSyntax(SizeOfSyntax sizeOfSyntax) : tag(SizeOf) { sizeOfSyntax = sizeOfSyntax; }
+    ExpressionSyntax(ContinueSyntax continueSyntax) : tag(Continue) { continueSyntax = continueSyntax; }
+    ExpressionSyntax(BreakSyntax breakSyntax) : tag(Break) { breakSyntax = breakSyntax; }
+    ExpressionSyntax(ReturnSyntax returnSyntax) : tag(Return) { returnSyntax = returnSyntax; }
+    ExpressionSyntax(ThrowSyntax throwSyntax) : tag(Throw) { throwSyntax = throwSyntax; }
     enum {
         Literal,
         Name,
@@ -1053,7 +389,655 @@ struct ExpressionSyntax : Object {
         ReturnSyntax returnSyntax;
         ThrowSyntax throwSyntax;
     };
+};
 
+struct DropSyntax : Object {
+    DropSyntax(size_t start, size_t end, OperationSyntax handler) : start(start), end(end), handler(handler) {}
+    size_t start;
+    size_t end;
+    OperationSyntax handler;
+};
+
+struct CatchSyntax : Object {
+    CatchSyntax(size_t start, size_t end, OperationSyntax condition, OperationSyntax handler) : start(start), end(end), condition(condition), handler(handler) {}
+    size_t start;
+    size_t end;
+    OperationSyntax condition;
+    OperationSyntax handler;
+};
+
+struct CatcherSyntax : Object {
+    CatcherSyntax(size_t start, size_t end, Vector<CatchSyntax> catchers, DropSyntax* dropper) : start(start), end(end), catchers(catchers), dropper(dropper) {}
+    size_t start;
+    size_t end;
+    Vector<CatchSyntax> catchers;
+    DropSyntax* dropper;
+};
+
+struct MemberAccessSyntax : Object {
+    MemberAccessSyntax(size_t start, size_t end, NameSyntax member) : start(start), end(end), member(member) {}
+    size_t start;
+    size_t end;
+    NameSyntax member;
+};
+
+struct PostfixSyntax : Object {
+    PostfixSyntax(MemberAccessSyntax memberAccessSyntax) : tag(MemberAccess) { memberAccessSyntax = memberAccessSyntax; }
+    PostfixSyntax(CatcherSyntax catcherSyntax) : tag(Catcher) { catcherSyntax = catcherSyntax; }
+    enum {
+        MemberAccess,
+        Catcher,
+    } tag;
+    union {
+        MemberAccessSyntax memberAccessSyntax;
+        CatcherSyntax catcherSyntax;
+    };
+};
+
+struct OperandSyntax : Object {
+    OperandSyntax(size_t start, size_t end, ExpressionSyntax expression, Vector<PostfixSyntax>* postfixes) : start(start), end(end), expression(expression), postfixes(postfixes) {}
+    size_t start;
+    size_t end;
+    ExpressionSyntax expression;
+    Vector<PostfixSyntax>* postfixes;
+};
+
+struct StructureSyntax : Object {
+    StructureSyntax(size_t start, size_t end, Vector<MemberSyntax>* members) : start(start), end(end), members(members) {}
+    size_t start;
+    size_t end;
+    Vector<MemberSyntax>* members;
+};
+
+struct ArraySyntax : Object {
+    ArraySyntax(size_t start, size_t end, Vector<TypeSpecSyntax>* members) : start(start), end(end), members(members) {}
+    size_t start;
+    size_t end;
+    Vector<TypeSpecSyntax>* members;
+};
+
+struct BindingSpecSyntax : Object {
+    BindingSpecSyntax(StructureSyntax structureSyntax) : tag(Structure) { structureSyntax = structureSyntax; }
+    BindingSpecSyntax(TypeSyntax typeSyntax) : tag(Type) { typeSyntax = typeSyntax; }
+    BindingSpecSyntax(ArraySyntax arraySyntax) : tag(Array) { arraySyntax = arraySyntax; }
+    enum {
+        Structure,
+        Type,
+        Array,
+    } tag;
+    union {
+        StructureSyntax structureSyntax;
+        TypeSyntax typeSyntax;
+        ArraySyntax arraySyntax;
+    };
+};
+
+struct BindingAnnotationSyntax : Object {
+    BindingAnnotationSyntax(size_t start, size_t end, BindingSpecSyntax spec) : start(start), end(end), spec(spec) {}
+    size_t start;
+    size_t end;
+    BindingSpecSyntax spec;
+};
+
+struct BindingSyntax : Object {
+    BindingSyntax(size_t start, size_t end, String name, BindingAnnotationSyntax* annotation, OperationSyntax operation) : start(start), end(end), name(name), annotation(annotation), operation(operation) {}
+    size_t start;
+    size_t end;
+    String name;
+    BindingAnnotationSyntax* annotation;
+    OperationSyntax operation;
+};
+
+struct MutableSyntax : Object {
+    MutableSyntax(size_t start, size_t end, BindingSyntax binding) : start(start), end(end), binding(binding) {}
+    size_t start;
+    size_t end;
+    BindingSyntax binding;
+};
+
+struct VarSyntax : Object {
+    VarSyntax(size_t start, size_t end, BindingSyntax binding) : start(start), end(end), binding(binding) {}
+    size_t start;
+    size_t end;
+    BindingSyntax binding;
+};
+
+struct LetSyntax : Object {
+    LetSyntax(size_t start, size_t end, BindingSyntax binding) : start(start), end(end), binding(binding) {}
+    size_t start;
+    size_t end;
+    BindingSyntax binding;
+};
+
+struct StatementSyntax : Object {
+    StatementSyntax(OperationSyntax operationSyntax) : tag(Operation) { operationSyntax = operationSyntax; }
+    StatementSyntax(LetSyntax letSyntax) : tag(Let) { letSyntax = letSyntax; }
+    StatementSyntax(VarSyntax varSyntax) : tag(Var) { varSyntax = varSyntax; }
+    StatementSyntax(MutableSyntax mutableSyntax) : tag(Mutable) { mutableSyntax = mutableSyntax; }
+    StatementSyntax(SetSyntax setSyntax) : tag(Set) { setSyntax = setSyntax; }
+    enum {
+        Operation,
+        Let,
+        Var,
+        Mutable,
+        Set,
+    } tag;
+    union {
+        OperationSyntax operationSyntax;
+        LetSyntax letSyntax;
+        VarSyntax varSyntax;
+        MutableSyntax mutableSyntax;
+        SetSyntax setSyntax;
+    };
+};
+
+struct ModelSyntax : Object {
+    ModelSyntax(LiteralSyntax literalSyntax) : tag(Literal) { literalSyntax = literalSyntax; }
+    ModelSyntax(NameSyntax nameSyntax) : tag(Name) { nameSyntax = nameSyntax; }
+    ModelSyntax(ObjectSyntax objectSyntax) : tag(Object) { objectSyntax = objectSyntax; }
+    ModelSyntax(VectorSyntax vectorSyntax) : tag(Vector) { vectorSyntax = vectorSyntax; }
+    enum {
+        Literal,
+        Name,
+        Object,
+        Vector,
+    } tag;
+    union {
+        LiteralSyntax literalSyntax;
+        NameSyntax nameSyntax;
+        ObjectSyntax objectSyntax;
+        VectorSyntax vectorSyntax;
+    };
+};
+
+struct ModuleSyntax : Object {
+    ModuleSyntax(size_t start, size_t end, NameSyntax name) : start(start), end(end), name(name) {}
+    size_t start;
+    size_t end;
+    NameSyntax name;
+};
+
+struct MacroSyntax : Object {
+    MacroSyntax(size_t start, size_t end, String name, ModelSyntax model, OperationSyntax rule) : start(start), end(end), name(name), model(model), rule(rule) {}
+    size_t start;
+    size_t end;
+    String name;
+    ModelSyntax model;
+    OperationSyntax rule;
+};
+
+struct TypeSpecSyntax : Object {
+    TypeSpecSyntax(StructureSyntax structureSyntax) : tag(Structure) { structureSyntax = structureSyntax; }
+    TypeSpecSyntax(TypeSyntax typeSyntax) : tag(Type) { typeSyntax = typeSyntax; }
+    enum {
+        Structure,
+        Type,
+    } tag;
+    union {
+        StructureSyntax structureSyntax;
+        TypeSyntax typeSyntax;
+    };
+};
+
+struct ExtendSyntax : Object {
+    ExtendSyntax(size_t start, size_t end, TypeSpecSyntax spec) : start(start), end(end), spec(spec) {}
+    size_t start;
+    size_t end;
+    TypeSpecSyntax spec;
+};
+
+struct ExtendsSyntax : Object {
+    ExtendsSyntax(size_t start, size_t end, Vector<ExtendSyntax>* extensions) : start(start), end(end), extensions(extensions) {}
+    size_t start;
+    size_t end;
+    Vector<ExtendSyntax>* extensions;
+};
+
+struct IntrinsicSyntax : Object {
+    IntrinsicSyntax(size_t start, size_t end) : start(start), end(end) {}
+    size_t start;
+    size_t end;
+};
+
+struct InstructionSyntax : Object {
+    InstructionSyntax(size_t start, size_t end) : start(start), end(end) {}
+    size_t start;
+    size_t end;
+};
+
+struct ExternSyntax : Object {
+    ExternSyntax(size_t start, size_t end) : start(start), end(end) {}
+    size_t start;
+    size_t end;
+};
+
+struct ImplementationSyntax : Object {
+    ImplementationSyntax(ActionSyntax actionSyntax) : tag(Action) { actionSyntax = actionSyntax; }
+    ImplementationSyntax(ExternSyntax externSyntax) : tag(Extern) { externSyntax = externSyntax; }
+    ImplementationSyntax(InstructionSyntax instructionSyntax) : tag(Instruction) { instructionSyntax = instructionSyntax; }
+    ImplementationSyntax(IntrinsicSyntax intrinsicSyntax) : tag(Intrinsic) { intrinsicSyntax = intrinsicSyntax; }
+    enum {
+        Action,
+        Extern,
+        Instruction,
+        Intrinsic,
+    } tag;
+    union {
+        ActionSyntax actionSyntax;
+        ExternSyntax externSyntax;
+        InstructionSyntax instructionSyntax;
+        IntrinsicSyntax intrinsicSyntax;
+    };
+};
+
+struct SymbolSyntax : Object {
+    SymbolSyntax(size_t start, size_t end, String name, Vector<AttributeSyntax>* attributes, ReturnsSyntax* returns, ThrowsSyntax* throws, ImplementationSyntax implementation) : start(start), end(end), name(name), attributes(attributes), returns(returns), throws(throws), implementation(implementation) {}
+    size_t start;
+    size_t end;
+    String name;
+    Vector<AttributeSyntax>* attributes;
+    ReturnsSyntax* returns;
+    ThrowsSyntax* throws;
+    ImplementationSyntax implementation;
+};
+
+struct RoutineSyntax : Object {
+    RoutineSyntax(size_t start, size_t end, ParameterSetSyntax* parameters, Vector<AttributeSyntax>* attributes, ReturnsSyntax* returns, ThrowsSyntax* throws, ImplementationSyntax implementation) : start(start), end(end), parameters(parameters), attributes(attributes), returns(returns), throws(throws), implementation(implementation) {}
+    size_t start;
+    size_t end;
+    ParameterSetSyntax* parameters;
+    Vector<AttributeSyntax>* attributes;
+    ReturnsSyntax* returns;
+    ThrowsSyntax* throws;
+    ImplementationSyntax implementation;
+};
+
+struct TargetSyntax : Object {
+    TargetSyntax(SymbolSyntax symbolSyntax) : tag(Symbol) { symbolSyntax = symbolSyntax; }
+    TargetSyntax(RoutineSyntax routineSyntax) : tag(Routine) { routineSyntax = routineSyntax; }
+    enum {
+        Symbol,
+        Routine,
+    } tag;
+    union {
+        SymbolSyntax symbolSyntax;
+        RoutineSyntax routineSyntax;
+    };
+};
+
+struct OperatorSyntax : Object {
+    OperatorSyntax(size_t start, size_t end, TargetSyntax target) : start(start), end(end), target(target) {}
+    size_t start;
+    size_t end;
+    TargetSyntax target;
+};
+
+struct ProcedureSyntax : Object {
+    ProcedureSyntax(size_t start, size_t end, String name, GenericArgumentsSyntax* generics, RoutineSyntax routine) : start(start), end(end), name(name), generics(generics), routine(routine) {}
+    size_t start;
+    size_t end;
+    String name;
+    GenericArgumentsSyntax* generics;
+    RoutineSyntax routine;
+};
+
+struct FunctionSyntax : Object {
+    FunctionSyntax(size_t start, size_t end, String name, GenericArgumentsSyntax* generics, RoutineSyntax routine) : start(start), end(end), name(name), generics(generics), routine(routine) {}
+    size_t start;
+    size_t end;
+    String name;
+    GenericArgumentsSyntax* generics;
+    RoutineSyntax routine;
+};
+
+struct MethodSyntax : Object {
+    MethodSyntax(FunctionSyntax functionSyntax) : tag(Function) { functionSyntax = functionSyntax; }
+    MethodSyntax(ProcedureSyntax procedureSyntax) : tag(Procedure) { procedureSyntax = procedureSyntax; }
+    MethodSyntax(OperatorSyntax operatorSyntax) : tag(Operator) { operatorSyntax = operatorSyntax; }
+    enum {
+        Function,
+        Procedure,
+        Operator,
+    } tag;
+    union {
+        FunctionSyntax functionSyntax;
+        ProcedureSyntax procedureSyntax;
+        OperatorSyntax operatorSyntax;
+    };
+};
+
+struct TraitSyntax : Object {
+    TraitSyntax(size_t start, size_t end, NameSyntax name, ExtendsSyntax* extension, Vector<AttributeSyntax>* attributes, Vector<MethodSyntax>* functions) : start(start), end(end), name(name), extension(extension), attributes(attributes), functions(functions) {}
+    size_t start;
+    size_t end;
+    NameSyntax name;
+    ExtendsSyntax* extension;
+    Vector<AttributeSyntax>* attributes;
+    Vector<MethodSyntax>* functions;
+};
+
+struct ImplementSyntax : Object {
+    ImplementSyntax(size_t start, size_t end, TypeSyntax type, Vector<AttributeSyntax>* attributes, Vector<MethodSyntax>* methods) : start(start), end(end), type(type), attributes(attributes), methods(methods) {}
+    size_t start;
+    size_t end;
+    TypeSyntax type;
+    Vector<AttributeSyntax>* attributes;
+    Vector<MethodSyntax>* methods;
+};
+
+struct UseSyntax : Object {
+    UseSyntax(size_t start, size_t end, NameSyntax name) : start(start), end(end), name(name) {}
+    size_t start;
+    size_t end;
+    NameSyntax name;
+};
+
+struct ThrowsSyntax : Object {
+    ThrowsSyntax(size_t start, size_t end, TypeSyntax type, Vector<AttributeSyntax>* attributes) : start(start), end(end), type(type), attributes(attributes) {}
+    size_t start;
+    size_t end;
+    TypeSyntax type;
+    Vector<AttributeSyntax>* attributes;
+};
+
+struct ParametersSyntax : Object {
+    ParametersSyntax(size_t start, size_t end, Vector<PropertySyntax>* properties) : start(start), end(end), properties(properties) {}
+    size_t start;
+    size_t end;
+    Vector<PropertySyntax>* properties;
+};
+
+struct ParameterSetSyntax : Object {
+    ParameterSetSyntax(ParametersSyntax parametersSyntax) : tag(Parameters) { parametersSyntax = parametersSyntax; }
+    ParameterSetSyntax(TypeSyntax typeSyntax) : tag(Type) { typeSyntax = typeSyntax; }
+    enum {
+        Parameters,
+        Type,
+    } tag;
+    union {
+        ParametersSyntax parametersSyntax;
+        TypeSyntax typeSyntax;
+    };
+};
+
+struct ReturnsSyntax : Object {
+    ReturnsSyntax(size_t start, size_t end, ParameterSetSyntax parameters, Vector<AttributeSyntax>* attributes) : start(start), end(end), parameters(parameters), attributes(attributes) {}
+    size_t start;
+    size_t end;
+    ParameterSetSyntax parameters;
+    Vector<AttributeSyntax>* attributes;
+};
+
+struct OptionalSyntax : Object {
+    OptionalSyntax(size_t start, size_t end) : start(start), end(end) {}
+    size_t start;
+    size_t end;
+};
+
+struct GenericArgumentSyntax : Object {
+    GenericArgumentSyntax(size_t start, size_t end, TypeSyntax spec) : start(start), end(end), spec(spec) {}
+    size_t start;
+    size_t end;
+    TypeSyntax spec;
+};
+
+struct GenericArgumentsSyntax : Object {
+    GenericArgumentsSyntax(size_t start, size_t end, Vector<GenericArgumentSyntax>* generics) : start(start), end(end), generics(generics) {}
+    size_t start;
+    size_t end;
+    Vector<GenericArgumentSyntax>* generics;
+};
+
+struct TypeAnnotationSyntax : Object {
+    TypeAnnotationSyntax(size_t start, size_t end, TypeSpecSyntax spec) : start(start), end(end), spec(spec) {}
+    size_t start;
+    size_t end;
+    TypeSpecSyntax spec;
+};
+
+struct PropertySyntax : Object {
+    PropertySyntax(size_t start, size_t end, String name, TypeAnnotationSyntax* annotation, Vector<AttributeSyntax>* attributes) : start(start), end(end), name(name), annotation(annotation), attributes(attributes) {}
+    size_t start;
+    size_t end;
+    String name;
+    TypeAnnotationSyntax* annotation;
+    Vector<AttributeSyntax>* attributes;
+};
+
+struct FieldSyntax : Object {
+    FieldSyntax(size_t start, size_t end, PropertySyntax property) : start(start), end(end), property(property) {}
+    size_t start;
+    size_t end;
+    PropertySyntax property;
+};
+
+struct MemberSyntax : Object {
+    MemberSyntax(FieldSyntax fieldSyntax) : tag(Field) { fieldSyntax = fieldSyntax; }
+    MemberSyntax(PropertySyntax propertySyntax) : tag(Property) { propertySyntax = propertySyntax; }
+    enum {
+        Field,
+        Property,
+    } tag;
+    union {
+        FieldSyntax fieldSyntax;
+        PropertySyntax propertySyntax;
+    };
+};
+
+struct BodySyntax : Object {
+    BodySyntax(size_t start, size_t end, Vector<DeclarationSyntax>* declarations) : start(start), end(end), declarations(declarations) {}
+    size_t start;
+    size_t end;
+    Vector<DeclarationSyntax>* declarations;
+};
+
+struct DelegateSyntax : Object {
+    DelegateSyntax(size_t start, size_t end, ParameterSetSyntax* parameters, Vector<AttributeSyntax>* attributes, ReturnsSyntax* result, ThrowsSyntax* error) : start(start), end(end), parameters(parameters), attributes(attributes), result(result), error(error) {}
+    size_t start;
+    size_t end;
+    ParameterSetSyntax* parameters;
+    Vector<AttributeSyntax>* attributes;
+    ReturnsSyntax* result;
+    ThrowsSyntax* error;
+};
+
+struct ConstantSyntax : Object {
+    ConstantSyntax(size_t start, size_t end, OperationSyntax operation) : start(start), end(end), operation(operation) {}
+    size_t start;
+    size_t end;
+    OperationSyntax operation;
+};
+
+struct EnumSyntax : Object {
+    EnumSyntax(size_t start, size_t end, LiteralToken literal) : start(start), end(end), literal(literal) {}
+    size_t start;
+    size_t end;
+    LiteralToken literal;
+};
+
+struct VariantSyntax : Object {
+    VariantSyntax(size_t start, size_t end, StructureSyntax structure, BodySyntax* body) : start(start), end(end), structure(structure), body(body) {}
+    size_t start;
+    size_t end;
+    StructureSyntax structure;
+    BodySyntax* body;
+};
+
+struct ItemSyntax : Object {
+    ItemSyntax(VariantSyntax variantSyntax) : tag(Variant) { variantSyntax = variantSyntax; }
+    ItemSyntax(EnumSyntax enumSyntax) : tag(Enum) { enumSyntax = enumSyntax; }
+    enum {
+        Variant,
+        Enum,
+    } tag;
+    union {
+        VariantSyntax variantSyntax;
+        EnumSyntax enumSyntax;
+    };
+};
+
+struct TagSyntax : Object {
+    TagSyntax(size_t start, size_t end, String name, Vector<AttributeSyntax>* attributes, ItemSyntax* item) : start(start), end(end), name(name), attributes(attributes), item(item) {}
+    size_t start;
+    size_t end;
+    String name;
+    Vector<AttributeSyntax>* attributes;
+    ItemSyntax* item;
+};
+
+struct UnionSyntax : Object {
+    UnionSyntax(size_t start, size_t end, Vector<TagSyntax> tags, BodySyntax body) : start(start), end(end), tags(tags), body(body) {}
+    size_t start;
+    size_t end;
+    Vector<TagSyntax> tags;
+    BodySyntax body;
+};
+
+struct NamespaceSyntax : Object {
+    NamespaceSyntax(size_t start, size_t end, BodySyntax body) : start(start), end(end), body(body) {}
+    size_t start;
+    size_t end;
+    BodySyntax body;
+};
+
+struct ClassSyntax : Object {
+    ClassSyntax(size_t start, size_t end, StructureSyntax structure, BodySyntax* body) : start(start), end(end), structure(structure), body(body) {}
+    size_t start;
+    size_t end;
+    StructureSyntax structure;
+    BodySyntax* body;
+};
+
+struct ConceptSyntax : Object {
+    ConceptSyntax(ClassSyntax classSyntax) : tag(Class) { classSyntax = classSyntax; }
+    ConceptSyntax(NamespaceSyntax namespaceSyntax) : tag(Namespace) { namespaceSyntax = namespaceSyntax; }
+    ConceptSyntax(UnionSyntax unionSyntax) : tag(Union) { unionSyntax = unionSyntax; }
+    ConceptSyntax(ConstantSyntax constantSyntax) : tag(Constant) { constantSyntax = constantSyntax; }
+    ConceptSyntax(DelegateSyntax delegateSyntax) : tag(Delegate) { delegateSyntax = delegateSyntax; }
+    ConceptSyntax(IntrinsicSyntax intrinsicSyntax) : tag(Intrinsic) { intrinsicSyntax = intrinsicSyntax; }
+    enum {
+        Class,
+        Namespace,
+        Union,
+        Constant,
+        Delegate,
+        Intrinsic,
+    } tag;
+    union {
+        ClassSyntax classSyntax;
+        NamespaceSyntax namespaceSyntax;
+        UnionSyntax unionSyntax;
+        ConstantSyntax constantSyntax;
+        DelegateSyntax delegateSyntax;
+        IntrinsicSyntax intrinsicSyntax;
+    };
+};
+
+struct AttributeSyntax : Object {
+    AttributeSyntax(size_t start, size_t end, String attribute, ModelSyntax value) : start(start), end(end), attribute(attribute), value(value) {}
+    size_t start;
+    size_t end;
+    String attribute;
+    ModelSyntax value;
+};
+
+struct ExtensionSyntax : Object {
+    ExtensionSyntax(size_t start, size_t end, String name) : start(start), end(end), name(name) {}
+    size_t start;
+    size_t end;
+    String name;
+};
+
+struct DefinitionSyntax : Object {
+    DefinitionSyntax(size_t start, size_t end, TypeSyntax type, Vector<AttributeSyntax>* attributes, ConceptSyntax concept_) : start(start), end(end), type(type), attributes(attributes), concept_(concept_) {}
+    size_t start;
+    size_t end;
+    TypeSyntax type;
+    Vector<AttributeSyntax>* attributes;
+    ConceptSyntax concept_;
+};
+
+struct ExportSyntax : Object {
+    ExportSyntax(DefinitionSyntax definitionSyntax) : tag(Definition) { definitionSyntax = definitionSyntax; }
+    ExportSyntax(FunctionSyntax functionSyntax) : tag(Function) { functionSyntax = functionSyntax; }
+    ExportSyntax(ProcedureSyntax procedureSyntax) : tag(Procedure) { procedureSyntax = procedureSyntax; }
+    ExportSyntax(OperatorSyntax operatorSyntax) : tag(Operator) { operatorSyntax = operatorSyntax; }
+    ExportSyntax(ImplementSyntax implementSyntax) : tag(Implement) { implementSyntax = implementSyntax; }
+    ExportSyntax(TraitSyntax traitSyntax) : tag(Trait) { traitSyntax = traitSyntax; }
+    ExportSyntax(MacroSyntax macroSyntax) : tag(Macro) { macroSyntax = macroSyntax; }
+    ExportSyntax(ModuleSyntax moduleSyntax) : tag(Module) { moduleSyntax = moduleSyntax; }
+    enum {
+        Definition,
+        Function,
+        Procedure,
+        Operator,
+        Implement,
+        Trait,
+        Macro,
+        Module,
+    } tag;
+    union {
+        DefinitionSyntax definitionSyntax;
+        FunctionSyntax functionSyntax;
+        ProcedureSyntax procedureSyntax;
+        OperatorSyntax operatorSyntax;
+        ImplementSyntax implementSyntax;
+        TraitSyntax traitSyntax;
+        MacroSyntax macroSyntax;
+        ModuleSyntax moduleSyntax;
+    };
+};
+
+struct PrivateSyntax : Object {
+    PrivateSyntax(size_t start, size_t end, ExportSyntax export_) : start(start), end(end), export_(export_) {}
+    size_t start;
+    size_t end;
+    ExportSyntax export_;
+};
+
+struct DeclarationSyntax : Object {
+    DeclarationSyntax(PrivateSyntax privateSyntax) : tag(Private) { privateSyntax = privateSyntax; }
+    DeclarationSyntax(DefinitionSyntax definitionSyntax) : tag(Definition) { definitionSyntax = definitionSyntax; }
+    DeclarationSyntax(FunctionSyntax functionSyntax) : tag(Function) { functionSyntax = functionSyntax; }
+    DeclarationSyntax(ProcedureSyntax procedureSyntax) : tag(Procedure) { procedureSyntax = procedureSyntax; }
+    DeclarationSyntax(OperatorSyntax operatorSyntax) : tag(Operator) { operatorSyntax = operatorSyntax; }
+    DeclarationSyntax(UseSyntax useSyntax) : tag(Use) { useSyntax = useSyntax; }
+    DeclarationSyntax(ImplementSyntax implementSyntax) : tag(Implement) { implementSyntax = implementSyntax; }
+    DeclarationSyntax(TraitSyntax traitSyntax) : tag(Trait) { traitSyntax = traitSyntax; }
+    DeclarationSyntax(MacroSyntax macroSyntax) : tag(Macro) { macroSyntax = macroSyntax; }
+    DeclarationSyntax(ModuleSyntax moduleSyntax) : tag(Module) { moduleSyntax = moduleSyntax; }
+    enum {
+        Private,
+        Definition,
+        Function,
+        Procedure,
+        Operator,
+        Use,
+        Implement,
+        Trait,
+        Macro,
+        Module,
+    } tag;
+    union {
+        PrivateSyntax privateSyntax;
+        DefinitionSyntax definitionSyntax;
+        FunctionSyntax functionSyntax;
+        ProcedureSyntax procedureSyntax;
+        OperatorSyntax operatorSyntax;
+        UseSyntax useSyntax;
+        ImplementSyntax implementSyntax;
+        TraitSyntax traitSyntax;
+        MacroSyntax macroSyntax;
+        ModuleSyntax moduleSyntax;
+    };
+};
+
+struct FileSyntax : Object {
+    FileSyntax(size_t start, size_t end, Vector<DeclarationSyntax>* declarations, Vector<StatementSyntax>* statements) : start(start), end(end), declarations(declarations), statements(statements) {}
+    size_t start;
+    size_t end;
+    Vector<DeclarationSyntax>* declarations;
+    Vector<StatementSyntax>* statements;
 };
 
 using namespace scaly::containers;
@@ -1305,7 +1289,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(PrivateSyntax), _rp) PrivateSyntax(start, end, export_);
+        auto ret = new(alignof(PrivateSyntax), _rp) PrivateSyntax(start, end, *export_);
 
         return Result<PrivateSyntax*, ParserError*> { .tag = Result<PrivateSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -1449,37 +1433,9 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(DefinitionSyntax), _rp) DefinitionSyntax(start, end, type, attributes, concept_);
+        auto ret = new(alignof(DefinitionSyntax), _rp) DefinitionSyntax(start, end, *type, attributes, *concept_);
 
         return Result<DefinitionSyntax*, ParserError*> { .tag = Result<DefinitionSyntax*, ParserError*>::Ok, .ok = ret };
-    }
-
-    Result<NameSyntax*, ParserError*> parse_name(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
-        auto start = this->lexer.previous_position;
-
-        auto name = this->lexer.parse_identifier(_r, _rp, this->keywords);
-        if (name != nullptr) {
-            if (!this->is_identifier(*name)) {
-                return Result<NameSyntax*, ParserError*> { .tag = Result<NameSyntax*, ParserError*>::Ok, .ok = nullptr };
-
-            }
-        }
-        else {
-                return Result<NameSyntax*, ParserError*> { .tag = Result<NameSyntax*, ParserError*>::Ok, .ok = nullptr };
-
-        }
-
-        auto extensions_result = this->parse_extension_list(_r, _rp, _ep);
-        if (extensions_result.tag == Result<Vector<ExtensionSyntax>*, ParserError*>::Error)
-            return Result<NameSyntax*, ParserError*> { .tag = Result<NameSyntax*, ParserError*>::Error, .error = extensions_result.error };
-        auto extensions = extensions_result.ok;
-
-        auto end = this->lexer.position;
-
-        auto ret = new(alignof(NameSyntax), _rp) NameSyntax(start, end, name, extensions);
-
-        return Result<NameSyntax*, ParserError*> { .tag = Result<NameSyntax*, ParserError*>::Ok, .ok = ret };
     }
 
     Result<Vector<ExtensionSyntax>*, ParserError*> parse_extension_list(Region& _pr, Page* _rp, Page* _ep) {
@@ -1530,7 +1486,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(ExtensionSyntax), _rp) ExtensionSyntax(start, end, name);
+        auto ret = new(alignof(ExtensionSyntax), _rp) ExtensionSyntax(start, end, *name);
 
         return Result<ExtensionSyntax*, ParserError*> { .tag = Result<ExtensionSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -1581,7 +1537,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(AttributeSyntax), _rp) AttributeSyntax(start, end, attribute, value);
+        auto ret = new(alignof(AttributeSyntax), _rp) AttributeSyntax(start, end, *attribute, *value);
 
         return Result<AttributeSyntax*, ParserError*> { .tag = Result<AttributeSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -1687,7 +1643,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(ClassSyntax), _rp) ClassSyntax(start, end, structure, body);
+        auto ret = new(alignof(ClassSyntax), _rp) ClassSyntax(start, end, *structure, body);
 
         return Result<ClassSyntax*, ParserError*> { .tag = Result<ClassSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -1706,7 +1662,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(NamespaceSyntax), _rp) NamespaceSyntax(start, end, body);
+        auto ret = new(alignof(NamespaceSyntax), _rp) NamespaceSyntax(start, end, *body);
 
         return Result<NamespaceSyntax*, ParserError*> { .tag = Result<NamespaceSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -1759,7 +1715,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(UnionSyntax), _rp) UnionSyntax(start, end, tags, body);
+        auto ret = new(alignof(UnionSyntax), _rp) UnionSyntax(start, end, *tags, *body);
 
         return Result<UnionSyntax*, ParserError*> { .tag = Result<UnionSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -1818,7 +1774,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(TagSyntax), _rp) TagSyntax(start, end, name, attributes, item);
+        auto ret = new(alignof(TagSyntax), _rp) TagSyntax(start, end, *name, attributes, item);
 
         return Result<TagSyntax*, ParserError*> { .tag = Result<TagSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -1886,7 +1842,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(VariantSyntax), _rp) VariantSyntax(start, end, structure, body);
+        auto ret = new(alignof(VariantSyntax), _rp) VariantSyntax(start, end, *structure, body);
 
         return Result<VariantSyntax*, ParserError*> { .tag = Result<VariantSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -1927,7 +1883,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(ConstantSyntax), _rp) ConstantSyntax(start, end, operation);
+        auto ret = new(alignof(ConstantSyntax), _rp) ConstantSyntax(start, end, *operation);
 
         return Result<ConstantSyntax*, ParserError*> { .tag = Result<ConstantSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -1967,33 +1923,6 @@ struct Parser : Object {
         auto ret = new(alignof(DelegateSyntax), _rp) DelegateSyntax(start, end, parameters, attributes, result, error);
 
         return Result<DelegateSyntax*, ParserError*> { .tag = Result<DelegateSyntax*, ParserError*>::Ok, .ok = ret };
-    }
-
-    Result<StructureSyntax*, ParserError*> parse_structure(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
-        auto start = this->lexer.previous_position;
-
-        auto success_left_paren_1 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, "("));
-        if (!success_left_paren_1) {
-
-                return Result<StructureSyntax*, ParserError*> { .tag = Result<StructureSyntax*, ParserError*>::Ok, .ok = nullptr };
-        }
-
-        auto members_result = this->parse_member_list(_r, _rp, _ep);
-        if (members_result.tag == Result<Vector<MemberSyntax>*, ParserError*>::Error)
-            return Result<StructureSyntax*, ParserError*> { .tag = Result<StructureSyntax*, ParserError*>::Error, .error = members_result.error };
-        auto members = members_result.ok;
-
-        auto success_right_paren_3 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, ")"));
-        if (!success_right_paren_3) {
-
-            return Result<StructureSyntax*, ParserError*> { .tag = Result<StructureSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, lexer.position) };        }
-
-        auto end = this->lexer.position;
-
-        auto ret = new(alignof(StructureSyntax), _rp) StructureSyntax(start, end, members);
-
-        return Result<StructureSyntax*, ParserError*> { .tag = Result<StructureSyntax*, ParserError*>::Ok, .ok = ret };
     }
 
     Result<BodySyntax*, ParserError*> parse_body(Region& _pr, Page* _rp, Page* _ep) {
@@ -2103,7 +2032,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(FieldSyntax), _rp) FieldSyntax(start, end, property);
+        auto ret = new(alignof(FieldSyntax), _rp) FieldSyntax(start, end, *property);
 
         return Result<FieldSyntax*, ParserError*> { .tag = Result<FieldSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -2172,7 +2101,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(PropertySyntax), _rp) PropertySyntax(start, end, name, annotation, attributes);
+        auto ret = new(alignof(PropertySyntax), _rp) PropertySyntax(start, end, *name, annotation, attributes);
 
         return Result<PropertySyntax*, ParserError*> { .tag = Result<PropertySyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -2197,120 +2126,9 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(TypeAnnotationSyntax), _rp) TypeAnnotationSyntax(start, end, spec);
+        auto ret = new(alignof(TypeAnnotationSyntax), _rp) TypeAnnotationSyntax(start, end, *spec);
 
         return Result<TypeAnnotationSyntax*, ParserError*> { .tag = Result<TypeAnnotationSyntax*, ParserError*>::Ok, .ok = ret };
-    }
-
-    Result<Vector<TypeSpecSyntax>*, ParserError*> parse_typespec_list(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
-        {
-            auto _r_1 = Region::create(_r);
-            Array<TypeSpecSyntax>* array = nullptr;
-            while(true) {
-                auto node_result = this->parse_typespec(_r_1, _rp, _ep);
-                if (node_result.tag == Result<TypeSpecSyntax*, ParserError*>::Error)
-                    return Result<Vector<TypeSpecSyntax>*, ParserError*> { .tag = Result<Vector<TypeSpecSyntax>*, ParserError*>::Error, .error = node_result.error };
-                auto node = node_result.ok;
-                if (node != nullptr) {
-                    if (array == nullptr)
-                        array = Array<TypeSpecSyntax>::create(_r_1.page);
-                    array->add(*node);
-                } else {
-                    break;
-                }
-            }
-
-            if (array == nullptr)
-                return Result<Vector<TypeSpecSyntax>*, ParserError*> { .tag = Result<Vector<TypeSpecSyntax>*, ParserError*>::Ok, .ok = nullptr };
-            
-            return Result<Vector<TypeSpecSyntax>*, ParserError*> { .tag = Result<Vector<TypeSpecSyntax>*, ParserError*>::Ok, .ok = Vector<TypeSpecSyntax>::from_array(_rp, *array) };
-        }
-    }
-
-    Result<TypeSpecSyntax*, ParserError*> parse_typespec(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
-        {
-            auto _r_1 = Region::create(_r);
-            auto node_result = this->parse_structure(_r_1, _rp, _ep);
-            if (node_result.tag == Result<StructureSyntax*, ParserError*>::Error)
-                return Result<TypeSpecSyntax*, ParserError*> { .tag = Result<TypeSpecSyntax*, ParserError*>::Error, .error = node_result.error };
-            auto node = node_result.ok;
-            if (node != nullptr) {
-                return Result<TypeSpecSyntax*, ParserError*> { .tag = Result<TypeSpecSyntax*, ParserError*>::Ok, .ok = 
-                    new (alignof(TypeSpecSyntax), _rp) TypeSpecSyntax(StructureSyntax(*node))
-                };
-            }
-        }
-        {
-            auto _r_1 = Region::create(_r);
-            auto node_result = this->parse_type(_r_1, _rp, _ep);
-            if (node_result.tag == Result<TypeSyntax*, ParserError*>::Error)
-                return Result<TypeSpecSyntax*, ParserError*> { .tag = Result<TypeSpecSyntax*, ParserError*>::Error, .error = node_result.error };
-            auto node = node_result.ok;
-            if (node != nullptr) {
-                return Result<TypeSpecSyntax*, ParserError*> { .tag = Result<TypeSpecSyntax*, ParserError*>::Ok, .ok = 
-                    new (alignof(TypeSpecSyntax), _rp) TypeSpecSyntax(TypeSyntax(*node))
-                };
-            }
-        }
-        return Result<TypeSpecSyntax*, ParserError*> { .tag = Result<TypeSpecSyntax*, ParserError*>::Ok, .ok = nullptr };
-    }
-
-    Result<TypeSyntax*, ParserError*> parse_type(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
-        auto start = this->lexer.previous_position;
-
-        auto name_result = this->parse_name(_r, _rp, _ep);
-        if (name_result.tag == Result<NameSyntax*, ParserError*>::Error)
-            return Result<TypeSyntax*, ParserError*> { .tag = Result<TypeSyntax*, ParserError*>::Error, .error = name_result.error };
-        auto name = name_result.ok;
-        if (name == nullptr) {
-            return Result<TypeSyntax*, ParserError*> { .tag = Result<TypeSyntax*, ParserError*>::Ok, .ok = nullptr };
-        }
-
-        auto generics_result = this->parse_genericarguments(_r, _rp, _ep);
-        if (generics_result.tag == Result<GenericArgumentsSyntax*, ParserError*>::Error)
-            return Result<TypeSyntax*, ParserError*> { .tag = Result<TypeSyntax*, ParserError*>::Error, .error = generics_result.error };
-        auto generics = generics_result.ok;
-
-        auto optional_result = this->parse_optional(_r, _rp, _ep);
-        if (optional_result.tag == Result<OptionalSyntax*, ParserError*>::Error)
-            return Result<TypeSyntax*, ParserError*> { .tag = Result<TypeSyntax*, ParserError*>::Error, .error = optional_result.error };
-        auto optional = optional_result.ok;
-
-        auto end = this->lexer.position;
-
-        auto ret = new(alignof(TypeSyntax), _rp) TypeSyntax(start, end, name, generics, optional);
-
-        return Result<TypeSyntax*, ParserError*> { .tag = Result<TypeSyntax*, ParserError*>::Ok, .ok = ret };
-    }
-
-    Result<ArraySyntax*, ParserError*> parse_array(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
-        auto start = this->lexer.previous_position;
-
-        auto success_left_bracket_1 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, "["));
-        if (!success_left_bracket_1) {
-
-                return Result<ArraySyntax*, ParserError*> { .tag = Result<ArraySyntax*, ParserError*>::Ok, .ok = nullptr };
-        }
-
-        auto members_result = this->parse_typespec_list(_r, _rp, _ep);
-        if (members_result.tag == Result<Vector<TypeSpecSyntax>*, ParserError*>::Error)
-            return Result<ArraySyntax*, ParserError*> { .tag = Result<ArraySyntax*, ParserError*>::Error, .error = members_result.error };
-        auto members = members_result.ok;
-
-        auto success_right_bracket_3 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, "]"));
-        if (!success_right_bracket_3) {
-
-            return Result<ArraySyntax*, ParserError*> { .tag = Result<ArraySyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, lexer.position) };        }
-
-        auto end = this->lexer.position;
-
-        auto ret = new(alignof(ArraySyntax), _rp) ArraySyntax(start, end, members);
-
-        return Result<ArraySyntax*, ParserError*> { .tag = Result<ArraySyntax*, ParserError*>::Ok, .ok = ret };
     }
 
     Result<GenericArgumentsSyntax*, ParserError*> parse_genericarguments(Region& _pr, Page* _rp, Page* _ep) {
@@ -2385,7 +2203,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(GenericArgumentSyntax), _rp) GenericArgumentSyntax(start, end, spec);
+        auto ret = new(alignof(GenericArgumentSyntax), _rp) GenericArgumentSyntax(start, end, *spec);
 
         return Result<GenericArgumentSyntax*, ParserError*> { .tag = Result<GenericArgumentSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -2405,6 +2223,329 @@ struct Parser : Object {
         auto ret = new(alignof(OptionalSyntax), _rp) OptionalSyntax(start, end);
 
         return Result<OptionalSyntax*, ParserError*> { .tag = Result<OptionalSyntax*, ParserError*>::Ok, .ok = ret };
+    }
+
+    Result<ReturnsSyntax*, ParserError*> parse_returns(Region& _pr, Page* _rp, Page* _ep) {
+        auto _r = Region::create(_pr);
+        auto start = this->lexer.previous_position;
+
+        auto success_returns_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "returns"));
+        if (!success_returns_1) {
+
+                return Result<ReturnsSyntax*, ParserError*> { .tag = Result<ReturnsSyntax*, ParserError*>::Ok, .ok = nullptr };
+        }
+
+        auto parameters_result = this->parse_parameterset(_r, _rp, _ep);
+        if (parameters_result.tag == Result<ParameterSetSyntax*, ParserError*>::Error)
+            return Result<ReturnsSyntax*, ParserError*> { .tag = Result<ReturnsSyntax*, ParserError*>::Error, .error = parameters_result.error };
+        auto parameters = parameters_result.ok;
+        if (parameters == nullptr) {
+            return Result<ReturnsSyntax*, ParserError*> { .tag = Result<ReturnsSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, lexer.position) };
+        }
+
+        auto attributes_result = this->parse_attribute_list(_r, _rp, _ep);
+        if (attributes_result.tag == Result<Vector<AttributeSyntax>*, ParserError*>::Error)
+            return Result<ReturnsSyntax*, ParserError*> { .tag = Result<ReturnsSyntax*, ParserError*>::Error, .error = attributes_result.error };
+        auto attributes = attributes_result.ok;
+
+        auto end = this->lexer.position;
+
+        auto ret = new(alignof(ReturnsSyntax), _rp) ReturnsSyntax(start, end, *parameters, attributes);
+
+        return Result<ReturnsSyntax*, ParserError*> { .tag = Result<ReturnsSyntax*, ParserError*>::Ok, .ok = ret };
+    }
+
+    Result<ParameterSetSyntax*, ParserError*> parse_parameterset(Region& _pr, Page* _rp, Page* _ep) {
+        auto _r = Region::create(_pr);
+        {
+            auto _r_1 = Region::create(_r);
+            auto node_result = this->parse_parameters(_r_1, _rp, _ep);
+            if (node_result.tag == Result<ParametersSyntax*, ParserError*>::Error)
+                return Result<ParameterSetSyntax*, ParserError*> { .tag = Result<ParameterSetSyntax*, ParserError*>::Error, .error = node_result.error };
+            auto node = node_result.ok;
+            if (node != nullptr) {
+                return Result<ParameterSetSyntax*, ParserError*> { .tag = Result<ParameterSetSyntax*, ParserError*>::Ok, .ok = 
+                    new (alignof(ParameterSetSyntax), _rp) ParameterSetSyntax(ParametersSyntax(*node))
+                };
+            }
+        }
+        {
+            auto _r_1 = Region::create(_r);
+            auto node_result = this->parse_type(_r_1, _rp, _ep);
+            if (node_result.tag == Result<TypeSyntax*, ParserError*>::Error)
+                return Result<ParameterSetSyntax*, ParserError*> { .tag = Result<ParameterSetSyntax*, ParserError*>::Error, .error = node_result.error };
+            auto node = node_result.ok;
+            if (node != nullptr) {
+                return Result<ParameterSetSyntax*, ParserError*> { .tag = Result<ParameterSetSyntax*, ParserError*>::Ok, .ok = 
+                    new (alignof(ParameterSetSyntax), _rp) ParameterSetSyntax(TypeSyntax(*node))
+                };
+            }
+        }
+        return Result<ParameterSetSyntax*, ParserError*> { .tag = Result<ParameterSetSyntax*, ParserError*>::Ok, .ok = nullptr };
+    }
+
+    Result<ParametersSyntax*, ParserError*> parse_parameters(Region& _pr, Page* _rp, Page* _ep) {
+        auto _r = Region::create(_pr);
+        auto start = this->lexer.previous_position;
+
+        auto success_left_paren_1 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, "("));
+        if (!success_left_paren_1) {
+
+                return Result<ParametersSyntax*, ParserError*> { .tag = Result<ParametersSyntax*, ParserError*>::Ok, .ok = nullptr };
+        }
+
+        auto properties_result = this->parse_property_list(_r, _rp, _ep);
+        if (properties_result.tag == Result<Vector<PropertySyntax>*, ParserError*>::Error)
+            return Result<ParametersSyntax*, ParserError*> { .tag = Result<ParametersSyntax*, ParserError*>::Error, .error = properties_result.error };
+        auto properties = properties_result.ok;
+
+        auto success_right_paren_3 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, ")"));
+        if (!success_right_paren_3) {
+
+            return Result<ParametersSyntax*, ParserError*> { .tag = Result<ParametersSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, lexer.position) };        }
+
+        auto end = this->lexer.position;
+
+        auto ret = new(alignof(ParametersSyntax), _rp) ParametersSyntax(start, end, properties);
+
+        return Result<ParametersSyntax*, ParserError*> { .tag = Result<ParametersSyntax*, ParserError*>::Ok, .ok = ret };
+    }
+
+    Result<ThrowsSyntax*, ParserError*> parse_throws(Region& _pr, Page* _rp, Page* _ep) {
+        auto _r = Region::create(_pr);
+        auto start = this->lexer.previous_position;
+
+        auto success_throws_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "throws"));
+        if (!success_throws_1) {
+
+                return Result<ThrowsSyntax*, ParserError*> { .tag = Result<ThrowsSyntax*, ParserError*>::Ok, .ok = nullptr };
+        }
+
+        auto type_result = this->parse_type(_r, _rp, _ep);
+        if (type_result.tag == Result<TypeSyntax*, ParserError*>::Error)
+            return Result<ThrowsSyntax*, ParserError*> { .tag = Result<ThrowsSyntax*, ParserError*>::Error, .error = type_result.error };
+        auto type = type_result.ok;
+        if (type == nullptr) {
+            return Result<ThrowsSyntax*, ParserError*> { .tag = Result<ThrowsSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, lexer.position) };
+        }
+
+        auto attributes_result = this->parse_attribute_list(_r, _rp, _ep);
+        if (attributes_result.tag == Result<Vector<AttributeSyntax>*, ParserError*>::Error)
+            return Result<ThrowsSyntax*, ParserError*> { .tag = Result<ThrowsSyntax*, ParserError*>::Error, .error = attributes_result.error };
+        auto attributes = attributes_result.ok;
+
+        auto end = this->lexer.position;
+
+        auto ret = new(alignof(ThrowsSyntax), _rp) ThrowsSyntax(start, end, *type, attributes);
+
+        return Result<ThrowsSyntax*, ParserError*> { .tag = Result<ThrowsSyntax*, ParserError*>::Ok, .ok = ret };
+    }
+
+    Result<UseSyntax*, ParserError*> parse_use(Region& _pr, Page* _rp, Page* _ep) {
+        auto _r = Region::create(_pr);
+        auto start = this->lexer.previous_position;
+
+        auto success_use_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "use"));
+        if (!success_use_1) {
+
+                return Result<UseSyntax*, ParserError*> { .tag = Result<UseSyntax*, ParserError*>::Ok, .ok = nullptr };
+        }
+
+        auto name_result = this->parse_name(_r, _rp, _ep);
+        if (name_result.tag == Result<NameSyntax*, ParserError*>::Error)
+            return Result<UseSyntax*, ParserError*> { .tag = Result<UseSyntax*, ParserError*>::Error, .error = name_result.error };
+        auto name = name_result.ok;
+        if (name == nullptr) {
+            return Result<UseSyntax*, ParserError*> { .tag = Result<UseSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, lexer.position) };
+        }
+
+        auto success_colon_3 = this->lexer.parse_colon(_r, _rp);
+        if (!success_colon_3) {
+
+        }
+
+        auto end = this->lexer.position;
+
+        auto ret = new(alignof(UseSyntax), _rp) UseSyntax(start, end, *name);
+
+        return Result<UseSyntax*, ParserError*> { .tag = Result<UseSyntax*, ParserError*>::Ok, .ok = ret };
+    }
+
+    Result<ImplementSyntax*, ParserError*> parse_implement(Region& _pr, Page* _rp, Page* _ep) {
+        auto _r = Region::create(_pr);
+        auto start = this->lexer.previous_position;
+
+        auto success_implement_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "implement"));
+        if (!success_implement_1) {
+
+                return Result<ImplementSyntax*, ParserError*> { .tag = Result<ImplementSyntax*, ParserError*>::Ok, .ok = nullptr };
+        }
+
+        auto type_result = this->parse_type(_r, _rp, _ep);
+        if (type_result.tag == Result<TypeSyntax*, ParserError*>::Error)
+            return Result<ImplementSyntax*, ParserError*> { .tag = Result<ImplementSyntax*, ParserError*>::Error, .error = type_result.error };
+        auto type = type_result.ok;
+        if (type == nullptr) {
+            return Result<ImplementSyntax*, ParserError*> { .tag = Result<ImplementSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, lexer.position) };
+        }
+
+        auto attributes_result = this->parse_attribute_list(_r, _rp, _ep);
+        if (attributes_result.tag == Result<Vector<AttributeSyntax>*, ParserError*>::Error)
+            return Result<ImplementSyntax*, ParserError*> { .tag = Result<ImplementSyntax*, ParserError*>::Error, .error = attributes_result.error };
+        auto attributes = attributes_result.ok;
+
+        auto success_colon_4 = this->lexer.parse_colon(_r, _rp);
+        if (!success_colon_4) {
+
+        }
+
+        auto success_left_curly_5 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, "{"));
+        if (!success_left_curly_5) {
+
+            return Result<ImplementSyntax*, ParserError*> { .tag = Result<ImplementSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, lexer.position) };        }
+
+        auto methods_result = this->parse_method_list(_r, _rp, _ep);
+        if (methods_result.tag == Result<Vector<MethodSyntax>*, ParserError*>::Error)
+            return Result<ImplementSyntax*, ParserError*> { .tag = Result<ImplementSyntax*, ParserError*>::Error, .error = methods_result.error };
+        auto methods = methods_result.ok;
+
+        auto success_right_curly_7 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, "}"));
+        if (!success_right_curly_7) {
+
+            return Result<ImplementSyntax*, ParserError*> { .tag = Result<ImplementSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, lexer.position) };        }
+
+        auto success_colon_8 = this->lexer.parse_colon(_r, _rp);
+        if (!success_colon_8) {
+
+        }
+
+        auto end = this->lexer.position;
+
+        auto ret = new(alignof(ImplementSyntax), _rp) ImplementSyntax(start, end, *type, attributes, methods);
+
+        return Result<ImplementSyntax*, ParserError*> { .tag = Result<ImplementSyntax*, ParserError*>::Ok, .ok = ret };
+    }
+
+    Result<TraitSyntax*, ParserError*> parse_trait(Region& _pr, Page* _rp, Page* _ep) {
+        auto _r = Region::create(_pr);
+        auto start = this->lexer.previous_position;
+
+        auto success_trait_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "trait"));
+        if (!success_trait_1) {
+
+                return Result<TraitSyntax*, ParserError*> { .tag = Result<TraitSyntax*, ParserError*>::Ok, .ok = nullptr };
+        }
+
+        auto name_result = this->parse_name(_r, _rp, _ep);
+        if (name_result.tag == Result<NameSyntax*, ParserError*>::Error)
+            return Result<TraitSyntax*, ParserError*> { .tag = Result<TraitSyntax*, ParserError*>::Error, .error = name_result.error };
+        auto name = name_result.ok;
+        if (name == nullptr) {
+            return Result<TraitSyntax*, ParserError*> { .tag = Result<TraitSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, lexer.position) };
+        }
+
+        auto extension_result = this->parse_extends(_r, _rp, _ep);
+        if (extension_result.tag == Result<ExtendsSyntax*, ParserError*>::Error)
+            return Result<TraitSyntax*, ParserError*> { .tag = Result<TraitSyntax*, ParserError*>::Error, .error = extension_result.error };
+        auto extension = extension_result.ok;
+
+        auto attributes_result = this->parse_attribute_list(_r, _rp, _ep);
+        if (attributes_result.tag == Result<Vector<AttributeSyntax>*, ParserError*>::Error)
+            return Result<TraitSyntax*, ParserError*> { .tag = Result<TraitSyntax*, ParserError*>::Error, .error = attributes_result.error };
+        auto attributes = attributes_result.ok;
+
+        auto success_left_curly_5 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, "{"));
+        if (!success_left_curly_5) {
+
+            return Result<TraitSyntax*, ParserError*> { .tag = Result<TraitSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, lexer.position) };        }
+
+        auto functions_result = this->parse_method_list(_r, _rp, _ep);
+        if (functions_result.tag == Result<Vector<MethodSyntax>*, ParserError*>::Error)
+            return Result<TraitSyntax*, ParserError*> { .tag = Result<TraitSyntax*, ParserError*>::Error, .error = functions_result.error };
+        auto functions = functions_result.ok;
+
+        auto success_right_curly_7 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, "}"));
+        if (!success_right_curly_7) {
+
+            return Result<TraitSyntax*, ParserError*> { .tag = Result<TraitSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, lexer.position) };        }
+
+        auto success_colon_8 = this->lexer.parse_colon(_r, _rp);
+        if (!success_colon_8) {
+
+        }
+
+        auto end = this->lexer.position;
+
+        auto ret = new(alignof(TraitSyntax), _rp) TraitSyntax(start, end, *name, extension, attributes, functions);
+
+        return Result<TraitSyntax*, ParserError*> { .tag = Result<TraitSyntax*, ParserError*>::Ok, .ok = ret };
+    }
+
+    Result<Vector<MethodSyntax>*, ParserError*> parse_method_list(Region& _pr, Page* _rp, Page* _ep) {
+        auto _r = Region::create(_pr);
+        {
+            auto _r_1 = Region::create(_r);
+            Array<MethodSyntax>* array = nullptr;
+            while(true) {
+                auto node_result = this->parse_method(_r_1, _rp, _ep);
+                if (node_result.tag == Result<MethodSyntax*, ParserError*>::Error)
+                    return Result<Vector<MethodSyntax>*, ParserError*> { .tag = Result<Vector<MethodSyntax>*, ParserError*>::Error, .error = node_result.error };
+                auto node = node_result.ok;
+                if (node != nullptr) {
+                    if (array == nullptr)
+                        array = Array<MethodSyntax>::create(_r_1.page);
+                    array->add(*node);
+                } else {
+                    break;
+                }
+            }
+
+            if (array == nullptr)
+                return Result<Vector<MethodSyntax>*, ParserError*> { .tag = Result<Vector<MethodSyntax>*, ParserError*>::Ok, .ok = nullptr };
+            
+            return Result<Vector<MethodSyntax>*, ParserError*> { .tag = Result<Vector<MethodSyntax>*, ParserError*>::Ok, .ok = Vector<MethodSyntax>::from_array(_rp, *array) };
+        }
+    }
+
+    Result<MethodSyntax*, ParserError*> parse_method(Region& _pr, Page* _rp, Page* _ep) {
+        auto _r = Region::create(_pr);
+        {
+            auto _r_1 = Region::create(_r);
+            auto node_result = this->parse_function(_r_1, _rp, _ep);
+            if (node_result.tag == Result<FunctionSyntax*, ParserError*>::Error)
+                return Result<MethodSyntax*, ParserError*> { .tag = Result<MethodSyntax*, ParserError*>::Error, .error = node_result.error };
+            auto node = node_result.ok;
+            if (node != nullptr) {
+                return Result<MethodSyntax*, ParserError*> { .tag = Result<MethodSyntax*, ParserError*>::Ok, .ok = 
+                    new (alignof(MethodSyntax), _rp) MethodSyntax(FunctionSyntax(*node))
+                };
+            }
+        }
+        {
+            auto _r_1 = Region::create(_r);
+            auto node_result = this->parse_procedure(_r_1, _rp, _ep);
+            if (node_result.tag == Result<ProcedureSyntax*, ParserError*>::Error)
+                return Result<MethodSyntax*, ParserError*> { .tag = Result<MethodSyntax*, ParserError*>::Error, .error = node_result.error };
+            auto node = node_result.ok;
+            if (node != nullptr) {
+                return Result<MethodSyntax*, ParserError*> { .tag = Result<MethodSyntax*, ParserError*>::Ok, .ok = 
+                    new (alignof(MethodSyntax), _rp) MethodSyntax(ProcedureSyntax(*node))
+                };
+            }
+        }
+        {
+            auto _r_1 = Region::create(_r);
+            auto node_result = this->parse_operator(_r_1, _rp, _ep);
+            if (node_result.tag == Result<OperatorSyntax*, ParserError*>::Error)
+                return Result<MethodSyntax*, ParserError*> { .tag = Result<MethodSyntax*, ParserError*>::Error, .error = node_result.error };
+            auto node = node_result.ok;
+            if (node != nullptr) {
+                return Result<MethodSyntax*, ParserError*> { .tag = Result<MethodSyntax*, ParserError*>::Ok, .ok = 
+                    new (alignof(MethodSyntax), _rp) MethodSyntax(OperatorSyntax(*node))
+                };
+            }
+        }
+        return Result<MethodSyntax*, ParserError*> { .tag = Result<MethodSyntax*, ParserError*>::Ok, .ok = nullptr };
     }
 
     Result<FunctionSyntax*, ParserError*> parse_function(Region& _pr, Page* _rp, Page* _ep) {
@@ -2442,7 +2583,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(FunctionSyntax), _rp) FunctionSyntax(start, end, name, generics, routine);
+        auto ret = new(alignof(FunctionSyntax), _rp) FunctionSyntax(start, end, *name, generics, *routine);
 
         return Result<FunctionSyntax*, ParserError*> { .tag = Result<FunctionSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -2482,7 +2623,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(ProcedureSyntax), _rp) ProcedureSyntax(start, end, name, generics, routine);
+        auto ret = new(alignof(ProcedureSyntax), _rp) ProcedureSyntax(start, end, *name, generics, *routine);
 
         return Result<ProcedureSyntax*, ParserError*> { .tag = Result<ProcedureSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -2507,7 +2648,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(OperatorSyntax), _rp) OperatorSyntax(start, end, target);
+        auto ret = new(alignof(OperatorSyntax), _rp) OperatorSyntax(start, end, *target);
 
         return Result<OperatorSyntax*, ParserError*> { .tag = Result<OperatorSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -2585,7 +2726,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(RoutineSyntax), _rp) RoutineSyntax(start, end, parameters, attributes, returns, throws, implementation);
+        auto ret = new(alignof(RoutineSyntax), _rp) RoutineSyntax(start, end, parameters, attributes, returns, throws, *implementation);
 
         return Result<RoutineSyntax*, ParserError*> { .tag = Result<RoutineSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -2641,180 +2782,9 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(SymbolSyntax), _rp) SymbolSyntax(start, end, name, attributes, returns, throws, implementation);
+        auto ret = new(alignof(SymbolSyntax), _rp) SymbolSyntax(start, end, *name, attributes, returns, throws, *implementation);
 
         return Result<SymbolSyntax*, ParserError*> { .tag = Result<SymbolSyntax*, ParserError*>::Ok, .ok = ret };
-    }
-
-    Result<ParameterSetSyntax*, ParserError*> parse_parameterset(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
-        {
-            auto _r_1 = Region::create(_r);
-            auto node_result = this->parse_parameters(_r_1, _rp, _ep);
-            if (node_result.tag == Result<ParametersSyntax*, ParserError*>::Error)
-                return Result<ParameterSetSyntax*, ParserError*> { .tag = Result<ParameterSetSyntax*, ParserError*>::Error, .error = node_result.error };
-            auto node = node_result.ok;
-            if (node != nullptr) {
-                return Result<ParameterSetSyntax*, ParserError*> { .tag = Result<ParameterSetSyntax*, ParserError*>::Ok, .ok = 
-                    new (alignof(ParameterSetSyntax), _rp) ParameterSetSyntax(ParametersSyntax(*node))
-                };
-            }
-        }
-        {
-            auto _r_1 = Region::create(_r);
-            auto node_result = this->parse_type(_r_1, _rp, _ep);
-            if (node_result.tag == Result<TypeSyntax*, ParserError*>::Error)
-                return Result<ParameterSetSyntax*, ParserError*> { .tag = Result<ParameterSetSyntax*, ParserError*>::Error, .error = node_result.error };
-            auto node = node_result.ok;
-            if (node != nullptr) {
-                return Result<ParameterSetSyntax*, ParserError*> { .tag = Result<ParameterSetSyntax*, ParserError*>::Ok, .ok = 
-                    new (alignof(ParameterSetSyntax), _rp) ParameterSetSyntax(TypeSyntax(*node))
-                };
-            }
-        }
-        return Result<ParameterSetSyntax*, ParserError*> { .tag = Result<ParameterSetSyntax*, ParserError*>::Ok, .ok = nullptr };
-    }
-
-    Result<ParametersSyntax*, ParserError*> parse_parameters(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
-        auto start = this->lexer.previous_position;
-
-        auto success_left_paren_1 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, "("));
-        if (!success_left_paren_1) {
-
-                return Result<ParametersSyntax*, ParserError*> { .tag = Result<ParametersSyntax*, ParserError*>::Ok, .ok = nullptr };
-        }
-
-        auto properties_result = this->parse_property_list(_r, _rp, _ep);
-        if (properties_result.tag == Result<Vector<PropertySyntax>*, ParserError*>::Error)
-            return Result<ParametersSyntax*, ParserError*> { .tag = Result<ParametersSyntax*, ParserError*>::Error, .error = properties_result.error };
-        auto properties = properties_result.ok;
-
-        auto success_right_paren_3 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, ")"));
-        if (!success_right_paren_3) {
-
-            return Result<ParametersSyntax*, ParserError*> { .tag = Result<ParametersSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, lexer.position) };        }
-
-        auto end = this->lexer.position;
-
-        auto ret = new(alignof(ParametersSyntax), _rp) ParametersSyntax(start, end, properties);
-
-        return Result<ParametersSyntax*, ParserError*> { .tag = Result<ParametersSyntax*, ParserError*>::Ok, .ok = ret };
-    }
-
-    Result<ReturnsSyntax*, ParserError*> parse_returns(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
-        auto start = this->lexer.previous_position;
-
-        auto success_returns_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "returns"));
-        if (!success_returns_1) {
-
-                return Result<ReturnsSyntax*, ParserError*> { .tag = Result<ReturnsSyntax*, ParserError*>::Ok, .ok = nullptr };
-        }
-
-        auto parameters_result = this->parse_parameterset(_r, _rp, _ep);
-        if (parameters_result.tag == Result<ParameterSetSyntax*, ParserError*>::Error)
-            return Result<ReturnsSyntax*, ParserError*> { .tag = Result<ReturnsSyntax*, ParserError*>::Error, .error = parameters_result.error };
-        auto parameters = parameters_result.ok;
-        if (parameters == nullptr) {
-            return Result<ReturnsSyntax*, ParserError*> { .tag = Result<ReturnsSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, lexer.position) };
-        }
-
-        auto attributes_result = this->parse_attribute_list(_r, _rp, _ep);
-        if (attributes_result.tag == Result<Vector<AttributeSyntax>*, ParserError*>::Error)
-            return Result<ReturnsSyntax*, ParserError*> { .tag = Result<ReturnsSyntax*, ParserError*>::Error, .error = attributes_result.error };
-        auto attributes = attributes_result.ok;
-
-        auto end = this->lexer.position;
-
-        auto ret = new(alignof(ReturnsSyntax), _rp) ReturnsSyntax(start, end, parameters, attributes);
-
-        return Result<ReturnsSyntax*, ParserError*> { .tag = Result<ReturnsSyntax*, ParserError*>::Ok, .ok = ret };
-    }
-
-    Result<ThrowsSyntax*, ParserError*> parse_throws(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
-        auto start = this->lexer.previous_position;
-
-        auto success_throws_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "throws"));
-        if (!success_throws_1) {
-
-                return Result<ThrowsSyntax*, ParserError*> { .tag = Result<ThrowsSyntax*, ParserError*>::Ok, .ok = nullptr };
-        }
-
-        auto type_result = this->parse_type(_r, _rp, _ep);
-        if (type_result.tag == Result<TypeSyntax*, ParserError*>::Error)
-            return Result<ThrowsSyntax*, ParserError*> { .tag = Result<ThrowsSyntax*, ParserError*>::Error, .error = type_result.error };
-        auto type = type_result.ok;
-        if (type == nullptr) {
-            return Result<ThrowsSyntax*, ParserError*> { .tag = Result<ThrowsSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, lexer.position) };
-        }
-
-        auto attributes_result = this->parse_attribute_list(_r, _rp, _ep);
-        if (attributes_result.tag == Result<Vector<AttributeSyntax>*, ParserError*>::Error)
-            return Result<ThrowsSyntax*, ParserError*> { .tag = Result<ThrowsSyntax*, ParserError*>::Error, .error = attributes_result.error };
-        auto attributes = attributes_result.ok;
-
-        auto end = this->lexer.position;
-
-        auto ret = new(alignof(ThrowsSyntax), _rp) ThrowsSyntax(start, end, type, attributes);
-
-        return Result<ThrowsSyntax*, ParserError*> { .tag = Result<ThrowsSyntax*, ParserError*>::Ok, .ok = ret };
-    }
-
-    Result<Vector<ActionSyntax>*, ParserError*> parse_action_list(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
-        {
-            auto _r_1 = Region::create(_r);
-            Array<ActionSyntax>* array = nullptr;
-            while(true) {
-                auto node_result = this->parse_action(_r_1, _rp, _ep);
-                if (node_result.tag == Result<ActionSyntax*, ParserError*>::Error)
-                    return Result<Vector<ActionSyntax>*, ParserError*> { .tag = Result<Vector<ActionSyntax>*, ParserError*>::Error, .error = node_result.error };
-                auto node = node_result.ok;
-                if (node != nullptr) {
-                    if (array == nullptr)
-                        array = Array<ActionSyntax>::create(_r_1.page);
-                    array->add(*node);
-                } else {
-                    break;
-                }
-            }
-
-            if (array == nullptr)
-                return Result<Vector<ActionSyntax>*, ParserError*> { .tag = Result<Vector<ActionSyntax>*, ParserError*>::Ok, .ok = nullptr };
-            
-            return Result<Vector<ActionSyntax>*, ParserError*> { .tag = Result<Vector<ActionSyntax>*, ParserError*>::Ok, .ok = Vector<ActionSyntax>::from_array(_rp, *array) };
-        }
-    }
-
-    Result<ActionSyntax*, ParserError*> parse_action(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
-        {
-            auto _r_1 = Region::create(_r);
-            auto node_result = this->parse_operation(_r_1, _rp, _ep);
-            if (node_result.tag == Result<OperationSyntax*, ParserError*>::Error)
-                return Result<ActionSyntax*, ParserError*> { .tag = Result<ActionSyntax*, ParserError*>::Error, .error = node_result.error };
-            auto node = node_result.ok;
-            if (node != nullptr) {
-                return Result<ActionSyntax*, ParserError*> { .tag = Result<ActionSyntax*, ParserError*>::Ok, .ok = 
-                    new (alignof(ActionSyntax), _rp) ActionSyntax(OperationSyntax(*node))
-                };
-            }
-        }
-        {
-            auto _r_1 = Region::create(_r);
-            auto node_result = this->parse_set(_r_1, _rp, _ep);
-            if (node_result.tag == Result<SetSyntax*, ParserError*>::Error)
-                return Result<ActionSyntax*, ParserError*> { .tag = Result<ActionSyntax*, ParserError*>::Error, .error = node_result.error };
-            auto node = node_result.ok;
-            if (node != nullptr) {
-                return Result<ActionSyntax*, ParserError*> { .tag = Result<ActionSyntax*, ParserError*>::Ok, .ok = 
-                    new (alignof(ActionSyntax), _rp) ActionSyntax(SetSyntax(*node))
-                };
-            }
-        }
-        return Result<ActionSyntax*, ParserError*> { .tag = Result<ActionSyntax*, ParserError*>::Ok, .ok = nullptr };
     }
 
     Result<ImplementationSyntax*, ParserError*> parse_implementation(Region& _pr, Page* _rp, Page* _ep) {
@@ -2931,213 +2901,6 @@ struct Parser : Object {
         return Result<IntrinsicSyntax*, ParserError*> { .tag = Result<IntrinsicSyntax*, ParserError*>::Ok, .ok = ret };
     }
 
-    Result<UseSyntax*, ParserError*> parse_use(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
-        auto start = this->lexer.previous_position;
-
-        auto success_use_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "use"));
-        if (!success_use_1) {
-
-                return Result<UseSyntax*, ParserError*> { .tag = Result<UseSyntax*, ParserError*>::Ok, .ok = nullptr };
-        }
-
-        auto name_result = this->parse_name(_r, _rp, _ep);
-        if (name_result.tag == Result<NameSyntax*, ParserError*>::Error)
-            return Result<UseSyntax*, ParserError*> { .tag = Result<UseSyntax*, ParserError*>::Error, .error = name_result.error };
-        auto name = name_result.ok;
-        if (name == nullptr) {
-            return Result<UseSyntax*, ParserError*> { .tag = Result<UseSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, lexer.position) };
-        }
-
-        auto success_colon_3 = this->lexer.parse_colon(_r, _rp);
-        if (!success_colon_3) {
-
-        }
-
-        auto end = this->lexer.position;
-
-        auto ret = new(alignof(UseSyntax), _rp) UseSyntax(start, end, name);
-
-        return Result<UseSyntax*, ParserError*> { .tag = Result<UseSyntax*, ParserError*>::Ok, .ok = ret };
-    }
-
-    Result<ImplementSyntax*, ParserError*> parse_implement(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
-        auto start = this->lexer.previous_position;
-
-        auto success_implement_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "implement"));
-        if (!success_implement_1) {
-
-                return Result<ImplementSyntax*, ParserError*> { .tag = Result<ImplementSyntax*, ParserError*>::Ok, .ok = nullptr };
-        }
-
-        auto type_result = this->parse_type(_r, _rp, _ep);
-        if (type_result.tag == Result<TypeSyntax*, ParserError*>::Error)
-            return Result<ImplementSyntax*, ParserError*> { .tag = Result<ImplementSyntax*, ParserError*>::Error, .error = type_result.error };
-        auto type = type_result.ok;
-        if (type == nullptr) {
-            return Result<ImplementSyntax*, ParserError*> { .tag = Result<ImplementSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, lexer.position) };
-        }
-
-        auto attributes_result = this->parse_attribute_list(_r, _rp, _ep);
-        if (attributes_result.tag == Result<Vector<AttributeSyntax>*, ParserError*>::Error)
-            return Result<ImplementSyntax*, ParserError*> { .tag = Result<ImplementSyntax*, ParserError*>::Error, .error = attributes_result.error };
-        auto attributes = attributes_result.ok;
-
-        auto success_colon_4 = this->lexer.parse_colon(_r, _rp);
-        if (!success_colon_4) {
-
-        }
-
-        auto success_left_curly_5 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, "{"));
-        if (!success_left_curly_5) {
-
-            return Result<ImplementSyntax*, ParserError*> { .tag = Result<ImplementSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, lexer.position) };        }
-
-        auto methods_result = this->parse_method_list(_r, _rp, _ep);
-        if (methods_result.tag == Result<Vector<MethodSyntax>*, ParserError*>::Error)
-            return Result<ImplementSyntax*, ParserError*> { .tag = Result<ImplementSyntax*, ParserError*>::Error, .error = methods_result.error };
-        auto methods = methods_result.ok;
-
-        auto success_right_curly_7 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, "}"));
-        if (!success_right_curly_7) {
-
-            return Result<ImplementSyntax*, ParserError*> { .tag = Result<ImplementSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, lexer.position) };        }
-
-        auto success_colon_8 = this->lexer.parse_colon(_r, _rp);
-        if (!success_colon_8) {
-
-        }
-
-        auto end = this->lexer.position;
-
-        auto ret = new(alignof(ImplementSyntax), _rp) ImplementSyntax(start, end, type, attributes, methods);
-
-        return Result<ImplementSyntax*, ParserError*> { .tag = Result<ImplementSyntax*, ParserError*>::Ok, .ok = ret };
-    }
-
-    Result<TraitSyntax*, ParserError*> parse_trait(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
-        auto start = this->lexer.previous_position;
-
-        auto success_trait_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "trait"));
-        if (!success_trait_1) {
-
-                return Result<TraitSyntax*, ParserError*> { .tag = Result<TraitSyntax*, ParserError*>::Ok, .ok = nullptr };
-        }
-
-        auto name_result = this->parse_name(_r, _rp, _ep);
-        if (name_result.tag == Result<NameSyntax*, ParserError*>::Error)
-            return Result<TraitSyntax*, ParserError*> { .tag = Result<TraitSyntax*, ParserError*>::Error, .error = name_result.error };
-        auto name = name_result.ok;
-        if (name == nullptr) {
-            return Result<TraitSyntax*, ParserError*> { .tag = Result<TraitSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, lexer.position) };
-        }
-
-        auto extension_result = this->parse_extends(_r, _rp, _ep);
-        if (extension_result.tag == Result<ExtendsSyntax*, ParserError*>::Error)
-            return Result<TraitSyntax*, ParserError*> { .tag = Result<TraitSyntax*, ParserError*>::Error, .error = extension_result.error };
-        auto extension = extension_result.ok;
-
-        auto attributes_result = this->parse_attribute_list(_r, _rp, _ep);
-        if (attributes_result.tag == Result<Vector<AttributeSyntax>*, ParserError*>::Error)
-            return Result<TraitSyntax*, ParserError*> { .tag = Result<TraitSyntax*, ParserError*>::Error, .error = attributes_result.error };
-        auto attributes = attributes_result.ok;
-
-        auto success_left_curly_5 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, "{"));
-        if (!success_left_curly_5) {
-
-            return Result<TraitSyntax*, ParserError*> { .tag = Result<TraitSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, lexer.position) };        }
-
-        auto functions_result = this->parse_method_list(_r, _rp, _ep);
-        if (functions_result.tag == Result<Vector<MethodSyntax>*, ParserError*>::Error)
-            return Result<TraitSyntax*, ParserError*> { .tag = Result<TraitSyntax*, ParserError*>::Error, .error = functions_result.error };
-        auto functions = functions_result.ok;
-
-        auto success_right_curly_7 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, "}"));
-        if (!success_right_curly_7) {
-
-            return Result<TraitSyntax*, ParserError*> { .tag = Result<TraitSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, lexer.position) };        }
-
-        auto success_colon_8 = this->lexer.parse_colon(_r, _rp);
-        if (!success_colon_8) {
-
-        }
-
-        auto end = this->lexer.position;
-
-        auto ret = new(alignof(TraitSyntax), _rp) TraitSyntax(start, end, name, extension, attributes, functions);
-
-        return Result<TraitSyntax*, ParserError*> { .tag = Result<TraitSyntax*, ParserError*>::Ok, .ok = ret };
-    }
-
-    Result<Vector<MethodSyntax>*, ParserError*> parse_method_list(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
-        {
-            auto _r_1 = Region::create(_r);
-            Array<MethodSyntax>* array = nullptr;
-            while(true) {
-                auto node_result = this->parse_method(_r_1, _rp, _ep);
-                if (node_result.tag == Result<MethodSyntax*, ParserError*>::Error)
-                    return Result<Vector<MethodSyntax>*, ParserError*> { .tag = Result<Vector<MethodSyntax>*, ParserError*>::Error, .error = node_result.error };
-                auto node = node_result.ok;
-                if (node != nullptr) {
-                    if (array == nullptr)
-                        array = Array<MethodSyntax>::create(_r_1.page);
-                    array->add(*node);
-                } else {
-                    break;
-                }
-            }
-
-            if (array == nullptr)
-                return Result<Vector<MethodSyntax>*, ParserError*> { .tag = Result<Vector<MethodSyntax>*, ParserError*>::Ok, .ok = nullptr };
-            
-            return Result<Vector<MethodSyntax>*, ParserError*> { .tag = Result<Vector<MethodSyntax>*, ParserError*>::Ok, .ok = Vector<MethodSyntax>::from_array(_rp, *array) };
-        }
-    }
-
-    Result<MethodSyntax*, ParserError*> parse_method(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
-        {
-            auto _r_1 = Region::create(_r);
-            auto node_result = this->parse_function(_r_1, _rp, _ep);
-            if (node_result.tag == Result<FunctionSyntax*, ParserError*>::Error)
-                return Result<MethodSyntax*, ParserError*> { .tag = Result<MethodSyntax*, ParserError*>::Error, .error = node_result.error };
-            auto node = node_result.ok;
-            if (node != nullptr) {
-                return Result<MethodSyntax*, ParserError*> { .tag = Result<MethodSyntax*, ParserError*>::Ok, .ok = 
-                    new (alignof(MethodSyntax), _rp) MethodSyntax(FunctionSyntax(*node))
-                };
-            }
-        }
-        {
-            auto _r_1 = Region::create(_r);
-            auto node_result = this->parse_procedure(_r_1, _rp, _ep);
-            if (node_result.tag == Result<ProcedureSyntax*, ParserError*>::Error)
-                return Result<MethodSyntax*, ParserError*> { .tag = Result<MethodSyntax*, ParserError*>::Error, .error = node_result.error };
-            auto node = node_result.ok;
-            if (node != nullptr) {
-                return Result<MethodSyntax*, ParserError*> { .tag = Result<MethodSyntax*, ParserError*>::Ok, .ok = 
-                    new (alignof(MethodSyntax), _rp) MethodSyntax(ProcedureSyntax(*node))
-                };
-            }
-        }
-        {
-            auto _r_1 = Region::create(_r);
-            auto node_result = this->parse_operator(_r_1, _rp, _ep);
-            if (node_result.tag == Result<OperatorSyntax*, ParserError*>::Error)
-                return Result<MethodSyntax*, ParserError*> { .tag = Result<MethodSyntax*, ParserError*>::Error, .error = node_result.error };
-            auto node = node_result.ok;
-            if (node != nullptr) {
-                return Result<MethodSyntax*, ParserError*> { .tag = Result<MethodSyntax*, ParserError*>::Ok, .ok = 
-                    new (alignof(MethodSyntax), _rp) MethodSyntax(OperatorSyntax(*node))
-                };
-            }
-        }
-        return Result<MethodSyntax*, ParserError*> { .tag = Result<MethodSyntax*, ParserError*>::Ok, .ok = nullptr };
-    }
-
     Result<ExtendsSyntax*, ParserError*> parse_extends(Region& _pr, Page* _rp, Page* _ep) {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
@@ -3205,9 +2968,64 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(ExtendSyntax), _rp) ExtendSyntax(start, end, spec);
+        auto ret = new(alignof(ExtendSyntax), _rp) ExtendSyntax(start, end, *spec);
 
         return Result<ExtendSyntax*, ParserError*> { .tag = Result<ExtendSyntax*, ParserError*>::Ok, .ok = ret };
+    }
+
+    Result<Vector<TypeSpecSyntax>*, ParserError*> parse_typespec_list(Region& _pr, Page* _rp, Page* _ep) {
+        auto _r = Region::create(_pr);
+        {
+            auto _r_1 = Region::create(_r);
+            Array<TypeSpecSyntax>* array = nullptr;
+            while(true) {
+                auto node_result = this->parse_typespec(_r_1, _rp, _ep);
+                if (node_result.tag == Result<TypeSpecSyntax*, ParserError*>::Error)
+                    return Result<Vector<TypeSpecSyntax>*, ParserError*> { .tag = Result<Vector<TypeSpecSyntax>*, ParserError*>::Error, .error = node_result.error };
+                auto node = node_result.ok;
+                if (node != nullptr) {
+                    if (array == nullptr)
+                        array = Array<TypeSpecSyntax>::create(_r_1.page);
+                    array->add(*node);
+                } else {
+                    break;
+                }
+            }
+
+            if (array == nullptr)
+                return Result<Vector<TypeSpecSyntax>*, ParserError*> { .tag = Result<Vector<TypeSpecSyntax>*, ParserError*>::Ok, .ok = nullptr };
+            
+            return Result<Vector<TypeSpecSyntax>*, ParserError*> { .tag = Result<Vector<TypeSpecSyntax>*, ParserError*>::Ok, .ok = Vector<TypeSpecSyntax>::from_array(_rp, *array) };
+        }
+    }
+
+    Result<TypeSpecSyntax*, ParserError*> parse_typespec(Region& _pr, Page* _rp, Page* _ep) {
+        auto _r = Region::create(_pr);
+        {
+            auto _r_1 = Region::create(_r);
+            auto node_result = this->parse_structure(_r_1, _rp, _ep);
+            if (node_result.tag == Result<StructureSyntax*, ParserError*>::Error)
+                return Result<TypeSpecSyntax*, ParserError*> { .tag = Result<TypeSpecSyntax*, ParserError*>::Error, .error = node_result.error };
+            auto node = node_result.ok;
+            if (node != nullptr) {
+                return Result<TypeSpecSyntax*, ParserError*> { .tag = Result<TypeSpecSyntax*, ParserError*>::Ok, .ok = 
+                    new (alignof(TypeSpecSyntax), _rp) TypeSpecSyntax(StructureSyntax(*node))
+                };
+            }
+        }
+        {
+            auto _r_1 = Region::create(_r);
+            auto node_result = this->parse_type(_r_1, _rp, _ep);
+            if (node_result.tag == Result<TypeSyntax*, ParserError*>::Error)
+                return Result<TypeSpecSyntax*, ParserError*> { .tag = Result<TypeSpecSyntax*, ParserError*>::Error, .error = node_result.error };
+            auto node = node_result.ok;
+            if (node != nullptr) {
+                return Result<TypeSpecSyntax*, ParserError*> { .tag = Result<TypeSpecSyntax*, ParserError*>::Ok, .ok = 
+                    new (alignof(TypeSpecSyntax), _rp) TypeSpecSyntax(TypeSyntax(*node))
+                };
+            }
+        }
+        return Result<TypeSpecSyntax*, ParserError*> { .tag = Result<TypeSpecSyntax*, ParserError*>::Ok, .ok = nullptr };
     }
 
     Result<MacroSyntax*, ParserError*> parse_macro(Region& _pr, Page* _rp, Page* _ep) {
@@ -3248,7 +3066,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(MacroSyntax), _rp) MacroSyntax(start, end, name, model, rule);
+        auto ret = new(alignof(MacroSyntax), _rp) MacroSyntax(start, end, *name, *model, *rule);
 
         return Result<MacroSyntax*, ParserError*> { .tag = Result<MacroSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -3278,7 +3096,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(ModuleSyntax), _rp) ModuleSyntax(start, end, name);
+        auto ret = new(alignof(ModuleSyntax), _rp) ModuleSyntax(start, end, *name);
 
         return Result<ModuleSyntax*, ParserError*> { .tag = Result<ModuleSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -3447,7 +3265,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(LetSyntax), _rp) LetSyntax(start, end, binding);
+        auto ret = new(alignof(LetSyntax), _rp) LetSyntax(start, end, *binding);
 
         return Result<LetSyntax*, ParserError*> { .tag = Result<LetSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -3472,7 +3290,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(VarSyntax), _rp) VarSyntax(start, end, binding);
+        auto ret = new(alignof(VarSyntax), _rp) VarSyntax(start, end, *binding);
 
         return Result<VarSyntax*, ParserError*> { .tag = Result<VarSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -3497,7 +3315,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(MutableSyntax), _rp) MutableSyntax(start, end, binding);
+        auto ret = new(alignof(MutableSyntax), _rp) MutableSyntax(start, end, *binding);
 
         return Result<MutableSyntax*, ParserError*> { .tag = Result<MutableSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -3533,7 +3351,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(BindingSyntax), _rp) BindingSyntax(start, end, name, annotation, operation);
+        auto ret = new(alignof(BindingSyntax), _rp) BindingSyntax(start, end, *name, annotation, *operation);
 
         return Result<BindingSyntax*, ParserError*> { .tag = Result<BindingSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -3558,7 +3376,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(BindingAnnotationSyntax), _rp) BindingAnnotationSyntax(start, end, spec);
+        auto ret = new(alignof(BindingAnnotationSyntax), _rp) BindingAnnotationSyntax(start, end, *spec);
 
         return Result<BindingAnnotationSyntax*, ParserError*> { .tag = Result<BindingAnnotationSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -3630,61 +3448,58 @@ struct Parser : Object {
         return Result<BindingSpecSyntax*, ParserError*> { .tag = Result<BindingSpecSyntax*, ParserError*>::Ok, .ok = nullptr };
     }
 
-    Result<SetSyntax*, ParserError*> parse_set(Region& _pr, Page* _rp, Page* _ep) {
+    Result<ArraySyntax*, ParserError*> parse_array(Region& _pr, Page* _rp, Page* _ep) {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto success_set_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "set"));
-        if (!success_set_1) {
+        auto success_left_bracket_1 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, "["));
+        if (!success_left_bracket_1) {
 
-                return Result<SetSyntax*, ParserError*> { .tag = Result<SetSyntax*, ParserError*>::Ok, .ok = nullptr };
+                return Result<ArraySyntax*, ParserError*> { .tag = Result<ArraySyntax*, ParserError*>::Ok, .ok = nullptr };
         }
 
-        auto target_result = this->parse_operation(_r, _rp, _ep);
-        if (target_result.tag == Result<OperationSyntax*, ParserError*>::Error)
-            return Result<SetSyntax*, ParserError*> { .tag = Result<SetSyntax*, ParserError*>::Error, .error = target_result.error };
-        auto target = target_result.ok;
-        if (target == nullptr) {
-            return Result<SetSyntax*, ParserError*> { .tag = Result<SetSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, lexer.position) };
-        }
+        auto members_result = this->parse_typespec_list(_r, _rp, _ep);
+        if (members_result.tag == Result<Vector<TypeSpecSyntax>*, ParserError*>::Error)
+            return Result<ArraySyntax*, ParserError*> { .tag = Result<ArraySyntax*, ParserError*>::Error, .error = members_result.error };
+        auto members = members_result.ok;
 
-        auto source_result = this->parse_operation(_r, _rp, _ep);
-        if (source_result.tag == Result<OperationSyntax*, ParserError*>::Error)
-            return Result<SetSyntax*, ParserError*> { .tag = Result<SetSyntax*, ParserError*>::Error, .error = source_result.error };
-        auto source = source_result.ok;
-        if (source == nullptr) {
-            return Result<SetSyntax*, ParserError*> { .tag = Result<SetSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, lexer.position) };
-        }
+        auto success_right_bracket_3 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, "]"));
+        if (!success_right_bracket_3) {
+
+            return Result<ArraySyntax*, ParserError*> { .tag = Result<ArraySyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, lexer.position) };        }
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(SetSyntax), _rp) SetSyntax(start, end, target, source);
+        auto ret = new(alignof(ArraySyntax), _rp) ArraySyntax(start, end, members);
 
-        return Result<SetSyntax*, ParserError*> { .tag = Result<SetSyntax*, ParserError*>::Ok, .ok = ret };
+        return Result<ArraySyntax*, ParserError*> { .tag = Result<ArraySyntax*, ParserError*>::Ok, .ok = ret };
     }
 
-    Result<OperationSyntax*, ParserError*> parse_operation(Region& _pr, Page* _rp, Page* _ep) {
+    Result<StructureSyntax*, ParserError*> parse_structure(Region& _pr, Page* _rp, Page* _ep) {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto operands_result = this->parse_operand_list(_r, _rp, _ep);
-        if (operands_result.tag == Result<Vector<OperandSyntax>*, ParserError*>::Error)
-            return Result<OperationSyntax*, ParserError*> { .tag = Result<OperationSyntax*, ParserError*>::Error, .error = operands_result.error };
-        auto operands = operands_result.ok;
-        if (operands == nullptr) {
-            return Result<OperationSyntax*, ParserError*> { .tag = Result<OperationSyntax*, ParserError*>::Ok, .ok = nullptr };
+        auto success_left_paren_1 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, "("));
+        if (!success_left_paren_1) {
+
+                return Result<StructureSyntax*, ParserError*> { .tag = Result<StructureSyntax*, ParserError*>::Ok, .ok = nullptr };
         }
 
-        auto success_colon_2 = this->lexer.parse_colon(_r, _rp);
-        if (!success_colon_2) {
+        auto members_result = this->parse_member_list(_r, _rp, _ep);
+        if (members_result.tag == Result<Vector<MemberSyntax>*, ParserError*>::Error)
+            return Result<StructureSyntax*, ParserError*> { .tag = Result<StructureSyntax*, ParserError*>::Error, .error = members_result.error };
+        auto members = members_result.ok;
 
-        }
+        auto success_right_paren_3 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, ")"));
+        if (!success_right_paren_3) {
+
+            return Result<StructureSyntax*, ParserError*> { .tag = Result<StructureSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, lexer.position) };        }
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(OperationSyntax), _rp) OperationSyntax(start, end, operands);
+        auto ret = new(alignof(StructureSyntax), _rp) StructureSyntax(start, end, members);
 
-        return Result<OperationSyntax*, ParserError*> { .tag = Result<OperationSyntax*, ParserError*>::Ok, .ok = ret };
+        return Result<StructureSyntax*, ParserError*> { .tag = Result<StructureSyntax*, ParserError*>::Ok, .ok = ret };
     }
 
     Result<Vector<OperandSyntax>*, ParserError*> parse_operand_list(Region& _pr, Page* _rp, Page* _ep) {
@@ -3732,7 +3547,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(OperandSyntax), _rp) OperandSyntax(start, end, expression, postfixes);
+        auto ret = new(alignof(OperandSyntax), _rp) OperandSyntax(start, end, *expression, postfixes);
 
         return Result<OperandSyntax*, ParserError*> { .tag = Result<OperandSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -3812,7 +3627,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(MemberAccessSyntax), _rp) MemberAccessSyntax(start, end, member);
+        auto ret = new(alignof(MemberAccessSyntax), _rp) MemberAccessSyntax(start, end, *member);
 
         return Result<MemberAccessSyntax*, ParserError*> { .tag = Result<MemberAccessSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -3836,7 +3651,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(CatcherSyntax), _rp) CatcherSyntax(start, end, catchers, dropper);
+        auto ret = new(alignof(CatcherSyntax), _rp) CatcherSyntax(start, end, *catchers, dropper);
 
         return Result<CatcherSyntax*, ParserError*> { .tag = Result<CatcherSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -3895,7 +3710,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(CatchSyntax), _rp) CatchSyntax(start, end, condition, handler);
+        auto ret = new(alignof(CatchSyntax), _rp) CatchSyntax(start, end, *condition, *handler);
 
         return Result<CatchSyntax*, ParserError*> { .tag = Result<CatchSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -3920,139 +3735,9 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(DropSyntax), _rp) DropSyntax(start, end, handler);
+        auto ret = new(alignof(DropSyntax), _rp) DropSyntax(start, end, *handler);
 
         return Result<DropSyntax*, ParserError*> { .tag = Result<DropSyntax*, ParserError*>::Ok, .ok = ret };
-    }
-
-    Result<ContinueSyntax*, ParserError*> parse_continue(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
-        auto start = this->lexer.previous_position;
-
-        auto success_continue_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "continue"));
-        if (!success_continue_1) {
-
-                return Result<ContinueSyntax*, ParserError*> { .tag = Result<ContinueSyntax*, ParserError*>::Ok, .ok = nullptr };
-        }
-
-        auto name_result = this->parse_loop(_r, _rp, _ep);
-        if (name_result.tag == Result<LoopSyntax*, ParserError*>::Error)
-            return Result<ContinueSyntax*, ParserError*> { .tag = Result<ContinueSyntax*, ParserError*>::Error, .error = name_result.error };
-        auto name = name_result.ok;
-
-        auto success_colon_3 = this->lexer.parse_colon(_r, _rp);
-        if (!success_colon_3) {
-
-        }
-
-        auto end = this->lexer.position;
-
-        auto ret = new(alignof(ContinueSyntax), _rp) ContinueSyntax(start, end, name);
-
-        return Result<ContinueSyntax*, ParserError*> { .tag = Result<ContinueSyntax*, ParserError*>::Ok, .ok = ret };
-    }
-
-    Result<LoopSyntax*, ParserError*> parse_loop(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
-        auto start = this->lexer.previous_position;
-
-        auto success_loop_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "loop"));
-        if (!success_loop_1) {
-
-                return Result<LoopSyntax*, ParserError*> { .tag = Result<LoopSyntax*, ParserError*>::Ok, .ok = nullptr };
-        }
-
-        auto name = this->lexer.parse_identifier(_r, _rp, this->keywords);
-        if (name != nullptr) {
-            if (!this->is_identifier(*name)) {
-            return Result<LoopSyntax*, ParserError*> { .tag = Result<LoopSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, lexer.position) };
-            }
-        }
-        else {
-            return Result<LoopSyntax*, ParserError*> { .tag = Result<LoopSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, lexer.position) };
-        }
-
-        auto end = this->lexer.position;
-
-        auto ret = new(alignof(LoopSyntax), _rp) LoopSyntax(start, end, name);
-
-        return Result<LoopSyntax*, ParserError*> { .tag = Result<LoopSyntax*, ParserError*>::Ok, .ok = ret };
-    }
-
-    Result<BreakSyntax*, ParserError*> parse_break(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
-        auto start = this->lexer.previous_position;
-
-        auto success_break_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "break"));
-        if (!success_break_1) {
-
-                return Result<BreakSyntax*, ParserError*> { .tag = Result<BreakSyntax*, ParserError*>::Ok, .ok = nullptr };
-        }
-
-        auto name_result = this->parse_loop(_r, _rp, _ep);
-        if (name_result.tag == Result<LoopSyntax*, ParserError*>::Error)
-            return Result<BreakSyntax*, ParserError*> { .tag = Result<BreakSyntax*, ParserError*>::Error, .error = name_result.error };
-        auto name = name_result.ok;
-
-        auto result_result = this->parse_operation(_r, _rp, _ep);
-        if (result_result.tag == Result<OperationSyntax*, ParserError*>::Error)
-            return Result<BreakSyntax*, ParserError*> { .tag = Result<BreakSyntax*, ParserError*>::Error, .error = result_result.error };
-        auto result = result_result.ok;
-
-        auto success_colon_4 = this->lexer.parse_colon(_r, _rp);
-        if (!success_colon_4) {
-
-        }
-
-        auto end = this->lexer.position;
-
-        auto ret = new(alignof(BreakSyntax), _rp) BreakSyntax(start, end, name, result);
-
-        return Result<BreakSyntax*, ParserError*> { .tag = Result<BreakSyntax*, ParserError*>::Ok, .ok = ret };
-    }
-
-    Result<ReturnSyntax*, ParserError*> parse_return(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
-        auto start = this->lexer.previous_position;
-
-        auto success_return_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "return"));
-        if (!success_return_1) {
-
-                return Result<ReturnSyntax*, ParserError*> { .tag = Result<ReturnSyntax*, ParserError*>::Ok, .ok = nullptr };
-        }
-
-        auto result_result = this->parse_operation(_r, _rp, _ep);
-        if (result_result.tag == Result<OperationSyntax*, ParserError*>::Error)
-            return Result<ReturnSyntax*, ParserError*> { .tag = Result<ReturnSyntax*, ParserError*>::Error, .error = result_result.error };
-        auto result = result_result.ok;
-
-        auto end = this->lexer.position;
-
-        auto ret = new(alignof(ReturnSyntax), _rp) ReturnSyntax(start, end, result);
-
-        return Result<ReturnSyntax*, ParserError*> { .tag = Result<ReturnSyntax*, ParserError*>::Ok, .ok = ret };
-    }
-
-    Result<ThrowSyntax*, ParserError*> parse_throw(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
-        auto start = this->lexer.previous_position;
-
-        auto success_throw_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "throw"));
-        if (!success_throw_1) {
-
-                return Result<ThrowSyntax*, ParserError*> { .tag = Result<ThrowSyntax*, ParserError*>::Ok, .ok = nullptr };
-        }
-
-        auto result_result = this->parse_operation(_r, _rp, _ep);
-        if (result_result.tag == Result<OperationSyntax*, ParserError*>::Error)
-            return Result<ThrowSyntax*, ParserError*> { .tag = Result<ThrowSyntax*, ParserError*>::Error, .error = result_result.error };
-        auto result = result_result.ok;
-
-        auto end = this->lexer.position;
-
-        auto ret = new(alignof(ThrowSyntax), _rp) ThrowSyntax(start, end, result);
-
-        return Result<ThrowSyntax*, ParserError*> { .tag = Result<ThrowSyntax*, ParserError*>::Ok, .ok = ret };
     }
 
     Result<ExpressionSyntax*, ParserError*> parse_expression(Region& _pr, Page* _rp, Page* _ep) {
@@ -4252,6 +3937,136 @@ struct Parser : Object {
         return Result<ExpressionSyntax*, ParserError*> { .tag = Result<ExpressionSyntax*, ParserError*>::Ok, .ok = nullptr };
     }
 
+    Result<ContinueSyntax*, ParserError*> parse_continue(Region& _pr, Page* _rp, Page* _ep) {
+        auto _r = Region::create(_pr);
+        auto start = this->lexer.previous_position;
+
+        auto success_continue_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "continue"));
+        if (!success_continue_1) {
+
+                return Result<ContinueSyntax*, ParserError*> { .tag = Result<ContinueSyntax*, ParserError*>::Ok, .ok = nullptr };
+        }
+
+        auto name_result = this->parse_loop(_r, _rp, _ep);
+        if (name_result.tag == Result<LoopSyntax*, ParserError*>::Error)
+            return Result<ContinueSyntax*, ParserError*> { .tag = Result<ContinueSyntax*, ParserError*>::Error, .error = name_result.error };
+        auto name = name_result.ok;
+
+        auto success_colon_3 = this->lexer.parse_colon(_r, _rp);
+        if (!success_colon_3) {
+
+        }
+
+        auto end = this->lexer.position;
+
+        auto ret = new(alignof(ContinueSyntax), _rp) ContinueSyntax(start, end, name);
+
+        return Result<ContinueSyntax*, ParserError*> { .tag = Result<ContinueSyntax*, ParserError*>::Ok, .ok = ret };
+    }
+
+    Result<BreakSyntax*, ParserError*> parse_break(Region& _pr, Page* _rp, Page* _ep) {
+        auto _r = Region::create(_pr);
+        auto start = this->lexer.previous_position;
+
+        auto success_break_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "break"));
+        if (!success_break_1) {
+
+                return Result<BreakSyntax*, ParserError*> { .tag = Result<BreakSyntax*, ParserError*>::Ok, .ok = nullptr };
+        }
+
+        auto name_result = this->parse_loop(_r, _rp, _ep);
+        if (name_result.tag == Result<LoopSyntax*, ParserError*>::Error)
+            return Result<BreakSyntax*, ParserError*> { .tag = Result<BreakSyntax*, ParserError*>::Error, .error = name_result.error };
+        auto name = name_result.ok;
+
+        auto result_result = this->parse_operation(_r, _rp, _ep);
+        if (result_result.tag == Result<OperationSyntax*, ParserError*>::Error)
+            return Result<BreakSyntax*, ParserError*> { .tag = Result<BreakSyntax*, ParserError*>::Error, .error = result_result.error };
+        auto result = result_result.ok;
+
+        auto success_colon_4 = this->lexer.parse_colon(_r, _rp);
+        if (!success_colon_4) {
+
+        }
+
+        auto end = this->lexer.position;
+
+        auto ret = new(alignof(BreakSyntax), _rp) BreakSyntax(start, end, name, result);
+
+        return Result<BreakSyntax*, ParserError*> { .tag = Result<BreakSyntax*, ParserError*>::Ok, .ok = ret };
+    }
+
+    Result<LoopSyntax*, ParserError*> parse_loop(Region& _pr, Page* _rp, Page* _ep) {
+        auto _r = Region::create(_pr);
+        auto start = this->lexer.previous_position;
+
+        auto success_loop_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "loop"));
+        if (!success_loop_1) {
+
+                return Result<LoopSyntax*, ParserError*> { .tag = Result<LoopSyntax*, ParserError*>::Ok, .ok = nullptr };
+        }
+
+        auto name = this->lexer.parse_identifier(_r, _rp, this->keywords);
+        if (name != nullptr) {
+            if (!this->is_identifier(*name)) {
+            return Result<LoopSyntax*, ParserError*> { .tag = Result<LoopSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, lexer.position) };
+            }
+        }
+        else {
+            return Result<LoopSyntax*, ParserError*> { .tag = Result<LoopSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, lexer.position) };
+        }
+
+        auto end = this->lexer.position;
+
+        auto ret = new(alignof(LoopSyntax), _rp) LoopSyntax(start, end, *name);
+
+        return Result<LoopSyntax*, ParserError*> { .tag = Result<LoopSyntax*, ParserError*>::Ok, .ok = ret };
+    }
+
+    Result<ReturnSyntax*, ParserError*> parse_return(Region& _pr, Page* _rp, Page* _ep) {
+        auto _r = Region::create(_pr);
+        auto start = this->lexer.previous_position;
+
+        auto success_return_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "return"));
+        if (!success_return_1) {
+
+                return Result<ReturnSyntax*, ParserError*> { .tag = Result<ReturnSyntax*, ParserError*>::Ok, .ok = nullptr };
+        }
+
+        auto result_result = this->parse_operation(_r, _rp, _ep);
+        if (result_result.tag == Result<OperationSyntax*, ParserError*>::Error)
+            return Result<ReturnSyntax*, ParserError*> { .tag = Result<ReturnSyntax*, ParserError*>::Error, .error = result_result.error };
+        auto result = result_result.ok;
+
+        auto end = this->lexer.position;
+
+        auto ret = new(alignof(ReturnSyntax), _rp) ReturnSyntax(start, end, result);
+
+        return Result<ReturnSyntax*, ParserError*> { .tag = Result<ReturnSyntax*, ParserError*>::Ok, .ok = ret };
+    }
+
+    Result<ThrowSyntax*, ParserError*> parse_throw(Region& _pr, Page* _rp, Page* _ep) {
+        auto _r = Region::create(_pr);
+        auto start = this->lexer.previous_position;
+
+        auto success_throw_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "throw"));
+        if (!success_throw_1) {
+
+                return Result<ThrowSyntax*, ParserError*> { .tag = Result<ThrowSyntax*, ParserError*>::Ok, .ok = nullptr };
+        }
+
+        auto result_result = this->parse_operation(_r, _rp, _ep);
+        if (result_result.tag == Result<OperationSyntax*, ParserError*>::Error)
+            return Result<ThrowSyntax*, ParserError*> { .tag = Result<ThrowSyntax*, ParserError*>::Error, .error = result_result.error };
+        auto result = result_result.ok;
+
+        auto end = this->lexer.position;
+
+        auto ret = new(alignof(ThrowSyntax), _rp) ThrowSyntax(start, end, result);
+
+        return Result<ThrowSyntax*, ParserError*> { .tag = Result<ThrowSyntax*, ParserError*>::Ok, .ok = ret };
+    }
+
     Result<LiteralSyntax*, ParserError*> parse_literal(Region& _pr, Page* _rp, Page* _ep) {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
@@ -4351,7 +4166,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(ComponentSyntax), _rp) ComponentSyntax(start, end, operands, attributes, value);
+        auto ret = new(alignof(ComponentSyntax), _rp) ComponentSyntax(start, end, *operands, attributes, value);
 
         return Result<ComponentSyntax*, ParserError*> { .tag = Result<ComponentSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -4381,7 +4196,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(ValueSyntax), _rp) ValueSyntax(start, end, value, attributes);
+        auto ret = new(alignof(ValueSyntax), _rp) ValueSyntax(start, end, *value, attributes);
 
         return Result<ValueSyntax*, ParserError*> { .tag = Result<ValueSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -4411,7 +4226,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(VectorSyntax), _rp) VectorSyntax(start, end, elements);
+        auto ret = new(alignof(VectorSyntax), _rp) VectorSyntax(start, end, *elements);
 
         return Result<VectorSyntax*, ParserError*> { .tag = Result<VectorSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -4466,7 +4281,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(ElementSyntax), _rp) ElementSyntax(start, end, operation, attributes);
+        auto ret = new(alignof(ElementSyntax), _rp) ElementSyntax(start, end, *operation, attributes);
 
         return Result<ElementSyntax*, ParserError*> { .tag = Result<ElementSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -4541,7 +4356,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(IfSyntax), _rp) IfSyntax(start, end, condition, match, alias, consequent, alternative);
+        auto ret = new(alignof(IfSyntax), _rp) IfSyntax(start, end, *condition, match, alias, *consequent, alternative);
 
         return Result<IfSyntax*, ParserError*> { .tag = Result<IfSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -4566,7 +4381,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(IsSyntax), _rp) IsSyntax(start, end, type);
+        auto ret = new(alignof(IsSyntax), _rp) IsSyntax(start, end, *type);
 
         return Result<IsSyntax*, ParserError*> { .tag = Result<IsSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -4598,7 +4413,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(AsSyntax), _rp) AsSyntax(start, end, name);
+        auto ret = new(alignof(AsSyntax), _rp) AsSyntax(start, end, *name);
 
         return Result<AsSyntax*, ParserError*> { .tag = Result<AsSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -4628,7 +4443,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(ElseSyntax), _rp) ElseSyntax(start, end, alternative);
+        auto ret = new(alignof(ElseSyntax), _rp) ElseSyntax(start, end, *alternative);
 
         return Result<ElseSyntax*, ParserError*> { .tag = Result<ElseSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -4666,7 +4481,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(MatchSyntax), _rp) MatchSyntax(start, end, scrutinee, cases, alternative);
+        auto ret = new(alignof(MatchSyntax), _rp) MatchSyntax(start, end, *scrutinee, *cases, alternative);
 
         return Result<MatchSyntax*, ParserError*> { .tag = Result<MatchSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -4725,7 +4540,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(CaseSyntax), _rp) CaseSyntax(start, end, condition, consequent);
+        auto ret = new(alignof(CaseSyntax), _rp) CaseSyntax(start, end, *condition, *consequent);
 
         return Result<CaseSyntax*, ParserError*> { .tag = Result<CaseSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -4785,7 +4600,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(LambdaSyntax), _rp) LambdaSyntax(start, end, input, block);
+        auto ret = new(alignof(LambdaSyntax), _rp) LambdaSyntax(start, end, *input, *block);
 
         return Result<LambdaSyntax*, ParserError*> { .tag = Result<LambdaSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -4836,7 +4651,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(ForSyntax), _rp) ForSyntax(start, end, condition, expression, name, action);
+        auto ret = new(alignof(ForSyntax), _rp) ForSyntax(start, end, *condition, *expression, name, *action);
 
         return Result<ForSyntax*, ParserError*> { .tag = Result<ForSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -4863,7 +4678,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(LabelSyntax), _rp) LabelSyntax(start, end, name);
+        auto ret = new(alignof(LabelSyntax), _rp) LabelSyntax(start, end, *name);
 
         return Result<LabelSyntax*, ParserError*> { .tag = Result<LabelSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -4901,7 +4716,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(WhileSyntax), _rp) WhileSyntax(start, end, condition, name, action);
+        auto ret = new(alignof(WhileSyntax), _rp) WhileSyntax(start, end, *condition, name, *action);
 
         return Result<WhileSyntax*, ParserError*> { .tag = Result<WhileSyntax*, ParserError*>::Ok, .ok = ret };
     }
@@ -4931,9 +4746,121 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(RepeatSyntax), _rp) RepeatSyntax(start, end, name, action);
+        auto ret = new(alignof(RepeatSyntax), _rp) RepeatSyntax(start, end, name, *action);
 
         return Result<RepeatSyntax*, ParserError*> { .tag = Result<RepeatSyntax*, ParserError*>::Ok, .ok = ret };
+    }
+
+    Result<Vector<ActionSyntax>*, ParserError*> parse_action_list(Region& _pr, Page* _rp, Page* _ep) {
+        auto _r = Region::create(_pr);
+        {
+            auto _r_1 = Region::create(_r);
+            Array<ActionSyntax>* array = nullptr;
+            while(true) {
+                auto node_result = this->parse_action(_r_1, _rp, _ep);
+                if (node_result.tag == Result<ActionSyntax*, ParserError*>::Error)
+                    return Result<Vector<ActionSyntax>*, ParserError*> { .tag = Result<Vector<ActionSyntax>*, ParserError*>::Error, .error = node_result.error };
+                auto node = node_result.ok;
+                if (node != nullptr) {
+                    if (array == nullptr)
+                        array = Array<ActionSyntax>::create(_r_1.page);
+                    array->add(*node);
+                } else {
+                    break;
+                }
+            }
+
+            if (array == nullptr)
+                return Result<Vector<ActionSyntax>*, ParserError*> { .tag = Result<Vector<ActionSyntax>*, ParserError*>::Ok, .ok = nullptr };
+            
+            return Result<Vector<ActionSyntax>*, ParserError*> { .tag = Result<Vector<ActionSyntax>*, ParserError*>::Ok, .ok = Vector<ActionSyntax>::from_array(_rp, *array) };
+        }
+    }
+
+    Result<ActionSyntax*, ParserError*> parse_action(Region& _pr, Page* _rp, Page* _ep) {
+        auto _r = Region::create(_pr);
+        {
+            auto _r_1 = Region::create(_r);
+            auto node_result = this->parse_operation(_r_1, _rp, _ep);
+            if (node_result.tag == Result<OperationSyntax*, ParserError*>::Error)
+                return Result<ActionSyntax*, ParserError*> { .tag = Result<ActionSyntax*, ParserError*>::Error, .error = node_result.error };
+            auto node = node_result.ok;
+            if (node != nullptr) {
+                return Result<ActionSyntax*, ParserError*> { .tag = Result<ActionSyntax*, ParserError*>::Ok, .ok = 
+                    new (alignof(ActionSyntax), _rp) ActionSyntax(OperationSyntax(*node))
+                };
+            }
+        }
+        {
+            auto _r_1 = Region::create(_r);
+            auto node_result = this->parse_set(_r_1, _rp, _ep);
+            if (node_result.tag == Result<SetSyntax*, ParserError*>::Error)
+                return Result<ActionSyntax*, ParserError*> { .tag = Result<ActionSyntax*, ParserError*>::Error, .error = node_result.error };
+            auto node = node_result.ok;
+            if (node != nullptr) {
+                return Result<ActionSyntax*, ParserError*> { .tag = Result<ActionSyntax*, ParserError*>::Ok, .ok = 
+                    new (alignof(ActionSyntax), _rp) ActionSyntax(SetSyntax(*node))
+                };
+            }
+        }
+        return Result<ActionSyntax*, ParserError*> { .tag = Result<ActionSyntax*, ParserError*>::Ok, .ok = nullptr };
+    }
+
+    Result<SetSyntax*, ParserError*> parse_set(Region& _pr, Page* _rp, Page* _ep) {
+        auto _r = Region::create(_pr);
+        auto start = this->lexer.previous_position;
+
+        auto success_set_1 = this->lexer.parse_keyword(_r, _rp, *String::from_c_string(_r.page, "set"));
+        if (!success_set_1) {
+
+                return Result<SetSyntax*, ParserError*> { .tag = Result<SetSyntax*, ParserError*>::Ok, .ok = nullptr };
+        }
+
+        auto target_result = this->parse_operation(_r, _rp, _ep);
+        if (target_result.tag == Result<OperationSyntax*, ParserError*>::Error)
+            return Result<SetSyntax*, ParserError*> { .tag = Result<SetSyntax*, ParserError*>::Error, .error = target_result.error };
+        auto target = target_result.ok;
+        if (target == nullptr) {
+            return Result<SetSyntax*, ParserError*> { .tag = Result<SetSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, lexer.position) };
+        }
+
+        auto source_result = this->parse_operation(_r, _rp, _ep);
+        if (source_result.tag == Result<OperationSyntax*, ParserError*>::Error)
+            return Result<SetSyntax*, ParserError*> { .tag = Result<SetSyntax*, ParserError*>::Error, .error = source_result.error };
+        auto source = source_result.ok;
+        if (source == nullptr) {
+            return Result<SetSyntax*, ParserError*> { .tag = Result<SetSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, lexer.position) };
+        }
+
+        auto end = this->lexer.position;
+
+        auto ret = new(alignof(SetSyntax), _rp) SetSyntax(start, end, *target, *source);
+
+        return Result<SetSyntax*, ParserError*> { .tag = Result<SetSyntax*, ParserError*>::Ok, .ok = ret };
+    }
+
+    Result<OperationSyntax*, ParserError*> parse_operation(Region& _pr, Page* _rp, Page* _ep) {
+        auto _r = Region::create(_pr);
+        auto start = this->lexer.previous_position;
+
+        auto operands_result = this->parse_operand_list(_r, _rp, _ep);
+        if (operands_result.tag == Result<Vector<OperandSyntax>*, ParserError*>::Error)
+            return Result<OperationSyntax*, ParserError*> { .tag = Result<OperationSyntax*, ParserError*>::Error, .error = operands_result.error };
+        auto operands = operands_result.ok;
+        if (operands == nullptr) {
+            return Result<OperationSyntax*, ParserError*> { .tag = Result<OperationSyntax*, ParserError*>::Ok, .ok = nullptr };
+        }
+
+        auto success_colon_2 = this->lexer.parse_colon(_r, _rp);
+        if (!success_colon_2) {
+
+        }
+
+        auto end = this->lexer.position;
+
+        auto ret = new(alignof(OperationSyntax), _rp) OperationSyntax(start, end, *operands);
+
+        return Result<OperationSyntax*, ParserError*> { .tag = Result<OperationSyntax*, ParserError*>::Ok, .ok = ret };
     }
 
     Result<SizeOfSyntax*, ParserError*> parse_sizeof(Region& _pr, Page* _rp, Page* _ep) {
@@ -4956,9 +4883,66 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = new(alignof(SizeOfSyntax), _rp) SizeOfSyntax(start, end, type);
+        auto ret = new(alignof(SizeOfSyntax), _rp) SizeOfSyntax(start, end, *type);
 
         return Result<SizeOfSyntax*, ParserError*> { .tag = Result<SizeOfSyntax*, ParserError*>::Ok, .ok = ret };
+    }
+
+    Result<TypeSyntax*, ParserError*> parse_type(Region& _pr, Page* _rp, Page* _ep) {
+        auto _r = Region::create(_pr);
+        auto start = this->lexer.previous_position;
+
+        auto name_result = this->parse_name(_r, _rp, _ep);
+        if (name_result.tag == Result<NameSyntax*, ParserError*>::Error)
+            return Result<TypeSyntax*, ParserError*> { .tag = Result<TypeSyntax*, ParserError*>::Error, .error = name_result.error };
+        auto name = name_result.ok;
+        if (name == nullptr) {
+            return Result<TypeSyntax*, ParserError*> { .tag = Result<TypeSyntax*, ParserError*>::Ok, .ok = nullptr };
+        }
+
+        auto generics_result = this->parse_genericarguments(_r, _rp, _ep);
+        if (generics_result.tag == Result<GenericArgumentsSyntax*, ParserError*>::Error)
+            return Result<TypeSyntax*, ParserError*> { .tag = Result<TypeSyntax*, ParserError*>::Error, .error = generics_result.error };
+        auto generics = generics_result.ok;
+
+        auto optional_result = this->parse_optional(_r, _rp, _ep);
+        if (optional_result.tag == Result<OptionalSyntax*, ParserError*>::Error)
+            return Result<TypeSyntax*, ParserError*> { .tag = Result<TypeSyntax*, ParserError*>::Error, .error = optional_result.error };
+        auto optional = optional_result.ok;
+
+        auto end = this->lexer.position;
+
+        auto ret = new(alignof(TypeSyntax), _rp) TypeSyntax(start, end, *name, generics, optional);
+
+        return Result<TypeSyntax*, ParserError*> { .tag = Result<TypeSyntax*, ParserError*>::Ok, .ok = ret };
+    }
+
+    Result<NameSyntax*, ParserError*> parse_name(Region& _pr, Page* _rp, Page* _ep) {
+        auto _r = Region::create(_pr);
+        auto start = this->lexer.previous_position;
+
+        auto name = this->lexer.parse_identifier(_r, _rp, this->keywords);
+        if (name != nullptr) {
+            if (!this->is_identifier(*name)) {
+                return Result<NameSyntax*, ParserError*> { .tag = Result<NameSyntax*, ParserError*>::Ok, .ok = nullptr };
+
+            }
+        }
+        else {
+                return Result<NameSyntax*, ParserError*> { .tag = Result<NameSyntax*, ParserError*>::Ok, .ok = nullptr };
+
+        }
+
+        auto extensions_result = this->parse_extension_list(_r, _rp, _ep);
+        if (extensions_result.tag == Result<Vector<ExtensionSyntax>*, ParserError*>::Error)
+            return Result<NameSyntax*, ParserError*> { .tag = Result<NameSyntax*, ParserError*>::Error, .error = extensions_result.error };
+        auto extensions = extensions_result.ok;
+
+        auto end = this->lexer.position;
+
+        auto ret = new(alignof(NameSyntax), _rp) NameSyntax(start, end, *name, extensions);
+
+        return Result<NameSyntax*, ParserError*> { .tag = Result<NameSyntax*, ParserError*>::Ok, .ok = ret };
     }
 
     bool is_at_end() {

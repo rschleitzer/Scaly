@@ -117,57 +117,6 @@ struct ModelError : Object {
     };
 };
 
-Result<RoutineSyntax*, ParserError*> parse_main_function_stub_routine(Region& _pr, Page* _rp, Page* _ep, Parser& parser) {
-    auto _r = Region::create(_pr);
-    auto start = parser.lexer.previous_position;
-
-    auto parameters_result = parser.parse_parameterset(_r, _rp, _ep);
-    if (parameters_result.tag == Result<ParameterSetSyntax*, ParserError*>::Error)
-        return Result<RoutineSyntax*, ParserError*> { .tag = Result<RoutineSyntax*, ParserError*>::Error, .error = parameters_result.error };
-    auto parameters = parameters_result.ok;
-
-    auto returns_result = parser.parse_returns(_r, _rp, _ep);
-    if (returns_result.tag == Result<ReturnsSyntax*, ParserError*>::Error)
-        return Result<RoutineSyntax*, ParserError*> { .tag = Result<RoutineSyntax*, ParserError*>::Error, .error = returns_result.error };
-    auto returns = returns_result.ok;
-
-    auto end = parser.lexer.position;
-
-    auto ret = new(alignof(RoutineSyntax), _rp) RoutineSyntax(start, end, parameters, nullptr, returns, nullptr, nullptr);
-
-    return Result<RoutineSyntax*, ParserError*> { .tag = Result<RoutineSyntax*, ParserError*>::Ok, .ok = ret };
-}
-
-Result<FunctionSyntax*, ParserError*> parse_main_function_stub(Region& _pr, Page* _rp, Page* _ep) {
-    auto _r = Region::create(_pr);
-    Parser& parser = *new(alignof(Parser), _r.page) Parser(*String::from_c_string(_r.page, "function main('argument count': int, 'argument values': pointer[pointer[byte]]) returns int"));
-    auto start = parser.lexer.previous_position;
-
-    auto success_function = parser.lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "function"));
-    if (!success_function)
-        return Result<FunctionSyntax*, ParserError*> { .tag = Result<FunctionSyntax*, ParserError*>::Ok, .ok = nullptr };
-
-    auto name = parser.lexer.parse_identifier(_r, _r.page, parser.keywords);
-    if (name != nullptr) {
-        if (!parser.is_identifier(*name)) {
-            return Result<FunctionSyntax*, ParserError*> { .tag = Result<FunctionSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, parser.lexer.position) };
-        }
-    }
-    else
-        return Result<FunctionSyntax*, ParserError*> { .tag = Result<FunctionSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, parser.lexer.position) };
-
-    auto routine_result = parse_main_function_stub_routine(_r, _rp, _ep, parser);
-    if (routine_result.tag == Result<RoutineSyntax*, ParserError*>::Error)
-        return Result<FunctionSyntax*, ParserError*> { .tag = Result<FunctionSyntax*, ParserError*>::Error, .error = routine_result.error };
-    auto routine = routine_result.ok;
-    if (routine == nullptr)
-        return Result<FunctionSyntax*, ParserError*> { .tag = Result<FunctionSyntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, parser.lexer.position) };
-
-    auto end = parser.lexer.position;
-    auto ret = new(alignof(FunctionSyntax), _rp) FunctionSyntax(start, end, name, nullptr, routine);
-    return Result<FunctionSyntax*, ParserError*> { .tag = Result<FunctionSyntax*, ParserError*>::Ok, .ok = ret };
-}
-
 Result<Vector<DeclarationSyntax>*, ParserError*> parse_program(Region& _pr, Page* _rp, Page* _ep, String& program) {
     auto _r = Region::create(_pr);
     Array<DeclarationSyntax>* declarations = Array<DeclarationSyntax>::create(_r.page);
@@ -198,37 +147,66 @@ Result<Vector<DeclarationSyntax>*, ParserError*> parse_program(Region& _pr, Page
     }
 
     // Parse the main function stub
-    auto main_function_syntax_result = parse_main_function_stub(_r, _rp, _ep);
-    if (main_function_syntax_result.tag == Result<FunctionSyntax*, ParserError*>::Error)
-        return Result<Vector<DeclarationSyntax>*, ParserError*> { .tag = Result<Vector<DeclarationSyntax>*, ParserError*>::Error, .error = main_function_syntax_result.error };
-    auto main_function_syntax = main_function_syntax_result.ok;
+    Parser& parser_main = *new(alignof(Parser), _r.page) Parser(*String::from_c_string(_r.page, "function main('argument count': int, 'argument values': pointer[pointer[byte]]) returns int"));
+    auto start = parser_main.lexer.previous_position;
+
+    auto success_function = parser_main.lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "function"));
+    if (!success_function)
+        return Result<Vector<DeclarationSyntax>*, ParserError*> { .tag = Result<Vector<DeclarationSyntax>*, ParserError*>::Ok, .ok = nullptr };
+
+    auto name = parser_main.lexer.parse_identifier(_r, _r.page, parser_main.keywords);
+    if (name != nullptr) {
+        if (!parser_main.is_identifier(*name)) {
+            return Result<Vector<DeclarationSyntax>*, ParserError*> { .tag = Result<Vector<DeclarationSyntax>*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, parser_main.lexer.position) };
+        }
+    }
+    else
+        return Result<Vector<DeclarationSyntax>*, ParserError*> { .tag = Result<Vector<DeclarationSyntax>*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, parser_main.lexer.position) };
+
+
+    auto parameters_result = parser_main.parse_parameterset(_r, _rp, _ep);
+    if (parameters_result.tag == Result<ParameterSetSyntax*, ParserError*>::Error)
+        return Result<Vector<DeclarationSyntax>*, ParserError*> { .tag = Result<Vector<DeclarationSyntax>*, ParserError*>::Error, .error = parameters_result.error };
+    auto parameters = parameters_result.ok;
+
+    auto returns_result = parser_main.parse_returns(_r, _rp, _ep);
+    if (returns_result.tag == Result<ReturnsSyntax*, ParserError*>::Error)
+        return Result<Vector<DeclarationSyntax>*, ParserError*> { .tag = Result<Vector<DeclarationSyntax>*, ParserError*>::Error, .error = returns_result.error };
+    auto returns = returns_result.ok;
+
+    auto end = parser_main.lexer.position;
+
+    // Parse the statements of the program and put them into the function implementation
+    Array<StatementSyntax>* statements = Array<StatementSyntax>::create(_r.page);
+    while(true) {
+        auto node_result = parser.parse_statement(_r, _rp, _ep);
+        if (node_result.tag == Result<StatementSyntax*, ParserError*>::Error)
+            return Result<Vector<DeclarationSyntax>*, ParserError*> { .tag = Result<Vector<DeclarationSyntax>*, ParserError*>::Error, .error = node_result.error };
+        auto node = node_result.ok;
+        if (node != nullptr) {
+            statements->add(*node);
+        } else {
+            break;
+        }
+    }
+    auto block = new(alignof(BlockSyntax), _rp) BlockSyntax(start, end, Vector<StatementSyntax>::from_array(_rp, *statements));
+    auto block_expression = new (alignof(ExpressionSyntax), _rp) ExpressionSyntax(BlockSyntax(*block));
+    auto operand = new(alignof(OperandSyntax), _rp) OperandSyntax(start, end, *block_expression, nullptr);
+    Array<OperandSyntax>* operands_array = Array<OperandSyntax>::create(_r.page);;
+    operands_array->add(*operand);
+    auto operation = new(alignof(OperationSyntax), _rp) OperationSyntax(start, end, *Vector<OperandSyntax>::from_array(_rp, *operands_array));
+    auto action = new (alignof(ActionSyntax), _rp) ActionSyntax(OperationSyntax(*operation));
+    auto implementation = new (alignof(ImplementationSyntax), _rp) ImplementationSyntax(ActionSyntax(*action));
+
+    auto routine = new(alignof(RoutineSyntax), _rp) RoutineSyntax(start, end, parameters, nullptr, returns, nullptr, *implementation);
+    if (routine == nullptr)
+        return Result<Vector<DeclarationSyntax>*, ParserError*> { .tag = Result<Vector<DeclarationSyntax>*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, parser_main.lexer.position) };
+
+    auto main_function_syntax = new(alignof(FunctionSyntax), _rp) FunctionSyntax(start, end, *name, nullptr, *routine);
     DeclarationSyntax* main_function_declaration = nullptr;
     if (main_function_syntax != nullptr)
     {
-        // Parse the statements of the program and put them into the function implementation
-        auto start = parser.lexer.previous_position;
-        Array<StatementSyntax>* statements = Array<StatementSyntax>::create(_r.page);
-        while(true) {
-            auto node_result = parser.parse_statement(_r, _rp, _ep);
-            if (node_result.tag == Result<StatementSyntax*, ParserError*>::Error)
-                return Result<Vector<DeclarationSyntax>*, ParserError*> { .tag = Result<Vector<DeclarationSyntax>*, ParserError*>::Error, .error = node_result.error };
-            auto node = node_result.ok;
-            if (node != nullptr) {
-                statements->add(*node);
-            } else {
-                break;
-            }
-        }
-        auto end = parser.lexer.position;
-        auto block = new(alignof(BlockSyntax), _rp) BlockSyntax(start, end, Vector<StatementSyntax>::from_array(_rp, *statements));
-        auto block_expression = new (alignof(ExpressionSyntax), _rp) ExpressionSyntax(BlockSyntax(*block));
-        auto operand = new(alignof(OperandSyntax), _rp) OperandSyntax(start, end, block_expression, nullptr);
-        Array<OperandSyntax>* operands_array = Array<OperandSyntax>::create(_r.page);;
-        operands_array->add(*operand);
-        auto operation = new(alignof(OperationSyntax), _rp) OperationSyntax(start, end, Vector<OperandSyntax>::from_array(_rp, *operands_array));
-        auto action = new (alignof(ActionSyntax), _rp) ActionSyntax(OperationSyntax(*operation));
-        auto implementation = new (alignof(ImplementationSyntax), _rp) ImplementationSyntax(ActionSyntax(*action));
-        main_function_syntax->routine->implementation = implementation;
+        main_function_syntax->routine.implementation = *implementation;
         main_function_declaration =  new (alignof(DeclarationSyntax), _rp) DeclarationSyntax(FunctionSyntax(*main_function_syntax));
         declarations->add(*main_function_declaration);
     }
@@ -258,14 +236,14 @@ Result<Model*, ModelError*> build_model(Region& _pr, Page* _rp, Page* _ep, Vecto
             {
                 auto _r_1 = Region::create(_r);
                 auto function_result = build_function(_r_1, _rp, _ep, declaration->functionSyntax, functions_builder);
-                if (function_result.tag == Result<Vector<DeclarationSyntax>*, ParserError*>::Error)
-                    return Result<Model*, ModelError*> { .tag = Result<Model*, ModelError*>::Error, .error = new(alignof(ModelError), _ep) ModelError(*function_result.error) };
+                // if (function_result.tag == Result<Vector<DeclarationSyntax>*, ParserError*>::Error)
+                //     return Result<Model*, ModelError*> { .tag = Result<Model*, ModelError*>::Error, .error = new(alignof(ModelError), _ep) ModelError(*function_result.error) };
                 auto function = function_result.ok;
                 Array<Function>* function_array = nullptr;
                 if (!functions_builder.contains(function->name))
                 {
                     function_array = Array<Function>::create(_r.page);
-                    functions_builder.add(function->name, *function_array);
+                    //functions_builder.add(function->name, *function_array);
                 }
                 else
                 {
@@ -308,7 +286,7 @@ Result<Model*, ModelError*> build_program_model(Region& _pr, Page* _rp, Page* _e
         return model_result;
     auto model = model_result.ok;
 
-    auto functions = model->functions;
+    //auto functions = model->functions;
 
     return Result<Model*, ModelError*> { .tag = Result<Model*, ModelError*>::Ok, .ok = model };
 }

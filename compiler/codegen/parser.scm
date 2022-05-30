@@ -161,7 +161,7 @@ struct Parser : Object {
 
         auto ret = new(alignof("(id syntax)"Syntax), _rp) "(id syntax)"Syntax(start, end"
                 (apply-to-property-children-of syntax (lambda (content) ($
-                    ", "(case (type content) (("literal") "*") (else ""))(property content)
+                    ", "(if (optional? content) "" "*")(property content)
                 )))
                 ");
 
