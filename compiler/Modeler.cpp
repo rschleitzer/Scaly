@@ -117,15 +117,15 @@ struct ModelError : Object {
     };
 };
 
-Result<Vector<DeclarationSyntax>*, ParserError*> parse_program(Region& _pr, Page* _rp, Page* _ep, String& program) {
+Result<Vector<DeclarationSyntax>*, ParserError> parse_program(Region& _pr, Page* _rp, Page* _ep, String& program) {
     auto _r = Region::create(_pr);
     Array<DeclarationSyntax>* declarations = Array<DeclarationSyntax>::create(_r.page);
     
     // Parse the scaly module inclusion
     Parser& parser_module = *new(alignof(Parser), _r.page) Parser(*String::from_c_string(_r.page, "module scaly"));
     auto module_syntax_result = parser_module.parse_module(_r, _rp, _ep);
-    if (module_syntax_result.tag == Result<ModuleSyntax*, ParserError*>::Error)
-        return Result<Vector<DeclarationSyntax>*, ParserError*> { .tag = Result<Vector<DeclarationSyntax>*, ParserError*>::Error, .error = module_syntax_result.error };
+    if (module_syntax_result.tag == Result<ModuleSyntax*, ParserError>::Error)
+        return Result<Vector<DeclarationSyntax>*, ParserError> { .tag = Result<Vector<DeclarationSyntax>*, ParserError>::Error, .error = module_syntax_result.error };
     auto module_syntax = module_syntax_result.ok;
     DeclarationSyntax* module_declaration = nullptr;
     if (module_syntax != nullptr)
@@ -136,8 +136,8 @@ Result<Vector<DeclarationSyntax>*, ParserError*> parse_program(Region& _pr, Page
     Parser& parser = *new(alignof(Parser), _r.page) Parser(program);
     while(true) {
         auto node_result = parser.parse_declaration(_r, _rp, _ep);
-        if (node_result.tag == Result<DeclarationSyntax*, ParserError*>::Error)
-            return Result<Vector<DeclarationSyntax>*, ParserError*> { .tag = Result<Vector<DeclarationSyntax>*, ParserError*>::Error, .error = node_result.error };
+        if (node_result.tag == Result<DeclarationSyntax*, ParserError>::Error)
+            return Result<Vector<DeclarationSyntax>*, ParserError> { .tag = Result<Vector<DeclarationSyntax>*, ParserError>::Error, .error = node_result.error };
         auto node = node_result.ok;
         if (node != nullptr) {
             declarations->add(*node);
@@ -152,26 +152,26 @@ Result<Vector<DeclarationSyntax>*, ParserError*> parse_program(Region& _pr, Page
 
     auto success_function = parser_main.lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "function"));
     if (!success_function)
-        return Result<Vector<DeclarationSyntax>*, ParserError*> { .tag = Result<Vector<DeclarationSyntax>*, ParserError*>::Ok, .ok = nullptr };
+        return Result<Vector<DeclarationSyntax>*, ParserError> { .tag = Result<Vector<DeclarationSyntax>*, ParserError>::Ok, .ok = nullptr };
 
     auto name = parser_main.lexer.parse_identifier(_r, _r.page, parser_main.keywords);
     if (name != nullptr) {
         if (!parser_main.is_identifier(*name)) {
-            return Result<Vector<DeclarationSyntax>*, ParserError*> { .tag = Result<Vector<DeclarationSyntax>*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(InvalidSyntaxParserError(start, parser_main.lexer.position)) };
+            return Result<Vector<DeclarationSyntax>*, ParserError> { .tag = Result<Vector<DeclarationSyntax>*, ParserError>::Error, .error = ParserError(InvalidSyntaxParserError(start, parser_main.lexer.position)) };
         }
     }
     else
-        return Result<Vector<DeclarationSyntax>*, ParserError*> { .tag = Result<Vector<DeclarationSyntax>*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(InvalidSyntaxParserError(start, parser_main.lexer.position)) };
+        return Result<Vector<DeclarationSyntax>*, ParserError> { .tag = Result<Vector<DeclarationSyntax>*, ParserError>::Error, .error = ParserError(InvalidSyntaxParserError(start, parser_main.lexer.position)) };
 
 
     auto parameters_result = parser_main.parse_parameterset(_r, _rp, _ep);
-    if (parameters_result.tag == Result<ParameterSetSyntax*, ParserError*>::Error)
-        return Result<Vector<DeclarationSyntax>*, ParserError*> { .tag = Result<Vector<DeclarationSyntax>*, ParserError*>::Error, .error = parameters_result.error };
+    if (parameters_result.tag == Result<ParameterSetSyntax*, ParserError>::Error)
+        return Result<Vector<DeclarationSyntax>*, ParserError> { .tag = Result<Vector<DeclarationSyntax>*, ParserError>::Error, .error = parameters_result.error };
     auto parameters = parameters_result.ok;
 
     auto returns_result = parser_main.parse_returns(_r, _rp, _ep);
-    if (returns_result.tag == Result<ReturnsSyntax*, ParserError*>::Error)
-        return Result<Vector<DeclarationSyntax>*, ParserError*> { .tag = Result<Vector<DeclarationSyntax>*, ParserError*>::Error, .error = returns_result.error };
+    if (returns_result.tag == Result<ReturnsSyntax*, ParserError>::Error)
+        return Result<Vector<DeclarationSyntax>*, ParserError> { .tag = Result<Vector<DeclarationSyntax>*, ParserError>::Error, .error = returns_result.error };
     auto returns = returns_result.ok;
 
     auto end = parser_main.lexer.position;
@@ -180,8 +180,8 @@ Result<Vector<DeclarationSyntax>*, ParserError*> parse_program(Region& _pr, Page
     Array<StatementSyntax>* statements = Array<StatementSyntax>::create(_r.page);
     while(true) {
         auto node_result = parser.parse_statement(_r, _rp, _ep);
-        if (node_result.tag == Result<StatementSyntax*, ParserError*>::Error)
-            return Result<Vector<DeclarationSyntax>*, ParserError*> { .tag = Result<Vector<DeclarationSyntax>*, ParserError*>::Error, .error = node_result.error };
+        if (node_result.tag == Result<StatementSyntax*, ParserError>::Error)
+            return Result<Vector<DeclarationSyntax>*, ParserError> { .tag = Result<Vector<DeclarationSyntax>*, ParserError>::Error, .error = node_result.error };
         auto node = node_result.ok;
         if (node != nullptr) {
             statements->add(*node);
@@ -200,7 +200,7 @@ Result<Vector<DeclarationSyntax>*, ParserError*> parse_program(Region& _pr, Page
 
     auto routine = new(alignof(RoutineSyntax), _rp) RoutineSyntax(start, end, parameters, nullptr, returns, nullptr, *implementation);
     if (routine == nullptr)
-        return Result<Vector<DeclarationSyntax>*, ParserError*> { .tag = Result<Vector<DeclarationSyntax>*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(InvalidSyntaxParserError(start, parser_main.lexer.position)) };
+        return Result<Vector<DeclarationSyntax>*, ParserError> { .tag = Result<Vector<DeclarationSyntax>*, ParserError>::Error, .error = ParserError(InvalidSyntaxParserError(start, parser_main.lexer.position)) };
 
     auto main_function_syntax = new(alignof(FunctionSyntax), _rp) FunctionSyntax(start, end, *name, nullptr, *routine);
     DeclarationSyntax* main_function_declaration = nullptr;
@@ -210,7 +210,7 @@ Result<Vector<DeclarationSyntax>*, ParserError*> parse_program(Region& _pr, Page
         main_function_declaration =  new (alignof(DeclarationSyntax), _rp) DeclarationSyntax(FunctionSyntax(*main_function_syntax));
         declarations->add(*main_function_declaration);
     }
-    return Result<Vector<DeclarationSyntax>*, ParserError*> { .tag = Result<Vector<DeclarationSyntax>*, ParserError*>::Ok, .ok = Vector<DeclarationSyntax>::from_array(_rp, *declarations) };
+    return Result<Vector<DeclarationSyntax>*, ParserError> { .tag = Result<Vector<DeclarationSyntax>*, ParserError>::Ok, .ok = Vector<DeclarationSyntax>::from_array(_rp, *declarations) };
 }
 
 Result<Function*, ModelError*> build_function(Region& _pr, Page* _rp, Page* _ep, FunctionSyntax& function_syntax, MultiMapBuilder<String, Array<Function>>& functions_builder) {
@@ -236,7 +236,7 @@ Result<Model*, ModelError*> build_model(Region& _pr, Page* _rp, Page* _ep, Vecto
             {
                 auto _r_1 = Region::create(_r);
                 auto function_result = build_function(_r_1, _rp, _ep, declaration->functionSyntax, functions_builder);
-                // if (function_result.tag == Result<Vector<DeclarationSyntax>*, ParserError*>::Error)
+                // if (function_result.tag == Result<Vector<DeclarationSyntax>*, ParserError>::Error)
                 //     return Result<Model*, ModelError*> { .tag = Result<Model*, ModelError*>::Error, .error = new(alignof(ModelError), _ep) ModelError(*function_result.error) };
                 auto function = function_result.ok;
                 Array<Function>* function_array = nullptr;
@@ -277,8 +277,8 @@ Result<Model*, ModelError*> build_program_model(Region& _pr, Page* _rp, Page* _e
     auto _r = Region::create(_pr);
 
     auto declarations_result = parse_program(_r, _r.page, _ep, program);
-    if (declarations_result.tag == Result<Vector<DeclarationSyntax>*, ParserError*>::Error)
-        return Result<Model*, ModelError*> { .tag = Result<Model*, ModelError*>::Error, .error = new(alignof(ModelError), _ep) ModelError(*declarations_result.error) };
+    if (declarations_result.tag == Result<Vector<DeclarationSyntax>*, ParserError>::Error)
+        return Result<Model*, ModelError*> { .tag = Result<Model*, ModelError*>::Error, .error = new(alignof(ModelError), _ep) ModelError(declarations_result.error) };
     auto declarations = declarations_result.ok;
 
     auto model_result = build_model(_r, _r.page, _ep, *declarations);
