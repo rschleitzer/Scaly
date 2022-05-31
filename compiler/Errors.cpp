@@ -9,15 +9,15 @@ struct InvalidSyntaxParserError {
 };
 
 struct ParserError : Object {
-    ParserError(OtherSyntaxParserError other_syntax_parser_error) : _tag(OtherSyntax) { _other_syntax = other_syntax_parser_error; }
-    ParserError(InvalidSyntaxParserError invalid_syntax_parser_error) : _tag(InvalidSyntax) { _invalid_syntax = invalid_syntax_parser_error; }
+    ParserError(OtherSyntaxParserError _OtherSyntaxParserError) : _tag(OtherSyntax) { _OtherSyntax = _OtherSyntaxParserError; }
+    ParserError(InvalidSyntaxParserError _InvalidSyntaxParserError) : _tag(InvalidSyntax) { _InvalidSyntax = _InvalidSyntaxParserError; }
     enum {
         OtherSyntax,
         InvalidSyntax,
     } _tag;
     union {
-        OtherSyntaxParserError _other_syntax;
-        InvalidSyntaxParserError _invalid_syntax;
+        OtherSyntaxParserError _OtherSyntax;
+        InvalidSyntaxParserError _InvalidSyntax;
     };
 };
 
