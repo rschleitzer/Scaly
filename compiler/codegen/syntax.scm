@@ -55,7 +55,7 @@ struct "(id syntax-node)"Syntax : Object {
 "
 struct "(id syntax-node)"Syntax : Object {
 "               (apply-to-children-of syntax-node (lambda (content) ($
-"    "          (id syntax-node)"Syntax("(link content)"Syntax "(string-firstchar-downcase (link content))"Syntax) : tag("(link content)") { "(string-firstchar-downcase (link content))"Syntax = "(string-firstchar-downcase (link content))"Syntax; }
+"    "          (id syntax-node)"Syntax("(link content)"Syntax _"(link content)"Syntax) : _tag("(link content)") { _"(link content)" = _"(link content)"Syntax; }
 "               )))
 
 "    enum {"
@@ -64,11 +64,11 @@ struct "(id syntax-node)"Syntax : Object {
         "(link content)","
                 )))
 "
-    } tag;
+    } _tag;
     union {"
                 (apply-to-children-of syntax-node (lambda (content) ($
 "
-        "(link content)"Syntax "(string-firstchar-downcase (link content))"Syntax;"
+        "(link content)"Syntax _"(link content)";"
                 )))
 "
     };

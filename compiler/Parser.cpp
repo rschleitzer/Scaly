@@ -137,15 +137,15 @@ struct SetSyntax : Object {
 };
 
 struct ActionSyntax : Object {
-    ActionSyntax(OperationSyntax operationSyntax) : tag(Operation) { operationSyntax = operationSyntax; }
-    ActionSyntax(SetSyntax setSyntax) : tag(Set) { setSyntax = setSyntax; }
+    ActionSyntax(OperationSyntax _OperationSyntax) : _tag(Operation) { _Operation = _OperationSyntax; }
+    ActionSyntax(SetSyntax _SetSyntax) : _tag(Set) { _Set = _SetSyntax; }
     enum {
         Operation,
         Set,
-    } tag;
+    } _tag;
     union {
-        OperationSyntax operationSyntax;
-        SetSyntax setSyntax;
+        OperationSyntax _Operation;
+        SetSyntax _Set;
     };
 };
 
@@ -337,22 +337,22 @@ struct ContinueSyntax : Object {
 };
 
 struct ExpressionSyntax : Object {
-    ExpressionSyntax(LiteralSyntax literalSyntax) : tag(Literal) { literalSyntax = literalSyntax; }
-    ExpressionSyntax(NameSyntax nameSyntax) : tag(Name) { nameSyntax = nameSyntax; }
-    ExpressionSyntax(ObjectSyntax objectSyntax) : tag(Object) { objectSyntax = objectSyntax; }
-    ExpressionSyntax(VectorSyntax vectorSyntax) : tag(Vector) { vectorSyntax = vectorSyntax; }
-    ExpressionSyntax(BlockSyntax blockSyntax) : tag(Block) { blockSyntax = blockSyntax; }
-    ExpressionSyntax(IfSyntax ifSyntax) : tag(If) { ifSyntax = ifSyntax; }
-    ExpressionSyntax(MatchSyntax matchSyntax) : tag(Match) { matchSyntax = matchSyntax; }
-    ExpressionSyntax(LambdaSyntax lambdaSyntax) : tag(Lambda) { lambdaSyntax = lambdaSyntax; }
-    ExpressionSyntax(ForSyntax forSyntax) : tag(For) { forSyntax = forSyntax; }
-    ExpressionSyntax(WhileSyntax whileSyntax) : tag(While) { whileSyntax = whileSyntax; }
-    ExpressionSyntax(RepeatSyntax repeatSyntax) : tag(Repeat) { repeatSyntax = repeatSyntax; }
-    ExpressionSyntax(SizeOfSyntax sizeOfSyntax) : tag(SizeOf) { sizeOfSyntax = sizeOfSyntax; }
-    ExpressionSyntax(ContinueSyntax continueSyntax) : tag(Continue) { continueSyntax = continueSyntax; }
-    ExpressionSyntax(BreakSyntax breakSyntax) : tag(Break) { breakSyntax = breakSyntax; }
-    ExpressionSyntax(ReturnSyntax returnSyntax) : tag(Return) { returnSyntax = returnSyntax; }
-    ExpressionSyntax(ThrowSyntax throwSyntax) : tag(Throw) { throwSyntax = throwSyntax; }
+    ExpressionSyntax(LiteralSyntax _LiteralSyntax) : _tag(Literal) { _Literal = _LiteralSyntax; }
+    ExpressionSyntax(NameSyntax _NameSyntax) : _tag(Name) { _Name = _NameSyntax; }
+    ExpressionSyntax(ObjectSyntax _ObjectSyntax) : _tag(Object) { _Object = _ObjectSyntax; }
+    ExpressionSyntax(VectorSyntax _VectorSyntax) : _tag(Vector) { _Vector = _VectorSyntax; }
+    ExpressionSyntax(BlockSyntax _BlockSyntax) : _tag(Block) { _Block = _BlockSyntax; }
+    ExpressionSyntax(IfSyntax _IfSyntax) : _tag(If) { _If = _IfSyntax; }
+    ExpressionSyntax(MatchSyntax _MatchSyntax) : _tag(Match) { _Match = _MatchSyntax; }
+    ExpressionSyntax(LambdaSyntax _LambdaSyntax) : _tag(Lambda) { _Lambda = _LambdaSyntax; }
+    ExpressionSyntax(ForSyntax _ForSyntax) : _tag(For) { _For = _ForSyntax; }
+    ExpressionSyntax(WhileSyntax _WhileSyntax) : _tag(While) { _While = _WhileSyntax; }
+    ExpressionSyntax(RepeatSyntax _RepeatSyntax) : _tag(Repeat) { _Repeat = _RepeatSyntax; }
+    ExpressionSyntax(SizeOfSyntax _SizeOfSyntax) : _tag(SizeOf) { _SizeOf = _SizeOfSyntax; }
+    ExpressionSyntax(ContinueSyntax _ContinueSyntax) : _tag(Continue) { _Continue = _ContinueSyntax; }
+    ExpressionSyntax(BreakSyntax _BreakSyntax) : _tag(Break) { _Break = _BreakSyntax; }
+    ExpressionSyntax(ReturnSyntax _ReturnSyntax) : _tag(Return) { _Return = _ReturnSyntax; }
+    ExpressionSyntax(ThrowSyntax _ThrowSyntax) : _tag(Throw) { _Throw = _ThrowSyntax; }
     enum {
         Literal,
         Name,
@@ -370,24 +370,24 @@ struct ExpressionSyntax : Object {
         Break,
         Return,
         Throw,
-    } tag;
+    } _tag;
     union {
-        LiteralSyntax literalSyntax;
-        NameSyntax nameSyntax;
-        ObjectSyntax objectSyntax;
-        VectorSyntax vectorSyntax;
-        BlockSyntax blockSyntax;
-        IfSyntax ifSyntax;
-        MatchSyntax matchSyntax;
-        LambdaSyntax lambdaSyntax;
-        ForSyntax forSyntax;
-        WhileSyntax whileSyntax;
-        RepeatSyntax repeatSyntax;
-        SizeOfSyntax sizeOfSyntax;
-        ContinueSyntax continueSyntax;
-        BreakSyntax breakSyntax;
-        ReturnSyntax returnSyntax;
-        ThrowSyntax throwSyntax;
+        LiteralSyntax _Literal;
+        NameSyntax _Name;
+        ObjectSyntax _Object;
+        VectorSyntax _Vector;
+        BlockSyntax _Block;
+        IfSyntax _If;
+        MatchSyntax _Match;
+        LambdaSyntax _Lambda;
+        ForSyntax _For;
+        WhileSyntax _While;
+        RepeatSyntax _Repeat;
+        SizeOfSyntax _SizeOf;
+        ContinueSyntax _Continue;
+        BreakSyntax _Break;
+        ReturnSyntax _Return;
+        ThrowSyntax _Throw;
     };
 };
 
@@ -422,15 +422,15 @@ struct MemberAccessSyntax : Object {
 };
 
 struct PostfixSyntax : Object {
-    PostfixSyntax(MemberAccessSyntax memberAccessSyntax) : tag(MemberAccess) { memberAccessSyntax = memberAccessSyntax; }
-    PostfixSyntax(CatcherSyntax catcherSyntax) : tag(Catcher) { catcherSyntax = catcherSyntax; }
+    PostfixSyntax(MemberAccessSyntax _MemberAccessSyntax) : _tag(MemberAccess) { _MemberAccess = _MemberAccessSyntax; }
+    PostfixSyntax(CatcherSyntax _CatcherSyntax) : _tag(Catcher) { _Catcher = _CatcherSyntax; }
     enum {
         MemberAccess,
         Catcher,
-    } tag;
+    } _tag;
     union {
-        MemberAccessSyntax memberAccessSyntax;
-        CatcherSyntax catcherSyntax;
+        MemberAccessSyntax _MemberAccess;
+        CatcherSyntax _Catcher;
     };
 };
 
@@ -457,18 +457,18 @@ struct ArraySyntax : Object {
 };
 
 struct BindingSpecSyntax : Object {
-    BindingSpecSyntax(StructureSyntax structureSyntax) : tag(Structure) { structureSyntax = structureSyntax; }
-    BindingSpecSyntax(TypeSyntax typeSyntax) : tag(Type) { typeSyntax = typeSyntax; }
-    BindingSpecSyntax(ArraySyntax arraySyntax) : tag(Array) { arraySyntax = arraySyntax; }
+    BindingSpecSyntax(StructureSyntax _StructureSyntax) : _tag(Structure) { _Structure = _StructureSyntax; }
+    BindingSpecSyntax(TypeSyntax _TypeSyntax) : _tag(Type) { _Type = _TypeSyntax; }
+    BindingSpecSyntax(ArraySyntax _ArraySyntax) : _tag(Array) { _Array = _ArraySyntax; }
     enum {
         Structure,
         Type,
         Array,
-    } tag;
+    } _tag;
     union {
-        StructureSyntax structureSyntax;
-        TypeSyntax typeSyntax;
-        ArraySyntax arraySyntax;
+        StructureSyntax _Structure;
+        TypeSyntax _Type;
+        ArraySyntax _Array;
     };
 };
 
@@ -510,43 +510,43 @@ struct LetSyntax : Object {
 };
 
 struct StatementSyntax : Object {
-    StatementSyntax(OperationSyntax operationSyntax) : tag(Operation) { operationSyntax = operationSyntax; }
-    StatementSyntax(LetSyntax letSyntax) : tag(Let) { letSyntax = letSyntax; }
-    StatementSyntax(VarSyntax varSyntax) : tag(Var) { varSyntax = varSyntax; }
-    StatementSyntax(MutableSyntax mutableSyntax) : tag(Mutable) { mutableSyntax = mutableSyntax; }
-    StatementSyntax(SetSyntax setSyntax) : tag(Set) { setSyntax = setSyntax; }
+    StatementSyntax(OperationSyntax _OperationSyntax) : _tag(Operation) { _Operation = _OperationSyntax; }
+    StatementSyntax(LetSyntax _LetSyntax) : _tag(Let) { _Let = _LetSyntax; }
+    StatementSyntax(VarSyntax _VarSyntax) : _tag(Var) { _Var = _VarSyntax; }
+    StatementSyntax(MutableSyntax _MutableSyntax) : _tag(Mutable) { _Mutable = _MutableSyntax; }
+    StatementSyntax(SetSyntax _SetSyntax) : _tag(Set) { _Set = _SetSyntax; }
     enum {
         Operation,
         Let,
         Var,
         Mutable,
         Set,
-    } tag;
+    } _tag;
     union {
-        OperationSyntax operationSyntax;
-        LetSyntax letSyntax;
-        VarSyntax varSyntax;
-        MutableSyntax mutableSyntax;
-        SetSyntax setSyntax;
+        OperationSyntax _Operation;
+        LetSyntax _Let;
+        VarSyntax _Var;
+        MutableSyntax _Mutable;
+        SetSyntax _Set;
     };
 };
 
 struct ModelSyntax : Object {
-    ModelSyntax(LiteralSyntax literalSyntax) : tag(Literal) { literalSyntax = literalSyntax; }
-    ModelSyntax(NameSyntax nameSyntax) : tag(Name) { nameSyntax = nameSyntax; }
-    ModelSyntax(ObjectSyntax objectSyntax) : tag(Object) { objectSyntax = objectSyntax; }
-    ModelSyntax(VectorSyntax vectorSyntax) : tag(Vector) { vectorSyntax = vectorSyntax; }
+    ModelSyntax(LiteralSyntax _LiteralSyntax) : _tag(Literal) { _Literal = _LiteralSyntax; }
+    ModelSyntax(NameSyntax _NameSyntax) : _tag(Name) { _Name = _NameSyntax; }
+    ModelSyntax(ObjectSyntax _ObjectSyntax) : _tag(Object) { _Object = _ObjectSyntax; }
+    ModelSyntax(VectorSyntax _VectorSyntax) : _tag(Vector) { _Vector = _VectorSyntax; }
     enum {
         Literal,
         Name,
         Object,
         Vector,
-    } tag;
+    } _tag;
     union {
-        LiteralSyntax literalSyntax;
-        NameSyntax nameSyntax;
-        ObjectSyntax objectSyntax;
-        VectorSyntax vectorSyntax;
+        LiteralSyntax _Literal;
+        NameSyntax _Name;
+        ObjectSyntax _Object;
+        VectorSyntax _Vector;
     };
 };
 
@@ -567,15 +567,15 @@ struct MacroSyntax : Object {
 };
 
 struct TypeSpecSyntax : Object {
-    TypeSpecSyntax(StructureSyntax structureSyntax) : tag(Structure) { structureSyntax = structureSyntax; }
-    TypeSpecSyntax(TypeSyntax typeSyntax) : tag(Type) { typeSyntax = typeSyntax; }
+    TypeSpecSyntax(StructureSyntax _StructureSyntax) : _tag(Structure) { _Structure = _StructureSyntax; }
+    TypeSpecSyntax(TypeSyntax _TypeSyntax) : _tag(Type) { _Type = _TypeSyntax; }
     enum {
         Structure,
         Type,
-    } tag;
+    } _tag;
     union {
-        StructureSyntax structureSyntax;
-        TypeSyntax typeSyntax;
+        StructureSyntax _Structure;
+        TypeSyntax _Type;
     };
 };
 
@@ -612,21 +612,21 @@ struct ExternSyntax : Object {
 };
 
 struct ImplementationSyntax : Object {
-    ImplementationSyntax(ActionSyntax actionSyntax) : tag(Action) { actionSyntax = actionSyntax; }
-    ImplementationSyntax(ExternSyntax externSyntax) : tag(Extern) { externSyntax = externSyntax; }
-    ImplementationSyntax(InstructionSyntax instructionSyntax) : tag(Instruction) { instructionSyntax = instructionSyntax; }
-    ImplementationSyntax(IntrinsicSyntax intrinsicSyntax) : tag(Intrinsic) { intrinsicSyntax = intrinsicSyntax; }
+    ImplementationSyntax(ActionSyntax _ActionSyntax) : _tag(Action) { _Action = _ActionSyntax; }
+    ImplementationSyntax(ExternSyntax _ExternSyntax) : _tag(Extern) { _Extern = _ExternSyntax; }
+    ImplementationSyntax(InstructionSyntax _InstructionSyntax) : _tag(Instruction) { _Instruction = _InstructionSyntax; }
+    ImplementationSyntax(IntrinsicSyntax _IntrinsicSyntax) : _tag(Intrinsic) { _Intrinsic = _IntrinsicSyntax; }
     enum {
         Action,
         Extern,
         Instruction,
         Intrinsic,
-    } tag;
+    } _tag;
     union {
-        ActionSyntax actionSyntax;
-        ExternSyntax externSyntax;
-        InstructionSyntax instructionSyntax;
-        IntrinsicSyntax intrinsicSyntax;
+        ActionSyntax _Action;
+        ExternSyntax _Extern;
+        InstructionSyntax _Instruction;
+        IntrinsicSyntax _Intrinsic;
     };
 };
 
@@ -653,15 +653,15 @@ struct RoutineSyntax : Object {
 };
 
 struct TargetSyntax : Object {
-    TargetSyntax(SymbolSyntax symbolSyntax) : tag(Symbol) { symbolSyntax = symbolSyntax; }
-    TargetSyntax(RoutineSyntax routineSyntax) : tag(Routine) { routineSyntax = routineSyntax; }
+    TargetSyntax(SymbolSyntax _SymbolSyntax) : _tag(Symbol) { _Symbol = _SymbolSyntax; }
+    TargetSyntax(RoutineSyntax _RoutineSyntax) : _tag(Routine) { _Routine = _RoutineSyntax; }
     enum {
         Symbol,
         Routine,
-    } tag;
+    } _tag;
     union {
-        SymbolSyntax symbolSyntax;
-        RoutineSyntax routineSyntax;
+        SymbolSyntax _Symbol;
+        RoutineSyntax _Routine;
     };
 };
 
@@ -691,18 +691,18 @@ struct FunctionSyntax : Object {
 };
 
 struct MethodSyntax : Object {
-    MethodSyntax(FunctionSyntax functionSyntax) : tag(Function) { functionSyntax = functionSyntax; }
-    MethodSyntax(ProcedureSyntax procedureSyntax) : tag(Procedure) { procedureSyntax = procedureSyntax; }
-    MethodSyntax(OperatorSyntax operatorSyntax) : tag(Operator) { operatorSyntax = operatorSyntax; }
+    MethodSyntax(FunctionSyntax _FunctionSyntax) : _tag(Function) { _Function = _FunctionSyntax; }
+    MethodSyntax(ProcedureSyntax _ProcedureSyntax) : _tag(Procedure) { _Procedure = _ProcedureSyntax; }
+    MethodSyntax(OperatorSyntax _OperatorSyntax) : _tag(Operator) { _Operator = _OperatorSyntax; }
     enum {
         Function,
         Procedure,
         Operator,
-    } tag;
+    } _tag;
     union {
-        FunctionSyntax functionSyntax;
-        ProcedureSyntax procedureSyntax;
-        OperatorSyntax operatorSyntax;
+        FunctionSyntax _Function;
+        ProcedureSyntax _Procedure;
+        OperatorSyntax _Operator;
     };
 };
 
@@ -748,15 +748,15 @@ struct ParametersSyntax : Object {
 };
 
 struct ParameterSetSyntax : Object {
-    ParameterSetSyntax(ParametersSyntax parametersSyntax) : tag(Parameters) { parametersSyntax = parametersSyntax; }
-    ParameterSetSyntax(TypeSyntax typeSyntax) : tag(Type) { typeSyntax = typeSyntax; }
+    ParameterSetSyntax(ParametersSyntax _ParametersSyntax) : _tag(Parameters) { _Parameters = _ParametersSyntax; }
+    ParameterSetSyntax(TypeSyntax _TypeSyntax) : _tag(Type) { _Type = _TypeSyntax; }
     enum {
         Parameters,
         Type,
-    } tag;
+    } _tag;
     union {
-        ParametersSyntax parametersSyntax;
-        TypeSyntax typeSyntax;
+        ParametersSyntax _Parameters;
+        TypeSyntax _Type;
     };
 };
 
@@ -812,15 +812,15 @@ struct FieldSyntax : Object {
 };
 
 struct MemberSyntax : Object {
-    MemberSyntax(FieldSyntax fieldSyntax) : tag(Field) { fieldSyntax = fieldSyntax; }
-    MemberSyntax(PropertySyntax propertySyntax) : tag(Property) { propertySyntax = propertySyntax; }
+    MemberSyntax(FieldSyntax _FieldSyntax) : _tag(Field) { _Field = _FieldSyntax; }
+    MemberSyntax(PropertySyntax _PropertySyntax) : _tag(Property) { _Property = _PropertySyntax; }
     enum {
         Field,
         Property,
-    } tag;
+    } _tag;
     union {
-        FieldSyntax fieldSyntax;
-        PropertySyntax propertySyntax;
+        FieldSyntax _Field;
+        PropertySyntax _Property;
     };
 };
 
@@ -864,15 +864,15 @@ struct VariantSyntax : Object {
 };
 
 struct ItemSyntax : Object {
-    ItemSyntax(VariantSyntax variantSyntax) : tag(Variant) { variantSyntax = variantSyntax; }
-    ItemSyntax(EnumSyntax enumSyntax) : tag(Enum) { enumSyntax = enumSyntax; }
+    ItemSyntax(VariantSyntax _VariantSyntax) : _tag(Variant) { _Variant = _VariantSyntax; }
+    ItemSyntax(EnumSyntax _EnumSyntax) : _tag(Enum) { _Enum = _EnumSyntax; }
     enum {
         Variant,
         Enum,
-    } tag;
+    } _tag;
     union {
-        VariantSyntax variantSyntax;
-        EnumSyntax enumSyntax;
+        VariantSyntax _Variant;
+        EnumSyntax _Enum;
     };
 };
 
@@ -909,12 +909,12 @@ struct ClassSyntax : Object {
 };
 
 struct ConceptSyntax : Object {
-    ConceptSyntax(ClassSyntax classSyntax) : tag(Class) { classSyntax = classSyntax; }
-    ConceptSyntax(NamespaceSyntax namespaceSyntax) : tag(Namespace) { namespaceSyntax = namespaceSyntax; }
-    ConceptSyntax(UnionSyntax unionSyntax) : tag(Union) { unionSyntax = unionSyntax; }
-    ConceptSyntax(ConstantSyntax constantSyntax) : tag(Constant) { constantSyntax = constantSyntax; }
-    ConceptSyntax(DelegateSyntax delegateSyntax) : tag(Delegate) { delegateSyntax = delegateSyntax; }
-    ConceptSyntax(IntrinsicSyntax intrinsicSyntax) : tag(Intrinsic) { intrinsicSyntax = intrinsicSyntax; }
+    ConceptSyntax(ClassSyntax _ClassSyntax) : _tag(Class) { _Class = _ClassSyntax; }
+    ConceptSyntax(NamespaceSyntax _NamespaceSyntax) : _tag(Namespace) { _Namespace = _NamespaceSyntax; }
+    ConceptSyntax(UnionSyntax _UnionSyntax) : _tag(Union) { _Union = _UnionSyntax; }
+    ConceptSyntax(ConstantSyntax _ConstantSyntax) : _tag(Constant) { _Constant = _ConstantSyntax; }
+    ConceptSyntax(DelegateSyntax _DelegateSyntax) : _tag(Delegate) { _Delegate = _DelegateSyntax; }
+    ConceptSyntax(IntrinsicSyntax _IntrinsicSyntax) : _tag(Intrinsic) { _Intrinsic = _IntrinsicSyntax; }
     enum {
         Class,
         Namespace,
@@ -922,14 +922,14 @@ struct ConceptSyntax : Object {
         Constant,
         Delegate,
         Intrinsic,
-    } tag;
+    } _tag;
     union {
-        ClassSyntax classSyntax;
-        NamespaceSyntax namespaceSyntax;
-        UnionSyntax unionSyntax;
-        ConstantSyntax constantSyntax;
-        DelegateSyntax delegateSyntax;
-        IntrinsicSyntax intrinsicSyntax;
+        ClassSyntax _Class;
+        NamespaceSyntax _Namespace;
+        UnionSyntax _Union;
+        ConstantSyntax _Constant;
+        DelegateSyntax _Delegate;
+        IntrinsicSyntax _Intrinsic;
     };
 };
 
@@ -958,14 +958,14 @@ struct DefinitionSyntax : Object {
 };
 
 struct ExportSyntax : Object {
-    ExportSyntax(DefinitionSyntax definitionSyntax) : tag(Definition) { definitionSyntax = definitionSyntax; }
-    ExportSyntax(FunctionSyntax functionSyntax) : tag(Function) { functionSyntax = functionSyntax; }
-    ExportSyntax(ProcedureSyntax procedureSyntax) : tag(Procedure) { procedureSyntax = procedureSyntax; }
-    ExportSyntax(OperatorSyntax operatorSyntax) : tag(Operator) { operatorSyntax = operatorSyntax; }
-    ExportSyntax(ImplementSyntax implementSyntax) : tag(Implement) { implementSyntax = implementSyntax; }
-    ExportSyntax(TraitSyntax traitSyntax) : tag(Trait) { traitSyntax = traitSyntax; }
-    ExportSyntax(MacroSyntax macroSyntax) : tag(Macro) { macroSyntax = macroSyntax; }
-    ExportSyntax(ModuleSyntax moduleSyntax) : tag(Module) { moduleSyntax = moduleSyntax; }
+    ExportSyntax(DefinitionSyntax _DefinitionSyntax) : _tag(Definition) { _Definition = _DefinitionSyntax; }
+    ExportSyntax(FunctionSyntax _FunctionSyntax) : _tag(Function) { _Function = _FunctionSyntax; }
+    ExportSyntax(ProcedureSyntax _ProcedureSyntax) : _tag(Procedure) { _Procedure = _ProcedureSyntax; }
+    ExportSyntax(OperatorSyntax _OperatorSyntax) : _tag(Operator) { _Operator = _OperatorSyntax; }
+    ExportSyntax(ImplementSyntax _ImplementSyntax) : _tag(Implement) { _Implement = _ImplementSyntax; }
+    ExportSyntax(TraitSyntax _TraitSyntax) : _tag(Trait) { _Trait = _TraitSyntax; }
+    ExportSyntax(MacroSyntax _MacroSyntax) : _tag(Macro) { _Macro = _MacroSyntax; }
+    ExportSyntax(ModuleSyntax _ModuleSyntax) : _tag(Module) { _Module = _ModuleSyntax; }
     enum {
         Definition,
         Function,
@@ -975,16 +975,16 @@ struct ExportSyntax : Object {
         Trait,
         Macro,
         Module,
-    } tag;
+    } _tag;
     union {
-        DefinitionSyntax definitionSyntax;
-        FunctionSyntax functionSyntax;
-        ProcedureSyntax procedureSyntax;
-        OperatorSyntax operatorSyntax;
-        ImplementSyntax implementSyntax;
-        TraitSyntax traitSyntax;
-        MacroSyntax macroSyntax;
-        ModuleSyntax moduleSyntax;
+        DefinitionSyntax _Definition;
+        FunctionSyntax _Function;
+        ProcedureSyntax _Procedure;
+        OperatorSyntax _Operator;
+        ImplementSyntax _Implement;
+        TraitSyntax _Trait;
+        MacroSyntax _Macro;
+        ModuleSyntax _Module;
     };
 };
 
@@ -996,16 +996,16 @@ struct PrivateSyntax : Object {
 };
 
 struct DeclarationSyntax : Object {
-    DeclarationSyntax(PrivateSyntax privateSyntax) : tag(Private) { privateSyntax = privateSyntax; }
-    DeclarationSyntax(DefinitionSyntax definitionSyntax) : tag(Definition) { definitionSyntax = definitionSyntax; }
-    DeclarationSyntax(FunctionSyntax functionSyntax) : tag(Function) { functionSyntax = functionSyntax; }
-    DeclarationSyntax(ProcedureSyntax procedureSyntax) : tag(Procedure) { procedureSyntax = procedureSyntax; }
-    DeclarationSyntax(OperatorSyntax operatorSyntax) : tag(Operator) { operatorSyntax = operatorSyntax; }
-    DeclarationSyntax(UseSyntax useSyntax) : tag(Use) { useSyntax = useSyntax; }
-    DeclarationSyntax(ImplementSyntax implementSyntax) : tag(Implement) { implementSyntax = implementSyntax; }
-    DeclarationSyntax(TraitSyntax traitSyntax) : tag(Trait) { traitSyntax = traitSyntax; }
-    DeclarationSyntax(MacroSyntax macroSyntax) : tag(Macro) { macroSyntax = macroSyntax; }
-    DeclarationSyntax(ModuleSyntax moduleSyntax) : tag(Module) { moduleSyntax = moduleSyntax; }
+    DeclarationSyntax(PrivateSyntax _PrivateSyntax) : _tag(Private) { _Private = _PrivateSyntax; }
+    DeclarationSyntax(DefinitionSyntax _DefinitionSyntax) : _tag(Definition) { _Definition = _DefinitionSyntax; }
+    DeclarationSyntax(FunctionSyntax _FunctionSyntax) : _tag(Function) { _Function = _FunctionSyntax; }
+    DeclarationSyntax(ProcedureSyntax _ProcedureSyntax) : _tag(Procedure) { _Procedure = _ProcedureSyntax; }
+    DeclarationSyntax(OperatorSyntax _OperatorSyntax) : _tag(Operator) { _Operator = _OperatorSyntax; }
+    DeclarationSyntax(UseSyntax _UseSyntax) : _tag(Use) { _Use = _UseSyntax; }
+    DeclarationSyntax(ImplementSyntax _ImplementSyntax) : _tag(Implement) { _Implement = _ImplementSyntax; }
+    DeclarationSyntax(TraitSyntax _TraitSyntax) : _tag(Trait) { _Trait = _TraitSyntax; }
+    DeclarationSyntax(MacroSyntax _MacroSyntax) : _tag(Macro) { _Macro = _MacroSyntax; }
+    DeclarationSyntax(ModuleSyntax _ModuleSyntax) : _tag(Module) { _Module = _ModuleSyntax; }
     enum {
         Private,
         Definition,
@@ -1017,18 +1017,18 @@ struct DeclarationSyntax : Object {
         Trait,
         Macro,
         Module,
-    } tag;
+    } _tag;
     union {
-        PrivateSyntax privateSyntax;
-        DefinitionSyntax definitionSyntax;
-        FunctionSyntax functionSyntax;
-        ProcedureSyntax procedureSyntax;
-        OperatorSyntax operatorSyntax;
-        UseSyntax useSyntax;
-        ImplementSyntax implementSyntax;
-        TraitSyntax traitSyntax;
-        MacroSyntax macroSyntax;
-        ModuleSyntax moduleSyntax;
+        PrivateSyntax _Private;
+        DefinitionSyntax _Definition;
+        FunctionSyntax _Function;
+        ProcedureSyntax _Procedure;
+        OperatorSyntax _Operator;
+        UseSyntax _Use;
+        ImplementSyntax _Implement;
+        TraitSyntax _Trait;
+        MacroSyntax _Macro;
+        ModuleSyntax _Module;
     };
 };
 

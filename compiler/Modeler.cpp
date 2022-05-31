@@ -226,7 +226,7 @@ Result<Model*, ModelError*> build_model(Region& _pr, Page* _rp, Page* _ep, Vecto
 
     auto declarations_iterator = VectorIterator<DeclarationSyntax>::create(declarations);
     while (auto declaration = declarations_iterator.next()) {
-        switch (declaration->tag)
+        switch (declaration->_tag)
         {
             case DeclarationSyntax::Private:
             break;
@@ -235,7 +235,7 @@ Result<Model*, ModelError*> build_model(Region& _pr, Page* _rp, Page* _ep, Vecto
             case DeclarationSyntax::Function:
             {
                 auto _r_1 = Region::create(_r);
-                auto function_result = build_function(_r_1, _rp, _ep, declaration->functionSyntax, functions_builder);
+                auto function_result = build_function(_r_1, _rp, _ep, declaration->_Function, functions_builder);
                 // if (function_result.tag == Result<Vector<DeclarationSyntax>*, ParserError>::Error)
                 //     return Result<Model*, ModelError*> { .tag = Result<Model*, ModelError*>::Error, .error = new(alignof(ModelError), _ep) ModelError(*function_result.error) };
                 auto function = function_result.ok;
