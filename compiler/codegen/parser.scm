@@ -88,7 +88,7 @@ struct Parser : Object {
 "            return Result<"(id syntax)"Syntax*, ParserError*> { .tag = Result<"(id syntax)"Syntax*, ParserError*>::Ok, .ok = nullptr };
 "                                   )
                                     ($
-"            return Result<"(id syntax)"Syntax*, ParserError*> { .tag = Result<"(id syntax)"Syntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, lexer.position) };
+"            return Result<"(id syntax)"Syntax*, ParserError*> { .tag = Result<"(id syntax)"Syntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(InvalidSyntaxParserError(start, lexer.position)) };
 "                                   )
                                 )
 "        }
@@ -121,7 +121,7 @@ struct Parser : Object {
 "                                               )
                                                 ($
 "
-            return Result<"(id syntax)"Syntax*, ParserError*> { .tag = Result<"(id syntax)"Syntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, lexer.position) };"
+            return Result<"(id syntax)"Syntax*, ParserError*> { .tag = Result<"(id syntax)"Syntax*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(InvalidSyntaxParserError(start, lexer.position)) };"
                                                 )
                                             )
                                         )

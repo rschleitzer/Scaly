@@ -157,11 +157,11 @@ Result<Vector<DeclarationSyntax>*, ParserError*> parse_program(Region& _pr, Page
     auto name = parser_main.lexer.parse_identifier(_r, _r.page, parser_main.keywords);
     if (name != nullptr) {
         if (!parser_main.is_identifier(*name)) {
-            return Result<Vector<DeclarationSyntax>*, ParserError*> { .tag = Result<Vector<DeclarationSyntax>*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, parser_main.lexer.position) };
+            return Result<Vector<DeclarationSyntax>*, ParserError*> { .tag = Result<Vector<DeclarationSyntax>*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(InvalidSyntaxParserError(start, parser_main.lexer.position)) };
         }
     }
     else
-        return Result<Vector<DeclarationSyntax>*, ParserError*> { .tag = Result<Vector<DeclarationSyntax>*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, parser_main.lexer.position) };
+        return Result<Vector<DeclarationSyntax>*, ParserError*> { .tag = Result<Vector<DeclarationSyntax>*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(InvalidSyntaxParserError(start, parser_main.lexer.position)) };
 
 
     auto parameters_result = parser_main.parse_parameterset(_r, _rp, _ep);
@@ -200,7 +200,7 @@ Result<Vector<DeclarationSyntax>*, ParserError*> parse_program(Region& _pr, Page
 
     auto routine = new(alignof(RoutineSyntax), _rp) RoutineSyntax(start, end, parameters, nullptr, returns, nullptr, *implementation);
     if (routine == nullptr)
-        return Result<Vector<DeclarationSyntax>*, ParserError*> { .tag = Result<Vector<DeclarationSyntax>*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(start, parser_main.lexer.position) };
+        return Result<Vector<DeclarationSyntax>*, ParserError*> { .tag = Result<Vector<DeclarationSyntax>*, ParserError*>::Error, .error = new(alignof(ParserError), _ep) ParserError(InvalidSyntaxParserError(start, parser_main.lexer.position)) };
 
     auto main_function_syntax = new(alignof(FunctionSyntax), _rp) FunctionSyntax(start, end, *name, nullptr, *routine);
     DeclarationSyntax* main_function_declaration = nullptr;
