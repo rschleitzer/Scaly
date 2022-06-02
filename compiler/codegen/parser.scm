@@ -27,27 +27,29 @@ struct Parser : Object {
             Array<"(id syntax)"Syntax>* array = nullptr;
             while(true) {
                 auto node_result = this->parse_"(downcase-string (id syntax))"(_r_1, _rp, _ep);
-                if (node_result.tag == Result<"(id syntax)"Syntax*, ParserError>::Error)
-                    return Result<""Vector<"(id syntax)"Syntax>*, ParserError> { .tag = Result<""Vector<"(id syntax)"Syntax>*, ParserError>::Error, .error = node_result.error };
-                auto node = node_result.ok;
-                if (node != nullptr) {
+                if ((node_result._tag == Result<"(id syntax)"Syntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
+                    return Result<""Vector<"(id syntax)"Syntax>*, ParserError> { ._tag = Result<""Vector<"(id syntax)"Syntax>*, ParserError>::Error, ._Error = node_result._Error };
+                if (node_result._tag == Result<"(id syntax)"Syntax, ParserError>::Ok) {
+                    auto node = node_result._Ok;
                     if (array == nullptr)
                         array = Array<"(id syntax)"Syntax>::create(_r_1.page);
-                    array->add(*node);
+                    array->add(node);
                 } else {
+                    if ((array == nullptr) && (node_result._tag == Result<"(id syntax)"Syntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
+                        return Result<""Vector<"(id syntax)"Syntax>*, ParserError> { ._tag = Result<""Vector<"(id syntax)"Syntax>*, ParserError>::Error, ._Error = node_result._Error };
                     break;
                 }
             }
 
             if (array == nullptr)
-                return Result<""Vector<"(id syntax)"Syntax>*, ParserError> { .tag = Result<""Vector<"(id syntax)"Syntax>*, ParserError>::Ok, .ok = nullptr };
+                return Result<""Vector<"(id syntax)"Syntax>*, ParserError> { ._tag = Result<""Vector<"(id syntax)"Syntax>*, ParserError>::Ok, ._Ok = nullptr };
             
-            return Result<""Vector<"(id syntax)"Syntax>*, ParserError> { .tag = Result<""Vector<"(id syntax)"Syntax>*, ParserError>::Ok, .ok = Vector<"(id syntax)"Syntax>::from_array(_rp, *array) };
+            return Result<""Vector<"(id syntax)"Syntax>*, ParserError> { ._tag = Result<""Vector<"(id syntax)"Syntax>*, ParserError>::Ok, ._Ok = Vector<"(id syntax)"Syntax>::from_array(_rp, *array) };
         }
     }
 "       )"")
 "
-    Result<"(id syntax)"Syntax*, ParserError> parse_"(downcase-string (id syntax))"(Region& _pr, Page* _rp, Page* _ep) {
+    Result<"(id syntax)"Syntax, ParserError> parse_"(downcase-string (id syntax))"(Region& _pr, Page* _rp, Page* _ep) {
         auto _r = Region::create(_pr);
 "
         (if (abstract? syntax)
@@ -56,18 +58,22 @@ struct Parser : Object {
 "        {
             auto _r_1 = Region::create(_r);
             auto node_result = this->parse_"(downcase-string (link content))"(_r_1, _rp, _ep);
-            if (node_result.tag == Result<"(link content)"Syntax*, ParserError>::Error)
-                return Result<"(id syntax)"Syntax*, ParserError> { .tag = Result<"(id syntax)"Syntax*, ParserError>::Error, .error = node_result.error };
-            auto node = node_result.ok;
-            if (node != nullptr) {
-                return Result<"(id syntax)"Syntax*, ParserError> { .tag = Result<"(id syntax)"Syntax*, ParserError>::Ok, .ok = 
-                    new (alignof("(id syntax)"Syntax), _rp) "(id syntax)"Syntax("(link content)"Syntax(*node))
+            if (node_result._tag == Result<"(link content)"Syntax, ParserError>::Error)
+            {
+                if (node_result._Error._tag == ParserError::InvalidSyntax)
+                    return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = node_result._Error };
+            }
+            else
+            {
+                auto node = node_result._Ok;
+                return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Ok, ._Ok = 
+                    "(id syntax)"Syntax("(link content)"Syntax(node))
                 };
             }
         }
 "
                 )))
-"        return Result<"(id syntax)"Syntax*, ParserError> { .tag = Result<"(id syntax)"Syntax*, ParserError>::Ok, .ok = nullptr };
+"        return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
 "
             )
             ($ ; non-abstract syntax
@@ -77,22 +83,23 @@ struct Parser : Object {
                         ($ ; non-terminals
 "
         auto "(property content)"_result = this->parse_"(downcase-string (link content))(if (multiple? content) "_list" "")"(_r, _rp, _ep);
-        if ("(property content)"_result.tag == Result<"(if (multiple? content) "Vector<" "")(link content)"Syntax"(if (multiple? content) ">" "")"*, ParserError>::Error)
-            return Result<"(id syntax)"Syntax*, ParserError> { .tag = Result<"(id syntax)"Syntax*, ParserError>::Error, .error = "(property content)"_result.error };
-        auto "(property content)" = "(property content)"_result.ok;
-"
-                            (if (optional? content) "" ($
-"        if ("(property content)" == nullptr) {
+        if ("(property content)"_result._tag == Result<"(if (multiple? content) "Vector<" "")(link content)"Syntax"(if (multiple? content) ">" "")", ParserError>::Error)
+        {
+"                            (if (optional? content) "" ($
+"            if ("(property content)"_result._Error._tag == ParserError::OtherSyntax)
 "                               (if (equal? 1 (child-number content))
                                     ($
-"            return Result<"(id syntax)"Syntax*, ParserError> { .tag = Result<"(id syntax)"Syntax*, ParserError>::Ok, .ok = nullptr };
+"               return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
 "                                   )
                                     ($
-"            return Result<"(id syntax)"Syntax*, ParserError> { .tag = Result<"(id syntax)"Syntax*, ParserError>::Error, .error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+"               return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
 "                                   )
                                 )
+                           ))
 "        }
-"                           ))
+
+        auto "(property content)" = "(if (and (multiple? content)(optional? content)) ($ ""(property content)"_result._tag == Result<"(if (multiple? content) "Vector<" "")(link content)"Syntax"(if (multiple? content) ">" "")", ParserError>::Error ? nullptr : ") "")(property content)"_result._Ok;
+"
                         )
                         ($ ; terminals
 "
@@ -117,11 +124,11 @@ struct Parser : Object {
                                             (if (equal? 1 (child-number content))
                                                 ($
 "
-                return Result<"(id syntax)"Syntax*, ParserError> { .tag = Result<"(id syntax)"Syntax*, ParserError>::Ok, .ok = nullptr };
+                return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
 "                                               )
                                                 ($
 "
-            return Result<"(id syntax)"Syntax*, ParserError> { .tag = Result<"(id syntax)"Syntax*, ParserError>::Error, .error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };"
+            return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };"
                                                 )
                                             )
                                         )
@@ -129,8 +136,8 @@ struct Parser : Object {
                                 ))
                                 (case (type content)
                                     (("keyword" "punctuation" "colon" "semicolon") ($ 
-"        if (!success_"(if (property content) (property content) ($ (case (type content) (("colon" "semicolon") (type content)) (else (link content)))"_"(number->string (child-number content))))") {
-"                                       null-handler
+"        if (!success_"(if (property content) (property content) ($ (case (type content) (("colon" "semicolon") (type content)) (else (link content)))"_"(number->string (child-number content))))") {"
+                                    null-handler
 "        }
 "
                                     ))
@@ -142,7 +149,7 @@ struct Parser : Object {
             }
         }
         else {"
-                                        null-handler
+                                    null-handler
             "
         }
 "                                   ))
@@ -159,13 +166,20 @@ struct Parser : Object {
 "
         auto end = this->lexer.position;
 
-        auto ret = new(alignof("(id syntax)"Syntax), _rp) "(id syntax)"Syntax(start, end"
+        auto ret = "(id syntax)"Syntax(start, end"
                 (apply-to-property-children-of syntax (lambda (content) ($
-                    ", "(if (optional? content) "" "*")(property content)
+                    ", "
+                    (case (type content)
+                        (("keyword" "punctuation" "identifier" "attribute") "*")
+                        (else "")
+                    )
+                    (if (and (optional? content)(not (multiple? content))) ($ "new(alignof("(link content)"Syntax), _rp) "(link content)"Syntax(") "")
+                    (property content)
+                    (if (and (optional? content)(not (multiple? content))) ")" "")
                 )))
                 ");
 
-        return Result<"(id syntax)"Syntax*, ParserError> { .tag = Result<"(id syntax)"Syntax*, ParserError>::Ok, .ok = ret };
+        return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Ok, ._Ok = ret };
 "
             ) ; $
         ) ; abstract or not

@@ -15,9 +15,9 @@ struct "(id syntax-node)"Syntax : Object {
                     (if (property content) ($
                             ", "
                             (case (type content)
-                                (("syntax") ($ (if (multiple? content) ($ "Vector<") "")(link content)"Syntax"(if (multiple? content)">" "")(if (optional? content)"*" "")))
+                                (("syntax") ($ (if (multiple? content) ($ "Vector<") "")(link content)"Syntax"(if (multiple? content)">" "")(if (or (optional? content) (multiple? content))"*" "")))
                                 (("identifier" "attribute") ($ "String"(if (optional? content)"*" "")))
-                                (("literal") ($ "LiteralToken"(if (optional? content)"*" "")))
+                                (("literal") "LiteralToken*")
                                 (("keyword" "punctuation") "bool")
                             )
                             " "
@@ -39,9 +39,9 @@ struct "(id syntax-node)"Syntax : Object {
 "
     "
                         (case (type content)
-                            (("syntax") ($ (if (multiple? content) ($ "Vector<") "")(link content)"Syntax"(if (multiple? content)">" "")(if (optional? content)"*" "")))
+                            (("syntax") ($ (if (multiple? content) ($ "Vector<") "")(link content)"Syntax"(if (multiple? content)">" "")(if (or (optional? content) (multiple? content))"*" "")))
                             (("identifier" "attribute") ($ "String"(if (optional? content)"*" "")))
-                            (("literal") ($ "LiteralToken"(if (optional? content)"*" "")))
+                            (("literal") "LiteralToken*")
                             (("keyword" "punctuation") "bool")
                         )
 " "

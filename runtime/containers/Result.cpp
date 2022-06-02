@@ -6,10 +6,10 @@ struct Result {
     enum {
         Ok,
         Error,
-    } tag;
+    } _tag;
     union {
-        OK ok;
-        ERROR error;
+        OK _Ok;
+        ERROR _Error;
     };
 };
 
