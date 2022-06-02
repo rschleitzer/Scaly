@@ -98,7 +98,32 @@ struct Parser : Object {
                            ))
 "        }
 
-        auto "(property content)" = "(if (and (multiple? content)(optional? content)) ($ ""(property content)"_result._tag == Result<"(if (multiple? content) "Vector<" "")(link content)"Syntax"(if (multiple? content) ">" "")", ParserError>::Error ? nullptr : ") "")(property content)"_result._Ok;
+        "                   (if (and (optional? content)(not (multiple? content)))
+                                ($ ""(link content)"Syntax*")
+                                "auto"
+                            )
+                            " "
+                            (property content)
+                            " = "
+                            (if (optional? content)
+                                ($
+                                    (property content)
+                                    "_result._tag == Result<"
+                                    (if (multiple? content) "Vector<" "")
+                                    (link content)
+                                    "Syntax"
+                                    (if (multiple? content) ">" "")
+                                    ", ParserError>::Error ? nullptr : "
+                                    (if (multiple? content) "" ($
+                                    "new(alignof("(link content)"Syntax), _rp) "(link content)"Syntax("
+                                    ))
+                                )
+                                ""
+                            )
+                            (property content)                            
+                            "_result._Ok"
+                            (if (and (optional? content)(not (multiple? content))) ")" "")
+                            ";
 "
                         )
                         ($ ; terminals
@@ -173,9 +198,7 @@ struct Parser : Object {
                         (("keyword" "punctuation" "identifier" "attribute") "*")
                         (else "")
                     )
-                    (if (and (optional? content)(not (multiple? content))) ($ "new(alignof("(link content)"Syntax), _rp) "(link content)"Syntax(") "")
                     (property content)
-                    (if (and (optional? content)(not (multiple? content))) ")" "")
                 )))
                 ");
 
