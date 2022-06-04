@@ -46,7 +46,6 @@ struct InstructionSyntax;
 struct IntrinsicSyntax; 
 struct ExtendsSyntax; 
 struct ExtendSyntax; 
-struct TypeSpecSyntax; 
 struct MacroSyntax; 
 struct ModuleSyntax; 
 struct ModelSyntax; 
@@ -450,10 +449,10 @@ struct StructureSyntax : Object {
 };
 
 struct ArraySyntax : Object {
-    ArraySyntax(size_t start, size_t end, Vector<TypeSpecSyntax>* members) : start(start), end(end), members(members) {}
+    ArraySyntax(size_t start, size_t end, Vector<TypeSyntax>* members) : start(start), end(end), members(members) {}
     size_t start;
     size_t end;
-    Vector<TypeSpecSyntax>* members;
+    Vector<TypeSyntax>* members;
 };
 
 struct BindingSpecSyntax : Object {
@@ -566,24 +565,11 @@ struct MacroSyntax : Object {
     OperationSyntax rule;
 };
 
-struct TypeSpecSyntax : Object {
-    TypeSpecSyntax(StructureSyntax _StructureSyntax) : _tag(Structure) { _Structure = _StructureSyntax; }
-    TypeSpecSyntax(TypeSyntax _TypeSyntax) : _tag(Type) { _Type = _TypeSyntax; }
-    enum {
-        Structure,
-        Type,
-    } _tag;
-    union {
-        StructureSyntax _Structure;
-        TypeSyntax _Type;
-    };
-};
-
 struct ExtendSyntax : Object {
-    ExtendSyntax(size_t start, size_t end, TypeSpecSyntax spec) : start(start), end(end), spec(spec) {}
+    ExtendSyntax(size_t start, size_t end, TypeSyntax type) : start(start), end(end), type(type) {}
     size_t start;
     size_t end;
-    TypeSpecSyntax spec;
+    TypeSyntax type;
 };
 
 struct ExtendsSyntax : Object {
@@ -775,10 +761,10 @@ struct OptionalSyntax : Object {
 };
 
 struct GenericArgumentSyntax : Object {
-    GenericArgumentSyntax(size_t start, size_t end, TypeSyntax spec) : start(start), end(end), spec(spec) {}
+    GenericArgumentSyntax(size_t start, size_t end, TypeSyntax type) : start(start), end(end), type(type) {}
     size_t start;
     size_t end;
-    TypeSyntax spec;
+    TypeSyntax type;
 };
 
 struct GenericArgumentsSyntax : Object {
@@ -789,10 +775,10 @@ struct GenericArgumentsSyntax : Object {
 };
 
 struct TypeAnnotationSyntax : Object {
-    TypeAnnotationSyntax(size_t start, size_t end, TypeSpecSyntax spec) : start(start), end(end), spec(spec) {}
+    TypeAnnotationSyntax(size_t start, size_t end, TypeSyntax type) : start(start), end(end), type(type) {}
     size_t start;
     size_t end;
-    TypeSpecSyntax spec;
+    TypeSyntax type;
 };
 
 struct PropertySyntax : Object {
@@ -2257,18 +2243,18 @@ struct Parser : Object {
                 return Result<TypeAnnotationSyntax, ParserError> { ._tag = Result<TypeAnnotationSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
-        auto spec_result = this->parse_typespec(_r, _rp, _ep);
-        if (spec_result._tag == Result<TypeSpecSyntax, ParserError>::Error)
+        auto type_result = this->parse_type(_r, _rp, _ep);
+        if (type_result._tag == Result<TypeSyntax, ParserError>::Error)
         {
-            if (spec_result._Error._tag == ParserError::OtherSyntax)
+            if (type_result._Error._tag == ParserError::OtherSyntax)
                return Result<TypeAnnotationSyntax, ParserError> { ._tag = Result<TypeAnnotationSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
         }
 
-        auto spec = spec_result._Ok;
+        auto type = type_result._Ok;
 
         auto end = this->lexer.position;
 
-        auto ret = TypeAnnotationSyntax(start, end, spec);
+        auto ret = TypeAnnotationSyntax(start, end, type);
 
         return Result<TypeAnnotationSyntax, ParserError> { ._tag = Result<TypeAnnotationSyntax, ParserError>::Ok, ._Ok = ret };
     }
@@ -2332,14 +2318,14 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto spec_result = this->parse_type(_r, _rp, _ep);
-        if (spec_result._tag == Result<TypeSyntax, ParserError>::Error)
+        auto type_result = this->parse_type(_r, _rp, _ep);
+        if (type_result._tag == Result<TypeSyntax, ParserError>::Error)
         {
-            if (spec_result._Error._tag == ParserError::OtherSyntax)
+            if (type_result._Error._tag == ParserError::OtherSyntax)
                return Result<GenericArgumentSyntax, ParserError> { ._tag = Result<GenericArgumentSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
-        auto spec = spec_result._Ok;
+        auto type = type_result._Ok;
 
         auto success_comma_2 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, ","));
         if (!success_comma_2) {
@@ -2347,7 +2333,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = GenericArgumentSyntax(start, end, spec);
+        auto ret = GenericArgumentSyntax(start, end, type);
 
         return Result<GenericArgumentSyntax, ParserError> { ._tag = Result<GenericArgumentSyntax, ParserError>::Ok, ._Ok = ret };
     }
@@ -3162,14 +3148,14 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto spec_result = this->parse_typespec(_r, _rp, _ep);
-        if (spec_result._tag == Result<TypeSpecSyntax, ParserError>::Error)
+        auto type_result = this->parse_type(_r, _rp, _ep);
+        if (type_result._tag == Result<TypeSyntax, ParserError>::Error)
         {
-            if (spec_result._Error._tag == ParserError::OtherSyntax)
+            if (type_result._Error._tag == ParserError::OtherSyntax)
                return Result<ExtendSyntax, ParserError> { ._tag = Result<ExtendSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
-        auto spec = spec_result._Ok;
+        auto type = type_result._Ok;
 
         auto success_comma_2 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, ","));
         if (!success_comma_2) {
@@ -3177,74 +3163,9 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = ExtendSyntax(start, end, spec);
+        auto ret = ExtendSyntax(start, end, type);
 
         return Result<ExtendSyntax, ParserError> { ._tag = Result<ExtendSyntax, ParserError>::Ok, ._Ok = ret };
-    }
-
-    Result<Vector<TypeSpecSyntax>*, ParserError> parse_typespec_list(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
-        {
-            auto _r_1 = Region::create(_r);
-            Array<TypeSpecSyntax>* array = nullptr;
-            while(true) {
-                auto node_result = this->parse_typespec(_r_1, _rp, _ep);
-                if ((node_result._tag == Result<TypeSpecSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
-                    return Result<Vector<TypeSpecSyntax>*, ParserError> { ._tag = Result<Vector<TypeSpecSyntax>*, ParserError>::Error, ._Error = node_result._Error };
-                if (node_result._tag == Result<TypeSpecSyntax, ParserError>::Ok) {
-                    auto node = node_result._Ok;
-                    if (array == nullptr)
-                        array = Array<TypeSpecSyntax>::create(_r_1.page);
-                    array->add(node);
-                } else {
-                    if ((array == nullptr) && (node_result._tag == Result<TypeSpecSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
-                        return Result<Vector<TypeSpecSyntax>*, ParserError> { ._tag = Result<Vector<TypeSpecSyntax>*, ParserError>::Error, ._Error = node_result._Error };
-                    break;
-                }
-            }
-
-            if (array == nullptr)
-                return Result<Vector<TypeSpecSyntax>*, ParserError> { ._tag = Result<Vector<TypeSpecSyntax>*, ParserError>::Ok, ._Ok = nullptr };
-            
-            return Result<Vector<TypeSpecSyntax>*, ParserError> { ._tag = Result<Vector<TypeSpecSyntax>*, ParserError>::Ok, ._Ok = Vector<TypeSpecSyntax>::from_array(_rp, *array) };
-        }
-    }
-
-    Result<TypeSpecSyntax, ParserError> parse_typespec(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
-        {
-            auto _r_1 = Region::create(_r);
-            auto node_result = this->parse_structure(_r_1, _rp, _ep);
-            if (node_result._tag == Result<StructureSyntax, ParserError>::Error)
-            {
-                if (node_result._Error._tag == ParserError::InvalidSyntax)
-                    return Result<TypeSpecSyntax, ParserError> { ._tag = Result<TypeSpecSyntax, ParserError>::Error, ._Error = node_result._Error };
-            }
-            else
-            {
-                auto node = node_result._Ok;
-                return Result<TypeSpecSyntax, ParserError> { ._tag = Result<TypeSpecSyntax, ParserError>::Ok, ._Ok = 
-                    TypeSpecSyntax(StructureSyntax(node))
-                };
-            }
-        }
-        {
-            auto _r_1 = Region::create(_r);
-            auto node_result = this->parse_type(_r_1, _rp, _ep);
-            if (node_result._tag == Result<TypeSyntax, ParserError>::Error)
-            {
-                if (node_result._Error._tag == ParserError::InvalidSyntax)
-                    return Result<TypeSpecSyntax, ParserError> { ._tag = Result<TypeSpecSyntax, ParserError>::Error, ._Error = node_result._Error };
-            }
-            else
-            {
-                auto node = node_result._Ok;
-                return Result<TypeSpecSyntax, ParserError> { ._tag = Result<TypeSpecSyntax, ParserError>::Ok, ._Ok = 
-                    TypeSpecSyntax(TypeSyntax(node))
-                };
-            }
-        }
-        return Result<TypeSpecSyntax, ParserError> { ._tag = Result<TypeSpecSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
     }
 
     Result<MacroSyntax, ParserError> parse_macro(Region& _pr, Page* _rp, Page* _ep) {
@@ -3731,12 +3652,12 @@ struct Parser : Object {
                 return Result<ArraySyntax, ParserError> { ._tag = Result<ArraySyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
-        auto members_result = this->parse_typespec_list(_r, _rp, _ep);
-        if (members_result._tag == Result<Vector<TypeSpecSyntax>, ParserError>::Error)
+        auto members_result = this->parse_type_list(_r, _rp, _ep);
+        if (members_result._tag == Result<Vector<TypeSyntax>, ParserError>::Error)
         {
         }
 
-        auto members = members_result._tag == Result<Vector<TypeSpecSyntax>, ParserError>::Error ? nullptr : members_result._Ok;
+        auto members = members_result._tag == Result<Vector<TypeSyntax>, ParserError>::Error ? nullptr : members_result._Ok;
 
         auto success_right_bracket_3 = this->lexer.parse_punctuation(_r, _rp, *String::from_c_string(_r.page, "]"));
         if (!success_right_bracket_3) {
@@ -5288,6 +5209,34 @@ struct Parser : Object {
         auto ret = SizeOfSyntax(start, end, type);
 
         return Result<SizeOfSyntax, ParserError> { ._tag = Result<SizeOfSyntax, ParserError>::Ok, ._Ok = ret };
+    }
+
+    Result<Vector<TypeSyntax>*, ParserError> parse_type_list(Region& _pr, Page* _rp, Page* _ep) {
+        auto _r = Region::create(_pr);
+        {
+            auto _r_1 = Region::create(_r);
+            Array<TypeSyntax>* array = nullptr;
+            while(true) {
+                auto node_result = this->parse_type(_r_1, _rp, _ep);
+                if ((node_result._tag == Result<TypeSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
+                    return Result<Vector<TypeSyntax>*, ParserError> { ._tag = Result<Vector<TypeSyntax>*, ParserError>::Error, ._Error = node_result._Error };
+                if (node_result._tag == Result<TypeSyntax, ParserError>::Ok) {
+                    auto node = node_result._Ok;
+                    if (array == nullptr)
+                        array = Array<TypeSyntax>::create(_r_1.page);
+                    array->add(node);
+                } else {
+                    if ((array == nullptr) && (node_result._tag == Result<TypeSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
+                        return Result<Vector<TypeSyntax>*, ParserError> { ._tag = Result<Vector<TypeSyntax>*, ParserError>::Error, ._Error = node_result._Error };
+                    break;
+                }
+            }
+
+            if (array == nullptr)
+                return Result<Vector<TypeSyntax>*, ParserError> { ._tag = Result<Vector<TypeSyntax>*, ParserError>::Ok, ._Ok = nullptr };
+            
+            return Result<Vector<TypeSyntax>*, ParserError> { ._tag = Result<Vector<TypeSyntax>*, ParserError>::Ok, ._Ok = Vector<TypeSyntax>::from_array(_rp, *array) };
+        }
     }
 
     Result<TypeSyntax, ParserError> parse_type(Region& _pr, Page* _rp, Page* _ep) {

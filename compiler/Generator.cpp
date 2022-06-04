@@ -13,15 +13,13 @@
 namespace scaly {
 namespace compiler {
 
-using namespace llvm;
-
 static void InitializeModule() {
   // Open a new context and module.
-  auto TheContext = std::make_unique<LLVMContext>();
-  auto TheModule = std::make_unique<Module>("my cool jit", *TheContext);
+  auto TheContext = std::make_unique<llvm::LLVMContext>();
+  auto TheModule = std::make_unique<llvm::Module>("my cool jit", *TheContext);
 
   // Create a new builder for the module.
-  auto Builder = std::make_unique<IRBuilder<>>(*TheContext);
+  auto Builder = std::make_unique<llvm::IRBuilder<>>(*TheContext);
 }
 
 

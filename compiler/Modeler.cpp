@@ -9,10 +9,15 @@ struct Span : Object {
     Span(size_t file_id, size_t start, size_t end) : file_id(file_id), start(start), end(end) {}
 };
 
-struct Expression;
-
-struct Parameter {
+struct Type {
     String name;
+    Type(String name) : name(name) {}
+};
+
+struct Property {
+    String* name;
+    Type* type;
+    Property(String* name, Type* type) : name(name), type(type) {}
 };
 
 
@@ -20,6 +25,8 @@ struct NameExpression : Object {
     String path;
     NameExpression(String path) : path(path) {}
 };
+
+struct Expression;
 
 struct Operand : Object {
     Expression* expression;
@@ -64,10 +71,10 @@ struct Operation : Object {
 struct Function : Object {
     Span span;
     String name;
-    Vector<Parameter>* input;
-    Vector<Parameter>* output;
+    Vector<Property>* input;
+    Vector<Property>* output;
     Operation* operation;
-    Function(Span span, String name, Vector<Parameter>* input, Vector<Parameter>* output, Operation* operation) : span(span), name(name), input(input), output(output), operation(operation) {}
+    Function(Span span, String name, Vector<Property>* input, Vector<Property>* output, Operation* operation) : span(span), name(name), input(input), output(output), operation(operation) {}
 };
 
 struct Model : Object {
@@ -200,10 +207,38 @@ Result<Vector<DeclarationSyntax>*, ParserError> parse_program(Region& _pr, Page*
     return Result<Vector<DeclarationSyntax>*, ParserError> { ._tag = Result<Vector<DeclarationSyntax>*, ParserError>::Ok, ._Ok = Vector<DeclarationSyntax>::from_array(_rp, declarations) };
 }
 
+Result<Vector<Property>, ModelError> handle_parameterset(Region& _pr, Page* _rp, Page* _ep, ParameterSetSyntax& parameterSetSyntax) {
+    auto _r = Region::create(_pr);
+    Array<Property>& parameters = *new(alignof(Array<Property>), _r.page) Array<Property>();
+    switch (parameterSetSyntax._tag) {
+        case ParameterSetSyntax::Parameters: {
+            auto parameters = parameterSetSyntax._Parameters;
+        }
+        break;
+        case ParameterSetSyntax::Type: {
+            auto type_syntax = parameterSetSyntax._Type;
+            parameters.add(Property(nullptr, nullptr));
+        }
+        break;
+    }
+    return Result<Vector<Property>, ModelError> { ._tag = Result<Vector<Property>, ModelError>::Ok, ._Ok = *Vector<Property>::from_array(_rp, parameters) };
+}
+
 Result<Function, ModelError> handle_function(Region& _pr, Page* _rp, Page* _ep, FunctionSyntax& function_syntax, MultiMapBuilder<String, Function>& functions_builder) {
-    Vector<Parameter>* input = nullptr;
-    Vector<Parameter>* output = nullptr;
+    auto _r = Region::create(_pr);
+    Vector<Property>* input = nullptr;
+    Vector<Property>* output = nullptr;
     Operation* operation = nullptr;
+    if (function_syntax.routine.parameters != nullptr) {
+        ParameterSetSyntax& parameterSetSyntax = *function_syntax.routine.parameters;
+        auto parameterset_result = handle_parameterset(_r, _rp, _ep, parameterSetSyntax);
+    }
+    if (function_syntax.routine.returns != nullptr)
+    {
+        ParameterSetSyntax& parameterSetSyntax = function_syntax.routine.returns->parameters; 
+        auto parameterset_result = handle_parameterset(_r, _rp, _ep, parameterSetSyntax);
+    }
+
     return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(0, function_syntax.start, function_syntax.end), *function_syntax.name.copy(_rp), input, output, operation) };
 }
 

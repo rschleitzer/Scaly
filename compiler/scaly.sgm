@@ -47,7 +47,7 @@
         <content attribute                                      property = attribute
         <content link = Model                                   property = value
 
-    <syntax id = Concept                              abstract
+    <syntax id = Concept                               abstract
         <content link = Class
         <content link = Namespace
         <content link = Union
@@ -125,7 +125,7 @@
 
     <syntax id = TypeAnnotation
         <content colon
-        <content link = TypeSpec                                property = spec
+        <content link = Type                                    property = type
 
     <syntax id = GenericArguments
         <content link = left_bracket
@@ -133,7 +133,7 @@
         <content link = right_bracket
 
     <syntax id = GenericArgument              multiple
-        <content link = Type                                    property = spec
+        <content link = Type                                    property = type
         <content link = comma                          optional
 
     <syntax id = Optional
@@ -248,12 +248,8 @@
         <content link = Extend                multiple optional property = extensions
 
     <syntax id = Extend                       multiple
-        <content link = TypeSpec                                property = spec
+        <content link = Type                                    property = type
         <content link = comma                          optional
-
-    <syntax id = TypeSpec                     multiple abstract
-        <content link = Structure
-        <content link = Type
 
     <syntax id = Macro
         <content link = macro
@@ -307,7 +303,7 @@
 
     <syntax id = Array
         <content link = left_bracket
-        <content link = TypeSpec              multiple optional property = members
+        <content link = Type                  multiple optional property = members
         <content link = right_bracket
 
     <syntax id = Structure
@@ -498,7 +494,7 @@
         <content link = sizeof
         <content link = Type                                    property = type
 
-    <syntax id = Type
+    <syntax id = Type                        multiple
         <content link = Name                                    property = name
         <content link = GenericArguments               optional property = generics
         <content link = Optional                       optional property = optional
