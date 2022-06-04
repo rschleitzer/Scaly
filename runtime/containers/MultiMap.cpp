@@ -5,7 +5,6 @@ using namespace scaly::memory;
 
 template<class K, class V>
 struct MultiMap : Object {
-    size_t length;
     Vector<Vector<KeyValuePair<K, Vector<V>>>>* slots;
 
     static MultiMap<K, V>* create(Page* _rp) {
