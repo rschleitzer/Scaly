@@ -2,6 +2,7 @@
 #define __Scaly_Compiler__
 
 #include "../runtime/containers/Containers.cpp"
+#include "../runtime/io/IO.cpp"
 
 #include "Lexer.cpp"
 #include "Errors.cpp"

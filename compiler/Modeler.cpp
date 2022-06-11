@@ -2,6 +2,8 @@ namespace scaly {
 namespace compiler {
 namespace model {
 
+using namespace scaly::io;
+
 struct Span : Object {
     size_t file_id;
     size_t start;
@@ -77,6 +79,12 @@ struct Function : Object {
     Function(Span span, String name, Vector<Property>* input, Vector<Property>* output, Operation* operation) : span(span), name(name), input(input), output(output), operation(operation) {}
 };
 
+struct Concept : Object {
+    Span span;
+    String name;
+    Type type;
+};
+
 struct Model : Object {
     MultiMap<String, Function> functions;
     Model(MultiMap<String, Function> functions) : functions(functions) {};
@@ -86,26 +94,33 @@ struct IoModelError {
     String file_name;
 };
 
+struct NotImplementedModelError
+{
+    NotImplementedModelError(Span _Span) : span(_Span) {}
+    Span span;
+};
+
 struct DuplicateNameError
 {
-    size_t file_id;
-    size_t start;
-    size_t end;
+    Span span;
 };
 
 struct ModelBuilderError {
-    ModelBuilderError(DuplicateNameError& duplicateNameError) : duplicateNameError(duplicateNameError) {}
+    ModelBuilderError(NotImplementedModelError _NotImplementedModelError) : _NotImplemented(_NotImplementedModelError) {}
+    ModelBuilderError(DuplicateNameError _DuplicateNameError) : _DuplicateName(_DuplicateNameError) {}
     enum {
+        NotImplemented,
         DuplicateName,
     } tag;
     union {
-        DuplicateNameError duplicateNameError;
+        NotImplementedModelError _NotImplemented;
+        DuplicateNameError _DuplicateName;
     };
 };
 
 struct ModelError : Object {
-    ModelError(ParserError& parserError) : parserError(parserError) {}
-    ModelError(ModelBuilderError& modelBuilderError) : modelBuilderError(modelBuilderError) {}
+    ModelError(ParserError parserError) : parserError(parserError) {}
+    ModelError(ModelBuilderError modelBuilderError) : modelBuilderError(modelBuilderError) {}
     enum {
         Io,
         Parser,
@@ -242,13 +257,19 @@ Result<Function, ModelError> handle_function(Region& _pr, Page* _rp, Page* _ep, 
     return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(0, function_syntax.start, function_syntax.end), *function_syntax.name.copy(_rp), input, output, operation) };
 }
 
+Result<Concept, ModelError> handle_module(Region& _pr, Page* _rp, Page* _ep, ModuleSyntax& module_syntax) {
+    return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(0, module_syntax.start, module_syntax.end))))  };
+}
+
 Result<Model, ModelError> build_model(Region& _pr, Page* _rp, Page* _ep, Vector<DeclarationSyntax>& declarations) {
     auto _r = Region::create(_pr);
 
     MultiMapBuilder<String, Function>& functions_builder = *new(alignof(MultiMapBuilder<String, Array<Function>>), _r.page) MultiMapBuilder<String, Function>();
+    MultiMapBuilder<String, Concept>& definitions_builder = *new(alignof(MultiMapBuilder<String, Array<Concept>>), _r.page) MultiMapBuilder<String, Concept>();
 
     auto declarations_iterator = VectorIterator<DeclarationSyntax>::create(declarations);
     while (auto declaration = declarations_iterator.next()) {
+        auto _r_1 = Region::create(_r);
         switch (declaration->_tag)
         {
             case DeclarationSyntax::Private:
@@ -256,7 +277,6 @@ Result<Model, ModelError> build_model(Region& _pr, Page* _rp, Page* _ep, Vector<
             case DeclarationSyntax::Definition:
             break;
             case DeclarationSyntax::Function: {
-                auto _r_1 = Region::create(_r);
                 auto function_result = handle_function(_r_1, _rp, _ep, declaration->_Function, functions_builder);
                 if (function_result._tag == Result<Function, ModelError>::Error)
                     return Result<Model, ModelError> { ._tag = Result<Model, ModelError>::Error, ._Error = function_result._Error };
@@ -277,6 +297,7 @@ Result<Model, ModelError> build_model(Region& _pr, Page* _rp, Page* _ep, Vector<
             case DeclarationSyntax::Macro:
             break;
             case DeclarationSyntax::Module:
+                auto module_result = handle_module(_r, _rp, _ep, declaration->_Module);
             break;
         }
     }

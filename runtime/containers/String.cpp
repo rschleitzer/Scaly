@@ -11,6 +11,23 @@ struct String : Object {
     String(char* data)
     : data(data) {}
 
+    String(Page* _rp, size_t length) {
+        char length_array[PACKED_SIZE];
+        auto rest = length;
+
+        size_t counter = 0;
+        while (rest >= 0x80) {
+            length_array[counter] = (char)rest | 0x80;
+            rest >>= 7;
+            counter += 1;
+        }
+
+        length_array[counter] = (char)rest;
+        auto overall_length = counter + 1 + length;
+        data = (char*)_rp->allocate_raw(overall_length, 1);
+        memcpy(data, length_array, counter + 1);
+    }
+
     static String* create(Page* _rp, const char* data, size_t length) {
         char length_array[PACKED_SIZE];
         auto rest = length;
@@ -88,7 +105,7 @@ struct String : Object {
         return (const char*)dest;
     }
 
-    const char* get_buffer() {
+    char* get_buffer() {
         size_t length = 0;
         auto bit_count = 0;
         size_t index = 0;
