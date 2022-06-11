@@ -12,7 +12,7 @@ struct Parser : Object {
         auto _r = Region::create_from_page(Page::get(this));
         HashSetBuilder<""String>& hash_set_builder = *HashSetBuilder<""String>::create(_r.page);
 "   (apply-to-selected-children "keyword" (lambda (keyword) ($
-"        hash_set_builder.add(*String::from_c_string(Page::get(this), \""(id keyword)"\"));
+"        hash_set_builder.add(String(Page::get(this), \""(id keyword)"\"));
 "   )))
 "        keywords = *HashSet<""String>::from_hash_set_builder(_r, Page::get(this), hash_set_builder);
     }
@@ -135,8 +135,8 @@ struct Parser : Object {
                             )
             " = this->lexer.parse_"(type content)"(_r, _rp"
                             (case (type content)
-                                (("keyword")     ($ ", *String::from_c_string(_r.page, \""(link content)"\")"))
-                                (("punctuation") ($ ", *String::from_c_string(_r.page, \""(value (element-with-id (link content)))"\")"))
+                                (("keyword")     ($ ", String(_r.page, \""(link content)"\")"))
+                                (("punctuation") ($ ", String(_r.page, \""(value (element-with-id (link content)))"\")"))
                                 (("identifier")  ($ ", this->keywords"))
                                 (("attribute" "literal" "colon" "semicolon") "")
                             )");

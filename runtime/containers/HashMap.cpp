@@ -33,7 +33,7 @@ struct HashMap : Object {
         return hash_map;
     }
 
-    bool contains(K& key) {
+    bool contains(const K& key) {
         if (this->slots == nullptr)
             return false;
 
@@ -50,7 +50,7 @@ struct HashMap : Object {
         return false;
     }
 
-    V* operator [](K& key) {
+    V* operator [](const K& key) {
         if (this->slots == nullptr)
             return nullptr;
 

@@ -34,7 +34,7 @@ struct HashSet : Object {
         return hash_set;
     }
 
-    bool contains(T& value) {
+    bool contains(const T& value) {
         if (this->slots == nullptr)
             return false;
 

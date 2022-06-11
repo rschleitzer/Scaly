@@ -44,21 +44,21 @@ void test_array(Region& _pr)
 
 void test_string(Region& _pr) {
     auto _r = Region::create(_pr);
-    auto string = String::from_c_string(_r.page, "Hello world!");
-    auto length = string->get_length();
+    auto string = String(_r.page, "Hello world!");
+    auto length = string.get_length();
     if (length != 12)
         exit(-7);
-    auto long_string = String::from_c_string(_r.page, "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890");
-    if (long_string->get_length() != 130)
+    auto long_string = String(_r.page, "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890");
+    if (long_string.get_length() != 130)
         exit(-8);
-    auto c_string = long_string->to_c_string(_r.page);
-    auto string_c = String::from_c_string(_r.page, c_string);
+    auto c_string = long_string.to_c_string(_r.page);
+    auto string_c = String(_r.page, c_string);
 
-    auto semi = *String::from_c_string(_r.page, ";");
-    auto dot = *String::from_c_string(_r.page, ".");
+    auto semi = String(_r.page, ";");
+    auto dot = String(_r.page, ".");
     if (semi.equals(dot))
         exit(-9);
-    auto semi2 = *String::from_c_string(_r.page, ";");
+    auto semi2 = String(_r.page, ";");
     if (!semi.equals(semi2))
         exit(-10);
 }
@@ -72,7 +72,7 @@ void test_string_builder(Region& _pr) {
     string_builder.append_character('a');
     string_builder.append_character('b');
     string_builder.append_character('c');
-    if (!string_builder.to_string(_r.page)->equals(*String::from_c_string(_r.page, "abc")))
+    if (!string_builder.to_string(_r.page).equals(String(_r.page, "abc")))
         exit(-12);
     if (string_builder.get_length() != 3)
         exit(-13);
@@ -81,7 +81,7 @@ void test_string_builder(Region& _pr) {
     string_builder2.append_character('e');
     string_builder2.append_character('f');
     string_builder2.append_character('g');
-    if (!string_builder2.to_string(_r.page)->equals(*String::from_c_string(_r.page, "defg")))
+    if (!string_builder2.to_string(_r.page).equals(String(_r.page, "defg")))
         exit(-14);
     if (string_builder2.get_length() != 4)
         exit(-15);
@@ -111,27 +111,27 @@ void test_hash_set(Region& _pr) {
     auto _r = Region::create(_pr);
 
     Array<String>& array = *Array<String>::create(_r.page);
-    array.add(*String::from_c_string(_r.page, "using"));
-    array.add(*String::from_c_string(_r.page, "namespace"));
-    array.add(*String::from_c_string(_r.page, "typedef"));
+    array.add(String(_r.page, "using"));
+    array.add(String(_r.page, "namespace"));
+    array.add(String(_r.page, "typedef"));
     Vector<String>& vector = *Vector<String>::from_array(_r.page, array);
     HashSetBuilder<String>& keywords_builder = *HashSetBuilder<String>::from_vector(_r.page, vector);
-    if (!keywords_builder.contains(*String::from_c_string(_r.page, "using")))
+    if (!keywords_builder.contains(String(_r.page, "using")))
         exit (-18);
-    if (!keywords_builder.contains(*String::from_c_string(_r.page, "namespace")))
+    if (!keywords_builder.contains(String(_r.page, "namespace")))
         exit (-18);
-    if (!keywords_builder.contains(*String::from_c_string(_r.page, "typedef")))
+    if (!keywords_builder.contains(String(_r.page, "typedef")))
         exit (-18);
-    if (keywords_builder.contains(*String::from_c_string(_r.page, "nix")))
+    if (keywords_builder.contains(String(_r.page, "nix")))
         exit (-18);
     HashSet<String>& keywords = *HashSet<String>::from_hash_set_builder(_r, _r.page, keywords_builder);
-    if (!keywords.contains(*String::from_c_string(_r.page, "using")))
+    if (!keywords.contains(String(_r.page, "using")))
         exit (-19);
-    if (!keywords.contains(*String::from_c_string(_r.page, "namespace")))
+    if (!keywords.contains(String(_r.page, "namespace")))
         exit (-19);
-    if (!keywords.contains(*String::from_c_string(_r.page, "typedef")))
+    if (!keywords.contains(String(_r.page, "typedef")))
         exit (-19);
-    if (keywords.contains(*String::from_c_string(_r.page, "nix")))
+    if (keywords.contains(String(_r.page, "nix")))
         exit (-19);
 }
 
@@ -140,43 +140,43 @@ void test_hash_map(Region& _pr) {
     {
         auto _r_1 = Region::create(_r);
         Array<KeyValuePair<String, int>>& array = *Array<KeyValuePair<String, int>>::create(_r_1.page);
-        array.add(KeyValuePair<String, int> { .key = *String::from_c_string(_r_1.page, "using"), .value = 1 });
-        array.add(KeyValuePair<String, int> { .key = *String::from_c_string(_r_1.page, "namespace"), .value = 2 });
-        array.add(KeyValuePair<String, int> { .key = *String::from_c_string(_r_1.page, "typedef"), .value = 3 });
+        array.add(KeyValuePair<String, int> { .key = String(_r_1.page, "using"), .value = 1 });
+        array.add(KeyValuePair<String, int> { .key = String(_r_1.page, "namespace"), .value = 2 });
+        array.add(KeyValuePair<String, int> { .key = String(_r_1.page, "typedef"), .value = 3 });
         Vector<KeyValuePair<String, int>>& vector = *Vector<KeyValuePair<String, int>>::from_array(_r_1.page, array);
         HashMapBuilder<String, int>& keywords_builder = *HashMapBuilder<String, int>::from_vector(_r_1.page, vector);
-        if (!keywords_builder.contains(*String::from_c_string(_r_1.page, "using")))
+        if (!keywords_builder.contains(String(_r_1.page, "using")))
             exit (-18);
-        if (!keywords_builder.contains(*String::from_c_string(_r_1.page, "namespace")))
+        if (!keywords_builder.contains(String(_r_1.page, "namespace")))
             exit (-19);
-        if (!keywords_builder.contains(*String::from_c_string(_r_1.page, "typedef")))
+        if (!keywords_builder.contains(String(_r_1.page, "typedef")))
             exit (-20);
-        if (keywords_builder.contains(*String::from_c_string(_r_1.page, "nix")))
+        if (keywords_builder.contains(String(_r_1.page, "nix")))
             exit (-21);
-        if (*keywords_builder[*String::from_c_string(_r_1.page, "using")] != 1)
+        if (*keywords_builder[String(_r_1.page, "using")] != 1)
             exit (-22);
-        if (*keywords_builder[*String::from_c_string(_r_1.page, "namespace")] != 2)
+        if (*keywords_builder[String(_r_1.page, "namespace")] != 2)
             exit (-23);
-        if (*keywords_builder[*String::from_c_string(_r_1.page, "typedef")] != 3)
+        if (*keywords_builder[String(_r_1.page, "typedef")] != 3)
             exit (-24);
-        if (keywords_builder[*String::from_c_string(_r_1.page, "nix")] != nullptr)
+        if (keywords_builder[String(_r_1.page, "nix")] != nullptr)
             exit (-25);
         HashMap<String, int>& keywords = *HashMap<String, int>::from_hash_map_builder(_r_1, _r_1.page, keywords_builder);
-        if (!keywords.contains(*String::from_c_string(_r_1.page, "using")))
+        if (!keywords.contains(String(_r_1.page, "using")))
             exit (-18);
-        if (!keywords.contains(*String::from_c_string(_r_1.page, "namespace")))
+        if (!keywords.contains(String(_r_1.page, "namespace")))
             exit (-19);
-        if (!keywords.contains(*String::from_c_string(_r_1.page, "typedef")))
+        if (!keywords.contains(String(_r_1.page, "typedef")))
             exit (-20);
-        if (keywords.contains(*String::from_c_string(_r_1.page, "nix")))
+        if (keywords.contains(String(_r_1.page, "nix")))
             exit (-21);
-        if (*keywords[*String::from_c_string(_r_1.page, "using")] != 1)
+        if (*keywords[String(_r_1.page, "using")] != 1)
             exit (-22);
-        if (*keywords[*String::from_c_string(_r_1.page, "namespace")] != 2)
+        if (*keywords[String(_r_1.page, "namespace")] != 2)
             exit (-23);
-        if (*keywords[*String::from_c_string(_r_1.page, "typedef")] != 3)
+        if (*keywords[String(_r_1.page, "typedef")] != 3)
             exit (-24);
-        if (keywords[*String::from_c_string(_r_1.page, "nix")] != nullptr)
+        if (keywords[String(_r_1.page, "nix")] != nullptr)
             exit (-25);
     }
     {
@@ -196,8 +196,8 @@ void test_hash_map(Region& _pr) {
                         sb->append_character(j);
                         sb->append_character(k);
                         sb->append_character(l);
-                        map.add(*sb->to_string(_r_1.page), (size_t)i * j * k * l);
-                        set.add(*sb->to_string(_r_1.page));
+                        map.add(sb->to_string(_r_1.page), (size_t)i * j * k * l);
+                        set.add(sb->to_string(_r_1.page));
                     }
                 }
             }
@@ -215,7 +215,7 @@ void test_hash_map(Region& _pr) {
                         sb->append_character(j);
                         sb->append_character(k);
                         sb->append_character(l);
-                        String& theString = *(sb->to_string(_r_1.page));
+                        String theString = (sb->to_string(_r_1.page));
                          if (!set.contains(theString))
                              exit(-26);
                         if (!map.contains(theString))
@@ -247,9 +247,9 @@ void test_multi_map(Region& _pr) {
                         sb->append_character(j);
                         sb->append_character(k);
                         sb->append_character(l);
-                        map_builder.add(*sb->to_string(_r_1.page), (size_t)i * j * k * l);
-                        map_builder.add(*sb->to_string(_r_1.page), (size_t)i * j * k * l + 1);
-                        map_builder.add(*sb->to_string(_r_1.page), (size_t)i * j * k * l + 2);
+                        map_builder.add(sb->to_string(_r_1.page), (size_t)i * j * k * l);
+                        map_builder.add(sb->to_string(_r_1.page), (size_t)i * j * k * l + 1);
+                        map_builder.add(sb->to_string(_r_1.page), (size_t)i * j * k * l + 2);
                     }
                 }
             }
@@ -268,7 +268,7 @@ void test_multi_map(Region& _pr) {
                         sb->append_character(j);
                         sb->append_character(k);
                         sb->append_character(l);
-                        String& theString = *(sb->to_string(_r_1.page));
+                        String theString = (sb->to_string(_r_1.page));
                         if (!map_builder.contains(theString))
                             exit(-27);
                         if (!map.contains(theString))

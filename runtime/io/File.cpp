@@ -24,7 +24,7 @@ struct FileError : Object {
 };
 
 struct File {
-    static Result<String, FileError> read_to_string(Region& _pr, Page* _rp, Page *_ep, String& path) {
+    static Result<String, FileError> read_to_string(Region& _pr, Page* _rp, Page *_ep, const String& path) {
         Region _r(_pr);
         FILE* file = fopen(path.to_c_string(_r.page), "rb");
         if (!file) {
@@ -37,7 +37,7 @@ struct File {
         fseek(file, 0, SEEK_END);
         long size = ftell(file);
         rewind(file);
-        auto ret = String(_rp, size); 
+        String ret = String(_rp, (size_t)size); 
         char* buffer = ret.get_buffer();
         fread (buffer, 1, size, file);
         fclose (file);
@@ -45,7 +45,7 @@ struct File {
         return Result<String, FileError> { ._tag = Result<String, FileError>::Ok, ._Ok = ret };
     }
 
-    static FileError* write_from_string(Region& _pr, Page *_ep, String& path, String& contents) {
+    static FileError* write_from_string(Region& _pr, Page *_ep, const String& path, const String& contents) {
         Region _r(_pr);
         FILE* file = fopen(path.to_c_string(_r.page), "wb");
         if (!file) {

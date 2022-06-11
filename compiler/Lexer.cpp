@@ -221,9 +221,9 @@ struct Lexer : Object {
             {
                 if (this->token != nullptr)
                     Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
-                auto punctuation_string = String::from_character(Page::get(this)->allocate_exclusive_page(), c);
+                auto punctuation_string = String(Page::get(this)->allocate_exclusive_page(), c);
                 this->read_character();
-                this->token = new (alignof(Token), Page::get(this)->allocate_exclusive_page()) Token(PunctuationToken(*punctuation_string));
+                this->token = new (alignof(Token), Page::get(this)->allocate_exclusive_page()) Token(PunctuationToken(punctuation_string));
                 break;
             }
 
@@ -231,10 +231,10 @@ struct Lexer : Object {
             {
                 if (this->token != nullptr)
                     Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
-                auto punctuation_string = String::from_character(Page::get(this)->allocate_exclusive_page(), c);
+                auto punctuation_string = String(Page::get(this)->allocate_exclusive_page(), c);
                 this->read_character();
                 this->skip_whitespace(true);
-                this->token = new (alignof(Token), Page::get(this)->allocate_exclusive_page()) Token(PunctuationToken(*punctuation_string));
+                this->token = new (alignof(Token), Page::get(this)->allocate_exclusive_page()) Token(PunctuationToken(punctuation_string));
                 break;
             }
 
@@ -278,7 +278,7 @@ struct Lexer : Object {
                 if (name.get_length() == 0)
                     return new (alignof(Token), _rp) Token(InvalidToken());
                 else
-                    return new (alignof(Token), _rp) Token(IdentifierToken(*name.to_string(_rp)));
+                    return new (alignof(Token), _rp) Token(IdentifierToken(name.to_string(_rp)));
             }
             else {
                 char c = *character;
@@ -289,7 +289,7 @@ struct Lexer : Object {
                 }
                 else
                 {
-                    auto token = new (alignof(Token), _rp) Token(IdentifierToken(*name.to_string(_rp)));
+                    auto token = new (alignof(Token), _rp) Token(IdentifierToken(name.to_string(_rp)));
                     return token;
                 }
             }
@@ -304,7 +304,7 @@ struct Lexer : Object {
                 if (name.get_length() == 0)
                     return new (alignof(Token), _rp) Token(InvalidToken());
                 else
-                    return new (alignof(Token), _rp) Token(AttributeToken(*name.to_string(_rp)));
+                    return new (alignof(Token), _rp) Token(AttributeToken(name.to_string(_rp)));
             }
             else {
                 char c = *character;
@@ -315,7 +315,7 @@ struct Lexer : Object {
                 }
                 else
                 {
-                    auto token = new (alignof(Token), _rp) Token(AttributeToken(*name.to_string(_rp)));
+                    auto token = new (alignof(Token), _rp) Token(AttributeToken(name.to_string(_rp)));
                     return token;
                 }
             }
@@ -332,7 +332,7 @@ struct Lexer : Object {
                 if (operation.get_length() == 0)
                     return new (alignof(Token), _rp) Token(InvalidToken());
                 else
-                    return new (alignof(Token), _rp) Token(IdentifierToken(*operation.to_string(_rp)));
+                    return new (alignof(Token), _rp) Token(IdentifierToken(operation.to_string(_rp)));
             }
 
             auto c = *character;
@@ -343,7 +343,7 @@ struct Lexer : Object {
                     break;
 
                 default:{
-                    auto token = new (alignof(Token), _rp) Token(IdentifierToken(*operation.to_string(_rp)));
+                    auto token = new (alignof(Token), _rp) Token(IdentifierToken(operation.to_string(_rp)));
                     return token;
                 }
             }
@@ -363,7 +363,7 @@ struct Lexer : Object {
             {
                 case '\"':
                     read_character();
-                    return new (alignof(Token), _rp) Token(LiteralToken(StringToken(*value.to_string(_rp))));
+                    return new (alignof(Token), _rp) Token(LiteralToken(StringToken(value.to_string(_rp))));
 
                 case '\\': 
                     {
@@ -414,7 +414,7 @@ struct Lexer : Object {
                 case '\'':
                     read_character();
                     {
-                        auto token = new (alignof(Token), _rp) Token(IdentifierToken(*value.to_string(_rp)));
+                        auto token = new (alignof(Token), _rp) Token(IdentifierToken(value.to_string(_rp)));
                         return token;
                     }
                 default:
@@ -437,7 +437,7 @@ struct Lexer : Object {
             {
                 case '`':
                     read_character();
-                    return new (alignof(Token), _rp) Token(LiteralToken(FragmentToken(*value.to_string(_rp))));
+                    return new (alignof(Token), _rp) Token(LiteralToken(FragmentToken(value.to_string(_rp))));
 
                 case '\\': 
                     {
@@ -478,7 +478,7 @@ struct Lexer : Object {
     Token* scan_numeric_literal(Page* _rp, StringBuilder& value) {
         read_character();
         if (character == nullptr)
-            auto token = new (alignof(Token), _rp) Token(LiteralToken(IntegerToken(*value.to_string(_rp))));
+            auto token = new (alignof(Token), _rp) Token(LiteralToken(IntegerToken(value.to_string(_rp))));
 
         auto c = *character;
 
@@ -508,7 +508,7 @@ struct Lexer : Object {
             default:
                 if (value.get_length() == 0)
                     value.append_character('0');
-                return new (alignof(Token), _rp) Token(LiteralToken(IntegerToken(*value.to_string(_rp))));
+                return new (alignof(Token), _rp) Token(LiteralToken(IntegerToken(value.to_string(_rp))));
         }
     }
 
@@ -519,7 +519,7 @@ struct Lexer : Object {
         while (true) {
             read_character();
             if (character == nullptr)
-                return new (alignof(Token), _rp) Token(LiteralToken(IntegerToken(*value.to_string(_rp))));
+                return new (alignof(Token), _rp) Token(LiteralToken(IntegerToken(value.to_string(_rp))));
 
             auto c = *character;
 
@@ -539,7 +539,7 @@ struct Lexer : Object {
                     return scan_exponent(_rp, value);
 
                 default:
-                    return new (alignof(Token), _rp) Token(LiteralToken(IntegerToken(*value.to_string(_rp))));
+                    return new (alignof(Token), _rp) Token(LiteralToken(IntegerToken(value.to_string(_rp))));
             }
         }
     }
@@ -549,7 +549,7 @@ struct Lexer : Object {
             read_character();
 
             if (character == nullptr)
-                return new (alignof(Token), _rp) Token(LiteralToken(FloatingPointToken(*value.to_string(_rp))));
+                return new (alignof(Token), _rp) Token(LiteralToken(FloatingPointToken(value.to_string(_rp))));
 
             auto c = *character;
 
@@ -566,7 +566,7 @@ struct Lexer : Object {
                     return scan_exponent(_rp, value);
 
                 default:
-                    return new (alignof(Token), _rp) Token(LiteralToken(FloatingPointToken(*value.to_string(_rp))));
+                    return new (alignof(Token), _rp) Token(LiteralToken(FloatingPointToken(value.to_string(_rp))));
             }
         }
     }
@@ -575,7 +575,7 @@ struct Lexer : Object {
         while (true) {
             read_character();
             if (character == nullptr)
-                return new (alignof(Token), _rp) Token(LiteralToken(FloatingPointToken(*value.to_string(_rp))));
+                return new (alignof(Token), _rp) Token(LiteralToken(FloatingPointToken(value.to_string(_rp))));
 
             auto c = *character;
 
@@ -584,7 +584,7 @@ struct Lexer : Object {
                 continue;
             }
 
-            return new (alignof(Token), _rp) Token(LiteralToken(FloatingPointToken(*value.to_string(_rp))));
+            return new (alignof(Token), _rp) Token(LiteralToken(FloatingPointToken(value.to_string(_rp))));
         }
     }
 
@@ -595,7 +595,7 @@ struct Lexer : Object {
             read_character();
 
             if (character == nullptr)
-                return new (alignof(Token), _rp) Token(LiteralToken(HexToken(*value.to_string(_rp))));
+                return new (alignof(Token), _rp) Token(LiteralToken(HexToken(value.to_string(_rp))));
 
             auto c = *character;
 
@@ -604,7 +604,7 @@ struct Lexer : Object {
                 continue;
             }
 
-            return new (alignof(Token), _rp) Token(LiteralToken(HexToken(*value.to_string(_rp))));
+            return new (alignof(Token), _rp) Token(LiteralToken(HexToken(value.to_string(_rp))));
         }
     }
 
@@ -749,7 +749,7 @@ struct Lexer : Object {
         }
     }
 
-    bool parse_keyword(Region& _pr, Page* _rp, String& fixed_string) {
+    bool parse_keyword(Region& _pr, Page* _rp, const String& fixed_string) {
         Region _r = Region::create(_pr);
         if (token->tag == Token::Empty)
             advance(_r);
@@ -805,7 +805,7 @@ struct Lexer : Object {
         }
     }
 
-    bool parse_punctuation(Region& _pr, Page* _rp, String& fixed_string) {
+    bool parse_punctuation(Region& _pr, Page* _rp, const String& fixed_string) {
         Region _r = Region::create(_pr);
         if (token->tag == Token::Empty)
             advance(_r);

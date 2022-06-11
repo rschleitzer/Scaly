@@ -28,7 +28,7 @@ struct String : Object {
         memcpy(data, length_array, counter + 1);
     }
 
-    static String* create(Page* _rp, const char* data, size_t length) {
+    String(Page* _rp, const char* other, size_t length) {
         char length_array[PACKED_SIZE];
         auto rest = length;
 
@@ -41,17 +41,12 @@ struct String : Object {
 
         length_array[counter] = (char)rest;
         auto overall_length = counter + 1 + length;
-        auto pointer = _rp->allocate_raw(overall_length, 1);
-        memcpy(pointer, length_array, counter + 1);
-        memcpy((char*)pointer + counter + 1, data, length);
-
-        return new (alignof(String), _rp) String((char*)pointer);
+        data = (char*)_rp->allocate_raw(overall_length, 1);
+        memcpy((void*)data, length_array, counter + 1);
+        memcpy((void*)(data + counter + 1), other, length);
     }
 
-    static String* from_c_string(Page* _rp, const char* c_string) {
-        auto length = strlen(c_string);
-        return String::create(_rp, c_string, length);
-    }
+    String(Page* _rp, const char* c_string) : String(_rp, c_string, strlen(c_string)) {}
 
     String* copy(Page* _rp) {
         size_t length = 0;
@@ -77,11 +72,11 @@ struct String : Object {
         return new (alignof(String), _rp) String((char*)pointer);
     }
 
-    static String* from_character(Page* _rp, char character) {
-        return String::create(_rp, (const char*)&character, 1);
+    String(Page* _rp, char character) {
+        String(_rp, (const char*)&character, 1);
     }
 
-    const char* to_c_string(Page* _rp) {
+    const char* to_c_string(Page* _rp) const {
         size_t length = 0;
         auto bit_count = 0;
         size_t index = 0;
@@ -125,15 +120,15 @@ struct String : Object {
         return this->data + index + 1;
     }
 
-    String* append_character(Page* _rp, char c) {
-        auto s = String::create(_rp, this->data, this->get_length() + 1);
-        auto data = s->data;
+    String append_character(Page* _rp, char c) {
+        auto s = String(_rp, this->data, this->get_length() + 1);
+        auto data = s.data;
         auto char_pointer = data + this->get_length() - 1;
         *char_pointer = c;
         return s;
     }
 
-    size_t get_length() {
+    size_t get_length() const {
         size_t result = 0;
         auto bit_count = 0;
         auto index = 0;
@@ -154,7 +149,7 @@ struct String : Object {
         return result;
     }
 
-    bool equals(String& other) {
+    bool equals(String other) const {
         size_t length = 0;
         auto bit_count = 0;
         auto index = 0;
@@ -180,7 +175,7 @@ struct String : Object {
         return memcmp(this->data + index + 1, other.data + index + 1, length) == 0;
     }
 
-    size_t hash() {
+    size_t hash() const {
         // std::string s(this->data, this->get_length());
         // return std::hash<std::string>{}(s);
         size_t length = 0;

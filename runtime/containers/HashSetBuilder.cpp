@@ -142,7 +142,7 @@ struct HashSetBuilder : Object {
         return true;
     }
 
-    bool contains(T& value) {
+    bool contains(const T& value) {
         if (this->slots == nullptr)
             return false;
 

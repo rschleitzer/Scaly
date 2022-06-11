@@ -133,12 +133,12 @@ struct ModelError : Object {
     };
 };
 
-Result<Vector<DeclarationSyntax>*, ParserError> parse_program(Region& _pr, Page* _rp, Page* _ep, String& program) {
+Result<Vector<DeclarationSyntax>*, ParserError> parse_program(Region& _pr, Page* _rp, Page* _ep, const String& program) {
     auto _r = Region::create(_pr);
     Array<DeclarationSyntax>& declarations = *Array<DeclarationSyntax>::create(_r.page);
     
     // Parse the scaly module inclusion
-    Parser& parser_module = *new(alignof(Parser), _r.page) Parser(*String::from_c_string(_r.page, "module scaly"));
+    Parser& parser_module = *new(alignof(Parser), _r.page) Parser(String(_r.page, "module scaly"));
     auto module_syntax_result = parser_module.parse_module(_r, _rp, _ep);
     if (module_syntax_result._tag == Result<ModuleSyntax*, ParserError>::Error)
         return Result<Vector<DeclarationSyntax>*, ParserError> { ._tag = Result<Vector<DeclarationSyntax>*, ParserError>::Error, ._Error = module_syntax_result._Error };
@@ -161,10 +161,10 @@ Result<Vector<DeclarationSyntax>*, ParserError> parse_program(Region& _pr, Page*
     }
 
     // Parse the main function stub
-    Parser& parser_main = *new(alignof(Parser), _r.page) Parser(*String::from_c_string(_r.page, "function main('argument count': int, 'argument values': pointer[pointer[byte]]) returns int"));
+    Parser& parser_main = *new(alignof(Parser), _r.page) Parser(String(_r.page, "function main('argument count': int, 'argument values': pointer[pointer[byte]]) returns int"));
     auto start = parser_main.lexer.previous_position;
 
-    auto success_function = parser_main.lexer.parse_keyword(_r, _r.page, *String::from_c_string(_r.page, "function"));
+    auto success_function = parser_main.lexer.parse_keyword(_r, _r.page, String(_r.page, "function"));
     if (!success_function)
         return Result<Vector<DeclarationSyntax>*, ParserError> { ._tag = Result<Vector<DeclarationSyntax>*, ParserError>::Ok, ._Ok = nullptr };
 
@@ -307,7 +307,7 @@ Result<Model, ModelError> build_model(Region& _pr, Page* _rp, Page* _ep, Vector<
     return Result<Model, ModelError> { ._tag = Result<Model, ModelError>::Ok, ._Ok = Model(*MultiMap<String, Function>::from_multi_map_builder(_r, _rp, functions_builder)) };
 }
 
-Result<Model, ModelError> build_program_model(Region& _pr, Page* _rp, Page* _ep, String& program) {
+Result<Model, ModelError> build_program_model(Region& _pr, Page* _rp, Page* _ep, const String& program) {
     auto _r = Region::create(_pr);
 
     auto declarations_result = parse_program(_r, _r.page, _ep, program);
