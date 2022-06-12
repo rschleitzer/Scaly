@@ -73,7 +73,9 @@ struct String : Object {
     }
 
     String(Page* _rp, char character) {
-        String(_rp, (const char*)&character, 1);
+        data = (char*)_rp->allocate_raw(2, 1);
+        data[0] = 1;
+        data[1] = character;
     }
 
     const char* to_c_string(Page* _rp) const {
