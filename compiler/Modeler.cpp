@@ -5,10 +5,9 @@ namespace model {
 using namespace scaly::io;
 
 struct Span : Object {
-    size_t file_id;
     size_t start;
     size_t end;
-    Span(size_t file_id, size_t start, size_t end) : file_id(file_id), start(start), end(end) {}
+    Span(size_t start, size_t end) : start(start), end(end) {}
 };
 
 struct Type {
@@ -254,11 +253,11 @@ Result<Function, ModelError> handle_function(Region& _pr, Page* _rp, Page* _ep, 
         auto parameterset_result = handle_parameterset(_r, _rp, _ep, parameterSetSyntax);
     }
 
-    return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(0, function_syntax.start, function_syntax.end), *function_syntax.name.copy(_rp), input, output, operation) };
+    return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(function_syntax.start, function_syntax.end), *function_syntax.name.copy(_rp), input, output, operation) };
 }
 
 Result<Concept, ModelError> handle_module(Region& _pr, Page* _rp, Page* _ep, ModuleSyntax& module_syntax) {
-    return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(0, module_syntax.start, module_syntax.end))))  };
+    return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(module_syntax.start, module_syntax.end))))  };
 }
 
 Result<Model, ModelError> build_model(Region& _pr, Page* _rp, Page* _ep, Vector<DeclarationSyntax>& declarations) {
