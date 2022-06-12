@@ -6,7 +6,6 @@ using namespace scaly::containers;
 
 template<class T>
 struct HashSet : Object {
-    size_t length;
     Vector<Vector<T>>* slots;
 
     static HashSet<T>* create(Page* _rp) {
