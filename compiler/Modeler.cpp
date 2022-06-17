@@ -189,6 +189,21 @@ Result<Vector<DeclarationSyntax>*, ParserError> parse_program(Region& _pr, Page*
 
     auto end = parser_main.lexer.position;
 
+    // Parse the uses of the program and put them into the function implementation
+    Array<UseSyntax>& uses = *Array<UseSyntax>::create(_r.page);
+    while(true) {
+        auto node_result = parser.parse_use(_r, _rp, _ep);
+        if ((node_result._tag == Result<UseSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
+            return Result<Vector<DeclarationSyntax>*, ParserError> { ._tag = Result<Vector<DeclarationSyntax>*, ParserError>::Error, ._Error = node_result._Error };
+        if (node_result._tag == Result<UseSyntax, ParserError>::Ok) {
+            auto node = node_result._Ok;
+            uses.add(node);
+        } else {
+            if ((uses.length == 0) && (node_result._tag == Result<UseSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
+            return Result<Vector<DeclarationSyntax>*, ParserError> { ._tag = Result<Vector<DeclarationSyntax>*, ParserError>::Error, ._Error = node_result._Error };
+            break;
+        }
+    }
     // Parse the statements of the program and put them into the function implementation
     Array<StatementSyntax>& statements = *Array<StatementSyntax>::create(_r.page);
     while(true) {
@@ -204,7 +219,7 @@ Result<Vector<DeclarationSyntax>*, ParserError> parse_program(Region& _pr, Page*
             break;
         }
     }
-    auto block = new(alignof(BlockSyntax), _rp) BlockSyntax(start, end, Vector<StatementSyntax>::from_array(_rp, statements));
+    auto block = new(alignof(BlockSyntax), _rp) BlockSyntax(start, end, Vector<UseSyntax>::from_array(_rp, uses), Vector<StatementSyntax>::from_array(_rp, statements));
     auto block_expression = new (alignof(ExpressionSyntax), _rp) ExpressionSyntax(BlockSyntax(*block));
     auto operand = new(alignof(OperandSyntax), _rp) OperandSyntax(start, end, *block_expression, nullptr);
     Array<OperandSyntax>& operands_array = *Array<OperandSyntax>::create(_r.page);;
@@ -286,8 +301,6 @@ Result<Model, ModelError> build_model(Region& _pr, Page* _rp, Page* _ep, Vector<
             case DeclarationSyntax::Procedure:
             break;
             case DeclarationSyntax::Operator:
-            break;
-            case DeclarationSyntax::Use:
             break;
             case DeclarationSyntax::Implement:
             break;

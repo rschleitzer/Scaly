@@ -247,9 +247,10 @@ struct IfSyntax : Object {
 };
 
 struct BlockSyntax : Object {
-    BlockSyntax(size_t start, size_t end, Vector<StatementSyntax>* statements) : start(start), end(end), statements(statements) {}
+    BlockSyntax(size_t start, size_t end, Vector<UseSyntax>* uses, Vector<StatementSyntax>* statements) : start(start), end(end), uses(uses), statements(statements) {}
     size_t start;
     size_t end;
+    Vector<UseSyntax>* uses;
     Vector<StatementSyntax>* statements;
 };
 
@@ -693,21 +694,23 @@ struct MethodSyntax : Object {
 };
 
 struct TraitSyntax : Object {
-    TraitSyntax(size_t start, size_t end, NameSyntax name, ExtendsSyntax* extension, Vector<AttributeSyntax>* attributes, Vector<MethodSyntax>* functions) : start(start), end(end), name(name), extension(extension), attributes(attributes), functions(functions) {}
+    TraitSyntax(size_t start, size_t end, NameSyntax name, ExtendsSyntax* extension, Vector<AttributeSyntax>* attributes, Vector<UseSyntax>* uses, Vector<MethodSyntax>* functions) : start(start), end(end), name(name), extension(extension), attributes(attributes), uses(uses), functions(functions) {}
     size_t start;
     size_t end;
     NameSyntax name;
     ExtendsSyntax* extension;
     Vector<AttributeSyntax>* attributes;
+    Vector<UseSyntax>* uses;
     Vector<MethodSyntax>* functions;
 };
 
 struct ImplementSyntax : Object {
-    ImplementSyntax(size_t start, size_t end, TypeSyntax type, Vector<AttributeSyntax>* attributes, Vector<MethodSyntax>* methods) : start(start), end(end), type(type), attributes(attributes), methods(methods) {}
+    ImplementSyntax(size_t start, size_t end, TypeSyntax type, Vector<AttributeSyntax>* attributes, Vector<UseSyntax>* uses, Vector<MethodSyntax>* methods) : start(start), end(end), type(type), attributes(attributes), uses(uses), methods(methods) {}
     size_t start;
     size_t end;
     TypeSyntax type;
     Vector<AttributeSyntax>* attributes;
+    Vector<UseSyntax>* uses;
     Vector<MethodSyntax>* methods;
 };
 
@@ -811,9 +814,10 @@ struct MemberSyntax : Object {
 };
 
 struct BodySyntax : Object {
-    BodySyntax(size_t start, size_t end, Vector<DeclarationSyntax>* declarations) : start(start), end(end), declarations(declarations) {}
+    BodySyntax(size_t start, size_t end, Vector<UseSyntax>* uses, Vector<DeclarationSyntax>* declarations) : start(start), end(end), uses(uses), declarations(declarations) {}
     size_t start;
     size_t end;
+    Vector<UseSyntax>* uses;
     Vector<DeclarationSyntax>* declarations;
 };
 
@@ -987,7 +991,6 @@ struct DeclarationSyntax : Object {
     DeclarationSyntax(FunctionSyntax _FunctionSyntax) : _tag(Function) { _Function = _FunctionSyntax; }
     DeclarationSyntax(ProcedureSyntax _ProcedureSyntax) : _tag(Procedure) { _Procedure = _ProcedureSyntax; }
     DeclarationSyntax(OperatorSyntax _OperatorSyntax) : _tag(Operator) { _Operator = _OperatorSyntax; }
-    DeclarationSyntax(UseSyntax _UseSyntax) : _tag(Use) { _Use = _UseSyntax; }
     DeclarationSyntax(ImplementSyntax _ImplementSyntax) : _tag(Implement) { _Implement = _ImplementSyntax; }
     DeclarationSyntax(TraitSyntax _TraitSyntax) : _tag(Trait) { _Trait = _TraitSyntax; }
     DeclarationSyntax(MacroSyntax _MacroSyntax) : _tag(Macro) { _Macro = _MacroSyntax; }
@@ -998,7 +1001,6 @@ struct DeclarationSyntax : Object {
         Function,
         Procedure,
         Operator,
-        Use,
         Implement,
         Trait,
         Macro,
@@ -1010,7 +1012,6 @@ struct DeclarationSyntax : Object {
         FunctionSyntax _Function;
         ProcedureSyntax _Procedure;
         OperatorSyntax _Operator;
-        UseSyntax _Use;
         ImplementSyntax _Implement;
         TraitSyntax _Trait;
         MacroSyntax _Macro;
@@ -1019,9 +1020,10 @@ struct DeclarationSyntax : Object {
 };
 
 struct FileSyntax : Object {
-    FileSyntax(size_t start, size_t end, Vector<DeclarationSyntax>* declarations, Vector<StatementSyntax>* statements) : start(start), end(end), declarations(declarations), statements(statements) {}
+    FileSyntax(size_t start, size_t end, Vector<UseSyntax>* uses, Vector<DeclarationSyntax>* declarations, Vector<StatementSyntax>* statements) : start(start), end(end), uses(uses), declarations(declarations), statements(statements) {}
     size_t start;
     size_t end;
+    Vector<UseSyntax>* uses;
     Vector<DeclarationSyntax>* declarations;
     Vector<StatementSyntax>* statements;
 };
@@ -1087,6 +1089,13 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
+        auto uses_result = this->parse_use_list(_r, _rp, _ep);
+        if (uses_result._tag == Result<Vector<UseSyntax>, ParserError>::Error)
+        {
+        }
+
+        auto uses = uses_result._tag == Result<Vector<UseSyntax>, ParserError>::Error ? nullptr : uses_result._Ok;
+
         auto declarations_result = this->parse_declaration_list(_r, _rp, _ep);
         if (declarations_result._tag == Result<Vector<DeclarationSyntax>, ParserError>::Error)
         {
@@ -1103,7 +1112,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = FileSyntax(start, end, declarations, statements);
+        auto ret = FileSyntax(start, end, uses, declarations, statements);
 
         return Result<FileSyntax, ParserError> { ._tag = Result<FileSyntax, ParserError>::Ok, ._Ok = ret };
     }
@@ -1215,22 +1224,6 @@ struct Parser : Object {
                 auto node = node_result._Ok;
                 return Result<DeclarationSyntax, ParserError> { ._tag = Result<DeclarationSyntax, ParserError>::Ok, ._Ok = 
                     DeclarationSyntax(OperatorSyntax(node))
-                };
-            }
-        }
-        {
-            auto _r_1 = Region::create(_r);
-            auto node_result = this->parse_use(_r_1, _rp, _ep);
-            if (node_result._tag == Result<UseSyntax, ParserError>::Error)
-            {
-                if (node_result._Error._tag == ParserError::InvalidSyntax)
-                    return Result<DeclarationSyntax, ParserError> { ._tag = Result<DeclarationSyntax, ParserError>::Error, ._Error = node_result._Error };
-            }
-            else
-            {
-                auto node = node_result._Ok;
-                return Result<DeclarationSyntax, ParserError> { ._tag = Result<DeclarationSyntax, ParserError>::Ok, ._Ok = 
-                    DeclarationSyntax(UseSyntax(node))
                 };
             }
         }
@@ -2049,6 +2042,13 @@ struct Parser : Object {
                 return Result<BodySyntax, ParserError> { ._tag = Result<BodySyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
+        auto uses_result = this->parse_use_list(_r, _rp, _ep);
+        if (uses_result._tag == Result<Vector<UseSyntax>, ParserError>::Error)
+        {
+        }
+
+        auto uses = uses_result._tag == Result<Vector<UseSyntax>, ParserError>::Error ? nullptr : uses_result._Ok;
+
         auto declarations_result = this->parse_declaration_list(_r, _rp, _ep);
         if (declarations_result._tag == Result<Vector<DeclarationSyntax>, ParserError>::Error)
         {
@@ -2056,17 +2056,17 @@ struct Parser : Object {
 
         auto declarations = declarations_result._tag == Result<Vector<DeclarationSyntax>, ParserError>::Error ? nullptr : declarations_result._Ok;
 
-        auto success_right_curly_3 = this->lexer.parse_punctuation(_r, _rp, String(_r.page, "}"));
-        if (!success_right_curly_3) {
+        auto success_right_curly_4 = this->lexer.parse_punctuation(_r, _rp, String(_r.page, "}"));
+        if (!success_right_curly_4) {
             return Result<BodySyntax, ParserError> { ._tag = Result<BodySyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };        }
 
-        auto success_colon_4 = this->lexer.parse_colon(_r, _rp);
-        if (!success_colon_4) {
+        auto success_colon_5 = this->lexer.parse_colon(_r, _rp);
+        if (!success_colon_5) {
         }
 
         auto end = this->lexer.position;
 
-        auto ret = BodySyntax(start, end, declarations);
+        auto ret = BodySyntax(start, end, uses, declarations);
 
         return Result<BodySyntax, ParserError> { ._tag = Result<BodySyntax, ParserError>::Ok, ._Ok = ret };
     }
@@ -2482,6 +2482,34 @@ struct Parser : Object {
         return Result<ThrowsSyntax, ParserError> { ._tag = Result<ThrowsSyntax, ParserError>::Ok, ._Ok = ret };
     }
 
+    Result<Vector<UseSyntax>*, ParserError> parse_use_list(Region& _pr, Page* _rp, Page* _ep) {
+        auto _r = Region::create(_pr);
+        {
+            auto _r_1 = Region::create(_r);
+            Array<UseSyntax>* array = nullptr;
+            while(true) {
+                auto node_result = this->parse_use(_r_1, _rp, _ep);
+                if ((node_result._tag == Result<UseSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
+                    return Result<Vector<UseSyntax>*, ParserError> { ._tag = Result<Vector<UseSyntax>*, ParserError>::Error, ._Error = node_result._Error };
+                if (node_result._tag == Result<UseSyntax, ParserError>::Ok) {
+                    auto node = node_result._Ok;
+                    if (array == nullptr)
+                        array = Array<UseSyntax>::create(_r_1.page);
+                    array->add(node);
+                } else {
+                    if ((array == nullptr) && (node_result._tag == Result<UseSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
+                        return Result<Vector<UseSyntax>*, ParserError> { ._tag = Result<Vector<UseSyntax>*, ParserError>::Error, ._Error = node_result._Error };
+                    break;
+                }
+            }
+
+            if (array == nullptr)
+                return Result<Vector<UseSyntax>*, ParserError> { ._tag = Result<Vector<UseSyntax>*, ParserError>::Ok, ._Ok = nullptr };
+            
+            return Result<Vector<UseSyntax>*, ParserError> { ._tag = Result<Vector<UseSyntax>*, ParserError>::Ok, ._Ok = Vector<UseSyntax>::from_array(_rp, *array) };
+        }
+    }
+
     Result<UseSyntax, ParserError> parse_use(Region& _pr, Page* _rp, Page* _ep) {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
@@ -2544,6 +2572,13 @@ struct Parser : Object {
         if (!success_left_curly_5) {
             return Result<ImplementSyntax, ParserError> { ._tag = Result<ImplementSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };        }
 
+        auto uses_result = this->parse_use_list(_r, _rp, _ep);
+        if (uses_result._tag == Result<Vector<UseSyntax>, ParserError>::Error)
+        {
+        }
+
+        auto uses = uses_result._tag == Result<Vector<UseSyntax>, ParserError>::Error ? nullptr : uses_result._Ok;
+
         auto methods_result = this->parse_method_list(_r, _rp, _ep);
         if (methods_result._tag == Result<Vector<MethodSyntax>, ParserError>::Error)
         {
@@ -2551,17 +2586,17 @@ struct Parser : Object {
 
         auto methods = methods_result._tag == Result<Vector<MethodSyntax>, ParserError>::Error ? nullptr : methods_result._Ok;
 
-        auto success_right_curly_7 = this->lexer.parse_punctuation(_r, _rp, String(_r.page, "}"));
-        if (!success_right_curly_7) {
+        auto success_right_curly_8 = this->lexer.parse_punctuation(_r, _rp, String(_r.page, "}"));
+        if (!success_right_curly_8) {
             return Result<ImplementSyntax, ParserError> { ._tag = Result<ImplementSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };        }
 
-        auto success_colon_8 = this->lexer.parse_colon(_r, _rp);
-        if (!success_colon_8) {
+        auto success_colon_9 = this->lexer.parse_colon(_r, _rp);
+        if (!success_colon_9) {
         }
 
         auto end = this->lexer.position;
 
-        auto ret = ImplementSyntax(start, end, type, attributes, methods);
+        auto ret = ImplementSyntax(start, end, type, attributes, uses, methods);
 
         return Result<ImplementSyntax, ParserError> { ._tag = Result<ImplementSyntax, ParserError>::Ok, ._Ok = ret };
     }
@@ -2602,6 +2637,13 @@ struct Parser : Object {
         if (!success_left_curly_5) {
             return Result<TraitSyntax, ParserError> { ._tag = Result<TraitSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };        }
 
+        auto uses_result = this->parse_use_list(_r, _rp, _ep);
+        if (uses_result._tag == Result<Vector<UseSyntax>, ParserError>::Error)
+        {
+        }
+
+        auto uses = uses_result._tag == Result<Vector<UseSyntax>, ParserError>::Error ? nullptr : uses_result._Ok;
+
         auto functions_result = this->parse_method_list(_r, _rp, _ep);
         if (functions_result._tag == Result<Vector<MethodSyntax>, ParserError>::Error)
         {
@@ -2609,17 +2651,17 @@ struct Parser : Object {
 
         auto functions = functions_result._tag == Result<Vector<MethodSyntax>, ParserError>::Error ? nullptr : functions_result._Ok;
 
-        auto success_right_curly_7 = this->lexer.parse_punctuation(_r, _rp, String(_r.page, "}"));
-        if (!success_right_curly_7) {
+        auto success_right_curly_8 = this->lexer.parse_punctuation(_r, _rp, String(_r.page, "}"));
+        if (!success_right_curly_8) {
             return Result<TraitSyntax, ParserError> { ._tag = Result<TraitSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };        }
 
-        auto success_colon_8 = this->lexer.parse_colon(_r, _rp);
-        if (!success_colon_8) {
+        auto success_colon_9 = this->lexer.parse_colon(_r, _rp);
+        if (!success_colon_9) {
         }
 
         auto end = this->lexer.position;
 
-        auto ret = TraitSyntax(start, end, name, extension, attributes, functions);
+        auto ret = TraitSyntax(start, end, name, extension, attributes, uses, functions);
 
         return Result<TraitSyntax, ParserError> { ._tag = Result<TraitSyntax, ParserError>::Ok, ._Ok = ret };
     }
@@ -4589,6 +4631,13 @@ struct Parser : Object {
                 return Result<BlockSyntax, ParserError> { ._tag = Result<BlockSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
+        auto uses_result = this->parse_use_list(_r, _rp, _ep);
+        if (uses_result._tag == Result<Vector<UseSyntax>, ParserError>::Error)
+        {
+        }
+
+        auto uses = uses_result._tag == Result<Vector<UseSyntax>, ParserError>::Error ? nullptr : uses_result._Ok;
+
         auto statements_result = this->parse_statement_list(_r, _rp, _ep);
         if (statements_result._tag == Result<Vector<StatementSyntax>, ParserError>::Error)
         {
@@ -4596,13 +4645,13 @@ struct Parser : Object {
 
         auto statements = statements_result._tag == Result<Vector<StatementSyntax>, ParserError>::Error ? nullptr : statements_result._Ok;
 
-        auto success_right_curly_3 = this->lexer.parse_punctuation(_r, _rp, String(_r.page, "}"));
-        if (!success_right_curly_3) {
+        auto success_right_curly_4 = this->lexer.parse_punctuation(_r, _rp, String(_r.page, "}"));
+        if (!success_right_curly_4) {
             return Result<BlockSyntax, ParserError> { ._tag = Result<BlockSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };        }
 
         auto end = this->lexer.position;
 
-        auto ret = BlockSyntax(start, end, statements);
+        auto ret = BlockSyntax(start, end, uses, statements);
 
         return Result<BlockSyntax, ParserError> { ._tag = Result<BlockSyntax, ParserError>::Ok, ._Ok = ret };
     }
