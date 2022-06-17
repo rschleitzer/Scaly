@@ -8,26 +8,6 @@ const size_t PACKED_SIZE = sizeof(size_t) * 8 / 7;
 struct String : Object {
     char* data;
 
-    String(char* data)
-    : data(data) {}
-
-    String(Page* _rp, size_t length) {
-        char length_array[PACKED_SIZE];
-        auto rest = length;
-
-        size_t counter = 0;
-        while (rest >= 0x80) {
-            length_array[counter] = (char)rest | 0x80;
-            rest >>= 7;
-            counter += 1;
-        }
-
-        length_array[counter] = (char)rest;
-        auto overall_length = counter + 1 + length;
-        data = (char*)_rp->allocate_raw(overall_length, 1);
-        memcpy(data, length_array, counter + 1);
-    }
-
     String(Page* _rp, const char* other, size_t length) {
         char length_array[PACKED_SIZE];
         auto rest = length;
@@ -41,14 +21,14 @@ struct String : Object {
 
         length_array[counter] = (char)rest;
         auto overall_length = counter + 1 + length;
-        data = (char*)_rp->allocate_raw(overall_length, 1);
-        memcpy((void*)data, length_array, counter + 1);
-        memcpy((void*)(data + counter + 1), other, length);
+        this->data = (char*)_rp->allocate_raw(overall_length, 1);
+        memcpy(this->data, length_array, counter + 1);
+        memcpy((void*)(this->data + counter + 1), other, length);
     }
 
     String(Page* _rp, const char* c_string) : String(_rp, c_string, strlen(c_string)) {}
 
-    String* copy(Page* _rp) {
+    String(Page* _rp, const String& other) {
         size_t length = 0;
         auto bit_count = 0;
         auto index = 0;
@@ -58,7 +38,7 @@ struct String : Object {
                 exit(12);
             }
 
-            char byte = *(this->data + index);
+            char byte = *(other.data + index);
             length |= ((size_t)(byte & 0x7F)) << bit_count;
             if ((byte & 0x80) == 0)
                 break;
@@ -67,15 +47,14 @@ struct String : Object {
             index += 1;
         }
         auto overall_length = index + 1 + length;
-        auto pointer = _rp->allocate_raw(overall_length, 1);
-        memcpy(pointer, this->data, overall_length);
-        return new (alignof(String), _rp) String((char*)pointer);
+        this->data = (char*)_rp->allocate_raw(overall_length, 1);
+        memcpy(this->data, other.data, overall_length);
     }
 
     String(Page* _rp, char character) {
-        data = (char*)_rp->allocate_raw(2, 1);
-        data[0] = 1;
-        data[1] = character;
+        this->data = (char*)_rp->allocate_raw(2, 1);
+        this->data[0] = 1;
+        this->data[1] = character;
     }
 
     const char* to_c_string(Page* _rp) const {
@@ -120,14 +99,6 @@ struct String : Object {
         }
 
         return this->data + index + 1;
-    }
-
-    String append_character(Page* _rp, char c) {
-        auto s = String(_rp, this->data, this->get_length() + 1);
-        auto data = s.data;
-        auto char_pointer = data + this->get_length() - 1;
-        *char_pointer = c;
-        return s;
     }
 
     size_t get_length() const {

@@ -253,7 +253,7 @@ Result<Function, ModelError> handle_function(Region& _pr, Page* _rp, Page* _ep, 
         auto parameterset_result = handle_parameterset(_r, _rp, _ep, parameterSetSyntax);
     }
 
-    return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(function_syntax.start, function_syntax.end), *function_syntax.name.copy(_rp), input, output, operation) };
+    return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(function_syntax.start, function_syntax.end), String(_rp, function_syntax.name), input, output, operation) };
 }
 
 Result<Concept, ModelError> handle_module(Region& _pr, Page* _rp, Page* _ep, ModuleSyntax& module_syntax) {

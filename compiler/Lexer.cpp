@@ -779,7 +779,7 @@ struct Lexer : Object {
             {
                 if (keywords.contains(token->identifierToken.name))
                     return nullptr;
-                auto ret = token->identifierToken.name.copy(_rp);
+                auto ret = new(alignof(String), _rp) String(_rp, token->identifierToken.name);
                 empty();
                 return ret;
             }
@@ -796,7 +796,7 @@ struct Lexer : Object {
         switch (token->tag) {
             case Token::Attribute:
             {
-                auto ret = token->attributeToken.name.copy(_rp);
+                auto ret = new(alignof(String), _rp) String(_rp, token->attributeToken.name);
                 empty();
                 return ret;
             }
@@ -836,28 +836,28 @@ struct Lexer : Object {
                 {
                     case LiteralToken::String:
                     {
-                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken(StringToken(*token->literalToken.stringToken.value.copy(_rp)));
+                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken(StringToken(String(_rp, token->literalToken.stringToken.value)));
                         empty();
                         return ret;
                     }
 
                     case LiteralToken::Integer:
                     {
-                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken(IntegerToken(*token->literalToken.integerToken.value.copy(_rp)));
+                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken(IntegerToken(String(_rp, token->literalToken.integerToken.value)));
                         empty();
                         return ret;
                     }
 
                     case LiteralToken::FloatingPoint:
                     {
-                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken(FloatingPointToken(*token->literalToken.floatingPointToken.value.copy(_rp)));
+                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken(FloatingPointToken(String(_rp, token->literalToken.floatingPointToken.value)));
                         empty();
                         return ret;
                     }
 
                     case LiteralToken::Hex:
                     {
-                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken(HexToken(*token->literalToken.hexToken.value.copy(_rp)));
+                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken(HexToken(String(_rp, token->literalToken.hexToken.value)));
                         empty();
                         return ret;
                     }
@@ -871,7 +871,7 @@ struct Lexer : Object {
 
                     case LiteralToken::Fragment:
                     {
-                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken(FragmentToken(*token->literalToken.fragmentToken.value.copy(_rp)));
+                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken(FragmentToken(String(_rp, token->literalToken.fragmentToken.value)));
                         empty();
                         return ret;
                     }
