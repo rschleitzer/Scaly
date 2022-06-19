@@ -22,12 +22,12 @@ struct MultiMap : Object {
                 array.add(
                     KeyValuePair<K, Vector<V>> {
                         .key = item->value.key,
-                        .value = *Vector<V>::from_array(_rp, *item->value.value),
+                        .value = Vector<V>(_rp, *item->value.value),
                     }                
                 );
             }
             if (array.length > 0)
-                this->slots->set(i, *Vector<KeyValuePair<K, Vector<V>>>::from_array(_rp, array));
+                this->slots->set(i, Vector<KeyValuePair<K, Vector<V>>>(_rp, array));
         }
     }
 

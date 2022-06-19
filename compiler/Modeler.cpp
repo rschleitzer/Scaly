@@ -219,12 +219,14 @@ Result<Vector<DeclarationSyntax>*, ParserError> parse_program(Region& _pr, Page*
             break;
         }
     }
-    auto block = new(alignof(BlockSyntax), _rp) BlockSyntax(start, end, Vector<UseSyntax>::from_array(_rp, uses), Vector<StatementSyntax>::from_array(_rp, statements));
+    auto block = new(alignof(BlockSyntax), _rp) BlockSyntax(start, end, 
+        new(alignof(Vector<UseSyntax>), _rp) Vector<UseSyntax>(_rp, uses), 
+        new(alignof(Vector<StatementSyntax>), _rp) Vector<StatementSyntax>(_rp, statements));
     auto block_expression = new (alignof(ExpressionSyntax), _rp) ExpressionSyntax(BlockSyntax(*block));
     auto operand = new(alignof(OperandSyntax), _rp) OperandSyntax(start, end, *block_expression, nullptr);
     Array<OperandSyntax>& operands_array = *new(alignof(Array<OperandSyntax>), _r.page) Array<OperandSyntax>();
     operands_array.add(*operand);
-    auto operation = OperationSyntax(start, end, Vector<OperandSyntax>::from_array(_rp, operands_array));
+    auto operation = OperationSyntax(start, end, new(alignof(Vector<OperandSyntax>), _rp) Vector<OperandSyntax>(_rp, operands_array));
     auto action = ActionSyntax(OperationSyntax(operation));
     auto implementation = ImplementationSyntax(ActionSyntax(action));
 
@@ -233,7 +235,10 @@ Result<Vector<DeclarationSyntax>*, ParserError> parse_program(Region& _pr, Page*
     main_function_syntax.routine.implementation = implementation;
     DeclarationSyntax& main_function_declaration = *new (alignof(DeclarationSyntax), _rp) DeclarationSyntax(FunctionSyntax(main_function_syntax));;
     declarations.add(main_function_declaration);
-    return Result<Vector<DeclarationSyntax>*, ParserError> { ._tag = Result<Vector<DeclarationSyntax>*, ParserError>::Ok, ._Ok = Vector<DeclarationSyntax>::from_array(_rp, declarations) };
+    return Result<Vector<DeclarationSyntax>*, ParserError> { 
+        ._tag = Result<Vector<DeclarationSyntax>*, ParserError>::Ok, 
+        ._Ok = new(alignof(Vector<DeclarationSyntax>), _rp) Vector<DeclarationSyntax>(_rp, declarations)
+    };
 }
 
 Result<Vector<Property>, ModelError> handle_parameterset(Region& _pr, Page* _rp, Page* _ep, ParameterSetSyntax& parameterSetSyntax) {
@@ -250,7 +255,9 @@ Result<Vector<Property>, ModelError> handle_parameterset(Region& _pr, Page* _rp,
         }
         break;
     }
-    return Result<Vector<Property>, ModelError> { ._tag = Result<Vector<Property>, ModelError>::Ok, ._Ok = *Vector<Property>::from_array(_rp, parameters) };
+    return Result<Vector<Property>, ModelError> {
+        ._tag = Result<Vector<Property>, ModelError>::Ok, 
+        ._Ok = Vector<Property>(_rp, parameters) };
 }
 
 Result<Function, ModelError> handle_function(Region& _pr, Page* _rp, Page* _ep, FunctionSyntax& function_syntax, MultiMapBuilder<String, Function>& functions_builder) {

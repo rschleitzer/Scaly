@@ -38,16 +38,22 @@ template<class T> struct Vector : Object {
         }
     }
 
-    static Vector<T>* from_raw_array(Page* _rp, T* array, size_t length) {
-        Vector<T>* vector = new(alignof(Vector<T>), _rp) Vector<T>(_rp, length);
-        memcpy(vector->data, array, length * sizeof(T));
-        return vector;
+    Vector<T>(Page* _rp, T* array, size_t length) : length(length) {
+        if (this->length > 0) {
+            this->data = (T*) _rp->allocate_raw(length * sizeof(T), alignof(T));
+            memcpy(this->data, array, length * sizeof(T));
+        } else {
+            this->data = nullptr;
+        }
     }
 
-    static Vector<T>* from_array(Page* _rp, Array<T>& array) {
-        if (array.length == 0)
-            return new(alignof(Vector<T>), _rp) Vector<T>(0, nullptr);
-        return Vector<T>::from_raw_array(_rp, array.vector->data, array.length);
+    Vector<T>(Page* _rp, Array<T>& array) : length(array.length) {
+        if (this->length > 0) {
+            this->data = (T*) _rp->allocate_raw(length * sizeof(T), alignof(T));
+            memcpy(this->data, array.vector->data, length * sizeof(T));
+        } else {
+            this->data = nullptr;
+        }
     }
 
     T* get(size_t i) {

@@ -1144,7 +1144,9 @@ struct Parser : Object {
             if (array == nullptr)
                 return Result<Vector<DeclarationSyntax>*, ParserError> { ._tag = Result<Vector<DeclarationSyntax>*, ParserError>::Ok, ._Ok = nullptr };
             
-            return Result<Vector<DeclarationSyntax>*, ParserError> { ._tag = Result<Vector<DeclarationSyntax>*, ParserError>::Ok, ._Ok = Vector<DeclarationSyntax>::from_array(_rp, *array) };
+            return Result<Vector<DeclarationSyntax>*, ParserError> {
+                ._tag = Result<Vector<DeclarationSyntax>*, ParserError>::Ok,
+                ._Ok = new(alignof(Vector<DeclarationSyntax>), _rp) Vector<DeclarationSyntax>(_rp, *array) };
         }
     }
 
@@ -1524,7 +1526,9 @@ struct Parser : Object {
             if (array == nullptr)
                 return Result<Vector<ExtensionSyntax>*, ParserError> { ._tag = Result<Vector<ExtensionSyntax>*, ParserError>::Ok, ._Ok = nullptr };
             
-            return Result<Vector<ExtensionSyntax>*, ParserError> { ._tag = Result<Vector<ExtensionSyntax>*, ParserError>::Ok, ._Ok = Vector<ExtensionSyntax>::from_array(_rp, *array) };
+            return Result<Vector<ExtensionSyntax>*, ParserError> {
+                ._tag = Result<Vector<ExtensionSyntax>*, ParserError>::Ok,
+                ._Ok = new(alignof(Vector<ExtensionSyntax>), _rp) Vector<ExtensionSyntax>(_rp, *array) };
         }
     }
 
@@ -1578,7 +1582,9 @@ struct Parser : Object {
             if (array == nullptr)
                 return Result<Vector<AttributeSyntax>*, ParserError> { ._tag = Result<Vector<AttributeSyntax>*, ParserError>::Ok, ._Ok = nullptr };
             
-            return Result<Vector<AttributeSyntax>*, ParserError> { ._tag = Result<Vector<AttributeSyntax>*, ParserError>::Ok, ._Ok = Vector<AttributeSyntax>::from_array(_rp, *array) };
+            return Result<Vector<AttributeSyntax>*, ParserError> {
+                ._tag = Result<Vector<AttributeSyntax>*, ParserError>::Ok,
+                ._Ok = new(alignof(Vector<AttributeSyntax>), _rp) Vector<AttributeSyntax>(_rp, *array) };
         }
     }
 
@@ -1834,7 +1840,9 @@ struct Parser : Object {
             if (array == nullptr)
                 return Result<Vector<TagSyntax>*, ParserError> { ._tag = Result<Vector<TagSyntax>*, ParserError>::Ok, ._Ok = nullptr };
             
-            return Result<Vector<TagSyntax>*, ParserError> { ._tag = Result<Vector<TagSyntax>*, ParserError>::Ok, ._Ok = Vector<TagSyntax>::from_array(_rp, *array) };
+            return Result<Vector<TagSyntax>*, ParserError> {
+                ._tag = Result<Vector<TagSyntax>*, ParserError>::Ok,
+                ._Ok = new(alignof(Vector<TagSyntax>), _rp) Vector<TagSyntax>(_rp, *array) };
         }
     }
 
@@ -2098,7 +2106,9 @@ struct Parser : Object {
             if (array == nullptr)
                 return Result<Vector<MemberSyntax>*, ParserError> { ._tag = Result<Vector<MemberSyntax>*, ParserError>::Ok, ._Ok = nullptr };
             
-            return Result<Vector<MemberSyntax>*, ParserError> { ._tag = Result<Vector<MemberSyntax>*, ParserError>::Ok, ._Ok = Vector<MemberSyntax>::from_array(_rp, *array) };
+            return Result<Vector<MemberSyntax>*, ParserError> {
+                ._tag = Result<Vector<MemberSyntax>*, ParserError>::Ok,
+                ._Ok = new(alignof(Vector<MemberSyntax>), _rp) Vector<MemberSyntax>(_rp, *array) };
         }
     }
 
@@ -2188,7 +2198,9 @@ struct Parser : Object {
             if (array == nullptr)
                 return Result<Vector<PropertySyntax>*, ParserError> { ._tag = Result<Vector<PropertySyntax>*, ParserError>::Ok, ._Ok = nullptr };
             
-            return Result<Vector<PropertySyntax>*, ParserError> { ._tag = Result<Vector<PropertySyntax>*, ParserError>::Ok, ._Ok = Vector<PropertySyntax>::from_array(_rp, *array) };
+            return Result<Vector<PropertySyntax>*, ParserError> {
+                ._tag = Result<Vector<PropertySyntax>*, ParserError>::Ok,
+                ._Ok = new(alignof(Vector<PropertySyntax>), _rp) Vector<PropertySyntax>(_rp, *array) };
         }
     }
 
@@ -2313,7 +2325,9 @@ struct Parser : Object {
             if (array == nullptr)
                 return Result<Vector<GenericArgumentSyntax>*, ParserError> { ._tag = Result<Vector<GenericArgumentSyntax>*, ParserError>::Ok, ._Ok = nullptr };
             
-            return Result<Vector<GenericArgumentSyntax>*, ParserError> { ._tag = Result<Vector<GenericArgumentSyntax>*, ParserError>::Ok, ._Ok = Vector<GenericArgumentSyntax>::from_array(_rp, *array) };
+            return Result<Vector<GenericArgumentSyntax>*, ParserError> {
+                ._tag = Result<Vector<GenericArgumentSyntax>*, ParserError>::Ok,
+                ._Ok = new(alignof(Vector<GenericArgumentSyntax>), _rp) Vector<GenericArgumentSyntax>(_rp, *array) };
         }
     }
 
@@ -2509,7 +2523,9 @@ struct Parser : Object {
             if (array == nullptr)
                 return Result<Vector<UseSyntax>*, ParserError> { ._tag = Result<Vector<UseSyntax>*, ParserError>::Ok, ._Ok = nullptr };
             
-            return Result<Vector<UseSyntax>*, ParserError> { ._tag = Result<Vector<UseSyntax>*, ParserError>::Ok, ._Ok = Vector<UseSyntax>::from_array(_rp, *array) };
+            return Result<Vector<UseSyntax>*, ParserError> {
+                ._tag = Result<Vector<UseSyntax>*, ParserError>::Ok,
+                ._Ok = new(alignof(Vector<UseSyntax>), _rp) Vector<UseSyntax>(_rp, *array) };
         }
     }
 
@@ -2693,7 +2709,9 @@ struct Parser : Object {
             if (array == nullptr)
                 return Result<Vector<MethodSyntax>*, ParserError> { ._tag = Result<Vector<MethodSyntax>*, ParserError>::Ok, ._Ok = nullptr };
             
-            return Result<Vector<MethodSyntax>*, ParserError> { ._tag = Result<Vector<MethodSyntax>*, ParserError>::Ok, ._Ok = Vector<MethodSyntax>::from_array(_rp, *array) };
+            return Result<Vector<MethodSyntax>*, ParserError> {
+                ._tag = Result<Vector<MethodSyntax>*, ParserError>::Ok,
+                ._Ok = new(alignof(Vector<MethodSyntax>), _rp) Vector<MethodSyntax>(_rp, *array) };
         }
     }
 
@@ -3185,7 +3203,9 @@ struct Parser : Object {
             if (array == nullptr)
                 return Result<Vector<ExtendSyntax>*, ParserError> { ._tag = Result<Vector<ExtendSyntax>*, ParserError>::Ok, ._Ok = nullptr };
             
-            return Result<Vector<ExtendSyntax>*, ParserError> { ._tag = Result<Vector<ExtendSyntax>*, ParserError>::Ok, ._Ok = Vector<ExtendSyntax>::from_array(_rp, *array) };
+            return Result<Vector<ExtendSyntax>*, ParserError> {
+                ._tag = Result<Vector<ExtendSyntax>*, ParserError>::Ok,
+                ._Ok = new(alignof(Vector<ExtendSyntax>), _rp) Vector<ExtendSyntax>(_rp, *array) };
         }
     }
 
@@ -3379,7 +3399,9 @@ struct Parser : Object {
             if (array == nullptr)
                 return Result<Vector<StatementSyntax>*, ParserError> { ._tag = Result<Vector<StatementSyntax>*, ParserError>::Ok, ._Ok = nullptr };
             
-            return Result<Vector<StatementSyntax>*, ParserError> { ._tag = Result<Vector<StatementSyntax>*, ParserError>::Ok, ._Ok = Vector<StatementSyntax>::from_array(_rp, *array) };
+            return Result<Vector<StatementSyntax>*, ParserError> {
+                ._tag = Result<Vector<StatementSyntax>*, ParserError>::Ok,
+                ._Ok = new(alignof(Vector<StatementSyntax>), _rp) Vector<StatementSyntax>(_rp, *array) };
         }
     }
 
@@ -3631,7 +3653,9 @@ struct Parser : Object {
             if (array == nullptr)
                 return Result<Vector<BindingSpecSyntax>*, ParserError> { ._tag = Result<Vector<BindingSpecSyntax>*, ParserError>::Ok, ._Ok = nullptr };
             
-            return Result<Vector<BindingSpecSyntax>*, ParserError> { ._tag = Result<Vector<BindingSpecSyntax>*, ParserError>::Ok, ._Ok = Vector<BindingSpecSyntax>::from_array(_rp, *array) };
+            return Result<Vector<BindingSpecSyntax>*, ParserError> {
+                ._tag = Result<Vector<BindingSpecSyntax>*, ParserError>::Ok,
+                ._Ok = new(alignof(Vector<BindingSpecSyntax>), _rp) Vector<BindingSpecSyntax>(_rp, *array) };
         }
     }
 
@@ -3766,7 +3790,9 @@ struct Parser : Object {
             if (array == nullptr)
                 return Result<Vector<OperandSyntax>*, ParserError> { ._tag = Result<Vector<OperandSyntax>*, ParserError>::Ok, ._Ok = nullptr };
             
-            return Result<Vector<OperandSyntax>*, ParserError> { ._tag = Result<Vector<OperandSyntax>*, ParserError>::Ok, ._Ok = Vector<OperandSyntax>::from_array(_rp, *array) };
+            return Result<Vector<OperandSyntax>*, ParserError> {
+                ._tag = Result<Vector<OperandSyntax>*, ParserError>::Ok,
+                ._Ok = new(alignof(Vector<OperandSyntax>), _rp) Vector<OperandSyntax>(_rp, *array) };
         }
     }
 
@@ -3821,7 +3847,9 @@ struct Parser : Object {
             if (array == nullptr)
                 return Result<Vector<PostfixSyntax>*, ParserError> { ._tag = Result<Vector<PostfixSyntax>*, ParserError>::Ok, ._Ok = nullptr };
             
-            return Result<Vector<PostfixSyntax>*, ParserError> { ._tag = Result<Vector<PostfixSyntax>*, ParserError>::Ok, ._Ok = Vector<PostfixSyntax>::from_array(_rp, *array) };
+            return Result<Vector<PostfixSyntax>*, ParserError> {
+                ._tag = Result<Vector<PostfixSyntax>*, ParserError>::Ok,
+                ._Ok = new(alignof(Vector<PostfixSyntax>), _rp) Vector<PostfixSyntax>(_rp, *array) };
         }
     }
 
@@ -3938,7 +3966,9 @@ struct Parser : Object {
             if (array == nullptr)
                 return Result<Vector<CatchSyntax>*, ParserError> { ._tag = Result<Vector<CatchSyntax>*, ParserError>::Ok, ._Ok = nullptr };
             
-            return Result<Vector<CatchSyntax>*, ParserError> { ._tag = Result<Vector<CatchSyntax>*, ParserError>::Ok, ._Ok = Vector<CatchSyntax>::from_array(_rp, *array) };
+            return Result<Vector<CatchSyntax>*, ParserError> {
+                ._tag = Result<Vector<CatchSyntax>*, ParserError>::Ok,
+                ._Ok = new(alignof(Vector<CatchSyntax>), _rp) Vector<CatchSyntax>(_rp, *array) };
         }
     }
 
@@ -4463,7 +4493,9 @@ struct Parser : Object {
             if (array == nullptr)
                 return Result<Vector<ComponentSyntax>*, ParserError> { ._tag = Result<Vector<ComponentSyntax>*, ParserError>::Ok, ._Ok = nullptr };
             
-            return Result<Vector<ComponentSyntax>*, ParserError> { ._tag = Result<Vector<ComponentSyntax>*, ParserError>::Ok, ._Ok = Vector<ComponentSyntax>::from_array(_rp, *array) };
+            return Result<Vector<ComponentSyntax>*, ParserError> {
+                ._tag = Result<Vector<ComponentSyntax>*, ParserError>::Ok,
+                ._Ok = new(alignof(Vector<ComponentSyntax>), _rp) Vector<ComponentSyntax>(_rp, *array) };
         }
     }
 
@@ -4590,7 +4622,9 @@ struct Parser : Object {
             if (array == nullptr)
                 return Result<Vector<ElementSyntax>*, ParserError> { ._tag = Result<Vector<ElementSyntax>*, ParserError>::Ok, ._Ok = nullptr };
             
-            return Result<Vector<ElementSyntax>*, ParserError> { ._tag = Result<Vector<ElementSyntax>*, ParserError>::Ok, ._Ok = Vector<ElementSyntax>::from_array(_rp, *array) };
+            return Result<Vector<ElementSyntax>*, ParserError> {
+                ._tag = Result<Vector<ElementSyntax>*, ParserError>::Ok,
+                ._Ok = new(alignof(Vector<ElementSyntax>), _rp) Vector<ElementSyntax>(_rp, *array) };
         }
     }
 
@@ -4863,7 +4897,9 @@ struct Parser : Object {
             if (array == nullptr)
                 return Result<Vector<CaseSyntax>*, ParserError> { ._tag = Result<Vector<CaseSyntax>*, ParserError>::Ok, ._Ok = nullptr };
             
-            return Result<Vector<CaseSyntax>*, ParserError> { ._tag = Result<Vector<CaseSyntax>*, ParserError>::Ok, ._Ok = Vector<CaseSyntax>::from_array(_rp, *array) };
+            return Result<Vector<CaseSyntax>*, ParserError> {
+                ._tag = Result<Vector<CaseSyntax>*, ParserError>::Ok,
+                ._Ok = new(alignof(Vector<CaseSyntax>), _rp) Vector<CaseSyntax>(_rp, *array) };
         }
     }
 
@@ -5139,7 +5175,9 @@ struct Parser : Object {
             if (array == nullptr)
                 return Result<Vector<ActionSyntax>*, ParserError> { ._tag = Result<Vector<ActionSyntax>*, ParserError>::Ok, ._Ok = nullptr };
             
-            return Result<Vector<ActionSyntax>*, ParserError> { ._tag = Result<Vector<ActionSyntax>*, ParserError>::Ok, ._Ok = Vector<ActionSyntax>::from_array(_rp, *array) };
+            return Result<Vector<ActionSyntax>*, ParserError> {
+                ._tag = Result<Vector<ActionSyntax>*, ParserError>::Ok,
+                ._Ok = new(alignof(Vector<ActionSyntax>), _rp) Vector<ActionSyntax>(_rp, *array) };
         }
     }
 
@@ -5287,7 +5325,9 @@ struct Parser : Object {
             if (array == nullptr)
                 return Result<Vector<TypeSyntax>*, ParserError> { ._tag = Result<Vector<TypeSyntax>*, ParserError>::Ok, ._Ok = nullptr };
             
-            return Result<Vector<TypeSyntax>*, ParserError> { ._tag = Result<Vector<TypeSyntax>*, ParserError>::Ok, ._Ok = Vector<TypeSyntax>::from_array(_rp, *array) };
+            return Result<Vector<TypeSyntax>*, ParserError> {
+                ._tag = Result<Vector<TypeSyntax>*, ParserError>::Ok,
+                ._Ok = new(alignof(Vector<TypeSyntax>), _rp) Vector<TypeSyntax>(_rp, *array) };
         }
     }
 

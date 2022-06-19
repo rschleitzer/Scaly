@@ -22,7 +22,7 @@ struct HashMap : Object {
             while (auto item = list_iterator.next())
                 array.add(item->value);
             if (array.length > 0)
-                this->slots->set(i, *Vector<KeyValuePair<K, V>>::from_array(_rp, array));
+                this->slots->set(i, Vector<KeyValuePair<K, V>>(_rp, array));
         }
     }
 

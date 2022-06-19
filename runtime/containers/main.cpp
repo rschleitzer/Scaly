@@ -17,7 +17,7 @@ void test_vector(Region& _pr)
     {
         auto r_1 = Region::create(_r);
         const char* string_array[3] = {"using", "namespace", "typedef"};
-        Vector<const char*>& vector = *Vector<const char*>::from_raw_array(r_1.page, (const char**)string_array, 3);
+        Vector<const char*> vector = Vector<const char*>(r_1.page, (const char**)string_array, 3);
         if (*(vector.get(0)) != string_array[0])
             exit(-3);
         if (*vector[1] != string_array[1])
@@ -114,7 +114,7 @@ void test_hash_set(Region& _pr) {
     array.add(String(_r.page, "using"));
     array.add(String(_r.page, "namespace"));
     array.add(String(_r.page, "typedef"));
-    Vector<String>& vector = *Vector<String>::from_array(_r.page, array);
+    Vector<String> vector = Vector<String>(_r.page, array);
     HashSetBuilder<String>& keywords_builder = *HashSetBuilder<String>::from_vector(_r.page, vector);
     if (!keywords_builder.contains(String(_r.page, "using")))
         exit (-18);
@@ -143,7 +143,7 @@ void test_hash_map(Region& _pr) {
         array.add(KeyValuePair<String, int> { .key = String(_r_1.page, "using"), .value = 1 });
         array.add(KeyValuePair<String, int> { .key = String(_r_1.page, "namespace"), .value = 2 });
         array.add(KeyValuePair<String, int> { .key = String(_r_1.page, "typedef"), .value = 3 });
-        Vector<KeyValuePair<String, int>>& vector = *Vector<KeyValuePair<String, int>>::from_array(_r_1.page, array);
+        Vector<KeyValuePair<String, int>> vector = Vector<KeyValuePair<String, int>>(_r_1.page, array);
         HashMapBuilder<String, int>& keywords_builder = *HashMapBuilder<String, int>::from_vector(_r_1.page, vector);
         if (!keywords_builder.contains(String(_r_1.page, "using")))
             exit (-18);

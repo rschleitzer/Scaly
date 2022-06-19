@@ -47,7 +47,9 @@ struct Parser : Object {
             if (array == nullptr)
                 return Result<""Vector<"(id syntax)"Syntax>*, ParserError> { ._tag = Result<""Vector<"(id syntax)"Syntax>*, ParserError>::Ok, ._Ok = nullptr };
             
-            return Result<""Vector<"(id syntax)"Syntax>*, ParserError> { ._tag = Result<""Vector<"(id syntax)"Syntax>*, ParserError>::Ok, ._Ok = Vector<"(id syntax)"Syntax>::from_array(_rp, *array) };
+            return Result<""Vector<"(id syntax)"Syntax>*, ParserError> {
+                ._tag = Result<""Vector<"(id syntax)"Syntax>*, ParserError>::Ok,
+                ._Ok = new(alignof(Vector<"(id syntax)"Syntax>), _rp) Vector<"(id syntax)"Syntax>(_rp, *array) };
         }
     }
 "       )"")
