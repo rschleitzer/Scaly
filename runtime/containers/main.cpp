@@ -30,7 +30,7 @@ void test_vector(Region& _pr)
 void test_array(Region& _pr)
 {
     auto _r = Region::create(_pr);
-    Array<int>& array = *Array<int>::create(_r.page);
+    Array<int>& array = *new(alignof(Array<int>), _r.page) Array<int>();
     // A quarter gigabyte worth of ints
     int huge_number = 1024 * 1024 * 64;
     for (int i = 1; i <= huge_number; i++)
@@ -110,7 +110,7 @@ void test_list(Region& _pr) {
 void test_hash_set(Region& _pr) {
     auto _r = Region::create(_pr);
 
-    Array<String>& array = *Array<String>::create(_r.page);
+    Array<String>& array = *new(alignof(Array<String>), _r.page) Array<String>();
     array.add(String(_r.page, "using"));
     array.add(String(_r.page, "namespace"));
     array.add(String(_r.page, "typedef"));
@@ -139,7 +139,7 @@ void test_hash_map(Region& _pr) {
     auto _r = Region::create(_pr);
     {
         auto _r_1 = Region::create(_r);
-        Array<KeyValuePair<String, int>>& array = *Array<KeyValuePair<String, int>>::create(_r_1.page);
+        Array<KeyValuePair<String, int>>& array = *new(alignof(Array<KeyValuePair<String, int>>), _r_1.page) Array<KeyValuePair<String, int>>();
         array.add(KeyValuePair<String, int> { .key = String(_r_1.page, "using"), .value = 1 });
         array.add(KeyValuePair<String, int> { .key = String(_r_1.page, "namespace"), .value = 2 });
         array.add(KeyValuePair<String, int> { .key = String(_r_1.page, "typedef"), .value = 3 });

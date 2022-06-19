@@ -134,7 +134,7 @@ struct ModelError : Object {
 
 Result<Vector<DeclarationSyntax>*, ParserError> parse_program(Region& _pr, Page* _rp, Page* _ep, const String& program) {
     auto _r = Region::create(_pr);
-    Array<DeclarationSyntax>& declarations = *Array<DeclarationSyntax>::create(_r.page);
+    Array<DeclarationSyntax>& declarations = *new(alignof(Array<DeclarationSyntax>), _r.page) Array<DeclarationSyntax>();
     
     // Parse the scaly module inclusion
     Parser& parser_module = *new(alignof(Parser), _r.page) Parser(String(_r.page, "module scaly"));
@@ -190,7 +190,7 @@ Result<Vector<DeclarationSyntax>*, ParserError> parse_program(Region& _pr, Page*
     auto end = parser_main.lexer.position;
 
     // Parse the uses of the program and put them into the function implementation
-    Array<UseSyntax>& uses = *Array<UseSyntax>::create(_r.page);
+    Array<UseSyntax>& uses = *new(alignof(Array<UseSyntax>), _r.page) Array<UseSyntax>();
     while(true) {
         auto node_result = parser.parse_use(_r, _rp, _ep);
         if ((node_result._tag == Result<UseSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
@@ -205,7 +205,7 @@ Result<Vector<DeclarationSyntax>*, ParserError> parse_program(Region& _pr, Page*
         }
     }
     // Parse the statements of the program and put them into the function implementation
-    Array<StatementSyntax>& statements = *Array<StatementSyntax>::create(_r.page);
+    Array<StatementSyntax>& statements = *new(alignof(Array<StatementSyntax>), _r.page) Array<StatementSyntax>();
     while(true) {
         auto node_result = parser.parse_statement(_r, _rp, _ep);
         if ((node_result._tag == Result<StatementSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
@@ -222,7 +222,7 @@ Result<Vector<DeclarationSyntax>*, ParserError> parse_program(Region& _pr, Page*
     auto block = new(alignof(BlockSyntax), _rp) BlockSyntax(start, end, Vector<UseSyntax>::from_array(_rp, uses), Vector<StatementSyntax>::from_array(_rp, statements));
     auto block_expression = new (alignof(ExpressionSyntax), _rp) ExpressionSyntax(BlockSyntax(*block));
     auto operand = new(alignof(OperandSyntax), _rp) OperandSyntax(start, end, *block_expression, nullptr);
-    Array<OperandSyntax>& operands_array = *Array<OperandSyntax>::create(_r.page);;
+    Array<OperandSyntax>& operands_array = *new(alignof(Array<OperandSyntax>), _r.page) Array<OperandSyntax>();
     operands_array.add(*operand);
     auto operation = OperationSyntax(start, end, Vector<OperandSyntax>::from_array(_rp, operands_array));
     auto action = ActionSyntax(OperationSyntax(operation));

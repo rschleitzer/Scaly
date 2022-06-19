@@ -8,6 +8,23 @@ const size_t PACKED_SIZE = sizeof(size_t) * 8 / 7;
 struct String : Object {
     char* data;
 
+    String(Page* _rp, size_t length) {
+        char length_array[PACKED_SIZE];
+        auto rest = length;
+
+        size_t counter = 0;
+        while (rest >= 0x80) {
+            length_array[counter] = (char)rest | 0x80;
+            rest >>= 7;
+            counter += 1;
+        }
+
+        length_array[counter] = (char)rest;
+        auto overall_length = counter + 1 + length;
+        data = (char*)_rp->allocate_raw(overall_length, 1);
+        memcpy(data, length_array, counter + 1);
+    }
+
     String(Page* _rp, const char* other, size_t length) {
         char length_array[PACKED_SIZE];
         auto rest = length;

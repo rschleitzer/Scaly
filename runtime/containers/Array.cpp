@@ -7,10 +7,6 @@ template<class T> struct Array : Object {
     size_t length;
     Vector<T>* vector;
 
-    static Array<T>* create(Page* _rp) {
-        return new(alignof(Array<T>), _rp) Array<T> ();
-    }
-
     T* get_buffer() {
         if (this->vector == nullptr)
             return nullptr;

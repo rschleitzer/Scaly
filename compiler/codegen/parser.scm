@@ -32,7 +32,7 @@ struct Parser : Object {
                 if (node_result._tag == Result<"(id syntax)"Syntax, ParserError>::Ok) {
                     auto node = node_result._Ok;
                     if (array == nullptr)
-                        array = Array<"(id syntax)"Syntax>::create(_r_1.page);
+                        array = new(alignof(Array<"(id syntax)"Syntax>), _r_1.page) Array<"(id syntax)"Syntax>();
                     array->add(node);
                 } else {
                     if ((array == nullptr) && (node_result._tag == Result<"(id syntax)"Syntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
