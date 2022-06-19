@@ -7,17 +7,12 @@ template<class K, class V>
 struct MultiMap : Object {
     Vector<Vector<KeyValuePair<K, Vector<V>>>>* slots;
 
-    static MultiMap<K, V>* create(Page* _rp) {
-        return new(alignof(MultiMap<K, V>), _rp) MultiMap<K, V> ();
-    }
-
-    static MultiMap<K, V>* from_multi_map_builder(Region& _pr, Page* _rp, MultiMapBuilder<K, V>& multi_map_builder) {
+    MultiMap<K, V>(Region& _pr, Page* _rp, MultiMapBuilder<K, V>& multi_map_builder) {
         auto _r = Region::create(_pr);
-        auto multi_map = create(_rp);
         if (multi_map_builder.length == 0)
-            return multi_map;
+            return;
 
-        multi_map->slots = Vector<Vector<KeyValuePair<K, Vector<V>>>>::create(_rp, multi_map_builder.slots->length);
+        this->slots = Vector<Vector<KeyValuePair<K, Vector<V>>>>::create(_rp, multi_map_builder.slots->length);
         auto length = multi_map_builder.slots->length;
         for (size_t i = 0; i < length; i++) {
             auto _r_1 = Region::create(_r);
@@ -32,10 +27,8 @@ struct MultiMap : Object {
                 );
             }
             if (array.length > 0)
-                multi_map->slots->set(i, *Vector<KeyValuePair<K, Vector<V>>>::from_array(_rp, array));
+                this->slots->set(i, *Vector<KeyValuePair<K, Vector<V>>>::from_array(_rp, array));
         }
-
-        return multi_map;
     }
 
     bool contains(K& key) {

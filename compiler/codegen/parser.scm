@@ -6,15 +6,18 @@ struct Parser : Object {
     Lexer lexer;
     HashSet<""String> keywords;
 
-    Parser(String text)
-      : lexer(*new(alignof(Lexer), Page::get(this)) Lexer(text))
-    {
-        auto _r = Region::create_from_page(Page::get(this));
+    Parser(Region& _pr, Page* _rp, String text)
+      : lexer(*new(alignof(Lexer), _rp) Lexer(text)),
+        keywords(initialize_keywords(_pr, _rp)) {}
+
+    HashSet<""String> initialize_keywords(Region& _pr, Page* _rp) {
+        auto _r = Region::create_from_page(_rp);
         HashSetBuilder<""String>& hash_set_builder = *HashSetBuilder<""String>::create(_r.page);
 "   (apply-to-selected-children "keyword" (lambda (keyword) ($
 "        hash_set_builder.add(String(Page::get(this), \""(id keyword)"\"));
 "   )))
-"        keywords = *HashSet<""String>::from_hash_set_builder(_r, Page::get(this), hash_set_builder);
+"        keywords = HashSet<""String>(_r, _rp, hash_set_builder);
+        return keywords;
     }
 "
     (apply-to-selected-children "syntax" (lambda (syntax) ($

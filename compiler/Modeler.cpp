@@ -137,7 +137,7 @@ Result<Vector<DeclarationSyntax>*, ParserError> parse_program(Region& _pr, Page*
     Array<DeclarationSyntax>& declarations = *new(alignof(Array<DeclarationSyntax>), _r.page) Array<DeclarationSyntax>();
     
     // Parse the scaly module inclusion
-    Parser& parser_module = *new(alignof(Parser), _r.page) Parser(String(_r.page, "module scaly"));
+    Parser& parser_module = *new(alignof(Parser), _r.page) Parser(_r, _r.page, String(_r.page, "module scaly"));
     auto module_syntax_result = parser_module.parse_module(_r, _rp, _ep);
     if (module_syntax_result._tag == Result<ModuleSyntax*, ParserError>::Error)
         return Result<Vector<DeclarationSyntax>*, ParserError> { ._tag = Result<Vector<DeclarationSyntax>*, ParserError>::Error, ._Error = module_syntax_result._Error };
@@ -146,7 +146,7 @@ Result<Vector<DeclarationSyntax>*, ParserError> parse_program(Region& _pr, Page*
     declarations.add(module_declaration);
 
     // Parse the declarations of the program
-    Parser& parser = *new(alignof(Parser), _r.page) Parser(program);
+    Parser& parser = *new(alignof(Parser), _r.page) Parser(_r, _r.page, program);
     while(true) {
         auto node_result = parser.parse_declaration(_r, _rp, _ep);
         if ((node_result._tag == Result<DeclarationSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
@@ -160,7 +160,7 @@ Result<Vector<DeclarationSyntax>*, ParserError> parse_program(Region& _pr, Page*
     }
 
     // Parse the main function stub
-    Parser& parser_main = *new(alignof(Parser), _r.page) Parser(String(_r.page, "function main('argument count': int, 'argument values': pointer[pointer[byte]]) returns int"));
+    Parser& parser_main = *new(alignof(Parser), _r.page) Parser(_r, _r.page, String(_r.page, "function main('argument count': int, 'argument values': pointer[pointer[byte]]) returns int"));
     auto start = parser_main.lexer.previous_position;
 
     auto success_function = parser_main.lexer.parse_keyword(_r, _r.page, String(_r.page, "function"));
@@ -316,7 +316,7 @@ Result<Model, ModelError> build_model(Region& _pr, Page* _rp, Page* _ep, Vector<
 
     //auto function_builder_iterator = functions_builder.
     //auto ret = new(alignof(Model), _rp) Model(functions);
-    return Result<Model, ModelError> { ._tag = Result<Model, ModelError>::Ok, ._Ok = Model(*MultiMap<String, Function>::from_multi_map_builder(_r, _rp, functions_builder)) };
+    return Result<Model, ModelError> { ._tag = Result<Model, ModelError>::Ok, ._Ok = Model(MultiMap<String, Function>(_r, _rp, functions_builder)) };
 }
 
 Result<Model, ModelError> build_program_model(Region& _pr, Page* _rp, Page* _ep, const String& program) {

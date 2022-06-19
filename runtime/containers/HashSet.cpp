@@ -8,17 +8,12 @@ template<class T>
 struct HashSet : Object {
     Vector<Vector<T>>* slots;
 
-    static HashSet<T>* create(Page* _rp) {
-        return new(alignof(HashSet<T>), _rp) HashSet<T>();
-    }
-
-    static HashSet<T>* from_hash_set_builder(Region& _pr, Page* _rp, HashSetBuilder<T>& hash_set_builder) {
+    HashSet<T>(Region& _pr, Page* _rp, HashSetBuilder<T>& hash_set_builder) {
         auto _r = Region::create(_pr);
-        auto hash_set = create(_rp);
         if (hash_set_builder.length == 0)
-            return hash_set;
+            return;
 
-        hash_set->slots = Vector<Vector<T>>::create(_rp, hash_set_builder.slots->length);
+        this->slots = Vector<Vector<T>>::create(_rp, hash_set_builder.slots->length);
         auto length = hash_set_builder.slots->length;
         for (size_t i = 0; i < length; i++) {
             auto _r_1 = Region::create(_r);
@@ -27,10 +22,8 @@ struct HashSet : Object {
             while (auto item = list_iterator.next())
                 array.add(item->value);
             if (array.length > 0)
-                hash_set->slots->set(i, *Vector<T>::from_array(_rp, array));
+                this->slots->set(i, *Vector<T>::from_array(_rp, array));
         }
-
-        return hash_set;
     }
 
     bool contains(const T& value) {

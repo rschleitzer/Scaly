@@ -124,7 +124,7 @@ void test_hash_set(Region& _pr) {
         exit (-18);
     if (keywords_builder.contains(String(_r.page, "nix")))
         exit (-18);
-    HashSet<String>& keywords = *HashSet<String>::from_hash_set_builder(_r, _r.page, keywords_builder);
+    HashSet<String>& keywords = *new(alignof(HashSet<String>), _r.page)  HashSet<String>(_r, _r.page, keywords_builder);
     if (!keywords.contains(String(_r.page, "using")))
         exit (-19);
     if (!keywords.contains(String(_r.page, "namespace")))
@@ -161,7 +161,7 @@ void test_hash_map(Region& _pr) {
             exit (-24);
         if (keywords_builder[String(_r_1.page, "nix")] != nullptr)
             exit (-25);
-        HashMap<String, int>& keywords = *HashMap<String, int>::from_hash_map_builder(_r_1, _r_1.page, keywords_builder);
+        HashMap<String, int>& keywords = *new(alignof(HashMap<String, int>), _r_1.page) HashMap<String, int>(_r_1, _r_1.page, keywords_builder);
         if (!keywords.contains(String(_r_1.page, "using")))
             exit (-18);
         if (!keywords.contains(String(_r_1.page, "namespace")))
@@ -254,7 +254,7 @@ void test_multi_map(Region& _pr) {
                 }
             }
         }
-        MultiMap<String, size_t>& map = *MultiMap<String, size_t>::from_multi_map_builder(_r_1, _r_1.page, map_builder);
+        MultiMap<String, size_t>& map = *new(alignof(MultiMap<String, size_t>), _r_1.page) MultiMap<String, size_t>(_r_1, _r_1.page, map_builder);
         for (char i = 'A'; i <= 'Z'; i++)
         {
             for (char j = 'a'; j <= 'z'; j++)

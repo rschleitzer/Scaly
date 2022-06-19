@@ -173,7 +173,7 @@ void test_lexer(Page* _rp) {
 void test_parser(Region& _pr)
 {
     auto _r = Region::create(_pr);
-    Parser& parser = *new (alignof(Parser), _r.page) Parser(String(_r.page, "define a 1"));
+    Parser& parser = *new (alignof(Parser), _r.page) Parser(_r, _r.page, String(_r.page, "define a 1"));
     auto file_syntax = parser.parse_file(_r, _r.page, _r.page);
     if (file_syntax._tag != Result<FileSyntax*, ParserError*>::Ok)
         exit(-1);
