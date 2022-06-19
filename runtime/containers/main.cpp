@@ -115,7 +115,7 @@ void test_hash_set(Region& _pr) {
     array.add(String(_r.page, "namespace"));
     array.add(String(_r.page, "typedef"));
     Vector<String> vector = Vector<String>(_r.page, array);
-    HashSetBuilder<String>& keywords_builder = *HashSetBuilder<String>::from_vector(_r.page, vector);
+    HashSetBuilder<String>& keywords_builder = *new(alignof(HashSetBuilder<String>), _r.page) HashSetBuilder<String>(_r.page, vector);
     if (!keywords_builder.contains(String(_r.page, "using")))
         exit (-18);
     if (!keywords_builder.contains(String(_r.page, "namespace")))
@@ -144,7 +144,7 @@ void test_hash_map(Region& _pr) {
         array.add(KeyValuePair<String, int> { .key = String(_r_1.page, "namespace"), .value = 2 });
         array.add(KeyValuePair<String, int> { .key = String(_r_1.page, "typedef"), .value = 3 });
         Vector<KeyValuePair<String, int>> vector = Vector<KeyValuePair<String, int>>(_r_1.page, array);
-        HashMapBuilder<String, int>& keywords_builder = *HashMapBuilder<String, int>::from_vector(_r_1.page, vector);
+        HashMapBuilder<String, int>& keywords_builder = *new(alignof(HashMapBuilder<String, int>), _r_1.page) HashMapBuilder<String, int>(_r_1.page, vector);
         if (!keywords_builder.contains(String(_r_1.page, "using")))
             exit (-18);
         if (!keywords_builder.contains(String(_r_1.page, "namespace")))
@@ -181,8 +181,8 @@ void test_hash_map(Region& _pr) {
     }
     {
         auto _r_1 = Region::create(_r);
-        HashMapBuilder<String, size_t>& map = *HashMapBuilder<String, size_t>::create(_r_1.page);
-        HashSetBuilder<String>& set = *HashSetBuilder<String>::create(_r_1.page);
+        HashMapBuilder<String, size_t>& map = *new(alignof(HashMapBuilder<String, size_t>), _r_1.page) HashMapBuilder<String, size_t>();
+        HashSetBuilder<String>& set = *new(alignof(HashSetBuilder<String>), _r_1.page) HashSetBuilder<String>();
         for (char i = 'A'; i <= 'Z'; i++)
         {
             for (char j = 'a'; j <= 'z'; j++)
@@ -233,7 +233,7 @@ void test_multi_map(Region& _pr) {
     auto _r = Region::create(_pr);
     {
         auto _r_1 = Region::create(_r);
-        MultiMapBuilder<String, size_t>& map_builder = *MultiMapBuilder<String, size_t>::create(_r_1.page);
+        MultiMapBuilder<String, size_t>& map_builder = *new(alignof(MultiMapBuilder<String, size_t>), _r_1.page) MultiMapBuilder<String, size_t>();
         for (char i = 'A'; i <= 'Z'; i++)
         {
             for (char j = 'a'; j <= 'z'; j++)

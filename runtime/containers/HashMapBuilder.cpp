@@ -15,25 +15,19 @@ struct HashMapBuilder : Object {
     Vector<List<Slot<KeyValuePair<K, V>>>>* slots;
     Page* slots_page;
 
-    static HashMapBuilder<K, V>* create(Page* _rp) {
-        return new(alignof(HashMapBuilder<K, V>), _rp) HashMapBuilder<K, V> ();
-    }
+    HashMapBuilder<K, V>() :length(0), slots(nullptr), slots_page(nullptr) {}
 
-    static HashMapBuilder<K, V>* from_vector(Page* _rp, Vector<KeyValuePair<K, V>>& vector) {
-        auto hash_map = create(_rp);
-        if (vector.length > 0)
-        {
-            hash_map->reallocate(vector.length);
-            for (size_t i = 0; i < vector.length; i++) {
-                hash_map->add_internal((*(vector[i])).key, (*(vector[i])).value);
+    HashMapBuilder<K, V>(Page* _rp, Vector<KeyValuePair<K, V>>& vector) : HashMapBuilder<K, V>() {
+        if (vector.length > 0) {
+            this->reallocate(vector.length);
+            auto vector_iterator = VectorIterator<KeyValuePair<K, V>>(vector);
+            while (auto element = vector_iterator.next()) {
+                this->add_internal(element->key, element->value);
             }
         }
-
-        return hash_map;
     }
 
-    void reallocate(size_t size)
-    {
+    void reallocate(size_t size) {
         auto hash_size = get_prime(size);
         this->slots_page = Page::get(this)->allocate_exclusive_page();
         auto slots = new(alignof(Vector<List<Slot<KeyValuePair<K, V>>>>), this->slots_page) Vector<List<Slot<KeyValuePair<K, V>>>>(this->slots_page, hash_size);

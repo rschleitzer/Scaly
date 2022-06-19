@@ -12,7 +12,7 @@ struct Parser : Object {
 
     HashSet<""String> initialize_keywords(Region& _pr, Page* _rp) {
         auto _r = Region::create_from_page(_rp);
-        HashSetBuilder<""String>& hash_set_builder = *HashSetBuilder<""String>::create(_r.page);
+        HashSetBuilder<""String>& hash_set_builder = *new(alignof(HashSetBuilder<""String>), _r.page) HashSetBuilder<""String>();
 "   (apply-to-selected-children "keyword" (lambda (keyword) ($
 "        hash_set_builder.add(String(Page::get(this), \""(id keyword)"\"));
 "   )))

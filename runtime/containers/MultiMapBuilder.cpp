@@ -9,12 +9,9 @@ struct MultiMapBuilder : Object {
     Vector<List<Slot<KeyValuePair<K, Array<V>*>>>>* slots;
     Page* slots_page;
 
-    static MultiMapBuilder<K, V>* create(Page* _rp) {
-        return new(alignof(MultiMapBuilder<K, V>), _rp) MultiMapBuilder<K, V> ();
-    }
+    MultiMapBuilder<K, V>() :length(0), slots(nullptr), slots_page(nullptr) {}
 
-    void reallocate(size_t size)
-    {
+    void reallocate(size_t size) {
         auto hash_size = get_prime(size);
         this->slots_page = Page::get(this)->allocate_exclusive_page();
         auto slots = new(alignof(Vector<List<Slot<KeyValuePair<K, Array<V>*>>>>), this->slots_page) Vector<List<Slot<KeyValuePair<K, Array<V>*>>>>(this->slots_page, hash_size);

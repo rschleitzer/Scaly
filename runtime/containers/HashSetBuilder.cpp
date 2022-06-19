@@ -67,25 +67,19 @@ struct HashSetBuilder : Object {
     Vector<List<Slot<T>>>* slots;
     Page* slots_page;
 
-    static HashSetBuilder<T>* create(Page* _rp) {
-        return new(alignof(HashSetBuilder<T>), _rp) HashSetBuilder<T>();
-    }
+    HashSetBuilder<T>() :length(0), slots(nullptr), slots_page(nullptr) {}
 
-    static HashSetBuilder<T>* from_vector(Page* _rp, Vector<T>& vector) {
-        auto hash_set_builder = create(_rp);
-        if (vector.length > 0)
-        {
-            hash_set_builder->reallocate(vector.length);
-            for (size_t i = 0; i < vector.length; i++) {
-                hash_set_builder->add_internal(*(vector[i]));
+    HashSetBuilder<T>(Page* _rp, Vector<T>& vector) :HashSetBuilder<T>() {
+        if (vector.length > 0) {
+            this->reallocate(vector.length);
+            auto vector_iterator = VectorIterator<T>(vector);
+            while (auto element = vector_iterator.next()) {
+                this->add_internal(*element);
             }
         }
-
-        return hash_set_builder;
     }
 
-    void reallocate(size_t size)
-    {
+    void reallocate(size_t size) {
         auto hash_size = get_prime(size);
         this->slots_page = Page::get(this)->allocate_exclusive_page();
         Vector<List<Slot<T>>>* slots = new(alignof(Vector<List<Slot<T>>>), this->slots_page) Vector<List<Slot<T>>>(this->slots_page, hash_size);
