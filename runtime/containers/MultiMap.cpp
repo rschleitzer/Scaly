@@ -17,7 +17,7 @@ struct MultiMap : Object {
         for (size_t i = 0; i < length; i++) {
             auto _r_1 = Region::create(_r);
             Array<KeyValuePair<K, Vector<V>>>& array = *new(alignof(Array<KeyValuePair<K, Vector<V>>>), _r_1.page) Array<KeyValuePair<K, Vector<V>>>();
-            auto list_iterator = ListIterator<Slot<KeyValuePair<K, Array<V>*>>>::create(multi_map_builder.slots->get(i)->head);
+            auto list_iterator = ListIterator<Slot<KeyValuePair<K, Array<V>*>>>(multi_map_builder.slots->get(i)->head);
             while (auto item = list_iterator.next()) {
                 array.add(
                     KeyValuePair<K, Vector<V>> {

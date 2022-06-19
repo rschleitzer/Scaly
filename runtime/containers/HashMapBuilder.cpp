@@ -41,7 +41,7 @@ struct HashMapBuilder : Object {
         if (this->slots != nullptr) {
             auto vector_iterator = VectorIterator<List<Slot<KeyValuePair<K, V>>>>::create(*this->slots);
             while (auto element = vector_iterator.next()) {
-                auto list_iterator = ListIterator<Slot<KeyValuePair<K, V>>>::create(element->head);
+                auto list_iterator = ListIterator<Slot<KeyValuePair<K, V>>>(element->head);
                 while (auto item = list_iterator.next())
                 {
                     auto hash_code = item->hash_code;

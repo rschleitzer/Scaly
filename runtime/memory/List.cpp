@@ -16,9 +16,7 @@ template<class T> struct Node : Object {
 template<class T> struct ListIterator {
     Node<T>* current;
 
-    static ListIterator<T> create(Node<T>* head) {
-        return ListIterator { .current = head };
-    }
+    ListIterator<T>(Node<T>* head) :current(head) {}
 
     T* next() {
         if (this->current != nullptr) {
@@ -70,7 +68,7 @@ template<class T> struct List : Object {
     }
 
     ListIterator<T> get_iterator()  {
-        return ListIterator<T>::create(this->head);
+        return ListIterator<T>(this->head);
     }
 };
 

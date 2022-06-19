@@ -18,7 +18,7 @@ struct HashSet : Object {
         for (size_t i = 0; i < length; i++) {
             auto _r_1 = Region::create(_r);
             Array<T>& array = *new(alignof(Array<T>), _r_1.page) Array<T>();
-            auto list_iterator = ListIterator<Slot<T>>::create(hash_set_builder.slots->get(i)->head);
+            auto list_iterator = ListIterator<Slot<T>>(hash_set_builder.slots->get(i)->head);
             while (auto item = list_iterator.next())
                 array.add(item->value);
             if (array.length > 0)

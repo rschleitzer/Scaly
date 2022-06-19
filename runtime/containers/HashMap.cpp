@@ -18,7 +18,7 @@ struct HashMap : Object {
         for (size_t i = 0; i < length; i++) {
             auto _r_1 = Region::create(_r);
             Array<KeyValuePair<K, V>>& array = *new(alignof(Array<KeyValuePair<K, V>>), _r_1.page) Array<KeyValuePair<K, V>>();
-            auto list_iterator = ListIterator<Slot<KeyValuePair<K, V>>>::create(hash_map_builder.slots->get(i)->head);
+            auto list_iterator = ListIterator<Slot<KeyValuePair<K, V>>>(hash_map_builder.slots->get(i)->head);
             while (auto item = list_iterator.next())
                 array.add(item->value);
             if (array.length > 0)
