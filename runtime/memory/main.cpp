@@ -5,7 +5,7 @@ void test_page()
 {
     auto heap = Heap::create();
     auto root_stack_bucket = StackBucket::create(&heap);
-    auto r = Region::create_from_page(Page::get(root_stack_bucket));
+    auto r = Region(Page::get(root_stack_bucket));
 
     auto page = r.page;
 
@@ -106,7 +106,7 @@ void test_heap()
     auto heap = Heap::create();
     auto root_stack_bucket = StackBucket::create(&heap);
     auto root_page = Page::get(root_stack_bucket);
-    auto r = Region::create_from_page(&*root_page);
+    auto r = Region(&*root_page);
     auto page = r.page;
 
     size_t* start = nullptr;
@@ -268,56 +268,9 @@ void test_heapbucket() {
         exit(-39);
 }
 
-void test_region() {
-    auto heap = Heap::create();
-    auto root_stack_bucket = StackBucket::create(&heap);
-    auto r1 = Region::create_from_page(Page::get(root_stack_bucket));
-
-    auto one = (int*)r1.allocate(sizeof(int), alignof(int));
-    *one = 1;
-
-    auto two = (int*)r1.allocate(sizeof(int), alignof(int));
-    *two = 2;
-
-    {
-        auto r2a = Region::create(r1);
-
-        auto three = (int*)r2a.allocate(sizeof(int), alignof(int));
-        *three = 3;
-
-        auto four = (int*)r2a.allocate(sizeof(int), alignof(int));
-        *four = 4;
-
-        auto five = (int*)r2a.allocate(sizeof(int), alignof(int));
-        *five = 5;
-
-        if  (*five != 5)
-            exit(-40);
-        if  (*four != 4)
-            exit(-41);
-        if  (*three != 3)
-            exit(-42);
-    }
-    {
-        auto r2b = Region::create(r1);
-
-        auto six = (int*)r2b.allocate(sizeof(int), alignof(int));
-        *six = 6;
-
-        auto seven = (int*)r2b.allocate(sizeof(int), alignof(int));
-        *seven = 7;
-    }
-
-    if  (*two != 2)
-        exit(-43);
-    if  (*one != 1)
-        exit(-44);
-}
-
 int main(int argc, char** argv)
 {
     test_page();
     test_heap();
     test_heapbucket();
-    test_region();
 }

@@ -27,7 +27,7 @@ int main(int argc, char** argv)
     auto heap = Heap::create();
     auto root_stack_bucket = StackBucket::create(&heap);
     auto root_page = Page::get(root_stack_bucket);
-    auto region = Region::create_from_page(root_page);
+    auto region = Region(root_page);
 
     test_file(region);
 }

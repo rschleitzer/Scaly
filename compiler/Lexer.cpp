@@ -271,7 +271,7 @@ struct Lexer : Object {
     }
 
     Token* scan_identifier(Page* _rp) {
-        auto r = Region::create_from_page(_rp);
+        auto r = Region(_rp);
         StringBuilder& name = *StringBuilder::create(r.page);
         while (true) {
             if (character == nullptr) {
@@ -297,7 +297,7 @@ struct Lexer : Object {
     }
 
     Token* scan_attribute(Page* _rp) {
-        auto r = Region::create_from_page(_rp);
+        auto r = Region(_rp);
         StringBuilder& name = *StringBuilder::create(r.page);
         while (true) {
             if (character == nullptr) {
@@ -323,7 +323,7 @@ struct Lexer : Object {
     }
 
     Token* scan_operator(Page* _rp, char c) {
-        auto r = Region::create_from_page(_rp);
+        auto r = Region(_rp);
         StringBuilder& operation = *StringBuilder::create(r.page);
         operation.append_character(c);
         while (true) {
@@ -351,7 +351,7 @@ struct Lexer : Object {
     }
 
     Token* scan_string_literal(Page* _rp) {
-        auto r = Region::create_from_page(_rp);
+        auto r = Region(_rp);
         StringBuilder& value = *StringBuilder::create(r.page);
         while (true) {
             read_character();
@@ -402,7 +402,7 @@ struct Lexer : Object {
     }
 
     Token* scan_string_identifier(Page* _rp) {
-        auto r = Region::create_from_page(_rp);
+        auto r = Region(_rp);
         StringBuilder& value = *StringBuilder::create(r.page);
         while (true) {
             read_character();
@@ -425,7 +425,7 @@ struct Lexer : Object {
     }
 
     Token* scan_fragment_literal(Page* _rp) {
-        auto r = Region::create_from_page(_rp);
+        auto r = Region(_rp);
         StringBuilder& value = *StringBuilder::create(r.page);
         while (true) {
             read_character();
@@ -513,7 +513,7 @@ struct Lexer : Object {
     }
 
     Token* scan_integer_literal(Page* _rp, char c) {
-        auto r = Region::create_from_page(_rp);
+        auto r = Region(_rp);
         StringBuilder& value = *StringBuilder::create(r.page);
         value.append_character(c);
         while (true) {
@@ -589,7 +589,7 @@ struct Lexer : Object {
     }
 
     Token* scan_hex_literal(Page* _rp) {
-        auto r = Region::create_from_page(_rp);
+        auto r = Region(_rp);
         StringBuilder& value = *StringBuilder::create(r.page);
         while (true) {
             read_character();
