@@ -194,7 +194,7 @@ void test_compiler(Region& _pr)
 "0"
 "\n"
     ),
-     *Vector<String>::create(r.page, 0)
+    *new(alignof(Vector<String>), r.page) Vector<String>(r.page, 0)
     ) != 0)
         exit (-60);
 

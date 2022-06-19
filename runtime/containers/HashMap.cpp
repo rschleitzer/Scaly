@@ -13,7 +13,7 @@ struct HashMap : Object {
         if (hash_map_builder.length == 0)
             return;
 
-        this->slots = Vector<Vector<KeyValuePair<K, V>>>::create(_rp, hash_map_builder.slots->length);
+        this->slots = new(alignof(Vector<Vector<KeyValuePair<K, V>>>), _rp) Vector<Vector<KeyValuePair<K, V>>>(_rp, hash_map_builder.slots->length);
         auto length = hash_map_builder.slots->length;
         for (size_t i = 0; i < length; i++) {
             auto _r_1 = Region::create(_r);

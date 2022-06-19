@@ -12,7 +12,7 @@ struct MultiMap : Object {
         if (multi_map_builder.length == 0)
             return;
 
-        this->slots = Vector<Vector<KeyValuePair<K, Vector<V>>>>::create(_rp, multi_map_builder.slots->length);
+        this->slots = new(alignof(Vector<Vector<KeyValuePair<K, Vector<V>>>>), _rp) Vector<Vector<KeyValuePair<K, Vector<V>>>>(_rp, multi_map_builder.slots->length);
         auto length = multi_map_builder.slots->length;
         for (size_t i = 0; i < length; i++) {
             auto _r_1 = Region::create(_r);

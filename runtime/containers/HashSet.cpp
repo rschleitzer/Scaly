@@ -13,7 +13,7 @@ struct HashSet : Object {
         if (hash_set_builder.length == 0)
             return;
 
-        this->slots = Vector<Vector<T>>::create(_rp, hash_set_builder.slots->length);
+        this->slots = new(alignof(Vector<Vector<T>>), _rp) Vector<Vector<T>>(_rp, hash_set_builder.slots->length);
         auto length = hash_set_builder.slots->length;
         for (size_t i = 0; i < length; i++) {
             auto _r_1 = Region::create(_r);

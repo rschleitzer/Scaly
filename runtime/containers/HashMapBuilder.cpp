@@ -36,7 +36,7 @@ struct HashMapBuilder : Object {
     {
         auto hash_size = get_prime(size);
         this->slots_page = Page::get(this)->allocate_exclusive_page();
-        Vector<List<Slot<KeyValuePair<K, V>>>>* slots = Vector<List<Slot<KeyValuePair<K, V>>>>::create(this->slots_page, hash_size);
+        auto slots = new(alignof(Vector<List<Slot<KeyValuePair<K, V>>>>), this->slots_page) Vector<List<Slot<KeyValuePair<K, V>>>>(this->slots_page, hash_size);
 
         if (this->slots != nullptr) {
             auto vector_iterator = VectorIterator<List<Slot<KeyValuePair<K, V>>>>(*this->slots);

@@ -88,7 +88,7 @@ struct HashSetBuilder : Object {
     {
         auto hash_size = get_prime(size);
         this->slots_page = Page::get(this)->allocate_exclusive_page();
-        Vector<List<Slot<T>>>* slots = Vector<List<Slot<T>>>::create(this->slots_page, hash_size);
+        Vector<List<Slot<T>>>* slots = new(alignof(Vector<List<Slot<T>>>), this->slots_page) Vector<List<Slot<T>>>(this->slots_page, hash_size);
 
         if (this->slots != nullptr) {
             auto vector_iterator = VectorIterator<List<Slot<T>>>(*this->slots);

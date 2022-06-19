@@ -11,7 +11,7 @@ template<class T> struct VectorIterator {
     Vector<T>& vector;
     size_t position;
 
-    VectorIterator<T>(Vector<T>& vector) : vector(vector) {}
+    VectorIterator<T>(Vector<T>& vector) : vector(vector), position(0) {}
 
     T* next() {
         if (position == vector.length)
@@ -26,36 +26,27 @@ template<class T> struct Vector : Object {
     size_t length;
     T* data;
 
-    Vector(size_t length)
-    : length(length) {}
+    Vector(size_t length, T* data)
+    : length(length), data(data) {}
 
-    static Vector<T>* create(Page* _rp, size_t length) {
-        auto vector = allocate(_rp, length);
-        if (length > 0)
-            std::memset(vector->data, 0, length * sizeof(T));
-        return vector;
-    }
-
-    static Vector<T>* allocate(Page* _rp, size_t length) {
-        auto vector = create_without_buffer(_rp, length);
-        if (length > 0)
-            vector->data = (T*) _rp->allocate_raw(length * sizeof(T), alignof(T));
-        return vector;
-    }
-
-    static Vector<T>* create_without_buffer(Page* _rp, size_t length) {
-        return new(alignof(Vector<T>), _rp) Vector<T> (length);
+    Vector<T>(Page* _rp, size_t length) : length(length) {
+        if (this->length > 0) {
+            this->data = (T*) _rp->allocate_raw(length * sizeof(T), alignof(T));
+            std::memset(this->data, 0, length * sizeof(T));
+        } else {
+            this->data = nullptr;
+        }
     }
 
     static Vector<T>* from_raw_array(Page* _rp, T* array, size_t length) {
-        Vector<T>* vector = Vector<T>::create(_rp, length);
+        Vector<T>* vector = new(alignof(Vector<T>), _rp) Vector<T>(_rp, length);
         memcpy(vector->data, array, length * sizeof(T));
         return vector;
     }
 
     static Vector<T>* from_array(Page* _rp, Array<T>& array) {
         if (array.length == 0)
-            return new(alignof(Vector<T>), _rp) Vector<T>(0);
+            return new(alignof(Vector<T>), _rp) Vector<T>(0, nullptr);
         return Vector<T>::from_raw_array(_rp, array.vector->data, array.length);
     }
 

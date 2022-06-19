@@ -6,7 +6,7 @@ void test_vector(Region& _pr)
     auto _r = Region::create(_pr);
     {
         auto r_1 = Region::create(_r);
-        Vector<int>& vector = *Vector<int>::create(r_1.page, 2);
+        Vector<int>& vector = *new(alignof(Vector<int>), r_1.page) Vector<int>(r_1.page, 2);
         *vector[0] = 1;
         vector.set(1, 2);
         if (*(vector.get(0)) != 1)
@@ -216,7 +216,7 @@ void test_hash_map(Region& _pr) {
                         sb->append_character(k);
                         sb->append_character(l);
                         String theString = (sb->to_string(_r_1.page));
-                         if (!set.contains(theString))
+                        if (!set.contains(theString))
                              exit(-26);
                         if (!map.contains(theString))
                             exit(-27);
