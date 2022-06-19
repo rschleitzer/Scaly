@@ -91,7 +91,7 @@ struct HashSetBuilder : Object {
         Vector<List<Slot<T>>>* slots = Vector<List<Slot<T>>>::create(this->slots_page, hash_size);
 
         if (this->slots != nullptr) {
-            auto vector_iterator = VectorIterator<List<Slot<T>>>::create(*this->slots);
+            auto vector_iterator = VectorIterator<List<Slot<T>>>(*this->slots);
             while (auto element = vector_iterator.next()) {
                 auto list_iterator = ListIterator<Slot<T>>(element->head);
                 while (auto item = list_iterator.next())

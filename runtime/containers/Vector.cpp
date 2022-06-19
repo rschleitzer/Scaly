@@ -11,9 +11,7 @@ template<class T> struct VectorIterator {
     Vector<T>& vector;
     size_t position;
 
-    static VectorIterator<T> create(Vector<T>& vector) {
-        return VectorIterator { .vector = vector, .position = 0 };
-    }
+    VectorIterator<T>(Vector<T>& vector) : vector(vector) {}
 
     T* next() {
         if (position == vector.length)

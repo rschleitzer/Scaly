@@ -20,7 +20,7 @@ struct MultiMapBuilder : Object {
         Vector<List<Slot<KeyValuePair<K, Array<V>*>>>>* slots = Vector<List<Slot<KeyValuePair<K, Array<V>*>>>>::create(this->slots_page, hash_size);
 
         if (this->slots != nullptr) {
-            auto vector_iterator = VectorIterator<List<Slot<KeyValuePair<K, Array<V>*>>>>::create(*this->slots);
+            auto vector_iterator = VectorIterator<List<Slot<KeyValuePair<K, Array<V>*>>>>(*this->slots);
             while (auto element = vector_iterator.next()) {
                 auto list_iterator = ListIterator<Slot<KeyValuePair<K, Array<V>*>>>(element->head);
                 while (auto item = list_iterator.next())

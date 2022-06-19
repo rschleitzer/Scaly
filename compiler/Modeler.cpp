@@ -281,7 +281,7 @@ Result<Model, ModelError> build_model(Region& _pr, Page* _rp, Page* _ep, Vector<
     MultiMapBuilder<String, Function>& functions_builder = *new(alignof(MultiMapBuilder<String, Array<Function>>), _r.page) MultiMapBuilder<String, Function>();
     MultiMapBuilder<String, Concept>& definitions_builder = *new(alignof(MultiMapBuilder<String, Array<Concept>>), _r.page) MultiMapBuilder<String, Concept>();
 
-    auto declarations_iterator = VectorIterator<DeclarationSyntax>::create(declarations);
+    auto declarations_iterator = VectorIterator<DeclarationSyntax>(declarations);
     while (auto declaration = declarations_iterator.next()) {
         auto _r_1 = Region::create(_r);
         switch (declaration->_tag)
