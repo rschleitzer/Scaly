@@ -478,7 +478,7 @@ struct Lexer : Object {
     Token* scan_numeric_literal(Page* _rp, StringBuilder& value) {
         read_character();
         if (character == nullptr)
-            auto token = new (alignof(Token), _rp) Token(LiteralToken(IntegerToken(value.to_string(_rp))));
+            return new (alignof(Token), _rp) Token(LiteralToken(IntegerToken(value.to_string(_rp))));
 
         auto c = *character;
 

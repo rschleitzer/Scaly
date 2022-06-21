@@ -137,26 +137,42 @@ Result<Vector<DeclarationSyntax>*, ParserError> parse_program(Region& _pr, Page*
     Array<DeclarationSyntax>& declarations = *new(alignof(Array<DeclarationSyntax>), _r.page) Array<DeclarationSyntax>();
     
     // Parse the scaly module inclusion
-    Parser& parser_module = *new(alignof(Parser), _r.page) Parser(_r, _r.page, String(_r.page, "module scaly"));
-    auto module_syntax_result = parser_module.parse_module(_r, _rp, _ep);
-    if (module_syntax_result._tag == Result<ModuleSyntax*, ParserError>::Error)
-        return Result<Vector<DeclarationSyntax>*, ParserError> { ._tag = Result<Vector<DeclarationSyntax>*, ParserError>::Error, ._Error = module_syntax_result._Error };
-    auto module_syntax = module_syntax_result._Ok;
-    auto module_declaration = DeclarationSyntax(ModuleSyntax(module_syntax));
-    declarations.add(module_declaration);
+    {
+        auto _r_1 = Region::create(_r);
+        Parser& parser_module = *new(alignof(Parser), _r_1.page) Parser(_r_1, _r_1.page, String(_r_1.page, "module scaly"));
+        auto module_syntax_result = parser_module.parse_module(_r_1, _rp, _ep);
+        if (module_syntax_result._tag == Result<ModuleSyntax*, ParserError>::Error)
+            return Result<Vector<DeclarationSyntax>*, ParserError> { ._tag = Result<Vector<DeclarationSyntax>*, ParserError>::Error, ._Error = module_syntax_result._Error };
+        auto module_syntax = module_syntax_result._Ok;
+        auto module_declaration = DeclarationSyntax(ModuleSyntax(module_syntax));
+        declarations.add(module_declaration);
+    }
 
-    // Parse the declarations of the program
-    Parser& parser = *new(alignof(Parser), _r.page) Parser(_r, _r.page, program);
-    while(true) {
-        auto node_result = parser.parse_declaration(_r, _rp, _ep);
-        if ((node_result._tag == Result<DeclarationSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
-            return Result<Vector<DeclarationSyntax>*, ParserError> { ._tag = Result<Vector<DeclarationSyntax>*, ParserError>::Error, ._Error = node_result._Error };
-        if (node_result._tag == Result<DeclarationSyntax, ParserError>::Ok) {
-            auto node = node_result._Ok;
-            declarations.add(node);
-        } else {
-            break;
+    // Parse the uses and declarations of the program
+    Vector<UseSyntax>* uses = nullptr;
+    Vector<StatementSyntax>* statements = nullptr;
+    {
+        auto _r_1 = Region::create(_r);
+        Parser& parser = *new(alignof(Parser), _r_1.page) Parser(_r_1, _r_1.page, program);
+        while(true) {
+            auto node_result = parser.parse_declaration(_r_1, _rp, _ep);
+            if ((node_result._tag == Result<DeclarationSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
+                return Result<Vector<DeclarationSyntax>*, ParserError> { ._tag = Result<Vector<DeclarationSyntax>*, ParserError>::Error, ._Error = node_result._Error };
+            if (node_result._tag == Result<DeclarationSyntax, ParserError>::Ok) {
+                auto node = node_result._Ok;
+                declarations.add(node);
+            } else {
+                break;
+            }
         }
+
+        Result<Vector<UseSyntax>*, ParserError> uses_result = parser.parse_use_list(_r_1, _rp, _ep);
+        if (uses_result._tag == Result<Vector<UseSyntax>, ParserError>::Ok)
+            uses = uses_result._Ok;
+
+        Result<Vector<StatementSyntax>*, ParserError> statements_result = parser.parse_statement_list(_r_1, _rp, _ep);
+        if (statements_result._tag == Result<Vector<StatementSyntax>, ParserError>::Ok)
+            statements = statements_result._Ok;
     }
 
     // Parse the main function stub
@@ -189,39 +205,7 @@ Result<Vector<DeclarationSyntax>*, ParserError> parse_program(Region& _pr, Page*
 
     auto end = parser_main.lexer.position;
 
-    // Parse the uses of the program and put them into the function implementation
-    Array<UseSyntax>& uses = *new(alignof(Array<UseSyntax>), _r.page) Array<UseSyntax>();
-    while(true) {
-        auto node_result = parser.parse_use(_r, _rp, _ep);
-        if ((node_result._tag == Result<UseSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
-            return Result<Vector<DeclarationSyntax>*, ParserError> { ._tag = Result<Vector<DeclarationSyntax>*, ParserError>::Error, ._Error = node_result._Error };
-        if (node_result._tag == Result<UseSyntax, ParserError>::Ok) {
-            auto node = node_result._Ok;
-            uses.add(node);
-        } else {
-            if ((uses.length == 0) && (node_result._tag == Result<UseSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
-            return Result<Vector<DeclarationSyntax>*, ParserError> { ._tag = Result<Vector<DeclarationSyntax>*, ParserError>::Error, ._Error = node_result._Error };
-            break;
-        }
-    }
-    // Parse the statements of the program and put them into the function implementation
-    Array<StatementSyntax>& statements = *new(alignof(Array<StatementSyntax>), _r.page) Array<StatementSyntax>();
-    while(true) {
-        auto node_result = parser.parse_statement(_r, _rp, _ep);
-        if ((node_result._tag == Result<StatementSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
-            return Result<Vector<DeclarationSyntax>*, ParserError> { ._tag = Result<Vector<DeclarationSyntax>*, ParserError>::Error, ._Error = node_result._Error };
-        if (node_result._tag == Result<StatementSyntax, ParserError>::Ok) {
-            auto node = node_result._Ok;
-            statements.add(node);
-        } else {
-            if ((statements.length == 0) && (node_result._tag == Result<StatementSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
-            return Result<Vector<DeclarationSyntax>*, ParserError> { ._tag = Result<Vector<DeclarationSyntax>*, ParserError>::Error, ._Error = node_result._Error };
-            break;
-        }
-    }
-    auto block = new(alignof(BlockSyntax), _rp) BlockSyntax(start, end, 
-        new(alignof(Vector<UseSyntax>), _rp) Vector<UseSyntax>(_rp, uses), 
-        new(alignof(Vector<StatementSyntax>), _rp) Vector<StatementSyntax>(_rp, statements));
+    auto block = new(alignof(BlockSyntax), _rp) BlockSyntax(start, end, uses, statements);
     auto block_expression = new (alignof(ExpressionSyntax), _rp) ExpressionSyntax(BlockSyntax(*block));
     auto operand = new(alignof(OperandSyntax), _rp) OperandSyntax(start, end, *block_expression, nullptr);
     Array<OperandSyntax>& operands_array = *new(alignof(Array<OperandSyntax>), _r.page) Array<OperandSyntax>();

@@ -189,13 +189,7 @@ void test_generator(Region& _pr)
 void test_compiler(Region& _pr)
 {
     auto r = Region::create(_pr);
-    if (compile_and_run_program(_pr, String(r.page,
-"\n"
-"0"
-"\n"
-    ),
-    *new(alignof(Vector<String>), r.page) Vector<String>(r.page, 0)
-    ) != 0)
+    if (compile_and_run_program(_pr, String(r.page, "0"), *new(alignof(Vector<String>), r.page) Vector<String>(r.page, 0)) != 0)
         exit (-60);
 
 }
