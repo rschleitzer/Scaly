@@ -53,12 +53,12 @@ struct HexToken {
 };
 
 struct LiteralToken : Object {
-    LiteralToken(StringToken stringToken) : tag(String), stringToken(stringToken) {}
-    LiteralToken(FragmentToken fragmentToken) : tag(Fragment), fragmentToken(fragmentToken) {}
-    LiteralToken(IntegerToken integerToken) : tag(Integer), integerToken(integerToken) {}
-    LiteralToken(BooleanToken booleanToken) : tag(Boolean), booleanToken(booleanToken) {}
-    LiteralToken(FloatingPointToken floatingPointToken) : tag(FloatingPoint), floatingPointToken(floatingPointToken) {}
-    LiteralToken(HexToken hexToken) : tag(Hex), hexToken(hexToken) {}
+    LiteralToken(StringToken string) : _tag(String), _String(string) {}
+    LiteralToken(FragmentToken fragment) : _tag(Fragment), _Fragment(fragment) {}
+    LiteralToken(IntegerToken integer) : _tag(Integer), _Integer(integer) {}
+    LiteralToken(BooleanToken boolean) : _tag(Boolean), _Boolean(boolean) {}
+    LiteralToken(FloatingPointToken floating_point) : _tag(FloatingPoint), _FloatingPoint(floating_point) {}
+    LiteralToken(HexToken hex) : _tag(Hex), _Hex(hex) {}
     enum {
         String,
         Fragment,
@@ -66,14 +66,14 @@ struct LiteralToken : Object {
         Boolean,
         FloatingPoint,
         Hex,
-    } tag;
+    } _tag;
     union {
-        StringToken stringToken;
-        FragmentToken fragmentToken;
-        IntegerToken integerToken;
-        BooleanToken booleanToken;
-        FloatingPointToken floatingPointToken;
-        HexToken hexToken;
+        StringToken _String;
+        FragmentToken _Fragment;
+        IntegerToken _Integer;
+        BooleanToken _Boolean;
+        FloatingPointToken _FloatingPoint;
+        HexToken _Hex;
 
     };
 };
@@ -82,14 +82,14 @@ struct LineFeedToken {};
 struct ColonToken {};
 
 struct Token : Object {
-    Token(EmptyToken emptyToken) : tag(Empty) {}
-    Token(InvalidToken invalidToken) : tag(Invalid) {}
-    Token(IdentifierToken identifierToken) : tag(Identifier), identifierToken(identifierToken) {}
-    Token(AttributeToken attributeToken) : tag(Attribute), attributeToken(attributeToken) {}
-    Token(PunctuationToken punctuationToken) : tag(Punctuation), punctuationToken(punctuationToken) {}
-    Token(LiteralToken literalToken) : tag(Literal), literalToken(literalToken) {}
-    Token(LineFeedToken lineFeedToken) : tag(LineFeed) {}
-    Token(ColonToken colonToken) : tag(Colon) {}
+    Token(EmptyToken empty) : _tag(Empty) {}
+    Token(InvalidToken invalid) : _tag(Invalid) {}
+    Token(IdentifierToken identifier) : _tag(Identifier), _Identifier(identifier) {}
+    Token(AttributeToken attribute) : _tag(Attribute), _Attribute(attribute) {}
+    Token(PunctuationToken punctuation) : _tag(Punctuation), _Punctuation(punctuation) {}
+    Token(LiteralToken literal) : _tag(Literal), _Literal(literal) {}
+    Token(LineFeedToken line_feed) : _tag(LineFeed) {}
+    Token(ColonToken colon) : _tag(Colon) {}
     enum {
         Empty,
         Invalid,
@@ -99,16 +99,16 @@ struct Token : Object {
         Literal,
         LineFeed,
         Colon,
-    } tag;
+    } _tag;
     union {
-        EmptyToken emptyToken;
-        InvalidToken invalidToken;
-        IdentifierToken identifierToken;
-        AttributeToken attributeToken;
-        PunctuationToken punctuationToken;
-        LiteralToken literalToken;
-        LineFeedToken lineFeedToken;
-        ColonToken colonToken;
+        EmptyToken _Empty;
+        InvalidToken _Invalid;
+        IdentifierToken _Identifier;
+        AttributeToken _Attribute;
+        PunctuationToken _Punctuation;
+        LiteralToken _Literal;
+        LineFeedToken _LineFeed;
+        ColonToken _Colon;
     };
 };
 
@@ -121,7 +121,7 @@ struct Lexer : Object {
 
     Lexer(String deck) {
         token = new(alignof(Token), Page::get(this)->allocate_exclusive_page()) Token(EmptyToken());
-        token->tag = Token::Empty;
+        token->_tag = Token::Empty;
         character = nullptr;
         chars = StringIterator::create(deck);
         previous_position = 0,
@@ -265,7 +265,7 @@ struct Lexer : Object {
                 continue;
 
             auto token = new (alignof(Token), _rp) Token(LineFeedToken());
-            token->tag = Token::LineFeed;
+            token->_tag = Token::LineFeed;
             return this->token;
         }
     }
@@ -751,13 +751,13 @@ struct Lexer : Object {
 
     bool parse_keyword(Region& _pr, Page* _rp, const String& fixed_string) {
         Region _r = Region::create(_pr);
-        if (token->tag == Token::Empty)
+        if (token->_tag == Token::Empty)
             advance(_r);
 
-        switch (token->tag) {
+        switch (token->_tag) {
             case Token::Identifier:
             {
-                auto right_keyword = (token->identifierToken.name.equals(fixed_string));
+                auto right_keyword = (token->_Identifier.name.equals(fixed_string));
                 if (right_keyword)
                     empty();
 
@@ -771,15 +771,15 @@ struct Lexer : Object {
 
     String* parse_identifier(Region& _pr, Page* _rp, HashSet<String>& keywords) {
         Region _r = Region::create(_pr);
-        if (token->tag == Token::Empty)
+        if (token->_tag == Token::Empty)
             advance(_r);
 
-        switch (token->tag) {
+        switch (token->_tag) {
             case Token::Identifier:
             {
-                if (keywords.contains(token->identifierToken.name))
+                if (keywords.contains(token->_Identifier.name))
                     return nullptr;
-                auto ret = new(alignof(String), _rp) String(_rp, token->identifierToken.name);
+                auto ret = new(alignof(String), _rp) String(_rp, token->_Identifier.name);
                 empty();
                 return ret;
             }
@@ -790,13 +790,13 @@ struct Lexer : Object {
 
     String* parse_attribute(Region& _pr, Page* _rp) {
         Region _r = Region::create(_pr);
-        if (token->tag == Token::Empty)
+        if (token->_tag == Token::Empty)
             advance(_r);
 
-        switch (token->tag) {
+        switch (token->_tag) {
             case Token::Attribute:
             {
-                auto ret = new(alignof(String), _rp) String(_rp, token->attributeToken.name);
+                auto ret = new(alignof(String), _rp) String(_rp, token->_Attribute.name);
                 empty();
                 return ret;
             }
@@ -807,13 +807,13 @@ struct Lexer : Object {
 
     bool parse_punctuation(Region& _pr, Page* _rp, const String& fixed_string) {
         Region _r = Region::create(_pr);
-        if (token->tag == Token::Empty)
+        if (token->_tag == Token::Empty)
             advance(_r);
 
-        switch (token->tag) {
+        switch (token->_tag) {
             case Token::Punctuation:
             {
-                bool ret = (token->punctuationToken.sign.equals(fixed_string));
+                bool ret = (token->_Punctuation.sign.equals(fixed_string));
                 if (ret)
                     empty();
 
@@ -826,52 +826,52 @@ struct Lexer : Object {
 
     LiteralToken* parse_literal(Region& _pr, Page* _rp) {
         Region _r = Region::create(_pr);
-        if (token->tag == Token::Empty)
+        if (token->_tag == Token::Empty)
             advance(_r);
 
-        switch (token->tag)
+        switch (token->_tag)
         {
             case Token::Literal:
-                switch (token->literalToken.tag)
+                switch (token->_Literal._tag)
                 {
                     case LiteralToken::String:
                     {
-                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken(StringToken(String(_rp, token->literalToken.stringToken.value)));
+                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken(StringToken(String(_rp, token->_Literal._String.value)));
                         empty();
                         return ret;
                     }
 
                     case LiteralToken::Integer:
                     {
-                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken(IntegerToken(String(_rp, token->literalToken.integerToken.value)));
+                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken(IntegerToken(String(_rp, token->_Literal._Integer.value)));
                         empty();
                         return ret;
                     }
 
                     case LiteralToken::FloatingPoint:
                     {
-                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken(FloatingPointToken(String(_rp, token->literalToken.floatingPointToken.value)));
+                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken(FloatingPointToken(String(_rp, token->_Literal._FloatingPoint.value)));
                         empty();
                         return ret;
                     }
 
                     case LiteralToken::Hex:
                     {
-                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken(HexToken(String(_rp, token->literalToken.hexToken.value)));
+                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken(HexToken(String(_rp, token->_Literal._Hex.value)));
                         empty();
                         return ret;
                     }
 
                     case LiteralToken::Boolean:
                     {
-                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken(BooleanToken(token->literalToken.booleanToken.value));
+                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken(BooleanToken(token->_Literal._Boolean.value));
                         empty();
                         return ret;
                     }
 
                     case LiteralToken::Fragment:
                     {
-                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken(FragmentToken(String(_rp, token->literalToken.fragmentToken.value)));
+                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken(FragmentToken(String(_rp, token->_Literal._Fragment.value)));
                         empty();
                         return ret;
                     }
@@ -886,10 +886,10 @@ struct Lexer : Object {
 
     bool parse_colon(Region&_pr, Page* _rp) {
         Region _r = Region::create(_pr);
-        if (token->tag == Token::Empty)
+        if (token->_tag == Token::Empty)
             advance(_r);
 
-        switch (token->tag)
+        switch (token->_tag)
         {
             case Token::Colon: case Token::LineFeed:
                 empty();

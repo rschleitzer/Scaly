@@ -9,10 +9,10 @@ void test_lexer(Page* _rp) {
     {
         auto _r_1 = Region::create(r);
         Lexer& lexer = *new(alignof(Lexer), _r_1.page) Lexer(String(_r_1.page, ""));
-        if (lexer.token->tag != Token::Empty)
+        if (lexer.token->_tag != Token::Empty)
             exit (-1);
         lexer.advance(_r_1);
-        if (lexer.token->tag != Token::Empty)
+        if (lexer.token->_tag != Token::Empty)
             exit (-2);
     }
     {
@@ -26,146 +26,146 @@ void test_lexer(Page* _rp) {
 "'a string identifier' `a string fragment \\`\\n\\r\\t`"
         );
         Lexer& lexer = *new(alignof(Lexer), _r_1.page) Lexer(s);
-        if (lexer.token->tag != Token::Empty)
+        if (lexer.token->_tag != Token::Empty)
             exit (-3);
         lexer.advance(_r_1);
-        if (lexer.token->tag != Token::Identifier)
+        if (lexer.token->_tag != Token::Identifier)
             exit (-4);
-        if (!lexer.token->identifierToken.name.equals(String(_r_1.page, "abc_AZ0815_7")))
+        if (!lexer.token->_Identifier.name.equals(String(_r_1.page, "abc_AZ0815_7")))
             exit (-5);
         lexer.advance(_r_1);
-        if (lexer.token->tag != Token::Literal)
+        if (lexer.token->_tag != Token::Literal)
             exit (-6);
-        if (lexer.token->literalToken.tag != LiteralToken::Integer)
+        if (lexer.token->_Literal._tag != LiteralToken::Integer)
             exit (-7);
-        if (!lexer.token->literalToken.integerToken.value.equals(String(_r_1.page, "42")))
+        if (!lexer.token->_Literal._Integer.value.equals(String(_r_1.page, "42")))
             exit (-8);
         lexer.advance(_r_1);
-        if (lexer.token->tag != Token::LineFeed)
+        if (lexer.token->_tag != Token::LineFeed)
             exit (-9);
         lexer.advance(_r_1);
-        if (lexer.token->tag != Token::Colon)
+        if (lexer.token->_tag != Token::Colon)
             exit (-10);
         lexer.advance(_r_1);
-        if (lexer.token->tag != Token::Literal)
+        if (lexer.token->_tag != Token::Literal)
             exit (-11);
-        if (lexer.token->literalToken.tag != LiteralToken::Integer)
+        if (lexer.token->_Literal._tag != LiteralToken::Integer)
             exit (-12);
-        if (!lexer.token->literalToken.integerToken.value.equals(String(_r_1.page, "0")))
+        if (!lexer.token->_Literal._Integer.value.equals(String(_r_1.page, "0")))
             exit (-13);
         lexer.advance(_r_1);
-        if (lexer.token->tag != Token::Literal)
+        if (lexer.token->_tag != Token::Literal)
             exit (-14);
-        if (lexer.token->literalToken.tag != LiteralToken::Integer)
+        if (lexer.token->_Literal._tag != LiteralToken::Integer)
             exit (-15);
-        if (!lexer.token->literalToken.integerToken.value.equals(String(_r_1.page, "12")))
+        if (!lexer.token->_Literal._Integer.value.equals(String(_r_1.page, "12")))
             exit (-16);
         lexer.advance(_r_1);
-        if (lexer.token->tag != Token::Literal)
+        if (lexer.token->_tag != Token::Literal)
             exit (-17);
-        if (lexer.token->literalToken.tag != LiteralToken::FloatingPoint)
+        if (lexer.token->_Literal._tag != LiteralToken::FloatingPoint)
             exit (-18);
-        if (!lexer.token->literalToken.floatingPointToken.value.equals(String(_r_1.page, "0.34")))
+        if (!lexer.token->_Literal._FloatingPoint.value.equals(String(_r_1.page, "0.34")))
             exit (-18);
         lexer.advance(_r_1);
-        if (lexer.token->tag != Token::Literal)
+        if (lexer.token->_tag != Token::Literal)
             exit (-19);
-        if (lexer.token->literalToken.tag != LiteralToken::FloatingPoint)
+        if (lexer.token->_Literal._tag != LiteralToken::FloatingPoint)
             exit (-20);
-        if (!lexer.token->literalToken.floatingPointToken.value.equals(String(_r_1.page, "0.56E12")))
+        if (!lexer.token->_Literal._FloatingPoint.value.equals(String(_r_1.page, "0.56E12")))
             exit (-21);
         lexer.advance(_r_1);
-        if (lexer.token->tag != Token::Literal)
+        if (lexer.token->_tag != Token::Literal)
             exit (-22);
-        if (lexer.token->literalToken.tag != LiteralToken::FloatingPoint)
+        if (lexer.token->_Literal._tag != LiteralToken::FloatingPoint)
             exit (-23);
-        if (!lexer.token->literalToken.floatingPointToken.value.equals(String(_r_1.page, "0.78e13")))
+        if (!lexer.token->_Literal._FloatingPoint.value.equals(String(_r_1.page, "0.78e13")))
             exit (-24);
         lexer.advance(_r_1);
-        if (lexer.token->tag != Token::Literal)
+        if (lexer.token->_tag != Token::Literal)
             exit (-25);
-        if (lexer.token->literalToken.tag != LiteralToken::Hex)
+        if (lexer.token->_Literal._tag != LiteralToken::Hex)
             exit (-26);
-        if (!lexer.token->literalToken.hexToken.value.equals(String(_r_1.page, "aB")))
+        if (!lexer.token->_Literal._Hex.value.equals(String(_r_1.page, "aB")))
             exit (-27);
         lexer.advance(_r_1);
-        if (lexer.token->tag != Token::Literal)
+        if (lexer.token->_tag != Token::Literal)
             exit (-28);
-        if (lexer.token->literalToken.tag != LiteralToken::Hex)
+        if (lexer.token->_Literal._tag != LiteralToken::Hex)
             exit (-29);
-        if (!lexer.token->literalToken.hexToken.value.equals(String(_r_1.page, "CdEf02")))
+        if (!lexer.token->_Literal._Hex.value.equals(String(_r_1.page, "CdEf02")))
             exit (-30);
         lexer.advance(_r_1);
-        if (lexer.token->tag != Token::Literal)
+        if (lexer.token->_tag != Token::Literal)
             exit (-31);
-        if (lexer.token->literalToken.tag != LiteralToken::Boolean)
+        if (lexer.token->_Literal._tag != LiteralToken::Boolean)
             exit (-32);
-        if (lexer.token->literalToken.booleanToken.value)
+        if (lexer.token->_Literal._Boolean.value)
             exit (-33);
         lexer.advance(_r_1);
-        if (lexer.token->tag != Token::Literal)
+        if (lexer.token->_tag != Token::Literal)
             exit (-34);
-        if (lexer.token->literalToken.tag != LiteralToken::Boolean)
+        if (lexer.token->_Literal._tag != LiteralToken::Boolean)
             exit (-35);
-        if (!lexer.token->literalToken.booleanToken.value)
+        if (!lexer.token->_Literal._Boolean.value)
             exit (-36);
         lexer.advance(_r_1);
-        if (lexer.token->tag != Token::Attribute)
+        if (lexer.token->_tag != Token::Attribute)
             exit (-37);
-        if (!lexer.token->attributeToken.name.equals(String(_r_1.page, "ttribute")))
+        if (!lexer.token->_Attribute.name.equals(String(_r_1.page, "ttribute")))
             exit (-38);
         lexer.advance(_r_1);
-        if (lexer.token->tag != Token::Identifier)
+        if (lexer.token->_tag != Token::Identifier)
             exit (-39);
-        if (!lexer.token->identifierToken.name.equals(String(_r_1.page, "+")))
+        if (!lexer.token->_Identifier.name.equals(String(_r_1.page, "+")))
             exit (-40);
         lexer.advance(_r_1);
-        if (lexer.token->tag != Token::Identifier)
+        if (lexer.token->_tag != Token::Identifier)
             exit (-41);
-        if (!lexer.token->identifierToken.name.equals(String(_r_1.page, "-")))
+        if (!lexer.token->_Identifier.name.equals(String(_r_1.page, "-")))
             exit (-42);
         lexer.advance(_r_1);
-        if (lexer.token->tag != Token::Literal)
+        if (lexer.token->_tag != Token::Literal)
             exit (-43);
-        if (lexer.token->literalToken.tag != LiteralToken::Integer)
+        if (lexer.token->_Literal._tag != LiteralToken::Integer)
             exit (-44);
-        if (!lexer.token->literalToken.integerToken.value.equals(String(_r_1.page, "815")))
+        if (!lexer.token->_Literal._Integer.value.equals(String(_r_1.page, "815")))
             exit (-45);
         lexer.advance(_r_1);
-        if (lexer.token->tag != Token::Identifier)
+        if (lexer.token->_tag != Token::Identifier)
             exit (-46);
-        if (!lexer.token->identifierToken.name.equals(String(_r_1.page, "/*")))
+        if (!lexer.token->_Identifier.name.equals(String(_r_1.page, "/*")))
             exit (-47);
         lexer.advance(_r_1);
-        if (lexer.token->tag != Token::Identifier)
+        if (lexer.token->_tag != Token::Identifier)
             exit (-46);
-        if (!lexer.token->identifierToken.name.equals(String(_r_1.page, "<>")))
+        if (!lexer.token->_Identifier.name.equals(String(_r_1.page, "<>")))
             exit (-47);
         lexer.advance(_r_1);
-        if (lexer.token->tag != Token::Literal)
+        if (lexer.token->_tag != Token::Literal)
             exit (-48);
-        if (lexer.token->literalToken.tag != LiteralToken::String)
+        if (lexer.token->_Literal._tag != LiteralToken::String)
             exit (-49);
-        if (!lexer.token->literalToken.stringToken.value.equals(String(_r_1.page, "a string")))
+        if (!lexer.token->_Literal._String.value.equals(String(_r_1.page, "a string")))
             exit (-50);
         lexer.advance(_r_1);
-        if (lexer.token->tag != Token::Literal)
+        if (lexer.token->_tag != Token::Literal)
             exit (-51);
-        if (lexer.token->literalToken.tag != LiteralToken::String)
+        if (lexer.token->_Literal._tag != LiteralToken::String)
             exit (-52);
-        if (!lexer.token->literalToken.stringToken.value.equals(String(_r_1.page, "\"\n\r\t")))
+        if (!lexer.token->_Literal._String.value.equals(String(_r_1.page, "\"\n\r\t")))
             exit (-53);
         lexer.advance(_r_1);
-        if (lexer.token->tag != Token::Identifier)
+        if (lexer.token->_tag != Token::Identifier)
             exit (-54);
-        if (!lexer.token->identifierToken.name.equals(String(_r_1.page, "a string identifier")))
+        if (!lexer.token->_Identifier.name.equals(String(_r_1.page, "a string identifier")))
             exit (-55);
         lexer.advance(_r_1);
-        if (lexer.token->tag != Token::Literal)
+        if (lexer.token->_tag != Token::Literal)
             exit (-56);
-        if (lexer.token->literalToken.tag != LiteralToken::Fragment)
+        if (lexer.token->_Literal._tag != LiteralToken::Fragment)
             exit (-57);
-        if (!lexer.token->literalToken.fragmentToken.value.equals(String(_r_1.page, "a string fragment `\n\r\t")))
+        if (!lexer.token->_Literal._Fragment.value.equals(String(_r_1.page, "a string fragment `\n\r\t")))
             exit (-58);
     }
 }
