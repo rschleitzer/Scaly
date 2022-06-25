@@ -14,18 +14,18 @@ struct NotImplementedModelError
     Span span;
 };
 
-struct DuplicateNameError
-{
+struct DuplicateNameError {
+    DuplicateNameError(Span span) : span(span) {}
     Span span;
 };
 
 struct ModelBuilderError {
-    ModelBuilderError(NotImplementedModelError _NotImplementedModelError) : _NotImplemented(_NotImplementedModelError) {}
-    ModelBuilderError(DuplicateNameError _DuplicateNameError) : _DuplicateName(_DuplicateNameError) {}
+    ModelBuilderError(NotImplementedModelError _NotImplementedModelError) : _tag(NotImplemented), _NotImplemented(_NotImplementedModelError) {}
+    ModelBuilderError(DuplicateNameError _DuplicateNameError) : _tag(DuplicateName), _DuplicateName(_DuplicateNameError) {}
     enum {
         NotImplemented,
         DuplicateName,
-    } tag;
+    } _tag;
     union {
         NotImplementedModelError _NotImplemented;
         DuplicateNameError _DuplicateName;
@@ -33,17 +33,18 @@ struct ModelBuilderError {
 };
 
 struct ModelError : Object {
-    ModelError(ParserError parserError) : parserError(parserError) {}
-    ModelError(ModelBuilderError modelBuilderError) : modelBuilderError(modelBuilderError) {}
+    ModelError(IoModelError ioModelError) : _tag(Io), _Io(ioModelError) {}
+    ModelError(ParserError parserError) : _tag(Parser), _Parser(parserError) {}
+    ModelError(ModelBuilderError modelBuilderError) : _tag(Builder), _Builder(modelBuilderError) {}
     enum {
         Io,
         Parser,
         Builder,
-    } tag;
+    } _tag;
     union {
-        IoModelError ioModelError;
-        ParserError parserError;
-        ModelBuilderError modelBuilderError;
+        IoModelError _Io;
+        ParserError _Parser;
+        ModelBuilderError _Builder;
     };
 };
 
@@ -178,7 +179,9 @@ Result<Function, ModelError> handle_function(Region& _pr, Page* _rp, Page* _ep, 
 }
 
 Result<Concept, ModelError> handle_module(Region& _pr, Page* _rp, Page* _ep, ModuleSyntax& module_syntax) {
-    return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(module_syntax.start, module_syntax.end))))  };
+    auto _r = Region::create(_pr);
+    auto file_name_builder = new(alignof(StringBuilder), _r.page) StringBuilder(); 
+    return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = Concept(Span(module_syntax.start, module_syntax.end), Type(String(_rp, module_syntax.name.name)))  };
 }
 
 Result<Model, ModelError> build_model(Region& _pr, Page* _rp, Page* _ep, Vector<DeclarationSyntax>& declarations) {
@@ -215,7 +218,13 @@ Result<Model, ModelError> build_model(Region& _pr, Page* _rp, Page* _ep, Vector<
             case DeclarationSyntax::Macro:
             break;
             case DeclarationSyntax::Module:
-                auto module_result = handle_module(_r, _rp, _ep, declaration->_Module);
+                auto module_syntax = declaration->_Module;
+                auto concept_result = handle_module(_r, _rp, _ep, module_syntax);
+                if (concept_result._tag == Result<Concept, ModelError>::Error)
+                    return Result<Model, ModelError> { ._tag = Result<Model, ModelError>::Error, ._Error = concept_result._Error };
+                auto concept = concept_result._Ok;
+                if (!concepts_builder.add(concept.type.name, concept))
+                    return Result<Model, ModelError> { ._tag = Result<Model, ModelError>::Error, ._Error = ModelError(ModelBuilderError(DuplicateNameError(Span(module_syntax.start, module_syntax.end)))) };
             break;
         }
     }

@@ -65,7 +65,7 @@ void test_string(Region& _pr) {
 
 void test_string_builder(Region& _pr) {
     auto _r = Region::create(_pr);
-    StringBuilder& string_builder = *StringBuilder::create(_r.page);
+    StringBuilder& string_builder = *new(alignof(StringBuilder), _r.page) StringBuilder();
     auto length = string_builder.get_length();
     if (length != 0)
         exit(-11);
@@ -77,7 +77,7 @@ void test_string_builder(Region& _pr) {
     if (string_builder.get_length() != 3)
         exit(-13);
 
-    StringBuilder& string_builder2 = *StringBuilder::from_character(_r.page, 'd');
+    StringBuilder& string_builder2 = *new(alignof(StringBuilder), _r.page) StringBuilder('d');
     string_builder2.append_character('e');
     string_builder2.append_character('f');
     string_builder2.append_character('g');
@@ -192,12 +192,12 @@ void test_hash_map(Region& _pr) {
                     for (char l = '!'; l <= '/'; l++)
                     {
                         Region _r_2 = Region::create(_r_1);
-                        auto sb = StringBuilder::from_character(_r_2.page, i);
-                        sb->append_character(j);
-                        sb->append_character(k);
-                        sb->append_character(l);
-                        map.add(sb->to_string(_r_1.page), (size_t)i * j * k * l);
-                        set.add(sb->to_string(_r_1.page));
+                        StringBuilder& sb = *new(alignof(StringBuilder), _r_2.page) StringBuilder(i);
+                        sb.append_character(j);
+                        sb.append_character(k);
+                        sb.append_character(l);
+                        map.add(sb.to_string(_r_1.page), (size_t)i * j * k * l);
+                        set.add(sb.to_string(_r_1.page));
                     }
                 }
             }
@@ -211,11 +211,11 @@ void test_hash_map(Region& _pr) {
                     for (char l = '!'; l <= '/'; l++)
                     {
                         Region _r_2 = Region::create(_r_1);
-                        auto sb = StringBuilder::from_character(_r_2.page, i);
-                        sb->append_character(j);
-                        sb->append_character(k);
-                        sb->append_character(l);
-                        String theString = (sb->to_string(_r_1.page));
+                        StringBuilder& sb = *new(alignof(StringBuilder), _r_2.page) StringBuilder(i);
+                        sb.append_character(j);
+                        sb.append_character(k);
+                        sb.append_character(l);
+                        String theString = sb.to_string(_r_1.page);
                         if (!set.contains(theString))
                              exit(-26);
                         if (!map.contains(theString))
@@ -243,13 +243,13 @@ void test_multi_map(Region& _pr) {
                     for (char l = '!'; l <= '/'; l++)
                     {
                         Region _r_2 = Region::create(_r_1);
-                        auto sb = StringBuilder::from_character(_r_2.page, i);
-                        sb->append_character(j);
-                        sb->append_character(k);
-                        sb->append_character(l);
-                        map_builder.add(sb->to_string(_r_1.page), (size_t)i * j * k * l);
-                        map_builder.add(sb->to_string(_r_1.page), (size_t)i * j * k * l + 1);
-                        map_builder.add(sb->to_string(_r_1.page), (size_t)i * j * k * l + 2);
+                        StringBuilder& sb = *new(alignof(StringBuilder), _r_2.page) StringBuilder(i);
+                        sb.append_character(j);
+                        sb.append_character(k);
+                        sb.append_character(l);
+                        map_builder.add(sb.to_string(_r_1.page), (size_t)i * j * k * l);
+                        map_builder.add(sb.to_string(_r_1.page), (size_t)i * j * k * l + 1);
+                        map_builder.add(sb.to_string(_r_1.page), (size_t)i * j * k * l + 2);
                     }
                 }
             }
@@ -264,11 +264,11 @@ void test_multi_map(Region& _pr) {
                     for (char l = '!'; l <= '/'; l++)
                     {
                         Region _r_2 = Region::create(_r_1);
-                        auto sb = StringBuilder::from_character(_r_2.page, i);
-                        sb->append_character(j);
-                        sb->append_character(k);
-                        sb->append_character(l);
-                        String theString = (sb->to_string(_r_1.page));
+                        StringBuilder& sb = *new(alignof(StringBuilder), _r_2.page) StringBuilder(i);
+                        sb.append_character(j);
+                        sb.append_character(k);
+                        sb.append_character(l);
+                        String theString = (sb.to_string(_r_1.page));
                         if (!map_builder.contains(theString))
                             exit(-27);
                         if (!map.contains(theString))

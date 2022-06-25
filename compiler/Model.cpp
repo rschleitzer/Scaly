@@ -10,18 +10,6 @@ struct Span : Object {
     Span(size_t start, size_t end) : start(start), end(end) {}
 };
 
-struct Type {
-    String name;
-    Type(String name) : name(name) {}
-};
-
-struct Property {
-    String* name;
-    Type* type;
-    Property(String* name, Type* type) : name(name), type(type) {}
-};
-
-
 struct NameExpression : Object {
     String path;
     NameExpression(String path) : path(path) {}
@@ -68,6 +56,17 @@ struct Operation : Object {
     Operation(Vector<Operand> operands) : operands(operands) {}
 };
 
+struct Type {
+    String name;
+    Type(String name) : name(name) {}
+};
+
+struct Property {
+    String* name;
+    Type* type;
+    Property(String* name, Type* type) : name(name), type(type) {}
+};
+
 struct Function : Object {
     Span span;
     String name;
@@ -84,8 +83,10 @@ struct Function : Object {
 
 struct Concept : Object {
     Span span;
-    String name;
     Type type;
+    Concept(Span span, Type type)
+      : span(span),
+        type(type) {}
 };
 
 struct Model : Object {

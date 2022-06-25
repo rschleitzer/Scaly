@@ -7,16 +7,12 @@ struct StringBuilder : Object {
     Array<char> buffer;
 
     StringBuilder(Array<char> _buffer)
-    :   buffer(_buffer) {}
+      : buffer(_buffer) {}
 
-    static StringBuilder* create(Page* _rp) {
-        return new(alignof(StringBuilder), _rp) StringBuilder(Array<char>());
-    }
+    StringBuilder() : StringBuilder(Array<char>()) {}
 
-    static StringBuilder* from_character(Page* _rp, char character) {
-        auto string_builder = StringBuilder::create(_rp);
-        string_builder->append_character(character);
-        return string_builder;
+    StringBuilder(char character) : StringBuilder() {
+        this->append_character(character);
     }
 
     void append_character(char character) {
