@@ -4,91 +4,6 @@ namespace model {
 
 using namespace scaly::io;
 
-struct Span : Object {
-    size_t start;
-    size_t end;
-    Span(size_t start, size_t end) : start(start), end(end) {}
-};
-
-struct Type {
-    String name;
-    Type(String name) : name(name) {}
-};
-
-struct Property {
-    String* name;
-    Type* type;
-    Property(String* name, Type* type) : name(name), type(type) {}
-};
-
-
-struct NameExpression : Object {
-    String path;
-    NameExpression(String path) : path(path) {}
-};
-
-struct Expression;
-
-struct Operand : Object {
-    Expression* expression;
-};
-
-
-struct Component : Object {
-    Span span;
-    String name;
-    Vector<Operand> value;
-    Component(Span span, String name, Vector<Operand> value) : span(span), name(name), value(value) {}
-};
-
-
-struct TupleExpression : Object {
-    Span span;
-    Vector<Component> components;
-    TupleExpression(Span span, Vector<Component> components) : span(span), components(components) {}
-};
-
-struct NameExpression;
-struct TupleExpression;
-struct Expression : Object {
-    Expression(NameExpression nameExpression) : tag(Name), nameExpression(nameExpression) {}
-    Expression(TupleExpression tupleExpression) : tag(Tuple), tupleExpression(tupleExpression) {}
-    enum {
-        Name,
-        Tuple,
-    } tag;
-    union {
-        NameExpression nameExpression;
-        TupleExpression tupleExpression;
-    };
-
-};
-
-struct Operation : Object {
-    Vector<Operand> operands;
-    Operation(Vector<Operand> operands) : operands(operands) {}
-};
-
-struct Function : Object {
-    Span span;
-    String name;
-    Vector<Property>* input;
-    Vector<Property>* output;
-    Operation* operation;
-    Function(Span span, String name, Vector<Property>* input, Vector<Property>* output, Operation* operation) : span(span), name(name), input(input), output(output), operation(operation) {}
-};
-
-struct Concept : Object {
-    Span span;
-    String name;
-    Type type;
-};
-
-struct Model : Object {
-    MultiMap<String, Function> functions;
-    Model(MultiMap<String, Function> functions) : functions(functions) {};
-};
-
 struct IoModelError {
     String file_name;
 };
@@ -269,8 +184,8 @@ Result<Concept, ModelError> handle_module(Region& _pr, Page* _rp, Page* _ep, Mod
 Result<Model, ModelError> build_model(Region& _pr, Page* _rp, Page* _ep, Vector<DeclarationSyntax>& declarations) {
     auto _r = Region::create(_pr);
 
+    HashMapBuilder<String, Concept>& concepts_builder = *new(alignof(HashMapBuilder<String, Array<Concept>>), _r.page) HashMapBuilder<String, Concept>();
     MultiMapBuilder<String, Function>& functions_builder = *new(alignof(MultiMapBuilder<String, Array<Function>>), _r.page) MultiMapBuilder<String, Function>();
-    MultiMapBuilder<String, Concept>& definitions_builder = *new(alignof(MultiMapBuilder<String, Array<Concept>>), _r.page) MultiMapBuilder<String, Concept>();
 
     auto declarations_iterator = VectorIterator<DeclarationSyntax>(declarations);
     while (auto declaration = declarations_iterator.next()) {
@@ -304,10 +219,7 @@ Result<Model, ModelError> build_model(Region& _pr, Page* _rp, Page* _ep, Vector<
             break;
         }
     }
-
-    //auto function_builder_iterator = functions_builder.
-    //auto ret = new(alignof(Model), _rp) Model(functions);
-    return Result<Model, ModelError> { ._tag = Result<Model, ModelError>::Ok, ._Ok = Model(MultiMap<String, Function>(_r, _rp, functions_builder)) };
+    return Result<Model, ModelError> { ._tag = Result<Model, ModelError>::Ok, ._Ok = Model(HashMap<String, Concept>(_r, _rp, concepts_builder), MultiMap<String, Function>(_r, _rp, functions_builder)) };
 }
 
 Result<Model, ModelError> build_program_model(Region& _pr, Page* _rp, Page* _ep, const String& program) {

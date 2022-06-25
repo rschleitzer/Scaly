@@ -7,6 +7,7 @@
 #include "Lexer.cpp"
 #include "Errors.cpp"
 #include "Parser.cpp"
+#include "Model.cpp"
 #include "Modeler.cpp"
 #include "Generator.cpp"
 
