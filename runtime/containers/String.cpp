@@ -195,11 +195,10 @@ struct StringIterator {
     char* current;
     char* last;
 
-    static StringIterator create(String string) {
+    StringIterator(String string) {
         auto buffer = string.get_buffer();
-        return StringIterator {
-            .current = (char*)buffer,
-            .last = (char*)buffer + string.get_length() };
+        this->current = buffer;
+        this->last = buffer + string.get_length();
     }
 
     char* next() {

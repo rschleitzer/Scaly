@@ -119,11 +119,12 @@ struct Lexer : Object {
     size_t previous_position;
     size_t position;
 
-    Lexer(String deck) {
+    Lexer(String deck)
+      : chars(StringIterator(deck))
+    {
         token = new(alignof(Token), Page::get(this)->allocate_exclusive_page()) Token(EmptyToken());
         token->_tag = Token::Empty;
         character = nullptr;
-        chars = StringIterator::create(deck);
         previous_position = 0,
         position = 0,
         read_character();
