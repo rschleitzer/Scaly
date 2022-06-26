@@ -26,7 +26,7 @@ template<class T> struct Vector : Object {
     size_t length;
     T* data;
 
-    Vector(size_t length, T* data)
+    Vector(T* data, size_t length)
     : length(length), data(data) {}
 
     Vector<T>(Page* _rp, size_t length) : length(length) {

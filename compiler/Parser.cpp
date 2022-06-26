@@ -1,6 +1,67 @@
 namespace scaly {
 namespace compiler {
 
+struct IdentifierLiteral {
+    IdentifierLiteral(String name) : name(name) {}
+    String name;
+};
+
+struct StringLiteral {
+    StringLiteral(String value) : value(value) {}
+    String value;
+};
+
+struct FragmentLiteral {
+    FragmentLiteral(String value) : value(value) {}
+    String value;
+};
+
+struct IntegerLiteral {
+    IntegerLiteral(String value) : value(value) {}
+    String value;
+};
+
+struct BooleanLiteral {
+    BooleanLiteral(bool value) : value(value) {}
+    bool value;
+};
+
+struct FloatingPointLiteral {
+    FloatingPointLiteral(String value) : value(value) {}
+    String value;
+};
+
+struct HexLiteral {
+    HexLiteral(String value) : value(value) {}
+    String value;
+};
+
+struct Literal : Object {
+    Literal(StringLiteral string) : _tag(String), _String(string) {}
+    Literal(FragmentLiteral fragment) : _tag(Fragment), _Fragment(fragment) {}
+    Literal(IntegerLiteral integer) : _tag(Integer), _Integer(integer) {}
+    Literal(BooleanLiteral boolean) : _tag(Boolean), _Boolean(boolean) {}
+    Literal(FloatingPointLiteral floating_point) : _tag(FloatingPoint), _FloatingPoint(floating_point) {}
+    Literal(HexLiteral hex) : _tag(Hex), _Hex(hex) {}
+    enum {
+        String,
+        Fragment,
+        Integer,
+        Boolean,
+        FloatingPoint,
+        Hex,
+    } _tag;
+    union {
+        StringLiteral _String;
+        FragmentLiteral _Fragment;
+        IntegerLiteral _Integer;
+        BooleanLiteral _Boolean;
+        FloatingPointLiteral _FloatingPoint;
+        HexLiteral _Hex;
+
+    };
+};
+
 struct FileSyntax; 
 struct DeclarationSyntax; 
 struct PrivateSyntax; 
@@ -294,10 +355,10 @@ struct ObjectSyntax : Object {
 };
 
 struct LiteralSyntax : Object {
-    LiteralSyntax(size_t start, size_t end, LiteralToken* literal) : start(start), end(end), literal(literal) {}
+    LiteralSyntax(size_t start, size_t end, Literal literal) : start(start), end(end), literal(literal) {}
     size_t start;
     size_t end;
-    LiteralToken* literal;
+    Literal literal;
 };
 
 struct ThrowSyntax : Object {
@@ -839,10 +900,10 @@ struct ConstantSyntax : Object {
 };
 
 struct EnumSyntax : Object {
-    EnumSyntax(size_t start, size_t end, LiteralToken* literal) : start(start), end(end), literal(literal) {}
+    EnumSyntax(size_t start, size_t end, Literal literal) : start(start), end(end), literal(literal) {}
     size_t start;
     size_t end;
-    LiteralToken* literal;
+    Literal literal;
 };
 
 struct VariantSyntax : Object {
@@ -1086,6 +1147,66 @@ struct Parser : Object {
         hash_set_builder.add(String(Page::get(this), "while"));
         keywords = HashSet<String>(_r, _rp, hash_set_builder);
         return keywords;
+    }
+
+    Result<Literal, ParserError> parse_literal_token(Region& _pr, Page* _rp) {
+        Region _r = Region::create(_pr);
+        if (this->lexer.token._tag == Token::Empty)
+            lexer.advance(_r);
+
+        switch (this->lexer.token._tag)
+        {
+            case Token::Literal:
+                switch (this->lexer.token._Literal._tag)
+                {
+                    case LiteralToken::String:
+                    {
+                        auto ret = Literal(StringLiteral(String(_rp, this->lexer.token._Literal._String.value)));
+                        this->lexer.empty();
+                        return Result<Literal, ParserError> { ._tag = Result<Literal, ParserError>::Ok, ._Ok = ret };
+                    }
+
+                    case LiteralToken::Integer:
+                    {
+                        auto ret = Literal(IntegerLiteral(String(_rp, this->lexer.token._Literal._String.value)));
+                        this->lexer.empty();
+                        return Result<Literal, ParserError> { ._tag = Result<Literal, ParserError>::Ok, ._Ok = ret };
+                    }
+
+                    case LiteralToken::FloatingPoint:
+                    {
+                        auto ret = Literal(FloatingPointLiteral(String(_rp, this->lexer.token._Literal._String.value)));
+                        this->lexer.empty();
+                        return Result<Literal, ParserError> { ._tag = Result<Literal, ParserError>::Ok, ._Ok = ret };
+                    }
+
+                    case LiteralToken::Hex:
+                    {
+                        auto ret = Literal(HexLiteral(String(_rp, this->lexer.token._Literal._String.value)));
+                        this->lexer.empty();
+                        return Result<Literal, ParserError> { ._tag = Result<Literal, ParserError>::Ok, ._Ok = ret };
+                    }
+
+                    case LiteralToken::Boolean:
+                    {
+                        auto ret = Literal(BooleanLiteral(this->lexer.token._Literal._Boolean.value));
+                        this->lexer.empty();
+                        return Result<Literal, ParserError> { ._tag = Result<Literal, ParserError>::Ok, ._Ok = ret };
+                    }
+
+                    case LiteralToken::Fragment:
+                    {
+                        auto ret = Literal(FragmentLiteral(String(_rp, this->lexer.token._Literal._String.value)));
+                        this->lexer.empty();
+                        return Result<Literal, ParserError> { ._tag = Result<Literal, ParserError>::Ok, ._Ok = ret };
+                    }
+
+                    default:
+                        return Result<Literal, ParserError> { ._tag = Result<Literal, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(lexer.position, lexer.position)) };
+                }
+            default:
+                return Result<Literal, ParserError> { ._tag = Result<Literal, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+        }
     }
 
     Result<FileSyntax, ParserError> parse_file(Region& _pr, Page* _rp, Page* _ep) {
@@ -1963,11 +2084,14 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto literal = this->lexer.parse_literal(_r, _rp);
-        if (literal == nullptr) {
-
-                return Result<EnumSyntax, ParserError> { ._tag = Result<EnumSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+        auto literal_result = this->parse_literal_token(_r, _rp);
+        if (literal_result._tag == Result<Literal, ParserError>::Error)
+        {
+            if (literal_result._Error._tag == ParserError::OtherSyntax)
+               return Result<EnumSyntax, ParserError> { ._tag = Result<EnumSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
+
+        auto literal = literal_result._Ok;
 
         auto end = this->lexer.position;
 
@@ -4429,11 +4553,14 @@ struct Parser : Object {
         auto _r = Region::create(_pr);
         auto start = this->lexer.previous_position;
 
-        auto literal = this->lexer.parse_literal(_r, _rp);
-        if (literal == nullptr) {
-
-                return Result<LiteralSyntax, ParserError> { ._tag = Result<LiteralSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+        auto literal_result = this->parse_literal_token(_r, _rp);
+        if (literal_result._tag == Result<Literal, ParserError>::Error)
+        {
+            if (literal_result._Error._tag == ParserError::OtherSyntax)
+               return Result<LiteralSyntax, ParserError> { ._tag = Result<LiteralSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
+
+        auto literal = literal_result._Ok;
 
         auto end = this->lexer.position;
 

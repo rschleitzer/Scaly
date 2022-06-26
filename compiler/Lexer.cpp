@@ -8,33 +8,33 @@ struct EmptyToken {};
 struct InvalidToken {};
 
 struct IdentifierToken {
-    IdentifierToken(String name) : name(name) {}
-    String name;
+    IdentifierToken(Vector<char> name) : name(name) {}
+    Vector<char> name;
 };
 
 struct AttributeToken {
-    AttributeToken(String name) : name(name) {}
-    String name;
+    AttributeToken(Vector<char> name) : name(name) {}
+    Vector<char> name;
 };
 
 struct PunctuationToken {
-    PunctuationToken(String sign) : sign(sign) {}
-    String sign;
+    PunctuationToken(Vector<char> sign) : sign(sign) {}
+    Vector<char> sign;
 };
 
 struct StringToken {
-    StringToken(String value) : value(value) {}
-    String value;
+    StringToken(Vector<char> value) : value(value) {}
+    Vector<char> value;
 };
 
 struct FragmentToken {
-    FragmentToken(String value) : value(value) {}
-    String value;
+    FragmentToken(Vector<char> value) : value(value) {}
+    Vector<char> value;
 };
 
 struct IntegerToken {
-    IntegerToken(String value) : value(value) {}
-    String value;
+    IntegerToken(Vector<char> value) : value(value) {}
+    Vector<char> value;
 };
 
 struct BooleanToken {
@@ -43,13 +43,13 @@ struct BooleanToken {
 };
 
 struct FloatingPointToken {
-    FloatingPointToken(String value) : value(value) {}
-    String value;
+    FloatingPointToken(Vector<char> value) : value(value) {}
+    Vector<char> value;
 };
 
 struct HexToken {
-    HexToken(String value) : value(value) {}
-    String value;
+    HexToken(Vector<char> value) : value(value) {}
+    Vector<char> value;
 };
 
 struct LiteralToken : Object {
@@ -113,17 +113,16 @@ struct Token : Object {
 };
 
 struct Lexer : Object {
-    Token* token;
+    Token token;
     char* character;
     StringIterator chars;
     size_t previous_position;
     size_t position;
 
     Lexer(String deck)
-      : chars(StringIterator(deck))
+      : chars(StringIterator(deck)),
+        token(Token(EmptyToken()))
     {
-        token = new(alignof(Token), Page::get(this)->allocate_exclusive_page()) Token(EmptyToken());
-        token->_tag = Token::Empty;
         character = nullptr;
         previous_position = 0,
         position = 0,
@@ -148,480 +147,400 @@ struct Lexer : Object {
         auto c = *character;
 
         if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z'))) {
-            if (this->token != nullptr)
-                Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
-            this->token = scan_identifier(Page::get(this)->allocate_exclusive_page());
+            this->token = scan_identifier();
             return;
         }
 
         if ((c >= '1') && (c <= '9')) {
-            if (this->token != nullptr)
-                Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
-            this->token = scan_integer_literal(Page::get(this)->allocate_exclusive_page(), c);
+            this->token = scan_integer_literal(this->character, 0);
             return;
         }
 
         switch (c) {
             case '\n':
-                if (this->token != nullptr)
-                    Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
                 this->token = scan_line_feed(Page::get(this)->allocate_exclusive_page());
                 break;
 
             case ':':
                 read_character();
-                if (this->token != nullptr)
-                    Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
-                this->token = new (alignof(Token), Page::get(this)->allocate_exclusive_page()) Token(ColonToken());
+                this->token = Token(ColonToken());
                 break;
 
             case '0':
-                if (this->token != nullptr)
-                    Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
                 {
                     auto _r_1 = Region::create(_r);
                     StringBuilder& value = *new (alignof(StringBuilder), _r_1.page) StringBuilder();
-                    this->token = scan_numeric_literal(Page::get(this)->allocate_exclusive_page(), value);
+                    this->token = scan_numeric_literal();
                 }
                 break;
 
             case '@':
                 read_character();
-                if (this->token != nullptr)
-                    Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
-                this->token = scan_attribute(Page::get(this)->allocate_exclusive_page());
+                this->token = scan_attribute();
                 break;
 
             case '+': case '-': case '*': case '/': case '=': case '%': case '&': case '|': case '^': case '~': case '<': case '>':
             {
-                if (this->token != nullptr)
-                    Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
-                this->token = scan_operator(Page::get(this)->allocate_exclusive_page(), c);
+                this->token = scan_operator();
                 break;
             }
 
             case '\"':
-                if (this->token != nullptr)
-                    Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
-                this->token = scan_string_literal(Page::get(this)->allocate_exclusive_page());
+                this->token = scan_string_literal();
                 break;
 
             case '\'':
-                if (this->token != nullptr)
-                    Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
-                this->token = scan_string_identifier(Page::get(this)->allocate_exclusive_page());
+                this->token = scan_string_identifier();
                 break;
 
             case '`':
-                if (this->token != nullptr)
-                    Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
-                this->token = scan_fragment_literal(Page::get(this)->allocate_exclusive_page());
+                this->token = scan_fragment_literal();
                 break;
 
             case '}': case ')': case ']': case '.': case '?':
             {
-                if (this->token != nullptr)
-                    Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
-                auto punctuation_string = String(Page::get(this)->allocate_exclusive_page(), c);
+                this->token = Token(PunctuationToken(Vector<char>(this->character, 1)));
                 this->read_character();
-                this->token = new (alignof(Token), Page::get(this)->allocate_exclusive_page()) Token(PunctuationToken(punctuation_string));
                 break;
             }
 
             case '{': case '(': case '[': case ',':
             {
-                if (this->token != nullptr)
-                    Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
-                auto punctuation_string = String(Page::get(this)->allocate_exclusive_page(), c);
+                this->token = Token(PunctuationToken(Vector<char>(this->character, 1)));
                 this->read_character();
                 this->skip_whitespace(true);
-                this->token = new (alignof(Token), Page::get(this)->allocate_exclusive_page()) Token(PunctuationToken(punctuation_string));
                 break;
             }
 
             default:
-                if (this->token != nullptr)
-                    Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
-                this->token = new (alignof(Token), Page::get(this)->allocate_exclusive_page()) Token(InvalidToken());
+                this->token = Token(InvalidToken());
                 break;
         }
     }
 
     void empty() {
-        if (this->token != nullptr)
-            Page::get(this)->deallocate_exclusive_page(Page::get(this->token));
-        this->token = new (alignof(Token), Page::get(this)->allocate_exclusive_page()) Token(EmptyToken());
+        this->token = Token(EmptyToken());
     }
 
-    Token* scan_line_feed(Page* _rp) {
+    Token scan_line_feed(Page* _rp) {
         while (true) {
             read_character();
             skip_whitespace(false);
-            if (this->character == nullptr) {
-                auto token = new (alignof(Token), _rp) Token(LineFeedToken());
-                return this->token;
-            }
+            if (this->character == nullptr)
+                return Token(LineFeedToken());
 
             if (*this->character == '\n')
                 continue;
 
-            auto token = new (alignof(Token), _rp) Token(LineFeedToken());
-            token->_tag = Token::LineFeed;
-            return this->token;
+            return Token(LineFeedToken());
         }
     }
 
-    Token* scan_identifier(Page* _rp) {
-        auto r = Region(_rp);
-        StringBuilder& name = *new(alignof(StringBuilder), r.page) StringBuilder();
+    Token scan_identifier() {
+        char* start = this->character;
+        size_t length = 0;
         while (true) {
             if (character == nullptr) {
-                if (name.get_length() == 0)
-                    return new (alignof(Token), _rp) Token(InvalidToken());
+                if (length == 0)
+                    return Token(InvalidToken());
                 else
-                    return new (alignof(Token), _rp) Token(IdentifierToken(name.to_string(_rp)));
+                    return Token(IdentifierToken(Vector<char>(start, length)));
             }
             else {
                 char c = *character;
-                if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || ((c >= '0') && (c <= '9')) || (c == '_'))
-                {
-                    name.append_character(c);
+                if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || ((c >= '0') && (c <= '9')) || (c == '_')) {
                     this->read_character();
+                    length++;
                 }
-                else
-                {
-                    auto token = new (alignof(Token), _rp) Token(IdentifierToken(name.to_string(_rp)));
-                    return token;
+                else {
+                    return Token(IdentifierToken(Vector<char>(start, length)));
                 }
             }
         }
     }
 
-    Token* scan_attribute(Page* _rp) {
-        auto r = Region(_rp);
-        StringBuilder& name = *new(alignof(StringBuilder), r.page) StringBuilder();
+    Token scan_attribute() {
+        char* start = this->character;
+        size_t length = 0;
         while (true) {
             if (character == nullptr) {
-                if (name.get_length() == 0)
-                    return new (alignof(Token), _rp) Token(InvalidToken());
+                if (length == 0)
+                    return Token(InvalidToken());
                 else
-                    return new (alignof(Token), _rp) Token(AttributeToken(name.to_string(_rp)));
+                    return Token(AttributeToken(Vector<char>(start, length)));
             }
             else {
                 char c = *character;
-                if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || ((c >= '0') && (c <= '9')) || (c == '_'))
-                {
-                    name.append_character(c);
+                if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || ((c >= '0') && (c <= '9')) || (c == '_')) {
                     this->read_character();
+                    length++;
                 }
-                else
-                {
-                    auto token = new (alignof(Token), _rp) Token(AttributeToken(name.to_string(_rp)));
-                    return token;
+                else {
+                    return Token(AttributeToken(Vector<char>(start, length)));
                 }
             }
         }
     }
 
-    Token* scan_operator(Page* _rp, char c) {
-        auto r = Region(_rp);
-        StringBuilder& operation = *new(alignof(StringBuilder), r.page) StringBuilder();
-        operation.append_character(c);
+    Token scan_operator() {
+        char* start = this->character;
+        size_t length = 0;
         while (true) {
             read_character();
+            length++;
             if (character == nullptr) {
-                if (operation.get_length() == 0)
-                    return new (alignof(Token), _rp) Token(InvalidToken());
+                if (length == 1)
+                    return Token(InvalidToken());
                 else
-                    return new (alignof(Token), _rp) Token(IdentifierToken(operation.to_string(_rp)));
+                    return Token(IdentifierToken(Vector<char>(start, length)));
             }
 
             auto c = *character;
             switch (c)
             {
                 case '+': case '-': case '*': case '/': case '=': case '%': case '&': case '|': case '^': case '~': case '<': case '>':
-                    operation.append_character(c);
                     break;
 
                 default:{
-                    auto token = new (alignof(Token), _rp) Token(IdentifierToken(operation.to_string(_rp)));
-                    return token;
+                    return Token(IdentifierToken(Vector<char>(start, length)));
                 }
             }
         }
     }
 
-    Token* scan_string_literal(Page* _rp) {
-        auto r = Region(_rp);
-        StringBuilder& value = *new(alignof(StringBuilder), r.page) StringBuilder();
+    Token scan_string_literal() {
+        char* start = this->character + 1;
+        size_t length = 0;
         while (true) {
             read_character();
+            length++;
             if (character == nullptr)
-                return new (alignof(Token), _rp) Token(InvalidToken());
+                return Token(InvalidToken());
 
-            auto c = *character;
-            switch (c)
-            {
+            switch (*character) {
                 case '\"':
                     read_character();
-                    return new (alignof(Token), _rp) Token(LiteralToken(StringToken(value.to_string(_rp))));
+                    return Token(LiteralToken(StringToken(Vector<char>(start, length - 1))));
 
                 case '\\': 
-                    {
-                        read_character();
-                        if (character == nullptr)
-                            return new (alignof(Token), _rp) Token(InvalidToken());
+                    read_character();
+                    length++;
+                    if (character == nullptr)
+                        return Token(InvalidToken());
 
-                        auto c2 = *character;
-                        switch (c2) {
-                            case '\"': case '\\': case '\'':
-                                value.append_character(c2);
-                                break;
-                            case 'n':
-                                value.append_character('\n');
-                                break;
-                            case 'r':
-                                value.append_character('\r');
-                                break;
-                            case 't':
-                                value.append_character('\t');
-                                break;
-                            case '0':
-                                value.append_character('\0');
-                                break;
-                            default:
-                                return new (alignof(Token), _rp) Token(InvalidToken());                            
-                        }
+                    switch (*character) {
+                        case '\"': case '\\': case '\'':
+                            break;
+                        case 'n':
+                            break;
+                        case 'r':
+                            break;
+                        case 't':
+                            break;
+                        case '0':
+                            break;
+                        default:
+                            return Token(InvalidToken());                            
                     }
                     break;
 
                 default:
-                    value.append_character(c);
                     break;
             }
         }
     }
 
-    Token* scan_string_identifier(Page* _rp) {
-        auto r = Region(_rp);
-        StringBuilder& value = *new(alignof(StringBuilder), r.page) StringBuilder();
+    Token scan_string_identifier() {
+        char* start = this->character + 1;
+        size_t length = 0;
         while (true) {
             read_character();
+            length++;
             if (character == nullptr)
-                return new (alignof(Token), _rp) Token(InvalidToken());
+                return Token(InvalidToken());
 
             auto c = *character;
             switch (c) {
                 case '\'':
                     read_character();
-                    {
-                        auto token = new (alignof(Token), _rp) Token(IdentifierToken(value.to_string(_rp)));
-                        return token;
-                    }
+                        return Token(IdentifierToken(Vector<char>(start, length - 1)));
                 default:
-                    value.append_character(c);
                     break;
             }
         }
     }
 
-    Token* scan_fragment_literal(Page* _rp) {
-        auto r = Region(_rp);
-        StringBuilder& value = *new(alignof(StringBuilder), r.page) StringBuilder();
+    Token scan_fragment_literal() {
+        char* start = this->character + 1;
+        size_t length = 0;
         while (true) {
             read_character();
+            length++;
             if (character == nullptr)
-                return new (alignof(Token), _rp) Token(InvalidToken());
+                return Token(InvalidToken());
 
-            auto c = *character;
-            switch (c)
+            switch (*character)
             {
                 case '`':
                     read_character();
-                    return new (alignof(Token), _rp) Token(LiteralToken(FragmentToken(value.to_string(_rp))));
+                    return Token(LiteralToken(FragmentToken(Vector<char>(start, length - 1))));
 
                 case '\\': 
-                    {
-                        read_character();
-                        if (character == nullptr)
-                            return new (alignof(Token), _rp) Token(InvalidToken());
+                    read_character();
+                    length++;
+                    if (character == nullptr)
+                        return Token(InvalidToken());
 
-                        auto c2 = *character;
-                        switch (c2) {
-                            case '`': case '\\': case '\'':
-                                value.append_character(c2);
-                                break;
-                            case 'n':
-                                value.append_character('\n');
-                                break;
-                            case 'r':
-                                value.append_character('\r');
-                                break;
-                            case 't':
-                                value.append_character('\t');
-                                break;
-                            case '0':
-                                value.append_character('\0');
-                                break;
-                            default:
-                                return new (alignof(Token), _rp) Token(InvalidToken());                            
-                        }
+                    switch (*character) {
+                        case '`': case '\\': case '\'':
+                            break;
+                        case 'n':
+                            break;
+                        case 'r':
+                            break;
+                        case 't':
+                            break;
+                        case '0':
+                            break;
+                        default:
+                            return Token(InvalidToken());                            
                     }
                     break;
 
                 default:
-                    value.append_character(c);
                     break;
             }
         }
     }
 
-    Token* scan_numeric_literal(Page* _rp, StringBuilder& value) {
+    Token scan_numeric_literal() {
+        char* start = this->character;
+        size_t length = 0;
         read_character();
+        length++;
         if (character == nullptr)
-            return new (alignof(Token), _rp) Token(LiteralToken(IntegerToken(value.to_string(_rp))));
+            return Token(LiteralToken(IntegerToken(Vector<char>(start, length))));
 
         auto c = *character;
 
         if ((c >= '0') && (c <= '9')) {
-            value.append_character(c);
-            return scan_integer_literal(_rp, c);
+            return scan_integer_literal(start, length);
         }
 
         switch (c) {
             case '.':
-                if (value.get_length() == 0)
-                    value.append_character('0');
-                value.append_character(c);
-                return scan_fraction(_rp, value);
+                return scan_fraction(start, length);
 
             case 'E':
             case 'e':
-                value.append_character(c);
-                return scan_exponent(_rp, value);
+                return scan_exponent(start, length);
 
             case 'x':
-                return scan_hex_literal(_rp);
+                return scan_hex_literal(start, length);
 
             case 'B':
-                return scan_boolean_literal(_rp);
+                return scan_boolean_literal();
 
             default:
-                if (value.get_length() == 0)
-                    value.append_character('0');
-                return new (alignof(Token), _rp) Token(LiteralToken(IntegerToken(value.to_string(_rp))));
+                return Token(LiteralToken(IntegerToken(Vector<char>(start, length))));
         }
     }
 
-    Token* scan_integer_literal(Page* _rp, char c) {
-        auto r = Region(_rp);
-        StringBuilder& value = *new(alignof(StringBuilder), r.page) StringBuilder();
-        value.append_character(c);
+    Token scan_integer_literal(char* start, size_t length) {
         while (true) {
             read_character();
+            length++;
             if (character == nullptr)
-                return new (alignof(Token), _rp) Token(LiteralToken(IntegerToken(value.to_string(_rp))));
+                return Token(LiteralToken(IntegerToken(Vector<char>(start, length))));
 
             auto c = *character;
 
             if ((c >= '0') && (c <= '9')) {
-                value.append_character(c);
                 continue;
             }
 
             switch (c) {
                 case '.':
-                    value.append_character(c);
-                    return scan_fraction(_rp, value);
+                    return scan_fraction(start, length);
 
                 case 'E':
                 case 'e':
-                    value.append_character(c);
-                    return scan_exponent(_rp, value);
+                    return scan_exponent(start, length);
 
                 default:
-                    return new (alignof(Token), _rp) Token(LiteralToken(IntegerToken(value.to_string(_rp))));
+                    return Token(LiteralToken(IntegerToken(Vector<char>(start, length))));
             }
         }
     }
 
-    Token* scan_fraction(Page* _rp, StringBuilder& value) {
+    Token scan_fraction(char* start, size_t length) {
         while (true) {
             read_character();
-
+            length++;
             if (character == nullptr)
-                return new (alignof(Token), _rp) Token(LiteralToken(FloatingPointToken(value.to_string(_rp))));
+                return Token(LiteralToken(FloatingPointToken(Vector<char>(start, length))));
 
             auto c = *character;
 
-            if ((c >= '0') && (c <= '9')) {
-                value.append_character(c);
+            if ((c >= '0') && (c <= '9'))
                 continue;
-            }
 
-            switch (c)
-            {
+            switch (c) {
                 case 'E':
                 case 'e':
-                    value.append_character(c);
-                    return scan_exponent(_rp, value);
+                    return scan_exponent(start, length);
 
                 default:
-                    return new (alignof(Token), _rp) Token(LiteralToken(FloatingPointToken(value.to_string(_rp))));
+                    return Token(LiteralToken(FloatingPointToken(Vector<char>(start, length))));
             }
         }
     }
 
-    Token* scan_exponent(Page* _rp, StringBuilder& value) {
+    Token scan_exponent(char* start, size_t length) {
         while (true) {
             read_character();
+            length++;
             if (character == nullptr)
-                return new (alignof(Token), _rp) Token(LiteralToken(FloatingPointToken(value.to_string(_rp))));
+                return Token(LiteralToken(FloatingPointToken(Vector<char>(start, length))));
 
             auto c = *character;
 
-            if ((c >= '0') && (c <= '9')) {
-                value.append_character(c);
+            if ((c >= '0') && (c <= '9'))
                 continue;
-            }
 
-            return new (alignof(Token), _rp) Token(LiteralToken(FloatingPointToken(value.to_string(_rp))));
+            return Token(LiteralToken(FloatingPointToken(Vector<char>(start, length))));
         }
     }
 
-    Token* scan_hex_literal(Page* _rp) {
-        auto r = Region(_rp);
-        StringBuilder& value = *new(alignof(StringBuilder), r.page) StringBuilder();
+    Token scan_hex_literal(char* start, size_t length) {
         while (true) {
             read_character();
-
+            length++;
             if (character == nullptr)
-                return new (alignof(Token), _rp) Token(LiteralToken(HexToken(value.to_string(_rp))));
+                return Token(LiteralToken(HexToken(Vector<char>(start, length))));
 
             auto c = *character;
 
-            if (((c >= '0') && (c <= '9')) || (c >= 'A') && (c <= 'F') || ((c >= 'a') && (c <= 'f'))) {
-                value.append_character(c);
+            if (((c >= '0') && (c <= '9')) || (c >= 'A') && (c <= 'F') || ((c >= 'a') && (c <= 'f')))
                 continue;
-            }
 
-            return new (alignof(Token), _rp) Token(LiteralToken(HexToken(value.to_string(_rp))));
+            return Token(LiteralToken(HexToken(Vector<char>(start, length))));
         }
     }
 
-    Token* scan_boolean_literal(Page* _rp) {
+    Token scan_boolean_literal() {
         read_character();
         if (character == nullptr)
-            return new (alignof(Token), _rp) Token(InvalidToken());
+            return Token(InvalidToken());
 
         auto c = *character;
 
         if (c != '0' && c != '1') {
-            return new (alignof(Token), _rp) Token(InvalidToken());
+            return Token(InvalidToken());
         }
         else {
             read_character();
-            return new (alignof(Token), _rp) Token(LiteralToken(BooleanToken(c == '1')));
+            return Token(LiteralToken(BooleanToken(c == '1')));
         }
     }
 
@@ -752,13 +671,13 @@ struct Lexer : Object {
 
     bool parse_keyword(Region& _pr, Page* _rp, const String& fixed_string) {
         Region _r = Region::create(_pr);
-        if (token->_tag == Token::Empty)
+        if (token._tag == Token::Empty)
             advance(_r);
 
-        switch (token->_tag) {
+        switch (token._tag) {
             case Token::Identifier:
             {
-                auto right_keyword = (token->_Identifier.name.equals(fixed_string));
+                auto right_keyword = (fixed_string.equals(token._Identifier.name));
                 if (right_keyword)
                     empty();
 
@@ -772,15 +691,15 @@ struct Lexer : Object {
 
     String* parse_identifier(Region& _pr, Page* _rp, HashSet<String>& keywords) {
         Region _r = Region::create(_pr);
-        if (token->_tag == Token::Empty)
+        if (token._tag == Token::Empty)
             advance(_r);
 
-        switch (token->_tag) {
+        switch (token._tag) {
             case Token::Identifier:
             {
-                if (keywords.contains(token->_Identifier.name))
+                if (keywords.contains(String(_r.page, token._Identifier.name)))
                     return nullptr;
-                auto ret = new(alignof(String), _rp) String(_rp, token->_Identifier.name);
+                auto ret = new(alignof(String), _rp) String(_rp, token._Identifier.name);
                 empty();
                 return ret;
             }
@@ -791,13 +710,13 @@ struct Lexer : Object {
 
     String* parse_attribute(Region& _pr, Page* _rp) {
         Region _r = Region::create(_pr);
-        if (token->_tag == Token::Empty)
+        if (token._tag == Token::Empty)
             advance(_r);
 
-        switch (token->_tag) {
+        switch (token._tag) {
             case Token::Attribute:
             {
-                auto ret = new(alignof(String), _rp) String(_rp, token->_Attribute.name);
+                auto ret = new(alignof(String), _rp) String(_rp, token._Attribute.name);
                 empty();
                 return ret;
             }
@@ -808,13 +727,13 @@ struct Lexer : Object {
 
     bool parse_punctuation(Region& _pr, Page* _rp, const String& fixed_string) {
         Region _r = Region::create(_pr);
-        if (token->_tag == Token::Empty)
+        if (token._tag == Token::Empty)
             advance(_r);
 
-        switch (token->_tag) {
+        switch (token._tag) {
             case Token::Punctuation:
             {
-                bool ret = (token->_Punctuation.sign.equals(fixed_string));
+                bool ret = (fixed_string.equals(token._Punctuation.sign));
                 if (ret)
                     empty();
 
@@ -825,72 +744,12 @@ struct Lexer : Object {
         }
     }
 
-    LiteralToken* parse_literal(Region& _pr, Page* _rp) {
-        Region _r = Region::create(_pr);
-        if (token->_tag == Token::Empty)
-            advance(_r);
-
-        switch (token->_tag)
-        {
-            case Token::Literal:
-                switch (token->_Literal._tag)
-                {
-                    case LiteralToken::String:
-                    {
-                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken(StringToken(String(_rp, token->_Literal._String.value)));
-                        empty();
-                        return ret;
-                    }
-
-                    case LiteralToken::Integer:
-                    {
-                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken(IntegerToken(String(_rp, token->_Literal._Integer.value)));
-                        empty();
-                        return ret;
-                    }
-
-                    case LiteralToken::FloatingPoint:
-                    {
-                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken(FloatingPointToken(String(_rp, token->_Literal._FloatingPoint.value)));
-                        empty();
-                        return ret;
-                    }
-
-                    case LiteralToken::Hex:
-                    {
-                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken(HexToken(String(_rp, token->_Literal._Hex.value)));
-                        empty();
-                        return ret;
-                    }
-
-                    case LiteralToken::Boolean:
-                    {
-                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken(BooleanToken(token->_Literal._Boolean.value));
-                        empty();
-                        return ret;
-                    }
-
-                    case LiteralToken::Fragment:
-                    {
-                        auto ret = new (alignof(LiteralToken), _rp) LiteralToken(FragmentToken(String(_rp, token->_Literal._Fragment.value)));
-                        empty();
-                        return ret;
-                    }
-
-                    default:
-                        return nullptr;
-                }
-            default:
-                return nullptr;
-        }
-    }
-
     bool parse_colon(Region&_pr, Page* _rp) {
         Region _r = Region::create(_pr);
-        if (token->_tag == Token::Empty)
+        if (token._tag == Token::Empty)
             advance(_r);
 
-        switch (token->_tag)
+        switch (token._tag)
         {
             case Token::Colon: case Token::LineFeed:
                 empty();

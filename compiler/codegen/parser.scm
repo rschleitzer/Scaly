@@ -19,6 +19,66 @@ struct Parser : Object {
 "        keywords = HashSet<""String>(_r, _rp, hash_set_builder);
         return keywords;
     }
+
+    Result<""Literal, ParserError> parse_literal_token(Region& _pr, Page* _rp) {
+        Region _r = Region::create(_pr);
+        if (this->lexer.token._tag == Token::Empty)
+            lexer.advance(_r);
+
+        switch (this->lexer.token._tag)
+        {
+            case Token::Literal:
+                switch (this->lexer.token._Literal._tag)
+                {
+                    case LiteralToken::String:
+                    {
+                        auto ret = Literal(StringLiteral(String(_rp, this->lexer.token._Literal._String.value)));
+                        this->lexer.empty();
+                        return Result<""Literal, ParserError> { ._tag = Result<""Literal, ParserError>::Ok, ._Ok = ret };
+                    }
+
+                    case LiteralToken::Integer:
+                    {
+                        auto ret = Literal(IntegerLiteral(String(_rp, this->lexer.token._Literal._String.value)));
+                        this->lexer.empty();
+                        return Result<""Literal, ParserError> { ._tag = Result<""Literal, ParserError>::Ok, ._Ok = ret };
+                    }
+
+                    case LiteralToken::FloatingPoint:
+                    {
+                        auto ret = Literal(FloatingPointLiteral(String(_rp, this->lexer.token._Literal._String.value)));
+                        this->lexer.empty();
+                        return Result<""Literal, ParserError> { ._tag = Result<""Literal, ParserError>::Ok, ._Ok = ret };
+                    }
+
+                    case LiteralToken::Hex:
+                    {
+                        auto ret = Literal(HexLiteral(String(_rp, this->lexer.token._Literal._String.value)));
+                        this->lexer.empty();
+                        return Result<""Literal, ParserError> { ._tag = Result<""Literal, ParserError>::Ok, ._Ok = ret };
+                    }
+
+                    case LiteralToken::Boolean:
+                    {
+                        auto ret = Literal(BooleanLiteral(this->lexer.token._Literal._Boolean.value));
+                        this->lexer.empty();
+                        return Result<""Literal, ParserError> { ._tag = Result<""Literal, ParserError>::Ok, ._Ok = ret };
+                    }
+
+                    case LiteralToken::Fragment:
+                    {
+                        auto ret = Literal(FragmentLiteral(String(_rp, this->lexer.token._Literal._String.value)));
+                        this->lexer.empty();
+                        return Result<""Literal, ParserError> { ._tag = Result<""Literal, ParserError>::Ok, ._Ok = ret };
+                    }
+
+                    default:
+                        return Result<""Literal, ParserError> { ._tag = Result<""Literal, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(lexer.position, lexer.position)) };
+                }
+            default:
+                return Result<""Literal, ParserError> { ._tag = Result<""Literal, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+        }
+    }
 "
     (apply-to-selected-children "syntax" (lambda (syntax) ($
         (if (multiple? syntax) ($
@@ -84,8 +144,8 @@ struct Parser : Object {
             ($ ; non-abstract syntax
 "        auto start = this->lexer.previous_position;
 "               (apply-to-children-of syntax (lambda (content) ($
-                   (if (string=? "syntax" (type content))
-                        ($ ; non-terminals
+                    (case (type content)
+                        (("syntax") ($ ; non-terminals
 "
         auto "(property content)"_result = this->parse_"(downcase-string (link content))(if (multiple? content) "_list" "")"(_r, _rp, _ep);
         if ("(property content)"_result._tag == Result<"(if (multiple? content) "Vector<" "")(link content)"Syntax"(if (multiple? content) ">" "")", ParserError>::Error)
@@ -130,8 +190,54 @@ struct Parser : Object {
                             (if (and (optional? content)(not (multiple? content))) ")" "")
                             ";
 "
-                        )
-                        ($ ; terminals
+                        ))
+                        (("literal") ($
+"
+        auto "(property content)"_result = this->parse_literal_token(_r, _rp);
+        if ("(property content)"_result._tag == Result<""Literal, ParserError>::Error)
+        {
+"                            (if (optional? content) "" ($
+"            if ("(property content)"_result._Error._tag == ParserError::OtherSyntax)
+"                               (if (equal? 1 (child-number content))
+                                    ($
+"               return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+"                                   )
+                                    ($
+"               return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+"                                   )
+                                )
+                           ))
+"        }
+
+        "                   (if (and (optional? content)(not (multiple? content)))
+                                ($ ""(link content)"Syntax*")
+                                "auto"
+                            )
+                            " "
+                            (property content)
+                            " = "
+                            (if (optional? content)
+                                ($
+                                    (property content)
+                                    "_result._tag == Result<"
+                                    (if (multiple? content) "Vector<" "")
+                                    (link content)
+                                    "Syntax"
+                                    (if (multiple? content) ">" "")
+                                    ", ParserError>::Error ? nullptr : "
+                                    (if (multiple? content) "" ($
+                                    "new(alignof("(link content)"Syntax), _rp) "(link content)"Syntax("
+                                    ))
+                                )
+                                ""
+                            )
+                            (property content)                            
+                            "_result._Ok"
+                            (if (and (optional? content)(not (multiple? content))) ")" "")
+                            ";
+"
+                        ))
+                        (else ($ ; terminals
 "
         auto "
                             (case (type content)
@@ -143,7 +249,7 @@ struct Parser : Object {
                                 (("keyword")     ($ ", String(_r.page, \""(link content)"\")"))
                                 (("punctuation") ($ ", String(_r.page, \""(value (element-with-id (link content)))"\")"))
                                 (("identifier")  ($ ", this->keywords"))
-                                (("attribute" "literal" "colon" "semicolon") "")
+                                (("attribute" "colon" "semicolon") "")
                             )");
 "
                             (let
@@ -190,8 +296,8 @@ struct Parser : Object {
 "                                   ))
                                 )
                             )
-                        ) ; terminal
-                    ) ; syntax or terminal
+                        )) ; terminal
+                    ) ; syntax, literal or other stuff
                 ))) ; apply to children of syntax
 "
         auto end = this->lexer.position;

@@ -43,6 +43,8 @@ struct String : Object {
         memcpy((void*)(this->data + counter + 1), other, length);
     }
 
+    String(Page* _rp, Vector<char> other) : String(_rp, other.data, other.length) {}
+
     String(Page* _rp, const char* c_string) : String(_rp, c_string, strlen(c_string)) {}
 
     String(Page* _rp, const String& other) {
@@ -163,6 +165,32 @@ struct String : Object {
         }
 
         return memcmp(this->data + index + 1, other.data + index + 1, length) == 0;
+    }
+
+    bool equals(Vector<char> other) const {
+        size_t length = 0;
+        auto bit_count = 0;
+        auto index = 0;
+        while (true) {
+            if (bit_count == PACKED_SIZE * 7) {
+                // Bad string length
+                exit(13);
+            }
+
+            char byte = *(this->data + index);
+            length |= ((size_t)(byte & 0x7F)) << bit_count;
+            if ((byte & 0x80) == 0) {
+                break;
+            }
+            bit_count += 7;
+            index += 1;
+        }
+
+        if (length != other.length) {
+            return false;
+        }
+
+        return memcmp(this->data + index + 1, other.data, length) == 0;
     }
 
     size_t hash() const {
