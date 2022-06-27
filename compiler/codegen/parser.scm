@@ -21,7 +21,7 @@ struct Parser : Object {
     }
 
     Result<""Literal, ParserError> parse_literal_token(Region& _pr, Page* _rp) {
-        Region _r = Region::create(_pr);
+        Region _r(_pr);
         if (this->lexer.token._tag == Token::Empty)
             lexer.advance(_r);
 
@@ -84,9 +84,9 @@ struct Parser : Object {
         (if (multiple? syntax) ($
 "
     Result<""Vector<"(id syntax)"Syntax>*, ParserError> parse_"(downcase-string (id syntax))"_list(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             Array<"(id syntax)"Syntax>* array = nullptr;
             while(true) {
                 auto node_result = this->parse_"(downcase-string (id syntax))"(_r_1, _rp, _ep);
@@ -115,13 +115,13 @@ struct Parser : Object {
 "       )"")
 "
     Result<"(id syntax)"Syntax, ParserError> parse_"(downcase-string (id syntax))"(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
 "
         (if (abstract? syntax)
             ($
                 (apply-to-children-of syntax (lambda (content) ($
 "        {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_"(downcase-string (link content))"(_r_1, _rp, _ep);
             if (node_result._tag == Result<"(link content)"Syntax, ParserError>::Error)
             {

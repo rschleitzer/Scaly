@@ -3,10 +3,10 @@ using namespace scaly::containers;
 
 void test_vector(Region& _pr)
 {
-    auto _r = Region::create(_pr);
+    Region _r(_pr);
     {
-        auto r_1 = Region::create(_r);
-        Vector<int>& vector = *new(alignof(Vector<int>), r_1.page) Vector<int>(r_1.page, 2);
+        Region _r_1(_r);
+        Vector<int>& vector = *new(alignof(Vector<int>), _r_1.page) Vector<int>(_r_1.page, 2);
         *vector[0] = 1;
         vector.set(1, 2);
         if (*(vector.get(0)) != 1)
@@ -15,9 +15,9 @@ void test_vector(Region& _pr)
             exit(-2);
     }
     {
-        auto r_1 = Region::create(_r);
+        Region _r_1(_r);
         const char* string_array[3] = {"using", "namespace", "typedef"};
-        Vector<const char*> vector = Vector<const char*>(r_1.page, (const char**)string_array, 3);
+        Vector<const char*> vector = Vector<const char*>(_r_1.page, (const char**)string_array, 3);
         if (*(vector.get(0)) != string_array[0])
             exit(-3);
         if (*vector[1] != string_array[1])
@@ -29,7 +29,7 @@ void test_vector(Region& _pr)
 
 void test_array(Region& _pr)
 {
-    auto _r = Region::create(_pr);
+    Region _r(_pr);
     Array<int>& array = *new(alignof(Array<int>), _r.page) Array<int>();
     // A quarter gigabyte worth of ints
     int huge_number = 1024 * 1024 * 64;
@@ -43,7 +43,7 @@ void test_array(Region& _pr)
 }
 
 void test_string(Region& _pr) {
-    auto _r = Region::create(_pr);
+    Region _r(_pr);
     auto string = String(_r.page, "Hello world!");
     auto length = string.get_length();
     if (length != 12)
@@ -64,7 +64,7 @@ void test_string(Region& _pr) {
 }
 
 void test_string_builder(Region& _pr) {
-    auto _r = Region::create(_pr);
+    Region _r(_pr);
     StringBuilder& string_builder = *new(alignof(StringBuilder), _r.page) StringBuilder();
     auto length = string_builder.get_length();
     if (length != 0)
@@ -88,7 +88,7 @@ void test_string_builder(Region& _pr) {
 }
 
 void test_list(Region& _pr) {
-    auto _r = Region::create(_pr);
+    Region _r(_pr);
     List<int>& list = *List<int>::create(_r.page);
 
     int huge_number = 1024 * 1024 * 62;
@@ -108,7 +108,7 @@ void test_list(Region& _pr) {
 }
 
 void test_hash_set(Region& _pr) {
-    auto _r = Region::create(_pr);
+    Region _r(_pr);
 
     Array<String>& array = *new(alignof(Array<String>), _r.page) Array<String>();
     array.add(String(_r.page, "using"));
@@ -136,9 +136,9 @@ void test_hash_set(Region& _pr) {
 }
 
 void test_hash_map(Region& _pr) {
-    auto _r = Region::create(_pr);
+    Region _r(_pr);
     {
-        auto _r_1 = Region::create(_r);
+        Region _r_1(_r);;
         Array<KeyValuePair<String, int>>& array = *new(alignof(Array<KeyValuePair<String, int>>), _r_1.page) Array<KeyValuePair<String, int>>();
         array.add(KeyValuePair<String, int> { .key = String(_r_1.page, "using"), .value = 1 });
         array.add(KeyValuePair<String, int> { .key = String(_r_1.page, "namespace"), .value = 2 });
@@ -180,7 +180,7 @@ void test_hash_map(Region& _pr) {
             exit (-25);
     }
     {
-        auto _r_1 = Region::create(_r);
+        Region _r_1(_r);;
         HashMapBuilder<String, size_t>& map = *new(alignof(HashMapBuilder<String, size_t>), _r_1.page) HashMapBuilder<String, size_t>();
         HashSetBuilder<String>& set = *new(alignof(HashSetBuilder<String>), _r_1.page) HashSetBuilder<String>();
         for (char i = 'A'; i <= 'Z'; i++)
@@ -191,7 +191,7 @@ void test_hash_map(Region& _pr) {
                 {
                     for (char l = '!'; l <= '/'; l++)
                     {
-                        Region _r_2 = Region::create(_r_1);
+                        Region _r_2(_r_1);;
                         StringBuilder& sb = *new(alignof(StringBuilder), _r_2.page) StringBuilder(i);
                         sb.append_character(j);
                         sb.append_character(k);
@@ -210,7 +210,7 @@ void test_hash_map(Region& _pr) {
                 {
                     for (char l = '!'; l <= '/'; l++)
                     {
-                        Region _r_2 = Region::create(_r_1);
+                        Region _r_2(_r_1);;
                         StringBuilder& sb = *new(alignof(StringBuilder), _r_2.page) StringBuilder(i);
                         sb.append_character(j);
                         sb.append_character(k);
@@ -230,9 +230,9 @@ void test_hash_map(Region& _pr) {
 }
 
 void test_multi_map(Region& _pr) {
-    auto _r = Region::create(_pr);
+    Region _r(_pr);
     {
-        auto _r_1 = Region::create(_r);
+        Region _r_1(_r);;
         MultiMapBuilder<String, size_t>& map_builder = *new(alignof(MultiMapBuilder<String, size_t>), _r_1.page) MultiMapBuilder<String, size_t>();
         for (char i = 'A'; i <= 'Z'; i++)
         {
@@ -242,7 +242,7 @@ void test_multi_map(Region& _pr) {
                 {
                     for (char l = '!'; l <= '/'; l++)
                     {
-                        Region _r_2 = Region::create(_r_1);
+                        Region _r_2(_r_1);;
                         StringBuilder& sb = *new(alignof(StringBuilder), _r_2.page) StringBuilder(i);
                         sb.append_character(j);
                         sb.append_character(k);
@@ -263,7 +263,7 @@ void test_multi_map(Region& _pr) {
                 {
                     for (char l = '!'; l <= '/'; l++)
                     {
-                        Region _r_2 = Region::create(_r_1);
+                        Region _r_2(_r_1);;
                         StringBuilder& sb = *new(alignof(StringBuilder), _r_2.page) StringBuilder(i);
                         sb.append_character(j);
                         sb.append_character(k);

@@ -5,9 +5,9 @@ using namespace scaly::containers;
 using namespace scaly::compiler;
 
 void test_lexer(Page* _rp) {
-    auto r = Region(_rp);
+    auto _r = Region(_rp);
     {
-        auto _r_1 = Region::create(r);
+        Region _r_1(_r);
         Lexer& lexer = *new(alignof(Lexer), _r_1.page) Lexer(String(_r_1.page, ""));
         if (lexer.token._tag != Token::Empty)
             exit (-1);
@@ -16,7 +16,7 @@ void test_lexer(Page* _rp) {
             exit (-2);
     }
     {
-        auto _r_1 = Region::create(r);
+        Region _r_1(_r);
         auto s = String(_r_1.page,
 " \t\r\n;single line comment\n"
 ";*multi\nline\ncomment;*nested comment*;"
@@ -172,7 +172,7 @@ void test_lexer(Page* _rp) {
 
 void test_parser(Region& _pr)
 {
-    auto _r = Region::create(_pr);
+    Region _r(_pr);
     Parser& parser = *new (alignof(Parser), _r.page) Parser(_r, _r.page, String(_r.page, "define a 1"));
     auto file_syntax = parser.parse_file(_r, _r.page, _r.page);
     if (file_syntax._tag != Result<FileSyntax*, ParserError*>::Ok)
@@ -181,14 +181,14 @@ void test_parser(Region& _pr)
 
 void test_generator(Region& _pr)
 {
-    auto r = Region::create(_pr);
+    Region _r(_pr);
     InitializeModule();
 
 }
 
 void test_compiler(Region& _pr)
 {
-    auto r = Region::create(_pr);
+    auto r = Region(_pr);
     if (compile_and_run_program(_pr, String(r.page, "0"), *new(alignof(Vector<String>), r.page) Vector<String>(r.page, 0)) != 0)
         exit (-60);
 

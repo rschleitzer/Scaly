@@ -1150,7 +1150,7 @@ struct Parser : Object {
     }
 
     Result<Literal, ParserError> parse_literal_token(Region& _pr, Page* _rp) {
-        Region _r = Region::create(_pr);
+        Region _r(_pr);
         if (this->lexer.token._tag == Token::Empty)
             lexer.advance(_r);
 
@@ -1210,7 +1210,7 @@ struct Parser : Object {
     }
 
     Result<FileSyntax, ParserError> parse_file(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto uses_result = this->parse_use_list(_r, _rp, _ep);
@@ -1242,9 +1242,9 @@ struct Parser : Object {
     }
 
     Result<Vector<DeclarationSyntax>*, ParserError> parse_declaration_list(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             Array<DeclarationSyntax>* array = nullptr;
             while(true) {
                 auto node_result = this->parse_declaration(_r_1, _rp, _ep);
@@ -1272,9 +1272,9 @@ struct Parser : Object {
     }
 
     Result<DeclarationSyntax, ParserError> parse_declaration(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_private(_r_1, _rp, _ep);
             if (node_result._tag == Result<PrivateSyntax, ParserError>::Error)
             {
@@ -1290,7 +1290,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_definition(_r_1, _rp, _ep);
             if (node_result._tag == Result<DefinitionSyntax, ParserError>::Error)
             {
@@ -1306,7 +1306,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_function(_r_1, _rp, _ep);
             if (node_result._tag == Result<FunctionSyntax, ParserError>::Error)
             {
@@ -1322,7 +1322,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_procedure(_r_1, _rp, _ep);
             if (node_result._tag == Result<ProcedureSyntax, ParserError>::Error)
             {
@@ -1338,7 +1338,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_operator(_r_1, _rp, _ep);
             if (node_result._tag == Result<OperatorSyntax, ParserError>::Error)
             {
@@ -1354,7 +1354,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_implement(_r_1, _rp, _ep);
             if (node_result._tag == Result<ImplementSyntax, ParserError>::Error)
             {
@@ -1370,7 +1370,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_trait(_r_1, _rp, _ep);
             if (node_result._tag == Result<TraitSyntax, ParserError>::Error)
             {
@@ -1386,7 +1386,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_macro(_r_1, _rp, _ep);
             if (node_result._tag == Result<MacroSyntax, ParserError>::Error)
             {
@@ -1402,7 +1402,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_module(_r_1, _rp, _ep);
             if (node_result._tag == Result<ModuleSyntax, ParserError>::Error)
             {
@@ -1421,7 +1421,7 @@ struct Parser : Object {
     }
 
     Result<PrivateSyntax, ParserError> parse_private(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_private_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "private"));
@@ -1446,9 +1446,9 @@ struct Parser : Object {
     }
 
     Result<ExportSyntax, ParserError> parse_export(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_definition(_r_1, _rp, _ep);
             if (node_result._tag == Result<DefinitionSyntax, ParserError>::Error)
             {
@@ -1464,7 +1464,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_function(_r_1, _rp, _ep);
             if (node_result._tag == Result<FunctionSyntax, ParserError>::Error)
             {
@@ -1480,7 +1480,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_procedure(_r_1, _rp, _ep);
             if (node_result._tag == Result<ProcedureSyntax, ParserError>::Error)
             {
@@ -1496,7 +1496,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_operator(_r_1, _rp, _ep);
             if (node_result._tag == Result<OperatorSyntax, ParserError>::Error)
             {
@@ -1512,7 +1512,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_implement(_r_1, _rp, _ep);
             if (node_result._tag == Result<ImplementSyntax, ParserError>::Error)
             {
@@ -1528,7 +1528,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_trait(_r_1, _rp, _ep);
             if (node_result._tag == Result<TraitSyntax, ParserError>::Error)
             {
@@ -1544,7 +1544,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_macro(_r_1, _rp, _ep);
             if (node_result._tag == Result<MacroSyntax, ParserError>::Error)
             {
@@ -1560,7 +1560,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_module(_r_1, _rp, _ep);
             if (node_result._tag == Result<ModuleSyntax, ParserError>::Error)
             {
@@ -1579,7 +1579,7 @@ struct Parser : Object {
     }
 
     Result<DefinitionSyntax, ParserError> parse_definition(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_define_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "define"));
@@ -1624,9 +1624,9 @@ struct Parser : Object {
     }
 
     Result<Vector<ExtensionSyntax>*, ParserError> parse_extension_list(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             Array<ExtensionSyntax>* array = nullptr;
             while(true) {
                 auto node_result = this->parse_extension(_r_1, _rp, _ep);
@@ -1654,7 +1654,7 @@ struct Parser : Object {
     }
 
     Result<ExtensionSyntax, ParserError> parse_extension(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_dot_1 = this->lexer.parse_punctuation(_r, _rp, String(_r.page, "."));
@@ -1680,9 +1680,9 @@ struct Parser : Object {
     }
 
     Result<Vector<AttributeSyntax>*, ParserError> parse_attribute_list(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             Array<AttributeSyntax>* array = nullptr;
             while(true) {
                 auto node_result = this->parse_attribute(_r_1, _rp, _ep);
@@ -1710,7 +1710,7 @@ struct Parser : Object {
     }
 
     Result<AttributeSyntax, ParserError> parse_attribute(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto attribute = this->lexer.parse_attribute(_r, _rp);
@@ -1736,9 +1736,9 @@ struct Parser : Object {
     }
 
     Result<ConceptSyntax, ParserError> parse_concept(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_class(_r_1, _rp, _ep);
             if (node_result._tag == Result<ClassSyntax, ParserError>::Error)
             {
@@ -1754,7 +1754,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_namespace(_r_1, _rp, _ep);
             if (node_result._tag == Result<NamespaceSyntax, ParserError>::Error)
             {
@@ -1770,7 +1770,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_union(_r_1, _rp, _ep);
             if (node_result._tag == Result<UnionSyntax, ParserError>::Error)
             {
@@ -1786,7 +1786,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_constant(_r_1, _rp, _ep);
             if (node_result._tag == Result<ConstantSyntax, ParserError>::Error)
             {
@@ -1802,7 +1802,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_delegate(_r_1, _rp, _ep);
             if (node_result._tag == Result<DelegateSyntax, ParserError>::Error)
             {
@@ -1818,7 +1818,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_intrinsic(_r_1, _rp, _ep);
             if (node_result._tag == Result<IntrinsicSyntax, ParserError>::Error)
             {
@@ -1837,7 +1837,7 @@ struct Parser : Object {
     }
 
     Result<ClassSyntax, ParserError> parse_class(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto structure_result = this->parse_structure(_r, _rp, _ep);
@@ -1868,7 +1868,7 @@ struct Parser : Object {
     }
 
     Result<NamespaceSyntax, ParserError> parse_namespace(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto body_result = this->parse_body(_r, _rp, _ep);
@@ -1888,7 +1888,7 @@ struct Parser : Object {
     }
 
     Result<UnionSyntax, ParserError> parse_union(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_union_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "union"));
@@ -1938,9 +1938,9 @@ struct Parser : Object {
     }
 
     Result<Vector<TagSyntax>*, ParserError> parse_tag_list(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             Array<TagSyntax>* array = nullptr;
             while(true) {
                 auto node_result = this->parse_tag(_r_1, _rp, _ep);
@@ -1968,7 +1968,7 @@ struct Parser : Object {
     }
 
     Result<TagSyntax, ParserError> parse_tag(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto name = this->lexer.parse_identifier(_r, _rp, this->keywords);
@@ -2005,9 +2005,9 @@ struct Parser : Object {
     }
 
     Result<ItemSyntax, ParserError> parse_item(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_variant(_r_1, _rp, _ep);
             if (node_result._tag == Result<VariantSyntax, ParserError>::Error)
             {
@@ -2023,7 +2023,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_enum(_r_1, _rp, _ep);
             if (node_result._tag == Result<EnumSyntax, ParserError>::Error)
             {
@@ -2042,7 +2042,7 @@ struct Parser : Object {
     }
 
     Result<VariantSyntax, ParserError> parse_variant(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_colon_1 = this->lexer.parse_colon(_r, _rp);
@@ -2081,7 +2081,7 @@ struct Parser : Object {
     }
 
     Result<EnumSyntax, ParserError> parse_enum(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto literal_result = this->parse_literal_token(_r, _rp);
@@ -2101,7 +2101,7 @@ struct Parser : Object {
     }
 
     Result<ConstantSyntax, ParserError> parse_constant(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto operation_result = this->parse_operation(_r, _rp, _ep);
@@ -2125,7 +2125,7 @@ struct Parser : Object {
     }
 
     Result<DelegateSyntax, ParserError> parse_delegate(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_delegate_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "delegate"));
@@ -2169,7 +2169,7 @@ struct Parser : Object {
     }
 
     Result<BodySyntax, ParserError> parse_body(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_left_curly_1 = this->lexer.parse_punctuation(_r, _rp, String(_r.page, "{"));
@@ -2207,9 +2207,9 @@ struct Parser : Object {
     }
 
     Result<Vector<MemberSyntax>*, ParserError> parse_member_list(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             Array<MemberSyntax>* array = nullptr;
             while(true) {
                 auto node_result = this->parse_member(_r_1, _rp, _ep);
@@ -2237,9 +2237,9 @@ struct Parser : Object {
     }
 
     Result<MemberSyntax, ParserError> parse_member(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_field(_r_1, _rp, _ep);
             if (node_result._tag == Result<FieldSyntax, ParserError>::Error)
             {
@@ -2255,7 +2255,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_property(_r_1, _rp, _ep);
             if (node_result._tag == Result<PropertySyntax, ParserError>::Error)
             {
@@ -2274,7 +2274,7 @@ struct Parser : Object {
     }
 
     Result<FieldSyntax, ParserError> parse_field(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_private_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "private"));
@@ -2299,9 +2299,9 @@ struct Parser : Object {
     }
 
     Result<Vector<PropertySyntax>*, ParserError> parse_property_list(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             Array<PropertySyntax>* array = nullptr;
             while(true) {
                 auto node_result = this->parse_property(_r_1, _rp, _ep);
@@ -2329,7 +2329,7 @@ struct Parser : Object {
     }
 
     Result<PropertySyntax, ParserError> parse_property(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto name = this->lexer.parse_identifier(_r, _rp, this->keywords);
@@ -2374,7 +2374,7 @@ struct Parser : Object {
     }
 
     Result<TypeAnnotationSyntax, ParserError> parse_typeannotation(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_colon_1 = this->lexer.parse_colon(_r, _rp);
@@ -2399,7 +2399,7 @@ struct Parser : Object {
     }
 
     Result<GenericArgumentsSyntax, ParserError> parse_genericarguments(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_left_bracket_1 = this->lexer.parse_punctuation(_r, _rp, String(_r.page, "["));
@@ -2426,9 +2426,9 @@ struct Parser : Object {
     }
 
     Result<Vector<GenericArgumentSyntax>*, ParserError> parse_genericargument_list(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             Array<GenericArgumentSyntax>* array = nullptr;
             while(true) {
                 auto node_result = this->parse_genericargument(_r_1, _rp, _ep);
@@ -2456,7 +2456,7 @@ struct Parser : Object {
     }
 
     Result<GenericArgumentSyntax, ParserError> parse_genericargument(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto type_result = this->parse_type(_r, _rp, _ep);
@@ -2480,7 +2480,7 @@ struct Parser : Object {
     }
 
     Result<OptionalSyntax, ParserError> parse_optional(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_question_1 = this->lexer.parse_punctuation(_r, _rp, String(_r.page, "?"));
@@ -2496,7 +2496,7 @@ struct Parser : Object {
     }
 
     Result<ReturnsSyntax, ParserError> parse_returns(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_returns_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "returns"));
@@ -2528,9 +2528,9 @@ struct Parser : Object {
     }
 
     Result<ParameterSetSyntax, ParserError> parse_parameterset(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_parameters(_r_1, _rp, _ep);
             if (node_result._tag == Result<ParametersSyntax, ParserError>::Error)
             {
@@ -2546,7 +2546,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_type(_r_1, _rp, _ep);
             if (node_result._tag == Result<TypeSyntax, ParserError>::Error)
             {
@@ -2565,7 +2565,7 @@ struct Parser : Object {
     }
 
     Result<ParametersSyntax, ParserError> parse_parameters(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_left_paren_1 = this->lexer.parse_punctuation(_r, _rp, String(_r.page, "("));
@@ -2592,7 +2592,7 @@ struct Parser : Object {
     }
 
     Result<ThrowsSyntax, ParserError> parse_throws(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_throws_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "throws"));
@@ -2624,9 +2624,9 @@ struct Parser : Object {
     }
 
     Result<Vector<UseSyntax>*, ParserError> parse_use_list(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             Array<UseSyntax>* array = nullptr;
             while(true) {
                 auto node_result = this->parse_use(_r_1, _rp, _ep);
@@ -2654,7 +2654,7 @@ struct Parser : Object {
     }
 
     Result<UseSyntax, ParserError> parse_use(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_use_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "use"));
@@ -2683,7 +2683,7 @@ struct Parser : Object {
     }
 
     Result<ImplementSyntax, ParserError> parse_implement(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_implement_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "implement"));
@@ -2745,7 +2745,7 @@ struct Parser : Object {
     }
 
     Result<TraitSyntax, ParserError> parse_trait(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_trait_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "trait"));
@@ -2810,9 +2810,9 @@ struct Parser : Object {
     }
 
     Result<Vector<MethodSyntax>*, ParserError> parse_method_list(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             Array<MethodSyntax>* array = nullptr;
             while(true) {
                 auto node_result = this->parse_method(_r_1, _rp, _ep);
@@ -2840,9 +2840,9 @@ struct Parser : Object {
     }
 
     Result<MethodSyntax, ParserError> parse_method(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_function(_r_1, _rp, _ep);
             if (node_result._tag == Result<FunctionSyntax, ParserError>::Error)
             {
@@ -2858,7 +2858,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_procedure(_r_1, _rp, _ep);
             if (node_result._tag == Result<ProcedureSyntax, ParserError>::Error)
             {
@@ -2874,7 +2874,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_operator(_r_1, _rp, _ep);
             if (node_result._tag == Result<OperatorSyntax, ParserError>::Error)
             {
@@ -2893,7 +2893,7 @@ struct Parser : Object {
     }
 
     Result<FunctionSyntax, ParserError> parse_function(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_function_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "function"));
@@ -2935,7 +2935,7 @@ struct Parser : Object {
     }
 
     Result<ProcedureSyntax, ParserError> parse_procedure(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_procedure_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "procedure"));
@@ -2977,7 +2977,7 @@ struct Parser : Object {
     }
 
     Result<OperatorSyntax, ParserError> parse_operator(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_operator_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "operator"));
@@ -3002,9 +3002,9 @@ struct Parser : Object {
     }
 
     Result<TargetSyntax, ParserError> parse_target(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_symbol(_r_1, _rp, _ep);
             if (node_result._tag == Result<SymbolSyntax, ParserError>::Error)
             {
@@ -3020,7 +3020,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_routine(_r_1, _rp, _ep);
             if (node_result._tag == Result<RoutineSyntax, ParserError>::Error)
             {
@@ -3039,7 +3039,7 @@ struct Parser : Object {
     }
 
     Result<RoutineSyntax, ParserError> parse_routine(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto parameters_result = this->parse_parameterset(_r, _rp, _ep);
@@ -3095,7 +3095,7 @@ struct Parser : Object {
     }
 
     Result<SymbolSyntax, ParserError> parse_symbol(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto name = this->lexer.parse_identifier(_r, _rp, this->keywords);
@@ -3156,9 +3156,9 @@ struct Parser : Object {
     }
 
     Result<ImplementationSyntax, ParserError> parse_implementation(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_action(_r_1, _rp, _ep);
             if (node_result._tag == Result<ActionSyntax, ParserError>::Error)
             {
@@ -3174,7 +3174,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_extern(_r_1, _rp, _ep);
             if (node_result._tag == Result<ExternSyntax, ParserError>::Error)
             {
@@ -3190,7 +3190,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_instruction(_r_1, _rp, _ep);
             if (node_result._tag == Result<InstructionSyntax, ParserError>::Error)
             {
@@ -3206,7 +3206,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_intrinsic(_r_1, _rp, _ep);
             if (node_result._tag == Result<IntrinsicSyntax, ParserError>::Error)
             {
@@ -3225,7 +3225,7 @@ struct Parser : Object {
     }
 
     Result<ExternSyntax, ParserError> parse_extern(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_extern_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "extern"));
@@ -3241,7 +3241,7 @@ struct Parser : Object {
     }
 
     Result<InstructionSyntax, ParserError> parse_instruction(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_instruction_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "instruction"));
@@ -3261,7 +3261,7 @@ struct Parser : Object {
     }
 
     Result<IntrinsicSyntax, ParserError> parse_intrinsic(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_intrinsic_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "intrinsic"));
@@ -3281,7 +3281,7 @@ struct Parser : Object {
     }
 
     Result<ExtendsSyntax, ParserError> parse_extends(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_extends_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "extends"));
@@ -3304,9 +3304,9 @@ struct Parser : Object {
     }
 
     Result<Vector<ExtendSyntax>*, ParserError> parse_extend_list(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             Array<ExtendSyntax>* array = nullptr;
             while(true) {
                 auto node_result = this->parse_extend(_r_1, _rp, _ep);
@@ -3334,7 +3334,7 @@ struct Parser : Object {
     }
 
     Result<ExtendSyntax, ParserError> parse_extend(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto type_result = this->parse_type(_r, _rp, _ep);
@@ -3358,7 +3358,7 @@ struct Parser : Object {
     }
 
     Result<MacroSyntax, ParserError> parse_macro(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_macro_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "macro"));
@@ -3402,7 +3402,7 @@ struct Parser : Object {
     }
 
     Result<ModuleSyntax, ParserError> parse_module(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_module_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "module"));
@@ -3431,9 +3431,9 @@ struct Parser : Object {
     }
 
     Result<ModelSyntax, ParserError> parse_model(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_literal(_r_1, _rp, _ep);
             if (node_result._tag == Result<LiteralSyntax, ParserError>::Error)
             {
@@ -3449,7 +3449,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_name(_r_1, _rp, _ep);
             if (node_result._tag == Result<NameSyntax, ParserError>::Error)
             {
@@ -3465,7 +3465,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_object(_r_1, _rp, _ep);
             if (node_result._tag == Result<ObjectSyntax, ParserError>::Error)
             {
@@ -3481,7 +3481,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_vector(_r_1, _rp, _ep);
             if (node_result._tag == Result<VectorSyntax, ParserError>::Error)
             {
@@ -3500,9 +3500,9 @@ struct Parser : Object {
     }
 
     Result<Vector<StatementSyntax>*, ParserError> parse_statement_list(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             Array<StatementSyntax>* array = nullptr;
             while(true) {
                 auto node_result = this->parse_statement(_r_1, _rp, _ep);
@@ -3530,9 +3530,9 @@ struct Parser : Object {
     }
 
     Result<StatementSyntax, ParserError> parse_statement(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_operation(_r_1, _rp, _ep);
             if (node_result._tag == Result<OperationSyntax, ParserError>::Error)
             {
@@ -3548,7 +3548,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_let(_r_1, _rp, _ep);
             if (node_result._tag == Result<LetSyntax, ParserError>::Error)
             {
@@ -3564,7 +3564,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_var(_r_1, _rp, _ep);
             if (node_result._tag == Result<VarSyntax, ParserError>::Error)
             {
@@ -3580,7 +3580,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_mutable(_r_1, _rp, _ep);
             if (node_result._tag == Result<MutableSyntax, ParserError>::Error)
             {
@@ -3596,7 +3596,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_set(_r_1, _rp, _ep);
             if (node_result._tag == Result<SetSyntax, ParserError>::Error)
             {
@@ -3615,7 +3615,7 @@ struct Parser : Object {
     }
 
     Result<LetSyntax, ParserError> parse_let(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_let_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "let"));
@@ -3640,7 +3640,7 @@ struct Parser : Object {
     }
 
     Result<VarSyntax, ParserError> parse_var(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_var_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "var"));
@@ -3665,7 +3665,7 @@ struct Parser : Object {
     }
 
     Result<MutableSyntax, ParserError> parse_mutable(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_mutable_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "mutable"));
@@ -3690,7 +3690,7 @@ struct Parser : Object {
     }
 
     Result<BindingSyntax, ParserError> parse_binding(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto name = this->lexer.parse_identifier(_r, _rp, this->keywords);
@@ -3729,7 +3729,7 @@ struct Parser : Object {
     }
 
     Result<BindingAnnotationSyntax, ParserError> parse_bindingannotation(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_colon_1 = this->lexer.parse_colon(_r, _rp);
@@ -3754,9 +3754,9 @@ struct Parser : Object {
     }
 
     Result<Vector<BindingSpecSyntax>*, ParserError> parse_bindingspec_list(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             Array<BindingSpecSyntax>* array = nullptr;
             while(true) {
                 auto node_result = this->parse_bindingspec(_r_1, _rp, _ep);
@@ -3784,9 +3784,9 @@ struct Parser : Object {
     }
 
     Result<BindingSpecSyntax, ParserError> parse_bindingspec(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_structure(_r_1, _rp, _ep);
             if (node_result._tag == Result<StructureSyntax, ParserError>::Error)
             {
@@ -3802,7 +3802,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_type(_r_1, _rp, _ep);
             if (node_result._tag == Result<TypeSyntax, ParserError>::Error)
             {
@@ -3818,7 +3818,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_array(_r_1, _rp, _ep);
             if (node_result._tag == Result<ArraySyntax, ParserError>::Error)
             {
@@ -3837,7 +3837,7 @@ struct Parser : Object {
     }
 
     Result<ArraySyntax, ParserError> parse_array(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_left_bracket_1 = this->lexer.parse_punctuation(_r, _rp, String(_r.page, "["));
@@ -3864,7 +3864,7 @@ struct Parser : Object {
     }
 
     Result<StructureSyntax, ParserError> parse_structure(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_left_paren_1 = this->lexer.parse_punctuation(_r, _rp, String(_r.page, "("));
@@ -3891,9 +3891,9 @@ struct Parser : Object {
     }
 
     Result<Vector<OperandSyntax>*, ParserError> parse_operand_list(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             Array<OperandSyntax>* array = nullptr;
             while(true) {
                 auto node_result = this->parse_operand(_r_1, _rp, _ep);
@@ -3921,7 +3921,7 @@ struct Parser : Object {
     }
 
     Result<OperandSyntax, ParserError> parse_operand(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto expression_result = this->parse_expression(_r, _rp, _ep);
@@ -3948,9 +3948,9 @@ struct Parser : Object {
     }
 
     Result<Vector<PostfixSyntax>*, ParserError> parse_postfix_list(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             Array<PostfixSyntax>* array = nullptr;
             while(true) {
                 auto node_result = this->parse_postfix(_r_1, _rp, _ep);
@@ -3978,9 +3978,9 @@ struct Parser : Object {
     }
 
     Result<PostfixSyntax, ParserError> parse_postfix(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_memberaccess(_r_1, _rp, _ep);
             if (node_result._tag == Result<MemberAccessSyntax, ParserError>::Error)
             {
@@ -3996,7 +3996,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_catcher(_r_1, _rp, _ep);
             if (node_result._tag == Result<CatcherSyntax, ParserError>::Error)
             {
@@ -4015,7 +4015,7 @@ struct Parser : Object {
     }
 
     Result<MemberAccessSyntax, ParserError> parse_memberaccess(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_dot_1 = this->lexer.parse_punctuation(_r, _rp, String(_r.page, "."));
@@ -4040,7 +4040,7 @@ struct Parser : Object {
     }
 
     Result<CatcherSyntax, ParserError> parse_catcher(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto catchers_result = this->parse_catch_list(_r, _rp, _ep);
@@ -4067,9 +4067,9 @@ struct Parser : Object {
     }
 
     Result<Vector<CatchSyntax>*, ParserError> parse_catch_list(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             Array<CatchSyntax>* array = nullptr;
             while(true) {
                 auto node_result = this->parse_catch(_r_1, _rp, _ep);
@@ -4097,7 +4097,7 @@ struct Parser : Object {
     }
 
     Result<CatchSyntax, ParserError> parse_catch(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_catch_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "catch"));
@@ -4131,7 +4131,7 @@ struct Parser : Object {
     }
 
     Result<DropSyntax, ParserError> parse_drop(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_drop_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "drop"));
@@ -4156,9 +4156,9 @@ struct Parser : Object {
     }
 
     Result<ExpressionSyntax, ParserError> parse_expression(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_literal(_r_1, _rp, _ep);
             if (node_result._tag == Result<LiteralSyntax, ParserError>::Error)
             {
@@ -4174,7 +4174,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_name(_r_1, _rp, _ep);
             if (node_result._tag == Result<NameSyntax, ParserError>::Error)
             {
@@ -4190,7 +4190,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_object(_r_1, _rp, _ep);
             if (node_result._tag == Result<ObjectSyntax, ParserError>::Error)
             {
@@ -4206,7 +4206,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_vector(_r_1, _rp, _ep);
             if (node_result._tag == Result<VectorSyntax, ParserError>::Error)
             {
@@ -4222,7 +4222,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_block(_r_1, _rp, _ep);
             if (node_result._tag == Result<BlockSyntax, ParserError>::Error)
             {
@@ -4238,7 +4238,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_if(_r_1, _rp, _ep);
             if (node_result._tag == Result<IfSyntax, ParserError>::Error)
             {
@@ -4254,7 +4254,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_match(_r_1, _rp, _ep);
             if (node_result._tag == Result<MatchSyntax, ParserError>::Error)
             {
@@ -4270,7 +4270,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_lambda(_r_1, _rp, _ep);
             if (node_result._tag == Result<LambdaSyntax, ParserError>::Error)
             {
@@ -4286,7 +4286,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_for(_r_1, _rp, _ep);
             if (node_result._tag == Result<ForSyntax, ParserError>::Error)
             {
@@ -4302,7 +4302,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_while(_r_1, _rp, _ep);
             if (node_result._tag == Result<WhileSyntax, ParserError>::Error)
             {
@@ -4318,7 +4318,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_repeat(_r_1, _rp, _ep);
             if (node_result._tag == Result<RepeatSyntax, ParserError>::Error)
             {
@@ -4334,7 +4334,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_sizeof(_r_1, _rp, _ep);
             if (node_result._tag == Result<SizeOfSyntax, ParserError>::Error)
             {
@@ -4350,7 +4350,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_continue(_r_1, _rp, _ep);
             if (node_result._tag == Result<ContinueSyntax, ParserError>::Error)
             {
@@ -4366,7 +4366,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_break(_r_1, _rp, _ep);
             if (node_result._tag == Result<BreakSyntax, ParserError>::Error)
             {
@@ -4382,7 +4382,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_return(_r_1, _rp, _ep);
             if (node_result._tag == Result<ReturnSyntax, ParserError>::Error)
             {
@@ -4398,7 +4398,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_throw(_r_1, _rp, _ep);
             if (node_result._tag == Result<ThrowSyntax, ParserError>::Error)
             {
@@ -4417,7 +4417,7 @@ struct Parser : Object {
     }
 
     Result<ContinueSyntax, ParserError> parse_continue(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_continue_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "continue"));
@@ -4444,7 +4444,7 @@ struct Parser : Object {
     }
 
     Result<BreakSyntax, ParserError> parse_break(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_break_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "break"));
@@ -4478,7 +4478,7 @@ struct Parser : Object {
     }
 
     Result<LoopSyntax, ParserError> parse_loop(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_loop_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "loop"));
@@ -4504,7 +4504,7 @@ struct Parser : Object {
     }
 
     Result<ReturnSyntax, ParserError> parse_return(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_return_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "return"));
@@ -4527,7 +4527,7 @@ struct Parser : Object {
     }
 
     Result<ThrowSyntax, ParserError> parse_throw(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_throw_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "throw"));
@@ -4550,7 +4550,7 @@ struct Parser : Object {
     }
 
     Result<LiteralSyntax, ParserError> parse_literal(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto literal_result = this->parse_literal_token(_r, _rp);
@@ -4570,7 +4570,7 @@ struct Parser : Object {
     }
 
     Result<ObjectSyntax, ParserError> parse_object(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_left_paren_1 = this->lexer.parse_punctuation(_r, _rp, String(_r.page, "("));
@@ -4597,9 +4597,9 @@ struct Parser : Object {
     }
 
     Result<Vector<ComponentSyntax>*, ParserError> parse_component_list(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             Array<ComponentSyntax>* array = nullptr;
             while(true) {
                 auto node_result = this->parse_component(_r_1, _rp, _ep);
@@ -4627,7 +4627,7 @@ struct Parser : Object {
     }
 
     Result<ComponentSyntax, ParserError> parse_component(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto operands_result = this->parse_operand_list(_r, _rp, _ep);
@@ -4665,7 +4665,7 @@ struct Parser : Object {
     }
 
     Result<ValueSyntax, ParserError> parse_value(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_colon_1 = this->lexer.parse_colon(_r, _rp);
@@ -4697,7 +4697,7 @@ struct Parser : Object {
     }
 
     Result<VectorSyntax, ParserError> parse_vector(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_left_bracket_1 = this->lexer.parse_punctuation(_r, _rp, String(_r.page, "["));
@@ -4726,9 +4726,9 @@ struct Parser : Object {
     }
 
     Result<Vector<ElementSyntax>*, ParserError> parse_element_list(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             Array<ElementSyntax>* array = nullptr;
             while(true) {
                 auto node_result = this->parse_element(_r_1, _rp, _ep);
@@ -4756,7 +4756,7 @@ struct Parser : Object {
     }
 
     Result<ElementSyntax, ParserError> parse_element(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto operation_result = this->parse_operation(_r, _rp, _ep);
@@ -4787,7 +4787,7 @@ struct Parser : Object {
     }
 
     Result<BlockSyntax, ParserError> parse_block(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_left_curly_1 = this->lexer.parse_punctuation(_r, _rp, String(_r.page, "{"));
@@ -4821,7 +4821,7 @@ struct Parser : Object {
     }
 
     Result<IfSyntax, ParserError> parse_if(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_if_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "if"));
@@ -4876,7 +4876,7 @@ struct Parser : Object {
     }
 
     Result<IsSyntax, ParserError> parse_is(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_is_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "is"));
@@ -4901,7 +4901,7 @@ struct Parser : Object {
     }
 
     Result<AsSyntax, ParserError> parse_as(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_as_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "as"));
@@ -4931,7 +4931,7 @@ struct Parser : Object {
     }
 
     Result<ElseSyntax, ParserError> parse_else(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_else_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "else"));
@@ -4960,7 +4960,7 @@ struct Parser : Object {
     }
 
     Result<MatchSyntax, ParserError> parse_match(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_match_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "match"));
@@ -5001,9 +5001,9 @@ struct Parser : Object {
     }
 
     Result<Vector<CaseSyntax>*, ParserError> parse_case_list(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             Array<CaseSyntax>* array = nullptr;
             while(true) {
                 auto node_result = this->parse_case(_r_1, _rp, _ep);
@@ -5031,7 +5031,7 @@ struct Parser : Object {
     }
 
     Result<CaseSyntax, ParserError> parse_case(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_case_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "case"));
@@ -5065,7 +5065,7 @@ struct Parser : Object {
     }
 
     Result<DefaultSyntax, ParserError> parse_default(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_default_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "default"));
@@ -5088,7 +5088,7 @@ struct Parser : Object {
     }
 
     Result<LambdaSyntax, ParserError> parse_lambda(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_lambda_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "lambda"));
@@ -5126,7 +5126,7 @@ struct Parser : Object {
     }
 
     Result<ForSyntax, ParserError> parse_for(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_for_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "for"));
@@ -5180,7 +5180,7 @@ struct Parser : Object {
     }
 
     Result<LabelSyntax, ParserError> parse_label(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_label_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "label"));
@@ -5206,7 +5206,7 @@ struct Parser : Object {
     }
 
     Result<WhileSyntax, ParserError> parse_while(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_while_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "while"));
@@ -5247,7 +5247,7 @@ struct Parser : Object {
     }
 
     Result<RepeatSyntax, ParserError> parse_repeat(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_repeat_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "repeat"));
@@ -5279,9 +5279,9 @@ struct Parser : Object {
     }
 
     Result<Vector<ActionSyntax>*, ParserError> parse_action_list(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             Array<ActionSyntax>* array = nullptr;
             while(true) {
                 auto node_result = this->parse_action(_r_1, _rp, _ep);
@@ -5309,9 +5309,9 @@ struct Parser : Object {
     }
 
     Result<ActionSyntax, ParserError> parse_action(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_operation(_r_1, _rp, _ep);
             if (node_result._tag == Result<OperationSyntax, ParserError>::Error)
             {
@@ -5327,7 +5327,7 @@ struct Parser : Object {
             }
         }
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             auto node_result = this->parse_set(_r_1, _rp, _ep);
             if (node_result._tag == Result<SetSyntax, ParserError>::Error)
             {
@@ -5346,7 +5346,7 @@ struct Parser : Object {
     }
 
     Result<SetSyntax, ParserError> parse_set(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_set_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "set"));
@@ -5380,7 +5380,7 @@ struct Parser : Object {
     }
 
     Result<OperationSyntax, ParserError> parse_operation(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto operands_result = this->parse_operand_list(_r, _rp, _ep);
@@ -5404,7 +5404,7 @@ struct Parser : Object {
     }
 
     Result<SizeOfSyntax, ParserError> parse_sizeof(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto success_sizeof_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "sizeof"));
@@ -5429,9 +5429,9 @@ struct Parser : Object {
     }
 
     Result<Vector<TypeSyntax>*, ParserError> parse_type_list(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             Array<TypeSyntax>* array = nullptr;
             while(true) {
                 auto node_result = this->parse_type(_r_1, _rp, _ep);
@@ -5459,7 +5459,7 @@ struct Parser : Object {
     }
 
     Result<TypeSyntax, ParserError> parse_type(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto name_result = this->parse_name(_r, _rp, _ep);
@@ -5493,7 +5493,7 @@ struct Parser : Object {
     }
 
     Result<NameSyntax, ParserError> parse_name(Region& _pr, Page* _rp, Page* _ep) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         auto start = this->lexer.previous_position;
 
         auto name = this->lexer.parse_identifier(_r, _rp, this->keywords);

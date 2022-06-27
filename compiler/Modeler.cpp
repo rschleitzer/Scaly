@@ -5,7 +5,8 @@ namespace model {
 using namespace scaly::io;
 
 struct IoModelError {
-    String file_name;
+    FileError file_error;
+    IoModelError(FileError file_error) : file_error(file_error) {}
 };
 
 struct NotImplementedModelError
@@ -49,12 +50,12 @@ struct ModelError : Object {
 };
 
 Result<Vector<DeclarationSyntax>*, ParserError> parse_program(Region& _pr, Page* _rp, Page* _ep, const String& program) {
-    auto _r = Region::create(_pr);
+    Region _r(_pr);
     Array<DeclarationSyntax>& declarations = *new(alignof(Array<DeclarationSyntax>), _r.page) Array<DeclarationSyntax>();
     
     // Parse the scaly module inclusion
     {
-        auto _r_1 = Region::create(_r);
+        Region _r_1(_r);
         Parser& parser_module = *new(alignof(Parser), _r_1.page) Parser(_r_1, _r_1.page, String(_r_1.page, "module scaly"));
         auto module_syntax_result = parser_module.parse_module(_r_1, _rp, _ep);
         if (module_syntax_result._tag == Result<ModuleSyntax*, ParserError>::Error)
@@ -68,7 +69,7 @@ Result<Vector<DeclarationSyntax>*, ParserError> parse_program(Region& _pr, Page*
     Vector<UseSyntax>* uses = nullptr;
     Vector<StatementSyntax>* statements = nullptr;
     {
-        auto _r_1 = Region::create(_r);
+        Region _r_1(_r);
         Parser& parser = *new(alignof(Parser), _r_1.page) Parser(_r_1, _r_1.page, program);
         while(true) {
             auto node_result = parser.parse_declaration(_r_1, _rp, _ep);
@@ -142,7 +143,7 @@ Result<Vector<DeclarationSyntax>*, ParserError> parse_program(Region& _pr, Page*
 }
 
 Result<Vector<Property>, ModelError> handle_parameterset(Region& _pr, Page* _rp, Page* _ep, ParameterSetSyntax& parameterSetSyntax) {
-    auto _r = Region::create(_pr);
+    Region _r(_pr);
     Array<Property>& parameters = *new(alignof(Array<Property>), _r.page) Array<Property>();
     switch (parameterSetSyntax._tag) {
         case ParameterSetSyntax::Parameters: {
@@ -161,7 +162,7 @@ Result<Vector<Property>, ModelError> handle_parameterset(Region& _pr, Page* _rp,
 }
 
 Result<Function, ModelError> handle_function(Region& _pr, Page* _rp, Page* _ep, FunctionSyntax& function_syntax, MultiMapBuilder<String, Function>& functions_builder) {
-    auto _r = Region::create(_pr);
+    Region _r(_pr);
     Vector<Property>* input = nullptr;
     Vector<Property>* output = nullptr;
     Operation* operation = nullptr;
@@ -179,20 +180,26 @@ Result<Function, ModelError> handle_function(Region& _pr, Page* _rp, Page* _ep, 
 }
 
 Result<Concept, ModelError> handle_module(Region& _pr, Page* _rp, Page* _ep, ModuleSyntax& module_syntax) {
-    auto _r = Region::create(_pr);
-    auto file_name_builder = new(alignof(StringBuilder), _r.page) StringBuilder(); 
+    Region _r(_pr);
+    StringBuilder& file_name_builder = *new(alignof(StringBuilder), _r.page) StringBuilder(module_syntax.name.name);
+    file_name_builder.append_string(String(_r.page, ".scaly"));
+    auto file_name = file_name_builder.to_string(_r.page);
+    auto module_text_result = File::read_to_string(_r, _r.page, _r.page, file_name);
+    if (module_text_result._tag == Result<String, FileError>::Error) {
+        return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(module_text_result._Error) };
+    }
     return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = Concept(Span(module_syntax.start, module_syntax.end), Type(String(_rp, module_syntax.name.name)))  };
 }
 
 Result<Model, ModelError> build_model(Region& _pr, Page* _rp, Page* _ep, Vector<DeclarationSyntax>& declarations) {
-    auto _r = Region::create(_pr);
+    Region _r(_pr);
 
     HashMapBuilder<String, Concept>& concepts_builder = *new(alignof(HashMapBuilder<String, Array<Concept>>), _r.page) HashMapBuilder<String, Concept>();
     MultiMapBuilder<String, Function>& functions_builder = *new(alignof(MultiMapBuilder<String, Array<Function>>), _r.page) MultiMapBuilder<String, Function>();
 
     auto declarations_iterator = VectorIterator<DeclarationSyntax>(declarations);
     while (auto declaration = declarations_iterator.next()) {
-        auto _r_1 = Region::create(_r);
+        Region _r_1(_r);
         switch (declaration->_tag)
         {
             case DeclarationSyntax::Private:
@@ -219,7 +226,7 @@ Result<Model, ModelError> build_model(Region& _pr, Page* _rp, Page* _ep, Vector<
             break;
             case DeclarationSyntax::Module:
                 auto module_syntax = declaration->_Module;
-                auto concept_result = handle_module(_r, _rp, _ep, module_syntax);
+                auto concept_result = handle_module(_r_1, _rp, _ep, module_syntax);
                 if (concept_result._tag == Result<Concept, ModelError>::Error)
                     return Result<Model, ModelError> { ._tag = Result<Model, ModelError>::Error, ._Error = concept_result._Error };
                 auto concept = concept_result._Ok;
@@ -232,7 +239,7 @@ Result<Model, ModelError> build_model(Region& _pr, Page* _rp, Page* _ep, Vector<
 }
 
 Result<Model, ModelError> build_program_model(Region& _pr, Page* _rp, Page* _ep, const String& program) {
-    auto _r = Region::create(_pr);
+    Region _r(_pr);
 
     auto declarations_result = parse_program(_r, _r.page, _ep, program);
     if (declarations_result._tag == Result<Vector<DeclarationSyntax>*, ParserError>::Error)

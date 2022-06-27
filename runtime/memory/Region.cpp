@@ -16,9 +16,7 @@ struct Region {
         }
     };
 
-    static Region create(Region& region) {
-        return Region(region.page);
-    }
+    Region(const Region& region) : Region(region.page) {}
 
     ~Region() {
         page->deallocate_extensions();

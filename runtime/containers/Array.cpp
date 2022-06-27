@@ -34,6 +34,29 @@ template<class T> struct Array : Object {
         this->length++;
     }
 
+    void add(const Vector<T>& items) {
+        auto length = this->length + items.length;
+        auto size = sizeof(T);
+        if (this->vector == nullptr || length >= this->vector->length) {
+            reallocate();
+        }
+        if (length >= this->vector->length) {
+            auto own_page = Page::get(this);
+            auto data = (T*)own_page->allocate_raw(length * size, alignof(T));
+            auto bytes_to_copy = this->vector->length * size;
+            if (this->vector->length > 0)
+                memcpy(data, this->vector->data, bytes_to_copy);
+            Page* old_exclusive_page = Page::get(this->vector->data);
+            own_page->deallocate_exclusive_page(old_exclusive_page);
+            this->vector->data = data;
+            this->vector->length = length;
+        }
+
+        if (items.length > 0)
+            memcpy(this->vector->data + this->length * size, items.data, items.length * size);
+        this->length += items.length;
+    }
+
     T* get(size_t i) {
         if (i >= this->length)
             return nullptr;
@@ -60,7 +83,7 @@ template<class T> struct Array : Object {
         } else {
             length = this->vector->length * 2;
             auto data = (T*)own_page->allocate_raw(length * size, alignof(T));
-            auto bytes_to_copy = this->vector->length * sizeof(T);
+            auto bytes_to_copy = this->vector->length * size;
             memcpy(data, this->vector->data, bytes_to_copy);
             Page* old_exclusive_page = Page::get(this->vector->data);
             own_page->deallocate_exclusive_page(old_exclusive_page);

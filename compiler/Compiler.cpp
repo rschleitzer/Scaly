@@ -16,7 +16,7 @@ namespace scaly {
 namespace compiler {
 
 int compile_and_run_program(Region& _pr, const String& program, Vector<String>& arguments) {
-    auto _r = Region::create(_pr);
+    Region _r(_pr);
     auto model = scaly::compiler::model::build_program_model(_r, _r.page, _r.page, program);
     return 0;
 }

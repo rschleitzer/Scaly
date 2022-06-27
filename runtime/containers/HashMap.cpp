@@ -9,14 +9,14 @@ struct HashMap : Object {
     Vector<Vector<KeyValuePair<K, V>>>* slots;
 
     HashMap<K, V>(Region& _pr, Page* _rp, HashMapBuilder<K, V>& hash_map_builder) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);
         if (hash_map_builder.length == 0)
             return;
 
         this->slots = new(alignof(Vector<Vector<KeyValuePair<K, V>>>), _rp) Vector<Vector<KeyValuePair<K, V>>>(_rp, hash_map_builder.slots->length);
         auto length = hash_map_builder.slots->length;
         for (size_t i = 0; i < length; i++) {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             Array<KeyValuePair<K, V>>& array = *new(alignof(Array<KeyValuePair<K, V>>), _r_1.page) Array<KeyValuePair<K, V>>();
             auto list_iterator = ListIterator<Slot<KeyValuePair<K, V>>>(hash_map_builder.slots->get(i)->head);
             while (auto item = list_iterator.next())

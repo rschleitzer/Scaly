@@ -100,7 +100,7 @@ struct String : Object {
         return (const char*)dest;
     }
 
-    char* get_buffer() {
+    char* get_buffer() const {
         size_t length = 0;
         auto bit_count = 0;
         size_t index = 0;

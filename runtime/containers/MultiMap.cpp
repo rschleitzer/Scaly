@@ -8,14 +8,14 @@ struct MultiMap : Object {
     Vector<Vector<KeyValuePair<K, Vector<V>>>>* slots;
 
     MultiMap<K, V>(Region& _pr, Page* _rp, MultiMapBuilder<K, V>& multi_map_builder) {
-        auto _r = Region::create(_pr);
+        Region _r(_pr);;
         if (multi_map_builder.length == 0)
             return;
 
         this->slots = new(alignof(Vector<Vector<KeyValuePair<K, Vector<V>>>>), _rp) Vector<Vector<KeyValuePair<K, Vector<V>>>>(_rp, multi_map_builder.slots->length);
         auto length = multi_map_builder.slots->length;
         for (size_t i = 0; i < length; i++) {
-            auto _r_1 = Region::create(_r);
+            Region _r_1(_r);
             Array<KeyValuePair<K, Vector<V>>>& array = *new(alignof(Array<KeyValuePair<K, Vector<V>>>), _r_1.page) Array<KeyValuePair<K, Vector<V>>>();
             auto list_iterator = ListIterator<Slot<KeyValuePair<K, Array<V>*>>>(multi_map_builder.slots->get(i)->head);
             while (auto item = list_iterator.next()) {

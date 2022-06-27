@@ -3,16 +3,16 @@
 using namespace scaly::io;
 
 void test_file(Region& _pr) {
-    auto _r = Region::create(_pr);
+    Region _r(_pr);
     {
-        auto _r_1 = Region::create(_r);
+        Region _r_1(_r);
         auto file_not_found_result = File::read_to_string(_r_1, _r_1.page, _r_1.page, String(_r_1.page, "foo"));
         if (file_not_found_result._tag != Result<String, FileError>::Error)
             exit (-1);
     }
     
     {
-        auto _r_1 = Region::create(_r);
+        Region _r_1(_r);
         auto main_text_result = File::read_to_string(_r_1, _r_1.page, _r_1.page, String(_r_1.page, "bar"));
         if (main_text_result._tag != Result<String, FileError>::Ok)
             exit (-2);
