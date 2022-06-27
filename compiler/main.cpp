@@ -188,8 +188,8 @@ void test_generator(Region& _pr)
 
 void test_compiler(Region& _pr)
 {
-    auto r = Region(_pr);
-    if (compile_and_run_program(_pr, String(r.page, "0"), *new(alignof(Vector<String>), r.page) Vector<String>(r.page, 0)) != 0)
+    Region _r(_pr);
+    if (compile_and_run_program(_pr, String(_r.page, "0"), *new(alignof(Vector<String>), _r.page) Vector<String>(_r.page, 0)) != 0)
         exit (-60);
 
 }
