@@ -1100,7 +1100,7 @@ struct Parser : Object {
         keywords(initialize_keywords(_pr, _rp)) {}
 
     HashSet<String> initialize_keywords(Region& _pr, Page* _rp) {
-        auto _r = Region(_rp);
+        Region _r(_pr);
         HashSetBuilder<String>& hash_set_builder = *new(alignof(HashSetBuilder<String>), _r.page) HashSetBuilder<String>();
         hash_set_builder.add(String(Page::get(this), "as"));
         hash_set_builder.add(String(Page::get(this), "break"));

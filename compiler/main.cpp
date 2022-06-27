@@ -4,8 +4,8 @@ using namespace scaly::memory;
 using namespace scaly::containers;
 using namespace scaly::compiler;
 
-void test_lexer(Page* _rp) {
-    auto _r = Region(_rp);
+void test_lexer(Region& _pr) {
+    Region _r(_pr);
     {
         Region _r_1(_r);
         Lexer& lexer = *new(alignof(Lexer), _r_1.page) Lexer(String(_r_1.page, ""));
@@ -196,12 +196,10 @@ void test_compiler(Region& _pr)
 
 int main(int argc, char** argv) {
     auto heap = Heap::create();
-    auto root_stack_bucket = StackBucket::create(&heap);
-    auto root_page = Page::get(root_stack_bucket);
-    auto region = Region(root_page);
+    Region _r(heap);
 
-    test_lexer(root_page);
-    test_parser(region);
-    test_generator(region);
-    test_compiler(region);
+    test_lexer(_r);
+    test_parser(_r);
+    test_generator(_r);
+    test_compiler(_r);
 }

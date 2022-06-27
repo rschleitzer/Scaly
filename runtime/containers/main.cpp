@@ -295,16 +295,14 @@ void test_multi_map(Region& _pr) {
 int main(int argc, char** argv)
 {
     auto heap = Heap::create();
-    auto root_stack_bucket = StackBucket::create(&heap);
-    auto root_page = Page::get(root_stack_bucket);
-    auto region = Region(root_page);
+    Region _r(heap);
 
-    test_vector(region);
-    test_array(region);
-    test_string(region);
-    test_string_builder(region);
-    test_list(region);
-    test_hash_set(region);
-    test_hash_map(region);
-    test_multi_map(region);
+    test_vector(_r);
+    test_array(_r);
+    test_string(_r);
+    test_string_builder(_r);
+    test_list(_r);
+    test_hash_set(_r);
+    test_hash_map(_r);
+    test_multi_map(_r);
 }

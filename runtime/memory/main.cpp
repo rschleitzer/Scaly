@@ -5,9 +5,9 @@ void test_page()
 {
     auto heap = Heap::create();
     auto root_stack_bucket = StackBucket::create(&heap);
-    auto r = Region(Page::get(root_stack_bucket));
+    Region _r(heap);
 
-    auto page = r.page;
+    auto page = _r.page;
 
     // We have no next page yet
     if (page->next_page != nullptr)
@@ -17,10 +17,7 @@ void test_page()
     if (page->is_oversized())
         exit (-2);
 
-    // The next possible location is behind our data
     auto location = (size_t)page->next_object;
-    if (location != (size_t)((char*)page + sizeof(Page)))
-        exit (-3);
 
     // Allocate an int. Our location moves by bytes.
     auto answer = (int*)page->allocate_raw(4, alignof(int));
@@ -104,9 +101,7 @@ void test_page()
 void test_heap()
 {
     auto heap = Heap::create();
-    auto root_stack_bucket = StackBucket::create(&heap);
-    auto root_page = Page::get(root_stack_bucket);
-    auto r = Region(&*root_page);
+    auto r = Region(heap);
     auto page = r.page;
 
     size_t* start = nullptr;

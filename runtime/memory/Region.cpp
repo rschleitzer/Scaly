@@ -4,19 +4,22 @@ namespace memory {
 struct Region {
     Page* page;
 
-    Region(Page* page) {
-        auto bucket = Bucket::get(page);
+    Region(Heap& heap) {
+        auto root_stack_bucket = StackBucket::create(&heap);
+        page = Page::get(root_stack_bucket);
+    }
+
+    Region(const Region& region) {
+        auto bucket = Bucket::get(region.page);
         switch (bucket->tag) {
             case Bucket::Heap:
                 this->page = bucket->heap.allocate_page();
                 break;
             case Bucket::Stack:
-                auto our_page_address = StackBucket::new_page(page);
+                auto our_page_address = StackBucket::new_page(region.page);
                 this->page = our_page_address;
         }
-    };
-
-    Region(const Region& region) : Region(region.page) {}
+    }
 
     ~Region() {
         page->deallocate_extensions();

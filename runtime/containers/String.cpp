@@ -95,7 +95,7 @@ struct String : Object {
 
         auto dest = _rp->allocate_raw(length + 1, 1);
         memcpy(dest, this->data + index + 1, length);
-        *((char*)dest + index + 1 + length) = 0;
+        *((char*)dest + index + length) = 0;
 
         return (const char*)dest;
     }
