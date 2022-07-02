@@ -49,7 +49,7 @@ struct ModelError : Object {
     };
 };
 
-Result<Vector<DeclarationSyntax>*, ParserError> parse_program(Region& _pr, Page* _rp, Page* _ep, const String& program) {
+Result<FileSyntax, ParserError> parse_program(Region& _pr, Page* _rp, Page* _ep, const String& program) {
     Region _r(_pr);
     Array<DeclarationSyntax>& declarations = *new(alignof(Array<DeclarationSyntax>), _r.page) Array<DeclarationSyntax>();
     
@@ -59,7 +59,7 @@ Result<Vector<DeclarationSyntax>*, ParserError> parse_program(Region& _pr, Page*
         Parser& parser_module = *new(alignof(Parser), _r_1.page) Parser(_r_1, _r_1.page, String(_r_1.page, "module scaly"));
         auto module_syntax_result = parser_module.parse_module(_r_1, _rp, _ep);
         if (module_syntax_result._tag == Result<ModuleSyntax*, ParserError>::Error)
-            return Result<Vector<DeclarationSyntax>*, ParserError> { ._tag = Result<Vector<DeclarationSyntax>*, ParserError>::Error, ._Error = module_syntax_result._Error };
+            return Result<FileSyntax, ParserError> { ._tag = Result<FileSyntax, ParserError>::Error, ._Error = module_syntax_result._Error };
         auto module_syntax = module_syntax_result._Ok;
         auto module_declaration = DeclarationSyntax(ModuleSyntax(module_syntax));
         declarations.add(module_declaration);
@@ -74,7 +74,7 @@ Result<Vector<DeclarationSyntax>*, ParserError> parse_program(Region& _pr, Page*
         while(true) {
             auto node_result = parser.parse_declaration(_r_1, _rp, _ep);
             if ((node_result._tag == Result<DeclarationSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
-                return Result<Vector<DeclarationSyntax>*, ParserError> { ._tag = Result<Vector<DeclarationSyntax>*, ParserError>::Error, ._Error = node_result._Error };
+                return Result<FileSyntax, ParserError> { ._tag = Result<FileSyntax, ParserError>::Error, ._Error = node_result._Error };
             if (node_result._tag == Result<DeclarationSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
                 declarations.add(node);
@@ -98,26 +98,26 @@ Result<Vector<DeclarationSyntax>*, ParserError> parse_program(Region& _pr, Page*
 
     auto success_function = parser_main.lexer.parse_keyword(_r, _r.page, String(_r.page, "function"));
     if (!success_function)
-        return Result<Vector<DeclarationSyntax>*, ParserError> { ._tag = Result<Vector<DeclarationSyntax>*, ParserError>::Ok, ._Ok = nullptr };
+        return Result<FileSyntax, ParserError> { ._tag = Result<FileSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, parser_main.lexer.position)) };
 
     auto name = parser_main.lexer.parse_identifier(_r, _r.page, parser_main.keywords);
     if (name != nullptr) {
         if (!parser_main.is_identifier(*name)) {
-            return Result<Vector<DeclarationSyntax>*, ParserError> { ._tag = Result<Vector<DeclarationSyntax>*, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, parser_main.lexer.position)) };
+            return Result<FileSyntax, ParserError> { ._tag = Result<FileSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, parser_main.lexer.position)) };
         }
     }
     else
-        return Result<Vector<DeclarationSyntax>*, ParserError> { ._tag = Result<Vector<DeclarationSyntax>*, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, parser_main.lexer.position)) };
+        return Result<FileSyntax, ParserError> { ._tag = Result<FileSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, parser_main.lexer.position)) };
 
 
     auto parameters_result = parser_main.parse_parameterset(_r, _rp, _ep);
     if (parameters_result._tag == Result<ParameterSetSyntax*, ParserError>::Error)
-        return Result<Vector<DeclarationSyntax>*, ParserError> { ._tag = Result<Vector<DeclarationSyntax>*, ParserError>::Error, ._Error = parameters_result._Error };
+        return Result<FileSyntax, ParserError> { ._tag = Result<FileSyntax, ParserError>::Error, ._Error = parameters_result._Error };
     auto parameters = parameters_result._Ok;
 
     auto returns_result = parser_main.parse_returns(_r, _rp, _ep);
     if (returns_result._tag == Result<ReturnsSyntax*, ParserError>::Error)
-        return Result<Vector<DeclarationSyntax>*, ParserError> { ._tag = Result<Vector<DeclarationSyntax>*, ParserError>::Error, ._Error = returns_result._Error };
+        return Result<FileSyntax, ParserError> { ._tag = Result<FileSyntax, ParserError>::Error, ._Error = returns_result._Error };
     auto returns = returns_result._Ok;
 
     auto end = parser_main.lexer.position;
@@ -136,9 +136,11 @@ Result<Vector<DeclarationSyntax>*, ParserError> parse_program(Region& _pr, Page*
     main_function_syntax.routine.implementation = implementation;
     DeclarationSyntax& main_function_declaration = *new (alignof(DeclarationSyntax), _rp) DeclarationSyntax(FunctionSyntax(main_function_syntax));;
     declarations.add(main_function_declaration);
-    return Result<Vector<DeclarationSyntax>*, ParserError> { 
-        ._tag = Result<Vector<DeclarationSyntax>*, ParserError>::Ok, 
-        ._Ok = new(alignof(Vector<DeclarationSyntax>), _rp) Vector<DeclarationSyntax>(_rp, declarations)
+
+    FileSyntax file_syntax(0, 0, nullptr, new(alignof(Vector<DeclarationSyntax>), _rp) Vector<DeclarationSyntax>(_rp, declarations), nullptr);
+    return Result<FileSyntax, ParserError> { 
+        ._tag = Result<FileSyntax, ParserError>::Ok, 
+        ._Ok = file_syntax
     };
 }
 
@@ -179,81 +181,111 @@ Result<Function, ModelError> handle_function(Region& _pr, Page* _rp, Page* _ep, 
     return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(function_syntax.start, function_syntax.end), String(_rp, function_syntax.name), input, output, operation) };
 }
 
-Result<Concept, ModelError> handle_module(Region& _pr, Page* _rp, Page* _ep, ModuleSyntax& module_syntax) {
+Result<Concept, ModelError> build_concept(Region& _pr, Page* _rp, Page* _ep, String name, FileSyntax file_syntax);
+
+Result<Module, ModelError> handle_module(Region& _pr, Page* _rp, Page* _ep, ModuleSyntax& module_syntax) {
     Region _r(_pr);
     StringBuilder& file_name_builder = *new(alignof(StringBuilder), _r.page) StringBuilder(module_syntax.name.name);
     file_name_builder.append_string(String(_r.page, ".scaly"));
-    auto file_name = file_name_builder.to_string(_r.page);
+    auto file_name = file_name_builder.to_string(_rp);
     auto module_text_result = File::read_to_string(_r, _r.page, _r.page, file_name);
     if (module_text_result._tag == Result<String, FileError>::Error) {
-        return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(module_text_result._Error) };
+        return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = ModelError(module_text_result._Error) };
     }
-    return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = Concept(Span(module_syntax.start, module_syntax.end), Type(String(_rp, module_syntax.name.name)))  };
+    auto module_text = module_text_result._Ok;
+
+    Parser& parser = *new(alignof(Parser), _r.page) Parser(_r, _r.page, module_text);
+    auto file_syntax_result = parser.parse_file(_r, _rp, _ep);
+    if (file_syntax_result._tag == Result<ModuleSyntax*, ParserError>::Error)
+        return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = file_syntax_result._Error };
+    auto file_syntax = file_syntax_result._Ok;
+    auto concept_result = build_concept(_r, _r.page, _ep, String(_rp, module_syntax.name.name), file_syntax);
+    if (concept_result._tag == Result<Concept, ModelError>::Error)
+        return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = concept_result._Error };
+    auto concept = concept_result._Ok;
+    
+    return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Ok,
+        ._Ok = Module(String(_rp, module_syntax.name.name), Code { ._tag = Code::File, ._File = file_name }, concept)
+    };
 }
 
-Result<Model, ModelError> build_model(Region& _pr, Page* _rp, Page* _ep, Vector<DeclarationSyntax>& declarations) {
+Result<Concept, ModelError> build_concept(Region& _pr, Page* _rp, Page* _ep, String name, FileSyntax file_syntax) {
     Region _r(_pr);
 
+    HashMapBuilder<String, Module>& modules_builder = *new(alignof(HashMapBuilder<String, Array<Module>>), _r.page) HashMapBuilder<String, Module>();
     HashMapBuilder<String, Concept>& concepts_builder = *new(alignof(HashMapBuilder<String, Array<Concept>>), _r.page) HashMapBuilder<String, Concept>();
     MultiMapBuilder<String, Function>& functions_builder = *new(alignof(MultiMapBuilder<String, Array<Function>>), _r.page) MultiMapBuilder<String, Function>();
 
-    auto declarations_iterator = VectorIterator<DeclarationSyntax>(declarations);
-    while (auto declaration = declarations_iterator.next()) {
-        Region _r_1(_r);
-        switch (declaration->_tag)
-        {
-            case DeclarationSyntax::Private:
-            break;
-            case DeclarationSyntax::Definition:
-            break;
-            case DeclarationSyntax::Function: {
-                auto function_result = handle_function(_r_1, _rp, _ep, declaration->_Function, functions_builder);
-                if (function_result._tag == Result<Function, ModelError>::Error)
-                    return Result<Model, ModelError> { ._tag = Result<Model, ModelError>::Error, ._Error = function_result._Error };
-                auto function = function_result._Ok;
-                functions_builder.add(function.name, function);
+    if (file_syntax.declarations != nullptr) {
+        auto declarations_iterator = VectorIterator<DeclarationSyntax>(*(file_syntax.declarations));
+        while (auto declaration = declarations_iterator.next()) {
+            Region _r_1(_r);
+            switch (declaration->_tag) {
+                case DeclarationSyntax::Private:
+                break;
+                case DeclarationSyntax::Definition:
+                break;
+                case DeclarationSyntax::Function: {
+                    auto function_result = handle_function(_r_1, _rp, _ep, declaration->_Function, functions_builder);
+                    if (function_result._tag == Result<Function, ModelError>::Error)
+                        return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = function_result._Error };
+                    auto function = function_result._Ok;
+                    functions_builder.add(function.name, function);
+                }
+                break;
+                case DeclarationSyntax::Procedure:
+                break;
+                case DeclarationSyntax::Operator:
+                break;
+                case DeclarationSyntax::Implement:
+                break;
+                case DeclarationSyntax::Trait:
+                break;
+                case DeclarationSyntax::Macro:
+                break;
+                case DeclarationSyntax::Module:
+                    auto module_syntax = declaration->_Module;
+                    auto module_result = handle_module(_r_1, _rp, _ep, module_syntax);
+                    if (module_result._tag == Result<Concept, ModelError>::Error)
+                        return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error,
+                            ._Error = module_result._Error };
+                    auto module = module_result._Ok;
+                    if (!modules_builder.add(module.name, module))
+                        return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error,
+                            ._Error = ModelError(ModelBuilderError(DuplicateNameError(Span(module_syntax.start, module_syntax.end)))) };
+                break;
             }
-            break;
-            case DeclarationSyntax::Procedure:
-            break;
-            case DeclarationSyntax::Operator:
-            break;
-            case DeclarationSyntax::Implement:
-            break;
-            case DeclarationSyntax::Trait:
-            break;
-            case DeclarationSyntax::Macro:
-            break;
-            case DeclarationSyntax::Module:
-                auto module_syntax = declaration->_Module;
-                auto concept_result = handle_module(_r_1, _rp, _ep, module_syntax);
-                if (concept_result._tag == Result<Concept, ModelError>::Error)
-                    return Result<Model, ModelError> { ._tag = Result<Model, ModelError>::Error, ._Error = concept_result._Error };
-                auto concept = concept_result._Ok;
-                if (!concepts_builder.add(concept.type.name, concept))
-                    return Result<Model, ModelError> { ._tag = Result<Model, ModelError>::Error, ._Error = ModelError(ModelBuilderError(DuplicateNameError(Span(module_syntax.start, module_syntax.end)))) };
-            break;
         }
     }
-    return Result<Model, ModelError> { ._tag = Result<Model, ModelError>::Ok, ._Ok = Model(HashMap<String, Concept>(_r, _rp, concepts_builder), MultiMap<String, Function>(_r, _rp, functions_builder)) };
+    return Result<Concept, ModelError> {
+        ._tag = Result<Concept, ModelError>::Ok, 
+        ._Ok = Concept(Span(file_syntax.start, file_syntax.end),
+                    Type(String(_rp, name)),
+                    HashMap<String, Module>(_r, _rp, modules_builder),
+                    HashMap<String, Concept>(_r, _rp, concepts_builder),
+                    MultiMap<String, Function>(_r, _rp, functions_builder)) };
 }
 
-Result<Model, ModelError> build_program_model(Region& _pr, Page* _rp, Page* _ep, const String& program) {
+Result<Module, ModelError> build_program_module(Region& _pr, Page* _rp, Page* _ep, const String& program) {
     Region _r(_pr);
+    
+    // Parse the whole program into declarations
+    auto file_result = parse_program(_r, _r.page, _ep, program);
+    if (file_result._tag == Result<Vector<DeclarationSyntax>*, ParserError>::Error)
+        return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = ModelError(file_result._Error) };
+    auto file = file_result._Ok;
 
-    auto declarations_result = parse_program(_r, _r.page, _ep, program);
-    if (declarations_result._tag == Result<Vector<DeclarationSyntax>*, ParserError>::Error)
-        return Result<Model, ModelError> { ._tag = Result<Model, ModelError>::Error, ._Error = ModelError(declarations_result._Error) };
-    auto declarations = declarations_result._Ok;
 
-    auto model_result = build_model(_r, _r.page, _ep, *declarations);
-    if (model_result._tag == Result<Model*, ModelError*>::Error)
-        return model_result;
-    auto model = model_result._Ok;
+    auto concept_result = build_concept(_r, _r.page, _ep, String(_rp, ""), file);
+    if (concept_result._tag == Result<Module*, ModelError*>::Error)
+        return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = concept_result._Error };
+    auto concept = concept_result._Ok;
+
+    Module module(String(_rp, ""), Code { ._tag = Code::Program, ._Program = String(program) }, concept);
 
     //auto functions = model->functions;
 
-    return Result<Model, ModelError> { ._tag = Result<Model, ModelError>::Ok, ._Ok = model };
+    return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Ok, ._Ok = module };
 }
 
 }

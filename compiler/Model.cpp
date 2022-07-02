@@ -81,20 +81,42 @@ struct Function : Object {
         operation(operation) {}
 };
 
+struct Module;
+
 struct Concept : Object {
     Span span;
     Type type;
-    Concept(Span span, Type type)
-      : span(span),
-        type(type) {}
-};
-
-struct Model : Object {
+    HashMap<String, Module> modules;
     HashMap<String, Concept> concepts;
     MultiMap<String, Function> functions;
-    Model(HashMap<String, Concept> concepts, MultiMap<String, Function> functions)
-      : concepts(concepts),
+    Concept(Span span, Type type, HashMap<String, Module> modules, HashMap<String, Concept> concepts, MultiMap<String, Function> functions)
+      : span(span),
+        type(type),
+        modules(modules),
+        concepts(concepts),
         functions(functions) {}
+};
+
+struct Code {
+    enum {
+        Program,
+        File,
+    } _tag;
+    union {
+        String _Program;
+        String _File;
+    };
+
+};
+
+struct Module : Object {
+    String name;
+    Code code;
+    Concept concept;
+    Module(String name, Code code, Concept concept)
+      : name(name),
+        code(code),
+        concept(concept) {}
 };
 
 }
