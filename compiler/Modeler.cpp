@@ -276,12 +276,12 @@ Result<Module, ModelError> build_program_module(Region& _pr, Page* _rp, Page* _e
     auto file = file_result._Ok;
 
 
-    auto concept_result = build_concept(_r, _r.page, _ep, String(_rp, ""), file);
+    auto concept_result = build_concept(_r, _rp, _ep, String(_rp, ""), file);
     if (concept_result._tag == Result<Module*, ModelError*>::Error)
         return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = concept_result._Error };
     auto concept = concept_result._Ok;
 
-    Module module(String(_rp, ""), Code { ._tag = Code::Program, ._Program = String(program) }, concept);
+    Module module(String(_rp, ""), Code { ._tag = Code::Program, ._Program = String(_rp, program) }, concept);
 
     //auto functions = model->functions;
 

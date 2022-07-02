@@ -25,7 +25,7 @@ void test_lexer(Region& _pr) {
 "@ttribute + -0815 /* <> \"a string\" \"\\\"\\n\\r\\t\" "
 "'a string identifier' `a string fragment \\`\\n\\r\\t`"
         );
-        Lexer& lexer = *new(alignof(Lexer), _r_1.page) Lexer(s);
+        Lexer& lexer = *new(alignof(Lexer), _r_1.page) Lexer(String(_r_1.page, s));
         if (lexer.token._tag != Token::Empty)
             exit (-3);
         lexer.advance(_r_1);
@@ -189,7 +189,7 @@ void test_generator(Region& _pr)
 void test_compiler(Region& _pr)
 {
     Region _r(_pr);
-    if (compile_and_run_program(_pr, String(_r.page, "0"), *new(alignof(Vector<String>), _r.page) Vector<String>(_r.page, 0)) != 0)
+    if (compile_and_run_program(_r, String(_r.page, "0"), *new(alignof(Vector<String>), _r.page) Vector<String>(_r.page, 0)) != 0)
         exit (-60);
 
 }

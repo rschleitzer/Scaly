@@ -5,7 +5,6 @@ using namespace scaly::memory;
 
 template<class K, class V>
 struct HashMap : Object {
-    size_t length;
     Vector<Vector<KeyValuePair<K, V>>>* slots;
 
     HashMap<K, V>(Region& _pr, Page* _rp, HashMapBuilder<K, V>& hash_map_builder) {
