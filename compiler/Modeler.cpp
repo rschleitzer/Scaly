@@ -181,11 +181,16 @@ Result<Function, ModelError> handle_function(Region& _pr, Page* _rp, Page* _ep, 
     return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(function_syntax.start, function_syntax.end), String(_rp, function_syntax.name), input, output, operation) };
 }
 
-Result<Concept, ModelError> build_concept(Region& _pr, Page* _rp, Page* _ep, String name, FileSyntax file_syntax);
+Result<Concept, ModelError> build_concept(Region& _pr, Page* _rp, Page* _ep, String name, String path, FileSyntax file_syntax);
 
-Result<Module, ModelError> handle_module(Region& _pr, Page* _rp, Page* _ep, ModuleSyntax& module_syntax) {
+Result<Module, ModelError> handle_module(Region& _pr, Page* _rp, Page* _ep, String path, ModuleSyntax& module_syntax) {
     Region _r(_pr);
-    StringBuilder& file_name_builder = *new(alignof(StringBuilder), _r.page) StringBuilder(module_syntax.name.name);
+    StringBuilder& file_name_builder = *new(alignof(StringBuilder), _r.page) StringBuilder();
+    if (path.get_length() > 0) {
+        file_name_builder.append_string(path);
+        file_name_builder.append_character('/');
+    }
+    file_name_builder.append_string(module_syntax.name.name);
     file_name_builder.append_string(String(_r.page, ".scaly"));
     auto file_name = file_name_builder.to_string(_rp);
     auto module_text_result = File::read_to_string(_r, _r.page, _r.page, file_name);
@@ -199,7 +204,14 @@ Result<Module, ModelError> handle_module(Region& _pr, Page* _rp, Page* _ep, Modu
     if (file_syntax_result._tag == Result<ModuleSyntax*, ParserError>::Error)
         return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = file_syntax_result._Error };
     auto file_syntax = file_syntax_result._Ok;
-    auto concept_result = build_concept(_r, _r.page, _ep, String(_rp, module_syntax.name.name), file_syntax);
+
+    StringBuilder& path_builder = *new(alignof(StringBuilder), _r.page) StringBuilder(path);
+    if (path.get_length() > 0)
+        file_name_builder.append_character('/');
+    path_builder.append_string(module_syntax.name.name);
+
+
+    auto concept_result = build_concept(_r, _r.page, _ep, String(_rp, module_syntax.name.name), path_builder.to_string(_r.page), file_syntax);
     if (concept_result._tag == Result<Concept, ModelError>::Error)
         return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = concept_result._Error };
     auto concept = concept_result._Ok;
@@ -209,7 +221,7 @@ Result<Module, ModelError> handle_module(Region& _pr, Page* _rp, Page* _ep, Modu
     };
 }
 
-Result<Concept, ModelError> build_concept(Region& _pr, Page* _rp, Page* _ep, String name, FileSyntax file_syntax) {
+Result<Concept, ModelError> build_concept(Region& _pr, Page* _rp, Page* _ep, String name, String path, FileSyntax file_syntax) {
     Region _r(_pr);
 
     HashMapBuilder<String, Module>& modules_builder = *new(alignof(HashMapBuilder<String, Array<Module>>), _r.page) HashMapBuilder<String, Module>();
@@ -245,7 +257,7 @@ Result<Concept, ModelError> build_concept(Region& _pr, Page* _rp, Page* _ep, Str
                 break;
                 case DeclarationSyntax::Module:
                     auto module_syntax = declaration->_Module;
-                    auto module_result = handle_module(_r_1, _rp, _ep, module_syntax);
+                    auto module_result = handle_module(_r_1, _rp, _ep, path, module_syntax);
                     if (module_result._tag == Result<Concept, ModelError>::Error)
                         return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error,
                             ._Error = module_result._Error };
@@ -269,22 +281,17 @@ Result<Concept, ModelError> build_concept(Region& _pr, Page* _rp, Page* _ep, Str
 Result<Module, ModelError> build_program_module(Region& _pr, Page* _rp, Page* _ep, const String& program) {
     Region _r(_pr);
     
-    // Parse the whole program into declarations
     auto file_result = parse_program(_r, _r.page, _ep, program);
     if (file_result._tag == Result<Vector<DeclarationSyntax>*, ParserError>::Error)
         return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = ModelError(file_result._Error) };
     auto file = file_result._Ok;
 
-
-    auto concept_result = build_concept(_r, _rp, _ep, String(_rp, ""), file);
+    auto concept_result = build_concept(_r, _rp, _ep, String(_rp, ""), String(_rp, ""), file);
     if (concept_result._tag == Result<Module*, ModelError*>::Error)
         return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = concept_result._Error };
     auto concept = concept_result._Ok;
 
     Module module(String(_rp, ""), Code { ._tag = Code::Program, ._Program = String(_rp, program) }, concept);
-
-    //auto functions = model->functions;
-
     return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Ok, ._Ok = module };
 }
 
