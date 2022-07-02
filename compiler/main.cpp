@@ -170,8 +170,7 @@ void test_lexer(Region& _pr) {
     }
 }
 
-void test_parser(Region& _pr)
-{
+void test_parser(Region& _pr) {
     Region _r(_pr);
     Parser& parser = *new (alignof(Parser), _r.page) Parser(_r, _r.page, String(_r.page, "define a 1"));
     auto file_syntax = parser.parse_file(_r, _r.page, _r.page);
@@ -179,15 +178,13 @@ void test_parser(Region& _pr)
         exit(-1);
 }
 
-void test_generator(Region& _pr)
-{
+void test_generator(Region& _pr) {
     Region _r(_pr);
     InitializeModule();
 
 }
 
-void test_compiler(Region& _pr)
-{
+void test_compiler(Region& _pr) {
     Region _r(_pr);
     if (compile_and_run_program(_r, String(_r.page, "0"), *new(alignof(Vector<String>), _r.page) Vector<String>(_r.page, 0)) != 0)
         exit (-60);

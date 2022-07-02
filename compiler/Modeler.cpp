@@ -234,9 +234,9 @@ Result<Concept, ModelError> build_concept(Region& _pr, Page* _rp, Page* _ep, Str
             Region _r_1(_r);
             switch (declaration->_tag) {
                 case DeclarationSyntax::Private:
-                break;
+                    return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(declaration->_Private.start, declaration->_Private.end)))) };
                 case DeclarationSyntax::Definition:
-                break;
+                    return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(declaration->_Definition.start, declaration->_Definition.end)))) };
                 case DeclarationSyntax::Function: {
                     auto function_result = handle_function(_r_1, _rp, _ep, declaration->_Function, functions_builder);
                     if (function_result._tag == Result<Function, ModelError>::Error)
@@ -246,15 +246,15 @@ Result<Concept, ModelError> build_concept(Region& _pr, Page* _rp, Page* _ep, Str
                 }
                 break;
                 case DeclarationSyntax::Procedure:
-                break;
+                    return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(declaration->_Procedure.start, declaration->_Procedure.end)))) };
                 case DeclarationSyntax::Operator:
-                break;
+                    return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(declaration->_Operator.start, declaration->_Operator.end)))) };
                 case DeclarationSyntax::Implement:
-                break;
+                    return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(declaration->_Implement.start, declaration->_Implement.end)))) };
                 case DeclarationSyntax::Trait:
-                break;
+                    return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(declaration->_Trait.start, declaration->_Trait.end)))) };
                 case DeclarationSyntax::Macro:
-                break;
+                    return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(declaration->_Macro.start, declaration->_Macro.end)))) };
                 case DeclarationSyntax::Module:
                     auto module_syntax = declaration->_Module;
                     auto module_result = handle_module(_r_1, _rp, _ep, path, module_syntax);
