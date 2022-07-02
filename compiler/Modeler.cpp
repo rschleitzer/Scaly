@@ -163,7 +163,40 @@ Result<Vector<Property>, ModelError> handle_parameterset(Region& _pr, Page* _rp,
         ._Ok = Vector<Property>(_rp, parameters) };
 }
 
-Result<Function, ModelError> handle_function(Region& _pr, Page* _rp, Page* _ep, FunctionSyntax& function_syntax, MultiMapBuilder<String, Function>& functions_builder) {
+Result<Concept, ModelError> handle_definition(Region& _pr, Page* _rp, Page* _ep, DefinitionSyntax& definition) {
+    Region _r(_pr);
+
+    HashMapBuilder<String, Module>& modules_builder = *new(alignof(HashMapBuilder<String, Array<Module>>), _r.page) HashMapBuilder<String, Module>();
+    HashMapBuilder<String, Concept>& concepts_builder = *new(alignof(HashMapBuilder<String, Array<Concept>>), _r.page) HashMapBuilder<String, Concept>();
+    MultiMapBuilder<String, Function>& functions_builder = *new(alignof(MultiMapBuilder<String, Array<Function>>), _r.page) MultiMapBuilder<String, Function>();
+
+    auto concept = definition.concept_;
+    switch (concept._tag)
+    {
+        case ConceptSyntax::Class:
+            return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(concept._Class.start, concept._Class.end)))) };
+        case ConceptSyntax::Namespace:
+            return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(concept._Namespace.start, concept._Namespace.end)))) };
+        case ConceptSyntax::Union:
+            return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(concept._Union.start, concept._Union.end)))) };
+        case ConceptSyntax::Constant:
+            return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(concept._Constant.start, concept._Constant.end)))) };
+        case ConceptSyntax::Delegate:
+            return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(concept._Delegate.start, concept._Delegate.end)))) };
+        case ConceptSyntax::Intrinsic:
+            return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(concept._Intrinsic.start, concept._Intrinsic.end)))) };
+    }
+
+    return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = 
+        Concept(Span(definition.start, definition.end), 
+            String(_rp, definition.type.name.name), 
+            HashMap<String, Module>(_r, _rp, modules_builder), 
+            HashMap<String, Concept>(_r, _rp, concepts_builder),
+            MultiMap<String, Function>(_r, _rp, functions_builder))
+        };
+}
+
+Result<Function, ModelError> handle_function(Region& _pr, Page* _rp, Page* _ep, FunctionSyntax& function_syntax) {
     Region _r(_pr);
     Vector<Property>* input = nullptr;
     Vector<Property>* output = nullptr;
@@ -235,10 +268,16 @@ Result<Concept, ModelError> build_concept(Region& _pr, Page* _rp, Page* _ep, Str
             switch (declaration->_tag) {
                 case DeclarationSyntax::Private:
                     return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(declaration->_Private.start, declaration->_Private.end)))) };
-                case DeclarationSyntax::Definition:
-                    return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(declaration->_Definition.start, declaration->_Definition.end)))) };
+                case DeclarationSyntax::Definition: {
+                    auto concept_result = handle_definition(_r_1, _rp, _ep, declaration->_Definition);
+                    if (concept_result._tag == Result<Function, ModelError>::Error)
+                        return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = concept_result._Error };
+                    auto concept = concept_result._Ok;
+                    concepts_builder.add(concept.type.name, concept);
+                }
+                break;
                 case DeclarationSyntax::Function: {
-                    auto function_result = handle_function(_r_1, _rp, _ep, declaration->_Function, functions_builder);
+                    auto function_result = handle_function(_r_1, _rp, _ep, declaration->_Function);
                     if (function_result._tag == Result<Function, ModelError>::Error)
                         return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = function_result._Error };
                     auto function = function_result._Ok;
