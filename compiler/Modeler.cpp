@@ -163,6 +163,13 @@ Result<Vector<Property>, ModelError> handle_parameterset(Region& _pr, Page* _rp,
         ._Ok = Vector<Property>(_rp, parameters) };
 }
 
+Result<Structure, ModelError> handle_class(Region& _pr, Page* _rp, Page* _ep, ClassSyntax& class_) {    
+    return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(class_.start, class_.end)))) };
+    // return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Ok,
+    //     ._Ok = Structure(Span(class_.start, class_.end), Code(_rp, module_syntax.name.name), Text { ._tag = Text::File, ._File = file_name }, concept)
+    // };
+}
+
 Result<Concept, ModelError> handle_definition(Region& _pr, Page* _rp, Page* _ep, DefinitionSyntax& definition) {
     Region _r(_pr);
 
@@ -171,10 +178,21 @@ Result<Concept, ModelError> handle_definition(Region& _pr, Page* _rp, Page* _ep,
     // MultiMapBuilder<String, Function>& functions_builder = *new(alignof(MultiMapBuilder<String, Array<Function>>), _r.page) MultiMapBuilder<String, Function>();
 
     auto concept = definition.concept_;
+    Span span(definition.start, definition.end);
+    Type type(String(_rp, definition.type.name.name));
     switch (concept._tag)
     {
-        case ConceptSyntax::Class:
-            return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(concept._Class.start, concept._Class.end)))) };
+        case ConceptSyntax::Class: {
+            auto class_ = concept._Class;
+            auto structure_result = handle_class(_r, _rp, _ep, class_);
+            if (structure_result._tag == Result<Structure, ModelError>::Error)
+                return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = structure_result._Error };
+            auto structure = structure_result._Ok;
+            return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = 
+                Concept(span, type,
+                    Implementation { ._tag = Implementation::Structure, ._Structure = structure }
+                )};
+        }
         case ConceptSyntax::Namespace:
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(concept._Namespace.start, concept._Namespace.end)))) };
         case ConceptSyntax::Union:
@@ -185,17 +203,10 @@ Result<Concept, ModelError> handle_definition(Region& _pr, Page* _rp, Page* _ep,
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(concept._Delegate.start, concept._Delegate.end)))) };
         case ConceptSyntax::Intrinsic:
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = 
-                Concept(Span(definition.start, definition.end), 
-                    Type(String(_rp, definition.type.name.name)),
+                Concept(span, type,
                     Implementation { ._tag = Implementation::Intrinsic }
                 )};
-            }
-
-    return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = 
-        Concept(Span(definition.start, definition.end), 
-            Type(String(_rp, definition.type.name.name)),
-            Implementation { ._tag = Implementation::Intrinsic }
-        )};
+    }
 }
 
 Result<Function, ModelError> handle_function(Region& _pr, Page* _rp, Page* _ep, FunctionSyntax& function_syntax) {
