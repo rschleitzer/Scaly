@@ -82,22 +82,68 @@ struct Function : Object {
 };
 
 struct Module;
+struct Concept;
 
-struct Concept : Object {
-    Span span;
-    Type type;
+struct Code {
     HashMap<String, Module> modules;
     HashMap<String, Concept> concepts;
     MultiMap<String, Function> functions;
-    Concept(Span span, Type type, HashMap<String, Module> modules, HashMap<String, Concept> concepts, MultiMap<String, Function> functions)
-      : span(span),
-        type(type),
-        modules(modules),
+    Code(HashMap<String, Module> modules, HashMap<String, Concept> concepts, MultiMap<String, Function> functions)
+      : modules(modules),
         concepts(concepts),
         functions(functions) {}
 };
 
-struct Code {
+struct Structure{
+    Span span;
+    Code code;
+    Structure(Span span, Code code)
+      : span(span),
+        code(code) {}
+};
+
+struct Union {
+
+};
+
+struct NameSpace {
+    MultiMap<String, Function> functions;
+    NameSpace(MultiMap<String, Function> functions)
+      : functions(functions) {}
+};
+
+struct Intrinsic {
+
+};
+
+struct Implementation {
+    enum {
+        Intrinsic,
+        Constant,
+        NameSpace,
+        Structure,
+        Union,
+    } _tag;
+    union {
+        struct Intrinsic _Intrinsic;
+        String _Constant;
+        struct NameSpace _NameSpace;
+        struct Structure _Structure;
+        struct Union _Union;
+    };
+};
+
+struct Concept : Object {
+    Span span;
+    Type type;
+    Implementation implementation;
+    Concept(Span span, Type type, Implementation implementation)
+      : span(span),
+        type(type),
+        implementation(implementation) {}
+};
+
+struct Text {
     enum {
         Program,
         File,
@@ -106,16 +152,15 @@ struct Code {
         String _Program;
         String _File;
     };
-
 };
 
 struct Module : Object {
     String name;
-    Code code;
+    Text text;
     Concept concept;
-    Module(String name, Code code, Concept concept)
+    Module(String name, Text text, Concept concept)
       : name(name),
-        code(code),
+        text(text),
         concept(concept) {}
 };
 

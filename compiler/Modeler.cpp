@@ -166,9 +166,9 @@ Result<Vector<Property>, ModelError> handle_parameterset(Region& _pr, Page* _rp,
 Result<Concept, ModelError> handle_definition(Region& _pr, Page* _rp, Page* _ep, DefinitionSyntax& definition) {
     Region _r(_pr);
 
-    HashMapBuilder<String, Module>& modules_builder = *new(alignof(HashMapBuilder<String, Array<Module>>), _r.page) HashMapBuilder<String, Module>();
-    HashMapBuilder<String, Concept>& concepts_builder = *new(alignof(HashMapBuilder<String, Array<Concept>>), _r.page) HashMapBuilder<String, Concept>();
-    MultiMapBuilder<String, Function>& functions_builder = *new(alignof(MultiMapBuilder<String, Array<Function>>), _r.page) MultiMapBuilder<String, Function>();
+    // HashMapBuilder<String, Module>& modules_builder = *new(alignof(HashMapBuilder<String, Array<Module>>), _r.page) HashMapBuilder<String, Module>();
+    // HashMapBuilder<String, Concept>& concepts_builder = *new(alignof(HashMapBuilder<String, Array<Concept>>), _r.page) HashMapBuilder<String, Concept>();
+    // MultiMapBuilder<String, Function>& functions_builder = *new(alignof(MultiMapBuilder<String, Array<Function>>), _r.page) MultiMapBuilder<String, Function>();
 
     auto concept = definition.concept_;
     switch (concept._tag)
@@ -184,16 +184,18 @@ Result<Concept, ModelError> handle_definition(Region& _pr, Page* _rp, Page* _ep,
         case ConceptSyntax::Delegate:
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(concept._Delegate.start, concept._Delegate.end)))) };
         case ConceptSyntax::Intrinsic:
-            return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(concept._Intrinsic.start, concept._Intrinsic.end)))) };
-    }
+            return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = 
+                Concept(Span(definition.start, definition.end), 
+                    Type(String(_rp, definition.type.name.name)),
+                    Implementation { ._tag = Implementation::Intrinsic }
+                )};
+            }
 
     return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = 
         Concept(Span(definition.start, definition.end), 
-            String(_rp, definition.type.name.name), 
-            HashMap<String, Module>(_r, _rp, modules_builder), 
-            HashMap<String, Concept>(_r, _rp, concepts_builder),
-            MultiMap<String, Function>(_r, _rp, functions_builder))
-        };
+            Type(String(_rp, definition.type.name.name)),
+            Implementation { ._tag = Implementation::Intrinsic }
+        )};
 }
 
 Result<Function, ModelError> handle_function(Region& _pr, Page* _rp, Page* _ep, FunctionSyntax& function_syntax) {
@@ -250,7 +252,7 @@ Result<Module, ModelError> handle_module(Region& _pr, Page* _rp, Page* _ep, Stri
     auto concept = concept_result._Ok;
     
     return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Ok,
-        ._Ok = Module(String(_rp, module_syntax.name.name), Code { ._tag = Code::File, ._File = file_name }, concept)
+        ._Ok = Module(String(_rp, module_syntax.name.name), Text { ._tag = Text::File, ._File = file_name }, concept)
     };
 }
 
@@ -312,9 +314,7 @@ Result<Concept, ModelError> build_concept(Region& _pr, Page* _rp, Page* _ep, Str
         ._tag = Result<Concept, ModelError>::Ok, 
         ._Ok = Concept(Span(file_syntax.start, file_syntax.end),
                     Type(String(_rp, name)),
-                    HashMap<String, Module>(_r, _rp, modules_builder),
-                    HashMap<String, Concept>(_r, _rp, concepts_builder),
-                    MultiMap<String, Function>(_r, _rp, functions_builder)) };
+                    Implementation { ._tag = Implementation::Intrinsic }) };
 }
 
 Result<Module, ModelError> build_program_module(Region& _pr, Page* _rp, Page* _ep, const String& program) {
@@ -330,7 +330,7 @@ Result<Module, ModelError> build_program_module(Region& _pr, Page* _rp, Page* _e
         return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = concept_result._Error };
     auto concept = concept_result._Ok;
 
-    Module module(String(_rp, ""), Code { ._tag = Code::Program, ._Program = String(_rp, program) }, concept);
+    Module module(String(_rp, ""), Text { ._tag = Text::Program, ._Program = String(_rp, program) }, concept);
     return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Ok, ._Ok = module };
 }
 

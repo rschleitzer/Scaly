@@ -25,13 +25,24 @@ int compile_and_run_program(Region& _pr, const String& program, Vector<String>& 
     
     auto module = module_result._Ok;
     String string_name(_r.page, "main");
-    auto main_functions = module.concept.functions[string_name];
-    if (main_functions->length != 1)
-        return -2;
+    switch (module.concept.implementation._tag) {
+        case Implementation::NameSpace: {
+            auto name_space = module.concept.implementation._NameSpace;
+            auto main_functions = name_space.functions[string_name];
+            if (main_functions->length != 1)
+                return -2;
 
-    auto main = main_functions[0];
+            auto main = main_functions[0];
+            
+            return 0;
+
+        }
+        break;
+
+        default:
+            return -2;
+    }
     
-    return 0;
 }
 
 }
