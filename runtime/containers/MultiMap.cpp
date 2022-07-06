@@ -9,8 +9,10 @@ struct MultiMap : Object {
 
     MultiMap<K, V>(Region& _pr, Page* _rp, MultiMapBuilder<K, V>& multi_map_builder) {
         Region _r(_pr);;
-        if (multi_map_builder.length == 0)
+        if (multi_map_builder.length == 0) {
+            this->slots = nullptr;
             return;
+        }
 
         this->slots = new(alignof(Vector<Vector<KeyValuePair<K, Vector<V>>>>), _rp) Vector<Vector<KeyValuePair<K, Vector<V>>>>(_rp, multi_map_builder.slots->length);
         auto length = multi_map_builder.slots->length;

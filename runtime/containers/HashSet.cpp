@@ -10,8 +10,10 @@ struct HashSet : Object {
 
     HashSet<T>(Region& _pr, Page* _rp, HashSetBuilder<T>& hash_set_builder) {
         Region _r(_pr);
-        if (hash_set_builder.length == 0)
+        if (hash_set_builder.length == 0) {
+            this->slots = nullptr;
             return;
+        }
 
         this->slots = new(alignof(Vector<Vector<T>>), _rp) Vector<Vector<T>>(_rp, hash_set_builder.slots->length);
         auto length = hash_set_builder.slots->length;

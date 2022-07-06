@@ -83,15 +83,12 @@ struct Function : Object {
 
 struct Module;
 struct Concept;
+struct Nameable;
 
 struct Code {
-    HashMap<String, Module> modules;
-    HashMap<String, Concept> concepts;
-    MultiMap<String, Function> functions;
-    Code(HashMap<String, Module> modules, HashMap<String, Concept> concepts, MultiMap<String, Function> functions)
-      : modules(modules),
-        concepts(concepts),
-        functions(functions) {}
+    HashMap<String, Nameable> symbols;
+    Code(HashMap<String, Nameable> symbols)
+      : symbols(symbols) {}
 };
 
 struct Structure{
@@ -109,9 +106,9 @@ struct Union {
 };
 
 struct NameSpace {
-    MultiMap<String, Function> functions;
-    NameSpace(MultiMap<String, Function> functions)
-      : functions(functions) {}
+    Code code;
+    NameSpace(Code code)
+      : code(code) {}
 };
 
 struct Intrinsic {
@@ -164,6 +161,19 @@ struct Module : Object {
       : name(name),
         text(text),
         concept(concept) {}
+};
+
+struct Nameable {
+    enum {
+        Module,
+        Concept,
+        Functions,
+    } _tag;
+    union {
+        struct Module _Module;
+        struct Concept _Concept;
+        Vector<Function> _Functions;
+    };
 };
 
 }

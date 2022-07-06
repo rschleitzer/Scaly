@@ -28,21 +28,25 @@ int compile_and_run_program(Region& _pr, const String& program, Vector<String>& 
     switch (module.concept.implementation._tag) {
         case Implementation::NameSpace: {
             auto name_space = module.concept.implementation._NameSpace;
-            auto main_functions = name_space.functions[string_name];
-            if (main_functions->length != 1)
-                return -2;
+            auto main_functions_symbol = name_space.code.symbols[string_name];
+            switch (main_functions_symbol->_tag) {
+                case Nameable::Functions: {
+                    auto main_functions = main_functions_symbol->_Functions;
+                    if (main_functions.length != 1)
+                        return -3;
 
-            auto main = main_functions[0];
-            
-            return 0;
-
+                    auto main = main_functions[0];
+                    
+                    return 0;                }
+                default:
+                    return -2;
+            }
         }
         break;
 
         default:
-            return -2;
+            return -4;
     }
-    
 }
 
 }

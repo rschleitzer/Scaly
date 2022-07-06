@@ -9,8 +9,10 @@ struct HashMap : Object {
 
     HashMap<K, V>(Region& _pr, Page* _rp, HashMapBuilder<K, V>& hash_map_builder) {
         Region _r(_pr);
-        if (hash_map_builder.length == 0)
+        if (hash_map_builder.length == 0) {
+            this->slots = nullptr;
             return;
+        }
 
         this->slots = new(alignof(Vector<Vector<KeyValuePair<K, V>>>), _rp) Vector<Vector<KeyValuePair<K, V>>>(_rp, hash_map_builder.slots->length);
         auto length = hash_map_builder.slots->length;

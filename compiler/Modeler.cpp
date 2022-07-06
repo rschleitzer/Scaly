@@ -9,27 +9,42 @@ struct IoModelError {
     IoModelError(FileError file_error) : file_error(file_error) {}
 };
 
-struct NotImplementedModelError
+struct NotImplemented
 {
-    NotImplementedModelError(Span _Span) : span(_Span) {}
+    NotImplemented(Span _Span) : span(_Span) {}
     Span span;
 };
 
-struct DuplicateNameError {
-    DuplicateNameError(Span span) : span(span) {}
+struct DuplicateName {
+    DuplicateName(Span span) : span(span) {}
     Span span;
 };
 
+struct NonFunctionSymbolExists {
+    NonFunctionSymbolExists(Span span) : span(span) {}
+    Span span;
+};
+
+struct FunctionSymbolExists {
+    FunctionSymbolExists(Span span) : span(span) {}
+    Span span;
+};
 struct ModelBuilderError {
-    ModelBuilderError(NotImplementedModelError _NotImplementedModelError) : _tag(NotImplemented), _NotImplemented(_NotImplementedModelError) {}
-    ModelBuilderError(DuplicateNameError _DuplicateNameError) : _tag(DuplicateName), _DuplicateName(_DuplicateNameError) {}
+    ModelBuilderError(NotImplemented _NotImplementedModelError) : _tag(NotImplemented), _NotImplemented(_NotImplementedModelError) {}
+    ModelBuilderError(DuplicateName _DuplicateName) : _tag(DuplicateName), _DuplicateName(_DuplicateName) {}
+    ModelBuilderError(NonFunctionSymbolExists _NonFunctionSymbolExists) : _tag(NonFunctionSymbolExists), _NonFunctionSymbolExists(_NonFunctionSymbolExists) {}
+    ModelBuilderError(FunctionSymbolExists _FunctionSymbolExists) : _tag(FunctionSymbolExists), _FunctionSymbolExists(_FunctionSymbolExists) {}
     enum {
         NotImplemented,
         DuplicateName,
+        NonFunctionSymbolExists,
+        FunctionSymbolExists,
     } _tag;
     union {
-        NotImplementedModelError _NotImplemented;
-        DuplicateNameError _DuplicateName;
+        struct NotImplemented _NotImplemented;
+        struct DuplicateName _DuplicateName;
+        struct NonFunctionSymbolExists _NonFunctionSymbolExists;
+        struct FunctionSymbolExists _FunctionSymbolExists;
     };
 };
 
@@ -165,15 +180,24 @@ Result<Vector<Property>, ModelError> handle_parameterset(Region& _pr, Page* _rp,
 
 Result<HashMap<String, Property>, ModelError> handle_structure(Region& _pr, Page* _rp, Page* _ep, StructureSyntax& structure) {    
     Region _r(_pr);
-    return Result<HashMap<String, Property>, ModelError> { ._tag = Result<HashMap<String, Property>, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(structure.start, structure.end)))) };
+    HashMapBuilder<String, Property>& properties_builder = *new(alignof(HashMapBuilder<String, Property>), _r.page) HashMapBuilder<String, Property>();
+    /// Fill it
+    return Result<HashMap<String, Property>, ModelError> { ._tag = Result<HashMap<String, Property>, ModelError>::Ok, ._Ok = HashMap<String, Property>(_r, _rp, properties_builder) };
 }
 
-Result<Code, ModelError> handle_body(Region& _pr, Page* _rp, Page* _ep, BodySyntax* body) {    
+Result<Code, ModelError> build_code(Region& _pr, Page* _rp, Page* _ep, String name, String path, Vector<UseSyntax>* uses, Vector<DeclarationSyntax>* declarations);
+
+Result<Code, ModelError> handle_body(Region& _pr, Page* _rp, Page* _ep, String name, String path, BodySyntax& body) {    
     Region _r(_pr);
-    return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(body->start, body->end)))) };
+    auto code_result = build_code(_r, _rp, _ep, name, path, body.uses, body.declarations);
+    if (code_result._tag == Result<Code, ModelError>::Error)
+        return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = code_result._Error };
+
+    auto code = code_result._Ok;
+    return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Ok, ._Ok = code };
 }
 
-Result<Structure, ModelError> handle_class(Region& _pr, Page* _rp, Page* _ep, ClassSyntax& class_) {    
+Result<Structure, ModelError> handle_class(Region& _pr, Page* _rp, Page* _ep, String name, String path, ClassSyntax& class_) {    
     Region _r(_pr);
     // return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(class_.start, class_.end)))) };
 
@@ -182,22 +206,27 @@ Result<Structure, ModelError> handle_class(Region& _pr, Page* _rp, Page* _ep, Cl
         return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = properties_result._Error };
     auto properties = properties_result._Ok;
 
-    auto code_result = handle_body(_pr, _rp, _ep, class_.body);
-    if (code_result._tag == Result<Code, ModelError>::Error)
-        return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = code_result._Error };
-    auto code = code_result._Ok;
+    if (class_.body == nullptr) {
+        HashMapBuilder<String, Nameable>& symbols_builder = *new(alignof(HashMapBuilder<String, Nameable>), _r.page) HashMapBuilder<String, Nameable>();
+        auto code = Code(HashMap<String, Nameable>(_r, _rp, symbols_builder));
+        return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Ok,
+            ._Ok = Structure(Span(class_.start, class_.end), properties, code)
+        };
+    }
+    else {
+        auto code_result = handle_body(_pr, _rp, _ep, name, path, *class_.body);
+        if (code_result._tag == Result<Code, ModelError>::Error)
+            return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = code_result._Error };
+        auto code = code_result._Ok;
 
-    return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Ok,
-        ._Ok = Structure(Span(class_.start, class_.end), properties, code)
-    };
+        return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Ok,
+            ._Ok = Structure(Span(class_.start, class_.end), properties, code)
+        };
+    }
 }
 
-Result<Concept, ModelError> handle_definition(Region& _pr, Page* _rp, Page* _ep, DefinitionSyntax& definition) {
+Result<Concept, ModelError> handle_definition(Region& _pr, Page* _rp, Page* _ep, String name, String path, DefinitionSyntax& definition) {
     Region _r(_pr);
-
-    // HashMapBuilder<String, Module>& modules_builder = *new(alignof(HashMapBuilder<String, Array<Module>>), _r.page) HashMapBuilder<String, Module>();
-    // HashMapBuilder<String, Concept>& concepts_builder = *new(alignof(HashMapBuilder<String, Array<Concept>>), _r.page) HashMapBuilder<String, Concept>();
-    // MultiMapBuilder<String, Function>& functions_builder = *new(alignof(MultiMapBuilder<String, Array<Function>>), _r.page) MultiMapBuilder<String, Function>();
 
     auto concept = definition.concept_;
     Span span(definition.start, definition.end);
@@ -206,7 +235,7 @@ Result<Concept, ModelError> handle_definition(Region& _pr, Page* _rp, Page* _ep,
     {
         case ConceptSyntax::Class: {
             auto class_ = concept._Class;
-            auto structure_result = handle_class(_r, _rp, _ep, class_);
+            auto structure_result = handle_class(_r, _rp, _ep, name, path, class_);
             if (structure_result._tag == Result<Structure, ModelError>::Error)
                 return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = structure_result._Error };
             auto structure = structure_result._Ok;
@@ -216,13 +245,16 @@ Result<Concept, ModelError> handle_definition(Region& _pr, Page* _rp, Page* _ep,
                 )};
         }
         case ConceptSyntax::Namespace:
-            return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(concept._Namespace.start, concept._Namespace.end)))) };
+            return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(concept._Namespace.start, concept._Namespace.end)))) };
         case ConceptSyntax::Union:
-            return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(concept._Union.start, concept._Union.end)))) };
+            return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(concept._Union.start, concept._Union.end)))) };
         case ConceptSyntax::Constant:
-            return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(concept._Constant.start, concept._Constant.end)))) };
+            return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = 
+                Concept(span, type,
+                    Implementation { ._tag = Implementation::Constant, ._Constant = String(_rp, "0") }
+                )};
         case ConceptSyntax::Delegate:
-            return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(concept._Delegate.start, concept._Delegate.end)))) };
+            return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(concept._Delegate.start, concept._Delegate.end)))) };
         case ConceptSyntax::Intrinsic:
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = 
                 Concept(span, type,
@@ -249,7 +281,7 @@ Result<Function, ModelError> handle_function(Region& _pr, Page* _rp, Page* _ep, 
     return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(function_syntax.start, function_syntax.end), String(_rp, function_syntax.name), input, output, operation) };
 }
 
-Result<Concept, ModelError> build_concept(Region& _pr, Page* _rp, Page* _ep, String name, String path, FileSyntax file_syntax);
+Result<Concept, ModelError> build_module_concept(Region& _pr, Page* _rp, Page* _ep, String name, String path, FileSyntax file_syntax);
 
 Result<Module, ModelError> handle_module(Region& _pr, Page* _rp, Page* _ep, String path, ModuleSyntax& module_syntax) {
     Region _r(_pr);
@@ -279,7 +311,7 @@ Result<Module, ModelError> handle_module(Region& _pr, Page* _rp, Page* _ep, Stri
     path_builder.append_string(module_syntax.name.name);
 
 
-    auto concept_result = build_concept(_r, _r.page, _ep, String(_rp, module_syntax.name.name), path_builder.to_string(_r.page), file_syntax);
+    auto concept_result = build_module_concept(_r, _rp, _ep, String(_rp, module_syntax.name.name), path_builder.to_string(_r.page), file_syntax);
     if (concept_result._tag == Result<Concept, ModelError>::Error)
         return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = concept_result._Error };
     auto concept = concept_result._Ok;
@@ -289,65 +321,101 @@ Result<Module, ModelError> handle_module(Region& _pr, Page* _rp, Page* _ep, Stri
     };
 }
 
-Result<Concept, ModelError> build_concept(Region& _pr, Page* _rp, Page* _ep, String name, String path, FileSyntax file_syntax) {
+Result<Code, ModelError> build_code(Region& _pr, Page* _rp, Page* _ep, String name, String path, Vector<UseSyntax>* uses, Vector<DeclarationSyntax>* declarations) {
     Region _r(_pr);
 
-    HashMapBuilder<String, Module>& modules_builder = *new(alignof(HashMapBuilder<String, Array<Module>>), _r.page) HashMapBuilder<String, Module>();
-    HashMapBuilder<String, Concept>& concepts_builder = *new(alignof(HashMapBuilder<String, Array<Concept>>), _r.page) HashMapBuilder<String, Concept>();
-    MultiMapBuilder<String, Function>& functions_builder = *new(alignof(MultiMapBuilder<String, Array<Function>>), _r.page) MultiMapBuilder<String, Function>();
+    HashMapBuilder<String, Nameable>& symbols_builder = *new(alignof(HashMapBuilder<String, Nameable>), _r.page) HashMapBuilder<String, Nameable>();
+    HashMapBuilder<String, Array<Function>>& functions_builder = *new(alignof(HashMapBuilder<String, Array<Function>>), _r.page) HashMapBuilder<String, Array<Function>>();
 
-    if (file_syntax.declarations != nullptr) {
-        auto declarations_iterator = VectorIterator<DeclarationSyntax>(*(file_syntax.declarations));
+    if (declarations != nullptr) {
+        auto declarations_iterator = VectorIterator<DeclarationSyntax>(*(declarations));
         while (auto declaration = declarations_iterator.next()) {
             Region _r_1(_r);
             switch (declaration->_tag) {
                 case DeclarationSyntax::Private:
-                    return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(declaration->_Private.start, declaration->_Private.end)))) };
+                    return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(declaration->_Private.start, declaration->_Private.end)))) };
                 case DeclarationSyntax::Definition: {
-                    auto concept_result = handle_definition(_r_1, _rp, _ep, declaration->_Definition);
+                    auto concept_result = handle_definition(_r_1, _rp, _ep, name, path, declaration->_Definition);
                     if (concept_result._tag == Result<Function, ModelError>::Error)
-                        return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = concept_result._Error };
+                        return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = concept_result._Error };
                     auto concept = concept_result._Ok;
-                    concepts_builder.add(concept.type.name, concept);
+                    if (functions_builder.contains(concept.type.name))
+                        return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(FunctionSymbolExists(Span(declaration->_Definition.start, declaration->_Definition.end)))) };
+
+                    symbols_builder.add(concept.type.name, Nameable { ._tag = Nameable::Concept, ._Concept = concept });
                 }
                 break;
                 case DeclarationSyntax::Function: {
                     auto function_result = handle_function(_r_1, _rp, _ep, declaration->_Function);
                     if (function_result._tag == Result<Function, ModelError>::Error)
-                        return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = function_result._Error };
+                        return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = function_result._Error };
                     auto function = function_result._Ok;
-                    functions_builder.add(function.name, function);
+                    auto symbol_with_function_name = symbols_builder[function.name];
+                    if (symbol_with_function_name != nullptr)
+                        return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NonFunctionSymbolExists(Span(declaration->_Function.start, declaration->_Function.end)))) };
+                    Array<Function>* functions_array = functions_builder[function.name];
+                    if (functions_array == nullptr)
+                    {
+                        functions_builder.add(function.name, Array<Function>());
+                        functions_array = functions_builder[function.name];
+                    }
+                    functions_array->add(function);
                 }
                 break;
                 case DeclarationSyntax::Procedure:
-                    return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(declaration->_Procedure.start, declaration->_Procedure.end)))) };
+                    return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(declaration->_Procedure.start, declaration->_Procedure.end)))) };
                 case DeclarationSyntax::Operator:
-                    return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(declaration->_Operator.start, declaration->_Operator.end)))) };
+                    return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(declaration->_Operator.start, declaration->_Operator.end)))) };
                 case DeclarationSyntax::Implement:
-                    return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(declaration->_Implement.start, declaration->_Implement.end)))) };
+                    return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(declaration->_Implement.start, declaration->_Implement.end)))) };
                 case DeclarationSyntax::Trait:
-                    return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(declaration->_Trait.start, declaration->_Trait.end)))) };
+                    return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(declaration->_Trait.start, declaration->_Trait.end)))) };
                 case DeclarationSyntax::Macro:
-                    return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(declaration->_Macro.start, declaration->_Macro.end)))) };
+                    return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(declaration->_Macro.start, declaration->_Macro.end)))) };
                 case DeclarationSyntax::Module:
                     auto module_syntax = declaration->_Module;
                     auto module_result = handle_module(_r_1, _rp, _ep, path, module_syntax);
-                    if (module_result._tag == Result<Concept, ModelError>::Error)
-                        return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error,
+                    if (module_result._tag == Result<Code, ModelError>::Error)
+                        return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error,
                             ._Error = module_result._Error };
                     auto module = module_result._Ok;
-                    if (!modules_builder.add(module.name, module))
-                        return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error,
-                            ._Error = ModelError(ModelBuilderError(DuplicateNameError(Span(module_syntax.start, module_syntax.end)))) };
+                    if (!symbols_builder.add(module.name, Nameable { ._tag = Nameable::Module, ._Module = module }))
+                        return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error,
+                            ._Error = ModelError(ModelBuilderError(NonFunctionSymbolExists(Span(module_syntax.start, module_syntax.end)))) };
                 break;
             }
         }
     }
+
+    HashMap<String, Array<Function>> functions(_r, _r.page, functions_builder);
+    if (functions.slots != nullptr) {
+        auto functions_slots_iterator = VectorIterator<Vector<KeyValuePair<String, Array<Function>>>>(*functions.slots);
+        while (auto function_slot = functions_slots_iterator.next()) {
+            auto functions_iterator = VectorIterator<KeyValuePair<String, Array<Function>>>(*function_slot);
+            while (auto function_kvp = functions_iterator.next()) {
+                symbols_builder.add(function_kvp->key, Nameable { ._tag = Nameable::Functions, ._Functions = Vector<Function>(_rp, function_kvp->value) });
+            }
+        }
+    }
+
+    auto code = Code(HashMap<String, Nameable>(_r, _rp, symbols_builder));
+    return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Ok, ._Ok = code };
+}
+
+Result<Concept, ModelError> build_module_concept(Region& _pr, Page* _rp, Page* _ep, String name, String path, FileSyntax file_syntax) {
+    Region _r(_pr);
+
+    auto code_result = build_code(_r, _rp, _ep, name, path, file_syntax.uses, file_syntax.declarations);
+    if (code_result._tag == Result<Code, ModelError>::Error)
+        return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = code_result._Error };
+
+    auto code = code_result._Ok;
+
     return Result<Concept, ModelError> {
         ._tag = Result<Concept, ModelError>::Ok, 
         ._Ok = Concept(Span(file_syntax.start, file_syntax.end),
                     Type(String(_rp, name)),
-                    Implementation { ._tag = Implementation::Intrinsic }) };
+                    Implementation { ._tag = Implementation::NameSpace, ._NameSpace = NameSpace(code) }) };
 }
 
 Result<Module, ModelError> build_program_module(Region& _pr, Page* _rp, Page* _ep, const String& program) {
@@ -358,7 +426,7 @@ Result<Module, ModelError> build_program_module(Region& _pr, Page* _rp, Page* _e
         return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = ModelError(file_result._Error) };
     auto file = file_result._Ok;
 
-    auto concept_result = build_concept(_r, _rp, _ep, String(_rp, ""), String(_rp, ""), file);
+    auto concept_result = build_module_concept(_r, _rp, _ep, String(_rp, ""), String(_rp, ""), file);
     if (concept_result._tag == Result<Module*, ModelError*>::Error)
         return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = concept_result._Error };
     auto concept = concept_result._Ok;
