@@ -96,9 +96,11 @@ struct Code {
 
 struct Structure{
     Span span;
+    HashMap<String, Property> properties;
     Code code;
-    Structure(Span span, Code code)
+    Structure(Span span, HashMap<String, Property> properties, Code code)
       : span(span),
+        properties(properties),
         code(code) {}
 };
 

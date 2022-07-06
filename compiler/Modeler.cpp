@@ -163,11 +163,33 @@ Result<Vector<Property>, ModelError> handle_parameterset(Region& _pr, Page* _rp,
         ._Ok = Vector<Property>(_rp, parameters) };
 }
 
+Result<HashMap<String, Property>, ModelError> handle_structure(Region& _pr, Page* _rp, Page* _ep, StructureSyntax& structure) {    
+    Region _r(_pr);
+    return Result<HashMap<String, Property>, ModelError> { ._tag = Result<HashMap<String, Property>, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(structure.start, structure.end)))) };
+}
+
+Result<Code, ModelError> handle_body(Region& _pr, Page* _rp, Page* _ep, BodySyntax* body) {    
+    Region _r(_pr);
+    return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(body->start, body->end)))) };
+}
+
 Result<Structure, ModelError> handle_class(Region& _pr, Page* _rp, Page* _ep, ClassSyntax& class_) {    
-    return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(class_.start, class_.end)))) };
-    // return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Ok,
-    //     ._Ok = Structure(Span(class_.start, class_.end), Code(_rp, module_syntax.name.name), Text { ._tag = Text::File, ._File = file_name }, concept)
-    // };
+    Region _r(_pr);
+    // return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(class_.start, class_.end)))) };
+
+    auto properties_result = handle_structure(_pr, _rp, _ep, class_.structure);
+    if (properties_result._tag == Result<HashMap<String, Property>, ModelError>::Error)
+        return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = properties_result._Error };
+    auto properties = properties_result._Ok;
+
+    auto code_result = handle_body(_pr, _rp, _ep, class_.body);
+    if (code_result._tag == Result<Code, ModelError>::Error)
+        return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = code_result._Error };
+    auto code = code_result._Ok;
+
+    return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Ok,
+        ._Ok = Structure(Span(class_.start, class_.end), properties, code)
+    };
 }
 
 Result<Concept, ModelError> handle_definition(Region& _pr, Page* _rp, Page* _ep, DefinitionSyntax& definition) {
