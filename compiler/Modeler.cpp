@@ -281,6 +281,23 @@ Result<Function, ModelError> handle_function(Region& _pr, Page* _rp, Page* _ep, 
     return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(function_syntax.start, function_syntax.end), String(_rp, function_syntax.name), input, output, operation) };
 }
 
+Result<Operator, ModelError> handle_operator(Region& _pr, Page* _rp, Page* _ep, OperatorSyntax& operator_syntax) {
+    Region _r(_pr);
+    Vector<Property>* output = nullptr;
+    Operation* operation = nullptr;
+    switch (operator_syntax.target._tag) {
+        case TargetSyntax::Routine:
+            return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(operator_syntax.start, operator_syntax.end)))) };
+        case TargetSyntax::Symbol:
+            auto operator_ = operator_syntax.target._Symbol;
+            if (operator_.returns != nullptr) {
+                ParameterSetSyntax& parameterSetSyntax = operator_.returns->parameters; 
+                auto parameterset_result = handle_parameterset(_r, _rp, _ep, parameterSetSyntax);
+            }
+            return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Ok, ._Ok = Operator(Span(operator_syntax.start, operator_syntax.end), String(_rp, operator_.name), output, operation) };
+    }
+}
+
 Result<Concept, ModelError> build_module_concept(Region& _pr, Page* _rp, Page* _ep, String name, String path, FileSyntax file_syntax);
 
 Result<Module, ModelError> handle_module(Region& _pr, Page* _rp, Page* _ep, String path, ModuleSyntax& module_syntax) {
@@ -364,8 +381,18 @@ Result<Code, ModelError> build_code(Region& _pr, Page* _rp, Page* _ep, String na
                 break;
                 case DeclarationSyntax::Procedure:
                     return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(declaration->_Procedure.start, declaration->_Procedure.end)))) };
-                case DeclarationSyntax::Operator:
-                    return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(declaration->_Operator.start, declaration->_Operator.end)))) };
+                case DeclarationSyntax::Operator: {
+                    auto operator_syntax = declaration->_Operator;
+                    auto operator_result = handle_operator(_r_1, _rp, _ep, operator_syntax);
+                    if (operator_result._tag == Result<Code, ModelError>::Error)
+                        return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error,
+                            ._Error = operator_result._Error };
+                    auto operator_ = operator_result._Ok;
+                    if (!symbols_builder.add(operator_.name, Nameable { ._tag = Nameable::Operator, ._Operator = operator_ }))
+                        return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error,
+                            ._Error = ModelError(ModelBuilderError(DuplicateName(Span(operator_syntax.start, operator_syntax.end)))) };
+                }
+                break;
                 case DeclarationSyntax::Implement:
                     return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(declaration->_Implement.start, declaration->_Implement.end)))) };
                 case DeclarationSyntax::Trait:
@@ -382,7 +409,7 @@ Result<Code, ModelError> build_code(Region& _pr, Page* _rp, Page* _ep, String na
                     if (!symbols_builder.add(module.name, Nameable { ._tag = Nameable::Module, ._Module = module }))
                         return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error,
                             ._Error = ModelError(ModelBuilderError(NonFunctionSymbolExists(Span(module_syntax.start, module_syntax.end)))) };
-                break;
+                    break;
             }
         }
     }

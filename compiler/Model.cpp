@@ -81,6 +81,18 @@ struct Function : Object {
         operation(operation) {}
 };
 
+struct Operator : Object {
+    Span span;
+    String name;
+    Vector<Property>* output;
+    Operation* operation;
+    Operator(Span span, String name, Vector<Property>* output, Operation* operation)
+      : span(span),
+        name(name),
+        output(output),
+        operation(operation) {}
+};
+
 struct Module;
 struct Concept;
 struct Nameable;
@@ -167,11 +179,13 @@ struct Nameable {
     enum {
         Module,
         Concept,
+        Operator,
         Functions,
     } _tag;
     union {
         struct Module _Module;
         struct Concept _Concept;
+        struct Operator _Operator;
         Vector<Function> _Functions;
     };
 };

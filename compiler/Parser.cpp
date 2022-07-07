@@ -99,8 +99,8 @@ struct FunctionSyntax;
 struct ProcedureSyntax; 
 struct OperatorSyntax; 
 struct TargetSyntax; 
-struct RoutineSyntax; 
 struct SymbolSyntax; 
+struct RoutineSyntax; 
 struct ImplementationSyntax; 
 struct ExternSyntax; 
 struct InstructionSyntax; 
@@ -678,22 +678,22 @@ struct ImplementationSyntax : Object {
     };
 };
 
-struct SymbolSyntax : Object {
-    SymbolSyntax(size_t start, size_t end, String name, Vector<AttributeSyntax>* attributes, ReturnsSyntax* returns, ThrowsSyntax* throws, ImplementationSyntax implementation) : start(start), end(end), name(name), attributes(attributes), returns(returns), throws(throws), implementation(implementation) {}
+struct RoutineSyntax : Object {
+    RoutineSyntax(size_t start, size_t end, ParameterSetSyntax* parameters, Vector<AttributeSyntax>* attributes, ReturnsSyntax* returns, ThrowsSyntax* throws, ImplementationSyntax implementation) : start(start), end(end), parameters(parameters), attributes(attributes), returns(returns), throws(throws), implementation(implementation) {}
     size_t start;
     size_t end;
-    String name;
+    ParameterSetSyntax* parameters;
     Vector<AttributeSyntax>* attributes;
     ReturnsSyntax* returns;
     ThrowsSyntax* throws;
     ImplementationSyntax implementation;
 };
 
-struct RoutineSyntax : Object {
-    RoutineSyntax(size_t start, size_t end, ParameterSetSyntax* parameters, Vector<AttributeSyntax>* attributes, ReturnsSyntax* returns, ThrowsSyntax* throws, ImplementationSyntax implementation) : start(start), end(end), parameters(parameters), attributes(attributes), returns(returns), throws(throws), implementation(implementation) {}
+struct SymbolSyntax : Object {
+    SymbolSyntax(size_t start, size_t end, String name, Vector<AttributeSyntax>* attributes, ReturnsSyntax* returns, ThrowsSyntax* throws, ImplementationSyntax implementation) : start(start), end(end), name(name), attributes(attributes), returns(returns), throws(throws), implementation(implementation) {}
     size_t start;
     size_t end;
-    ParameterSetSyntax* parameters;
+    String name;
     Vector<AttributeSyntax>* attributes;
     ReturnsSyntax* returns;
     ThrowsSyntax* throws;
@@ -3038,62 +3038,6 @@ struct Parser : Object {
         return Result<TargetSyntax, ParserError> { ._tag = Result<TargetSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
     }
 
-    Result<RoutineSyntax, ParserError> parse_routine(Region& _pr, Page* _rp, Page* _ep) {
-        Region _r(_pr);
-        auto start = this->lexer.previous_position;
-
-        auto parameters_result = this->parse_parameterset(_r, _rp, _ep);
-        if (parameters_result._tag == Result<ParameterSetSyntax, ParserError>::Error)
-        {
-        }
-
-        ParameterSetSyntax* parameters = parameters_result._tag == Result<ParameterSetSyntax, ParserError>::Error ? nullptr : new(alignof(ParameterSetSyntax), _rp) ParameterSetSyntax(parameters_result._Ok);
-
-        auto attributes_result = this->parse_attribute_list(_r, _rp, _ep);
-        if (attributes_result._tag == Result<Vector<AttributeSyntax>, ParserError>::Error)
-        {
-        }
-
-        auto attributes = attributes_result._tag == Result<Vector<AttributeSyntax>, ParserError>::Error ? nullptr : attributes_result._Ok;
-
-        auto returns_result = this->parse_returns(_r, _rp, _ep);
-        if (returns_result._tag == Result<ReturnsSyntax, ParserError>::Error)
-        {
-        }
-
-        ReturnsSyntax* returns = returns_result._tag == Result<ReturnsSyntax, ParserError>::Error ? nullptr : new(alignof(ReturnsSyntax), _rp) ReturnsSyntax(returns_result._Ok);
-
-        auto success_colon_4 = this->lexer.parse_colon(_r, _rp);
-        if (!success_colon_4) {
-        }
-
-        auto throws_result = this->parse_throws(_r, _rp, _ep);
-        if (throws_result._tag == Result<ThrowsSyntax, ParserError>::Error)
-        {
-        }
-
-        ThrowsSyntax* throws = throws_result._tag == Result<ThrowsSyntax, ParserError>::Error ? nullptr : new(alignof(ThrowsSyntax), _rp) ThrowsSyntax(throws_result._Ok);
-
-        auto success_colon_6 = this->lexer.parse_colon(_r, _rp);
-        if (!success_colon_6) {
-        }
-
-        auto implementation_result = this->parse_implementation(_r, _rp, _ep);
-        if (implementation_result._tag == Result<ImplementationSyntax, ParserError>::Error)
-        {
-            if (implementation_result._Error._tag == ParserError::OtherSyntax)
-               return Result<RoutineSyntax, ParserError> { ._tag = Result<RoutineSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
-        }
-
-        auto implementation = implementation_result._Ok;
-
-        auto end = this->lexer.position;
-
-        auto ret = RoutineSyntax(start, end, parameters, attributes, returns, throws, implementation);
-
-        return Result<RoutineSyntax, ParserError> { ._tag = Result<RoutineSyntax, ParserError>::Ok, ._Ok = ret };
-    }
-
     Result<SymbolSyntax, ParserError> parse_symbol(Region& _pr, Page* _rp, Page* _ep) {
         Region _r(_pr);
         auto start = this->lexer.previous_position;
@@ -3153,6 +3097,62 @@ struct Parser : Object {
         auto ret = SymbolSyntax(start, end, *name, attributes, returns, throws, implementation);
 
         return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Ok, ._Ok = ret };
+    }
+
+    Result<RoutineSyntax, ParserError> parse_routine(Region& _pr, Page* _rp, Page* _ep) {
+        Region _r(_pr);
+        auto start = this->lexer.previous_position;
+
+        auto parameters_result = this->parse_parameterset(_r, _rp, _ep);
+        if (parameters_result._tag == Result<ParameterSetSyntax, ParserError>::Error)
+        {
+        }
+
+        ParameterSetSyntax* parameters = parameters_result._tag == Result<ParameterSetSyntax, ParserError>::Error ? nullptr : new(alignof(ParameterSetSyntax), _rp) ParameterSetSyntax(parameters_result._Ok);
+
+        auto attributes_result = this->parse_attribute_list(_r, _rp, _ep);
+        if (attributes_result._tag == Result<Vector<AttributeSyntax>, ParserError>::Error)
+        {
+        }
+
+        auto attributes = attributes_result._tag == Result<Vector<AttributeSyntax>, ParserError>::Error ? nullptr : attributes_result._Ok;
+
+        auto returns_result = this->parse_returns(_r, _rp, _ep);
+        if (returns_result._tag == Result<ReturnsSyntax, ParserError>::Error)
+        {
+        }
+
+        ReturnsSyntax* returns = returns_result._tag == Result<ReturnsSyntax, ParserError>::Error ? nullptr : new(alignof(ReturnsSyntax), _rp) ReturnsSyntax(returns_result._Ok);
+
+        auto success_colon_4 = this->lexer.parse_colon(_r, _rp);
+        if (!success_colon_4) {
+        }
+
+        auto throws_result = this->parse_throws(_r, _rp, _ep);
+        if (throws_result._tag == Result<ThrowsSyntax, ParserError>::Error)
+        {
+        }
+
+        ThrowsSyntax* throws = throws_result._tag == Result<ThrowsSyntax, ParserError>::Error ? nullptr : new(alignof(ThrowsSyntax), _rp) ThrowsSyntax(throws_result._Ok);
+
+        auto success_colon_6 = this->lexer.parse_colon(_r, _rp);
+        if (!success_colon_6) {
+        }
+
+        auto implementation_result = this->parse_implementation(_r, _rp, _ep);
+        if (implementation_result._tag == Result<ImplementationSyntax, ParserError>::Error)
+        {
+            if (implementation_result._Error._tag == ParserError::OtherSyntax)
+               return Result<RoutineSyntax, ParserError> { ._tag = Result<RoutineSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+        }
+
+        auto implementation = implementation_result._Ok;
+
+        auto end = this->lexer.position;
+
+        auto ret = RoutineSyntax(start, end, parameters, attributes, returns, throws, implementation);
+
+        return Result<RoutineSyntax, ParserError> { ._tag = Result<RoutineSyntax, ParserError>::Ok, ._Ok = ret };
     }
 
     Result<ImplementationSyntax, ParserError> parse_implementation(Region& _pr, Page* _rp, Page* _ep) {

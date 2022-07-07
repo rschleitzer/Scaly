@@ -211,8 +211,8 @@
         <content link = Symbol
         <content link = Routine
 
-    <syntax id = Routine
-        <content link = ParameterSet                   optional property = parameters
+    <syntax id = Symbol
+        <content identifier                                     property = name
         <content link = Attribute             multiple optional property = attributes
         <content link = Returns                        optional property = returns
         <content colon                                 optional
@@ -220,8 +220,8 @@
         <content colon                                 optional
         <content link = Implementation                          property = implementation
 
-    <syntax id = Symbol
-        <content identifier                                     property = name
+    <syntax id = Routine
+        <content link = ParameterSet                   optional property = parameters
         <content link = Attribute             multiple optional property = attributes
         <content link = Returns                        optional property = returns
         <content colon                                 optional
