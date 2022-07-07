@@ -137,7 +137,7 @@ struct Implementation {
     } _tag;
     union {
         struct Intrinsic _Intrinsic;
-        String _Constant;
+        Operation _Constant;
         struct NameSpace _NameSpace;
         struct Structure _Structure;
         struct Union _Union;

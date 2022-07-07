@@ -225,6 +225,10 @@ Result<Structure, ModelError> handle_class(Region& _pr, Page* _rp, Page* _ep, St
     }
 }
 
+Result<Operation, ModelError> handle_operation(Region& _pr, Page* _rp, Page* _ep, OperationSyntax& operation) {
+    return Result<Operation, ModelError> { ._tag = Result<Operation, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(operation.start, operation.end)))) };
+}
+
 Result<Concept, ModelError> handle_definition(Region& _pr, Page* _rp, Page* _ep, String name, String path, DefinitionSyntax& definition) {
     Region _r(_pr);
 
@@ -248,11 +252,17 @@ Result<Concept, ModelError> handle_definition(Region& _pr, Page* _rp, Page* _ep,
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(concept._Namespace.start, concept._Namespace.end)))) };
         case ConceptSyntax::Union:
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(concept._Union.start, concept._Union.end)))) };
-        case ConceptSyntax::Constant:
+        case ConceptSyntax::Constant: {
+            auto constant = concept._Constant;
+            auto operation_result = handle_operation(_r, _rp, _ep, constant.operation);
+            if (operation_result._tag == Result<Operation, ModelError>::Error)
+                return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = operation_result._Error };
+            auto operation = operation_result._Ok;
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = 
                 Concept(span, type,
-                    Implementation { ._tag = Implementation::Constant, ._Constant = String(_rp, "0") }
+                    Implementation { ._tag = Implementation::Constant, ._Constant = operation }
                 )};
+        }
         case ConceptSyntax::Delegate:
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(concept._Delegate.start, concept._Delegate.end)))) };
         case ConceptSyntax::Intrinsic:
