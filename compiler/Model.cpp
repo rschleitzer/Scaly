@@ -10,16 +10,7 @@ struct Span : Object {
     Span(size_t start, size_t end) : start(start), end(end) {}
 };
 
-struct NameExpression : Object {
-    String path;
-    NameExpression(String path) : path(path) {}
-};
-
-struct Expression;
-
-struct Operand : Object {
-    Expression* expression;
-};
+struct Operand;
 
 struct Component : Object {
     Span span;
@@ -28,27 +19,59 @@ struct Component : Object {
     Component(Span span, String name, Vector<Operand> value) : span(span), name(name), value(value) {}
 };
 
-
-struct TupleExpression : Object {
-    Span span;
-    Vector<Component> components;
-    TupleExpression(Span span, Vector<Component> components) : span(span), components(components) {}
+struct Name : Object {
+    String path;
+    Name(String path) : path(path) {}
 };
 
-struct NameExpression;
-struct TupleExpression;
-struct Expression : Object {
-    Expression(NameExpression nameExpression) : tag(Name), nameExpression(nameExpression) {}
-    Expression(TupleExpression tupleExpression) : tag(Tuple), tupleExpression(tupleExpression) {}
+struct Tuple : Object {
+    Span span;
+    Vector<Component> components;
+    Tuple(Span span, Vector<Component> components) : span(span), components(components) {}
+};
+
+struct Constant {
     enum {
+        Boolean,
+        Integer,
+        Hex,
+        FloatingPoint,
+        String,
+        Fragment,
+    } _tag;
+    union {
+        bool _Boolean;
+        size_t _Integer;
+        size_t _Hex;
+        double _FloatingPoint;
+        struct String _String;
+        struct String _Fragment;
+    };
+};
+
+struct Expression {
+    enum {
+        Constant,
         Name,
         Tuple,
-    } tag;
+    } _tag;
     union {
-        NameExpression nameExpression;
-        TupleExpression tupleExpression;
+        struct Constant _Constant;
+        struct Name _Name;
+        struct Tuple _Tuple;
     };
 
+};
+
+struct Postfix {
+
+};
+
+struct Operand : Object {
+    Span span;
+    Expression expression;
+    Vector<Postfix>* postfixes;
+    Operand(Span span, Expression expression, Vector<Postfix>* postfixes) : span(span), expression(expression), postfixes(postfixes) {}
 };
 
 struct Operation : Object {

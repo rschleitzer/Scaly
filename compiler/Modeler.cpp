@@ -29,22 +29,30 @@ struct FunctionSymbolExists {
     FunctionSymbolExists(Span span) : span(span) {}
     Span span;
 };
+
+struct InvalidConstant {
+    InvalidConstant(Span span) : span(span) {}
+    Span span;
+};
 struct ModelBuilderError {
     ModelBuilderError(NotImplemented _NotImplementedModelError) : _tag(NotImplemented), _NotImplemented(_NotImplementedModelError) {}
     ModelBuilderError(DuplicateName _DuplicateName) : _tag(DuplicateName), _DuplicateName(_DuplicateName) {}
     ModelBuilderError(NonFunctionSymbolExists _NonFunctionSymbolExists) : _tag(NonFunctionSymbolExists), _NonFunctionSymbolExists(_NonFunctionSymbolExists) {}
     ModelBuilderError(FunctionSymbolExists _FunctionSymbolExists) : _tag(FunctionSymbolExists), _FunctionSymbolExists(_FunctionSymbolExists) {}
+    ModelBuilderError(InvalidConstant _InvalidConstant) : _tag(InvalidConstant), _InvalidConstant(_InvalidConstant) {}
     enum {
         NotImplemented,
         DuplicateName,
         NonFunctionSymbolExists,
         FunctionSymbolExists,
+        InvalidConstant,
     } _tag;
     union {
         struct NotImplemented _NotImplemented;
         struct DuplicateName _DuplicateName;
         struct NonFunctionSymbolExists _NonFunctionSymbolExists;
         struct FunctionSymbolExists _FunctionSymbolExists;
+        struct InvalidConstant _InvalidConstant;
     };
 };
 
@@ -225,8 +233,126 @@ Result<Structure, ModelError> handle_class(Region& _pr, Page* _rp, Page* _ep, St
     }
 }
 
+Result<Postfix, ModelError> handle_postfix(Region& _pr, Page* _rp, Page* _ep, PostfixSyntax& operand) {
+    Region _r(_pr);
+    return Result<Postfix, ModelError> { ._tag = Result<Postfix, ModelError>::Ok, ._Ok = Postfix() };
+}
+
+Result<Constant, ModelError> handle_literal(Region& _pr, Page* _rp, Page* _ep, LiteralSyntax& literal) {
+    Region _r(_pr);
+    switch (literal.literal._tag) {
+        case Literal::Boolean:
+            return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError> ::Ok, ._Ok = Constant { ._tag = Constant::Boolean, ._Boolean = literal.literal._Boolean.value } };
+        case Literal::Integer: {
+            auto integer = (size_t)strtol(literal.literal._Integer.value.to_c_string(_r.page), nullptr, 10);
+            const bool range_error = errno == ERANGE;
+            if (range_error)
+                return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError>::Error, ._Error = ModelError(ModelBuilderError(InvalidConstant(Span(literal.start, literal.end)))) };
+
+            return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError> ::Ok, ._Ok = Constant { ._tag = Constant::Integer, ._Integer = integer } };
+        }
+        case Literal::Hex: {
+            auto hex = (size_t)strtol(literal.literal._Hex.value.to_c_string(_r.page), nullptr, 16);
+            const bool range_error = errno == ERANGE;
+            if (range_error)
+                return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError>::Error, ._Error = ModelError(ModelBuilderError(InvalidConstant(Span(literal.start, literal.end)))) };
+
+            return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError> ::Ok, ._Ok = Constant { ._tag = Constant::Hex, ._Hex = hex } };
+        }
+        case Literal::FloatingPoint: {
+            auto floating_point = strtod(literal.literal._FloatingPoint.value.to_c_string(_r.page), nullptr);
+            const bool range_error = errno == ERANGE;
+            if (range_error)
+                return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError>::Error, ._Error = ModelError(ModelBuilderError(InvalidConstant(Span(literal.start, literal.end)))) };
+
+            return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError> ::Ok, ._Ok = Constant { ._tag = Constant::FloatingPoint, ._FloatingPoint = floating_point } };
+        }
+        case Literal::String:
+            return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError> ::Ok, ._Ok = Constant { ._tag = Constant::String, ._String = literal.literal._String.value } };
+        case Literal::Fragment:
+            return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError> ::Ok, ._Ok = Constant { ._tag = Constant::Fragment, ._Fragment = literal.literal._Fragment.value } };
+        break;
+    }
+}
+
+Result<Expression, ModelError> handle_expression(Region& _pr, Page* _rp, Page* _ep, ExpressionSyntax& expression) {
+    Region _r(_pr);
+    switch (expression._tag) {
+        case ExpressionSyntax::Literal: {
+            auto literal = expression._Literal;
+            auto constant_result = handle_literal(_r, _rp, _ep, literal);
+            if (constant_result._tag == Result<Constant, ModelError>::Error)
+                return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = constant_result._Error };
+            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::Constant, ._Constant = constant_result._Ok} };
+        }
+        case ExpressionSyntax::Name:
+            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(expression._Name.start, expression._Name.end)))) };
+        case ExpressionSyntax::Object:
+            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(expression._Object.start, expression._Object.end)))) };
+        case ExpressionSyntax::Vector:
+            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(expression._Vector.start, expression._Vector.end)))) };
+        case ExpressionSyntax::Block:
+            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(expression._Block.start, expression._Block.end)))) };
+        case ExpressionSyntax::If:
+            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(expression._If.start, expression._If.end)))) };
+        case ExpressionSyntax::Match:
+            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(expression._Match.start, expression._Match.end)))) };
+        case ExpressionSyntax::Lambda:
+            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(expression._Lambda.start, expression._Lambda.end)))) };
+        case ExpressionSyntax::For:
+            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(expression._For.start, expression._For.end)))) };
+        case ExpressionSyntax::While:
+            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(expression._While.start, expression._While.end)))) };
+        case ExpressionSyntax::Repeat:
+            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(expression._Repeat.start, expression._Repeat.end)))) };
+        case ExpressionSyntax::SizeOf:
+            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(expression._SizeOf.start, expression._SizeOf.end)))) };
+        case ExpressionSyntax::Continue:
+            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(expression._Continue.start, expression._Continue.end)))) };
+        case ExpressionSyntax::Break:
+            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(expression._Break.start, expression._Break.end)))) };
+        case ExpressionSyntax::Return:
+            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(expression._Return.start, expression._Return.end)))) };
+        case ExpressionSyntax::Throw:
+            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(expression._Throw.start, expression._Throw.end)))) };
+    }
+}
+
+Result<Operand, ModelError> handle_operand(Region& _pr, Page* _rp, Page* _ep, OperandSyntax& operand) {
+    Region _r(_pr);
+    Vector<Postfix>* postfixes = nullptr;
+    if (operand.postfixes != nullptr) {
+        Array<Postfix>& postfixes_builder = *new(alignof(Array<Postfix>), _r.page) Array<Postfix>();
+        auto postfixes_iterator = VectorIterator<PostfixSyntax>(*(operand.postfixes));
+        while (auto postfix = postfixes_iterator.next()) {
+            auto postfix_result = handle_postfix(_r, _rp, _ep, *postfix);
+            if (postfix_result._tag == Result<Operand, ModelError>::Error)
+                return Result<Operand, ModelError> { ._tag = Result<Operand, ModelError>::Error, ._Error = postfix_result._Error };
+            postfixes_builder.add(postfix_result._Ok);
+        }
+        postfixes = new(alignof(Vector<Postfix>), _rp) Vector<Postfix>(_rp, postfixes_builder);
+    }
+
+    auto expression_result = handle_expression(_r, _rp, _ep, operand.expression);
+    if (expression_result._tag == Result<Expression, ModelError>::Error)
+        return Result<Operand, ModelError> { ._tag = Result<Operand, ModelError>::Error, ._Error = expression_result._Error };
+
+    return Result<Operand, ModelError> { ._tag = Result<Operand, ModelError>::Ok, ._Ok = Operand(Span(operand.expression._Literal.start, operand.expression._Literal.end), expression_result._Ok, postfixes) };
+}
+
 Result<Operation, ModelError> handle_operation(Region& _pr, Page* _rp, Page* _ep, OperationSyntax& operation) {
-    return Result<Operation, ModelError> { ._tag = Result<Operation, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(operation.start, operation.end)))) };
+    Region _r(_pr);
+    Array<Operand>& operands_builder = *new(alignof(Array<Operand>), _r.page) Array<Operand>();
+    if (operation.operands != nullptr) {
+        auto operands_iterator = VectorIterator<OperandSyntax>(*(operation.operands));
+        while (auto operand = operands_iterator.next()) {
+            auto operand_result = handle_operand(_r, _rp, _ep, *operand);
+            if (operand_result._tag == Result<Operand, ModelError>::Error)
+                return Result<Operation, ModelError> { ._tag = Result<Operation, ModelError>::Error, ._Error = operand_result._Error };
+            operands_builder.add(operand_result._Ok);
+        }
+    }
+    return Result<Operation, ModelError> { ._tag = Result<Operation, ModelError>::Ok, ._Ok = Operation(Vector<Operand>(_rp, operands_builder)) };
 }
 
 Result<Concept, ModelError> handle_definition(Region& _pr, Page* _rp, Page* _ep, String name, String path, DefinitionSyntax& definition) {
