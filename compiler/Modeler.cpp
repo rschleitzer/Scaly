@@ -275,24 +275,24 @@ Result<Constant, ModelError> handle_literal(Region& _pr, Page* _rp, Page* _ep, L
     }
 }
 
-Result<Type*, ModelError> handle_type(Region& _pr, Page* _rp, Page* _ep, TypeSyntax& type) {
+Result<Type, ModelError> handle_type(Region& _pr, Page* _rp, Page* _ep, TypeSyntax& type) {
     Region _r(_pr);
-    return Result<Type*, ModelError> { ._tag = Result<Type*, ModelError>::Ok, ._Ok = new(alignof(Type), _rp) Type(String(_rp, type.name.name)) };
+    return Result<Type, ModelError> { ._tag = Result<Type, ModelError>::Ok, ._Ok = Type(String(_rp, type.name.name)) };
 }
 
-Result<Type*, ModelError> handle_binding_annotation(Region& _pr, Page* _rp, Page* _ep, BindingAnnotationSyntax& binding_annotation) {
+Result<Type, ModelError> handle_binding_annotation(Region& _pr, Page* _rp, Page* _ep, BindingAnnotationSyntax& binding_annotation) {
     Region _r(_pr);
     switch (binding_annotation.spec._tag) {
         case BindingSpecSyntax::Type: {
             auto type_result = handle_type(_r, _rp, _ep, binding_annotation.spec._Type);
-            if (type_result._tag == Result<Type*, ModelError>::Error)
-                return Result<Type*, ModelError> { ._tag = Result<Type*, ModelError>::Error, ._Error = type_result._Error };
-            return Result<Type*, ModelError> { ._tag = Result<Type*, ModelError>::Ok, ._Ok = type_result._Ok };
+            if (type_result._tag == Result<Type, ModelError>::Error)
+                return Result<Type, ModelError> { ._tag = Result<Type, ModelError>::Error, ._Error = type_result._Error };
+            return Result<Type, ModelError> { ._tag = Result<Type, ModelError>::Ok, ._Ok = type_result._Ok };
         }
         case BindingSpecSyntax::Structure:
-            return Result<Type*, ModelError> { ._tag = Result<Type*, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(binding_annotation.spec._Structure.start, binding_annotation.spec._Structure.end)))) };
+            return Result<Type, ModelError> { ._tag = Result<Type, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(binding_annotation.spec._Structure.start, binding_annotation.spec._Structure.end)))) };
         case BindingSpecSyntax::Array:
-            return Result<Type*, ModelError> { ._tag = Result<Type*, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(binding_annotation.spec._Array.start, binding_annotation.spec._Array.end)))) };
+            return Result<Type, ModelError> { ._tag = Result<Type, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(binding_annotation.spec._Array.start, binding_annotation.spec._Array.end)))) };
 
     }
 }
@@ -318,7 +318,7 @@ Result<Vector<Statement>, ModelError> handle_statements(Region& _pr, Page* _rp, 
                     auto _type_result = handle_binding_annotation(_r, _rp, _ep, *statement->_Let.binding.annotation);
                     if (_type_result._tag == Result<Type, ModelError>::Error)
                         return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = _type_result._Error };
-                    type = _type_result._Ok;
+                    type = new(alignof(Type), _rp) Type(_type_result._Ok);
                 }
                 auto operation_result = handle_operation(_r, _rp, _ep, binding);
                 if (operation_result._tag == Result<Operation, ModelError>::Error)
@@ -337,7 +337,7 @@ Result<Vector<Statement>, ModelError> handle_statements(Region& _pr, Page* _rp, 
                     auto _type_result = handle_binding_annotation(_r, _rp, _ep, *statement->_Var.binding.annotation);
                     if (_type_result._tag == Result<Type, ModelError>::Error)
                         return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = _type_result._Error };
-                    type = _type_result._Ok;
+                    type = new(alignof(Type), _rp) Type(_type_result._Ok);
                 }
                 auto operation_result = handle_operation(_r, _rp, _ep, binding);
                 if (operation_result._tag == Result<Operation, ModelError>::Error)
@@ -356,7 +356,7 @@ Result<Vector<Statement>, ModelError> handle_statements(Region& _pr, Page* _rp, 
                     auto _type_result = handle_binding_annotation(_r, _rp, _ep, *statement->_Mutable.binding.annotation);
                     if (_type_result._tag == Result<Type, ModelError>::Error)
                         return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = _type_result._Error };
-                    type = _type_result._Ok;
+                    type = new(alignof(Type), _rp) Type(_type_result._Ok);
                 }
                 auto operation_result = handle_operation(_r, _rp, _ep, binding);
                 if (operation_result._tag == Result<Operation, ModelError>::Error)
@@ -491,10 +491,6 @@ Result<Concept, ModelError> handle_definition(Region& _pr, Page* _rp, Page* _ep,
 
     auto concept = definition.concept_;
     Span span(definition.start, definition.end);
-    auto _type_result = handle_type(_r, _rp, _ep, definition.type);
-    if (_type_result._tag == Result<Type*, ModelError>::Error)
-        return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = _type_result._Error };
-    auto type = _type_result._Ok;
     switch (concept._tag)
     {
         case ConceptSyntax::Class: {
@@ -504,7 +500,7 @@ Result<Concept, ModelError> handle_definition(Region& _pr, Page* _rp, Page* _ep,
                 return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = structure_result._Error };
             auto structure = structure_result._Ok;
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = 
-                Concept(span, *type,
+                Concept(span, String(_rp, definition.name),
                     Body { ._tag = Body::Structure, ._Structure = structure }
                 )};
         }
@@ -519,7 +515,7 @@ Result<Concept, ModelError> handle_definition(Region& _pr, Page* _rp, Page* _ep,
                 return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = operation_result._Error };
             auto operation = operation_result._Ok;
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = 
-                Concept(span, *type,
+                Concept(span, String(_rp, definition.name),
                     Body { ._tag = Body::Constant, ._Constant = operation }
                 )};
         }
@@ -527,7 +523,7 @@ Result<Concept, ModelError> handle_definition(Region& _pr, Page* _rp, Page* _ep,
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(concept._Delegate.start, concept._Delegate.end)))) };
         case ConceptSyntax::Intrinsic:
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = 
-                Concept(span, *type,
+                Concept(span, String(_rp, definition.name),
                     Body { ._tag = Body::Intrinsic }
                 )};
     }
@@ -657,10 +653,10 @@ Result<Code, ModelError> build_code(Region& _pr, Page* _rp, Page* _ep, String na
                     if (concept_result._tag == Result<Function, ModelError>::Error)
                         return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = concept_result._Error };
                     auto concept = concept_result._Ok;
-                    if (functions_builder.contains(concept.type.name))
+                    if (functions_builder.contains(concept.name))
                         return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(FunctionSymbolExists(Span(declaration->_Definition.start, declaration->_Definition.end)))) };
 
-                    symbols_builder.add(concept.type.name, Nameable { ._tag = Nameable::Concept, ._Concept = concept });
+                    symbols_builder.add(concept.name, Nameable { ._tag = Nameable::Concept, ._Concept = concept });
                 }
                 break;
                 case DeclarationSyntax::Function: {
@@ -742,7 +738,7 @@ Result<Concept, ModelError> build_module_concept(Region& _pr, Page* _rp, Page* _
     return Result<Concept, ModelError> {
         ._tag = Result<Concept, ModelError>::Ok, 
         ._Ok = Concept(Span(file_syntax.start, file_syntax.end),
-                    Type(String(_rp, name)),
+                    String(_rp, name),
                     Body { ._tag = Body::NameSpace, ._NameSpace = NameSpace(code) }) };
 }
 

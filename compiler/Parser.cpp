@@ -67,6 +67,8 @@ struct DeclarationSyntax;
 struct PrivateSyntax; 
 struct ExportSyntax; 
 struct DefinitionSyntax; 
+struct GenericParametersSyntax; 
+struct GenericParameterSyntax; 
 struct ExtensionSyntax; 
 struct AttributeSyntax; 
 struct ConceptSyntax; 
@@ -999,11 +1001,26 @@ struct ExtensionSyntax : Object {
     String name;
 };
 
-struct DefinitionSyntax : Object {
-    DefinitionSyntax(size_t start, size_t end, TypeSyntax type, Vector<AttributeSyntax>* attributes, ConceptSyntax concept_) : start(start), end(end), type(type), attributes(attributes), concept_(concept_) {}
+struct GenericParameterSyntax : Object {
+    GenericParameterSyntax(size_t start, size_t end, String name) : start(start), end(end), name(name) {}
     size_t start;
     size_t end;
-    TypeSyntax type;
+    String name;
+};
+
+struct GenericParametersSyntax : Object {
+    GenericParametersSyntax(size_t start, size_t end, Vector<GenericParameterSyntax>* parameters) : start(start), end(end), parameters(parameters) {}
+    size_t start;
+    size_t end;
+    Vector<GenericParameterSyntax>* parameters;
+};
+
+struct DefinitionSyntax : Object {
+    DefinitionSyntax(size_t start, size_t end, String name, GenericParametersSyntax* parameters, Vector<AttributeSyntax>* attributes, ConceptSyntax concept_) : start(start), end(end), name(name), parameters(parameters), attributes(attributes), concept_(concept_) {}
+    size_t start;
+    size_t end;
+    String name;
+    GenericParametersSyntax* parameters;
     Vector<AttributeSyntax>* attributes;
     ConceptSyntax concept_;
 };
@@ -1587,17 +1604,25 @@ struct Parser : Object {
                 return Result<DefinitionSyntax, ParserError> { ._tag = Result<DefinitionSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
-        auto type_result = this->parse_type(_r, _rp, _ep);
-        if (type_result._tag == Result<TypeSyntax, ParserError>::Error)
-        {
-            if (type_result._Error._tag == ParserError::OtherSyntax)
-               return Result<DefinitionSyntax, ParserError> { ._tag = Result<DefinitionSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+        auto name = this->lexer.parse_identifier(_r, _rp, this->keywords);
+        if (name != nullptr) {
+            if (!this->is_identifier(*name)) {
+            return Result<DefinitionSyntax, ParserError> { ._tag = Result<DefinitionSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
+        }
+        else {
+            return Result<DefinitionSyntax, ParserError> { ._tag = Result<DefinitionSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
         }
 
-        auto type = type_result._Ok;
+        auto parameters_result = this->parse_genericparameters(_r, _rp, _ep);
+        if (parameters_result._tag == Result<GenericParametersSyntax, ParserError>::Error)
+        {
+        }
 
-        auto success_colon_3 = this->lexer.parse_colon(_r, _rp);
-        if (!success_colon_3) {
+        GenericParametersSyntax* parameters = parameters_result._tag == Result<GenericParametersSyntax, ParserError>::Error ? nullptr : new(alignof(GenericParametersSyntax), _rp) GenericParametersSyntax(parameters_result._Ok);
+
+        auto success_colon_4 = this->lexer.parse_colon(_r, _rp);
+        if (!success_colon_4) {
         }
 
         auto attributes_result = this->parse_attribute_list(_r, _rp, _ep);
@@ -1618,9 +1643,95 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = DefinitionSyntax(start, end, type, attributes, concept_);
+        auto ret = DefinitionSyntax(start, end, *name, parameters, attributes, concept_);
 
         return Result<DefinitionSyntax, ParserError> { ._tag = Result<DefinitionSyntax, ParserError>::Ok, ._Ok = ret };
+    }
+
+    Result<GenericParametersSyntax, ParserError> parse_genericparameters(Region& _pr, Page* _rp, Page* _ep) {
+        Region _r(_pr);
+        auto start = this->lexer.previous_position;
+
+        auto success_left_bracket_1 = this->lexer.parse_punctuation(_r, _rp, String(_r.page, "["));
+        if (!success_left_bracket_1) {
+                return Result<GenericParametersSyntax, ParserError> { ._tag = Result<GenericParametersSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+        }
+
+        auto parameters_result = this->parse_genericparameter_list(_r, _rp, _ep);
+        if (parameters_result._tag == Result<Vector<GenericParameterSyntax>, ParserError>::Error)
+        {
+            if (parameters_result._Error._tag == ParserError::OtherSyntax)
+               return Result<GenericParametersSyntax, ParserError> { ._tag = Result<GenericParametersSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+        }
+
+        auto parameters = parameters_result._Ok;
+
+        auto success_right_bracket_3 = this->lexer.parse_punctuation(_r, _rp, String(_r.page, "]"));
+        if (!success_right_bracket_3) {
+            return Result<GenericParametersSyntax, ParserError> { ._tag = Result<GenericParametersSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };        }
+
+        auto end = this->lexer.position;
+
+        auto ret = GenericParametersSyntax(start, end, parameters);
+
+        return Result<GenericParametersSyntax, ParserError> { ._tag = Result<GenericParametersSyntax, ParserError>::Ok, ._Ok = ret };
+    }
+
+    Result<Vector<GenericParameterSyntax>*, ParserError> parse_genericparameter_list(Region& _pr, Page* _rp, Page* _ep) {
+        Region _r(_pr);
+        {
+            Region _r_1(_r);
+            Array<GenericParameterSyntax>* array = nullptr;
+            while(true) {
+                auto node_result = this->parse_genericparameter(_r_1, _rp, _ep);
+                if ((node_result._tag == Result<GenericParameterSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
+                    return Result<Vector<GenericParameterSyntax>*, ParserError> { ._tag = Result<Vector<GenericParameterSyntax>*, ParserError>::Error, ._Error = node_result._Error };
+                if (node_result._tag == Result<GenericParameterSyntax, ParserError>::Ok) {
+                    auto node = node_result._Ok;
+                    if (array == nullptr)
+                        array = new(alignof(Array<GenericParameterSyntax>), _r_1.page) Array<GenericParameterSyntax>();
+                    array->add(node);
+                } else {
+                    if ((array == nullptr) && (node_result._tag == Result<GenericParameterSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
+                        return Result<Vector<GenericParameterSyntax>*, ParserError> { ._tag = Result<Vector<GenericParameterSyntax>*, ParserError>::Error, ._Error = node_result._Error };
+                    break;
+                }
+            }
+
+            if (array == nullptr)
+                return Result<Vector<GenericParameterSyntax>*, ParserError> { ._tag = Result<Vector<GenericParameterSyntax>*, ParserError>::Ok, ._Ok = nullptr };
+            
+            return Result<Vector<GenericParameterSyntax>*, ParserError> {
+                ._tag = Result<Vector<GenericParameterSyntax>*, ParserError>::Ok,
+                ._Ok = new(alignof(Vector<GenericParameterSyntax>), _rp) Vector<GenericParameterSyntax>(_rp, *array) };
+        }
+    }
+
+    Result<GenericParameterSyntax, ParserError> parse_genericparameter(Region& _pr, Page* _rp, Page* _ep) {
+        Region _r(_pr);
+        auto start = this->lexer.previous_position;
+
+        auto name = this->lexer.parse_identifier(_r, _rp, this->keywords);
+        if (name != nullptr) {
+            if (!this->is_identifier(*name)) {
+                return Result<GenericParameterSyntax, ParserError> { ._tag = Result<GenericParameterSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+
+            }
+        }
+        else {
+                return Result<GenericParameterSyntax, ParserError> { ._tag = Result<GenericParameterSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+
+        }
+
+        auto success_comma_2 = this->lexer.parse_punctuation(_r, _rp, String(_r.page, ","));
+        if (!success_comma_2) {
+        }
+
+        auto end = this->lexer.position;
+
+        auto ret = GenericParameterSyntax(start, end, *name);
+
+        return Result<GenericParameterSyntax, ParserError> { ._tag = Result<GenericParameterSyntax, ParserError>::Ok, ._Ok = ret };
     }
 
     Result<Vector<ExtensionSyntax>*, ParserError> parse_extension_list(Region& _pr, Page* _rp, Page* _ep) {

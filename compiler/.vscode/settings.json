@@ -27,6 +27,7 @@
         "streambuf": "cpp",
         "typeinfo": "cpp",
         "*.def": "cpp",
-        "*.inc": "cpp"
+        "*.inc": "cpp",
+        "compare": "cpp"
     }
 }

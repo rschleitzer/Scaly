@@ -34,10 +34,20 @@
 
     <syntax id = Definition
         <content link = define
-        <content link = Type                                    property = type
+        <content identifier                                    property = name
+        <content link = GenericParameters              optional property = parameters
         <content colon                                 optional
         <content link = Attribute             multiple optional property = attributes
         <content link = Concept                                 property = concept_
+
+    <syntax id = GenericParameters
+        <content link = left_bracket
+        <content link = GenericParameter      multiple          property = parameters
+        <content link = right_bracket
+
+    <syntax id = GenericParameter             multiple
+        <content identifier                                     property = name
+        <content link = comma                          optional 
 
     <syntax id = Extension                    multiple
         <content link = dot

@@ -235,11 +235,11 @@ struct Body {
 
 struct Concept : Object {
     Span span;
-    Type type;
+    String name;
     Body body;
-    Concept(Span span, Type type, Body body)
+    Concept(Span span, String name, Body body)
       : span(span),
-        type(type),
+        name(name),
         body(body) {}
 };
 
