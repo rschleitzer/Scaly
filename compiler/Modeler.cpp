@@ -275,6 +275,11 @@ Result<Constant, ModelError> handle_literal(Region& _pr, Page* _rp, Page* _ep, L
     }
 }
 
+Result<Block, ModelError> handle_block(Region& _pr, Page* _rp, Page* _ep, BlockSyntax& block) {
+    Region _r(_pr);
+    return Result<Block, ModelError> { ._tag = Result<Block, ModelError> ::Ok, ._Ok = Block() };
+ }
+
 Result<Expression, ModelError> handle_expression(Region& _pr, Page* _rp, Page* _ep, ExpressionSyntax& expression) {
     Region _r(_pr);
     switch (expression._tag) {
@@ -291,8 +296,13 @@ Result<Expression, ModelError> handle_expression(Region& _pr, Page* _rp, Page* _
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(expression._Object.start, expression._Object.end)))) };
         case ExpressionSyntax::Vector:
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(expression._Vector.start, expression._Vector.end)))) };
-        case ExpressionSyntax::Block:
-            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(expression._Block.start, expression._Block.end)))) };
+        case ExpressionSyntax::Block: {
+            auto block = expression._Block;
+            auto block_result = handle_block(_r, _rp, _ep, block);
+            if (block_result._tag == Result<Expression, ModelError>::Error)
+                return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = block_result._Error };
+            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::Block, ._Block = block_result._Ok} };
+        }
         case ExpressionSyntax::If:
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(expression._If.start, expression._If.end)))) };
         case ExpressionSyntax::Match:
@@ -371,7 +381,7 @@ Result<Concept, ModelError> handle_definition(Region& _pr, Page* _rp, Page* _ep,
             auto structure = structure_result._Ok;
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = 
                 Concept(span, type,
-                    Implementation { ._tag = Implementation::Structure, ._Structure = structure }
+                    Body { ._tag = Body::Structure, ._Structure = structure }
                 )};
         }
         case ConceptSyntax::Namespace:
@@ -386,7 +396,7 @@ Result<Concept, ModelError> handle_definition(Region& _pr, Page* _rp, Page* _ep,
             auto operation = operation_result._Ok;
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = 
                 Concept(span, type,
-                    Implementation { ._tag = Implementation::Constant, ._Constant = operation }
+                    Body { ._tag = Body::Constant, ._Constant = operation }
                 )};
         }
         case ConceptSyntax::Delegate:
@@ -394,8 +404,22 @@ Result<Concept, ModelError> handle_definition(Region& _pr, Page* _rp, Page* _ep,
         case ConceptSyntax::Intrinsic:
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = 
                 Concept(span, type,
-                    Implementation { ._tag = Implementation::Intrinsic }
+                    Body { ._tag = Body::Intrinsic }
                 )};
+    }
+}
+
+Result<Statement, ModelError> handle_action(Region& _pr, Page* _rp, Page* _ep, ActionSyntax& action) {
+    Region _r(_pr);
+    switch (action._tag) {
+        case ActionSyntax::Operation: {
+            auto operation_result = handle_operation(_r, _rp, _ep, action._Operation);
+            if (operation_result._tag == Result<Operation, ModelError>::Error)
+                return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = operation_result._Error };
+            return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Ok, ._Ok = Statement { ._tag = Statement::Operation, ._Operation = operation_result._Ok } };
+        }
+        case ActionSyntax::Set:
+            return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(action._Set.start, action._Set.end)))) };
     }
 }
 
@@ -403,18 +427,35 @@ Result<Function, ModelError> handle_function(Region& _pr, Page* _rp, Page* _ep, 
     Region _r(_pr);
     Vector<Property>* input = nullptr;
     Vector<Property>* output = nullptr;
-    Operation* operation = nullptr;
+
     if (function_syntax.routine.parameters != nullptr) {
         ParameterSetSyntax& parameterSetSyntax = *function_syntax.routine.parameters;
         auto parameterset_result = handle_parameterset(_r, _rp, _ep, parameterSetSyntax);
     }
+
     if (function_syntax.routine.returns != nullptr)
     {
         ParameterSetSyntax& parameterSetSyntax = function_syntax.routine.returns->parameters; 
         auto parameterset_result = handle_parameterset(_r, _rp, _ep, parameterSetSyntax);
     }
 
-    return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(function_syntax.start, function_syntax.end), String(_rp, function_syntax.name), input, output, operation) };
+    switch (function_syntax.routine.implementation._tag) {
+        case ImplementationSyntax::Action: {
+            auto statement_result = handle_action(_r, _rp, _ep, function_syntax.routine.implementation._Action);
+            if (statement_result._tag == Result<Statement, ModelError>::Error)
+                return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Error, ._Error = statement_result._Error };
+            return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(function_syntax.start, function_syntax.end), String(_rp, function_syntax.name), input, output, Implementation { ._tag = Implementation::Statement, ._Statement = statement_result._Ok }) };
+        }
+        case ImplementationSyntax::Extern:
+            return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(function_syntax.start, function_syntax.end), String(_rp, function_syntax.name), input, output, Implementation { ._tag = Implementation::Extern, ._Extern = Extern() }) };
+        case ImplementationSyntax::Instruction:
+            return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(function_syntax.start, function_syntax.end), String(_rp, function_syntax.name), input, output, Implementation { ._tag = Implementation::Instruction, ._Instruction = Instruction() }) };
+        case ImplementationSyntax::Intrinsic:
+            return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(function_syntax.start, function_syntax.end), String(_rp, function_syntax.name), input, output, Implementation { ._tag = Implementation::Intrinsic, ._Intrinsic = Intrinsic() }) };
+        break;
+
+    }
+
 }
 
 Result<Operator, ModelError> handle_operator(Region& _pr, Page* _rp, Page* _ep, OperatorSyntax& operator_syntax) {
@@ -578,7 +619,7 @@ Result<Concept, ModelError> build_module_concept(Region& _pr, Page* _rp, Page* _
         ._tag = Result<Concept, ModelError>::Ok, 
         ._Ok = Concept(Span(file_syntax.start, file_syntax.end),
                     Type(String(_rp, name)),
-                    Implementation { ._tag = Implementation::NameSpace, ._NameSpace = NameSpace(code) }) };
+                    Body { ._tag = Body::NameSpace, ._NameSpace = NameSpace(code) }) };
 }
 
 Result<Module, ModelError> build_program_module(Region& _pr, Page* _rp, Page* _ep, const String& program) {

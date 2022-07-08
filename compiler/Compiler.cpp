@@ -25,9 +25,9 @@ int compile_and_run_program(Region& _pr, const String& program, Vector<String>& 
     
     auto module = module_result._Ok;
     String string_name(_r.page, "main");
-    switch (module.concept.implementation._tag) {
-        case Implementation::NameSpace: {
-            auto name_space = module.concept.implementation._NameSpace;
+    switch (module.concept.body._tag) {
+        case Body::NameSpace: {
+            auto name_space = module.concept.body._NameSpace;
             auto main_functions_symbol = name_space.code.symbols[string_name];
             switch (main_functions_symbol->_tag) {
                 case Nameable::Functions: {

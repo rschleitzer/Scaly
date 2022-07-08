@@ -49,18 +49,35 @@ struct Constant {
     };
 };
 
+struct Block {
+
+};
+
 struct Expression {
     enum {
         Constant,
         Name,
         Tuple,
+        Block,
     } _tag;
     union {
         struct Constant _Constant;
         struct Name _Name;
         struct Tuple _Tuple;
+        struct Block _Block;
     };
 
+};
+
+struct Type {
+    String name;
+    Type(String name) : name(name) {}
+};
+
+struct Property {
+    String* name;
+    Type* type;
+    Property(String* name, Type* type) : name(name), type(type) {}
 };
 
 struct Postfix {
@@ -79,15 +96,47 @@ struct Operation : Object {
     Operation(Vector<Operand> operands) : operands(operands) {}
 };
 
-struct Type {
-    String name;
-    Type(String name) : name(name) {}
+struct Binding {
+
 };
 
-struct Property {
-    String* name;
-    Type* type;
-    Property(String* name, Type* type) : name(name), type(type) {}
+struct Mutation {
+
+};
+
+struct Statement {
+    enum {
+        Operation,
+        Binding,
+        Mutation,
+    } _tag;
+    union {
+        struct Operation _Operation;
+        struct Binding _Binding;
+        struct Mutation _Mutation;
+    };
+};
+
+
+struct Extern {};
+
+struct Instruction {};
+
+struct Intrinsic {};
+
+struct Implementation {
+    enum {
+        Statement,
+        Extern,
+        Instruction,
+        Intrinsic,
+    } _tag;
+    union {
+        struct Statement _Statement;
+        struct Extern _Extern;
+        struct Instruction _Instruction;
+        struct Intrinsic _Intrinsic;
+    };
 };
 
 struct Function : Object {
@@ -95,13 +144,13 @@ struct Function : Object {
     String name;
     Vector<Property>* input;
     Vector<Property>* output;
-    Operation* operation;
-    Function(Span span, String name, Vector<Property>* input, Vector<Property>* output, Operation* operation)
+    Implementation implementation;
+    Function(Span span, String name, Vector<Property>* input, Vector<Property>* output, Implementation implementation)
       : span(span),
         name(name),
         input(input),
         output(output),
-        operation(operation) {}
+        implementation(implementation) {}
 };
 
 struct Operator : Object {
@@ -146,11 +195,7 @@ struct NameSpace {
       : code(code) {}
 };
 
-struct Intrinsic {
-
-};
-
-struct Implementation {
+struct Body {
     enum {
         Intrinsic,
         Constant,
@@ -170,11 +215,11 @@ struct Implementation {
 struct Concept : Object {
     Span span;
     Type type;
-    Implementation implementation;
-    Concept(Span span, Type type, Implementation implementation)
+    Body body;
+    Concept(Span span, Type type, Body body)
       : span(span),
         type(type),
-        implementation(implementation) {}
+        body(body) {}
 };
 
 struct Text {
