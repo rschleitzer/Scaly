@@ -69,7 +69,7 @@ struct Expression {
 
 };
 
-struct Type {
+struct Type : Object {
     String name;
     Type(String name) : name(name) {}
 };
@@ -102,12 +102,17 @@ struct Statement;
 struct Binding {
     enum Mutability { Constant, Extendable, Mutable, } binding_type;
     String identifier;
+    Type* type;
     Operation operation;
     Vector<Statement> body;
+    Binding(Mutability binding_type, String identifier, Type* type, Operation operation, Vector<Statement> body)
+      : binding_type(binding_type), identifier(identifier), type(type), operation(operation), body(body) {}
 };
 
-struct Mutation {
-
+struct Mutation : Object {
+    Operation source;
+    Operation target;
+    Mutation(Operation source, Operation target) : source(source), target(target) {}
 };
 
 struct Action {

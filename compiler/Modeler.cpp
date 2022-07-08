@@ -275,9 +275,113 @@ Result<Constant, ModelError> handle_literal(Region& _pr, Page* _rp, Page* _ep, L
     }
 }
 
+Result<Type*, ModelError> handle_type(Region& _pr, Page* _rp, Page* _ep, TypeSyntax& type) {
+    Region _r(_pr);
+    return Result<Type*, ModelError> { ._tag = Result<Type*, ModelError>::Ok, ._Ok = new(alignof(Type), _rp) Type(String(_rp, type.name.name)) };
+}
+
+Result<Type*, ModelError> handle_binding_annotation(Region& _pr, Page* _rp, Page* _ep, BindingAnnotationSyntax& binding_annotation) {
+    Region _r(_pr);
+    switch (binding_annotation.spec._tag) {
+        case BindingSpecSyntax::Type: {
+            auto type_result = handle_type(_r, _rp, _ep, binding_annotation.spec._Type);
+            if (type_result._tag == Result<Type*, ModelError>::Error)
+                return Result<Type*, ModelError> { ._tag = Result<Type*, ModelError>::Error, ._Error = type_result._Error };
+            return Result<Type*, ModelError> { ._tag = Result<Type*, ModelError>::Ok, ._Ok = type_result._Ok };
+        }
+        case BindingSpecSyntax::Structure:
+            return Result<Type*, ModelError> { ._tag = Result<Type*, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(binding_annotation.spec._Structure.start, binding_annotation.spec._Structure.end)))) };
+        case BindingSpecSyntax::Array:
+            return Result<Type*, ModelError> { ._tag = Result<Type*, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(binding_annotation.spec._Array.start, binding_annotation.spec._Array.end)))) };
+
+    }
+}
+
+Result<Operation, ModelError> handle_operation(Region& _pr, Page* _rp, Page* _ep, OperationSyntax& operation);
+
 Result<Vector<Statement>, ModelError> handle_statements(Region& _pr, Page* _rp, Page* _ep, Array<Statement>& statements_builder, VectorIterator<StatementSyntax>& statements) {
     Region _r(_pr);
-
+    while (auto statement = statements.next()) {
+        switch (statement->_tag)
+        {
+            case StatementSyntax::Operation: {
+                auto operation_result = handle_operation(_r, _rp, _ep, statement->_Operation);
+                if (operation_result._tag == Result<Operation, ModelError>::Error)
+                    return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = operation_result._Error };
+                statements_builder.add(Statement { ._tag = Statement::Action, ._Action = { ._tag = Action::Operation, ._Operation = operation_result._Ok }});
+                break;
+            }
+            case StatementSyntax::Let: {
+                auto binding = statement->_Let.binding.operation;
+                Type* type = nullptr;
+                if (statement->_Let.binding.annotation != nullptr) {
+                    auto _type_result = handle_binding_annotation(_r, _rp, _ep, *statement->_Let.binding.annotation);
+                    if (_type_result._tag == Result<Type, ModelError>::Error)
+                        return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = _type_result._Error };
+                    type = _type_result._Ok;
+                }
+                auto operation_result = handle_operation(_r, _rp, _ep, binding);
+                if (operation_result._tag == Result<Operation, ModelError>::Error)
+                    return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = operation_result._Error };
+                Array<Statement>& body_statements_builder = *new(alignof(Array<Statement>), _r.page) Array<Statement>();
+                auto statements_result = handle_statements(_r, _rp, _ep, body_statements_builder, statements);
+                if (statements_result._tag == Result<Vector<Statement>, ModelError>::Error)
+                    return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = statements_result._Error };
+                statements_builder.add(Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Constant, String(_rp, statement->_Let.binding.name), type, operation_result._Ok, statements_result._Ok) });
+                return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Ok, ._Ok = Vector<Statement>(_rp, statements_builder) };
+            }
+            case StatementSyntax::Var: {
+                auto binding = statement->_Var.binding.operation;
+                Type* type = nullptr;
+                if (statement->_Var.binding.annotation != nullptr) {
+                    auto _type_result = handle_binding_annotation(_r, _rp, _ep, *statement->_Var.binding.annotation);
+                    if (_type_result._tag == Result<Type, ModelError>::Error)
+                        return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = _type_result._Error };
+                    type = _type_result._Ok;
+                }
+                auto operation_result = handle_operation(_r, _rp, _ep, binding);
+                if (operation_result._tag == Result<Operation, ModelError>::Error)
+                    return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = operation_result._Error };
+                Array<Statement>& body_statements_builder = *new(alignof(Array<Statement>), _r.page) Array<Statement>();
+                auto statements_result = handle_statements(_r, _rp, _ep, body_statements_builder, statements);
+                if (statements_result._tag == Result<Vector<Statement>, ModelError>::Error)
+                    return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = statements_result._Error };
+                statements_builder.add(Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Extendable, String(_rp, statement->_Var.binding.name), type, operation_result._Ok, statements_result._Ok) });
+                return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Ok, ._Ok = Vector<Statement>(_rp, statements_builder) };
+            }
+            case StatementSyntax::Mutable: {
+                auto binding = statement->_Mutable.binding.operation;
+                Type* type = nullptr;
+                if (statement->_Mutable.binding.annotation != nullptr) {
+                    auto _type_result = handle_binding_annotation(_r, _rp, _ep, *statement->_Mutable.binding.annotation);
+                    if (_type_result._tag == Result<Type, ModelError>::Error)
+                        return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = _type_result._Error };
+                    type = _type_result._Ok;
+                }
+                auto operation_result = handle_operation(_r, _rp, _ep, binding);
+                if (operation_result._tag == Result<Operation, ModelError>::Error)
+                    return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = operation_result._Error };
+                Array<Statement>& body_statements_builder = *new(alignof(Array<Statement>), _r.page) Array<Statement>();
+                auto statements_result = handle_statements(_r, _rp, _ep, body_statements_builder, statements);
+                if (statements_result._tag == Result<Vector<Statement>, ModelError>::Error)
+                    return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = statements_result._Error };
+                statements_builder.add(Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Mutable, String(_rp, statement->_Mutable.binding.name), type, operation_result._Ok, statements_result._Ok) });
+                return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Ok, ._Ok = Vector<Statement>(_rp, statements_builder) };
+            }
+            case StatementSyntax::Set:
+                auto _source_result = handle_operation(_r, _rp, _ep, statement->_Set.source);
+                if (_source_result._tag == Result<Operation, ModelError>::Error)
+                    return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = _source_result._Error };
+                auto source = _source_result._Ok;
+                auto _target_result = handle_operation(_r, _rp, _ep, statement->_Set.target);
+                if (_target_result._tag == Result<Operation, ModelError>::Error)
+                    return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = _target_result._Error };
+                auto target = _target_result._Ok;
+                statements_builder.add(Statement { ._tag = Statement::Action, ._Action = { ._tag = Action::Mutation, ._Mutation = Mutation(source, target) }});
+                break;
+        }
+    }
+    
     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError> ::Ok, ._Ok = Vector<Statement>(_rp, statements_builder) };
 }
 
@@ -387,7 +491,10 @@ Result<Concept, ModelError> handle_definition(Region& _pr, Page* _rp, Page* _ep,
 
     auto concept = definition.concept_;
     Span span(definition.start, definition.end);
-    Type type(String(_rp, definition.type.name.name));
+    auto _type_result = handle_type(_r, _rp, _ep, definition.type);
+    if (_type_result._tag == Result<Type*, ModelError>::Error)
+        return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = _type_result._Error };
+    auto type = _type_result._Ok;
     switch (concept._tag)
     {
         case ConceptSyntax::Class: {
@@ -397,7 +504,7 @@ Result<Concept, ModelError> handle_definition(Region& _pr, Page* _rp, Page* _ep,
                 return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = structure_result._Error };
             auto structure = structure_result._Ok;
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = 
-                Concept(span, type,
+                Concept(span, *type,
                     Body { ._tag = Body::Structure, ._Structure = structure }
                 )};
         }
@@ -412,7 +519,7 @@ Result<Concept, ModelError> handle_definition(Region& _pr, Page* _rp, Page* _ep,
                 return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = operation_result._Error };
             auto operation = operation_result._Ok;
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = 
-                Concept(span, type,
+                Concept(span, *type,
                     Body { ._tag = Body::Constant, ._Constant = operation }
                 )};
         }
@@ -420,7 +527,7 @@ Result<Concept, ModelError> handle_definition(Region& _pr, Page* _rp, Page* _ep,
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(concept._Delegate.start, concept._Delegate.end)))) };
         case ConceptSyntax::Intrinsic:
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = 
-                Concept(span, type,
+                Concept(span, *type,
                     Body { ._tag = Body::Intrinsic }
                 )};
     }
