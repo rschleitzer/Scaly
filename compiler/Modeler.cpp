@@ -275,8 +275,25 @@ Result<Constant, ModelError> handle_literal(Region& _pr, Page* _rp, Page* _ep, L
     }
 }
 
+Result<Statement, ModelError> handle_statement(Region& _pr, Page* _rp, Page* _ep, StatementSyntax& block) {
+    Region _r(_pr);
+}
+
 Result<Block, ModelError> handle_block(Region& _pr, Page* _rp, Page* _ep, BlockSyntax& block) {
     Region _r(_pr);
+    Vector<Statement>* statements = nullptr;
+    if (block.statements != nullptr) {
+        Array<Statement>& statements_builder = *new(alignof(Array<Statement>), _r.page) Array<Statement>();
+        auto statements_iterator = VectorIterator<StatementSyntax>(*(block.statements));
+        while (auto statement = statements_iterator.next()) {
+            auto statement_result = handle_statement(_r, _rp, _ep, *statement);
+            if (statement_result._tag == Result<Operand, ModelError>::Error)
+                return Result<Block, ModelError> { ._tag = Result<Block, ModelError>::Error, ._Error = statement_result._Error };
+            statements_builder.add(statement_result._Ok);
+        }
+        statements = new(alignof(Vector<Statement>), _rp) Vector<Statement>(_rp, statements_builder);
+    }
+
     return Result<Block, ModelError> { ._tag = Result<Block, ModelError> ::Ok, ._Ok = Block() };
  }
 
