@@ -265,18 +265,20 @@ Result<Constant, ModelError> handle_literal(Region& _pr, Page* _rp, Page* _ep, L
             if (range_error)
                 return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError>::Error, ._Error = ModelError(ModelBuilderError(InvalidConstant(Span(literal.start, literal.end)))) };
 
-            return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError> ::Ok, ._Ok = Constant { ._tag = Constant::FloatingPoint, ._FloatingPoint = floating_point } };
+            return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError>::Ok, ._Ok = Constant { ._tag = Constant::FloatingPoint, ._FloatingPoint = floating_point } };
         }
         case Literal::String:
-            return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError> ::Ok, ._Ok = Constant { ._tag = Constant::String, ._String = literal.literal._String.value } };
+            return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError>::Ok, ._Ok = Constant { ._tag = Constant::String, ._String = literal.literal._String.value } };
         case Literal::Fragment:
-            return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError> ::Ok, ._Ok = Constant { ._tag = Constant::Fragment, ._Fragment = literal.literal._Fragment.value } };
+            return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError>::Ok, ._Ok = Constant { ._tag = Constant::Fragment, ._Fragment = literal.literal._Fragment.value } };
         break;
     }
 }
 
-Result<Statement, ModelError> handle_statement(Region& _pr, Page* _rp, Page* _ep, StatementSyntax& block) {
+Result<Vector<Statement>, ModelError> handle_statements(Region& _pr, Page* _rp, Page* _ep, Array<Statement>& statements_builder, VectorIterator<StatementSyntax>& statements) {
     Region _r(_pr);
+
+    return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError> ::Ok, ._Ok = Vector<Statement>(_rp, statements_builder) };
 }
 
 Result<Block, ModelError> handle_block(Region& _pr, Page* _rp, Page* _ep, BlockSyntax& block) {
@@ -285,12 +287,10 @@ Result<Block, ModelError> handle_block(Region& _pr, Page* _rp, Page* _ep, BlockS
     if (block.statements != nullptr) {
         Array<Statement>& statements_builder = *new(alignof(Array<Statement>), _r.page) Array<Statement>();
         auto statements_iterator = VectorIterator<StatementSyntax>(*(block.statements));
-        while (auto statement = statements_iterator.next()) {
-            auto statement_result = handle_statement(_r, _rp, _ep, *statement);
+        auto statement_result = handle_statements(_r, _rp, _ep, statements_builder, statements_iterator);
             if (statement_result._tag == Result<Operand, ModelError>::Error)
                 return Result<Block, ModelError> { ._tag = Result<Block, ModelError>::Error, ._Error = statement_result._Error };
             statements_builder.add(statement_result._Ok);
-        }
         statements = new(alignof(Vector<Statement>), _rp) Vector<Statement>(_rp, statements_builder);
     }
 
@@ -433,7 +433,7 @@ Result<Statement, ModelError> handle_action(Region& _pr, Page* _rp, Page* _ep, A
             auto operation_result = handle_operation(_r, _rp, _ep, action._Operation);
             if (operation_result._tag == Result<Operation, ModelError>::Error)
                 return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = operation_result._Error };
-            return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Ok, ._Ok = Statement { ._tag = Statement::Operation, ._Operation = operation_result._Ok } };
+            return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Ok, ._Ok = Statement { ._tag = Statement::Action, ._Action = Action { ._tag = Action::Operation, ._Operation = operation_result._Ok } } };
         }
         case ActionSyntax::Set:
             return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(action._Set.start, action._Set.end)))) };

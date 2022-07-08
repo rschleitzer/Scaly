@@ -96,24 +96,40 @@ struct Operation : Object {
     Operation(Vector<Operand> operands) : operands(operands) {}
 };
 
-struct Binding {
+struct Statement;
 
+
+struct Binding {
+    enum Mutability { Constant, Extendable, Mutable, } binding_type;
+    String identifier;
+    Operation operation;
+    Vector<Statement> body;
 };
 
 struct Mutation {
 
 };
 
-struct Statement {
+struct Action {
     enum {
         Operation,
-        Binding,
         Mutation,
     } _tag;
     union {
         struct Operation _Operation;
-        struct Binding _Binding;
         struct Mutation _Mutation;
+    };
+
+};
+
+struct Statement {
+    enum {
+        Action,
+        Binding,
+    } _tag;
+    union {
+        struct Action _Action;
+        struct Binding _Binding;
     };
 };
 
