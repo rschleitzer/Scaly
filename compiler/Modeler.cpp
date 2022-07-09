@@ -729,6 +729,35 @@ Result<Code, ModelError> build_code(Region& _pr, Page* _rp, Page* _ep, String na
 Result<Concept, ModelError> build_module_concept(Region& _pr, Page* _rp, Page* _ep, String name, String path, FileSyntax file_syntax) {
     Region _r(_pr);
 
+    if (file_syntax.declarations != nullptr && file_syntax.declarations->length == 1) {
+        auto first_declaration = *(*(file_syntax.declarations))[0];
+        switch (first_declaration._tag) {
+            case DeclarationSyntax::Definition: {
+                auto definition_syntax = first_declaration._Definition;
+                if (name.equals(definition_syntax.name))
+                    return handle_definition(_r, _rp, _ep, name, path, definition_syntax);
+            }
+            break;
+            case DeclarationSyntax::Private: {
+                auto private_syntax = first_declaration._Private;
+                switch (private_syntax.export_._tag) {
+                    case ExportSyntax::Definition: {
+                        auto definition_syntax = private_syntax.export_._Definition;
+                        if (name.equals(definition_syntax.name))
+                            return handle_definition(_r, _rp, _ep, name, path, definition_syntax);
+
+                    }
+                    break;
+                    default:
+                    break;
+                }
+            }
+            break;
+            default:
+            break;
+        }
+    }
+
     auto code_result = build_code(_r, _rp, _ep, name, path, file_syntax.uses, file_syntax.declarations);
     if (code_result._tag == Result<Code, ModelError>::Error)
         return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = code_result._Error };
