@@ -1,0 +1,6 @@
+define Page
+(
+    private 'current page': pointer[Page],
+    private 'next object offset': integer,
+    private 'exclusive pages': integer,
+)

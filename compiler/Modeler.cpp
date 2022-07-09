@@ -621,7 +621,7 @@ Result<Module, ModelError> handle_module(Region& _pr, Page* _rp, Page* _ep, Stri
 
     StringBuilder& path_builder = *new(alignof(StringBuilder), _r.page) StringBuilder(path);
     if (path.get_length() > 0)
-        file_name_builder.append_character('/');
+        path_builder.append_character('/');
     path_builder.append_string(module_syntax.name.name);
 
 
