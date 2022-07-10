@@ -5,8 +5,24 @@ namespace model {
 using namespace scaly::io;
 
 struct IoModelError {
-    FileError file_error;
-    IoModelError(FileError file_error) : file_error(file_error) {}
+    enum {
+        File,
+    } _tag;
+    union {
+        struct FileError _File;
+    };
+    IoModelError(FileError file_error) : _File(file_error) {}
+
+    String to_string(Region& _pr, Page* _rp) {
+        Region _r(_pr);
+        StringBuilder& message_builder = *new(alignof(StringBuilder), _r.page) StringBuilder();
+        switch (_tag) {
+            case File:
+                message_builder.append_string(_File.to_string(_r, _rp));
+            break;
+        }
+        return message_builder.to_string(_rp);     
+    }
 };
 
 struct NotImplemented
@@ -77,7 +93,7 @@ struct ModelError : Object {
         StringBuilder& message_builder = *new(alignof(StringBuilder), _r.page) StringBuilder();
         switch (_tag) {
             case Io:
-                message_builder.append_string(String(_r.page, "A problem with I/O has occurred."));
+                message_builder.append_string(_Io.to_string(_r, _rp));
             break;
             case Parser:
                 message_builder.append_string(String(_r.page, "A parser error hase occurred."));

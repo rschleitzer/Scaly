@@ -6,9 +6,15 @@ namespace io {
 
 using namespace scaly::memory;
 
-    
-struct UnknownFileError {};
-struct NoSuchFileOrDirectoryError {};
+struct UnknownFileError {
+    UnknownFileError(String file_name) : file_name(file_name) {}
+    String file_name;
+};
+
+struct NoSuchFileOrDirectoryError {
+    NoSuchFileOrDirectoryError(String file_name) : file_name(file_name) {}
+    String file_name;
+};
 
 struct FileError : Object {
     FileError(UnknownFileError _UnknownFileError) : _tag(Unknown) { _Unknown = _UnknownFileError; }
@@ -21,6 +27,24 @@ struct FileError : Object {
         UnknownFileError _Unknown;
         NoSuchFileOrDirectoryError _NoSuchFileOrDirectory;
     };
+
+    String to_string(Region& _pr, Page* _rp) {
+        Region _r(_pr);
+        StringBuilder& message_builder = *new(alignof(StringBuilder), _r.page) StringBuilder();
+        switch (_tag) {
+            case Unknown:
+                message_builder.append_string(String(_r.page, "An unknown file error occurred with the file "));
+                message_builder.append_string(_Unknown.file_name);
+                message_builder.append_string(String(_r.page, "."));
+            break;
+            case NoSuchFileOrDirectory:
+                message_builder.append_string(String(_r.page, "A file or directory with the name "));
+                message_builder.append_string(_NoSuchFileOrDirectory.file_name);
+                message_builder.append_string(String(_r.page, "does not exist."));
+            break;
+        }
+        return message_builder.to_string(_rp);     
+    }
 };
 
 struct File {
@@ -29,8 +53,8 @@ struct File {
         FILE* file = fopen(path.to_c_string(_r.page), "rb");
         if (!file) {
             switch (errno) {
-                case ENOENT: return Result<String, FileError> { ._tag = Result<String, FileError>::Error, ._Error = FileError(NoSuchFileOrDirectoryError()) };
-                default: return Result<String, FileError> { ._tag =  Result<String, FileError>::Error, ._Error = FileError(UnknownFileError()) }; 
+                case ENOENT: return Result<String, FileError> { ._tag = Result<String, FileError>::Error, ._Error = FileError(NoSuchFileOrDirectoryError(String(_ep, path))) };
+                default: return Result<String, FileError> { ._tag =  Result<String, FileError>::Error, ._Error = FileError(UnknownFileError(String(_ep, path))) }; 
             }
         }
         
@@ -50,8 +74,8 @@ struct File {
         FILE* file = fopen(path.to_c_string(_r.page), "wb");
         if (!file) {
             switch (errno) {
-                case ENOENT: return new(alignof(FileError), _ep) FileError(NoSuchFileOrDirectoryError());
-                default: return new(alignof(FileError), _ep) FileError(UnknownFileError());
+                case ENOENT: return new(alignof(FileError), _ep) FileError(NoSuchFileOrDirectoryError(String(_ep, path)));
+                default: return new(alignof(FileError), _ep) FileError(UnknownFileError(String(_ep, path)));
             };
         }
 
