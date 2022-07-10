@@ -548,7 +548,7 @@ Result<Module, ModelError> handle_module(Region& _pr, Page* _rp, Page* _ep, Stri
     Parser& parser = *new(alignof(Parser), _r.page) Parser(_r, _r.page, module_text);
     auto file_syntax_result = parser.parse_file(_r, _rp, _ep);
     if (file_syntax_result._tag == Result<ModuleSyntax*, ParserError>::Error)
-        return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = file_syntax_result._Error };
+        return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = ModelError(ParserModelError(Text {._tag = Text::File, ._Program = String(_ep, file_name) }, file_syntax_result._Error)) };
     auto file_syntax = file_syntax_result._Ok;
 
     StringBuilder& path_builder = *new(alignof(StringBuilder), _r.page) StringBuilder(path);
@@ -708,7 +708,7 @@ Result<Module, ModelError> build_program_module(Region& _pr, Page* _rp, Page* _e
     
     auto file_result = parse_program(_r, _r.page, _ep, program);
     if (file_result._tag == Result<Vector<DeclarationSyntax>*, ParserError>::Error)
-        return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = ModelError(file_result._Error) };
+        return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = ModelError(ParserModelError(Text {._tag = Text::Program, ._Program = String(_ep, program) }, file_result._Error)) };
     auto file = file_result._Ok;
 
     auto concept_result = build_module_concept(_r, _rp, _ep, String(_rp, ""), String(_rp, ""), file);

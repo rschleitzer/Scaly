@@ -25,6 +25,19 @@ struct IoModelError {
     }
 };
 
+struct ParserModelError {
+    ParserModelError(Text text, ParserError parser_error) : text(text), error(parser_error) {}
+
+    Text text;
+    ParserError error;
+
+    String to_string(Region& _pr, Page* _rp) {
+        Region _r(_pr);
+        StringBuilder& message_builder = *new(alignof(StringBuilder), _r.page) StringBuilder();
+        return message_builder.to_string(_rp);     
+    }
+};
+
 struct NotImplemented
 {
     NotImplemented(Span _Span) : span(_Span) {}
@@ -75,7 +88,7 @@ struct ModelBuilderError {
 
 struct ModelError : Object {
     ModelError(IoModelError ioModelError) : _tag(Io), _Io(ioModelError) {}
-    ModelError(ParserError parserError) : _tag(Parser), _Parser(parserError) {}
+    ModelError(ParserModelError parserError) : _tag(Parser),  _Parser(parserError) {}
     ModelError(ModelBuilderError modelBuilderError) : _tag(Builder), _Builder(modelBuilderError) {}
     enum {
         Io,
@@ -84,7 +97,7 @@ struct ModelError : Object {
     } _tag;
     union {
         IoModelError _Io;
-        ParserError _Parser;
+        ParserModelError _Parser;
         ModelBuilderError _Builder;
     };
 
@@ -96,7 +109,7 @@ struct ModelError : Object {
                 message_builder.append_string(_Io.to_string(_r, _rp));
             break;
             case Parser:
-                message_builder.append_string(String(_r.page, "A parser error hase occurred."));
+                message_builder.append_string(_Parser.to_string(_r, _rp));
             break;
             case Builder:
                 message_builder.append_string(String(_r.page, "A problem while building the model has occurred."));
