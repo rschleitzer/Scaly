@@ -186,9 +186,12 @@ void test_generator(Region& _pr) {
 
 void test_compiler(Region& _pr) {
     Region _r(_pr);
-    if (compile_and_run_program(_r, String(_r.page, "0"), *new(alignof(Vector<String>), _r.page) Vector<String>(_r.page, 0)) != 0)
+    StringBuilder& message_builder = *new(alignof(StringBuilder), _r.page) StringBuilder(String(_r.page, "test_compiler failed: "));
+    auto error = compile_and_run_program(_r, _r.page, String(_r.page, "0"), *new(alignof(Vector<String>), _r.page) Vector<String>(_r.page, 0));
+    if (error != nullptr) {
+        auto error_message = error->generate_compiler_message(_r, _r.page);
         exit (-60);
-
+    }
 }
 
 int main(int argc, char** argv) {

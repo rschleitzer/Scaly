@@ -10,18 +10,18 @@
 #include "Model.cpp"
 #include "Modeler.cpp"
 #include "Generator.cpp"
-
+#include "CompilerError.cpp"
 
 namespace scaly {
 namespace compiler {
 
 using namespace scaly::compiler::model;
 
-int compile_and_run_program(Region& _pr, const String& program, Vector<String>& arguments) {
+CompilerError* compile_and_run_program(Region& _pr, Page* _ep, const String& program, Vector<String>& arguments) {
     Region _r(_pr);
     auto module_result = scaly::compiler::model::build_program_module(_r, _r.page, _r.page, program);
     if (module_result._tag == Result<Module, ModelError>::Error)
-        return -1;
+        return new(alignof(CompilerError), _ep) CompilerError(module_result._Error);
     
     auto module = module_result._Ok;
     String string_name(_r.page, "main");
@@ -33,19 +33,20 @@ int compile_and_run_program(Region& _pr, const String& program, Vector<String>& 
                 case Nameable::Functions: {
                     auto main_functions = main_functions_symbol->_Functions;
                     if (main_functions.length != 1)
-                        return -3;
+                        return new(alignof(CompilerError), _ep) CompilerError(MultipleMainFunctions());
 
                     auto main = main_functions[0];
                     
-                    return 0;                }
+                    return nullptr;
+                }
                 default:
-                    return -2;
+                    return new(alignof(CompilerError), _ep) CompilerError(MainIsNotAFunction());
             }
         }
         break;
 
         default:
-            return -4;
+            return new(alignof(CompilerError), _ep) CompilerError(ProgramModuleIsNotANameSpace());
     }
 }
 
