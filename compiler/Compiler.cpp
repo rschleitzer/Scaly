@@ -8,6 +8,7 @@
 #include "Errors.cpp"
 #include "Parser.cpp"
 #include "Model.cpp"
+#include "ModelError.cpp"
 #include "Modeler.cpp"
 #include "Generator.cpp"
 #include "CompilerError.cpp"
