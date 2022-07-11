@@ -4,9 +4,10 @@ namespace compiler {
 struct OtherSyntax {};
 
 struct InvalidSyntax {
-    InvalidSyntax(size_t start, size_t end) : start(start), end(end) {}
+    InvalidSyntax(size_t start, size_t end, String expected) : start(start), end(end), expected(expected) {}
     size_t start;
     size_t end;
+    String expected;
 };
 
 struct ParserError : Object {

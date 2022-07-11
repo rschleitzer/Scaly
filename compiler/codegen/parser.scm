@@ -206,7 +206,7 @@ struct Parser : Object {
 "               return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
 "                                   )
                                     ($
-"               return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax("(property content)"_start, lexer.position)) };
+"               return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax("(property content)"_start, lexer.position, String(_ep, \"a literal\"))) };
 "                                   )
                                 )
                             ))
@@ -268,7 +268,16 @@ struct Parser : Object {
 "                                               )
                                                 ($
 "
-            return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_"syntax-moniker", lexer.position)) };"
+            return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_"syntax-moniker", lexer.position, String(_ep, \""
+                                                    (case (type content)
+                                                        (("keyword")     (link content))
+                                                        (("punctuation") (value (element-with-id (link content))))
+                                                        (("identifier")  "an identifier")
+                                                        (("attribute") "an attribute")
+                                                        (("colon") "a colon or a line feed")
+                                                        (("semicolon") "a semicolon")
+                                                    )
+            "\"))) };"
                                                 )
                                             )
                                         )
