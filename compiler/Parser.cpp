@@ -1468,12 +1468,7 @@ struct Parser : Object {
         auto export__result = this->parse_export(_r, _rp, _ep);
         if (export__result._tag == Result<ExportSyntax, ParserError>::Error)
         {
-            switch (export__result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<PrivateSyntax, ParserError> { ._tag = Result<PrivateSyntax, ParserError>::Error, ._Error = export__result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<PrivateSyntax, ParserError> { ._tag = Result<PrivateSyntax, ParserError>::Error, ._Error = export__result._Error };
-            }
+                return Result<PrivateSyntax, ParserError> { ._tag = Result<PrivateSyntax, ParserError>::Error, ._Error = export__result._Error };
         }
 
         auto export_ = export__result._Ok;
@@ -1673,12 +1668,7 @@ struct Parser : Object {
         auto concept__result = this->parse_concept(_r, _rp, _ep);
         if (concept__result._tag == Result<ConceptSyntax, ParserError>::Error)
         {
-            switch (concept__result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<DefinitionSyntax, ParserError> { ._tag = Result<DefinitionSyntax, ParserError>::Error, ._Error = concept__result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<DefinitionSyntax, ParserError> { ._tag = Result<DefinitionSyntax, ParserError>::Error, ._Error = concept__result._Error };
-            }
+                return Result<DefinitionSyntax, ParserError> { ._tag = Result<DefinitionSyntax, ParserError>::Error, ._Error = concept__result._Error };
         }
 
         auto concept_ = concept__result._Ok;
@@ -1703,12 +1693,7 @@ struct Parser : Object {
         auto parameters_result = this->parse_genericparameter_list(_r, _rp, _ep);
         if (parameters_result._tag == Result<Vector<GenericParameterSyntax>, ParserError>::Error)
         {
-            switch (parameters_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<GenericParametersSyntax, ParserError> { ._tag = Result<GenericParametersSyntax, ParserError>::Error, ._Error = parameters_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<GenericParametersSyntax, ParserError> { ._tag = Result<GenericParametersSyntax, ParserError>::Error, ._Error = parameters_result._Error };
-            }
+                return Result<GenericParametersSyntax, ParserError> { ._tag = Result<GenericParametersSyntax, ParserError>::Error, ._Error = parameters_result._Error };
         }
 
         auto parameters = parameters_result._Ok;
@@ -1886,12 +1871,7 @@ struct Parser : Object {
         auto value_result = this->parse_model(_r, _rp, _ep);
         if (value_result._tag == Result<ModelSyntax, ParserError>::Error)
         {
-            switch (value_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<AttributeSyntax, ParserError> { ._tag = Result<AttributeSyntax, ParserError>::Error, ._Error = value_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<AttributeSyntax, ParserError> { ._tag = Result<AttributeSyntax, ParserError>::Error, ._Error = value_result._Error };
-            }
+                return Result<AttributeSyntax, ParserError> { ._tag = Result<AttributeSyntax, ParserError>::Error, ._Error = value_result._Error };
         }
 
         auto value = value_result._Ok;
@@ -2011,12 +1991,7 @@ struct Parser : Object {
         auto structure_result = this->parse_structure(_r, _rp, _ep);
         if (structure_result._tag == Result<StructureSyntax, ParserError>::Error)
         {
-            switch (structure_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<ClassSyntax, ParserError> { ._tag = Result<ClassSyntax, ParserError>::Error, ._Error = structure_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<ClassSyntax, ParserError> { ._tag = Result<ClassSyntax, ParserError>::Error, ._Error = structure_result._Error };
-            }
+                return Result<ClassSyntax, ParserError> { ._tag = Result<ClassSyntax, ParserError>::Error, ._Error = structure_result._Error };
         }
 
         auto structure = structure_result._Ok;
@@ -2053,12 +2028,7 @@ struct Parser : Object {
         auto body_result = this->parse_body(_r, _rp, _ep);
         if (body_result._tag == Result<BodySyntax, ParserError>::Error)
         {
-            switch (body_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<NamespaceSyntax, ParserError> { ._tag = Result<NamespaceSyntax, ParserError>::Error, ._Error = body_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<NamespaceSyntax, ParserError> { ._tag = Result<NamespaceSyntax, ParserError>::Error, ._Error = body_result._Error };
-            }
+                return Result<NamespaceSyntax, ParserError> { ._tag = Result<NamespaceSyntax, ParserError>::Error, ._Error = body_result._Error };
         }
 
         auto body = body_result._Ok;
@@ -2093,12 +2063,7 @@ struct Parser : Object {
         auto tags_result = this->parse_tag_list(_r, _rp, _ep);
         if (tags_result._tag == Result<Vector<TagSyntax>, ParserError>::Error)
         {
-            switch (tags_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<UnionSyntax, ParserError> { ._tag = Result<UnionSyntax, ParserError>::Error, ._Error = tags_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<UnionSyntax, ParserError> { ._tag = Result<UnionSyntax, ParserError>::Error, ._Error = tags_result._Error };
-            }
+                return Result<UnionSyntax, ParserError> { ._tag = Result<UnionSyntax, ParserError>::Error, ._Error = tags_result._Error };
         }
 
         auto tags = tags_result._Ok;
@@ -2116,12 +2081,7 @@ struct Parser : Object {
         auto body_result = this->parse_body(_r, _rp, _ep);
         if (body_result._tag == Result<BodySyntax, ParserError>::Error)
         {
-            switch (body_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<UnionSyntax, ParserError> { ._tag = Result<UnionSyntax, ParserError>::Error, ._Error = body_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<UnionSyntax, ParserError> { ._tag = Result<UnionSyntax, ParserError>::Error, ._Error = body_result._Error };
-            }
+                return Result<UnionSyntax, ParserError> { ._tag = Result<UnionSyntax, ParserError>::Error, ._Error = body_result._Error };
         }
 
         auto body = body_result._Ok;
@@ -2262,12 +2222,7 @@ struct Parser : Object {
         auto structure_result = this->parse_structure(_r, _rp, _ep);
         if (structure_result._tag == Result<StructureSyntax, ParserError>::Error)
         {
-            switch (structure_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<VariantSyntax, ParserError> { ._tag = Result<VariantSyntax, ParserError>::Error, ._Error = structure_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<VariantSyntax, ParserError> { ._tag = Result<VariantSyntax, ParserError>::Error, ._Error = structure_result._Error };
-            }
+                return Result<VariantSyntax, ParserError> { ._tag = Result<VariantSyntax, ParserError>::Error, ._Error = structure_result._Error };
         }
 
         auto structure = structure_result._Ok;
@@ -2330,12 +2285,7 @@ struct Parser : Object {
         auto operation_result = this->parse_operation(_r, _rp, _ep);
         if (operation_result._tag == Result<OperationSyntax, ParserError>::Error)
         {
-            switch (operation_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<ConstantSyntax, ParserError> { ._tag = Result<ConstantSyntax, ParserError>::Error, ._Error = operation_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<ConstantSyntax, ParserError> { ._tag = Result<ConstantSyntax, ParserError>::Error, ._Error = operation_result._Error };
-            }
+                return Result<ConstantSyntax, ParserError> { ._tag = Result<ConstantSyntax, ParserError>::Error, ._Error = operation_result._Error };
         }
 
         auto operation = operation_result._Ok;
@@ -2554,12 +2504,7 @@ struct Parser : Object {
         auto property_result = this->parse_property(_r, _rp, _ep);
         if (property_result._tag == Result<PropertySyntax, ParserError>::Error)
         {
-            switch (property_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<FieldSyntax, ParserError> { ._tag = Result<FieldSyntax, ParserError>::Error, ._Error = property_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<FieldSyntax, ParserError> { ._tag = Result<FieldSyntax, ParserError>::Error, ._Error = property_result._Error };
-            }
+                return Result<FieldSyntax, ParserError> { ._tag = Result<FieldSyntax, ParserError>::Error, ._Error = property_result._Error };
         }
 
         auto property = property_result._Ok;
@@ -2674,12 +2619,7 @@ struct Parser : Object {
         auto type_result = this->parse_type(_r, _rp, _ep);
         if (type_result._tag == Result<TypeSyntax, ParserError>::Error)
         {
-            switch (type_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<TypeAnnotationSyntax, ParserError> { ._tag = Result<TypeAnnotationSyntax, ParserError>::Error, ._Error = type_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<TypeAnnotationSyntax, ParserError> { ._tag = Result<TypeAnnotationSyntax, ParserError>::Error, ._Error = type_result._Error };
-            }
+                return Result<TypeAnnotationSyntax, ParserError> { ._tag = Result<TypeAnnotationSyntax, ParserError>::Error, ._Error = type_result._Error };
         }
 
         auto type = type_result._Ok;
@@ -2763,12 +2703,7 @@ struct Parser : Object {
         auto type_result = this->parse_type(_r, _rp, _ep);
         if (type_result._tag == Result<TypeSyntax, ParserError>::Error)
         {
-            switch (type_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<GenericArgumentSyntax, ParserError> { ._tag = Result<GenericArgumentSyntax, ParserError>::Error, ._Error = type_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<GenericArgumentSyntax, ParserError> { ._tag = Result<GenericArgumentSyntax, ParserError>::Error, ._Error = type_result._Error };
-            }
+                return Result<GenericArgumentSyntax, ParserError> { ._tag = Result<GenericArgumentSyntax, ParserError>::Error, ._Error = type_result._Error };
         }
 
         auto type = type_result._Ok;
@@ -2815,12 +2750,7 @@ struct Parser : Object {
         auto parameters_result = this->parse_parameterset(_r, _rp, _ep);
         if (parameters_result._tag == Result<ParameterSetSyntax, ParserError>::Error)
         {
-            switch (parameters_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<ReturnsSyntax, ParserError> { ._tag = Result<ReturnsSyntax, ParserError>::Error, ._Error = parameters_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<ReturnsSyntax, ParserError> { ._tag = Result<ReturnsSyntax, ParserError>::Error, ._Error = parameters_result._Error };
-            }
+                return Result<ReturnsSyntax, ParserError> { ._tag = Result<ReturnsSyntax, ParserError>::Error, ._Error = parameters_result._Error };
         }
 
         auto parameters = parameters_result._Ok;
@@ -2930,12 +2860,7 @@ struct Parser : Object {
         auto type_result = this->parse_type(_r, _rp, _ep);
         if (type_result._tag == Result<TypeSyntax, ParserError>::Error)
         {
-            switch (type_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<ThrowsSyntax, ParserError> { ._tag = Result<ThrowsSyntax, ParserError>::Error, ._Error = type_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<ThrowsSyntax, ParserError> { ._tag = Result<ThrowsSyntax, ParserError>::Error, ._Error = type_result._Error };
-            }
+                return Result<ThrowsSyntax, ParserError> { ._tag = Result<ThrowsSyntax, ParserError>::Error, ._Error = type_result._Error };
         }
 
         auto type = type_result._Ok;
@@ -3003,12 +2928,7 @@ struct Parser : Object {
         auto name_result = this->parse_name(_r, _rp, _ep);
         if (name_result._tag == Result<NameSyntax, ParserError>::Error)
         {
-            switch (name_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<UseSyntax, ParserError> { ._tag = Result<UseSyntax, ParserError>::Error, ._Error = name_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<UseSyntax, ParserError> { ._tag = Result<UseSyntax, ParserError>::Error, ._Error = name_result._Error };
-            }
+                return Result<UseSyntax, ParserError> { ._tag = Result<UseSyntax, ParserError>::Error, ._Error = name_result._Error };
         }
 
         auto name = name_result._Ok;
@@ -3038,12 +2958,7 @@ struct Parser : Object {
         auto type_result = this->parse_type(_r, _rp, _ep);
         if (type_result._tag == Result<TypeSyntax, ParserError>::Error)
         {
-            switch (type_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<ImplementSyntax, ParserError> { ._tag = Result<ImplementSyntax, ParserError>::Error, ._Error = type_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<ImplementSyntax, ParserError> { ._tag = Result<ImplementSyntax, ParserError>::Error, ._Error = type_result._Error };
-            }
+                return Result<ImplementSyntax, ParserError> { ._tag = Result<ImplementSyntax, ParserError>::Error, ._Error = type_result._Error };
         }
 
         auto type = type_result._Ok;
@@ -3127,12 +3042,7 @@ struct Parser : Object {
         auto name_result = this->parse_name(_r, _rp, _ep);
         if (name_result._tag == Result<NameSyntax, ParserError>::Error)
         {
-            switch (name_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<TraitSyntax, ParserError> { ._tag = Result<TraitSyntax, ParserError>::Error, ._Error = name_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<TraitSyntax, ParserError> { ._tag = Result<TraitSyntax, ParserError>::Error, ._Error = name_result._Error };
-            }
+                return Result<TraitSyntax, ParserError> { ._tag = Result<TraitSyntax, ParserError>::Error, ._Error = name_result._Error };
         }
 
         auto name = name_result._Ok;
@@ -3331,12 +3241,7 @@ struct Parser : Object {
         auto routine_result = this->parse_routine(_r, _rp, _ep);
         if (routine_result._tag == Result<RoutineSyntax, ParserError>::Error)
         {
-            switch (routine_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<FunctionSyntax, ParserError> { ._tag = Result<FunctionSyntax, ParserError>::Error, ._Error = routine_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<FunctionSyntax, ParserError> { ._tag = Result<FunctionSyntax, ParserError>::Error, ._Error = routine_result._Error };
-            }
+                return Result<FunctionSyntax, ParserError> { ._tag = Result<FunctionSyntax, ParserError>::Error, ._Error = routine_result._Error };
         }
 
         auto routine = routine_result._Ok;
@@ -3385,12 +3290,7 @@ struct Parser : Object {
         auto routine_result = this->parse_routine(_r, _rp, _ep);
         if (routine_result._tag == Result<RoutineSyntax, ParserError>::Error)
         {
-            switch (routine_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<ProcedureSyntax, ParserError> { ._tag = Result<ProcedureSyntax, ParserError>::Error, ._Error = routine_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<ProcedureSyntax, ParserError> { ._tag = Result<ProcedureSyntax, ParserError>::Error, ._Error = routine_result._Error };
-            }
+                return Result<ProcedureSyntax, ParserError> { ._tag = Result<ProcedureSyntax, ParserError>::Error, ._Error = routine_result._Error };
         }
 
         auto routine = routine_result._Ok;
@@ -3415,12 +3315,7 @@ struct Parser : Object {
         auto target_result = this->parse_target(_r, _rp, _ep);
         if (target_result._tag == Result<TargetSyntax, ParserError>::Error)
         {
-            switch (target_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<OperatorSyntax, ParserError> { ._tag = Result<OperatorSyntax, ParserError>::Error, ._Error = target_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<OperatorSyntax, ParserError> { ._tag = Result<OperatorSyntax, ParserError>::Error, ._Error = target_result._Error };
-            }
+                return Result<OperatorSyntax, ParserError> { ._tag = Result<OperatorSyntax, ParserError>::Error, ._Error = target_result._Error };
         }
 
         auto target = target_result._Ok;
@@ -3538,12 +3433,7 @@ struct Parser : Object {
         auto implementation_result = this->parse_implementation(_r, _rp, _ep);
         if (implementation_result._tag == Result<ImplementationSyntax, ParserError>::Error)
         {
-            switch (implementation_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Error, ._Error = implementation_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Error, ._Error = implementation_result._Error };
-            }
+                return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Error, ._Error = implementation_result._Error };
         }
 
         auto implementation = implementation_result._Ok;
@@ -3624,12 +3514,7 @@ struct Parser : Object {
         auto implementation_result = this->parse_implementation(_r, _rp, _ep);
         if (implementation_result._tag == Result<ImplementationSyntax, ParserError>::Error)
         {
-            switch (implementation_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<RoutineSyntax, ParserError> { ._tag = Result<RoutineSyntax, ParserError>::Error, ._Error = implementation_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<RoutineSyntax, ParserError> { ._tag = Result<RoutineSyntax, ParserError>::Error, ._Error = implementation_result._Error };
-            }
+                return Result<RoutineSyntax, ParserError> { ._tag = Result<RoutineSyntax, ParserError>::Error, ._Error = implementation_result._Error };
         }
 
         auto implementation = implementation_result._Ok;
@@ -3838,12 +3723,7 @@ struct Parser : Object {
         auto type_result = this->parse_type(_r, _rp, _ep);
         if (type_result._tag == Result<TypeSyntax, ParserError>::Error)
         {
-            switch (type_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<ExtendSyntax, ParserError> { ._tag = Result<ExtendSyntax, ParserError>::Error, ._Error = type_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<ExtendSyntax, ParserError> { ._tag = Result<ExtendSyntax, ParserError>::Error, ._Error = type_result._Error };
-            }
+                return Result<ExtendSyntax, ParserError> { ._tag = Result<ExtendSyntax, ParserError>::Error, ._Error = type_result._Error };
         }
 
         auto type = type_result._Ok;
@@ -3884,12 +3764,7 @@ struct Parser : Object {
         auto model_result = this->parse_model(_r, _rp, _ep);
         if (model_result._tag == Result<ModelSyntax, ParserError>::Error)
         {
-            switch (model_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<MacroSyntax, ParserError> { ._tag = Result<MacroSyntax, ParserError>::Error, ._Error = model_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<MacroSyntax, ParserError> { ._tag = Result<MacroSyntax, ParserError>::Error, ._Error = model_result._Error };
-            }
+                return Result<MacroSyntax, ParserError> { ._tag = Result<MacroSyntax, ParserError>::Error, ._Error = model_result._Error };
         }
 
         auto model = model_result._Ok;
@@ -3897,12 +3772,7 @@ struct Parser : Object {
         auto rule_result = this->parse_operation(_r, _rp, _ep);
         if (rule_result._tag == Result<OperationSyntax, ParserError>::Error)
         {
-            switch (rule_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<MacroSyntax, ParserError> { ._tag = Result<MacroSyntax, ParserError>::Error, ._Error = rule_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<MacroSyntax, ParserError> { ._tag = Result<MacroSyntax, ParserError>::Error, ._Error = rule_result._Error };
-            }
+                return Result<MacroSyntax, ParserError> { ._tag = Result<MacroSyntax, ParserError>::Error, ._Error = rule_result._Error };
         }
 
         auto rule = rule_result._Ok;
@@ -3927,12 +3797,7 @@ struct Parser : Object {
         auto name_result = this->parse_name(_r, _rp, _ep);
         if (name_result._tag == Result<NameSyntax, ParserError>::Error)
         {
-            switch (name_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<ModuleSyntax, ParserError> { ._tag = Result<ModuleSyntax, ParserError>::Error, ._Error = name_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<ModuleSyntax, ParserError> { ._tag = Result<ModuleSyntax, ParserError>::Error, ._Error = name_result._Error };
-            }
+                return Result<ModuleSyntax, ParserError> { ._tag = Result<ModuleSyntax, ParserError>::Error, ._Error = name_result._Error };
         }
 
         auto name = name_result._Ok;
@@ -4146,12 +4011,7 @@ struct Parser : Object {
         auto binding_result = this->parse_binding(_r, _rp, _ep);
         if (binding_result._tag == Result<BindingSyntax, ParserError>::Error)
         {
-            switch (binding_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<LetSyntax, ParserError> { ._tag = Result<LetSyntax, ParserError>::Error, ._Error = binding_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<LetSyntax, ParserError> { ._tag = Result<LetSyntax, ParserError>::Error, ._Error = binding_result._Error };
-            }
+                return Result<LetSyntax, ParserError> { ._tag = Result<LetSyntax, ParserError>::Error, ._Error = binding_result._Error };
         }
 
         auto binding = binding_result._Ok;
@@ -4176,12 +4036,7 @@ struct Parser : Object {
         auto binding_result = this->parse_binding(_r, _rp, _ep);
         if (binding_result._tag == Result<BindingSyntax, ParserError>::Error)
         {
-            switch (binding_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<VarSyntax, ParserError> { ._tag = Result<VarSyntax, ParserError>::Error, ._Error = binding_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<VarSyntax, ParserError> { ._tag = Result<VarSyntax, ParserError>::Error, ._Error = binding_result._Error };
-            }
+                return Result<VarSyntax, ParserError> { ._tag = Result<VarSyntax, ParserError>::Error, ._Error = binding_result._Error };
         }
 
         auto binding = binding_result._Ok;
@@ -4206,12 +4061,7 @@ struct Parser : Object {
         auto binding_result = this->parse_binding(_r, _rp, _ep);
         if (binding_result._tag == Result<BindingSyntax, ParserError>::Error)
         {
-            switch (binding_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<MutableSyntax, ParserError> { ._tag = Result<MutableSyntax, ParserError>::Error, ._Error = binding_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<MutableSyntax, ParserError> { ._tag = Result<MutableSyntax, ParserError>::Error, ._Error = binding_result._Error };
-            }
+                return Result<MutableSyntax, ParserError> { ._tag = Result<MutableSyntax, ParserError>::Error, ._Error = binding_result._Error };
         }
 
         auto binding = binding_result._Ok;
@@ -4256,12 +4106,7 @@ struct Parser : Object {
         auto operation_result = this->parse_operation(_r, _rp, _ep);
         if (operation_result._tag == Result<OperationSyntax, ParserError>::Error)
         {
-            switch (operation_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<BindingSyntax, ParserError> { ._tag = Result<BindingSyntax, ParserError>::Error, ._Error = operation_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<BindingSyntax, ParserError> { ._tag = Result<BindingSyntax, ParserError>::Error, ._Error = operation_result._Error };
-            }
+                return Result<BindingSyntax, ParserError> { ._tag = Result<BindingSyntax, ParserError>::Error, ._Error = operation_result._Error };
         }
 
         auto operation = operation_result._Ok;
@@ -4286,12 +4131,7 @@ struct Parser : Object {
         auto spec_result = this->parse_bindingspec(_r, _rp, _ep);
         if (spec_result._tag == Result<BindingSpecSyntax, ParserError>::Error)
         {
-            switch (spec_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<BindingAnnotationSyntax, ParserError> { ._tag = Result<BindingAnnotationSyntax, ParserError>::Error, ._Error = spec_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<BindingAnnotationSyntax, ParserError> { ._tag = Result<BindingAnnotationSyntax, ParserError>::Error, ._Error = spec_result._Error };
-            }
+                return Result<BindingAnnotationSyntax, ParserError> { ._tag = Result<BindingAnnotationSyntax, ParserError>::Error, ._Error = spec_result._Error };
         }
 
         auto spec = spec_result._Ok;
@@ -4493,12 +4333,7 @@ struct Parser : Object {
         auto expression_result = this->parse_expression(_r, _rp, _ep);
         if (expression_result._tag == Result<ExpressionSyntax, ParserError>::Error)
         {
-            switch (expression_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<OperandSyntax, ParserError> { ._tag = Result<OperandSyntax, ParserError>::Error, ._Error = expression_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<OperandSyntax, ParserError> { ._tag = Result<OperandSyntax, ParserError>::Error, ._Error = expression_result._Error };
-            }
+                return Result<OperandSyntax, ParserError> { ._tag = Result<OperandSyntax, ParserError>::Error, ._Error = expression_result._Error };
         }
 
         auto expression = expression_result._Ok;
@@ -4603,12 +4438,7 @@ struct Parser : Object {
         auto member_result = this->parse_name(_r, _rp, _ep);
         if (member_result._tag == Result<NameSyntax, ParserError>::Error)
         {
-            switch (member_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<MemberAccessSyntax, ParserError> { ._tag = Result<MemberAccessSyntax, ParserError>::Error, ._Error = member_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<MemberAccessSyntax, ParserError> { ._tag = Result<MemberAccessSyntax, ParserError>::Error, ._Error = member_result._Error };
-            }
+                return Result<MemberAccessSyntax, ParserError> { ._tag = Result<MemberAccessSyntax, ParserError>::Error, ._Error = member_result._Error };
         }
 
         auto member = member_result._Ok;
@@ -4627,12 +4457,7 @@ struct Parser : Object {
         auto catchers_result = this->parse_catch_list(_r, _rp, _ep);
         if (catchers_result._tag == Result<Vector<CatchSyntax>, ParserError>::Error)
         {
-            switch (catchers_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<CatcherSyntax, ParserError> { ._tag = Result<CatcherSyntax, ParserError>::Error, ._Error = catchers_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<CatcherSyntax, ParserError> { ._tag = Result<CatcherSyntax, ParserError>::Error, ._Error = catchers_result._Error };
-            }
+                return Result<CatcherSyntax, ParserError> { ._tag = Result<CatcherSyntax, ParserError>::Error, ._Error = catchers_result._Error };
         }
 
         auto catchers = catchers_result._Ok;
@@ -4700,12 +4525,7 @@ struct Parser : Object {
         auto condition_result = this->parse_operation(_r, _rp, _ep);
         if (condition_result._tag == Result<OperationSyntax, ParserError>::Error)
         {
-            switch (condition_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<CatchSyntax, ParserError> { ._tag = Result<CatchSyntax, ParserError>::Error, ._Error = condition_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<CatchSyntax, ParserError> { ._tag = Result<CatchSyntax, ParserError>::Error, ._Error = condition_result._Error };
-            }
+                return Result<CatchSyntax, ParserError> { ._tag = Result<CatchSyntax, ParserError>::Error, ._Error = condition_result._Error };
         }
 
         auto condition = condition_result._Ok;
@@ -4713,12 +4533,7 @@ struct Parser : Object {
         auto handler_result = this->parse_operation(_r, _rp, _ep);
         if (handler_result._tag == Result<OperationSyntax, ParserError>::Error)
         {
-            switch (handler_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<CatchSyntax, ParserError> { ._tag = Result<CatchSyntax, ParserError>::Error, ._Error = handler_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<CatchSyntax, ParserError> { ._tag = Result<CatchSyntax, ParserError>::Error, ._Error = handler_result._Error };
-            }
+                return Result<CatchSyntax, ParserError> { ._tag = Result<CatchSyntax, ParserError>::Error, ._Error = handler_result._Error };
         }
 
         auto handler = handler_result._Ok;
@@ -4743,12 +4558,7 @@ struct Parser : Object {
         auto handler_result = this->parse_operation(_r, _rp, _ep);
         if (handler_result._tag == Result<OperationSyntax, ParserError>::Error)
         {
-            switch (handler_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<DropSyntax, ParserError> { ._tag = Result<DropSyntax, ParserError>::Error, ._Error = handler_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<DropSyntax, ParserError> { ._tag = Result<DropSyntax, ParserError>::Error, ._Error = handler_result._Error };
-            }
+                return Result<DropSyntax, ParserError> { ._tag = Result<DropSyntax, ParserError>::Error, ._Error = handler_result._Error };
         }
 
         auto handler = handler_result._Ok;
@@ -5285,12 +5095,7 @@ struct Parser : Object {
         auto operands_result = this->parse_operand_list(_r, _rp, _ep);
         if (operands_result._tag == Result<Vector<OperandSyntax>, ParserError>::Error)
         {
-            switch (operands_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<ComponentSyntax, ParserError> { ._tag = Result<ComponentSyntax, ParserError>::Error, ._Error = operands_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<ComponentSyntax, ParserError> { ._tag = Result<ComponentSyntax, ParserError>::Error, ._Error = operands_result._Error };
-            }
+                return Result<ComponentSyntax, ParserError> { ._tag = Result<ComponentSyntax, ParserError>::Error, ._Error = operands_result._Error };
         }
 
         auto operands = operands_result._Ok;
@@ -5346,12 +5151,7 @@ struct Parser : Object {
         auto value_result = this->parse_operation(_r, _rp, _ep);
         if (value_result._tag == Result<OperationSyntax, ParserError>::Error)
         {
-            switch (value_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<ValueSyntax, ParserError> { ._tag = Result<ValueSyntax, ParserError>::Error, ._Error = value_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<ValueSyntax, ParserError> { ._tag = Result<ValueSyntax, ParserError>::Error, ._Error = value_result._Error };
-            }
+                return Result<ValueSyntax, ParserError> { ._tag = Result<ValueSyntax, ParserError>::Error, ._Error = value_result._Error };
         }
 
         auto value = value_result._Ok;
@@ -5389,12 +5189,7 @@ struct Parser : Object {
         auto elements_result = this->parse_element_list(_r, _rp, _ep);
         if (elements_result._tag == Result<Vector<ElementSyntax>, ParserError>::Error)
         {
-            switch (elements_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<VectorSyntax, ParserError> { ._tag = Result<VectorSyntax, ParserError>::Error, ._Error = elements_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<VectorSyntax, ParserError> { ._tag = Result<VectorSyntax, ParserError>::Error, ._Error = elements_result._Error };
-            }
+                return Result<VectorSyntax, ParserError> { ._tag = Result<VectorSyntax, ParserError>::Error, ._Error = elements_result._Error };
         }
 
         auto elements = elements_result._Ok;
@@ -5448,12 +5243,7 @@ struct Parser : Object {
         auto operation_result = this->parse_operation(_r, _rp, _ep);
         if (operation_result._tag == Result<OperationSyntax, ParserError>::Error)
         {
-            switch (operation_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<ElementSyntax, ParserError> { ._tag = Result<ElementSyntax, ParserError>::Error, ._Error = operation_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<ElementSyntax, ParserError> { ._tag = Result<ElementSyntax, ParserError>::Error, ._Error = operation_result._Error };
-            }
+                return Result<ElementSyntax, ParserError> { ._tag = Result<ElementSyntax, ParserError>::Error, ._Error = operation_result._Error };
         }
 
         auto operation = operation_result._Ok;
@@ -5544,12 +5334,7 @@ struct Parser : Object {
         auto condition_result = this->parse_operation(_r, _rp, _ep);
         if (condition_result._tag == Result<OperationSyntax, ParserError>::Error)
         {
-            switch (condition_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<IfSyntax, ParserError> { ._tag = Result<IfSyntax, ParserError>::Error, ._Error = condition_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<IfSyntax, ParserError> { ._tag = Result<IfSyntax, ParserError>::Error, ._Error = condition_result._Error };
-            }
+                return Result<IfSyntax, ParserError> { ._tag = Result<IfSyntax, ParserError>::Error, ._Error = condition_result._Error };
         }
 
         auto condition = condition_result._Ok;
@@ -5583,12 +5368,7 @@ struct Parser : Object {
         auto consequent_result = this->parse_action(_r, _rp, _ep);
         if (consequent_result._tag == Result<ActionSyntax, ParserError>::Error)
         {
-            switch (consequent_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<IfSyntax, ParserError> { ._tag = Result<IfSyntax, ParserError>::Error, ._Error = consequent_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<IfSyntax, ParserError> { ._tag = Result<IfSyntax, ParserError>::Error, ._Error = consequent_result._Error };
-            }
+                return Result<IfSyntax, ParserError> { ._tag = Result<IfSyntax, ParserError>::Error, ._Error = consequent_result._Error };
         }
 
         auto consequent = consequent_result._Ok;
@@ -5626,12 +5406,7 @@ struct Parser : Object {
         auto type_result = this->parse_type(_r, _rp, _ep);
         if (type_result._tag == Result<TypeSyntax, ParserError>::Error)
         {
-            switch (type_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<IsSyntax, ParserError> { ._tag = Result<IsSyntax, ParserError>::Error, ._Error = type_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<IsSyntax, ParserError> { ._tag = Result<IsSyntax, ParserError>::Error, ._Error = type_result._Error };
-            }
+                return Result<IsSyntax, ParserError> { ._tag = Result<IsSyntax, ParserError>::Error, ._Error = type_result._Error };
         }
 
         auto type = type_result._Ok;
@@ -5694,12 +5469,7 @@ struct Parser : Object {
         auto alternative_result = this->parse_action(_r, _rp, _ep);
         if (alternative_result._tag == Result<ActionSyntax, ParserError>::Error)
         {
-            switch (alternative_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<ElseSyntax, ParserError> { ._tag = Result<ElseSyntax, ParserError>::Error, ._Error = alternative_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<ElseSyntax, ParserError> { ._tag = Result<ElseSyntax, ParserError>::Error, ._Error = alternative_result._Error };
-            }
+                return Result<ElseSyntax, ParserError> { ._tag = Result<ElseSyntax, ParserError>::Error, ._Error = alternative_result._Error };
         }
 
         auto alternative = alternative_result._Ok;
@@ -5724,12 +5494,7 @@ struct Parser : Object {
         auto scrutinee_result = this->parse_operation(_r, _rp, _ep);
         if (scrutinee_result._tag == Result<OperationSyntax, ParserError>::Error)
         {
-            switch (scrutinee_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<MatchSyntax, ParserError> { ._tag = Result<MatchSyntax, ParserError>::Error, ._Error = scrutinee_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<MatchSyntax, ParserError> { ._tag = Result<MatchSyntax, ParserError>::Error, ._Error = scrutinee_result._Error };
-            }
+                return Result<MatchSyntax, ParserError> { ._tag = Result<MatchSyntax, ParserError>::Error, ._Error = scrutinee_result._Error };
         }
 
         auto scrutinee = scrutinee_result._Ok;
@@ -5737,12 +5502,7 @@ struct Parser : Object {
         auto cases_result = this->parse_case_list(_r, _rp, _ep);
         if (cases_result._tag == Result<Vector<CaseSyntax>, ParserError>::Error)
         {
-            switch (cases_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<MatchSyntax, ParserError> { ._tag = Result<MatchSyntax, ParserError>::Error, ._Error = cases_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<MatchSyntax, ParserError> { ._tag = Result<MatchSyntax, ParserError>::Error, ._Error = cases_result._Error };
-            }
+                return Result<MatchSyntax, ParserError> { ._tag = Result<MatchSyntax, ParserError>::Error, ._Error = cases_result._Error };
         }
 
         auto cases = cases_result._Ok;
@@ -5810,12 +5570,7 @@ struct Parser : Object {
         auto condition_result = this->parse_operation(_r, _rp, _ep);
         if (condition_result._tag == Result<OperationSyntax, ParserError>::Error)
         {
-            switch (condition_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<CaseSyntax, ParserError> { ._tag = Result<CaseSyntax, ParserError>::Error, ._Error = condition_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<CaseSyntax, ParserError> { ._tag = Result<CaseSyntax, ParserError>::Error, ._Error = condition_result._Error };
-            }
+                return Result<CaseSyntax, ParserError> { ._tag = Result<CaseSyntax, ParserError>::Error, ._Error = condition_result._Error };
         }
 
         auto condition = condition_result._Ok;
@@ -5823,12 +5578,7 @@ struct Parser : Object {
         auto consequent_result = this->parse_action(_r, _rp, _ep);
         if (consequent_result._tag == Result<ActionSyntax, ParserError>::Error)
         {
-            switch (consequent_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<CaseSyntax, ParserError> { ._tag = Result<CaseSyntax, ParserError>::Error, ._Error = consequent_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<CaseSyntax, ParserError> { ._tag = Result<CaseSyntax, ParserError>::Error, ._Error = consequent_result._Error };
-            }
+                return Result<CaseSyntax, ParserError> { ._tag = Result<CaseSyntax, ParserError>::Error, ._Error = consequent_result._Error };
         }
 
         auto consequent = consequent_result._Ok;
@@ -5883,12 +5633,7 @@ struct Parser : Object {
         auto input_result = this->parse_operation(_r, _rp, _ep);
         if (input_result._tag == Result<OperationSyntax, ParserError>::Error)
         {
-            switch (input_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<LambdaSyntax, ParserError> { ._tag = Result<LambdaSyntax, ParserError>::Error, ._Error = input_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<LambdaSyntax, ParserError> { ._tag = Result<LambdaSyntax, ParserError>::Error, ._Error = input_result._Error };
-            }
+                return Result<LambdaSyntax, ParserError> { ._tag = Result<LambdaSyntax, ParserError>::Error, ._Error = input_result._Error };
         }
 
         auto input = input_result._Ok;
@@ -5901,12 +5646,7 @@ struct Parser : Object {
         auto block_result = this->parse_action(_r, _rp, _ep);
         if (block_result._tag == Result<ActionSyntax, ParserError>::Error)
         {
-            switch (block_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<LambdaSyntax, ParserError> { ._tag = Result<LambdaSyntax, ParserError>::Error, ._Error = block_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<LambdaSyntax, ParserError> { ._tag = Result<LambdaSyntax, ParserError>::Error, ._Error = block_result._Error };
-            }
+                return Result<LambdaSyntax, ParserError> { ._tag = Result<LambdaSyntax, ParserError>::Error, ._Error = block_result._Error };
         }
 
         auto block = block_result._Ok;
@@ -5931,12 +5671,7 @@ struct Parser : Object {
         auto condition_result = this->parse_operation(_r, _rp, _ep);
         if (condition_result._tag == Result<OperationSyntax, ParserError>::Error)
         {
-            switch (condition_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Error, ._Error = condition_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Error, ._Error = condition_result._Error };
-            }
+                return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Error, ._Error = condition_result._Error };
         }
 
         auto condition = condition_result._Ok;
@@ -5949,12 +5684,7 @@ struct Parser : Object {
         auto expression_result = this->parse_operation(_r, _rp, _ep);
         if (expression_result._tag == Result<OperationSyntax, ParserError>::Error)
         {
-            switch (expression_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Error, ._Error = expression_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Error, ._Error = expression_result._Error };
-            }
+                return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Error, ._Error = expression_result._Error };
         }
 
         auto expression = expression_result._Ok;
@@ -5975,12 +5705,7 @@ struct Parser : Object {
         auto action_result = this->parse_action(_r, _rp, _ep);
         if (action_result._tag == Result<ActionSyntax, ParserError>::Error)
         {
-            switch (action_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Error, ._Error = action_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Error, ._Error = action_result._Error };
-            }
+                return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Error, ._Error = action_result._Error };
         }
 
         auto action = action_result._Ok;
@@ -6033,12 +5758,7 @@ struct Parser : Object {
         auto condition_result = this->parse_operation(_r, _rp, _ep);
         if (condition_result._tag == Result<OperationSyntax, ParserError>::Error)
         {
-            switch (condition_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<WhileSyntax, ParserError> { ._tag = Result<WhileSyntax, ParserError>::Error, ._Error = condition_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<WhileSyntax, ParserError> { ._tag = Result<WhileSyntax, ParserError>::Error, ._Error = condition_result._Error };
-            }
+                return Result<WhileSyntax, ParserError> { ._tag = Result<WhileSyntax, ParserError>::Error, ._Error = condition_result._Error };
         }
 
         auto condition = condition_result._Ok;
@@ -6059,12 +5779,7 @@ struct Parser : Object {
         auto action_result = this->parse_action(_r, _rp, _ep);
         if (action_result._tag == Result<ActionSyntax, ParserError>::Error)
         {
-            switch (action_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<WhileSyntax, ParserError> { ._tag = Result<WhileSyntax, ParserError>::Error, ._Error = action_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<WhileSyntax, ParserError> { ._tag = Result<WhileSyntax, ParserError>::Error, ._Error = action_result._Error };
-            }
+                return Result<WhileSyntax, ParserError> { ._tag = Result<WhileSyntax, ParserError>::Error, ._Error = action_result._Error };
         }
 
         auto action = action_result._Ok;
@@ -6102,12 +5817,7 @@ struct Parser : Object {
         auto action_result = this->parse_action(_r, _rp, _ep);
         if (action_result._tag == Result<ActionSyntax, ParserError>::Error)
         {
-            switch (action_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<RepeatSyntax, ParserError> { ._tag = Result<RepeatSyntax, ParserError>::Error, ._Error = action_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<RepeatSyntax, ParserError> { ._tag = Result<RepeatSyntax, ParserError>::Error, ._Error = action_result._Error };
-            }
+                return Result<RepeatSyntax, ParserError> { ._tag = Result<RepeatSyntax, ParserError>::Error, ._Error = action_result._Error };
         }
 
         auto action = action_result._Ok;
@@ -6199,12 +5909,7 @@ struct Parser : Object {
         auto target_result = this->parse_operation(_r, _rp, _ep);
         if (target_result._tag == Result<OperationSyntax, ParserError>::Error)
         {
-            switch (target_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<SetSyntax, ParserError> { ._tag = Result<SetSyntax, ParserError>::Error, ._Error = target_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<SetSyntax, ParserError> { ._tag = Result<SetSyntax, ParserError>::Error, ._Error = target_result._Error };
-            }
+                return Result<SetSyntax, ParserError> { ._tag = Result<SetSyntax, ParserError>::Error, ._Error = target_result._Error };
         }
 
         auto target = target_result._Ok;
@@ -6212,12 +5917,7 @@ struct Parser : Object {
         auto source_result = this->parse_operation(_r, _rp, _ep);
         if (source_result._tag == Result<OperationSyntax, ParserError>::Error)
         {
-            switch (source_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<SetSyntax, ParserError> { ._tag = Result<SetSyntax, ParserError>::Error, ._Error = source_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<SetSyntax, ParserError> { ._tag = Result<SetSyntax, ParserError>::Error, ._Error = source_result._Error };
-            }
+                return Result<SetSyntax, ParserError> { ._tag = Result<SetSyntax, ParserError>::Error, ._Error = source_result._Error };
         }
 
         auto source = source_result._Ok;
@@ -6236,12 +5936,7 @@ struct Parser : Object {
         auto operands_result = this->parse_operand_list(_r, _rp, _ep);
         if (operands_result._tag == Result<Vector<OperandSyntax>, ParserError>::Error)
         {
-            switch (operands_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<OperationSyntax, ParserError> { ._tag = Result<OperationSyntax, ParserError>::Error, ._Error = operands_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<OperationSyntax, ParserError> { ._tag = Result<OperationSyntax, ParserError>::Error, ._Error = operands_result._Error };
-            }
+                return Result<OperationSyntax, ParserError> { ._tag = Result<OperationSyntax, ParserError>::Error, ._Error = operands_result._Error };
         }
 
         auto operands = operands_result._Ok;
@@ -6271,12 +5966,7 @@ struct Parser : Object {
         auto type_result = this->parse_type(_r, _rp, _ep);
         if (type_result._tag == Result<TypeSyntax, ParserError>::Error)
         {
-            switch (type_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<SizeOfSyntax, ParserError> { ._tag = Result<SizeOfSyntax, ParserError>::Error, ._Error = type_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<SizeOfSyntax, ParserError> { ._tag = Result<SizeOfSyntax, ParserError>::Error, ._Error = type_result._Error };
-            }
+                return Result<SizeOfSyntax, ParserError> { ._tag = Result<SizeOfSyntax, ParserError>::Error, ._Error = type_result._Error };
         }
 
         auto type = type_result._Ok;
@@ -6325,12 +6015,7 @@ struct Parser : Object {
         auto name_result = this->parse_name(_r, _rp, _ep);
         if (name_result._tag == Result<NameSyntax, ParserError>::Error)
         {
-            switch (name_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<TypeSyntax, ParserError> { ._tag = Result<TypeSyntax, ParserError>::Error, ._Error = name_result._Error };
-                case ParserError::InvalidSyntax:
-                    return Result<TypeSyntax, ParserError> { ._tag = Result<TypeSyntax, ParserError>::Error, ._Error = name_result._Error };
-            }
+                return Result<TypeSyntax, ParserError> { ._tag = Result<TypeSyntax, ParserError>::Error, ._Error = name_result._Error };
         }
 
         auto name = name_result._Ok;

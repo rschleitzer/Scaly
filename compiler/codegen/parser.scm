@@ -150,20 +150,23 @@ struct Parser : Object {
         auto "(property content)"_result = this->parse_"(downcase-string (link content))(if (multiple? content) "_list" "")"(_r, _rp, _ep);
         if ("(property content)"_result._tag == Result<"(if (multiple? content) "Vector<" "")(link content)"Syntax"(if (multiple? content) ">" "")", ParserError>::Error)
         {
-            switch ("(property content)"_result._Error._tag) {
+"
+                            (if (optional? content)
+                                ($
+"            switch ("(property content)"_result._Error._tag) {
                 case ParserError::OtherSyntax:
-"                            (if (optional? content)
-                                ($
-"                    break;
-"                               )
-                                ($
-"                    return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = "(property content)"_result._Error };
-"                               )
-                            )
-"                case ParserError::InvalidSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
                     return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = "(property content)"_result._Error };
             }
-        }
+"
+                                )
+                                ($
+"                return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = "(property content)"_result._Error };
+"                               )
+                            )
+
+"        }
 
         "                   (if (and (optional? content)(not (multiple? content)))
                                 ($ ""(link content)"Syntax*")
@@ -213,7 +216,7 @@ struct Parser : Object {
 "        }
 
         "                   (if (and (optional? content)(not (multiple? content)))
-                                ($ ""(link content)"Syntax*")
+                                ($ (link content)"Syntax*")
                                 "auto"
                             )
                             " "
