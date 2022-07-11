@@ -4,6 +4,27 @@ namespace model {
 
 using namespace scaly::io;
 
+struct Position {
+    size_t line;
+    size_t column;
+    Position(size_t line, size_t column) : line(line), column(column) {}
+};
+
+Position calculate_position_from_string(Region& _pr, Page* _rp, Page* _ep, const String& text) {
+    Region _r(_pr);
+    return Position(0, 0);
+}
+
+String build_file_name(Region& _pr, Page* _rp, const Text& text) {
+    Region _r(_pr);
+    switch (text._tag) {
+        case Text::Program:
+            return String(_rp, "<Program>");
+        case Text::File:
+            return String(_rp, text._File);
+    }
+}
+
 struct IoModelError {
     enum {
         File,
@@ -25,6 +46,21 @@ struct IoModelError {
     }
 };
 
+Result<Position, IoModelError> calculate_position(Region& _pr, Page* _rp, Page* _ep, const Text& text, size_t offset) {
+    Region _r(_pr);
+    switch (text._tag) {
+        case Text::Program:
+            return Result<Position, IoModelError> { ._tag = Result<Position, IoModelError>::Error, ._Ok = calculate_position_from_string(_r, _rp, _ep, text._Program) };
+        case Text::File: {
+            auto text_result = File::read_to_string(_r, _r.page, _r.page, text._File);
+            if (text_result._tag == Result<String, FileError>::Error) {
+                return Result<Position, IoModelError> { ._tag = Result<Position, IoModelError>::Error, ._Error = IoModelError(text_result._Error) };
+            }
+            return Result<Position, IoModelError> { ._tag = Result<Position, IoModelError>::Error, ._Ok = calculate_position_from_string(_r, _rp, _ep, text_result._Ok) };
+        }
+    }
+}
+
 struct ParserModelError {
     ParserModelError(Text text, ParserError parser_error) : text(text), error(parser_error) {}
 
@@ -33,8 +69,31 @@ struct ParserModelError {
 
     String to_string(Region& _pr, Page* _rp) {
         Region _r(_pr);
+        switch (error._tag) {
+            case ParserError::OtherSyntax:
+                return String(_rp, "An other syntax was expected here.");     
+            case ParserError::InvalidSyntax:
+                return build_error_message(_r, _rp,  error._InvalidSyntax);
+        }
+    }
+
+    String build_error_message(Region& _pr, Page* _rp, InvalidSyntax invalid_syntax) {
+        Region _r(_pr);
         StringBuilder& message_builder = *new(alignof(StringBuilder), _r.page) StringBuilder();
-        return message_builder.to_string(_rp);     
+        message_builder.append_string(build_file_name(_r, _rp, this->text));
+        message_builder.append_character(':');
+        auto position_result = calculate_position(_r, _rp, _r.page, this->text, invalid_syntax.start);
+        switch (position_result._tag) {
+            case Result<Position, IoModelError>::Error:
+                break;
+            case Result<Position, IoModelError>::Ok:
+                break;
+        }
+        message_builder.append_string(String(_rp, ": "));
+        message_builder.append_string(invalid_syntax.expected);
+        message_builder.append_string(String(_rp, " was expectec here."));
+
+        return message_builder.to_string(_rp);
     }
 };
 
