@@ -71,9 +71,6 @@ struct Parser : Object {
                         this->lexer.empty();
                         return Result<""Literal, ParserError> { ._tag = Result<""Literal, ParserError>::Ok, ._Ok = ret };
                     }
-
-                    default:
-                        return Result<""Literal, ParserError> { ._tag = Result<""Literal, ParserError>::Error, ._Error = ParserError(InvalidSyntax(lexer.position, lexer.position)) };
                 }
             default:
                 return Result<""Literal, ParserError> { ._tag = Result<""Literal, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
