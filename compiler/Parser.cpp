@@ -1233,6 +1233,12 @@ struct Parser : Object {
         auto uses_result = this->parse_use_list(_r, _rp, _ep);
         if (uses_result._tag == Result<Vector<UseSyntax>, ParserError>::Error)
         {
+            switch (uses_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<FileSyntax, ParserError> { ._tag = Result<FileSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto uses = uses_result._tag == Result<Vector<UseSyntax>, ParserError>::Error ? nullptr : uses_result._Ok;
@@ -1240,6 +1246,12 @@ struct Parser : Object {
         auto declarations_result = this->parse_declaration_list(_r, _rp, _ep);
         if (declarations_result._tag == Result<Vector<DeclarationSyntax>, ParserError>::Error)
         {
+            switch (declarations_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<FileSyntax, ParserError> { ._tag = Result<FileSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto declarations = declarations_result._tag == Result<Vector<DeclarationSyntax>, ParserError>::Error ? nullptr : declarations_result._Ok;
@@ -1247,6 +1259,12 @@ struct Parser : Object {
         auto statements_result = this->parse_statement_list(_r, _rp, _ep);
         if (statements_result._tag == Result<Vector<StatementSyntax>, ParserError>::Error)
         {
+            switch (statements_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<FileSyntax, ParserError> { ._tag = Result<FileSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto statements = statements_result._tag == Result<Vector<StatementSyntax>, ParserError>::Error ? nullptr : statements_result._Ok;
@@ -1443,14 +1461,18 @@ struct Parser : Object {
 
         auto success_private_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "private"));
         if (!success_private_1) {
-                return Result<PrivateSyntax, ParserError> { ._tag = Result<PrivateSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<PrivateSyntax, ParserError> { ._tag = Result<PrivateSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto export__result = this->parse_export(_r, _rp, _ep);
         if (export__result._tag == Result<ExportSyntax, ParserError>::Error)
         {
-            if (export__result._Error._tag == ParserError::OtherSyntax)
-               return Result<PrivateSyntax, ParserError> { ._tag = Result<PrivateSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (export__result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<PrivateSyntax, ParserError> { ._tag = Result<PrivateSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<PrivateSyntax, ParserError> { ._tag = Result<PrivateSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto export_ = export__result._Ok;
@@ -1601,7 +1623,7 @@ struct Parser : Object {
 
         auto success_define_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "define"));
         if (!success_define_1) {
-                return Result<DefinitionSyntax, ParserError> { ._tag = Result<DefinitionSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<DefinitionSyntax, ParserError> { ._tag = Result<DefinitionSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto name = this->lexer.parse_identifier(_r, _rp, this->keywords);
@@ -1617,6 +1639,12 @@ struct Parser : Object {
         auto parameters_result = this->parse_genericparameters(_r, _rp, _ep);
         if (parameters_result._tag == Result<GenericParametersSyntax, ParserError>::Error)
         {
+            switch (parameters_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<DefinitionSyntax, ParserError> { ._tag = Result<DefinitionSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         GenericParametersSyntax* parameters = parameters_result._tag == Result<GenericParametersSyntax, ParserError>::Error ? nullptr : new(alignof(GenericParametersSyntax), _rp) GenericParametersSyntax(parameters_result._Ok);
@@ -1628,6 +1656,12 @@ struct Parser : Object {
         auto attributes_result = this->parse_attribute_list(_r, _rp, _ep);
         if (attributes_result._tag == Result<Vector<AttributeSyntax>, ParserError>::Error)
         {
+            switch (attributes_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<DefinitionSyntax, ParserError> { ._tag = Result<DefinitionSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto attributes = attributes_result._tag == Result<Vector<AttributeSyntax>, ParserError>::Error ? nullptr : attributes_result._Ok;
@@ -1635,8 +1669,12 @@ struct Parser : Object {
         auto concept__result = this->parse_concept(_r, _rp, _ep);
         if (concept__result._tag == Result<ConceptSyntax, ParserError>::Error)
         {
-            if (concept__result._Error._tag == ParserError::OtherSyntax)
-               return Result<DefinitionSyntax, ParserError> { ._tag = Result<DefinitionSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (concept__result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<DefinitionSyntax, ParserError> { ._tag = Result<DefinitionSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<DefinitionSyntax, ParserError> { ._tag = Result<DefinitionSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto concept_ = concept__result._Ok;
@@ -1654,14 +1692,18 @@ struct Parser : Object {
 
         auto success_left_bracket_1 = this->lexer.parse_punctuation(_r, _rp, String(_r.page, "["));
         if (!success_left_bracket_1) {
-                return Result<GenericParametersSyntax, ParserError> { ._tag = Result<GenericParametersSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<GenericParametersSyntax, ParserError> { ._tag = Result<GenericParametersSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto parameters_result = this->parse_genericparameter_list(_r, _rp, _ep);
         if (parameters_result._tag == Result<Vector<GenericParameterSyntax>, ParserError>::Error)
         {
-            if (parameters_result._Error._tag == ParserError::OtherSyntax)
-               return Result<GenericParametersSyntax, ParserError> { ._tag = Result<GenericParametersSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (parameters_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<GenericParametersSyntax, ParserError> { ._tag = Result<GenericParametersSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<GenericParametersSyntax, ParserError> { ._tag = Result<GenericParametersSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto parameters = parameters_result._Ok;
@@ -1714,12 +1756,12 @@ struct Parser : Object {
         auto name = this->lexer.parse_identifier(_r, _rp, this->keywords);
         if (name != nullptr) {
             if (!this->is_identifier(*name)) {
-                return Result<GenericParameterSyntax, ParserError> { ._tag = Result<GenericParameterSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<GenericParameterSyntax, ParserError> { ._tag = Result<GenericParameterSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
 
             }
         }
         else {
-                return Result<GenericParameterSyntax, ParserError> { ._tag = Result<GenericParameterSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<GenericParameterSyntax, ParserError> { ._tag = Result<GenericParameterSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
 
         }
 
@@ -1770,7 +1812,7 @@ struct Parser : Object {
 
         auto success_dot_1 = this->lexer.parse_punctuation(_r, _rp, String(_r.page, "."));
         if (!success_dot_1) {
-                return Result<ExtensionSyntax, ParserError> { ._tag = Result<ExtensionSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<ExtensionSyntax, ParserError> { ._tag = Result<ExtensionSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto name = this->lexer.parse_identifier(_r, _rp, this->keywords);
@@ -1827,14 +1869,18 @@ struct Parser : Object {
         auto attribute = this->lexer.parse_attribute(_r, _rp);
         if (attribute == nullptr) {
 
-                return Result<AttributeSyntax, ParserError> { ._tag = Result<AttributeSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<AttributeSyntax, ParserError> { ._tag = Result<AttributeSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto value_result = this->parse_model(_r, _rp, _ep);
         if (value_result._tag == Result<ModelSyntax, ParserError>::Error)
         {
-            if (value_result._Error._tag == ParserError::OtherSyntax)
-               return Result<AttributeSyntax, ParserError> { ._tag = Result<AttributeSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (value_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<AttributeSyntax, ParserError> { ._tag = Result<AttributeSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<AttributeSyntax, ParserError> { ._tag = Result<AttributeSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto value = value_result._Ok;
@@ -1954,8 +2000,12 @@ struct Parser : Object {
         auto structure_result = this->parse_structure(_r, _rp, _ep);
         if (structure_result._tag == Result<StructureSyntax, ParserError>::Error)
         {
-            if (structure_result._Error._tag == ParserError::OtherSyntax)
-               return Result<ClassSyntax, ParserError> { ._tag = Result<ClassSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            switch (structure_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<ClassSyntax, ParserError> { ._tag = Result<ClassSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+                case ParserError::InvalidSyntax:
+                    return Result<ClassSyntax, ParserError> { ._tag = Result<ClassSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto structure = structure_result._Ok;
@@ -1967,6 +2017,12 @@ struct Parser : Object {
         auto body_result = this->parse_body(_r, _rp, _ep);
         if (body_result._tag == Result<BodySyntax, ParserError>::Error)
         {
+            switch (body_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<ClassSyntax, ParserError> { ._tag = Result<ClassSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         BodySyntax* body = body_result._tag == Result<BodySyntax, ParserError>::Error ? nullptr : new(alignof(BodySyntax), _rp) BodySyntax(body_result._Ok);
@@ -1985,8 +2041,12 @@ struct Parser : Object {
         auto body_result = this->parse_body(_r, _rp, _ep);
         if (body_result._tag == Result<BodySyntax, ParserError>::Error)
         {
-            if (body_result._Error._tag == ParserError::OtherSyntax)
-               return Result<NamespaceSyntax, ParserError> { ._tag = Result<NamespaceSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            switch (body_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<NamespaceSyntax, ParserError> { ._tag = Result<NamespaceSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+                case ParserError::InvalidSyntax:
+                    return Result<NamespaceSyntax, ParserError> { ._tag = Result<NamespaceSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto body = body_result._Ok;
@@ -2004,7 +2064,7 @@ struct Parser : Object {
 
         auto success_union_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "union"));
         if (!success_union_1) {
-                return Result<UnionSyntax, ParserError> { ._tag = Result<UnionSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<UnionSyntax, ParserError> { ._tag = Result<UnionSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto success_colon_2 = this->lexer.parse_colon(_r, _rp);
@@ -2018,8 +2078,12 @@ struct Parser : Object {
         auto tags_result = this->parse_tag_list(_r, _rp, _ep);
         if (tags_result._tag == Result<Vector<TagSyntax>, ParserError>::Error)
         {
-            if (tags_result._Error._tag == ParserError::OtherSyntax)
-               return Result<UnionSyntax, ParserError> { ._tag = Result<UnionSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (tags_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<UnionSyntax, ParserError> { ._tag = Result<UnionSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<UnionSyntax, ParserError> { ._tag = Result<UnionSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto tags = tags_result._Ok;
@@ -2035,8 +2099,12 @@ struct Parser : Object {
         auto body_result = this->parse_body(_r, _rp, _ep);
         if (body_result._tag == Result<BodySyntax, ParserError>::Error)
         {
-            if (body_result._Error._tag == ParserError::OtherSyntax)
-               return Result<UnionSyntax, ParserError> { ._tag = Result<UnionSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (body_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<UnionSyntax, ParserError> { ._tag = Result<UnionSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<UnionSyntax, ParserError> { ._tag = Result<UnionSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto body = body_result._Ok;
@@ -2085,18 +2153,24 @@ struct Parser : Object {
         auto name = this->lexer.parse_identifier(_r, _rp, this->keywords);
         if (name != nullptr) {
             if (!this->is_identifier(*name)) {
-                return Result<TagSyntax, ParserError> { ._tag = Result<TagSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<TagSyntax, ParserError> { ._tag = Result<TagSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
 
             }
         }
         else {
-                return Result<TagSyntax, ParserError> { ._tag = Result<TagSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<TagSyntax, ParserError> { ._tag = Result<TagSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
 
         }
 
         auto attributes_result = this->parse_attribute_list(_r, _rp, _ep);
         if (attributes_result._tag == Result<Vector<AttributeSyntax>, ParserError>::Error)
         {
+            switch (attributes_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<TagSyntax, ParserError> { ._tag = Result<TagSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto attributes = attributes_result._tag == Result<Vector<AttributeSyntax>, ParserError>::Error ? nullptr : attributes_result._Ok;
@@ -2104,6 +2178,12 @@ struct Parser : Object {
         auto item_result = this->parse_item(_r, _rp, _ep);
         if (item_result._tag == Result<ItemSyntax, ParserError>::Error)
         {
+            switch (item_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<TagSyntax, ParserError> { ._tag = Result<TagSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         ItemSyntax* item = item_result._tag == Result<ItemSyntax, ParserError>::Error ? nullptr : new(alignof(ItemSyntax), _rp) ItemSyntax(item_result._Ok);
@@ -2163,8 +2243,12 @@ struct Parser : Object {
         auto structure_result = this->parse_structure(_r, _rp, _ep);
         if (structure_result._tag == Result<StructureSyntax, ParserError>::Error)
         {
-            if (structure_result._Error._tag == ParserError::OtherSyntax)
-               return Result<VariantSyntax, ParserError> { ._tag = Result<VariantSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (structure_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<VariantSyntax, ParserError> { ._tag = Result<VariantSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<VariantSyntax, ParserError> { ._tag = Result<VariantSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto structure = structure_result._Ok;
@@ -2176,6 +2260,12 @@ struct Parser : Object {
         auto body_result = this->parse_body(_r, _rp, _ep);
         if (body_result._tag == Result<BodySyntax, ParserError>::Error)
         {
+            switch (body_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<VariantSyntax, ParserError> { ._tag = Result<VariantSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         BodySyntax* body = body_result._tag == Result<BodySyntax, ParserError>::Error ? nullptr : new(alignof(BodySyntax), _rp) BodySyntax(body_result._Ok);
@@ -2218,8 +2308,12 @@ struct Parser : Object {
         auto operation_result = this->parse_operation(_r, _rp, _ep);
         if (operation_result._tag == Result<OperationSyntax, ParserError>::Error)
         {
-            if (operation_result._Error._tag == ParserError::OtherSyntax)
-               return Result<ConstantSyntax, ParserError> { ._tag = Result<ConstantSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            switch (operation_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<ConstantSyntax, ParserError> { ._tag = Result<ConstantSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+                case ParserError::InvalidSyntax:
+                    return Result<ConstantSyntax, ParserError> { ._tag = Result<ConstantSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto operation = operation_result._Ok;
@@ -2241,12 +2335,18 @@ struct Parser : Object {
 
         auto success_delegate_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "delegate"));
         if (!success_delegate_1) {
-                return Result<DelegateSyntax, ParserError> { ._tag = Result<DelegateSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<DelegateSyntax, ParserError> { ._tag = Result<DelegateSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto parameters_result = this->parse_parameterset(_r, _rp, _ep);
         if (parameters_result._tag == Result<ParameterSetSyntax, ParserError>::Error)
         {
+            switch (parameters_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<DelegateSyntax, ParserError> { ._tag = Result<DelegateSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         ParameterSetSyntax* parameters = parameters_result._tag == Result<ParameterSetSyntax, ParserError>::Error ? nullptr : new(alignof(ParameterSetSyntax), _rp) ParameterSetSyntax(parameters_result._Ok);
@@ -2254,6 +2354,12 @@ struct Parser : Object {
         auto attributes_result = this->parse_attribute_list(_r, _rp, _ep);
         if (attributes_result._tag == Result<Vector<AttributeSyntax>, ParserError>::Error)
         {
+            switch (attributes_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<DelegateSyntax, ParserError> { ._tag = Result<DelegateSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto attributes = attributes_result._tag == Result<Vector<AttributeSyntax>, ParserError>::Error ? nullptr : attributes_result._Ok;
@@ -2261,6 +2367,12 @@ struct Parser : Object {
         auto result_result = this->parse_returns(_r, _rp, _ep);
         if (result_result._tag == Result<ReturnsSyntax, ParserError>::Error)
         {
+            switch (result_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<DelegateSyntax, ParserError> { ._tag = Result<DelegateSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         ReturnsSyntax* result = result_result._tag == Result<ReturnsSyntax, ParserError>::Error ? nullptr : new(alignof(ReturnsSyntax), _rp) ReturnsSyntax(result_result._Ok);
@@ -2268,6 +2380,12 @@ struct Parser : Object {
         auto error_result = this->parse_throws(_r, _rp, _ep);
         if (error_result._tag == Result<ThrowsSyntax, ParserError>::Error)
         {
+            switch (error_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<DelegateSyntax, ParserError> { ._tag = Result<DelegateSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         ThrowsSyntax* error = error_result._tag == Result<ThrowsSyntax, ParserError>::Error ? nullptr : new(alignof(ThrowsSyntax), _rp) ThrowsSyntax(error_result._Ok);
@@ -2285,12 +2403,18 @@ struct Parser : Object {
 
         auto success_left_curly_1 = this->lexer.parse_punctuation(_r, _rp, String(_r.page, "{"));
         if (!success_left_curly_1) {
-                return Result<BodySyntax, ParserError> { ._tag = Result<BodySyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<BodySyntax, ParserError> { ._tag = Result<BodySyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto uses_result = this->parse_use_list(_r, _rp, _ep);
         if (uses_result._tag == Result<Vector<UseSyntax>, ParserError>::Error)
         {
+            switch (uses_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<BodySyntax, ParserError> { ._tag = Result<BodySyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto uses = uses_result._tag == Result<Vector<UseSyntax>, ParserError>::Error ? nullptr : uses_result._Ok;
@@ -2298,6 +2422,12 @@ struct Parser : Object {
         auto declarations_result = this->parse_declaration_list(_r, _rp, _ep);
         if (declarations_result._tag == Result<Vector<DeclarationSyntax>, ParserError>::Error)
         {
+            switch (declarations_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<BodySyntax, ParserError> { ._tag = Result<BodySyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto declarations = declarations_result._tag == Result<Vector<DeclarationSyntax>, ParserError>::Error ? nullptr : declarations_result._Ok;
@@ -2390,14 +2520,18 @@ struct Parser : Object {
 
         auto success_private_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "private"));
         if (!success_private_1) {
-                return Result<FieldSyntax, ParserError> { ._tag = Result<FieldSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<FieldSyntax, ParserError> { ._tag = Result<FieldSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto property_result = this->parse_property(_r, _rp, _ep);
         if (property_result._tag == Result<PropertySyntax, ParserError>::Error)
         {
-            if (property_result._Error._tag == ParserError::OtherSyntax)
-               return Result<FieldSyntax, ParserError> { ._tag = Result<FieldSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (property_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<FieldSyntax, ParserError> { ._tag = Result<FieldSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<FieldSyntax, ParserError> { ._tag = Result<FieldSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto property = property_result._Ok;
@@ -2446,18 +2580,24 @@ struct Parser : Object {
         auto name = this->lexer.parse_identifier(_r, _rp, this->keywords);
         if (name != nullptr) {
             if (!this->is_identifier(*name)) {
-                return Result<PropertySyntax, ParserError> { ._tag = Result<PropertySyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<PropertySyntax, ParserError> { ._tag = Result<PropertySyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
 
             }
         }
         else {
-                return Result<PropertySyntax, ParserError> { ._tag = Result<PropertySyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<PropertySyntax, ParserError> { ._tag = Result<PropertySyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
 
         }
 
         auto annotation_result = this->parse_typeannotation(_r, _rp, _ep);
         if (annotation_result._tag == Result<TypeAnnotationSyntax, ParserError>::Error)
         {
+            switch (annotation_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<PropertySyntax, ParserError> { ._tag = Result<PropertySyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         TypeAnnotationSyntax* annotation = annotation_result._tag == Result<TypeAnnotationSyntax, ParserError>::Error ? nullptr : new(alignof(TypeAnnotationSyntax), _rp) TypeAnnotationSyntax(annotation_result._Ok);
@@ -2465,6 +2605,12 @@ struct Parser : Object {
         auto attributes_result = this->parse_attribute_list(_r, _rp, _ep);
         if (attributes_result._tag == Result<Vector<AttributeSyntax>, ParserError>::Error)
         {
+            switch (attributes_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<PropertySyntax, ParserError> { ._tag = Result<PropertySyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto attributes = attributes_result._tag == Result<Vector<AttributeSyntax>, ParserError>::Error ? nullptr : attributes_result._Ok;
@@ -2490,14 +2636,18 @@ struct Parser : Object {
 
         auto success_colon_1 = this->lexer.parse_colon(_r, _rp);
         if (!success_colon_1) {
-                return Result<TypeAnnotationSyntax, ParserError> { ._tag = Result<TypeAnnotationSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<TypeAnnotationSyntax, ParserError> { ._tag = Result<TypeAnnotationSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto type_result = this->parse_type(_r, _rp, _ep);
         if (type_result._tag == Result<TypeSyntax, ParserError>::Error)
         {
-            if (type_result._Error._tag == ParserError::OtherSyntax)
-               return Result<TypeAnnotationSyntax, ParserError> { ._tag = Result<TypeAnnotationSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (type_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<TypeAnnotationSyntax, ParserError> { ._tag = Result<TypeAnnotationSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<TypeAnnotationSyntax, ParserError> { ._tag = Result<TypeAnnotationSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto type = type_result._Ok;
@@ -2515,12 +2665,18 @@ struct Parser : Object {
 
         auto success_left_bracket_1 = this->lexer.parse_punctuation(_r, _rp, String(_r.page, "["));
         if (!success_left_bracket_1) {
-                return Result<GenericArgumentsSyntax, ParserError> { ._tag = Result<GenericArgumentsSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<GenericArgumentsSyntax, ParserError> { ._tag = Result<GenericArgumentsSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto generics_result = this->parse_genericargument_list(_r, _rp, _ep);
         if (generics_result._tag == Result<Vector<GenericArgumentSyntax>, ParserError>::Error)
         {
+            switch (generics_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<GenericArgumentsSyntax, ParserError> { ._tag = Result<GenericArgumentsSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto generics = generics_result._tag == Result<Vector<GenericArgumentSyntax>, ParserError>::Error ? nullptr : generics_result._Ok;
@@ -2573,8 +2729,12 @@ struct Parser : Object {
         auto type_result = this->parse_type(_r, _rp, _ep);
         if (type_result._tag == Result<TypeSyntax, ParserError>::Error)
         {
-            if (type_result._Error._tag == ParserError::OtherSyntax)
-               return Result<GenericArgumentSyntax, ParserError> { ._tag = Result<GenericArgumentSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            switch (type_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<GenericArgumentSyntax, ParserError> { ._tag = Result<GenericArgumentSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+                case ParserError::InvalidSyntax:
+                    return Result<GenericArgumentSyntax, ParserError> { ._tag = Result<GenericArgumentSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto type = type_result._Ok;
@@ -2596,7 +2756,7 @@ struct Parser : Object {
 
         auto success_question_1 = this->lexer.parse_punctuation(_r, _rp, String(_r.page, "?"));
         if (!success_question_1) {
-                return Result<OptionalSyntax, ParserError> { ._tag = Result<OptionalSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<OptionalSyntax, ParserError> { ._tag = Result<OptionalSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto end = this->lexer.position;
@@ -2612,14 +2772,18 @@ struct Parser : Object {
 
         auto success_returns_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "returns"));
         if (!success_returns_1) {
-                return Result<ReturnsSyntax, ParserError> { ._tag = Result<ReturnsSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<ReturnsSyntax, ParserError> { ._tag = Result<ReturnsSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto parameters_result = this->parse_parameterset(_r, _rp, _ep);
         if (parameters_result._tag == Result<ParameterSetSyntax, ParserError>::Error)
         {
-            if (parameters_result._Error._tag == ParserError::OtherSyntax)
-               return Result<ReturnsSyntax, ParserError> { ._tag = Result<ReturnsSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (parameters_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<ReturnsSyntax, ParserError> { ._tag = Result<ReturnsSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<ReturnsSyntax, ParserError> { ._tag = Result<ReturnsSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto parameters = parameters_result._Ok;
@@ -2627,6 +2791,12 @@ struct Parser : Object {
         auto attributes_result = this->parse_attribute_list(_r, _rp, _ep);
         if (attributes_result._tag == Result<Vector<AttributeSyntax>, ParserError>::Error)
         {
+            switch (attributes_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<ReturnsSyntax, ParserError> { ._tag = Result<ReturnsSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto attributes = attributes_result._tag == Result<Vector<AttributeSyntax>, ParserError>::Error ? nullptr : attributes_result._Ok;
@@ -2681,12 +2851,18 @@ struct Parser : Object {
 
         auto success_left_paren_1 = this->lexer.parse_punctuation(_r, _rp, String(_r.page, "("));
         if (!success_left_paren_1) {
-                return Result<ParametersSyntax, ParserError> { ._tag = Result<ParametersSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<ParametersSyntax, ParserError> { ._tag = Result<ParametersSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto properties_result = this->parse_property_list(_r, _rp, _ep);
         if (properties_result._tag == Result<Vector<PropertySyntax>, ParserError>::Error)
         {
+            switch (properties_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<ParametersSyntax, ParserError> { ._tag = Result<ParametersSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto properties = properties_result._tag == Result<Vector<PropertySyntax>, ParserError>::Error ? nullptr : properties_result._Ok;
@@ -2708,14 +2884,18 @@ struct Parser : Object {
 
         auto success_throws_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "throws"));
         if (!success_throws_1) {
-                return Result<ThrowsSyntax, ParserError> { ._tag = Result<ThrowsSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<ThrowsSyntax, ParserError> { ._tag = Result<ThrowsSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto type_result = this->parse_type(_r, _rp, _ep);
         if (type_result._tag == Result<TypeSyntax, ParserError>::Error)
         {
-            if (type_result._Error._tag == ParserError::OtherSyntax)
-               return Result<ThrowsSyntax, ParserError> { ._tag = Result<ThrowsSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (type_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<ThrowsSyntax, ParserError> { ._tag = Result<ThrowsSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<ThrowsSyntax, ParserError> { ._tag = Result<ThrowsSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto type = type_result._Ok;
@@ -2723,6 +2903,12 @@ struct Parser : Object {
         auto attributes_result = this->parse_attribute_list(_r, _rp, _ep);
         if (attributes_result._tag == Result<Vector<AttributeSyntax>, ParserError>::Error)
         {
+            switch (attributes_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<ThrowsSyntax, ParserError> { ._tag = Result<ThrowsSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto attributes = attributes_result._tag == Result<Vector<AttributeSyntax>, ParserError>::Error ? nullptr : attributes_result._Ok;
@@ -2770,14 +2956,18 @@ struct Parser : Object {
 
         auto success_use_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "use"));
         if (!success_use_1) {
-                return Result<UseSyntax, ParserError> { ._tag = Result<UseSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<UseSyntax, ParserError> { ._tag = Result<UseSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto name_result = this->parse_name(_r, _rp, _ep);
         if (name_result._tag == Result<NameSyntax, ParserError>::Error)
         {
-            if (name_result._Error._tag == ParserError::OtherSyntax)
-               return Result<UseSyntax, ParserError> { ._tag = Result<UseSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (name_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<UseSyntax, ParserError> { ._tag = Result<UseSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<UseSyntax, ParserError> { ._tag = Result<UseSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto name = name_result._Ok;
@@ -2799,14 +2989,18 @@ struct Parser : Object {
 
         auto success_implement_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "implement"));
         if (!success_implement_1) {
-                return Result<ImplementSyntax, ParserError> { ._tag = Result<ImplementSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<ImplementSyntax, ParserError> { ._tag = Result<ImplementSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto type_result = this->parse_type(_r, _rp, _ep);
         if (type_result._tag == Result<TypeSyntax, ParserError>::Error)
         {
-            if (type_result._Error._tag == ParserError::OtherSyntax)
-               return Result<ImplementSyntax, ParserError> { ._tag = Result<ImplementSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (type_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<ImplementSyntax, ParserError> { ._tag = Result<ImplementSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<ImplementSyntax, ParserError> { ._tag = Result<ImplementSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto type = type_result._Ok;
@@ -2814,6 +3008,12 @@ struct Parser : Object {
         auto attributes_result = this->parse_attribute_list(_r, _rp, _ep);
         if (attributes_result._tag == Result<Vector<AttributeSyntax>, ParserError>::Error)
         {
+            switch (attributes_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<ImplementSyntax, ParserError> { ._tag = Result<ImplementSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto attributes = attributes_result._tag == Result<Vector<AttributeSyntax>, ParserError>::Error ? nullptr : attributes_result._Ok;
@@ -2829,6 +3029,12 @@ struct Parser : Object {
         auto uses_result = this->parse_use_list(_r, _rp, _ep);
         if (uses_result._tag == Result<Vector<UseSyntax>, ParserError>::Error)
         {
+            switch (uses_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<ImplementSyntax, ParserError> { ._tag = Result<ImplementSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto uses = uses_result._tag == Result<Vector<UseSyntax>, ParserError>::Error ? nullptr : uses_result._Ok;
@@ -2836,6 +3042,12 @@ struct Parser : Object {
         auto methods_result = this->parse_method_list(_r, _rp, _ep);
         if (methods_result._tag == Result<Vector<MethodSyntax>, ParserError>::Error)
         {
+            switch (methods_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<ImplementSyntax, ParserError> { ._tag = Result<ImplementSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto methods = methods_result._tag == Result<Vector<MethodSyntax>, ParserError>::Error ? nullptr : methods_result._Ok;
@@ -2861,14 +3073,18 @@ struct Parser : Object {
 
         auto success_trait_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "trait"));
         if (!success_trait_1) {
-                return Result<TraitSyntax, ParserError> { ._tag = Result<TraitSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<TraitSyntax, ParserError> { ._tag = Result<TraitSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto name_result = this->parse_name(_r, _rp, _ep);
         if (name_result._tag == Result<NameSyntax, ParserError>::Error)
         {
-            if (name_result._Error._tag == ParserError::OtherSyntax)
-               return Result<TraitSyntax, ParserError> { ._tag = Result<TraitSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (name_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<TraitSyntax, ParserError> { ._tag = Result<TraitSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<TraitSyntax, ParserError> { ._tag = Result<TraitSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto name = name_result._Ok;
@@ -2876,6 +3092,12 @@ struct Parser : Object {
         auto extension_result = this->parse_extends(_r, _rp, _ep);
         if (extension_result._tag == Result<ExtendsSyntax, ParserError>::Error)
         {
+            switch (extension_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<TraitSyntax, ParserError> { ._tag = Result<TraitSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         ExtendsSyntax* extension = extension_result._tag == Result<ExtendsSyntax, ParserError>::Error ? nullptr : new(alignof(ExtendsSyntax), _rp) ExtendsSyntax(extension_result._Ok);
@@ -2883,6 +3105,12 @@ struct Parser : Object {
         auto attributes_result = this->parse_attribute_list(_r, _rp, _ep);
         if (attributes_result._tag == Result<Vector<AttributeSyntax>, ParserError>::Error)
         {
+            switch (attributes_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<TraitSyntax, ParserError> { ._tag = Result<TraitSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto attributes = attributes_result._tag == Result<Vector<AttributeSyntax>, ParserError>::Error ? nullptr : attributes_result._Ok;
@@ -2894,6 +3122,12 @@ struct Parser : Object {
         auto uses_result = this->parse_use_list(_r, _rp, _ep);
         if (uses_result._tag == Result<Vector<UseSyntax>, ParserError>::Error)
         {
+            switch (uses_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<TraitSyntax, ParserError> { ._tag = Result<TraitSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto uses = uses_result._tag == Result<Vector<UseSyntax>, ParserError>::Error ? nullptr : uses_result._Ok;
@@ -2901,6 +3135,12 @@ struct Parser : Object {
         auto functions_result = this->parse_method_list(_r, _rp, _ep);
         if (functions_result._tag == Result<Vector<MethodSyntax>, ParserError>::Error)
         {
+            switch (functions_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<TraitSyntax, ParserError> { ._tag = Result<TraitSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto functions = functions_result._tag == Result<Vector<MethodSyntax>, ParserError>::Error ? nullptr : functions_result._Ok;
@@ -3009,7 +3249,7 @@ struct Parser : Object {
 
         auto success_function_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "function"));
         if (!success_function_1) {
-                return Result<FunctionSyntax, ParserError> { ._tag = Result<FunctionSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<FunctionSyntax, ParserError> { ._tag = Result<FunctionSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto name = this->lexer.parse_identifier(_r, _rp, this->keywords);
@@ -3025,6 +3265,12 @@ struct Parser : Object {
         auto generics_result = this->parse_genericarguments(_r, _rp, _ep);
         if (generics_result._tag == Result<GenericArgumentsSyntax, ParserError>::Error)
         {
+            switch (generics_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<FunctionSyntax, ParserError> { ._tag = Result<FunctionSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         GenericArgumentsSyntax* generics = generics_result._tag == Result<GenericArgumentsSyntax, ParserError>::Error ? nullptr : new(alignof(GenericArgumentsSyntax), _rp) GenericArgumentsSyntax(generics_result._Ok);
@@ -3032,8 +3278,12 @@ struct Parser : Object {
         auto routine_result = this->parse_routine(_r, _rp, _ep);
         if (routine_result._tag == Result<RoutineSyntax, ParserError>::Error)
         {
-            if (routine_result._Error._tag == ParserError::OtherSyntax)
-               return Result<FunctionSyntax, ParserError> { ._tag = Result<FunctionSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (routine_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<FunctionSyntax, ParserError> { ._tag = Result<FunctionSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<FunctionSyntax, ParserError> { ._tag = Result<FunctionSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto routine = routine_result._Ok;
@@ -3051,7 +3301,7 @@ struct Parser : Object {
 
         auto success_procedure_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "procedure"));
         if (!success_procedure_1) {
-                return Result<ProcedureSyntax, ParserError> { ._tag = Result<ProcedureSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<ProcedureSyntax, ParserError> { ._tag = Result<ProcedureSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto name = this->lexer.parse_identifier(_r, _rp, this->keywords);
@@ -3067,6 +3317,12 @@ struct Parser : Object {
         auto generics_result = this->parse_genericarguments(_r, _rp, _ep);
         if (generics_result._tag == Result<GenericArgumentsSyntax, ParserError>::Error)
         {
+            switch (generics_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<ProcedureSyntax, ParserError> { ._tag = Result<ProcedureSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         GenericArgumentsSyntax* generics = generics_result._tag == Result<GenericArgumentsSyntax, ParserError>::Error ? nullptr : new(alignof(GenericArgumentsSyntax), _rp) GenericArgumentsSyntax(generics_result._Ok);
@@ -3074,8 +3330,12 @@ struct Parser : Object {
         auto routine_result = this->parse_routine(_r, _rp, _ep);
         if (routine_result._tag == Result<RoutineSyntax, ParserError>::Error)
         {
-            if (routine_result._Error._tag == ParserError::OtherSyntax)
-               return Result<ProcedureSyntax, ParserError> { ._tag = Result<ProcedureSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (routine_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<ProcedureSyntax, ParserError> { ._tag = Result<ProcedureSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<ProcedureSyntax, ParserError> { ._tag = Result<ProcedureSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto routine = routine_result._Ok;
@@ -3093,14 +3353,18 @@ struct Parser : Object {
 
         auto success_operator_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "operator"));
         if (!success_operator_1) {
-                return Result<OperatorSyntax, ParserError> { ._tag = Result<OperatorSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<OperatorSyntax, ParserError> { ._tag = Result<OperatorSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto target_result = this->parse_target(_r, _rp, _ep);
         if (target_result._tag == Result<TargetSyntax, ParserError>::Error)
         {
-            if (target_result._Error._tag == ParserError::OtherSyntax)
-               return Result<OperatorSyntax, ParserError> { ._tag = Result<OperatorSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (target_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<OperatorSyntax, ParserError> { ._tag = Result<OperatorSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<OperatorSyntax, ParserError> { ._tag = Result<OperatorSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto target = target_result._Ok;
@@ -3156,18 +3420,24 @@ struct Parser : Object {
         auto name = this->lexer.parse_identifier(_r, _rp, this->keywords);
         if (name != nullptr) {
             if (!this->is_identifier(*name)) {
-                return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
 
             }
         }
         else {
-                return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
 
         }
 
         auto attributes_result = this->parse_attribute_list(_r, _rp, _ep);
         if (attributes_result._tag == Result<Vector<AttributeSyntax>, ParserError>::Error)
         {
+            switch (attributes_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto attributes = attributes_result._tag == Result<Vector<AttributeSyntax>, ParserError>::Error ? nullptr : attributes_result._Ok;
@@ -3175,6 +3445,12 @@ struct Parser : Object {
         auto returns_result = this->parse_returns(_r, _rp, _ep);
         if (returns_result._tag == Result<ReturnsSyntax, ParserError>::Error)
         {
+            switch (returns_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         ReturnsSyntax* returns = returns_result._tag == Result<ReturnsSyntax, ParserError>::Error ? nullptr : new(alignof(ReturnsSyntax), _rp) ReturnsSyntax(returns_result._Ok);
@@ -3186,6 +3462,12 @@ struct Parser : Object {
         auto throws_result = this->parse_throws(_r, _rp, _ep);
         if (throws_result._tag == Result<ThrowsSyntax, ParserError>::Error)
         {
+            switch (throws_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         ThrowsSyntax* throws = throws_result._tag == Result<ThrowsSyntax, ParserError>::Error ? nullptr : new(alignof(ThrowsSyntax), _rp) ThrowsSyntax(throws_result._Ok);
@@ -3197,8 +3479,12 @@ struct Parser : Object {
         auto implementation_result = this->parse_implementation(_r, _rp, _ep);
         if (implementation_result._tag == Result<ImplementationSyntax, ParserError>::Error)
         {
-            if (implementation_result._Error._tag == ParserError::OtherSyntax)
-               return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (implementation_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto implementation = implementation_result._Ok;
@@ -3217,6 +3503,12 @@ struct Parser : Object {
         auto parameters_result = this->parse_parameterset(_r, _rp, _ep);
         if (parameters_result._tag == Result<ParameterSetSyntax, ParserError>::Error)
         {
+            switch (parameters_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<RoutineSyntax, ParserError> { ._tag = Result<RoutineSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         ParameterSetSyntax* parameters = parameters_result._tag == Result<ParameterSetSyntax, ParserError>::Error ? nullptr : new(alignof(ParameterSetSyntax), _rp) ParameterSetSyntax(parameters_result._Ok);
@@ -3224,6 +3516,12 @@ struct Parser : Object {
         auto attributes_result = this->parse_attribute_list(_r, _rp, _ep);
         if (attributes_result._tag == Result<Vector<AttributeSyntax>, ParserError>::Error)
         {
+            switch (attributes_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<RoutineSyntax, ParserError> { ._tag = Result<RoutineSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto attributes = attributes_result._tag == Result<Vector<AttributeSyntax>, ParserError>::Error ? nullptr : attributes_result._Ok;
@@ -3231,6 +3529,12 @@ struct Parser : Object {
         auto returns_result = this->parse_returns(_r, _rp, _ep);
         if (returns_result._tag == Result<ReturnsSyntax, ParserError>::Error)
         {
+            switch (returns_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<RoutineSyntax, ParserError> { ._tag = Result<RoutineSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         ReturnsSyntax* returns = returns_result._tag == Result<ReturnsSyntax, ParserError>::Error ? nullptr : new(alignof(ReturnsSyntax), _rp) ReturnsSyntax(returns_result._Ok);
@@ -3242,6 +3546,12 @@ struct Parser : Object {
         auto throws_result = this->parse_throws(_r, _rp, _ep);
         if (throws_result._tag == Result<ThrowsSyntax, ParserError>::Error)
         {
+            switch (throws_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<RoutineSyntax, ParserError> { ._tag = Result<RoutineSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         ThrowsSyntax* throws = throws_result._tag == Result<ThrowsSyntax, ParserError>::Error ? nullptr : new(alignof(ThrowsSyntax), _rp) ThrowsSyntax(throws_result._Ok);
@@ -3253,8 +3563,12 @@ struct Parser : Object {
         auto implementation_result = this->parse_implementation(_r, _rp, _ep);
         if (implementation_result._tag == Result<ImplementationSyntax, ParserError>::Error)
         {
-            if (implementation_result._Error._tag == ParserError::OtherSyntax)
-               return Result<RoutineSyntax, ParserError> { ._tag = Result<RoutineSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (implementation_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<RoutineSyntax, ParserError> { ._tag = Result<RoutineSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<RoutineSyntax, ParserError> { ._tag = Result<RoutineSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto implementation = implementation_result._Ok;
@@ -3341,7 +3655,7 @@ struct Parser : Object {
 
         auto success_extern_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "extern"));
         if (!success_extern_1) {
-                return Result<ExternSyntax, ParserError> { ._tag = Result<ExternSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<ExternSyntax, ParserError> { ._tag = Result<ExternSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto end = this->lexer.position;
@@ -3357,7 +3671,7 @@ struct Parser : Object {
 
         auto success_instruction_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "instruction"));
         if (!success_instruction_1) {
-                return Result<InstructionSyntax, ParserError> { ._tag = Result<InstructionSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<InstructionSyntax, ParserError> { ._tag = Result<InstructionSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto success_colon_2 = this->lexer.parse_colon(_r, _rp);
@@ -3377,7 +3691,7 @@ struct Parser : Object {
 
         auto success_intrinsic_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "intrinsic"));
         if (!success_intrinsic_1) {
-                return Result<IntrinsicSyntax, ParserError> { ._tag = Result<IntrinsicSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<IntrinsicSyntax, ParserError> { ._tag = Result<IntrinsicSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto success_colon_2 = this->lexer.parse_colon(_r, _rp);
@@ -3397,12 +3711,18 @@ struct Parser : Object {
 
         auto success_extends_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "extends"));
         if (!success_extends_1) {
-                return Result<ExtendsSyntax, ParserError> { ._tag = Result<ExtendsSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<ExtendsSyntax, ParserError> { ._tag = Result<ExtendsSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto extensions_result = this->parse_extend_list(_r, _rp, _ep);
         if (extensions_result._tag == Result<Vector<ExtendSyntax>, ParserError>::Error)
         {
+            switch (extensions_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<ExtendsSyntax, ParserError> { ._tag = Result<ExtendsSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto extensions = extensions_result._tag == Result<Vector<ExtendSyntax>, ParserError>::Error ? nullptr : extensions_result._Ok;
@@ -3451,8 +3771,12 @@ struct Parser : Object {
         auto type_result = this->parse_type(_r, _rp, _ep);
         if (type_result._tag == Result<TypeSyntax, ParserError>::Error)
         {
-            if (type_result._Error._tag == ParserError::OtherSyntax)
-               return Result<ExtendSyntax, ParserError> { ._tag = Result<ExtendSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            switch (type_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<ExtendSyntax, ParserError> { ._tag = Result<ExtendSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+                case ParserError::InvalidSyntax:
+                    return Result<ExtendSyntax, ParserError> { ._tag = Result<ExtendSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto type = type_result._Ok;
@@ -3474,7 +3798,7 @@ struct Parser : Object {
 
         auto success_macro_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "macro"));
         if (!success_macro_1) {
-                return Result<MacroSyntax, ParserError> { ._tag = Result<MacroSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<MacroSyntax, ParserError> { ._tag = Result<MacroSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto name = this->lexer.parse_identifier(_r, _rp, this->keywords);
@@ -3490,8 +3814,12 @@ struct Parser : Object {
         auto model_result = this->parse_model(_r, _rp, _ep);
         if (model_result._tag == Result<ModelSyntax, ParserError>::Error)
         {
-            if (model_result._Error._tag == ParserError::OtherSyntax)
-               return Result<MacroSyntax, ParserError> { ._tag = Result<MacroSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (model_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<MacroSyntax, ParserError> { ._tag = Result<MacroSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<MacroSyntax, ParserError> { ._tag = Result<MacroSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto model = model_result._Ok;
@@ -3499,8 +3827,12 @@ struct Parser : Object {
         auto rule_result = this->parse_operation(_r, _rp, _ep);
         if (rule_result._tag == Result<OperationSyntax, ParserError>::Error)
         {
-            if (rule_result._Error._tag == ParserError::OtherSyntax)
-               return Result<MacroSyntax, ParserError> { ._tag = Result<MacroSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (rule_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<MacroSyntax, ParserError> { ._tag = Result<MacroSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<MacroSyntax, ParserError> { ._tag = Result<MacroSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto rule = rule_result._Ok;
@@ -3518,14 +3850,18 @@ struct Parser : Object {
 
         auto success_module_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "module"));
         if (!success_module_1) {
-                return Result<ModuleSyntax, ParserError> { ._tag = Result<ModuleSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<ModuleSyntax, ParserError> { ._tag = Result<ModuleSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto name_result = this->parse_name(_r, _rp, _ep);
         if (name_result._tag == Result<NameSyntax, ParserError>::Error)
         {
-            if (name_result._Error._tag == ParserError::OtherSyntax)
-               return Result<ModuleSyntax, ParserError> { ._tag = Result<ModuleSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (name_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<ModuleSyntax, ParserError> { ._tag = Result<ModuleSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<ModuleSyntax, ParserError> { ._tag = Result<ModuleSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto name = name_result._Ok;
@@ -3731,14 +4067,18 @@ struct Parser : Object {
 
         auto success_let_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "let"));
         if (!success_let_1) {
-                return Result<LetSyntax, ParserError> { ._tag = Result<LetSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<LetSyntax, ParserError> { ._tag = Result<LetSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto binding_result = this->parse_binding(_r, _rp, _ep);
         if (binding_result._tag == Result<BindingSyntax, ParserError>::Error)
         {
-            if (binding_result._Error._tag == ParserError::OtherSyntax)
-               return Result<LetSyntax, ParserError> { ._tag = Result<LetSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (binding_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<LetSyntax, ParserError> { ._tag = Result<LetSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<LetSyntax, ParserError> { ._tag = Result<LetSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto binding = binding_result._Ok;
@@ -3756,14 +4096,18 @@ struct Parser : Object {
 
         auto success_var_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "var"));
         if (!success_var_1) {
-                return Result<VarSyntax, ParserError> { ._tag = Result<VarSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<VarSyntax, ParserError> { ._tag = Result<VarSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto binding_result = this->parse_binding(_r, _rp, _ep);
         if (binding_result._tag == Result<BindingSyntax, ParserError>::Error)
         {
-            if (binding_result._Error._tag == ParserError::OtherSyntax)
-               return Result<VarSyntax, ParserError> { ._tag = Result<VarSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (binding_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<VarSyntax, ParserError> { ._tag = Result<VarSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<VarSyntax, ParserError> { ._tag = Result<VarSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto binding = binding_result._Ok;
@@ -3781,14 +4125,18 @@ struct Parser : Object {
 
         auto success_mutable_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "mutable"));
         if (!success_mutable_1) {
-                return Result<MutableSyntax, ParserError> { ._tag = Result<MutableSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<MutableSyntax, ParserError> { ._tag = Result<MutableSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto binding_result = this->parse_binding(_r, _rp, _ep);
         if (binding_result._tag == Result<BindingSyntax, ParserError>::Error)
         {
-            if (binding_result._Error._tag == ParserError::OtherSyntax)
-               return Result<MutableSyntax, ParserError> { ._tag = Result<MutableSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (binding_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<MutableSyntax, ParserError> { ._tag = Result<MutableSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<MutableSyntax, ParserError> { ._tag = Result<MutableSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto binding = binding_result._Ok;
@@ -3807,18 +4155,24 @@ struct Parser : Object {
         auto name = this->lexer.parse_identifier(_r, _rp, this->keywords);
         if (name != nullptr) {
             if (!this->is_identifier(*name)) {
-                return Result<BindingSyntax, ParserError> { ._tag = Result<BindingSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<BindingSyntax, ParserError> { ._tag = Result<BindingSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
 
             }
         }
         else {
-                return Result<BindingSyntax, ParserError> { ._tag = Result<BindingSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<BindingSyntax, ParserError> { ._tag = Result<BindingSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
 
         }
 
         auto annotation_result = this->parse_bindingannotation(_r, _rp, _ep);
         if (annotation_result._tag == Result<BindingAnnotationSyntax, ParserError>::Error)
         {
+            switch (annotation_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<BindingSyntax, ParserError> { ._tag = Result<BindingSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         BindingAnnotationSyntax* annotation = annotation_result._tag == Result<BindingAnnotationSyntax, ParserError>::Error ? nullptr : new(alignof(BindingAnnotationSyntax), _rp) BindingAnnotationSyntax(annotation_result._Ok);
@@ -3826,8 +4180,12 @@ struct Parser : Object {
         auto operation_result = this->parse_operation(_r, _rp, _ep);
         if (operation_result._tag == Result<OperationSyntax, ParserError>::Error)
         {
-            if (operation_result._Error._tag == ParserError::OtherSyntax)
-               return Result<BindingSyntax, ParserError> { ._tag = Result<BindingSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (operation_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<BindingSyntax, ParserError> { ._tag = Result<BindingSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<BindingSyntax, ParserError> { ._tag = Result<BindingSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto operation = operation_result._Ok;
@@ -3845,14 +4203,18 @@ struct Parser : Object {
 
         auto success_colon_1 = this->lexer.parse_colon(_r, _rp);
         if (!success_colon_1) {
-                return Result<BindingAnnotationSyntax, ParserError> { ._tag = Result<BindingAnnotationSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<BindingAnnotationSyntax, ParserError> { ._tag = Result<BindingAnnotationSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto spec_result = this->parse_bindingspec(_r, _rp, _ep);
         if (spec_result._tag == Result<BindingSpecSyntax, ParserError>::Error)
         {
-            if (spec_result._Error._tag == ParserError::OtherSyntax)
-               return Result<BindingAnnotationSyntax, ParserError> { ._tag = Result<BindingAnnotationSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (spec_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<BindingAnnotationSyntax, ParserError> { ._tag = Result<BindingAnnotationSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<BindingAnnotationSyntax, ParserError> { ._tag = Result<BindingAnnotationSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto spec = spec_result._Ok;
@@ -3953,12 +4315,18 @@ struct Parser : Object {
 
         auto success_left_bracket_1 = this->lexer.parse_punctuation(_r, _rp, String(_r.page, "["));
         if (!success_left_bracket_1) {
-                return Result<ArraySyntax, ParserError> { ._tag = Result<ArraySyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<ArraySyntax, ParserError> { ._tag = Result<ArraySyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto members_result = this->parse_type_list(_r, _rp, _ep);
         if (members_result._tag == Result<Vector<TypeSyntax>, ParserError>::Error)
         {
+            switch (members_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<ArraySyntax, ParserError> { ._tag = Result<ArraySyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto members = members_result._tag == Result<Vector<TypeSyntax>, ParserError>::Error ? nullptr : members_result._Ok;
@@ -3980,12 +4348,18 @@ struct Parser : Object {
 
         auto success_left_paren_1 = this->lexer.parse_punctuation(_r, _rp, String(_r.page, "("));
         if (!success_left_paren_1) {
-                return Result<StructureSyntax, ParserError> { ._tag = Result<StructureSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<StructureSyntax, ParserError> { ._tag = Result<StructureSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto members_result = this->parse_member_list(_r, _rp, _ep);
         if (members_result._tag == Result<Vector<MemberSyntax>, ParserError>::Error)
         {
+            switch (members_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<StructureSyntax, ParserError> { ._tag = Result<StructureSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto members = members_result._tag == Result<Vector<MemberSyntax>, ParserError>::Error ? nullptr : members_result._Ok;
@@ -4038,8 +4412,12 @@ struct Parser : Object {
         auto expression_result = this->parse_expression(_r, _rp, _ep);
         if (expression_result._tag == Result<ExpressionSyntax, ParserError>::Error)
         {
-            if (expression_result._Error._tag == ParserError::OtherSyntax)
-               return Result<OperandSyntax, ParserError> { ._tag = Result<OperandSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            switch (expression_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<OperandSyntax, ParserError> { ._tag = Result<OperandSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+                case ParserError::InvalidSyntax:
+                    return Result<OperandSyntax, ParserError> { ._tag = Result<OperandSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto expression = expression_result._Ok;
@@ -4047,6 +4425,12 @@ struct Parser : Object {
         auto postfixes_result = this->parse_postfix_list(_r, _rp, _ep);
         if (postfixes_result._tag == Result<Vector<PostfixSyntax>, ParserError>::Error)
         {
+            switch (postfixes_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<OperandSyntax, ParserError> { ._tag = Result<OperandSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto postfixes = postfixes_result._tag == Result<Vector<PostfixSyntax>, ParserError>::Error ? nullptr : postfixes_result._Ok;
@@ -4131,14 +4515,18 @@ struct Parser : Object {
 
         auto success_dot_1 = this->lexer.parse_punctuation(_r, _rp, String(_r.page, "."));
         if (!success_dot_1) {
-                return Result<MemberAccessSyntax, ParserError> { ._tag = Result<MemberAccessSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<MemberAccessSyntax, ParserError> { ._tag = Result<MemberAccessSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto member_result = this->parse_name(_r, _rp, _ep);
         if (member_result._tag == Result<NameSyntax, ParserError>::Error)
         {
-            if (member_result._Error._tag == ParserError::OtherSyntax)
-               return Result<MemberAccessSyntax, ParserError> { ._tag = Result<MemberAccessSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (member_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<MemberAccessSyntax, ParserError> { ._tag = Result<MemberAccessSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<MemberAccessSyntax, ParserError> { ._tag = Result<MemberAccessSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto member = member_result._Ok;
@@ -4157,8 +4545,12 @@ struct Parser : Object {
         auto catchers_result = this->parse_catch_list(_r, _rp, _ep);
         if (catchers_result._tag == Result<Vector<CatchSyntax>, ParserError>::Error)
         {
-            if (catchers_result._Error._tag == ParserError::OtherSyntax)
-               return Result<CatcherSyntax, ParserError> { ._tag = Result<CatcherSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            switch (catchers_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<CatcherSyntax, ParserError> { ._tag = Result<CatcherSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+                case ParserError::InvalidSyntax:
+                    return Result<CatcherSyntax, ParserError> { ._tag = Result<CatcherSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto catchers = catchers_result._Ok;
@@ -4166,6 +4558,12 @@ struct Parser : Object {
         auto dropper_result = this->parse_drop(_r, _rp, _ep);
         if (dropper_result._tag == Result<DropSyntax, ParserError>::Error)
         {
+            switch (dropper_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<CatcherSyntax, ParserError> { ._tag = Result<CatcherSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         DropSyntax* dropper = dropper_result._tag == Result<DropSyntax, ParserError>::Error ? nullptr : new(alignof(DropSyntax), _rp) DropSyntax(dropper_result._Ok);
@@ -4213,14 +4611,18 @@ struct Parser : Object {
 
         auto success_catch_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "catch"));
         if (!success_catch_1) {
-                return Result<CatchSyntax, ParserError> { ._tag = Result<CatchSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<CatchSyntax, ParserError> { ._tag = Result<CatchSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto condition_result = this->parse_operation(_r, _rp, _ep);
         if (condition_result._tag == Result<OperationSyntax, ParserError>::Error)
         {
-            if (condition_result._Error._tag == ParserError::OtherSyntax)
-               return Result<CatchSyntax, ParserError> { ._tag = Result<CatchSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (condition_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<CatchSyntax, ParserError> { ._tag = Result<CatchSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<CatchSyntax, ParserError> { ._tag = Result<CatchSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto condition = condition_result._Ok;
@@ -4228,8 +4630,12 @@ struct Parser : Object {
         auto handler_result = this->parse_operation(_r, _rp, _ep);
         if (handler_result._tag == Result<OperationSyntax, ParserError>::Error)
         {
-            if (handler_result._Error._tag == ParserError::OtherSyntax)
-               return Result<CatchSyntax, ParserError> { ._tag = Result<CatchSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (handler_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<CatchSyntax, ParserError> { ._tag = Result<CatchSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<CatchSyntax, ParserError> { ._tag = Result<CatchSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto handler = handler_result._Ok;
@@ -4247,14 +4653,18 @@ struct Parser : Object {
 
         auto success_drop_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "drop"));
         if (!success_drop_1) {
-                return Result<DropSyntax, ParserError> { ._tag = Result<DropSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<DropSyntax, ParserError> { ._tag = Result<DropSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto handler_result = this->parse_operation(_r, _rp, _ep);
         if (handler_result._tag == Result<OperationSyntax, ParserError>::Error)
         {
-            if (handler_result._Error._tag == ParserError::OtherSyntax)
-               return Result<DropSyntax, ParserError> { ._tag = Result<DropSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (handler_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<DropSyntax, ParserError> { ._tag = Result<DropSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<DropSyntax, ParserError> { ._tag = Result<DropSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto handler = handler_result._Ok;
@@ -4533,12 +4943,18 @@ struct Parser : Object {
 
         auto success_continue_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "continue"));
         if (!success_continue_1) {
-                return Result<ContinueSyntax, ParserError> { ._tag = Result<ContinueSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<ContinueSyntax, ParserError> { ._tag = Result<ContinueSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto name_result = this->parse_loop(_r, _rp, _ep);
         if (name_result._tag == Result<LoopSyntax, ParserError>::Error)
         {
+            switch (name_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<ContinueSyntax, ParserError> { ._tag = Result<ContinueSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         LoopSyntax* name = name_result._tag == Result<LoopSyntax, ParserError>::Error ? nullptr : new(alignof(LoopSyntax), _rp) LoopSyntax(name_result._Ok);
@@ -4560,12 +4976,18 @@ struct Parser : Object {
 
         auto success_break_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "break"));
         if (!success_break_1) {
-                return Result<BreakSyntax, ParserError> { ._tag = Result<BreakSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<BreakSyntax, ParserError> { ._tag = Result<BreakSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto name_result = this->parse_loop(_r, _rp, _ep);
         if (name_result._tag == Result<LoopSyntax, ParserError>::Error)
         {
+            switch (name_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<BreakSyntax, ParserError> { ._tag = Result<BreakSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         LoopSyntax* name = name_result._tag == Result<LoopSyntax, ParserError>::Error ? nullptr : new(alignof(LoopSyntax), _rp) LoopSyntax(name_result._Ok);
@@ -4573,6 +4995,12 @@ struct Parser : Object {
         auto result_result = this->parse_operation(_r, _rp, _ep);
         if (result_result._tag == Result<OperationSyntax, ParserError>::Error)
         {
+            switch (result_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<BreakSyntax, ParserError> { ._tag = Result<BreakSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         OperationSyntax* result = result_result._tag == Result<OperationSyntax, ParserError>::Error ? nullptr : new(alignof(OperationSyntax), _rp) OperationSyntax(result_result._Ok);
@@ -4594,7 +5022,7 @@ struct Parser : Object {
 
         auto success_loop_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "loop"));
         if (!success_loop_1) {
-                return Result<LoopSyntax, ParserError> { ._tag = Result<LoopSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<LoopSyntax, ParserError> { ._tag = Result<LoopSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto name = this->lexer.parse_identifier(_r, _rp, this->keywords);
@@ -4620,12 +5048,18 @@ struct Parser : Object {
 
         auto success_return_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "return"));
         if (!success_return_1) {
-                return Result<ReturnSyntax, ParserError> { ._tag = Result<ReturnSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<ReturnSyntax, ParserError> { ._tag = Result<ReturnSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto result_result = this->parse_operation(_r, _rp, _ep);
         if (result_result._tag == Result<OperationSyntax, ParserError>::Error)
         {
+            switch (result_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<ReturnSyntax, ParserError> { ._tag = Result<ReturnSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         OperationSyntax* result = result_result._tag == Result<OperationSyntax, ParserError>::Error ? nullptr : new(alignof(OperationSyntax), _rp) OperationSyntax(result_result._Ok);
@@ -4643,12 +5077,18 @@ struct Parser : Object {
 
         auto success_throw_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "throw"));
         if (!success_throw_1) {
-                return Result<ThrowSyntax, ParserError> { ._tag = Result<ThrowSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<ThrowSyntax, ParserError> { ._tag = Result<ThrowSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto result_result = this->parse_operation(_r, _rp, _ep);
         if (result_result._tag == Result<OperationSyntax, ParserError>::Error)
         {
+            switch (result_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<ThrowSyntax, ParserError> { ._tag = Result<ThrowSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         OperationSyntax* result = result_result._tag == Result<OperationSyntax, ParserError>::Error ? nullptr : new(alignof(OperationSyntax), _rp) OperationSyntax(result_result._Ok);
@@ -4686,12 +5126,18 @@ struct Parser : Object {
 
         auto success_left_paren_1 = this->lexer.parse_punctuation(_r, _rp, String(_r.page, "("));
         if (!success_left_paren_1) {
-                return Result<ObjectSyntax, ParserError> { ._tag = Result<ObjectSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<ObjectSyntax, ParserError> { ._tag = Result<ObjectSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto components_result = this->parse_component_list(_r, _rp, _ep);
         if (components_result._tag == Result<Vector<ComponentSyntax>, ParserError>::Error)
         {
+            switch (components_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<ObjectSyntax, ParserError> { ._tag = Result<ObjectSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto components = components_result._tag == Result<Vector<ComponentSyntax>, ParserError>::Error ? nullptr : components_result._Ok;
@@ -4744,8 +5190,12 @@ struct Parser : Object {
         auto operands_result = this->parse_operand_list(_r, _rp, _ep);
         if (operands_result._tag == Result<Vector<OperandSyntax>, ParserError>::Error)
         {
-            if (operands_result._Error._tag == ParserError::OtherSyntax)
-               return Result<ComponentSyntax, ParserError> { ._tag = Result<ComponentSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            switch (operands_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<ComponentSyntax, ParserError> { ._tag = Result<ComponentSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+                case ParserError::InvalidSyntax:
+                    return Result<ComponentSyntax, ParserError> { ._tag = Result<ComponentSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto operands = operands_result._Ok;
@@ -4753,6 +5203,12 @@ struct Parser : Object {
         auto attributes_result = this->parse_attribute_list(_r, _rp, _ep);
         if (attributes_result._tag == Result<Vector<AttributeSyntax>, ParserError>::Error)
         {
+            switch (attributes_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<ComponentSyntax, ParserError> { ._tag = Result<ComponentSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto attributes = attributes_result._tag == Result<Vector<AttributeSyntax>, ParserError>::Error ? nullptr : attributes_result._Ok;
@@ -4760,6 +5216,12 @@ struct Parser : Object {
         auto value_result = this->parse_value(_r, _rp, _ep);
         if (value_result._tag == Result<ValueSyntax, ParserError>::Error)
         {
+            switch (value_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<ComponentSyntax, ParserError> { ._tag = Result<ComponentSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         ValueSyntax* value = value_result._tag == Result<ValueSyntax, ParserError>::Error ? nullptr : new(alignof(ValueSyntax), _rp) ValueSyntax(value_result._Ok);
@@ -4781,14 +5243,18 @@ struct Parser : Object {
 
         auto success_colon_1 = this->lexer.parse_colon(_r, _rp);
         if (!success_colon_1) {
-                return Result<ValueSyntax, ParserError> { ._tag = Result<ValueSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<ValueSyntax, ParserError> { ._tag = Result<ValueSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto value_result = this->parse_operation(_r, _rp, _ep);
         if (value_result._tag == Result<OperationSyntax, ParserError>::Error)
         {
-            if (value_result._Error._tag == ParserError::OtherSyntax)
-               return Result<ValueSyntax, ParserError> { ._tag = Result<ValueSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (value_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<ValueSyntax, ParserError> { ._tag = Result<ValueSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<ValueSyntax, ParserError> { ._tag = Result<ValueSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto value = value_result._Ok;
@@ -4796,6 +5262,12 @@ struct Parser : Object {
         auto attributes_result = this->parse_attribute_list(_r, _rp, _ep);
         if (attributes_result._tag == Result<Vector<AttributeSyntax>, ParserError>::Error)
         {
+            switch (attributes_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<ValueSyntax, ParserError> { ._tag = Result<ValueSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto attributes = attributes_result._tag == Result<Vector<AttributeSyntax>, ParserError>::Error ? nullptr : attributes_result._Ok;
@@ -4813,14 +5285,18 @@ struct Parser : Object {
 
         auto success_left_bracket_1 = this->lexer.parse_punctuation(_r, _rp, String(_r.page, "["));
         if (!success_left_bracket_1) {
-                return Result<VectorSyntax, ParserError> { ._tag = Result<VectorSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<VectorSyntax, ParserError> { ._tag = Result<VectorSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto elements_result = this->parse_element_list(_r, _rp, _ep);
         if (elements_result._tag == Result<Vector<ElementSyntax>, ParserError>::Error)
         {
-            if (elements_result._Error._tag == ParserError::OtherSyntax)
-               return Result<VectorSyntax, ParserError> { ._tag = Result<VectorSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (elements_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<VectorSyntax, ParserError> { ._tag = Result<VectorSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<VectorSyntax, ParserError> { ._tag = Result<VectorSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto elements = elements_result._Ok;
@@ -4873,8 +5349,12 @@ struct Parser : Object {
         auto operation_result = this->parse_operation(_r, _rp, _ep);
         if (operation_result._tag == Result<OperationSyntax, ParserError>::Error)
         {
-            if (operation_result._Error._tag == ParserError::OtherSyntax)
-               return Result<ElementSyntax, ParserError> { ._tag = Result<ElementSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            switch (operation_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<ElementSyntax, ParserError> { ._tag = Result<ElementSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+                case ParserError::InvalidSyntax:
+                    return Result<ElementSyntax, ParserError> { ._tag = Result<ElementSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto operation = operation_result._Ok;
@@ -4882,6 +5362,12 @@ struct Parser : Object {
         auto attributes_result = this->parse_attribute_list(_r, _rp, _ep);
         if (attributes_result._tag == Result<Vector<AttributeSyntax>, ParserError>::Error)
         {
+            switch (attributes_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<ElementSyntax, ParserError> { ._tag = Result<ElementSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto attributes = attributes_result._tag == Result<Vector<AttributeSyntax>, ParserError>::Error ? nullptr : attributes_result._Ok;
@@ -4903,12 +5389,18 @@ struct Parser : Object {
 
         auto success_left_curly_1 = this->lexer.parse_punctuation(_r, _rp, String(_r.page, "{"));
         if (!success_left_curly_1) {
-                return Result<BlockSyntax, ParserError> { ._tag = Result<BlockSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<BlockSyntax, ParserError> { ._tag = Result<BlockSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto uses_result = this->parse_use_list(_r, _rp, _ep);
         if (uses_result._tag == Result<Vector<UseSyntax>, ParserError>::Error)
         {
+            switch (uses_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<BlockSyntax, ParserError> { ._tag = Result<BlockSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto uses = uses_result._tag == Result<Vector<UseSyntax>, ParserError>::Error ? nullptr : uses_result._Ok;
@@ -4916,6 +5408,12 @@ struct Parser : Object {
         auto statements_result = this->parse_statement_list(_r, _rp, _ep);
         if (statements_result._tag == Result<Vector<StatementSyntax>, ParserError>::Error)
         {
+            switch (statements_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<BlockSyntax, ParserError> { ._tag = Result<BlockSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto statements = statements_result._tag == Result<Vector<StatementSyntax>, ParserError>::Error ? nullptr : statements_result._Ok;
@@ -4937,14 +5435,18 @@ struct Parser : Object {
 
         auto success_if_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "if"));
         if (!success_if_1) {
-                return Result<IfSyntax, ParserError> { ._tag = Result<IfSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<IfSyntax, ParserError> { ._tag = Result<IfSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto condition_result = this->parse_operation(_r, _rp, _ep);
         if (condition_result._tag == Result<OperationSyntax, ParserError>::Error)
         {
-            if (condition_result._Error._tag == ParserError::OtherSyntax)
-               return Result<IfSyntax, ParserError> { ._tag = Result<IfSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (condition_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<IfSyntax, ParserError> { ._tag = Result<IfSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<IfSyntax, ParserError> { ._tag = Result<IfSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto condition = condition_result._Ok;
@@ -4952,6 +5454,12 @@ struct Parser : Object {
         auto match_result = this->parse_is(_r, _rp, _ep);
         if (match_result._tag == Result<IsSyntax, ParserError>::Error)
         {
+            switch (match_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<IfSyntax, ParserError> { ._tag = Result<IfSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         IsSyntax* match = match_result._tag == Result<IsSyntax, ParserError>::Error ? nullptr : new(alignof(IsSyntax), _rp) IsSyntax(match_result._Ok);
@@ -4959,6 +5467,12 @@ struct Parser : Object {
         auto alias_result = this->parse_as(_r, _rp, _ep);
         if (alias_result._tag == Result<AsSyntax, ParserError>::Error)
         {
+            switch (alias_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<IfSyntax, ParserError> { ._tag = Result<IfSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         AsSyntax* alias = alias_result._tag == Result<AsSyntax, ParserError>::Error ? nullptr : new(alignof(AsSyntax), _rp) AsSyntax(alias_result._Ok);
@@ -4966,8 +5480,12 @@ struct Parser : Object {
         auto consequent_result = this->parse_action(_r, _rp, _ep);
         if (consequent_result._tag == Result<ActionSyntax, ParserError>::Error)
         {
-            if (consequent_result._Error._tag == ParserError::OtherSyntax)
-               return Result<IfSyntax, ParserError> { ._tag = Result<IfSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (consequent_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<IfSyntax, ParserError> { ._tag = Result<IfSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<IfSyntax, ParserError> { ._tag = Result<IfSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto consequent = consequent_result._Ok;
@@ -4975,6 +5493,12 @@ struct Parser : Object {
         auto alternative_result = this->parse_else(_r, _rp, _ep);
         if (alternative_result._tag == Result<ElseSyntax, ParserError>::Error)
         {
+            switch (alternative_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<IfSyntax, ParserError> { ._tag = Result<IfSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         ElseSyntax* alternative = alternative_result._tag == Result<ElseSyntax, ParserError>::Error ? nullptr : new(alignof(ElseSyntax), _rp) ElseSyntax(alternative_result._Ok);
@@ -4992,14 +5516,18 @@ struct Parser : Object {
 
         auto success_is_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "is"));
         if (!success_is_1) {
-                return Result<IsSyntax, ParserError> { ._tag = Result<IsSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<IsSyntax, ParserError> { ._tag = Result<IsSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto type_result = this->parse_type(_r, _rp, _ep);
         if (type_result._tag == Result<TypeSyntax, ParserError>::Error)
         {
-            if (type_result._Error._tag == ParserError::OtherSyntax)
-               return Result<IsSyntax, ParserError> { ._tag = Result<IsSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (type_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<IsSyntax, ParserError> { ._tag = Result<IsSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<IsSyntax, ParserError> { ._tag = Result<IsSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto type = type_result._Ok;
@@ -5017,7 +5545,7 @@ struct Parser : Object {
 
         auto success_as_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "as"));
         if (!success_as_1) {
-                return Result<AsSyntax, ParserError> { ._tag = Result<AsSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<AsSyntax, ParserError> { ._tag = Result<AsSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto name = this->lexer.parse_identifier(_r, _rp, this->keywords);
@@ -5047,7 +5575,7 @@ struct Parser : Object {
 
         auto success_else_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "else"));
         if (!success_else_1) {
-                return Result<ElseSyntax, ParserError> { ._tag = Result<ElseSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<ElseSyntax, ParserError> { ._tag = Result<ElseSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto success_colon_2 = this->lexer.parse_colon(_r, _rp);
@@ -5057,8 +5585,12 @@ struct Parser : Object {
         auto alternative_result = this->parse_action(_r, _rp, _ep);
         if (alternative_result._tag == Result<ActionSyntax, ParserError>::Error)
         {
-            if (alternative_result._Error._tag == ParserError::OtherSyntax)
-               return Result<ElseSyntax, ParserError> { ._tag = Result<ElseSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (alternative_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<ElseSyntax, ParserError> { ._tag = Result<ElseSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<ElseSyntax, ParserError> { ._tag = Result<ElseSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto alternative = alternative_result._Ok;
@@ -5076,14 +5608,18 @@ struct Parser : Object {
 
         auto success_match_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "match"));
         if (!success_match_1) {
-                return Result<MatchSyntax, ParserError> { ._tag = Result<MatchSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<MatchSyntax, ParserError> { ._tag = Result<MatchSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto scrutinee_result = this->parse_operation(_r, _rp, _ep);
         if (scrutinee_result._tag == Result<OperationSyntax, ParserError>::Error)
         {
-            if (scrutinee_result._Error._tag == ParserError::OtherSyntax)
-               return Result<MatchSyntax, ParserError> { ._tag = Result<MatchSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (scrutinee_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<MatchSyntax, ParserError> { ._tag = Result<MatchSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<MatchSyntax, ParserError> { ._tag = Result<MatchSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto scrutinee = scrutinee_result._Ok;
@@ -5091,8 +5627,12 @@ struct Parser : Object {
         auto cases_result = this->parse_case_list(_r, _rp, _ep);
         if (cases_result._tag == Result<Vector<CaseSyntax>, ParserError>::Error)
         {
-            if (cases_result._Error._tag == ParserError::OtherSyntax)
-               return Result<MatchSyntax, ParserError> { ._tag = Result<MatchSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (cases_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<MatchSyntax, ParserError> { ._tag = Result<MatchSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<MatchSyntax, ParserError> { ._tag = Result<MatchSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto cases = cases_result._Ok;
@@ -5100,6 +5640,12 @@ struct Parser : Object {
         auto alternative_result = this->parse_default(_r, _rp, _ep);
         if (alternative_result._tag == Result<DefaultSyntax, ParserError>::Error)
         {
+            switch (alternative_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<MatchSyntax, ParserError> { ._tag = Result<MatchSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         DefaultSyntax* alternative = alternative_result._tag == Result<DefaultSyntax, ParserError>::Error ? nullptr : new(alignof(DefaultSyntax), _rp) DefaultSyntax(alternative_result._Ok);
@@ -5147,14 +5693,18 @@ struct Parser : Object {
 
         auto success_case_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "case"));
         if (!success_case_1) {
-                return Result<CaseSyntax, ParserError> { ._tag = Result<CaseSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<CaseSyntax, ParserError> { ._tag = Result<CaseSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto condition_result = this->parse_operation(_r, _rp, _ep);
         if (condition_result._tag == Result<OperationSyntax, ParserError>::Error)
         {
-            if (condition_result._Error._tag == ParserError::OtherSyntax)
-               return Result<CaseSyntax, ParserError> { ._tag = Result<CaseSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (condition_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<CaseSyntax, ParserError> { ._tag = Result<CaseSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<CaseSyntax, ParserError> { ._tag = Result<CaseSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto condition = condition_result._Ok;
@@ -5162,8 +5712,12 @@ struct Parser : Object {
         auto consequent_result = this->parse_action(_r, _rp, _ep);
         if (consequent_result._tag == Result<ActionSyntax, ParserError>::Error)
         {
-            if (consequent_result._Error._tag == ParserError::OtherSyntax)
-               return Result<CaseSyntax, ParserError> { ._tag = Result<CaseSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (consequent_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<CaseSyntax, ParserError> { ._tag = Result<CaseSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<CaseSyntax, ParserError> { ._tag = Result<CaseSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto consequent = consequent_result._Ok;
@@ -5181,12 +5735,18 @@ struct Parser : Object {
 
         auto success_default_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "default"));
         if (!success_default_1) {
-                return Result<DefaultSyntax, ParserError> { ._tag = Result<DefaultSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<DefaultSyntax, ParserError> { ._tag = Result<DefaultSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto alternative_result = this->parse_action(_r, _rp, _ep);
         if (alternative_result._tag == Result<ActionSyntax, ParserError>::Error)
         {
+            switch (alternative_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<DefaultSyntax, ParserError> { ._tag = Result<DefaultSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         ActionSyntax* alternative = alternative_result._tag == Result<ActionSyntax, ParserError>::Error ? nullptr : new(alignof(ActionSyntax), _rp) ActionSyntax(alternative_result._Ok);
@@ -5204,14 +5764,18 @@ struct Parser : Object {
 
         auto success_lambda_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "lambda"));
         if (!success_lambda_1) {
-                return Result<LambdaSyntax, ParserError> { ._tag = Result<LambdaSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<LambdaSyntax, ParserError> { ._tag = Result<LambdaSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto input_result = this->parse_operation(_r, _rp, _ep);
         if (input_result._tag == Result<OperationSyntax, ParserError>::Error)
         {
-            if (input_result._Error._tag == ParserError::OtherSyntax)
-               return Result<LambdaSyntax, ParserError> { ._tag = Result<LambdaSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (input_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<LambdaSyntax, ParserError> { ._tag = Result<LambdaSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<LambdaSyntax, ParserError> { ._tag = Result<LambdaSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto input = input_result._Ok;
@@ -5223,8 +5787,12 @@ struct Parser : Object {
         auto block_result = this->parse_action(_r, _rp, _ep);
         if (block_result._tag == Result<ActionSyntax, ParserError>::Error)
         {
-            if (block_result._Error._tag == ParserError::OtherSyntax)
-               return Result<LambdaSyntax, ParserError> { ._tag = Result<LambdaSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (block_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<LambdaSyntax, ParserError> { ._tag = Result<LambdaSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<LambdaSyntax, ParserError> { ._tag = Result<LambdaSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto block = block_result._Ok;
@@ -5242,14 +5810,18 @@ struct Parser : Object {
 
         auto success_for_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "for"));
         if (!success_for_1) {
-                return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto condition_result = this->parse_operation(_r, _rp, _ep);
         if (condition_result._tag == Result<OperationSyntax, ParserError>::Error)
         {
-            if (condition_result._Error._tag == ParserError::OtherSyntax)
-               return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (condition_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto condition = condition_result._Ok;
@@ -5261,8 +5833,12 @@ struct Parser : Object {
         auto expression_result = this->parse_operation(_r, _rp, _ep);
         if (expression_result._tag == Result<OperationSyntax, ParserError>::Error)
         {
-            if (expression_result._Error._tag == ParserError::OtherSyntax)
-               return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (expression_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto expression = expression_result._Ok;
@@ -5270,6 +5846,12 @@ struct Parser : Object {
         auto name_result = this->parse_label(_r, _rp, _ep);
         if (name_result._tag == Result<LabelSyntax, ParserError>::Error)
         {
+            switch (name_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         LabelSyntax* name = name_result._tag == Result<LabelSyntax, ParserError>::Error ? nullptr : new(alignof(LabelSyntax), _rp) LabelSyntax(name_result._Ok);
@@ -5277,8 +5859,12 @@ struct Parser : Object {
         auto action_result = this->parse_action(_r, _rp, _ep);
         if (action_result._tag == Result<ActionSyntax, ParserError>::Error)
         {
-            if (action_result._Error._tag == ParserError::OtherSyntax)
-               return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (action_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto action = action_result._Ok;
@@ -5296,7 +5882,7 @@ struct Parser : Object {
 
         auto success_label_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "label"));
         if (!success_label_1) {
-                return Result<LabelSyntax, ParserError> { ._tag = Result<LabelSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<LabelSyntax, ParserError> { ._tag = Result<LabelSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto name = this->lexer.parse_identifier(_r, _rp, this->keywords);
@@ -5322,14 +5908,18 @@ struct Parser : Object {
 
         auto success_while_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "while"));
         if (!success_while_1) {
-                return Result<WhileSyntax, ParserError> { ._tag = Result<WhileSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<WhileSyntax, ParserError> { ._tag = Result<WhileSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto condition_result = this->parse_operation(_r, _rp, _ep);
         if (condition_result._tag == Result<OperationSyntax, ParserError>::Error)
         {
-            if (condition_result._Error._tag == ParserError::OtherSyntax)
-               return Result<WhileSyntax, ParserError> { ._tag = Result<WhileSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (condition_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<WhileSyntax, ParserError> { ._tag = Result<WhileSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<WhileSyntax, ParserError> { ._tag = Result<WhileSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto condition = condition_result._Ok;
@@ -5337,6 +5927,12 @@ struct Parser : Object {
         auto name_result = this->parse_label(_r, _rp, _ep);
         if (name_result._tag == Result<LabelSyntax, ParserError>::Error)
         {
+            switch (name_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<WhileSyntax, ParserError> { ._tag = Result<WhileSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         LabelSyntax* name = name_result._tag == Result<LabelSyntax, ParserError>::Error ? nullptr : new(alignof(LabelSyntax), _rp) LabelSyntax(name_result._Ok);
@@ -5344,8 +5940,12 @@ struct Parser : Object {
         auto action_result = this->parse_action(_r, _rp, _ep);
         if (action_result._tag == Result<ActionSyntax, ParserError>::Error)
         {
-            if (action_result._Error._tag == ParserError::OtherSyntax)
-               return Result<WhileSyntax, ParserError> { ._tag = Result<WhileSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (action_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<WhileSyntax, ParserError> { ._tag = Result<WhileSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<WhileSyntax, ParserError> { ._tag = Result<WhileSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto action = action_result._Ok;
@@ -5363,12 +5963,18 @@ struct Parser : Object {
 
         auto success_repeat_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "repeat"));
         if (!success_repeat_1) {
-                return Result<RepeatSyntax, ParserError> { ._tag = Result<RepeatSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<RepeatSyntax, ParserError> { ._tag = Result<RepeatSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto name_result = this->parse_label(_r, _rp, _ep);
         if (name_result._tag == Result<LabelSyntax, ParserError>::Error)
         {
+            switch (name_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<RepeatSyntax, ParserError> { ._tag = Result<RepeatSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         LabelSyntax* name = name_result._tag == Result<LabelSyntax, ParserError>::Error ? nullptr : new(alignof(LabelSyntax), _rp) LabelSyntax(name_result._Ok);
@@ -5376,8 +5982,12 @@ struct Parser : Object {
         auto action_result = this->parse_action(_r, _rp, _ep);
         if (action_result._tag == Result<ActionSyntax, ParserError>::Error)
         {
-            if (action_result._Error._tag == ParserError::OtherSyntax)
-               return Result<RepeatSyntax, ParserError> { ._tag = Result<RepeatSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (action_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<RepeatSyntax, ParserError> { ._tag = Result<RepeatSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<RepeatSyntax, ParserError> { ._tag = Result<RepeatSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto action = action_result._Ok;
@@ -5462,14 +6072,18 @@ struct Parser : Object {
 
         auto success_set_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "set"));
         if (!success_set_1) {
-                return Result<SetSyntax, ParserError> { ._tag = Result<SetSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<SetSyntax, ParserError> { ._tag = Result<SetSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto target_result = this->parse_operation(_r, _rp, _ep);
         if (target_result._tag == Result<OperationSyntax, ParserError>::Error)
         {
-            if (target_result._Error._tag == ParserError::OtherSyntax)
-               return Result<SetSyntax, ParserError> { ._tag = Result<SetSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (target_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<SetSyntax, ParserError> { ._tag = Result<SetSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<SetSyntax, ParserError> { ._tag = Result<SetSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto target = target_result._Ok;
@@ -5477,8 +6091,12 @@ struct Parser : Object {
         auto source_result = this->parse_operation(_r, _rp, _ep);
         if (source_result._tag == Result<OperationSyntax, ParserError>::Error)
         {
-            if (source_result._Error._tag == ParserError::OtherSyntax)
-               return Result<SetSyntax, ParserError> { ._tag = Result<SetSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (source_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<SetSyntax, ParserError> { ._tag = Result<SetSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<SetSyntax, ParserError> { ._tag = Result<SetSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto source = source_result._Ok;
@@ -5497,8 +6115,12 @@ struct Parser : Object {
         auto operands_result = this->parse_operand_list(_r, _rp, _ep);
         if (operands_result._tag == Result<Vector<OperandSyntax>, ParserError>::Error)
         {
-            if (operands_result._Error._tag == ParserError::OtherSyntax)
-               return Result<OperationSyntax, ParserError> { ._tag = Result<OperationSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            switch (operands_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<OperationSyntax, ParserError> { ._tag = Result<OperationSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+                case ParserError::InvalidSyntax:
+                    return Result<OperationSyntax, ParserError> { ._tag = Result<OperationSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto operands = operands_result._Ok;
@@ -5520,14 +6142,18 @@ struct Parser : Object {
 
         auto success_sizeof_1 = this->lexer.parse_keyword(_r, _rp, String(_r.page, "sizeof"));
         if (!success_sizeof_1) {
-                return Result<SizeOfSyntax, ParserError> { ._tag = Result<SizeOfSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<SizeOfSyntax, ParserError> { ._tag = Result<SizeOfSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
         }
 
         auto type_result = this->parse_type(_r, _rp, _ep);
         if (type_result._tag == Result<TypeSyntax, ParserError>::Error)
         {
-            if (type_result._Error._tag == ParserError::OtherSyntax)
-               return Result<SizeOfSyntax, ParserError> { ._tag = Result<SizeOfSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            switch (type_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<SizeOfSyntax, ParserError> { ._tag = Result<SizeOfSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                case ParserError::InvalidSyntax:
+                    return Result<SizeOfSyntax, ParserError> { ._tag = Result<SizeOfSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto type = type_result._Ok;
@@ -5576,8 +6202,12 @@ struct Parser : Object {
         auto name_result = this->parse_name(_r, _rp, _ep);
         if (name_result._tag == Result<NameSyntax, ParserError>::Error)
         {
-            if (name_result._Error._tag == ParserError::OtherSyntax)
-               return Result<TypeSyntax, ParserError> { ._tag = Result<TypeSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            switch (name_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<TypeSyntax, ParserError> { ._tag = Result<TypeSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+                case ParserError::InvalidSyntax:
+                    return Result<TypeSyntax, ParserError> { ._tag = Result<TypeSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto name = name_result._Ok;
@@ -5585,6 +6215,12 @@ struct Parser : Object {
         auto generics_result = this->parse_genericarguments(_r, _rp, _ep);
         if (generics_result._tag == Result<GenericArgumentsSyntax, ParserError>::Error)
         {
+            switch (generics_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<TypeSyntax, ParserError> { ._tag = Result<TypeSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         GenericArgumentsSyntax* generics = generics_result._tag == Result<GenericArgumentsSyntax, ParserError>::Error ? nullptr : new(alignof(GenericArgumentsSyntax), _rp) GenericArgumentsSyntax(generics_result._Ok);
@@ -5592,6 +6228,12 @@ struct Parser : Object {
         auto optional_result = this->parse_optional(_r, _rp, _ep);
         if (optional_result._tag == Result<OptionalSyntax, ParserError>::Error)
         {
+            switch (optional_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<TypeSyntax, ParserError> { ._tag = Result<TypeSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         OptionalSyntax* optional = optional_result._tag == Result<OptionalSyntax, ParserError>::Error ? nullptr : new(alignof(OptionalSyntax), _rp) OptionalSyntax(optional_result._Ok);
@@ -5610,18 +6252,24 @@ struct Parser : Object {
         auto name = this->lexer.parse_identifier(_r, _rp, this->keywords);
         if (name != nullptr) {
             if (!this->is_identifier(*name)) {
-                return Result<NameSyntax, ParserError> { ._tag = Result<NameSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<NameSyntax, ParserError> { ._tag = Result<NameSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
 
             }
         }
         else {
-                return Result<NameSyntax, ParserError> { ._tag = Result<NameSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<NameSyntax, ParserError> { ._tag = Result<NameSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
 
         }
 
         auto extensions_result = this->parse_extension_list(_r, _rp, _ep);
         if (extensions_result._tag == Result<Vector<ExtensionSyntax>, ParserError>::Error)
         {
+            switch (extensions_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<NameSyntax, ParserError> { ._tag = Result<NameSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
         }
 
         auto extensions = extensions_result._tag == Result<Vector<ExtensionSyntax>, ParserError>::Error ? nullptr : extensions_result._Ok;

@@ -150,18 +150,25 @@ struct Parser : Object {
         auto "(property content)"_result = this->parse_"(downcase-string (link content))(if (multiple? content) "_list" "")"(_r, _rp, _ep);
         if ("(property content)"_result._tag == Result<"(if (multiple? content) "Vector<" "")(link content)"Syntax"(if (multiple? content) ">" "")", ParserError>::Error)
         {
-"                            (if (optional? content) "" ($
-"            if ("(property content)"_result._Error._tag == ParserError::OtherSyntax)
-"                               (if (equal? 1 (child-number content))
+            switch ("(property content)"_result._Error._tag) {
+                case ParserError::OtherSyntax:
+"                            (if (optional? content)
+                                ($
+"                    break;
+"                               )
+                                (if (equal? 1 (child-number content))
                                     ($
-"               return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+"                    return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
 "                                   )
                                     ($
-"               return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+"                    return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
 "                                   )
                                 )
-                           ))
-"        }
+                            )
+"                case ParserError::InvalidSyntax:
+                    return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+            }
+        }
 
         "                   (if (and (optional? content)(not (multiple? content)))
                                 ($ ""(link content)"Syntax*")
@@ -260,7 +267,7 @@ struct Parser : Object {
                                             (if (equal? 1 (child-number content))
                                                 ($
 "
-                return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
 "                                               )
                                                 ($
 "
