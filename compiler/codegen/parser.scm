@@ -73,10 +73,10 @@ struct Parser : Object {
                     }
 
                     default:
-                        return Result<""Literal, ParserError> { ._tag = Result<""Literal, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(lexer.position, lexer.position)) };
+                        return Result<""Literal, ParserError> { ._tag = Result<""Literal, ParserError>::Error, ._Error = ParserError(InvalidSyntax(lexer.position, lexer.position)) };
                 }
             default:
-                return Result<""Literal, ParserError> { ._tag = Result<""Literal, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+                return Result<""Literal, ParserError> { ._tag = Result<""Literal, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
     }
 "
@@ -138,14 +138,14 @@ struct Parser : Object {
         }
 "
                 )))
-"        return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+"        return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
 "
             )
             ($ ; non-abstract syntax
 "        auto start = this->lexer.previous_position;
 "               (apply-to-children-of syntax (lambda (content) ($
                     (case (type content)
-                        (("syntax") ($ ; non-terminals
+                        (("syntax") ($
 "
         auto "(property content)"_result = this->parse_"(downcase-string (link content))(if (multiple? content) "_list" "")"(_r, _rp, _ep);
         if ("(property content)"_result._tag == Result<"(if (multiple? content) "Vector<" "")(link content)"Syntax"(if (multiple? content) ">" "")", ParserError>::Error)
@@ -156,17 +156,12 @@ struct Parser : Object {
                                 ($
 "                    break;
 "                               )
-                                (if (equal? 1 (child-number content))
-                                    ($
-"                    return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
-"                                   )
-                                    ($
-"                    return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
-"                                   )
-                                )
+                                ($
+"                    return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = "(property content)"_result._Error };
+"                               )
                             )
 "                case ParserError::InvalidSyntax:
-                    return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+                    return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = "(property content)"_result._Error };
             }
         }
 
@@ -200,20 +195,21 @@ struct Parser : Object {
                         ))
                         (("literal") ($
 "
+        auto "(property content)"_start = this->lexer.previous_position;
         auto "(property content)"_result = this->parse_literal_token(_r, _rp);
         if ("(property content)"_result._tag == Result<""Literal, ParserError>::Error)
         {
-"                            (if (optional? content) "" ($
+"                           (if (optional? content) "" ($
 "            if ("(property content)"_result._Error._tag == ParserError::OtherSyntax)
 "                               (if (equal? 1 (child-number content))
                                     ($
-"               return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+"               return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
 "                                   )
                                     ($
-"               return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };
+"               return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax("(property content)"_start, lexer.position)) };
 "                                   )
                                 )
-                           ))
+                            ))
 "        }
 
         "                   (if (and (optional? content)(not (multiple? content)))
@@ -244,11 +240,12 @@ struct Parser : Object {
                             ";
 "
                         ))
-                        (else ($ ; terminals
+                        (else (let ((syntax-moniker (if (property content) (property content) ($ (case (type content) (("colon" "semicolon") (type content)) (else (link content)))"_"(number->string (child-number content)))))) ($ ; terminals
 "
+        auto start_"syntax-moniker" = this->lexer.previous_position;
         auto "
                             (case (type content)
-                                (("keyword" "punctuation" "colon" "semicolon") ($ "success_"(if (property content) (property content) ($ (case (type content) (("colon" "semicolon") (type content)) (else (link content)))"_"(number->string (child-number content))))))
+                                (("keyword" "punctuation" "colon" "semicolon") ($ "success_"syntax-moniker))
                                 (else (property content))
                             )
             " = this->lexer.parse_"(type content)"(_r, _rp"
@@ -267,11 +264,11 @@ struct Parser : Object {
                                             (if (equal? 1 (child-number content))
                                                 ($
 "
-            return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(OtherSyntaxParserError()) };
+            return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
 "                                               )
                                                 ($
 "
-            return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(InvalidSyntaxParserError(start, lexer.position)) };"
+            return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_"syntax-moniker", lexer.position)) };"
                                                 )
                                             )
                                         )
@@ -303,7 +300,7 @@ struct Parser : Object {
 "                                   ))
                                 )
                             )
-                        )) ; terminal
+                        ))) ; terminal
                     ) ; syntax, literal or other stuff
                 ))) ; apply to children of syntax
 "
