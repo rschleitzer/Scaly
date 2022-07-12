@@ -10,11 +10,6 @@ struct Position {
     Position(size_t line, size_t column) : line(line), column(column) {}
 };
 
-Position calculate_position_from_string(Region& _pr, Page* _rp, Page* _ep, const String& text) {
-    Region _r(_pr);
-    return Position(0, 0);
-}
-
 String build_file_name(Region& _pr, Page* _rp, const Text& text) {
     Region _r(_pr);
     switch (text._tag) {
@@ -23,6 +18,27 @@ String build_file_name(Region& _pr, Page* _rp, const Text& text) {
         case Text::File:
             return String(_rp, text._File);
     }
+}
+
+Position calculate_position_from_string(Region& _pr, Page* _rp, Page* _ep, const String& text, size_t offset) {
+    Region _r(_pr);
+    StringIterator iterator(text);
+    size_t line = 1;
+    size_t column = 1;
+    size_t counter = 0;
+    while (auto character = iterator.next()) {
+        counter++;
+        if (offset == counter)
+            return Position(line, column);
+        if (*character == '\n') {
+            line++;
+            column = 1;
+        }
+        else {
+            column++;
+        }
+    }
+    return Position(0, 0);
 }
 
 struct IoModelError {
@@ -50,13 +66,13 @@ Result<Position, IoModelError> calculate_position(Region& _pr, Page* _rp, Page* 
     Region _r(_pr);
     switch (text._tag) {
         case Text::Program:
-            return Result<Position, IoModelError> { ._tag = Result<Position, IoModelError>::Error, ._Ok = calculate_position_from_string(_r, _rp, _ep, text._Program) };
+            return Result<Position, IoModelError> { ._tag = Result<Position, IoModelError>::Error, ._Ok = calculate_position_from_string(_r, _rp, _ep, text._Program, offset) };
         case Text::File: {
             auto text_result = File::read_to_string(_r, _r.page, _r.page, text._File);
             if (text_result._tag == Result<String, FileError>::Error) {
                 return Result<Position, IoModelError> { ._tag = Result<Position, IoModelError>::Error, ._Error = IoModelError(text_result._Error) };
             }
-            return Result<Position, IoModelError> { ._tag = Result<Position, IoModelError>::Error, ._Ok = calculate_position_from_string(_r, _rp, _ep, text_result._Ok) };
+            return Result<Position, IoModelError> { ._tag = Result<Position, IoModelError>::Ok, ._Ok = calculate_position_from_string(_r, _rp, _ep, text_result._Ok, offset) };
         }
     }
 }
@@ -77,6 +93,12 @@ struct ParserModelError {
         }
     }
 
+    String to_string(Page* _rp, size_t number) {
+        char str[22];
+        sprintf(str, "%zd", number);
+        return String(_rp, str);
+    }
+
     String build_error_message(Region& _pr, Page* _rp, InvalidSyntax invalid_syntax) {
         Region _r(_pr);
         StringBuilder& message_builder = *new(alignof(StringBuilder), _r.page) StringBuilder();
@@ -85,13 +107,18 @@ struct ParserModelError {
         auto position_result = calculate_position(_r, _rp, _r.page, this->text, invalid_syntax.start);
         switch (position_result._tag) {
             case Result<Position, IoModelError>::Error:
-                break;
-            case Result<Position, IoModelError>::Ok:
-                break;
+            break;
+            case Result<Position, IoModelError>::Ok: {
+                auto position = position_result._Ok;
+                message_builder.append_string(to_string(_r.page, position.line));
+                message_builder.append_character(':');
+                message_builder.append_string(to_string(_r.page, position.column));
+            }
+            break;
         }
-        message_builder.append_string(String(_rp, ": "));
+        message_builder.append_string(String(_rp, ": error: expected "));
         message_builder.append_string(invalid_syntax.expected);
-        message_builder.append_string(String(_rp, " was expectec here."));
+        message_builder.append_character('.');
 
         return message_builder.to_string(_rp);
     }
