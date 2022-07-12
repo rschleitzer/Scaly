@@ -4,5 +4,6 @@
 #include "../containers/Containers.cpp"
 
 #include "File.cpp"
+#include "Console.cpp"
 
 #endif // __Scaly_IO__

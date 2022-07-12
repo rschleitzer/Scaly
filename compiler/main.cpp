@@ -190,6 +190,8 @@ void test_compiler(Region& _pr) {
     auto error = compile_and_run_program(_r, _r.page, String(_r.page, "0"), *new(alignof(Vector<String>), _r.page) Vector<String>(_r.page, 0));
     if (error != nullptr) {
         auto error_message = error->to_string(_r, _r.page);
+        print(_r, _r.page, error_message);
+        print(_r.page, "\n");
         exit (-60);
     }
 }
