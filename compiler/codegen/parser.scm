@@ -144,6 +144,7 @@ struct Parser : Object {
                     (case (type content)
                         (("syntax") ($
 "
+        auto "(property content)"_start = this->lexer.position;
         auto "(property content)"_result = this->parse_"(downcase-string (link content))(if (multiple? content) "_list" "")"(_r, _rp, _ep);
         if ("(property content)"_result._tag == Result<"(if (multiple? content) "Vector<" "")(link content)"Syntax"(if (multiple? content) ">" "")", ParserError>::Error)
         {
@@ -158,9 +159,19 @@ struct Parser : Object {
             }
 "
                                 )
-                                ($
-"                return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = "(property content)"_result._Error };
-"                               )
+                                (if (equal? 1 (child-number content))
+                                    ($
+"            return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = "(property content)"_result._Error };
+"                                   )
+                                    ($
+"            switch ("(property content)"_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax("(property content)"_start, lexer.position, String(_ep, \"a valid "(link content)" syntax\"))) };
+                case ParserError::InvalidSyntax:
+                    return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = "(property content)"_result._Error };
+            }
+"                                   )
+                                )
                             )
 
 "        }
