@@ -138,7 +138,6 @@ struct Lexer : Object {
 
     void advance(Region& _pr) {
         Region _r(_pr);
-        skip_whitespace(false);
         this->previous_position = this->position;
 
         if (this->character == nullptr)
@@ -148,11 +147,13 @@ struct Lexer : Object {
 
         if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z'))) {
             this->token = scan_identifier();
+            skip_whitespace(false);
             return;
         }
 
         if ((c >= '1') && (c <= '9')) {
             this->token = scan_integer_literal(this->character, 0);
+            skip_whitespace(false);
             return;
         }
 
@@ -216,6 +217,7 @@ struct Lexer : Object {
                 this->token = Token(InvalidToken());
                 break;
         }
+        skip_whitespace(false);
     }
 
     void empty() {
