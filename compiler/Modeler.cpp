@@ -4,15 +4,15 @@ namespace model {
 
 using namespace scaly::io;
 
-Result<FileSyntax, ParserError> parse_program(Region& _pr, Page* _rp, Page* _ep, const String& program) {
-    Region _r(_pr);
+Result<FileSyntax, ParserError> parse_program(Page* _rp, Page* _ep, const String& program) {
+    Region _r;
     Array<DeclarationSyntax>& declarations = *new(alignof(Array<DeclarationSyntax>), _r.page) Array<DeclarationSyntax>();
     
     // Parse the scaly module inclusion
     {
-        Region _r_1(_r);
-        Parser& parser_module = *new(alignof(Parser), _r_1.page) Parser(_r_1, _r_1.page, String(_r_1.page, "module scaly"));
-        auto module_syntax_result = parser_module.parse_module(_r_1, _rp, _ep);
+        Region _r_1;
+        Parser& parser_module = *new(alignof(Parser), _r_1.page) Parser(_r_1.page, String(_r_1.page, "module scaly"));
+        auto module_syntax_result = parser_module.parse_module(_rp, _ep);
         if (module_syntax_result._tag == Result<ModuleSyntax*, ParserError>::Error)
             return Result<FileSyntax, ParserError> { ._tag = Result<FileSyntax, ParserError>::Error, ._Error = module_syntax_result._Error };
         auto module_syntax = module_syntax_result._Ok;
@@ -24,10 +24,10 @@ Result<FileSyntax, ParserError> parse_program(Region& _pr, Page* _rp, Page* _ep,
     Vector<UseSyntax>* uses = nullptr;
     Vector<StatementSyntax>* statements = nullptr;
     {
-        Region _r_1(_r);
-        Parser& parser = *new(alignof(Parser), _r_1.page) Parser(_r_1, _r_1.page, program);
+        Region _r_1;
+        Parser& parser = *new(alignof(Parser), _r_1.page) Parser(_r_1.page, program);
         while(true) {
-            auto node_result = parser.parse_declaration(_r_1, _rp, _ep);
+            auto node_result = parser.parse_declaration(_rp, _ep);
             if ((node_result._tag == Result<DeclarationSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
                 return Result<FileSyntax, ParserError> { ._tag = Result<FileSyntax, ParserError>::Error, ._Error = node_result._Error };
             if (node_result._tag == Result<DeclarationSyntax, ParserError>::Ok) {
@@ -38,24 +38,24 @@ Result<FileSyntax, ParserError> parse_program(Region& _pr, Page* _rp, Page* _ep,
             }
         }
 
-        Result<Vector<UseSyntax>*, ParserError> uses_result = parser.parse_use_list(_r_1, _rp, _ep);
+        Result<Vector<UseSyntax>*, ParserError> uses_result = parser.parse_use_list(_rp, _ep);
         if (uses_result._tag == Result<Vector<UseSyntax>, ParserError>::Ok)
             uses = uses_result._Ok;
 
-        Result<Vector<StatementSyntax>*, ParserError> statements_result = parser.parse_statement_list(_r_1, _rp, _ep);
+        Result<Vector<StatementSyntax>*, ParserError> statements_result = parser.parse_statement_list(_rp, _ep);
         if (statements_result._tag == Result<Vector<StatementSyntax>, ParserError>::Ok)
             statements = statements_result._Ok;
     }
 
     // Parse the main function stub
-    Parser& parser_main = *new(alignof(Parser), _r.page) Parser(_r, _r.page, String(_r.page, "function main('argument count': int, 'argument values': pointer[pointer[byte]]) returns int"));
+    Parser& parser_main = *new(alignof(Parser), _r.page) Parser(_r.page, String(_r.page, "function main('argument count': int, 'argument values': pointer[pointer[byte]]) returns int"));
     auto start = parser_main.lexer.previous_position;
 
-    auto success_function = parser_main.lexer.parse_keyword(_r, _r.page, String(_r.page, "function"));
+    auto success_function = parser_main.lexer.parse_keyword(_r.page, String(_r.page, "function"));
     if (!success_function)
         return Result<FileSyntax, ParserError> { ._tag = Result<FileSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start, parser_main.lexer.position, String(_ep, "function"))) };
 
-    auto name = parser_main.lexer.parse_identifier(_r, _r.page, parser_main.keywords);
+    auto name = parser_main.lexer.parse_identifier(_r.page, parser_main.keywords);
     if (name != nullptr) {
         if (!parser_main.is_identifier(*name)) {
             return Result<FileSyntax, ParserError> { ._tag = Result<FileSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start, parser_main.lexer.position, String(_ep, "main"))) };
@@ -65,12 +65,12 @@ Result<FileSyntax, ParserError> parse_program(Region& _pr, Page* _rp, Page* _ep,
         return Result<FileSyntax, ParserError> { ._tag = Result<FileSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start, parser_main.lexer.position, String(_ep, "main"))) };
 
 
-    auto parameters_result = parser_main.parse_parameterset(_r, _rp, _ep);
+    auto parameters_result = parser_main.parse_parameterset(_rp, _ep);
     if (parameters_result._tag == Result<ParameterSetSyntax*, ParserError>::Error)
         return Result<FileSyntax, ParserError> { ._tag = Result<FileSyntax, ParserError>::Error, ._Error = parameters_result._Error };
     auto parameters = parameters_result._Ok;
 
-    auto returns_result = parser_main.parse_returns(_r, _rp, _ep);
+    auto returns_result = parser_main.parse_returns(_rp, _ep);
     if (returns_result._tag == Result<ReturnsSyntax*, ParserError>::Error)
         return Result<FileSyntax, ParserError> { ._tag = Result<FileSyntax, ParserError>::Error, ._Error = returns_result._Error };
     auto returns = returns_result._Ok;
@@ -99,8 +99,8 @@ Result<FileSyntax, ParserError> parse_program(Region& _pr, Page* _rp, Page* _ep,
     };
 }
 
-Result<Vector<Property>, ModelError> handle_parameterset(Region& _pr, Page* _rp, Page* _ep, ParameterSetSyntax& parameterSetSyntax) {
-    Region _r(_pr);
+Result<Vector<Property>, ModelError> handle_parameterset(Page* _rp, Page* _ep, ParameterSetSyntax& parameterSetSyntax) {
+    Region _r;
     Array<Property>& parameters = *new(alignof(Array<Property>), _r.page) Array<Property>();
     switch (parameterSetSyntax._tag) {
         case ParameterSetSyntax::Parameters: {
@@ -118,18 +118,17 @@ Result<Vector<Property>, ModelError> handle_parameterset(Region& _pr, Page* _rp,
         ._Ok = Vector<Property>(_rp, parameters) };
 }
 
-Result<HashMap<String, Property>, ModelError> handle_structure(Region& _pr, Page* _rp, Page* _ep, StructureSyntax& structure) {    
-    Region _r(_pr);
+Result<HashMap<String, Property>, ModelError> handle_structure(Page* _rp, Page* _ep, StructureSyntax& structure) {    
+    Region _r;
     HashMapBuilder<String, Property>& properties_builder = *new(alignof(HashMapBuilder<String, Property>), _r.page) HashMapBuilder<String, Property>();
     /// Fill it
-    return Result<HashMap<String, Property>, ModelError> { ._tag = Result<HashMap<String, Property>, ModelError>::Ok, ._Ok = HashMap<String, Property>(_r, _rp, properties_builder) };
+    return Result<HashMap<String, Property>, ModelError> { ._tag = Result<HashMap<String, Property>, ModelError>::Ok, ._Ok = HashMap<String, Property>(_rp, properties_builder) };
 }
 
-Result<Code, ModelError> build_code(Region& _pr, Page* _rp, Page* _ep, String name, String path, Vector<UseSyntax>* uses, Vector<DeclarationSyntax>* declarations);
+Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String path, Vector<UseSyntax>* uses, Vector<DeclarationSyntax>* declarations);
 
-Result<Code, ModelError> handle_body(Region& _pr, Page* _rp, Page* _ep, String name, String path, BodySyntax& body) {    
-    Region _r(_pr);
-    auto code_result = build_code(_r, _rp, _ep, name, path, body.uses, body.declarations);
+Result<Code, ModelError> handle_body(Page* _rp, Page* _ep, String name, String path, BodySyntax& body) {    
+    auto code_result = build_code(_rp, _ep, name, path, body.uses, body.declarations);
     if (code_result._tag == Result<Code, ModelError>::Error)
         return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = code_result._Error };
 
@@ -137,24 +136,22 @@ Result<Code, ModelError> handle_body(Region& _pr, Page* _rp, Page* _ep, String n
     return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Ok, ._Ok = code };
 }
 
-Result<Structure, ModelError> handle_class(Region& _pr, Page* _rp, Page* _ep, String name, String path, ClassSyntax& class_) {    
-    Region _r(_pr);
-    // return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplementedModelError(Span(class_.start, class_.end)))) };
-
-    auto properties_result = handle_structure(_pr, _rp, _ep, class_.structure);
+Result<Structure, ModelError> handle_class(Page* _rp, Page* _ep, String name, String path, ClassSyntax& class_) {    
+    auto properties_result = handle_structure(_rp, _ep, class_.structure);
     if (properties_result._tag == Result<HashMap<String, Property>, ModelError>::Error)
         return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = properties_result._Error };
     auto properties = properties_result._Ok;
 
     if (class_.body == nullptr) {
-        HashMapBuilder<String, Nameable>& symbols_builder = *new(alignof(HashMapBuilder<String, Nameable>), _r.page) HashMapBuilder<String, Nameable>();
-        auto code = Code(HashMap<String, Nameable>(_r, _rp, symbols_builder));
+        Region _r_1;
+        HashMapBuilder<String, Nameable>& symbols_builder = *new(alignof(HashMapBuilder<String, Nameable>), _r_1.page) HashMapBuilder<String, Nameable>();
+        auto code = Code(HashMap<String, Nameable>(_rp, symbols_builder));
         return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Ok,
             ._Ok = Structure(Span(class_.start, class_.end), properties, code)
         };
     }
     else {
-        auto code_result = handle_body(_pr, _rp, _ep, name, path, *class_.body);
+        auto code_result = handle_body(_rp, _ep, name, path, *class_.body);
         if (code_result._tag == Result<Code, ModelError>::Error)
             return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = code_result._Error };
         auto code = code_result._Ok;
@@ -165,13 +162,12 @@ Result<Structure, ModelError> handle_class(Region& _pr, Page* _rp, Page* _ep, St
     }
 }
 
-Result<Postfix, ModelError> handle_postfix(Region& _pr, Page* _rp, Page* _ep, PostfixSyntax& operand) {
-    Region _r(_pr);
+Result<Postfix, ModelError> handle_postfix(Page* _rp, Page* _ep, PostfixSyntax& operand) {
     return Result<Postfix, ModelError> { ._tag = Result<Postfix, ModelError>::Ok, ._Ok = Postfix() };
 }
 
-Result<Constant, ModelError> handle_literal(Region& _pr, Page* _rp, Page* _ep, LiteralSyntax& literal) {
-    Region _r(_pr);
+Result<Constant, ModelError> handle_literal(Page* _rp, Page* _ep, LiteralSyntax& literal) {
+    Region _r;
     switch (literal.literal._tag) {
         case Literal::Boolean:
             return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError> ::Ok, ._Ok = Constant { ._tag = Constant::Boolean, ._Boolean = literal.literal._Boolean.value } };
@@ -207,16 +203,14 @@ Result<Constant, ModelError> handle_literal(Region& _pr, Page* _rp, Page* _ep, L
     }
 }
 
-Result<Type, ModelError> handle_type(Region& _pr, Page* _rp, Page* _ep, TypeSyntax& type) {
-    Region _r(_pr);
+Result<Type, ModelError> handle_type(Page* _rp, Page* _ep, TypeSyntax& type) {
     return Result<Type, ModelError> { ._tag = Result<Type, ModelError>::Ok, ._Ok = Type(String(_rp, type.name.name)) };
 }
 
-Result<Type, ModelError> handle_binding_annotation(Region& _pr, Page* _rp, Page* _ep, BindingAnnotationSyntax& binding_annotation) {
-    Region _r(_pr);
+Result<Type, ModelError> handle_binding_annotation(Page* _rp, Page* _ep, BindingAnnotationSyntax& binding_annotation) {
     switch (binding_annotation.spec._tag) {
         case BindingSpecSyntax::Type: {
-            auto type_result = handle_type(_r, _rp, _ep, binding_annotation.spec._Type);
+            auto type_result = handle_type(_rp, _ep, binding_annotation.spec._Type);
             if (type_result._tag == Result<Type, ModelError>::Error)
                 return Result<Type, ModelError> { ._tag = Result<Type, ModelError>::Error, ._Error = type_result._Error };
             return Result<Type, ModelError> { ._tag = Result<Type, ModelError>::Ok, ._Ok = type_result._Ok };
@@ -229,15 +223,15 @@ Result<Type, ModelError> handle_binding_annotation(Region& _pr, Page* _rp, Page*
     }
 }
 
-Result<Operation, ModelError> handle_operation(Region& _pr, Page* _rp, Page* _ep, OperationSyntax& operation);
+Result<Operation, ModelError> handle_operation(Page* _rp, Page* _ep, OperationSyntax& operation);
 
-Result<Vector<Statement>, ModelError> handle_statements(Region& _pr, Page* _rp, Page* _ep, Array<Statement>& statements_builder, VectorIterator<StatementSyntax>& statements) {
-    Region _r(_pr);
+Result<Vector<Statement>, ModelError> handle_statements(Page* _rp, Page* _ep, Array<Statement>& statements_builder, VectorIterator<StatementSyntax>& statements) {
+    Region _r;
     while (auto statement = statements.next()) {
         switch (statement->_tag)
         {
             case StatementSyntax::Operation: {
-                auto operation_result = handle_operation(_r, _rp, _ep, statement->_Operation);
+                auto operation_result = handle_operation(_rp, _ep, statement->_Operation);
                 if (operation_result._tag == Result<Operation, ModelError>::Error)
                     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = operation_result._Error };
                 statements_builder.add(Statement { ._tag = Statement::Action, ._Action = { ._tag = Action::Operation, ._Operation = operation_result._Ok }});
@@ -247,16 +241,16 @@ Result<Vector<Statement>, ModelError> handle_statements(Region& _pr, Page* _rp, 
                 auto binding = statement->_Let.binding.operation;
                 Type* type = nullptr;
                 if (statement->_Let.binding.annotation != nullptr) {
-                    auto _type_result = handle_binding_annotation(_r, _rp, _ep, *statement->_Let.binding.annotation);
+                    auto _type_result = handle_binding_annotation(_rp, _ep, *statement->_Let.binding.annotation);
                     if (_type_result._tag == Result<Type, ModelError>::Error)
                         return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = _type_result._Error };
                     type = new(alignof(Type), _rp) Type(_type_result._Ok);
                 }
-                auto operation_result = handle_operation(_r, _rp, _ep, binding);
+                auto operation_result = handle_operation(_rp, _ep, binding);
                 if (operation_result._tag == Result<Operation, ModelError>::Error)
                     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = operation_result._Error };
                 Array<Statement>& body_statements_builder = *new(alignof(Array<Statement>), _r.page) Array<Statement>();
-                auto statements_result = handle_statements(_r, _rp, _ep, body_statements_builder, statements);
+                auto statements_result = handle_statements(_rp, _ep, body_statements_builder, statements);
                 if (statements_result._tag == Result<Vector<Statement>, ModelError>::Error)
                     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = statements_result._Error };
                 statements_builder.add(Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Constant, String(_rp, statement->_Let.binding.name), type, operation_result._Ok, statements_result._Ok) });
@@ -266,16 +260,16 @@ Result<Vector<Statement>, ModelError> handle_statements(Region& _pr, Page* _rp, 
                 auto binding = statement->_Var.binding.operation;
                 Type* type = nullptr;
                 if (statement->_Var.binding.annotation != nullptr) {
-                    auto _type_result = handle_binding_annotation(_r, _rp, _ep, *statement->_Var.binding.annotation);
+                    auto _type_result = handle_binding_annotation(_rp, _ep, *statement->_Var.binding.annotation);
                     if (_type_result._tag == Result<Type, ModelError>::Error)
                         return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = _type_result._Error };
                     type = new(alignof(Type), _rp) Type(_type_result._Ok);
                 }
-                auto operation_result = handle_operation(_r, _rp, _ep, binding);
+                auto operation_result = handle_operation(_rp, _ep, binding);
                 if (operation_result._tag == Result<Operation, ModelError>::Error)
                     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = operation_result._Error };
                 Array<Statement>& body_statements_builder = *new(alignof(Array<Statement>), _r.page) Array<Statement>();
-                auto statements_result = handle_statements(_r, _rp, _ep, body_statements_builder, statements);
+                auto statements_result = handle_statements(_rp, _ep, body_statements_builder, statements);
                 if (statements_result._tag == Result<Vector<Statement>, ModelError>::Error)
                     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = statements_result._Error };
                 statements_builder.add(Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Extendable, String(_rp, statement->_Var.binding.name), type, operation_result._Ok, statements_result._Ok) });
@@ -285,27 +279,27 @@ Result<Vector<Statement>, ModelError> handle_statements(Region& _pr, Page* _rp, 
                 auto binding = statement->_Mutable.binding.operation;
                 Type* type = nullptr;
                 if (statement->_Mutable.binding.annotation != nullptr) {
-                    auto _type_result = handle_binding_annotation(_r, _rp, _ep, *statement->_Mutable.binding.annotation);
+                    auto _type_result = handle_binding_annotation(_rp, _ep, *statement->_Mutable.binding.annotation);
                     if (_type_result._tag == Result<Type, ModelError>::Error)
                         return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = _type_result._Error };
                     type = new(alignof(Type), _rp) Type(_type_result._Ok);
                 }
-                auto operation_result = handle_operation(_r, _rp, _ep, binding);
+                auto operation_result = handle_operation(_rp, _ep, binding);
                 if (operation_result._tag == Result<Operation, ModelError>::Error)
                     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = operation_result._Error };
                 Array<Statement>& body_statements_builder = *new(alignof(Array<Statement>), _r.page) Array<Statement>();
-                auto statements_result = handle_statements(_r, _rp, _ep, body_statements_builder, statements);
+                auto statements_result = handle_statements(_rp, _ep, body_statements_builder, statements);
                 if (statements_result._tag == Result<Vector<Statement>, ModelError>::Error)
                     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = statements_result._Error };
                 statements_builder.add(Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Mutable, String(_rp, statement->_Mutable.binding.name), type, operation_result._Ok, statements_result._Ok) });
                 return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Ok, ._Ok = Vector<Statement>(_rp, statements_builder) };
             }
             case StatementSyntax::Set:
-                auto _source_result = handle_operation(_r, _rp, _ep, statement->_Set.source);
+                auto _source_result = handle_operation(_rp, _ep, statement->_Set.source);
                 if (_source_result._tag == Result<Operation, ModelError>::Error)
                     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = _source_result._Error };
                 auto source = _source_result._Ok;
-                auto _target_result = handle_operation(_r, _rp, _ep, statement->_Set.target);
+                auto _target_result = handle_operation(_rp, _ep, statement->_Set.target);
                 if (_target_result._tag == Result<Operation, ModelError>::Error)
                     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = _target_result._Error };
                 auto target = _target_result._Ok;
@@ -317,13 +311,13 @@ Result<Vector<Statement>, ModelError> handle_statements(Region& _pr, Page* _rp, 
     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError> ::Ok, ._Ok = Vector<Statement>(_rp, statements_builder) };
 }
 
-Result<Block, ModelError> handle_block(Region& _pr, Page* _rp, Page* _ep, BlockSyntax& block) {
-    Region _r(_pr);
+Result<Block, ModelError> handle_block(Page* _rp, Page* _ep, BlockSyntax& block) {
+    Region _r;
     Vector<Statement>* statements = nullptr;
     if (block.statements != nullptr) {
         Array<Statement>& statements_builder = *new(alignof(Array<Statement>), _r.page) Array<Statement>();
         auto statements_iterator = VectorIterator<StatementSyntax>(*(block.statements));
-        auto statement_result = handle_statements(_r, _rp, _ep, statements_builder, statements_iterator);
+        auto statement_result = handle_statements(_rp, _ep, statements_builder, statements_iterator);
             if (statement_result._tag == Result<Operand, ModelError>::Error)
                 return Result<Block, ModelError> { ._tag = Result<Block, ModelError>::Error, ._Error = statement_result._Error };
             statements_builder.add(statement_result._Ok);
@@ -333,12 +327,12 @@ Result<Block, ModelError> handle_block(Region& _pr, Page* _rp, Page* _ep, BlockS
     return Result<Block, ModelError> { ._tag = Result<Block, ModelError> ::Ok, ._Ok = Block() };
  }
 
-Result<Expression, ModelError> handle_expression(Region& _pr, Page* _rp, Page* _ep, ExpressionSyntax& expression) {
-    Region _r(_pr);
+Result<Expression, ModelError> handle_expression(Page* _rp, Page* _ep, ExpressionSyntax& expression) {
+    Region _r;
     switch (expression._tag) {
         case ExpressionSyntax::Literal: {
             auto literal = expression._Literal;
-            auto constant_result = handle_literal(_r, _rp, _ep, literal);
+            auto constant_result = handle_literal(_rp, _ep, literal);
             if (constant_result._tag == Result<Constant, ModelError>::Error)
                 return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = constant_result._Error };
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::Constant, ._Constant = constant_result._Ok} };
@@ -351,7 +345,7 @@ Result<Expression, ModelError> handle_expression(Region& _pr, Page* _rp, Page* _
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(expression._Vector.start, expression._Vector.end)))) };
         case ExpressionSyntax::Block: {
             auto block = expression._Block;
-            auto block_result = handle_block(_r, _rp, _ep, block);
+            auto block_result = handle_block(_rp, _ep, block);
             if (block_result._tag == Result<Expression, ModelError>::Error)
                 return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = block_result._Error };
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::Block, ._Block = block_result._Ok} };
@@ -381,14 +375,14 @@ Result<Expression, ModelError> handle_expression(Region& _pr, Page* _rp, Page* _
     }
 }
 
-Result<Operand, ModelError> handle_operand(Region& _pr, Page* _rp, Page* _ep, OperandSyntax& operand) {
-    Region _r(_pr);
+Result<Operand, ModelError> handle_operand(Page* _rp, Page* _ep, OperandSyntax& operand) {
     Vector<Postfix>* postfixes = nullptr;
     if (operand.postfixes != nullptr) {
-        Array<Postfix>& postfixes_builder = *new(alignof(Array<Postfix>), _r.page) Array<Postfix>();
+        Region _r_1;
+        Array<Postfix>& postfixes_builder = *new(alignof(Array<Postfix>), _r_1.page) Array<Postfix>();
         auto postfixes_iterator = VectorIterator<PostfixSyntax>(*(operand.postfixes));
         while (auto postfix = postfixes_iterator.next()) {
-            auto postfix_result = handle_postfix(_r, _rp, _ep, *postfix);
+            auto postfix_result = handle_postfix(_rp, _ep, *postfix);
             if (postfix_result._tag == Result<Operand, ModelError>::Error)
                 return Result<Operand, ModelError> { ._tag = Result<Operand, ModelError>::Error, ._Error = postfix_result._Error };
             postfixes_builder.add(postfix_result._Ok);
@@ -396,20 +390,20 @@ Result<Operand, ModelError> handle_operand(Region& _pr, Page* _rp, Page* _ep, Op
         postfixes = new(alignof(Vector<Postfix>), _rp) Vector<Postfix>(_rp, postfixes_builder);
     }
 
-    auto expression_result = handle_expression(_r, _rp, _ep, operand.expression);
+    auto expression_result = handle_expression(_rp, _ep, operand.expression);
     if (expression_result._tag == Result<Expression, ModelError>::Error)
         return Result<Operand, ModelError> { ._tag = Result<Operand, ModelError>::Error, ._Error = expression_result._Error };
 
     return Result<Operand, ModelError> { ._tag = Result<Operand, ModelError>::Ok, ._Ok = Operand(Span(operand.expression._Literal.start, operand.expression._Literal.end), expression_result._Ok, postfixes) };
 }
 
-Result<Operation, ModelError> handle_operation(Region& _pr, Page* _rp, Page* _ep, OperationSyntax& operation) {
-    Region _r(_pr);
+Result<Operation, ModelError> handle_operation(Page* _rp, Page* _ep, OperationSyntax& operation) {
+    Region _r;
     Array<Operand>& operands_builder = *new(alignof(Array<Operand>), _r.page) Array<Operand>();
     if (operation.operands != nullptr) {
         auto operands_iterator = VectorIterator<OperandSyntax>(*(operation.operands));
         while (auto operand = operands_iterator.next()) {
-            auto operand_result = handle_operand(_r, _rp, _ep, *operand);
+            auto operand_result = handle_operand(_rp, _ep, *operand);
             if (operand_result._tag == Result<Operand, ModelError>::Error)
                 return Result<Operation, ModelError> { ._tag = Result<Operation, ModelError>::Error, ._Error = operand_result._Error };
             operands_builder.add(operand_result._Ok);
@@ -418,16 +412,14 @@ Result<Operation, ModelError> handle_operation(Region& _pr, Page* _rp, Page* _ep
     return Result<Operation, ModelError> { ._tag = Result<Operation, ModelError>::Ok, ._Ok = Operation(Vector<Operand>(_rp, operands_builder)) };
 }
 
-Result<Concept, ModelError> handle_definition(Region& _pr, Page* _rp, Page* _ep, String name, String path, DefinitionSyntax& definition) {
-    Region _r(_pr);
-
+Result<Concept, ModelError> handle_definition(Page* _rp, Page* _ep, String name, String path, DefinitionSyntax& definition) {
     auto concept = definition.concept_;
     Span span(definition.start, definition.end);
     switch (concept._tag)
     {
         case ConceptSyntax::Class: {
             auto class_ = concept._Class;
-            auto structure_result = handle_class(_r, _rp, _ep, name, path, class_);
+            auto structure_result = handle_class(_rp, _ep, name, path, class_);
             if (structure_result._tag == Result<Structure, ModelError>::Error)
                 return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = structure_result._Error };
             auto structure = structure_result._Ok;
@@ -442,7 +434,7 @@ Result<Concept, ModelError> handle_definition(Region& _pr, Page* _rp, Page* _ep,
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(concept._Union.start, concept._Union.end)))) };
         case ConceptSyntax::Constant: {
             auto constant = concept._Constant;
-            auto operation_result = handle_operation(_r, _rp, _ep, constant.operation);
+            auto operation_result = handle_operation(_rp, _ep, constant.operation);
             if (operation_result._tag == Result<Operation, ModelError>::Error)
                 return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = operation_result._Error };
             auto operation = operation_result._Ok;
@@ -461,11 +453,10 @@ Result<Concept, ModelError> handle_definition(Region& _pr, Page* _rp, Page* _ep,
     }
 }
 
-Result<Statement, ModelError> handle_action(Region& _pr, Page* _rp, Page* _ep, ActionSyntax& action) {
-    Region _r(_pr);
+Result<Statement, ModelError> handle_action(Page* _rp, Page* _ep, ActionSyntax& action) {
     switch (action._tag) {
         case ActionSyntax::Operation: {
-            auto operation_result = handle_operation(_r, _rp, _ep, action._Operation);
+            auto operation_result = handle_operation(_rp, _ep, action._Operation);
             if (operation_result._tag == Result<Operation, ModelError>::Error)
                 return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = operation_result._Error };
             return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Ok, ._Ok = Statement { ._tag = Statement::Action, ._Action = Action { ._tag = Action::Operation, ._Operation = operation_result._Ok } } };
@@ -475,25 +466,24 @@ Result<Statement, ModelError> handle_action(Region& _pr, Page* _rp, Page* _ep, A
     }
 }
 
-Result<Function, ModelError> handle_function(Region& _pr, Page* _rp, Page* _ep, FunctionSyntax& function_syntax) {
-    Region _r(_pr);
+Result<Function, ModelError> handle_function(Page* _rp, Page* _ep, FunctionSyntax& function_syntax) {
     Vector<Property>* input = nullptr;
     Vector<Property>* output = nullptr;
 
     if (function_syntax.routine.parameters != nullptr) {
         ParameterSetSyntax& parameterSetSyntax = *function_syntax.routine.parameters;
-        auto parameterset_result = handle_parameterset(_r, _rp, _ep, parameterSetSyntax);
+        auto parameterset_result = handle_parameterset(_rp, _ep, parameterSetSyntax);
     }
 
     if (function_syntax.routine.returns != nullptr)
     {
         ParameterSetSyntax& parameterSetSyntax = function_syntax.routine.returns->parameters; 
-        auto parameterset_result = handle_parameterset(_r, _rp, _ep, parameterSetSyntax);
+        auto parameterset_result = handle_parameterset(_rp, _ep, parameterSetSyntax);
     }
 
     switch (function_syntax.routine.implementation._tag) {
         case ImplementationSyntax::Action: {
-            auto statement_result = handle_action(_r, _rp, _ep, function_syntax.routine.implementation._Action);
+            auto statement_result = handle_action(_rp, _ep, function_syntax.routine.implementation._Action);
             if (statement_result._tag == Result<Statement, ModelError>::Error)
                 return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Error, ._Error = statement_result._Error };
             return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(function_syntax.start, function_syntax.end), String(_rp, function_syntax.name), input, output, Implementation { ._tag = Implementation::Statement, ._Statement = statement_result._Ok }) };
@@ -510,8 +500,7 @@ Result<Function, ModelError> handle_function(Region& _pr, Page* _rp, Page* _ep, 
 
 }
 
-Result<Operator, ModelError> handle_operator(Region& _pr, Page* _rp, Page* _ep, OperatorSyntax& operator_syntax) {
-    Region _r(_pr);
+Result<Operator, ModelError> handle_operator(Page* _rp, Page* _ep, OperatorSyntax& operator_syntax) {
     Vector<Property>* output = nullptr;
     Operation* operation = nullptr;
     switch (operator_syntax.target._tag) {
@@ -521,16 +510,16 @@ Result<Operator, ModelError> handle_operator(Region& _pr, Page* _rp, Page* _ep, 
             auto operator_ = operator_syntax.target._Symbol;
             if (operator_.returns != nullptr) {
                 ParameterSetSyntax& parameterSetSyntax = operator_.returns->parameters; 
-                auto parameterset_result = handle_parameterset(_r, _rp, _ep, parameterSetSyntax);
+                auto parameterset_result = handle_parameterset(_rp, _ep, parameterSetSyntax);
             }
             return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Ok, ._Ok = Operator(Span(operator_syntax.start, operator_syntax.end), String(_rp, operator_.name), output, operation) };
     }
 }
 
-Result<Concept, ModelError> build_module_concept(Region& _pr, Page* _rp, Page* _ep, String name, String path, FileSyntax file_syntax);
+Result<Concept, ModelError> build_module_concept(Page* _rp, Page* _ep, String name, String path, FileSyntax file_syntax);
 
-Result<Module, ModelError> handle_module(Region& _pr, Page* _rp, Page* _ep, String path, ModuleSyntax& module_syntax) {
-    Region _r(_pr);
+Result<Module, ModelError> handle_module(Page* _rp, Page* _ep, String path, ModuleSyntax& module_syntax) {
+    Region _r;
     StringBuilder& file_name_builder = *new(alignof(StringBuilder), _r.page) StringBuilder();
     if (path.get_length() > 0) {
         file_name_builder.append_string(path);
@@ -539,14 +528,14 @@ Result<Module, ModelError> handle_module(Region& _pr, Page* _rp, Page* _ep, Stri
     file_name_builder.append_string(module_syntax.name.name);
     file_name_builder.append_string(String(_r.page, ".scaly"));
     auto file_name = file_name_builder.to_string(_rp);
-    auto module_text_result = File::read_to_string(_r, _r.page, _r.page, file_name);
+    auto module_text_result = File::read_to_string(_r.page, _r.page, file_name);
     if (module_text_result._tag == Result<String, FileError>::Error) {
         return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = ModelError(module_text_result._Error) };
     }
     auto module_text = module_text_result._Ok;
 
-    Parser& parser = *new(alignof(Parser), _r.page) Parser(_r, _r.page, module_text);
-    auto file_syntax_result = parser.parse_file(_r, _rp, _ep);
+    Parser& parser = *new(alignof(Parser), _r.page) Parser(_r.page, module_text);
+    auto file_syntax_result = parser.parse_file(_rp, _ep);
     if (file_syntax_result._tag == Result<ModuleSyntax*, ParserError>::Error)
         return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = ModelError(ParserModelError(Text {._tag = Text::File, ._Program = String(_ep, file_name) }, file_syntax_result._Error)) };
     auto file_syntax = file_syntax_result._Ok;
@@ -557,7 +546,7 @@ Result<Module, ModelError> handle_module(Region& _pr, Page* _rp, Page* _ep, Stri
     path_builder.append_string(module_syntax.name.name);
 
 
-    auto concept_result = build_module_concept(_r, _rp, _ep, String(_rp, module_syntax.name.name), path_builder.to_string(_r.page), file_syntax);
+    auto concept_result = build_module_concept(_rp, _ep, String(_rp, module_syntax.name.name), path_builder.to_string(_r.page), file_syntax);
     if (concept_result._tag == Result<Concept, ModelError>::Error)
         return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = concept_result._Error };
     auto concept = concept_result._Ok;
@@ -567,21 +556,20 @@ Result<Module, ModelError> handle_module(Region& _pr, Page* _rp, Page* _ep, Stri
     };
 }
 
-Result<Code, ModelError> build_code(Region& _pr, Page* _rp, Page* _ep, String name, String path, Vector<UseSyntax>* uses, Vector<DeclarationSyntax>* declarations) {
-    Region _r(_pr);
-
+Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String path, Vector<UseSyntax>* uses, Vector<DeclarationSyntax>* declarations) {
+    Region _r;
     HashMapBuilder<String, Nameable>& symbols_builder = *new(alignof(HashMapBuilder<String, Nameable>), _r.page) HashMapBuilder<String, Nameable>();
     HashMapBuilder<String, Array<Function>>& functions_builder = *new(alignof(HashMapBuilder<String, Array<Function>>), _r.page) HashMapBuilder<String, Array<Function>>();
 
     if (declarations != nullptr) {
         auto declarations_iterator = VectorIterator<DeclarationSyntax>(*(declarations));
         while (auto declaration = declarations_iterator.next()) {
-            Region _r_1(_r);
+            Region _r_1;
             switch (declaration->_tag) {
                 case DeclarationSyntax::Private:
                     return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(declaration->_Private.start, declaration->_Private.end)))) };
                 case DeclarationSyntax::Definition: {
-                    auto concept_result = handle_definition(_r_1, _rp, _ep, name, path, declaration->_Definition);
+                    auto concept_result = handle_definition(_rp, _ep, name, path, declaration->_Definition);
                     if (concept_result._tag == Result<Function, ModelError>::Error)
                         return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = concept_result._Error };
                     auto concept = concept_result._Ok;
@@ -592,7 +580,7 @@ Result<Code, ModelError> build_code(Region& _pr, Page* _rp, Page* _ep, String na
                 }
                 break;
                 case DeclarationSyntax::Function: {
-                    auto function_result = handle_function(_r_1, _rp, _ep, declaration->_Function);
+                    auto function_result = handle_function(_rp, _ep, declaration->_Function);
                     if (function_result._tag == Result<Function, ModelError>::Error)
                         return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = function_result._Error };
                     auto function = function_result._Ok;
@@ -612,7 +600,7 @@ Result<Code, ModelError> build_code(Region& _pr, Page* _rp, Page* _ep, String na
                     return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(declaration->_Procedure.start, declaration->_Procedure.end)))) };
                 case DeclarationSyntax::Operator: {
                     auto operator_syntax = declaration->_Operator;
-                    auto operator_result = handle_operator(_r_1, _rp, _ep, operator_syntax);
+                    auto operator_result = handle_operator(_rp, _ep, operator_syntax);
                     if (operator_result._tag == Result<Code, ModelError>::Error)
                         return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error,
                             ._Error = operator_result._Error };
@@ -630,7 +618,7 @@ Result<Code, ModelError> build_code(Region& _pr, Page* _rp, Page* _ep, String na
                     return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(Span(declaration->_Macro.start, declaration->_Macro.end)))) };
                 case DeclarationSyntax::Module:
                     auto module_syntax = declaration->_Module;
-                    auto module_result = handle_module(_r_1, _rp, _ep, path, module_syntax);
+                    auto module_result = handle_module(_rp, _ep, path, module_syntax);
                     if (module_result._tag == Result<Code, ModelError>::Error)
                         return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error,
                             ._Error = module_result._Error };
@@ -643,7 +631,7 @@ Result<Code, ModelError> build_code(Region& _pr, Page* _rp, Page* _ep, String na
         }
     }
 
-    HashMap<String, Array<Function>> functions(_r, _r.page, functions_builder);
+    HashMap<String, Array<Function>> functions(_r.page, functions_builder);
     if (functions.slots != nullptr) {
         auto functions_slots_iterator = VectorIterator<Vector<KeyValuePair<String, Array<Function>>>>(*functions.slots);
         while (auto function_slot = functions_slots_iterator.next()) {
@@ -654,20 +642,18 @@ Result<Code, ModelError> build_code(Region& _pr, Page* _rp, Page* _ep, String na
         }
     }
 
-    auto code = Code(HashMap<String, Nameable>(_r, _rp, symbols_builder));
+    auto code = Code(HashMap<String, Nameable>(_rp, symbols_builder));
     return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Ok, ._Ok = code };
 }
 
-Result<Concept, ModelError> build_module_concept(Region& _pr, Page* _rp, Page* _ep, String name, String path, FileSyntax file_syntax) {
-    Region _r(_pr);
-
+Result<Concept, ModelError> build_module_concept(Page* _rp, Page* _ep, String name, String path, FileSyntax file_syntax) {
     if (file_syntax.declarations != nullptr && file_syntax.declarations->length == 1) {
         auto first_declaration = *(*(file_syntax.declarations))[0];
         switch (first_declaration._tag) {
             case DeclarationSyntax::Definition: {
                 auto definition_syntax = first_declaration._Definition;
                 if (name.equals(definition_syntax.name))
-                    return handle_definition(_r, _rp, _ep, name, path, definition_syntax);
+                    return handle_definition(_rp, _ep, name, path, definition_syntax);
             }
             break;
             case DeclarationSyntax::Private: {
@@ -676,7 +662,7 @@ Result<Concept, ModelError> build_module_concept(Region& _pr, Page* _rp, Page* _
                     case ExportSyntax::Definition: {
                         auto definition_syntax = private_syntax.export_._Definition;
                         if (name.equals(definition_syntax.name))
-                            return handle_definition(_r, _rp, _ep, name, path, definition_syntax);
+                            return handle_definition(_rp, _ep, name, path, definition_syntax);
 
                     }
                     break;
@@ -690,7 +676,7 @@ Result<Concept, ModelError> build_module_concept(Region& _pr, Page* _rp, Page* _
         }
     }
 
-    auto code_result = build_code(_r, _rp, _ep, name, path, file_syntax.uses, file_syntax.declarations);
+    auto code_result = build_code(_rp, _ep, name, path, file_syntax.uses, file_syntax.declarations);
     if (code_result._tag == Result<Code, ModelError>::Error)
         return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = code_result._Error };
 
@@ -703,15 +689,15 @@ Result<Concept, ModelError> build_module_concept(Region& _pr, Page* _rp, Page* _
                     Body { ._tag = Body::NameSpace, ._NameSpace = NameSpace(code) }) };
 }
 
-Result<Module, ModelError> build_program_module(Region& _pr, Page* _rp, Page* _ep, const String& program) {
-    Region _r(_pr);
+Result<Module, ModelError> build_program_module(Page* _rp, Page* _ep, const String& program) {
+    Region _r;
     
-    auto file_result = parse_program(_r, _r.page, _ep, program);
+    auto file_result = parse_program(_r.page, _ep, program);
     if (file_result._tag == Result<Vector<DeclarationSyntax>*, ParserError>::Error)
         return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = ModelError(ParserModelError(Text {._tag = Text::Program, ._Program = String(_ep, program) }, file_result._Error)) };
     auto file = file_result._Ok;
 
-    auto concept_result = build_module_concept(_r, _rp, _ep, String(_rp, ""), String(_rp, ""), file);
+    auto concept_result = build_module_concept(_rp, _ep, String(_rp, ""), String(_rp, ""), file);
     if (concept_result._tag == Result<Module*, ModelError*>::Error)
         return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = concept_result._Error };
     auto concept = concept_result._Ok;

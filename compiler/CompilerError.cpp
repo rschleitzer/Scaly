@@ -28,12 +28,12 @@ struct CompilerError : Object {
         struct ProgramModuleIsNotANameSpace _ProgramModuleIsNotANameSpace;
     };
 
-    String to_string(Region& _pr, Page* _rp) {
-        Region _r(_pr);
+    String to_string(Page* _rp) {
+        Region _r;
         StringBuilder& message_builder = *new(alignof(StringBuilder), _r.page) StringBuilder();
         switch (_tag) {
             case Model:
-                message_builder.append_string(_Model.to_string(_r, _rp));
+                message_builder.append_string(_Model.to_string(_rp));
             break;
             case MultipleMainFunctions:
                 message_builder.append_string(String(_r.page, "Multiple main functions have been defined. There can only be one main function."));

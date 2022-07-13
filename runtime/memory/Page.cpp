@@ -73,9 +73,8 @@ struct Page {
 
     void* allocate_oversized(size_t size)
     {
-        Page* page;
         // We allocate oversized objects directly.
-        posix_memalign((void**)&page, PAGE_SIZE, size);
+        auto page = (Page*)aligned_alloc(PAGE_SIZE, size);
 
         // Oversized pages have no next_object
         page->next_object = nullptr;
@@ -87,9 +86,11 @@ struct Page {
         return (void*)(page + 1);
     }
 
-    Page* allocate_page() {
-        auto bucket = Bucket::get(this);
-        return bucket->allocate_page();
+    static Page* allocate_page() {
+        // auto bucket = Bucket::get(this);
+        auto page = (Page*)aligned_alloc(PAGE_SIZE, PAGE_SIZE);
+        page->reset();
+        return page;
     }
 
     Page* allocate_exclusive_page() {
@@ -122,12 +123,7 @@ struct Page {
     }
 
     void forget() {
-        if (this->next_object == nullptr) {
-            free (this);
-        } else {
-            auto bucket = Bucket::get(this);
-            bucket->deallocate_page(this);
-        }
+        free(this);
     }
 
     static Page* get(void* address) {

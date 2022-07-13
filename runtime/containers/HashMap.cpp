@@ -7,8 +7,8 @@ template<class K, class V>
 struct HashMap : Object {
     Vector<Vector<KeyValuePair<K, V>>>* slots;
 
-    HashMap<K, V>(Region& _pr, Page* _rp, HashMapBuilder<K, V>& hash_map_builder) {
-        Region _r(_pr);
+    HashMap<K, V>(Page* _rp, HashMapBuilder<K, V>& hash_map_builder) {
+        Region _r;
         if (hash_map_builder.length == 0) {
             this->slots = nullptr;
             return;
@@ -17,7 +17,7 @@ struct HashMap : Object {
         this->slots = new(alignof(Vector<Vector<KeyValuePair<K, V>>>), _rp) Vector<Vector<KeyValuePair<K, V>>>(_rp, hash_map_builder.slots->length);
         auto length = hash_map_builder.slots->length;
         for (size_t i = 0; i < length; i++) {
-            Region _r_1(_r);
+            Region _r_1;
             Array<KeyValuePair<K, V>>& array = *new(alignof(Array<KeyValuePair<K, V>>), _r_1.page) Array<KeyValuePair<K, V>>();
             auto list_iterator = ListIterator<Slot<KeyValuePair<K, V>>>(hash_map_builder.slots->get(i)->head);
             while (auto item = list_iterator.next())

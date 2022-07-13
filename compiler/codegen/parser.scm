@@ -6,24 +6,23 @@ struct Parser : Object {
     Lexer lexer;
     HashSet<""String> keywords;
 
-    Parser(Region& _pr, Page* _rp, String text)
+    Parser(Page* _rp, String text)
       : lexer(*new(alignof(Lexer), _rp) Lexer(text)),
-        keywords(initialize_keywords(_pr, _rp)) {}
+        keywords(initialize_keywords( _rp)) {}
 
-    HashSet<""String> initialize_keywords(Region& _pr, Page* _rp) {
-        Region _r(_pr);
+    HashSet<""String> initialize_keywords(Page* _rp) {
+        Region _r;
         HashSetBuilder<""String>& hash_set_builder = *new(alignof(HashSetBuilder<""String>), _r.page) HashSetBuilder<""String>();
 "   (apply-to-selected-children "keyword" (lambda (keyword) ($
 "        hash_set_builder.add(String(Page::get(this), \""(id keyword)"\"));
 "   )))
-"        keywords = HashSet<""String>(_r, _rp, hash_set_builder);
+"        keywords = HashSet<""String>(_rp, hash_set_builder);
         return keywords;
     }
 
-    Result<""Literal, ParserError> parse_literal_token(Region& _pr, Page* _rp) {
-        Region _r(_pr);
+    Result<""Literal, ParserError> parse_literal_token(Page* _rp) {
         if (this->lexer.token._tag == Token::Empty)
-            lexer.advance(_r);
+            lexer.advance();
 
         switch (this->lexer.token._tag)
         {
@@ -80,46 +79,43 @@ struct Parser : Object {
     (apply-to-selected-children "syntax" (lambda (syntax) ($
         (if (multiple? syntax) ($
 "
-    Result<""Vector<"(id syntax)"Syntax>*, ParserError> parse_"(downcase-string (id syntax))"_list(Region& _pr, Page* _rp, Page* _ep) {
-        Region _r(_pr);
-        {
-            Region _r_1(_r);
-            Array<"(id syntax)"Syntax>* array = nullptr;
-            while(true) {
-                auto node_result = this->parse_"(downcase-string (id syntax))"(_r_1, _rp, _ep);
-                if ((node_result._tag == Result<"(id syntax)"Syntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
+    Result<""Vector<"(id syntax)"Syntax>*, ParserError> parse_"(downcase-string (id syntax))"_list(Page* _rp, Page* _ep) {
+        Region _r;
+        Array<"(id syntax)"Syntax>* array = nullptr;
+        while(true) {
+            auto node_result = this->parse_"(downcase-string (id syntax))"(_rp, _ep);
+            if ((node_result._tag == Result<"(id syntax)"Syntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
+                return Result<""Vector<"(id syntax)"Syntax>*, ParserError> { ._tag = Result<""Vector<"(id syntax)"Syntax>*, ParserError>::Error, ._Error = node_result._Error };
+            if (node_result._tag == Result<"(id syntax)"Syntax, ParserError>::Ok) {
+                auto node = node_result._Ok;
+                if (array == nullptr)
+                    array = new(alignof(Array<"(id syntax)"Syntax>), _r.page) Array<"(id syntax)"Syntax>();
+                array->add(node);
+            } else {
+                if ((array == nullptr) && (node_result._tag == Result<"(id syntax)"Syntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
                     return Result<""Vector<"(id syntax)"Syntax>*, ParserError> { ._tag = Result<""Vector<"(id syntax)"Syntax>*, ParserError>::Error, ._Error = node_result._Error };
-                if (node_result._tag == Result<"(id syntax)"Syntax, ParserError>::Ok) {
-                    auto node = node_result._Ok;
-                    if (array == nullptr)
-                        array = new(alignof(Array<"(id syntax)"Syntax>), _r_1.page) Array<"(id syntax)"Syntax>();
-                    array->add(node);
-                } else {
-                    if ((array == nullptr) && (node_result._tag == Result<"(id syntax)"Syntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
-                        return Result<""Vector<"(id syntax)"Syntax>*, ParserError> { ._tag = Result<""Vector<"(id syntax)"Syntax>*, ParserError>::Error, ._Error = node_result._Error };
-                    break;
-                }
+                break;
             }
-
-            if (array == nullptr)
-                return Result<""Vector<"(id syntax)"Syntax>*, ParserError> { ._tag = Result<""Vector<"(id syntax)"Syntax>*, ParserError>::Ok, ._Ok = nullptr };
-            
-            return Result<""Vector<"(id syntax)"Syntax>*, ParserError> {
-                ._tag = Result<""Vector<"(id syntax)"Syntax>*, ParserError>::Ok,
-                ._Ok = new(alignof(Vector<"(id syntax)"Syntax>), _rp) Vector<"(id syntax)"Syntax>(_rp, *array) };
         }
+
+        if (array == nullptr)
+            return Result<""Vector<"(id syntax)"Syntax>*, ParserError> { ._tag = Result<""Vector<"(id syntax)"Syntax>*, ParserError>::Ok, ._Ok = nullptr };
+        
+        return Result<""Vector<"(id syntax)"Syntax>*, ParserError> {
+            ._tag = Result<""Vector<"(id syntax)"Syntax>*, ParserError>::Ok,
+            ._Ok = new(alignof(Vector<"(id syntax)"Syntax>), _rp) Vector<"(id syntax)"Syntax>(_rp, *array) };
     }
 "       )"")
 "
-    Result<"(id syntax)"Syntax, ParserError> parse_"(downcase-string (id syntax))"(Region& _pr, Page* _rp, Page* _ep) {
-        Region _r(_pr);
+    Result<"(id syntax)"Syntax, ParserError> parse_"(downcase-string (id syntax))"(Page* _rp, Page* _ep) {
+        Region _r;
 "
         (if (abstract? syntax)
             ($
                 (apply-to-children-of syntax (lambda (content) ($
 "        {
-            Region _r_1(_r);
-            auto node_result = this->parse_"(downcase-string (link content))"(_r_1, _rp, _ep);
+            Region _r_1;
+            auto node_result = this->parse_"(downcase-string (link content))"(_rp, _ep);
             if (node_result._tag == Result<"(link content)"Syntax, ParserError>::Error)
             {
                 if (node_result._Error._tag == ParserError::InvalidSyntax)
@@ -145,7 +141,7 @@ struct Parser : Object {
                         (("syntax") ($
 "
         auto "(property content)"_start = this->lexer.position;
-        auto "(property content)"_result = this->parse_"(downcase-string (link content))(if (multiple? content) "_list" "")"(_r, _rp, _ep);
+        auto "(property content)"_result = this->parse_"(downcase-string (link content))(if (multiple? content) "_list" "")"(_rp, _ep);
         if ("(property content)"_result._tag == Result<"(if (multiple? content) "Vector<" "")(link content)"Syntax"(if (multiple? content) ">" "")", ParserError>::Error)
         {
 "
@@ -207,7 +203,7 @@ struct Parser : Object {
                         (("literal") ($
 "
         auto "(property content)"_start = this->lexer.previous_position;
-        auto "(property content)"_result = this->parse_literal_token(_r, _rp);
+        auto "(property content)"_result = this->parse_literal_token(_rp);
         if ("(property content)"_result._tag == Result<""Literal, ParserError>::Error)
         {
 "                           (if (optional? content) "" ($
@@ -259,7 +255,7 @@ struct Parser : Object {
                                 (("keyword" "punctuation" "colon" "semicolon") ($ "success_"syntax-moniker))
                                 (else (property content))
                             )
-            " = this->lexer.parse_"(type content)"(_r, _rp"
+            " = this->lexer.parse_"(type content)"(_rp"
                             (case (type content)
                                 (("keyword")     ($ ", String(_r.page, \""(link content)"\")"))
                                 (("punctuation") ($ ", String(_r.page, \""(value (element-with-id (link content)))"\")"))

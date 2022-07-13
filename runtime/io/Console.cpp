@@ -13,8 +13,8 @@ FileError* print(Page* _ep, const char* message) {
     return nullptr;
 }
 
-FileError* print(Region& _pr, Page* _ep, String message) {
-    Region _r(_pr);
+FileError* print(Page* _ep, String message) {
+    Region _r;
     return print(_ep, message.to_c_string(_r.page));
 }
 

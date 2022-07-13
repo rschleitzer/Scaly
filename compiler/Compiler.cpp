@@ -18,9 +18,9 @@ namespace compiler {
 
 using namespace scaly::compiler::model;
 
-CompilerError* compile_and_run_program(Region& _pr, Page* _ep, const String& program, Vector<String>& arguments) {
-    Region _r(_pr);
-    auto module_result = scaly::compiler::model::build_program_module(_r, _r.page, _r.page, program);
+CompilerError* compile_and_run_program(Page* _ep, const String& program, Vector<String>& arguments) {
+    Region _r;
+    auto module_result = scaly::compiler::model::build_program_module(_r.page, _ep, program);
     if (module_result._tag == Result<Module, ModelError>::Error)
         return new(alignof(CompilerError), _ep) CompilerError(module_result._Error);
     

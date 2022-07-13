@@ -8,8 +8,8 @@ template<class T>
 struct HashSet : Object {
     Vector<Vector<T>>* slots;
 
-    HashSet<T>(Region& _pr, Page* _rp, HashSetBuilder<T>& hash_set_builder) {
-        Region _r(_pr);
+    HashSet<T>(Page* _rp, HashSetBuilder<T>& hash_set_builder) {
+        Region _r;
         if (hash_set_builder.length == 0) {
             this->slots = nullptr;
             return;
@@ -18,7 +18,7 @@ struct HashSet : Object {
         this->slots = new(alignof(Vector<Vector<T>>), _rp) Vector<Vector<T>>(_rp, hash_set_builder.slots->length);
         auto length = hash_set_builder.slots->length;
         for (size_t i = 0; i < length; i++) {
-            Region _r_1(_r);
+            Region _r_1;
             Array<T>& array = *new(alignof(Array<T>), _r_1.page) Array<T>();
             auto list_iterator = ListIterator<Slot<T>>(hash_set_builder.slots->get(i)->head);
             while (auto item = list_iterator.next())

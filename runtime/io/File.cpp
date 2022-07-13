@@ -28,8 +28,8 @@ struct FileError : Object {
         NoSuchFileOrDirectoryError _NoSuchFileOrDirectory;
     };
 
-    String to_string(Region& _pr, Page* _rp) {
-        Region _r(_pr);
+    String to_string(Page* _rp) {
+        Region _r;
         StringBuilder& message_builder = *new(alignof(StringBuilder), _r.page) StringBuilder();
         switch (_tag) {
             case Unknown:
@@ -48,8 +48,8 @@ struct FileError : Object {
 };
 
 struct File {
-    static Result<String, FileError> read_to_string(Region& _pr, Page* _rp, Page *_ep, const String& path) {
-        Region _r(_pr);
+    static Result<String, FileError> read_to_string(Page* _rp, Page *_ep, const String& path) {
+        Region _r;
         FILE* file = fopen(path.to_c_string(_r.page), "rb");
         if (!file) {
             switch (errno) {
@@ -69,8 +69,8 @@ struct File {
         return Result<String, FileError> { ._tag = Result<String, FileError>::Ok, ._Ok = ret };
     }
 
-    static FileError* write_from_string(Region& _pr, Page *_ep, const String& path, const String& contents) {
-        Region _r(_pr);
+    static FileError* write_from_string(Page *_ep, const String& path, const String& contents) {
+        Region _r;
         FILE* file = fopen(path.to_c_string(_r.page), "wb");
         if (!file) {
             switch (errno) {

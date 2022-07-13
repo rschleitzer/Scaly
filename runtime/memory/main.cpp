@@ -3,9 +3,7 @@ using namespace scaly::memory;
 
 void test_page()
 {
-    auto heap = Heap::create();
-    auto root_stack_bucket = StackBucket::create(&heap);
-    Region _r(heap);
+    Region _r;
 
     auto page = _r.page;
 
@@ -100,8 +98,7 @@ void test_page()
 
 void test_heap()
 {
-    auto heap = Heap::create();
-    auto r = Region(heap);
+    Region r;
     auto page = r.page;
 
     size_t* start = nullptr;
@@ -130,142 +127,9 @@ void test_heap()
         exit (-28);
 }
 
-void test_heapbucket() {
-    auto heap = Heap::create();
-    auto pool = Pool::create(&heap);
-    auto bucket = Bucket::get(pool);
-    auto _page00 = bucket->allocate_page();
-    auto _page01 = bucket->allocate_page();
-    auto page02 = bucket->allocate_page();
-    auto page03 = bucket->allocate_page();
-    auto page04 = bucket->allocate_page();
-    auto page05 = bucket->allocate_page();
-    auto _page06 = bucket->allocate_page();
-    auto _page07 = bucket->allocate_page();
-    auto _page08 = bucket->allocate_page();
-    auto _page09 = bucket->allocate_page();
-    auto _page10 = bucket->allocate_page();
-    auto _page11 = bucket->allocate_page();
-    auto _page12 = bucket->allocate_page();
-    auto _page13 = bucket->allocate_page();
-    auto _page14 = bucket->allocate_page();
-    auto _page15 = bucket->allocate_page();
-    auto page16 = bucket->allocate_page();
-    auto _page17 = bucket->allocate_page();
-    auto page18 = bucket->allocate_page();
-    auto _page19 = bucket->allocate_page();
-    auto _page20 = bucket->allocate_page();
-    auto _page21 = bucket->allocate_page();
-    auto _page22 = bucket->allocate_page();
-    auto _page23 = bucket->allocate_page();
-    auto _page24 = bucket->allocate_page();
-    auto _page25 = bucket->allocate_page();
-    auto _page26 = bucket->allocate_page();
-    auto _page27 = bucket->allocate_page();
-    auto _page28 = bucket->allocate_page();
-    auto _page29 = bucket->allocate_page();
-    auto _page30 = bucket->allocate_page();
-    auto _page31 = bucket->allocate_page();
-    auto _page32 = bucket->allocate_page();
-    auto _page33 = bucket->allocate_page();
-    auto _page34 = bucket->allocate_page();
-    auto _page35 = bucket->allocate_page();
-    auto _page36 = bucket->allocate_page();
-    auto _page37 = bucket->allocate_page();
-    auto _page38 = bucket->allocate_page();
-    auto _page39 = bucket->allocate_page();
-    auto _page40 = bucket->allocate_page();
-    auto _page41 = bucket->allocate_page();
-    auto _page42 = bucket->allocate_page();
-    auto _page43 = bucket->allocate_page();
-    auto _page44 = bucket->allocate_page();
-    auto _page45 = bucket->allocate_page();
-    auto _page46 = bucket->allocate_page();
-    auto _page47 = bucket->allocate_page();
-    auto _page48 = bucket->allocate_page();
-    auto _page49 = bucket->allocate_page();
-    auto _page50 = bucket->allocate_page();
-    auto _page51 = bucket->allocate_page();
-    auto _page52 = bucket->allocate_page();
-    auto _page53 = bucket->allocate_page();
-    auto _page54 = bucket->allocate_page();
-    auto _page55 = bucket->allocate_page();
-    auto _page56 = bucket->allocate_page();
-    auto _page57 = bucket->allocate_page();
-    auto _page58 = bucket->allocate_page();
-    auto _page59 = bucket->allocate_page();
-    auto _page60 = bucket->allocate_page();
-    auto _page61 = bucket->allocate_page();
-    auto page62 = bucket->allocate_page();
-
-    if (bucket->tag != Bucket::Heap)
-        exit(-29);
-    if (bucket->heap.map != 0)
-        exit(-30);
-
-    bucket->deallocate_page(&*page62);
-    auto page62a = bucket->allocate_page();
-
-    if (page62 != page62a)
-        exit(-31);
-
-    if (bucket->tag != Bucket::Heap)
-        exit(-32);
-    if (bucket->heap.map != 0)
-        exit(-33);
-
-    bucket->deallocate_page(&*page02);
-    bucket->deallocate_page(&*page03);
-    bucket->deallocate_page(&*page04);
-    bucket->deallocate_page(&*page05);
-    auto page02a = bucket->allocate_page();
-    auto page03a = bucket->allocate_page();
-    auto page04a = bucket->allocate_page();
-    auto page05a = bucket->allocate_page();
-
-    if (page02 != page02a)
-        exit(-34);
-    if (page03 != page03a)
-        exit(-35);
-    if (page04 != page04a)
-        exit(-36);
-    if (page05 != page05a)
-        exit(-37);
-
-    if (bucket->tag != Bucket::Heap)
-        exit(-38);
-    if (bucket->heap.map != 0)
-        exit(-39);
-
-    bucket->deallocate_page(&*page16);
-    bucket->deallocate_page(&*page18);
-    auto page16a = bucket->allocate_page();
-    auto page18a = bucket->allocate_page();
-
-    if (page16 != page16a)
-        exit(-40);
-    if (page18 != page18a)
-        exit(-41);
-
-    if (bucket->tag != Bucket::Heap)
-        exit(-42);
-    if (bucket->heap.map != 0)
-        exit(-43);
-
-    bucket->deallocate_page(&*page62);
-    page62a = bucket->allocate_page();
-    if (page62 != page62a)
-        exit(-44);
-
-    if (bucket->tag != Bucket::Heap)
-        exit(-38);
-    if (bucket->heap.map != 0)
-        exit(-39);
-}
 
 int main(int argc, char** argv)
 {
     test_page();
     test_heap();
-    test_heapbucket();
 }
