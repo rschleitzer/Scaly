@@ -108,13 +108,11 @@ struct Parser : Object {
 "       )"")
 "
     Result<"(id syntax)"Syntax, ParserError> parse_"(downcase-string (id syntax))"(Page* _rp, Page* _ep) {
-        Region _r;
 "
         (if (abstract? syntax)
             ($
                 (apply-to-children-of syntax (lambda (content) ($
 "        {
-            Region _r_1;
             auto node_result = this->parse_"(downcase-string (link content))"(_rp, _ep);
             if (node_result._tag == Result<"(link content)"Syntax, ParserError>::Error)
             {
@@ -135,7 +133,8 @@ struct Parser : Object {
 "
             )
             ($ ; non-abstract syntax
-"        auto start = this->lexer.previous_position;
+"        Region _r;
+        auto start = this->lexer.previous_position;
 "               (apply-to-children-of syntax (lambda (content) ($
                     (case (type content)
                         (("syntax") ($

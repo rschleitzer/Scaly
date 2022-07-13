@@ -1303,9 +1303,7 @@ struct Parser : Object {
     }
 
     Result<DeclarationSyntax, ParserError> parse_declaration(Page* _rp, Page* _ep) {
-        Region _r;
         {
-            Region _r_1;
             auto node_result = this->parse_private(_rp, _ep);
             if (node_result._tag == Result<PrivateSyntax, ParserError>::Error)
             {
@@ -1321,7 +1319,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_definition(_rp, _ep);
             if (node_result._tag == Result<DefinitionSyntax, ParserError>::Error)
             {
@@ -1337,7 +1334,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_function(_rp, _ep);
             if (node_result._tag == Result<FunctionSyntax, ParserError>::Error)
             {
@@ -1353,7 +1349,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_procedure(_rp, _ep);
             if (node_result._tag == Result<ProcedureSyntax, ParserError>::Error)
             {
@@ -1369,7 +1364,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_operator(_rp, _ep);
             if (node_result._tag == Result<OperatorSyntax, ParserError>::Error)
             {
@@ -1385,7 +1379,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_implement(_rp, _ep);
             if (node_result._tag == Result<ImplementSyntax, ParserError>::Error)
             {
@@ -1401,7 +1394,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_trait(_rp, _ep);
             if (node_result._tag == Result<TraitSyntax, ParserError>::Error)
             {
@@ -1417,7 +1409,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_macro(_rp, _ep);
             if (node_result._tag == Result<MacroSyntax, ParserError>::Error)
             {
@@ -1433,7 +1424,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_module(_rp, _ep);
             if (node_result._tag == Result<ModuleSyntax, ParserError>::Error)
             {
@@ -1483,9 +1473,7 @@ struct Parser : Object {
     }
 
     Result<ExportSyntax, ParserError> parse_export(Page* _rp, Page* _ep) {
-        Region _r;
         {
-            Region _r_1;
             auto node_result = this->parse_definition(_rp, _ep);
             if (node_result._tag == Result<DefinitionSyntax, ParserError>::Error)
             {
@@ -1501,7 +1489,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_function(_rp, _ep);
             if (node_result._tag == Result<FunctionSyntax, ParserError>::Error)
             {
@@ -1517,7 +1504,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_procedure(_rp, _ep);
             if (node_result._tag == Result<ProcedureSyntax, ParserError>::Error)
             {
@@ -1533,7 +1519,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_operator(_rp, _ep);
             if (node_result._tag == Result<OperatorSyntax, ParserError>::Error)
             {
@@ -1549,7 +1534,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_implement(_rp, _ep);
             if (node_result._tag == Result<ImplementSyntax, ParserError>::Error)
             {
@@ -1565,7 +1549,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_trait(_rp, _ep);
             if (node_result._tag == Result<TraitSyntax, ParserError>::Error)
             {
@@ -1581,7 +1564,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_macro(_rp, _ep);
             if (node_result._tag == Result<MacroSyntax, ParserError>::Error)
             {
@@ -1597,7 +1579,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_module(_rp, _ep);
             if (node_result._tag == Result<ModuleSyntax, ParserError>::Error)
             {
@@ -1897,9 +1878,7 @@ struct Parser : Object {
     }
 
     Result<ConceptSyntax, ParserError> parse_concept(Page* _rp, Page* _ep) {
-        Region _r;
         {
-            Region _r_1;
             auto node_result = this->parse_class(_rp, _ep);
             if (node_result._tag == Result<ClassSyntax, ParserError>::Error)
             {
@@ -1915,7 +1894,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_namespace(_rp, _ep);
             if (node_result._tag == Result<NamespaceSyntax, ParserError>::Error)
             {
@@ -1931,7 +1909,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_union(_rp, _ep);
             if (node_result._tag == Result<UnionSyntax, ParserError>::Error)
             {
@@ -1947,7 +1924,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_constant(_rp, _ep);
             if (node_result._tag == Result<ConstantSyntax, ParserError>::Error)
             {
@@ -1963,7 +1939,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_delegate(_rp, _ep);
             if (node_result._tag == Result<DelegateSyntax, ParserError>::Error)
             {
@@ -1979,7 +1954,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_intrinsic(_rp, _ep);
             if (node_result._tag == Result<IntrinsicSyntax, ParserError>::Error)
             {
@@ -2201,9 +2175,7 @@ struct Parser : Object {
     }
 
     Result<ItemSyntax, ParserError> parse_item(Page* _rp, Page* _ep) {
-        Region _r;
         {
-            Region _r_1;
             auto node_result = this->parse_variant(_rp, _ep);
             if (node_result._tag == Result<VariantSyntax, ParserError>::Error)
             {
@@ -2219,7 +2191,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_enum(_rp, _ep);
             if (node_result._tag == Result<EnumSyntax, ParserError>::Error)
             {
@@ -2493,9 +2464,7 @@ struct Parser : Object {
     }
 
     Result<MemberSyntax, ParserError> parse_member(Page* _rp, Page* _ep) {
-        Region _r;
         {
-            Region _r_1;
             auto node_result = this->parse_field(_rp, _ep);
             if (node_result._tag == Result<FieldSyntax, ParserError>::Error)
             {
@@ -2511,7 +2480,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_property(_rp, _ep);
             if (node_result._tag == Result<PropertySyntax, ParserError>::Error)
             {
@@ -2831,9 +2799,7 @@ struct Parser : Object {
     }
 
     Result<ParameterSetSyntax, ParserError> parse_parameterset(Page* _rp, Page* _ep) {
-        Region _r;
         {
-            Region _r_1;
             auto node_result = this->parse_parameters(_rp, _ep);
             if (node_result._tag == Result<ParametersSyntax, ParserError>::Error)
             {
@@ -2849,7 +2815,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_type(_rp, _ep);
             if (node_result._tag == Result<TypeSyntax, ParserError>::Error)
             {
@@ -3234,9 +3199,7 @@ struct Parser : Object {
     }
 
     Result<MethodSyntax, ParserError> parse_method(Page* _rp, Page* _ep) {
-        Region _r;
         {
-            Region _r_1;
             auto node_result = this->parse_function(_rp, _ep);
             if (node_result._tag == Result<FunctionSyntax, ParserError>::Error)
             {
@@ -3252,7 +3215,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_procedure(_rp, _ep);
             if (node_result._tag == Result<ProcedureSyntax, ParserError>::Error)
             {
@@ -3268,7 +3230,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_operator(_rp, _ep);
             if (node_result._tag == Result<OperatorSyntax, ParserError>::Error)
             {
@@ -3430,9 +3391,7 @@ struct Parser : Object {
     }
 
     Result<TargetSyntax, ParserError> parse_target(Page* _rp, Page* _ep) {
-        Region _r;
         {
-            Region _r_1;
             auto node_result = this->parse_symbol(_rp, _ep);
             if (node_result._tag == Result<SymbolSyntax, ParserError>::Error)
             {
@@ -3448,7 +3407,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_routine(_rp, _ep);
             if (node_result._tag == Result<RoutineSyntax, ParserError>::Error)
             {
@@ -3648,9 +3606,7 @@ struct Parser : Object {
     }
 
     Result<ImplementationSyntax, ParserError> parse_implementation(Page* _rp, Page* _ep) {
-        Region _r;
         {
-            Region _r_1;
             auto node_result = this->parse_action(_rp, _ep);
             if (node_result._tag == Result<ActionSyntax, ParserError>::Error)
             {
@@ -3666,7 +3622,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_extern(_rp, _ep);
             if (node_result._tag == Result<ExternSyntax, ParserError>::Error)
             {
@@ -3682,7 +3637,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_instruction(_rp, _ep);
             if (node_result._tag == Result<InstructionSyntax, ParserError>::Error)
             {
@@ -3698,7 +3652,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_intrinsic(_rp, _ep);
             if (node_result._tag == Result<IntrinsicSyntax, ParserError>::Error)
             {
@@ -3953,9 +3906,7 @@ struct Parser : Object {
     }
 
     Result<ModelSyntax, ParserError> parse_model(Page* _rp, Page* _ep) {
-        Region _r;
         {
-            Region _r_1;
             auto node_result = this->parse_literal(_rp, _ep);
             if (node_result._tag == Result<LiteralSyntax, ParserError>::Error)
             {
@@ -3971,7 +3922,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_name(_rp, _ep);
             if (node_result._tag == Result<NameSyntax, ParserError>::Error)
             {
@@ -3987,7 +3937,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_object(_rp, _ep);
             if (node_result._tag == Result<ObjectSyntax, ParserError>::Error)
             {
@@ -4003,7 +3952,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_vector(_rp, _ep);
             if (node_result._tag == Result<VectorSyntax, ParserError>::Error)
             {
@@ -4049,9 +3997,7 @@ struct Parser : Object {
     }
 
     Result<StatementSyntax, ParserError> parse_statement(Page* _rp, Page* _ep) {
-        Region _r;
         {
-            Region _r_1;
             auto node_result = this->parse_operation(_rp, _ep);
             if (node_result._tag == Result<OperationSyntax, ParserError>::Error)
             {
@@ -4067,7 +4013,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_let(_rp, _ep);
             if (node_result._tag == Result<LetSyntax, ParserError>::Error)
             {
@@ -4083,7 +4028,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_var(_rp, _ep);
             if (node_result._tag == Result<VarSyntax, ParserError>::Error)
             {
@@ -4099,7 +4043,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_mutable(_rp, _ep);
             if (node_result._tag == Result<MutableSyntax, ParserError>::Error)
             {
@@ -4115,7 +4058,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_set(_rp, _ep);
             if (node_result._tag == Result<SetSyntax, ParserError>::Error)
             {
@@ -4337,9 +4279,7 @@ struct Parser : Object {
     }
 
     Result<BindingSpecSyntax, ParserError> parse_bindingspec(Page* _rp, Page* _ep) {
-        Region _r;
         {
-            Region _r_1;
             auto node_result = this->parse_structure(_rp, _ep);
             if (node_result._tag == Result<StructureSyntax, ParserError>::Error)
             {
@@ -4355,7 +4295,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_type(_rp, _ep);
             if (node_result._tag == Result<TypeSyntax, ParserError>::Error)
             {
@@ -4371,7 +4310,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_array(_rp, _ep);
             if (node_result._tag == Result<ArraySyntax, ParserError>::Error)
             {
@@ -4550,9 +4488,7 @@ struct Parser : Object {
     }
 
     Result<PostfixSyntax, ParserError> parse_postfix(Page* _rp, Page* _ep) {
-        Region _r;
         {
-            Region _r_1;
             auto node_result = this->parse_memberaccess(_rp, _ep);
             if (node_result._tag == Result<MemberAccessSyntax, ParserError>::Error)
             {
@@ -4568,7 +4504,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_catcher(_rp, _ep);
             if (node_result._tag == Result<CatcherSyntax, ParserError>::Error)
             {
@@ -4755,9 +4690,7 @@ struct Parser : Object {
     }
 
     Result<ExpressionSyntax, ParserError> parse_expression(Page* _rp, Page* _ep) {
-        Region _r;
         {
-            Region _r_1;
             auto node_result = this->parse_literal(_rp, _ep);
             if (node_result._tag == Result<LiteralSyntax, ParserError>::Error)
             {
@@ -4773,7 +4706,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_name(_rp, _ep);
             if (node_result._tag == Result<NameSyntax, ParserError>::Error)
             {
@@ -4789,7 +4721,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_object(_rp, _ep);
             if (node_result._tag == Result<ObjectSyntax, ParserError>::Error)
             {
@@ -4805,7 +4736,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_vector(_rp, _ep);
             if (node_result._tag == Result<VectorSyntax, ParserError>::Error)
             {
@@ -4821,7 +4751,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_block(_rp, _ep);
             if (node_result._tag == Result<BlockSyntax, ParserError>::Error)
             {
@@ -4837,7 +4766,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_if(_rp, _ep);
             if (node_result._tag == Result<IfSyntax, ParserError>::Error)
             {
@@ -4853,7 +4781,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_match(_rp, _ep);
             if (node_result._tag == Result<MatchSyntax, ParserError>::Error)
             {
@@ -4869,7 +4796,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_lambda(_rp, _ep);
             if (node_result._tag == Result<LambdaSyntax, ParserError>::Error)
             {
@@ -4885,7 +4811,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_for(_rp, _ep);
             if (node_result._tag == Result<ForSyntax, ParserError>::Error)
             {
@@ -4901,7 +4826,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_while(_rp, _ep);
             if (node_result._tag == Result<WhileSyntax, ParserError>::Error)
             {
@@ -4917,7 +4841,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_repeat(_rp, _ep);
             if (node_result._tag == Result<RepeatSyntax, ParserError>::Error)
             {
@@ -4933,7 +4856,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_sizeof(_rp, _ep);
             if (node_result._tag == Result<SizeOfSyntax, ParserError>::Error)
             {
@@ -4949,7 +4871,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_continue(_rp, _ep);
             if (node_result._tag == Result<ContinueSyntax, ParserError>::Error)
             {
@@ -4965,7 +4886,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_break(_rp, _ep);
             if (node_result._tag == Result<BreakSyntax, ParserError>::Error)
             {
@@ -4981,7 +4901,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_return(_rp, _ep);
             if (node_result._tag == Result<ReturnSyntax, ParserError>::Error)
             {
@@ -4997,7 +4916,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_throw(_rp, _ep);
             if (node_result._tag == Result<ThrowSyntax, ParserError>::Error)
             {
@@ -6162,9 +6080,7 @@ struct Parser : Object {
     }
 
     Result<ActionSyntax, ParserError> parse_action(Page* _rp, Page* _ep) {
-        Region _r;
         {
-            Region _r_1;
             auto node_result = this->parse_operation(_rp, _ep);
             if (node_result._tag == Result<OperationSyntax, ParserError>::Error)
             {
@@ -6180,7 +6096,6 @@ struct Parser : Object {
             }
         }
         {
-            Region _r_1;
             auto node_result = this->parse_set(_rp, _ep);
             if (node_result._tag == Result<SetSyntax, ParserError>::Error)
             {
