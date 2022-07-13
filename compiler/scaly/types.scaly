@@ -4,7 +4,7 @@ define int (this: LLVM.i32) {}
 define byte (this: LLVM.i8) {}
 
 define bool (this: LLVM.i1) {
-    operator 'as int' returns while
+    operator 'as int' returns int
         LLVM.zext[LLVM.i32](this)
 }
 

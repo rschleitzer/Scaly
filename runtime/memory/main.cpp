@@ -96,7 +96,7 @@ void test_page()
     auto exclusive_page = page->allocate_exclusive_page();
  }
 
-void test_heap()
+void test_allocate_raw()
 {
     Region r;
     auto page = r.page;
@@ -131,5 +131,5 @@ void test_heap()
 int main(int argc, char** argv)
 {
     test_page();
-    test_heap();
+    test_allocate_raw();
 }

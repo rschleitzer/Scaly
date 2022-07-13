@@ -5,7 +5,6 @@ namespace memory {
 using namespace scaly::containers;
 
 const int PAGE_SIZE = 0x1000;
-const size_t BUCKET_PAGES = sizeof(size_t) * 8;
 
 struct Page {
     void* next_object;
@@ -87,7 +86,6 @@ struct Page {
     }
 
     static Page* allocate_page() {
-        // auto bucket = Bucket::get(this);
         auto page = (Page*)aligned_alloc(PAGE_SIZE, PAGE_SIZE);
         page->reset();
         return page;
