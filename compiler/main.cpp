@@ -191,9 +191,9 @@ void test_compiler(Region& _pr) {
     if (error != nullptr) {
         auto error_message = error->to_string(_r, _r.page);
         print(_r, _r.page, error_message);
-        print(_r.page, "\n");
         exit (-60);
     }
+
 }
 
 int main(int argc, char** argv) {

@@ -20,7 +20,7 @@ String build_file_name(Region& _pr, Page* _rp, const Text& text) {
     }
 }
 
-Position calculate_position_from_string(Region& _pr, Page* _rp, Page* _ep, const String& text, size_t offset) {
+Position calculate_position_from_string(Region& _pr, Page* _rp, const String& text, size_t offset) {
     Region _r(_pr);
     StringIterator iterator(text);
     size_t line = 1;
@@ -40,6 +40,70 @@ Position calculate_position_from_string(Region& _pr, Page* _rp, Page* _ep, const
     }
     return Position(0, 0);
 }
+
+String build_hint_lines_from_string(Region& _pr, Page* _rp, const String& text, size_t start_offset, size_t end_offset, Position start_position, Position end_position) {
+    Region _r(_pr);
+    StringIterator iterator(text);
+    size_t current_line = 1;
+    size_t current_column = 1;
+    size_t counter = 0;
+    auto start_line = start_position.line;
+    auto end_line = end_position.line;
+    auto start_column = start_position.column;
+    auto end_column = end_position.column;
+    StringBuilder& line_builder = *new(alignof(StringBuilder), _r.page) StringBuilder();
+    StringBuilder& indicator_builder = *new(alignof(StringBuilder), _r.page) StringBuilder();
+    StringBuilder& output_builder = *new(alignof(StringBuilder), _r.page) StringBuilder();
+    while (auto character = iterator.next()) {
+        counter++;
+        if (*character == '\n') {
+            if (current_line >= start_line && current_line <= end_line) {
+                line_builder.append_character('\n');
+                output_builder.append_string(line_builder.to_string(_r.page));
+                indicator_builder.append_character('\n');
+                output_builder.append_string(indicator_builder.to_string(_r.page));
+            }
+            current_line++;
+            current_column = 1;
+            if (current_line > end_line) {
+                return output_builder.to_string(_rp);
+            }
+            else {
+                line_builder = *new(alignof(StringBuilder), _r.page) StringBuilder();
+                indicator_builder = *new(alignof(StringBuilder), _r.page) StringBuilder();
+            }
+
+        }
+        else {
+            if (current_line >= start_line && current_line <= end_line) {
+                line_builder.append_character(*character);
+                if (current_column >= start_column && current_column < end_column)
+                    indicator_builder.append_character('^');
+                else
+                    indicator_builder.append_character(' ');
+            }
+            current_column++;
+        }
+    }
+    return output_builder.to_string(_rp);
+}
+
+Result<String, FileError> build_hint_lines(Region& _pr, Page* _rp, const Text& text, size_t start_offset, size_t end_offset, Position start_position, Position end_position) {
+    Region _r(_pr);
+    switch (text._tag) {
+        case Text::Program:
+            return Result<String, FileError> { ._tag = Result<String, FileError>::Error, ._Ok = build_hint_lines_from_string(_r, _rp, text._Program, start_offset, end_offset, start_position, end_position) };
+        case Text::File: {
+            auto text_result = File::read_to_string(_r, _r.page, _r.page, text._File);
+            if (text_result._tag == Result<String, FileError>::Error) {
+                return Result<String, FileError> { ._tag = Result<String, FileError>::Error, ._Error = FileError(text_result._Error) };
+            }
+            return Result<String, FileError> { ._tag = Result<String, FileError>::Ok, ._Ok = build_hint_lines_from_string(_r, _rp, text_result._Ok, start_offset, end_offset, start_position, end_position) };
+        }
+    }
+}
+
+
 
 struct IoModelError {
     enum {
@@ -66,13 +130,13 @@ Result<Position, IoModelError> calculate_position(Region& _pr, Page* _rp, Page* 
     Region _r(_pr);
     switch (text._tag) {
         case Text::Program:
-            return Result<Position, IoModelError> { ._tag = Result<Position, IoModelError>::Error, ._Ok = calculate_position_from_string(_r, _rp, _ep, text._Program, offset) };
+            return Result<Position, IoModelError> { ._tag = Result<Position, IoModelError>::Error, ._Ok = calculate_position_from_string(_r, _rp, text._Program, offset) };
         case Text::File: {
             auto text_result = File::read_to_string(_r, _r.page, _r.page, text._File);
             if (text_result._tag == Result<String, FileError>::Error) {
                 return Result<Position, IoModelError> { ._tag = Result<Position, IoModelError>::Error, ._Error = IoModelError(text_result._Error) };
             }
-            return Result<Position, IoModelError> { ._tag = Result<Position, IoModelError>::Ok, ._Ok = calculate_position_from_string(_r, _rp, _ep, text_result._Ok, offset) };
+            return Result<Position, IoModelError> { ._tag = Result<Position, IoModelError>::Ok, ._Ok = calculate_position_from_string(_r, _rp, text_result._Ok, offset) };
         }
     }
 }
@@ -104,21 +168,25 @@ struct ParserModelError {
         StringBuilder& message_builder = *new(alignof(StringBuilder), _r.page) StringBuilder();
         message_builder.append_string(build_file_name(_r, _rp, this->text));
         message_builder.append_character(':');
-        auto position_result = calculate_position(_r, _rp, _r.page, this->text, invalid_syntax.start);
-        switch (position_result._tag) {
-            case Result<Position, IoModelError>::Error:
-            break;
-            case Result<Position, IoModelError>::Ok: {
-                auto position = position_result._Ok;
-                message_builder.append_string(to_string(_r.page, position.line));
-                message_builder.append_character(':');
-                message_builder.append_string(to_string(_r.page, position.column));
+        auto position_result_start = calculate_position(_r, _rp, _r.page, this->text, invalid_syntax.start);
+        if (position_result_start._tag == Result<Position, IoModelError>::Ok) {
+            auto position_start = position_result_start._Ok;
+            message_builder.append_string(to_string(_r.page, position_start.line));
+            message_builder.append_character(':');
+            message_builder.append_string(to_string(_r.page, position_start.column));
+            message_builder.append_string(String(_rp, ": error: expected "));
+            message_builder.append_string(invalid_syntax.expected);
+            message_builder.append_character('.');
+            message_builder.append_character('\n');
+            auto position_result_end = calculate_position(_r, _rp, _r.page, this->text, invalid_syntax.end);
+            if (position_result_end._tag == Result<Position, IoModelError>::Ok) {
+                auto position_end = position_result_end._Ok;
+                auto hint_lines_result = build_hint_lines(_r, _rp, this->text, invalid_syntax.start, invalid_syntax.end, position_start, position_end);
+                if (hint_lines_result._tag == Result<String, FileError>::Ok) {
+                    message_builder.append_string(hint_lines_result._Ok);
+                }
             }
-            break;
         }
-        message_builder.append_string(String(_rp, ": error: expected "));
-        message_builder.append_string(invalid_syntax.expected);
-        message_builder.append_character('.');
 
         return message_builder.to_string(_rp);
     }
@@ -198,7 +266,7 @@ struct ModelError : Object {
                 message_builder.append_string(_Parser.to_string(_r, _rp));
             break;
             case Builder:
-                message_builder.append_string(String(_r.page, "A problem while building the model has occurred."));
+                message_builder.append_string(String(_r.page, "A problem while building the model has occurred.\n"));
             break;
         }
         return message_builder.to_string(_rp);     
