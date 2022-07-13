@@ -4,20 +4,27 @@ using namespace scaly::containers;
 
 struct Parser : Object {
     Lexer lexer;
+    Vector<""String> keywords_index;
     HashSet<""String> keywords;
 
     Parser(Page* _rp, String text)
       : lexer(*new(alignof(Lexer), _rp) Lexer(text)),
+        keywords_index(initialize_keywords_index(_rp)),
         keywords(initialize_keywords( _rp)) {}
+
+    Vector<""String> initialize_keywords_index(Page* _rp) {
+        Region _r;
+        Array<""String>& keywords_builder = *new(alignof(Array<""String>), _r.page) Array<""String>();
+"   (apply-to-selected-children "keyword" (lambda (keyword) ($
+"        keywords_builder.add(String(Page::get(this), \""(id keyword)"\"));
+"   )))
+"        return Vector<""String>(_rp, keywords_builder);
+    }
 
     HashSet<""String> initialize_keywords(Page* _rp) {
         Region _r;
-        HashSetBuilder<""String>& hash_set_builder = *new(alignof(HashSetBuilder<""String>), _r.page) HashSetBuilder<""String>();
-"   (apply-to-selected-children "keyword" (lambda (keyword) ($
-"        hash_set_builder.add(String(Page::get(this), \""(id keyword)"\"));
-"   )))
-"        keywords = HashSet<""String>(_rp, hash_set_builder);
-        return keywords;
+        HashSetBuilder<""String>& hash_set_builder = *new(alignof(HashSetBuilder<""String>), _r.page) HashSetBuilder<""String>(_r.page, this->keywords_index);
+        return HashSet<""String>(_rp, hash_set_builder);
     }
 
     Result<""Literal, ParserError> parse_literal_token(Page* _rp) {
@@ -133,8 +140,7 @@ struct Parser : Object {
 "
             )
             ($ ; non-abstract syntax
-"        Region _r;
-        auto start = this->lexer.previous_position;
+"        auto start = this->lexer.previous_position;
 "               (apply-to-children-of syntax (lambda (content) ($
                     (case (type content)
                         (("syntax") ($
@@ -256,7 +262,7 @@ struct Parser : Object {
                             )
             " = this->lexer.parse_"(type content)"("
                             (case (type content)
-                                (("keyword")     ($ "_rp, String(_r.page, \""(link content)"\")"))
+                                (("keyword")     ($ "_rp, *this->keywords_index["(number->string (- (child-number (element-with-id (link content))) 1))"]"))
                                 (("punctuation") ($ "'"(value (element-with-id (link content)))"'"))
                                 (("identifier")  ($ "_rp, this->keywords"))
                                 (("attribute" "colon" "semicolon") "_rp")

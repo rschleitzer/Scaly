@@ -1110,60 +1110,67 @@ using namespace scaly::containers;
 
 struct Parser : Object {
     Lexer lexer;
+    Vector<String> keywords_index;
     HashSet<String> keywords;
 
     Parser(Page* _rp, String text)
       : lexer(*new(alignof(Lexer), _rp) Lexer(text)),
+        keywords_index(initialize_keywords_index(_rp)),
         keywords(initialize_keywords( _rp)) {}
+
+    Vector<String> initialize_keywords_index(Page* _rp) {
+        Region _r;
+        Array<String>& keywords_builder = *new(alignof(Array<String>), _r.page) Array<String>();
+        keywords_builder.add(String(Page::get(this), "as"));
+        keywords_builder.add(String(Page::get(this), "break"));
+        keywords_builder.add(String(Page::get(this), "catch"));
+        keywords_builder.add(String(Page::get(this), "case"));
+        keywords_builder.add(String(Page::get(this), "continue"));
+        keywords_builder.add(String(Page::get(this), "define"));
+        keywords_builder.add(String(Page::get(this), "default"));
+        keywords_builder.add(String(Page::get(this), "delegate"));
+        keywords_builder.add(String(Page::get(this), "drop"));
+        keywords_builder.add(String(Page::get(this), "else"));
+        keywords_builder.add(String(Page::get(this), "extends"));
+        keywords_builder.add(String(Page::get(this), "extern"));
+        keywords_builder.add(String(Page::get(this), "for"));
+        keywords_builder.add(String(Page::get(this), "function"));
+        keywords_builder.add(String(Page::get(this), "if"));
+        keywords_builder.add(String(Page::get(this), "is"));
+        keywords_builder.add(String(Page::get(this), "implement"));
+        keywords_builder.add(String(Page::get(this), "in"));
+        keywords_builder.add(String(Page::get(this), "instruction"));
+        keywords_builder.add(String(Page::get(this), "intrinsic"));
+        keywords_builder.add(String(Page::get(this), "label"));
+        keywords_builder.add(String(Page::get(this), "lambda"));
+        keywords_builder.add(String(Page::get(this), "let"));
+        keywords_builder.add(String(Page::get(this), "loop"));
+        keywords_builder.add(String(Page::get(this), "macro"));
+        keywords_builder.add(String(Page::get(this), "match"));
+        keywords_builder.add(String(Page::get(this), "module"));
+        keywords_builder.add(String(Page::get(this), "mutable"));
+        keywords_builder.add(String(Page::get(this), "operator"));
+        keywords_builder.add(String(Page::get(this), "procedure"));
+        keywords_builder.add(String(Page::get(this), "private"));
+        keywords_builder.add(String(Page::get(this), "return"));
+        keywords_builder.add(String(Page::get(this), "returns"));
+        keywords_builder.add(String(Page::get(this), "repeat"));
+        keywords_builder.add(String(Page::get(this), "set"));
+        keywords_builder.add(String(Page::get(this), "sizeof"));
+        keywords_builder.add(String(Page::get(this), "throw"));
+        keywords_builder.add(String(Page::get(this), "throws"));
+        keywords_builder.add(String(Page::get(this), "trait"));
+        keywords_builder.add(String(Page::get(this), "union"));
+        keywords_builder.add(String(Page::get(this), "use"));
+        keywords_builder.add(String(Page::get(this), "var"));
+        keywords_builder.add(String(Page::get(this), "while"));
+        return Vector<String>(_rp, keywords_builder);
+    }
 
     HashSet<String> initialize_keywords(Page* _rp) {
         Region _r;
-        HashSetBuilder<String>& hash_set_builder = *new(alignof(HashSetBuilder<String>), _r.page) HashSetBuilder<String>();
-        hash_set_builder.add(String(Page::get(this), "as"));
-        hash_set_builder.add(String(Page::get(this), "break"));
-        hash_set_builder.add(String(Page::get(this), "catch"));
-        hash_set_builder.add(String(Page::get(this), "case"));
-        hash_set_builder.add(String(Page::get(this), "continue"));
-        hash_set_builder.add(String(Page::get(this), "define"));
-        hash_set_builder.add(String(Page::get(this), "default"));
-        hash_set_builder.add(String(Page::get(this), "delegate"));
-        hash_set_builder.add(String(Page::get(this), "drop"));
-        hash_set_builder.add(String(Page::get(this), "else"));
-        hash_set_builder.add(String(Page::get(this), "extends"));
-        hash_set_builder.add(String(Page::get(this), "extern"));
-        hash_set_builder.add(String(Page::get(this), "for"));
-        hash_set_builder.add(String(Page::get(this), "function"));
-        hash_set_builder.add(String(Page::get(this), "if"));
-        hash_set_builder.add(String(Page::get(this), "is"));
-        hash_set_builder.add(String(Page::get(this), "implement"));
-        hash_set_builder.add(String(Page::get(this), "in"));
-        hash_set_builder.add(String(Page::get(this), "instruction"));
-        hash_set_builder.add(String(Page::get(this), "intrinsic"));
-        hash_set_builder.add(String(Page::get(this), "label"));
-        hash_set_builder.add(String(Page::get(this), "lambda"));
-        hash_set_builder.add(String(Page::get(this), "let"));
-        hash_set_builder.add(String(Page::get(this), "loop"));
-        hash_set_builder.add(String(Page::get(this), "macro"));
-        hash_set_builder.add(String(Page::get(this), "match"));
-        hash_set_builder.add(String(Page::get(this), "module"));
-        hash_set_builder.add(String(Page::get(this), "mutable"));
-        hash_set_builder.add(String(Page::get(this), "operator"));
-        hash_set_builder.add(String(Page::get(this), "procedure"));
-        hash_set_builder.add(String(Page::get(this), "private"));
-        hash_set_builder.add(String(Page::get(this), "return"));
-        hash_set_builder.add(String(Page::get(this), "returns"));
-        hash_set_builder.add(String(Page::get(this), "repeat"));
-        hash_set_builder.add(String(Page::get(this), "set"));
-        hash_set_builder.add(String(Page::get(this), "sizeof"));
-        hash_set_builder.add(String(Page::get(this), "throw"));
-        hash_set_builder.add(String(Page::get(this), "throws"));
-        hash_set_builder.add(String(Page::get(this), "trait"));
-        hash_set_builder.add(String(Page::get(this), "union"));
-        hash_set_builder.add(String(Page::get(this), "use"));
-        hash_set_builder.add(String(Page::get(this), "var"));
-        hash_set_builder.add(String(Page::get(this), "while"));
-        keywords = HashSet<String>(_rp, hash_set_builder);
-        return keywords;
+        HashSetBuilder<String>& hash_set_builder = *new(alignof(HashSetBuilder<String>), _r.page) HashSetBuilder<String>(_r.page, this->keywords_index);
+        return HashSet<String>(_rp, hash_set_builder);
     }
 
     Result<Literal, ParserError> parse_literal_token(Page* _rp) {
@@ -1223,7 +1230,6 @@ struct Parser : Object {
     }
 
     Result<FileSyntax, ParserError> parse_file(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto uses_start = this->lexer.position;
@@ -1442,11 +1448,10 @@ struct Parser : Object {
     }
 
     Result<PrivateSyntax, ParserError> parse_private(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_private_1 = this->lexer.previous_position;
-        auto success_private_1 = this->lexer.parse_keyword(_rp, String(_r.page, "private"));
+        auto success_private_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[30]);
         if (!success_private_1) {
             return Result<PrivateSyntax, ParserError> { ._tag = Result<PrivateSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -1597,11 +1602,10 @@ struct Parser : Object {
     }
 
     Result<DefinitionSyntax, ParserError> parse_definition(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_define_1 = this->lexer.previous_position;
-        auto success_define_1 = this->lexer.parse_keyword(_rp, String(_r.page, "define"));
+        auto success_define_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[5]);
         if (!success_define_1) {
             return Result<DefinitionSyntax, ParserError> { ._tag = Result<DefinitionSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -1672,7 +1676,6 @@ struct Parser : Object {
     }
 
     Result<GenericParametersSyntax, ParserError> parse_genericparameters(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_left_bracket_1 = this->lexer.previous_position;
@@ -1735,7 +1738,6 @@ struct Parser : Object {
     }
 
     Result<GenericParameterSyntax, ParserError> parse_genericparameter(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_name = this->lexer.previous_position;
@@ -1791,7 +1793,6 @@ struct Parser : Object {
     }
 
     Result<ExtensionSyntax, ParserError> parse_extension(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_dot_1 = this->lexer.previous_position;
@@ -1846,7 +1847,6 @@ struct Parser : Object {
     }
 
     Result<AttributeSyntax, ParserError> parse_attribute(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_attribute = this->lexer.previous_position;
@@ -1972,7 +1972,6 @@ struct Parser : Object {
     }
 
     Result<ClassSyntax, ParserError> parse_class(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto structure_start = this->lexer.position;
@@ -2011,7 +2010,6 @@ struct Parser : Object {
     }
 
     Result<NamespaceSyntax, ParserError> parse_namespace(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto body_start = this->lexer.position;
@@ -2031,11 +2029,10 @@ struct Parser : Object {
     }
 
     Result<UnionSyntax, ParserError> parse_union(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_union_1 = this->lexer.previous_position;
-        auto success_union_1 = this->lexer.parse_keyword(_rp, String(_r.page, "union"));
+        auto success_union_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[39]);
         if (!success_union_1) {
             return Result<UnionSyntax, ParserError> { ._tag = Result<UnionSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -2123,7 +2120,6 @@ struct Parser : Object {
     }
 
     Result<TagSyntax, ParserError> parse_tag(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_name = this->lexer.previous_position;
@@ -2209,7 +2205,6 @@ struct Parser : Object {
     }
 
     Result<VariantSyntax, ParserError> parse_variant(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_colon_1 = this->lexer.previous_position;
@@ -2263,7 +2258,6 @@ struct Parser : Object {
     }
 
     Result<EnumSyntax, ParserError> parse_enum(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto literal_start = this->lexer.previous_position;
@@ -2284,7 +2278,6 @@ struct Parser : Object {
     }
 
     Result<ConstantSyntax, ParserError> parse_constant(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto operation_start = this->lexer.position;
@@ -2309,11 +2302,10 @@ struct Parser : Object {
     }
 
     Result<DelegateSyntax, ParserError> parse_delegate(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_delegate_1 = this->lexer.previous_position;
-        auto success_delegate_1 = this->lexer.parse_keyword(_rp, String(_r.page, "delegate"));
+        auto success_delegate_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[7]);
         if (!success_delegate_1) {
             return Result<DelegateSyntax, ParserError> { ._tag = Result<DelegateSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -2382,7 +2374,6 @@ struct Parser : Object {
     }
 
     Result<BodySyntax, ParserError> parse_body(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_left_curly_1 = this->lexer.previous_position;
@@ -2498,11 +2489,10 @@ struct Parser : Object {
     }
 
     Result<FieldSyntax, ParserError> parse_field(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_private_1 = this->lexer.previous_position;
-        auto success_private_1 = this->lexer.parse_keyword(_rp, String(_r.page, "private"));
+        auto success_private_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[30]);
         if (!success_private_1) {
             return Result<FieldSyntax, ParserError> { ._tag = Result<FieldSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -2556,7 +2546,6 @@ struct Parser : Object {
     }
 
     Result<PropertySyntax, ParserError> parse_property(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_name = this->lexer.previous_position;
@@ -2618,7 +2607,6 @@ struct Parser : Object {
     }
 
     Result<TypeAnnotationSyntax, ParserError> parse_typeannotation(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_colon_1 = this->lexer.previous_position;
@@ -2649,7 +2637,6 @@ struct Parser : Object {
     }
 
     Result<GenericArgumentsSyntax, ParserError> parse_genericarguments(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_left_bracket_1 = this->lexer.previous_position;
@@ -2712,7 +2699,6 @@ struct Parser : Object {
     }
 
     Result<GenericArgumentSyntax, ParserError> parse_genericargument(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto type_start = this->lexer.position;
@@ -2737,7 +2723,6 @@ struct Parser : Object {
     }
 
     Result<OptionalSyntax, ParserError> parse_optional(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_question_1 = this->lexer.previous_position;
@@ -2754,11 +2739,10 @@ struct Parser : Object {
     }
 
     Result<ReturnsSyntax, ParserError> parse_returns(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_returns_1 = this->lexer.previous_position;
-        auto success_returns_1 = this->lexer.parse_keyword(_rp, String(_r.page, "returns"));
+        auto success_returns_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[32]);
         if (!success_returns_1) {
             return Result<ReturnsSyntax, ParserError> { ._tag = Result<ReturnsSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -2833,7 +2817,6 @@ struct Parser : Object {
     }
 
     Result<ParametersSyntax, ParserError> parse_parameters(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_left_paren_1 = this->lexer.previous_position;
@@ -2869,11 +2852,10 @@ struct Parser : Object {
     }
 
     Result<ThrowsSyntax, ParserError> parse_throws(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_throws_1 = this->lexer.previous_position;
-        auto success_throws_1 = this->lexer.parse_keyword(_rp, String(_r.page, "throws"));
+        auto success_throws_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[37]);
         if (!success_throws_1) {
             return Result<ThrowsSyntax, ParserError> { ._tag = Result<ThrowsSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -2941,11 +2923,10 @@ struct Parser : Object {
     }
 
     Result<UseSyntax, ParserError> parse_use(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_use_1 = this->lexer.previous_position;
-        auto success_use_1 = this->lexer.parse_keyword(_rp, String(_r.page, "use"));
+        auto success_use_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[40]);
         if (!success_use_1) {
             return Result<UseSyntax, ParserError> { ._tag = Result<UseSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -2977,11 +2958,10 @@ struct Parser : Object {
     }
 
     Result<ImplementSyntax, ParserError> parse_implement(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_implement_1 = this->lexer.previous_position;
-        auto success_implement_1 = this->lexer.parse_keyword(_rp, String(_r.page, "implement"));
+        auto success_implement_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[16]);
         if (!success_implement_1) {
             return Result<ImplementSyntax, ParserError> { ._tag = Result<ImplementSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -3070,11 +3050,10 @@ struct Parser : Object {
     }
 
     Result<TraitSyntax, ParserError> parse_trait(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_trait_1 = this->lexer.previous_position;
-        auto success_trait_1 = this->lexer.parse_keyword(_rp, String(_r.page, "trait"));
+        auto success_trait_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[38]);
         if (!success_trait_1) {
             return Result<TraitSyntax, ParserError> { ._tag = Result<TraitSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -3248,11 +3227,10 @@ struct Parser : Object {
     }
 
     Result<FunctionSyntax, ParserError> parse_function(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_function_1 = this->lexer.previous_position;
-        auto success_function_1 = this->lexer.parse_keyword(_rp, String(_r.page, "function"));
+        auto success_function_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[13]);
         if (!success_function_1) {
             return Result<FunctionSyntax, ParserError> { ._tag = Result<FunctionSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -3304,11 +3282,10 @@ struct Parser : Object {
     }
 
     Result<ProcedureSyntax, ParserError> parse_procedure(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_procedure_1 = this->lexer.previous_position;
-        auto success_procedure_1 = this->lexer.parse_keyword(_rp, String(_r.page, "procedure"));
+        auto success_procedure_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[29]);
         if (!success_procedure_1) {
             return Result<ProcedureSyntax, ParserError> { ._tag = Result<ProcedureSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -3360,11 +3337,10 @@ struct Parser : Object {
     }
 
     Result<OperatorSyntax, ParserError> parse_operator(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_operator_1 = this->lexer.previous_position;
-        auto success_operator_1 = this->lexer.parse_keyword(_rp, String(_r.page, "operator"));
+        auto success_operator_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[28]);
         if (!success_operator_1) {
             return Result<OperatorSyntax, ParserError> { ._tag = Result<OperatorSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -3425,7 +3401,6 @@ struct Parser : Object {
     }
 
     Result<SymbolSyntax, ParserError> parse_symbol(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_name = this->lexer.previous_position;
@@ -3515,7 +3490,6 @@ struct Parser : Object {
     }
 
     Result<RoutineSyntax, ParserError> parse_routine(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto parameters_start = this->lexer.position;
@@ -3670,11 +3644,10 @@ struct Parser : Object {
     }
 
     Result<ExternSyntax, ParserError> parse_extern(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_extern_1 = this->lexer.previous_position;
-        auto success_extern_1 = this->lexer.parse_keyword(_rp, String(_r.page, "extern"));
+        auto success_extern_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[11]);
         if (!success_extern_1) {
             return Result<ExternSyntax, ParserError> { ._tag = Result<ExternSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -3687,11 +3660,10 @@ struct Parser : Object {
     }
 
     Result<InstructionSyntax, ParserError> parse_instruction(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_instruction_1 = this->lexer.previous_position;
-        auto success_instruction_1 = this->lexer.parse_keyword(_rp, String(_r.page, "instruction"));
+        auto success_instruction_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[18]);
         if (!success_instruction_1) {
             return Result<InstructionSyntax, ParserError> { ._tag = Result<InstructionSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -3709,11 +3681,10 @@ struct Parser : Object {
     }
 
     Result<IntrinsicSyntax, ParserError> parse_intrinsic(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_intrinsic_1 = this->lexer.previous_position;
-        auto success_intrinsic_1 = this->lexer.parse_keyword(_rp, String(_r.page, "intrinsic"));
+        auto success_intrinsic_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[19]);
         if (!success_intrinsic_1) {
             return Result<IntrinsicSyntax, ParserError> { ._tag = Result<IntrinsicSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -3731,11 +3702,10 @@ struct Parser : Object {
     }
 
     Result<ExtendsSyntax, ParserError> parse_extends(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_extends_1 = this->lexer.previous_position;
-        auto success_extends_1 = this->lexer.parse_keyword(_rp, String(_r.page, "extends"));
+        auto success_extends_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[10]);
         if (!success_extends_1) {
             return Result<ExtendsSyntax, ParserError> { ._tag = Result<ExtendsSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -3789,7 +3759,6 @@ struct Parser : Object {
     }
 
     Result<ExtendSyntax, ParserError> parse_extend(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto type_start = this->lexer.position;
@@ -3814,11 +3783,10 @@ struct Parser : Object {
     }
 
     Result<MacroSyntax, ParserError> parse_macro(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_macro_1 = this->lexer.previous_position;
-        auto success_macro_1 = this->lexer.parse_keyword(_rp, String(_r.page, "macro"));
+        auto success_macro_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[24]);
         if (!success_macro_1) {
             return Result<MacroSyntax, ParserError> { ._tag = Result<MacroSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -3870,11 +3838,10 @@ struct Parser : Object {
     }
 
     Result<ModuleSyntax, ParserError> parse_module(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_module_1 = this->lexer.previous_position;
-        auto success_module_1 = this->lexer.parse_keyword(_rp, String(_r.page, "module"));
+        auto success_module_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[26]);
         if (!success_module_1) {
             return Result<ModuleSyntax, ParserError> { ._tag = Result<ModuleSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -4076,11 +4043,10 @@ struct Parser : Object {
     }
 
     Result<LetSyntax, ParserError> parse_let(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_let_1 = this->lexer.previous_position;
-        auto success_let_1 = this->lexer.parse_keyword(_rp, String(_r.page, "let"));
+        auto success_let_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[22]);
         if (!success_let_1) {
             return Result<LetSyntax, ParserError> { ._tag = Result<LetSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -4107,11 +4073,10 @@ struct Parser : Object {
     }
 
     Result<VarSyntax, ParserError> parse_var(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_var_1 = this->lexer.previous_position;
-        auto success_var_1 = this->lexer.parse_keyword(_rp, String(_r.page, "var"));
+        auto success_var_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[41]);
         if (!success_var_1) {
             return Result<VarSyntax, ParserError> { ._tag = Result<VarSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -4138,11 +4103,10 @@ struct Parser : Object {
     }
 
     Result<MutableSyntax, ParserError> parse_mutable(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_mutable_1 = this->lexer.previous_position;
-        auto success_mutable_1 = this->lexer.parse_keyword(_rp, String(_r.page, "mutable"));
+        auto success_mutable_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[27]);
         if (!success_mutable_1) {
             return Result<MutableSyntax, ParserError> { ._tag = Result<MutableSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -4169,7 +4133,6 @@ struct Parser : Object {
     }
 
     Result<BindingSyntax, ParserError> parse_binding(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_name = this->lexer.previous_position;
@@ -4221,7 +4184,6 @@ struct Parser : Object {
     }
 
     Result<BindingAnnotationSyntax, ParserError> parse_bindingannotation(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_colon_1 = this->lexer.previous_position;
@@ -4328,7 +4290,6 @@ struct Parser : Object {
     }
 
     Result<ArraySyntax, ParserError> parse_array(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_left_bracket_1 = this->lexer.previous_position;
@@ -4364,7 +4325,6 @@ struct Parser : Object {
     }
 
     Result<StructureSyntax, ParserError> parse_structure(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_left_paren_1 = this->lexer.previous_position;
@@ -4427,7 +4387,6 @@ struct Parser : Object {
     }
 
     Result<OperandSyntax, ParserError> parse_operand(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto expression_start = this->lexer.position;
@@ -4522,7 +4481,6 @@ struct Parser : Object {
     }
 
     Result<MemberAccessSyntax, ParserError> parse_memberaccess(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_dot_1 = this->lexer.previous_position;
@@ -4553,7 +4511,6 @@ struct Parser : Object {
     }
 
     Result<CatcherSyntax, ParserError> parse_catcher(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto catchers_start = this->lexer.position;
@@ -4614,11 +4571,10 @@ struct Parser : Object {
     }
 
     Result<CatchSyntax, ParserError> parse_catch(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_catch_1 = this->lexer.previous_position;
-        auto success_catch_1 = this->lexer.parse_keyword(_rp, String(_r.page, "catch"));
+        auto success_catch_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[2]);
         if (!success_catch_1) {
             return Result<CatchSyntax, ParserError> { ._tag = Result<CatchSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -4659,11 +4615,10 @@ struct Parser : Object {
     }
 
     Result<DropSyntax, ParserError> parse_drop(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_drop_1 = this->lexer.previous_position;
-        auto success_drop_1 = this->lexer.parse_keyword(_rp, String(_r.page, "drop"));
+        auto success_drop_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[8]);
         if (!success_drop_1) {
             return Result<DropSyntax, ParserError> { ._tag = Result<DropSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -4934,11 +4889,10 @@ struct Parser : Object {
     }
 
     Result<ContinueSyntax, ParserError> parse_continue(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_continue_1 = this->lexer.previous_position;
-        auto success_continue_1 = this->lexer.parse_keyword(_rp, String(_r.page, "continue"));
+        auto success_continue_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[4]);
         if (!success_continue_1) {
             return Result<ContinueSyntax, ParserError> { ._tag = Result<ContinueSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -4970,11 +4924,10 @@ struct Parser : Object {
     }
 
     Result<BreakSyntax, ParserError> parse_break(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_break_1 = this->lexer.previous_position;
-        auto success_break_1 = this->lexer.parse_keyword(_rp, String(_r.page, "break"));
+        auto success_break_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[1]);
         if (!success_break_1) {
             return Result<BreakSyntax, ParserError> { ._tag = Result<BreakSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -5020,11 +4973,10 @@ struct Parser : Object {
     }
 
     Result<LoopSyntax, ParserError> parse_loop(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_loop_1 = this->lexer.previous_position;
-        auto success_loop_1 = this->lexer.parse_keyword(_rp, String(_r.page, "loop"));
+        auto success_loop_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[23]);
         if (!success_loop_1) {
             return Result<LoopSyntax, ParserError> { ._tag = Result<LoopSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -5048,11 +5000,10 @@ struct Parser : Object {
     }
 
     Result<ReturnSyntax, ParserError> parse_return(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_return_1 = this->lexer.previous_position;
-        auto success_return_1 = this->lexer.parse_keyword(_rp, String(_r.page, "return"));
+        auto success_return_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[31]);
         if (!success_return_1) {
             return Result<ReturnSyntax, ParserError> { ._tag = Result<ReturnSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -5079,11 +5030,10 @@ struct Parser : Object {
     }
 
     Result<ThrowSyntax, ParserError> parse_throw(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_throw_1 = this->lexer.previous_position;
-        auto success_throw_1 = this->lexer.parse_keyword(_rp, String(_r.page, "throw"));
+        auto success_throw_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[36]);
         if (!success_throw_1) {
             return Result<ThrowSyntax, ParserError> { ._tag = Result<ThrowSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -5110,7 +5060,6 @@ struct Parser : Object {
     }
 
     Result<LiteralSyntax, ParserError> parse_literal(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto literal_start = this->lexer.previous_position;
@@ -5131,7 +5080,6 @@ struct Parser : Object {
     }
 
     Result<ObjectSyntax, ParserError> parse_object(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_left_paren_1 = this->lexer.previous_position;
@@ -5194,7 +5142,6 @@ struct Parser : Object {
     }
 
     Result<ComponentSyntax, ParserError> parse_component(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto operands_start = this->lexer.position;
@@ -5247,7 +5194,6 @@ struct Parser : Object {
     }
 
     Result<ValueSyntax, ParserError> parse_value(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_colon_1 = this->lexer.previous_position;
@@ -5292,7 +5238,6 @@ struct Parser : Object {
     }
 
     Result<VectorSyntax, ParserError> parse_vector(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_left_bracket_1 = this->lexer.previous_position;
@@ -5355,7 +5300,6 @@ struct Parser : Object {
     }
 
     Result<ElementSyntax, ParserError> parse_element(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto operation_start = this->lexer.position;
@@ -5394,7 +5338,6 @@ struct Parser : Object {
     }
 
     Result<BlockSyntax, ParserError> parse_block(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_left_curly_1 = this->lexer.previous_position;
@@ -5444,11 +5387,10 @@ struct Parser : Object {
     }
 
     Result<IfSyntax, ParserError> parse_if(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_if_1 = this->lexer.previous_position;
-        auto success_if_1 = this->lexer.parse_keyword(_rp, String(_r.page, "if"));
+        auto success_if_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[14]);
         if (!success_if_1) {
             return Result<IfSyntax, ParserError> { ._tag = Result<IfSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -5531,11 +5473,10 @@ struct Parser : Object {
     }
 
     Result<IsSyntax, ParserError> parse_is(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_is_1 = this->lexer.previous_position;
-        auto success_is_1 = this->lexer.parse_keyword(_rp, String(_r.page, "is"));
+        auto success_is_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[15]);
         if (!success_is_1) {
             return Result<IsSyntax, ParserError> { ._tag = Result<IsSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -5562,11 +5503,10 @@ struct Parser : Object {
     }
 
     Result<AsSyntax, ParserError> parse_as(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_as_1 = this->lexer.previous_position;
-        auto success_as_1 = this->lexer.parse_keyword(_rp, String(_r.page, "as"));
+        auto success_as_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[0]);
         if (!success_as_1) {
             return Result<AsSyntax, ParserError> { ._tag = Result<AsSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -5595,11 +5535,10 @@ struct Parser : Object {
     }
 
     Result<ElseSyntax, ParserError> parse_else(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_else_1 = this->lexer.previous_position;
-        auto success_else_1 = this->lexer.parse_keyword(_rp, String(_r.page, "else"));
+        auto success_else_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[9]);
         if (!success_else_1) {
             return Result<ElseSyntax, ParserError> { ._tag = Result<ElseSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -5631,11 +5570,10 @@ struct Parser : Object {
     }
 
     Result<MatchSyntax, ParserError> parse_match(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_match_1 = this->lexer.previous_position;
-        auto success_match_1 = this->lexer.parse_keyword(_rp, String(_r.page, "match"));
+        auto success_match_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[25]);
         if (!success_match_1) {
             return Result<MatchSyntax, ParserError> { ._tag = Result<MatchSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -5717,11 +5655,10 @@ struct Parser : Object {
     }
 
     Result<CaseSyntax, ParserError> parse_case(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_case_1 = this->lexer.previous_position;
-        auto success_case_1 = this->lexer.parse_keyword(_rp, String(_r.page, "case"));
+        auto success_case_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[3]);
         if (!success_case_1) {
             return Result<CaseSyntax, ParserError> { ._tag = Result<CaseSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -5762,11 +5699,10 @@ struct Parser : Object {
     }
 
     Result<DefaultSyntax, ParserError> parse_default(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_default_1 = this->lexer.previous_position;
-        auto success_default_1 = this->lexer.parse_keyword(_rp, String(_r.page, "default"));
+        auto success_default_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[6]);
         if (!success_default_1) {
             return Result<DefaultSyntax, ParserError> { ._tag = Result<DefaultSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -5793,11 +5729,10 @@ struct Parser : Object {
     }
 
     Result<LambdaSyntax, ParserError> parse_lambda(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_lambda_1 = this->lexer.previous_position;
-        auto success_lambda_1 = this->lexer.parse_keyword(_rp, String(_r.page, "lambda"));
+        auto success_lambda_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[21]);
         if (!success_lambda_1) {
             return Result<LambdaSyntax, ParserError> { ._tag = Result<LambdaSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -5843,11 +5778,10 @@ struct Parser : Object {
     }
 
     Result<ForSyntax, ParserError> parse_for(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_for_1 = this->lexer.previous_position;
-        auto success_for_1 = this->lexer.parse_keyword(_rp, String(_r.page, "for"));
+        auto success_for_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[12]);
         if (!success_for_1) {
             return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -5867,7 +5801,7 @@ struct Parser : Object {
         auto condition = condition_result._Ok;
 
         auto start_in_3 = this->lexer.previous_position;
-        auto success_in_3 = this->lexer.parse_keyword(_rp, String(_r.page, "in"));
+        auto success_in_3 = this->lexer.parse_keyword(_rp, *this->keywords_index[17]);
         if (!success_in_3) {
             return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_in_3, lexer.position, String(_ep, "in"))) };        }
 
@@ -5921,11 +5855,10 @@ struct Parser : Object {
     }
 
     Result<LabelSyntax, ParserError> parse_label(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_label_1 = this->lexer.previous_position;
-        auto success_label_1 = this->lexer.parse_keyword(_rp, String(_r.page, "label"));
+        auto success_label_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[20]);
         if (!success_label_1) {
             return Result<LabelSyntax, ParserError> { ._tag = Result<LabelSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -5949,11 +5882,10 @@ struct Parser : Object {
     }
 
     Result<WhileSyntax, ParserError> parse_while(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_while_1 = this->lexer.previous_position;
-        auto success_while_1 = this->lexer.parse_keyword(_rp, String(_r.page, "while"));
+        auto success_while_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[42]);
         if (!success_while_1) {
             return Result<WhileSyntax, ParserError> { ._tag = Result<WhileSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -6008,11 +5940,10 @@ struct Parser : Object {
     }
 
     Result<RepeatSyntax, ParserError> parse_repeat(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_repeat_1 = this->lexer.previous_position;
-        auto success_repeat_1 = this->lexer.parse_keyword(_rp, String(_r.page, "repeat"));
+        auto success_repeat_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[33]);
         if (!success_repeat_1) {
             return Result<RepeatSyntax, ParserError> { ._tag = Result<RepeatSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -6114,11 +6045,10 @@ struct Parser : Object {
     }
 
     Result<SetSyntax, ParserError> parse_set(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_set_1 = this->lexer.previous_position;
-        auto success_set_1 = this->lexer.parse_keyword(_rp, String(_r.page, "set"));
+        auto success_set_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[34]);
         if (!success_set_1) {
             return Result<SetSyntax, ParserError> { ._tag = Result<SetSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -6159,7 +6089,6 @@ struct Parser : Object {
     }
 
     Result<OperationSyntax, ParserError> parse_operation(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto operands_start = this->lexer.position;
@@ -6184,11 +6113,10 @@ struct Parser : Object {
     }
 
     Result<SizeOfSyntax, ParserError> parse_sizeof(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_sizeof_1 = this->lexer.previous_position;
-        auto success_sizeof_1 = this->lexer.parse_keyword(_rp, String(_r.page, "sizeof"));
+        auto success_sizeof_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[35]);
         if (!success_sizeof_1) {
             return Result<SizeOfSyntax, ParserError> { ._tag = Result<SizeOfSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -6242,7 +6170,6 @@ struct Parser : Object {
     }
 
     Result<TypeSyntax, ParserError> parse_type(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto name_start = this->lexer.position;
@@ -6290,7 +6217,6 @@ struct Parser : Object {
     }
 
     Result<NameSyntax, ParserError> parse_name(Page* _rp, Page* _ep) {
-        Region _r;
         auto start = this->lexer.previous_position;
 
         auto start_name = this->lexer.previous_position;
