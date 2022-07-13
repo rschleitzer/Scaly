@@ -254,12 +254,12 @@ struct Parser : Object {
                                 (("keyword" "punctuation" "colon" "semicolon") ($ "success_"syntax-moniker))
                                 (else (property content))
                             )
-            " = this->lexer.parse_"(type content)"(_rp"
+            " = this->lexer.parse_"(type content)"("
                             (case (type content)
-                                (("keyword")     ($ ", String(_r.page, \""(link content)"\")"))
-                                (("punctuation") ($ ", String(_r.page, \""(value (element-with-id (link content)))"\")"))
-                                (("identifier")  ($ ", this->keywords"))
-                                (("attribute" "colon" "semicolon") "")
+                                (("keyword")     ($ "_rp, String(_r.page, \""(link content)"\")"))
+                                (("punctuation") ($ "'"(value (element-with-id (link content)))"'"))
+                                (("identifier")  ($ "_rp, this->keywords"))
+                                (("attribute" "colon" "semicolon") "_rp")
                             )");
 "
                             (let

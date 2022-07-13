@@ -18,8 +18,8 @@ struct AttributeToken {
 };
 
 struct PunctuationToken {
-    PunctuationToken(Vector<char> sign) : sign(sign) {}
-    Vector<char> sign;
+    PunctuationToken(char sign) : sign(sign) {}
+    char sign;
 };
 
 struct StringToken {
@@ -199,14 +199,14 @@ struct Lexer : Object {
 
             case '}': case ')': case ']': case '.': case '?':
             {
-                this->token = Token(PunctuationToken(Vector<char>(this->character, 1)));
+                this->token = Token(PunctuationToken(*this->character));
                 this->read_character();
                 break;
             }
 
             case '{': case '(': case '[': case ',':
             {
-                this->token = Token(PunctuationToken(Vector<char>(this->character, 1)));
+                this->token = Token(PunctuationToken(*this->character));
                 this->read_character();
                 this->skip_whitespace(true);
                 break;
@@ -723,14 +723,14 @@ struct Lexer : Object {
         }
     }
 
-    bool parse_punctuation(Page* _rp, const String& fixed_string) {
+    bool parse_punctuation(char character) {
         if (token._tag == Token::Empty)
             advance();
 
         switch (token._tag) {
             case Token::Punctuation:
             {
-                bool ret = (fixed_string.equals(token._Punctuation.sign));
+                bool ret = (character == token._Punctuation.sign);
                 if (ret)
                     empty();
 

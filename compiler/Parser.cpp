@@ -1676,7 +1676,7 @@ struct Parser : Object {
         auto start = this->lexer.previous_position;
 
         auto start_left_bracket_1 = this->lexer.previous_position;
-        auto success_left_bracket_1 = this->lexer.parse_punctuation(_rp, String(_r.page, "["));
+        auto success_left_bracket_1 = this->lexer.parse_punctuation('[');
         if (!success_left_bracket_1) {
             return Result<GenericParametersSyntax, ParserError> { ._tag = Result<GenericParametersSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -1696,7 +1696,7 @@ struct Parser : Object {
         auto parameters = parameters_result._Ok;
 
         auto start_right_bracket_3 = this->lexer.previous_position;
-        auto success_right_bracket_3 = this->lexer.parse_punctuation(_rp, String(_r.page, "]"));
+        auto success_right_bracket_3 = this->lexer.parse_punctuation(']');
         if (!success_right_bracket_3) {
             return Result<GenericParametersSyntax, ParserError> { ._tag = Result<GenericParametersSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_right_bracket_3, lexer.position, String(_ep, "]"))) };        }
 
@@ -1752,7 +1752,7 @@ struct Parser : Object {
         }
 
         auto start_comma_2 = this->lexer.previous_position;
-        auto success_comma_2 = this->lexer.parse_punctuation(_rp, String(_r.page, ","));
+        auto success_comma_2 = this->lexer.parse_punctuation(',');
         if (!success_comma_2) {
         }
 
@@ -1795,7 +1795,7 @@ struct Parser : Object {
         auto start = this->lexer.previous_position;
 
         auto start_dot_1 = this->lexer.previous_position;
-        auto success_dot_1 = this->lexer.parse_punctuation(_rp, String(_r.page, "."));
+        auto success_dot_1 = this->lexer.parse_punctuation('.');
         if (!success_dot_1) {
             return Result<ExtensionSyntax, ParserError> { ._tag = Result<ExtensionSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -2046,7 +2046,7 @@ struct Parser : Object {
         }
 
         auto start_left_paren_3 = this->lexer.previous_position;
-        auto success_left_paren_3 = this->lexer.parse_punctuation(_rp, String(_r.page, "("));
+        auto success_left_paren_3 = this->lexer.parse_punctuation('(');
         if (!success_left_paren_3) {
             return Result<UnionSyntax, ParserError> { ._tag = Result<UnionSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_left_paren_3, lexer.position, String(_ep, "("))) };        }
 
@@ -2065,7 +2065,7 @@ struct Parser : Object {
         auto tags = tags_result._Ok;
 
         auto start_right_paren_5 = this->lexer.previous_position;
-        auto success_right_paren_5 = this->lexer.parse_punctuation(_rp, String(_r.page, ")"));
+        auto success_right_paren_5 = this->lexer.parse_punctuation(')');
         if (!success_right_paren_5) {
             return Result<UnionSyntax, ParserError> { ._tag = Result<UnionSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_right_paren_5, lexer.position, String(_ep, ")"))) };        }
 
@@ -2386,7 +2386,7 @@ struct Parser : Object {
         auto start = this->lexer.previous_position;
 
         auto start_left_curly_1 = this->lexer.previous_position;
-        auto success_left_curly_1 = this->lexer.parse_punctuation(_rp, String(_r.page, "{"));
+        auto success_left_curly_1 = this->lexer.parse_punctuation('{');
         if (!success_left_curly_1) {
             return Result<BodySyntax, ParserError> { ._tag = Result<BodySyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -2420,7 +2420,7 @@ struct Parser : Object {
         auto declarations = declarations_result._tag == Result<Vector<DeclarationSyntax>, ParserError>::Error ? nullptr : declarations_result._Ok;
 
         auto start_right_curly_4 = this->lexer.previous_position;
-        auto success_right_curly_4 = this->lexer.parse_punctuation(_rp, String(_r.page, "}"));
+        auto success_right_curly_4 = this->lexer.parse_punctuation('}');
         if (!success_right_curly_4) {
             return Result<BodySyntax, ParserError> { ._tag = Result<BodySyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_right_curly_4, lexer.position, String(_ep, "}"))) };        }
 
@@ -2601,7 +2601,7 @@ struct Parser : Object {
         auto attributes = attributes_result._tag == Result<Vector<AttributeSyntax>, ParserError>::Error ? nullptr : attributes_result._Ok;
 
         auto start_comma_4 = this->lexer.previous_position;
-        auto success_comma_4 = this->lexer.parse_punctuation(_rp, String(_r.page, ","));
+        auto success_comma_4 = this->lexer.parse_punctuation(',');
         if (!success_comma_4) {
         }
 
@@ -2653,7 +2653,7 @@ struct Parser : Object {
         auto start = this->lexer.previous_position;
 
         auto start_left_bracket_1 = this->lexer.previous_position;
-        auto success_left_bracket_1 = this->lexer.parse_punctuation(_rp, String(_r.page, "["));
+        auto success_left_bracket_1 = this->lexer.parse_punctuation('[');
         if (!success_left_bracket_1) {
             return Result<GenericArgumentsSyntax, ParserError> { ._tag = Result<GenericArgumentsSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -2673,7 +2673,7 @@ struct Parser : Object {
         auto generics = generics_result._tag == Result<Vector<GenericArgumentSyntax>, ParserError>::Error ? nullptr : generics_result._Ok;
 
         auto start_right_bracket_3 = this->lexer.previous_position;
-        auto success_right_bracket_3 = this->lexer.parse_punctuation(_rp, String(_r.page, "]"));
+        auto success_right_bracket_3 = this->lexer.parse_punctuation(']');
         if (!success_right_bracket_3) {
             return Result<GenericArgumentsSyntax, ParserError> { ._tag = Result<GenericArgumentsSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_right_bracket_3, lexer.position, String(_ep, "]"))) };        }
 
@@ -2725,7 +2725,7 @@ struct Parser : Object {
         auto type = type_result._Ok;
 
         auto start_comma_2 = this->lexer.previous_position;
-        auto success_comma_2 = this->lexer.parse_punctuation(_rp, String(_r.page, ","));
+        auto success_comma_2 = this->lexer.parse_punctuation(',');
         if (!success_comma_2) {
         }
 
@@ -2741,7 +2741,7 @@ struct Parser : Object {
         auto start = this->lexer.previous_position;
 
         auto start_question_1 = this->lexer.previous_position;
-        auto success_question_1 = this->lexer.parse_punctuation(_rp, String(_r.page, "?"));
+        auto success_question_1 = this->lexer.parse_punctuation('?');
         if (!success_question_1) {
             return Result<OptionalSyntax, ParserError> { ._tag = Result<OptionalSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -2837,7 +2837,7 @@ struct Parser : Object {
         auto start = this->lexer.previous_position;
 
         auto start_left_paren_1 = this->lexer.previous_position;
-        auto success_left_paren_1 = this->lexer.parse_punctuation(_rp, String(_r.page, "("));
+        auto success_left_paren_1 = this->lexer.parse_punctuation('(');
         if (!success_left_paren_1) {
             return Result<ParametersSyntax, ParserError> { ._tag = Result<ParametersSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -2857,7 +2857,7 @@ struct Parser : Object {
         auto properties = properties_result._tag == Result<Vector<PropertySyntax>, ParserError>::Error ? nullptr : properties_result._Ok;
 
         auto start_right_paren_3 = this->lexer.previous_position;
-        auto success_right_paren_3 = this->lexer.parse_punctuation(_rp, String(_r.page, ")"));
+        auto success_right_paren_3 = this->lexer.parse_punctuation(')');
         if (!success_right_paren_3) {
             return Result<ParametersSyntax, ParserError> { ._tag = Result<ParametersSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_right_paren_3, lexer.position, String(_ep, ")"))) };        }
 
@@ -3020,7 +3020,7 @@ struct Parser : Object {
         }
 
         auto start_left_curly_5 = this->lexer.previous_position;
-        auto success_left_curly_5 = this->lexer.parse_punctuation(_rp, String(_r.page, "{"));
+        auto success_left_curly_5 = this->lexer.parse_punctuation('{');
         if (!success_left_curly_5) {
             return Result<ImplementSyntax, ParserError> { ._tag = Result<ImplementSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_left_curly_5, lexer.position, String(_ep, "{"))) };        }
 
@@ -3053,7 +3053,7 @@ struct Parser : Object {
         auto methods = methods_result._tag == Result<Vector<MethodSyntax>, ParserError>::Error ? nullptr : methods_result._Ok;
 
         auto start_right_curly_8 = this->lexer.previous_position;
-        auto success_right_curly_8 = this->lexer.parse_punctuation(_rp, String(_r.page, "}"));
+        auto success_right_curly_8 = this->lexer.parse_punctuation('}');
         if (!success_right_curly_8) {
             return Result<ImplementSyntax, ParserError> { ._tag = Result<ImplementSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_right_curly_8, lexer.position, String(_ep, "}"))) };        }
 
@@ -3122,7 +3122,7 @@ struct Parser : Object {
         auto attributes = attributes_result._tag == Result<Vector<AttributeSyntax>, ParserError>::Error ? nullptr : attributes_result._Ok;
 
         auto start_left_curly_5 = this->lexer.previous_position;
-        auto success_left_curly_5 = this->lexer.parse_punctuation(_rp, String(_r.page, "{"));
+        auto success_left_curly_5 = this->lexer.parse_punctuation('{');
         if (!success_left_curly_5) {
             return Result<TraitSyntax, ParserError> { ._tag = Result<TraitSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_left_curly_5, lexer.position, String(_ep, "{"))) };        }
 
@@ -3155,7 +3155,7 @@ struct Parser : Object {
         auto functions = functions_result._tag == Result<Vector<MethodSyntax>, ParserError>::Error ? nullptr : functions_result._Ok;
 
         auto start_right_curly_8 = this->lexer.previous_position;
-        auto success_right_curly_8 = this->lexer.parse_punctuation(_rp, String(_r.page, "}"));
+        auto success_right_curly_8 = this->lexer.parse_punctuation('}');
         if (!success_right_curly_8) {
             return Result<TraitSyntax, ParserError> { ._tag = Result<TraitSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_right_curly_8, lexer.position, String(_ep, "}"))) };        }
 
@@ -3802,7 +3802,7 @@ struct Parser : Object {
         auto type = type_result._Ok;
 
         auto start_comma_2 = this->lexer.previous_position;
-        auto success_comma_2 = this->lexer.parse_punctuation(_rp, String(_r.page, ","));
+        auto success_comma_2 = this->lexer.parse_punctuation(',');
         if (!success_comma_2) {
         }
 
@@ -4332,7 +4332,7 @@ struct Parser : Object {
         auto start = this->lexer.previous_position;
 
         auto start_left_bracket_1 = this->lexer.previous_position;
-        auto success_left_bracket_1 = this->lexer.parse_punctuation(_rp, String(_r.page, "["));
+        auto success_left_bracket_1 = this->lexer.parse_punctuation('[');
         if (!success_left_bracket_1) {
             return Result<ArraySyntax, ParserError> { ._tag = Result<ArraySyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -4352,7 +4352,7 @@ struct Parser : Object {
         auto members = members_result._tag == Result<Vector<TypeSyntax>, ParserError>::Error ? nullptr : members_result._Ok;
 
         auto start_right_bracket_3 = this->lexer.previous_position;
-        auto success_right_bracket_3 = this->lexer.parse_punctuation(_rp, String(_r.page, "]"));
+        auto success_right_bracket_3 = this->lexer.parse_punctuation(']');
         if (!success_right_bracket_3) {
             return Result<ArraySyntax, ParserError> { ._tag = Result<ArraySyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_right_bracket_3, lexer.position, String(_ep, "]"))) };        }
 
@@ -4368,7 +4368,7 @@ struct Parser : Object {
         auto start = this->lexer.previous_position;
 
         auto start_left_paren_1 = this->lexer.previous_position;
-        auto success_left_paren_1 = this->lexer.parse_punctuation(_rp, String(_r.page, "("));
+        auto success_left_paren_1 = this->lexer.parse_punctuation('(');
         if (!success_left_paren_1) {
             return Result<StructureSyntax, ParserError> { ._tag = Result<StructureSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -4388,7 +4388,7 @@ struct Parser : Object {
         auto members = members_result._tag == Result<Vector<MemberSyntax>, ParserError>::Error ? nullptr : members_result._Ok;
 
         auto start_right_paren_3 = this->lexer.previous_position;
-        auto success_right_paren_3 = this->lexer.parse_punctuation(_rp, String(_r.page, ")"));
+        auto success_right_paren_3 = this->lexer.parse_punctuation(')');
         if (!success_right_paren_3) {
             return Result<StructureSyntax, ParserError> { ._tag = Result<StructureSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_right_paren_3, lexer.position, String(_ep, ")"))) };        }
 
@@ -4526,7 +4526,7 @@ struct Parser : Object {
         auto start = this->lexer.previous_position;
 
         auto start_dot_1 = this->lexer.previous_position;
-        auto success_dot_1 = this->lexer.parse_punctuation(_rp, String(_r.page, "."));
+        auto success_dot_1 = this->lexer.parse_punctuation('.');
         if (!success_dot_1) {
             return Result<MemberAccessSyntax, ParserError> { ._tag = Result<MemberAccessSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -5135,7 +5135,7 @@ struct Parser : Object {
         auto start = this->lexer.previous_position;
 
         auto start_left_paren_1 = this->lexer.previous_position;
-        auto success_left_paren_1 = this->lexer.parse_punctuation(_rp, String(_r.page, "("));
+        auto success_left_paren_1 = this->lexer.parse_punctuation('(');
         if (!success_left_paren_1) {
             return Result<ObjectSyntax, ParserError> { ._tag = Result<ObjectSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -5155,7 +5155,7 @@ struct Parser : Object {
         auto components = components_result._tag == Result<Vector<ComponentSyntax>, ParserError>::Error ? nullptr : components_result._Ok;
 
         auto start_right_paren_3 = this->lexer.previous_position;
-        auto success_right_paren_3 = this->lexer.parse_punctuation(_rp, String(_r.page, ")"));
+        auto success_right_paren_3 = this->lexer.parse_punctuation(')');
         if (!success_right_paren_3) {
             return Result<ObjectSyntax, ParserError> { ._tag = Result<ObjectSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_right_paren_3, lexer.position, String(_ep, ")"))) };        }
 
@@ -5235,7 +5235,7 @@ struct Parser : Object {
         ValueSyntax* value = value_result._tag == Result<ValueSyntax, ParserError>::Error ? nullptr : new(alignof(ValueSyntax), _rp) ValueSyntax(value_result._Ok);
 
         auto start_comma_4 = this->lexer.previous_position;
-        auto success_comma_4 = this->lexer.parse_punctuation(_rp, String(_r.page, ","));
+        auto success_comma_4 = this->lexer.parse_punctuation(',');
         if (!success_comma_4) {
         }
 
@@ -5296,7 +5296,7 @@ struct Parser : Object {
         auto start = this->lexer.previous_position;
 
         auto start_left_bracket_1 = this->lexer.previous_position;
-        auto success_left_bracket_1 = this->lexer.parse_punctuation(_rp, String(_r.page, "["));
+        auto success_left_bracket_1 = this->lexer.parse_punctuation('[');
         if (!success_left_bracket_1) {
             return Result<VectorSyntax, ParserError> { ._tag = Result<VectorSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -5316,7 +5316,7 @@ struct Parser : Object {
         auto elements = elements_result._Ok;
 
         auto start_right_bracket_3 = this->lexer.previous_position;
-        auto success_right_bracket_3 = this->lexer.parse_punctuation(_rp, String(_r.page, "]"));
+        auto success_right_bracket_3 = this->lexer.parse_punctuation(']');
         if (!success_right_bracket_3) {
             return Result<VectorSyntax, ParserError> { ._tag = Result<VectorSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_right_bracket_3, lexer.position, String(_ep, "]"))) };        }
 
@@ -5382,7 +5382,7 @@ struct Parser : Object {
         auto attributes = attributes_result._tag == Result<Vector<AttributeSyntax>, ParserError>::Error ? nullptr : attributes_result._Ok;
 
         auto start_comma_3 = this->lexer.previous_position;
-        auto success_comma_3 = this->lexer.parse_punctuation(_rp, String(_r.page, ","));
+        auto success_comma_3 = this->lexer.parse_punctuation(',');
         if (!success_comma_3) {
         }
 
@@ -5398,7 +5398,7 @@ struct Parser : Object {
         auto start = this->lexer.previous_position;
 
         auto start_left_curly_1 = this->lexer.previous_position;
-        auto success_left_curly_1 = this->lexer.parse_punctuation(_rp, String(_r.page, "{"));
+        auto success_left_curly_1 = this->lexer.parse_punctuation('{');
         if (!success_left_curly_1) {
             return Result<BlockSyntax, ParserError> { ._tag = Result<BlockSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
@@ -5432,7 +5432,7 @@ struct Parser : Object {
         auto statements = statements_result._tag == Result<Vector<StatementSyntax>, ParserError>::Error ? nullptr : statements_result._Ok;
 
         auto start_right_curly_4 = this->lexer.previous_position;
-        auto success_right_curly_4 = this->lexer.parse_punctuation(_rp, String(_r.page, "}"));
+        auto success_right_curly_4 = this->lexer.parse_punctuation('}');
         if (!success_right_curly_4) {
             return Result<BlockSyntax, ParserError> { ._tag = Result<BlockSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_right_curly_4, lexer.position, String(_ep, "}"))) };        }
 
