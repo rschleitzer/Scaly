@@ -186,7 +186,14 @@ void test_generator() {
 void test_compiler() {
     Region _r;
     StringBuilder& message_builder = *new(alignof(StringBuilder), _r.page) StringBuilder(String(_r.page, "test_compiler failed: "));
-    auto error = compile_and_run_program(_r.page, String(_r.page, "0"), *new(alignof(Vector<String>), _r.page) Vector<String>(_r.page, 0));
+    auto error = compile_and_run_program(_r.page, String(_r.page, 
+
+"function test_page {\n"
+"    mutable page: Page Page.allocate_page\n"
+"}\n"
+"test_page()\n"
+
+    ), *new(alignof(Vector<String>), _r.page) Vector<String>(_r.page, 0));
     if (error != nullptr) {
         auto error_message = error->to_string(_r.page);
         print(_r.page, error_message);
