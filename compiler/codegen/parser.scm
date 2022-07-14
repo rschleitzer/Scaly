@@ -224,7 +224,7 @@ struct Parser : Object {
                             ))
 "        }
 
-        "                   (if (and (optional? content)(not (multiple? content)))
+        "                   (if (and (optional? content)(not (multiple? content))(link content))
                                 ($ (link content)"Syntax*")
                                 "auto"
                             )
@@ -331,7 +331,8 @@ struct Parser : Object {
                 (apply-to-property-children-of syntax (lambda (content) ($
                     ", "
                     (case (type content)
-                        (("keyword" "punctuation" "identifier" "attribute") "*")
+                        (("keyword" "punctuation") "*")
+                        (("identifier" "attribute") (if (optional? content) "" "*"))
                         (else "")
                     )
                     (property content)

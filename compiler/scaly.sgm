@@ -11,6 +11,8 @@
         <content link = Private
         <content link = Definition
         <content link = Function
+        <content link = Init
+        <content link = DeInit
         <content link = Procedure
         <content link = Operator
         <content link = Implement
@@ -25,6 +27,8 @@
     <syntax id = Export                                abstract
         <content link = Definition
         <content link = Function
+        <content link = Init
+        <content link = DeInit
         <content link = Procedure
         <content link = Operator
         <content link = Implement
@@ -205,6 +209,14 @@
         <content link = function
         <content identifier                                     property = name
         <content link = GenericArguments               optional property = generics
+        <content link = Routine                                 property = routine
+
+    <syntax id = Init
+        <content link = init
+        <content link = Routine                                 property = routine
+
+    <syntax id = DeInit
+        <content link = deinit
         <content link = Routine                                 property = routine
 
     <syntax id = Procedure
@@ -435,11 +447,16 @@
 
     <syntax id = Is
         <content link = is
+        <content identifier                                     property = name
+        <content colon
         <content link = Type                                    property = type
+        <content colon                                 optional
 
     <syntax id = As
         <content link = as
         <content identifier                                     property = name
+        <content colon
+        <content link = Type                                    property = type
         <content colon                                 optional
 
     <syntax id = Else
@@ -512,10 +529,32 @@
         <content link = Name                                    property = name
         <content link = GenericArguments               optional property = generics
         <content link = Optional                       optional property = optional
+        <content link = LifeTime                       optional property = lifeTime
 
     <syntax id = Name
         <content identifier                                     property = name
         <content link = Extension             multiple optional property = extensions
+
+    <syntax id = LifeTime                              abstract
+        <content link = Root
+        <content link = Local
+        <content link = Reference
+        <content link = Thrown
+
+    <syntax id = Root
+        <content link = dollar
+        <content identifier                                     property = location
+
+    <syntax id = Local
+        <content link = hash
+        <content identifier                                     property = location
+
+    <syntax id = Reference
+        <content link = caret
+        <content identifier                            optional property = age
+
+    <syntax id = Thrown
+        <content link = exclamation
 
     <keyword id = as
     <keyword id = break
@@ -524,6 +563,7 @@
     <keyword id = continue
     <keyword id = define
     <keyword id = default
+    <keyword id = deinit
     <keyword id = delegate
     <keyword id = drop
     <keyword id = else
@@ -532,6 +572,7 @@
     <keyword id = for
     <keyword id = function
     <keyword id = if
+    <keyword id = init
     <keyword id = is
     <keyword id = implement
     <keyword id = in
@@ -564,11 +605,15 @@
     <punctuation id = dot               value = "."
     <punctuation id = comma             value = ","
     <punctuation id = question          value = "?"
+    <punctuation id = exclamation       value = "!"
     <punctuation id = left_paren        value = "("
     <punctuation id = right_paren       value = ")"
     <punctuation id = left_curly        value = "{"
     <punctuation id = right_curly       value = "}"
     <punctuation id = left_bracket      value = "["
     <punctuation id = right_bracket     value = "]"
+    <punctuation id = dollar            value = "$"
+    <punctuation id = hash              value = "#"
+    <punctuation id = caret             value = "^"
 
   </grammar>

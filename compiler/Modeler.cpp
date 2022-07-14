@@ -597,6 +597,10 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
                     functions_array->add(function);
                 }
                 break;
+                case DeclarationSyntax::Init:
+                    return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Init"), Span(declaration->_Init.start, declaration->_Implement.end)))) };
+                case DeclarationSyntax::DeInit:
+                    return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "DeInit"), Span(declaration->_DeInit.start, declaration->_Implement.end)))) };
                 case DeclarationSyntax::Procedure:
                     return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Procedure"), Span(declaration->_Procedure.start, declaration->_Procedure.end)))) };
                 case DeclarationSyntax::Operator: {

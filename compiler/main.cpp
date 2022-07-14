@@ -189,7 +189,7 @@ void test_compiler() {
     auto error = compile_and_run_program(_r.page, String(_r.page, 
 
 "function test_page {\n"
-"    mutable page: Page Page.allocate_page\n"
+"    mutable page: pointer[Page] Page.allocate_page()\n"
 "}\n"
 "test_page()\n"
 

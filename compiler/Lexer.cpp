@@ -179,7 +179,7 @@ struct Lexer : Object {
                 this->token = scan_attribute();
                 break;
 
-            case '+': case '-': case '*': case '/': case '=': case '%': case '&': case '|': case '^': case '~': case '<': case '>':
+            case '+': case '-': case '*': case '/': case '=': case '%': case '&': case '|': case '~': case '<': case '>':
             {
                 this->token = scan_operator();
                 break;
@@ -197,7 +197,7 @@ struct Lexer : Object {
                 this->token = scan_fragment_literal();
                 break;
 
-            case '}': case ')': case ']': case '.': case '?':
+            case '}': case ')': case ']': case '.': case '?': case '!': case '$': case '#': case '^':
             {
                 this->token = Token(PunctuationToken(*this->character));
                 this->read_character();
