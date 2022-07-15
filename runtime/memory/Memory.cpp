@@ -9,6 +9,8 @@
 using std::size_t;
 using std::alignment_of;
 
+const int PAGE_SIZE = 0x1000;
+
 #include "Object.h"
 #include "List.cpp"
 #include "Page.cpp"

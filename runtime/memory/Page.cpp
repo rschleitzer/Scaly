@@ -4,8 +4,6 @@ namespace memory {
 
 using namespace scaly::containers;
 
-const int PAGE_SIZE = 0x1000;
-
 struct Page {
     void* next_object;
     Page* current_page;

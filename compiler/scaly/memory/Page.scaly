@@ -1,3 +1,5 @@
+use scaly.containers
+
 define Page
 (
     next_object: pointer[void]
@@ -6,11 +8,11 @@ define Page
     exclusive_pages: List[pointer[Page]] 
 )
 {
-    function reset(this: pointer[Page]) {
-        set this*.current_page: null
-        set this*.next_page: null
-        set this*.next_object: this + 1
-        set this*.exclusive_pages: List[pointer[Page]]()
+    function reset(this) {
+        set this.current_page: null
+        set this.next_page: null
+        set this.next_object: this + 1
+        set this.exclusive_pages: List[pointer[Page]]()
     }
 
     function allocate_page returns pointer[Page] {
@@ -22,7 +24,16 @@ define Page
         }
     }
 
-    function forget(this: pointer[Page]) {
-        free(this)
+    function clear(this) {
+        this.deallocate_extensions()
+        this.reset()
+    }
+
+    function is_oversized(this) returns bool {
+        this.next_object = null
+    }
+
+    function forget(this) {
+        free(this&)
     }
 }

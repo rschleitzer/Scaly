@@ -7,6 +7,8 @@ template<class T> struct Array : Object {
     size_t length;
     Vector<T>* vector;
 
+    Array() : length(0), vector(nullptr) {}
+
     T* get_buffer() {
         if (this->vector == nullptr)
             return nullptr;

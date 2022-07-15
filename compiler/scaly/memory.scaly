@@ -1,2 +1,4 @@
+define PAGE_SIZE 0x1000
+
 module Page
 module Region

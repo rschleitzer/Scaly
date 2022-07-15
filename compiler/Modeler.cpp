@@ -717,7 +717,6 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
     if (declarations != nullptr) {
         auto declarations_iterator = VectorIterator<DeclarationSyntax>(*(declarations));
         while (auto declaration = declarations_iterator.next()) {
-            Region _r_1;
             switch (declaration->_tag) {
                 case DeclarationSyntax::Private:{
                     auto export_ = declaration->_Private.export_;
