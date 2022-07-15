@@ -275,6 +275,21 @@ struct FunctionSymbolExists {
     }
 };
 
+struct DeInitializerExists {
+    DeInitializerExists(Text text, Span span) : text(text), span(span) {}
+    Text text;
+    Span span;
+
+    String to_string(Page* _rp) {
+        Region _r;
+        StringBuilder& message_builder = *new(alignof(StringBuilder), _r.page) StringBuilder();
+        append_error_message_header(message_builder, this->text, span.start);
+        message_builder.append_string(String(_rp, "A deinitializer has already been defined."));
+        append_hint_lines(message_builder, this->text, span.start, span.end);
+
+        return message_builder.to_string(_rp);
+    }
+};
 struct InvalidConstant {
     InvalidConstant(Text text, Span span) : text(text), span(span) {}
     Text text;
@@ -291,25 +306,47 @@ struct InvalidConstant {
     }
 };
 
+struct InvalidComponentName {
+    InvalidComponentName(Text text, Span span) : text(text), span(span) {}
+    Text text;
+    Span span;
+
+    String to_string(Page* _rp) {
+        Region _r;
+        StringBuilder& message_builder = *new(alignof(StringBuilder), _r.page) StringBuilder();
+        append_error_message_header(message_builder, this->text, span.start);
+        message_builder.append_string(String(_rp, "The component does not have an identifier as name."));
+        append_hint_lines(message_builder, this->text, span.start, span.end);
+
+        return message_builder.to_string(_rp);
+    }
+};
+
 struct ModelBuilderError {
     ModelBuilderError(NotImplemented _NotImplementedModelError) : _tag(NotImplemented), _NotImplemented(_NotImplementedModelError) {}
     ModelBuilderError(DuplicateName _DuplicateName) : _tag(DuplicateName), _DuplicateName(_DuplicateName) {}
     ModelBuilderError(NonFunctionSymbolExists _NonFunctionSymbolExists) : _tag(NonFunctionSymbolExists), _NonFunctionSymbolExists(_NonFunctionSymbolExists) {}
     ModelBuilderError(FunctionSymbolExists _FunctionSymbolExists) : _tag(FunctionSymbolExists), _FunctionSymbolExists(_FunctionSymbolExists) {}
+    ModelBuilderError(DeInitializerExists _DeInitializerExists) : _tag(DeInitializerExists), _DeInitializerExists(_DeInitializerExists) {}
     ModelBuilderError(InvalidConstant _InvalidConstant) : _tag(InvalidConstant), _InvalidConstant(_InvalidConstant) {}
+    ModelBuilderError(InvalidComponentName _InvalidComponentName) : _tag(InvalidComponentName), _InvalidComponentName(_InvalidComponentName) {}
     enum {
         NotImplemented,
         DuplicateName,
         NonFunctionSymbolExists,
         FunctionSymbolExists,
+        DeInitializerExists,
         InvalidConstant,
+        InvalidComponentName,
     } _tag;
     union {
         struct NotImplemented _NotImplemented;
         struct DuplicateName _DuplicateName;
         struct NonFunctionSymbolExists _NonFunctionSymbolExists;
         struct FunctionSymbolExists _FunctionSymbolExists;
+        struct DeInitializerExists _DeInitializerExists;
         struct InvalidConstant _InvalidConstant;
+        struct InvalidComponentName _InvalidComponentName;
     };
 
     String to_string(Page* _rp) {
@@ -328,8 +365,14 @@ struct ModelBuilderError {
             case FunctionSymbolExists:
                 message_builder.append_string(_FunctionSymbolExists.to_string(_rp));
             break;
+            case DeInitializerExists:
+                message_builder.append_string(_DeInitializerExists.to_string(_rp));
+            break;
             case InvalidConstant:
                 message_builder.append_string(_InvalidConstant.to_string(_rp));
+            break;
+            case InvalidComponentName:
+                message_builder.append_string(_InvalidComponentName.to_string(_rp));
             break;
         }
         return message_builder.to_string(_rp);     

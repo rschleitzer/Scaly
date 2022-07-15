@@ -136,7 +136,7 @@ Result<Code, ModelError> handle_body(Page* _rp, Page* _ep, String name, String p
     return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Ok, ._Ok = code };
 }
 
-Result<Structure, ModelError> handle_class(Page* _rp, Page* _ep, String name, String path, ClassSyntax& class_, const Text& text) {    
+Result<Structure, ModelError> handle_class(Page* _rp, Page* _ep, String name, String path, ClassSyntax& class_, bool private_, const Text& text) {    
     auto properties_result = handle_structure(_rp, _ep, class_.structure);
     if (properties_result._tag == Result<HashMap<String, Property>, ModelError>::Error)
         return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = properties_result._Error };
@@ -145,9 +145,9 @@ Result<Structure, ModelError> handle_class(Page* _rp, Page* _ep, String name, St
     if (class_.body == nullptr) {
         Region _r_1;
         HashMapBuilder<String, Nameable>& symbols_builder = *new(alignof(HashMapBuilder<String, Nameable>), _r_1.page) HashMapBuilder<String, Nameable>();
-        auto code = Code(HashMap<String, Nameable>(_rp, symbols_builder));
+        auto code = Code(HashMap<String, Nameable>(_rp, symbols_builder), nullptr, nullptr);
         return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Ok,
-            ._Ok = Structure(Span(class_.start, class_.end), properties, code)
+            ._Ok = Structure(Span(class_.start, class_.end), private_, properties, code)
         };
     }
     else {
@@ -157,7 +157,7 @@ Result<Structure, ModelError> handle_class(Page* _rp, Page* _ep, String name, St
         auto code = code_result._Ok;
 
         return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Ok,
-            ._Ok = Structure(Span(class_.start, class_.end), properties, code)
+            ._Ok = Structure(Span(class_.start, class_.end), private_, properties, code)
         };
     }
 }
@@ -253,7 +253,7 @@ Result<Vector<Statement>, ModelError> handle_statements(Page* _rp, Page* _ep, Ar
                 auto statements_result = handle_statements(_rp, _ep, body_statements_builder, statements, text);
                 if (statements_result._tag == Result<Vector<Statement>, ModelError>::Error)
                     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = statements_result._Error };
-                statements_builder.add(Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Constant, String(_rp, statement->_Let.binding.name), type, operation_result._Ok, statements_result._Ok) });
+                statements_builder.add(Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Constant, Property(new(alignof(String), _rp) String(_rp, statement->_Let.binding.name), type), operation_result._Ok, statements_result._Ok) });
                 return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Ok, ._Ok = Vector<Statement>(_rp, statements_builder) };
             }
             case StatementSyntax::Var: {
@@ -272,7 +272,7 @@ Result<Vector<Statement>, ModelError> handle_statements(Page* _rp, Page* _ep, Ar
                 auto statements_result = handle_statements(_rp, _ep, body_statements_builder, statements, text);
                 if (statements_result._tag == Result<Vector<Statement>, ModelError>::Error)
                     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = statements_result._Error };
-                statements_builder.add(Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Extendable, String(_rp, statement->_Var.binding.name), type, operation_result._Ok, statements_result._Ok) });
+                statements_builder.add(Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Extendable, Property(new(alignof(String), _rp) String(_rp, statement->_Var.binding.name), type), operation_result._Ok, statements_result._Ok) });
                 return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Ok, ._Ok = Vector<Statement>(_rp, statements_builder) };
             }
             case StatementSyntax::Mutable: {
@@ -291,24 +291,97 @@ Result<Vector<Statement>, ModelError> handle_statements(Page* _rp, Page* _ep, Ar
                 auto statements_result = handle_statements(_rp, _ep, body_statements_builder, statements, text);
                 if (statements_result._tag == Result<Vector<Statement>, ModelError>::Error)
                     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = statements_result._Error };
-                statements_builder.add(Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Mutable, String(_rp, statement->_Mutable.binding.name), type, operation_result._Ok, statements_result._Ok) });
+                statements_builder.add(Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Mutable, Property(new(alignof(String), _rp) String(_rp, statement->_Mutable.binding.name), type), operation_result._Ok, statements_result._Ok) });
                 return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Ok, ._Ok = Vector<Statement>(_rp, statements_builder) };
             }
             case StatementSyntax::Set:
-                auto _source_result = handle_operation(_rp, _ep, statement->_Set.source, text);
-                if (_source_result._tag == Result<Operation, ModelError>::Error)
-                    return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = _source_result._Error };
-                auto source = _source_result._Ok;
                 auto _target_result = handle_operation(_rp, _ep, statement->_Set.target, text);
                 if (_target_result._tag == Result<Operation, ModelError>::Error)
                     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = _target_result._Error };
                 auto target = _target_result._Ok;
+                auto _source_result = handle_operation(_rp, _ep, statement->_Set.source, text);
+                if (_source_result._tag == Result<Operation, ModelError>::Error)
+                    return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = _source_result._Error };
+                auto source = _source_result._Ok;
                 statements_builder.add(Statement { ._tag = Statement::Action, ._Action = { ._tag = Action::Mutation, ._Mutation = Mutation(source, target) }});
                 break;
         }
     }
     
     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError> ::Ok, ._Ok = Vector<Statement>(_rp, statements_builder) };
+}
+
+Result<Vector<Operand>, ModelError> handle_operands(Page* _rp, Page* _ep, Vector<OperandSyntax>& operands, const Text& text);
+
+Result<Component, ModelError> handle_component(Page* _rp, Page* _ep, ComponentSyntax& component, const Text& text) {
+    Region _r;
+    String* name = nullptr;
+    if (component.value != nullptr) {
+        if (component.operands != nullptr) {
+            auto name_operands = *component.operands;
+            if (name_operands.length > 0) {
+                auto name_operand = *name_operands[0];
+                if (name_operands.length > 1)
+                    return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Error, ._Error = ModelError(ModelBuilderError(InvalidComponentName(text, Span(name_operand.start, name_operand.end)))) };
+                if (name_operand.postfixes != nullptr)
+                    return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Error, ._Error = ModelError(ModelBuilderError(InvalidComponentName(text, Span(name_operand.start, name_operand.end)))) };
+                if (name_operand.expression._tag == ExpressionSyntax::Variable)
+                    name = new(alignof(String), _rp) String(_rp, name_operand.expression._Variable.identifier);
+            }
+        }
+        auto value = component.value->value;
+        if (value.operands != nullptr) {
+            auto operands = *value.operands;
+            auto value_result = handle_operands(_rp, _ep, operands, text);
+            if (value_result._tag == Result<Vector<Operand>, ModelError>::Error)
+                return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Error, ._Error = value_result._Error };
+            else
+                return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Ok, ._Ok = Component(Span(component.start, component.end), name, value_result._Ok)};
+        } else {
+            return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Ok, ._Ok = Component(Span(component.start, component.end), name, Vector<Operand>(_rp, 0))};
+        }
+    } else {
+        if (component.operands != nullptr) {
+            auto operands = *component.operands;
+            auto value_result = handle_operands(_rp, _ep, operands, text);
+            if (value_result._tag == Result<Vector<Operand>, ModelError>::Error)
+                return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Error, ._Error = value_result._Error };
+            else
+                return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Ok, ._Ok = Component(Span(component.start, component.end), name, value_result._Ok)};
+        } else {
+            return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Ok, ._Ok = Component(Span(component.start, component.end), name, Vector<Operand>(_rp, 0))};
+        }
+    }
+}
+
+Result<Tuple, ModelError> handle_object(Page* _rp, Page* _ep, ObjectSyntax& object, const Text& text) {
+    Region _r;
+    Array<Component>& components_builder = *new(alignof(Array<Component>), _r.page) Array<Component>();
+    if (object.components != nullptr) {
+        auto components_iterator = VectorIterator<ComponentSyntax>(*(object.components));
+        while (auto component = components_iterator.next()) {
+            auto component_result =  handle_component(_rp, _ep, *component, text);
+            if (component_result._tag == Result<Operand, ModelError>::Error)
+                return Result<Tuple, ModelError> { ._tag = Result<Tuple, ModelError>::Error, ._Error = component_result._Error };
+            components_builder.add(component_result._Ok);
+        }
+    }
+    return Result<Tuple, ModelError> { ._tag = Result<Tuple, ModelError>::Ok, ._Ok = Tuple(Span(object.start, object.end), Vector<Component>(_rp, components_builder)) };
+}
+
+Result<Matrix, ModelError> handle_vector(Page* _rp, Page* _ep, VectorSyntax& vector, const Text& text) {
+    Region _r;
+    Array<Operation>& operations_builder = *new(alignof(Array<Operation>), _r.page) Array<Operation>();
+    if (vector.elements != nullptr) {
+        auto elements_iterator = VectorIterator<ElementSyntax>(*(vector.elements));
+        while (auto element = elements_iterator.next()) {
+            auto operation_result =  handle_operation(_rp, _ep, element->operation, text);
+            if (operation_result._tag == Result<Operand, ModelError>::Error)
+                return Result<Matrix, ModelError> { ._tag = Result<Matrix, ModelError>::Error, ._Error = operation_result._Error };
+            operations_builder.add(operation_result._Ok);
+        }
+    }
+    return Result<Matrix, ModelError> { ._tag = Result<Matrix, ModelError>::Ok, ._Ok = Matrix(Span(vector.start, vector.end), Vector<Operation>(_rp, operations_builder)) };
 }
 
 Result<Block, ModelError> handle_block(Page* _rp, Page* _ep, BlockSyntax& block, const Text& text) {
@@ -325,7 +398,33 @@ Result<Block, ModelError> handle_block(Page* _rp, Page* _ep, BlockSyntax& block,
     }
 
     return Result<Block, ModelError> { ._tag = Result<Block, ModelError> ::Ok, ._Ok = Block() };
- }
+}
+
+Result<Action, ModelError> handle_action(Page* _rp, Page* _ep, ActionSyntax& action, const Text& text);
+
+Result<If, ModelError> handle_if(Page* _rp, Page* _ep, IfSyntax& if_, const Text& text) {
+    Region _r;
+    Property* property = nullptr;
+    auto condition_result = handle_operands(_rp, _ep, *if_.condition.operands, text);
+    if (condition_result._tag == Result<Vector<Operand>, ModelError>::Error)
+        return Result<If, ModelError> { ._tag = Result<If, ModelError>::Error, ._Error = condition_result._Error };
+    auto condition = condition_result._Ok;
+    Action consequent = Action { ._tag = Action::Operation, ._Operation = Operation(Vector<Operand>(_rp, 0)) };
+    if (if_.consequent != nullptr) {
+        auto _consequent_result = handle_action(_rp, _ep, *if_.consequent, text);
+        if (_consequent_result._tag == Result<Action, ModelError>::Error)
+            return Result<If, ModelError> { ._tag = Result<If, ModelError>::Error, ._Error = _consequent_result._Error };
+        consequent = Action(_consequent_result._Ok);
+    }
+    Action alternative = Action { ._tag = Action::Operation, ._Operation = Operation(Vector<Operand>(_rp, 0)) };
+    if (if_.alternative != nullptr) {
+        auto _alternative_result = handle_action(_rp, _ep, if_.alternative->alternative, text);
+        if (_alternative_result._tag == Result<Action, ModelError>::Error)
+            return Result<If, ModelError> { ._tag = Result<If, ModelError>::Error, ._Error = _alternative_result._Error };
+        alternative = Action(_alternative_result._Ok);
+    }
+    return Result<If, ModelError> { ._tag = Result<If, ModelError>::Ok, ._Ok = If(Span(if_.start, if_.end), condition, property, consequent, alternative) };
+}
 
 Result<Expression, ModelError> handle_expression(Page* _rp, Page* _ep, ExpressionSyntax& expression, const Text& text) {
     Region _r;
@@ -337,12 +436,24 @@ Result<Expression, ModelError> handle_expression(Page* _rp, Page* _ep, Expressio
                 return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = constant_result._Error };
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::Constant, ._Constant = constant_result._Ok} };
         }
-        case ExpressionSyntax::Name:
-            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Name"), Span(expression._Name.start, expression._Name.end)))) };
-        case ExpressionSyntax::Object:
-            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Object"), Span(expression._Object.start, expression._Object.end)))) };
-        case ExpressionSyntax::Vector:
-            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Vector"), Span(expression._Vector.start, expression._Vector.end)))) };
+        case ExpressionSyntax::Variable: {
+            auto variable = expression._Variable;
+            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::Variable, ._Variable = String(_rp, variable.identifier)} };
+        }
+        case ExpressionSyntax::Object: {
+            auto object = expression._Object;
+            auto object_result = handle_object(_rp, _ep, object, text);
+            if (object_result._tag == Result<Expression, ModelError>::Error)
+                return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = object_result._Error };
+            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::Tuple, ._Tuple = object_result._Ok} };
+        }
+        case ExpressionSyntax::Vector: {
+            auto vector = expression._Vector;
+            auto vector_result = handle_vector(_rp, _ep, vector, text);
+            if (vector_result._tag == Result<Expression, ModelError>::Error)
+                return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = vector_result._Error };
+            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::Matrix, ._Matrix = vector_result._Ok} };
+        }
         case ExpressionSyntax::Block: {
             auto block = expression._Block;
             auto block_result = handle_block(_rp, _ep, block, text);
@@ -350,8 +461,13 @@ Result<Expression, ModelError> handle_expression(Page* _rp, Page* _ep, Expressio
                 return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = block_result._Error };
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::Block, ._Block = block_result._Ok} };
         }
-        case ExpressionSyntax::If:
-            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "If"), Span(expression._If.start, expression._If.end)))) };
+        case ExpressionSyntax::If: {
+            auto if_ = expression._If;
+            auto if_result = handle_if(_rp, _ep, if_, text);
+            if (if_result._tag == Result<Expression, ModelError>::Error)
+                return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = if_result._Error };
+            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::If, ._If = if_result._Ok} };
+        }
         case ExpressionSyntax::Match:
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Match"), Span(expression._Match.start, expression._Match.end)))) };
         case ExpressionSyntax::Lambda:
@@ -397,29 +513,38 @@ Result<Operand, ModelError> handle_operand(Page* _rp, Page* _ep, OperandSyntax& 
     return Result<Operand, ModelError> { ._tag = Result<Operand, ModelError>::Ok, ._Ok = Operand(Span(operand.expression._Literal.start, operand.expression._Literal.end), expression_result._Ok, postfixes) };
 }
 
-Result<Operation, ModelError> handle_operation(Page* _rp, Page* _ep, OperationSyntax& operation, const Text& text) {
+Result<Vector<Operand>, ModelError> handle_operands(Page* _rp, Page* _ep, Vector<OperandSyntax>& operands, const Text& text) {
     Region _r;
     Array<Operand>& operands_builder = *new(alignof(Array<Operand>), _r.page) Array<Operand>();
-    if (operation.operands != nullptr) {
-        auto operands_iterator = VectorIterator<OperandSyntax>(*(operation.operands));
-        while (auto operand = operands_iterator.next()) {
-            auto operand_result = handle_operand(_rp, _ep, *operand, text);
-            if (operand_result._tag == Result<Operand, ModelError>::Error)
-                return Result<Operation, ModelError> { ._tag = Result<Operation, ModelError>::Error, ._Error = operand_result._Error };
-            operands_builder.add(operand_result._Ok);
-        }
+    auto operands_iterator = VectorIterator<OperandSyntax>(operands);
+    while (auto operand = operands_iterator.next()) {
+        auto operand_result = handle_operand(_rp, _ep, *operand, text);
+        if (operand_result._tag == Result<Operand, ModelError>::Error)
+            return Result<Vector<Operand>, ModelError> { ._tag = Result<Vector<Operand>, ModelError>::Error, ._Error = operand_result._Error };
+        operands_builder.add(operand_result._Ok);
     }
-    return Result<Operation, ModelError> { ._tag = Result<Operation, ModelError>::Ok, ._Ok = Operation(Vector<Operand>(_rp, operands_builder)) };
+    return Result<Vector<Operand>, ModelError> { ._tag = Result<Vector<Operand>, ModelError>::Ok, ._Ok = (Vector<Operand>(_rp, operands_builder)) };
 }
 
-Result<Concept, ModelError> handle_definition(Page* _rp, Page* _ep, String name, String path, DefinitionSyntax& definition, const Text& text) {
+Result<Operation, ModelError> handle_operation(Page* _rp, Page* _ep, OperationSyntax& operation, const Text& text) {
+    if (operation.operands != nullptr) {
+        auto operands = *operation.operands;
+        auto operands_result = handle_operands(_rp, _ep, operands, text);
+        if (operands_result._tag == Result<Vector<Operand>, ModelError>::Error)
+            return Result<Operation, ModelError> { ._tag = Result<Operation, ModelError>::Error, ._Error = operands_result._Error };
+        return Result<Operation, ModelError> { ._tag = Result<Operation, ModelError>::Ok, ._Ok = operands_result._Ok };
+    }
+     return Result<Operation, ModelError> { ._tag = Result<Operation, ModelError>::Ok, ._Ok = Operation(Vector<Operand>(_rp, 0)) };
+}
+
+Result<Concept, ModelError> handle_definition(Page* _rp, Page* _ep, String name, String path, DefinitionSyntax& definition, bool private_, const Text& text) {
     auto concept = definition.concept_;
     Span span(definition.start, definition.end);
     switch (concept._tag)
     {
         case ConceptSyntax::Class: {
             auto class_ = concept._Class;
-            auto structure_result = handle_class(_rp, _ep, name, path, class_, text);
+            auto structure_result = handle_class(_rp, _ep, name, path, class_, private_, text);
             if (structure_result._tag == Result<Structure, ModelError>::Error)
                 return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = structure_result._Error };
             auto structure = structure_result._Ok;
@@ -453,20 +578,20 @@ Result<Concept, ModelError> handle_definition(Page* _rp, Page* _ep, String name,
     }
 }
 
-Result<Statement, ModelError> handle_action(Page* _rp, Page* _ep, ActionSyntax& action, const Text& text) {
+Result<Action, ModelError> handle_action(Page* _rp, Page* _ep, ActionSyntax& action, const Text& text) {
     switch (action._tag) {
         case ActionSyntax::Operation: {
             auto operation_result = handle_operation(_rp, _ep, action._Operation, text);
             if (operation_result._tag == Result<Operation, ModelError>::Error)
-                return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = operation_result._Error };
-            return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Ok, ._Ok = Statement { ._tag = Statement::Action, ._Action = Action { ._tag = Action::Operation, ._Operation = operation_result._Ok } } };
+                return Result<Action, ModelError> { ._tag = Result<Action, ModelError>::Error, ._Error = operation_result._Error };
+            return Result<Action, ModelError> { ._tag = Result<Action, ModelError>::Ok, ._Ok = Action { ._tag = Action::Operation, ._Operation = operation_result._Ok } };
         }
         case ActionSyntax::Set:
-            return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Set"), Span(action._Set.start, action._Set.end)))) };
+            return Result<Action, ModelError> { ._tag = Result<Action, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Set"), Span(action._Set.start, action._Set.end)))) };
     }
 }
 
-Result<Function, ModelError> handle_function(Page* _rp, Page* _ep, FunctionSyntax& function_syntax, const Text& text) {
+Result<Function, ModelError> handle_function(Page* _rp, Page* _ep, FunctionSyntax& function_syntax, bool private_, const Text& text) {
     Vector<Property>* input = nullptr;
     Vector<Property>* output = nullptr;
 
@@ -483,24 +608,49 @@ Result<Function, ModelError> handle_function(Page* _rp, Page* _ep, FunctionSynta
 
     switch (function_syntax.routine.implementation._tag) {
         case ImplementationSyntax::Action: {
-            auto statement_result = handle_action(_rp, _ep, function_syntax.routine.implementation._Action, text);
-            if (statement_result._tag == Result<Statement, ModelError>::Error)
-                return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Error, ._Error = statement_result._Error };
-            return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(function_syntax.start, function_syntax.end), String(_rp, function_syntax.name), input, output, Implementation { ._tag = Implementation::Statement, ._Statement = statement_result._Ok }) };
+            auto action_result = handle_action(_rp, _ep, function_syntax.routine.implementation._Action, text);
+            if (action_result._tag == Result<Statement, ModelError>::Error)
+                return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Error, ._Error = action_result._Error };
+            return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(function_syntax.start, function_syntax.end), private_, String(_rp, function_syntax.name), input, output, Implementation { ._tag = Implementation::Action, ._Action = action_result._Ok }) };
         }
         case ImplementationSyntax::Extern:
-            return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(function_syntax.start, function_syntax.end), String(_rp, function_syntax.name), input, output, Implementation { ._tag = Implementation::Extern, ._Extern = Extern() }) };
+            return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(function_syntax.start, function_syntax.end), private_, String(_rp, function_syntax.name), input, output, Implementation { ._tag = Implementation::Extern, ._Extern = Extern() }) };
         case ImplementationSyntax::Instruction:
-            return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(function_syntax.start, function_syntax.end), String(_rp, function_syntax.name), input, output, Implementation { ._tag = Implementation::Instruction, ._Instruction = Instruction() }) };
+            return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(function_syntax.start, function_syntax.end), private_, String(_rp, function_syntax.name), input, output, Implementation { ._tag = Implementation::Instruction, ._Instruction = Instruction() }) };
         case ImplementationSyntax::Intrinsic:
-            return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(function_syntax.start, function_syntax.end), String(_rp, function_syntax.name), input, output, Implementation { ._tag = Implementation::Intrinsic, ._Intrinsic = Intrinsic() }) };
+            return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(function_syntax.start, function_syntax.end), private_, String(_rp, function_syntax.name), input, output, Implementation { ._tag = Implementation::Intrinsic, ._Intrinsic = Intrinsic() }) };
         break;
 
     }
 
 }
 
-Result<Operator, ModelError> handle_operator(Page* _rp, Page* _ep, OperatorSyntax& operator_syntax, const Text& text) {
+Result<Initializer, ModelError> handle_initializer(Page* _rp, Page* _ep, InitSyntax& initializer, bool private_, const Text& text) {
+    Vector<Property>* input = nullptr;
+
+    if (initializer.parameters != nullptr) {
+        ParameterSetSyntax& parameterSetSyntax = *initializer.parameters;
+        auto parameterset_result = handle_parameterset(_rp, _ep, parameterSetSyntax);
+    }
+
+    auto action_result = handle_action(_rp, _ep, initializer.action, text);
+    if (action_result._tag == Result<Statement, ModelError>::Error)
+        return Result<Initializer, ModelError> { ._tag = Result<Initializer, ModelError>::Error, ._Error = action_result._Error };
+
+    return Result<Initializer, ModelError> { ._tag = Result<Initializer, ModelError>::Ok, ._Ok = Initializer(Span(initializer.start, initializer.end), private_, input, Implementation { ._tag = Implementation::Action, ._Action = action_result._Ok }) };
+}
+
+Result<DeInitializer*, ModelError> handle_deinitializer(Page* _rp, Page* _ep, DeInitSyntax& deinitializer, const Text& text) {
+    Vector<Property>* input = nullptr;
+
+    auto action_result = handle_action(_rp, _ep, deinitializer.action, text);
+    if (action_result._tag == Result<Statement, ModelError>::Error)
+        return Result<DeInitializer*, ModelError> { ._tag = Result<DeInitializer*, ModelError>::Error, ._Error = action_result._Error };
+
+    return Result<DeInitializer*, ModelError> { ._tag = Result<DeInitializer*, ModelError>::Ok, ._Ok = new(alignof(DeInitializer), _rp) DeInitializer(Span(deinitializer.start, deinitializer.end), Implementation { ._tag = Implementation::Action, ._Action = action_result._Ok }) };
+}
+
+Result<Operator, ModelError> handle_operator(Page* _rp, Page* _ep, OperatorSyntax& operator_syntax, bool private_, const Text& text) {
     Vector<Property>* output = nullptr;
     Operation* operation = nullptr;
     switch (operator_syntax.target._tag) {
@@ -512,13 +662,13 @@ Result<Operator, ModelError> handle_operator(Page* _rp, Page* _ep, OperatorSynta
                 ParameterSetSyntax& parameterSetSyntax = operator_.returns->parameters; 
                 auto parameterset_result = handle_parameterset(_rp, _ep, parameterSetSyntax);
             }
-            return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Ok, ._Ok = Operator(Span(operator_syntax.start, operator_syntax.end), String(_rp, operator_.name), output, operation) };
+            return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Ok, ._Ok = Operator(Span(operator_syntax.start, operator_syntax.end), private_, String(_rp, operator_.name), output, operation) };
     }
 }
 
 Result<Concept, ModelError> build_module_concept(Page* _rp, Page* _ep, String name, String path, FileSyntax file_syntax, const Text& text);
 
-Result<Module, ModelError> handle_module(Page* _rp, Page* _ep, String path, ModuleSyntax& module_syntax) {
+Result<Module, ModelError> handle_module(Page* _rp, Page* _ep, String path, ModuleSyntax& module_syntax, bool private_) {
     Region _r;
     StringBuilder& file_name_builder = *new(alignof(StringBuilder), _r.page) StringBuilder();
     if (path.get_length() > 0) {
@@ -553,7 +703,7 @@ Result<Module, ModelError> handle_module(Page* _rp, Page* _ep, String path, Modu
     auto concept = concept_result._Ok;
     
     return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Ok,
-        ._Ok = Module(String(_rp, module_syntax.name.name), Text { ._tag = Text::File, ._File = file_name }, concept)
+        ._Ok = Module(private_, String(_rp, module_syntax.name.name), Text { ._tag = Text::File, ._File = file_name }, concept)
     };
 }
 
@@ -561,16 +711,88 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
     Region _r;
     HashMapBuilder<String, Nameable>& symbols_builder = *new(alignof(HashMapBuilder<String, Nameable>), _r.page) HashMapBuilder<String, Nameable>();
     HashMapBuilder<String, Array<Function>>& functions_builder = *new(alignof(HashMapBuilder<String, Array<Function>>), _r.page) HashMapBuilder<String, Array<Function>>();
+    Array<Initializer>& initializers_builder = *new(alignof(Array<Initializer>), _r.page) Array<Initializer>();
+    DeInitializer* deinitializer = nullptr;
 
     if (declarations != nullptr) {
         auto declarations_iterator = VectorIterator<DeclarationSyntax>(*(declarations));
         while (auto declaration = declarations_iterator.next()) {
             Region _r_1;
             switch (declaration->_tag) {
-                case DeclarationSyntax::Private:
-                    return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Private"), Span(declaration->_Private.start, declaration->_Private.end)))) };
+                case DeclarationSyntax::Private:{
+                    auto export_ = declaration->_Private.export_;
+                    switch (export_._tag) {
+                        case ExportSyntax::Definition: {
+                            auto concept_result = handle_definition(_rp, _ep, name, path, export_._Definition, true, text);
+                            if (concept_result._tag == Result<Function, ModelError>::Error)
+                                return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = concept_result._Error };
+                            auto concept = concept_result._Ok;
+                            if (functions_builder.contains(concept.name))
+                                return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(FunctionSymbolExists(text, Span(declaration->_Definition.start, declaration->_Definition.end)))) };
+
+                            symbols_builder.add(concept.name, Nameable { ._tag = Nameable::Concept, ._Concept = concept });
+                        }
+                        break;
+                        case ExportSyntax::Function: {
+                            auto function_result = handle_function(_rp, _ep, export_._Function, true, text);
+                            if (function_result._tag == Result<Function, ModelError>::Error)
+                                return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = function_result._Error };
+                            auto function = function_result._Ok;
+                            auto symbol_with_function_name = symbols_builder[function.name];
+                            if (symbol_with_function_name != nullptr)
+                                return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NonFunctionSymbolExists(text, Span(declaration->_Function.start, declaration->_Function.end)))) };
+                            Array<Function>* functions_array = functions_builder[function.name];
+                            if (functions_array == nullptr)
+                            {
+                                functions_builder.add(function.name, Array<Function>());
+                                functions_array = functions_builder[function.name];
+                            }
+                            functions_array->add(function);
+                        }
+                        break;
+                        case ExportSyntax::Init: {
+                            auto _initializer_result = handle_initializer(_rp, _ep, export_._Init, true, text);
+                            if (_initializer_result._tag == Result<Initializer, ModelError>::Error)
+                                return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = _initializer_result._Error };
+                            auto initializer = _initializer_result._Ok;
+                            initializers_builder.add(initializer);
+                        }
+                        break;
+                        case ExportSyntax::Procedure:
+                            return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Private Procedure"), Span(declaration->_Procedure.start, declaration->_Procedure.end)))) };
+                        case ExportSyntax::Operator: {
+                            auto operator_syntax = export_._Operator;
+                            auto operator_result = handle_operator(_rp, _ep, operator_syntax, true, text);
+                            if (operator_result._tag == Result<Code, ModelError>::Error)
+                                return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error,
+                                    ._Error = operator_result._Error };
+                            auto operator_ = operator_result._Ok;
+                            if (!symbols_builder.add(operator_.name, Nameable { ._tag = Nameable::Operator, ._Operator = operator_ }))
+                                return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error,
+                                    ._Error = ModelError(ModelBuilderError(DuplicateName(text, Span(operator_syntax.start, operator_syntax.end)))) };
+                        }
+                        break;
+                        case ExportSyntax::Implement:
+                            return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Private Implement"), Span(declaration->_Implement.start, declaration->_Implement.end)))) };
+                        case ExportSyntax::Trait:
+                            return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Private Trait"), Span(declaration->_Trait.start, declaration->_Trait.end)))) };
+                        case ExportSyntax::Module: {
+                            auto module_syntax = export_._Module;
+                            auto module_result = handle_module(_rp, _ep, path, module_syntax, true);
+                            if (module_result._tag == Result<Code, ModelError>::Error)
+                                return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error,
+                                    ._Error = module_result._Error };
+                            auto module = module_result._Ok;
+                            if (!symbols_builder.add(module.name, Nameable { ._tag = Nameable::Module, ._Module = module }))
+                                return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error,
+                                    ._Error = ModelError(ModelBuilderError(NonFunctionSymbolExists(text, Span(module_syntax.start, module_syntax.end)))) };
+                        }
+                        break;
+                    }
+                }
+                break;
                 case DeclarationSyntax::Definition: {
-                    auto concept_result = handle_definition(_rp, _ep, name, path, declaration->_Definition, text);
+                    auto concept_result = handle_definition(_rp, _ep, name, path, declaration->_Definition, false, text);
                     if (concept_result._tag == Result<Function, ModelError>::Error)
                         return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = concept_result._Error };
                     auto concept = concept_result._Ok;
@@ -581,7 +803,7 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
                 }
                 break;
                 case DeclarationSyntax::Function: {
-                    auto function_result = handle_function(_rp, _ep, declaration->_Function, text);
+                    auto function_result = handle_function(_rp, _ep, declaration->_Function, true, text);
                     if (function_result._tag == Result<Function, ModelError>::Error)
                         return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = function_result._Error };
                     auto function = function_result._Ok;
@@ -597,15 +819,28 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
                     functions_array->add(function);
                 }
                 break;
-                case DeclarationSyntax::Init:
-                    return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Init"), Span(declaration->_Init.start, declaration->_Implement.end)))) };
-                case DeclarationSyntax::DeInit:
-                    return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "DeInit"), Span(declaration->_DeInit.start, declaration->_Implement.end)))) };
+                case DeclarationSyntax::Init: {
+                    auto _initializer_result = handle_initializer(_rp, _ep, declaration->_Init, false, text);
+                    if (_initializer_result._tag == Result<Initializer, ModelError>::Error)
+                        return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = _initializer_result._Error };
+                    auto initializer = _initializer_result._Ok;
+                    initializers_builder.add(initializer);
+                }
+                break;
+                case DeclarationSyntax::DeInit: {
+                    if (deinitializer != nullptr)
+                        return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(DeInitializerExists(text, Span(declaration->_DeInit.start, declaration->_DeInit.end)))) };
+                    auto _deinitializer_result = handle_deinitializer(_rp, _ep, declaration->_DeInit, text);
+                    if (_deinitializer_result._tag == Result<DeInitializer, ModelError>::Error)
+                        return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = _deinitializer_result._Error };
+                    deinitializer = _deinitializer_result._Ok;
+                }
+                break;
                 case DeclarationSyntax::Procedure:
                     return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Procedure"), Span(declaration->_Procedure.start, declaration->_Procedure.end)))) };
                 case DeclarationSyntax::Operator: {
                     auto operator_syntax = declaration->_Operator;
-                    auto operator_result = handle_operator(_rp, _ep, operator_syntax, text);
+                    auto operator_result = handle_operator(_rp, _ep, operator_syntax, false, text);
                     if (operator_result._tag == Result<Code, ModelError>::Error)
                         return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error,
                             ._Error = operator_result._Error };
@@ -621,9 +856,9 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
                     return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Trait"), Span(declaration->_Trait.start, declaration->_Trait.end)))) };
                 case DeclarationSyntax::Macro:
                     return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Macro"), Span(declaration->_Macro.start, declaration->_Macro.end)))) };
-                case DeclarationSyntax::Module:
+                case DeclarationSyntax::Module: {
                     auto module_syntax = declaration->_Module;
-                    auto module_result = handle_module(_rp, _ep, path, module_syntax);
+                    auto module_result = handle_module(_rp, _ep, path, module_syntax, false);
                     if (module_result._tag == Result<Code, ModelError>::Error)
                         return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error,
                             ._Error = module_result._Error };
@@ -631,7 +866,8 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
                     if (!symbols_builder.add(module.name, Nameable { ._tag = Nameable::Module, ._Module = module }))
                         return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error,
                             ._Error = ModelError(ModelBuilderError(NonFunctionSymbolExists(text, Span(module_syntax.start, module_syntax.end)))) };
-                    break;
+                }
+                break;
             }
         }
     }
@@ -647,7 +883,11 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
         }
     }
 
-    auto code = Code(HashMap<String, Nameable>(_rp, symbols_builder));
+    Vector<Initializer>* initializers = nullptr;
+    if (initializers_builder.length > 0)
+        initializers = new(alignof(Vector<Initializer>), _rp) Vector<Initializer>(_rp, initializers_builder);
+
+    auto code = Code(HashMap<String, Nameable>(_rp, symbols_builder), initializers, nullptr);
     return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Ok, ._Ok = code };
 }
 
@@ -658,7 +898,7 @@ Result<Concept, ModelError> build_module_concept(Page* _rp, Page* _ep, String na
             case DeclarationSyntax::Definition: {
                 auto definition_syntax = first_declaration._Definition;
                 if (name.equals(definition_syntax.name))
-                    return handle_definition(_rp, _ep, name, path, definition_syntax, text);
+                    return handle_definition(_rp, _ep, name, path, definition_syntax, false, text);
             }
             break;
             case DeclarationSyntax::Private: {
@@ -667,7 +907,7 @@ Result<Concept, ModelError> build_module_concept(Page* _rp, Page* _ep, String na
                     case ExportSyntax::Definition: {
                         auto definition_syntax = private_syntax.export_._Definition;
                         if (name.equals(definition_syntax.name))
-                            return handle_definition(_rp, _ep, name, path, definition_syntax, text);
+                            return handle_definition(_rp, _ep, name, path, definition_syntax, true, text);
 
                     }
                     break;
@@ -708,7 +948,7 @@ Result<Module, ModelError> build_program_module(Page* _rp, Page* _ep, const Stri
         return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = concept_result._Error };
     auto concept = concept_result._Ok;
 
-    Module module(String(_rp, ""), Text { ._tag = Text::Program, ._Program = String(_rp, program) }, concept);
+    Module module(false, String(_rp, ""), Text { ._tag = Text::Program, ._Program = String(_rp, program) }, concept);
     return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Ok, ._Ok = module };
 }
 

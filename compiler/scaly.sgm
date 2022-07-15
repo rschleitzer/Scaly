@@ -28,12 +28,10 @@
         <content link = Definition
         <content link = Function
         <content link = Init
-        <content link = DeInit
         <content link = Procedure
         <content link = Operator
         <content link = Implement
         <content link = Trait
-        <content link = Macro
         <content link = Module
 
     <syntax id = Definition
@@ -213,11 +211,12 @@
 
     <syntax id = Init
         <content link = init
-        <content link = Routine                                 property = routine
+        <content link = ParameterSet                   optional property = parameters
+        <content link = Action                                  property = action
 
     <syntax id = DeInit
         <content link = deinit
-        <content link = Routine                                 property = routine
+        <content link = Action                                  property = action
 
     <syntax id = Procedure
         <content link = procedure
@@ -363,7 +362,7 @@
 
     <syntax id = Expression                            abstract
         <content link = Literal
-        <content link = Name
+        <content link = Variable
         <content link = Object
         <content link = Vector
         <content link = Block
@@ -405,6 +404,9 @@
     <syntax id = Literal
         <content literal                                        property = literal
 
+    <syntax id = Variable
+        <content identifier                                     property = identifier
+
     <syntax id = Object
         <content link = left_paren
         <content link = Component             multiple optional property = components
@@ -441,19 +443,11 @@
         <content link = if
         <content link = Operation                               property = condition
         <content link = Is                             optional property = match
-        <content link = As                             optional property = alias
-        <content link = Action                                  property = consequent
+        <content link = Action                         optional  property = consequent
         <content link = Else                           optional property = alternative
 
     <syntax id = Is
         <content link = is
-        <content identifier                                     property = name
-        <content colon
-        <content link = Type                                    property = type
-        <content colon                                 optional
-
-    <syntax id = As
-        <content link = as
         <content identifier                                     property = name
         <content colon
         <content link = Type                                    property = type
@@ -556,7 +550,6 @@
     <syntax id = Thrown
         <content link = exclamation
 
-    <keyword id = as
     <keyword id = break
     <keyword id = catch
     <keyword id = case
