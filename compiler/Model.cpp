@@ -116,6 +116,14 @@ struct If : Object {
     If(Span span, Vector<Operand> condition, Property* property, Action consequent, Action alternative) : span(span), condition(condition), property(property), consequent(consequent), alternative(alternative) {}
 };
 
+struct For : Object {
+    Span span;
+    Property* property;
+    Vector<Operand> expression;
+    Action action;
+    For(Span span, Property* property, Vector<Operand> expression, Action action) : span(span), property(property), expression(expression), action(action) {}
+};
+
 struct SizeOf : Object {
     Span span;
     Type type;
@@ -136,6 +144,7 @@ struct Expression {
         Matrix,
         Block,
         If,
+        For,
         SizeOf,
         Return,
     } _tag;
@@ -146,6 +155,7 @@ struct Expression {
         struct Matrix _Matrix;
         struct Block _Block;
         struct If _If;
+        struct For _For;
         struct SizeOf _SizeOf;
         struct Return _Return;
     };
