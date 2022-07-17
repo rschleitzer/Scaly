@@ -116,6 +116,12 @@ struct If : Object {
     If(Span span, Vector<Operand> condition, Property* property, Action consequent, Action alternative) : span(span), condition(condition), property(property), consequent(consequent), alternative(alternative) {}
 };
 
+struct SizeOf : Object {
+    Span span;
+    Type type;
+    SizeOf(Span span, Type type) : span(span), type(type) {}
+};
+
 struct Expression {
     enum {
         Constant,
@@ -124,6 +130,7 @@ struct Expression {
         Matrix,
         Block,
         If,
+        SizeOf,
     } _tag;
     union {
         struct Constant _Constant;
@@ -132,6 +139,7 @@ struct Expression {
         struct Matrix _Matrix;
         struct Block _Block;
         struct If _If;
+        struct SizeOf _SizeOf;
     };
 
 };

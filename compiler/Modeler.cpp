@@ -203,14 +203,14 @@ Result<Constant, ModelError> handle_literal(Page* _rp, Page* _ep, LiteralSyntax&
     }
 }
 
-Result<Type, ModelError> handle_type(Page* _rp, Page* _ep, TypeSyntax& type) {
+Result<Type, ModelError> handle_type(Page* _rp, Page* _ep, TypeSyntax& type, const Text& text) {
     return Result<Type, ModelError> { ._tag = Result<Type, ModelError>::Ok, ._Ok = Type(String(_rp, type.name.name)) };
 }
 
 Result<Type, ModelError> handle_binding_annotation(Page* _rp, Page* _ep, BindingAnnotationSyntax& binding_annotation, const Text& text) {
     switch (binding_annotation.spec._tag) {
         case BindingSpecSyntax::Type: {
-            auto type_result = handle_type(_rp, _ep, binding_annotation.spec._Type);
+            auto type_result = handle_type(_rp, _ep, binding_annotation.spec._Type, text);
             if (type_result._tag == Result<Type, ModelError>::Error)
                 return Result<Type, ModelError> { ._tag = Result<Type, ModelError>::Error, ._Error = type_result._Error };
             return Result<Type, ModelError> { ._tag = Result<Type, ModelError>::Ok, ._Ok = type_result._Ok };
@@ -426,6 +426,15 @@ Result<If, ModelError> handle_if(Page* _rp, Page* _ep, IfSyntax& if_, const Text
     return Result<If, ModelError> { ._tag = Result<If, ModelError>::Ok, ._Ok = If(Span(if_.start, if_.end), condition, property, consequent, alternative) };
 }
 
+Result<SizeOf, ModelError> handle_size_of(Page* _rp, Page* _ep, SizeOfSyntax& size_of, const Text& text) {
+    Region _r;
+    auto type_result = handle_type(_rp, _ep, size_of.type, text);
+    if (type_result._tag == Result<Vector<Operand>, ModelError>::Error)
+        return Result<SizeOf, ModelError> { ._tag = Result<SizeOf, ModelError>::Error, ._Error = type_result._Error };
+    auto type = type_result._Ok;
+    return Result<SizeOf, ModelError> { ._tag = Result<SizeOf, ModelError>::Ok, ._Ok = SizeOf(Span(size_of.start, size_of.end), type) };
+}
+
 Result<Expression, ModelError> handle_expression(Page* _rp, Page* _ep, ExpressionSyntax& expression, const Text& text) {
     Region _r;
     switch (expression._tag) {
@@ -478,8 +487,13 @@ Result<Expression, ModelError> handle_expression(Page* _rp, Page* _ep, Expressio
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "While"), Span(expression._While.start, expression._While.end)))) };
         case ExpressionSyntax::Repeat:
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Repeat"), Span(expression._Repeat.start, expression._Repeat.end)))) };
-        case ExpressionSyntax::SizeOf:
-            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "SizeOf"), Span(expression._SizeOf.start, expression._SizeOf.end)))) };
+        case ExpressionSyntax::SizeOf: {
+            auto size_of = expression._SizeOf;
+            auto size_of_result = handle_size_of(_rp, _ep, size_of, text);
+            if (size_of_result._tag == Result<Expression, ModelError>::Error)
+                return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = size_of_result._Error };
+            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::SizeOf, ._SizeOf = size_of_result._Ok} };
+        }
         case ExpressionSyntax::Continue:
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Continue"), Span(expression._Continue.start, expression._Continue.end)))) };
         case ExpressionSyntax::Break:
