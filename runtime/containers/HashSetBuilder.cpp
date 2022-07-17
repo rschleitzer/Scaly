@@ -92,13 +92,7 @@ struct HashSetBuilder : Object {
                 {
                     auto hash_code = item->hash_code;
                     auto slot_number = hash_code % slots->length;
-                    auto slot_list = slots->get(slot_number);
-                    if (slot_list == nullptr)
-                    {
-                        slot_list = List<Slot<T>>::create(Page::get(this->slots_page));
-                        slots->set(slot_number, *slot_list);
-                    }
-
+                    auto slot_list = (*(slots))[slot_number];
                     slot_list->add(this->slots_page, *item);
                 }
             }
@@ -117,9 +111,7 @@ struct HashSetBuilder : Object {
     bool add_internal(T value) {
         auto hash_code = value.hash();
         auto slot_number = hash_code % this->slots->length;
-        auto slot_list = this->slots->get(slot_number);
-        if (slot_list == nullptr)
-            this->slots->set(slot_number, *List<Slot<T>>::create(this->slots_page));
+        auto slot_list = (*(this->slots))[slot_number];
         auto iterator = slot_list->get_iterator();
         while (Slot<T>* item = iterator.next()) {
             if (value.equals(item->value)) {

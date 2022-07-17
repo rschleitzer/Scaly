@@ -24,13 +24,7 @@ struct MultiMapBuilder : Object {
                 {
                     auto hash_code = item->hash_code;
                     auto slot_number = hash_code % slots->length;
-                    auto slot_list = slots->get(slot_number);
-                    if (slot_list == nullptr)
-                    {
-                        slot_list = List<Slot<KeyValuePair<K, Array<V>*>>>::create(Page::get(this->slots_page));
-                        slots->set(slot_number, *slot_list);
-                    }
-
+                    auto slot_list = (*(slots))[slot_number];
                     slot_list->add(this->slots_page, *item);
                 }
             }
@@ -44,9 +38,7 @@ struct MultiMapBuilder : Object {
         if (this->slots == nullptr)
             reallocate(this->length + 1);
         auto slot_number = hash_code % this->slots->length;
-        auto slot_list = this->slots->get(slot_number);
-        if (slot_list == nullptr)
-            this->slots->set(slot_number, *List<Slot<KeyValuePair<K, Array<V>*>>>::create(this->slots_page));
+        auto slot_list = (*(this->slots))[slot_number];
         auto iterator = slot_list->get_iterator();
         Array<V>* array = nullptr;
         while (Slot<KeyValuePair<K, Array<V>*>>* item = iterator.next()) {
