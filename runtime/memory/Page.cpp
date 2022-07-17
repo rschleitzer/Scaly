@@ -17,17 +17,11 @@ struct Page {
         this->exclusive_pages = List<Page*>();
     }
 
-    void clear() {
-        this->deallocate_extensions();
-        this->reset();
-    }
-
     bool is_oversized() {
         return this->next_object == nullptr;
     }
 
-    size_t get_capacity(size_t align)
-    {
+    size_t get_capacity(size_t align) {
         auto location = (size_t)this->next_object;
         auto aligned_location = (location + align - 1) & ~(align - 1);
         auto location_after_page = (size_t)this + PAGE_SIZE;
@@ -44,7 +38,6 @@ struct Page {
         if (capacity < size) {
             // We need to reserve the space for the page object
             auto gross_size = size + sizeof(Page);
-            Page* page;
             if (gross_size > PAGE_SIZE)
                 return allocate_oversized(gross_size);
 
@@ -56,7 +49,7 @@ struct Page {
                 return object;
             }
 
-            page = this->allocate_page();
+            auto page = this->allocate_page();
             this->current_page = page;
             this->next_page = page;
             return page->allocate_raw(size, align);
@@ -71,7 +64,10 @@ struct Page {
     void* allocate_oversized(size_t size)
     {
         // We allocate oversized objects directly.
-        auto page = (Page*)aligned_alloc(PAGE_SIZE, size);
+        auto address = aligned_alloc(PAGE_SIZE, size);
+        if (address == nullptr)
+            exit(1);
+        auto page = (Page*)address;
 
         // Oversized pages have no next_object
         page->next_object = nullptr;
@@ -100,10 +96,11 @@ struct Page {
         if (this->next_object == nullptr)
             return;
 
-        auto i = this->exclusive_pages.get_iterator();
-        while (auto exclusive_page = i.next()) {
-            (*exclusive_page)->deallocate_extensions();
-            (*exclusive_page)->forget();
+        auto _exclusive_pages_iterator = this->exclusive_pages.get_iterator();
+        while (auto _exclusive_page = _exclusive_pages_iterator.next()) {
+            auto exclusive_page = *_exclusive_page;
+            exclusive_page->deallocate_extensions();
+            exclusive_page->forget();
         }
 
         auto page = this->next_page; 
@@ -120,8 +117,7 @@ struct Page {
 
     static Page* get(void* address) {
         auto mask = ~(size_t)(PAGE_SIZE - 1);
-        auto page_raw = (void*)((size_t)address & mask);
-        auto page = (Page*)page_raw;
+        auto page = (Page*)((size_t)address & mask);
         return page;
     }
 
@@ -129,7 +125,7 @@ struct Page {
         page->deallocate_extensions();
         page->forget();
         if (!this->exclusive_pages.remove(page))
-            exit(15);
+            exit(2);
     }
 };
 
