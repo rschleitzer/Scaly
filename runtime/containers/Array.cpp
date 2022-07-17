@@ -80,17 +80,15 @@ template<class T> struct Array : Object {
             Page* exclusive_page = own_page->allocate_exclusive_page();
             auto capacity = exclusive_page->get_capacity(alignof(T)) - sizeof(Vector<T>);
             length = capacity / size;
-            this->vector = new(alignof(Vector<T>), own_page) Vector<T>((T*)nullptr, length);
-            this->vector->data = (T*)exclusive_page->allocate_raw(capacity, alignof(T));             
+            this->vector = new(alignof(Vector<T>), exclusive_page) Vector<T>(exclusive_page, length);
         } else {
             length = this->vector->length * 2;
-            auto data = (T*)own_page->allocate_raw(length * size, alignof(T));
+            auto new_vector = new(alignof(Vector<T>), own_page) Vector<T>(own_page, length);
             auto bytes_to_copy = this->vector->length * size;
-            memcpy(data, this->vector->data, bytes_to_copy);
+            memcpy(new_vector->data, this->vector->data, bytes_to_copy);
             Page* old_exclusive_page = Page::get(this->vector->data);
             own_page->deallocate_exclusive_page(old_exclusive_page);
-            this->vector->data = data;
-            this->vector->length = length;
+            this->vector = new_vector;
         }
     }
 };
