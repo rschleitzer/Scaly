@@ -33,6 +33,15 @@ define Page
         this.next_object = null
     }
 
+    function get_capacity(this, align: size_t) returns size_t
+    {
+        var location this.next_object as[size_t]
+        var aligned_location location + align - 1 & ((align - 1)~)
+        var location_after_page this as[size_t] + PAGE_SIZE
+        var capacity location_after_page - aligned_location
+        capacity
+    }
+
     function forget(this) {
         free(this&)
     }
