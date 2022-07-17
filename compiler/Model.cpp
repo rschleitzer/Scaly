@@ -118,10 +118,10 @@ struct If : Object {
 
 struct For : Object {
     Span span;
-    Property* property;
+    String identifier;
     Vector<Operand> expression;
     Action action;
-    For(Span span, Property* property, Vector<Operand> expression, Action action) : span(span), property(property), expression(expression), action(action) {}
+    For(Span span, String identifier, Vector<Operand> expression, Action action) : span(span), identifier(identifier), expression(expression), action(action) {}
 };
 
 struct SizeOf : Object {

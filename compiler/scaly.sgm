@@ -443,7 +443,7 @@
         <content link = if
         <content link = Operation                               property = condition
         <content link = Is                             optional property = match
-        <content link = Action                         optional  property = consequent
+        <content link = Action                         optional property = consequent
         <content link = Else                           optional property = alternative
 
     <syntax id = Is
@@ -481,7 +481,8 @@
 
     <syntax id = For
         <content link = for
-        <content link = Operation                               property = condition
+        <content identifier                                     property = variable
+        <content link = TypeAnnotation                 optional property = annotation
         <content link = in
         <content link = Operation                               property = expression
         <content link = Label                          optional property = name

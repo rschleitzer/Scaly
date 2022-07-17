@@ -426,6 +426,19 @@ Result<If, ModelError> handle_if(Page* _rp, Page* _ep, IfSyntax& if_, const Text
     return Result<If, ModelError> { ._tag = Result<If, ModelError>::Ok, ._Ok = If(Span(if_.start, if_.end), condition, property, consequent, alternative) };
 }
 
+Result<For, ModelError> handle_for(Page* _rp, Page* _ep, ForSyntax& for_, const Text& text) {
+    Region _r;
+    auto expression_result = handle_operands(_rp, _ep, *for_.expression.operands, text);
+    if (expression_result._tag == Result<Vector<Operand>, ModelError>::Error)
+        return Result<For, ModelError> { ._tag = Result<For, ModelError>::Error, ._Error = expression_result._Error };
+    auto expression = expression_result._Ok;
+    auto _action_result = handle_action(_rp, _ep, for_.action, text);
+    if (_action_result._tag == Result<Action, ModelError>::Error)
+        return Result<For, ModelError> { ._tag = Result<For, ModelError>::Error, ._Error = _action_result._Error };
+    auto action = Action(_action_result._Ok);
+    return Result<For, ModelError> { ._tag = Result<For, ModelError>::Ok, ._Ok = For(Span(for_.start, for_.end), String(_rp, for_.variable), expression, action) };
+}
+
 Result<SizeOf, ModelError> handle_size_of(Page* _rp, Page* _ep, SizeOfSyntax& size_of, const Text& text) {
     Region _r;
     auto type_result = handle_type(_rp, _ep, size_of.type, text);
@@ -437,8 +450,6 @@ Result<SizeOf, ModelError> handle_size_of(Page* _rp, Page* _ep, SizeOfSyntax& si
 
 Result<Return, ModelError> handle_return(Page* _rp, Page* _ep, ReturnSyntax& return_, const Text& text) {
     Region _r;
-    Property* property = nullptr;
-
     if (return_.result != nullptr) {
         auto result = return_.result->operands;
         auto result_result = handle_operands(_rp, _ep, *result, text);
@@ -495,8 +506,13 @@ Result<Expression, ModelError> handle_expression(Page* _rp, Page* _ep, Expressio
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Match"), Span(expression._Match.start, expression._Match.end)))) };
         case ExpressionSyntax::Lambda:
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Lambda"), Span(expression._Lambda.start, expression._Lambda.end)))) };
-        case ExpressionSyntax::For:
-            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "For"), Span(expression._For.start, expression._For.end)))) };
+        case ExpressionSyntax::For: {
+            auto for_ = expression._For;
+            auto for_result = handle_for(_rp, _ep, for_, text);
+            if (for_result._tag == Result<Expression, ModelError>::Error)
+                return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = for_result._Error };
+            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::For, ._For = for_result._Ok} };
+        }
         case ExpressionSyntax::While:
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "While"), Span(expression._While.start, expression._While.end)))) };
         case ExpressionSyntax::Repeat:

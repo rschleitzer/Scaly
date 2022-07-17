@@ -290,10 +290,11 @@ struct LabelSyntax : Object {
 };
 
 struct ForSyntax : Object {
-    ForSyntax(size_t start, size_t end, OperationSyntax condition, OperationSyntax expression, LabelSyntax* name, ActionSyntax action) : start(start), end(end), condition(condition), expression(expression), name(name), action(action) {}
+    ForSyntax(size_t start, size_t end, String variable, TypeAnnotationSyntax* annotation, OperationSyntax expression, LabelSyntax* name, ActionSyntax action) : start(start), end(end), variable(variable), annotation(annotation), expression(expression), name(name), action(action) {}
     size_t start;
     size_t end;
-    OperationSyntax condition;
+    String variable;
+    TypeAnnotationSyntax* annotation;
     OperationSyntax expression;
     LabelSyntax* name;
     ActionSyntax action;
@@ -5964,24 +5965,35 @@ struct Parser : Object {
             return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
 
-        auto condition_start = this->lexer.position;
-        auto condition_result = this->parse_operation(_rp, _ep);
-        if (condition_result._tag == Result<OperationSyntax, ParserError>::Error)
+        auto start_variable = this->lexer.previous_position;
+        auto variable = this->lexer.parse_identifier(_rp, this->keywords);
+        if (variable != nullptr) {
+            if (!this->is_identifier(*variable)) {
+            return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_variable, lexer.position, String(_ep, "an identifier"))) };
+            }
+        }
+        else {
+            return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_variable, lexer.position, String(_ep, "an identifier"))) };
+        }
+
+        auto annotation_start = this->lexer.position;
+        auto annotation_result = this->parse_typeannotation(_rp, _ep);
+        if (annotation_result._tag == Result<TypeAnnotationSyntax, ParserError>::Error)
         {
-            switch (condition_result._Error._tag) {
+            switch (annotation_result._Error._tag) {
                 case ParserError::OtherSyntax:
-                    return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(condition_start, lexer.position, String(_ep, "a valid Operation syntax"))) };
+                    break;
                 case ParserError::InvalidSyntax:
-                    return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Error, ._Error = condition_result._Error };
+                    return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Error, ._Error = annotation_result._Error };
             }
         }
 
-        auto condition = condition_result._Ok;
+        TypeAnnotationSyntax* annotation = annotation_result._tag == Result<TypeAnnotationSyntax, ParserError>::Error ? nullptr : new(alignof(TypeAnnotationSyntax), _rp) TypeAnnotationSyntax(annotation_result._Ok);
 
-        auto start_in_3 = this->lexer.previous_position;
-        auto success_in_3 = this->lexer.parse_keyword(_rp, *this->keywords_index[18]);
-        if (!success_in_3) {
-            return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_in_3, lexer.position, String(_ep, "in"))) };        }
+        auto start_in_4 = this->lexer.previous_position;
+        auto success_in_4 = this->lexer.parse_keyword(_rp, *this->keywords_index[18]);
+        if (!success_in_4) {
+            return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_in_4, lexer.position, String(_ep, "in"))) };        }
 
         auto expression_start = this->lexer.position;
         auto expression_result = this->parse_operation(_rp, _ep);
@@ -6027,7 +6039,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = ForSyntax(start, end, condition, expression, name, action);
+        auto ret = ForSyntax(start, end, *variable, annotation, expression, name, action);
 
         return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Ok, ._Ok = ret };
     }
