@@ -438,11 +438,15 @@ Result<SizeOf, ModelError> handle_size_of(Page* _rp, Page* _ep, SizeOfSyntax& si
 Result<Return, ModelError> handle_return(Page* _rp, Page* _ep, ReturnSyntax& return_, const Text& text) {
     Region _r;
     Property* property = nullptr;
-    auto result_result = handle_operands(_rp, _ep, *return_.result->operands, text);
-    if (result_result._tag == Result<Vector<Operand>, ModelError>::Error)
-        return Result<Return, ModelError> { ._tag = Result<Return, ModelError>::Error, ._Error = result_result._Error };
-    auto result = result_result._Ok;
-    return Result<Return, ModelError> { ._tag = Result<Return, ModelError>::Ok, ._Ok = Return(Span(return_.start, return_.end), result) };
+
+    if (return_.result != nullptr) {
+        auto result = return_.result->operands;
+        auto result_result = handle_operands(_rp, _ep, *result, text);
+        if (result_result._tag == Result<Vector<Operand>, ModelError>::Error)
+            return Result<Return, ModelError> { ._tag = Result<Return, ModelError>::Error, ._Error = result_result._Error };
+        return Result<Return, ModelError> { ._tag = Result<Return, ModelError>::Ok, ._Ok = Return(Span(return_.start, return_.end), result_result._Ok) };
+    }
+    return Result<Return, ModelError> { ._tag = Result<Return, ModelError>::Ok, ._Ok = Return(Span(return_.start, return_.end), Vector<Operand>(_rp, 0)) };
 }
 
 Result<Expression, ModelError> handle_expression(Page* _rp, Page* _ep, ExpressionSyntax& expression, const Text& text) {
@@ -615,8 +619,17 @@ Result<Action, ModelError> handle_action(Page* _rp, Page* _ep, ActionSyntax& act
                 return Result<Action, ModelError> { ._tag = Result<Action, ModelError>::Error, ._Error = operation_result._Error };
             return Result<Action, ModelError> { ._tag = Result<Action, ModelError>::Ok, ._Ok = Action { ._tag = Action::Operation, ._Operation = operation_result._Ok } };
         }
-        case ActionSyntax::Set:
-            return Result<Action, ModelError> { ._tag = Result<Action, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Set"), Span(action._Set.start, action._Set.end)))) };
+        case ActionSyntax::Set: {
+            auto _target_result = handle_operation(_rp, _ep, action._Set.target, text);
+            if (_target_result._tag == Result<Operation, ModelError>::Error)
+                return Result<Action, ModelError> { ._tag = Result<Action, ModelError>::Error, ._Error = _target_result._Error };
+            auto target = _target_result._Ok;
+            auto _source_result = handle_operation(_rp, _ep, action._Set.source, text);
+            if (_source_result._tag == Result<Operation, ModelError>::Error)
+                return Result<Action, ModelError> { ._tag = Result<Action, ModelError>::Error, ._Error = _source_result._Error };
+            auto source = _source_result._Ok;
+            return Result<Action, ModelError> { ._tag = Result<Action, ModelError>::Ok, ._Ok = Action { ._tag = Action::Mutation, ._Mutation = Mutation(source, target) } };
+        }
     }
 }
 
