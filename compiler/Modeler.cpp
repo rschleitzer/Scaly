@@ -435,6 +435,16 @@ Result<SizeOf, ModelError> handle_size_of(Page* _rp, Page* _ep, SizeOfSyntax& si
     return Result<SizeOf, ModelError> { ._tag = Result<SizeOf, ModelError>::Ok, ._Ok = SizeOf(Span(size_of.start, size_of.end), type) };
 }
 
+Result<Return, ModelError> handle_return(Page* _rp, Page* _ep, ReturnSyntax& return_, const Text& text) {
+    Region _r;
+    Property* property = nullptr;
+    auto result_result = handle_operands(_rp, _ep, *return_.result->operands, text);
+    if (result_result._tag == Result<Vector<Operand>, ModelError>::Error)
+        return Result<Return, ModelError> { ._tag = Result<Return, ModelError>::Error, ._Error = result_result._Error };
+    auto result = result_result._Ok;
+    return Result<Return, ModelError> { ._tag = Result<Return, ModelError>::Ok, ._Ok = Return(Span(return_.start, return_.end), result) };
+}
+
 Result<Expression, ModelError> handle_expression(Page* _rp, Page* _ep, ExpressionSyntax& expression, const Text& text) {
     Region _r;
     switch (expression._tag) {
@@ -498,8 +508,13 @@ Result<Expression, ModelError> handle_expression(Page* _rp, Page* _ep, Expressio
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Continue"), Span(expression._Continue.start, expression._Continue.end)))) };
         case ExpressionSyntax::Break:
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Break"), Span(expression._Break.start, expression._Break.end)))) };
-        case ExpressionSyntax::Return:
-            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Return"), Span(expression._Return.start, expression._Return.end)))) };
+        case ExpressionSyntax::Return: {
+            auto return_ = expression._Return;
+            auto return_result = handle_return(_rp, _ep, return_, text);
+            if (return_result._tag == Result<Expression, ModelError>::Error)
+                return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = return_result._Error };
+            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::Return, ._Return = return_result._Ok} };
+        }
         case ExpressionSyntax::Throw:
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Throw"), Span(expression._Throw.start, expression._Throw.end)))) };
     }

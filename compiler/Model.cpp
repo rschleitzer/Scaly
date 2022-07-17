@@ -122,6 +122,12 @@ struct SizeOf : Object {
     SizeOf(Span span, Type type) : span(span), type(type) {}
 };
 
+struct Return : Object {
+    Span span;
+    Vector<Operand> result;
+    Return(Span span, Vector<Operand> result) : span(span), result(result) {}
+};
+
 struct Expression {
     enum {
         Constant,
@@ -131,6 +137,7 @@ struct Expression {
         Block,
         If,
         SizeOf,
+        Return,
     } _tag;
     union {
         struct Constant _Constant;
@@ -140,6 +147,7 @@ struct Expression {
         struct Block _Block;
         struct If _If;
         struct SizeOf _SizeOf;
+        struct Return _Return;
     };
 
 };
