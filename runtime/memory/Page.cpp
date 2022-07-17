@@ -96,22 +96,18 @@ struct Page {
     }
 
     void deallocate_extensions() {
+        // Oversized pages cannot have extensions
+        if (this->next_object == nullptr)
+            return;
+
         auto i = this->exclusive_pages.get_iterator();
-        while (auto exclusive_page = i.next())
-        {
-            // Oversized pages cannot have extnsions
-            if ((*exclusive_page)->next_object == nullptr)
-                continue;
+        while (auto exclusive_page = i.next()) {
             (*exclusive_page)->deallocate_extensions();
             (*exclusive_page)->forget();
         }
 
-        if (this->next_object == nullptr)
-            return;
-
         auto page = this->next_page; 
-        while (page != nullptr)
-        {
+        while (page != nullptr) {
             auto next_page = page->next_page;
             page->forget();
             page = next_page;
