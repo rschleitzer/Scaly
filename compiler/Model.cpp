@@ -58,7 +58,12 @@ struct Matrix : Object {
     Matrix(Span span, Vector<Operation> operations) : span(span), operations(operations) {}
 };
 
+struct Statement;
+
 struct Block {
+    Span span;
+    Vector<Statement> statements;
+    Block(Span span, Vector<Statement> statements) : span(span), statements(statements) {}
 
 };
 

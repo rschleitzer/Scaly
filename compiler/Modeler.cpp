@@ -225,9 +225,11 @@ Result<Type, ModelError> handle_binding_annotation(Page* _rp, Page* _ep, Binding
 
 Result<Operation, ModelError> handle_operation(Page* _rp, Page* _ep, OperationSyntax& operation, const Text& text);
 
-Result<Vector<Statement>, ModelError> handle_statements(Page* _rp, Page* _ep, Array<Statement>& statements_builder, VectorIterator<StatementSyntax>& statements, const Text& text) {
+Result<Vector<Statement>, ModelError> handle_statements(Page* _rp, Page* _ep, Vector<StatementSyntax>& statements, const Text& text) {
     Region _r;
-    while (auto statement = statements.next()) {
+    Array<Statement>& statements_builder = *new(alignof(Array<Statement>), _r.page) Array<Statement>();
+    auto _statements_iterator = VectorIterator<StatementSyntax>(statements);
+    while (auto statement = _statements_iterator.next()) {
         switch (statement->_tag)
         {
             case StatementSyntax::Operation: {
@@ -249,8 +251,7 @@ Result<Vector<Statement>, ModelError> handle_statements(Page* _rp, Page* _ep, Ar
                 auto operation_result = handle_operation(_rp, _ep, binding, text);
                 if (operation_result._tag == Result<Operation, ModelError>::Error)
                     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = operation_result._Error };
-                Array<Statement>& body_statements_builder = *new(alignof(Array<Statement>), _r.page) Array<Statement>();
-                auto statements_result = handle_statements(_rp, _ep, body_statements_builder, statements, text);
+                auto statements_result = handle_statements(_rp, _ep, statements, text);
                 if (statements_result._tag == Result<Vector<Statement>, ModelError>::Error)
                     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = statements_result._Error };
                 statements_builder.add(Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Constant, Property(new(alignof(String), _rp) String(_rp, statement->_Let.binding.name), type), operation_result._Ok, statements_result._Ok) });
@@ -269,7 +270,7 @@ Result<Vector<Statement>, ModelError> handle_statements(Page* _rp, Page* _ep, Ar
                 if (operation_result._tag == Result<Operation, ModelError>::Error)
                     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = operation_result._Error };
                 Array<Statement>& body_statements_builder = *new(alignof(Array<Statement>), _r.page) Array<Statement>();
-                auto statements_result = handle_statements(_rp, _ep, body_statements_builder, statements, text);
+                auto statements_result = handle_statements(_rp, _ep, statements, text);
                 if (statements_result._tag == Result<Vector<Statement>, ModelError>::Error)
                     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = statements_result._Error };
                 statements_builder.add(Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Extendable, Property(new(alignof(String), _rp) String(_rp, statement->_Var.binding.name), type), operation_result._Ok, statements_result._Ok) });
@@ -288,7 +289,7 @@ Result<Vector<Statement>, ModelError> handle_statements(Page* _rp, Page* _ep, Ar
                 if (operation_result._tag == Result<Operation, ModelError>::Error)
                     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = operation_result._Error };
                 Array<Statement>& body_statements_builder = *new(alignof(Array<Statement>), _r.page) Array<Statement>();
-                auto statements_result = handle_statements(_rp, _ep, body_statements_builder, statements, text);
+                auto statements_result = handle_statements(_rp, _ep, statements, text);
                 if (statements_result._tag == Result<Vector<Statement>, ModelError>::Error)
                     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = statements_result._Error };
                 statements_builder.add(Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Mutable, Property(new(alignof(String), _rp) String(_rp, statement->_Mutable.binding.name), type), operation_result._Ok, statements_result._Ok) });
@@ -386,18 +387,15 @@ Result<Matrix, ModelError> handle_vector(Page* _rp, Page* _ep, VectorSyntax& vec
 
 Result<Block, ModelError> handle_block(Page* _rp, Page* _ep, BlockSyntax& block, const Text& text) {
     Region _r;
-    Vector<Statement>* statements = nullptr;
     if (block.statements != nullptr) {
-        Array<Statement>& statements_builder = *new(alignof(Array<Statement>), _r.page) Array<Statement>();
-        auto statements_iterator = VectorIterator<StatementSyntax>(*(block.statements));
-        auto statement_result = handle_statements(_rp, _ep, statements_builder, statements_iterator, text);
-            if (statement_result._tag == Result<Operand, ModelError>::Error)
-                return Result<Block, ModelError> { ._tag = Result<Block, ModelError>::Error, ._Error = statement_result._Error };
-            statements_builder.add(statement_result._Ok);
-        statements = new(alignof(Vector<Statement>), _rp) Vector<Statement>(_rp, statements_builder);
+        auto _statements_result = handle_statements(_rp, _ep, *block.statements, text);
+        if (_statements_result._tag == Result<Vector<Statement>, ModelError>::Error)
+            return Result<Block, ModelError> { ._tag = Result<Block, ModelError>::Error, ._Error = _statements_result._Error };
+        auto statements = _statements_result._Ok;
+        return Result<Block, ModelError> { ._tag = Result<Block, ModelError>::Ok, ._Ok = Block(Span(block.start, block.end), statements) };
     }
 
-    return Result<Block, ModelError> { ._tag = Result<Block, ModelError> ::Ok, ._Ok = Block() };
+    return Result<Block, ModelError> { ._tag = Result<Block, ModelError>::Ok, ._Ok = Block(Span(block.start, block.end), Vector<Statement>(_rp, 0)) };
 }
 
 Result<Action, ModelError> handle_action(Page* _rp, Page* _ep, ActionSyntax& action, const Text& text);
