@@ -6064,6 +6064,11 @@ struct Parser : Object {
             return Result<LabelSyntax, ParserError> { ._tag = Result<LabelSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_name, lexer.position, String(_ep, "an identifier"))) };
         }
 
+        auto start_colon_3 = this->lexer.previous_position;
+        auto success_colon_3 = this->lexer.parse_colon(_rp);
+        if (!success_colon_3) {
+        }
+
         auto end = this->lexer.position;
 
         auto ret = LabelSyntax(start, end, *name);

@@ -432,6 +432,9 @@ Result<For, ModelError> handle_for(Page* _rp, Page* _ep, ForSyntax& for_, const 
     if (expression_result._tag == Result<Vector<Operand>, ModelError>::Error)
         return Result<For, ModelError> { ._tag = Result<For, ModelError>::Error, ._Error = expression_result._Error };
     auto expression = expression_result._Ok;
+    if (for_.name != nullptr)
+        return Result<For, ModelError> { ._tag = Result<For, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Label in"), Span(for_.name->start, for_.name->end)))) };
+
     auto _action_result = handle_action(_rp, _ep, for_.action, text);
     if (_action_result._tag == Result<Action, ModelError>::Error)
         return Result<For, ModelError> { ._tag = Result<For, ModelError>::Error, ._Error = _action_result._Error };

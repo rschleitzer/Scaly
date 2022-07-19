@@ -491,6 +491,7 @@
     <syntax id = Label
         <content link = label
         <content identifier                                     property = name
+        <content colon                                 optional
 
     <syntax id = While
         <content link = while
