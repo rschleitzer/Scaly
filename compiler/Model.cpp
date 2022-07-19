@@ -124,6 +124,13 @@ struct For : Object {
     For(Span span, String identifier, Vector<Operand> expression, Action action) : span(span), identifier(identifier), expression(expression), action(action) {}
 };
 
+struct While : Object {
+    Span span;
+    Vector<Operand> expression;
+    Action action;
+    While(Span span, Vector<Operand> expression, Action action) : span(span), expression(expression), action(action) {}
+};
+
 struct SizeOf : Object {
     Span span;
     Type type;
@@ -145,6 +152,7 @@ struct Expression {
         Block,
         If,
         For,
+        While,
         SizeOf,
         Return,
     } _tag;
@@ -156,6 +164,7 @@ struct Expression {
         struct Block _Block;
         struct If _If;
         struct For _For;
+        struct While _While;
         struct SizeOf _SizeOf;
         struct Return _Return;
     };

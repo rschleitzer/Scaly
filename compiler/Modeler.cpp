@@ -433,13 +433,29 @@ Result<For, ModelError> handle_for(Page* _rp, Page* _ep, ForSyntax& for_, const 
         return Result<For, ModelError> { ._tag = Result<For, ModelError>::Error, ._Error = expression_result._Error };
     auto expression = expression_result._Ok;
     if (for_.name != nullptr)
-        return Result<For, ModelError> { ._tag = Result<For, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Label in"), Span(for_.name->start, for_.name->end)))) };
+        return Result<For, ModelError> { ._tag = Result<For, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Label in For"), Span(for_.name->start, for_.name->end)))) };
 
     auto _action_result = handle_action(_rp, _ep, for_.action, text);
     if (_action_result._tag == Result<Action, ModelError>::Error)
         return Result<For, ModelError> { ._tag = Result<For, ModelError>::Error, ._Error = _action_result._Error };
     auto action = Action(_action_result._Ok);
     return Result<For, ModelError> { ._tag = Result<For, ModelError>::Ok, ._Ok = For(Span(for_.start, for_.end), String(_rp, for_.variable), expression, action) };
+}
+
+Result<While, ModelError> handle_while(Page* _rp, Page* _ep, WhileSyntax& while_, const Text& text) {
+    Region _r;
+    auto _condition_result = handle_operands(_rp, _ep, *while_.condition.operands, text);
+    if (_condition_result._tag == Result<Vector<Operand>, ModelError>::Error)
+        return Result<While, ModelError> { ._tag = Result<While, ModelError>::Error, ._Error = _condition_result._Error };
+    auto condition = _condition_result._Ok;
+    if (while_.name != nullptr)
+        return Result<While, ModelError> { ._tag = Result<While, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Label in While"), Span(while_.name->start, while_.name->end)))) };
+
+    auto _action_result = handle_action(_rp, _ep, while_.action, text);
+    if (_action_result._tag == Result<Action, ModelError>::Error)
+        return Result<While, ModelError> { ._tag = Result<While, ModelError>::Error, ._Error = _action_result._Error };
+    auto action = Action(_action_result._Ok);
+    return Result<While, ModelError> { ._tag = Result<While, ModelError>::Ok, ._Ok = While(Span(while_.start, while_.end), condition, action) };
 }
 
 Result<SizeOf, ModelError> handle_size_of(Page* _rp, Page* _ep, SizeOfSyntax& size_of, const Text& text) {
@@ -516,8 +532,14 @@ Result<Expression, ModelError> handle_expression(Page* _rp, Page* _ep, Expressio
                 return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = for_result._Error };
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::For, ._For = for_result._Ok} };
         }
-        case ExpressionSyntax::While:
-            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "While"), Span(expression._While.start, expression._While.end)))) };
+        case ExpressionSyntax::While: {
+            auto while_syntax = expression._While;
+            auto _while_result = handle_while(_rp, _ep, while_syntax, text);
+            if (_while_result._tag == Result<Expression, ModelError>::Error)
+                return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = _while_result._Error };
+            auto while_ = _while_result._Ok;
+            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::While, ._While = while_} };
+        }
         case ExpressionSyntax::Repeat:
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Repeat"), Span(expression._Repeat.start, expression._Repeat.end)))) };
         case ExpressionSyntax::SizeOf: {
