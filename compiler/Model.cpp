@@ -89,9 +89,8 @@ struct Binding {
     enum Mutability { Constant, Extendable, Mutable, } binding_type;
     Property property;
     Operation operation;
-    Vector<Statement> body;
-    Binding(Mutability binding_type, Property property, Operation operation, Vector<Statement> body)
-      : binding_type(binding_type), property(property), operation(operation), body(body) {}
+    Binding(Mutability binding_type, Property property, Operation operation)
+      : binding_type(binding_type), property(property), operation(operation) {}
 };
 
 struct Mutation : Object {
@@ -224,10 +223,10 @@ struct Function : Object {
     Span span;
     bool private_;
     String name;
-    Vector<Property>* input;
-    Vector<Property>* output;
+    Vector<Property> input;
+    Vector<Property> output;
     Implementation implementation;
-    Function(Span span, bool private_, String name, Vector<Property>* input, Vector<Property>* output, Implementation implementation)
+    Function(Span span, bool private_, String name, Vector<Property> input, Vector<Property> output, Implementation implementation)
       : span(span),
         private_(private_),
         name(name),

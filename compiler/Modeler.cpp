@@ -251,10 +251,7 @@ Result<Vector<Statement>, ModelError> handle_statements(Page* _rp, Page* _ep, Ve
                 auto operation_result = handle_operation(_rp, _ep, binding, text);
                 if (operation_result._tag == Result<Operation, ModelError>::Error)
                     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = operation_result._Error };
-                auto statements_result = handle_statements(_rp, _ep, statements, text);
-                if (statements_result._tag == Result<Vector<Statement>, ModelError>::Error)
-                    return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = statements_result._Error };
-                statements_builder.add(Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Constant, Property(new(alignof(String), _rp) String(_rp, statement->_Let.binding.name), type), operation_result._Ok, statements_result._Ok) });
+                statements_builder.add(Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Constant, Property(new(alignof(String), _rp) String(_rp, statement->_Let.binding.name), type), operation_result._Ok) });
                 return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Ok, ._Ok = Vector<Statement>(_rp, statements_builder) };
             }
             case StatementSyntax::Var: {
@@ -270,10 +267,6 @@ Result<Vector<Statement>, ModelError> handle_statements(Page* _rp, Page* _ep, Ve
                 if (operation_result._tag == Result<Operation, ModelError>::Error)
                     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = operation_result._Error };
                 Array<Statement>& body_statements_builder = *new(alignof(Array<Statement>), _r.page) Array<Statement>();
-                auto statements_result = handle_statements(_rp, _ep, statements, text);
-                if (statements_result._tag == Result<Vector<Statement>, ModelError>::Error)
-                    return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = statements_result._Error };
-                statements_builder.add(Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Extendable, Property(new(alignof(String), _rp) String(_rp, statement->_Var.binding.name), type), operation_result._Ok, statements_result._Ok) });
                 return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Ok, ._Ok = Vector<Statement>(_rp, statements_builder) };
             }
             case StatementSyntax::Mutable: {
@@ -289,10 +282,7 @@ Result<Vector<Statement>, ModelError> handle_statements(Page* _rp, Page* _ep, Ve
                 if (operation_result._tag == Result<Operation, ModelError>::Error)
                     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = operation_result._Error };
                 Array<Statement>& body_statements_builder = *new(alignof(Array<Statement>), _r.page) Array<Statement>();
-                auto statements_result = handle_statements(_rp, _ep, statements, text);
-                if (statements_result._tag == Result<Vector<Statement>, ModelError>::Error)
-                    return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = statements_result._Error };
-                statements_builder.add(Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Mutable, Property(new(alignof(String), _rp) String(_rp, statement->_Mutable.binding.name), type), operation_result._Ok, statements_result._Ok) });
+                statements_builder.add(Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Mutable, Property(new(alignof(String), _rp) String(_rp, statement->_Mutable.binding.name), type), operation_result._Ok) });
                 return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Ok, ._Ok = Vector<Statement>(_rp, statements_builder) };
             }
             case StatementSyntax::Set:
@@ -673,18 +663,24 @@ Result<Action, ModelError> handle_action(Page* _rp, Page* _ep, ActionSyntax& act
 }
 
 Result<Function, ModelError> handle_function(Page* _rp, Page* _ep, FunctionSyntax& function_syntax, bool private_, const Text& text) {
-    Vector<Property>* input = nullptr;
-    Vector<Property>* output = nullptr;
+    Vector<Property> input = Vector<Property>(_rp, 0);
+    Vector<Property> output = Vector<Property>(_rp, 0);
 
     if (function_syntax.routine.parameters != nullptr) {
         ParameterSetSyntax& parameterSetSyntax = *function_syntax.routine.parameters;
-        auto parameterset_result = handle_parameterset(_rp, _ep, parameterSetSyntax);
+        auto _input_result = handle_parameterset(_rp, _ep, parameterSetSyntax);
+        if (_input_result._tag == Result<Vector<Property>, ModelError>::Error)
+            return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Error, ._Error = _input_result._Error };
+        input = _input_result._Ok;
     }
 
     if (function_syntax.routine.returns != nullptr)
     {
         ParameterSetSyntax& parameterSetSyntax = function_syntax.routine.returns->parameters; 
-        auto parameterset_result = handle_parameterset(_rp, _ep, parameterSetSyntax);
+        auto _output_result = handle_parameterset(_rp, _ep, parameterSetSyntax);
+        if (_output_result._tag == Result<Vector<Property>, ModelError>::Error)
+            return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Error, ._Error = _output_result._Error };
+        output = _output_result._Ok;
     }
 
     switch (function_syntax.routine.implementation._tag) {
@@ -883,7 +879,7 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
                 }
                 break;
                 case DeclarationSyntax::Function: {
-                    auto function_result = handle_function(_rp, _ep, declaration->_Function, true, text);
+                    auto function_result = handle_function(_rp, _ep, declaration->_Function, false, text);
                     if (function_result._tag == Result<Function, ModelError>::Error)
                         return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = function_result._Error };
                     auto function = function_result._Ok;
