@@ -298,24 +298,28 @@ struct Union {
 
 };
 
-struct NameSpace {
+struct Namespace {
+    Span span;
+    bool private_;
     Code code;
-    NameSpace(Code code)
-      : code(code) {}
+    Namespace(Span span, bool private_, Code code)
+      : span(span),
+        private_(private_),
+        code(code) {}
 };
 
 struct Body {
     enum {
         Intrinsic,
         Constant,
-        NameSpace,
+        Namespace,
         Structure,
         Union,
     } _tag;
     union {
         struct Intrinsic _Intrinsic;
         Operation _Constant;
-        struct NameSpace _NameSpace;
+        struct Namespace _Namespace;
         struct Structure _Structure;
         struct Union _Union;
     };

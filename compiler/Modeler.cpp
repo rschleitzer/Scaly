@@ -162,6 +162,17 @@ Result<Structure, ModelError> handle_class(Page* _rp, Page* _ep, String name, St
     }
 }
 
+Result<Namespace, ModelError> handle_namespace(Page* _rp, Page* _ep, String name, String path, NamespaceSyntax& namespace_, bool private_, const Text& text) {    
+    auto code_result = handle_body(_rp, _ep, name, path, namespace_.body, text);
+    if (code_result._tag == Result<Namespace, ModelError>::Error)
+        return Result<Namespace, ModelError> { ._tag = Result<Namespace, ModelError>::Error, ._Error = code_result._Error };
+    auto code = code_result._Ok;
+
+    return Result<Namespace, ModelError> { ._tag = Result<Namespace, ModelError>::Ok,
+        ._Ok = Namespace(Span(namespace_.start, namespace_.end), private_, code)
+    };
+}
+
 Result<Postfix, ModelError> handle_postfix(Page* _rp, Page* _ep, PostfixSyntax& operand) {
     return Result<Postfix, ModelError> { ._tag = Result<Postfix, ModelError>::Ok, ._Ok = Postfix() };
 }
@@ -615,8 +626,17 @@ Result<Concept, ModelError> handle_definition(Page* _rp, Page* _ep, String name,
                     Body { ._tag = Body::Structure, ._Structure = structure }
                 )};
         }
-        case ConceptSyntax::Namespace:
-            return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Namespace"), Span(concept._Namespace.start, concept._Namespace.end)))) };
+        case ConceptSyntax::Namespace: {
+            auto namespace_syntax = concept._Namespace;
+            auto _namespace_result = handle_namespace(_rp, _ep, name, path, namespace_syntax, private_, text);
+            if (_namespace_result._tag == Result<Structure, ModelError>::Error)
+                return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = _namespace_result._Error };
+            auto namespace_ = _namespace_result._Ok;
+            return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = 
+                Concept(span, String(_rp, definition.name),
+                    Body { ._tag = Body::Namespace, ._Namespace = namespace_ }
+                )};
+        }
         case ConceptSyntax::Union:
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Union"), Span(concept._Union.start, concept._Union.end)))) };
         case ConceptSyntax::Constant: {
@@ -732,7 +752,7 @@ Result<Operator, ModelError> handle_operator(Page* _rp, Page* _ep, OperatorSynta
     Operation* operation = nullptr;
     switch (operator_syntax.target._tag) {
         case TargetSyntax::Routine:
-            return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Routine"), Span(operator_syntax.start, operator_syntax.end)))) };
+            return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Non-Symbol Operator"), Span(operator_syntax.start, operator_syntax.end)))) };
         case TargetSyntax::Symbol:
             auto operator_ = operator_syntax.target._Symbol;
             if (operator_.returns != nullptr) {
@@ -743,7 +763,7 @@ Result<Operator, ModelError> handle_operator(Page* _rp, Page* _ep, OperatorSynta
     }
 }
 
-Result<Concept, ModelError> build_module_concept(Page* _rp, Page* _ep, String name, String path, FileSyntax file_syntax, const Text& text);
+Result<Concept, ModelError> build_module_concept(Page* _rp, Page* _ep, bool private_, String name, String path, FileSyntax file_syntax, const Text& text);
 
 Result<Module, ModelError> handle_module(Page* _rp, Page* _ep, String path, ModuleSyntax& module_syntax, bool private_) {
     Region _r;
@@ -774,7 +794,7 @@ Result<Module, ModelError> handle_module(Page* _rp, Page* _ep, String path, Modu
     path_builder.append_string(module_syntax.name.name);
 
 
-    auto concept_result = build_module_concept(_rp, _ep, String(_rp, module_syntax.name.name), path_builder.to_string(_r.page), file_syntax, text);
+    auto concept_result = build_module_concept(_rp, _ep, private_, String(_rp, module_syntax.name.name), path_builder.to_string(_r.page), file_syntax, text);
     if (concept_result._tag == Result<Concept, ModelError>::Error)
         return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = concept_result._Error };
     auto concept = concept_result._Ok;
@@ -1000,7 +1020,7 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
     return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Ok, ._Ok = code };
 }
 
-Result<Concept, ModelError> build_module_concept(Page* _rp, Page* _ep, String name, String path, FileSyntax file_syntax, const Text& text) {
+Result<Concept, ModelError> build_module_concept(Page* _rp, Page* _ep, bool private_, String name, String path, FileSyntax file_syntax, const Text& text) {
     if (file_syntax.declarations != nullptr && file_syntax.declarations->length == 1) {
         auto first_declaration = *(*(file_syntax.declarations))[0];
         switch (first_declaration._tag) {
@@ -1040,7 +1060,7 @@ Result<Concept, ModelError> build_module_concept(Page* _rp, Page* _ep, String na
         ._tag = Result<Concept, ModelError>::Ok, 
         ._Ok = Concept(Span(file_syntax.start, file_syntax.end),
                     String(_rp, name),
-                    Body { ._tag = Body::NameSpace, ._NameSpace = NameSpace(code) }) };
+                    Body { ._tag = Body::Namespace, ._Namespace = Namespace(Span(file_syntax.start, file_syntax.end), private_, code) }) };
 }
 
 Result<Module, ModelError> build_program_module(Page* _rp, Page* _ep, const String& program) {
@@ -1052,7 +1072,7 @@ Result<Module, ModelError> build_program_module(Page* _rp, Page* _ep, const Stri
         return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = ModelError(ParserModelError(text, file_result._Error)) };
     auto file = file_result._Ok;
 
-    auto concept_result = build_module_concept(_rp, _ep, String(_rp, ""), String(_rp, ""), file, text);
+    auto concept_result = build_module_concept(_rp, _ep, false, String(_rp, ""), String(_rp, ""), file, text);
     if (concept_result._tag == Result<Module*, ModelError*>::Error)
         return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = concept_result._Error };
     auto concept = concept_result._Ok;

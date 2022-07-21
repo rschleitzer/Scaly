@@ -27,8 +27,8 @@ CompilerError* compile_and_run_program(Page* _ep, const String& program, Vector<
     auto module = module_result._Ok;
     String string_name(_r.page, "main");
     switch (module.concept.body._tag) {
-        case Body::NameSpace: {
-            auto name_space = module.concept.body._NameSpace;
+        case Body::Namespace: {
+            auto name_space = module.concept.body._Namespace;
             auto main_functions_symbol = name_space.code.symbols[string_name];
             switch (main_functions_symbol->_tag) {
                 case Nameable::Functions: {
