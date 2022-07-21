@@ -222,13 +222,15 @@ struct Implementation {
 struct Function : Object {
     Span span;
     bool private_;
+    bool pure;
     String name;
     Vector<Property> input;
     Vector<Property> output;
     Implementation implementation;
-    Function(Span span, bool private_, String name, Vector<Property> input, Vector<Property> output, Implementation implementation)
+    Function(Span span, bool private_, bool pure, String name, Vector<Property> input, Vector<Property> output, Implementation implementation)
       : span(span),
         private_(private_),
+        pure(pure),
         name(name),
         input(input),
         output(output),

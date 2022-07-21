@@ -662,40 +662,40 @@ Result<Action, ModelError> handle_action(Page* _rp, Page* _ep, ActionSyntax& act
     }
 }
 
-Result<Function, ModelError> handle_function(Page* _rp, Page* _ep, FunctionSyntax& function_syntax, bool private_, const Text& text) {
+Result<Function, ModelError> build_function(Page* _rp, Page* _ep, size_t start, size_t end, String name, GenericArgumentsSyntax* generics, RoutineSyntax routine, bool private_, bool pure, const Text& text) {
     Vector<Property> input = Vector<Property>(_rp, 0);
     Vector<Property> output = Vector<Property>(_rp, 0);
 
-    if (function_syntax.routine.parameters != nullptr) {
-        ParameterSetSyntax& parameterSetSyntax = *function_syntax.routine.parameters;
+    if (routine.parameters != nullptr) {
+        ParameterSetSyntax& parameterSetSyntax = *routine.parameters;
         auto _input_result = handle_parameterset(_rp, _ep, parameterSetSyntax);
         if (_input_result._tag == Result<Vector<Property>, ModelError>::Error)
             return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Error, ._Error = _input_result._Error };
         input = _input_result._Ok;
     }
 
-    if (function_syntax.routine.returns != nullptr)
+    if (routine.returns != nullptr)
     {
-        ParameterSetSyntax& parameterSetSyntax = function_syntax.routine.returns->parameters; 
+        ParameterSetSyntax& parameterSetSyntax = routine.returns->parameters; 
         auto _output_result = handle_parameterset(_rp, _ep, parameterSetSyntax);
         if (_output_result._tag == Result<Vector<Property>, ModelError>::Error)
             return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Error, ._Error = _output_result._Error };
         output = _output_result._Ok;
     }
 
-    switch (function_syntax.routine.implementation._tag) {
+    switch (routine.implementation._tag) {
         case ImplementationSyntax::Action: {
-            auto action_result = handle_action(_rp, _ep, function_syntax.routine.implementation._Action, text);
+            auto action_result = handle_action(_rp, _ep, routine.implementation._Action, text);
             if (action_result._tag == Result<Statement, ModelError>::Error)
                 return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Error, ._Error = action_result._Error };
-            return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(function_syntax.start, function_syntax.end), private_, String(_rp, function_syntax.name), input, output, Implementation { ._tag = Implementation::Action, ._Action = action_result._Ok }) };
+            return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(start, end), private_, pure, String(_rp, name), input, output, Implementation { ._tag = Implementation::Action, ._Action = action_result._Ok }) };
         }
         case ImplementationSyntax::Extern:
-            return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(function_syntax.start, function_syntax.end), private_, String(_rp, function_syntax.name), input, output, Implementation { ._tag = Implementation::Extern, ._Extern = Extern() }) };
+            return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(start, end), private_, pure, String(_rp, name), input, output, Implementation { ._tag = Implementation::Extern, ._Extern = Extern() }) };
         case ImplementationSyntax::Instruction:
-            return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(function_syntax.start, function_syntax.end), private_, String(_rp, function_syntax.name), input, output, Implementation { ._tag = Implementation::Instruction, ._Instruction = Instruction() }) };
+            return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(start, end), private_, pure, String(_rp, name), input, output, Implementation { ._tag = Implementation::Instruction, ._Instruction = Instruction() }) };
         case ImplementationSyntax::Intrinsic:
-            return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(function_syntax.start, function_syntax.end), private_, String(_rp, function_syntax.name), input, output, Implementation { ._tag = Implementation::Intrinsic, ._Intrinsic = Intrinsic() }) };
+            return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(start, end), private_, pure, String(_rp, name), input, output, Implementation { ._tag = Implementation::Intrinsic, ._Intrinsic = Intrinsic() }) };
         break;
 
     }
@@ -810,7 +810,8 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
                         }
                         break;
                         case ExportSyntax::Function: {
-                            auto function_result = handle_function(_rp, _ep, export_._Function, true, text);
+                            auto function_syntax = export_._Function;
+                            auto function_result = build_function(_rp, _ep, function_syntax.start, function_syntax.end, function_syntax.name, function_syntax.generics, function_syntax.routine, true, true, text);
                             if (function_result._tag == Result<Function, ModelError>::Error)
                                 return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = function_result._Error };
                             auto function = function_result._Ok;
@@ -834,8 +835,23 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
                             initializers_builder.add(initializer);
                         }
                         break;
-                        case ExportSyntax::Procedure:
-                            return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Private Procedure"), Span(declaration->_Procedure.start, declaration->_Procedure.end)))) };
+                        case ExportSyntax::Procedure: {
+                            auto procedure_syntax = export_._Procedure;
+                            auto function_result = build_function(_rp, _ep, procedure_syntax.start, procedure_syntax.end, procedure_syntax.name, procedure_syntax.generics, procedure_syntax.routine, true, false, text);
+                            if (function_result._tag == Result<Function, ModelError>::Error)
+                                return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = function_result._Error };
+                            auto function = function_result._Ok;
+                            auto symbol_with_function_name = symbols_builder[function.name];
+                            if (symbol_with_function_name != nullptr)
+                                return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NonFunctionSymbolExists(text, Span(declaration->_Function.start, declaration->_Function.end)))) };
+                            Array<Function>* functions_array = functions_builder[function.name];
+                            if (functions_array == nullptr)
+                            {
+                                functions_builder.add(function.name, Array<Function>());
+                                functions_array = functions_builder[function.name];
+                            }
+                            functions_array->add(function);
+                        }
                         case ExportSyntax::Operator: {
                             auto operator_syntax = export_._Operator;
                             auto operator_result = handle_operator(_rp, _ep, operator_syntax, true, text);
@@ -879,7 +895,8 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
                 }
                 break;
                 case DeclarationSyntax::Function: {
-                    auto function_result = handle_function(_rp, _ep, declaration->_Function, false, text);
+                    auto function_syntax = declaration->_Function;
+                    auto function_result = build_function(_rp, _ep, function_syntax.start, function_syntax.end, function_syntax.name, function_syntax.generics, function_syntax.routine, false, true, text);
                     if (function_result._tag == Result<Function, ModelError>::Error)
                         return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = function_result._Error };
                     auto function = function_result._Ok;
@@ -912,8 +929,24 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
                     deinitializer = _deinitializer_result._Ok;
                 }
                 break;
-                case DeclarationSyntax::Procedure:
-                    return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Procedure"), Span(declaration->_Procedure.start, declaration->_Procedure.end)))) };
+                case DeclarationSyntax::Procedure: {
+                    auto procedure_syntax = declaration->_Procedure;
+                    auto procedure_result = build_function(_rp, _ep, procedure_syntax.start, procedure_syntax.end, procedure_syntax.name, procedure_syntax.generics, procedure_syntax.routine, false, false, text);
+                    if (procedure_result._tag == Result<Function, ModelError>::Error)
+                        return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = procedure_result._Error };
+                    auto function = procedure_result._Ok;
+                    auto symbol_with_function_name = symbols_builder[function.name];
+                    if (symbol_with_function_name != nullptr)
+                        return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NonFunctionSymbolExists(text, Span(declaration->_Function.start, declaration->_Function.end)))) };
+                    Array<Function>* functions_array = functions_builder[function.name];
+                    if (functions_array == nullptr)
+                    {
+                        functions_builder.add(function.name, Array<Function>());
+                        functions_array = functions_builder[function.name];
+                    }
+                    functions_array->add(function);
+                }
+                break;
                 case DeclarationSyntax::Operator: {
                     auto operator_syntax = declaration->_Operator;
                     auto operator_result = handle_operator(_rp, _ep, operator_syntax, false, text);
