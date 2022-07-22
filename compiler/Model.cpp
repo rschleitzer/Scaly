@@ -282,7 +282,7 @@ struct Code {
       : symbols(symbols), initializers(initializers), deinitializer(deinitializer) {}
 };
 
-struct Structure{
+struct Structure {
     Span span;
     bool private_;
     HashMap<String, Property> properties;
@@ -294,11 +294,30 @@ struct Structure{
         code(code) {}
 };
 
-struct Union {
 
+struct Variant : Object {
+    Span span;
+    String name;
+    HashMap<String, Property> properties;
+    Variant(Span span, String name, HashMap<String, Property> properties)
+      : span(span),
+        name(name),
+        properties(properties) {}
 };
 
-struct Namespace {
+struct Union : Object {
+    Span span;
+    bool private_;
+    HashMap<String, Variant> properties;
+    Code code;
+    Union(Span span, bool private_, HashMap<String, Variant> properties, Code code)
+      : span(span),
+        private_(private_),
+        properties(properties),
+        code(code) {}
+};
+
+struct Namespace : Object {
     Span span;
     bool private_;
     Code code;

@@ -125,6 +125,13 @@ Result<HashMap<String, Property>, ModelError> handle_structure(Page* _rp, Page* 
     return Result<HashMap<String, Property>, ModelError> { ._tag = Result<HashMap<String, Property>, ModelError>::Ok, ._Ok = HashMap<String, Property>(_rp, properties_builder) };
 }
 
+Result<HashMap<String, Variant>, ModelError> handle_variants(Page* _rp, Page* _ep, Vector<TagSyntax>& tags) {    
+    Region _r;
+    HashMapBuilder<String, Variant>& variants_builder = *new(alignof(HashMapBuilder<String, Variant>), _r.page) HashMapBuilder<String, Variant>();
+    /// Fill it
+    return Result<HashMap<String, Variant>, ModelError> { ._tag = Result<HashMap<String, Variant>, ModelError>::Ok, ._Ok = HashMap<String, Variant>(_rp, variants_builder) };
+}
+
 Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String path, Vector<UseSyntax>* uses, Vector<DeclarationSyntax>* declarations, const Text& text);
 
 Result<Code, ModelError> handle_body(Page* _rp, Page* _ep, String name, String path, BodySyntax& body, const Text& text) {    
@@ -171,6 +178,32 @@ Result<Namespace, ModelError> handle_namespace(Page* _rp, Page* _ep, String name
     return Result<Namespace, ModelError> { ._tag = Result<Namespace, ModelError>::Ok,
         ._Ok = Namespace(Span(namespace_.start, namespace_.end), private_, code)
     };
+}
+
+Result<Union, ModelError> handle_union(Page* _rp, Page* _ep, String name, String path, UnionSyntax& union_, bool private_, const Text& text) {    
+    auto variants_result = handle_variants(_rp, _ep, *union_.tags);
+    if (variants_result._tag == Result<HashMap<String, Property>, ModelError>::Error)
+        return Result<Union, ModelError> { ._tag = Result<Union, ModelError>::Error, ._Error = variants_result._Error };
+    auto variants = variants_result._Ok;
+
+    if (union_.body == nullptr) {
+        Region _r_1;
+        HashMapBuilder<String, Nameable>& symbols_builder = *new(alignof(HashMapBuilder<String, Nameable>), _r_1.page) HashMapBuilder<String, Nameable>();
+        auto code = Code(HashMap<String, Nameable>(_rp, symbols_builder), nullptr, nullptr);
+        return Result<Union, ModelError> { ._tag = Result<Union, ModelError>::Ok,
+            ._Ok = Union(Span(union_.start, union_.end), private_, variants, code)
+        };
+    }
+    else {
+        auto code_result = handle_body(_rp, _ep, name, path, *union_.body, text);
+        if (code_result._tag == Result<Code, ModelError>::Error)
+            return Result<Union, ModelError> { ._tag = Result<Union, ModelError>::Error, ._Error = code_result._Error };
+        auto code = code_result._Ok;
+
+        return Result<Union, ModelError> { ._tag = Result<Union, ModelError>::Ok,
+            ._Ok = Union(Span(union_.start, union_.end), private_, variants, code)
+        };
+    }
 }
 
 Result<Postfix, ModelError> handle_postfix(Page* _rp, Page* _ep, PostfixSyntax& operand) {
@@ -629,7 +662,7 @@ Result<Concept, ModelError> handle_definition(Page* _rp, Page* _ep, String name,
         case ConceptSyntax::Namespace: {
             auto namespace_syntax = concept._Namespace;
             auto _namespace_result = handle_namespace(_rp, _ep, name, path, namespace_syntax, private_, text);
-            if (_namespace_result._tag == Result<Structure, ModelError>::Error)
+            if (_namespace_result._tag == Result<Namespace, ModelError>::Error)
                 return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = _namespace_result._Error };
             auto namespace_ = _namespace_result._Ok;
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = 
@@ -637,8 +670,17 @@ Result<Concept, ModelError> handle_definition(Page* _rp, Page* _ep, String name,
                     Body { ._tag = Body::Namespace, ._Namespace = namespace_ }
                 )};
         }
-        case ConceptSyntax::Union:
-            return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Union"), Span(concept._Union.start, concept._Union.end)))) };
+        case ConceptSyntax::Union: {
+            auto union_syntax = concept._Union;
+            auto _union__result = handle_union(_rp, _ep, name, path, union_syntax, private_, text);
+            if (_union__result._tag == Result<Structure, ModelError>::Error)
+                return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = _union__result._Error };
+            auto union_ = _union__result._Ok;
+            return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = 
+                Concept(span, String(_rp, definition.name),
+                    Body { ._tag = Body::Union, ._Union = union_ }
+                )};
+        }
         case ConceptSyntax::Constant: {
             auto constant = concept._Constant;
             auto operation_result = handle_operation(_rp, _ep, constant.operation, text);

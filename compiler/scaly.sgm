@@ -82,7 +82,7 @@
         <content link = Tag                   multiple          property = tags
         <content link = right_paren
         <content colon                                 optional
-        <content link = Body                                    property = body
+        <content link = Body                           optional property = body
 
     <syntax id = Tag                          multiple
         <content identifier                                     property = name

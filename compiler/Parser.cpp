@@ -1009,11 +1009,11 @@ struct TagSyntax : Object {
 };
 
 struct UnionSyntax : Object {
-    UnionSyntax(size_t start, size_t end, Vector<TagSyntax>* tags, BodySyntax body) : start(start), end(end), tags(tags), body(body) {}
+    UnionSyntax(size_t start, size_t end, Vector<TagSyntax>* tags, BodySyntax* body) : start(start), end(end), tags(tags), body(body) {}
     size_t start;
     size_t end;
     Vector<TagSyntax>* tags;
-    BodySyntax body;
+    BodySyntax* body;
 };
 
 struct NamespaceSyntax : Object {
@@ -2184,13 +2184,13 @@ struct Parser : Object {
         {
             switch (body_result._Error._tag) {
                 case ParserError::OtherSyntax:
-                    return Result<UnionSyntax, ParserError> { ._tag = Result<UnionSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(body_start, lexer.position, String(_ep, "a valid Body syntax"))) };
+                    break;
                 case ParserError::InvalidSyntax:
                     return Result<UnionSyntax, ParserError> { ._tag = Result<UnionSyntax, ParserError>::Error, ._Error = body_result._Error };
             }
         }
 
-        auto body = body_result._Ok;
+        BodySyntax* body = body_result._tag == Result<BodySyntax, ParserError>::Error ? nullptr : new(alignof(BodySyntax), _rp) BodySyntax(body_result._Ok);
 
         auto end = this->lexer.position;
 
