@@ -30,19 +30,19 @@ struct CompilerError : Object {
 
     String to_string(Page* _rp) {
         Region _r;
-        StringBuilder& message_builder = *new(alignof(StringBuilder), _r.page) StringBuilder();
+        StringBuilder& message_builder = *new(alignof(StringBuilder), _r) StringBuilder();
         switch (_tag) {
             case Model:
                 message_builder.append_string(_Model.to_string(_rp));
             break;
             case MultipleMainFunctions:
-                message_builder.append_string(String(_r.page, "Multiple main functions have been defined. There can only be one main function."));
+                message_builder.append_string(String(_r.get_page(), "Multiple main functions have been defined. There can only be one main function."));
             break;
             case MainIsNotAFunction:
-                message_builder.append_string(String(_r.page, "The item called main is not a function."));
+                message_builder.append_string(String(_r.get_page(), "The item called main is not a function."));
             break;
             case ProgramModuleIsNotANameSpace:
-                message_builder.append_string(String(_r.page, "The root concept of a program is not a name space."));
+                message_builder.append_string(String(_r.get_page(), "The root concept of a program is not a name space."));
             break;
         }
         return message_builder.to_string(_rp);     

@@ -20,12 +20,12 @@ using namespace scaly::compiler::model;
 
 CompilerError* compile_and_run_program(Page* _ep, const String& program, Vector<String>& arguments) {
     Region _r;
-    auto module_result = scaly::compiler::model::build_program_module(_r.page, _ep, program);
+    auto module_result = scaly::compiler::model::build_program_module(_r.get_page(), _ep, program);
     if (module_result._tag == Result<Module, ModelError>::Error)
         return new(alignof(CompilerError), _ep) CompilerError(module_result._Error);
     
     auto module = module_result._Ok;
-    String string_name(_r.page, "main");
+    String string_name(_r.get_page(), "main");
     switch (module.concept.body._tag) {
         case Body::Namespace: {
             auto name_space = module.concept.body._Namespace;

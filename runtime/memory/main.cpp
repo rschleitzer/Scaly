@@ -5,7 +5,7 @@ void test_page()
 {
     Region _r;
 
-    Page& page = *_r.page;
+    Page& page = *_r.get_page();
 
     // We have no next page yet
     if (page.next_page != nullptr)
@@ -99,7 +99,7 @@ void test_page()
 void test_allocate_raw()
 {
     Region r;
-    Page& page = *r.page;
+    Page& page = *r.get_page();
 
     size_t* start = nullptr;
     size_t* p_previous = nullptr;

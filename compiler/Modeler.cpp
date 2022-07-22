@@ -6,12 +6,12 @@ using namespace scaly::io;
 
 Result<FileSyntax, ParserError> parse_program(Page* _rp, Page* _ep, const String& program) {
     Region _r;
-    Array<DeclarationSyntax>& declarations = *new(alignof(Array<DeclarationSyntax>), _r.page) Array<DeclarationSyntax>();
+    Array<DeclarationSyntax>& declarations = *new(alignof(Array<DeclarationSyntax>), _r) Array<DeclarationSyntax>();
     
     // Parse the scaly module inclusion
     {
         Region _r_1;
-        Parser& parser_module = *new(alignof(Parser), _r_1.page) Parser(_r_1.page, String(_r_1.page, "module scaly"));
+        Parser& parser_module = *new(alignof(Parser), _r_1) Parser(_r_1.get_page(), String(_r_1.get_page(), "module scaly"));
         auto module_syntax_result = parser_module.parse_module(_rp, _ep);
         if (module_syntax_result._tag == Result<ModuleSyntax*, ParserError>::Error)
             return Result<FileSyntax, ParserError> { ._tag = Result<FileSyntax, ParserError>::Error, ._Error = module_syntax_result._Error };
@@ -25,7 +25,7 @@ Result<FileSyntax, ParserError> parse_program(Page* _rp, Page* _ep, const String
     Vector<StatementSyntax>* statements = nullptr;
     {
         Region _r_1;
-        Parser& parser = *new(alignof(Parser), _r_1.page) Parser(_r_1.page, program);
+        Parser& parser = *new(alignof(Parser), _r_1) Parser(_r_1.get_page(), program);
         while(true) {
             auto node_result = parser.parse_declaration(_rp, _ep);
             if ((node_result._tag == Result<DeclarationSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
@@ -48,14 +48,14 @@ Result<FileSyntax, ParserError> parse_program(Page* _rp, Page* _ep, const String
     }
 
     // Parse the main function stub
-    Parser& parser_main = *new(alignof(Parser), _r.page) Parser(_r.page, String(_r.page, "function main('argument count': int, 'argument values': pointer[pointer[byte]]) returns int"));
+    Parser& parser_main = *new(alignof(Parser), _r) Parser(_r.get_page(), String(_r.get_page(), "function main('argument count': int, 'argument values': pointer[pointer[byte]]) returns int"));
     auto start = parser_main.lexer.previous_position;
 
-    auto success_function = parser_main.lexer.parse_keyword(_r.page, String(_r.page, "function"));
+    auto success_function = parser_main.lexer.parse_keyword(_r.get_page(), String(_r.get_page(), "function"));
     if (!success_function)
         return Result<FileSyntax, ParserError> { ._tag = Result<FileSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start, parser_main.lexer.position, String(_ep, "function"))) };
 
-    auto name = parser_main.lexer.parse_identifier(_r.page, parser_main.keywords);
+    auto name = parser_main.lexer.parse_identifier(_r.get_page(), parser_main.keywords);
     if (name != nullptr) {
         if (!parser_main.is_identifier(*name)) {
             return Result<FileSyntax, ParserError> { ._tag = Result<FileSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start, parser_main.lexer.position, String(_ep, "main"))) };
@@ -80,7 +80,7 @@ Result<FileSyntax, ParserError> parse_program(Page* _rp, Page* _ep, const String
     auto block = new(alignof(BlockSyntax), _rp) BlockSyntax(start, end, uses, statements);
     auto block_expression = new (alignof(ExpressionSyntax), _rp) ExpressionSyntax(BlockSyntax(*block));
     auto operand = new(alignof(OperandSyntax), _rp) OperandSyntax(start, end, *block_expression, nullptr);
-    Array<OperandSyntax>& operands_array = *new(alignof(Array<OperandSyntax>), _r.page) Array<OperandSyntax>();
+    Array<OperandSyntax>& operands_array = *new(alignof(Array<OperandSyntax>), _r) Array<OperandSyntax>();
     operands_array.add(*operand);
     auto operation = OperationSyntax(start, end, new(alignof(Vector<OperandSyntax>), _rp) Vector<OperandSyntax>(_rp, operands_array));
     auto action = ActionSyntax(OperationSyntax(operation));
@@ -112,7 +112,7 @@ Result<Property, ModelError> handle_property(Page* _rp, Page* _ep, bool private_
 
 Result<Vector<Property>, ModelError> handle_parameterset(Page* _rp, Page* _ep, ParameterSetSyntax& parameterSetSyntax, const Text& text) {
     Region _r;
-    Array<Property>& parameters = *new(alignof(Array<Property>), _r.page) Array<Property>();
+    Array<Property>& parameters = *new(alignof(Array<Property>), _r) Array<Property>();
     switch (parameterSetSyntax._tag) {
         case ParameterSetSyntax::Parameters: {
             auto parameters_syntax = parameterSetSyntax._Parameters;
@@ -146,7 +146,7 @@ Result<Vector<Property>, ModelError> handle_parameterset(Page* _rp, Page* _ep, P
 
 Result<HashMap<String, Property>, ModelError> handle_structure(Page* _rp, Page* _ep, StructureSyntax& structure, const Text& text) {    
     Region _r;
-    HashMapBuilder<String, Property>& properties_builder = *new(alignof(HashMapBuilder<String, Property>), _r.page) HashMapBuilder<String, Property>();
+    HashMapBuilder<String, Property>& properties_builder = *new(alignof(HashMapBuilder<String, Property>), _r) HashMapBuilder<String, Property>();
     if (structure.members != nullptr) {
         auto members = *structure.members;
         auto _members_iterator = VectorIterator<MemberSyntax>(members);
@@ -177,7 +177,7 @@ Result<HashMap<String, Property>, ModelError> handle_structure(Page* _rp, Page* 
 
 Result<HashMap<String, Variant>, ModelError> handle_variants(Page* _rp, Page* _ep, Vector<TagSyntax>& tags) {    
     Region _r;
-    HashMapBuilder<String, Variant>& variants_builder = *new(alignof(HashMapBuilder<String, Variant>), _r.page) HashMapBuilder<String, Variant>();
+    HashMapBuilder<String, Variant>& variants_builder = *new(alignof(HashMapBuilder<String, Variant>), _r) HashMapBuilder<String, Variant>();
     /// Fill it
     return Result<HashMap<String, Variant>, ModelError> { ._tag = Result<HashMap<String, Variant>, ModelError>::Ok, ._Ok = HashMap<String, Variant>(_rp, variants_builder) };
 }
@@ -201,7 +201,7 @@ Result<Structure, ModelError> handle_class(Page* _rp, Page* _ep, String name, St
 
     if (class_.body == nullptr) {
         Region _r_1;
-        HashMapBuilder<String, Nameable>& symbols_builder = *new(alignof(HashMapBuilder<String, Nameable>), _r_1.page) HashMapBuilder<String, Nameable>();
+        HashMapBuilder<String, Nameable>& symbols_builder = *new(alignof(HashMapBuilder<String, Nameable>), _r_1) HashMapBuilder<String, Nameable>();
         auto code = Code(HashMap<String, Nameable>(_rp, symbols_builder), nullptr, nullptr);
         return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Ok,
             ._Ok = Structure(Span(class_.start, class_.end), private_, properties, code)
@@ -238,7 +238,7 @@ Result<Union, ModelError> handle_union(Page* _rp, Page* _ep, String name, String
 
     if (union_.body == nullptr) {
         Region _r_1;
-        HashMapBuilder<String, Nameable>& symbols_builder = *new(alignof(HashMapBuilder<String, Nameable>), _r_1.page) HashMapBuilder<String, Nameable>();
+        HashMapBuilder<String, Nameable>& symbols_builder = *new(alignof(HashMapBuilder<String, Nameable>), _r_1) HashMapBuilder<String, Nameable>();
         auto code = Code(HashMap<String, Nameable>(_rp, symbols_builder), nullptr, nullptr);
         return Result<Union, ModelError> { ._tag = Result<Union, ModelError>::Ok,
             ._Ok = Union(Span(union_.start, union_.end), private_, variants, code)
@@ -266,7 +266,7 @@ Result<Constant, ModelError> handle_literal(Page* _rp, Page* _ep, LiteralSyntax&
         case Literal::Boolean:
             return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError> ::Ok, ._Ok = Constant { ._tag = Constant::Boolean, ._Boolean = literal.literal._Boolean.value } };
         case Literal::Integer: {
-            auto integer = (size_t)strtol(literal.literal._Integer.value.to_c_string(_r.page), nullptr, 10);
+            auto integer = (size_t)strtol(literal.literal._Integer.value.to_c_string(_r.get_page()), nullptr, 10);
             const bool range_error = errno == ERANGE;
             if (range_error)
                 return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError>::Error, ._Error = ModelError(ModelBuilderError(InvalidConstant(text, Span(literal.start, literal.end)))) };
@@ -274,7 +274,7 @@ Result<Constant, ModelError> handle_literal(Page* _rp, Page* _ep, LiteralSyntax&
             return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError> ::Ok, ._Ok = Constant { ._tag = Constant::Integer, ._Integer = integer } };
         }
         case Literal::Hex: {
-            auto hex = (size_t)strtol(literal.literal._Hex.value.to_c_string(_r.page), nullptr, 16);
+            auto hex = (size_t)strtol(literal.literal._Hex.value.to_c_string(_r.get_page()), nullptr, 16);
             const bool range_error = errno == ERANGE;
             if (range_error)
                 return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError>::Error, ._Error = ModelError(ModelBuilderError(InvalidConstant(text, Span(literal.start, literal.end)))) };
@@ -282,7 +282,7 @@ Result<Constant, ModelError> handle_literal(Page* _rp, Page* _ep, LiteralSyntax&
             return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError> ::Ok, ._Ok = Constant { ._tag = Constant::Hex, ._Hex = hex } };
         }
         case Literal::FloatingPoint: {
-            auto floating_point = strtod(literal.literal._FloatingPoint.value.to_c_string(_r.page), nullptr);
+            auto floating_point = strtod(literal.literal._FloatingPoint.value.to_c_string(_r.get_page()), nullptr);
             const bool range_error = errno == ERANGE;
             if (range_error)
                 return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError>::Error, ._Error = ModelError(ModelBuilderError(InvalidConstant(text, Span(literal.start, literal.end)))) };
@@ -321,7 +321,7 @@ Result<Operation, ModelError> handle_operation(Page* _rp, Page* _ep, OperationSy
 
 Result<Vector<Statement>, ModelError> handle_statements(Page* _rp, Page* _ep, Vector<StatementSyntax>& statements, const Text& text) {
     Region _r;
-    Array<Statement>& statements_builder = *new(alignof(Array<Statement>), _r.page) Array<Statement>();
+    Array<Statement>& statements_builder = *new(alignof(Array<Statement>), _r) Array<Statement>();
     auto _statements_iterator = VectorIterator<StatementSyntax>(statements);
     while (auto statement = _statements_iterator.next()) {
         switch (statement->_tag)
@@ -360,7 +360,7 @@ Result<Vector<Statement>, ModelError> handle_statements(Page* _rp, Page* _ep, Ve
                 auto operation_result = handle_operation(_rp, _ep, binding, text);
                 if (operation_result._tag == Result<Operation, ModelError>::Error)
                     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = operation_result._Error };
-                Array<Statement>& body_statements_builder = *new(alignof(Array<Statement>), _r.page) Array<Statement>();
+                Array<Statement>& body_statements_builder = *new(alignof(Array<Statement>), _r) Array<Statement>();
                 return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Ok, ._Ok = Vector<Statement>(_rp, statements_builder) };
             }
             case StatementSyntax::Mutable: {
@@ -375,7 +375,7 @@ Result<Vector<Statement>, ModelError> handle_statements(Page* _rp, Page* _ep, Ve
                 auto operation_result = handle_operation(_rp, _ep, binding, text);
                 if (operation_result._tag == Result<Operation, ModelError>::Error)
                     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = operation_result._Error };
-                Array<Statement>& body_statements_builder = *new(alignof(Array<Statement>), _r.page) Array<Statement>();
+                Array<Statement>& body_statements_builder = *new(alignof(Array<Statement>), _r) Array<Statement>();
                 statements_builder.add(Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Mutable, Property(Span(binding.start, binding.end), false, new(alignof(String), _rp) String(_rp, statement->_Mutable.binding.name), type), operation_result._Ok) });
                 return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Ok, ._Ok = Vector<Statement>(_rp, statements_builder) };
             }
@@ -441,7 +441,7 @@ Result<Component, ModelError> handle_component(Page* _rp, Page* _ep, ComponentSy
 
 Result<Tuple, ModelError> handle_object(Page* _rp, Page* _ep, ObjectSyntax& object, const Text& text) {
     Region _r;
-    Array<Component>& components_builder = *new(alignof(Array<Component>), _r.page) Array<Component>();
+    Array<Component>& components_builder = *new(alignof(Array<Component>), _r) Array<Component>();
     if (object.components != nullptr) {
         auto components_iterator = VectorIterator<ComponentSyntax>(*(object.components));
         while (auto component = components_iterator.next()) {
@@ -456,7 +456,7 @@ Result<Tuple, ModelError> handle_object(Page* _rp, Page* _ep, ObjectSyntax& obje
 
 Result<Matrix, ModelError> handle_vector(Page* _rp, Page* _ep, VectorSyntax& vector, const Text& text) {
     Region _r;
-    Array<Operation>& operations_builder = *new(alignof(Array<Operation>), _r.page) Array<Operation>();
+    Array<Operation>& operations_builder = *new(alignof(Array<Operation>), _r) Array<Operation>();
     if (vector.elements != nullptr) {
         auto elements_iterator = VectorIterator<ElementSyntax>(*(vector.elements));
         while (auto element = elements_iterator.next()) {
@@ -651,7 +651,7 @@ Result<Operand, ModelError> handle_operand(Page* _rp, Page* _ep, OperandSyntax& 
     Vector<Postfix>* postfixes = nullptr;
     if (operand.postfixes != nullptr) {
         Region _r_1;
-        Array<Postfix>& postfixes_builder = *new(alignof(Array<Postfix>), _r_1.page) Array<Postfix>();
+        Array<Postfix>& postfixes_builder = *new(alignof(Array<Postfix>), _r_1) Array<Postfix>();
         auto postfixes_iterator = VectorIterator<PostfixSyntax>(*(operand.postfixes));
         while (auto postfix = postfixes_iterator.next()) {
             auto postfix_result = handle_postfix(_rp, _ep, *postfix);
@@ -671,7 +671,7 @@ Result<Operand, ModelError> handle_operand(Page* _rp, Page* _ep, OperandSyntax& 
 
 Result<Vector<Operand>, ModelError> handle_operands(Page* _rp, Page* _ep, Vector<OperandSyntax>& operands, const Text& text) {
     Region _r;
-    Array<Operand>& operands_builder = *new(alignof(Array<Operand>), _r.page) Array<Operand>();
+    Array<Operand>& operands_builder = *new(alignof(Array<Operand>), _r) Array<Operand>();
     auto operands_iterator = VectorIterator<OperandSyntax>(operands);
     while (auto operand = operands_iterator.next()) {
         auto operand_result = handle_operand(_rp, _ep, *operand, text);
@@ -859,34 +859,34 @@ Result<Concept, ModelError> build_module_concept(Page* _rp, Page* _ep, bool priv
 
 Result<Module, ModelError> handle_module(Page* _rp, Page* _ep, String path, ModuleSyntax& module_syntax, bool private_) {
     Region _r;
-    StringBuilder& file_name_builder = *new(alignof(StringBuilder), _r.page) StringBuilder();
+    StringBuilder& file_name_builder = *new(alignof(StringBuilder), _r) StringBuilder();
     if (path.get_length() > 0) {
         file_name_builder.append_string(path);
         file_name_builder.append_character('/');
     }
     file_name_builder.append_string(module_syntax.name.name);
-    file_name_builder.append_string(String(_r.page, ".scaly"));
+    file_name_builder.append_string(String(_r.get_page(), ".scaly"));
     auto file_name = file_name_builder.to_string(_rp);
-    auto module_text_result = File::read_to_string(_r.page, _r.page, file_name);
+    auto module_text_result = File::read_to_string(_r.get_page(), _r.get_page(), file_name);
     if (module_text_result._tag == Result<String, FileError>::Error) {
         return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = ModelError(module_text_result._Error) };
     }
     auto module_text = module_text_result._Ok;
 
-    Parser& parser = *new(alignof(Parser), _r.page) Parser(_r.page, module_text);
+    Parser& parser = *new(alignof(Parser), _r) Parser(_r.get_page(), module_text);
     auto file_syntax_result = parser.parse_file(_rp, _ep);
     auto text = Text {._tag = Text::File, ._Program = String(_ep, file_name) };
     if (file_syntax_result._tag == Result<ModuleSyntax*, ParserError>::Error)
         return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = ModelError(ParserModelError(text, file_syntax_result._Error)) };
     auto file_syntax = file_syntax_result._Ok;
 
-    StringBuilder& path_builder = *new(alignof(StringBuilder), _r.page) StringBuilder(path);
+    StringBuilder& path_builder = *new(alignof(StringBuilder), _r) StringBuilder(path);
     if (path.get_length() > 0)
         path_builder.append_character('/');
     path_builder.append_string(module_syntax.name.name);
 
 
-    auto concept_result = build_module_concept(_rp, _ep, private_, String(_rp, module_syntax.name.name), path_builder.to_string(_r.page), file_syntax, text);
+    auto concept_result = build_module_concept(_rp, _ep, private_, String(_rp, module_syntax.name.name), path_builder.to_string(_r.get_page()), file_syntax, text);
     if (concept_result._tag == Result<Concept, ModelError>::Error)
         return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = concept_result._Error };
     auto concept = concept_result._Ok;
@@ -898,9 +898,9 @@ Result<Module, ModelError> handle_module(Page* _rp, Page* _ep, String path, Modu
 
 Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String path, Vector<UseSyntax>* uses, Vector<DeclarationSyntax>* declarations, const Text& text) {
     Region _r;
-    HashMapBuilder<String, Nameable>& symbols_builder = *new(alignof(HashMapBuilder<String, Nameable>), _r.page) HashMapBuilder<String, Nameable>();
-    HashMapBuilder<String, Array<Function>*>& functions_builder = *new(alignof(HashMapBuilder<String, Array<Function>*>), _r.page) HashMapBuilder<String, Array<Function>*>();
-    Array<Initializer>& initializers_builder = *new(alignof(Array<Initializer>), _r.page) Array<Initializer>();
+    HashMapBuilder<String, Nameable>& symbols_builder = *new(alignof(HashMapBuilder<String, Nameable>), _r) HashMapBuilder<String, Nameable>();
+    HashMapBuilder<String, Array<Function>*>& functions_builder = *new(alignof(HashMapBuilder<String, Array<Function>*>), _r) HashMapBuilder<String, Array<Function>*>();
+    Array<Initializer>& initializers_builder = *new(alignof(Array<Initializer>), _r) Array<Initializer>();
     DeInitializer* deinitializer = nullptr;
 
     if (declarations != nullptr) {
@@ -933,7 +933,7 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
                             Array<Function>** functions_array = functions_builder[function.name];
                             if (functions_array == nullptr)
                             {
-                                functions_builder.add(function.name, new(alignof(Array<Function>), _r.page) Array<Function>());
+                                functions_builder.add(function.name, new(alignof(Array<Function>), _r) Array<Function>());
                                 functions_array = functions_builder[function.name];
                             }
                             (*functions_array)->add(function);
@@ -959,7 +959,7 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
                             Array<Function>** functions_array = functions_builder[function.name];
                             if (functions_array == nullptr)
                             {
-                                functions_builder.add(function.name, new(alignof(Array<Function>), _r.page) Array<Function>());
+                                functions_builder.add(function.name, new(alignof(Array<Function>), _r) Array<Function>());
                                 functions_array = functions_builder[function.name];
                             }
                             (*functions_array)->add(function);
@@ -1018,7 +1018,7 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
                     Array<Function>** functions_array = functions_builder[function.name];
                     if (functions_array == nullptr)
                     {
-                        functions_builder.add(function.name, new(alignof(Array<Function>), _r.page) Array<Function>());
+                        functions_builder.add(function.name, new(alignof(Array<Function>), _r) Array<Function>());
                         functions_array = functions_builder[function.name];
                     }
                     (*functions_array)->add(function);
@@ -1053,7 +1053,7 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
                     Array<Function>** functions_array = functions_builder[function.name];
                     if (functions_array == nullptr)
                     {
-                        functions_builder.add(function.name, new(alignof(Array<Function>), _r.page) Array<Function>());
+                        functions_builder.add(function.name, new(alignof(Array<Function>), _r) Array<Function>());
                         functions_array = functions_builder[function.name];
                     }
                     (*functions_array)->add(function);
@@ -1093,7 +1093,7 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
         }
     }
 
-    HashMap<String, Array<Function>*> functions(_r.page, functions_builder);
+    HashMap<String, Array<Function>*> functions(_r.get_page(), functions_builder);
     if (functions.slots != nullptr) {
         auto functions_slots_iterator = VectorIterator<Vector<KeyValuePair<String, Array<Function>*>>>(*functions.slots);
         while (auto function_slot = functions_slots_iterator.next()) {
@@ -1158,7 +1158,7 @@ Result<Concept, ModelError> build_module_concept(Page* _rp, Page* _ep, bool priv
 Result<Module, ModelError> build_program_module(Page* _rp, Page* _ep, const String& program) {
     Region _r;
     
-    auto file_result = parse_program(_r.page, _ep, program);
+    auto file_result = parse_program(_r.get_page(), _ep, program);
     auto text = Text {._tag = Text::Program, ._Program = String(_ep, program) };
     if (file_result._tag == Result<Vector<DeclarationSyntax>*, ParserError>::Error)
         return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = ModelError(ParserModelError(text, file_result._Error)) };

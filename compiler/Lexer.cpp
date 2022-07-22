@@ -169,7 +169,7 @@ struct Lexer : Object {
             case '0':
                 {
                     Region _r_1;
-                    StringBuilder& value = *new (alignof(StringBuilder), _r_1.page) StringBuilder();
+                    StringBuilder& value = *new (alignof(StringBuilder), _r_1) StringBuilder();
                     this->token = scan_numeric_literal();
                 }
                 break;
@@ -696,7 +696,7 @@ struct Lexer : Object {
         switch (token._tag) {
             case Token::Identifier: {
                 Region _r_1;
-                if (keywords.contains(String(_r_1.page, token._Identifier.name)))
+                if (keywords.contains(String(_r_1.get_page(), token._Identifier.name)))
                     return nullptr;
                 auto ret = new(alignof(String), _rp) String(_rp, token._Identifier.name);
                 empty();

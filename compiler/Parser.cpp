@@ -1196,7 +1196,7 @@ struct Parser : Object {
 
     Vector<String> initialize_keywords_index(Page* _rp) {
         Region _r;
-        Array<String>& keywords_builder = *new(alignof(Array<String>), _r.page) Array<String>();
+        Array<String>& keywords_builder = *new(alignof(Array<String>), _r) Array<String>();
         keywords_builder.add(String(Page::get(this), "break"));
         keywords_builder.add(String(Page::get(this), "catch"));
         keywords_builder.add(String(Page::get(this), "case"));
@@ -1246,7 +1246,7 @@ struct Parser : Object {
 
     HashSet<String> initialize_keywords(Page* _rp) {
         Region _r;
-        HashSetBuilder<String>& hash_set_builder = *new(alignof(HashSetBuilder<String>), _r.page) HashSetBuilder<String>(_r.page, this->keywords_index);
+        HashSetBuilder<String>& hash_set_builder = *new(alignof(HashSetBuilder<String>), _r) HashSetBuilder<String>(_r.get_page(), this->keywords_index);
         return HashSet<String>(_rp, hash_set_builder);
     }
 
@@ -1368,7 +1368,7 @@ struct Parser : Object {
             if (node_result._tag == Result<DeclarationSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
                 if (array == nullptr)
-                    array = new(alignof(Array<DeclarationSyntax>), _r.page) Array<DeclarationSyntax>();
+                    array = new(alignof(Array<DeclarationSyntax>), _r) Array<DeclarationSyntax>();
                 array->add(node);
             } else {
                 if ((array == nullptr) && (node_result._tag == Result<DeclarationSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
@@ -1827,7 +1827,7 @@ struct Parser : Object {
             if (node_result._tag == Result<GenericParameterSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
                 if (array == nullptr)
-                    array = new(alignof(Array<GenericParameterSyntax>), _r.page) Array<GenericParameterSyntax>();
+                    array = new(alignof(Array<GenericParameterSyntax>), _r) Array<GenericParameterSyntax>();
                 array->add(node);
             } else {
                 if ((array == nullptr) && (node_result._tag == Result<GenericParameterSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
@@ -1882,7 +1882,7 @@ struct Parser : Object {
             if (node_result._tag == Result<ExtensionSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
                 if (array == nullptr)
-                    array = new(alignof(Array<ExtensionSyntax>), _r.page) Array<ExtensionSyntax>();
+                    array = new(alignof(Array<ExtensionSyntax>), _r) Array<ExtensionSyntax>();
                 array->add(node);
             } else {
                 if ((array == nullptr) && (node_result._tag == Result<ExtensionSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
@@ -1936,7 +1936,7 @@ struct Parser : Object {
             if (node_result._tag == Result<AttributeSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
                 if (array == nullptr)
-                    array = new(alignof(Array<AttributeSyntax>), _r.page) Array<AttributeSyntax>();
+                    array = new(alignof(Array<AttributeSyntax>), _r) Array<AttributeSyntax>();
                 array->add(node);
             } else {
                 if ((array == nullptr) && (node_result._tag == Result<AttributeSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
@@ -2209,7 +2209,7 @@ struct Parser : Object {
             if (node_result._tag == Result<TagSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
                 if (array == nullptr)
-                    array = new(alignof(Array<TagSyntax>), _r.page) Array<TagSyntax>();
+                    array = new(alignof(Array<TagSyntax>), _r) Array<TagSyntax>();
                 array->add(node);
             } else {
                 if ((array == nullptr) && (node_result._tag == Result<TagSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
@@ -2544,7 +2544,7 @@ struct Parser : Object {
             if (node_result._tag == Result<MemberSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
                 if (array == nullptr)
-                    array = new(alignof(Array<MemberSyntax>), _r.page) Array<MemberSyntax>();
+                    array = new(alignof(Array<MemberSyntax>), _r) Array<MemberSyntax>();
                 array->add(node);
             } else {
                 if ((array == nullptr) && (node_result._tag == Result<MemberSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
@@ -2635,7 +2635,7 @@ struct Parser : Object {
             if (node_result._tag == Result<PropertySyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
                 if (array == nullptr)
-                    array = new(alignof(Array<PropertySyntax>), _r.page) Array<PropertySyntax>();
+                    array = new(alignof(Array<PropertySyntax>), _r) Array<PropertySyntax>();
                 array->add(node);
             } else {
                 if ((array == nullptr) && (node_result._tag == Result<PropertySyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
@@ -2788,7 +2788,7 @@ struct Parser : Object {
             if (node_result._tag == Result<GenericArgumentSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
                 if (array == nullptr)
-                    array = new(alignof(Array<GenericArgumentSyntax>), _r.page) Array<GenericArgumentSyntax>();
+                    array = new(alignof(Array<GenericArgumentSyntax>), _r) Array<GenericArgumentSyntax>();
                 array->add(node);
             } else {
                 if ((array == nullptr) && (node_result._tag == Result<GenericArgumentSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
@@ -3012,7 +3012,7 @@ struct Parser : Object {
             if (node_result._tag == Result<UseSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
                 if (array == nullptr)
-                    array = new(alignof(Array<UseSyntax>), _r.page) Array<UseSyntax>();
+                    array = new(alignof(Array<UseSyntax>), _r) Array<UseSyntax>();
                 array->add(node);
             } else {
                 if ((array == nullptr) && (node_result._tag == Result<UseSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
@@ -3267,7 +3267,7 @@ struct Parser : Object {
             if (node_result._tag == Result<MethodSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
                 if (array == nullptr)
-                    array = new(alignof(Array<MethodSyntax>), _r.page) Array<MethodSyntax>();
+                    array = new(alignof(Array<MethodSyntax>), _r) Array<MethodSyntax>();
                 array->add(node);
             } else {
                 if ((array == nullptr) && (node_result._tag == Result<MethodSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
@@ -3922,7 +3922,7 @@ struct Parser : Object {
             if (node_result._tag == Result<ExtendSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
                 if (array == nullptr)
-                    array = new(alignof(Array<ExtendSyntax>), _r.page) Array<ExtendSyntax>();
+                    array = new(alignof(Array<ExtendSyntax>), _r) Array<ExtendSyntax>();
                 array->add(node);
             } else {
                 if ((array == nullptr) && (node_result._tag == Result<ExtendSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
@@ -4127,7 +4127,7 @@ struct Parser : Object {
             if (node_result._tag == Result<StatementSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
                 if (array == nullptr)
-                    array = new(alignof(Array<StatementSyntax>), _r.page) Array<StatementSyntax>();
+                    array = new(alignof(Array<StatementSyntax>), _r) Array<StatementSyntax>();
                 array->add(node);
             } else {
                 if ((array == nullptr) && (node_result._tag == Result<StatementSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
@@ -4404,7 +4404,7 @@ struct Parser : Object {
             if (node_result._tag == Result<BindingSpecSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
                 if (array == nullptr)
-                    array = new(alignof(Array<BindingSpecSyntax>), _r.page) Array<BindingSpecSyntax>();
+                    array = new(alignof(Array<BindingSpecSyntax>), _r) Array<BindingSpecSyntax>();
                 array->add(node);
             } else {
                 if ((array == nullptr) && (node_result._tag == Result<BindingSpecSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
@@ -4550,7 +4550,7 @@ struct Parser : Object {
             if (node_result._tag == Result<OperandSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
                 if (array == nullptr)
-                    array = new(alignof(Array<OperandSyntax>), _r.page) Array<OperandSyntax>();
+                    array = new(alignof(Array<OperandSyntax>), _r) Array<OperandSyntax>();
                 array->add(node);
             } else {
                 if ((array == nullptr) && (node_result._tag == Result<OperandSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
@@ -4610,7 +4610,7 @@ struct Parser : Object {
             if (node_result._tag == Result<PostfixSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
                 if (array == nullptr)
-                    array = new(alignof(Array<PostfixSyntax>), _r.page) Array<PostfixSyntax>();
+                    array = new(alignof(Array<PostfixSyntax>), _r) Array<PostfixSyntax>();
                 array->add(node);
             } else {
                 if ((array == nullptr) && (node_result._tag == Result<PostfixSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
@@ -4734,7 +4734,7 @@ struct Parser : Object {
             if (node_result._tag == Result<CatchSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
                 if (array == nullptr)
-                    array = new(alignof(Array<CatchSyntax>), _r.page) Array<CatchSyntax>();
+                    array = new(alignof(Array<CatchSyntax>), _r) Array<CatchSyntax>();
                 array->add(node);
             } else {
                 if ((array == nullptr) && (node_result._tag == Result<CatchSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
@@ -5328,7 +5328,7 @@ struct Parser : Object {
             if (node_result._tag == Result<ComponentSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
                 if (array == nullptr)
-                    array = new(alignof(Array<ComponentSyntax>), _r.page) Array<ComponentSyntax>();
+                    array = new(alignof(Array<ComponentSyntax>), _r) Array<ComponentSyntax>();
                 array->add(node);
             } else {
                 if ((array == nullptr) && (node_result._tag == Result<ComponentSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
@@ -5486,7 +5486,7 @@ struct Parser : Object {
             if (node_result._tag == Result<ElementSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
                 if (array == nullptr)
-                    array = new(alignof(Array<ElementSyntax>), _r.page) Array<ElementSyntax>();
+                    array = new(alignof(Array<ElementSyntax>), _r) Array<ElementSyntax>();
                 array->add(node);
             } else {
                 if ((array == nullptr) && (node_result._tag == Result<ElementSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
@@ -5816,7 +5816,7 @@ struct Parser : Object {
             if (node_result._tag == Result<CaseSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
                 if (array == nullptr)
-                    array = new(alignof(Array<CaseSyntax>), _r.page) Array<CaseSyntax>();
+                    array = new(alignof(Array<CaseSyntax>), _r) Array<CaseSyntax>();
                 array->add(node);
             } else {
                 if ((array == nullptr) && (node_result._tag == Result<CaseSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
@@ -6188,7 +6188,7 @@ struct Parser : Object {
             if (node_result._tag == Result<ActionSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
                 if (array == nullptr)
-                    array = new(alignof(Array<ActionSyntax>), _r.page) Array<ActionSyntax>();
+                    array = new(alignof(Array<ActionSyntax>), _r) Array<ActionSyntax>();
                 array->add(node);
             } else {
                 if ((array == nullptr) && (node_result._tag == Result<ActionSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
@@ -6347,7 +6347,7 @@ struct Parser : Object {
             if (node_result._tag == Result<TypeSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
                 if (array == nullptr)
-                    array = new(alignof(Array<TypeSyntax>), _r.page) Array<TypeSyntax>();
+                    array = new(alignof(Array<TypeSyntax>), _r) Array<TypeSyntax>();
                 array->add(node);
             } else {
                 if ((array == nullptr) && (node_result._tag == Result<TypeSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))

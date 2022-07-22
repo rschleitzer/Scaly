@@ -18,7 +18,7 @@ struct HashMap : Object {
         auto length = hash_map_builder.slots->length;
         for (size_t i = 0; i < length; i++) {
             Region _r_1;
-            Array<KeyValuePair<K, V>>& array = *new(alignof(Array<KeyValuePair<K, V>>), _r_1.page) Array<KeyValuePair<K, V>>();
+            Array<KeyValuePair<K, V>>& array = *new(alignof(Array<KeyValuePair<K, V>>), _r_1) Array<KeyValuePair<K, V>>();
             auto list_iterator = ListIterator<Slot<KeyValuePair<K, V>>>(hash_map_builder.slots->get(i)->head);
             while (auto item = list_iterator.next())
                 array.add(item->value);

@@ -30,17 +30,17 @@ struct FileError : Object {
 
     String to_string(Page* _rp) {
         Region _r;
-        StringBuilder& message_builder = *new(alignof(StringBuilder), _r.page) StringBuilder();
+        StringBuilder& message_builder = *new(alignof(StringBuilder), _r) StringBuilder();
         switch (_tag) {
             case Unknown:
-                message_builder.append_string(String(_r.page, "An unknown file error occurred with the file "));
+                message_builder.append_string(String(_r.get_page(), "An unknown file error occurred with the file "));
                 message_builder.append_string(_Unknown.file_name);
-                message_builder.append_string(String(_r.page, "."));
+                message_builder.append_string(String(_r.get_page(), "."));
             break;
             case NoSuchFileOrDirectory:
-                message_builder.append_string(String(_r.page, "A file or directory with the name "));
+                message_builder.append_string(String(_r.get_page(), "A file or directory with the name "));
                 message_builder.append_string(_NoSuchFileOrDirectory.file_name);
-                message_builder.append_string(String(_r.page, "does not exist."));
+                message_builder.append_string(String(_r.get_page(), "does not exist."));
             break;
         }
         return message_builder.to_string(_rp);     
@@ -50,7 +50,7 @@ struct FileError : Object {
 struct File {
     static Result<String, FileError> read_to_string(Page* _rp, Page *_ep, const String& path) {
         Region _r;
-        FILE* file = fopen(path.to_c_string(_r.page), "rb");
+        FILE* file = fopen(path.to_c_string(_r.get_page()), "rb");
         if (!file) {
             switch (errno) {
                 case ENOENT: return Result<String, FileError> { ._tag = Result<String, FileError>::Error, ._Error = FileError(NoSuchFileOrDirectoryError(String(_ep, path))) };
@@ -71,7 +71,7 @@ struct File {
 
     static FileError* write_from_string(Page *_ep, const String& path, const String& contents) {
         Region _r;
-        FILE* file = fopen(path.to_c_string(_r.page), "wb");
+        FILE* file = fopen(path.to_c_string(_r.get_page()), "wb");
         if (!file) {
             switch (errno) {
                 case ENOENT: return new(alignof(FileError), _ep) FileError(NoSuchFileOrDirectoryError(String(_ep, path)));
@@ -79,7 +79,7 @@ struct File {
             };
         }
 
-        fwrite(contents.to_c_string(_r.page), 1, contents.get_length(), file);
+        fwrite(contents.to_c_string(_r.get_page()), 1, contents.get_length(), file);
         fclose (file);
         return nullptr;
     }

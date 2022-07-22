@@ -14,7 +14,7 @@ struct Parser : Object {
 
     Vector<""String> initialize_keywords_index(Page* _rp) {
         Region _r;
-        Array<""String>& keywords_builder = *new(alignof(Array<""String>), _r.page) Array<""String>();
+        Array<""String>& keywords_builder = *new(alignof(Array<""String>), _r) Array<""String>();
 "   (apply-to-selected-children "keyword" (lambda (keyword) ($
 "        keywords_builder.add(String(Page::get(this), \""(id keyword)"\"));
 "   )))
@@ -23,7 +23,7 @@ struct Parser : Object {
 
     HashSet<""String> initialize_keywords(Page* _rp) {
         Region _r;
-        HashSetBuilder<""String>& hash_set_builder = *new(alignof(HashSetBuilder<""String>), _r.page) HashSetBuilder<""String>(_r.page, this->keywords_index);
+        HashSetBuilder<""String>& hash_set_builder = *new(alignof(HashSetBuilder<""String>), _r) HashSetBuilder<""String>(_r.get_page(), this->keywords_index);
         return HashSet<""String>(_rp, hash_set_builder);
     }
 
@@ -96,7 +96,7 @@ struct Parser : Object {
             if (node_result._tag == Result<"(id syntax)"Syntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
                 if (array == nullptr)
-                    array = new(alignof(Array<"(id syntax)"Syntax>), _r.page) Array<"(id syntax)"Syntax>();
+                    array = new(alignof(Array<"(id syntax)"Syntax>), _r) Array<"(id syntax)"Syntax>();
                 array->add(node);
             } else {
                 if ((array == nullptr) && (node_result._tag == Result<"(id syntax)"Syntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))

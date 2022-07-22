@@ -15,7 +15,7 @@ FileError* print(Page* _ep, const char* message) {
 
 FileError* print(Page* _ep, String message) {
     Region _r;
-    return print(_ep, message.to_c_string(_r.page));
+    return print(_ep, message.to_c_string(_r.get_page()));
 }
 
 }
