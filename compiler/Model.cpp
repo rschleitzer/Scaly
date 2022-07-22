@@ -73,9 +73,11 @@ struct Type : Object {
 };
 
 struct Property {
+    Span span;
+    bool private_;
     String* name;
     Type* type;
-    Property(String* name, Type* type) : name(name), type(type) {}
+    Property(Span span, bool private_, String* name, Type* type) : span(span), private_(private_), name(name), type(type) {}
 };
 
 struct Operation : Object {
