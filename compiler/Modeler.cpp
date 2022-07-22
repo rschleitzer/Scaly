@@ -116,15 +116,16 @@ Result<Vector<Property>, ModelError> handle_parameterset(Page* _rp, Page* _ep, P
     switch (parameterSetSyntax._tag) {
         case ParameterSetSyntax::Parameters: {
             auto parameters_syntax = parameterSetSyntax._Parameters;
-            auto _property_syntax_iterator = VectorIterator<PropertySyntax>(*parameters_syntax.properties);
-            while (auto _property_syntax = _property_syntax_iterator.next()) {
-                auto property_syntax = *_property_syntax;
-                auto _property_result = handle_property(_rp, _ep, false, property_syntax, text);
-                if (_property_result._tag == Result<Property, ModelError>::Error)
-                    return Result<Vector<Property>, ModelError> { ._tag = Result<Vector<Property>, ModelError>::Error, ._Error = _property_result._Error };
-                auto property = _property_result._Ok;
-                parameters.add(property);
-
+            if (parameters_syntax.properties != nullptr) {
+                auto _property_syntax_iterator = VectorIterator<PropertySyntax>(*parameters_syntax.properties);
+                while (auto _property_syntax = _property_syntax_iterator.next()) {
+                    auto property_syntax = *_property_syntax;
+                    auto _property_result = handle_property(_rp, _ep, false, property_syntax, text);
+                    if (_property_result._tag == Result<Property, ModelError>::Error)
+                        return Result<Vector<Property>, ModelError> { ._tag = Result<Vector<Property>, ModelError>::Error, ._Error = _property_result._Error };
+                    auto property = _property_result._Ok;
+                    parameters.add(property);
+                }
             }
         }
         break;
@@ -898,7 +899,7 @@ Result<Module, ModelError> handle_module(Page* _rp, Page* _ep, String path, Modu
 Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String path, Vector<UseSyntax>* uses, Vector<DeclarationSyntax>* declarations, const Text& text) {
     Region _r;
     HashMapBuilder<String, Nameable>& symbols_builder = *new(alignof(HashMapBuilder<String, Nameable>), _r.page) HashMapBuilder<String, Nameable>();
-    HashMapBuilder<String, Array<Function>>& functions_builder = *new(alignof(HashMapBuilder<String, Array<Function>>), _r.page) HashMapBuilder<String, Array<Function>>();
+    HashMapBuilder<String, Array<Function>*>& functions_builder = *new(alignof(HashMapBuilder<String, Array<Function>*>), _r.page) HashMapBuilder<String, Array<Function>*>();
     Array<Initializer>& initializers_builder = *new(alignof(Array<Initializer>), _r.page) Array<Initializer>();
     DeInitializer* deinitializer = nullptr;
 
@@ -929,13 +930,13 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
                             auto symbol_with_function_name = symbols_builder[function.name];
                             if (symbol_with_function_name != nullptr)
                                 return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NonFunctionSymbolExists(text, Span(declaration->_Function.start, declaration->_Function.end)))) };
-                            Array<Function>* functions_array = functions_builder[function.name];
+                            Array<Function>** functions_array = functions_builder[function.name];
                             if (functions_array == nullptr)
                             {
-                                functions_builder.add(function.name, Array<Function>());
+                                functions_builder.add(function.name, new(alignof(Array<Function>), _r.page) Array<Function>());
                                 functions_array = functions_builder[function.name];
                             }
-                            functions_array->add(function);
+                            (*functions_array)->add(function);
                         }
                         break;
                         case ExportSyntax::Init: {
@@ -955,13 +956,13 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
                             auto symbol_with_function_name = symbols_builder[function.name];
                             if (symbol_with_function_name != nullptr)
                                 return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NonFunctionSymbolExists(text, Span(declaration->_Function.start, declaration->_Function.end)))) };
-                            Array<Function>* functions_array = functions_builder[function.name];
+                            Array<Function>** functions_array = functions_builder[function.name];
                             if (functions_array == nullptr)
                             {
-                                functions_builder.add(function.name, Array<Function>());
+                                functions_builder.add(function.name, new(alignof(Array<Function>), _r.page) Array<Function>());
                                 functions_array = functions_builder[function.name];
                             }
-                            functions_array->add(function);
+                            (*functions_array)->add(function);
                         }
                         case ExportSyntax::Operator: {
                             auto operator_syntax = export_._Operator;
@@ -1014,13 +1015,13 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
                     auto symbol_with_function_name = symbols_builder[function.name];
                     if (symbol_with_function_name != nullptr)
                         return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NonFunctionSymbolExists(text, Span(declaration->_Function.start, declaration->_Function.end)))) };
-                    Array<Function>* functions_array = functions_builder[function.name];
+                    Array<Function>** functions_array = functions_builder[function.name];
                     if (functions_array == nullptr)
                     {
-                        functions_builder.add(function.name, Array<Function>());
+                        functions_builder.add(function.name, new(alignof(Array<Function>), _r.page) Array<Function>());
                         functions_array = functions_builder[function.name];
                     }
-                    functions_array->add(function);
+                    (*functions_array)->add(function);
                 }
                 break;
                 case DeclarationSyntax::Init: {
@@ -1049,13 +1050,13 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
                     auto symbol_with_function_name = symbols_builder[function.name];
                     if (symbol_with_function_name != nullptr)
                         return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NonFunctionSymbolExists(text, Span(declaration->_Function.start, declaration->_Function.end)))) };
-                    Array<Function>* functions_array = functions_builder[function.name];
+                    Array<Function>** functions_array = functions_builder[function.name];
                     if (functions_array == nullptr)
                     {
-                        functions_builder.add(function.name, Array<Function>());
+                        functions_builder.add(function.name, new(alignof(Array<Function>), _r.page) Array<Function>());
                         functions_array = functions_builder[function.name];
                     }
-                    functions_array->add(function);
+                    (*functions_array)->add(function);
                 }
                 break;
                 case DeclarationSyntax::Operator: {
@@ -1092,13 +1093,13 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
         }
     }
 
-    HashMap<String, Array<Function>> functions(_r.page, functions_builder);
+    HashMap<String, Array<Function>*> functions(_r.page, functions_builder);
     if (functions.slots != nullptr) {
-        auto functions_slots_iterator = VectorIterator<Vector<KeyValuePair<String, Array<Function>>>>(*functions.slots);
+        auto functions_slots_iterator = VectorIterator<Vector<KeyValuePair<String, Array<Function>*>>>(*functions.slots);
         while (auto function_slot = functions_slots_iterator.next()) {
-            auto functions_iterator = VectorIterator<KeyValuePair<String, Array<Function>>>(*function_slot);
+            auto functions_iterator = VectorIterator<KeyValuePair<String, Array<Function>*>>(*function_slot);
             while (auto function_kvp = functions_iterator.next()) {
-                symbols_builder.add(function_kvp->key, Nameable { ._tag = Nameable::Functions, ._Functions = Vector<Function>(_rp, function_kvp->value) });
+                symbols_builder.add(function_kvp->key, Nameable { ._tag = Nameable::Functions, ._Functions = Vector<Function>(_rp, *function_kvp->value) });
             }
         }
     }
