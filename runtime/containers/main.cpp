@@ -88,7 +88,7 @@ void test_string_builder() {
 
 void test_list() {
     Region _r;
-    List<int>& list = *List<int>::create(_r.get_page());
+    List<int> list;
 
     int huge_number = 1024 * 1024 * 62;
     for (int i = 1; i <= huge_number ; i++)
