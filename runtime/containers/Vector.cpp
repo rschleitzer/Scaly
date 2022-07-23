@@ -60,10 +60,10 @@ template<class T> struct Vector : Object {
         if (this->length > 0) {
             this->data = (T*) _rp->allocate_raw(length * sizeof(T), alignof(T));
             auto list_iterator = list.get_iterator();
-            size_t i = 0;
+            size_t i = length;
             while (auto item = list_iterator.next()) {
+                i--;
                 *(*this)[i] = *item;
-                i++;
             }
         } else {
             this->data = nullptr;

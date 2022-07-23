@@ -88,29 +88,27 @@ struct Parser : Object {
 "
     Result<""Vector<"(id syntax)"Syntax>*, ParserError> parse_"(downcase-string (id syntax))"_list(Page* _rp, Page* _ep) {
         Region _r;
-        Array<"(id syntax)"Syntax>* array = nullptr;
+        List<"(id syntax)"Syntax> list;
         while(true) {
             auto node_result = this->parse_"(downcase-string (id syntax))"(_rp, _ep);
             if ((node_result._tag == Result<"(id syntax)"Syntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
                 return Result<""Vector<"(id syntax)"Syntax>*, ParserError> { ._tag = Result<""Vector<"(id syntax)"Syntax>*, ParserError>::Error, ._Error = node_result._Error };
             if (node_result._tag == Result<"(id syntax)"Syntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
-                if (array == nullptr)
-                    array = new(alignof(Array<"(id syntax)"Syntax>), _r) Array<"(id syntax)"Syntax>();
-                array->add(node);
+                list.add(_r.get_page(), node);
             } else {
-                if ((array == nullptr) && (node_result._tag == Result<"(id syntax)"Syntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
+                if ((list.count() == 0) && (node_result._tag == Result<"(id syntax)"Syntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
                     return Result<""Vector<"(id syntax)"Syntax>*, ParserError> { ._tag = Result<""Vector<"(id syntax)"Syntax>*, ParserError>::Error, ._Error = node_result._Error };
                 break;
             }
         }
 
-        if (array == nullptr)
+        if (list.count() == 0)
             return Result<""Vector<"(id syntax)"Syntax>*, ParserError> { ._tag = Result<""Vector<"(id syntax)"Syntax>*, ParserError>::Ok, ._Ok = nullptr };
         
         return Result<""Vector<"(id syntax)"Syntax>*, ParserError> {
             ._tag = Result<""Vector<"(id syntax)"Syntax>*, ParserError>::Ok,
-            ._Ok = new(alignof(Vector<"(id syntax)"Syntax>), _rp) Vector<"(id syntax)"Syntax>(_rp, *array) };
+            ._Ok = new(alignof(Vector<"(id syntax)"Syntax>), _rp) Vector<"(id syntax)"Syntax>(_rp, list) };
     }
 "       )"")
 "

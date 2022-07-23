@@ -32,6 +32,7 @@ template<class T> struct ListIterator {
 template<class T> struct List : Object {
     Node<T>* head;
 
+    List() : head(nullptr) {}
     static List<T>* create(Page* _rp) {
         return new(alignof(List<T>), _rp) List<T>();
     }
