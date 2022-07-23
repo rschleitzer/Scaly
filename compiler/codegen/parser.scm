@@ -14,9 +14,9 @@ struct Parser : Object {
 
     Vector<""String> initialize_keywords_index(Page* _rp) {
         Region _r;
-        Array<""String>& keywords_builder = *new(alignof(Array<""String>), _r) Array<""String>();
+        List<""String> keywords_builder;
 "   (apply-to-selected-children "keyword" (lambda (keyword) ($
-"        keywords_builder.add(String(Page::get(this), \""(id keyword)"\"));
+"        keywords_builder.add(_r.get_page(), String(Page::get(this), \""(id keyword)"\"));
 "   )))
 "        return Vector<""String>(_rp, keywords_builder);
     }
