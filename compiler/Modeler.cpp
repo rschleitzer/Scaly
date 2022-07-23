@@ -298,7 +298,45 @@ Result<Constant, ModelError> handle_literal(Page* _rp, Page* _ep, LiteralSyntax&
 }
 
 Result<Type*, ModelError> handle_type(Page* _rp, Page* _ep, TypeSyntax& type, const Text& text) {
-    return Result<Type*, ModelError> { ._tag = Result<Type*, ModelError>::Ok, ._Ok = new(alignof(Type), _rp) Type(String(_rp, type.name.name)) };
+    Region _r;
+    Vector<Type> generics = Vector<Type>(_rp, 0);
+    Lifetime lifetime = Lifetime(Unspecified());
+    Array<Type>& generics_builder = *new(alignof(Array<Type>), _r) Array<Type>();
+    if (type.generics != nullptr) {
+        auto generic_arguments = type.generics->generics;
+        if (generic_arguments != nullptr) {
+            auto generics = *generic_arguments;
+            auto _generics_iterator = VectorIterator<GenericArgumentSyntax>(generics);
+            while (auto _generic = _generics_iterator.next()) {
+                auto generic = *_generic;
+                auto _type_result = handle_type(_rp, _ep, generic.type, text);
+                if (_type_result._tag == Result<Type*, ModelError>::Error)
+                    return Result<Type*, ModelError> { ._tag = Result<Type*, ModelError>::Error, ._Error = _type_result._Error };
+                auto type = _type_result._Ok;
+                generics_builder.add(*type);
+            }
+        }
+    }
+
+    if (type.lifetime != nullptr) {
+        auto lifetime_syntax = *type.lifetime;
+        switch (lifetime_syntax._tag) {
+            case LifetimeSyntax::Root:
+                lifetime = Lifetime(Root());
+            break;
+            case LifetimeSyntax::Local:
+                lifetime = Lifetime(Local(String(_rp, lifetime_syntax._Local.location)));
+            break;
+            case LifetimeSyntax::Reference:
+                lifetime = Lifetime(Reference(String(_rp, lifetime_syntax._Reference.age)));
+            break;
+            case LifetimeSyntax::Thrown:
+                lifetime = Lifetime(Thrown());
+            break;
+        }
+    }
+
+    return Result<Type*, ModelError> { ._tag = Result<Type*, ModelError>::Ok, ._Ok = new(alignof(Type), _rp) Type(Span(type.start, type.end), String(_rp, type.name.name), Vector<Type>(_rp, generics_builder), lifetime) };
 }
 
 Result<Type*, ModelError> handle_binding_annotation(Page* _rp, Page* _ep, BindingAnnotationSyntax& binding_annotation, const Text& text) {

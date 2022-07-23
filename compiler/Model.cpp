@@ -67,9 +67,46 @@ struct Block {
 
 };
 
+struct Unspecified {};
+struct Root {};
+struct Local {
+    Local(String location) : location(location) {}
+    String location;
+};
+struct Reference {
+    Reference(String age) : age(age) {}
+    String age;
+};
+struct Thrown {};
+
+struct Lifetime {
+    Lifetime(Unspecified _Unspecified) : _tag(Unspecified), _Unspecified(_Unspecified) {}
+    Lifetime(Root _Root) : _tag(Root), _Root(_Root) {}
+    Lifetime(Local _Local) : _tag(Local), _Local(_Local) {}
+    Lifetime(Reference _Reference) : _tag(Reference), _Reference(_Reference) {}
+    Lifetime(Thrown _Thrown) : _tag(Thrown), _Thrown(_Thrown) {}
+    enum {
+        Unspecified,
+        Root,
+        Local,
+        Reference,
+        Thrown,
+    } _tag;
+    union {
+        struct Unspecified _Unspecified;
+        struct Root _Root;
+        struct Local _Local;
+        struct Reference _Reference;
+        struct Thrown _Thrown;
+    };
+};
+
 struct Type : Object {
+    Span span;
     String name;
-    Type(String name) : name(name) {}
+    Vector<Type> generics;
+    Lifetime lifetime;
+    Type(Span span, String name, Vector<Type> generics, Lifetime lifetime) : span(span), name(name), generics(generics), lifetime(lifetime) {}
 };
 
 struct Property {
@@ -110,7 +147,6 @@ struct Action {
         struct Operation _Operation;
         struct Mutation _Mutation;
     };
-
 };
 
 struct If : Object {
