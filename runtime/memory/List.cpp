@@ -67,6 +67,14 @@ template<class T> struct List : Object {
         return &this->head->element;
     }
 
+    size_t count() {
+        auto list_iterator = this->get_iterator();
+        size_t i = 0;
+        while (auto item = list_iterator.next())
+            i++;
+        return i;
+    }
+
     ListIterator<T> get_iterator()  {
         return ListIterator<T>(this->head);
     }

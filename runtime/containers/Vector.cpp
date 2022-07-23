@@ -56,6 +56,20 @@ template<class T> struct Vector : Object {
         }
     }
 
+    Vector<T>(Page* _rp, List<T>& list) : length(list.count()) {
+        if (this->length > 0) {
+            this->data = (T*) _rp->allocate_raw(length * sizeof(T), alignof(T));
+            auto list_iterator = list.get_iterator();
+            size_t i = 0;
+            while (auto item = list_iterator.next()) {
+                *(*this)[i] = *item;
+                i++;
+            }
+        } else {
+            this->data = nullptr;
+        }
+    }
+
     T* get(size_t i) {
         if (i >= this->length)
             return nullptr;

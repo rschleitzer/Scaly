@@ -937,7 +937,7 @@ Result<Module, ModelError> handle_module(Page* _rp, Page* _ep, String path, Modu
 Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String path, Vector<UseSyntax>* uses, Vector<DeclarationSyntax>* declarations, const Text& text) {
     Region _r;
     HashMapBuilder<String, Nameable>& symbols_builder = *new(alignof(HashMapBuilder<String, Nameable>), _r) HashMapBuilder<String, Nameable>();
-    HashMapBuilder<String, Array<Function>*>& functions_builder = *new(alignof(HashMapBuilder<String, Array<Function>*>), _r) HashMapBuilder<String, Array<Function>*>();
+    HashMapBuilder<String, List<Function>>& functions_builder = *new(alignof(HashMapBuilder<String, List<Function>>), _r) HashMapBuilder<String, List<Function>>();
     Array<Initializer>& initializers_builder = *new(alignof(Array<Initializer>), _r) Array<Initializer>();
     DeInitializer* deinitializer = nullptr;
 
@@ -968,13 +968,13 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
                             auto symbol_with_function_name = symbols_builder[function.name];
                             if (symbol_with_function_name != nullptr)
                                 return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NonFunctionSymbolExists(text, Span(declaration->_Function.start, declaration->_Function.end)))) };
-                            Array<Function>** functions_array = functions_builder[function.name];
-                            if (functions_array == nullptr)
+                            List<Function>* functions_list = functions_builder[function.name];
+                            if (functions_list == nullptr)
                             {
-                                functions_builder.add(function.name, new(alignof(Array<Function>), _r) Array<Function>());
-                                functions_array = functions_builder[function.name];
+                                functions_builder.add(function.name, List<Function>());
+                                functions_list = functions_builder[function.name];
                             }
-                            (*functions_array)->add(function);
+                            (*functions_list).add(_r.get_page(), function);
                         }
                         break;
                         case ExportSyntax::Init: {
@@ -994,13 +994,13 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
                             auto symbol_with_function_name = symbols_builder[function.name];
                             if (symbol_with_function_name != nullptr)
                                 return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NonFunctionSymbolExists(text, Span(declaration->_Function.start, declaration->_Function.end)))) };
-                            Array<Function>** functions_array = functions_builder[function.name];
-                            if (functions_array == nullptr)
+                            List<Function>* functions_list = functions_builder[function.name];
+                            if (functions_list == nullptr)
                             {
-                                functions_builder.add(function.name, new(alignof(Array<Function>), _r) Array<Function>());
-                                functions_array = functions_builder[function.name];
+                                functions_builder.add(function.name, List<Function>());
+                                functions_list = functions_builder[function.name];
                             }
-                            (*functions_array)->add(function);
+                            (*functions_list).add(_r.get_page(), function);
                         }
                         case ExportSyntax::Operator: {
                             auto operator_syntax = export_._Operator;
@@ -1053,13 +1053,13 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
                     auto symbol_with_function_name = symbols_builder[function.name];
                     if (symbol_with_function_name != nullptr)
                         return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NonFunctionSymbolExists(text, Span(declaration->_Function.start, declaration->_Function.end)))) };
-                    Array<Function>** functions_array = functions_builder[function.name];
-                    if (functions_array == nullptr)
+                    List<Function>* functions_list = functions_builder[function.name];
+                    if (functions_list == nullptr)
                     {
-                        functions_builder.add(function.name, new(alignof(Array<Function>), _r) Array<Function>());
-                        functions_array = functions_builder[function.name];
+                        functions_builder.add(function.name, List<Function>());
+                        functions_list = functions_builder[function.name];
                     }
-                    (*functions_array)->add(function);
+                    (*functions_list).add(_r.get_page(), function);
                 }
                 break;
                 case DeclarationSyntax::Init: {
@@ -1088,13 +1088,13 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
                     auto symbol_with_function_name = symbols_builder[function.name];
                     if (symbol_with_function_name != nullptr)
                         return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NonFunctionSymbolExists(text, Span(declaration->_Function.start, declaration->_Function.end)))) };
-                    Array<Function>** functions_array = functions_builder[function.name];
-                    if (functions_array == nullptr)
+                    List<Function>* functions_list = functions_builder[function.name];
+                    if (functions_list == nullptr)
                     {
-                        functions_builder.add(function.name, new(alignof(Array<Function>), _r) Array<Function>());
-                        functions_array = functions_builder[function.name];
+                        functions_builder.add(function.name, List<Function>());
+                        functions_list = functions_builder[function.name];
                     }
-                    (*functions_array)->add(function);
+                    (*functions_list).add(_r.get_page(), function);
                 }
                 break;
                 case DeclarationSyntax::Operator: {
@@ -1131,13 +1131,13 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
         }
     }
 
-    HashMap<String, Array<Function>*> functions(_r.get_page(), functions_builder);
+    HashMap<String, List<Function>> functions(_r.get_page(), functions_builder);
     if (functions.slots != nullptr) {
-        auto functions_slots_iterator = VectorIterator<Vector<KeyValuePair<String, Array<Function>*>>>(*functions.slots);
+        auto functions_slots_iterator = VectorIterator<Vector<KeyValuePair<String, List<Function>>>>(*functions.slots);
         while (auto function_slot = functions_slots_iterator.next()) {
-            auto functions_iterator = VectorIterator<KeyValuePair<String, Array<Function>*>>(*function_slot);
+            auto functions_iterator = VectorIterator<KeyValuePair<String, List<Function>>>(*function_slot);
             while (auto function_kvp = functions_iterator.next()) {
-                symbols_builder.add(function_kvp->key, Nameable { ._tag = Nameable::Functions, ._Functions = Vector<Function>(_rp, *function_kvp->value) });
+                symbols_builder.add(function_kvp->key, Nameable { ._tag = Nameable::Functions, ._Functions = Vector<Function>(_rp, function_kvp->value) });
             }
         }
     }
