@@ -385,10 +385,12 @@ struct Body {
 struct Concept : Object {
     Span span;
     String name;
+    Vector<String> parameters;
     Body body;
-    Concept(Span span, String name, Body body)
+    Concept(Span span, String name, Vector<String> parameters, Body body)
       : span(span),
         name(name),
+        parameters(parameters),
         body(body) {}
 };
 
