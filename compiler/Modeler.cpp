@@ -784,7 +784,25 @@ Result<Operation, ModelError> handle_operation(Page* _rp, Page* _ep, OperationSy
             return Result<Operation, ModelError> { ._tag = Result<Operation, ModelError>::Error, ._Error = operands_result._Error };
         return Result<Operation, ModelError> { ._tag = Result<Operation, ModelError>::Ok, ._Ok = operands_result._Ok };
     }
-     return Result<Operation, ModelError> { ._tag = Result<Operation, ModelError>::Ok, ._Ok = Operation(Vector<Operand>(_rp, 0)) };
+    return Result<Operation, ModelError> { ._tag = Result<Operation, ModelError>::Ok, ._Ok = Operation(Vector<Operand>(_rp, 0)) };
+}
+
+Result<GenericParameter, ModelError> handle_generic_parameter(Page* _rp, Page* _ep, GenericParameterSyntax& generic_parameter, const Text& text) {
+    Region _r;
+    List<Attribute> attributes;
+    if (generic_parameter.attributes != nullptr) {
+        auto definition_attributes = *generic_parameter.attributes;
+        auto _attribute_iterator = VectorIterator<AttributeSyntax>(definition_attributes);
+        while (auto _attribute_syntax = _attribute_iterator.next()) {
+            auto attribute_syntax = *_attribute_syntax;
+            auto _attribute_result = handle_attribute(_rp, _ep, attribute_syntax, text);
+            if (_attribute_result._tag == Result<Attribute, ModelError>::Error)
+                return Result<GenericParameter, ModelError> { ._tag = Result<GenericParameter, ModelError>::Error, ._Error = _attribute_result._Error };
+            auto attribute = _attribute_result._Ok;
+            attributes.add(_r.get_page(), attribute);
+        }
+    }
+    return Result<GenericParameter, ModelError> { ._tag = Result<GenericParameter, ModelError>::Ok, ._Ok = GenericParameter(Span(generic_parameter.start, generic_parameter.end), String(_rp, generic_parameter.name), Vector<Attribute>(_rp, attributes)) };
 }
 
 Result<Concept, ModelError> handle_definition(Page* _rp, Page* _ep, String name, String path, DefinitionSyntax& definition, bool private_, const Text& text) {
@@ -792,14 +810,18 @@ Result<Concept, ModelError> handle_definition(Page* _rp, Page* _ep, String name,
     auto concept = definition.concept_;
     Span span(definition.start, definition.end);
 
-    List<String> parameters;
+    List<GenericParameter> parameters;
     if (definition.parameters != nullptr) {
         auto generic_parameters = *definition.parameters;
         if (generic_parameters.parameters != nullptr) {    
             auto _parameters_iterator = VectorIterator<GenericParameterSyntax>(*generic_parameters.parameters);
             while (auto _generic_parameter = _parameters_iterator.next()) {
                 auto generic_parameter = *_generic_parameter;
-                parameters.add(_r.get_page(), String(_rp, generic_parameter.name));
+                auto _parameter_result = handle_generic_parameter(_rp, _ep, generic_parameter, text);
+                if (_parameter_result._tag == Result<GenericParameter, ModelError>::Error)
+                    return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = _parameter_result._Error };
+                auto parameter = _parameter_result._Ok;
+                parameters.add(_r.get_page(), parameter);
 
             }
         }
@@ -828,7 +850,7 @@ Result<Concept, ModelError> handle_definition(Page* _rp, Page* _ep, String name,
                 return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = structure_result._Error };
             auto structure = structure_result._Ok;
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = 
-                Concept(span, String(_rp, definition.name), Vector<String>(_rp, parameters), Vector<Attribute>(_rp, attributes),
+                Concept(span, String(_rp, definition.name), Vector<GenericParameter>(_rp, parameters), Vector<Attribute>(_rp, attributes),
                     Body { ._tag = Body::Structure, ._Structure = structure }
                 )};
         }
@@ -839,7 +861,7 @@ Result<Concept, ModelError> handle_definition(Page* _rp, Page* _ep, String name,
                 return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = _namespace_result._Error };
             auto namespace_ = _namespace_result._Ok;
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = 
-                Concept(span, String(_rp, definition.name), Vector<String>(_rp, parameters), Vector<Attribute>(_rp, attributes),
+                Concept(span, String(_rp, definition.name), Vector<GenericParameter>(_rp, parameters), Vector<Attribute>(_rp, attributes),
                     Body { ._tag = Body::Namespace, ._Namespace = namespace_ }
                 )};
         }
@@ -850,7 +872,7 @@ Result<Concept, ModelError> handle_definition(Page* _rp, Page* _ep, String name,
                 return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = _union__result._Error };
             auto union_ = _union__result._Ok;
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = 
-                Concept(span, String(_rp, definition.name), Vector<String>(_rp, parameters), Vector<Attribute>(_rp, attributes),
+                Concept(span, String(_rp, definition.name), Vector<GenericParameter>(_rp, parameters), Vector<Attribute>(_rp, attributes),
                     Body { ._tag = Body::Union, ._Union = union_ }
                 )};
         }
@@ -861,7 +883,7 @@ Result<Concept, ModelError> handle_definition(Page* _rp, Page* _ep, String name,
                 return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = operation_result._Error };
             auto operation = operation_result._Ok;
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = 
-                Concept(span, String(_rp, definition.name), Vector<String>(_rp, parameters), Vector<Attribute>(_rp, attributes),
+                Concept(span, String(_rp, definition.name), Vector<GenericParameter>(_rp, parameters), Vector<Attribute>(_rp, attributes),
                     Body { ._tag = Body::Constant, ._Constant = operation }
                 )};
         }
@@ -869,7 +891,7 @@ Result<Concept, ModelError> handle_definition(Page* _rp, Page* _ep, String name,
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Delegate"), Span(concept._Delegate.start, concept._Delegate.end)))) };
         case ConceptSyntax::Intrinsic:
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = 
-                Concept(span, String(_rp, definition.name), Vector<String>(_rp, parameters), Vector<Attribute>(_rp, attributes),
+                Concept(span, String(_rp, definition.name), Vector<GenericParameter>(_rp, parameters), Vector<Attribute>(_rp, attributes),
                     Body { ._tag = Body::Intrinsic }
                 )};
     }
@@ -1271,12 +1293,12 @@ Result<Concept, ModelError> build_module_concept(Page* _rp, Page* _ep, bool priv
 
     auto code = code_result._Ok;
 
-    List<String> parameters;
+    List<GenericParameter> parameters;
     List<Attribute> attributes;
     return Result<Concept, ModelError> {
         ._tag = Result<Concept, ModelError>::Ok, 
         ._Ok = Concept(Span(file_syntax.start, file_syntax.end),
-                    String(_rp, name), Vector<String>(_rp, parameters), Vector<Attribute>(_rp, attributes),
+                    String(_rp, name), Vector<GenericParameter>(_rp, parameters), Vector<Attribute>(_rp, attributes),
                     Body { ._tag = Body::Namespace, ._Namespace = Namespace(Span(file_syntax.start, file_syntax.end), private_, code) }) };
 }
 

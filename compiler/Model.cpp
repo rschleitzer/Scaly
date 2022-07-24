@@ -406,13 +406,23 @@ struct Body {
     };
 };
 
+struct GenericParameter {
+    Span span;
+    String name;
+    Vector<Attribute> attributes;
+    GenericParameter(Span span, String name, Vector<Attribute> attributes)
+      : span(span),
+        name(name),
+        attributes(attributes) {}
+};
+
 struct Concept : Object {
     Span span;
     String name;
-    Vector<String> parameters;
+    Vector<GenericParameter> parameters;
     Vector<Attribute> attributes;
     Body body;
-    Concept(Span span, String name, Vector<String> parameters, Vector<Attribute> attributes, Body body)
+    Concept(Span span, String name, Vector<GenericParameter> parameters, Vector<Attribute> attributes, Body body)
       : span(span),
         name(name),
         parameters(parameters),
