@@ -87,7 +87,7 @@ Result<FileSyntax, ParserError> parse_program(Page* _rp, Page* _ep, const String
     auto implementation = ImplementationSyntax(ActionSyntax(action));
 
     auto routine = RoutineSyntax(start, end, new (alignof(ParameterSetSyntax), _rp) ParameterSetSyntax(parameters), nullptr, new (alignof(ReturnsSyntax), _rp) ReturnsSyntax(returns), nullptr, implementation);
-    FunctionSyntax& main_function_syntax = *new(alignof(FunctionSyntax), _rp) FunctionSyntax(start, end, *name, nullptr, routine);
+    FunctionSyntax& main_function_syntax = *new(alignof(FunctionSyntax), _rp) FunctionSyntax(start, end, *name, nullptr,nullptr, routine);
     main_function_syntax.routine.implementation = implementation;
     DeclarationSyntax& main_function_declaration = *new (alignof(DeclarationSyntax), _rp) DeclarationSyntax(FunctionSyntax(main_function_syntax));;
     declarations.add(_r.get_page(), main_function_declaration);
@@ -103,10 +103,13 @@ Result<Type*, ModelError> handle_type(Page* _rp, Page* _ep, TypeSyntax& type, co
 
 Result<Property, ModelError> handle_property(Page* _rp, Page* _ep, bool private_, PropertySyntax& property, const Text& text) {
     Region _r;
-    auto _type_result = handle_type(_rp, _ep, property.annotation->type, text);
-    if (_type_result._tag == Result<Type, ModelError>::Error)
-        return Result<Property, ModelError> { ._tag = Result<Property, ModelError>::Error, ._Error = _type_result._Error };
-    auto type = _type_result._Ok;
+    Type* type = nullptr;
+    if (property.annotation != nullptr) {
+        auto _type_result = handle_type(_rp, _ep, property.annotation->type, text);
+        if (_type_result._tag == Result<Type, ModelError>::Error)
+            return Result<Property, ModelError> { ._tag = Result<Property, ModelError>::Error, ._Error = _type_result._Error };
+        type = _type_result._Ok;
+    }
     return Result<Property, ModelError> { ._tag = Result<Property, ModelError>::Ok, ._Ok = Property(Span(property.start, property.end), false, new(alignof(String), _rp) String(_rp, property.name), type) };
 }
 

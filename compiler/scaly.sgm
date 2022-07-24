@@ -207,21 +207,25 @@
     <content link = function
     <content identifier                                     property = name
     <content link = GenericArguments               optional property = generics
+    <content link = Lifetime                       optional property = lifetime
     <content link = Routine                                 property = routine
 
 <syntax id = Init
     <content link = init
     <content link = ParameterSet                   optional property = parameters
+    <content colon                                 optional
     <content link = Action                                  property = action
 
 <syntax id = DeInit
     <content link = deinit
+    <content colon                                 optional
     <content link = Action                                  property = action
 
 <syntax id = Procedure
     <content link = procedure
     <content identifier                                     property = name
     <content link = GenericArguments               optional property = generics
+    <content link = Lifetime                       optional property = lifetime
     <content link = Routine                                 property = routine
 
 <syntax id = Operator
@@ -427,6 +431,7 @@
     <content link = left_bracket
     <content link = Element               multiple          property = elements
     <content link = right_bracket
+    <content link = Lifetime                       optional property = lifetime
 
 <syntax id = Element                      multiple
     <content link = Operation                               property = operation
