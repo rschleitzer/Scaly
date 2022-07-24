@@ -49,15 +49,8 @@
 
 <syntax id = GenericParameter             multiple
     <content identifier                                     property = name
+    <content link = Attribute             multiple optional property = attributes
     <content link = comma                          optional 
-
-<syntax id = Extension                    multiple
-    <content link = dot
-    <content identifier                                     property = name
-
-<syntax id = Attribute                    multiple
-    <content attribute                                      property = attribute
-    <content link = Model                                   property = value
 
 <syntax id = Concept                               abstract
     <content link = Class
@@ -132,8 +125,9 @@
 <syntax id = Property                     multiple
     <content identifier                                     property = name
     <content link = TypeAnnotation                 optional property = annotation
-    <content link = Attribute             multiple optional property = attributes
     <content link = comma                          optional
+    <content colon                                 optional
+    <content link = Attribute             multiple optional property = attributes
     <content colon                                 optional
 
 <syntax id = TypeAnnotation
@@ -285,9 +279,9 @@
     <content link = Model                                   property = model
     <content link = Operation                               property = rule
 
-<syntax id = Module
-    <content link = module
-    <content link = Name                                    property = name
+<syntax id = Attribute                    multiple
+    <content attribute                                      property = attribute
+    <content link = Model                                   property = value
     <content colon                                 optional
 
 <syntax id = Model                                 abstract
@@ -295,6 +289,11 @@
     <content link = Name
     <content link = Object
     <content link = Vector
+
+<syntax id = Module
+    <content link = module
+    <content link = Name                                    property = name
+    <content colon                                 optional
 
 <syntax id = Statement                    multiple abstract
     <content link = Operation
@@ -535,6 +534,10 @@
 <syntax id = Name
     <content identifier                                     property = name
     <content link = Extension             multiple optional property = extensions
+
+<syntax id = Extension                    multiple
+    <content link = dot
+    <content identifier                                     property = name
 
 <syntax id = Lifetime                              abstract
     <content link = Root

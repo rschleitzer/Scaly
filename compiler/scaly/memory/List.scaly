@@ -1,6 +1,15 @@
-define List[T]
+define List[T @summary "The element type of the list."]
+
+    @summary "A generic singly linked list."
+
+    @remarks "A list of type T which can collect T elements.
+    You can add an element living in the region specified,
+    and you can remove an element as well."
+
 (
     head: pointer[Node[T]]
+        @summary "The head node of the list."
+        @remarks "The head of the list will always be the last element added."
 )
 {
     init set head: null
