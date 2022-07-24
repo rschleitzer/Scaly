@@ -18,7 +18,11 @@ struct Component : Object {
     String* name;
     Vector<Operand> value;
     Vector<Attribute> attributes;
-    Component(Span span, String* name, Vector<Operand> value, Vector<Attribute> attributes) : span(span), name(name), value(value), attributes(attributes) {}
+    Component(Span span, String* name, Vector<Operand> value, Vector<Attribute> attributes)
+      : span(span),
+        name(name),
+        value(value),
+        attributes(attributes) {}
 };
 
 struct Name : Object {
@@ -116,7 +120,13 @@ struct Property {
     bool private_;
     String* name;
     Type* type;
-    Property(Span span, bool private_, String* name, Type* type) : span(span), private_(private_), name(name), type(type) {}
+    Vector<Attribute> attributes;
+    Property(Span span, bool private_, String* name, Type* type, Vector<Attribute> attributes)
+      : span(span),
+        private_(private_),
+        name(name),
+        type(type),
+        attributes(attributes) {}
 };
 
 struct Operation : Object {
