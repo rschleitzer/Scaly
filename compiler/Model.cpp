@@ -410,11 +410,13 @@ struct Concept : Object {
     Span span;
     String name;
     Vector<String> parameters;
+    Vector<Attribute> attributes;
     Body body;
-    Concept(Span span, String name, Vector<String> parameters, Body body)
+    Concept(Span span, String name, Vector<String> parameters, Vector<Attribute> attributes, Body body)
       : span(span),
         name(name),
         parameters(parameters),
+        attributes(attributes),
         body(body) {}
 };
 

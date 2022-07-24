@@ -828,7 +828,7 @@ Result<Concept, ModelError> handle_definition(Page* _rp, Page* _ep, String name,
                 return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = structure_result._Error };
             auto structure = structure_result._Ok;
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = 
-                Concept(span, String(_rp, definition.name), Vector<String>(_rp, parameters),
+                Concept(span, String(_rp, definition.name), Vector<String>(_rp, parameters), Vector<Attribute>(_rp, attributes),
                     Body { ._tag = Body::Structure, ._Structure = structure }
                 )};
         }
@@ -839,7 +839,7 @@ Result<Concept, ModelError> handle_definition(Page* _rp, Page* _ep, String name,
                 return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = _namespace_result._Error };
             auto namespace_ = _namespace_result._Ok;
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = 
-                Concept(span, String(_rp, definition.name), Vector<String>(_rp, parameters),
+                Concept(span, String(_rp, definition.name), Vector<String>(_rp, parameters), Vector<Attribute>(_rp, attributes),
                     Body { ._tag = Body::Namespace, ._Namespace = namespace_ }
                 )};
         }
@@ -850,7 +850,7 @@ Result<Concept, ModelError> handle_definition(Page* _rp, Page* _ep, String name,
                 return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = _union__result._Error };
             auto union_ = _union__result._Ok;
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = 
-                Concept(span, String(_rp, definition.name), Vector<String>(_rp, parameters),
+                Concept(span, String(_rp, definition.name), Vector<String>(_rp, parameters), Vector<Attribute>(_rp, attributes),
                     Body { ._tag = Body::Union, ._Union = union_ }
                 )};
         }
@@ -861,7 +861,7 @@ Result<Concept, ModelError> handle_definition(Page* _rp, Page* _ep, String name,
                 return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = operation_result._Error };
             auto operation = operation_result._Ok;
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = 
-                Concept(span, String(_rp, definition.name), Vector<String>(_rp, parameters),
+                Concept(span, String(_rp, definition.name), Vector<String>(_rp, parameters), Vector<Attribute>(_rp, attributes),
                     Body { ._tag = Body::Constant, ._Constant = operation }
                 )};
         }
@@ -869,7 +869,7 @@ Result<Concept, ModelError> handle_definition(Page* _rp, Page* _ep, String name,
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Delegate"), Span(concept._Delegate.start, concept._Delegate.end)))) };
         case ConceptSyntax::Intrinsic:
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = 
-                Concept(span, String(_rp, definition.name), Vector<String>(_rp, parameters),
+                Concept(span, String(_rp, definition.name), Vector<String>(_rp, parameters), Vector<Attribute>(_rp, attributes),
                     Body { ._tag = Body::Intrinsic }
                 )};
     }
@@ -1271,11 +1271,12 @@ Result<Concept, ModelError> build_module_concept(Page* _rp, Page* _ep, bool priv
 
     auto code = code_result._Ok;
 
-    List<String> empty_parameters;
+    List<String> parameters;
+    List<Attribute> attributes;
     return Result<Concept, ModelError> {
         ._tag = Result<Concept, ModelError>::Ok, 
         ._Ok = Concept(Span(file_syntax.start, file_syntax.end),
-                    String(_rp, name), Vector<String>(_rp, empty_parameters),
+                    String(_rp, name), Vector<String>(_rp, parameters), Vector<Attribute>(_rp, attributes),
                     Body { ._tag = Body::Namespace, ._Namespace = Namespace(Span(file_syntax.start, file_syntax.end), private_, code) }) };
 }
 

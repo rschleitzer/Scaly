@@ -36,7 +36,7 @@
 
 <syntax id = Definition
     <content link = define
-    <content identifier                                    property = name
+    <content identifier                                     property = name
     <content link = GenericParameters              optional property = parameters
     <content colon                                 optional
     <content link = Attribute             multiple optional property = attributes
