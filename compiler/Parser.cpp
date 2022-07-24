@@ -683,11 +683,11 @@ struct ModelSyntax : Object {
 };
 
 struct AttributeSyntax : Object {
-    AttributeSyntax(size_t start, size_t end, String attribute, ModelSyntax value) : start(start), end(end), attribute(attribute), value(value) {}
+    AttributeSyntax(size_t start, size_t end, String name, ModelSyntax model) : start(start), end(end), name(name), model(model) {}
     size_t start;
     size_t end;
-    String attribute;
-    ModelSyntax value;
+    String name;
+    ModelSyntax model;
 };
 
 struct MacroSyntax : Object {
@@ -3976,26 +3976,26 @@ struct Parser : Object {
     Result<AttributeSyntax, ParserError> parse_attribute(Page* _rp, Page* _ep) {
         auto start = this->lexer.previous_position;
 
-        auto start_attribute = this->lexer.previous_position;
-        auto attribute = this->lexer.parse_attribute(_rp);
-        if (attribute == nullptr) {
+        auto start_name = this->lexer.previous_position;
+        auto name = this->lexer.parse_attribute(_rp);
+        if (name == nullptr) {
 
             return Result<AttributeSyntax, ParserError> { ._tag = Result<AttributeSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
 
-        auto value_start = this->lexer.position;
-        auto value_result = this->parse_model(_rp, _ep);
-        if (value_result._tag == Result<ModelSyntax, ParserError>::Error)
+        auto model_start = this->lexer.position;
+        auto model_result = this->parse_model(_rp, _ep);
+        if (model_result._tag == Result<ModelSyntax, ParserError>::Error)
         {
-            switch (value_result._Error._tag) {
+            switch (model_result._Error._tag) {
                 case ParserError::OtherSyntax:
-                    return Result<AttributeSyntax, ParserError> { ._tag = Result<AttributeSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(value_start, lexer.position, String(_ep, "a valid Model syntax"))) };
+                    return Result<AttributeSyntax, ParserError> { ._tag = Result<AttributeSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(model_start, lexer.position, String(_ep, "a valid Model syntax"))) };
                 case ParserError::InvalidSyntax:
-                    return Result<AttributeSyntax, ParserError> { ._tag = Result<AttributeSyntax, ParserError>::Error, ._Error = value_result._Error };
+                    return Result<AttributeSyntax, ParserError> { ._tag = Result<AttributeSyntax, ParserError>::Error, ._Error = model_result._Error };
             }
         }
 
-        auto value = value_result._Ok;
+        auto model = model_result._Ok;
 
         auto start_colon_3 = this->lexer.previous_position;
         auto success_colon_3 = this->lexer.parse_colon(_rp);
@@ -4004,7 +4004,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = AttributeSyntax(start, end, *attribute, value);
+        auto ret = AttributeSyntax(start, end, *name, model);
 
         return Result<AttributeSyntax, ParserError> { ._tag = Result<AttributeSyntax, ParserError>::Ok, ._Ok = ret };
     }

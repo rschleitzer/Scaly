@@ -438,9 +438,25 @@ Result<Vector<Statement>, ModelError> handle_statements(Page* _rp, Page* _ep, Ve
 
 Result<Vector<Operand>, ModelError> handle_operands(Page* _rp, Page* _ep, Vector<OperandSyntax>& operands, const Text& text);
 
+Result<Attribute, ModelError> handle_attribute(Page* _rp, Page* _ep, AttributeSyntax& attribute, const Text& text);
 Result<Component, ModelError> handle_component(Page* _rp, Page* _ep, ComponentSyntax& component, const Text& text) {
     Region _r;
     String* name = nullptr;
+
+    List<Attribute> attributes;
+    if (component.attributes != nullptr) {
+        auto definition_attributes = *component.attributes;
+        auto _attribute_iterator = VectorIterator<AttributeSyntax>(definition_attributes);
+        while (auto _attribute_syntax = _attribute_iterator.next()) {
+            auto attribute_syntax = *_attribute_syntax;
+            auto _attribute_result = handle_attribute(_rp, _ep, attribute_syntax, text);
+            if (_attribute_result._tag == Result<Attribute, ModelError>::Error)
+                return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Error, ._Error = _attribute_result._Error };
+            auto attribute = _attribute_result._Ok;
+            attributes.add(_r.get_page(), attribute);
+        }
+    }
+
     if (component.value != nullptr) {
         if (component.operands != nullptr) {
             auto name_operands = *component.operands;
@@ -461,9 +477,9 @@ Result<Component, ModelError> handle_component(Page* _rp, Page* _ep, ComponentSy
             if (value_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Error, ._Error = value_result._Error };
             else
-                return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Ok, ._Ok = Component(Span(component.start, component.end), name, value_result._Ok)};
+                return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Ok, ._Ok = Component(Span(component.start, component.end), name, value_result._Ok, Vector<Attribute>(_rp,attributes))};
         } else {
-            return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Ok, ._Ok = Component(Span(component.start, component.end), name, Vector<Operand>(_rp, 0))};
+            return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Ok, ._Ok = Component(Span(component.start, component.end), name, Vector<Operand>(_rp, 0), Vector<Attribute>(_rp,attributes))};
         }
     } else {
         if (component.operands != nullptr) {
@@ -472,9 +488,9 @@ Result<Component, ModelError> handle_component(Page* _rp, Page* _ep, ComponentSy
             if (value_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Error, ._Error = value_result._Error };
             else
-                return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Ok, ._Ok = Component(Span(component.start, component.end), name, value_result._Ok)};
+                return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Ok, ._Ok = Component(Span(component.start, component.end), name, value_result._Ok, Vector<Attribute>(_rp,attributes))};
         } else {
-            return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Ok, ._Ok = Component(Span(component.start, component.end), name, Vector<Operand>(_rp, 0))};
+            return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Ok, ._Ok = Component(Span(component.start, component.end), name, Vector<Operand>(_rp, 0), Vector<Attribute>(_rp,attributes))};
         }
     }
 }
@@ -507,6 +523,44 @@ Result<Matrix, ModelError> handle_vector(Page* _rp, Page* _ep, VectorSyntax& vec
         }
     }
     return Result<Matrix, ModelError> { ._tag = Result<Matrix, ModelError>::Ok, ._Ok = Matrix(Span(vector.start, vector.end), Vector<Operation>(_rp, operations_builder)) };
+}
+
+Result<Model, ModelError> handle_model(Page* _rp, Page* _ep, ModelSyntax& model, const Text& text) {
+    switch (model._tag) {
+        case ModelSyntax::Literal: {
+            auto literal = model._Literal;
+            auto constant_result = handle_literal(_rp, _ep, literal, text);
+            if (constant_result._tag == Result<Constant, ModelError>::Error)
+                return Result<Model, ModelError> { ._tag = Result<Model, ModelError>::Error, ._Error = constant_result._Error };
+            return Result<Model, ModelError> { ._tag = Result<Model, ModelError>::Ok, ._Ok = Model { ._tag = Model::Constant, ._Constant = constant_result._Ok} };
+        }
+        case ModelSyntax::Name: {
+            auto variable = model._Name;
+            return Result<Model, ModelError> { ._tag = Result<Model, ModelError>::Ok, ._Ok = Model { ._tag = Model::Variable, ._Variable = String(_rp, variable.name)} };
+        }
+        case ModelSyntax::Object: {
+            auto object = model._Object;
+            auto object_result = handle_object(_rp, _ep, object, text);
+            if (object_result._tag == Result<Expression, ModelError>::Error)
+                return Result<Model, ModelError> { ._tag = Result<Model, ModelError>::Error, ._Error = object_result._Error };
+            return Result<Model, ModelError> { ._tag = Result<Model, ModelError>::Ok, ._Ok = Model { ._tag = Model::Tuple, ._Tuple = object_result._Ok} };
+        }
+        case ExpressionSyntax::Vector: {
+            auto vector = model._Vector;
+            auto vector_result = handle_vector(_rp, _ep, vector, text);
+            if (vector_result._tag == Result<Expression, ModelError>::Error)
+                return Result<Model, ModelError> { ._tag = Result<Model, ModelError>::Error, ._Error = vector_result._Error };
+            return Result<Model, ModelError> { ._tag = Result<Model, ModelError>::Ok, ._Ok = Model { ._tag = Model::Matrix, ._Matrix = vector_result._Ok} };
+        }
+    }
+}
+
+Result<Attribute, ModelError> handle_attribute(Page* _rp, Page* _ep, AttributeSyntax& attribute, const Text& text) {
+    auto _model_result = handle_model(_rp, _ep, attribute.model, text);
+    if (_model_result._tag == Result<Model, ModelError>::Error)
+        return Result<Attribute, ModelError> { ._tag = Result<Attribute, ModelError>::Error, ._Error = _model_result._Error };
+    auto model = _model_result._Ok;
+    return Result<Attribute, ModelError> { ._tag = Result<Attribute, ModelError>::Ok, ._Ok = Attribute(Span(attribute.start, attribute.end), attribute.name, model) };
 }
 
 Result<Block, ModelError> handle_block(Page* _rp, Page* _ep, BlockSyntax& block, const Text& text) {
@@ -737,6 +791,7 @@ Result<Concept, ModelError> handle_definition(Page* _rp, Page* _ep, String name,
     Region _r;
     auto concept = definition.concept_;
     Span span(definition.start, definition.end);
+
     List<String> parameters;
     if (definition.parameters != nullptr) {
         auto generic_parameters = *definition.parameters;
@@ -749,6 +804,21 @@ Result<Concept, ModelError> handle_definition(Page* _rp, Page* _ep, String name,
             }
         }
     }
+
+    List<Attribute> attributes;
+    if (definition.attributes != nullptr) {
+        auto definition_attributes = *definition.attributes;
+        auto _attribute_iterator = VectorIterator<AttributeSyntax>(definition_attributes);
+        while (auto _attribute_syntax = _attribute_iterator.next()) {
+            auto attribute_syntax = *_attribute_syntax;
+            auto _attribute_result = handle_attribute(_rp, _ep, attribute_syntax, text);
+            if (_attribute_result._tag == Result<Attribute, ModelError>::Error)
+                return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = _attribute_result._Error };
+            auto attribute = _attribute_result._Ok;
+            attributes.add(_r.get_page(), attribute);
+        }
+    }
+
     switch (concept._tag)
     {
         case ConceptSyntax::Class: {

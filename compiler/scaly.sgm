@@ -280,8 +280,8 @@
     <content link = Operation                               property = rule
 
 <syntax id = Attribute                    multiple
-    <content attribute                                      property = attribute
-    <content link = Model                                   property = value
+    <content attribute                                      property = name
+    <content link = Model                                   property = model
     <content colon                                 optional
 
 <syntax id = Model                                 abstract

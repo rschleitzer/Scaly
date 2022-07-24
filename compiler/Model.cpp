@@ -11,12 +11,14 @@ struct Span : Object {
 };
 
 struct Operand;
+struct Attribute;
 
 struct Component : Object {
     Span span;
     String* name;
     Vector<Operand> value;
-    Component(Span span, String* name, Vector<Operand> value) : span(span), name(name), value(value) {}
+    Vector<Attribute> attributes;
+    Component(Span span, String* name, Vector<Operand> value, Vector<Attribute> attributes) : span(span), name(name), value(value), attributes(attributes) {}
 };
 
 struct Name : Object {
@@ -211,6 +213,28 @@ struct Expression {
         struct Return _Return;
     };
 
+};
+
+struct Model {
+    enum {
+        Constant,
+        Variable,
+        Tuple,
+        Matrix,
+    } _tag;
+    union {
+        struct Constant _Constant;
+        struct String _Variable;
+        struct Tuple _Tuple;
+        struct Matrix _Matrix;
+    };
+};
+
+struct Attribute {
+    Span span;
+    String name;
+    Model model;
+    Attribute(Span span, String name, Model model) : span(span), name(name), model(model) {}
 };
 
 struct Postfix {
