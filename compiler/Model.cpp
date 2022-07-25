@@ -417,6 +417,13 @@ struct Body {
     };
 };
 
+struct Use {
+    Span span;
+    Vector<String> path;
+    Use(Span span, Vector<String> path)
+      : span(span), path(path) {}
+};
+
 struct GenericParameter {
     Span span;
     String name;
@@ -429,12 +436,14 @@ struct GenericParameter {
 
 struct Concept : Object {
     Span span;
+    Vector<Use> uses;
     String name;
     Vector<GenericParameter> parameters;
     Vector<Attribute> attributes;
     Body body;
-    Concept(Span span, String name, Vector<GenericParameter> parameters, Vector<Attribute> attributes, Body body)
+    Concept(Span span, Vector<Use> uses, String name, Vector<GenericParameter> parameters, Vector<Attribute> attributes, Body body)
       : span(span),
+        uses(uses),
         name(name),
         parameters(parameters),
         attributes(attributes),
