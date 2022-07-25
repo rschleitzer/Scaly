@@ -26,8 +26,9 @@ struct Component : Object {
 };
 
 struct Name : Object {
-    String path;
-    Name(String path) : path(path) {}
+    Span span;
+    Vector<String> path;
+    Name(Span span, Vector<String> path) : span(span), path(path) {}
 };
 
 
@@ -109,10 +110,10 @@ struct Lifetime {
 
 struct Type : Object {
     Span span;
-    String name;
+    Vector<String> name;
     Vector<Type> generics;
     Lifetime lifetime;
-    Type(Span span, String name, Vector<Type> generics, Lifetime lifetime) : span(span), name(name), generics(generics), lifetime(lifetime) {}
+    Type(Span span, Vector<String> name, Vector<Type> generics, Lifetime lifetime) : span(span), name(name), generics(generics), lifetime(lifetime) {}
 };
 
 struct Property {

@@ -317,6 +317,18 @@ Result<Constant, ModelError> handle_literal(Page* _rp, Page* _ep, LiteralSyntax&
 
 Result<Type*, ModelError> handle_type(Page* _rp, Page* _ep, TypeSyntax& type, const Text& text) {
     Region _r;
+
+    List<String> path;
+    path.add(_r.get_page(), String(_rp, type.name.name));
+    if (type.name.extensions != nullptr) {
+        auto extensions = *type.name.extensions;
+        auto _extensions_iterator = VectorIterator<ExtensionSyntax>(extensions);
+        while (auto _extension = _extensions_iterator.next()) {
+            auto extension = *_extension;
+            path.add(_rp, extension.name);
+        }
+    }
+
     Vector<Type> generics = Vector<Type>(_rp, 0);
     Lifetime lifetime = Lifetime(Unspecified());
     List<Type> generics_builder;
@@ -354,7 +366,7 @@ Result<Type*, ModelError> handle_type(Page* _rp, Page* _ep, TypeSyntax& type, co
         }
     }
 
-    return Result<Type*, ModelError> { ._tag = Result<Type*, ModelError>::Ok, ._Ok = new(alignof(Type), _rp) Type(Span(type.start, type.end), String(_rp, type.name.name), Vector<Type>(_rp, generics_builder), lifetime) };
+    return Result<Type*, ModelError> { ._tag = Result<Type*, ModelError>::Ok, ._Ok = new(alignof(Type), _rp) Type(Span(type.start, type.end), Vector<String>(_rp, path), Vector<Type>(_rp, generics_builder), lifetime) };
 }
 
 Result<Type*, ModelError> handle_binding_annotation(Page* _rp, Page* _ep, BindingAnnotationSyntax& binding_annotation, const Text& text) {
