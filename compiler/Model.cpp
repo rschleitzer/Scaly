@@ -171,6 +171,21 @@ struct If : Object {
     If(Span span, Vector<Operand> condition, Property* property, Action consequent, Action alternative) : span(span), condition(condition), property(property), consequent(consequent), alternative(alternative) {}
 };
 
+struct Case : Object {
+    Span span;
+    Vector<Operand> condition;
+    Action consequent;
+    Case(Span span, Vector<Operand> condition, Action consequent) : span(span), condition(condition), consequent(consequent) {}
+};
+
+struct Match : Object {
+    Span span;
+    Vector<Operand> condition;
+    Vector<Case> cases;
+    Action alternative;
+    Match(Span span, Vector<Operand> condition, Vector<Case> cases, Action alternative) : span(span), condition(condition), cases(cases), alternative(alternative) {}
+};
+
 struct For : Object {
     Span span;
     String identifier;
@@ -218,6 +233,7 @@ struct Expression {
         struct Matrix _Matrix;
         struct Block _Block;
         struct If _If;
+        struct Match _Match;
         struct For _For;
         struct While _While;
         struct SizeOf _SizeOf;
@@ -248,8 +264,35 @@ struct Attribute {
     Attribute(Span span, String name, Model model) : span(span), name(name), model(model) {}
 };
 
-struct Postfix {
+struct Catch {
+    Span span;
+    Operation condition;
+    Operation handler;
+    Catch(Span span, Operation condition, Operation handler) : span(span), condition(condition), handler(handler) {}
+};
 
+struct Drop {
+    Span span;
+    Operation handler;
+    Drop(Span span, Operation handler) : span(span), handler(handler) {}
+};
+
+struct Catcher {
+    Span span;
+    Vector<Catch> catches;
+    Drop* drop;
+    Catcher(Span span, Vector<Catch> catches, Drop* drop) : span(span), catches(catches), drop(drop) {}
+};
+
+struct Postfix {
+    enum {
+        MemberAccess,
+        Catcher,
+    } _tag;
+    union {
+        Vector<String> _MemberAccess;
+        struct Catcher _Catcher;
+    };
 };
 
 struct Operand : Object {

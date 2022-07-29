@@ -274,8 +274,83 @@ Result<Union, ModelError> handle_union(Page* _rp, Page* _ep, String name, String
     }
 }
 
-Result<Postfix, ModelError> handle_postfix(Page* _rp, Page* _ep, PostfixSyntax& operand) {
-    return Result<Postfix, ModelError> { ._tag = Result<Postfix, ModelError>::Ok, ._Ok = Postfix() };
+Result<Operation, ModelError> handle_operation(Page* _rp, Page* _ep, OperationSyntax& operation, const Text& text);
+
+Result<Catch, ModelError> handle_catch(Page* _rp, Page* _ep, CatchSyntax& catch_, const Text& text) {
+    Region _r;
+    auto _condition_result =  handle_operation(_rp, _ep, catch_.condition, text);
+    if (_condition_result._tag == Result<Operand, ModelError>::Error)
+        return Result<Catch, ModelError> { ._tag = Result<Catch, ModelError>::Error, ._Error = _condition_result._Error };
+    auto condition = _condition_result._Ok;
+    auto _handler_result =  handle_operation(_rp, _ep, catch_.handler, text);
+    if (_handler_result._tag == Result<Operand, ModelError>::Error)
+        return Result<Catch, ModelError> { ._tag = Result<Catch, ModelError>::Error, ._Error = _handler_result._Error };
+    auto handler = _handler_result._Ok;
+    return Result<Catch, ModelError> { ._tag = Result<Catch, ModelError>::Ok, ._Ok = Catch(Span(catch_.start, catch_.end), condition, handler) };
+}
+
+Result<Drop, ModelError> handle_drop(Page* _rp, Page* _ep, DropSyntax& drop_, const Text& text) {
+    Region _r;
+    auto _handler_result =  handle_operation(_rp, _ep, drop_.handler, text);
+    if (_handler_result._tag == Result<Operand, ModelError>::Error)
+        return Result<Drop, ModelError> { ._tag = Result<Drop, ModelError>::Error, ._Error = _handler_result._Error };
+    auto handler = _handler_result._Ok;
+    return Result<Drop, ModelError> { ._tag = Result<Drop, ModelError>::Ok, ._Ok = Drop(Span(drop_.start, drop_.end), handler) };
+}
+
+Result<Catcher, ModelError> handle_catcher(Page* _rp, Page* _ep, CatcherSyntax& catcher, const Text& text) {
+    Region _r;
+    List<Catch> catches_builder;
+    if (catcher.catches != nullptr) {
+        auto catch_syntaxes = *catcher.catches;
+        auto _catches_iterator = VectorIterator<CatchSyntax>(catch_syntaxes);
+        while (auto _catch_syntax = _catches_iterator.next()) {
+            auto catch_syntax = *_catch_syntax;
+            auto _catch_result = handle_catch(_rp, _ep, catch_syntax, text);
+            if (_catch_result._tag == Result<Catch, ModelError>::Error)
+                return Result<Catcher, ModelError> { ._tag = Result<Catcher, ModelError>::Error, ._Error = _catch_result._Error };
+            auto catch_ = _catch_result._Ok;
+            catches_builder.add(_r.get_page(), catch_);
+        }
+    }
+    Drop* drop_ = nullptr;
+    if (catcher.dropper != nullptr) {
+        auto drop_syntax = *catcher.dropper;
+        auto _drop_result = handle_drop(_rp, _ep, drop_syntax, text);
+        if (_drop_result._tag == Result<Drop, ModelError>::Error)
+            return Result<Catcher, ModelError> { ._tag = Result<Catcher, ModelError>::Error, ._Error = _drop_result._Error };
+        auto drop_ = _drop_result._Ok;
+
+    }
+    return Result<Catcher, ModelError> { ._tag = Result<Catcher, ModelError>::Ok, ._Ok = Catcher(Span(catcher.start, catcher.end), Vector<Catch>(_rp, catches_builder), drop_) };
+}
+
+Result<Postfix, ModelError> handle_postfix(Page* _rp, Page* _ep, PostfixSyntax& postfix, const Text& text) {
+    Region _r;
+    switch (postfix._tag) {
+        case Postfix::MemberAccess: {
+            auto member_access = postfix._MemberAccess;
+            List<String> path;
+            path.add(_r.get_page(), String(_rp, member_access.member.name));
+            if (member_access.member.extensions != nullptr) {
+                auto extensions = *member_access.member.extensions;
+                auto _extensions_iterator = VectorIterator<ExtensionSyntax>(extensions);
+                while (auto _extension = _extensions_iterator.next()) {
+                    auto extension = *_extension;
+                    path.add(_r.get_page(), extension.name);
+                }
+            }
+            return Result<Postfix, ModelError> { ._tag = Result<Postfix, ModelError>::Ok, ._Ok = Postfix { ._tag = Postfix::MemberAccess, ._MemberAccess = Vector<String>(_rp, path) } };
+        }
+        case Postfix::Catcher: {
+            auto catcher_syntax = postfix._Catcher;
+            auto _catcher_result = handle_catcher(_rp, _ep, catcher_syntax, text);
+            if (_catcher_result._tag == Result<Catcher, ModelError>::Error)
+                return Result<Postfix, ModelError> { ._tag = Result<Postfix, ModelError>::Error, ._Error = _catcher_result._Error };
+            auto catcher = _catcher_result._Ok;
+            return Result<Postfix, ModelError> { ._tag = Result<Postfix, ModelError>::Ok, ._Ok = Postfix { ._tag = Postfix::Catcher, ._Catcher = catcher } };
+        }
+    }
 }
 
 Result<Constant, ModelError> handle_literal(Page* _rp, Page* _ep, LiteralSyntax& literal, const Text& text) {
@@ -325,7 +400,7 @@ Result<Type*, ModelError> handle_type(Page* _rp, Page* _ep, TypeSyntax& type, co
         auto _extensions_iterator = VectorIterator<ExtensionSyntax>(extensions);
         while (auto _extension = _extensions_iterator.next()) {
             auto extension = *_extension;
-            path.add(_rp, extension.name);
+            path.add(_r.get_page(), extension.name);
         }
     }
 
@@ -384,8 +459,6 @@ Result<Type*, ModelError> handle_binding_annotation(Page* _rp, Page* _ep, Bindin
 
     }
 }
-
-Result<Operation, ModelError> handle_operation(Page* _rp, Page* _ep, OperationSyntax& operation, const Text& text);
 
 Result<Vector<Statement>, ModelError> handle_statements(Page* _rp, Page* _ep, Vector<StatementSyntax>& statements, const Text& text) {
     Region _r;
@@ -628,6 +701,39 @@ Result<If, ModelError> handle_if(Page* _rp, Page* _ep, IfSyntax& if_, const Text
     return Result<If, ModelError> { ._tag = Result<If, ModelError>::Ok, ._Ok = If(Span(if_.start, if_.end), condition, property, consequent, alternative) };
 }
 
+Result<Match, ModelError> handle_match(Page* _rp, Page* _ep, MatchSyntax& match_, const Text& text) {
+    Region _r;
+    Property* property = nullptr;
+
+    auto condition_result = handle_operands(_rp, _ep, *match_.scrutinee.operands, text);
+    if (condition_result._tag == Result<Vector<Operand>, ModelError>::Error)
+        return Result<Match, ModelError> { ._tag = Result<Match, ModelError>::Error, ._Error = condition_result._Error };
+    auto condition = condition_result._Ok;
+
+    List<Case> cases_builder;
+    if (match_.cases != nullptr) {
+        auto case_iterator = VectorIterator<CaseSyntax>(*(match_.cases));
+        while (auto case_ = case_iterator.next()) {
+            auto condition_result =  handle_operation(_rp, _ep, case_->condition, text);
+            if (condition_result._tag == Result<Operand, ModelError>::Error)
+                return Result<Match, ModelError> { ._tag = Result<Match, ModelError>::Error, ._Error = condition_result._Error };
+            auto _consequent_result = handle_action(_rp, _ep, case_->consequent, text);
+            if (_consequent_result._tag == Result<Action, ModelError>::Error)
+                return Result<Match, ModelError> { ._tag = Result<Match, ModelError>::Error, ._Error = _consequent_result._Error };
+            auto consequent = Action(_consequent_result._Ok);
+        }
+    }
+
+    Action alternative = Action { ._tag = Action::Operation, ._Operation = Operation(Vector<Operand>(_rp, 0)) };
+    if (match_.alternative != nullptr) {
+        auto _alternative_result = handle_action(_rp, _ep, *(*(match_.alternative)).alternative, text);
+        if (_alternative_result._tag == Result<Action, ModelError>::Error)
+            return Result<Match, ModelError> { ._tag = Result<Match, ModelError>::Error, ._Error = _alternative_result._Error };
+        alternative = Action(_alternative_result._Ok);
+    }
+    return Result<Match, ModelError> { ._tag = Result<Match, ModelError>::Ok, ._Ok = Match(Span(match_.start, match_.end), condition, Vector<Case>(_rp, cases_builder), alternative) };
+}
+
 Result<For, ModelError> handle_for(Page* _rp, Page* _ep, ForSyntax& for_, const Text& text) {
     Region _r;
     auto expression_result = handle_operands(_rp, _ep, *for_.expression.operands, text);
@@ -723,8 +829,13 @@ Result<Expression, ModelError> handle_expression(Page* _rp, Page* _ep, Expressio
                 return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = if_result._Error };
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::If, ._If = if_result._Ok} };
         }
-        case ExpressionSyntax::Match:
-            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Match"), Span(expression._Match.start, expression._Match.end)))) };
+        case ExpressionSyntax::Match: {
+            auto match_ = expression._Match;
+            auto match_result = handle_match(_rp, _ep, match_, text);
+            if (match_result._tag == Result<Expression, ModelError>::Error)
+                return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = match_result._Error };
+            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::If, ._Match = match_result._Ok} };
+        }
         case ExpressionSyntax::Lambda:
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Lambda"), Span(expression._Lambda.start, expression._Lambda.end)))) };
         case ExpressionSyntax::For: {
@@ -774,7 +885,7 @@ Result<Operand, ModelError> handle_operand(Page* _rp, Page* _ep, OperandSyntax& 
         List<Postfix> postfixes_builder;
         auto postfixes_iterator = VectorIterator<PostfixSyntax>(*(operand.postfixes));
         while (auto postfix = postfixes_iterator.next()) {
-            auto postfix_result = handle_postfix(_rp, _ep, *postfix);
+            auto postfix_result = handle_postfix(_rp, _ep, *postfix, text);
             if (postfix_result._tag == Result<Operand, ModelError>::Error)
                 return Result<Operand, ModelError> { ._tag = Result<Operand, ModelError>::Error, ._Error = postfix_result._Error };
             postfixes_builder.add(_r_1.get_page(), postfix_result._Ok);

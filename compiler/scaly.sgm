@@ -351,7 +351,7 @@
     <content link = Name                                    property = member
 
 <syntax id = Catcher
-    <content link = Catch                 multiple          property = catchers
+    <content link = Catch                 multiple          property = catches
     <content link = Drop                           optional property = dropper
 
 <syntax id = Catch                        multiple

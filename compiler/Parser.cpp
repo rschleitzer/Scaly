@@ -532,10 +532,10 @@ struct CatchSyntax : Object {
 };
 
 struct CatcherSyntax : Object {
-    CatcherSyntax(size_t start, size_t end, Vector<CatchSyntax>* catchers, DropSyntax* dropper) : start(start), end(end), catchers(catchers), dropper(dropper) {}
+    CatcherSyntax(size_t start, size_t end, Vector<CatchSyntax>* catches, DropSyntax* dropper) : start(start), end(end), catches(catches), dropper(dropper) {}
     size_t start;
     size_t end;
-    Vector<CatchSyntax>* catchers;
+    Vector<CatchSyntax>* catches;
     DropSyntax* dropper;
 };
 
@@ -4677,14 +4677,14 @@ struct Parser : Object {
     Result<CatcherSyntax, ParserError> parse_catcher(Page* _rp, Page* _ep) {
         auto start = this->lexer.previous_position;
 
-        auto catchers_start = this->lexer.position;
-        auto catchers_result = this->parse_catch_list(_rp, _ep);
-        if (catchers_result._tag == Result<Vector<CatchSyntax>, ParserError>::Error)
+        auto catches_start = this->lexer.position;
+        auto catches_result = this->parse_catch_list(_rp, _ep);
+        if (catches_result._tag == Result<Vector<CatchSyntax>, ParserError>::Error)
         {
-            return Result<CatcherSyntax, ParserError> { ._tag = Result<CatcherSyntax, ParserError>::Error, ._Error = catchers_result._Error };
+            return Result<CatcherSyntax, ParserError> { ._tag = Result<CatcherSyntax, ParserError>::Error, ._Error = catches_result._Error };
         }
 
-        auto catchers = catchers_result._Ok;
+        auto catches = catches_result._Ok;
 
         auto dropper_start = this->lexer.position;
         auto dropper_result = this->parse_drop(_rp, _ep);
@@ -4702,7 +4702,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = CatcherSyntax(start, end, catchers, dropper);
+        auto ret = CatcherSyntax(start, end, catches, dropper);
 
         return Result<CatcherSyntax, ParserError> { ._tag = Result<CatcherSyntax, ParserError>::Ok, ._Ok = ret };
     }
