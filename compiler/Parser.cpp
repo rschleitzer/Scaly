@@ -113,6 +113,7 @@ struct MacroSyntax;
 struct AttributeSyntax; 
 struct ModelSyntax; 
 struct ModuleSyntax; 
+struct PackageSyntax; 
 struct StatementSyntax; 
 struct LetSyntax; 
 struct VarSyntax; 
@@ -656,6 +657,13 @@ struct StatementSyntax : Object {
     };
 };
 
+struct PackageSyntax : Object {
+    PackageSyntax(size_t start, size_t end, NameSyntax name) : start(start), end(end), name(name) {}
+    size_t start;
+    size_t end;
+    NameSyntax name;
+};
+
 struct ModuleSyntax : Object {
     ModuleSyntax(size_t start, size_t end, NameSyntax name) : start(start), end(end), name(name) {}
     size_t start;
@@ -1177,9 +1185,10 @@ struct DeclarationSyntax : Object {
 };
 
 struct FileSyntax : Object {
-    FileSyntax(size_t start, size_t end, Vector<UseSyntax>* uses, Vector<DeclarationSyntax>* declarations, Vector<StatementSyntax>* statements) : start(start), end(end), uses(uses), declarations(declarations), statements(statements) {}
+    FileSyntax(size_t start, size_t end, Vector<PackageSyntax>* packages, Vector<UseSyntax>* uses, Vector<DeclarationSyntax>* declarations, Vector<StatementSyntax>* statements) : start(start), end(end), packages(packages), uses(uses), declarations(declarations), statements(statements) {}
     size_t start;
     size_t end;
+    Vector<PackageSyntax>* packages;
     Vector<UseSyntax>* uses;
     Vector<DeclarationSyntax>* declarations;
     Vector<StatementSyntax>* statements;
@@ -1244,6 +1253,7 @@ struct Parser : Object {
         keywords_builder.add(_r.get_page(), String(Page::get(this), "use"));
         keywords_builder.add(_r.get_page(), String(Page::get(this), "var"));
         keywords_builder.add(_r.get_page(), String(Page::get(this), "while"));
+        keywords_builder.add(_r.get_page(), String(Page::get(this), "package"));
         return Vector<String>(_rp, keywords_builder);
     }
 
@@ -1312,6 +1322,20 @@ struct Parser : Object {
     Result<FileSyntax, ParserError> parse_file(Page* _rp, Page* _ep) {
         auto start = this->lexer.previous_position;
 
+        auto packages_start = this->lexer.position;
+        auto packages_result = this->parse_package_list(_rp, _ep);
+        if (packages_result._tag == Result<Vector<PackageSyntax>, ParserError>::Error)
+        {
+            switch (packages_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<FileSyntax, ParserError> { ._tag = Result<FileSyntax, ParserError>::Error, ._Error = packages_result._Error };
+            }
+        }
+
+        auto packages = packages_result._tag == Result<Vector<PackageSyntax>, ParserError>::Error ? nullptr : packages_result._Ok;
+
         auto uses_start = this->lexer.position;
         auto uses_result = this->parse_use_list(_rp, _ep);
         if (uses_result._tag == Result<Vector<UseSyntax>, ParserError>::Error)
@@ -1356,7 +1380,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = FileSyntax(start, end, uses, declarations, statements);
+        auto ret = FileSyntax(start, end, packages, uses, declarations, statements);
 
         return Result<FileSyntax, ParserError> { ._tag = Result<FileSyntax, ParserError>::Ok, ._Ok = ret };
     }
@@ -4106,6 +4130,66 @@ struct Parser : Object {
         auto ret = ModuleSyntax(start, end, name);
 
         return Result<ModuleSyntax, ParserError> { ._tag = Result<ModuleSyntax, ParserError>::Ok, ._Ok = ret };
+    }
+
+    Result<Vector<PackageSyntax>*, ParserError> parse_package_list(Page* _rp, Page* _ep) {
+        Region _r;
+        List<PackageSyntax> list;
+        while(true) {
+            auto node_result = this->parse_package(_rp, _ep);
+            if ((node_result._tag == Result<PackageSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
+                return Result<Vector<PackageSyntax>*, ParserError> { ._tag = Result<Vector<PackageSyntax>*, ParserError>::Error, ._Error = node_result._Error };
+            if (node_result._tag == Result<PackageSyntax, ParserError>::Ok) {
+                auto node = node_result._Ok;
+                list.add(_r.get_page(), node);
+            } else {
+                if ((list.count() == 0) && (node_result._tag == Result<PackageSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
+                    return Result<Vector<PackageSyntax>*, ParserError> { ._tag = Result<Vector<PackageSyntax>*, ParserError>::Error, ._Error = node_result._Error };
+                break;
+            }
+        }
+
+        if (list.count() == 0)
+            return Result<Vector<PackageSyntax>*, ParserError> { ._tag = Result<Vector<PackageSyntax>*, ParserError>::Ok, ._Ok = nullptr };
+        
+        return Result<Vector<PackageSyntax>*, ParserError> {
+            ._tag = Result<Vector<PackageSyntax>*, ParserError>::Ok,
+            ._Ok = new(alignof(Vector<PackageSyntax>), _rp) Vector<PackageSyntax>(_rp, list) };
+    }
+
+    Result<PackageSyntax, ParserError> parse_package(Page* _rp, Page* _ep) {
+        auto start = this->lexer.previous_position;
+
+        auto start_package_1 = this->lexer.previous_position;
+        auto success_package_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[44]);
+        if (!success_package_1) {
+            return Result<PackageSyntax, ParserError> { ._tag = Result<PackageSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
+        }
+
+        auto name_start = this->lexer.position;
+        auto name_result = this->parse_name(_rp, _ep);
+        if (name_result._tag == Result<NameSyntax, ParserError>::Error)
+        {
+            switch (name_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<PackageSyntax, ParserError> { ._tag = Result<PackageSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(name_start, lexer.position, String(_ep, "a valid Name syntax"))) };
+                case ParserError::InvalidSyntax:
+                    return Result<PackageSyntax, ParserError> { ._tag = Result<PackageSyntax, ParserError>::Error, ._Error = name_result._Error };
+            }
+        }
+
+        auto name = name_result._Ok;
+
+        auto start_colon_3 = this->lexer.previous_position;
+        auto success_colon_3 = this->lexer.parse_colon(_rp);
+        if (!success_colon_3) {
+        }
+
+        auto end = this->lexer.position;
+
+        auto ret = PackageSyntax(start, end, name);
+
+        return Result<PackageSyntax, ParserError> { ._tag = Result<PackageSyntax, ParserError>::Ok, ._Ok = ret };
     }
 
     Result<Vector<StatementSyntax>*, ParserError> parse_statement_list(Page* _rp, Page* _ep) {

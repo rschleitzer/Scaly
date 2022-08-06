@@ -3,6 +3,7 @@
 <grammar>
 
 <syntax id = File
+    <content link = Package               multiple optional property = packages
     <content link = Use                   multiple optional property = uses
     <content link = Declaration           multiple optional property = declarations
     <content link = Statement             multiple optional property = statements
@@ -292,6 +293,11 @@
 
 <syntax id = Module
     <content link = module
+    <content link = Name                                    property = name
+    <content colon                                 optional
+
+<syntax id = Package                      multiple
+    <content link = package
     <content link = Name                                    property = name
     <content colon                                 optional
 
@@ -603,6 +609,7 @@
 <keyword id = use
 <keyword id = var
 <keyword id = while
+<keyword id = package
 
 <punctuation id = dot               value = "."
 <punctuation id = comma             value = ","

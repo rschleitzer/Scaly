@@ -6,18 +6,18 @@ using namespace scaly::io;
 
 Result<FileSyntax, ParserError> parse_program(Page* _rp, Page* _ep, const String& program) {
     Region _r;
+    List<PackageSyntax> packages;
     List<DeclarationSyntax> declarations;
     
-    // Parse the scaly module inclusion
+    // Parse the scaly package inclusion
     {
         Region _r_1;
-        Parser& parser_module = *new(alignof(Parser), _r_1) Parser(_r_1.get_page(), String(_r_1.get_page(), "module scaly"));
-        auto module_syntax_result = parser_module.parse_module(_rp, _ep);
-        if (module_syntax_result._tag == Result<ModuleSyntax*, ParserError>::Error)
-            return Result<FileSyntax, ParserError> { ._tag = Result<FileSyntax, ParserError>::Error, ._Error = module_syntax_result._Error };
-        auto module_syntax = module_syntax_result._Ok;
-        auto module_declaration = DeclarationSyntax(ModuleSyntax(module_syntax));
-        declarations.add(_r.get_page(), module_declaration);
+        Parser& parser_package = *new(alignof(Parser), _r_1) Parser(_r_1.get_page(), String(_r_1.get_page(), "package scaly"));
+        auto package_syntax_result = parser_package.parse_package(_rp, _ep);
+        if (package_syntax_result._tag == Result<ModuleSyntax*, ParserError>::Error)
+            return Result<FileSyntax, ParserError> { ._tag = Result<FileSyntax, ParserError>::Error, ._Error = package_syntax_result._Error };
+        auto package_syntax = package_syntax_result._Ok;
+        packages.add(_r.get_page(), package_syntax);
     }
 
     // Parse the uses and declarations of the program
@@ -92,7 +92,7 @@ Result<FileSyntax, ParserError> parse_program(Page* _rp, Page* _ep, const String
     DeclarationSyntax& main_function_declaration = *new (alignof(DeclarationSyntax), _rp) DeclarationSyntax(FunctionSyntax(main_function_syntax));;
     declarations.add(_r.get_page(), main_function_declaration);
 
-    FileSyntax file_syntax(0, 0, nullptr, new(alignof(Vector<DeclarationSyntax>), _rp) Vector<DeclarationSyntax>(_rp, declarations), nullptr);
+    FileSyntax file_syntax(0, 0, new(alignof(Vector<PackageSyntax>), _rp) Vector<PackageSyntax>(_rp, packages), nullptr, new(alignof(Vector<DeclarationSyntax>), _rp) Vector<DeclarationSyntax>(_rp, declarations), nullptr);
     return Result<FileSyntax, ParserError> { 
         ._tag = Result<FileSyntax, ParserError>::Ok, 
         ._Ok = file_syntax
