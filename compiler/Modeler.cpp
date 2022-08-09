@@ -1168,7 +1168,7 @@ Result<Operator, ModelError> handle_operator(Page* _rp, Page* _ep, OperatorSynta
     }
 }
 
-Result<Concept, ModelError> build_module_concept(Page* _rp, Page* _ep, bool private_, String name, String path, FileSyntax file_syntax, const Text& text);
+Result<Concept, ModelError> build_concept(Page* _rp, Page* _ep, bool private_, String name, String path, FileSyntax file_syntax, const Text& text);
 
 Result<Module, ModelError> handle_module(Page* _rp, Page* _ep, String path, ModuleSyntax& module_syntax, bool private_) {
     Region _r;
@@ -1198,8 +1198,7 @@ Result<Module, ModelError> handle_module(Page* _rp, Page* _ep, String path, Modu
         path_builder.append_character('/');
     path_builder.append_string(module_syntax.name.name);
 
-
-    auto concept_result = build_module_concept(_rp, _ep, private_, String(_rp, module_syntax.name.name), path_builder.to_string(_r.get_page()), file_syntax, text);
+    auto concept_result = build_concept(_rp, _ep, private_, String(_rp, module_syntax.name.name), path_builder.to_string(_r.get_page()), file_syntax, text);
     if (concept_result._tag == Result<Concept, ModelError>::Error)
         return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = concept_result._Error };
     auto concept = concept_result._Ok;
@@ -1425,7 +1424,7 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
     return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Ok, ._Ok = code };
 }
 
-Result<Concept, ModelError> build_module_concept(Page* _rp, Page* _ep, bool private_, String name, String path, FileSyntax file_syntax, const Text& text) {
+Result<Concept, ModelError> build_concept(Page* _rp, Page* _ep, bool private_, String name, String path, FileSyntax file_syntax, const Text& text) {
     Region _r;
     if (file_syntax.declarations != nullptr && file_syntax.declarations->length == 1) {
         auto first_declaration = *(*(file_syntax.declarations))[0];
@@ -1486,22 +1485,68 @@ Result<Concept, ModelError> build_module_concept(Page* _rp, Page* _ep, bool priv
                     Body { ._tag = Body::Namespace, ._Namespace = Namespace(Span(file_syntax.start, file_syntax.end), private_, code) }) };
 }
 
-Result<Module, ModelError> build_program_module(Page* _rp, Page* _ep, const String& program) {
+Result<Package, ModelError> handle_package(Page* _rp, Page* _ep, PackageSyntax package_syntax, const Text& text) {
+    Region _r;
+    StringBuilder& file_name_builder = *new(alignof(StringBuilder), _r) StringBuilder();
+    file_name_builder.append_string(String(_r.get_page(), "../")); // The real package path to go here later
+    file_name_builder.append_string(package_syntax.name.name);
+    file_name_builder.append_string(String(_r.get_page(), "/"));
+    file_name_builder.append_string(package_syntax.name.name);
+    file_name_builder.append_string(String(_r.get_page(), ".scaly"));
+    auto file_name = file_name_builder.to_string(_rp);
+    auto module_text_result = File::read_to_string(_r.get_page(), _r.get_page(), file_name);
+    if (module_text_result._tag == Result<String, FileError>::Error) {
+        return Result<Package, ModelError> { ._tag = Result<Package, ModelError>::Error, ._Error = ModelError(module_text_result._Error) };
+    }
+    auto module_text = module_text_result._Ok;
+
+    Parser& parser = *new(alignof(Parser), _r) Parser(_r.get_page(), module_text);
+    auto file_syntax_result = parser.parse_file(_rp, _ep);
+    auto package_text = Text {._tag = Text::File, ._Program = String(_ep, file_name) };
+    if (file_syntax_result._tag == Result<ModuleSyntax*, ParserError>::Error)
+        return Result<Package, ModelError> { ._tag = Result<Package, ModelError>::Error, ._Error = ModelError(ParserModelError(text, file_syntax_result._Error)) };
+    auto file_syntax = file_syntax_result._Ok;
+
+    auto concept_result = build_concept(_rp, _ep, false, String(_rp, package_syntax.name.name), package_syntax.name.name, file_syntax, text);
+    if (concept_result._tag == Result<Concept, ModelError>::Error)
+        return Result<Package, ModelError> { ._tag = Result<Package, ModelError>::Error, ._Error = concept_result._Error };
+    auto concept = concept_result._Ok;
+    
+    return Result<Package, ModelError> { ._tag = Result<Package, ModelError>::Ok,
+        ._Ok = Package(String(_rp, package_syntax.name.name), Text { ._tag = Text::File, ._File = file_name }, concept)
+    };
+}
+
+Result<Program, ModelError> build_program(Page* _rp, Page* _ep, const String& program_string) {
     Region _r;
     
-    auto file_result = parse_program(_r.get_page(), _ep, program);
-    auto text = Text {._tag = Text::Program, ._Program = String(_ep, program) };
+    auto file_result = parse_program(_r.get_page(), _ep, program_string);
+    auto text = Text {._tag = Text::Program, ._Program = String(_ep, program_string) };
     if (file_result._tag == Result<Vector<DeclarationSyntax>*, ParserError>::Error)
-        return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = ModelError(ParserModelError(text, file_result._Error)) };
+        return Result<Program, ModelError> { ._tag = Result<Program, ModelError>::Error, ._Error = ModelError(ParserModelError(text, file_result._Error)) };
     auto file = file_result._Ok;
 
-    auto concept_result = build_module_concept(_rp, _ep, false, String(_rp, ""), String(_rp, ""), file, text);
+    List<Package> packages;
+    if (file.packages != nullptr) {
+        auto file_packages = *file.packages;
+        auto _package_iterator = VectorIterator<PackageSyntax>(file_packages);
+        while (auto _package_syntax = _package_iterator.next()) {
+            auto package_syntax = *_package_syntax;
+            auto _package_result = handle_package(_rp, _ep, package_syntax, text);
+            if (_package_result._tag == Result<Package, ModelError>::Error)
+                return Result<Program, ModelError> { ._tag = Result<Program, ModelError>::Error, ._Error = _package_result._Error };
+            auto package = _package_result._Ok;
+            packages.add(_r.get_page(), package);
+        }
+    }
+
+    auto concept_result = build_concept(_rp, _ep, false, String(_rp, ""), String(_rp, ""), file, text);
     if (concept_result._tag == Result<Module*, ModelError*>::Error)
-        return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = concept_result._Error };
+        return Result<Program, ModelError> { ._tag = Result<Program, ModelError>::Error, ._Error = concept_result._Error };
     auto concept = concept_result._Ok;
 
-    Module module(false, String(_rp, ""), Text { ._tag = Text::Program, ._Program = String(_rp, program) }, concept);
-    return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Ok, ._Ok = module };
+    Program program(String(_rp, ""), Text { ._tag = Text::Program, ._Program = String(_rp, program_string) }, Vector<Package>(_rp, packages), concept);
+    return Result<Program, ModelError> { ._tag = Result<Program, ModelError>::Ok, ._Ok = program };
 }
 
 }
