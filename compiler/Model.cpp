@@ -516,14 +516,38 @@ struct Module : Object {
         concept(concept) {}
 };
 
+struct Package : Object {
+    String name;
+    Text text;
+    Concept concept;
+    Package(String name, Text text, Concept concept)
+      : name(name),
+        text(text),
+        concept(concept) {}
+};
+
+struct Program : Object {
+    String name;
+    Text text;
+    Vector<Package> packages;
+    Concept concept;
+    Program(String name, Text text, Vector<Package> packages, Concept concept)
+      : name(name),
+        text(text),
+        packages(packages),
+        concept(concept) {}
+};
+
 struct Nameable {
     enum {
+        Package,
         Module,
         Concept,
         Operator,
         Functions,
     } _tag;
     union {
+        struct Package _Pacckage;
         struct Module _Module;
         struct Concept _Concept;
         struct Operator _Operator;
