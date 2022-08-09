@@ -1490,8 +1490,6 @@ Result<Package, ModelError> handle_package(Page* _rp, Page* _ep, PackageSyntax p
     StringBuilder& file_name_builder = *new(alignof(StringBuilder), _r) StringBuilder();
     file_name_builder.append_string(String(_r.get_page(), "../")); // The real package path to go here later
     file_name_builder.append_string(package_syntax.name.name);
-    file_name_builder.append_string(String(_r.get_page(), "/"));
-    file_name_builder.append_string(package_syntax.name.name);
     file_name_builder.append_string(String(_r.get_page(), ".scaly"));
     auto file_name = file_name_builder.to_string(_rp);
     auto module_text_result = File::read_to_string(_r.get_page(), _r.get_page(), file_name);
@@ -1507,7 +1505,11 @@ Result<Package, ModelError> handle_package(Page* _rp, Page* _ep, PackageSyntax p
         return Result<Package, ModelError> { ._tag = Result<Package, ModelError>::Error, ._Error = ModelError(ParserModelError(text, file_syntax_result._Error)) };
     auto file_syntax = file_syntax_result._Ok;
 
-    auto concept_result = build_concept(_rp, _ep, false, String(_rp, package_syntax.name.name), package_syntax.name.name, file_syntax, text);
+    StringBuilder& path_builder = *new(alignof(StringBuilder), _r) StringBuilder();
+    path_builder.append_string(String(_r.get_page(), "../")); // The real package path to go here later
+    path_builder.append_string(package_syntax.name.name);
+
+    auto concept_result = build_concept(_rp, _ep, false, String(_rp, package_syntax.name.name), path_builder.to_string(_r.get_page()), file_syntax, text);
     if (concept_result._tag == Result<Concept, ModelError>::Error)
         return Result<Package, ModelError> { ._tag = Result<Package, ModelError>::Error, ._Error = concept_result._Error };
     auto concept = concept_result._Ok;

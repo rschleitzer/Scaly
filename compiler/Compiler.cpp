@@ -1,8 +1,8 @@
 #ifndef __Scaly_Compiler__
 #define __Scaly_Compiler__
 
-#include "../runtime/containers/Containers.cpp"
-#include "../runtime/io/IO.cpp"
+#include "../scaly/containers/Containers.cpp"
+#include "../scaly/io/IO.cpp"
 
 #include "Lexer.cpp"
 #include "Errors.cpp"
@@ -18,17 +18,17 @@ namespace compiler {
 
 using namespace scaly::compiler::model;
 
-CompilerError* compile_and_run_program(Page* _ep, const String& program, Vector<String>& arguments) {
+CompilerError* compile_and_run_program(Page* _ep, const String& program_text, Vector<String>& arguments) {
     Region _r;
-    auto module_result = scaly::compiler::model::build_program(_r.get_page(), _ep, program);
-    if (module_result._tag == Result<Module, ModelError>::Error)
-        return new(alignof(CompilerError), _ep) CompilerError(module_result._Error);
+    auto program_result = scaly::compiler::model::build_program(_r.get_page(), _ep, program_text);
+    if (program_result._tag == Result<Program, ModelError>::Error)
+        return new(alignof(CompilerError), _ep) CompilerError(program_result._Error);
     
-    auto module = module_result._Ok;
+    auto program = program_result._Ok;
     String string_name(_r.get_page(), "main");
-    switch (module.concept.body._tag) {
+    switch (program.concept.body._tag) {
         case Body::Namespace: {
-            auto name_space = module.concept.body._Namespace;
+            auto name_space = program.concept.body._Namespace;
             auto main_functions_symbol = name_space.code.symbols[string_name];
             switch (main_functions_symbol->_tag) {
                 case Nameable::Functions: {
