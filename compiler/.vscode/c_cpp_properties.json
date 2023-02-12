@@ -4,6 +4,7 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
+                "/opt/homebrew/opt/llvm/include",
                 "/usr/include/llvm-15",
                 "/usr/include/llvm-c-15"
             ],
