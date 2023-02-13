@@ -1499,8 +1499,8 @@ Result<Package, ModelError> handle_package(Page* _rp, Page* _ep, PackageSyntax p
     auto module_text = module_text_result._Ok;
 
     Parser& parser = *new(alignof(Parser), _r) Parser(_r.get_page(), module_text);
-    auto file_syntax_result = parser.parse_file(_rp, _ep);
     auto package_text = Text {._tag = Text::File, ._Program = String(_ep, file_name) };
+    auto file_syntax_result = parser.parse_file(_rp, _ep);
     if (file_syntax_result._tag == Result<ModuleSyntax*, ParserError>::Error)
         return Result<Package, ModelError> { ._tag = Result<Package, ModelError>::Error, ._Error = ModelError(ParserModelError(text, file_syntax_result._Error)) };
     auto file_syntax = file_syntax_result._Ok;
@@ -1522,8 +1522,8 @@ Result<Package, ModelError> handle_package(Page* _rp, Page* _ep, PackageSyntax p
 Result<Program, ModelError> build_program(Page* _rp, Page* _ep, const String& program_string) {
     Region _r;
     
-    auto file_result = parse_program(_r.get_page(), _ep, program_string);
     auto text = Text {._tag = Text::Program, ._Program = String(_ep, program_string) };
+    auto file_result = parse_program(_r.get_page(), _ep, program_string);
     if (file_result._tag == Result<Vector<DeclarationSyntax>*, ParserError>::Error)
         return Result<Program, ModelError> { ._tag = Result<Program, ModelError>::Error, ._Error = ModelError(ParserModelError(text, file_result._Error)) };
     auto file = file_result._Ok;

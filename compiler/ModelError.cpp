@@ -123,7 +123,7 @@ Result<Position, FileError> calculate_position(Page* _rp, Page* _ep, const Text&
 
 String to_string(Page* _rp, size_t number) {
     char str[22];
-    sprintf(str, "%zd", number);
+    snprintf(str, 22, "%zd", number);
     return String(_rp, str);
 }
 
