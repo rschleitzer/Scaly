@@ -185,7 +185,6 @@ void test_generator() {
 
 void test_compiler() {
     Region _r;
-    StringBuilder& message_builder = *new(alignof(StringBuilder), _r) StringBuilder(String(_r.get_page(), "test_compiler failed: "));
     auto error = compile_and_run_program(_r.get_page(), String(_r.get_page(), 
 
 "function test_page {\n"
@@ -193,7 +192,7 @@ void test_compiler() {
 "}\n"
 "test_page()\n"
 
-    ), *new(alignof(Vector<String>), _r) Vector<String>(_r.get_page(), 0));
+    ));
     if (error != nullptr) {
         auto error_message = error->to_string(_r.get_page());
         print(_r.get_page(), error_message);

@@ -4,6 +4,7 @@
 #include "../scaly/containers/Containers.cpp"
 #include "../scaly/io/IO.cpp"
 
+#include "Configuration.cpp"
 #include "Lexer.cpp"
 #include "Errors.cpp"
 #include "Parser.cpp"
@@ -18,7 +19,7 @@ namespace compiler {
 
 using namespace scaly::compiler::model;
 
-CompilerError* compile_and_run_program(Page* _ep, const String& program_text, Vector<String>& arguments) {
+CompilerError* compile_and_run_program(Page* _ep, const String& program_text) {
     Region _r;
     auto program_result = scaly::compiler::model::build_program(_r.get_page(), _ep, program_text);
     if (program_result._tag == Result<Program, ModelError>::Error)

@@ -1522,7 +1522,7 @@ Result<Package, ModelError> handle_package(Page* _rp, Page* _ep, PackageSyntax p
 Result<Program, ModelError> build_program(Page* _rp, Page* _ep, const String& program_string) {
     Region _r;
     
-    auto text = Text {._tag = Text::Program, ._Program = String(_ep, program_string) };
+    auto text = Text {._tag = Text::Program, ._Program = String(_r.get_page(), program_string) };
     auto file_result = parse_program(_r.get_page(), _ep, program_string);
     if (file_result._tag == Result<Vector<DeclarationSyntax>*, ParserError>::Error)
         return Result<Program, ModelError> { ._tag = Result<Program, ModelError>::Error, ._Error = ModelError(ParserModelError(text, file_result._Error)) };
