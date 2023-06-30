@@ -736,7 +736,7 @@ Result<Match, ModelError> handle_match(Page* _rp, Page* _ep, MatchSyntax& match_
 
 Result<For, ModelError> handle_for(Page* _rp, Page* _ep, ForSyntax& for_, const Text& text) {
     Region _r;
-    auto expression_result = handle_operands(_rp, _ep, *for_.expression.operands, text);
+    auto expression_result = handle_operands(_rp, _ep, *for_.operation.operands, text);
     if (expression_result._tag == Result<Vector<Operand>, ModelError>::Error)
         return Result<For, ModelError> { ._tag = Result<For, ModelError>::Error, ._Error = expression_result._Error };
     auto expression = expression_result._Ok;

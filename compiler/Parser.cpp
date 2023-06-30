@@ -297,12 +297,12 @@ struct LabelSyntax : Object {
 };
 
 struct ForSyntax : Object {
-    ForSyntax(size_t start, size_t end, String variable, TypeAnnotationSyntax* annotation, OperationSyntax expression, LabelSyntax* name, ActionSyntax action) : start(start), end(end), variable(variable), annotation(annotation), expression(expression), name(name), action(action) {}
+    ForSyntax(size_t start, size_t end, String variable, TypeAnnotationSyntax* annotation, OperationSyntax operation, LabelSyntax* name, ActionSyntax action) : start(start), end(end), variable(variable), annotation(annotation), operation(operation), name(name), action(action) {}
     size_t start;
     size_t end;
     String variable;
     TypeAnnotationSyntax* annotation;
-    OperationSyntax expression;
+    OperationSyntax operation;
     LabelSyntax* name;
     ActionSyntax action;
 };
@@ -6068,19 +6068,19 @@ struct Parser : Object {
         if (!success_in_4) {
             return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_in_4, lexer.position, String(_ep, "in"))) };        }
 
-        auto expression_start = this->lexer.position;
-        auto expression_result = this->parse_operation(_rp, _ep);
-        if (expression_result._tag == Result<OperationSyntax, ParserError>::Error)
+        auto operation_start = this->lexer.position;
+        auto operation_result = this->parse_operation(_rp, _ep);
+        if (operation_result._tag == Result<OperationSyntax, ParserError>::Error)
         {
-            switch (expression_result._Error._tag) {
+            switch (operation_result._Error._tag) {
                 case ParserError::OtherSyntax:
-                    return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(expression_start, lexer.position, String(_ep, "a valid Operation syntax"))) };
+                    return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(operation_start, lexer.position, String(_ep, "a valid Operation syntax"))) };
                 case ParserError::InvalidSyntax:
-                    return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Error, ._Error = expression_result._Error };
+                    return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Error, ._Error = operation_result._Error };
             }
         }
 
-        auto expression = expression_result._Ok;
+        auto operation = operation_result._Ok;
 
         auto name_start = this->lexer.position;
         auto name_result = this->parse_label(_rp, _ep);
@@ -6112,7 +6112,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = ForSyntax(start, end, *variable, annotation, expression, name, action);
+        auto ret = ForSyntax(start, end, *variable, annotation, operation, name, action);
 
         return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Ok, ._Ok = ret };
     }

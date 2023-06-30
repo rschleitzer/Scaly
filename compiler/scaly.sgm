@@ -494,7 +494,7 @@
     <content identifier                                     property = variable
     <content link = TypeAnnotation                 optional property = annotation
     <content link = in
-    <content link = Operation                               property = expression
+    <content link = Operation                               property = operation
     <content link = Label                          optional property = name
     <content link = Action                                  property = action
 
