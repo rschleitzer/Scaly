@@ -198,10 +198,6 @@
     <content link = Procedure
     <content link = Operator
 
-<syntax id = Function
-    <content link = function
-    <content link = Target                                  property = target
-
 <syntax id = Init
     <content link = init
     <content link = ParameterSet                   optional property = parameters
@@ -212,6 +208,10 @@
     <content link = deinit
     <content colon                                 optional
     <content link = Action                                  property = action
+
+<syntax id = Function
+    <content link = function
+    <content link = Target                                  property = target
 
 <syntax id = Procedure
     <content link = procedure
