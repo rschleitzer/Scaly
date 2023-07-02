@@ -372,18 +372,21 @@ struct DeInitializer : Object {
       : span(span),
         implementation(implementation) {}
 };
+
 struct Operator : Object {
     Span span;
     bool private_;
     String name;
-    Vector<Property>* output;
-    Operation* operation;
-    Operator(Span span, bool private_, String name, Vector<Property>* output, Operation* operation)
+    Vector<Property> input;
+    Vector<Property> output;
+    Implementation implementation;
+    Operator(Span span, bool private_, String name, Vector<Property> input, Vector<Property> output, Implementation implementation)
       : span(span),
         private_(private_),
         name(name),
+        input(input),
         output(output),
-        operation(operation) {}
+        implementation(implementation) {}
 };
 
 struct Module;

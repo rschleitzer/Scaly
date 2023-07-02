@@ -770,14 +770,11 @@ struct RoutineSyntax : Object {
 };
 
 struct SymbolSyntax : Object {
-    SymbolSyntax(size_t start, size_t end, String name, Vector<AttributeSyntax>* attributes, ReturnsSyntax* returns, ThrowsSyntax* throws, ImplementationSyntax implementation) : start(start), end(end), name(name), attributes(attributes), returns(returns), throws(throws), implementation(implementation) {}
+    SymbolSyntax(size_t start, size_t end, String name, RoutineSyntax routine) : start(start), end(end), name(name), routine(routine) {}
     size_t start;
     size_t end;
     String name;
-    Vector<AttributeSyntax>* attributes;
-    ReturnsSyntax* returns;
-    ThrowsSyntax* throws;
-    ImplementationSyntax implementation;
+    RoutineSyntax routine;
 };
 
 struct TargetSyntax : Object {
@@ -3553,75 +3550,23 @@ struct Parser : Object {
 
         }
 
-        auto attributes_start = this->lexer.position;
-        auto attributes_result = this->parse_attribute_list(_rp, _ep);
-        if (attributes_result._tag == Result<Vector<AttributeSyntax>, ParserError>::Error)
+        auto routine_start = this->lexer.position;
+        auto routine_result = this->parse_routine(_rp, _ep);
+        if (routine_result._tag == Result<RoutineSyntax, ParserError>::Error)
         {
-            switch (attributes_result._Error._tag) {
+            switch (routine_result._Error._tag) {
                 case ParserError::OtherSyntax:
-                    break;
+                    return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(routine_start, lexer.position, String(_ep, "a valid Routine syntax"))) };
                 case ParserError::InvalidSyntax:
-                    return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Error, ._Error = attributes_result._Error };
+                    return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Error, ._Error = routine_result._Error };
             }
         }
 
-        auto attributes = attributes_result._tag == Result<Vector<AttributeSyntax>, ParserError>::Error ? nullptr : attributes_result._Ok;
-
-        auto returns_start = this->lexer.position;
-        auto returns_result = this->parse_returns(_rp, _ep);
-        if (returns_result._tag == Result<ReturnsSyntax, ParserError>::Error)
-        {
-            switch (returns_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    break;
-                case ParserError::InvalidSyntax:
-                    return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Error, ._Error = returns_result._Error };
-            }
-        }
-
-        ReturnsSyntax* returns = returns_result._tag == Result<ReturnsSyntax, ParserError>::Error ? nullptr : new(alignof(ReturnsSyntax), _rp) ReturnsSyntax(returns_result._Ok);
-
-        auto start_colon_4 = this->lexer.previous_position;
-        auto success_colon_4 = this->lexer.parse_colon(_rp);
-        if (!success_colon_4) {
-        }
-
-        auto throws_start = this->lexer.position;
-        auto throws_result = this->parse_throws(_rp, _ep);
-        if (throws_result._tag == Result<ThrowsSyntax, ParserError>::Error)
-        {
-            switch (throws_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    break;
-                case ParserError::InvalidSyntax:
-                    return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Error, ._Error = throws_result._Error };
-            }
-        }
-
-        ThrowsSyntax* throws = throws_result._tag == Result<ThrowsSyntax, ParserError>::Error ? nullptr : new(alignof(ThrowsSyntax), _rp) ThrowsSyntax(throws_result._Ok);
-
-        auto start_colon_6 = this->lexer.previous_position;
-        auto success_colon_6 = this->lexer.parse_colon(_rp);
-        if (!success_colon_6) {
-        }
-
-        auto implementation_start = this->lexer.position;
-        auto implementation_result = this->parse_implementation(_rp, _ep);
-        if (implementation_result._tag == Result<ImplementationSyntax, ParserError>::Error)
-        {
-            switch (implementation_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(implementation_start, lexer.position, String(_ep, "a valid Implementation syntax"))) };
-                case ParserError::InvalidSyntax:
-                    return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Error, ._Error = implementation_result._Error };
-            }
-        }
-
-        auto implementation = implementation_result._Ok;
+        auto routine = routine_result._Ok;
 
         auto end = this->lexer.position;
 
-        auto ret = SymbolSyntax(start, end, *name, attributes, returns, throws, implementation);
+        auto ret = SymbolSyntax(start, end, *name, routine);
 
         return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Ok, ._Ok = ret };
     }
