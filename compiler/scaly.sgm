@@ -201,8 +201,6 @@
 <syntax id = Function
     <content link = function
     <content identifier                                     property = name
-    <content link = GenericArguments               optional property = generics
-    <content link = Lifetime                       optional property = lifetime
     <content link = Routine                                 property = routine
 
 <syntax id = Init
@@ -219,8 +217,6 @@
 <syntax id = Procedure
     <content link = procedure
     <content identifier                                     property = name
-    <content link = GenericArguments               optional property = generics
-    <content link = Lifetime                       optional property = lifetime
     <content link = Routine                                 property = routine
 
 <syntax id = Operator
@@ -236,6 +232,8 @@
     <content link = Routine                                 property = routine
 
 <syntax id = Routine
+    <content link = GenericArguments               optional property = generics
+    <content link = Lifetime                       optional property = lifetime
     <content link = ParameterSet                   optional property = parameters
     <content link = Attribute             multiple optional property = attributes
     <content link = Returns                        optional property = returns

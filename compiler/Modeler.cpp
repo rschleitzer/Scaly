@@ -86,8 +86,8 @@ Result<FileSyntax, ParserError> parse_program(Page* _rp, Page* _ep, const String
     auto action = ActionSyntax(OperationSyntax(operation));
     auto implementation = ImplementationSyntax(ActionSyntax(action));
 
-    auto routine = RoutineSyntax(start, end, new (alignof(ParameterSetSyntax), _rp) ParameterSetSyntax(parameters), nullptr, new (alignof(ReturnsSyntax), _rp) ReturnsSyntax(returns), nullptr, implementation);
-    FunctionSyntax& main_function_syntax = *new(alignof(FunctionSyntax), _rp) FunctionSyntax(start, end, *name, nullptr,nullptr, routine);
+    auto routine = RoutineSyntax(start, end, nullptr, nullptr, new (alignof(ParameterSetSyntax), _rp) ParameterSetSyntax(parameters), nullptr, new (alignof(ReturnsSyntax), _rp) ReturnsSyntax(returns), nullptr, implementation);
+    FunctionSyntax& main_function_syntax = *new(alignof(FunctionSyntax), _rp) FunctionSyntax(start, end, *name, routine);
     main_function_syntax.routine.implementation = implementation;
     DeclarationSyntax& main_function_declaration = *new (alignof(DeclarationSyntax), _rp) DeclarationSyntax(FunctionSyntax(main_function_syntax));;
     declarations.add(_r.get_page(), main_function_declaration);
@@ -1265,7 +1265,7 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
                         break;
                         case ExportSyntax::Function: {
                             auto function_syntax = export_._Function;
-                            auto function_result = build_function(_rp, _ep, function_syntax.start, function_syntax.end, function_syntax.name, function_syntax.generics, function_syntax.routine, true, true, text);
+                            auto function_result = build_function(_rp, _ep, function_syntax.start, function_syntax.end, function_syntax.name, function_syntax.routine.generics, function_syntax.routine, true, true, text);
                             if (function_result._tag == Result<Function, ModelError>::Error)
                                 return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = function_result._Error };
                             auto function = function_result._Ok;
@@ -1291,7 +1291,7 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
                         break;
                         case ExportSyntax::Procedure: {
                             auto procedure_syntax = export_._Procedure;
-                            auto function_result = build_function(_rp, _ep, procedure_syntax.start, procedure_syntax.end, procedure_syntax.name, procedure_syntax.generics, procedure_syntax.routine, true, false, text);
+                            auto function_result = build_function(_rp, _ep, procedure_syntax.start, procedure_syntax.end, procedure_syntax.name, procedure_syntax.routine.generics, procedure_syntax.routine, true, false, text);
                             if (function_result._tag == Result<Function, ModelError>::Error)
                                 return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = function_result._Error };
                             auto function = function_result._Ok;
@@ -1350,7 +1350,7 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
                 break;
                 case DeclarationSyntax::Function: {
                     auto function_syntax = declaration->_Function;
-                    auto function_result = build_function(_rp, _ep, function_syntax.start, function_syntax.end, function_syntax.name, function_syntax.generics, function_syntax.routine, false, true, text);
+                    auto function_result = build_function(_rp, _ep, function_syntax.start, function_syntax.end, function_syntax.name, function_syntax.routine.generics, function_syntax.routine, false, true, text);
                     if (function_result._tag == Result<Function, ModelError>::Error)
                         return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = function_result._Error };
                     auto function = function_result._Ok;
@@ -1385,7 +1385,7 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
                 break;
                 case DeclarationSyntax::Procedure: {
                     auto procedure_syntax = declaration->_Procedure;
-                    auto procedure_result = build_function(_rp, _ep, procedure_syntax.start, procedure_syntax.end, procedure_syntax.name, procedure_syntax.generics, procedure_syntax.routine, false, false, text);
+                    auto procedure_result = build_function(_rp, _ep, procedure_syntax.start, procedure_syntax.end, procedure_syntax.name, procedure_syntax.routine.generics, procedure_syntax.routine, false, false, text);
                     if (procedure_result._tag == Result<Function, ModelError>::Error)
                         return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error, ._Error = procedure_result._Error };
                     auto function = procedure_result._Ok;

@@ -759,9 +759,11 @@ struct ImplementationSyntax : Object {
 };
 
 struct RoutineSyntax : Object {
-    RoutineSyntax(size_t start, size_t end, ParameterSetSyntax* parameters, Vector<AttributeSyntax>* attributes, ReturnsSyntax* returns, ThrowsSyntax* throws, ImplementationSyntax implementation) : start(start), end(end), parameters(parameters), attributes(attributes), returns(returns), throws(throws), implementation(implementation) {}
+    RoutineSyntax(size_t start, size_t end, GenericArgumentsSyntax* generics, LifetimeSyntax* lifetime, ParameterSetSyntax* parameters, Vector<AttributeSyntax>* attributes, ReturnsSyntax* returns, ThrowsSyntax* throws, ImplementationSyntax implementation) : start(start), end(end), generics(generics), lifetime(lifetime), parameters(parameters), attributes(attributes), returns(returns), throws(throws), implementation(implementation) {}
     size_t start;
     size_t end;
+    GenericArgumentsSyntax* generics;
+    LifetimeSyntax* lifetime;
     ParameterSetSyntax* parameters;
     Vector<AttributeSyntax>* attributes;
     ReturnsSyntax* returns;
@@ -798,12 +800,10 @@ struct OperatorSyntax : Object {
 };
 
 struct ProcedureSyntax : Object {
-    ProcedureSyntax(size_t start, size_t end, String name, GenericArgumentsSyntax* generics, LifetimeSyntax* lifetime, RoutineSyntax routine) : start(start), end(end), name(name), generics(generics), lifetime(lifetime), routine(routine) {}
+    ProcedureSyntax(size_t start, size_t end, String name, RoutineSyntax routine) : start(start), end(end), name(name), routine(routine) {}
     size_t start;
     size_t end;
     String name;
-    GenericArgumentsSyntax* generics;
-    LifetimeSyntax* lifetime;
     RoutineSyntax routine;
 };
 
@@ -823,12 +823,10 @@ struct InitSyntax : Object {
 };
 
 struct FunctionSyntax : Object {
-    FunctionSyntax(size_t start, size_t end, String name, GenericArgumentsSyntax* generics, LifetimeSyntax* lifetime, RoutineSyntax routine) : start(start), end(end), name(name), generics(generics), lifetime(lifetime), routine(routine) {}
+    FunctionSyntax(size_t start, size_t end, String name, RoutineSyntax routine) : start(start), end(end), name(name), routine(routine) {}
     size_t start;
     size_t end;
     String name;
-    GenericArgumentsSyntax* generics;
-    LifetimeSyntax* lifetime;
     RoutineSyntax routine;
 };
 
@@ -3268,34 +3266,6 @@ struct Parser : Object {
             return Result<FunctionSyntax, ParserError> { ._tag = Result<FunctionSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_name, lexer.position, String(_ep, "an identifier"))) };
         }
 
-        auto generics_start = this->lexer.position;
-        auto generics_result = this->parse_genericarguments(_rp, _ep);
-        if (generics_result._tag == Result<GenericArgumentsSyntax, ParserError>::Error)
-        {
-            switch (generics_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    break;
-                case ParserError::InvalidSyntax:
-                    return Result<FunctionSyntax, ParserError> { ._tag = Result<FunctionSyntax, ParserError>::Error, ._Error = generics_result._Error };
-            }
-        }
-
-        GenericArgumentsSyntax* generics = generics_result._tag == Result<GenericArgumentsSyntax, ParserError>::Error ? nullptr : new(alignof(GenericArgumentsSyntax), _rp) GenericArgumentsSyntax(generics_result._Ok);
-
-        auto lifetime_start = this->lexer.position;
-        auto lifetime_result = this->parse_lifetime(_rp, _ep);
-        if (lifetime_result._tag == Result<LifetimeSyntax, ParserError>::Error)
-        {
-            switch (lifetime_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    break;
-                case ParserError::InvalidSyntax:
-                    return Result<FunctionSyntax, ParserError> { ._tag = Result<FunctionSyntax, ParserError>::Error, ._Error = lifetime_result._Error };
-            }
-        }
-
-        LifetimeSyntax* lifetime = lifetime_result._tag == Result<LifetimeSyntax, ParserError>::Error ? nullptr : new(alignof(LifetimeSyntax), _rp) LifetimeSyntax(lifetime_result._Ok);
-
         auto routine_start = this->lexer.position;
         auto routine_result = this->parse_routine(_rp, _ep);
         if (routine_result._tag == Result<RoutineSyntax, ParserError>::Error)
@@ -3312,7 +3282,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = FunctionSyntax(start, end, *name, generics, lifetime, routine);
+        auto ret = FunctionSyntax(start, end, *name, routine);
 
         return Result<FunctionSyntax, ParserError> { ._tag = Result<FunctionSyntax, ParserError>::Ok, ._Ok = ret };
     }
@@ -3421,34 +3391,6 @@ struct Parser : Object {
             return Result<ProcedureSyntax, ParserError> { ._tag = Result<ProcedureSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_name, lexer.position, String(_ep, "an identifier"))) };
         }
 
-        auto generics_start = this->lexer.position;
-        auto generics_result = this->parse_genericarguments(_rp, _ep);
-        if (generics_result._tag == Result<GenericArgumentsSyntax, ParserError>::Error)
-        {
-            switch (generics_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    break;
-                case ParserError::InvalidSyntax:
-                    return Result<ProcedureSyntax, ParserError> { ._tag = Result<ProcedureSyntax, ParserError>::Error, ._Error = generics_result._Error };
-            }
-        }
-
-        GenericArgumentsSyntax* generics = generics_result._tag == Result<GenericArgumentsSyntax, ParserError>::Error ? nullptr : new(alignof(GenericArgumentsSyntax), _rp) GenericArgumentsSyntax(generics_result._Ok);
-
-        auto lifetime_start = this->lexer.position;
-        auto lifetime_result = this->parse_lifetime(_rp, _ep);
-        if (lifetime_result._tag == Result<LifetimeSyntax, ParserError>::Error)
-        {
-            switch (lifetime_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    break;
-                case ParserError::InvalidSyntax:
-                    return Result<ProcedureSyntax, ParserError> { ._tag = Result<ProcedureSyntax, ParserError>::Error, ._Error = lifetime_result._Error };
-            }
-        }
-
-        LifetimeSyntax* lifetime = lifetime_result._tag == Result<LifetimeSyntax, ParserError>::Error ? nullptr : new(alignof(LifetimeSyntax), _rp) LifetimeSyntax(lifetime_result._Ok);
-
         auto routine_start = this->lexer.position;
         auto routine_result = this->parse_routine(_rp, _ep);
         if (routine_result._tag == Result<RoutineSyntax, ParserError>::Error)
@@ -3465,7 +3407,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = ProcedureSyntax(start, end, *name, generics, lifetime, routine);
+        auto ret = ProcedureSyntax(start, end, *name, routine);
 
         return Result<ProcedureSyntax, ParserError> { ._tag = Result<ProcedureSyntax, ParserError>::Ok, ._Ok = ret };
     }
@@ -3574,6 +3516,34 @@ struct Parser : Object {
     Result<RoutineSyntax, ParserError> parse_routine(Page* _rp, Page* _ep) {
         auto start = this->lexer.previous_position;
 
+        auto generics_start = this->lexer.position;
+        auto generics_result = this->parse_genericarguments(_rp, _ep);
+        if (generics_result._tag == Result<GenericArgumentsSyntax, ParserError>::Error)
+        {
+            switch (generics_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<RoutineSyntax, ParserError> { ._tag = Result<RoutineSyntax, ParserError>::Error, ._Error = generics_result._Error };
+            }
+        }
+
+        GenericArgumentsSyntax* generics = generics_result._tag == Result<GenericArgumentsSyntax, ParserError>::Error ? nullptr : new(alignof(GenericArgumentsSyntax), _rp) GenericArgumentsSyntax(generics_result._Ok);
+
+        auto lifetime_start = this->lexer.position;
+        auto lifetime_result = this->parse_lifetime(_rp, _ep);
+        if (lifetime_result._tag == Result<LifetimeSyntax, ParserError>::Error)
+        {
+            switch (lifetime_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<RoutineSyntax, ParserError> { ._tag = Result<RoutineSyntax, ParserError>::Error, ._Error = lifetime_result._Error };
+            }
+        }
+
+        LifetimeSyntax* lifetime = lifetime_result._tag == Result<LifetimeSyntax, ParserError>::Error ? nullptr : new(alignof(LifetimeSyntax), _rp) LifetimeSyntax(lifetime_result._Ok);
+
         auto parameters_start = this->lexer.position;
         auto parameters_result = this->parse_parameterset(_rp, _ep);
         if (parameters_result._tag == Result<ParameterSetSyntax, ParserError>::Error)
@@ -3616,9 +3586,9 @@ struct Parser : Object {
 
         ReturnsSyntax* returns = returns_result._tag == Result<ReturnsSyntax, ParserError>::Error ? nullptr : new(alignof(ReturnsSyntax), _rp) ReturnsSyntax(returns_result._Ok);
 
-        auto start_colon_4 = this->lexer.previous_position;
-        auto success_colon_4 = this->lexer.parse_colon(_rp);
-        if (!success_colon_4) {
+        auto start_colon_6 = this->lexer.previous_position;
+        auto success_colon_6 = this->lexer.parse_colon(_rp);
+        if (!success_colon_6) {
         }
 
         auto throws_start = this->lexer.position;
@@ -3635,9 +3605,9 @@ struct Parser : Object {
 
         ThrowsSyntax* throws = throws_result._tag == Result<ThrowsSyntax, ParserError>::Error ? nullptr : new(alignof(ThrowsSyntax), _rp) ThrowsSyntax(throws_result._Ok);
 
-        auto start_colon_6 = this->lexer.previous_position;
-        auto success_colon_6 = this->lexer.parse_colon(_rp);
-        if (!success_colon_6) {
+        auto start_colon_8 = this->lexer.previous_position;
+        auto success_colon_8 = this->lexer.parse_colon(_rp);
+        if (!success_colon_8) {
         }
 
         auto implementation_start = this->lexer.position;
@@ -3656,7 +3626,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = RoutineSyntax(start, end, parameters, attributes, returns, throws, implementation);
+        auto ret = RoutineSyntax(start, end, generics, lifetime, parameters, attributes, returns, throws, implementation);
 
         return Result<RoutineSyntax, ParserError> { ._tag = Result<RoutineSyntax, ParserError>::Ok, ._Ok = ret };
     }
