@@ -200,8 +200,7 @@
 
 <syntax id = Function
     <content link = function
-    <content identifier                                     property = name
-    <content link = Routine                                 property = routine
+    <content link = Target                                  property = target
 
 <syntax id = Init
     <content link = init
@@ -216,8 +215,7 @@
 
 <syntax id = Procedure
     <content link = procedure
-    <content identifier                                     property = name
-    <content link = Routine                                 property = routine
+    <content link = Target                                  property = target
 
 <syntax id = Operator
     <content link = operator

@@ -95,9 +95,9 @@ struct UseSyntax;
 struct ImplementSyntax; 
 struct TraitSyntax; 
 struct MethodSyntax; 
-struct FunctionSyntax; 
 struct InitSyntax; 
 struct DeInitSyntax; 
+struct FunctionSyntax; 
 struct ProcedureSyntax; 
 struct OperatorSyntax; 
 struct TargetSyntax; 
@@ -800,11 +800,17 @@ struct OperatorSyntax : Object {
 };
 
 struct ProcedureSyntax : Object {
-    ProcedureSyntax(size_t start, size_t end, String name, RoutineSyntax routine) : start(start), end(end), name(name), routine(routine) {}
+    ProcedureSyntax(size_t start, size_t end, TargetSyntax target) : start(start), end(end), target(target) {}
     size_t start;
     size_t end;
-    String name;
-    RoutineSyntax routine;
+    TargetSyntax target;
+};
+
+struct FunctionSyntax : Object {
+    FunctionSyntax(size_t start, size_t end, TargetSyntax target) : start(start), end(end), target(target) {}
+    size_t start;
+    size_t end;
+    TargetSyntax target;
 };
 
 struct DeInitSyntax : Object {
@@ -820,14 +826,6 @@ struct InitSyntax : Object {
     size_t end;
     ParameterSetSyntax* parameters;
     ActionSyntax action;
-};
-
-struct FunctionSyntax : Object {
-    FunctionSyntax(size_t start, size_t end, String name, RoutineSyntax routine) : start(start), end(end), name(name), routine(routine) {}
-    size_t start;
-    size_t end;
-    String name;
-    RoutineSyntax routine;
 };
 
 struct MethodSyntax : Object {
@@ -3246,47 +3244,6 @@ struct Parser : Object {
         return Result<MethodSyntax, ParserError> { ._tag = Result<MethodSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
     }
 
-    Result<FunctionSyntax, ParserError> parse_function(Page* _rp, Page* _ep) {
-        auto start = this->lexer.previous_position;
-
-        auto start_function_1 = this->lexer.previous_position;
-        auto success_function_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[13]);
-        if (!success_function_1) {
-            return Result<FunctionSyntax, ParserError> { ._tag = Result<FunctionSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
-        }
-
-        auto start_name = this->lexer.previous_position;
-        auto name = this->lexer.parse_identifier(_rp, this->keywords);
-        if (name != nullptr) {
-            if (!this->is_identifier(*name)) {
-            return Result<FunctionSyntax, ParserError> { ._tag = Result<FunctionSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_name, lexer.position, String(_ep, "an identifier"))) };
-            }
-        }
-        else {
-            return Result<FunctionSyntax, ParserError> { ._tag = Result<FunctionSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_name, lexer.position, String(_ep, "an identifier"))) };
-        }
-
-        auto routine_start = this->lexer.position;
-        auto routine_result = this->parse_routine(_rp, _ep);
-        if (routine_result._tag == Result<RoutineSyntax, ParserError>::Error)
-        {
-            switch (routine_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<FunctionSyntax, ParserError> { ._tag = Result<FunctionSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(routine_start, lexer.position, String(_ep, "a valid Routine syntax"))) };
-                case ParserError::InvalidSyntax:
-                    return Result<FunctionSyntax, ParserError> { ._tag = Result<FunctionSyntax, ParserError>::Error, ._Error = routine_result._Error };
-            }
-        }
-
-        auto routine = routine_result._Ok;
-
-        auto end = this->lexer.position;
-
-        auto ret = FunctionSyntax(start, end, *name, routine);
-
-        return Result<FunctionSyntax, ParserError> { ._tag = Result<FunctionSyntax, ParserError>::Ok, ._Ok = ret };
-    }
-
     Result<InitSyntax, ParserError> parse_init(Page* _rp, Page* _ep) {
         auto start = this->lexer.previous_position;
 
@@ -3371,6 +3328,36 @@ struct Parser : Object {
         return Result<DeInitSyntax, ParserError> { ._tag = Result<DeInitSyntax, ParserError>::Ok, ._Ok = ret };
     }
 
+    Result<FunctionSyntax, ParserError> parse_function(Page* _rp, Page* _ep) {
+        auto start = this->lexer.previous_position;
+
+        auto start_function_1 = this->lexer.previous_position;
+        auto success_function_1 = this->lexer.parse_keyword(_rp, *this->keywords_index[13]);
+        if (!success_function_1) {
+            return Result<FunctionSyntax, ParserError> { ._tag = Result<FunctionSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
+        }
+
+        auto target_start = this->lexer.position;
+        auto target_result = this->parse_target(_rp, _ep);
+        if (target_result._tag == Result<TargetSyntax, ParserError>::Error)
+        {
+            switch (target_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<FunctionSyntax, ParserError> { ._tag = Result<FunctionSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(target_start, lexer.position, String(_ep, "a valid Target syntax"))) };
+                case ParserError::InvalidSyntax:
+                    return Result<FunctionSyntax, ParserError> { ._tag = Result<FunctionSyntax, ParserError>::Error, ._Error = target_result._Error };
+            }
+        }
+
+        auto target = target_result._Ok;
+
+        auto end = this->lexer.position;
+
+        auto ret = FunctionSyntax(start, end, target);
+
+        return Result<FunctionSyntax, ParserError> { ._tag = Result<FunctionSyntax, ParserError>::Ok, ._Ok = ret };
+    }
+
     Result<ProcedureSyntax, ParserError> parse_procedure(Page* _rp, Page* _ep) {
         auto start = this->lexer.previous_position;
 
@@ -3380,34 +3367,23 @@ struct Parser : Object {
             return Result<ProcedureSyntax, ParserError> { ._tag = Result<ProcedureSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
 
-        auto start_name = this->lexer.previous_position;
-        auto name = this->lexer.parse_identifier(_rp, this->keywords);
-        if (name != nullptr) {
-            if (!this->is_identifier(*name)) {
-            return Result<ProcedureSyntax, ParserError> { ._tag = Result<ProcedureSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_name, lexer.position, String(_ep, "an identifier"))) };
-            }
-        }
-        else {
-            return Result<ProcedureSyntax, ParserError> { ._tag = Result<ProcedureSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_name, lexer.position, String(_ep, "an identifier"))) };
-        }
-
-        auto routine_start = this->lexer.position;
-        auto routine_result = this->parse_routine(_rp, _ep);
-        if (routine_result._tag == Result<RoutineSyntax, ParserError>::Error)
+        auto target_start = this->lexer.position;
+        auto target_result = this->parse_target(_rp, _ep);
+        if (target_result._tag == Result<TargetSyntax, ParserError>::Error)
         {
-            switch (routine_result._Error._tag) {
+            switch (target_result._Error._tag) {
                 case ParserError::OtherSyntax:
-                    return Result<ProcedureSyntax, ParserError> { ._tag = Result<ProcedureSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(routine_start, lexer.position, String(_ep, "a valid Routine syntax"))) };
+                    return Result<ProcedureSyntax, ParserError> { ._tag = Result<ProcedureSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(target_start, lexer.position, String(_ep, "a valid Target syntax"))) };
                 case ParserError::InvalidSyntax:
-                    return Result<ProcedureSyntax, ParserError> { ._tag = Result<ProcedureSyntax, ParserError>::Error, ._Error = routine_result._Error };
+                    return Result<ProcedureSyntax, ParserError> { ._tag = Result<ProcedureSyntax, ParserError>::Error, ._Error = target_result._Error };
             }
         }
 
-        auto routine = routine_result._Ok;
+        auto target = target_result._Ok;
 
         auto end = this->lexer.position;
 
-        auto ret = ProcedureSyntax(start, end, *name, routine);
+        auto ret = ProcedureSyntax(start, end, target);
 
         return Result<ProcedureSyntax, ParserError> { ._tag = Result<ProcedureSyntax, ParserError>::Ok, ._Ok = ret };
     }
