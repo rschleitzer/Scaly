@@ -1159,12 +1159,12 @@ Result<Operator, ModelError> handle_operator(Page* _rp, Page* _ep, OperatorSynta
         case TargetSyntax::Routine:
             return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(text, String(_ep, "Non-Symbol Operator"), Span(operator_syntax.start, operator_syntax.end)))) };
         case TargetSyntax::Symbol:
-            auto operator_ = operator_syntax.target._Symbol;
-            if (operator_.returns != nullptr) {
-                ParameterSetSyntax& parameterSetSyntax = operator_.returns->parameters; 
+            auto symbol = operator_syntax.target._Symbol;
+            if (symbol.returns != nullptr) {
+                ParameterSetSyntax& parameterSetSyntax = symbol.returns->parameters; 
                 auto parameterset_result = handle_parameterset(_rp, _ep, parameterSetSyntax, text);
             }
-            return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Ok, ._Ok = Operator(Span(operator_syntax.start, operator_syntax.end), private_, String(_rp, operator_.name), output, operation) };
+            return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Ok, ._Ok = Operator(Span(operator_syntax.start, operator_syntax.end), private_, String(_rp, symbol.name), output, operation) };
     }
 }
 
