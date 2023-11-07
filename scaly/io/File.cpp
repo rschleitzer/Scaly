@@ -5,6 +5,7 @@ namespace scaly {
 namespace io {
 
 using namespace scaly::memory;
+using namespace scaly::containers;
 
 struct UnknownFileError {
     UnknownFileError(String file_name) : file_name(file_name) {}

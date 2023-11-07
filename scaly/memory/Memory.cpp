@@ -12,7 +12,9 @@ using std::alignment_of;
 const int PAGE_SIZE = 0x1000;
 
 #include "Object.h"
-#include "List.cpp"
+#include "PageNode.cpp"
+#include "PageListIterator.cpp"
+#include "PageList.cpp"
 #include "Page.cpp"
 #include "Region.cpp"
 #include "Object.cpp"

@@ -2,19 +2,17 @@ namespace scaly {
 
 namespace memory {
 
-using namespace scaly::containers;
-
 struct Page {
     void* next_object;
     Page* current_page;
     Page* next_page;
-    List<Page*> exclusive_pages;
+    PageList exclusive_pages;
 
     void reset() {
         this->current_page = nullptr;
         this->next_page = nullptr;
         this->next_object = this + 1;
-        this->exclusive_pages = List<Page*>();
+        this->exclusive_pages = PageList();
     }
 
     bool is_oversized() {
