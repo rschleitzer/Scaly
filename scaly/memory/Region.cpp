@@ -19,8 +19,6 @@ struct Region {
     }
 
 private:
-    Region(const Region& region) {
-    }
     Page* page;
 };
 
