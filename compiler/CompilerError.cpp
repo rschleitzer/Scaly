@@ -30,7 +30,7 @@ struct CompilerError : Object {
 
     String to_string(Page* _rp) {
         Region _r;
-        StringBuilder& message_builder = *new(alignof(StringBuilder), _r) StringBuilder();
+        StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
         switch (_tag) {
             case Model:
                 message_builder.append_string(_Model.to_string(_rp));

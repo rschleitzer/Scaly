@@ -10,6 +10,7 @@
 				"-fdiagnostics-color=always",
 				"-g",
 				"${workspaceFolder}/main.cpp",
+				"${workspaceFolder}/Object.ll",
 				"-o",
 				"${workspaceFolder}/bin/${fileBasenameNoExtension}",
 				"`llvm-config --cxxflags`"

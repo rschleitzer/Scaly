@@ -31,7 +31,7 @@ struct FileError : Object {
 
     String to_string(Page* _rp) {
         Region _r;
-        StringBuilder& message_builder = *new(alignof(StringBuilder), _r) StringBuilder();
+        StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
         switch (_tag) {
             case Unknown:
                 message_builder.append_string(String(_r.get_page(), "An unknown file error occurred with the file "));

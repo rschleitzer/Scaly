@@ -19,7 +19,7 @@ struct HashSet : Object {
         auto length = hash_set_builder.slots->length;
         for (size_t i = 0; i < length; i++) {
             Region _r_1;
-            Array<T>& array = *new(alignof(Array<T>), _r_1) Array<T>();
+            Array<T>& array = *new(alignof(Array<T>), _r_1.get_page()) Array<T>();
             auto list_iterator = ListIterator<Slot<T>>(hash_set_builder.slots->get(i)->head);
             while (auto item = list_iterator.next())
                 array.add(item->value);

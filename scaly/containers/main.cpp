@@ -5,7 +5,7 @@ void test_vector()
 {
     {
         Region _r_1;
-        Vector<int>& vector = *new(alignof(Vector<int>), _r_1) Vector<int>(_r_1.get_page(), 2);
+        Vector<int>& vector = *new(alignof(Vector<int>), _r_1.get_page()) Vector<int>(_r_1.get_page(), 2);
         *vector[0] = 1;
         vector.set(1, 2);
         if (*(vector.get(0)) != 1)
@@ -29,7 +29,7 @@ void test_vector()
 void test_array()
 {
     Region _r;
-    Array<int>& array = *new(alignof(Array<int>), _r) Array<int>();
+    Array<int>& array = *new(alignof(Array<int>), _r.get_page()) Array<int>();
     // A quarter gigabyte worth of ints
     int huge_number = 1024 * 1024 * 64;
     for (int i = 1; i <= huge_number; i++)
@@ -64,7 +64,7 @@ void test_string() {
 
 void test_string_builder() {
     Region _r;
-    StringBuilder& string_builder = *new(alignof(StringBuilder), _r) StringBuilder();
+    StringBuilder& string_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
     auto length = string_builder.get_length();
     if (length != 0)
         exit(-11);
@@ -76,7 +76,7 @@ void test_string_builder() {
     if (string_builder.get_length() != 3)
         exit(-13);
 
-    StringBuilder& string_builder2 = *new(alignof(StringBuilder), _r) StringBuilder('d');
+    StringBuilder& string_builder2 = *new(alignof(StringBuilder), _r.get_page()) StringBuilder('d');
     string_builder2.append_character('e');
     string_builder2.append_character('f');
     string_builder2.append_character('g');
@@ -109,12 +109,12 @@ void test_list() {
 void test_hash_set() {
     Region _r;
 
-    Array<String>& array = *new(alignof(Array<String>), _r) Array<String>();
+    Array<String>& array = *new(alignof(Array<String>), _r.get_page()) Array<String>();
     array.add(String(_r.get_page(), "using"));
     array.add(String(_r.get_page(), "namespace"));
     array.add(String(_r.get_page(), "typedef"));
     Vector<String> vector = Vector<String>(_r.get_page(), array);
-    HashSetBuilder<String>& keywords_builder = *new(alignof(HashSetBuilder<String>), _r) HashSetBuilder<String>(_r.get_page(), vector);
+    HashSetBuilder<String>& keywords_builder = *new(alignof(HashSetBuilder<String>), _r.get_page()) HashSetBuilder<String>(_r.get_page(), vector);
     if (!keywords_builder.contains(String(_r.get_page(), "using")))
         exit (-18);
     if (!keywords_builder.contains(String(_r.get_page(), "namespace")))
@@ -123,7 +123,7 @@ void test_hash_set() {
         exit (-18);
     if (keywords_builder.contains(String(_r.get_page(), "nix")))
         exit (-18);
-    HashSet<String>& keywords = *new(alignof(HashSet<String>), _r)  HashSet<String>(_r.get_page(), keywords_builder);
+    HashSet<String>& keywords = *new(alignof(HashSet<String>), _r.get_page())  HashSet<String>(_r.get_page(), keywords_builder);
     if (!keywords.contains(String(_r.get_page(), "using")))
         exit (-19);
     if (!keywords.contains(String(_r.get_page(), "namespace")))
@@ -137,12 +137,12 @@ void test_hash_set() {
 void test_hash_map() {
     {
         Region _r_1;
-        Array<KeyValuePair<String, int>>& array = *new(alignof(Array<KeyValuePair<String, int>>), _r_1) Array<KeyValuePair<String, int>>();
+        Array<KeyValuePair<String, int>>& array = *new(alignof(Array<KeyValuePair<String, int>>), _r_1.get_page()) Array<KeyValuePair<String, int>>();
         array.add(KeyValuePair<String, int> { .key = String(_r_1.get_page(), "using"), .value = 1 });
         array.add(KeyValuePair<String, int> { .key = String(_r_1.get_page(), "namespace"), .value = 2 });
         array.add(KeyValuePair<String, int> { .key = String(_r_1.get_page(), "typedef"), .value = 3 });
         Vector<KeyValuePair<String, int>> vector = Vector<KeyValuePair<String, int>>(_r_1.get_page(), array);
-        HashMapBuilder<String, int>& keywords_builder = *new(alignof(HashMapBuilder<String, int>), _r_1) HashMapBuilder<String, int>(_r_1.get_page(), vector);
+        HashMapBuilder<String, int>& keywords_builder = *new(alignof(HashMapBuilder<String, int>), _r_1.get_page()) HashMapBuilder<String, int>(_r_1.get_page(), vector);
         if (!keywords_builder.contains(String(_r_1.get_page(), "using")))
             exit (-18);
         if (!keywords_builder.contains(String(_r_1.get_page(), "namespace")))
@@ -159,7 +159,7 @@ void test_hash_map() {
             exit (-24);
         if (keywords_builder[String(_r_1.get_page(), "nix")] != nullptr)
             exit (-25);
-        HashMap<String, int>& keywords = *new(alignof(HashMap<String, int>), _r_1) HashMap<String, int>(_r_1.get_page(), keywords_builder);
+        HashMap<String, int>& keywords = *new(alignof(HashMap<String, int>), _r_1.get_page()) HashMap<String, int>(_r_1.get_page(), keywords_builder);
         if (!keywords.contains(String(_r_1.get_page(), "using")))
             exit (-18);
         if (!keywords.contains(String(_r_1.get_page(), "namespace")))
@@ -179,8 +179,8 @@ void test_hash_map() {
     }
     {
         Region _r_1;
-        HashMapBuilder<String, size_t>& map = *new(alignof(HashMapBuilder<String, size_t>), _r_1) HashMapBuilder<String, size_t>();
-        HashSetBuilder<String>& set = *new(alignof(HashSetBuilder<String>), _r_1) HashSetBuilder<String>();
+        HashMapBuilder<String, size_t>& map = *new(alignof(HashMapBuilder<String, size_t>), _r_1.get_page()) HashMapBuilder<String, size_t>();
+        HashSetBuilder<String>& set = *new(alignof(HashSetBuilder<String>), _r_1.get_page()) HashSetBuilder<String>();
         for (char i = 'A'; i <= 'Z'; i++)
         {
             for (char j = 'a'; j <= 'z'; j++)
@@ -190,7 +190,7 @@ void test_hash_map() {
                     for (char l = '!'; l <= '/'; l++)
                     {
                         Region _r_2;
-                        StringBuilder& sb = *new(alignof(StringBuilder), _r_2) StringBuilder(i);
+                        StringBuilder& sb = *new(alignof(StringBuilder), _r_2.get_page()) StringBuilder(i);
                         sb.append_character(j);
                         sb.append_character(k);
                         sb.append_character(l);
@@ -209,7 +209,7 @@ void test_hash_map() {
                     for (char l = '!'; l <= '/'; l++)
                     {
                         Region _r_2;
-                        StringBuilder& sb = *new(alignof(StringBuilder), _r_2) StringBuilder(i);
+                        StringBuilder& sb = *new(alignof(StringBuilder), _r_2.get_page()) StringBuilder(i);
                         sb.append_character(j);
                         sb.append_character(k);
                         sb.append_character(l);
@@ -230,7 +230,7 @@ void test_hash_map() {
 void test_multi_map() {
     {
         Region _r_1;
-        MultiMapBuilder<String, size_t>& map_builder = *new(alignof(MultiMapBuilder<String, size_t>), _r_1) MultiMapBuilder<String, size_t>();
+        MultiMapBuilder<String, size_t>& map_builder = *new(alignof(MultiMapBuilder<String, size_t>), _r_1.get_page()) MultiMapBuilder<String, size_t>();
         for (char i = 'A'; i <= 'Z'; i++)
         {
             for (char j = 'a'; j <= 'z'; j++)
@@ -240,7 +240,7 @@ void test_multi_map() {
                     for (char l = '!'; l <= '/'; l++)
                     {
                         Region _r_2;
-                        StringBuilder& sb = *new(alignof(StringBuilder), _r_2) StringBuilder(i);
+                        StringBuilder& sb = *new(alignof(StringBuilder), _r_2.get_page()) StringBuilder(i);
                         sb.append_character(j);
                         sb.append_character(k);
                         sb.append_character(l);
@@ -251,7 +251,7 @@ void test_multi_map() {
                 }
             }
         }
-        MultiMap<String, size_t>& map = *new(alignof(MultiMap<String, size_t>), _r_1) MultiMap<String, size_t>(_r_1.get_page(), map_builder);
+        MultiMap<String, size_t>& map = *new(alignof(MultiMap<String, size_t>), _r_1.get_page()) MultiMap<String, size_t>(_r_1.get_page(), map_builder);
         for (char i = 'A'; i <= 'Z'; i++)
         {
             for (char j = 'a'; j <= 'z'; j++)
@@ -261,7 +261,7 @@ void test_multi_map() {
                     for (char l = '!'; l <= '/'; l++)
                     {
                         Region _r_2;
-                        StringBuilder& sb = *new(alignof(StringBuilder), _r_2) StringBuilder(i);
+                        StringBuilder& sb = *new(alignof(StringBuilder), _r_2.get_page()) StringBuilder(i);
                         sb.append_character(j);
                         sb.append_character(k);
                         sb.append_character(l);

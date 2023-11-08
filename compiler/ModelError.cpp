@@ -49,9 +49,9 @@ String build_hint_lines_from_string(Page* _rp, const String& text, size_t start_
     auto end_line = end_position.line;
     auto start_column = start_position.column;
     auto end_column = end_position.column;
-    StringBuilder& line_builder = *new(alignof(StringBuilder), _r) StringBuilder();
-    StringBuilder& indicator_builder = *new(alignof(StringBuilder), _r) StringBuilder();
-    StringBuilder& output_builder = *new(alignof(StringBuilder), _r) StringBuilder();
+    StringBuilder& line_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
+    StringBuilder& indicator_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
+    StringBuilder& output_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
     while (auto character = iterator.next()) {
         counter++;
         if (*character == '\n') {
@@ -67,8 +67,8 @@ String build_hint_lines_from_string(Page* _rp, const String& text, size_t start_
                 return output_builder.to_string(_rp);
             }
             else {
-                line_builder = *new(alignof(StringBuilder), _r) StringBuilder();
-                indicator_builder = *new(alignof(StringBuilder), _r) StringBuilder();
+                line_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
+                indicator_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
             }
 
         }
@@ -168,7 +168,7 @@ struct IoModelError {
 
     String to_string(Page* _rp) {
         Region _r;
-        StringBuilder& message_builder = *new(alignof(StringBuilder), _r) StringBuilder();
+        StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
         switch (_tag) {
             case File:
                 message_builder.append_string(_File.to_string(_rp));
@@ -196,7 +196,7 @@ struct ParserModelError {
 
     String build_error_message(Page* _rp, InvalidSyntax invalid_syntax) {
         Region _r;
-        StringBuilder& message_builder = *new(alignof(StringBuilder), _r) StringBuilder();
+        StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
         append_error_message_header(message_builder, this->text, invalid_syntax.start);
         message_builder.append_string(String(_rp, "Expected "));
         message_builder.append_string(invalid_syntax.expected);
@@ -216,7 +216,7 @@ struct NotImplemented
 
     String to_string(Page* _rp) {
         Region _r;
-        StringBuilder& message_builder = *new(alignof(StringBuilder), _r) StringBuilder();
+        StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
         append_error_message_header(message_builder, this->text, span.start);
         message_builder.append_string(String(_rp, "The "));
         message_builder.append_string(name);
@@ -234,7 +234,7 @@ struct DuplicateName {
 
     String to_string(Page* _rp) {
         Region _r;
-        StringBuilder& message_builder = *new(alignof(StringBuilder), _r) StringBuilder();
+        StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
         append_error_message_header(message_builder, this->text, span.start);
         message_builder.append_string(String(_rp, "This declaration already exists."));
         append_hint_lines(message_builder, this->text, span.start, span.end);
@@ -250,7 +250,7 @@ struct NonFunctionSymbolExists {
 
     String to_string(Page* _rp) {
         Region _r;
-        StringBuilder& message_builder = *new(alignof(StringBuilder), _r) StringBuilder();
+        StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
         append_error_message_header(message_builder, this->text, span.start);
         message_builder.append_string(String(_rp, "This declaration already exists, but not as a function."));
         append_hint_lines(message_builder, this->text, span.start, span.end);
@@ -266,7 +266,7 @@ struct FunctionSymbolExists {
 
     String to_string(Page* _rp) {
         Region _r;
-        StringBuilder& message_builder = *new(alignof(StringBuilder), _r) StringBuilder();
+        StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
         append_error_message_header(message_builder, this->text, span.start);
         message_builder.append_string(String(_rp, "This declaration already exists, but as a function."));
         append_hint_lines(message_builder, this->text, span.start, span.end);
@@ -282,7 +282,7 @@ struct DeInitializerExists {
 
     String to_string(Page* _rp) {
         Region _r;
-        StringBuilder& message_builder = *new(alignof(StringBuilder), _r) StringBuilder();
+        StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
         append_error_message_header(message_builder, this->text, span.start);
         message_builder.append_string(String(_rp, "A deinitializer has already been defined."));
         append_hint_lines(message_builder, this->text, span.start, span.end);
@@ -297,7 +297,7 @@ struct InvalidConstant {
 
     String to_string(Page* _rp) {
         Region _r;
-        StringBuilder& message_builder = *new(alignof(StringBuilder), _r) StringBuilder();
+        StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
         append_error_message_header(message_builder, this->text, span.start);
         message_builder.append_string(String(_rp, "This is an invalid constant."));
         append_hint_lines(message_builder, this->text, span.start, span.end);
@@ -313,7 +313,7 @@ struct InvalidComponentName {
 
     String to_string(Page* _rp) {
         Region _r;
-        StringBuilder& message_builder = *new(alignof(StringBuilder), _r) StringBuilder();
+        StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
         append_error_message_header(message_builder, this->text, span.start);
         message_builder.append_string(String(_rp, "The component does not have an identifier as name."));
         append_hint_lines(message_builder, this->text, span.start, span.end);
@@ -351,7 +351,7 @@ struct ModelBuilderError {
 
     String to_string(Page* _rp) {
         Region _r;
-        StringBuilder& message_builder = *new(alignof(StringBuilder), _r) StringBuilder();
+        StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
         switch (_tag) {
             case NotImplemented:
                 message_builder.append_string(_NotImplemented.to_string(_rp));
@@ -396,7 +396,7 @@ struct ModelError : Object {
 
     String to_string(Page* _rp) {
         Region _r;
-        StringBuilder& message_builder = *new(alignof(StringBuilder), _r) StringBuilder();
+        StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
         switch (_tag) {
             case Io:
                 message_builder.append_string(_Io.to_string(_rp));

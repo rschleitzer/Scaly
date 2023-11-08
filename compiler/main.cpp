@@ -7,7 +7,7 @@ using namespace scaly::compiler;
 void test_lexer() {
     {
         Region _r_1;
-        Lexer& lexer = *new(alignof(Lexer), _r_1) Lexer(String(_r_1.get_page(), ""));
+        Lexer& lexer = *new(alignof(Lexer), _r_1.get_page()) Lexer(String(_r_1.get_page(), ""));
         if (lexer.token._tag != Token::Empty)
             exit (-1);
         lexer.advance();
@@ -24,7 +24,7 @@ void test_lexer() {
 "@ttribute + -0815 /* <> \"a string\" \"\\\"\\n\\r\\t\" "
 "'a string identifier' `a string fragment \\`\\n\\r\\t`"
         );
-        Lexer& lexer = *new(alignof(Lexer), _r_1) Lexer(String(_r_1.get_page(), s));
+        Lexer& lexer = *new(alignof(Lexer), _r_1.get_page()) Lexer(String(_r_1.get_page(), s));
         if (lexer.token._tag != Token::Empty)
             exit (-3);
         lexer.advance();
@@ -171,7 +171,7 @@ void test_lexer() {
 
 void test_parser() {
     Region _r;
-    Parser& parser = *new (alignof(Parser), _r) Parser(_r.get_page(), String(_r.get_page(), "define a 1"));
+    Parser& parser = *new (alignof(Parser), _r.get_page()) Parser(_r.get_page(), String(_r.get_page(), "define a 1"));
     auto file_syntax = parser.parse_file(_r.get_page(), _r.get_page());
     if (file_syntax._tag != Result<FileSyntax*, ParserError*>::Ok)
         exit(-1);

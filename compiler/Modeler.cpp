@@ -12,7 +12,7 @@ Result<FileSyntax, ParserError> parse_program(Page* _rp, Page* _ep, const String
     // Parse the scaly package inclusion
     {
         Region _r_1;
-        Parser& parser_package = *new(alignof(Parser), _r_1) Parser(_r_1.get_page(), String(_r_1.get_page(), "package scaly"));
+        Parser& parser_package = *new(alignof(Parser), _r_1.get_page()) Parser(_r_1.get_page(), String(_r_1.get_page(), "package scaly"));
         auto package_syntax_result = parser_package.parse_package(_rp, _ep);
         if (package_syntax_result._tag == Result<ModuleSyntax*, ParserError>::Error)
             return Result<FileSyntax, ParserError> { ._tag = Result<FileSyntax, ParserError>::Error, ._Error = package_syntax_result._Error };
@@ -25,7 +25,7 @@ Result<FileSyntax, ParserError> parse_program(Page* _rp, Page* _ep, const String
     Vector<StatementSyntax>* statements = nullptr;
     {
         Region _r_1;
-        Parser& parser = *new(alignof(Parser), _r_1) Parser(_r_1.get_page(), program);
+        Parser& parser = *new(alignof(Parser), _r_1.get_page()) Parser(_r_1.get_page(), program);
         while(true) {
             auto node_result = parser.parse_declaration(_rp, _ep);
             if ((node_result._tag == Result<DeclarationSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
@@ -48,7 +48,7 @@ Result<FileSyntax, ParserError> parse_program(Page* _rp, Page* _ep, const String
     }
 
     // Parse the main function stub
-    Parser& parser_main = *new(alignof(Parser), _r) Parser(_r.get_page(), String(_r.get_page(), "function main('argument count': int, 'argument values': pointer[pointer[byte]]) returns int"));
+    Parser& parser_main = *new(alignof(Parser), _r.get_page()) Parser(_r.get_page(), String(_r.get_page(), "function main('argument count': int, 'argument values': pointer[pointer[byte]]) returns int"));
     auto start = parser_main.lexer.previous_position;
 
     auto success_function = parser_main.lexer.parse_keyword(_rp, String(_r.get_page(), "function"));
@@ -166,7 +166,7 @@ Result<Vector<Property>, ModelError> handle_parameterset(Page* _rp, Page* _ep, P
 
 Result<HashMap<String, Property>, ModelError> handle_structure(Page* _rp, Page* _ep, StructureSyntax& structure, const Text& text) {    
     Region _r;
-    HashMapBuilder<String, Property>& properties_builder = *new(alignof(HashMapBuilder<String, Property>), _r) HashMapBuilder<String, Property>();
+    HashMapBuilder<String, Property>& properties_builder = *new(alignof(HashMapBuilder<String, Property>), _r.get_page()) HashMapBuilder<String, Property>();
     if (structure.members != nullptr) {
         auto members = *structure.members;
         auto _members_iterator = VectorIterator<MemberSyntax>(members);
@@ -197,7 +197,7 @@ Result<HashMap<String, Property>, ModelError> handle_structure(Page* _rp, Page* 
 
 Result<HashMap<String, Variant>, ModelError> handle_variants(Page* _rp, Page* _ep, Vector<TagSyntax>& tags) {    
     Region _r;
-    HashMapBuilder<String, Variant>& variants_builder = *new(alignof(HashMapBuilder<String, Variant>), _r) HashMapBuilder<String, Variant>();
+    HashMapBuilder<String, Variant>& variants_builder = *new(alignof(HashMapBuilder<String, Variant>), _r.get_page()) HashMapBuilder<String, Variant>();
     /// Fill it
     return Result<HashMap<String, Variant>, ModelError> { ._tag = Result<HashMap<String, Variant>, ModelError>::Ok, ._Ok = HashMap<String, Variant>(_rp, variants_builder) };
 }
@@ -221,7 +221,7 @@ Result<Structure, ModelError> handle_class(Page* _rp, Page* _ep, String name, St
 
     if (class_.body == nullptr) {
         Region _r_1;
-        HashMapBuilder<String, Nameable>& symbols_builder = *new(alignof(HashMapBuilder<String, Nameable>), _r_1) HashMapBuilder<String, Nameable>();
+        HashMapBuilder<String, Nameable>& symbols_builder = *new(alignof(HashMapBuilder<String, Nameable>), _r_1.get_page()) HashMapBuilder<String, Nameable>();
         auto code = Code(HashMap<String, Nameable>(_rp, symbols_builder), nullptr, nullptr);
         return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Ok,
             ._Ok = Structure(Span(class_.start, class_.end), private_, properties, code)
@@ -258,7 +258,7 @@ Result<Union, ModelError> handle_union(Page* _rp, Page* _ep, String name, String
 
     if (union_.body == nullptr) {
         Region _r_1;
-        HashMapBuilder<String, Nameable>& symbols_builder = *new(alignof(HashMapBuilder<String, Nameable>), _r_1) HashMapBuilder<String, Nameable>();
+        HashMapBuilder<String, Nameable>& symbols_builder = *new(alignof(HashMapBuilder<String, Nameable>), _r_1.get_page()) HashMapBuilder<String, Nameable>();
         auto code = Code(HashMap<String, Nameable>(_rp, symbols_builder), nullptr, nullptr);
         return Result<Union, ModelError> { ._tag = Result<Union, ModelError>::Ok,
             ._Ok = Union(Span(union_.start, union_.end), private_, variants, code)
@@ -1210,7 +1210,7 @@ Result<Concept, ModelError> build_concept(Page* _rp, Page* _ep, bool private_, S
 
 Result<Module, ModelError> handle_module(Page* _rp, Page* _ep, String path, ModuleSyntax& module_syntax, bool private_) {
     Region _r;
-    StringBuilder& file_name_builder = *new(alignof(StringBuilder), _r) StringBuilder();
+    StringBuilder& file_name_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
     if (path.get_length() > 0) {
         file_name_builder.append_string(path);
         file_name_builder.append_character('/');
@@ -1224,14 +1224,14 @@ Result<Module, ModelError> handle_module(Page* _rp, Page* _ep, String path, Modu
     }
     auto module_text = module_text_result._Ok;
 
-    Parser& parser = *new(alignof(Parser), _r) Parser(_r.get_page(), module_text);
+    Parser& parser = *new(alignof(Parser), _r.get_page()) Parser(_r.get_page(), module_text);
     auto file_syntax_result = parser.parse_file(_rp, _ep);
     auto text = Text {._tag = Text::File, ._Program = String(_ep, file_name) };
     if (file_syntax_result._tag == Result<ModuleSyntax*, ParserError>::Error)
         return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = ModelError(ParserModelError(text, file_syntax_result._Error)) };
     auto file_syntax = file_syntax_result._Ok;
 
-    StringBuilder& path_builder = *new(alignof(StringBuilder), _r) StringBuilder(path);
+    StringBuilder& path_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(path);
     if (path.get_length() > 0)
         path_builder.append_character('/');
     path_builder.append_string(module_syntax.name.name);
@@ -1248,8 +1248,8 @@ Result<Module, ModelError> handle_module(Page* _rp, Page* _ep, String path, Modu
 
 Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String path, Vector<UseSyntax>* uses, Vector<DeclarationSyntax>* declarations, const Text& text) {
     Region _r;
-    HashMapBuilder<String, Nameable>& symbols_builder = *new(alignof(HashMapBuilder<String, Nameable>), _r) HashMapBuilder<String, Nameable>();
-    HashMapBuilder<String, List<Function>>& functions_builder = *new(alignof(HashMapBuilder<String, List<Function>>), _r) HashMapBuilder<String, List<Function>>();
+    HashMapBuilder<String, Nameable>& symbols_builder = *new(alignof(HashMapBuilder<String, Nameable>), _r.get_page()) HashMapBuilder<String, Nameable>();
+    HashMapBuilder<String, List<Function>>& functions_builder = *new(alignof(HashMapBuilder<String, List<Function>>), _r.get_page()) HashMapBuilder<String, List<Function>>();
     List<Initializer> initializers_builder;
     DeInitializer* deinitializer = nullptr;
 
@@ -1525,7 +1525,7 @@ Result<Concept, ModelError> build_concept(Page* _rp, Page* _ep, bool private_, S
 
 Result<Package, ModelError> handle_package(Page* _rp, Page* _ep, PackageSyntax package_syntax, const Text& text) {
     Region _r;
-    StringBuilder& file_name_builder = *new(alignof(StringBuilder), _r) StringBuilder();
+    StringBuilder& file_name_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
     file_name_builder.append_string(String(_r.get_page(), "../")); // The real package path to go here later
     file_name_builder.append_string(package_syntax.name.name);
     file_name_builder.append_string(String(_r.get_page(), ".scaly"));
@@ -1536,14 +1536,14 @@ Result<Package, ModelError> handle_package(Page* _rp, Page* _ep, PackageSyntax p
     }
     auto module_text = module_text_result._Ok;
 
-    Parser& parser = *new(alignof(Parser), _r) Parser(_r.get_page(), module_text);
+    Parser& parser = *new(alignof(Parser), _r.get_page()) Parser(_r.get_page(), module_text);
     auto package_text = Text {._tag = Text::File, ._Program = String(_ep, file_name) };
     auto file_syntax_result = parser.parse_file(_rp, _ep);
     if (file_syntax_result._tag == Result<ModuleSyntax*, ParserError>::Error)
         return Result<Package, ModelError> { ._tag = Result<Package, ModelError>::Error, ._Error = ModelError(ParserModelError(text, file_syntax_result._Error)) };
     auto file_syntax = file_syntax_result._Ok;
 
-    StringBuilder& path_builder = *new(alignof(StringBuilder), _r) StringBuilder();
+    StringBuilder& path_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
     path_builder.append_string(String(_r.get_page(), "../")); // The real package path to go here later
     path_builder.append_string(package_syntax.name.name);
 

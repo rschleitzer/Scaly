@@ -18,7 +18,7 @@ struct MultiMap : Object {
         auto length = multi_map_builder.slots->length;
         for (size_t i = 0; i < length; i++) {
             Region _r_1;
-            Array<KeyValuePair<K, Vector<V>>>& array = *new(alignof(Array<KeyValuePair<K, Vector<V>>>), _r_1) Array<KeyValuePair<K, Vector<V>>>();
+            Array<KeyValuePair<K, Vector<V>>>& array = *new(alignof(Array<KeyValuePair<K, Vector<V>>>), _r_1.get_page()) Array<KeyValuePair<K, Vector<V>>>();
             auto list_iterator = ListIterator<Slot<KeyValuePair<K, Array<V>*>>>(multi_map_builder.slots->get(i)->head);
             while (auto item = list_iterator.next()) {
                 array.add(
