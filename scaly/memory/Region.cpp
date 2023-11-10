@@ -1,26 +1,20 @@
 namespace scaly {
 namespace memory {
 
-struct Region {
+Region::Region() : page(nullptr) {}
 
-    Region() : page(nullptr) {}
-
-    ~Region() {
-        if (page != nullptr) {
-            page->deallocate_extensions();
-            page->forget();
-        }
+Region::~Region() {
+    if (page != nullptr) {
+        page->deallocate_extensions();
+        page->forget();
     }
+}
 
-    Page* get_page() {
-        if (page == nullptr)
-            page = Page::allocate_page();
-        return page;
-    }
-
-private:
-    Page* page;
-};
+Page* Region::get_page() {
+    if (page == nullptr)
+        page = Page::allocate_page();
+    return page;
+}
 
 }
 

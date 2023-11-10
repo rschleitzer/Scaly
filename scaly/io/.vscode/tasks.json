@@ -14,6 +14,7 @@
 				"${workspaceFolder}/../memory/PageListIterator.ll",
 				"${workspaceFolder}/../memory/PageList.ll",
 				"${workspaceFolder}/../memory/Page.ll",
+				"${workspaceFolder}/../memory/Region.ll",
 				"-o",
 				"${workspaceFolder}/bin/${fileBasenameNoExtension}",
 				"`llvm-config --cxxflags`"
