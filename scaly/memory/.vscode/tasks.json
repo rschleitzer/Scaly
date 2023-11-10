@@ -11,6 +11,8 @@
 				"-g",
 				"${workspaceFolder}/main.cpp",
 				"${workspaceFolder}/PageNode.ll",
+				"${workspaceFolder}/PageListIterator.ll",
+				"${workspaceFolder}/PageList.ll",
 				"-o",
 				"${workspaceFolder}/bin/${fileBasenameNoExtension}",
 				"`llvm-config --cxxflags`"

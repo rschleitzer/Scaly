@@ -10,7 +10,9 @@
 				"-fdiagnostics-color=always",
 				"-g",
 				"${workspaceFolder}/main.cpp",
-				"${workspaceFolder}/../memory/Object.ll",
+				"${workspaceFolder}/../memory/PageNode.ll",
+				"${workspaceFolder}/../memory/PageListIterator.ll",
+				"${workspaceFolder}/../memory/PageList.ll",
 				"-o",
 				"${workspaceFolder}/bin/${fileBasenameNoExtension}",
 				"`llvm-config --cxxflags`"

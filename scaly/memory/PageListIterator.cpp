@@ -2,21 +2,17 @@ namespace scaly {
 
 namespace memory {
 
-struct PageListIterator {
-    PageNode* current;
+PageListIterator::PageListIterator(PageNode* head) :current(head) {}
 
-    PageListIterator(PageNode* head) :current(head) {}
-
-    Page** next() {
-        if (this->current != nullptr) {
-            auto current = this->current;
-            this->current = this->current->next;
-            return &current->page;
-        } else {
-            return nullptr;
-        }
+Page** PageListIterator::next() {
+    if (this->current != nullptr) {
+        auto current = this->current;
+        this->current = this->current->next;
+        return &current->page;
+    } else {
+        return nullptr;
     }
-};
+}
 
 }
 

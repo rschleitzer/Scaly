@@ -15,8 +15,6 @@ const int PAGE_SIZE = 0x1000;
 #include "PageNode.h"
 #include "PageListIterator.h"
 #include "PageList.h"
-#include "Page.cpp"
-#include "Region.cpp"
-#include "Object.cpp"
+#include "PageList.cpp"
 
 #endif // __Scaly_Memory__
