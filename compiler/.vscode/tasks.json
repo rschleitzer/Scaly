@@ -13,6 +13,7 @@
 				"${workspaceFolder}/../scaly/memory/PageNode.ll",
 				"${workspaceFolder}/../scaly/memory/PageListIterator.ll",
 				"${workspaceFolder}/../scaly/memory/PageList.ll",
+				"${workspaceFolder}/../scaly/memory/Page.ll",
 				"-o",
 				"${workspaceFolder}/bin/${fileBasenameNoExtension}",
 				"`llvm-config --cxxflags --ldflags --system-libs --libs core`"

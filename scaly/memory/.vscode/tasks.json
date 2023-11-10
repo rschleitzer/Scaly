@@ -13,6 +13,7 @@
 				"${workspaceFolder}/PageNode.ll",
 				"${workspaceFolder}/PageListIterator.ll",
 				"${workspaceFolder}/PageList.ll",
+				"${workspaceFolder}/Page.ll",
 				"-o",
 				"${workspaceFolder}/bin/${fileBasenameNoExtension}",
 				"`llvm-config --cxxflags`"
