@@ -3,9 +3,9 @@ namespace scaly {
 namespace memory {
 
 struct PageNode : Object {
-    Page* element;
+    Page* page;
     PageNode* next;
-    PageNode(Page* _element, PageNode* _next);
+    PageNode(Page* thePage, PageNode* nextNode);
 };
 
 }

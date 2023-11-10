@@ -59,7 +59,7 @@ void test_page()
         exit (-10);
 
     // Now we look at our oversized page.
-    Page& oversized_page = *Page::get(page.exclusive_pages.head->element);
+    Page& oversized_page = *Page::get(page.exclusive_pages.head->page);
 
     // A null next_object indicates an oversized page.
     if (oversized_page.next_object != nullptr)

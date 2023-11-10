@@ -11,7 +11,7 @@ struct PageListIterator {
         if (this->current != nullptr) {
             auto current = this->current;
             this->current = this->current->next;
-            return &current->element;
+            return &current->page;
         } else {
             return nullptr;
         }

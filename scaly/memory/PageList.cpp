@@ -18,7 +18,7 @@ struct PageList : Object {
         auto node = this->head;
         PageNode* previous_node = nullptr;
         while (node != nullptr) {
-            if (node->element == element) {
+            if (node->page == element) {
                 if (previous_node != nullptr)
                     previous_node->next = node->next;
                 if (node == head)
@@ -35,7 +35,7 @@ struct PageList : Object {
     Page** get_head() {
         if (this->head == nullptr)
             return nullptr;
-        return &this->head->element;
+        return &this->head->page;
     }
 
     size_t count() {
