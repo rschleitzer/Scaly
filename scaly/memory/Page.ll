@@ -7,7 +7,7 @@ target triple = "arm64-apple-macosx14.0.0"
 %"struct.scaly::memory::Page" = type { ptr, ptr, ptr, %"struct.scaly::memory::PageList" }
 %"struct.scaly::memory::PageListIterator" = type { ptr }
 
-; Function Attrs: mustprogress ssp uwtable
+; Function Attrs: mustprogress ssp uwtable(sync)
 define void @_ZN5scaly6memory4Page5resetEv(ptr noundef nonnull align 8 dereferenceable(32) %this) local_unnamed_addr #0 align 2 {
 entry:
   %ref.tmp = alloca %"struct.scaly::memory::PageList", align 8
@@ -24,15 +24,15 @@ entry:
   ret void
 }
 
-; Function Attrs: argmemonly mustprogress nocallback nofree nosync nounwind willreturn
+; Function Attrs: mustprogress nocallback nofree nosync nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.lifetime.start.p0(i64 immarg, ptr nocapture) #1
 
 declare noundef ptr @_ZN5scaly6memory8PageListC1Ev(ptr noundef nonnull returned align 8 dereferenceable(8)) unnamed_addr #2
 
-; Function Attrs: argmemonly mustprogress nocallback nofree nosync nounwind willreturn
+; Function Attrs: mustprogress nocallback nofree nosync nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.lifetime.end.p0(i64 immarg, ptr nocapture) #1
 
-; Function Attrs: argmemonly mustprogress nofree norecurse nosync nounwind readonly ssp willreturn uwtable
+; Function Attrs: mustprogress nofree norecurse nosync nounwind ssp willreturn memory(argmem: read) uwtable(sync)
 define noundef zeroext i1 @_ZN5scaly6memory4Page12is_oversizedEv(ptr nocapture noundef nonnull readonly align 8 dereferenceable(32) %this) local_unnamed_addr #3 align 2 {
 entry:
   %0 = load ptr, ptr %this, align 8, !tbaa !5
@@ -40,22 +40,22 @@ entry:
   ret i1 %cmp
 }
 
-; Function Attrs: argmemonly mustprogress nofree norecurse nosync nounwind readonly ssp willreturn uwtable
+; Function Attrs: mustprogress nofree norecurse nosync nounwind ssp willreturn memory(argmem: read) uwtable(sync)
 define noundef i64 @_ZN5scaly6memory4Page12get_capacityEm(ptr noundef nonnull align 8 dereferenceable(32) %this, i64 noundef %align) local_unnamed_addr #3 align 2 {
 entry:
   %0 = load ptr, ptr %this, align 8, !tbaa !5
   %1 = ptrtoint ptr %0 to i64
   %add = add i64 %align, -1
   %sub = add i64 %add, %1
-  %neg = sub i64 0, %align
-  %and = and i64 %sub, %neg
+  %not = sub i64 0, %align
+  %and = and i64 %sub, %not
   %2 = ptrtoint ptr %this to i64
   %add3 = add i64 %2, 4096
   %sub4 = sub i64 %add3, %and
   ret i64 %sub4
 }
 
-; Function Attrs: mustprogress ssp uwtable
+; Function Attrs: mustprogress ssp uwtable(sync)
 define noundef ptr @_ZN5scaly6memory4Page12allocate_rawEmm(ptr noundef nonnull align 8 dereferenceable(32) %this, i64 noundef %size, i64 noundef %align) local_unnamed_addr #0 align 2 {
 entry:
   %ref.tmp.i.i = alloca %"struct.scaly::memory::PageList", align 8
@@ -63,8 +63,8 @@ entry:
   %1 = ptrtoint ptr %0 to i64
   %add = add i64 %align, -1
   %sub = add i64 %add, %1
-  %neg = sub i64 0, %align
-  %and = and i64 %sub, %neg
+  %not = sub i64 0, %align
+  %and = and i64 %sub, %not
   %2 = ptrtoint ptr %this to i64
   %add3 = add i64 %2, 4096
   %sub4 = sub i64 %add3, %and
@@ -143,7 +143,7 @@ cleanup26:                                        ; preds = %_ZN5scaly6memory4Pa
   ret ptr %retval.1
 }
 
-; Function Attrs: mustprogress ssp uwtable
+; Function Attrs: mustprogress ssp uwtable(sync)
 define noundef nonnull ptr @_ZN5scaly6memory4Page18allocate_oversizedEm(ptr noundef nonnull align 8 dereferenceable(32) %this, i64 noundef %size) local_unnamed_addr #0 align 2 {
 entry:
   %sub = add i64 %size, 4095
@@ -164,7 +164,7 @@ if.end:                                           ; preds = %entry
   ret ptr %add.ptr
 }
 
-; Function Attrs: mustprogress nofree norecurse nosync nounwind readnone ssp willreturn uwtable
+; Function Attrs: mustprogress nofree norecurse nosync nounwind ssp willreturn memory(none) uwtable(sync)
 define noundef ptr @_ZN5scaly6memory4Page3getEPv(ptr noundef %address) local_unnamed_addr #4 align 2 {
 entry:
   %0 = ptrtoint ptr %address to i64
@@ -173,7 +173,7 @@ entry:
   ret ptr %1
 }
 
-; Function Attrs: mustprogress ssp uwtable
+; Function Attrs: mustprogress ssp uwtable(sync)
 define noundef ptr @_ZN5scaly6memory4Page13allocate_pageEv() local_unnamed_addr #0 align 2 {
 entry:
   %ref.tmp.i = alloca %"struct.scaly::memory::PageList", align 8
@@ -191,7 +191,7 @@ entry:
   ret ptr %call
 }
 
-; Function Attrs: inaccessiblememonly mustprogress nofree nounwind willreturn allockind("alloc,uninitialized,aligned") allocsize(1)
+; Function Attrs: mustprogress nofree nounwind willreturn allockind("alloc,uninitialized,aligned") allocsize(1) memory(inaccessiblemem: readwrite)
 declare noalias noundef ptr @aligned_alloc(i64 allocalign noundef, i64 noundef) local_unnamed_addr #5
 
 ; Function Attrs: noreturn
@@ -199,7 +199,7 @@ declare void @exit(i32 noundef) local_unnamed_addr #6
 
 declare void @_ZN5scaly6memory8PageList3addEPNS0_4PageES3_(ptr noundef nonnull align 8 dereferenceable(8), ptr noundef, ptr noundef) local_unnamed_addr #2
 
-; Function Attrs: mustprogress ssp uwtable
+; Function Attrs: mustprogress ssp uwtable(sync)
 define noundef ptr @_ZN5scaly6memory4Page23allocate_exclusive_pageEv(ptr noundef nonnull align 8 dereferenceable(32) %this) local_unnamed_addr #0 align 2 {
 entry:
   %ref.tmp.i.i = alloca %"struct.scaly::memory::PageList", align 8
@@ -219,7 +219,7 @@ entry:
   ret ptr %call.i
 }
 
-; Function Attrs: mustprogress ssp uwtable
+; Function Attrs: mustprogress ssp uwtable(sync)
 define void @_ZN5scaly6memory4Page21deallocate_extensionsEv(ptr noundef nonnull align 8 dereferenceable(32) %this) local_unnamed_addr #0 align 2 {
 entry:
   %_exclusive_pages_iterator = alloca %"struct.scaly::memory::PageListIterator", align 8
@@ -272,17 +272,17 @@ declare i64 @_ZN5scaly6memory8PageList12get_iteratorEv(ptr noundef nonnull align
 
 declare noundef ptr @_ZN5scaly6memory16PageListIterator4nextEv(ptr noundef nonnull align 8 dereferenceable(8)) local_unnamed_addr #2
 
-; Function Attrs: mustprogress nounwind ssp willreturn uwtable
+; Function Attrs: mustprogress nounwind ssp willreturn memory(argmem: readwrite, inaccessiblemem: readwrite) uwtable(sync)
 define void @_ZN5scaly6memory4Page6forgetEv(ptr nocapture noundef nonnull align 8 dereferenceable(32) %this) local_unnamed_addr #7 align 2 {
 entry:
   tail call void @free(ptr noundef nonnull %this)
   ret void
 }
 
-; Function Attrs: inaccessiblemem_or_argmemonly mustprogress nounwind willreturn allockind("free")
+; Function Attrs: mustprogress nounwind willreturn allockind("free") memory(argmem: readwrite, inaccessiblemem: readwrite)
 declare void @free(ptr allocptr nocapture noundef) local_unnamed_addr #8
 
-; Function Attrs: mustprogress ssp uwtable
+; Function Attrs: mustprogress ssp uwtable(sync)
 define void @_ZN5scaly6memory4Page25deallocate_exclusive_pageEPS1_(ptr noundef nonnull align 8 dereferenceable(32) %this, ptr noundef nonnull %page) local_unnamed_addr #0 align 2 {
 entry:
   tail call void @_ZN5scaly6memory4Page21deallocate_extensionsEv(ptr noundef nonnull align 8 dereferenceable(32) %page)
@@ -301,19 +301,19 @@ if.end:                                           ; preds = %entry
 
 declare noundef zeroext i1 @_ZN5scaly6memory8PageList6removeEPNS0_4PageE(ptr noundef nonnull align 8 dereferenceable(8), ptr noundef) local_unnamed_addr #2
 
-; Function Attrs: argmemonly nocallback nofree nounwind willreturn writeonly
+; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: write)
 declare void @llvm.memset.p0.i64(ptr nocapture writeonly, i8, i64, i1 immarg) #9
 
-attributes #0 = { mustprogress ssp uwtable "frame-pointer"="non-leaf" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="apple-m1" "target-features"="+aes,+crc,+crypto,+dotprod,+fp-armv8,+fp16fml,+fullfp16,+lse,+neon,+ras,+rcpc,+rdm,+sha2,+sha3,+sm4,+v8.5a,+zcm,+zcz" }
-attributes #1 = { argmemonly mustprogress nocallback nofree nosync nounwind willreturn }
-attributes #2 = { "frame-pointer"="non-leaf" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="apple-m1" "target-features"="+aes,+crc,+crypto,+dotprod,+fp-armv8,+fp16fml,+fullfp16,+lse,+neon,+ras,+rcpc,+rdm,+sha2,+sha3,+sm4,+v8.5a,+zcm,+zcz" }
-attributes #3 = { argmemonly mustprogress nofree norecurse nosync nounwind readonly ssp willreturn uwtable "frame-pointer"="non-leaf" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="apple-m1" "target-features"="+aes,+crc,+crypto,+dotprod,+fp-armv8,+fp16fml,+fullfp16,+lse,+neon,+ras,+rcpc,+rdm,+sha2,+sha3,+sm4,+v8.5a,+zcm,+zcz" }
-attributes #4 = { mustprogress nofree norecurse nosync nounwind readnone ssp willreturn uwtable "frame-pointer"="non-leaf" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="apple-m1" "target-features"="+aes,+crc,+crypto,+dotprod,+fp-armv8,+fp16fml,+fullfp16,+lse,+neon,+ras,+rcpc,+rdm,+sha2,+sha3,+sm4,+v8.5a,+zcm,+zcz" }
-attributes #5 = { inaccessiblememonly mustprogress nofree nounwind willreturn allockind("alloc,uninitialized,aligned") allocsize(1) "alloc-family"="malloc" "frame-pointer"="non-leaf" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="apple-m1" "target-features"="+aes,+crc,+crypto,+dotprod,+fp-armv8,+fp16fml,+fullfp16,+lse,+neon,+ras,+rcpc,+rdm,+sha2,+sha3,+sm4,+v8.5a,+zcm,+zcz" }
-attributes #6 = { noreturn "frame-pointer"="non-leaf" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="apple-m1" "target-features"="+aes,+crc,+crypto,+dotprod,+fp-armv8,+fp16fml,+fullfp16,+lse,+neon,+ras,+rcpc,+rdm,+sha2,+sha3,+sm4,+v8.5a,+zcm,+zcz" }
-attributes #7 = { mustprogress nounwind ssp willreturn uwtable "frame-pointer"="non-leaf" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="apple-m1" "target-features"="+aes,+crc,+crypto,+dotprod,+fp-armv8,+fp16fml,+fullfp16,+lse,+neon,+ras,+rcpc,+rdm,+sha2,+sha3,+sm4,+v8.5a,+zcm,+zcz" }
-attributes #8 = { inaccessiblemem_or_argmemonly mustprogress nounwind willreturn allockind("free") "alloc-family"="malloc" "frame-pointer"="non-leaf" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="apple-m1" "target-features"="+aes,+crc,+crypto,+dotprod,+fp-armv8,+fp16fml,+fullfp16,+lse,+neon,+ras,+rcpc,+rdm,+sha2,+sha3,+sm4,+v8.5a,+zcm,+zcz" }
-attributes #9 = { argmemonly nocallback nofree nounwind willreturn writeonly }
+attributes #0 = { mustprogress ssp uwtable(sync) "frame-pointer"="non-leaf" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="apple-m1" "target-features"="+aes,+crc,+dotprod,+fp-armv8,+fp16fml,+fullfp16,+lse,+neon,+ras,+rcpc,+rdm,+sha2,+sha3,+v8.1a,+v8.2a,+v8.3a,+v8.4a,+v8.5a,+v8a,+zcm,+zcz" }
+attributes #1 = { mustprogress nocallback nofree nosync nounwind willreturn memory(argmem: readwrite) }
+attributes #2 = { "frame-pointer"="non-leaf" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="apple-m1" "target-features"="+aes,+crc,+dotprod,+fp-armv8,+fp16fml,+fullfp16,+lse,+neon,+ras,+rcpc,+rdm,+sha2,+sha3,+v8.1a,+v8.2a,+v8.3a,+v8.4a,+v8.5a,+v8a,+zcm,+zcz" }
+attributes #3 = { mustprogress nofree norecurse nosync nounwind ssp willreturn memory(argmem: read) uwtable(sync) "frame-pointer"="non-leaf" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="apple-m1" "target-features"="+aes,+crc,+dotprod,+fp-armv8,+fp16fml,+fullfp16,+lse,+neon,+ras,+rcpc,+rdm,+sha2,+sha3,+v8.1a,+v8.2a,+v8.3a,+v8.4a,+v8.5a,+v8a,+zcm,+zcz" }
+attributes #4 = { mustprogress nofree norecurse nosync nounwind ssp willreturn memory(none) uwtable(sync) "frame-pointer"="non-leaf" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="apple-m1" "target-features"="+aes,+crc,+dotprod,+fp-armv8,+fp16fml,+fullfp16,+lse,+neon,+ras,+rcpc,+rdm,+sha2,+sha3,+v8.1a,+v8.2a,+v8.3a,+v8.4a,+v8.5a,+v8a,+zcm,+zcz" }
+attributes #5 = { mustprogress nofree nounwind willreturn allockind("alloc,uninitialized,aligned") allocsize(1) memory(inaccessiblemem: readwrite) "alloc-family"="malloc" "frame-pointer"="non-leaf" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="apple-m1" "target-features"="+aes,+crc,+dotprod,+fp-armv8,+fp16fml,+fullfp16,+lse,+neon,+ras,+rcpc,+rdm,+sha2,+sha3,+v8.1a,+v8.2a,+v8.3a,+v8.4a,+v8.5a,+v8a,+zcm,+zcz" }
+attributes #6 = { noreturn "frame-pointer"="non-leaf" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="apple-m1" "target-features"="+aes,+crc,+dotprod,+fp-armv8,+fp16fml,+fullfp16,+lse,+neon,+ras,+rcpc,+rdm,+sha2,+sha3,+v8.1a,+v8.2a,+v8.3a,+v8.4a,+v8.5a,+v8a,+zcm,+zcz" }
+attributes #7 = { mustprogress nounwind ssp willreturn memory(argmem: readwrite, inaccessiblemem: readwrite) uwtable(sync) "frame-pointer"="non-leaf" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="apple-m1" "target-features"="+aes,+crc,+dotprod,+fp-armv8,+fp16fml,+fullfp16,+lse,+neon,+ras,+rcpc,+rdm,+sha2,+sha3,+v8.1a,+v8.2a,+v8.3a,+v8.4a,+v8.5a,+v8a,+zcm,+zcz" }
+attributes #8 = { mustprogress nounwind willreturn allockind("free") memory(argmem: readwrite, inaccessiblemem: readwrite) "alloc-family"="malloc" "frame-pointer"="non-leaf" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="apple-m1" "target-features"="+aes,+crc,+dotprod,+fp-armv8,+fp16fml,+fullfp16,+lse,+neon,+ras,+rcpc,+rdm,+sha2,+sha3,+v8.1a,+v8.2a,+v8.3a,+v8.4a,+v8.5a,+v8a,+zcm,+zcz" }
+attributes #9 = { nocallback nofree nounwind willreturn memory(argmem: write) }
 attributes #10 = { nounwind }
 attributes #11 = { allocsize(1) }
 attributes #12 = { noreturn }
@@ -322,10 +322,10 @@ attributes #12 = { noreturn }
 !llvm.ident = !{!4}
 
 !0 = !{i32 1, !"wchar_size", i32 4}
-!1 = !{i32 7, !"PIC Level", i32 2}
-!2 = !{i32 7, !"uwtable", i32 2}
+!1 = !{i32 8, !"PIC Level", i32 2}
+!2 = !{i32 7, !"uwtable", i32 1}
 !3 = !{i32 7, !"frame-pointer", i32 1}
-!4 = !{!"Homebrew clang version 15.0.7"}
+!4 = !{!"Homebrew clang version 17.0.5"}
 !5 = !{!6, !7, i64 0}
 !6 = !{!"_ZTSN5scaly6memory4PageE", !7, i64 0, !7, i64 8, !7, i64 16, !10, i64 24}
 !7 = !{!"any pointer", !8, i64 0}

@@ -6,21 +6,21 @@ target triple = "arm64-apple-macosx14.0.0"
 %"struct.scaly::memory::PageNode" = type { ptr, ptr }
 %"struct.scaly::memory::PageListIterator" = type { ptr }
 
-; Function Attrs: argmemonly mustprogress nofree norecurse nosync nounwind ssp willreturn writeonly uwtable
+; Function Attrs: mustprogress nofree norecurse nosync nounwind ssp willreturn memory(argmem: write) uwtable(sync)
 define noundef nonnull ptr @_ZN5scaly6memory8PageListC2Ev(ptr noundef nonnull returned writeonly align 8 dereferenceable(8) %this) unnamed_addr #0 align 2 {
 entry:
   store ptr null, ptr %this, align 8, !tbaa !5
   ret ptr %this
 }
 
-; Function Attrs: argmemonly mustprogress nofree norecurse nosync nounwind ssp willreturn writeonly uwtable
+; Function Attrs: mustprogress nofree norecurse nosync nounwind ssp willreturn memory(argmem: write) uwtable(sync)
 define noundef nonnull ptr @_ZN5scaly6memory8PageListC1Ev(ptr noundef nonnull returned writeonly align 8 dereferenceable(8) %this) unnamed_addr #0 align 2 {
 entry:
   store ptr null, ptr %this, align 8, !tbaa !5
   ret ptr %this
 }
 
-; Function Attrs: mustprogress ssp uwtable
+; Function Attrs: mustprogress ssp uwtable(sync)
 define void @_ZN5scaly6memory8PageList3addEPNS0_4PageES3_(ptr nocapture noundef nonnull align 8 dereferenceable(8) %this, ptr noundef %_rp, ptr noundef %element) local_unnamed_addr #1 align 2 {
 entry:
   %call = tail call noundef ptr @_ZN5scaly6memory6ObjectnwEmmPNS0_4PageE(i64 noundef 16, i64 noundef 8, ptr noundef %_rp)
@@ -30,22 +30,22 @@ entry:
   ret void
 }
 
-; Function Attrs: argmemonly mustprogress nocallback nofree nosync nounwind willreturn
+; Function Attrs: mustprogress nocallback nofree nosync nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.lifetime.start.p0(i64 immarg, ptr nocapture) #2
 
 declare noundef ptr @_ZN5scaly6memory6ObjectnwEmmPNS0_4PageE(i64 noundef, i64 noundef, ptr noundef) local_unnamed_addr #3
 
 declare noundef ptr @_ZN5scaly6memory8PageNodeC1EPNS0_4PageEPS1_(ptr noundef nonnull returned align 8 dereferenceable(16), ptr noundef, ptr noundef) unnamed_addr #3
 
-; Function Attrs: argmemonly mustprogress nocallback nofree nosync nounwind willreturn
+; Function Attrs: mustprogress nocallback nofree nosync nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.lifetime.end.p0(i64 immarg, ptr nocapture) #2
 
-; Function Attrs: mustprogress nofree norecurse nosync nounwind ssp uwtable
+; Function Attrs: mustprogress nofree norecurse nosync nounwind ssp memory(readwrite, inaccessiblemem: none) uwtable(sync)
 define noundef zeroext i1 @_ZN5scaly6memory8PageList6removeEPNS0_4PageE(ptr nocapture noundef nonnull align 8 dereferenceable(8) %this, ptr noundef readnone %element) local_unnamed_addr #4 align 2 {
 entry:
   %node.024 = load ptr, ptr %this, align 8, !tbaa !10
-  %cmp.not25 = icmp eq ptr %node.024, null
-  br i1 %cmp.not25, label %cleanup, label %while.body.preheader
+  %cmp.not25.not = icmp eq ptr %node.024, null
+  br i1 %cmp.not25.not, label %cleanup, label %while.body.preheader
 
 while.body.preheader:                             ; preds = %entry
   %0 = load ptr, ptr %node.024, align 8, !tbaa !11
@@ -82,22 +82,22 @@ if.end11:                                         ; preds = %while.body.preheade
   %node.02737 = phi ptr [ %node.0, %while.body ], [ %node.024, %while.body.preheader ]
   %next12 = getelementptr inbounds %"struct.scaly::memory::PageNode", ptr %node.02737, i64 0, i32 1
   %node.0 = load ptr, ptr %next12, align 8, !tbaa !10
-  %cmp.not = icmp eq ptr %node.0, null
-  br i1 %cmp.not, label %cleanup, label %while.body, !llvm.loop !13
+  %cmp.not.not = icmp eq ptr %node.0, null
+  br i1 %cmp.not.not, label %cleanup, label %while.body, !llvm.loop !13
 
 cleanup:                                          ; preds = %if.end11, %entry, %if.end, %if.then8
   %cmp.not21 = phi i1 [ true, %if.end ], [ true, %if.then8 ], [ false, %entry ], [ false, %if.end11 ]
   ret i1 %cmp.not21
 }
 
-; Function Attrs: argmemonly mustprogress nofree norecurse nosync nounwind readonly ssp willreturn uwtable
+; Function Attrs: mustprogress nofree norecurse nosync nounwind ssp willreturn memory(argmem: read) uwtable(sync)
 define noundef ptr @_ZN5scaly6memory8PageList8get_headEv(ptr nocapture noundef nonnull readonly align 8 dereferenceable(8) %this) local_unnamed_addr #5 align 2 {
 entry:
   %0 = load ptr, ptr %this, align 8, !tbaa !5
   ret ptr %0
 }
 
-; Function Attrs: mustprogress ssp uwtable
+; Function Attrs: mustprogress ssp uwtable(sync)
 define noundef i64 @_ZN5scaly6memory8PageList5countEv(ptr nocapture noundef nonnull readonly align 8 dereferenceable(8) %this) local_unnamed_addr #1 align 2 {
 entry:
   %list_iterator = alloca %"struct.scaly::memory::PageListIterator", align 8
@@ -118,7 +118,7 @@ while.end:                                        ; preds = %while.cond
   ret i64 %i.0
 }
 
-; Function Attrs: mustprogress ssp uwtable
+; Function Attrs: mustprogress ssp uwtable(sync)
 define i64 @_ZN5scaly6memory8PageList12get_iteratorEv(ptr nocapture noundef nonnull readonly align 8 dereferenceable(8) %this) local_unnamed_addr #1 align 2 {
 entry:
   %retval = alloca %"struct.scaly::memory::PageListIterator", align 8
@@ -133,22 +133,22 @@ declare noundef ptr @_ZN5scaly6memory16PageListIterator4nextEv(ptr noundef nonnu
 
 declare noundef ptr @_ZN5scaly6memory16PageListIteratorC1EPNS0_8PageNodeE(ptr noundef nonnull returned align 8 dereferenceable(8), ptr noundef) unnamed_addr #3
 
-attributes #0 = { argmemonly mustprogress nofree norecurse nosync nounwind ssp willreturn writeonly uwtable "frame-pointer"="non-leaf" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="apple-m1" "target-features"="+aes,+crc,+crypto,+dotprod,+fp-armv8,+fp16fml,+fullfp16,+lse,+neon,+ras,+rcpc,+rdm,+sha2,+sha3,+sm4,+v8.5a,+zcm,+zcz" }
-attributes #1 = { mustprogress ssp uwtable "frame-pointer"="non-leaf" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="apple-m1" "target-features"="+aes,+crc,+crypto,+dotprod,+fp-armv8,+fp16fml,+fullfp16,+lse,+neon,+ras,+rcpc,+rdm,+sha2,+sha3,+sm4,+v8.5a,+zcm,+zcz" }
-attributes #2 = { argmemonly mustprogress nocallback nofree nosync nounwind willreturn }
-attributes #3 = { "frame-pointer"="non-leaf" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="apple-m1" "target-features"="+aes,+crc,+crypto,+dotprod,+fp-armv8,+fp16fml,+fullfp16,+lse,+neon,+ras,+rcpc,+rdm,+sha2,+sha3,+sm4,+v8.5a,+zcm,+zcz" }
-attributes #4 = { mustprogress nofree norecurse nosync nounwind ssp uwtable "frame-pointer"="non-leaf" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="apple-m1" "target-features"="+aes,+crc,+crypto,+dotprod,+fp-armv8,+fp16fml,+fullfp16,+lse,+neon,+ras,+rcpc,+rdm,+sha2,+sha3,+sm4,+v8.5a,+zcm,+zcz" }
-attributes #5 = { argmemonly mustprogress nofree norecurse nosync nounwind readonly ssp willreturn uwtable "frame-pointer"="non-leaf" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="apple-m1" "target-features"="+aes,+crc,+crypto,+dotprod,+fp-armv8,+fp16fml,+fullfp16,+lse,+neon,+ras,+rcpc,+rdm,+sha2,+sha3,+sm4,+v8.5a,+zcm,+zcz" }
+attributes #0 = { mustprogress nofree norecurse nosync nounwind ssp willreturn memory(argmem: write) uwtable(sync) "frame-pointer"="non-leaf" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="apple-m1" "target-features"="+aes,+crc,+dotprod,+fp-armv8,+fp16fml,+fullfp16,+lse,+neon,+ras,+rcpc,+rdm,+sha2,+sha3,+v8.1a,+v8.2a,+v8.3a,+v8.4a,+v8.5a,+v8a,+zcm,+zcz" }
+attributes #1 = { mustprogress ssp uwtable(sync) "frame-pointer"="non-leaf" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="apple-m1" "target-features"="+aes,+crc,+dotprod,+fp-armv8,+fp16fml,+fullfp16,+lse,+neon,+ras,+rcpc,+rdm,+sha2,+sha3,+v8.1a,+v8.2a,+v8.3a,+v8.4a,+v8.5a,+v8a,+zcm,+zcz" }
+attributes #2 = { mustprogress nocallback nofree nosync nounwind willreturn memory(argmem: readwrite) }
+attributes #3 = { "frame-pointer"="non-leaf" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="apple-m1" "target-features"="+aes,+crc,+dotprod,+fp-armv8,+fp16fml,+fullfp16,+lse,+neon,+ras,+rcpc,+rdm,+sha2,+sha3,+v8.1a,+v8.2a,+v8.3a,+v8.4a,+v8.5a,+v8a,+zcm,+zcz" }
+attributes #4 = { mustprogress nofree norecurse nosync nounwind ssp memory(readwrite, inaccessiblemem: none) uwtable(sync) "frame-pointer"="non-leaf" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="apple-m1" "target-features"="+aes,+crc,+dotprod,+fp-armv8,+fp16fml,+fullfp16,+lse,+neon,+ras,+rcpc,+rdm,+sha2,+sha3,+v8.1a,+v8.2a,+v8.3a,+v8.4a,+v8.5a,+v8a,+zcm,+zcz" }
+attributes #5 = { mustprogress nofree norecurse nosync nounwind ssp willreturn memory(argmem: read) uwtable(sync) "frame-pointer"="non-leaf" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="apple-m1" "target-features"="+aes,+crc,+dotprod,+fp-armv8,+fp16fml,+fullfp16,+lse,+neon,+ras,+rcpc,+rdm,+sha2,+sha3,+v8.1a,+v8.2a,+v8.3a,+v8.4a,+v8.5a,+v8a,+zcm,+zcz" }
 attributes #6 = { nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}
 
 !0 = !{i32 1, !"wchar_size", i32 4}
-!1 = !{i32 7, !"PIC Level", i32 2}
-!2 = !{i32 7, !"uwtable", i32 2}
+!1 = !{i32 8, !"PIC Level", i32 2}
+!2 = !{i32 7, !"uwtable", i32 1}
 !3 = !{i32 7, !"frame-pointer", i32 1}
-!4 = !{!"Homebrew clang version 15.0.7"}
+!4 = !{!"Homebrew clang version 17.0.5"}
 !5 = !{!6, !7, i64 0}
 !6 = !{!"_ZTSN5scaly6memory8PageListE", !7, i64 0}
 !7 = !{!"any pointer", !8, i64 0}
