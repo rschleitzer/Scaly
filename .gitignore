@@ -16,12 +16,13 @@ hell/hello.txt
 .codelite
 scaly.io/index.html
 scaly.io/book
-scalyc/obj
+retired/scalyc/obj
 scalyc/.vs
 scalyc/scalyc.csproj.user
 scalyc/scalyc.userprefs
 scalyc/Properties/launchSettings.json
-runtime/obj
+retired/runtime/obj
+retired/tests/obj
 tests/obj
 .vs
 docs/build

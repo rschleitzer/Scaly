@@ -1557,9 +1557,45 @@ Result<Package, ModelError> handle_package(Page* _rp, Page* _ep, PackageSyntax p
     };
 }
 
+Result<Program, ModelError> build_file(Page* _rp, Page* _ep, const String& file_name) {
+    Region _r;
+    auto module_text_result = File::read_to_string(_r.get_page(), _r.get_page(), file_name);
+    if (module_text_result._tag == Result<String, FileError>::Error) {
+        return Result<Program, ModelError> { ._tag = Result<Program, ModelError>::Error, ._Error = ModelError(module_text_result._Error) };
+    }
+    auto module_text = module_text_result._Ok;
+    Parser& parser = *new(alignof(Parser), _r.get_page()) Parser(_r.get_page(), module_text);
+    auto file_syntax_result = parser.parse_file(_rp, _ep);
+    auto text = Text {._tag = Text::File, ._Program = String(_rp, file_name) };
+    if (file_syntax_result._tag == Result<ModuleSyntax*, ParserError>::Error)
+        return Result<Program, ModelError> { ._tag = Result<Program, ModelError>::Error, ._Error = ModelError(ParserModelError(text, file_syntax_result._Error)) };
+    auto file_syntax = file_syntax_result._Ok;
+
+    List<Package> packages;
+    if (file_syntax.packages != nullptr) {
+        auto file_packages = *file_syntax.packages;
+        auto _package_iterator = VectorIterator<PackageSyntax>(file_packages);
+        while (auto _package_syntax = _package_iterator.next()) {
+            auto package_syntax = *_package_syntax;
+            auto _package_result = handle_package(_rp, _ep, package_syntax, text);
+            if (_package_result._tag == Result<Package, ModelError>::Error)
+                return Result<Program, ModelError> { ._tag = Result<Program, ModelError>::Error, ._Error = _package_result._Error };
+            auto package = _package_result._Ok;
+            packages.add(_r.get_page(), package);
+        }
+    }
+
+    auto concept_result = build_concept(_rp, _ep, false, String(_rp, ""), String(_rp, ""), file_syntax, text);
+    if (concept_result._tag == Result<Module*, ModelError*>::Error)
+        return Result<Program, ModelError> { ._tag = Result<Program, ModelError>::Error, ._Error = concept_result._Error };
+    auto concept = concept_result._Ok;
+
+    Program program(String(_rp, ""), text, Vector<Package>(_rp, packages), concept);
+    return Result<Program, ModelError> { ._tag = Result<Program, ModelError>::Ok, ._Ok = program };
+}
+
 Result<Program, ModelError> build_program(Page* _rp, Page* _ep, const String& program_string) {
     Region _r;
-    
     auto text = Text {._tag = Text::Program, ._Program = String(_r.get_page(), program_string) };
     auto file_result = parse_program(_r.get_page(), _ep, program_string);
     if (file_result._tag == Result<Vector<DeclarationSyntax>*, ParserError>::Error)

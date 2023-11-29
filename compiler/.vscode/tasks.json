@@ -6,7 +6,6 @@
 			"label": "C/C++: clang++ build active file",
 			"command": "clang++",
 			"args": [
-				"-std=c++20",
 				"-fdiagnostics-color=always",
 				"-g",
 				"${workspaceFolder}/main.cpp",

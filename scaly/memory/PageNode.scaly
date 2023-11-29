@@ -1,0 +1,11 @@
+define PageNode
+(
+    page: pointer[Page]
+    next: pointer[PageNode]
+)
+{
+    init(thePage: pointer[Page], nextNode: pointer[PageNode]) {
+        set this.page: thePage
+        set this.next: nextNode 
+    }
+}

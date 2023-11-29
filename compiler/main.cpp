@@ -179,11 +179,18 @@ void test_parser() {
 
 void test_generator() {
     Region _r;
-    InitializeModule();
-
+    Generator& generator = *new (alignof(Generator), _r.get_page()) Generator();
+    generator.initialize_module(String(_r.get_page(), "PageNode"));
+    generator.print_module();
+    // generator.save_module_to_file(String(_r.get_page(), "PageNode.ll"));
 }
 
 void test_compiler() {
+    Region _r;
+    auto error = compile_file(_r.get_page(), String(_r.get_page(), "../scaly/memory/PageNode.scaly"));
+}
+
+void test_compile_and_run_program() {
     Region _r;
     auto error = compile_and_run_program(_r.get_page(), String(_r.get_page(), 
 
@@ -196,14 +203,15 @@ void test_compiler() {
     if (error != nullptr) {
         auto error_message = error->to_string(_r.get_page());
         print(_r.get_page(), error_message);
-        exit (-60);
+        exit(-60);
     }
 
 }
 
 int main(int argc, char** argv) {
-    test_lexer();
-    test_parser();
-    test_generator();
+    // test_lexer();
+    // test_parser();
+    // test_generator();
+    test_compile_and_run_program();
     test_compiler();
 }

@@ -13,15 +13,31 @@
 namespace scaly {
 namespace compiler {
 
-static void InitializeModule() {
-  // Open a new context and module.
-  auto TheContext = std::make_unique<llvm::LLVMContext>();
-  auto TheModule = std::make_unique<llvm::Module>("my cool jit", *TheContext);
+struct Generator : Object {
+    std::unique_ptr<llvm::LLVMContext> context;
+    std::unique_ptr<llvm::Module> module;
+    std::unique_ptr<llvm::IRBuilder<>> builder;
 
-  // Create a new builder for the module.
-  auto Builder = std::make_unique<llvm::IRBuilder<>>(*TheContext);
-}
+    Generator() : context(std::make_unique<llvm::LLVMContext>()) {}
 
+    void initialize_module(const String& name) {
+        Region _r;
+        module = std::make_unique<llvm::Module>(name.to_c_string(_r.get_page()), *context);
+        builder = std::make_unique<llvm::IRBuilder<>>(*context);
+    }
+
+    void print_module() {
+        module->print(llvm::outs(), nullptr);
+    }
+
+    void save_module_to_file(const String& file_name) {
+        Region _r;
+        std::error_code error_code;
+        llvm::raw_fd_ostream outLL(file_name.to_c_string(_r.get_page()), error_code);
+        module->print(outLL, nullptr);
+    }
+
+};
 
 }
 }
