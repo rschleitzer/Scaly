@@ -19,9 +19,9 @@ namespace compiler {
 
 using namespace scaly::compiler::model;
 
-CompilerError* compile_file(Page* _ep, const String& file_name) {
+CompilerError* compile_module(Page* _ep, const String& file_name) {
     Region _r;
-    auto file_result = scaly::compiler::model::build_file(_r.get_page(), _ep, file_name);
+    auto file_result = scaly::compiler::model::build_module(_r.get_page(), _ep, file_name);
     if (file_result._tag == Result<Program, ModelError>::Error)
         return new(alignof(CompilerError), _ep) CompilerError(file_result._Error);
     
