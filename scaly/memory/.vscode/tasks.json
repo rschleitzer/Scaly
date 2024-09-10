@@ -17,7 +17,13 @@
 				"${workspaceFolder}/Region.ll",
 				"-o",
 				"${workspaceFolder}/bin/${fileBasenameNoExtension}",
-				"`llvm-config --cxxflags`"
+				//"`llvm-config --cxxflags`"
+				"-I/opt/homebrew/Cellar/llvm/17.0.5/include",
+				"-std=c++17",
+				"-stdlib=libc++",
+				"-D__STDC_CONSTANT_MACROS",
+				"-D__STDC_FORMAT_MACROS",
+				"-D__STDC_LIMIT_MACROS"
 			],
 			"options": {
 				"cwd": "${fileDirname}"
