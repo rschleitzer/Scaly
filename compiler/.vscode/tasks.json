@@ -9,6 +9,7 @@
 				"-fdiagnostics-color=always",
 				"-g",
 				"${workspaceFolder}/main.cpp",
+				"${workspaceFolder}/../scaly/memory/Object.ll",
 				"${workspaceFolder}/../scaly/memory/PageNode.ll",
 				"${workspaceFolder}/../scaly/memory/PageListIterator.ll",
 				"${workspaceFolder}/../scaly/memory/PageList.ll",

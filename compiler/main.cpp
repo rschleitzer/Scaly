@@ -180,9 +180,9 @@ void test_parser() {
 void test_generator() {
     Region _r;
     Generator& generator = *new (alignof(Generator), _r.get_page()) Generator();
-    generator.initialize_module(String(_r.get_page(), "PageNode"));
+    generator.initialize_module(String(_r.get_page(), "foo"));
     generator.print_module();
-    // generator.save_module_to_file(String(_r.get_page(), "PageNode.ll"));
+    generator.save_module_to_file(String(_r.get_page(), "foo.ll"));
 }
 
 void test_compiler() {
@@ -209,9 +209,9 @@ void test_compile_and_run_program() {
 }
 
 int main(int argc, char** argv) {
-    // test_lexer();
-    // test_parser();
-    // test_generator();
+    test_lexer();
+    test_parser();
+    test_generator();
     test_compile_and_run_program();
     test_compiler();
 }

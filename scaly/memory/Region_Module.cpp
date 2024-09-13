@@ -7,7 +7,6 @@
 #include <limits>
 
 using std::size_t;
-using std::alignment_of;
 
 const int PAGE_SIZE = 0x1000;
 

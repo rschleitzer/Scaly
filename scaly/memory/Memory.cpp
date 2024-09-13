@@ -7,7 +7,6 @@
 #include <limits>
 
 using std::size_t;
-using std::alignment_of;
 
 const int PAGE_SIZE = 0x1000;
 
@@ -17,6 +16,5 @@ const int PAGE_SIZE = 0x1000;
 #include "PageList.h"
 #include "Page.h"
 #include "Region.h"
-#include "Object.cpp"
 
 #endif // __Scaly_Memory__

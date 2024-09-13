@@ -10,6 +10,7 @@
 				"-fdiagnostics-color=always",
 				"-g",
 				"${workspaceFolder}/main.cpp",
+				"${workspaceFolder}/Object.ll",
 				"${workspaceFolder}/PageNode.ll",
 				"${workspaceFolder}/PageListIterator.ll",
 				"${workspaceFolder}/PageList.ll",

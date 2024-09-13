@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 namespace scaly {
 namespace memory {
 
