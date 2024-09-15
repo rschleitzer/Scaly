@@ -187,7 +187,7 @@ void test_generator() {
 
 void test_compiler() {
     Region _r;
-    auto error = compile_module(_r.get_page(), String(_r.get_page(), "../scaly.scaly"));
+    auto error = compile(_r.get_page(), String(_r.get_page(), "../scaly.scaly"));
 }
 
 void test_compile_and_run_program() {

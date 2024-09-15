@@ -1,7 +1,9 @@
-define PAGE_SIZE 0x1000
+define memory {
+    define PAGE_SIZE 0x1000
 
-;module Node
-;module List
-;module ListIterator
-module Page
-;module Region
+    ;module Node
+    ;module List
+    ;module ListIterator
+    module Page
+    ;module Region
+}
