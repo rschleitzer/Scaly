@@ -5,5 +5,6 @@
 
 #include "File.cpp"
 #include "Console.cpp"
+#include "Path.cpp"
 
 #endif // __Scaly_IO__

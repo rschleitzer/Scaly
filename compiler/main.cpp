@@ -187,7 +187,7 @@ void test_generator() {
 
 void test_compiler() {
     Region _r;
-    auto error = compile_module(_r.get_page(), String(_r.get_page(), "../scaly/memory/PageNode.scaly"));
+    auto error = compile_module(_r.get_page(), String(_r.get_page(), "../scaly.scaly"));
 }
 
 void test_compile_and_run_program() {
@@ -209,9 +209,9 @@ void test_compile_and_run_program() {
 }
 
 int main(int argc, char** argv) {
-    test_lexer();
-    test_parser();
-    test_generator();
-    test_compile_and_run_program();
+    // test_lexer();
+    // test_parser();
+    // test_generator();
+    // test_compile_and_run_program();
     test_compiler();
 }

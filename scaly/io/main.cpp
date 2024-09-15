@@ -21,7 +21,29 @@ void test_file() {
     }
 }
 
+void test_path() {
+    Region _r;
+
+    auto path = String(_r.get_page(), "../scaly.scaly");
+    auto directory_name = Path::get_directory_name(_r.get_page(), path);
+    if (!directory_name.equals(String(_r.get_page(), "..")))
+        exit(-4);
+
+    auto file_name = Path::get_file_name(_r.get_page(), String(_r.get_page(), path));
+    if (!file_name.equals(String(_r.get_page(), "scaly.scaly")))
+        exit(-5);
+
+    auto joined_path = Path::join(_r.get_page(), directory_name, file_name);
+    if (!joined_path.equals(path))
+        exit(-6);
+
+    directory_name = Path::get_directory_name(_r.get_page(), file_name);
+    if (!directory_name.equals(String(_r.get_page(), "")))
+        exit(-7);
+}
+
 int main(int argc, char** argv)
 {
+    test_path();
     test_file();
 }
