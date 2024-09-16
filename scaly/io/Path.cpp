@@ -1,4 +1,5 @@
 #include <libgen.h>
+#include <filesystem>
 
 namespace scaly {
 namespace io {
@@ -20,6 +21,16 @@ struct Path {
         auto path_as_c_string = path.to_c_string(_r.get_page());
         auto file_name_as_c_string = basename((char*)path_as_c_string);
         String ret = String(_rp, file_name_as_c_string);
+        return ret;
+    }
+
+    static String get_file_name_without_extension(Page* _rp, const String& path) {
+        Region _r;
+        auto path_as_c_string = path.to_c_string(_r.get_page());
+        std::filesystem::path p = path_as_c_string;
+        auto stem = p.stem();
+        auto file_name_without_extension_as_c_string = stem.c_str();
+        String ret = String(_rp, file_name_without_extension_as_c_string);
         return ret;
     }
 

@@ -1,9 +1,9 @@
-define ListIterator[T](current: pointer[Node[T]])
+define PageListIterator(current: pointer[PageNode])
 {
-    init(head: pointer[Node[T]] head)
+    init(head: pointer[PageNode] head)
         set this.current: head
 
-    procedure next(this: ListIterator[T]) returns option[T]
+    procedure next(this: PageListIterator) returns PageNode?
     {
         if this.current <> null
         {
@@ -13,7 +13,7 @@ define ListIterator[T](current: pointer[Node[T]])
         }
         else
         {
-            option[T] null
+            option[PageNode] null
         }
     }
 }

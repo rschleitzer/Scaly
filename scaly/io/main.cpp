@@ -24,13 +24,13 @@ void test_file() {
 void test_path() {
     Region _r;
 
-    auto path = String(_r.get_page(), "../scaly.scaly");
+    auto path = String(_r.get_page(), "../foo.scaly");
     auto directory_name = Path::get_directory_name(_r.get_page(), path);
     if (!directory_name.equals(String(_r.get_page(), "..")))
         exit(-4);
 
     auto file_name = Path::get_file_name(_r.get_page(), String(_r.get_page(), path));
-    if (!file_name.equals(String(_r.get_page(), "scaly.scaly")))
+    if (!file_name.equals(String(_r.get_page(), "foo.scaly")))
         exit(-5);
 
     auto joined_path = Path::join(_r.get_page(), directory_name, file_name);
@@ -40,6 +40,10 @@ void test_path() {
     directory_name = Path::get_directory_name(_r.get_page(), file_name);
     if (!directory_name.equals(String(_r.get_page(), "")))
         exit(-7);
+
+    auto file_name_without_extension = Path::get_file_name_without_extension(_r.get_page(), path);
+    if (!file_name_without_extension.equals(String(_r.get_page(), "foo")))
+        exit(-8);
 }
 
 int main(int argc, char** argv)

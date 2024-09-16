@@ -12,18 +12,27 @@
 #include "ModelError.cpp"
 #include "Modeler.cpp"
 #include "Generator.cpp"
+#include "TranspilerError.cpp"
+#include "Transpiler.cpp"
 #include "CompilerError.cpp"
 
 namespace scaly {
 namespace compiler {
 
 using namespace scaly::compiler::model;
+using namespace scaly::compiler::transpiler;
 
 CompilerError* compile(Page* _ep, const String& file_name) {
     Region _r;
-    auto file_result = scaly::compiler::model::build_program_from_file(_r.get_page(), _ep, file_name);
-    if (file_result._tag == Result<Program, ModelError>::Error)
-        return new(alignof(CompilerError), _ep) CompilerError(file_result._Error);
+    auto program_result = model_program_from_file(_r.get_page(), _ep, file_name);
+    if (program_result._tag == Result<Program, ModelError>::Error)
+        return new(alignof(CompilerError), _ep) CompilerError(program_result._Error);
+    
+    auto program = program_result._Ok;
+
+    auto transpiler_result = transpile(_r.get_page(), program);
+    if (transpiler_result != nullptr)
+        return new(alignof(CompilerError), _ep) CompilerError(transpiler_result);
     
     return nullptr;
 }

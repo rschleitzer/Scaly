@@ -1,0 +1,54 @@
+define PageList
+(
+    head: pointer[PageNode]
+)
+{
+    init set head: null
+
+    procedure add#r(this: PageList, element: pointer[Page])
+    {
+        let new_node PageNode(element, this.head)
+        set this.head: new_node
+    }
+
+    procedure remove(this: PageList, element: Page) returns bool
+    {
+        var node this.head
+        var previous_node: pointer[PageNode] null
+        while node <> nullptr
+        {
+            if node*.element = element
+            {
+                if previous_node <> nullptr
+                    set previous_node*.next: node*.next
+                if node = head
+                    set head: null
+                return true
+            }
+            set previous_node: node
+            set node: node*.next
+        }
+
+        false
+    }
+
+    function get_head(this: PageList) returns Page?
+    {
+        if this.head = null
+            return option[Page] null
+
+        option(this.head*.element)
+    }
+
+    function count(this: PageList) returns size_t
+    {
+        mutable list_iterator this.get_iterator()
+        var i: size_t 0
+        while list_iterator.next() <> null
+            set i: i + 1
+        i
+    }
+
+    function get_iterator(this: PageList) returns PageListIterator
+        PageListIterator this.head
+}

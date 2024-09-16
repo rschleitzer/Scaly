@@ -53,6 +53,9 @@
         "new": "cpp",
         "numbers": "cpp",
         "queue": "cpp",
-        "cinttypes": "cpp"
+        "cinttypes": "cpp",
+        "__config": "cpp",
+        "__tree": "cpp",
+        "locale": "cpp"
     }
 }

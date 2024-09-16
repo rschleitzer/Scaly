@@ -60,6 +60,20 @@ struct HashMap : Object {
 
         return nullptr;
     }
+
+    Vector<V*>& get_values(Page* _rp) const {
+        Region _r;
+        auto array = *new(alignof(Array<V*>), _r.get_page()) Array<V*>();
+        auto slot_iterator = VectorIterator<Vector<KeyValuePair<K, V>>>(*this->slots);
+        while (auto slot = slot_iterator.next()) {
+            auto element_iterator = VectorIterator<KeyValuePair<K, V>>(*slot);
+            while (auto element = element_iterator.next()) {
+                array.add(&element->value);
+            }
+        }
+
+        return *new(alignof(Vector<V*>), _rp) Vector<V*>(_rp, array);
+    }
 };
 
 }
