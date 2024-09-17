@@ -446,7 +446,7 @@ struct Namespace : Object {
         code(code) {}
 };
 
-struct Body {
+struct Definition {
     enum {
         Intrinsic,
         Constant,
@@ -486,14 +486,14 @@ struct Concept : Object {
     String name;
     Vector<GenericParameter> parameters;
     Vector<Attribute> attributes;
-    Body body;
-    Concept(Span span, Vector<Use> uses, String name, Vector<GenericParameter> parameters, Vector<Attribute> attributes, Body body)
+    Definition definition;
+    Concept(Span span, Vector<Use> uses, String name, Vector<GenericParameter> parameters, Vector<Attribute> attributes, Definition definition)
       : span(span),
         uses(uses),
         name(name),
         parameters(parameters),
         attributes(attributes),
-        body(body) {}
+        definition(definition) {}
 };
 
 struct Text {

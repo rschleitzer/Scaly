@@ -30,7 +30,8 @@ CompilerError* compile(Page* _ep, const String& file_name) {
     
     auto program = program_result._Ok;
 
-    auto transpiler_result = transpile(_r.get_page(), program);
+    auto transpiler = *new(alignof(Transpiler), _r.get_page()) Transpiler();
+    auto transpiler_result = transpiler.transpile(_r.get_page(), program);
     if (transpiler_result != nullptr)
         return new(alignof(CompilerError), _ep) CompilerError(transpiler_result);
     
@@ -45,9 +46,9 @@ CompilerError* compile_and_run_program(Page* _ep, const String& program_text) {
     
     auto program = program_result._Ok;
     String string_name(_r.get_page(), "main");
-    switch (program.concept.body._tag) {
-        case Body::Namespace: {
-            auto name_space = program.concept.body._Namespace;
+    switch (program.concept.definition._tag) {
+        case Definition::Namespace: {
+            auto name_space = program.concept.definition._Namespace;
             auto main_functions_symbol = name_space.code.symbols[string_name];
             switch (main_functions_symbol->_tag) {
                 case Nameable::Functions: {

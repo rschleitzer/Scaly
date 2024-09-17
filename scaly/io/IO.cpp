@@ -4,6 +4,7 @@
 #include "../containers/Containers.cpp"
 
 #include "File.cpp"
+#include "Directory.cpp"
 #include "Console.cpp"
 #include "Path.cpp"
 

@@ -10,13 +10,21 @@ struct NotImplemented
     NotImplemented() {}
 };
 
+struct OnlyFile
+{
+    OnlyFile() {}
+};
+
 struct TranspilerError : Object {
-    TranspilerError(NotImplemented _NotImplementedModelError) : _tag(NotImplemented), _NotImplemented(_NotImplementedModelError) {}
+    TranspilerError(NotImplemented _NotImplemented) : _tag(NotImplemented), _NotImplemented(_NotImplemented) {}
+    TranspilerError(OnlyFile _OnlyFile) : _tag(OnlyFile), _OnlyFile() {}
     enum {
         NotImplemented,
+        OnlyFile,
     } _tag;
     union {
         struct NotImplemented _NotImplemented;
+        struct OnlyFile _OnlyFile;
     };
 };
 

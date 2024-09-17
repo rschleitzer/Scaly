@@ -1030,7 +1030,7 @@ Result<Concept, ModelError> handle_definition(Page* _rp, Page* _ep, String path,
             auto structure = structure_result._Ok;
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = 
                 Concept(span, Vector<Use>(_rp, uses), String(_rp, definition.name), Vector<GenericParameter>(_rp, parameters), Vector<Attribute>(_rp, attributes),
-                    Body { ._tag = Body::Structure, ._Structure = structure }
+                    Definition { ._tag = Definition::Structure, ._Structure = structure }
                 )};
         }
         case ConceptSyntax::Namespace: {
@@ -1041,7 +1041,7 @@ Result<Concept, ModelError> handle_definition(Page* _rp, Page* _ep, String path,
             auto namespace_ = _namespace_result._Ok;
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = 
                 Concept(span, Vector<Use>(_rp, uses), String(_rp, definition.name), Vector<GenericParameter>(_rp, parameters), Vector<Attribute>(_rp, attributes),
-                    Body { ._tag = Body::Namespace, ._Namespace = namespace_ }
+                    Definition { ._tag = Definition::Namespace, ._Namespace = namespace_ }
                 )};
         }
         case ConceptSyntax::Union: {
@@ -1052,7 +1052,7 @@ Result<Concept, ModelError> handle_definition(Page* _rp, Page* _ep, String path,
             auto union_ = _union__result._Ok;
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = 
                 Concept(span, Vector<Use>(_rp, uses), String(_rp, definition.name), Vector<GenericParameter>(_rp, parameters), Vector<Attribute>(_rp, attributes),
-                    Body { ._tag = Body::Union, ._Union = union_ }
+                    Definition { ._tag = Definition::Union, ._Union = union_ }
                 )};
         }
         case ConceptSyntax::Constant: {
@@ -1063,7 +1063,7 @@ Result<Concept, ModelError> handle_definition(Page* _rp, Page* _ep, String path,
             auto operation = operation_result._Ok;
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = 
                 Concept(span, Vector<Use>(_rp, uses), String(_rp, definition.name), Vector<GenericParameter>(_rp, parameters), Vector<Attribute>(_rp, attributes),
-                    Body { ._tag = Body::Constant, ._Constant = operation }
+                    Definition { ._tag = Definition::Constant, ._Constant = operation }
                 )};
         }
         case ConceptSyntax::Delegate:
@@ -1071,7 +1071,7 @@ Result<Concept, ModelError> handle_definition(Page* _rp, Page* _ep, String path,
         case ConceptSyntax::Intrinsic:
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = 
                 Concept(span, Vector<Use>(_rp, uses), String(_rp, definition.name), Vector<GenericParameter>(_rp, parameters), Vector<Attribute>(_rp, attributes),
-                    Body { ._tag = Body::Intrinsic }
+                    Definition { ._tag = Definition::Intrinsic }
                 )};
     }
 }
@@ -1464,34 +1464,6 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
 
 Result<Concept, ModelError> build_concept(Page* _rp, Page* _ep, bool private_, String name, String path, FileSyntax file_syntax, const Text& text) {
     Region _r;
-    // if (file_syntax.declarations != nullptr && file_syntax.declarations->length == 1) {
-    //     auto first_declaration = *(*(file_syntax.declarations))[0];
-    //     switch (first_declaration._tag) {
-    //         case DeclarationSyntax::Definition: {
-    //             auto definition_syntax = first_declaration._Definition;
-    //             if (name.equals(definition_syntax.name))
-    //                 return handle_definition(_rp, _ep, path, definition_syntax, file_syntax.uses, false, text);
-    //         }
-    //         break;
-    //         case DeclarationSyntax::Private: {
-    //             auto private_syntax = first_declaration._Private;
-    //             switch (private_syntax.export_._tag) {
-    //                 case ExportSyntax::Definition: {
-    //                     auto definition_syntax = private_syntax.export_._Definition;
-    //                     if (name.equals(definition_syntax.name))
-    //                         return handle_definition(_rp, _ep, path, definition_syntax, file_syntax.uses, true, text);
-
-    //                 }
-    //                 break;
-    //                 default:
-    //                 break;
-    //             }
-    //         }
-    //         break;
-    //         default:
-    //         break;
-    //     }
-    // }
 
     auto code_result = build_code(_rp, _ep, name, path, file_syntax.uses, file_syntax.declarations, text);
     if (code_result._tag == Result<Code, ModelError>::Error)
@@ -1520,7 +1492,7 @@ Result<Concept, ModelError> build_concept(Page* _rp, Page* _ep, bool private_, S
         ._tag = Result<Concept, ModelError>::Ok, 
         ._Ok = Concept(Span(file_syntax.start, file_syntax.end),
                     Vector<Use>(_rp, uses), String(_rp, name), Vector<GenericParameter>(_rp, parameters), Vector<Attribute>(_rp, attributes),
-                    Body { ._tag = Body::Namespace, ._Namespace = Namespace(Span(file_syntax.start, file_syntax.end), private_, code) }) };
+                    Definition { ._tag = Definition::Namespace, ._Namespace = Namespace(Span(file_syntax.start, file_syntax.end), private_, code) }) };
 }
 
 Result<Package, ModelError> handle_package(Page* _rp, Page* _ep, PackageSyntax package_syntax, const Text& text) {
@@ -1584,7 +1556,7 @@ Result<Program, ModelError> model_program_from_file(Page* _rp, Page* _ep, const 
     //     }
     // }
 
-    auto concept_result = build_concept(_rp, _ep, false, String(_rp, ""), Path::get_directory_name(_rp, file_name), file_syntax, text);
+    auto concept_result = build_concept(_rp, _ep, false, Path::get_file_name_without_extension(_rp, file_name), Path::get_directory_name(_rp, file_name), file_syntax, text);
     if (concept_result._tag == Result<Module*, ModelError*>::Error)
         return Result<Program, ModelError> { ._tag = Result<Program, ModelError>::Error, ._Error = concept_result._Error };
     auto concept = concept_result._Ok;

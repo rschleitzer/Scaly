@@ -3,6 +3,47 @@ namespace containers {
 
 using namespace scaly::memory;
 
+template<class K, class V> struct HashMap;
+
+template<class K, class V>
+struct HashMapIterator : Object {
+    Vector<Vector<KeyValuePair<K, V>>>* slots;
+    VectorIterator<Vector<KeyValuePair<K, V>>>* slot_iterator;
+    VectorIterator<KeyValuePair<K, V>>* element_iterator;
+
+    HashMapIterator<K, V>(const HashMap<K, V>& hash_map) {
+        if (hash_map.slots == nullptr)
+            return;
+
+        slot_iterator = new (alignof(VectorIterator<Vector<KeyValuePair<K, V>>>), Page::get(this)) VectorIterator<Vector<KeyValuePair<K, V>>>(*hash_map.slots);
+        element_iterator = nullptr;
+    }
+
+    V* next() {
+        while (true)
+        {
+            if (element_iterator == nullptr) {
+                if (slot_iterator == nullptr)
+                    return nullptr;
+                
+                auto slot = slot_iterator->next();
+                if (slot == nullptr) {
+                    slot_iterator = nullptr;
+                    return nullptr;
+                }
+
+                element_iterator = new (alignof(VectorIterator<KeyValuePair<K, V>>), Page::get(this)) VectorIterator<KeyValuePair<K, V>>(*slot);
+            }
+
+            auto element = element_iterator->next();
+            if (element != nullptr)
+                return &element->value;
+            
+            element_iterator = nullptr;
+        }
+    }
+};
+
 template<class K, class V>
 struct HashMap : Object {
     Vector<Vector<KeyValuePair<K, V>>>* slots;

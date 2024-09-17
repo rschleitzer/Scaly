@@ -7,7 +7,7 @@ template<class T> struct Array;
 
 template<class T> struct Vector;
 
-template<class T> struct VectorIterator {
+template<class T> struct VectorIterator : Object {
     Vector<T>& vector;
     size_t position;
 

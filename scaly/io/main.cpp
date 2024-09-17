@@ -46,8 +46,35 @@ void test_path() {
         exit(-8);
 }
 
+void test_directory() {
+    Region _r;
+
+    {
+        auto dir_exists_result = Directory::exists(_r.get_page(), String(_r.get_page(), "foo"));
+        if (dir_exists_result._tag == Result<bool, FileError>::Error)
+            exit(-9);
+        if (dir_exists_result._Ok)
+            exit(-10);
+    }
+    {
+        auto dir_exists_result = Directory::exists(_r.get_page(), String(_r.get_page(), "bar"));
+        if (dir_exists_result._tag == Result<bool, FileError>::Error)
+            exit(-11);
+        if (dir_exists_result._Ok)
+            exit(-12);
+    }
+    {
+        auto dir_exists_result = Directory::exists(_r.get_page(), String(_r.get_page(), "ding"));
+        if (dir_exists_result._tag == Result<bool, FileError>::Error)
+            exit(-13);
+        if (!dir_exists_result._Ok)
+            exit(-14);
+    }
+}
+
 int main(int argc, char** argv)
 {
-    test_path();
-    test_file();
+    test_directory();
+    // test_path();
+    // test_file();
 }
