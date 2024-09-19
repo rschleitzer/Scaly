@@ -1,3 +1,15 @@
+const int PAGE_SIZE = 0x1000;
+
+#include "Object.h"
+#include "PageNode.h"
+#include "PageListIterator.h"
+#include "PageList.h"
+#include "Page.h"
+
+extern "C" void* aligned_alloc(size_t, size_t);
+extern "C" void  free(void*);
+extern "C" void exit(int);
+
 namespace scaly {
 
 namespace memory {

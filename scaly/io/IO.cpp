@@ -3,9 +3,13 @@
 
 #include "../containers/Containers.cpp"
 
-#include "File.cpp"
-#include "Directory.cpp"
-#include "Console.cpp"
-#include "Path.cpp"
+extern "C" int * __error(void);
+#define ENOENT 2
+#define	EOF	(-1)
+
+#include "File.h"
+#include "Directory.h"
+#include "Console.h"
+#include "Path.h"
 
 #endif // __Scaly_IO__

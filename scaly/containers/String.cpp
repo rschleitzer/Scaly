@@ -1,14 +1,11 @@
+#include "Containers.cpp"
+
 namespace scaly {
 namespace containers {
 
 using namespace scaly::memory;
 
-const size_t PACKED_SIZE = sizeof(size_t) * 8 / 7;
-
-struct String : Object {
-    char* data;
-
-    String(Page* _rp, size_t length) {
+String::String(Page* _rp, size_t length) {
         char length_array[PACKED_SIZE];
         auto rest = length;
 
@@ -25,7 +22,7 @@ struct String : Object {
         memcpy(data, length_array, counter + 1);
     }
 
-    String(Page* _rp, const char* other, size_t length) {
+    String::String(Page* _rp, const char* other, size_t length) {
         char length_array[PACKED_SIZE];
         auto rest = length;
 
@@ -43,11 +40,11 @@ struct String : Object {
         memcpy((void*)(this->data + counter + 1), other, length);
     }
 
-    String(Page* _rp, Vector<char> other) : String(_rp, other.data, other.length) {}
+    String::String(Page* _rp, Vector<char> other) : String(_rp, other.data, other.length) {}
 
-    String(Page* _rp, const char* c_string) : String(_rp, c_string, strlen(c_string)) {}
+    String::String(Page* _rp, const char* c_string) : String(_rp, c_string, strlen(c_string)) {}
 
-    String(Page* _rp, const String& other) {
+    String::String(Page* _rp, const String& other) {
         size_t length = 0;
         auto bit_count = 0;
         auto index = 0;
@@ -70,13 +67,13 @@ struct String : Object {
         memcpy(this->data, other.data, overall_length);
     }
 
-    String(Page* _rp, char character) {
+    String::String(Page* _rp, char character) {
         this->data = (char*)_rp->allocate_raw(2, 1);
         this->data[0] = 1;
         this->data[1] = character;
     }
 
-    const char* to_c_string(Page* _rp) const {
+    const char* String::to_c_string(Page* _rp) const {
         size_t length = 0;
         auto bit_count = 0;
         size_t index = 0;
@@ -100,7 +97,7 @@ struct String : Object {
         return (const char*)dest;
     }
 
-    char* get_buffer() const {
+    char* String::get_buffer() const {
         size_t length = 0;
         auto bit_count = 0;
         size_t index = 0;
@@ -120,7 +117,7 @@ struct String : Object {
         return this->data + index + 1;
     }
 
-    size_t get_length() const {
+    size_t String::get_length() const {
         size_t result = 0;
         auto bit_count = 0;
         auto index = 0;
@@ -141,7 +138,7 @@ struct String : Object {
         return result;
     }
 
-    bool equals(String other) const {
+    bool String::equals(String other) const {
         size_t length = 0;
         auto bit_count = 0;
         auto index = 0;
@@ -167,7 +164,7 @@ struct String : Object {
         return memcmp(this->data + index + 1, other.data + index + 1, length) == 0;
     }
 
-    bool equals(Vector<char> other) const {
+    bool String::equals(Vector<char> other) const {
         size_t length = 0;
         auto bit_count = 0;
         auto index = 0;
@@ -193,7 +190,7 @@ struct String : Object {
         return memcmp(this->data + index + 1, other.data, length) == 0;
     }
 
-    size_t hash() const {
+    size_t String::hash() const {
         // std::string s(this->data, this->get_length());
         // return std::hash<std::string>{}(s);
         size_t length = 0;
@@ -217,19 +214,13 @@ struct String : Object {
         return scaly::containers::hash(this->data + index + 1, length);
     }
 
-};
-
-struct StringIterator {
-    char* current;
-    char* last;
-
-    StringIterator(String string) {
+    StringIterator::StringIterator(String string) {
         auto buffer = string.get_buffer();
         this->current = buffer;
         this->last = buffer + string.get_length();
     }
 
-    char* next() {
+    char* StringIterator::next() {
         if (this->current == last) {
             return nullptr;
         } else {
@@ -238,7 +229,6 @@ struct StringIterator {
             return ret;
         }
     }
-};
 
 }
 }

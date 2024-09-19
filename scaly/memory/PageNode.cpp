@@ -1,12 +1,3 @@
-#include <stdlib.h>
-#include <new>
-#include <type_traits>
-#include <limits>
-
-using std::size_t;
-
-const int PAGE_SIZE = 0x1000;
-
 #include "Object.h"
 #include "PageNode.h"
 

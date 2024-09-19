@@ -1,4 +1,14 @@
-#include "Memory.cpp"
+extern "C" void exit(int);
+
+const int PAGE_SIZE = 0x1000;
+
+#include "Object.h"
+#include "PageNode.h"
+#include "PageListIterator.h"
+#include "PageList.h"
+#include "Page.h"
+#include "Region.h"
+
 using namespace scaly::memory;
 
 void test_page()

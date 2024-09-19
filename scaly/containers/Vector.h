@@ -35,7 +35,7 @@ template<class T> struct Vector : Object {
     Vector<T>(Page* _rp, size_t length) : length(length) {
         if (this->length > 0) {
             this->data = (T*) _rp->allocate_raw(length * sizeof(T), alignof(T));
-            std::memset(this->data, 0, length * sizeof(T));
+            memset(this->data, 0, length * sizeof(T));
         } else {
             this->data = nullptr;
         }

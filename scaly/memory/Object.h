@@ -1,4 +1,4 @@
-#include <stdlib.h>
+typedef __SIZE_TYPE__ size_t;
 
 namespace scaly {
 namespace memory {

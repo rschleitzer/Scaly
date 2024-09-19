@@ -1,3 +1,5 @@
+const int PAGE_SIZE = 0x1000;
+
 namespace scaly {
 namespace containers {
 

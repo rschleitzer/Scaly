@@ -1,3 +1,8 @@
+#include "Object.h"
+#include "PageNode.h"
+#include "PageListIterator.h"
+#include "PageList.h"
+
 namespace scaly {
 
 namespace memory {
