@@ -49,26 +49,37 @@ void test_path() {
 void test_directory() {
     Region _r;
 
+    auto foo = String(_r.get_page(), "foo");
     {
-        auto dir_exists_result = Directory::exists(_r.get_page(), String(_r.get_page(), "foo"));
+        auto dir_exists_result = Directory::exists(_r.get_page(), foo);
         if (dir_exists_result._tag == Result<bool, FileError>::Error)
             exit(-9);
         if (dir_exists_result._Ok)
             exit(-10);
     }
     {
-        auto dir_exists_result = Directory::exists(_r.get_page(), String(_r.get_page(), "bar"));
-        if (dir_exists_result._tag == Result<bool, FileError>::Error)
+        auto dir_exists_result = Directory::create(_r.get_page(), foo);
+        if (dir_exists_result != nullptr)
             exit(-11);
-        if (dir_exists_result._Ok)
-            exit(-12);
     }
     {
-        auto dir_exists_result = Directory::exists(_r.get_page(), String(_r.get_page(), "ding"));
+        auto dir_exists_result = Directory::exists(_r.get_page(), foo);
         if (dir_exists_result._tag == Result<bool, FileError>::Error)
-            exit(-13);
+            exit(-12);
         if (!dir_exists_result._Ok)
+            exit(-13);
+    }
+    {
+        auto dir_exists_result = Directory::remove(_r.get_page(), foo);
+        if (dir_exists_result != nullptr)
             exit(-14);
+    }
+    {
+        auto dir_exists_result = Directory::exists(_r.get_page(), foo);
+        if (dir_exists_result._tag == Result<bool, FileError>::Error)
+            exit(-15);
+        if (dir_exists_result._Ok)
+            exit(-16);
     }
 }
 

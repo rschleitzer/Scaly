@@ -125,7 +125,7 @@ Result<Property, ModelError> handle_property(Page* _rp, Page* _ep, bool private_
 
     List<Attribute> attributes;
     if (property.attributes != nullptr) {
-        auto property_attributes = *property.attributes;
+        auto property_attributes = property.attributes;
         auto _attribute_iterator = VectorIterator<AttributeSyntax>(property_attributes);
         while (auto _attribute_syntax = _attribute_iterator.next()) {
             auto attribute_syntax = *_attribute_syntax;
@@ -146,7 +146,7 @@ Result<Vector<Property>, ModelError> handle_parameterset(Page* _rp, Page* _ep, P
         case ParameterSetSyntax::Parameters: {
             auto parameters_syntax = parameterSetSyntax._Parameters;
             if (parameters_syntax.properties != nullptr) {
-                auto _property_syntax_iterator = VectorIterator<PropertySyntax>(*parameters_syntax.properties);
+                auto _property_syntax_iterator = VectorIterator<PropertySyntax>(parameters_syntax.properties);
                 while (auto _property_syntax = _property_syntax_iterator.next()) {
                     auto property_syntax = *_property_syntax;
                     auto _property_result = handle_property(_rp, _ep, false, property_syntax, text);
@@ -177,7 +177,7 @@ Result<HashMap<String, Property>, ModelError> handle_structure(Page* _rp, Page* 
     Region _r;
     HashMapBuilder<String, Property>& properties_builder = *new(alignof(HashMapBuilder<String, Property>), _r.get_page()) HashMapBuilder<String, Property>();
     if (structure.members != nullptr) {
-        auto members = *structure.members;
+        auto members = structure.members;
         auto _members_iterator = VectorIterator<MemberSyntax>(members);
         while (auto _member = _members_iterator.next()) {
             auto member = *_member;
@@ -313,7 +313,7 @@ Result<Catcher, ModelError> handle_catcher(Page* _rp, Page* _ep, CatcherSyntax& 
     Region _r;
     List<Catch> catches_builder;
     if (catcher.catches != nullptr) {
-        auto catch_syntaxes = *catcher.catches;
+        auto catch_syntaxes = catcher.catches;
         auto _catches_iterator = VectorIterator<CatchSyntax>(catch_syntaxes);
         while (auto _catch_syntax = _catches_iterator.next()) {
             auto catch_syntax = *_catch_syntax;
@@ -344,7 +344,7 @@ Result<Postfix, ModelError> handle_postfix(Page* _rp, Page* _ep, PostfixSyntax& 
             List<String> path;
             path.add(_r.get_page(), String(_rp, member_access.member.name));
             if (member_access.member.extensions != nullptr) {
-                auto extensions = *member_access.member.extensions;
+                auto extensions = member_access.member.extensions;
                 auto _extensions_iterator = VectorIterator<ExtensionSyntax>(extensions);
                 while (auto _extension = _extensions_iterator.next()) {
                     auto extension = *_extension;
@@ -407,7 +407,7 @@ Result<Type*, ModelError> handle_type(Page* _rp, Page* _ep, TypeSyntax& type, co
     List<String> path;
     path.add(_r.get_page(), String(_rp, type.name.name));
     if (type.name.extensions != nullptr) {
-        auto extensions = *type.name.extensions;
+        auto extensions = type.name.extensions;
         auto _extensions_iterator = VectorIterator<ExtensionSyntax>(extensions);
         while (auto _extension = _extensions_iterator.next()) {
             auto extension = *_extension;
@@ -421,7 +421,7 @@ Result<Type*, ModelError> handle_type(Page* _rp, Page* _ep, TypeSyntax& type, co
     if (type.generics != nullptr) {
         auto generic_arguments = type.generics->generics;
         if (generic_arguments != nullptr) {
-            auto generics = *generic_arguments;
+            auto generics = generic_arguments;
             auto _generics_iterator = VectorIterator<GenericArgumentSyntax>(generics);
             while (auto _generic = _generics_iterator.next()) {
                 auto generic = *_generic;
@@ -474,7 +474,7 @@ Result<Type*, ModelError> handle_binding_annotation(Page* _rp, Page* _ep, Bindin
 Result<Vector<Statement>, ModelError> handle_statements(Page* _rp, Page* _ep, Vector<StatementSyntax>& statements, const Text& text) {
     Region _r;
     List<Statement> statements_builder;
-    auto _statements_iterator = VectorIterator<StatementSyntax>(statements);
+    auto _statements_iterator = VectorIterator<StatementSyntax>(&statements);
     while (auto statement = _statements_iterator.next()) {
         switch (statement->_tag)
         {
@@ -555,7 +555,7 @@ Result<Component, ModelError> handle_component(Page* _rp, Page* _ep, ComponentSy
 
     List<Attribute> attributes;
     if (component.attributes != nullptr) {
-        auto definition_attributes = *component.attributes;
+        auto definition_attributes = component.attributes;
         auto _attribute_iterator = VectorIterator<AttributeSyntax>(definition_attributes);
         while (auto _attribute_syntax = _attribute_iterator.next()) {
             auto attribute_syntax = *_attribute_syntax;
@@ -609,7 +609,7 @@ Result<Tuple, ModelError> handle_object(Page* _rp, Page* _ep, ObjectSyntax& obje
     Region _r;
     List<Component> components_builder;
     if (object.components != nullptr) {
-        auto components_iterator = VectorIterator<ComponentSyntax>(*(object.components));
+        auto components_iterator = VectorIterator<ComponentSyntax>(object.components);
         while (auto component = components_iterator.next()) {
             auto component_result =  handle_component(_rp, _ep, *component, text);
             if (component_result._tag == Result<Operand, ModelError>::Error)
@@ -624,7 +624,7 @@ Result<Matrix, ModelError> handle_vector(Page* _rp, Page* _ep, VectorSyntax& vec
     Region _r;
     List<Operation> operations_builder;
     if (vector.elements != nullptr) {
-        auto elements_iterator = VectorIterator<ElementSyntax>(*(vector.elements));
+        auto elements_iterator = VectorIterator<ElementSyntax>(vector.elements);
         while (auto element = elements_iterator.next()) {
             auto operation_result =  handle_operation(_rp, _ep, element->operation, text);
             if (operation_result._tag == Result<Operand, ModelError>::Error)
@@ -723,7 +723,7 @@ Result<Match, ModelError> handle_match(Page* _rp, Page* _ep, MatchSyntax& match_
 
     List<Case> cases_builder;
     if (match_.cases != nullptr) {
-        auto case_iterator = VectorIterator<CaseSyntax>(*(match_.cases));
+        auto case_iterator = VectorIterator<CaseSyntax>(match_.cases);
         while (auto case_ = case_iterator.next()) {
             auto condition_result =  handle_operation(_rp, _ep, case_->condition, text);
             if (condition_result._tag == Result<Operand, ModelError>::Error)
@@ -894,7 +894,7 @@ Result<Operand, ModelError> handle_operand(Page* _rp, Page* _ep, OperandSyntax& 
     if (operand.postfixes != nullptr) {
         Region _r_1;
         List<Postfix> postfixes_builder;
-        auto postfixes_iterator = VectorIterator<PostfixSyntax>(*(operand.postfixes));
+        auto postfixes_iterator = VectorIterator<PostfixSyntax>(operand.postfixes);
         while (auto postfix = postfixes_iterator.next()) {
             auto postfix_result = handle_postfix(_rp, _ep, *postfix, text);
             if (postfix_result._tag == Result<Operand, ModelError>::Error)
@@ -914,7 +914,7 @@ Result<Operand, ModelError> handle_operand(Page* _rp, Page* _ep, OperandSyntax& 
 Result<Vector<Operand>, ModelError> handle_operands(Page* _rp, Page* _ep, Vector<OperandSyntax>& operands, const Text& text) {
     Region _r;
     List<Operand> operands_builder;
-    auto operands_iterator = VectorIterator<OperandSyntax>(operands);
+    auto operands_iterator = VectorIterator<OperandSyntax>(&operands);
     while (auto operand = operands_iterator.next()) {
         auto operand_result = handle_operand(_rp, _ep, *operand, text);
         if (operand_result._tag == Result<Operand, ModelError>::Error)
@@ -939,7 +939,7 @@ Result<GenericParameter, ModelError> handle_generic_parameter(Page* _rp, Page* _
     Region _r;
     List<Attribute> attributes;
     if (generic_parameter.attributes != nullptr) {
-        auto definition_attributes = *generic_parameter.attributes;
+        auto definition_attributes = generic_parameter.attributes;
         auto _attribute_iterator = VectorIterator<AttributeSyntax>(definition_attributes);
         while (auto _attribute_syntax = _attribute_iterator.next()) {
             auto attribute_syntax = *_attribute_syntax;
@@ -958,7 +958,7 @@ Result<Use, ModelError> handle_use(Page* _rp, Page* _ep, UseSyntax& use_, const 
     List<String> path;
     path.add(_r.get_page(), String(_rp, use_.name.name));
     if (use_.name.extensions != nullptr) {
-        auto extensions = *use_.name.extensions;
+        auto extensions = use_.name.extensions;
         auto _extensions_iterator = VectorIterator<ExtensionSyntax>(extensions);
         while (auto _extension = _extensions_iterator.next()) {
             auto extension = *_extension;
@@ -976,7 +976,7 @@ Result<Concept, ModelError> handle_definition(Page* _rp, Page* _ep, String path,
 
     List<Use> uses;
     if (use_syntaxes_option != nullptr) {
-        auto use_syntaxes = *use_syntaxes_option;
+        auto use_syntaxes = use_syntaxes_option;
         auto _uses_iterator = VectorIterator<UseSyntax>(use_syntaxes);
         while (auto _use_ = _uses_iterator.next()) {
             auto use = *_use_;
@@ -993,7 +993,7 @@ Result<Concept, ModelError> handle_definition(Page* _rp, Page* _ep, String path,
     if (definition.parameters != nullptr) {
         auto generic_parameters = *definition.parameters;
         if (generic_parameters.parameters != nullptr) {    
-            auto _parameters_iterator = VectorIterator<GenericParameterSyntax>(*generic_parameters.parameters);
+            auto _parameters_iterator = VectorIterator<GenericParameterSyntax>(generic_parameters.parameters);
             while (auto _generic_parameter = _parameters_iterator.next()) {
                 auto generic_parameter = *_generic_parameter;
                 auto _parameter_result = handle_generic_parameter(_rp, _ep, generic_parameter, text);
@@ -1008,7 +1008,7 @@ Result<Concept, ModelError> handle_definition(Page* _rp, Page* _ep, String path,
 
     List<Attribute> attributes;
     if (definition.attributes != nullptr) {
-        auto definition_attributes = *definition.attributes;
+        auto definition_attributes = definition.attributes;
         auto _attribute_iterator = VectorIterator<AttributeSyntax>(definition_attributes);
         while (auto _attribute_syntax = _attribute_iterator.next()) {
             auto attribute_syntax = *_attribute_syntax;
@@ -1253,7 +1253,7 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
     DeInitializer* deinitializer = nullptr;
 
     if (declarations != nullptr) {
-        auto declarations_iterator = VectorIterator<DeclarationSyntax>(*(declarations));
+        auto declarations_iterator = VectorIterator<DeclarationSyntax>(declarations);
         while (auto declaration = declarations_iterator.next()) {
             switch (declaration->_tag) {
                 case DeclarationSyntax::Private:{
@@ -1445,9 +1445,9 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
 
     HashMap<String, List<Function>> functions(_r.get_page(), functions_builder);
     if (functions.slots != nullptr) {
-        auto functions_slots_iterator = VectorIterator<Vector<KeyValuePair<String, List<Function>>>>(*functions.slots);
+        auto functions_slots_iterator = VectorIterator<Vector<KeyValuePair<String, List<Function>>>>(functions.slots);
         while (auto function_slot = functions_slots_iterator.next()) {
-            auto functions_iterator = VectorIterator<KeyValuePair<String, List<Function>>>(*function_slot);
+            auto functions_iterator = VectorIterator<KeyValuePair<String, List<Function>>>(function_slot);
             while (auto function_kvp = functions_iterator.next()) {
                 symbols_builder.add(function_kvp->key, Nameable { ._tag = Nameable::Functions, ._Functions = Vector<Function>(_rp, function_kvp->value) });
             }
@@ -1473,7 +1473,7 @@ Result<Concept, ModelError> build_concept(Page* _rp, Page* _ep, bool private_, S
 
     List<Use> uses;
     if (file_syntax.uses != nullptr) {
-        auto use_syntaxes = *file_syntax.uses;
+        auto use_syntaxes = file_syntax.uses;
         auto _uses_iterator = VectorIterator<UseSyntax>(use_syntaxes);
         while (auto _use_ = _uses_iterator.next()) {
             auto use = *_use_;
@@ -1575,7 +1575,7 @@ Result<Program, ModelError> build_program_from_string(Page* _rp, Page* _ep, cons
 
     List<Package> packages;
     if (file.packages != nullptr) {
-        auto file_packages = *file.packages;
+        auto file_packages = file.packages;
         auto _package_iterator = VectorIterator<PackageSyntax>(file_packages);
         while (auto _package_syntax = _package_iterator.next()) {
             auto package_syntax = *_package_syntax;

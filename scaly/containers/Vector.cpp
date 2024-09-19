@@ -7,18 +7,21 @@ template<class T> struct Array;
 
 template<class T> struct Vector;
 
-template<class T> struct VectorIterator : Object {
-    Vector<T>& vector;
+template<class T> struct VectorIterator {
+    Vector<T>* vector;
     size_t position;
 
-    VectorIterator<T>(Vector<T>& vector) : vector(vector), position(0) {}
+    VectorIterator<T>(Vector<T>* vector) : vector(vector), position(0) {}
 
     T* next() {
-        if (position == vector.length)
+        if (vector == nullptr)
+            return nullptr;
+
+        if (position == vector->length)
             return nullptr;
 
         position += 1;
-        return vector.get(position - 1);
+        return vector->get(position - 1);
     }
 };
 

@@ -6,40 +6,25 @@ using namespace scaly::memory;
 template<class K, class V> struct HashMap;
 
 template<class K, class V>
-struct HashMapIterator : Object {
+struct HashMapIterator {
     Vector<Vector<KeyValuePair<K, V>>>* slots;
-    VectorIterator<Vector<KeyValuePair<K, V>>>* slot_iterator;
-    VectorIterator<KeyValuePair<K, V>>* element_iterator;
+    VectorIterator<Vector<KeyValuePair<K, V>>> slot_iterator;
+    VectorIterator<KeyValuePair<K, V>> element_iterator;
 
-    HashMapIterator<K, V>(const HashMap<K, V>& hash_map) {
-        if (hash_map.slots == nullptr)
-            return;
-
-        slot_iterator = new (alignof(VectorIterator<Vector<KeyValuePair<K, V>>>), Page::get(this)) VectorIterator<Vector<KeyValuePair<K, V>>>(*hash_map.slots);
-        element_iterator = nullptr;
-    }
+    HashMapIterator<K, V>(const HashMap<K, V>& hash_map) 
+        : slot_iterator(VectorIterator<Vector<KeyValuePair<K, V>>>(hash_map.slots)), element_iterator(VectorIterator<KeyValuePair<K, V>>(slot_iterator.next())) {}
 
     V* next() {
-        while (true)
-        {
-            if (element_iterator == nullptr) {
-                if (slot_iterator == nullptr)
-                    return nullptr;
-                
-                auto slot = slot_iterator->next();
-                if (slot == nullptr) {
-                    slot_iterator = nullptr;
-                    return nullptr;
-                }
-
-                element_iterator = new (alignof(VectorIterator<KeyValuePair<K, V>>), Page::get(this)) VectorIterator<KeyValuePair<K, V>>(*slot);
-            }
-
-            auto element = element_iterator->next();
-            if (element != nullptr)
-                return &element->value;
+        while (true) {
+            auto ret = element_iterator.next();
+            if (ret != nullptr)
+                return &(*ret).value;
             
-            element_iterator = nullptr;
+            auto next_slot = slot_iterator.next();
+            if (next_slot == nullptr)
+                return nullptr;
+            
+            element_iterator = VectorIterator<KeyValuePair<K, V>>(slot_iterator.next());
         }
     }
 };
@@ -105,11 +90,13 @@ struct HashMap : Object {
     Vector<V*>& get_values(Page* _rp) const {
         Region _r;
         auto array = *new(alignof(Array<V*>), _r.get_page()) Array<V*>();
-        auto slot_iterator = VectorIterator<Vector<KeyValuePair<K, V>>>(*this->slots);
-        while (auto slot = slot_iterator.next()) {
-            auto element_iterator = VectorIterator<KeyValuePair<K, V>>(*slot);
-            while (auto element = element_iterator.next()) {
-                array.add(&element->value);
+        if (this->slots) {
+            auto slot_iterator = VectorIterator<Vector<KeyValuePair<K, V>>>(*this->slots);
+            while (auto slot = slot_iterator.next()) {
+                auto element_iterator = VectorIterator<KeyValuePair<K, V>>(*slot);
+                while (auto element = element_iterator.next()) {
+                    array.add(&element->value);
+                }
             }
         }
 

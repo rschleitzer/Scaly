@@ -31,7 +31,7 @@ CompilerError* compile(Page* _ep, const String& file_name) {
     auto program = program_result._Ok;
 
     auto transpiler = *new(alignof(Transpiler), _r.get_page()) Transpiler();
-    auto transpiler_result = transpiler.transpile(_r.get_page(), program);
+    auto transpiler_result = transpiler.program(_r.get_page(), program);
     if (transpiler_result != nullptr)
         return new(alignof(CompilerError), _ep) CompilerError(transpiler_result);
     

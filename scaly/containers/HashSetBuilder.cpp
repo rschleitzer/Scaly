@@ -72,7 +72,7 @@ struct HashSetBuilder : Object {
     HashSetBuilder<T>(Page* _rp, Vector<T>& vector) :HashSetBuilder<T>() {
         if (vector.length > 0) {
             this->reallocate(vector.length);
-            auto vector_iterator = VectorIterator<T>(vector);
+            auto vector_iterator = VectorIterator<T>(&vector);
             while (auto element = vector_iterator.next()) {
                 this->add_internal(*element);
             }
@@ -85,7 +85,7 @@ struct HashSetBuilder : Object {
         Vector<List<Slot<T>>>* slots = new(alignof(Vector<List<Slot<T>>>), this->slots_page) Vector<List<Slot<T>>>(this->slots_page, hash_size);
 
         if (this->slots != nullptr) {
-            auto vector_iterator = VectorIterator<List<Slot<T>>>(*this->slots);
+            auto vector_iterator = VectorIterator<List<Slot<T>>>(this->slots);
             while (auto element = vector_iterator.next()) {
                 auto list_iterator = ListIterator<Slot<T>>(element->head);
                 while (auto item = list_iterator.next())
