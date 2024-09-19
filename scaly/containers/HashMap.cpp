@@ -24,7 +24,7 @@ struct HashMapIterator {
             if (next_slot == nullptr)
                 return nullptr;
             
-            element_iterator = VectorIterator<KeyValuePair<K, V>>(slot_iterator.next());
+            element_iterator = VectorIterator<KeyValuePair<K, V>>(next_slot);
         }
     }
 };

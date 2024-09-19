@@ -1,0 +1,6 @@
+define io {
+    module Console
+    ;module Directory
+    ;module File
+    ;module Path
+}
