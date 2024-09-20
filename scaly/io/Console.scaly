@@ -1,1 +1,9 @@
-define Console {}
+define Console {
+    function print(message: pointer[const_char]) throws FileError {
+        if fputs(message, __stdoutp)
+    }
+
+    function print(message: String) throws FileError {
+        print message.to_c_string()
+    }
+}
