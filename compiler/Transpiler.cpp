@@ -15,7 +15,6 @@ struct Transpiler : Object {
                         case Definition::Namespace:
                             {
                                 auto member_iterator = HashMapIterator<String, Nameable>(program.concept.definition._Namespace.code.symbols);
-                                //auto member_iterator = VectorIterator(program.concept.definition._Namespace.code.symbols.get_values(_r.get_page()));
                                 while (auto member = member_iterator.next()) {
                                     switch(member->_tag) {
                                         case Nameable::Concept:
@@ -109,7 +108,6 @@ struct Transpiler : Object {
         Region _r;
 
         auto member_iterator = HashMapIterator<String, Nameable>(namespace_.code.symbols);
-        //auto member_iterator = VectorIterator(namespace_.code.symbols.get_values(_r.get_page()));
         while (auto member = member_iterator.next()) {
             switch(member->_tag) {
                 case Nameable::Concept:
