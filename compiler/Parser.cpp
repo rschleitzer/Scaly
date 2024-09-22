@@ -665,10 +665,10 @@ struct PackageSyntax : Object {
 };
 
 struct ModuleSyntax : Object {
-    ModuleSyntax(size_t start, size_t end, NameSyntax name) : start(start), end(end), name(name) {}
+    ModuleSyntax(size_t start, size_t end, String name) : start(start), end(end), name(name) {}
     size_t start;
     size_t end;
-    NameSyntax name;
+    String name;
 };
 
 struct ModelSyntax : Object {
@@ -3997,19 +3997,16 @@ struct Parser : Object {
             return Result<ModuleSyntax, ParserError> { ._tag = Result<ModuleSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
 
-        auto name_start = this->lexer.position;
-        auto name_result = this->parse_name(_rp, _ep);
-        if (name_result._tag == Result<NameSyntax, ParserError>::Error)
-        {
-            switch (name_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<ModuleSyntax, ParserError> { ._tag = Result<ModuleSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(name_start, lexer.position, String(_ep, "a valid Name syntax"))) };
-                case ParserError::InvalidSyntax:
-                    return Result<ModuleSyntax, ParserError> { ._tag = Result<ModuleSyntax, ParserError>::Error, ._Error = name_result._Error };
+        auto start_name = this->lexer.previous_position;
+        auto name = this->lexer.parse_identifier(_rp, this->keywords);
+        if (name != nullptr) {
+            if (!this->is_identifier(*name)) {
+            return Result<ModuleSyntax, ParserError> { ._tag = Result<ModuleSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_name, lexer.position, String(_ep, "an identifier"))) };
             }
         }
-
-        auto name = name_result._Ok;
+        else {
+            return Result<ModuleSyntax, ParserError> { ._tag = Result<ModuleSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_name, lexer.position, String(_ep, "an identifier"))) };
+        }
 
         auto start_colon_3 = this->lexer.previous_position;
         auto success_colon_3 = this->lexer.parse_colon(_rp);
@@ -4018,7 +4015,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = ModuleSyntax(start, end, name);
+        auto ret = ModuleSyntax(start, end, *name);
 
         return Result<ModuleSyntax, ParserError> { ._tag = Result<ModuleSyntax, ParserError>::Ok, ._Ok = ret };
     }

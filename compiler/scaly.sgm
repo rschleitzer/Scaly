@@ -284,7 +284,7 @@
 
 <syntax id = Module
     <content link = module
-    <content link = Name                                    property = name
+    <content identifier                                     property = name
     <content colon                                 optional
 
 <syntax id = Package                      multiple

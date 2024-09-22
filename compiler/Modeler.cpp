@@ -1219,7 +1219,7 @@ Result<Concept, ModelError> build_concept(Page* _rp, Page* _ep, bool private_, S
 
 Result<Module, ModelError> handle_module(Page* _rp, Page* _ep, String path, ModuleSyntax& module_syntax, bool private_) {
     Region _r;
-    StringBuilder& file_name_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(Path::join(_r.get_page(), path, module_syntax.name.name));
+    StringBuilder& file_name_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(Path::join(_r.get_page(), path, module_syntax.name));
     file_name_builder.append_string(String(_r.get_page(), ".scaly"));
     auto file_name = file_name_builder.to_string(_r.get_page());
     auto module_text_result = File::read_to_string(_r.get_page(), _r.get_page(), file_name);
@@ -1235,13 +1235,13 @@ Result<Module, ModelError> handle_module(Page* _rp, Page* _ep, String path, Modu
         return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = ModelError(ParserModelError(text, file_syntax_result._Error)) };
     auto file_syntax = file_syntax_result._Ok;
 
-    auto concept_result = build_concept(_rp, _ep, private_, String(_rp, module_syntax.name.name), path, file_syntax, text);
+    auto concept_result = build_concept(_rp, _ep, private_, String(_rp, module_syntax.name), path, file_syntax, text);
     if (concept_result._tag == Result<Concept, ModelError>::Error)
         return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = concept_result._Error };
     auto concept = concept_result._Ok;
     
     return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Ok,
-        ._Ok = Module(private_, String(_rp, module_syntax.name.name), String(_rp, file_name), concept)
+        ._Ok = Module(private_, String(_rp, file_name), concept)
     };
 }
 
@@ -1336,7 +1336,7 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
                                 return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error,
                                     ._Error = module_result._Error };
                             auto module = module_result._Ok;
-                            if (!symbols_builder.add(module.name, Nameable { ._tag = Nameable::Module, ._Module = module }))
+                            if (!symbols_builder.add(module.concept.name, Nameable { ._tag = Nameable::Module, ._Module = module }))
                                 return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error,
                                     ._Error = ModelError(ModelBuilderError(NonFunctionSymbolExists(text, Span(module_syntax.start, module_syntax.end)))) };
                         }
@@ -1434,7 +1434,7 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
                         return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error,
                             ._Error = module_result._Error };
                     auto module = module_result._Ok;
-                    if (!symbols_builder.add(module.name, Nameable { ._tag = Nameable::Module, ._Module = module }))
+                    if (!symbols_builder.add(module.concept.name, Nameable { ._tag = Nameable::Module, ._Module = module }))
                         return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Error,
                             ._Error = ModelError(ModelBuilderError(NonFunctionSymbolExists(text, Span(module_syntax.start, module_syntax.end)))) };
                 }
