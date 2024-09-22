@@ -188,8 +188,11 @@ void test_generator() {
 void test_compiler() {
     Region _r;
     auto error = compile(_r.get_page(), String(_r.get_page(), "../scaly.scaly"));
-    if (error != nullptr)
+    if (error != nullptr) {
+        auto error_message = error->to_string(_r.get_page());
+        print(_r.get_page(), error_message);
         exit(-2);
+    }
 }
 
 void test_compile_and_run_program() {

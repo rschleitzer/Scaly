@@ -37,7 +37,7 @@ struct CompilerError : Object {
         StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
         switch (_tag) {
             case Transpiler:
-                message_builder.append_string(String(_r.get_page(), "Transpiler error."));
+                message_builder.append_string(String(_rp, "Transpiler error."));
             case Model:
                 message_builder.append_string(_Model.to_string(_rp));
             break;

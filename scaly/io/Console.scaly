@@ -1,6 +1,6 @@
 define Console {
     function print(message: pointer[const_char]) throws FileError {
-        if fputs(message, __stdoutp)
+        if fputs(message, stdout)
     }
 
     function print(message: String) throws FileError {
