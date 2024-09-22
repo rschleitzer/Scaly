@@ -34,9 +34,12 @@ FileError* Directory::create(Page *_ep, const String& path) {
 
     struct stat s;
     int err = mkdir(path.to_c_string(_r.get_page()), 0755);
-    if (err == -1)
-        return new(alignof(FileError), _ep) FileError(UnknownFileError(String(_ep, path)));
-    
+    if(err == -1) {
+        if((*__error()) == ENOENT)
+            return new(alignof(FileError), _ep) FileError(NoSuchFileOrDirectoryError(String(_ep, path)));
+        else
+            return new(alignof(FileError), _ep)  FileError(UnknownFileError(String(_ep, path)));
+    }    
     return nullptr;
 }
 

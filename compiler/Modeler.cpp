@@ -103,7 +103,7 @@ Result<FileSyntax, ParserError> parse_program(Page* _rp, Page* _ep, const String
     DeclarationSyntax& main_function_declaration = *new (alignof(DeclarationSyntax), _rp) DeclarationSyntax(FunctionSyntax(main_function_syntax));;
     declarations.add(_r.get_page(), main_function_declaration);
 
-    FileSyntax file_syntax(0, 0, new(alignof(Vector<PackageSyntax>), _rp) Vector<PackageSyntax>(_rp, packages), nullptr, new(alignof(Vector<DeclarationSyntax>), _rp) Vector<DeclarationSyntax>(_rp, declarations), nullptr);
+    FileSyntax file_syntax(0, 0, new(alignof(Vector<PackageSyntax>), _rp) Vector<PackageSyntax>(_rp, packages), nullptr, new(alignof(Vector<DeclarationSyntax>), _rp) Vector<DeclarationSyntax>(_rp, declarations));
     return Result<FileSyntax, ParserError> { 
         ._tag = Result<FileSyntax, ParserError>::Ok, 
         ._Ok = file_syntax

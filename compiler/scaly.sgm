@@ -2,11 +2,16 @@
 
 <grammar>
 
-<syntax id = File
+<syntax id = Program
     <content link = Package               multiple optional property = packages
     <content link = Use                   multiple optional property = uses
     <content link = Declaration           multiple optional property = declarations
     <content link = Statement             multiple optional property = statements
+
+<syntax id = File
+    <content link = Package               multiple optional property = packages
+    <content link = Use                   multiple optional property = uses
+    <content link = Declaration           multiple optional property = declarations
 
 <syntax id = Declaration                  multiple abstract
     <content link = Private

@@ -11,29 +11,6 @@ struct Transpiler : Object {
             case Text::File:
                 {
                     auto file = program.text._File;
-                    auto path = String(_r.get_page(), Path::join(_r.get_page(), Path::get_directory_name(_r.get_page(), file), String(_r.get_page(), "output")));
-                    auto _result = Directory::exists(_ep, path);
-                    if (_result._tag == scaly::containers::Result<bool, FileError>::Error)
-                        return new(alignof(TranspilerError), _ep) TranspilerError(_result._Error);
-                    
-                    if (!_result._Ok)
-                    {
-                        auto _result = Directory::create(_ep, path);
-                        if (_result != nullptr)
-                            return new(alignof(TranspilerError), _ep) TranspilerError(*_result);
-                    }
-
-                    path = Path::join(_r.get_page(), path, program.name);
-                    auto _exists_result = Directory::exists(_ep, path);
-                    if (_exists_result._tag == scaly::containers::Result<bool, FileError>::Error)
-                        return new(alignof(TranspilerError), _ep) TranspilerError(_exists_result._Error);
-                    auto exists = _exists_result._Ok;
-                    if (!exists) {
-                        auto _result = Directory::create(_ep, path);
-                        if (_result != nullptr)
-                            return new(alignof(TranspilerError), _ep) TranspilerError(*_result);
-                    }
-
                     switch (program.concept.definition._tag) {
                         case Definition::Namespace:
                             {
@@ -43,6 +20,16 @@ struct Transpiler : Object {
                                     switch(member->_tag) {
                                         case Nameable::Concept:
                                             {
+                                                auto path = String(_r.get_page(), Path::join(_r.get_page(), Path::get_directory_name(_r.get_page(), file), String(_r.get_page(), "output")));
+                                                auto _exists_result = Directory::exists(_ep, path);
+                                                if (_exists_result._tag == scaly::containers::Result<bool, FileError>::Error)
+                                                    return new(alignof(TranspilerError), _ep) TranspilerError(_exists_result._Error);
+                                                auto exists = _exists_result._Ok;
+                                                if (!exists) {
+                                                    auto _result = Directory::create(_ep, path);
+                                                    if (_result != nullptr)
+                                                        return new(alignof(TranspilerError), _ep) TranspilerError(*_result);
+                                                }
                                                 auto _result = concept(_ep, path, file, member->_Concept);
                                                 if (_result != nullptr)
                                                     return new(alignof(TranspilerError), _ep) TranspilerError(*_result);
@@ -67,32 +54,40 @@ struct Transpiler : Object {
     }
 
     bool children_modules_available(Definition definition) {
-        return true;
+        switch (definition._tag) {
+            case Definition::Namespace:
+                {
+                    auto namespace_ = definition._Namespace;
+                    auto member_iterator = HashMapIterator<String, Nameable>(namespace_.code.symbols);
+                    while (auto member = member_iterator.next()) {
+                        switch(member->_tag) {
+                            case Nameable::Module:
+                                return true;
+                            default:
+                                continue;
+                        }
+                    }
+                }
+                break;
+            default:
+                return false;
+        }
+        return false;
     }
 
-    TranspilerError* concept(Page* _ep, const String& path, const String& file, const Concept& concept) {
+    TranspilerError* concept(Page* _ep, String path, const String& file, const Concept& concept) {
         Region _r;
 
         if (children_modules_available(concept.definition)) {
-            String namespace_path = Path::join(_r.get_page(), path, concept.name);
-            auto _exists_result = Directory::exists(_ep, namespace_path);
+            path = Path::join(_r.get_page(), path, concept.name);
+            auto _exists_result = Directory::exists(_ep, path);
             if (_exists_result._tag == scaly::containers::Result<bool, FileError>::Error)
                 return new(alignof(TranspilerError), _ep) TranspilerError(_exists_result._Error);
             auto exists = _exists_result._Ok;
             if (!exists) {
-                auto _result = Directory::create(_ep, namespace_path);
+                auto _result = Directory::create(_ep, path);
                 if (_result != nullptr)
                     return new(alignof(TranspilerError), _ep) TranspilerError(*_result);
-            }
-            switch (concept.definition._tag) {
-                case Definition::Namespace: {
-                    auto _namespace = concept.definition._Namespace;
-                    return namespace_(_ep, namespace_path, concept.name, file, _namespace);
-                }
-                
-                default:
-                    // return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented());
-                    return nullptr;
             }
         }
  
@@ -132,7 +127,8 @@ struct Transpiler : Object {
                     }
                     break;
                 default:
-                    return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented());
+                    // return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented());
+                    return nullptr;
             }
         }
 
