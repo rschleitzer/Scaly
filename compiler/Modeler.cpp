@@ -1241,7 +1241,7 @@ Result<Module, ModelError> handle_module(Page* _rp, Page* _ep, String path, Modu
     auto concept = concept_result._Ok;
     
     return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Ok,
-        ._Ok = Module(private_, String(_rp, module_syntax.name.name), Text { ._tag = Text::File, ._File = String(_rp, file_name) }, concept)
+        ._Ok = Module(private_, String(_rp, module_syntax.name.name), String(_rp, file_name), concept)
     };
 }
 

@@ -141,15 +141,7 @@ struct Transpiler : Object {
 
     TranspilerError* module(Page* _ep, const String& path, const Module& module) {
         Region _r;
-
-        switch (module.text._tag) {
-            case Text::File: {
-                auto file = module.text._File;
-                return concept(_ep, path, file, module.concept);
-            }
-            default:
-                return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented());
-        }
+        return concept(_ep, path, module.file, module.concept);
     }
 };
 

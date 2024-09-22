@@ -510,12 +510,12 @@ struct Text {
 struct Module : Object {
     bool private_;
     String name;
-    Text text;
+    String file;
     Concept concept;
-    Module(bool private_, String name, Text text, Concept concept)
+    Module(bool private_, String name, String file, Concept concept)
       : private_(private_),
         name(name),
-        text(text),
+        file(file),
         concept(concept) {}
 };
 
