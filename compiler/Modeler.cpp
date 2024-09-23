@@ -1470,6 +1470,17 @@ Result<Concept, ModelError> build_concept(Page* _rp, Page* _ep, bool private_, S
         return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = code_result._Error };
 
     auto code = code_result._Ok;
+    if (code.symbols.get_values(_r.get_page()).length == 1 && code.symbols[name] !=  nullptr) {
+        auto symbol = code.symbols[name];
+        switch (symbol->_tag) {
+            case Nameable::Concept: 
+                return Result<Concept, ModelError> {
+                    ._tag = Result<Concept, ModelError>::Ok, 
+                    ._Ok = symbol->_Concept };
+            default:
+                return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = ModelError(ModelBuilderError(ModuleRootMustBeConcept(text, Span(file_syntax.start, file_syntax.end)))) };
+        }
+    }
 
     List<Use> uses;
     if (file_syntax.uses != nullptr) {

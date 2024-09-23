@@ -91,9 +91,9 @@ struct HashMap : Object {
         Region _r;
         auto array = *new(alignof(Array<V*>), _r.get_page()) Array<V*>();
         if (this->slots) {
-            auto slot_iterator = VectorIterator<Vector<KeyValuePair<K, V>>>(*this->slots);
+            auto slot_iterator = VectorIterator<Vector<KeyValuePair<K, V>>>(this->slots);
             while (auto slot = slot_iterator.next()) {
-                auto element_iterator = VectorIterator<KeyValuePair<K, V>>(*slot);
+                auto element_iterator = VectorIterator<KeyValuePair<K, V>>(slot);
                 while (auto element = element_iterator.next()) {
                     array.add(&element->value);
                 }

@@ -16,6 +16,8 @@ extern "C" size_t strlen(const char *);
 #include "../memory/Page.h"
 #include "../memory/Region.h"
 
+#include "Node.h"
+#include "ListIterator.h"
 #include "List.h"
 #include "Vector.h"
 #include "Array.h"
@@ -28,6 +30,7 @@ extern "C" size_t strlen(const char *);
 #include "Result.cpp"
 
 #include "String.h"
+#include "StringIterator.h"
 #include "StringBuilder.h"
 
 #endif // __Scaly_Containers__

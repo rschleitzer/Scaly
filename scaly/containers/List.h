@@ -5,32 +5,6 @@ namespace containers {
 
 using namespace scaly::memory;
 
-template<class T> struct List;
-
-template<class T> struct Node : Object {
-    T element;
-    Node<T>* next;
-    Node(T _element, Node<T>* _next)
-    :   element(_element),
-        next(_next) {}
-};
-
-template<class T> struct ListIterator {
-    Node<T>* current;
-
-    ListIterator<T>(Node<T>* head) :current(head) {}
-
-    T* next() {
-        if (this->current != nullptr) {
-            auto current = this->current;
-            this->current = this->current->next;
-            return &current->element;
-        } else {
-            return nullptr;
-        }
-    }
-};
-
 template<class T> struct List : Object {
     Node<T>* head;
 

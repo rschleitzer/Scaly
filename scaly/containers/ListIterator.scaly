@@ -1,0 +1,14 @@
+define ListIterator[T] (current: pointer[Node[T]]) {
+
+    init (head: Pointer[Node[T]] head)  { set this.current : head }
+
+    procedure next: pointer[T] {
+        if this.current = null {
+            let current this.current
+            set this.current: this.current*.next;
+            return current*.element&;
+        } else {
+            return null
+        }
+    }
+};

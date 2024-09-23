@@ -1,0 +1,8 @@
+define Node[T] (element: T, next: pointer[Node[T]])
+{
+    init(element: T, next: pointer[Node[T]])
+    {
+        set this.element: element
+        set this.next: next
+    }
+}

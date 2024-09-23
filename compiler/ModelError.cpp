@@ -322,6 +322,22 @@ struct InvalidComponentName {
     }
 };
 
+struct ModuleRootMustBeConcept {
+    ModuleRootMustBeConcept(Text text, Span span) : text(text), span(span) {}
+    Text text;
+    Span span;
+
+    String to_string(Page* _rp) {
+        Region _r;
+        StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
+        append_error_message_header(message_builder, this->text, span.start);
+        message_builder.append_string(String(_rp, "The root definition of a module must be a concept."));
+        append_hint_lines(message_builder, this->text, span.start, span.end);
+
+        return message_builder.to_string(_rp);
+    }
+};
+
 struct ModelBuilderError {
     ModelBuilderError(NotImplemented _NotImplementedModelError) : _tag(NotImplemented), _NotImplemented(_NotImplementedModelError) {}
     ModelBuilderError(DuplicateName _DuplicateName) : _tag(DuplicateName), _DuplicateName(_DuplicateName) {}
@@ -330,6 +346,7 @@ struct ModelBuilderError {
     ModelBuilderError(DeInitializerExists _DeInitializerExists) : _tag(DeInitializerExists), _DeInitializerExists(_DeInitializerExists) {}
     ModelBuilderError(InvalidConstant _InvalidConstant) : _tag(InvalidConstant), _InvalidConstant(_InvalidConstant) {}
     ModelBuilderError(InvalidComponentName _InvalidComponentName) : _tag(InvalidComponentName), _InvalidComponentName(_InvalidComponentName) {}
+    ModelBuilderError(ModuleRootMustBeConcept _ModuleRootMustBeConcept) : _tag(ModuleRootMustBeConcept), _ModuleRootMustBeConcept(_ModuleRootMustBeConcept) {}
     enum {
         NotImplemented,
         DuplicateName,
@@ -338,6 +355,7 @@ struct ModelBuilderError {
         DeInitializerExists,
         InvalidConstant,
         InvalidComponentName,
+        ModuleRootMustBeConcept
     } _tag;
     union {
         struct NotImplemented _NotImplemented;
@@ -347,6 +365,7 @@ struct ModelBuilderError {
         struct DeInitializerExists _DeInitializerExists;
         struct InvalidConstant _InvalidConstant;
         struct InvalidComponentName _InvalidComponentName;
+        struct ModuleRootMustBeConcept _ModuleRootMustBeConcept;
     };
 
     String to_string(Page* _rp) {
@@ -373,6 +392,9 @@ struct ModelBuilderError {
             break;
             case InvalidComponentName:
                 message_builder.append_string(_InvalidComponentName.to_string(_rp));
+            break;
+            case ModuleRootMustBeConcept:
+                message_builder.append_string(_ModuleRootMustBeConcept.to_string(_rp));
             break;
         }
         return message_builder.to_string(_rp);     

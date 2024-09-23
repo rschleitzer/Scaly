@@ -93,7 +93,7 @@ struct Transpiler : Object {
         switch (concept.definition._tag) {
             case Definition::Namespace: {
                 auto _namespace = concept.definition._Namespace;
-                return namespace_(_ep, path, concept.name, file, _namespace);
+                return namespace_(_ep, path, file, concept.name, _namespace);
             }
             
             default:
@@ -126,7 +126,7 @@ struct Transpiler : Object {
                     break;
                 default:
                     // return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented());
-                    return nullptr;
+                    continue;
             }
         }
 

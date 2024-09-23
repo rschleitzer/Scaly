@@ -1,3 +1,7 @@
 define containers {
+    module Node
+    module ListIterator
     module List
+    module String
+    module StringIterator
 }

@@ -29,6 +29,23 @@ struct TranspilerError : Object {
         struct OnlyFile _OnlyFile;
         struct FileError _FileError;
     };
+
+    String to_string(Page* _rp) {
+        Region _r;
+        StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
+        switch (_tag) {
+            case NotImplemented:
+                message_builder.append_string(String(_rp, "This transpiler feature is not implemented.."));
+                break;
+            case OnlyFile:
+                message_builder.append_string(String(_rp, "Only a file can be transpiled."));
+                break;
+            case FileError:
+                message_builder.append_string(_FileError.to_string(_rp));
+                break;
+        }
+        return message_builder.to_string(_rp);     
+    }
 };
 
 }

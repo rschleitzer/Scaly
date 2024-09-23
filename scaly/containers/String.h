@@ -22,12 +22,5 @@ struct String : Object {
     size_t hash() const;
 };
 
-struct StringIterator {
-    char* current;
-    char* last;
-    StringIterator(String string);
-    char* next();
-};
-
 }
 }

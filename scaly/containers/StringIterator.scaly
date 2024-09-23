@@ -1,0 +1,23 @@
+(
+    current: pointer[char]
+    last: pointer[char]
+)
+{
+
+init(string: String) {
+    let buffer string.get_buffer()
+    set this.current: buffer
+    set this.last: buffer + string.get_length()
+}
+
+function next() : pointer[char] {
+    if this.current = last {
+        null
+    } else {
+        let ret this.current
+        set this.current: this.current + 1
+        ret
+    }
+}
+
+}

@@ -16,6 +16,7 @@
 				"${workspaceFolder}/../scaly/memory/PageNode.cpp",
 				"${workspaceFolder}/../scaly/memory/Region.cpp",
 				"${workspaceFolder}/../scaly/containers/String.cpp",
+				"${workspaceFolder}/../scaly/containers/StringIterator.cpp",
 				"${workspaceFolder}/../scaly/containers/HashSetBuilder.cpp",
 				"${workspaceFolder}/../scaly/containers/StringBuilder.cpp",
 				"${workspaceFolder}/../scaly/io/Console.cpp",
