@@ -1,10 +1,6 @@
-(
-    data: pointer[char]
-)
-
-{
+define String (data: pointer[char]) {
     init(length: size_t) {
-        let length_array: char[PACKED_SIZE]
+        let length_array: char[PACKED_SIZE] null
         var rest length
 
         var counter: size_t 0

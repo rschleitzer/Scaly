@@ -1,3 +1,4 @@
+define StringIterator
 (
     current: pointer[char]
     last: pointer[char]

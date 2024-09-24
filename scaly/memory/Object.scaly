@@ -1,0 +1,4 @@
+define Object () {
+    operator new (size: size_t, align: size_t, page: pointer[Page]): pointer[void]
+    function get_page() : pointer[Page]
+}
