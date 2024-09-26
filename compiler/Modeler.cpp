@@ -1057,11 +1057,12 @@ Result<Function, ModelError> build_function(Page* _rp, Page* _ep, size_t start, 
 }
 
 Result<Initializer, ModelError> handle_initializer(Page* _rp, Page* _ep, InitSyntax& initializer, bool private_, const Text& text) {
-    Vector<Property>* input = nullptr;
+    Vector<Property> input = Vector<Property>(_rp, 0);
 
     if (initializer.parameters != nullptr) {
         ParameterSetSyntax& parameterSetSyntax = *initializer.parameters;
         auto parameterset_result = handle_parameterset(_rp, _ep, parameterSetSyntax, text);
+        input = parameterset_result._Ok;
     }
 
     auto action_result = handle_action(_rp, _ep, initializer.action, text);
@@ -1072,8 +1073,6 @@ Result<Initializer, ModelError> handle_initializer(Page* _rp, Page* _ep, InitSyn
 }
 
 Result<DeInitializer*, ModelError> handle_deinitializer(Page* _rp, Page* _ep, DeInitSyntax& deinitializer, const Text& text) {
-    Vector<Property>* input = nullptr;
-
     auto action_result = handle_action(_rp, _ep, deinitializer.action, text);
     if (action_result._tag == Result<Statement, ModelError>::Error)
         return Result<DeInitializer*, ModelError> { ._tag = Result<DeInitializer*, ModelError>::Error, ._Error = action_result._Error };
@@ -1370,7 +1369,7 @@ Result<Code, ModelError> build_code(Page* _rp, Page* _ep, String name, String pa
     if (initializers_builder.count() > 0)
         initializers = new(alignof(Vector<Initializer>), _rp) Vector<Initializer>(_rp, initializers_builder);
 
-    auto code = Code(HashMap<String, Nameable>(_rp, symbols_builder), initializers, nullptr);
+    auto code = Code(HashMap<String, Nameable>(_rp, symbols_builder), initializers, deinitializer);
     return Result<Code, ModelError> { ._tag = Result<Code, ModelError>::Ok, ._Ok = code };
 }
 

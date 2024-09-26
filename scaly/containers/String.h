@@ -8,6 +8,7 @@ const size_t PACKED_SIZE = sizeof(size_t) * 8 / 7;
 struct String : Object {
     char* data;
 
+    String();
     String(Page* _rp, size_t length);
     String(Page* _rp, const char* other, size_t length);
     String(Page* _rp, Vector<char> other);

@@ -5,7 +5,7 @@ define Page
     next_object: pointer[void]
     current_page: pointer[Page]
     next_page: pointer[Page]
-    exclusive_pages: List[pointer[Page]] 
+    exclusive_pages: pointer[PageList] 
 )
 ;*
 {

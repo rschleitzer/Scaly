@@ -356,9 +356,9 @@ struct Function : Object {
 struct Initializer : Object {
     Span span;
     bool private_;
-    Vector<Property>* input;
+    Vector<Property> input;
     Implementation implementation;
-    Initializer(Span span, bool private_, Vector<Property>* input, Implementation implementation)
+    Initializer(Span span, bool private_, Vector<Property> input, Implementation implementation)
       : span(span),
         private_(private_),
         input(input),

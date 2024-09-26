@@ -4,13 +4,19 @@ define Region
 )
 {
     init() {
-        set page: Page.allocate_page()
+        set page: null
     }
 
     deinit() {
-        page*.deallocate_extensions()
-        page*.forget()
+        if (page <> null) {
+            page*.deallocate_extensions()
+            page*.forget()
+        }
     }
 
-    private init(region: Region) {}
+    function get_page(this: Region): pointer[Page] {
+        if this.page = null
+            set this.page: Page.allocate_page()
+        return this.page
+    }
 }
