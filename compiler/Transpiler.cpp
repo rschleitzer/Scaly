@@ -4,7 +4,7 @@ namespace transpiler {
 
 struct Transpiler : Object {
 
-    TranspilerError* program(Page* _ep, const Program& program) {
+    TranspilerError* program(Page* _ep, Program& program) {
         Region _r;
 
         switch (program.text._tag) {
@@ -22,7 +22,34 @@ struct Transpiler : Object {
                             return new(alignof(TranspilerError), _ep) TranspilerError(*_result);
                     }
 
-                    if (children_modules_available(program.concept.definition)) {
+                    bool children_modules_available  = check_for_children_modules(program.concept.definition);
+
+                    if (program.statements.length > 0) {
+                        StringBuilder& main_builder = *new (alignof(StringBuilder), _r.get_page()) StringBuilder();
+                        main_builder.append_string(String(_r.get_page(), "#include \""));
+                        main_builder.append_string(program.concept.name);
+                        if (children_modules_available) {
+                            main_builder.append_character('/');
+                            main_builder.append_string(program.concept.name);
+                        }
+                        main_builder.append_string(String(_r.get_page(), ".h\"\n\n"));
+                        main_builder.append_string(String(_r.get_page(), "int main(int argc, char** argv) {\n"));
+
+                        auto iter = VectorIterator<Statement>(&program.statements);
+                        while(auto statement = iter.next()) {
+                            build_statement(_ep, main_builder, statement);
+                        }
+
+                        main_builder.append_string(String(_r.get_page(), "    return 0;\n}\n"));
+                        if (main_builder.get_length() > 0) {
+                            auto main_file_name = Path::join(_r.get_page(), path, String(_r.get_page(), "main.cpp"));
+                            auto _main_result = File::write_from_string(_ep, main_file_name, main_builder.to_string(_r.get_page()));
+                            if (_main_result != nullptr)
+                                return new(alignof(TranspilerError), _ep) TranspilerError(*_main_result);
+                        }
+                    }
+
+                    if (children_modules_available) {
                         auto _path_result = extend_and_create_path(_r.get_page(), _ep, path, program.concept.name);
                         if (_path_result._tag == Result<String, FileError>::Error)
                             return new(alignof(TranspilerError), _ep) TranspilerError(_path_result._Error);
@@ -60,10 +87,15 @@ struct Transpiler : Object {
         return nullptr;
     }
 
+    TranspilerError* build_statement(Page* _ep, StringBuilder& builder, Statement* statement) {
+        return nullptr;
+    }
+
+
     TranspilerError* module(Page* _ep, String path, const Module& module) {
         Region _r;
 
-        if (children_modules_available(module.concept.definition)) {
+        if (check_for_children_modules(module.concept.definition)) {
             auto _path_result = extend_and_create_path(_r.get_page(), _ep, path, module.concept.name);
             if (_path_result._tag == Result<String, FileError>::Error)
                 return new(alignof(TranspilerError), _ep) TranspilerError(_path_result._Error);
@@ -97,7 +129,7 @@ struct Transpiler : Object {
         return nullptr;
     }
 
-    bool children_modules_available(Definition definition) {
+    bool check_for_children_modules(Definition definition) {
         switch (definition._tag) {
             case Definition::Namespace:
                 {
@@ -150,7 +182,7 @@ struct Transpiler : Object {
                     {
                         auto _module = member->_Module;
                         header_builder.append_string(String(_r.get_page(), "#include \""));
-                        if (children_modules_available(_module.concept.definition)) {
+                        if (check_for_children_modules(_module.concept.definition)) {
                             header_builder.append_string(String(_r.get_page(), _module.concept.name));
                             header_builder.append_character('/');
                         }

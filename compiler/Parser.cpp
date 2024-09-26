@@ -1188,12 +1188,10 @@ struct FileSyntax : Object {
 };
 
 struct ProgramSyntax : Object {
-    ProgramSyntax(size_t start, size_t end, Vector<PackageSyntax>* packages, Vector<UseSyntax>* uses, Vector<DeclarationSyntax>* declarations, Vector<StatementSyntax>* statements) : start(start), end(end), packages(packages), uses(uses), declarations(declarations), statements(statements) {}
+    ProgramSyntax(size_t start, size_t end, FileSyntax file, Vector<StatementSyntax>* statements) : start(start), end(end), file(file), statements(statements) {}
     size_t start;
     size_t end;
-    Vector<PackageSyntax>* packages;
-    Vector<UseSyntax>* uses;
-    Vector<DeclarationSyntax>* declarations;
+    FileSyntax file;
     Vector<StatementSyntax>* statements;
 };
 
@@ -1325,47 +1323,14 @@ struct Parser : Object {
     Result<ProgramSyntax, ParserError> parse_program(Page* _rp, Page* _ep) {
         auto start = this->lexer.previous_position;
 
-        auto packages_start = this->lexer.position;
-        auto packages_result = this->parse_package_list(_rp, _ep);
-        if (packages_result._tag == Result<Vector<PackageSyntax>, ParserError>::Error)
+        auto file_start = this->lexer.position;
+        auto file_result = this->parse_file(_rp, _ep);
+        if (file_result._tag == Result<FileSyntax, ParserError>::Error)
         {
-            switch (packages_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    break;
-                case ParserError::InvalidSyntax:
-                    return Result<ProgramSyntax, ParserError> { ._tag = Result<ProgramSyntax, ParserError>::Error, ._Error = packages_result._Error };
-            }
+            return Result<ProgramSyntax, ParserError> { ._tag = Result<ProgramSyntax, ParserError>::Error, ._Error = file_result._Error };
         }
 
-        auto packages = packages_result._tag == Result<Vector<PackageSyntax>, ParserError>::Error ? nullptr : packages_result._Ok;
-
-        auto uses_start = this->lexer.position;
-        auto uses_result = this->parse_use_list(_rp, _ep);
-        if (uses_result._tag == Result<Vector<UseSyntax>, ParserError>::Error)
-        {
-            switch (uses_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    break;
-                case ParserError::InvalidSyntax:
-                    return Result<ProgramSyntax, ParserError> { ._tag = Result<ProgramSyntax, ParserError>::Error, ._Error = uses_result._Error };
-            }
-        }
-
-        auto uses = uses_result._tag == Result<Vector<UseSyntax>, ParserError>::Error ? nullptr : uses_result._Ok;
-
-        auto declarations_start = this->lexer.position;
-        auto declarations_result = this->parse_declaration_list(_rp, _ep);
-        if (declarations_result._tag == Result<Vector<DeclarationSyntax>, ParserError>::Error)
-        {
-            switch (declarations_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    break;
-                case ParserError::InvalidSyntax:
-                    return Result<ProgramSyntax, ParserError> { ._tag = Result<ProgramSyntax, ParserError>::Error, ._Error = declarations_result._Error };
-            }
-        }
-
-        auto declarations = declarations_result._tag == Result<Vector<DeclarationSyntax>, ParserError>::Error ? nullptr : declarations_result._Ok;
+        auto file = file_result._Ok;
 
         auto statements_start = this->lexer.position;
         auto statements_result = this->parse_statement_list(_rp, _ep);
@@ -1383,7 +1348,7 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = ProgramSyntax(start, end, packages, uses, declarations, statements);
+        auto ret = ProgramSyntax(start, end, file, statements);
 
         return Result<ProgramSyntax, ParserError> { ._tag = Result<ProgramSyntax, ParserError>::Ok, ._Ok = ret };
     }

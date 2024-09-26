@@ -6,3 +6,7 @@ define scaly {
     module containers
     module io
 }
+
+memory.test()
+containers.test()
+io.test()

@@ -13,101 +13,13 @@ Result<FileSyntax, ParserError> parse_file(Page* _rp, Page* _ep, const String& m
     }
 }
 
-Result<FileSyntax, ParserError> parse_program(Page* _rp, Page* _ep, const String& program) {
+Result<ProgramSyntax, ParserError> parse_program(Page* _rp, Page* _ep, const String& program) {
     Region _r;
-    List<PackageSyntax> packages;
-    List<DeclarationSyntax> declarations;
-    
-    // Parse the scaly package inclusion
-    {
-        Region _r_1;
-        Parser& parser_package = *new(alignof(Parser), _r_1.get_page()) Parser(_r_1.get_page(), String(_r_1.get_page(), "package scaly"));
-        auto package_syntax_result = parser_package.parse_package(_rp, _ep);
-        if (package_syntax_result._tag == Result<ModuleSyntax*, ParserError>::Error)
-            return Result<FileSyntax, ParserError> { ._tag = Result<FileSyntax, ParserError>::Error, ._Error = package_syntax_result._Error };
-        auto package_syntax = package_syntax_result._Ok;
-        packages.add(_r.get_page(), package_syntax);
-    }
-
-    // Parse the uses and declarations of the program
-    Vector<UseSyntax>* uses = nullptr;
-    Vector<StatementSyntax>* statements = nullptr;
     {
         Region _r_1;
         Parser& parser = *new(alignof(Parser), _r_1.get_page()) Parser(_r_1.get_page(), program);
-        while(true) {
-            auto node_result = parser.parse_declaration(_rp, _ep);
-            if ((node_result._tag == Result<DeclarationSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
-                return Result<FileSyntax, ParserError> { ._tag = Result<FileSyntax, ParserError>::Error, ._Error = node_result._Error };
-            if (node_result._tag == Result<DeclarationSyntax, ParserError>::Ok) {
-                auto node = node_result._Ok;
-                declarations.add(_r.get_page(), node);
-            } else {
-                break;
-            }
-        }
-
-        Result<Vector<UseSyntax>*, ParserError> uses_result = parser.parse_use_list(_rp, _ep);
-        if (uses_result._tag == Result<Vector<UseSyntax>, ParserError>::Ok)
-            uses = uses_result._Ok;
-
-        Result<Vector<StatementSyntax>*, ParserError> statements_result = parser.parse_statement_list(_rp, _ep);
-        if (statements_result._tag == Result<Vector<StatementSyntax>, ParserError>::Ok)
-            statements = statements_result._Ok;
+        return parser.parse_program(_rp, _ep);
     }
-
-    // Parse the main function stub
-    Parser& parser_main = *new(alignof(Parser), _r.get_page()) Parser(_r.get_page(), String(_r.get_page(), "function main('argument count': int, 'argument values': pointer[pointer[byte]]) returns int"));
-    auto start = parser_main.lexer.previous_position;
-
-    auto success_function = parser_main.lexer.parse_keyword(_rp, String(_r.get_page(), "function"));
-    if (!success_function)
-        return Result<FileSyntax, ParserError> { ._tag = Result<FileSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start, parser_main.lexer.position, String(_ep, "function"))) };
-
-    auto name = parser_main.lexer.parse_identifier(_rp, parser_main.keywords);
-    if (name != nullptr) {
-        if (!parser_main.is_identifier(*name)) {
-            return Result<FileSyntax, ParserError> { ._tag = Result<FileSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start, parser_main.lexer.position, String(_ep, "main"))) };
-        }
-    }
-    else
-        return Result<FileSyntax, ParserError> { ._tag = Result<FileSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start, parser_main.lexer.position, String(_ep, "main"))) };
-
-
-    auto parameters_result = parser_main.parse_parameterset(_rp, _ep);
-    if (parameters_result._tag == Result<ParameterSetSyntax*, ParserError>::Error)
-        return Result<FileSyntax, ParserError> { ._tag = Result<FileSyntax, ParserError>::Error, ._Error = parameters_result._Error };
-    auto parameters = parameters_result._Ok;
-
-    auto returns_result = parser_main.parse_returns(_rp, _ep);
-    if (returns_result._tag == Result<ReturnsSyntax*, ParserError>::Error)
-        return Result<FileSyntax, ParserError> { ._tag = Result<FileSyntax, ParserError>::Error, ._Error = returns_result._Error };
-    auto returns = returns_result._Ok;
-
-    auto end = parser_main.lexer.position;
-
-    auto block = new(alignof(BlockSyntax), _rp) BlockSyntax(start, end, uses, statements);
-    auto block_expression = new (alignof(ExpressionSyntax), _rp) ExpressionSyntax(BlockSyntax(*block));
-    auto operand = new(alignof(OperandSyntax), _rp) OperandSyntax(start, end, *block_expression, nullptr);
-    List<OperandSyntax> operands;
-    operands.add(_r.get_page(), *operand);
-    auto operation = OperationSyntax(start, end, new(alignof(Vector<OperandSyntax>), _rp) Vector<OperandSyntax>(_rp, operands));
-    auto action = ActionSyntax(OperationSyntax(operation));
-    auto implementation = ImplementationSyntax(ActionSyntax(action));
-
-    auto routine = RoutineSyntax(start, end, nullptr, nullptr, new (alignof(ParameterSetSyntax), _rp) ParameterSetSyntax(parameters), nullptr, new (alignof(ReturnsSyntax), _rp) ReturnsSyntax(returns), nullptr, implementation);
-    auto symbol = SymbolSyntax(start, end, *name, routine);
-    auto target = TargetSyntax(symbol);
-    FunctionSyntax& main_function_syntax = *new(alignof(FunctionSyntax), _rp) FunctionSyntax(start, end, target);
-    main_function_syntax.target._Symbol.routine.implementation = implementation;
-    DeclarationSyntax& main_function_declaration = *new (alignof(DeclarationSyntax), _rp) DeclarationSyntax(FunctionSyntax(main_function_syntax));;
-    declarations.add(_r.get_page(), main_function_declaration);
-
-    FileSyntax file_syntax(0, 0, new(alignof(Vector<PackageSyntax>), _rp) Vector<PackageSyntax>(_rp, packages), nullptr, new(alignof(Vector<DeclarationSyntax>), _rp) Vector<DeclarationSyntax>(_rp, declarations));
-    return Result<FileSyntax, ParserError> { 
-        ._tag = Result<FileSyntax, ParserError>::Ok, 
-        ._Ok = file_syntax
-    };
 }
 
 Result<Type*, ModelError> handle_type(Page* _rp, Page* _ep, TypeSyntax& type, const Text& text);
@@ -1548,10 +1460,10 @@ Result<Program, ModelError> model_program_from_file(Page* _rp, Page* _ep, const 
         return Result<Program, ModelError> { ._tag = Result<Program, ModelError>::Error, ._Error = ModelError(file_text_result._Error) };
     }
     auto file_text = file_text_result._Ok;
-    auto file_result = parse_file(_r.get_page(), _ep, file_text);
-    if (file_result._tag == Result<Vector<DeclarationSyntax>*, ParserError>::Error)
-        return Result<Program, ModelError> { ._tag = Result<Program, ModelError>::Error, ._Error = ModelError(ParserModelError(text, file_result._Error)) };
-    auto file_syntax = file_result._Ok;
+    auto program_result = parse_program(_r.get_page(), _ep, file_text);
+    if (program_result._tag == Result<Vector<DeclarationSyntax>*, ParserError>::Error)
+        return Result<Program, ModelError> { ._tag = Result<Program, ModelError>::Error, ._Error = ModelError(ParserModelError(text, program_result._Error)) };
+    auto program_syntax = program_result._Ok;
 
     List<Package> packages;
     // if (file_syntax.packages != nullptr) {
@@ -1567,26 +1479,33 @@ Result<Program, ModelError> model_program_from_file(Page* _rp, Page* _ep, const 
     //     }
     // }
 
-    auto concept_result = build_concept(_rp, _ep, false, Path::get_file_name_without_extension(_rp, file_name), Path::get_directory_name(_rp, file_name), file_syntax, text);
+    auto concept_result = build_concept(_rp, _ep, false, Path::get_file_name_without_extension(_rp, file_name), Path::get_directory_name(_rp, file_name), program_syntax.file, text);
     if (concept_result._tag == Result<Module*, ModelError*>::Error)
         return Result<Program, ModelError> { ._tag = Result<Program, ModelError>::Error, ._Error = concept_result._Error };
     auto concept = concept_result._Ok;
 
-    Program program(String(_rp, Path::get_file_name_without_extension(_rp, file_name)), Text { ._tag = Text::File, ._Program = String(_rp, file_name) }, Vector<Package>(_rp, packages), concept);
+    Vector<Statement> statements = Vector<Statement>();
+    if (program_syntax.statements != nullptr) {
+        auto _statements_result = handle_statements(_rp, _ep, *program_syntax.statements, text);
+        if (_statements_result._tag == Result<Vector<Statement>, ModelError>::Error)
+            return Result<Program, ModelError> { ._tag = Result<Program, ModelError>::Error, ._Error = _statements_result._Error };
+        statements = _statements_result._Ok;
+    }
+    Program program(String(_rp, Path::get_file_name_without_extension(_rp, file_name)), Text { ._tag = Text::File, ._Program = String(_rp, file_name) }, Vector<Package>(_rp, packages), concept, statements);
     return Result<Program, ModelError> { ._tag = Result<Program, ModelError>::Ok, ._Ok = program };
 }
 
 Result<Program, ModelError> build_program_from_string(Page* _rp, Page* _ep, const String& program_string) {
     Region _r;
     auto text = Text {._tag = Text::Program, ._Program = String(_r.get_page(), program_string) };
-    auto file_result = parse_program(_r.get_page(), _ep, program_string);
-    if (file_result._tag == Result<Vector<DeclarationSyntax>*, ParserError>::Error)
-        return Result<Program, ModelError> { ._tag = Result<Program, ModelError>::Error, ._Error = ModelError(ParserModelError(text, file_result._Error)) };
-    auto file = file_result._Ok;
+    auto _program_syntax_result = parse_program(_r.get_page(), _ep, program_string);
+    if (_program_syntax_result._tag == Result<Vector<DeclarationSyntax>*, ParserError>::Error)
+        return Result<Program, ModelError> { ._tag = Result<Program, ModelError>::Error, ._Error = ModelError(ParserModelError(text, _program_syntax_result._Error)) };
+    auto program_syntax = _program_syntax_result._Ok;
 
     List<Package> packages;
-    if (file.packages != nullptr) {
-        auto file_packages = file.packages;
+    if (program_syntax.file.packages != nullptr) {
+        auto file_packages = program_syntax.file.packages;
         auto _package_iterator = VectorIterator<PackageSyntax>(file_packages);
         while (auto _package_syntax = _package_iterator.next()) {
             auto package_syntax = *_package_syntax;
@@ -1598,12 +1517,20 @@ Result<Program, ModelError> build_program_from_string(Page* _rp, Page* _ep, cons
         }
     }
 
-    auto concept_result = build_concept(_rp, _ep, false, String(_rp, ""), String(_rp, ""), file, text);
+    auto concept_result = build_concept(_rp, _ep, false, String(_rp, ""), String(_rp, ""), program_syntax.file, text);
     if (concept_result._tag == Result<Module*, ModelError*>::Error)
         return Result<Program, ModelError> { ._tag = Result<Program, ModelError>::Error, ._Error = concept_result._Error };
     auto concept = concept_result._Ok;
 
-    Program program(String(_rp, ""), Text { ._tag = Text::Program, ._Program = String(_rp, program_string) }, Vector<Package>(_rp, packages), concept);
+    Vector<Statement> statements = Vector<Statement>();
+    if (program_syntax.statements != nullptr) {
+        auto _statements_result = handle_statements(_rp, _ep, *program_syntax.statements, text);
+        if (_statements_result._tag == Result<Vector<Statement>, ModelError>::Error)
+            return Result<Program, ModelError> { ._tag = Result<Program, ModelError>::Error, ._Error = _statements_result._Error };
+        statements = _statements_result._Ok;
+    }
+
+    Program program(String(_rp, ""), Text { ._tag = Text::Program, ._Program = String(_rp, program_string) }, Vector<Package>(_rp, packages), concept, statements);
     return Result<Program, ModelError> { ._tag = Result<Program, ModelError>::Ok, ._Ok = program };
 }
 

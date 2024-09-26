@@ -29,6 +29,9 @@ template<class T> struct Vector : Object {
     size_t length;
     T* data;
 
+    Vector()
+    : length(0), data(nullptr) {}
+
     Vector(T* data, size_t length)
     : length(length), data(data) {}
 

@@ -532,11 +532,13 @@ struct Program : Object {
     Text text;
     Vector<Package> packages;
     Concept concept;
-    Program(String name, Text text, Vector<Package> packages, Concept concept)
+    Vector<Statement> statements;
+    Program(String name, Text text, Vector<Package> packages, Concept concept, Vector<Statement> statements)
       : name(name),
         text(text),
         packages(packages),
-        concept(concept) {}
+        concept(concept),
+        statements(statements) {}
 };
 
 struct Nameable {
