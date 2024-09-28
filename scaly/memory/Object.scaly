@@ -1,4 +1,4 @@
 define Object () {
-    operator new (size: size_t, align: size_t, page: pointer[Page]): pointer[void]
-    function get_page() : pointer[Page]
+    operator new (size: size_t, align: size_t, page: pointer[Page]) returns pointer[void] {}
+    function get_page() returns pointer[Page] {}
 }

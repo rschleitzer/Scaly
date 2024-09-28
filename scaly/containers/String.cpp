@@ -27,8 +27,10 @@ String::String(Page* _rp, size_t length) {
 }
 
 String::String(Page* _rp, const char* other, size_t length) {
-    if (length == 0)
+    if (length == 0) {
+        this->data = nullptr;
         return;
+    }
 
     char length_array[PACKED_SIZE];
     auto rest = length;
