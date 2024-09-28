@@ -1,5 +1,3 @@
-use scaly.containers
-
 define Page
 (
     next_object: pointer[void]

@@ -36,9 +36,9 @@ struct TranspilerError : Object {
         StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
         switch (_tag) {
             case NotImplemented:
-                message_builder.append_string(String(_rp, "The transpiler feature "));
+                message_builder.append_string(String(_rp, "The transpiler feature \""));
                 message_builder.append_string(_NotImplemented.expected);
-                message_builder.append_string(String(_rp, " is not implemented."));
+                message_builder.append_string(String(_rp, "\" is not implemented."));
                 break;
             case OnlyFile:
                 message_builder.append_string(String(_rp, "Only a file can be transpiled."));
