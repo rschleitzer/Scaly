@@ -566,6 +566,7 @@ struct Transpiler : Object {
         StringBuilder& builder = *new (alignof(StringBuilder), _r.get_page()) StringBuilder();
         builder.append_string(String(_r.get_page(), "namespace scaly { namespace memory { struct Page; } }\n"));
         builder.append_string(String(_r.get_page(), "typedef __SIZE_TYPE__ size_t;\n"));
+        builder.append_string(String(_r.get_page(), "typedef const char const_char;\n"));
         builder.append_string(String(_r.get_page(), "#include \"scaly/memory/Object.h\"\n"));
         builder.append_string(String(_r.get_page(), "namespace "));
         builder.append_string(program.concept.name);

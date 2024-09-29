@@ -1,0 +1,53 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "cppbuild",
+			"label": "C/C++: clang++ Aktive Datei kompilieren",
+			"command": "/opt/homebrew/opt/llvm/bin/clang++",
+			"args": [
+				"-fcolor-diagnostics",
+				"-fansi-escape-codes",
+				"-g",
+				"${workspaceFolder}/main.cpp",
+				"${workspaceFolder}/scaly/io/Console.cpp",
+				"${workspaceFolder}/scaly/io/io.cpp",
+				"${workspaceFolder}/scaly/containers/StringIterator.cpp",
+				"${workspaceFolder}/scaly/containers/String.cpp",
+				"${workspaceFolder}/scaly/containers/containers.cpp",
+				"${workspaceFolder}/scaly/memory/PageNode.cpp",
+				"${workspaceFolder}/scaly/memory/Page.cpp",
+				"${workspaceFolder}/scaly/memory/PageList.cpp",
+				"${workspaceFolder}/scaly/memory/Object.cpp",
+				"${workspaceFolder}/scaly/memory/Region.cpp",
+				"${workspaceFolder}/scaly/memory/PageListIterator.cpp",
+				"${workspaceFolder}/scaly/memory/memory.cpp",
+				"${workspaceFolder}/scaly/scaly.cpp",
+				"-o",
+				"${workspaceFolder}/bin/scaly",
+				//"`llvm-config --cxxflags --ldflags --system-libs --libs core`"
+				"-I/opt/homebrew/Cellar/llvm/17.0.5/include",
+				"-std=c++17",
+				"-stdlib=libc++",
+				"-D__STDC_CONSTANT_MACROS",
+				"-D__STDC_FORMAT_MACROS",
+				"-D__STDC_LIMIT_MACROS",
+				"-L/opt/homebrew/Cellar/llvm/17.0.5/lib",
+				"-Wl,-search_paths_first",
+				"-Wl,-headerpad_max_install_names",
+				"-lLLVM-17",
+			],
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"detail": "compiler: /usr/bin/clang++"
+		}
+	]
+}
