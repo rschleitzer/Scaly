@@ -25,8 +25,6 @@ struct Transpiler : Object {
             main_file(_ep, path, program);
         }
 
-        StringBuilder& header_builder = *new (alignof(StringBuilder), _r.get_page()) StringBuilder();
-        StringBuilder& cpp_builder = *new (alignof(StringBuilder), _r.get_page()) StringBuilder();
         main_include_file(_ep, path, program.module.name);
         forward_includes(_ep, path, program);
         StringBuilder& main_header_builder = *new (alignof(StringBuilder), _r.get_page()) StringBuilder(String(_r.get_page(), "../"));
@@ -38,20 +36,6 @@ struct Transpiler : Object {
         auto _result = build_module(_ep, path, program.module, main_header_builder.to_string(_r.get_page()), namespace_open_builder.to_string(_r.get_page()), String(_r.get_page(), "}\n"));
         if (_result != nullptr)
             return new(alignof(TranspilerError), _ep) TranspilerError(*_result);
-
-        auto base_file_name = Path::join(_r.get_page(), path, program.module.name);
-        StringBuilder& header_name_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(base_file_name);
-        header_name_builder.append_string(String(_r.get_page(), ".h"));
-        auto header_name = header_name_builder.to_string(_r.get_page());
-        auto _header_result = File::write_from_string(_ep, header_name, header_builder.to_string(_r.get_page()));
-        if (_header_result != nullptr)
-            return new(alignof(TranspilerError), _ep) TranspilerError(*_header_result);
-        StringBuilder& cpp_name_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(base_file_name);
-        cpp_name_builder.append_string(String(_r.get_page(), ".cpp"));
-        auto cpp_name = cpp_name_builder.to_string(_r.get_page());
-        auto _cpp_result = File::write_from_string(_ep, cpp_name, cpp_builder.to_string(_r.get_page()));
-        if (_cpp_result != nullptr)
-            return new(alignof(TranspilerError), _ep) TranspilerError(*_cpp_result);
 
         return nullptr;
     }
@@ -607,7 +591,7 @@ struct Transpiler : Object {
 				\"${workspaceFolder}/main.cpp\",\n"));
             StringBuilder& program_concept_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(String(_r.get_page(), program.module.name));
             program_concept_builder.append_character('/');
-            build_vscode_source_files_list(_r.get_page(), tasks_builder, program_concept_builder.to_string(_r.get_page()), program.module.symbols);
+            build_vscode_source_files(tasks_builder, program_concept_builder.to_string(_r.get_page()), program.module);
             tasks_builder.append_string(String(_r.get_page(), "\
 				\"-o\",\n\
 				\"${workspaceFolder}/bin/"));
@@ -668,7 +652,20 @@ struct Transpiler : Object {
         return nullptr;
     }
 
-    void build_vscode_source_files_list(Page* _rp, StringBuilder& builder, String path, HashMap<String, Nameable> symbols) {
+    void build_vscode_source_files(StringBuilder& builder, String path, Module& module) {
+        Region _r;
+        builder.append_string(String(_r.get_page(), "				\"${workspaceFolder}/"));
+        builder.append_string(path);
+        builder.append_string(module.name);
+        builder.append_string(String(_r.get_page(), ".cpp\",\n"));
+        StringBuilder& path_builder = *new (alignof(StringBuilder), _r.get_page()) StringBuilder(path);
+        path_builder.append_string(module.name);
+        path_builder.append_character('/');
+        build_vscode_source_files_list(builder, path_builder.to_string(_r.get_page()), module.symbols);
+    }
+
+
+    void build_vscode_source_files_list(StringBuilder& builder, String path, HashMap<String, Nameable> symbols) {
         Region _r;
         auto member_iterator = HashMapIterator<String, Nameable>(symbols);
         while (auto member = member_iterator.next()) {
@@ -679,17 +676,13 @@ struct Transpiler : Object {
                         switch (concept.definition._tag) {
                             case Definition::Namespace: {
                                 auto namespace_ = concept.definition._Namespace;
-                                build_vscode_source_files_list(_rp, builder, path, namespace_.symbols);
+                                build_vscode_source_files_list(builder, path, namespace_.symbols);
                             }
                             break;
 
                             case Definition::Structure: {
                                 auto structure = concept.definition._Structure;
-                                build_vscode_source_files_list(_rp, builder, path, structure.symbols);
-                                builder.append_string(String(_r.get_page(), "				\"${workspaceFolder}/"));
-                                builder.append_string(path);
-                                builder.append_string(concept.name);
-                                builder.append_string(String(_r.get_page(), ".cpp\",\n"));
+                                build_vscode_source_files_list(builder, path, structure.symbols);
                             }
                             break;
                             
@@ -701,14 +694,7 @@ struct Transpiler : Object {
                 case Nameable::Module:
                     {
                         auto module = member->_Module;
-                        builder.append_string(String(_r.get_page(), "				\"${workspaceFolder}/"));
-                        builder.append_string(path);
-                        builder.append_string(module.name);
-                        builder.append_string(String(_r.get_page(), ".cpp\",\n"));
-                        StringBuilder& path_builder = *new (alignof(StringBuilder), _r.get_page()) StringBuilder(path);
-                        path_builder.append_string(module.name);
-                        path_builder.append_character('/');
-                        build_vscode_source_files_list(_rp, builder, path_builder.to_string(_r.get_page()), module.symbols);
+                        build_vscode_source_files(builder, path, module);
                     }
                     break;
                 default:
