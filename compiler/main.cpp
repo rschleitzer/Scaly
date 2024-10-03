@@ -195,28 +195,9 @@ void test_compiler() {
     }
 }
 
-void test_compile_and_run_program() {
-    Region _r;
-    auto error = compile_and_run_program(_r.get_page(), String(_r.get_page(), 
-
-"function test_page {\n"
-"    mutable page Page.allocate_page()*\n"
-"}\n"
-"test_page()\n"
-
-    ));
-    if (error != nullptr) {
-        auto error_message = error->to_string(_r.get_page());
-        print(_r.get_page(), error_message);
-        exit(-60);
-    }
-
-}
-
 int main(int argc, char** argv) {
     // test_lexer();
     // test_parser();
     // test_generator();
-    // test_compile_and_run_program();
     test_compiler();
 }

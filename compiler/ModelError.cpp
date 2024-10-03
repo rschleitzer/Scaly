@@ -10,16 +10,7 @@ struct Position {
     Position(size_t line, size_t column) : line(line), column(column) {}
 };
 
-String build_file_name(Page* _rp, const Text& text) {
-    switch (text._tag) {
-        case Text::Program:
-            return String(_rp, "<Program>");
-        case Text::File:
-            return String(_rp, text._File);
-    }
-}
-
-Position calculate_position_from_string(Page* _rp, const String& text, size_t offset) {
+Position calculate_position_from_string(Page* _rp, String text, size_t offset) {
     StringIterator iterator(text);
     size_t line = 1;
     size_t column = 1;
@@ -91,34 +82,22 @@ String build_hint_lines_from_string(Page* _rp, const String& text, size_t start_
     return output_builder.to_string(_rp);
 }
 
-Result<String, FileError> build_hint_lines(Page* _rp, const Text& text, size_t start_offset, size_t end_offset, Position start_position, Position end_position) {
+Result<String, FileError> build_hint_lines(Page* _rp, String file, size_t start_offset, size_t end_offset, Position start_position, Position end_position) {
     Region _r;
-    switch (text._tag) {
-        case Text::Program:
-            return Result<String, FileError> { ._tag = Result<String, FileError>::Ok, ._Ok = build_hint_lines_from_string(_rp, text._Program, start_offset, end_offset, start_position, end_position) };
-        case Text::File: {
-            auto text_result = File::read_to_string(_r.get_page(), _r.get_page(), text._File);
-            if (text_result._tag == Result<String, FileError>::Error) {
-                return Result<String, FileError> { ._tag = Result<String, FileError>::Error, ._Error = FileError(text_result._Error) };
-            }
-            return Result<String, FileError> { ._tag = Result<String, FileError>::Ok, ._Ok = build_hint_lines_from_string(_rp, text_result._Ok, start_offset, end_offset, start_position, end_position) };
-        }
+    auto text_result = File::read_to_string(_r.get_page(), _r.get_page(), file);
+    if (text_result._tag == Result<String, FileError>::Error) {
+        return Result<String, FileError> { ._tag = Result<String, FileError>::Error, ._Error = FileError(text_result._Error) };
     }
+    return Result<String, FileError> { ._tag = Result<String, FileError>::Ok, ._Ok = build_hint_lines_from_string(_rp, text_result._Ok, start_offset, end_offset, start_position, end_position) };
 }
 
-Result<Position, FileError> calculate_position(Page* _rp, Page* _ep, const Text& text, size_t offset) {
+Result<Position, FileError> calculate_position(Page* _rp, Page* _ep, String file, size_t offset) {
     Region _r;
-    switch (text._tag) {
-        case Text::Program:
-            return Result<Position, FileError> { ._tag = Result<Position, FileError>::Ok, ._Ok = calculate_position_from_string(_rp, text._Program, offset) };
-        case Text::File: {
-            auto text_result = File::read_to_string(_r.get_page(), _r.get_page(), text._File);
-            if (text_result._tag == Result<String, FileError>::Error) {
-                return Result<Position, FileError> { ._tag = Result<Position, FileError>::Error, ._Error = FileError(text_result._Error) };
-            }
-            return Result<Position, FileError> { ._tag = Result<Position, FileError>::Ok, ._Ok = calculate_position_from_string(_rp, text_result._Ok, offset) };
-        }
+    auto text_result = File::read_to_string(_r.get_page(), _r.get_page(), file);
+    if (text_result._tag == Result<String, FileError>::Error) {
+        return Result<Position, FileError> { ._tag = Result<Position, FileError>::Error, ._Error = FileError(text_result._Error) };
     }
+    return Result<Position, FileError> { ._tag = Result<Position, FileError>::Ok, ._Ok = calculate_position_from_string(_rp, text_result._Ok, offset) };
 }
 
 String to_string(Page* _rp, size_t number) {
@@ -127,11 +106,11 @@ String to_string(Page* _rp, size_t number) {
     return String(_rp, str);
 }
 
-void append_error_message_header(StringBuilder& builder, const Text& text, size_t offset) {
+void append_error_message_header(StringBuilder& builder, String file, size_t offset) {
     Region _r;
-    builder.append_string(build_file_name(_r.get_page(), text));
+    builder.append_string(file);
     builder.append_character(':');
-    auto position_result_start = calculate_position(_r.get_page(), _r.get_page(), text, offset);
+    auto position_result_start = calculate_position(_r.get_page(), _r.get_page(), file, offset);
     if (position_result_start._tag == Result<Position, FileError>::Ok) {
         auto position_start = position_result_start._Ok;
         builder.append_string(to_string(_r.get_page(), position_start.line));
@@ -141,15 +120,15 @@ void append_error_message_header(StringBuilder& builder, const Text& text, size_
     }
 }
 
-void append_hint_lines(StringBuilder& builder, const Text& text, size_t start, size_t end) {
+void append_hint_lines(StringBuilder& builder, String file, size_t start, size_t end) {
     Region _r;
     builder.append_character('\n');
-    auto position_result_end = calculate_position(_r.get_page(), _r.get_page(), text, end);
+    auto position_result_end = calculate_position(_r.get_page(), _r.get_page(), file, end);
     if (position_result_end._tag == Result<Position, FileError>::Ok) {
         auto position_end = position_result_end._Ok;
-        auto position_result_start = calculate_position(_r.get_page(), _r.get_page(), text, start);
+        auto position_result_start = calculate_position(_r.get_page(), _r.get_page(), file, start);
         if (position_result_start._tag == Result<Position, FileError>::Ok) {
-            auto hint_lines_result = build_hint_lines(_r.get_page(), text, start, end, position_result_start._Ok, position_end);
+            auto hint_lines_result = build_hint_lines(_r.get_page(), file, start, end, position_result_start._Ok, position_end);
             if (hint_lines_result._tag == Result<String, FileError>::Ok) {
                 builder.append_string(hint_lines_result._Ok);
             }
@@ -179,9 +158,9 @@ struct IoModelError {
 };
 
 struct ParserModelError {
-    ParserModelError(Text text, ParserError parser_error) : text(text), error(parser_error) {}
+    ParserModelError(String file, ParserError parser_error) : file(file), error(parser_error) {}
 
-    Text text;
+    String file;
     ParserError error;
 
     String to_string(Page* _rp) {
@@ -197,11 +176,11 @@ struct ParserModelError {
     String build_error_message(Page* _rp, InvalidSyntax invalid_syntax) {
         Region _r;
         StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
-        append_error_message_header(message_builder, this->text, invalid_syntax.start);
+        append_error_message_header(message_builder, this->file, invalid_syntax.start);
         message_builder.append_string(String(_rp, "Expected "));
         message_builder.append_string(invalid_syntax.expected);
         message_builder.append_character('.');
-        append_hint_lines(message_builder, this->text, invalid_syntax.start, invalid_syntax.end);
+        append_hint_lines(message_builder, this->file, invalid_syntax.start, invalid_syntax.end);
 
         return message_builder.to_string(_rp);
     }
@@ -209,130 +188,130 @@ struct ParserModelError {
 
 struct NotImplemented
 {
-    NotImplemented(Text text, String name, Span span) : text(text), name(name), span(span) {}
-    Text text;
+    NotImplemented(String file, String name, Span span) : file(file), name(name), span(span) {}
+    String file;
     String name;
     Span span;
 
     String to_string(Page* _rp) {
         Region _r;
         StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
-        append_error_message_header(message_builder, this->text, span.start);
+        append_error_message_header(message_builder, this->file, span.start);
         message_builder.append_string(String(_rp, "The "));
         message_builder.append_string(name);
         message_builder.append_string(String(_rp, " syntax cannot be processed by the modeler yet."));
-        append_hint_lines(message_builder, this->text, span.start, span.end);
+        append_hint_lines(message_builder, this->file, span.start, span.end);
 
         return message_builder.to_string(_rp);
     }
 };
 
 struct DuplicateName {
-    DuplicateName(Text text, Span span) : text(text), span(span) {}
-    Text text;
+    DuplicateName(String file, Span span) : file(file), span(span) {}
+    String file;
     Span span;
 
     String to_string(Page* _rp) {
         Region _r;
         StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
-        append_error_message_header(message_builder, this->text, span.start);
+        append_error_message_header(message_builder, this->file, span.start);
         message_builder.append_string(String(_rp, "This declaration already exists."));
-        append_hint_lines(message_builder, this->text, span.start, span.end);
+        append_hint_lines(message_builder, this->file, span.start, span.end);
 
         return message_builder.to_string(_rp);
     }
 };
 
 struct NonFunctionSymbolExists {
-    NonFunctionSymbolExists(Text text, Span span) : text(text), span(span) {}
-    Text text;
+    NonFunctionSymbolExists(String file, Span span) : file(file), span(span) {}
+    String file;
     Span span;
 
     String to_string(Page* _rp) {
         Region _r;
         StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
-        append_error_message_header(message_builder, this->text, span.start);
+        append_error_message_header(message_builder, this->file, span.start);
         message_builder.append_string(String(_rp, "This declaration already exists, but not as a function."));
-        append_hint_lines(message_builder, this->text, span.start, span.end);
+        append_hint_lines(message_builder, this->file, span.start, span.end);
 
         return message_builder.to_string(_rp);
     }
 };
 
 struct FunctionSymbolExists {
-    FunctionSymbolExists(Text text, Span span) : text(text), span(span) {}
-    Text text;
+    FunctionSymbolExists(String file, Span span) : file(file), span(span) {}
+    String file;
     Span span;
 
     String to_string(Page* _rp) {
         Region _r;
         StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
-        append_error_message_header(message_builder, this->text, span.start);
+        append_error_message_header(message_builder, this->file, span.start);
         message_builder.append_string(String(_rp, "This declaration already exists, but as a function."));
-        append_hint_lines(message_builder, this->text, span.start, span.end);
+        append_hint_lines(message_builder, this->file, span.start, span.end);
 
         return message_builder.to_string(_rp);
     }
 };
 
 struct DeInitializerExists {
-    DeInitializerExists(Text text, Span span) : text(text), span(span) {}
-    Text text;
+    DeInitializerExists(String file, Span span) : file(file), span(span) {}
+    String file;
     Span span;
 
     String to_string(Page* _rp) {
         Region _r;
         StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
-        append_error_message_header(message_builder, this->text, span.start);
+        append_error_message_header(message_builder, this->file, span.start);
         message_builder.append_string(String(_rp, "A deinitializer has already been defined."));
-        append_hint_lines(message_builder, this->text, span.start, span.end);
+        append_hint_lines(message_builder, this->file, span.start, span.end);
 
         return message_builder.to_string(_rp);
     }
 };
 struct InvalidConstant {
-    InvalidConstant(Text text, Span span) : text(text), span(span) {}
-    Text text;
+    InvalidConstant(String file, Span span) : file(file), span(span) {}
+    String file;
     Span span;
 
     String to_string(Page* _rp) {
         Region _r;
         StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
-        append_error_message_header(message_builder, this->text, span.start);
+        append_error_message_header(message_builder, this->file, span.start);
         message_builder.append_string(String(_rp, "This is an invalid constant."));
-        append_hint_lines(message_builder, this->text, span.start, span.end);
+        append_hint_lines(message_builder, this->file, span.start, span.end);
 
         return message_builder.to_string(_rp);
     }
 };
 
 struct InvalidComponentName {
-    InvalidComponentName(Text text, Span span) : text(text), span(span) {}
-    Text text;
+    InvalidComponentName(String file, Span span) : file(file), span(span) {}
+    String file;
     Span span;
 
     String to_string(Page* _rp) {
         Region _r;
         StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
-        append_error_message_header(message_builder, this->text, span.start);
+        append_error_message_header(message_builder, this->file, span.start);
         message_builder.append_string(String(_rp, "The component does not have an identifier as name."));
-        append_hint_lines(message_builder, this->text, span.start, span.end);
+        append_hint_lines(message_builder, this->file, span.start, span.end);
 
         return message_builder.to_string(_rp);
     }
 };
 
 struct ModuleRootMustBeConcept {
-    ModuleRootMustBeConcept(Text text, Span span) : text(text), span(span) {}
-    Text text;
+    ModuleRootMustBeConcept(String file, Span span) : file(file), span(span) {}
+    String file;
     Span span;
 
     String to_string(Page* _rp) {
         Region _r;
         StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
-        append_error_message_header(message_builder, this->text, span.start);
+        append_error_message_header(message_builder, this->file, span.start);
         message_builder.append_string(String(_rp, "The root definition of a module must be a concept."));
-        append_hint_lines(message_builder, this->text, span.start, span.end);
+        append_hint_lines(message_builder, this->file, span.start, span.end);
 
         return message_builder.to_string(_rp);
     }

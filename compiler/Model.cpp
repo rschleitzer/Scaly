@@ -391,26 +391,25 @@ struct Operator : Object {
 
 struct Module;
 struct Concept;
+struct Use;
 struct Nameable;
-
-struct Code {
-    HashMap<String, Nameable> symbols;
-    Vector<Initializer>* initializers;
-    DeInitializer* deinitializer;
-    Code(HashMap<String, Nameable> symbols, Vector<Initializer>* initializers, DeInitializer* deinitializer)
-      : symbols(symbols), initializers(initializers), deinitializer(deinitializer) {}
-};
 
 struct Structure {
     Span span;
     bool private_;
     HashMap<String, Property> properties;
-    Code code;
-    Structure(Span span, bool private_, HashMap<String, Property> properties, Code code)
+    Vector<Use> uses;
+    Vector<Initializer> initializers;
+    DeInitializer* deinitializer;
+    HashMap<String, Nameable> symbols;
+    Structure(Span span, bool private_, HashMap<String, Property> properties, Vector<Use> uses, Vector<Initializer> initializers, DeInitializer* deinitializer, HashMap<String, Nameable> symbols)
       : span(span),
         private_(private_),
         properties(properties),
-        code(code) {}
+        uses(uses),
+        initializers(initializers),
+        deinitializer(deinitializer),
+        symbols(symbols) {}
 };
 
 
@@ -427,23 +426,19 @@ struct Variant : Object {
 struct Union : Object {
     Span span;
     bool private_;
-    HashMap<String, Variant> properties;
-    Code code;
-    Union(Span span, bool private_, HashMap<String, Variant> properties, Code code)
+    HashMap<String, Variant> variants;
+    Union(Span span, bool private_, HashMap<String, Variant> variants)
       : span(span),
         private_(private_),
-        properties(properties),
-        code(code) {}
+        variants(variants) {}
 };
 
 struct Namespace : Object {
     Span span;
-    bool private_;
-    Code code;
-    Namespace(Span span, bool private_, Code code)
+    HashMap<String, Nameable> symbols;
+    Namespace(Span span, HashMap<String, Nameable> symbols)
       : span(span),
-        private_(private_),
-        code(code) {}
+        symbols(symbols) {}
 };
 
 struct Definition {
@@ -482,62 +477,37 @@ struct GenericParameter {
 
 struct Concept : Object {
     Span span;
-    Vector<Use> uses;
     String name;
     Vector<GenericParameter> parameters;
     Vector<Attribute> attributes;
     Definition definition;
-    Concept(Span span, Vector<Use> uses, String name, Vector<GenericParameter> parameters, Vector<Attribute> attributes, Definition definition)
+    Concept(Span span, String name, Vector<GenericParameter> parameters, Vector<Attribute> attributes, Definition definition)
       : span(span),
-        uses(uses),
         name(name),
         parameters(parameters),
         attributes(attributes),
         definition(definition) {}
 };
 
-struct Text {
-    enum {
-        Program,
-        File,
-    } _tag;
-    union {
-        String _Program;
-        String _File;
-    };
-};
-
 struct Module : Object {
     bool private_;
     String file;
-    Concept concept;
-    Module(bool private_, String file, Concept concept)
+    String name;
+    HashMap<String, Nameable> symbols;
+    Module(bool private_, String file, String name, HashMap<String, Nameable> symbols)
       : private_(private_),
         file(file),
-        concept(concept) {}
-};
-
-struct Package : Object {
-    String name;
-    Text text;
-    Concept concept;
-    Package(String name, Text text, Concept concept)
-      : name(name),
-        text(text),
-        concept(concept) {}
+        name(name),
+        symbols(symbols) {}
 };
 
 struct Program : Object {
-    String name;
-    Text text;
-    Vector<Package> packages;
-    Concept concept;
+    Vector<Module> packages;
+    Module module;
     Vector<Statement> statements;
-    Program(String name, Text text, Vector<Package> packages, Concept concept, Vector<Statement> statements)
-      : name(name),
-        text(text),
-        packages(packages),
-        concept(concept),
+    Program(Vector<Module> packages, Module module, Vector<Statement> statements)
+      : packages(packages),
+        module(module),
         statements(statements) {}
 };
 
@@ -550,7 +520,6 @@ struct Nameable {
         Functions,
     } _tag;
     union {
-        struct Package _Pacckage;
         struct Module _Module;
         struct Concept _Concept;
         struct Operator _Operator;

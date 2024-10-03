@@ -1,5 +1,4 @@
-namespace scaly {
-namespace memory {
+
 using namespace scaly::memory;
 struct Page : Object {
     PageList* exclusive_pages;
@@ -7,5 +6,3 @@ struct Page : Object {
     Page* next_page;
     Page* current_page;
 };
-}
-}

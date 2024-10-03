@@ -33,6 +33,10 @@ template<class K, class V>
 struct HashMap : Object {
     Vector<Vector<KeyValuePair<K, V>>>* slots;
 
+    HashMap<K, V>() {
+        this->slots = nullptr;
+    };
+
     HashMap<K, V>(Page* _rp, HashMapBuilder<K, V>& hash_map_builder) {
         Region _r;
         if (hash_map_builder.length == 0) {

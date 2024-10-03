@@ -15,11 +15,7 @@
     <content link = Private
     <content link = Definition
     <content link = Function
-    <content link = Init
-    <content link = DeInit
-    <content link = Procedure
     <content link = Operator
-    <content link = Implement
     <content link = Trait
     <content link = Macro
     <content link = Module
@@ -31,11 +27,18 @@
 <syntax id = Export                                abstract
     <content link = Definition
     <content link = Function
-    <content link = Init
+    <content link = Operator
+    <content link = Trait
+    <content link = Module
+
+<syntax id = Member                  multiple abstract
+    <content link = Definition
+    <content link = Function
     <content link = Procedure
     <content link = Operator
     <content link = Implement
     <content link = Trait
+    <content link = Macro
     <content link = Module
 
 <syntax id = Definition
@@ -68,37 +71,36 @@
     <content link = Structure                               property = structure
     <content colon                                 optional
     <content link = Body                           optional property = body
+    <content colon                                 optional
+
+<syntax id = Body
+    <content link = left_curly
+    <content link = Use                   multiple optional property = uses
+    <content link = Init                  multiple optional property = inits
+    <content link = DeInit                         optional property = deInit
+    <content link = Member                multiple optional property = members
+    <content link = right_curly
+    <content colon                                 optional
 
 <syntax id = Namespace
-    <content link = Body                                    property = body
+    <content link = left_curly
+    <content link = Use                   multiple optional property = uses
+    <content link = Declaration           multiple optional property = declarations
+    <content link = right_curly
+    <content colon                                 optional
 
 <syntax id = Union
     <content link = union
     <content colon                                 optional
     <content link = left_paren
-    <content link = Tag                   multiple          property = tags
+    <content link = Variant               multiple          property = variants
     <content link = right_paren
     <content colon                                 optional
-    <content link = Body                           optional property = body
 
-<syntax id = Tag                          multiple
+<syntax id = Variant                      multiple
     <content identifier                                     property = name
     <content link = Attribute             multiple optional property = attributes
-    <content link = Item                           optional property = item
-
-<syntax id = Item                                  abstract
-    <content link = Variant
-    <content link = Enum
-
-<syntax id = Variant
-    <content colon                                 optional
-    <content link = Structure                               property = structure
-    <content colon                                 optional
-    <content link = Body                           optional property = body
-    <content colon                                 optional
-
-<syntax id = Enum
-    <content literal                                        property = literal
+    <content link = Class                          optional property = variant
 
 <syntax id = Constant
     <content link = Operation                               property = operation
@@ -110,29 +112,6 @@
     <content link = Attribute             multiple optional property = attributes
     <content link = Returns                        optional property = result
     <content link = Throws                         optional property = error
-
-<syntax id = Body
-    <content link = left_curly
-    <content link = Use                   multiple optional property = uses
-    <content link = Declaration           multiple optional property = declarations
-    <content link = right_curly
-    <content colon                                 optional
-
-<syntax id = Member                       multiple abstract
-    <content link = Field
-    <content link = Property
-
-<syntax id = Field
-    <content link = private
-    <content link = Property                                property = property
-
-<syntax id = Property                     multiple
-    <content identifier                                     property = name
-    <content link = TypeAnnotation                 optional property = annotation
-    <content link = comma                          optional
-    <content colon                                 optional
-    <content link = Attribute             multiple optional property = attributes
-    <content colon                                 optional
 
 <syntax id = TypeAnnotation
     <content colon
@@ -201,7 +180,7 @@
     <content link = Procedure
     <content link = Operator
 
-<syntax id = Init
+<syntax id = Init                         multiple
     <content link = init
     <content link = ParameterSet                   optional property = parameters
     <content colon                                 optional
@@ -335,8 +314,24 @@
 
 <syntax id = Structure
     <content link = left_paren
-    <content link = Member                multiple optional property = members
+    <content link = Part                  multiple optional property = parts
     <content link = right_paren
+
+<syntax id = Part                         multiple abstract
+    <content link = Field
+    <content link = Property
+
+<syntax id = Field
+    <content link = private
+    <content link = Property                                property = property
+
+<syntax id = Property                     multiple
+    <content identifier                                     property = name
+    <content link = TypeAnnotation                 optional property = annotation
+    <content link = comma                          optional
+    <content colon                                 optional
+    <content link = Attribute             multiple optional property = attributes
+    <content colon                                 optional
 
 <syntax id = Operand                      multiple
     <content link = Expression                              property = expression
