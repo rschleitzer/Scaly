@@ -29,11 +29,7 @@ struct Transpiler : Object {
         forward_includes(_ep, path, program);
         StringBuilder& main_header_builder = *new (alignof(StringBuilder), _r.get_page()) StringBuilder(String(_r.get_page(), "../"));
         main_header_builder.append_string(program.module.name);
-        StringBuilder& namespace_open_builder = *new (alignof(StringBuilder), _r.get_page()) StringBuilder();
-        namespace_open_builder.append_string(String(_r.get_page(), "namespace "));
-        namespace_open_builder.append_string(program.module.name);
-        namespace_open_builder.append_string(String(_r.get_page(), " {\n"));
-        auto _result = build_module(_ep, path, program.module, main_header_builder.to_string(_r.get_page()), namespace_open_builder.to_string(_r.get_page()), String(_r.get_page(), "}\n"));
+        auto _result = build_module(_ep, path, program.module, main_header_builder.to_string(_r.get_page()), String(), String());
         if (_result != nullptr)
             return new(alignof(TranspilerError), _ep) TranspilerError(*_result);
 
@@ -627,7 +623,6 @@ struct Transpiler : Object {
         }
 
         {
-            StringBuilder& launch_file_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(Path::join(_r.get_page(), vscode_dir, String(_r.get_page(), "launch.json")));
             StringBuilder& launch_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(String(_r.get_page(), "{\
     \"version\": \"0.2.0\",\n\
     \"configurations\": [\n\
@@ -643,7 +638,7 @@ struct Transpiler : Object {
         }\n\
     ]\n\
 }"));
-            auto _launch_result = File::write_from_string(_ep, launch_file_builder.to_string(_r.get_page()), launch_builder.to_string(_r.get_page()));
+            auto _launch_result = File::write_from_string(_ep, Path::join(_r.get_page(), vscode_dir, String(_r.get_page(), "launch.json")), launch_builder.to_string(_r.get_page()));
             if (_launch_result != nullptr)
                 return new(alignof(TranspilerError), _ep) TranspilerError(*_launch_result);
         }
