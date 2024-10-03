@@ -589,9 +589,7 @@ struct Transpiler : Object {
 				\"-fansi-escape-codes\",\n\
 				\"-g\",\n\
 				\"${workspaceFolder}/main.cpp\",\n"));
-            StringBuilder& program_concept_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(String(_r.get_page(), program.module.name));
-            program_concept_builder.append_character('/');
-            build_vscode_source_files(tasks_builder, program_concept_builder.to_string(_r.get_page()), program.module);
+            build_vscode_source_files(tasks_builder, String(), program.module);
             tasks_builder.append_string(String(_r.get_page(), "\
 				\"-o\",\n\
 				\"${workspaceFolder}/bin/"));
