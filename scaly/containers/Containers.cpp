@@ -21,6 +21,8 @@ extern "C" size_t strlen(const char *);
 #include "List.h"
 #include "Vector.h"
 #include "Array.h"
+#include "BuilderListIterator.h"
+#include "BuilderList.h"
 #include "HashSetBuilder.h"
 #include "HashSet.h"
 #include "HashMapBuilder.h"

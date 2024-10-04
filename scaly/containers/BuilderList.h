@@ -1,18 +1,16 @@
-const int PAGE_SIZE = 0x1000;
-
 namespace scaly {
 namespace containers {
 
 using namespace scaly::memory;
 
-template<class T> struct List : Object {
+template<class T> struct BuilderList : Object {
     Node<T>* head;
 
-    List() :head(nullptr) {}
+    BuilderList() :head(nullptr) {}
 
-    void add(T element) {
+    void add(Page* _rp, T element) {
         auto new_node = 
-            new (alignof(Node<T>), this->get_page()) Node<T>(element, this->head);
+            new (alignof(Node<T>), _rp) Node<T>(element, this->head);
 
         this->head = new_node;
     }
@@ -49,8 +47,8 @@ template<class T> struct List : Object {
         return i;
     }
 
-    ListIterator<T> get_iterator()  {
-        return ListIterator<T>(this->head);
+    BuilderListIterator<T> get_iterator()  {
+        return BuilderListIterator<T>(this->head);
     }
 };
 

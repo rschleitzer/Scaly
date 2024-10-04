@@ -1191,52 +1191,52 @@ struct Parser : Object {
 
     Vector<String> initialize_keywords_index(Page* _rp) {
         Region _r;
-        List<String> keywords_builder;
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "break"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "catch"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "case"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "continue"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "define"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "default"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "deinit"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "delegate"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "drop"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "else"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "extends"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "extern"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "for"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "function"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "if"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "init"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "is"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "implement"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "in"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "instruction"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "intrinsic"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "label"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "lambda"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "let"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "loop"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "macro"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "match"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "module"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "mutable"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "operator"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "procedure"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "private"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "return"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "returns"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "repeat"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "set"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "sizeof"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "throw"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "throws"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "trait"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "union"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "use"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "var"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "while"));
-        keywords_builder.add(_r.get_page(), String(Page::get(this), "package"));
+        List<String>& keywords_builder = *new(alignof(List<String>), _r.get_page()) List<String>();
+        keywords_builder.add(String(Page::get(this), "break"));
+        keywords_builder.add(String(Page::get(this), "catch"));
+        keywords_builder.add(String(Page::get(this), "case"));
+        keywords_builder.add(String(Page::get(this), "continue"));
+        keywords_builder.add(String(Page::get(this), "define"));
+        keywords_builder.add(String(Page::get(this), "default"));
+        keywords_builder.add(String(Page::get(this), "deinit"));
+        keywords_builder.add(String(Page::get(this), "delegate"));
+        keywords_builder.add(String(Page::get(this), "drop"));
+        keywords_builder.add(String(Page::get(this), "else"));
+        keywords_builder.add(String(Page::get(this), "extends"));
+        keywords_builder.add(String(Page::get(this), "extern"));
+        keywords_builder.add(String(Page::get(this), "for"));
+        keywords_builder.add(String(Page::get(this), "function"));
+        keywords_builder.add(String(Page::get(this), "if"));
+        keywords_builder.add(String(Page::get(this), "init"));
+        keywords_builder.add(String(Page::get(this), "is"));
+        keywords_builder.add(String(Page::get(this), "implement"));
+        keywords_builder.add(String(Page::get(this), "in"));
+        keywords_builder.add(String(Page::get(this), "instruction"));
+        keywords_builder.add(String(Page::get(this), "intrinsic"));
+        keywords_builder.add(String(Page::get(this), "label"));
+        keywords_builder.add(String(Page::get(this), "lambda"));
+        keywords_builder.add(String(Page::get(this), "let"));
+        keywords_builder.add(String(Page::get(this), "loop"));
+        keywords_builder.add(String(Page::get(this), "macro"));
+        keywords_builder.add(String(Page::get(this), "match"));
+        keywords_builder.add(String(Page::get(this), "module"));
+        keywords_builder.add(String(Page::get(this), "mutable"));
+        keywords_builder.add(String(Page::get(this), "operator"));
+        keywords_builder.add(String(Page::get(this), "procedure"));
+        keywords_builder.add(String(Page::get(this), "private"));
+        keywords_builder.add(String(Page::get(this), "return"));
+        keywords_builder.add(String(Page::get(this), "returns"));
+        keywords_builder.add(String(Page::get(this), "repeat"));
+        keywords_builder.add(String(Page::get(this), "set"));
+        keywords_builder.add(String(Page::get(this), "sizeof"));
+        keywords_builder.add(String(Page::get(this), "throw"));
+        keywords_builder.add(String(Page::get(this), "throws"));
+        keywords_builder.add(String(Page::get(this), "trait"));
+        keywords_builder.add(String(Page::get(this), "union"));
+        keywords_builder.add(String(Page::get(this), "use"));
+        keywords_builder.add(String(Page::get(this), "var"));
+        keywords_builder.add(String(Page::get(this), "while"));
+        keywords_builder.add(String(Page::get(this), "package"));
         return Vector<String>(_rp, keywords_builder);
     }
 
@@ -1389,14 +1389,14 @@ struct Parser : Object {
 
     Result<Vector<DeclarationSyntax>*, ParserError> parse_declaration_list(Page* _rp, Page* _ep) {
         Region _r;
-        List<DeclarationSyntax> list;
+        List<DeclarationSyntax>& list = *new(alignof(List<DeclarationSyntax>), _r.get_page()) List<DeclarationSyntax>();;
         while(true) {
             auto node_result = this->parse_declaration(_rp, _ep);
             if ((node_result._tag == Result<DeclarationSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
                 return Result<Vector<DeclarationSyntax>*, ParserError> { ._tag = Result<Vector<DeclarationSyntax>*, ParserError>::Error, ._Error = node_result._Error };
             if (node_result._tag == Result<DeclarationSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
-                list.add(_r.get_page(), node);
+                list.add(node);
             } else {
                 if ((list.count() == 0) && (node_result._tag == Result<DeclarationSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
                     return Result<Vector<DeclarationSyntax>*, ParserError> { ._tag = Result<Vector<DeclarationSyntax>*, ParserError>::Error, ._Error = node_result._Error };
@@ -1632,14 +1632,14 @@ struct Parser : Object {
 
     Result<Vector<MemberSyntax>*, ParserError> parse_member_list(Page* _rp, Page* _ep) {
         Region _r;
-        List<MemberSyntax> list;
+        List<MemberSyntax>& list = *new(alignof(List<MemberSyntax>), _r.get_page()) List<MemberSyntax>();;
         while(true) {
             auto node_result = this->parse_member(_rp, _ep);
             if ((node_result._tag == Result<MemberSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
                 return Result<Vector<MemberSyntax>*, ParserError> { ._tag = Result<Vector<MemberSyntax>*, ParserError>::Error, ._Error = node_result._Error };
             if (node_result._tag == Result<MemberSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
-                list.add(_r.get_page(), node);
+                list.add(node);
             } else {
                 if ((list.count() == 0) && (node_result._tag == Result<MemberSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
                     return Result<Vector<MemberSyntax>*, ParserError> { ._tag = Result<Vector<MemberSyntax>*, ParserError>::Error, ._Error = node_result._Error };
@@ -1890,14 +1890,14 @@ struct Parser : Object {
 
     Result<Vector<GenericParameterSyntax>*, ParserError> parse_genericparameter_list(Page* _rp, Page* _ep) {
         Region _r;
-        List<GenericParameterSyntax> list;
+        List<GenericParameterSyntax>& list = *new(alignof(List<GenericParameterSyntax>), _r.get_page()) List<GenericParameterSyntax>();;
         while(true) {
             auto node_result = this->parse_genericparameter(_rp, _ep);
             if ((node_result._tag == Result<GenericParameterSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
                 return Result<Vector<GenericParameterSyntax>*, ParserError> { ._tag = Result<Vector<GenericParameterSyntax>*, ParserError>::Error, ._Error = node_result._Error };
             if (node_result._tag == Result<GenericParameterSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
-                list.add(_r.get_page(), node);
+                list.add(node);
             } else {
                 if ((list.count() == 0) && (node_result._tag == Result<GenericParameterSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
                     return Result<Vector<GenericParameterSyntax>*, ParserError> { ._tag = Result<Vector<GenericParameterSyntax>*, ParserError>::Error, ._Error = node_result._Error };
@@ -2280,14 +2280,14 @@ struct Parser : Object {
 
     Result<Vector<VariantSyntax>*, ParserError> parse_variant_list(Page* _rp, Page* _ep) {
         Region _r;
-        List<VariantSyntax> list;
+        List<VariantSyntax>& list = *new(alignof(List<VariantSyntax>), _r.get_page()) List<VariantSyntax>();;
         while(true) {
             auto node_result = this->parse_variant(_rp, _ep);
             if ((node_result._tag == Result<VariantSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
                 return Result<Vector<VariantSyntax>*, ParserError> { ._tag = Result<Vector<VariantSyntax>*, ParserError>::Error, ._Error = node_result._Error };
             if (node_result._tag == Result<VariantSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
-                list.add(_r.get_page(), node);
+                list.add(node);
             } else {
                 if ((list.count() == 0) && (node_result._tag == Result<VariantSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
                     return Result<Vector<VariantSyntax>*, ParserError> { ._tag = Result<Vector<VariantSyntax>*, ParserError>::Error, ._Error = node_result._Error };
@@ -2517,14 +2517,14 @@ struct Parser : Object {
 
     Result<Vector<GenericArgumentSyntax>*, ParserError> parse_genericargument_list(Page* _rp, Page* _ep) {
         Region _r;
-        List<GenericArgumentSyntax> list;
+        List<GenericArgumentSyntax>& list = *new(alignof(List<GenericArgumentSyntax>), _r.get_page()) List<GenericArgumentSyntax>();;
         while(true) {
             auto node_result = this->parse_genericargument(_rp, _ep);
             if ((node_result._tag == Result<GenericArgumentSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
                 return Result<Vector<GenericArgumentSyntax>*, ParserError> { ._tag = Result<Vector<GenericArgumentSyntax>*, ParserError>::Error, ._Error = node_result._Error };
             if (node_result._tag == Result<GenericArgumentSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
-                list.add(_r.get_page(), node);
+                list.add(node);
             } else {
                 if ((list.count() == 0) && (node_result._tag == Result<GenericArgumentSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
                     return Result<Vector<GenericArgumentSyntax>*, ParserError> { ._tag = Result<Vector<GenericArgumentSyntax>*, ParserError>::Error, ._Error = node_result._Error };
@@ -2739,14 +2739,14 @@ struct Parser : Object {
 
     Result<Vector<UseSyntax>*, ParserError> parse_use_list(Page* _rp, Page* _ep) {
         Region _r;
-        List<UseSyntax> list;
+        List<UseSyntax>& list = *new(alignof(List<UseSyntax>), _r.get_page()) List<UseSyntax>();;
         while(true) {
             auto node_result = this->parse_use(_rp, _ep);
             if ((node_result._tag == Result<UseSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
                 return Result<Vector<UseSyntax>*, ParserError> { ._tag = Result<Vector<UseSyntax>*, ParserError>::Error, ._Error = node_result._Error };
             if (node_result._tag == Result<UseSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
-                list.add(_r.get_page(), node);
+                list.add(node);
             } else {
                 if ((list.count() == 0) && (node_result._tag == Result<UseSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
                     return Result<Vector<UseSyntax>*, ParserError> { ._tag = Result<Vector<UseSyntax>*, ParserError>::Error, ._Error = node_result._Error };
@@ -2992,14 +2992,14 @@ struct Parser : Object {
 
     Result<Vector<MethodSyntax>*, ParserError> parse_method_list(Page* _rp, Page* _ep) {
         Region _r;
-        List<MethodSyntax> list;
+        List<MethodSyntax>& list = *new(alignof(List<MethodSyntax>), _r.get_page()) List<MethodSyntax>();;
         while(true) {
             auto node_result = this->parse_method(_rp, _ep);
             if ((node_result._tag == Result<MethodSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
                 return Result<Vector<MethodSyntax>*, ParserError> { ._tag = Result<Vector<MethodSyntax>*, ParserError>::Error, ._Error = node_result._Error };
             if (node_result._tag == Result<MethodSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
-                list.add(_r.get_page(), node);
+                list.add(node);
             } else {
                 if ((list.count() == 0) && (node_result._tag == Result<MethodSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
                     return Result<Vector<MethodSyntax>*, ParserError> { ._tag = Result<Vector<MethodSyntax>*, ParserError>::Error, ._Error = node_result._Error };
@@ -3066,14 +3066,14 @@ struct Parser : Object {
 
     Result<Vector<InitSyntax>*, ParserError> parse_init_list(Page* _rp, Page* _ep) {
         Region _r;
-        List<InitSyntax> list;
+        List<InitSyntax>& list = *new(alignof(List<InitSyntax>), _r.get_page()) List<InitSyntax>();;
         while(true) {
             auto node_result = this->parse_init(_rp, _ep);
             if ((node_result._tag == Result<InitSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
                 return Result<Vector<InitSyntax>*, ParserError> { ._tag = Result<Vector<InitSyntax>*, ParserError>::Error, ._Error = node_result._Error };
             if (node_result._tag == Result<InitSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
-                list.add(_r.get_page(), node);
+                list.add(node);
             } else {
                 if ((list.count() == 0) && (node_result._tag == Result<InitSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
                     return Result<Vector<InitSyntax>*, ParserError> { ._tag = Result<Vector<InitSyntax>*, ParserError>::Error, ._Error = node_result._Error };
@@ -3606,14 +3606,14 @@ struct Parser : Object {
 
     Result<Vector<ExtendSyntax>*, ParserError> parse_extend_list(Page* _rp, Page* _ep) {
         Region _r;
-        List<ExtendSyntax> list;
+        List<ExtendSyntax>& list = *new(alignof(List<ExtendSyntax>), _r.get_page()) List<ExtendSyntax>();;
         while(true) {
             auto node_result = this->parse_extend(_rp, _ep);
             if ((node_result._tag == Result<ExtendSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
                 return Result<Vector<ExtendSyntax>*, ParserError> { ._tag = Result<Vector<ExtendSyntax>*, ParserError>::Error, ._Error = node_result._Error };
             if (node_result._tag == Result<ExtendSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
-                list.add(_r.get_page(), node);
+                list.add(node);
             } else {
                 if ((list.count() == 0) && (node_result._tag == Result<ExtendSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
                     return Result<Vector<ExtendSyntax>*, ParserError> { ._tag = Result<Vector<ExtendSyntax>*, ParserError>::Error, ._Error = node_result._Error };
@@ -3710,14 +3710,14 @@ struct Parser : Object {
 
     Result<Vector<AttributeSyntax>*, ParserError> parse_attribute_list(Page* _rp, Page* _ep) {
         Region _r;
-        List<AttributeSyntax> list;
+        List<AttributeSyntax>& list = *new(alignof(List<AttributeSyntax>), _r.get_page()) List<AttributeSyntax>();;
         while(true) {
             auto node_result = this->parse_attribute(_rp, _ep);
             if ((node_result._tag == Result<AttributeSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
                 return Result<Vector<AttributeSyntax>*, ParserError> { ._tag = Result<Vector<AttributeSyntax>*, ParserError>::Error, ._Error = node_result._Error };
             if (node_result._tag == Result<AttributeSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
-                list.add(_r.get_page(), node);
+                list.add(node);
             } else {
                 if ((list.count() == 0) && (node_result._tag == Result<AttributeSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
                     return Result<Vector<AttributeSyntax>*, ParserError> { ._tag = Result<Vector<AttributeSyntax>*, ParserError>::Error, ._Error = node_result._Error };
@@ -3867,14 +3867,14 @@ struct Parser : Object {
 
     Result<Vector<PackageSyntax>*, ParserError> parse_package_list(Page* _rp, Page* _ep) {
         Region _r;
-        List<PackageSyntax> list;
+        List<PackageSyntax>& list = *new(alignof(List<PackageSyntax>), _r.get_page()) List<PackageSyntax>();;
         while(true) {
             auto node_result = this->parse_package(_rp, _ep);
             if ((node_result._tag == Result<PackageSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
                 return Result<Vector<PackageSyntax>*, ParserError> { ._tag = Result<Vector<PackageSyntax>*, ParserError>::Error, ._Error = node_result._Error };
             if (node_result._tag == Result<PackageSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
-                list.add(_r.get_page(), node);
+                list.add(node);
             } else {
                 if ((list.count() == 0) && (node_result._tag == Result<PackageSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
                     return Result<Vector<PackageSyntax>*, ParserError> { ._tag = Result<Vector<PackageSyntax>*, ParserError>::Error, ._Error = node_result._Error };
@@ -3927,14 +3927,14 @@ struct Parser : Object {
 
     Result<Vector<StatementSyntax>*, ParserError> parse_statement_list(Page* _rp, Page* _ep) {
         Region _r;
-        List<StatementSyntax> list;
+        List<StatementSyntax>& list = *new(alignof(List<StatementSyntax>), _r.get_page()) List<StatementSyntax>();;
         while(true) {
             auto node_result = this->parse_statement(_rp, _ep);
             if ((node_result._tag == Result<StatementSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
                 return Result<Vector<StatementSyntax>*, ParserError> { ._tag = Result<Vector<StatementSyntax>*, ParserError>::Error, ._Error = node_result._Error };
             if (node_result._tag == Result<StatementSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
-                list.add(_r.get_page(), node);
+                list.add(node);
             } else {
                 if ((list.count() == 0) && (node_result._tag == Result<StatementSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
                     return Result<Vector<StatementSyntax>*, ParserError> { ._tag = Result<Vector<StatementSyntax>*, ParserError>::Error, ._Error = node_result._Error };
@@ -4202,14 +4202,14 @@ struct Parser : Object {
 
     Result<Vector<BindingSpecSyntax>*, ParserError> parse_bindingspec_list(Page* _rp, Page* _ep) {
         Region _r;
-        List<BindingSpecSyntax> list;
+        List<BindingSpecSyntax>& list = *new(alignof(List<BindingSpecSyntax>), _r.get_page()) List<BindingSpecSyntax>();;
         while(true) {
             auto node_result = this->parse_bindingspec(_rp, _ep);
             if ((node_result._tag == Result<BindingSpecSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
                 return Result<Vector<BindingSpecSyntax>*, ParserError> { ._tag = Result<Vector<BindingSpecSyntax>*, ParserError>::Error, ._Error = node_result._Error };
             if (node_result._tag == Result<BindingSpecSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
-                list.add(_r.get_page(), node);
+                list.add(node);
             } else {
                 if ((list.count() == 0) && (node_result._tag == Result<BindingSpecSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
                     return Result<Vector<BindingSpecSyntax>*, ParserError> { ._tag = Result<Vector<BindingSpecSyntax>*, ParserError>::Error, ._Error = node_result._Error };
@@ -4346,14 +4346,14 @@ struct Parser : Object {
 
     Result<Vector<PartSyntax>*, ParserError> parse_part_list(Page* _rp, Page* _ep) {
         Region _r;
-        List<PartSyntax> list;
+        List<PartSyntax>& list = *new(alignof(List<PartSyntax>), _r.get_page()) List<PartSyntax>();;
         while(true) {
             auto node_result = this->parse_part(_rp, _ep);
             if ((node_result._tag == Result<PartSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
                 return Result<Vector<PartSyntax>*, ParserError> { ._tag = Result<Vector<PartSyntax>*, ParserError>::Error, ._Error = node_result._Error };
             if (node_result._tag == Result<PartSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
-                list.add(_r.get_page(), node);
+                list.add(node);
             } else {
                 if ((list.count() == 0) && (node_result._tag == Result<PartSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
                     return Result<Vector<PartSyntax>*, ParserError> { ._tag = Result<Vector<PartSyntax>*, ParserError>::Error, ._Error = node_result._Error };
@@ -4435,14 +4435,14 @@ struct Parser : Object {
 
     Result<Vector<PropertySyntax>*, ParserError> parse_property_list(Page* _rp, Page* _ep) {
         Region _r;
-        List<PropertySyntax> list;
+        List<PropertySyntax>& list = *new(alignof(List<PropertySyntax>), _r.get_page()) List<PropertySyntax>();;
         while(true) {
             auto node_result = this->parse_property(_rp, _ep);
             if ((node_result._tag == Result<PropertySyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
                 return Result<Vector<PropertySyntax>*, ParserError> { ._tag = Result<Vector<PropertySyntax>*, ParserError>::Error, ._Error = node_result._Error };
             if (node_result._tag == Result<PropertySyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
-                list.add(_r.get_page(), node);
+                list.add(node);
             } else {
                 if ((list.count() == 0) && (node_result._tag == Result<PropertySyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
                     return Result<Vector<PropertySyntax>*, ParserError> { ._tag = Result<Vector<PropertySyntax>*, ParserError>::Error, ._Error = node_result._Error };
@@ -4526,14 +4526,14 @@ struct Parser : Object {
 
     Result<Vector<OperandSyntax>*, ParserError> parse_operand_list(Page* _rp, Page* _ep) {
         Region _r;
-        List<OperandSyntax> list;
+        List<OperandSyntax>& list = *new(alignof(List<OperandSyntax>), _r.get_page()) List<OperandSyntax>();;
         while(true) {
             auto node_result = this->parse_operand(_rp, _ep);
             if ((node_result._tag == Result<OperandSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
                 return Result<Vector<OperandSyntax>*, ParserError> { ._tag = Result<Vector<OperandSyntax>*, ParserError>::Error, ._Error = node_result._Error };
             if (node_result._tag == Result<OperandSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
-                list.add(_r.get_page(), node);
+                list.add(node);
             } else {
                 if ((list.count() == 0) && (node_result._tag == Result<OperandSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
                     return Result<Vector<OperandSyntax>*, ParserError> { ._tag = Result<Vector<OperandSyntax>*, ParserError>::Error, ._Error = node_result._Error };
@@ -4584,14 +4584,14 @@ struct Parser : Object {
 
     Result<Vector<PostfixSyntax>*, ParserError> parse_postfix_list(Page* _rp, Page* _ep) {
         Region _r;
-        List<PostfixSyntax> list;
+        List<PostfixSyntax>& list = *new(alignof(List<PostfixSyntax>), _r.get_page()) List<PostfixSyntax>();;
         while(true) {
             auto node_result = this->parse_postfix(_rp, _ep);
             if ((node_result._tag == Result<PostfixSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
                 return Result<Vector<PostfixSyntax>*, ParserError> { ._tag = Result<Vector<PostfixSyntax>*, ParserError>::Error, ._Error = node_result._Error };
             if (node_result._tag == Result<PostfixSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
-                list.add(_r.get_page(), node);
+                list.add(node);
             } else {
                 if ((list.count() == 0) && (node_result._tag == Result<PostfixSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
                     return Result<Vector<PostfixSyntax>*, ParserError> { ._tag = Result<Vector<PostfixSyntax>*, ParserError>::Error, ._Error = node_result._Error };
@@ -4706,14 +4706,14 @@ struct Parser : Object {
 
     Result<Vector<CatchSyntax>*, ParserError> parse_catch_list(Page* _rp, Page* _ep) {
         Region _r;
-        List<CatchSyntax> list;
+        List<CatchSyntax>& list = *new(alignof(List<CatchSyntax>), _r.get_page()) List<CatchSyntax>();;
         while(true) {
             auto node_result = this->parse_catch(_rp, _ep);
             if ((node_result._tag == Result<CatchSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
                 return Result<Vector<CatchSyntax>*, ParserError> { ._tag = Result<Vector<CatchSyntax>*, ParserError>::Error, ._Error = node_result._Error };
             if (node_result._tag == Result<CatchSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
-                list.add(_r.get_page(), node);
+                list.add(node);
             } else {
                 if ((list.count() == 0) && (node_result._tag == Result<CatchSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
                     return Result<Vector<CatchSyntax>*, ParserError> { ._tag = Result<Vector<CatchSyntax>*, ParserError>::Error, ._Error = node_result._Error };
@@ -5298,14 +5298,14 @@ struct Parser : Object {
 
     Result<Vector<ComponentSyntax>*, ParserError> parse_component_list(Page* _rp, Page* _ep) {
         Region _r;
-        List<ComponentSyntax> list;
+        List<ComponentSyntax>& list = *new(alignof(List<ComponentSyntax>), _r.get_page()) List<ComponentSyntax>();;
         while(true) {
             auto node_result = this->parse_component(_rp, _ep);
             if ((node_result._tag == Result<ComponentSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
                 return Result<Vector<ComponentSyntax>*, ParserError> { ._tag = Result<Vector<ComponentSyntax>*, ParserError>::Error, ._Error = node_result._Error };
             if (node_result._tag == Result<ComponentSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
-                list.add(_r.get_page(), node);
+                list.add(node);
             } else {
                 if ((list.count() == 0) && (node_result._tag == Result<ComponentSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
                     return Result<Vector<ComponentSyntax>*, ParserError> { ._tag = Result<Vector<ComponentSyntax>*, ParserError>::Error, ._Error = node_result._Error };
@@ -5468,14 +5468,14 @@ struct Parser : Object {
 
     Result<Vector<ElementSyntax>*, ParserError> parse_element_list(Page* _rp, Page* _ep) {
         Region _r;
-        List<ElementSyntax> list;
+        List<ElementSyntax>& list = *new(alignof(List<ElementSyntax>), _r.get_page()) List<ElementSyntax>();;
         while(true) {
             auto node_result = this->parse_element(_rp, _ep);
             if ((node_result._tag == Result<ElementSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
                 return Result<Vector<ElementSyntax>*, ParserError> { ._tag = Result<Vector<ElementSyntax>*, ParserError>::Error, ._Error = node_result._Error };
             if (node_result._tag == Result<ElementSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
-                list.add(_r.get_page(), node);
+                list.add(node);
             } else {
                 if ((list.count() == 0) && (node_result._tag == Result<ElementSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
                     return Result<Vector<ElementSyntax>*, ParserError> { ._tag = Result<Vector<ElementSyntax>*, ParserError>::Error, ._Error = node_result._Error };
@@ -5796,14 +5796,14 @@ struct Parser : Object {
 
     Result<Vector<CaseSyntax>*, ParserError> parse_case_list(Page* _rp, Page* _ep) {
         Region _r;
-        List<CaseSyntax> list;
+        List<CaseSyntax>& list = *new(alignof(List<CaseSyntax>), _r.get_page()) List<CaseSyntax>();;
         while(true) {
             auto node_result = this->parse_case(_rp, _ep);
             if ((node_result._tag == Result<CaseSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
                 return Result<Vector<CaseSyntax>*, ParserError> { ._tag = Result<Vector<CaseSyntax>*, ParserError>::Error, ._Error = node_result._Error };
             if (node_result._tag == Result<CaseSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
-                list.add(_r.get_page(), node);
+                list.add(node);
             } else {
                 if ((list.count() == 0) && (node_result._tag == Result<CaseSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
                     return Result<Vector<CaseSyntax>*, ParserError> { ._tag = Result<Vector<CaseSyntax>*, ParserError>::Error, ._Error = node_result._Error };
@@ -6166,14 +6166,14 @@ struct Parser : Object {
 
     Result<Vector<ActionSyntax>*, ParserError> parse_action_list(Page* _rp, Page* _ep) {
         Region _r;
-        List<ActionSyntax> list;
+        List<ActionSyntax>& list = *new(alignof(List<ActionSyntax>), _r.get_page()) List<ActionSyntax>();;
         while(true) {
             auto node_result = this->parse_action(_rp, _ep);
             if ((node_result._tag == Result<ActionSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
                 return Result<Vector<ActionSyntax>*, ParserError> { ._tag = Result<Vector<ActionSyntax>*, ParserError>::Error, ._Error = node_result._Error };
             if (node_result._tag == Result<ActionSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
-                list.add(_r.get_page(), node);
+                list.add(node);
             } else {
                 if ((list.count() == 0) && (node_result._tag == Result<ActionSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
                     return Result<Vector<ActionSyntax>*, ParserError> { ._tag = Result<Vector<ActionSyntax>*, ParserError>::Error, ._Error = node_result._Error };
@@ -6323,14 +6323,14 @@ struct Parser : Object {
 
     Result<Vector<TypeSyntax>*, ParserError> parse_type_list(Page* _rp, Page* _ep) {
         Region _r;
-        List<TypeSyntax> list;
+        List<TypeSyntax>& list = *new(alignof(List<TypeSyntax>), _r.get_page()) List<TypeSyntax>();;
         while(true) {
             auto node_result = this->parse_type(_rp, _ep);
             if ((node_result._tag == Result<TypeSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
                 return Result<Vector<TypeSyntax>*, ParserError> { ._tag = Result<Vector<TypeSyntax>*, ParserError>::Error, ._Error = node_result._Error };
             if (node_result._tag == Result<TypeSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
-                list.add(_r.get_page(), node);
+                list.add(node);
             } else {
                 if ((list.count() == 0) && (node_result._tag == Result<TypeSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
                     return Result<Vector<TypeSyntax>*, ParserError> { ._tag = Result<Vector<TypeSyntax>*, ParserError>::Error, ._Error = node_result._Error };
@@ -6446,14 +6446,14 @@ struct Parser : Object {
 
     Result<Vector<ExtensionSyntax>*, ParserError> parse_extension_list(Page* _rp, Page* _ep) {
         Region _r;
-        List<ExtensionSyntax> list;
+        List<ExtensionSyntax>& list = *new(alignof(List<ExtensionSyntax>), _r.get_page()) List<ExtensionSyntax>();;
         while(true) {
             auto node_result = this->parse_extension(_rp, _ep);
             if ((node_result._tag == Result<ExtensionSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
                 return Result<Vector<ExtensionSyntax>*, ParserError> { ._tag = Result<Vector<ExtensionSyntax>*, ParserError>::Error, ._Error = node_result._Error };
             if (node_result._tag == Result<ExtensionSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
-                list.add(_r.get_page(), node);
+                list.add(node);
             } else {
                 if ((list.count() == 0) && (node_result._tag == Result<ExtensionSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
                     return Result<Vector<ExtensionSyntax>*, ParserError> { ._tag = Result<Vector<ExtensionSyntax>*, ParserError>::Error, ._Error = node_result._Error };

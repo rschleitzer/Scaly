@@ -6,7 +6,7 @@ using namespace scaly::memory;
 template<class K, class V>
 struct MultiMapBuilder : Object {
     size_t length;
-    Vector<List<Slot<KeyValuePair<K, Array<V>*>>>>* slots;
+    Vector<BuilderList<Slot<KeyValuePair<K, Array<V>*>>>>* slots;
     Page* slots_page;
 
     MultiMapBuilder<K, V>() :length(0), slots(nullptr), slots_page(nullptr) {}
@@ -14,12 +14,12 @@ struct MultiMapBuilder : Object {
     void reallocate(size_t size) {
         auto hash_size = get_prime(size);
         this->slots_page = Page::get(this)->allocate_exclusive_page();
-        auto slots = new(alignof(Vector<List<Slot<KeyValuePair<K, Array<V>*>>>>), this->slots_page) Vector<List<Slot<KeyValuePair<K, Array<V>*>>>>(this->slots_page, hash_size);
+        auto slots = new(alignof(Vector<BuilderList<Slot<KeyValuePair<K, Array<V>*>>>>), this->slots_page) Vector<BuilderList<Slot<KeyValuePair<K, Array<V>*>>>>(this->slots_page, hash_size);
 
         if (this->slots != nullptr) {
-            auto vector_iterator = VectorIterator<List<Slot<KeyValuePair<K, Array<V>*>>>>(this->slots);
+            auto vector_iterator = VectorIterator<BuilderList<Slot<KeyValuePair<K, Array<V>*>>>>(this->slots);
             while (auto element = vector_iterator.next()) {
-                auto list_iterator = ListIterator<Slot<KeyValuePair<K, Array<V>*>>>(element->head);
+                auto list_iterator = BuilderListIterator<Slot<KeyValuePair<K, Array<V>*>>>(element->head);
                 while (auto item = list_iterator.next())
                 {
                     auto hash_code = item->hash_code;

@@ -14,9 +14,9 @@ struct Parser : Object {
 
     Vector<""String> initialize_keywords_index(Page* _rp) {
         Region _r;
-        List<""String> keywords_builder;
+        List<""String>& keywords_builder = *new(alignof(List<""String>), _r.get_page()) List<""String>();
 "   (apply-to-selected-children "keyword" (lambda (keyword) ($
-"        keywords_builder.add(_r.get_page(), String(Page::get(this), \""(id keyword)"\"));
+"        keywords_builder.add(String(Page::get(this), \""(id keyword)"\"));
 "   )))
 "        return Vector<""String>(_rp, keywords_builder);
     }
@@ -88,14 +88,14 @@ struct Parser : Object {
 "
     Result<""Vector<"(id syntax)"Syntax>*, ParserError> parse_"(downcase-string (id syntax))"_list(Page* _rp, Page* _ep) {
         Region _r;
-        List<"(id syntax)"Syntax> list;
+        List<"(id syntax)"Syntax>& list = *new(alignof(List<"(id syntax)"Syntax>), _r.get_page()) List<"(id syntax)"Syntax>();;
         while(true) {
             auto node_result = this->parse_"(downcase-string (id syntax))"(_rp, _ep);
             if ((node_result._tag == Result<"(id syntax)"Syntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
                 return Result<""Vector<"(id syntax)"Syntax>*, ParserError> { ._tag = Result<""Vector<"(id syntax)"Syntax>*, ParserError>::Error, ._Error = node_result._Error };
             if (node_result._tag == Result<"(id syntax)"Syntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
-                list.add(_r.get_page(), node);
+                list.add(node);
             } else {
                 if ((list.count() == 0) && (node_result._tag == Result<"(id syntax)"Syntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
                     return Result<""Vector<"(id syntax)"Syntax>*, ParserError> { ._tag = Result<""Vector<"(id syntax)"Syntax>*, ParserError>::Error, ._Error = node_result._Error };

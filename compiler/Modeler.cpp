@@ -35,7 +35,7 @@ Result<Property, ModelError> handle_property(Page* _rp, Page* _ep, bool private_
         type = _type_result._Ok;
     }
 
-    List<Attribute> attributes;
+    List<Attribute>& attributes = *new(alignof(List<Attribute>), _r.get_page()) List<Attribute>();
     if (property.attributes != nullptr) {
         auto property_attributes = property.attributes;
         auto _attribute_iterator = VectorIterator<AttributeSyntax>(property_attributes);
@@ -45,7 +45,7 @@ Result<Property, ModelError> handle_property(Page* _rp, Page* _ep, bool private_
             if (_attribute_result._tag == Result<Attribute, ModelError>::Error)
                 return Result<Property, ModelError> { ._tag = Result<Property, ModelError>::Error, ._Error = _attribute_result._Error };
             auto attribute = _attribute_result._Ok;
-            attributes.add(_r.get_page(), attribute);
+            attributes.add(attribute);
         }
     }
     return Result<Property, ModelError> { ._tag = Result<Property, ModelError>::Ok, ._Ok = Property(Span(property.start, property.end), false, new(alignof(String), _rp) String(_rp, property.name), type, Vector<Attribute>(_rp, attributes)) };
@@ -53,7 +53,7 @@ Result<Property, ModelError> handle_property(Page* _rp, Page* _ep, bool private_
 
 Result<Vector<Property>, ModelError> handle_parameterset(Page* _rp, Page* _ep, ParameterSetSyntax& parameterSetSyntax, String file) {
     Region _r;
-    List<Property> parameters;
+    List<Property>& parameters = *new(alignof(List<Property>), _r.get_page()) List<Property>();
     switch (parameterSetSyntax._tag) {
         case ParameterSetSyntax::Parameters: {
             auto parameters_syntax = parameterSetSyntax._Parameters;
@@ -65,7 +65,7 @@ Result<Vector<Property>, ModelError> handle_parameterset(Page* _rp, Page* _ep, P
                     if (_property_result._tag == Result<Property, ModelError>::Error)
                         return Result<Vector<Property>, ModelError> { ._tag = Result<Vector<Property>, ModelError>::Error, ._Error = _property_result._Error };
                     auto property = _property_result._Ok;
-                    parameters.add(_r.get_page(), property);
+                    parameters.add(property);
                 }
             }
         }
@@ -76,7 +76,7 @@ Result<Vector<Property>, ModelError> handle_parameterset(Page* _rp, Page* _ep, P
             if (_type_result._tag == Result<Type, ModelError>::Error)
                 return Result<Vector<Property>, ModelError> { ._tag = Result<Vector<Property>, ModelError>::Error, ._Error = _type_result._Error };
             auto type = _type_result._Ok;
-            parameters.add(_r.get_page(), Property(Span(type_syntax.start, type_syntax.end), false, nullptr, type, Vector<Attribute>(_rp, 0)));
+            parameters.add(Property(Span(type_syntax.start, type_syntax.end), false, nullptr, type, Vector<Attribute>()));
         }
         break;
     }
@@ -137,7 +137,7 @@ Result<Structure, ModelError> handle_class(Page* _rp, Page* _ep, String name, St
         return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = properties_result._Error };
     auto properties = properties_result._Ok;
 
-    List<Use> uses;
+    List<Use>& uses = *new(alignof(List<Use>), _r.get_page()) List<Use>();
 
     if (class_syntax.body == nullptr) {
         return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Ok,
@@ -154,19 +154,19 @@ Result<Structure, ModelError> handle_class(Page* _rp, Page* _ep, String name, St
                 if (_use_result._tag == Result<Use, ModelError>::Error)
                     return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = _use_result._Error };
                 auto use_ = _use_result._Ok;
-                uses.add(_r.get_page(), use_);
+                uses.add(use_);
 
             }
         }
 
-        List<Initializer> initializers_builder;
+        List<Initializer>& initializers_builder = *new(alignof(List<Initializer>), _r.get_page()) List<Initializer>();
         DeInitializer* deInitializer = nullptr;
         auto initializers_iterator = VectorIterator<InitSyntax>(class_syntax.body->inits);
         while (auto initializer = initializers_iterator.next()) {
             auto _initializer_result = handle_initializer(_rp, _ep, *initializer, false, file);
             if (_initializer_result._tag == Result<Initializer, ModelError>::Error)
                 return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = _initializer_result._Error };
-            initializers_builder.add(_r.get_page(), _initializer_result._Ok);
+            initializers_builder.add(_initializer_result._Ok);
         }
         if (class_syntax.body->deInit != nullptr) {
             auto _deinitializer_result = handle_deinitializer(_rp, _ep, *class_syntax.body->deInit, file);
@@ -205,7 +205,7 @@ Result<Structure, ModelError> handle_class(Page* _rp, Page* _ep, String name, St
                         functions_builder.add(function.name, List<Function>());
                         functions_list = functions_builder[function.name];
                     }
-                    (*functions_list).add(_r.get_page(), function);
+                    (*functions_list).add(function);
                 }
                 break;
                 case MemberSyntax::Procedure: {
@@ -223,7 +223,7 @@ Result<Structure, ModelError> handle_class(Page* _rp, Page* _ep, String name, St
                         functions_builder.add(function.name, List<Function>());
                         functions_list = functions_builder[function.name];
                     }
-                    (*functions_list).add(_r.get_page(), function);
+                    (*functions_list).add(function);
                 }
                 break;
                 case MemberSyntax::Operator: {
@@ -303,7 +303,7 @@ Result<Namespace, ModelError> handle_namespace(Page* _rp, Page* _ep, String name
                             functions_builder.add(function.name, List<Function>());
                             functions_list = functions_builder[function.name];
                         }
-                        (*functions_list).add(_r.get_page(), function);
+                        (*functions_list).add(function);
                     }
                     break;
                     case ExportSyntax::Operator: {
@@ -361,7 +361,7 @@ Result<Namespace, ModelError> handle_namespace(Page* _rp, Page* _ep, String name
                     functions_builder.add(function.name, List<Function>());
                     functions_list = functions_builder[function.name];
                 }
-                (*functions_list).add(_r.get_page(), function);
+                (*functions_list).add(function);
             }
             break;
             case DeclarationSyntax::Operator: {
@@ -447,7 +447,7 @@ Result<Drop, ModelError> handle_drop(Page* _rp, Page* _ep, DropSyntax& drop_, St
 
 Result<Catcher, ModelError> handle_catcher(Page* _rp, Page* _ep, CatcherSyntax& catcher, String file) {
     Region _r;
-    List<Catch> catches_builder;
+    List<Catch>& catches_builder = *new(alignof(List<Catch>), _r.get_page()) List<Catch>();
     if (catcher.catches != nullptr) {
         auto catch_syntaxes = catcher.catches;
         auto _catches_iterator = VectorIterator<CatchSyntax>(catch_syntaxes);
@@ -457,7 +457,7 @@ Result<Catcher, ModelError> handle_catcher(Page* _rp, Page* _ep, CatcherSyntax& 
             if (_catch_result._tag == Result<Catch, ModelError>::Error)
                 return Result<Catcher, ModelError> { ._tag = Result<Catcher, ModelError>::Error, ._Error = _catch_result._Error };
             auto catch_ = _catch_result._Ok;
-            catches_builder.add(_r.get_page(), catch_);
+            catches_builder.add(catch_);
         }
     }
     Drop* drop_ = nullptr;
@@ -477,14 +477,14 @@ Result<Postfix, ModelError> handle_postfix(Page* _rp, Page* _ep, PostfixSyntax& 
     switch (postfix._tag) {
         case Postfix::MemberAccess: {
             auto member_access = postfix._MemberAccess;
-            List<String> path;
-            path.add(_r.get_page(), String(_rp, member_access.member.name));
+            List<String>& path = *new(alignof(List<String>), _r.get_page()) List<String>();
+            path.add(String(_rp, member_access.member.name));
             if (member_access.member.extensions != nullptr) {
                 auto extensions = member_access.member.extensions;
                 auto _extensions_iterator = VectorIterator<ExtensionSyntax>(extensions);
                 while (auto _extension = _extensions_iterator.next()) {
                     auto extension = *_extension;
-                    path.add(_r.get_page(), extension.name);
+                    path.add(extension.name);
                 }
             }
             return Result<Postfix, ModelError> { ._tag = Result<Postfix, ModelError>::Ok, ._Ok = Postfix { ._tag = Postfix::MemberAccess, ._MemberAccess = Vector<String>(_rp, path) } };
@@ -540,20 +540,20 @@ Result<Constant, ModelError> handle_literal(Page* _rp, Page* _ep, LiteralSyntax&
 Result<Type*, ModelError> handle_type(Page* _rp, Page* _ep, TypeSyntax& type, String file) {
     Region _r;
 
-    List<String> path;
-    path.add(_r.get_page(), String(_rp, type.name.name));
+    List<String>& path = *new(alignof(List<String>), _r.get_page()) List<String>();
+    path.add(String(_rp, type.name.name));
     if (type.name.extensions != nullptr) {
         auto extensions = type.name.extensions;
         auto _extensions_iterator = VectorIterator<ExtensionSyntax>(extensions);
         while (auto _extension = _extensions_iterator.next()) {
             auto extension = *_extension;
-            path.add(_r.get_page(), extension.name);
+            path.add(extension.name);
         }
     }
 
     Vector<Type> generics = Vector<Type>(_rp, 0);
     Lifetime lifetime = Lifetime(Unspecified());
-    List<Type> generics_builder;
+    List<Type>& generics_builder = *new(alignof(List<Type>), _r.get_page()) List<Type>();
     if (type.generics != nullptr) {
         auto generic_arguments = type.generics->generics;
         if (generic_arguments != nullptr) {
@@ -565,7 +565,7 @@ Result<Type*, ModelError> handle_type(Page* _rp, Page* _ep, TypeSyntax& type, St
                 if (_type_result._tag == Result<Type*, ModelError>::Error)
                     return Result<Type*, ModelError> { ._tag = Result<Type*, ModelError>::Error, ._Error = _type_result._Error };
                 auto type = _type_result._Ok;
-                generics_builder.add(_r.get_page(), *type);
+                generics_builder.add(*type);
             }
         }
     }
@@ -609,7 +609,7 @@ Result<Type*, ModelError> handle_binding_annotation(Page* _rp, Page* _ep, Bindin
 
 Result<Vector<Statement>, ModelError> handle_statements(Page* _rp, Page* _ep, Vector<StatementSyntax>& statements, String file) {
     Region _r;
-    List<Statement> statements_builder;
+    List<Statement>& statements_builder = *new(alignof(List<Statement>), _r.get_page()) List<Statement>();
     auto _statements_iterator = VectorIterator<StatementSyntax>(&statements);
     while (auto statement = _statements_iterator.next()) {
         switch (statement->_tag)
@@ -618,7 +618,7 @@ Result<Vector<Statement>, ModelError> handle_statements(Page* _rp, Page* _ep, Ve
                 auto operation_result = handle_operation(_rp, _ep, statement->_Operation, file);
                 if (operation_result._tag == Result<Operation, ModelError>::Error)
                     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = operation_result._Error };
-                statements_builder.add(_r.get_page(), Statement { ._tag = Statement::Action, ._Action = { ._tag = Action::Operation, ._Operation = operation_result._Ok }});
+                statements_builder.add(Statement { ._tag = Statement::Action, ._Action = { ._tag = Action::Operation, ._Operation = operation_result._Ok }});
                 break;
             }
             case StatementSyntax::Let: {
@@ -633,7 +633,7 @@ Result<Vector<Statement>, ModelError> handle_statements(Page* _rp, Page* _ep, Ve
                 auto operation_result = handle_operation(_rp, _ep, binding, file);
                 if (operation_result._tag == Result<Operation, ModelError>::Error)
                     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = operation_result._Error };
-                statements_builder.add(_r.get_page(), Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Constant, Property(Span(binding.start, binding.end), false, new(alignof(String), _rp) String(_rp, statement->_Let.binding.name), type, Vector<Attribute>(_rp, 0)), operation_result._Ok) });
+                statements_builder.add(Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Constant, Property(Span(binding.start, binding.end), false, new(alignof(String), _rp) String(_rp, statement->_Let.binding.name), type, Vector<Attribute>(_rp, 0)), operation_result._Ok) });
                 return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Ok, ._Ok = Vector<Statement>(_rp, statements_builder) };
             }
             case StatementSyntax::Var: {
@@ -648,7 +648,7 @@ Result<Vector<Statement>, ModelError> handle_statements(Page* _rp, Page* _ep, Ve
                 auto operation_result = handle_operation(_rp, _ep, binding, file);
                 if (operation_result._tag == Result<Operation, ModelError>::Error)
                     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = operation_result._Error };
-                statements_builder.add(_r.get_page(), Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Extendable, Property(Span(binding.start, binding.end), false, new(alignof(String), _rp) String(_rp, statement->_Mutable.binding.name), type, Vector<Attribute>(_rp, 0)), operation_result._Ok) });
+                statements_builder.add(Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Extendable, Property(Span(binding.start, binding.end), false, new(alignof(String), _rp) String(_rp, statement->_Mutable.binding.name), type, Vector<Attribute>(_rp, 0)), operation_result._Ok) });
                 return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Ok, ._Ok = Vector<Statement>(_rp, statements_builder) };
             }
             case StatementSyntax::Mutable: {
@@ -663,7 +663,7 @@ Result<Vector<Statement>, ModelError> handle_statements(Page* _rp, Page* _ep, Ve
                 auto operation_result = handle_operation(_rp, _ep, binding, file);
                 if (operation_result._tag == Result<Operation, ModelError>::Error)
                     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = operation_result._Error };
-                statements_builder.add(_r.get_page(), Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Mutable, Property(Span(binding.start, binding.end), false, new(alignof(String), _rp) String(_rp, statement->_Mutable.binding.name), type, Vector<Attribute>(_rp, 0)), operation_result._Ok) });
+                statements_builder.add(Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Mutable, Property(Span(binding.start, binding.end), false, new(alignof(String), _rp) String(_rp, statement->_Mutable.binding.name), type, Vector<Attribute>(_rp, 0)), operation_result._Ok) });
                 return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Ok, ._Ok = Vector<Statement>(_rp, statements_builder) };
             }
             case StatementSyntax::Set:
@@ -675,7 +675,7 @@ Result<Vector<Statement>, ModelError> handle_statements(Page* _rp, Page* _ep, Ve
                 if (_source_result._tag == Result<Operation, ModelError>::Error)
                     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = _source_result._Error };
                 auto source = _source_result._Ok;
-                statements_builder.add(_r.get_page(), Statement { ._tag = Statement::Action, ._Action = { ._tag = Action::Mutation, ._Mutation = Mutation(source, target) }});
+                statements_builder.add(Statement { ._tag = Statement::Action, ._Action = { ._tag = Action::Mutation, ._Mutation = Mutation(source, target) }});
                 break;
         }
     }
@@ -689,7 +689,7 @@ Result<Component, ModelError> handle_component(Page* _rp, Page* _ep, ComponentSy
     Region _r;
     String* name = nullptr;
 
-    List<Attribute> attributes;
+    List<Attribute>& attributes = *new(alignof(List<Attribute>), _r.get_page()) List<Attribute>();
     if (component.attributes != nullptr) {
         auto definition_attributes = component.attributes;
         auto _attribute_iterator = VectorIterator<AttributeSyntax>(definition_attributes);
@@ -699,7 +699,7 @@ Result<Component, ModelError> handle_component(Page* _rp, Page* _ep, ComponentSy
             if (_attribute_result._tag == Result<Attribute, ModelError>::Error)
                 return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Error, ._Error = _attribute_result._Error };
             auto attribute = _attribute_result._Ok;
-            attributes.add(_r.get_page(), attribute);
+            attributes.add(attribute);
         }
     }
 
@@ -743,14 +743,14 @@ Result<Component, ModelError> handle_component(Page* _rp, Page* _ep, ComponentSy
 
 Result<Tuple, ModelError> handle_object(Page* _rp, Page* _ep, ObjectSyntax& object, String file) {
     Region _r;
-    List<Component> components_builder;
+    List<Component>& components_builder = *new(alignof(List<Component>), _r.get_page()) List<Component>();
     if (object.components != nullptr) {
         auto components_iterator = VectorIterator<ComponentSyntax>(object.components);
         while (auto component = components_iterator.next()) {
             auto component_result =  handle_component(_rp, _ep, *component, file);
             if (component_result._tag == Result<Operand, ModelError>::Error)
                 return Result<Tuple, ModelError> { ._tag = Result<Tuple, ModelError>::Error, ._Error = component_result._Error };
-            components_builder.add(_r.get_page(), component_result._Ok);
+            components_builder.add(component_result._Ok);
         }
     }
     return Result<Tuple, ModelError> { ._tag = Result<Tuple, ModelError>::Ok, ._Ok = Tuple(Span(object.start, object.end), Vector<Component>(_rp, components_builder)) };
@@ -758,14 +758,14 @@ Result<Tuple, ModelError> handle_object(Page* _rp, Page* _ep, ObjectSyntax& obje
 
 Result<Matrix, ModelError> handle_vector(Page* _rp, Page* _ep, VectorSyntax& vector, String file) {
     Region _r;
-    List<Operation> operations_builder;
+    List<Operation>& operations_builder = *new(alignof(List<Operation>), _r.get_page()) List<Operation>();
     if (vector.elements != nullptr) {
         auto elements_iterator = VectorIterator<ElementSyntax>(vector.elements);
         while (auto element = elements_iterator.next()) {
             auto operation_result =  handle_operation(_rp, _ep, element->operation, file);
             if (operation_result._tag == Result<Operand, ModelError>::Error)
                 return Result<Matrix, ModelError> { ._tag = Result<Matrix, ModelError>::Error, ._Error = operation_result._Error };
-            operations_builder.add(_r.get_page(), operation_result._Ok);
+            operations_builder.add(operation_result._Ok);
         }
     }
     return Result<Matrix, ModelError> { ._tag = Result<Matrix, ModelError>::Ok, ._Ok = Matrix(Span(vector.start, vector.end), Vector<Operation>(_rp, operations_builder)) };
@@ -1026,16 +1026,17 @@ Result<Expression, ModelError> handle_expression(Page* _rp, Page* _ep, Expressio
 }
 
 Result<Operand, ModelError> handle_operand(Page* _rp, Page* _ep, OperandSyntax& operand, String file) {
+    Region _r;
     Vector<Postfix>* postfixes = nullptr;
     if (operand.postfixes != nullptr) {
         Region _r_1;
-        List<Postfix> postfixes_builder;
+        List<Postfix>& postfixes_builder = *new(alignof(List<Postfix>), _r.get_page()) List<Postfix>();
         auto postfixes_iterator = VectorIterator<PostfixSyntax>(operand.postfixes);
         while (auto postfix = postfixes_iterator.next()) {
             auto postfix_result = handle_postfix(_rp, _ep, *postfix, file);
             if (postfix_result._tag == Result<Operand, ModelError>::Error)
                 return Result<Operand, ModelError> { ._tag = Result<Operand, ModelError>::Error, ._Error = postfix_result._Error };
-            postfixes_builder.add(_r_1.get_page(), postfix_result._Ok);
+            postfixes_builder.add(postfix_result._Ok);
         }
         postfixes = new(alignof(Vector<Postfix>), _rp) Vector<Postfix>(_rp, postfixes_builder);
     }
@@ -1049,13 +1050,13 @@ Result<Operand, ModelError> handle_operand(Page* _rp, Page* _ep, OperandSyntax& 
 
 Result<Vector<Operand>, ModelError> handle_operands(Page* _rp, Page* _ep, Vector<OperandSyntax>& operands, String file) {
     Region _r;
-    List<Operand> operands_builder;
+    List<Operand>& operands_builder = *new(alignof(List<Operand>), _r.get_page()) List<Operand>();
     auto operands_iterator = VectorIterator<OperandSyntax>(&operands);
     while (auto operand = operands_iterator.next()) {
         auto operand_result = handle_operand(_rp, _ep, *operand, file);
         if (operand_result._tag == Result<Operand, ModelError>::Error)
             return Result<Vector<Operand>, ModelError> { ._tag = Result<Vector<Operand>, ModelError>::Error, ._Error = operand_result._Error };
-        operands_builder.add(_r.get_page(), operand_result._Ok);
+        operands_builder.add(operand_result._Ok);
     }
     return Result<Vector<Operand>, ModelError> { ._tag = Result<Vector<Operand>, ModelError>::Ok, ._Ok = (Vector<Operand>(_rp, operands_builder)) };
 }
@@ -1073,7 +1074,7 @@ Result<Operation, ModelError> handle_operation(Page* _rp, Page* _ep, OperationSy
 
 Result<GenericParameter, ModelError> handle_generic_parameter(Page* _rp, Page* _ep, GenericParameterSyntax& generic_parameter, String file) {
     Region _r;
-    List<Attribute> attributes;
+    List<Attribute>& attributes = *new(alignof(List<Attribute>), _r.get_page()) List<Attribute>();
     if (generic_parameter.attributes != nullptr) {
         auto definition_attributes = generic_parameter.attributes;
         auto _attribute_iterator = VectorIterator<AttributeSyntax>(definition_attributes);
@@ -1083,7 +1084,7 @@ Result<GenericParameter, ModelError> handle_generic_parameter(Page* _rp, Page* _
             if (_attribute_result._tag == Result<Attribute, ModelError>::Error)
                 return Result<GenericParameter, ModelError> { ._tag = Result<GenericParameter, ModelError>::Error, ._Error = _attribute_result._Error };
             auto attribute = _attribute_result._Ok;
-            attributes.add(_r.get_page(), attribute);
+            attributes.add(attribute);
         }
     }
     return Result<GenericParameter, ModelError> { ._tag = Result<GenericParameter, ModelError>::Ok, ._Ok = GenericParameter(Span(generic_parameter.start, generic_parameter.end), String(_rp, generic_parameter.name), Vector<Attribute>(_rp, attributes)) };
@@ -1091,14 +1092,14 @@ Result<GenericParameter, ModelError> handle_generic_parameter(Page* _rp, Page* _
 
 Result<Use, ModelError> handle_use(Page* _rp, Page* _ep, UseSyntax& use_) {
     Region _r;
-    List<String> path;
-    path.add(_r.get_page(), String(_rp, use_.name.name));
+    List<String>& path = *new(alignof(List<String>), _r.get_page()) List<String>();
+    path.add(String(_rp, use_.name.name));
     if (use_.name.extensions != nullptr) {
         auto extensions = use_.name.extensions;
         auto _extensions_iterator = VectorIterator<ExtensionSyntax>(extensions);
         while (auto _extension = _extensions_iterator.next()) {
             auto extension = *_extension;
-            path.add(_rp, extension.name);
+            path.add(extension.name);
         }
     }
 
@@ -1110,7 +1111,7 @@ Result<Concept, ModelError> handle_definition(Page* _rp, Page* _ep, String path,
     auto concept = definition.concept_;
     Span span(definition.start, definition.end);
 
-    List<GenericParameter> parameters;
+    List<GenericParameter>& parameters = *new(alignof(List<GenericParameter>), _r.get_page()) List<GenericParameter>();
     if (definition.parameters != nullptr) {
         auto generic_parameters = *definition.parameters;
         if (generic_parameters.parameters != nullptr) {    
@@ -1121,13 +1122,13 @@ Result<Concept, ModelError> handle_definition(Page* _rp, Page* _ep, String path,
                 if (_parameter_result._tag == Result<GenericParameter, ModelError>::Error)
                     return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = _parameter_result._Error };
                 auto parameter = _parameter_result._Ok;
-                parameters.add(_r.get_page(), parameter);
+                parameters.add(parameter);
 
             }
         }
     }
 
-    List<Attribute> attributes;
+    List<Attribute>& attributes = *new(alignof(List<Attribute>), _r.get_page()) List<Attribute>();
     if (definition.attributes != nullptr) {
         auto definition_attributes = definition.attributes;
         auto _attribute_iterator = VectorIterator<AttributeSyntax>(definition_attributes);
@@ -1137,7 +1138,7 @@ Result<Concept, ModelError> handle_definition(Page* _rp, Page* _ep, String path,
             if (_attribute_result._tag == Result<Attribute, ModelError>::Error)
                 return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = _attribute_result._Error };
             auto attribute = _attribute_result._Ok;
-            attributes.add(_r.get_page(), attribute);
+            attributes.add(attribute);
         }
     }
 
@@ -1373,7 +1374,7 @@ Result<HashMap<String, Nameable>, ModelError> build_symbols(Page* _rp, Page* _ep
                                 functions_builder.add(function.name, List<Function>());
                                 functions_list = functions_builder[function.name];
                             }
-                            (*functions_list).add(_r.get_page(), function);
+                            (*functions_list).add(function);
                         }
                         break;
                         case ExportSyntax::Operator: {
@@ -1431,7 +1432,7 @@ Result<HashMap<String, Nameable>, ModelError> build_symbols(Page* _rp, Page* _ep
                         functions_builder.add(function.name, List<Function>());
                         functions_list = functions_builder[function.name];
                     }
-                    (*functions_list).add(_r.get_page(), function);
+                    (*functions_list).add(function);
                 }
                 break;
                 case DeclarationSyntax::Operator: {
@@ -1483,7 +1484,7 @@ Result<HashMap<String, Nameable>, ModelError> build_symbols(Page* _rp, Page* _ep
 
 Result<Module, ModelError> build_module(Page* _rp, Page* _ep, String path, String file_name, String name, FileSyntax& file_syntax, bool private_) {
     Region _r;
-    List<Use> uses;
+    List<Use>& uses = *new(alignof(List<Use>), _r.get_page()) List<Use>();
     if (file_syntax.uses != nullptr) {
         auto use_syntaxes = file_syntax.uses;
         auto _uses_iterator = VectorIterator<UseSyntax>(use_syntaxes);
@@ -1493,7 +1494,7 @@ Result<Module, ModelError> build_module(Page* _rp, Page* _ep, String path, Strin
             if (_use_result._tag == Result<Use, ModelError>::Error)
                 return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = _use_result._Error };
             auto use_ = _use_result._Ok;
-            uses.add(_r.get_page(), use_);
+            uses.add(use_);
 
         }
     }
@@ -1548,7 +1549,7 @@ Result<Program, ModelError> build_program(Page* _rp, Page* _ep, const String& fi
     auto program_syntax = program_result._Ok;
 
     auto path = Path::get_directory_name(_rp, file_name);
-    List<Module> packages;
+    List<Module>& packages = *new(alignof(List<Module>), _r.get_page()) List<Module>();
     if (program_syntax.file.packages != nullptr) {
         auto file_packages = program_syntax.file.packages;
         auto _package_iterator = VectorIterator<PackageSyntax>(file_packages);
@@ -1558,7 +1559,7 @@ Result<Program, ModelError> build_program(Page* _rp, Page* _ep, const String& fi
             if (_package_result._tag == Result<Module, ModelError>::Error)
                 return Result<Program, ModelError> { ._tag = Result<Program, ModelError>::Error, ._Error = _package_result._Error };
             auto package = _package_result._Ok;
-            packages.add(_r.get_page(), package);
+            packages.add(package);
         }
     }
 

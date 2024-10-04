@@ -21,7 +21,7 @@
 				"${workspaceFolder}/../memory/PageNode.cpp",
 				"${workspaceFolder}/../memory/Region.cpp",
 				"-o",
-				"${workspaceFolder}/bin/${fileBasenameNoExtension}",
+				"${workspaceFolder}/bin/containers",
 				//"`llvm-config --cxxflags`"
 				"-std=c++17",
 				"-stdlib=libc++",
