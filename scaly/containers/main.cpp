@@ -68,22 +68,27 @@ void test_string_builder() {
     auto length = string_builder.get_length();
     if (length != 0)
         exit(-11);
-    string_builder.append_character('a');
-    string_builder.append_character('b');
-    string_builder.append_character('c');
-    if (!string_builder.to_string(_r.get_page()).equals(String(_r.get_page(), "abc")))
+    string_builder.append('a');
+    string_builder.append('b');
+    string_builder.append('c');
+    if (!string_builder.to_string(_r.get_page()).equals("abc"))
         exit(-12);
     if (string_builder.get_length() != 3)
         exit(-13);
 
     StringBuilder& string_builder2 = *new(alignof(StringBuilder), _r.get_page()) StringBuilder('d');
-    string_builder2.append_character('e');
-    string_builder2.append_character('f');
-    string_builder2.append_character('g');
-    if (!string_builder2.to_string(_r.get_page()).equals(String(_r.get_page(), "defg")))
+    string_builder2.append('e');
+    string_builder2.append('f');
+    string_builder2.append('g');
+    if (!string_builder2.to_string(_r.get_page()).equals("defg"))
         exit(-14);
     if (string_builder2.get_length() != 4)
         exit(-15);
+    
+    StringBuilder& string_builder3 = *new(alignof(StringBuilder), _r.get_page()) StringBuilder("hijk");    
+    string_builder3.append("lmno");
+    if (!string_builder3.to_string(_r.get_page()).equals("hijklmno"))
+        exit(-16);
 }
 
 void test_list() {
@@ -191,9 +196,9 @@ void test_hash_map() {
                     {
                         Region _r_2;
                         StringBuilder& sb = *new(alignof(StringBuilder), _r_2.get_page()) StringBuilder(i);
-                        sb.append_character(j);
-                        sb.append_character(k);
-                        sb.append_character(l);
+                        sb.append(j);
+                        sb.append(k);
+                        sb.append(l);
                         map.add(sb.to_string(_r_1.get_page()), (size_t)i * j * k * l);
                         set.add(sb.to_string(_r_1.get_page()));
                     }
@@ -210,9 +215,9 @@ void test_hash_map() {
                     {
                         Region _r_2;
                         StringBuilder& sb = *new(alignof(StringBuilder), _r_2.get_page()) StringBuilder(i);
-                        sb.append_character(j);
-                        sb.append_character(k);
-                        sb.append_character(l);
+                        sb.append(j);
+                        sb.append(k);
+                        sb.append(l);
                         String theString = sb.to_string(_r_1.get_page());
                         if (!set.contains(theString))
                              exit(-26);
@@ -241,9 +246,9 @@ void test_multi_map() {
                     {
                         Region _r_2;
                         StringBuilder& sb = *new(alignof(StringBuilder), _r_2.get_page()) StringBuilder(i);
-                        sb.append_character(j);
-                        sb.append_character(k);
-                        sb.append_character(l);
+                        sb.append(j);
+                        sb.append(k);
+                        sb.append(l);
                         map_builder.add(sb.to_string(_r_1.get_page()), (size_t)i * j * k * l);
                         map_builder.add(sb.to_string(_r_1.get_page()), (size_t)i * j * k * l + 1);
                         map_builder.add(sb.to_string(_r_1.get_page()), (size_t)i * j * k * l + 2);
@@ -262,9 +267,9 @@ void test_multi_map() {
                     {
                         Region _r_2;
                         StringBuilder& sb = *new(alignof(StringBuilder), _r_2.get_page()) StringBuilder(i);
-                        sb.append_character(j);
-                        sb.append_character(k);
-                        sb.append_character(l);
+                        sb.append(j);
+                        sb.append(k);
+                        sb.append(l);
                         String theString = (sb.to_string(_r_2.get_page()));
                         if (!map_builder.contains(theString))
                             exit(-27);

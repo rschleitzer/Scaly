@@ -191,6 +191,37 @@ bool String::equals(String other) const {
     return memcmp(this->data + index + 1, other.data + index + 1, length) == 0;
 }
 
+bool String::equals(const char* other) const {
+    size_t length = 0;
+    auto index = 0;
+    if (this->data != nullptr) {
+        auto bit_count = 0;
+        while (true) {
+            if (bit_count == PACKED_SIZE * 7) {
+                // Bad string length
+                exit(13);
+            }
+
+            char byte = *(this->data + index);
+            length |= ((size_t)(byte & 0x7F)) << bit_count;
+            if ((byte & 0x80) == 0) {
+                break;
+            }
+            bit_count += 7;
+            index += 1;
+        }
+    }
+
+    if (length != strlen(other)) {
+        return false;
+    }
+
+    if (this->data == nullptr)
+        return true;
+
+    return memcmp(this->data + index + 1, other, length) == 0;
+}
+
 bool String::equals(Vector<char> other) const {
     size_t length = 0;
     auto index = 0;

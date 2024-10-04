@@ -22,14 +22,14 @@ String FileError::to_string(Page* _rp) {
     StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
     switch (_tag) {
         case Unknown:
-            message_builder.append_string(String(_r.get_page(), "An unknown file error occurred with the file "));
-            message_builder.append_string(_Unknown.file_name);
-            message_builder.append_string(String(_r.get_page(), "."));
+            message_builder.append("An unknown file error occurred with the file ");
+            message_builder.append(_Unknown.file_name);
+            message_builder.append(".");
         break;
         case NoSuchFileOrDirectory:
-            message_builder.append_string(String(_r.get_page(), "A file or directory with the name "));
-            message_builder.append_string(_NoSuchFileOrDirectory.file_name);
-            message_builder.append_string(String(_r.get_page(), "does not exist."));
+            message_builder.append("A file or directory with the name ");
+            message_builder.append(_NoSuchFileOrDirectory.file_name);
+            message_builder.append("does not exist.");
         break;
     }
     return message_builder.to_string(_rp);     

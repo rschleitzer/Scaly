@@ -36,18 +36,18 @@ struct TranspilerError : Object {
         StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
         switch (_tag) {
             case NotImplemented:
-                message_builder.append_string(String(_rp, "The transpiler feature \""));
-                message_builder.append_string(_NotImplemented.expected);
-                message_builder.append_string(String(_rp, "\" is not implemented."));
+                message_builder.append("The transpiler feature \"");
+                message_builder.append(_NotImplemented.expected);
+                message_builder.append("\" is not implemented.");
                 break;
             case OnlyFile:
-                message_builder.append_string(String(_rp, "Only a file can be transpiled."));
+                message_builder.append("Only a file can be transpiled.");
                 break;
             case FileError:
-                message_builder.append_string(_FileError.to_string(_rp));
+                message_builder.append(_FileError.to_string(_r.get_page()));
                 break;
         }
-        message_builder.append_character('\n');
+        message_builder.append('\n');
         return message_builder.to_string(_rp);     
     }
 };

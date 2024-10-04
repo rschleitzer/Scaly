@@ -19,6 +19,7 @@ struct String : Object {
     char* get_buffer() const;
     size_t get_length() const;
     bool equals(String other) const;
+    bool equals(const char* other) const;
     bool equals(Vector<char> other) const;
     size_t hash() const;
 };

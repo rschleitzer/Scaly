@@ -26,8 +26,8 @@ struct Transpiler : Object {
 
         main_include_file(_ep, path, program.module.name);
         forward_includes(_ep, path, program);
-        StringBuilder& main_header_builder = *new (alignof(StringBuilder), _r.get_page()) StringBuilder(String(_r.get_page(), "../"));
-        main_header_builder.append_string(program.module.name);
+        StringBuilder& main_header_builder = *new (alignof(StringBuilder), _r.get_page()) StringBuilder("../");
+        main_header_builder.append(program.module.name);
         auto _result = build_module(_ep, path, program.module, main_header_builder.to_string(_r.get_page()), String(), String());
         if (_result != nullptr)
             return new(alignof(TranspilerError), _ep) TranspilerError(*_result);
@@ -40,16 +40,16 @@ struct Transpiler : Object {
     TranspilerError* main_file(Page* _ep, String path, Program& program) {
         Region _r;
         StringBuilder& builder = *new (alignof(StringBuilder), _r.get_page()) StringBuilder();
-        builder.append_string(String(_r.get_page(), "#include \""));
-        builder.append_string(program.module.name);
-        builder.append_string(String(_r.get_page(), ".h\"\n\n"));
-        builder.append_string(String(_r.get_page(), "int main(int argc, char** argv) {\n"));
+        builder.append("#include \"");
+        builder.append(program.module.name);
+        builder.append(".h\"\n\n");
+        builder.append("int main(int argc, char** argv) {\n");
 
         auto iter = VectorIterator<Statement>(&program.statements);
         while(auto statement = iter.next()) {
             build_statement(_ep, builder, statement);
         }
-        builder.append_string(String(_r.get_page(), "    return 0;\n}\n"));
+        builder.append("    return 0;\n}\n");
         if (builder.get_length() > 0) {
             auto main_file_name = Path::join(_r.get_page(), path, String(_r.get_page(), "main.cpp"));
             auto _main_result = File::write_from_string(_ep, main_file_name, builder.to_string(_r.get_page()));
@@ -75,28 +75,28 @@ struct Transpiler : Object {
         StringBuilder& header_builder = *new (alignof(StringBuilder), _r.get_page()) StringBuilder();
         StringBuilder& cpp_builder = *new (alignof(StringBuilder), _r.get_page()) StringBuilder();
 
-        cpp_builder.append_string(String(_r.get_page(), "#include \""));
-        cpp_builder.append_string(main_header);
-        cpp_builder.append_string(String(_r.get_page(), ".h\"\n"));
-        cpp_builder.append_string(namespace_open);
+        cpp_builder.append(String(_r.get_page(), "#include \""));
+        cpp_builder.append(main_header);
+        cpp_builder.append(String(_r.get_page(), ".h\"\n"));
+        cpp_builder.append(namespace_open);
 
         auto _symbols_result = build_symbols(_ep, path, module.file, module.name, header_builder, cpp_builder, main_header, namespace_open, namespace_close, module.symbols);
         if (_symbols_result)
             return _symbols_result;
 
-        cpp_builder.append_character('\n');
-        cpp_builder.append_string(namespace_close);
+        cpp_builder.append('\n');
+        cpp_builder.append(namespace_close);
 
         auto base_file_name = Path::join(_r.get_page(), path, module.name);
         StringBuilder& header_name_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(base_file_name);
-        header_name_builder.append_string(String(_r.get_page(), ".h"));
+        header_name_builder.append(String(_r.get_page(), ".h"));
         auto header_name = header_name_builder.to_string(_r.get_page());
         auto _header_result = File::write_from_string(_ep, header_name, header_builder.to_string(_r.get_page()));
         if (_header_result != nullptr)
             return new(alignof(TranspilerError), _ep) TranspilerError(*_header_result);
 
         StringBuilder& cpp_name_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(base_file_name);
-        cpp_name_builder.append_string(String(_r.get_page(), ".cpp"));
+        cpp_name_builder.append(String(_r.get_page(), ".cpp"));
         auto cpp_name = cpp_name_builder.to_string(_r.get_page());
         auto _cpp_result = File::write_from_string(_ep, cpp_name, cpp_builder.to_string(_r.get_page()));
         if (_cpp_result != nullptr)
@@ -171,13 +171,13 @@ struct Transpiler : Object {
                 case Nameable::Module:
                     {
                         auto _module = member->_Module;
-                        header_builder.append_string(String(_r.get_page(), "#include \""));
-                        header_builder.append_string(String(_r.get_page(), _module.name));
-                        header_builder.append_character('/');
-                        header_builder.append_string(String(_r.get_page(), _module.name));
-                        header_builder.append_string(String(_r.get_page(), ".h\"\n"));
-                        StringBuilder& main_header_builder = *new (alignof(StringBuilder), _r.get_page()) StringBuilder(String(_r.get_page(), "../"));
-                        main_header_builder.append_string(main_header);
+                        header_builder.append(String(_r.get_page(), "#include \""));
+                        header_builder.append(String(_r.get_page(), _module.name));
+                        header_builder.append('/');
+                        header_builder.append(String(_r.get_page(), _module.name));
+                        header_builder.append(String(_r.get_page(), ".h\"\n"));
+                        StringBuilder& main_header_builder = *new (alignof(StringBuilder), _r.get_page()) StringBuilder("../");
+                        main_header_builder.append(main_header);
                         StringBuilder& namespace_close_builder = *new (alignof(StringBuilder), _r.get_page()) StringBuilder(namespace_close);
                         auto _result = build_module(_ep, path, _module, main_header_builder.to_string(_r.get_page()), namespace_open, namespace_close);
                         if (_result != nullptr)
@@ -203,25 +203,25 @@ struct Transpiler : Object {
 
     TranspilerError* build_structure(Page* _ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, Structure& structure, Vector<GenericParameter> parameters) {
         Region _r;
-        header_builder.append_string(String(_r.get_page(), "\nusing namespace scaly::memory;\n"));
+        header_builder.append(String(_r.get_page(), "\nusing namespace scaly::memory;\n"));
         full_struct_name(header_builder, name, parameters);
         if (!name.equals(String(_r.get_page(), "Object")))
-            header_builder.append_string(String(_r.get_page(), " : Object"));
-        header_builder.append_string(String(_r.get_page(), " {"));
+            header_builder.append(String(_r.get_page(), " : Object"));
+        header_builder.append(String(_r.get_page(), " {"));
 
         auto property_iterator = HashMapIterator<String, Property>(structure.properties);
         while (auto property = property_iterator.next()) {
             if (property->type) {
-                header_builder.append_character('\n');
-                header_builder.append_string(String(_r.get_page(), "    "));
+                header_builder.append('\n');
+                header_builder.append(String(_r.get_page(), "    "));
                 build_type(header_builder, property->type);
             }
 
             if (property->name)
             {
-                header_builder.append_character(' ');
-                header_builder.append_string(*property->name);
-                header_builder.append_character(';');
+                header_builder.append(' ');
+                header_builder.append(*property->name);
+                header_builder.append(';');
             }
         }
 
@@ -257,7 +257,7 @@ struct Transpiler : Object {
             }
         }
 
-        header_builder.append_string(String(_r.get_page(), "\n};\n"));
+        header_builder.append(String(_r.get_page(), "\n};\n"));
         return nullptr; 
     }
 
@@ -266,7 +266,7 @@ struct Transpiler : Object {
         StringBuilder& builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
         auto uses_iterator = VectorIterator<Use>(&uses);
         while (auto use = uses_iterator.next()) {
-            builder.append_string(String(_r.get_page(), "\nusing namespace "));
+            builder.append("\nusing namespace ");
             bool first = true;
             auto namespace_iterator = VectorIterator<String>(&use->path);
             while(auto namespace_ = namespace_iterator.next()) {
@@ -274,13 +274,11 @@ struct Transpiler : Object {
                     first = false;
                 }
                 else {
-                    builder.append_character(':');
-                    builder.append_character(':');
+                    builder.append("::");
                 }
-                builder.append_string(*namespace_);
+                builder.append(*namespace_);
             }
-            builder.append_character(';');
-            builder.append_character('\n');
+            builder.append(";\n");
         }
         return builder.to_string(_rp);
     }
@@ -294,78 +292,70 @@ struct Transpiler : Object {
             if (!isTemplate) {
                 function_prefix(cpp_builder, function, false);
                 if (name != nullptr) {
-                    cpp_builder.append_string(*name);
-                    cpp_builder.append_character(':');
-                    cpp_builder.append_character(':');
+                    cpp_builder.append(*name);
+                    cpp_builder.append("::");
                 }
-                cpp_builder.append_string(function->name);
+                cpp_builder.append(function->name);
                 build_input(cpp_builder, function->input);
-                cpp_builder.append_character(' ');
-                cpp_builder.append_character('{');
-                cpp_builder.append_character('}');
-                cpp_builder.append_character(';');
+                cpp_builder.append(" {};");
             }
-            header_builder.append_string(function->name);
+            header_builder.append(function->name);
             build_input(header_builder, function->input);
             if (isTemplate) {
-                header_builder.append_character(' ');
-                header_builder.append_character('{');
-                header_builder.append_character('}');
+                header_builder.append(" {}");
             }
-            header_builder.append_character(';');
+            header_builder.append(';');
         }
         return nullptr; 
     }
 
     void function_prefix(StringBuilder& builder, Function* function, bool indent) {
         Region _r;
-        builder.append_character('\n');
+        builder.append('\n');
         if (indent)
-            builder.append_string(String(_r.get_page(), "    "));
+            builder.append("    ");
         if (function->output.length == 0)
-            builder.append_string(String(_r.get_page(), "void"));
+            builder.append("void");
         else
             build_type(builder, function->output[0]->type);
-        builder.append_character(' ');
+        builder.append(' ');
     }
 
     TranspilerError* build_operator(Page* _ep, StringBuilder& header_builder, StringBuilder& cpp_builder, Operator& operator_) {
         Region _r;
-        header_builder.append_string(String(_r.get_page(), "\n    "));
+        header_builder.append(String(_r.get_page(), "\n    "));
         if (operator_.output.length == 0)
-            header_builder.append_string(String(_r.get_page(), "void"));
+            header_builder.append(String(_r.get_page(), "void"));
         else
             build_type(header_builder, operator_.output[0]->type);
-        header_builder.append_string(String(_r.get_page(), " operator "));
-        header_builder.append_string(operator_.name);
+        header_builder.append(String(_r.get_page(), " operator "));
+        header_builder.append(operator_.name);
         build_input(header_builder, operator_.input);
-        header_builder.append_character(';');
+        header_builder.append(';');
         return nullptr; 
     }
 
     TranspilerError* build_initializer(Page* _ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, Initializer* initializer) {
         Region _r;
-        header_builder.append_string(String(_r.get_page(), "\n    "));
-        header_builder.append_string(name);
+        header_builder.append(String(_r.get_page(), "\n    "));
+        header_builder.append(name);
         build_input(header_builder, initializer->input);
-        header_builder.append_character(';');
+        header_builder.append(';');
         return nullptr; 
     }
 
     TranspilerError* build_deinitializer(Page* _ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, DeInitializer* deInitializer) {
         Region _r;
-        header_builder.append_string(String(_r.get_page(), "\n    "));
-        header_builder.append_character('~');
-        header_builder.append_string(name);
-        header_builder.append_character('(');
-        header_builder.append_character(')');
-        header_builder.append_character(';');
+        header_builder.append(String(_r.get_page(), "\n    "));
+        header_builder.append('~');
+        header_builder.append(name);
+        header_builder.append("();");
         return nullptr; 
     }
 
     bool build_input(StringBuilder& builder, Vector<Property> input) {
         Region _r;
-        builder.append_character('(');
+        builder.append('(');
         auto input_iterator = VectorIterator<Property>(&input);
         bool first = true;
         bool isStatic = true;
@@ -378,16 +368,15 @@ struct Transpiler : Object {
                 first = false;
             }
             else {
-                builder.append_character(',');
-                builder.append_character(' ');
+                builder.append(", ");
             }
             if (property->type != nullptr) {
                 build_type(builder, property->type);
-                builder.append_character(' ');
+                builder.append(' ');
             }
-            builder.append_string(*property->name);
+            builder.append(*property->name);
         }
-        builder.append_character(')');
+        builder.append(')');
         return isStatic;
     }
 
@@ -395,22 +384,21 @@ struct Transpiler : Object {
         Region _r;
 
         if (parameters.length > 0) {
-            builder.append_string(String(_r.get_page(), "template<"));
+            builder.append("template<");
             {
                 auto generic_iterator = VectorIterator<GenericParameter>(&parameters);
                 size_t i = 0;
                 while(auto generic = generic_iterator.next()) {
-                    builder.append_string(String(_r.get_page(), "class "));
-                    builder.append_string(generic->name);
+                    builder.append("class ");
+                    builder.append(generic->name);
                     if (i < parameters.length - 1)
-                        builder.append_string(String(_r.get_page(), ", "));
+                        builder.append(", ");
                 }
             }
-            builder.append_character('>');
-            builder.append_character(' ');
+            builder.append("> ");
         }
-        builder.append_string(String(_r.get_page(), "struct "));
-        builder.append_string(name);
+        builder.append("struct ");
+        builder.append(name);
     }
 
     void build_type(StringBuilder& builder, Type* type) {
@@ -421,7 +409,7 @@ struct Transpiler : Object {
                 build_type(builder, generic);
                 break;
             }
-            builder.append_character('*');
+            builder.append('*');
             return;
         }
 
@@ -429,41 +417,40 @@ struct Transpiler : Object {
             auto type_name_iterator = VectorIterator<String>(&type->name);
             size_t i = 0;
             while (auto name_part = type_name_iterator.next()) {
-                builder.append_string(*name_part);
+                builder.append(*name_part);
                 if (i < type->name.length - 1)
-                    builder.append_string(String(_r.get_page(), "::"));
+                    builder.append("::");
                 i++;
             }
         }
 
         if (type->generics.length > 0) {
-            builder.append_character('<');
+            builder.append('<');
             {
                 auto generic_iterator = VectorIterator<Type>(&type->generics);
                 size_t i = 0;
                 while(auto generic = generic_iterator.next()) {
                     build_type(builder, generic);
                     if (i < type->generics.length - 1)
-                        builder.append_string(String(_r.get_page(), ", "));
+                        builder.append(", ");
                 }
             }
-            builder.append_character('>');
+            builder.append('>');
         }
     }
 
     TranspilerError* build_intrinsic(Page* _ep, StringBuilder& header_builder, String name) {
         Region _r;
 
-        header_builder.append_string(String(_r.get_page(), "typedef "));
+        header_builder.append(String(_r.get_page(), "typedef "));
         if (name.equals(String(_r.get_page(), "size_t")))
-            header_builder.append_string(String(_r.get_page(), "__SIZE_TYPE__"));
+            header_builder.append(String(_r.get_page(), "__SIZE_TYPE__"));
         else
             return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, name)));
             
-        header_builder.append_character(' ');
-        header_builder.append_string(name);
-        header_builder.append_character(';');
-        header_builder.append_character('\n');
+        header_builder.append(' ');
+        header_builder.append(name);
+        header_builder.append(";\n");
 
         return nullptr;
     }
@@ -471,17 +458,18 @@ struct Transpiler : Object {
     TranspilerError* forward_includes(Page* _ep, String path, Program& program) {
         Region _r;
         StringBuilder& builder = *new (alignof(StringBuilder), _r.get_page()) StringBuilder();
-        builder.append_string(String(_r.get_page(), "namespace scaly { namespace memory { struct Page; } }\n"));
-        builder.append_string(String(_r.get_page(), "typedef __SIZE_TYPE__ size_t;\n"));
-        builder.append_string(String(_r.get_page(), "typedef const char const_char;\n"));
-        builder.append_string(String(_r.get_page(), "#include \"scaly/memory/Object.h\"\n"));
-        builder.append_string(String(_r.get_page(), "namespace "));
-        builder.append_string(program.module.name);
-        builder.append_string(String(_r.get_page(), " {\n"));
+        builder.append("\
+namespace scaly { namespace memory { struct Page; } }\n\
+typedef __SIZE_TYPE__ size_t;\n\
+typedef const char const_char;\n\
+#include \"scaly/memory/Object.h\"\n");
+        builder.append("namespace ");
+        builder.append(program.module.name);
+        builder.append(" {\n");
         auto _result = forward_includes_for_symbols(_ep, builder,  program.module.symbols);
         if (_result != nullptr)
             return new(alignof(TranspilerError), _ep) TranspilerError(*_result);
-        builder.append_string(String(_r.get_page(), "}\n"));
+        builder.append("}\n");
 
         if (builder.get_length() > 0) {
             auto main_file_name = Path::join(_r.get_page(), path, String(_r.get_page(), "forwards.h"));
@@ -506,8 +494,7 @@ struct Transpiler : Object {
                 auto _structure = concept.definition._Structure;
                 if (!concept.name.equals(String(_r.get_page(), "Object"))) {
                     full_struct_name(builder, concept.name, concept.parameters);
-                    builder.append_character(';');
-                    builder.append_character('\n');
+                    builder.append(";\n");
                 }
                 return nullptr;
             }
@@ -522,13 +509,13 @@ struct Transpiler : Object {
 
     TranspilerError* forward_includes_for_namespace(Page* _ep, String name, StringBuilder& builder, const Namespace& namespace_) {
         Region _r;
-        builder.append_string(String(_r.get_page(), "namespace "));
-        builder.append_string(name);
-        builder.append_string(String(_r.get_page(), " {\n"));
+        builder.append("namespace ");
+        builder.append(name);
+        builder.append(" {\n");
         auto _result = forward_includes_for_symbols(_ep, builder, namespace_.symbols);
         if (_result != nullptr)
             return _result;
-        builder.append_string(String(_r.get_page(), "}\n"));
+        builder.append("}\n");
         return nullptr;
     }
 
@@ -569,7 +556,7 @@ struct Transpiler : Object {
             return new(alignof(TranspilerError), _ep) TranspilerError(*_create_directory_result);
         {
             StringBuilder& tasks_file_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(Path::join(_r.get_page(), vscode_dir, String(_r.get_page(), "tasks.json")));
-            StringBuilder& tasks_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(String(_r.get_page(), "{\n\
+            StringBuilder& tasks_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder("{\n\
 	\"version\": \"2.0.0\",\n\
 	\"tasks\": [\n\
 		{\n\
@@ -580,13 +567,13 @@ struct Transpiler : Object {
 				\"-fcolor-diagnostics\",\n\
 				\"-fansi-escape-codes\",\n\
 				\"-g\",\n\
-				\"${workspaceFolder}/main.cpp\",\n"));
+				\"${workspaceFolder}/main.cpp\",\n");
             build_vscode_source_files(tasks_builder, String(), program.module);
-            tasks_builder.append_string(String(_r.get_page(), "\
+            tasks_builder.append(String(_r.get_page(), "\
 				\"-o\",\n\
 				\"${workspaceFolder}/bin/"));
-            tasks_builder.append_string(program.module.name);
-            tasks_builder.append_string(String(_r.get_page(), "\",\n\
+            tasks_builder.append(program.module.name);
+            tasks_builder.append(String(_r.get_page(), "\",\n\
 				//\"`llvm-config --cxxflags --ldflags --system-libs --libs core`\"\n\
 				\"-I/opt/homebrew/Cellar/llvm/17.0.5/include\",\n\
 				\"-std=c++17\",\n\
@@ -619,16 +606,16 @@ struct Transpiler : Object {
         }
 
         {
-            StringBuilder& launch_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(String(_r.get_page(), "{\
+            StringBuilder& launch_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder("{\
     \"version\": \"0.2.0\",\n\
     \"configurations\": [\n\
         {\n\
             \"type\": \"lldb\",\n\
             \"request\": \"launch\",\n\
             \"name\": \"Debug\",\n\
-            \"program\": \"${workspaceFolder}/bin/"));
-            launch_builder.append_string(program.module.name);
-            launch_builder.append_string(String(_r.get_page(), "\",\n\
+            \"program\": \"${workspaceFolder}/bin/");
+            launch_builder.append(program.module.name);
+            launch_builder.append(String(_r.get_page(), "\",\n\
             \"args\": [],\n\
             \"cwd\": \"${workspaceFolder}\"\n\
         }\n\
@@ -643,13 +630,13 @@ struct Transpiler : Object {
 
     void build_vscode_source_files(StringBuilder& builder, String path, Module& module) {
         Region _r;
-        builder.append_string(String(_r.get_page(), "				\"${workspaceFolder}/"));
-        builder.append_string(path);
-        builder.append_string(module.name);
-        builder.append_string(String(_r.get_page(), ".cpp\",\n"));
+        builder.append("				\"${workspaceFolder}/");
+        builder.append(path);
+        builder.append(module.name);
+        builder.append(".cpp\",\n");
         StringBuilder& path_builder = *new (alignof(StringBuilder), _r.get_page()) StringBuilder(path);
-        path_builder.append_string(module.name);
-        path_builder.append_character('/');
+        path_builder.append(module.name);
+        path_builder.append('/');
         build_vscode_source_files_list(builder, path_builder.to_string(_r.get_page()), module.symbols);
     }
 
@@ -695,13 +682,13 @@ struct Transpiler : Object {
     TranspilerError* main_include_file(Page* _ep, String path, String name) {
         Region _r;
         StringBuilder& main_include_file_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(Path::join(_r.get_page(), path, name));
-        main_include_file_builder.append_string(String(_r.get_page(), ".h"));
-        StringBuilder& main_include_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(String(_r.get_page(), "#include \"forwards.h\"\n"));
-        main_include_builder.append_string(String(_r.get_page(), "#include \""));
-        main_include_builder.append_string(name);
-        main_include_builder.append_character('/');
-        main_include_builder.append_string(name);
-        main_include_builder.append_string(String(_r.get_page(), ".h\"\n"));
+        main_include_file_builder.append(String(_r.get_page(), ".h"));
+        StringBuilder& main_include_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder("#include \"forwards.h\"\n");
+        main_include_builder.append(String(_r.get_page(), "#include \""));
+        main_include_builder.append(name);
+        main_include_builder.append('/');
+        main_include_builder.append(name);
+        main_include_builder.append(String(_r.get_page(), ".h\"\n"));
         auto _main_include_result = File::write_from_string(_ep, main_include_file_builder.to_string(_r.get_page()), main_include_builder.to_string(_r.get_page()));
         if (_main_include_result != nullptr)
             return new(alignof(TranspilerError), _ep) TranspilerError(*_main_include_result);

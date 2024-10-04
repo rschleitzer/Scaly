@@ -47,10 +47,10 @@ String build_hint_lines_from_string(Page* _rp, const String& text, size_t start_
         counter++;
         if (*character == '\n') {
             if (current_line >= start_line && current_line <= end_line) {
-                line_builder.append_character('\n');
-                output_builder.append_string(line_builder.to_string(_r.get_page()));
-                indicator_builder.append_character('\n');
-                output_builder.append_string(indicator_builder.to_string(_r.get_page()));
+                line_builder.append('\n');
+                output_builder.append(line_builder.to_string(_r.get_page()));
+                indicator_builder.append('\n');
+                output_builder.append(indicator_builder.to_string(_r.get_page()));
             }
             current_line++;
             current_column = 1;
@@ -65,20 +65,20 @@ String build_hint_lines_from_string(Page* _rp, const String& text, size_t start_
         }
         else {
             if (current_line >= start_line && current_line <= end_line) {
-                line_builder.append_character(*character);
+                line_builder.append(*character);
                 if (counter >= start_offset && counter < end_offset)
-                    indicator_builder.append_character('^');
+                    indicator_builder.append('^');
                 else
-                    indicator_builder.append_character(' ');
+                    indicator_builder.append(' ');
             }
             current_column++;
         }
     }
 
-    line_builder.append_character('\n');
-    output_builder.append_string(line_builder.to_string(_r.get_page()));
-    indicator_builder.append_character('\n');
-    output_builder.append_string(indicator_builder.to_string(_r.get_page()));
+    line_builder.append('\n');
+    output_builder.append(line_builder.to_string(_r.get_page()));
+    indicator_builder.append('\n');
+    output_builder.append(indicator_builder.to_string(_r.get_page()));
     return output_builder.to_string(_rp);
 }
 
@@ -108,21 +108,21 @@ String to_string(Page* _rp, size_t number) {
 
 void append_error_message_header(StringBuilder& builder, String file, size_t offset) {
     Region _r;
-    builder.append_string(file);
-    builder.append_character(':');
+    builder.append(file);
+    builder.append(':');
     auto position_result_start = calculate_position(_r.get_page(), _r.get_page(), file, offset);
     if (position_result_start._tag == Result<Position, FileError>::Ok) {
         auto position_start = position_result_start._Ok;
-        builder.append_string(to_string(_r.get_page(), position_start.line));
-        builder.append_character(':');
-        builder.append_string(to_string(_r.get_page(), position_start.column));
-        builder.append_string(String(_r.get_page(), ": error: "));
+        builder.append(to_string(_r.get_page(), position_start.line));
+        builder.append(':');
+        builder.append(to_string(_r.get_page(), position_start.column));
+        builder.append(": error: ");
     }
 }
 
 void append_hint_lines(StringBuilder& builder, String file, size_t start, size_t end) {
     Region _r;
-    builder.append_character('\n');
+    builder.append('\n');
     auto position_result_end = calculate_position(_r.get_page(), _r.get_page(), file, end);
     if (position_result_end._tag == Result<Position, FileError>::Ok) {
         auto position_end = position_result_end._Ok;
@@ -130,7 +130,7 @@ void append_hint_lines(StringBuilder& builder, String file, size_t start, size_t
         if (position_result_start._tag == Result<Position, FileError>::Ok) {
             auto hint_lines_result = build_hint_lines(_r.get_page(), file, start, end, position_result_start._Ok, position_end);
             if (hint_lines_result._tag == Result<String, FileError>::Ok) {
-                builder.append_string(hint_lines_result._Ok);
+                builder.append(hint_lines_result._Ok);
             }
         }
     }
@@ -150,7 +150,7 @@ struct IoModelError {
         StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
         switch (_tag) {
             case File:
-                message_builder.append_string(_File.to_string(_rp));
+                message_builder.append(_File.to_string(_rp));
             break;
         }
         return message_builder.to_string(_rp);     
@@ -177,9 +177,9 @@ struct ParserModelError {
         Region _r;
         StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
         append_error_message_header(message_builder, this->file, invalid_syntax.start);
-        message_builder.append_string(String(_rp, "Expected "));
-        message_builder.append_string(invalid_syntax.expected);
-        message_builder.append_character('.');
+        message_builder.append("Expected ");
+        message_builder.append(invalid_syntax.expected);
+        message_builder.append('.');
         append_hint_lines(message_builder, this->file, invalid_syntax.start, invalid_syntax.end);
 
         return message_builder.to_string(_rp);
@@ -197,9 +197,9 @@ struct NotImplemented
         Region _r;
         StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
         append_error_message_header(message_builder, this->file, span.start);
-        message_builder.append_string(String(_rp, "The "));
-        message_builder.append_string(name);
-        message_builder.append_string(String(_rp, " syntax cannot be processed by the modeler yet."));
+        message_builder.append("The ");
+        message_builder.append(name);
+        message_builder.append(" syntax cannot be processed by the modeler yet.");
         append_hint_lines(message_builder, this->file, span.start, span.end);
 
         return message_builder.to_string(_rp);
@@ -215,7 +215,7 @@ struct DuplicateName {
         Region _r;
         StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
         append_error_message_header(message_builder, this->file, span.start);
-        message_builder.append_string(String(_rp, "This declaration already exists."));
+        message_builder.append("This declaration already exists.");
         append_hint_lines(message_builder, this->file, span.start, span.end);
 
         return message_builder.to_string(_rp);
@@ -231,7 +231,7 @@ struct NonFunctionSymbolExists {
         Region _r;
         StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
         append_error_message_header(message_builder, this->file, span.start);
-        message_builder.append_string(String(_rp, "This declaration already exists, but not as a function."));
+        message_builder.append("This declaration already exists, but not as a function.");
         append_hint_lines(message_builder, this->file, span.start, span.end);
 
         return message_builder.to_string(_rp);
@@ -247,7 +247,7 @@ struct FunctionSymbolExists {
         Region _r;
         StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
         append_error_message_header(message_builder, this->file, span.start);
-        message_builder.append_string(String(_rp, "This declaration already exists, but as a function."));
+        message_builder.append("This declaration already exists, but as a function.");
         append_hint_lines(message_builder, this->file, span.start, span.end);
 
         return message_builder.to_string(_rp);
@@ -263,7 +263,7 @@ struct DeInitializerExists {
         Region _r;
         StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
         append_error_message_header(message_builder, this->file, span.start);
-        message_builder.append_string(String(_rp, "A deinitializer has already been defined."));
+        message_builder.append("A deinitializer has already been defined.");
         append_hint_lines(message_builder, this->file, span.start, span.end);
 
         return message_builder.to_string(_rp);
@@ -278,7 +278,7 @@ struct InvalidConstant {
         Region _r;
         StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
         append_error_message_header(message_builder, this->file, span.start);
-        message_builder.append_string(String(_rp, "This is an invalid constant."));
+        message_builder.append("This is an invalid constant.");
         append_hint_lines(message_builder, this->file, span.start, span.end);
 
         return message_builder.to_string(_rp);
@@ -294,7 +294,7 @@ struct InvalidComponentName {
         Region _r;
         StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
         append_error_message_header(message_builder, this->file, span.start);
-        message_builder.append_string(String(_rp, "The component does not have an identifier as name."));
+        message_builder.append("The component does not have an identifier as name.");
         append_hint_lines(message_builder, this->file, span.start, span.end);
 
         return message_builder.to_string(_rp);
@@ -310,7 +310,7 @@ struct ModuleRootMustBeConcept {
         Region _r;
         StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
         append_error_message_header(message_builder, this->file, span.start);
-        message_builder.append_string(String(_rp, "The root definition of a module must be a concept."));
+        message_builder.append("The root definition of a module must be a concept.");
         append_hint_lines(message_builder, this->file, span.start, span.end);
 
         return message_builder.to_string(_rp);
@@ -352,28 +352,28 @@ struct ModelBuilderError {
         StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
         switch (_tag) {
             case NotImplemented:
-                message_builder.append_string(_NotImplemented.to_string(_rp));
+                message_builder.append(_NotImplemented.to_string(_rp));
             break;
             case DuplicateName:
-                message_builder.append_string(_DuplicateName.to_string(_rp));
+                message_builder.append(_DuplicateName.to_string(_rp));
             break;
             case NonFunctionSymbolExists:
-                message_builder.append_string(_NonFunctionSymbolExists.to_string(_rp));
+                message_builder.append(_NonFunctionSymbolExists.to_string(_rp));
             break;
             case FunctionSymbolExists:
-                message_builder.append_string(_FunctionSymbolExists.to_string(_rp));
+                message_builder.append(_FunctionSymbolExists.to_string(_rp));
             break;
             case DeInitializerExists:
-                message_builder.append_string(_DeInitializerExists.to_string(_rp));
+                message_builder.append(_DeInitializerExists.to_string(_rp));
             break;
             case InvalidConstant:
-                message_builder.append_string(_InvalidConstant.to_string(_rp));
+                message_builder.append(_InvalidConstant.to_string(_rp));
             break;
             case InvalidComponentName:
-                message_builder.append_string(_InvalidComponentName.to_string(_rp));
+                message_builder.append(_InvalidComponentName.to_string(_rp));
             break;
             case ModuleRootMustBeConcept:
-                message_builder.append_string(_ModuleRootMustBeConcept.to_string(_rp));
+                message_builder.append(_ModuleRootMustBeConcept.to_string(_rp));
             break;
         }
         return message_builder.to_string(_rp);     
@@ -400,13 +400,13 @@ struct ModelError : Object {
         StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
         switch (_tag) {
             case Io:
-                message_builder.append_string(_Io.to_string(_rp));
+                message_builder.append(_Io.to_string(_rp));
             break;
             case Parser:
-                message_builder.append_string(_Parser.to_string(_rp));
+                message_builder.append(_Parser.to_string(_rp));
             break;
             case Builder:
-                message_builder.append_string(_Builder.to_string(_rp));
+                message_builder.append(_Builder.to_string(_rp));
             break;
         }
         return message_builder.to_string(_rp);     

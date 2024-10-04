@@ -1511,7 +1511,7 @@ Result<Module, ModelError> build_module(Page* _rp, Page* _ep, String path, Strin
 Result<Module, ModelError> build_referenced_module(Page* _rp, Page* _ep, String path, String name, bool private_) {
     Region _r;
     StringBuilder& file_name_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(Path::join(_r.get_page(), path, name));
-    file_name_builder.append_string(String(_r.get_page(), ".scaly"));
+    file_name_builder.append(".scaly");
     auto file_name = file_name_builder.to_string(_r.get_page());
     auto module_text_result = File::read_to_string(_r.get_page(), _r.get_page(), file_name);
     if (module_text_result._tag == Result<String, FileError>::Error) {

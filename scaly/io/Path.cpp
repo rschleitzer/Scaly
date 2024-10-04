@@ -44,12 +44,12 @@ String Path::join(Page* _rp, const String& path1, const String& path2) {
         return String(_rp, path2);
     
     StringBuilder& path = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
-    path.append_string(path1);
+    path.append(path1);
     if (path2.get_length() == 0)
         return path.to_string(_rp);
 
-    path.append_character('/');
-    path.append_string(path2);
+    path.append('/');
+    path.append(path2);
     return path.to_string(_rp);
 }
 
