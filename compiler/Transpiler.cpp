@@ -57,15 +57,14 @@ struct Transpiler : Object {
         cpp_builder.append('\n');
         cpp_builder.append(namespace_close);
 
-        auto base_file_name = Path::join(_r.get_page(), path, module.name);
-        StringBuilder& header_name_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(base_file_name);
+        StringBuilder& header_name_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(path);
         header_name_builder.append(".h");
         auto header_name = header_name_builder.to_string(_r.get_page());
         auto _header_result = File::write_from_string(_ep, header_name, header_builder.to_string(_r.get_page()));
         if (_header_result != nullptr)
             return new(alignof(TranspilerError), _ep) TranspilerError(*_header_result);
 
-        StringBuilder& cpp_name_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(base_file_name);
+        StringBuilder& cpp_name_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(path);
         cpp_name_builder.append(".cpp");
         auto cpp_name = cpp_name_builder.to_string(_r.get_page());
         auto _cpp_result = File::write_from_string(_ep, cpp_name, cpp_builder.to_string(_r.get_page()));
@@ -142,11 +141,11 @@ struct Transpiler : Object {
                     {
                         auto _module = member->_Module;
                         header_builder.append("#include \"");
-                        header_builder.append(String(_r.get_page(), _module.name));
+                        header_builder.append(name);
                         header_builder.append('/');
                         header_builder.append(String(_r.get_page(), _module.name));
                         header_builder.append(".h\"\n");
-                        StringBuilder& main_header_builder = *new (alignof(StringBuilder), _r.get_page()) StringBuilder("../");
+                        StringBuilder& main_header_builder = *new (alignof(StringBuilder), _r.get_page()) StringBuilder();
                         main_header_builder.append(main_header);
                         StringBuilder& namespace_close_builder = *new (alignof(StringBuilder), _r.get_page()) StringBuilder(namespace_close);
                         auto _result = build_module(_ep, path, _module, main_header_builder.to_string(_r.get_page()), namespace_open, namespace_close);
@@ -425,29 +424,6 @@ struct Transpiler : Object {
         return nullptr;
     }
 
-    TranspilerError* main_file(Page* _ep, String path, Program& program) {
-        Region _r;
-        StringBuilder& builder = *new (alignof(StringBuilder), _r.get_page()) StringBuilder();
-        builder.append("#include \"");
-        builder.append(program.module.name);
-        builder.append(".h\"\n\n");
-        builder.append("int main(int argc, char** argv) {\n");
-
-        auto iter = VectorIterator<Statement>(&program.statements);
-        while(auto statement = iter.next()) {
-            build_statement(_ep, builder, statement);
-        }
-        builder.append("    return 0;\n}\n");
-        if (builder.get_length() > 0) {
-            auto main_file_name = Path::join(_r.get_page(), path, String(_r.get_page(), "main.cpp"));
-            auto _main_result = File::write_from_string(_ep, main_file_name, builder.to_string(_r.get_page()));
-            if (_main_result != nullptr)
-                return new(alignof(TranspilerError), _ep) TranspilerError(*_main_result);
-        }
-
-        return nullptr;
-    }
-
     TranspilerError* build_statement(Page* _ep, StringBuilder& builder, Statement* statement) {
         return nullptr;
     }
@@ -676,14 +652,33 @@ typedef const char const_char;\n\
         }
     }
 
+    TranspilerError* main_file(Page* _ep, String path, Program& program) {
+        Region _r;
+        StringBuilder& builder = *new (alignof(StringBuilder), _r.get_page()) StringBuilder();
+        builder.append("#include \"main.h\"\n\n");
+        builder.append("int main(int argc, char** argv) {\n");
+
+        auto iter = VectorIterator<Statement>(&program.statements);
+        while(auto statement = iter.next()) {
+            build_statement(_ep, builder, statement);
+        }
+        builder.append("    return 0;\n}\n");
+        if (builder.get_length() > 0) {
+            auto main_file_name = Path::join(_r.get_page(), path, String(_r.get_page(), "main.cpp"));
+            auto _main_result = File::write_from_string(_ep, main_file_name, builder.to_string(_r.get_page()));
+            if (_main_result != nullptr)
+                return new(alignof(TranspilerError), _ep) TranspilerError(*_main_result);
+        }
+
+        return nullptr;
+    }
+
     TranspilerError* main_include_file(Page* _ep, String path, String name) {
         Region _r;
-        StringBuilder& main_include_file_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(Path::join(_r.get_page(), path, name));
+        StringBuilder& main_include_file_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(Path::join(_r.get_page(), path, String(_r.get_page(), "main")));
         main_include_file_builder.append(".h");
         StringBuilder& main_include_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder("#include \"forwards.h\"\n");
         main_include_builder.append("#include \"");
-        main_include_builder.append(name);
-        main_include_builder.append('/');
         main_include_builder.append(name);
         main_include_builder.append(".h\"\n");
         auto _main_include_result = File::write_from_string(_ep, main_include_file_builder.to_string(_r.get_page()), main_include_builder.to_string(_r.get_page()));
