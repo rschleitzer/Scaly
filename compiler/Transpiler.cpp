@@ -65,7 +65,14 @@ struct Transpiler : Object {
         }
         if (!module.name.equals("scaly") && !module.name.equals("memory"))
             header_builder.append("\nusing namespace scaly::memory;\n");
-        header_builder.append(namespace_open);
+        StringBuilder& namespace_open_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(namespace_open);
+
+        bool leaf_module = is_leaf_module(module);
+        if (!leaf_module) {
+            header_builder.append("namespace ");
+            header_builder.append(module.name);
+            header_builder.append(" {\n");
+        }
 
         auto _symbols_result = build_symbols(_ep, path, module.file, module.name, header_builder, cpp_builder, main_header, namespace_open, namespace_close, module.symbols);
         if (_symbols_result)
@@ -73,7 +80,10 @@ struct Transpiler : Object {
 
         cpp_builder.append('\n');
         cpp_builder.append(namespace_close);
-        header_builder.append(namespace_close);
+
+        if (!leaf_module) {
+            header_builder.append("\n}");
+        }
         header_builder.append("\n#endif");
 
         StringBuilder& header_name_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(path);
@@ -92,6 +102,43 @@ struct Transpiler : Object {
 
         return nullptr;
     }
+
+    bool is_leaf_module(const Module& module) {
+        auto member_iterator = HashMapIterator<String, Nameable>(module.symbols);
+        while (auto member = member_iterator.next()) {
+            switch (member->_tag) {
+                case Nameable::Module:
+                    return false;
+                case Nameable::Concept:
+                    {
+                        auto concept = member->_Concept;
+                        switch (concept.definition._tag) {
+                            case Definition::Namespace: {
+                                auto namespace_ = concept.definition._Namespace;
+                                auto namespace_members_iterator = HashMapIterator<String, Nameable>(namespace_.symbols);
+                                while (auto namespace_member = namespace_members_iterator.next()) {
+                                    switch (namespace_member->_tag) {
+                                        case Nameable::Module:
+                                            return false;
+                                        default:
+                                            continue;
+                                    }
+                                }
+                            }
+                            break;
+                            
+                            default:
+                                break;
+                        }
+                    }
+                    break;
+                default:
+                    continue;
+            }
+        }
+        return true;
+    }
+
 
     FileError* create_directory(Page* _ep, String path) {
         auto _exists_result = Directory::exists(_ep, path);
