@@ -381,7 +381,6 @@ Result<Namespace, ModelError> handle_namespace(Page* _rp, Page* _ep, String name
             case DeclarationSyntax::Macro:
                 return Result<Namespace, ModelError> { ._tag = Result<Namespace, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(file, String(_ep, "Macro"), Span(declaration->_Macro.start, declaration->_Macro.end)))) };
             case DeclarationSyntax::Module: {
-                Region _r_1;
                 auto module_syntax = declaration->_Module;
                 auto module_result = handle_module(_rp, _ep, path, module_syntax, false);
                 if (module_result._tag == Result<Namespace, ModelError>::Error)
@@ -1157,7 +1156,7 @@ Result<Concept, ModelError> handle_definition(Page* _rp, Page* _ep, String path,
         }
         case ConceptSyntax::Namespace: {
             auto namespace_syntax = concept._Namespace;
-            auto _namespace_result = handle_namespace(_rp, _ep, definition.name, Path::join(_r.get_page(), path, definition.name), namespace_syntax, private_, file);
+            auto _namespace_result = handle_namespace(_rp, _ep, definition.name, Path::join(_rp, path, definition.name), namespace_syntax, private_, file);
             if (_namespace_result._tag == Result<Namespace, ModelError>::Error)
                 return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = _namespace_result._Error };
             auto namespace_ = _namespace_result._Ok;
@@ -1543,7 +1542,7 @@ Result<Program, ModelError> build_program(Page* _rp, Page* _ep, const String& fi
         return Result<Program, ModelError> { ._tag = Result<Program, ModelError>::Error, ._Error = ModelError(file_text_result._Error) };
     }
     auto file_text = file_text_result._Ok;
-    auto program_result = parse_program(_r.get_page(), _ep, file_text);
+    auto program_result = parse_program(_rp, _ep, file_text);
     if (program_result._tag == Result<Vector<DeclarationSyntax>*, ParserError>::Error)
         return Result<Program, ModelError> { ._tag = Result<Program, ModelError>::Error, ._Error = ModelError(ParserModelError(file_name, program_result._Error)) };
     auto program_syntax = program_result._Ok;

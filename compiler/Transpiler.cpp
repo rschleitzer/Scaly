@@ -19,7 +19,6 @@ struct Transpiler : Object {
                 return new(alignof(TranspilerError), _ep) TranspilerError(*_result);
         }
 
-        vscode_files(_ep, path, program);
 
         if (program.statements.length > 0) {
             main_file(_ep, path, program);
@@ -32,6 +31,8 @@ struct Transpiler : Object {
         auto _result = build_module(_ep, path, program.module, main_header_builder.to_string(_r.get_page()), String(), String());
         if (_result != nullptr)
             return new(alignof(TranspilerError), _ep) TranspilerError(*_result);
+
+        vscode_files(_ep, path, program);
 
         return nullptr;
     }
@@ -177,13 +178,8 @@ struct Transpiler : Object {
                         header_builder.append_string(String(_r.get_page(), ".h\"\n"));
                         StringBuilder& main_header_builder = *new (alignof(StringBuilder), _r.get_page()) StringBuilder(String(_r.get_page(), "../"));
                         main_header_builder.append_string(main_header);
-                        StringBuilder& namespace_open_builder = *new (alignof(StringBuilder), _r.get_page()) StringBuilder(namespace_open);
-                        namespace_open_builder.append_string(String(_r.get_page(), "namespace "));
-                        namespace_open_builder.append_string(_module.name);
-                        namespace_open_builder.append_string(String(_r.get_page(), " {"));
                         StringBuilder& namespace_close_builder = *new (alignof(StringBuilder), _r.get_page()) StringBuilder(namespace_close);
-                        namespace_close_builder.append_string(String(_r.get_page(), "}"));
-                        auto _result = build_module(_ep, path, _module, main_header_builder.to_string(_r.get_page()), namespace_open_builder.to_string(_r.get_page()), namespace_close_builder.to_string(_r.get_page()));
+                        auto _result = build_module(_ep, path, _module, main_header_builder.to_string(_r.get_page()), namespace_open, namespace_close);
                         if (_result != nullptr)
                             return new(alignof(TranspilerError), _ep) TranspilerError(*_result);
                     }
