@@ -266,7 +266,7 @@ struct Transpiler : Object {
         }
 
         if (structure.deinitializer != nullptr)
-            build_deinitializer(_ep, header_builder, cpp_builder, name, structure.deinitializer);
+            build_deinitializer(_ep, header_builder, cpp_builder, name, parameters.length > 0, structure.deinitializer);
 
         auto member_iterator = HashMapIterator<String, Nameable>(structure.symbols);
         while (auto member = member_iterator.next()) {
@@ -373,10 +373,12 @@ struct Transpiler : Object {
         header_builder.append("\n    ");
         header_builder.append(name);
         if (!is_generic) {
+            cpp_builder.append('\n');
             cpp_builder.append(name);
             cpp_builder.append("::");
             cpp_builder.append(name);
             build_input(cpp_builder, initializer->input);
+            cpp_builder.append(' ');
             cpp_builder.append('{');
             cpp_builder.append("};");
         }
@@ -388,16 +390,32 @@ struct Transpiler : Object {
         else {
             header_builder.append(';');
         }
-        
+
         return nullptr; 
     }
 
-    TranspilerError* build_deinitializer(Page* _ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, DeInitializer* deInitializer) {
+    TranspilerError* build_deinitializer(Page* _ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, bool is_generic, DeInitializer* deInitializer) {
         Region _r;
         header_builder.append("\n    ");
         header_builder.append('~');
         header_builder.append(name);
-        header_builder.append("();");
+        if (!is_generic) {
+            cpp_builder.append('\n');
+            cpp_builder.append(name);
+            cpp_builder.append("::");
+            cpp_builder.append('~');
+            cpp_builder.append(name);
+            cpp_builder.append("() {");
+            cpp_builder.append("};");
+        }
+        if (is_generic) {
+            header_builder.append("() {");
+            header_builder.append("};");
+        }
+        else {
+            header_builder.append("();");
+        }
+
         return nullptr; 
     }
 
