@@ -245,7 +245,6 @@ Result<Structure, ModelError> handle_class(Page* _rp, Page* _ep, String name, St
                 case MemberSyntax::Macro:
                     return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(file, String(_ep, "Macro"), Span(member->_Macro.start, member->_Macro.end)))) };
                 case MemberSyntax::Module: {
-                    Region _r_1;
                     auto module_syntax = member->_Module;
                     auto module_result = handle_module(_rp, _ep, path, module_syntax, false);
                     if (module_result._tag == Result<Structure, ModelError>::Error)
@@ -257,6 +256,17 @@ Result<Structure, ModelError> handle_class(Page* _rp, Page* _ep, String name, St
                             ._Error = ModelError(ModelBuilderError(NonFunctionSymbolExists(file, Span(module_syntax.start, module_syntax.end)))) };
                 }
                 break;
+            }
+        }
+
+        HashMap<String, List<Function>>& functions = *new(alignof(HashMap<String, List<Function>>), _r.get_page()) HashMap<String, List<Function>>(_r.get_page(), functions_builder);
+        if (functions.slots != nullptr) {
+            auto functions_slots_iterator = VectorIterator<Vector<KeyValuePair<String, List<Function>>>>(functions.slots);
+            while (auto function_slot = functions_slots_iterator.next()) {
+                auto functions_iterator = VectorIterator<KeyValuePair<String, List<Function>>>(function_slot);
+                while (auto function_kvp = functions_iterator.next()) {
+                    symbols_builder.add(function_kvp->key, Nameable { ._tag = Nameable::Functions, ._Functions = Vector<Function>(_rp, function_kvp->value) });
+                }
             }
         }
 
@@ -395,7 +405,7 @@ Result<Namespace, ModelError> handle_namespace(Page* _rp, Page* _ep, String name
         }
     }
 
-    HashMap<String, List<Function>> functions(_r.get_page(), functions_builder);
+    HashMap<String, List<Function>>& functions = *new(alignof(HashMap<String, List<Function>>), _r.get_page()) HashMap<String, List<Function>>(_r.get_page(), functions_builder);
     if (functions.slots != nullptr) {
         auto functions_slots_iterator = VectorIterator<Vector<KeyValuePair<String, List<Function>>>>(functions.slots);
         while (auto function_slot = functions_slots_iterator.next()) {
@@ -1468,7 +1478,7 @@ Result<HashMap<String, Nameable>, ModelError> build_symbols(Page* _rp, Page* _ep
         }
     }
 
-    HashMap<String, List<Function>> functions(_r.get_page(), functions_builder);
+    HashMap<String, List<Function>>& functions = *new(alignof(HashMap<String, List<Function>>), _r.get_page()) HashMap<String, List<Function>>(_r.get_page(), functions_builder);
     if (functions.slots != nullptr) {
         auto functions_slots_iterator = VectorIterator<Vector<KeyValuePair<String, List<Function>>>>(functions.slots);
         while (auto function_slot = functions_slots_iterator.next()) {

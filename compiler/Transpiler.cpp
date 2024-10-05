@@ -529,10 +529,10 @@ struct Transpiler : Object {
         Region _r;
         StringBuilder& builder = *new (alignof(StringBuilder), _r.get_page()) StringBuilder();
         builder.append("\
-namespace scaly { namespace memory { struct Page; } }\n\
+namespace scaly { namespace memory { struct Page;\n\
 typedef __SIZE_TYPE__ size_t;\n\
 typedef const char const_char;\n\
-#include \"scaly/memory/Object.h\"\n");
+#include \"scaly/memory/Object.h\"\n} }\n");
         auto _result = forward_includes_for_symbols(_ep, builder,  program.module.symbols);
         if (_result != nullptr)
             return new(alignof(TranspilerError), _ep) TranspilerError(*_result);
