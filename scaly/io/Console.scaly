@@ -1,7 +1,7 @@
 use scaly.containers
 define Console {
     function print(message: pointer[const_char]) throws FileError {
-        if fputs(message, stdout)
+        fputs(message, stdout)
     }
 
     function print(message: String) throws FileError {

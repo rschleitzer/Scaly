@@ -493,11 +493,13 @@ struct Module : Object {
     bool private_;
     String file;
     String name;
+    Vector<Use> uses;
     HashMap<String, Nameable> symbols;
-    Module(bool private_, String file, String name, HashMap<String, Nameable> symbols)
+    Module(bool private_, String file, String name, Vector<Use> uses, HashMap<String, Nameable> symbols)
       : private_(private_),
         file(file),
         name(name),
+        uses(uses),
         symbols(symbols) {}
 };
 

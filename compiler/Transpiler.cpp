@@ -64,7 +64,11 @@ struct Transpiler : Object {
             header_builder.append(".h\"\n");
         }
         if (!module.name.equals("scaly") && !module.name.equals("memory"))
-            header_builder.append("\nusing namespace scaly::memory;\n");
+            header_builder.append("using namespace scaly::memory;\n");
+        
+        build_uses(header_builder, module.uses);
+        build_uses(cpp_builder, module.uses);
+
         StringBuilder& namespace_open_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(namespace_open);
 
         bool leaf_module = is_leaf_module(module);
@@ -294,12 +298,11 @@ struct Transpiler : Object {
         return nullptr; 
     }
 
-    String build_uses(Page* _rp, Vector<Use>& uses) {
+    void build_uses(StringBuilder& builder, Vector<Use>& uses) {
         Region _r;
-        StringBuilder& builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder();
         auto uses_iterator = VectorIterator<Use>(&uses);
         while (auto use = uses_iterator.next()) {
-            builder.append("\nusing namespace ");
+            builder.append("using namespace ");
             bool first = true;
             auto namespace_iterator = VectorIterator<String>(&use->path);
             while(auto namespace_ = namespace_iterator.next()) {
@@ -313,7 +316,6 @@ struct Transpiler : Object {
             }
             builder.append(";\n");
         }
-        return builder.to_string(_rp);
     }
 
     TranspilerError* build_functions(Page* _ep, StringBuilder& header_builder, StringBuilder& cpp_builder, Vector<Function>& functions, String* name, bool isTemplate) {

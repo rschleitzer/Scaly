@@ -1495,7 +1495,6 @@ Result<Module, ModelError> build_module(Page* _rp, Page* _ep, String path, Strin
                 return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = _use_result._Error };
             auto use_ = _use_result._Ok;
             uses.add(use_);
-
         }
     }
 
@@ -1505,7 +1504,7 @@ Result<Module, ModelError> build_module(Page* _rp, Page* _ep, String path, Strin
     auto symbols = symbols_result._Ok;
     
     return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Ok,
-        ._Ok = Module(private_, String(_rp, file_name), name, symbols)
+        ._Ok = Module(private_, String(_rp, file_name), name, Vector<Use>(_rp, uses), symbols)
     };
 }
 
