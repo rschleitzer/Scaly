@@ -107,43 +107,6 @@ struct Transpiler : Object {
         return nullptr;
     }
 
-    bool is_leaf_module(const Module& module) {
-        auto member_iterator = HashMapIterator<String, Nameable>(module.symbols);
-        while (auto member = member_iterator.next()) {
-            switch (member->_tag) {
-                case Nameable::Module:
-                    return false;
-                case Nameable::Concept:
-                    {
-                        auto concept = member->_Concept;
-                        switch (concept.definition._tag) {
-                            case Definition::Namespace: {
-                                auto namespace_ = concept.definition._Namespace;
-                                auto namespace_members_iterator = HashMapIterator<String, Nameable>(namespace_.symbols);
-                                while (auto namespace_member = namespace_members_iterator.next()) {
-                                    switch (namespace_member->_tag) {
-                                        case Nameable::Module:
-                                            return false;
-                                        default:
-                                            continue;
-                                    }
-                                }
-                            }
-                            break;
-                            
-                            default:
-                                break;
-                        }
-                    }
-                    break;
-                default:
-                    continue;
-            }
-        }
-        return true;
-    }
-
-
     FileError* create_directory(Page* _ep, String path) {
         auto _exists_result = Directory::exists(_ep, path);
         if (_exists_result._tag == scaly::containers::Result<bool, FileError>::Error)
@@ -155,6 +118,41 @@ struct Transpiler : Object {
                 return _result;
         }
         return nullptr;
+    }
+
+    bool is_leaf_module(const Module& module) {
+        auto member_iterator = HashMapIterator<String, Nameable>(module.symbols);
+        while (auto member = member_iterator.next()) {
+            switch (member->_tag) {
+                case Nameable::Module:
+                    return false;
+                case Nameable::Concept: {
+                    auto concept = member->_Concept;
+                    switch (concept.definition._tag) {
+                        case Definition::Namespace: {
+                            auto namespace_ = concept.definition._Namespace;
+                            auto namespace_members_iterator = HashMapIterator<String, Nameable>(namespace_.symbols);
+                            while (auto namespace_member = namespace_members_iterator.next()) {
+                                switch (namespace_member->_tag) {
+                                    case Nameable::Module:
+                                        return false;
+                                    default:
+                                        continue;
+                                }
+                            }
+                            break;
+                        }
+                        
+                        default:
+                            break;
+                    }
+                    break;
+                }
+                default:
+                    continue;
+            }
+        }
+        return true;
     }
 
     TranspilerError* build_concept(Page* _ep, String path, String source, StringBuilder& header_builder, StringBuilder& cpp_builder, String main_header, String namespace_open, String namespace_close, Concept& concept) { 
@@ -264,7 +262,7 @@ struct Transpiler : Object {
 
         auto initializers_iterator = VectorIterator<Initializer>(&structure.initializers);
         while (auto initializer = initializers_iterator.next()) {
-            build_initializer(_ep, header_builder, cpp_builder, name, initializer);
+            build_initializer(_ep, header_builder, cpp_builder, name, parameters.length > 0, initializer);
         }
 
         if (structure.deinitializer != nullptr)
@@ -370,12 +368,27 @@ struct Transpiler : Object {
         return nullptr; 
     }
 
-    TranspilerError* build_initializer(Page* _ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, Initializer* initializer) {
+    TranspilerError* build_initializer(Page* _ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, bool is_generic, Initializer* initializer) {
         Region _r;
         header_builder.append("\n    ");
         header_builder.append(name);
+        if (!is_generic) {
+            cpp_builder.append(name);
+            cpp_builder.append("::");
+            cpp_builder.append(name);
+            build_input(cpp_builder, initializer->input);
+            cpp_builder.append('{');
+            cpp_builder.append("};");
+        }
         build_input(header_builder, initializer->input);
-        header_builder.append(';');
+        if (is_generic) {
+            header_builder.append('{');
+            header_builder.append("};");
+        }
+        else {
+            header_builder.append(';');
+        }
+        
         return nullptr; 
     }
 
