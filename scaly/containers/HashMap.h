@@ -7,7 +7,6 @@ template<class K, class V> struct HashMap;
 
 template<class K, class V>
 struct HashMapIterator {
-    Vector<Vector<KeyValuePair<K, V>>>* slots;
     VectorIterator<Vector<KeyValuePair<K, V>>> slot_iterator;
     VectorIterator<KeyValuePair<K, V>> element_iterator;
 

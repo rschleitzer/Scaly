@@ -7,7 +7,6 @@ template<class K, class V> struct MultiMap;
 
 template<class K, class V>
 struct MultiMapIterator {
-    Vector<Vector<KeyValuePair<K, Vector<V>>>>* slots;
     VectorIterator<Vector<KeyValuePair<K, Vector<V>>>> slot_iterator;
     VectorIterator<KeyValuePair<K, Vector<V>>> element_iterator;
 
