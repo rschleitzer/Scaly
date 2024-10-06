@@ -848,12 +848,13 @@ Result<If, ModelError> handle_if(Page* _rp, Page* _ep, IfSyntax& if_, String fil
             return Result<If, ModelError> { ._tag = Result<If, ModelError>::Error, ._Error = _consequent_result._Error };
         consequent = Action(_consequent_result._Ok);
     }
-    Action alternative = Action { ._tag = Action::Operation, ._Operation = Operation(Vector<Operand>(_rp, 0)) };
+
+    Action* alternative = nullptr;
     if (if_.alternative != nullptr) {
         auto _alternative_result = handle_action(_rp, _ep, if_.alternative->alternative, file);
         if (_alternative_result._tag == Result<Action, ModelError>::Error)
             return Result<If, ModelError> { ._tag = Result<If, ModelError>::Error, ._Error = _alternative_result._Error };
-        alternative = Action(_alternative_result._Ok);
+        alternative = new(alignof(Action), _rp) Action(_alternative_result._Ok);
     }
     return Result<If, ModelError> { ._tag = Result<If, ModelError>::Ok, ._Ok = If(Span(if_.start, if_.end), condition, property, consequent, alternative) };
 }

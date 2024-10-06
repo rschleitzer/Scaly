@@ -151,7 +151,7 @@ struct Mutation : Object {
     Mutation(Operation source, Operation target) : source(source), target(target) {}
 };
 
-struct Action {
+struct Action : Object {
     enum {
         Operation,
         Mutation,
@@ -167,8 +167,8 @@ struct If : Object {
     Vector<Operand> condition;
     Property* property;
     Action consequent;
-    Action alternative;
-    If(Span span, Vector<Operand> condition, Property* property, Action consequent, Action alternative) : span(span), condition(condition), property(property), consequent(consequent), alternative(alternative) {}
+    Action* alternative;
+    If(Span span, Vector<Operand> condition, Property* property, Action consequent, Action* alternative) : span(span), condition(condition), property(property), consequent(consequent), alternative(alternative) {}
 };
 
 struct Case : Object {

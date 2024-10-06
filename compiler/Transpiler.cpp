@@ -330,16 +330,274 @@ struct Transpiler : Object {
                 }
                 cpp_builder.append(function->name);
                 build_input(cpp_builder, function->input);
-                cpp_builder.append(" {};");
+                auto _result = build_implementation(_ep, cpp_builder, function->implementation, String(_r.get_page(), "    "));
+                if (_result != nullptr)
+                    return _result;
             }
             header_builder.append(function->name);
             build_input(header_builder, function->input);
             if (isTemplate) {
-                header_builder.append(" {}");
+                auto _result = build_implementation(_ep, header_builder, function->implementation, String(_r.get_page(), "    "));
+                if (_result != nullptr)
+                    return _result;
             }
             header_builder.append(';');
         }
         return nullptr; 
+    }
+
+    TranspilerError* build_implementation(Page* _ep, StringBuilder& builder, Implementation& implementation, String indent) {
+        builder.append(" {");
+        switch (implementation._tag) {
+            case Implementation::Action: {
+                auto action = implementation._Action;
+                auto _result = build_action(_ep, builder, action, indent);
+                if (_result != nullptr)
+                    return _result;
+                break;
+            }
+            case Implementation::Extern:
+                return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "Extern")));
+            case Implementation::Instruction:
+                return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "Instruction")));
+            case Implementation::Intrinsic:
+                return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "Intrinsic")));
+
+        }
+        builder.append("}");
+        return nullptr;
+    }
+
+    TranspilerError* build_action(Page* _ep, StringBuilder& builder, Action& action, String indent) {
+        switch (action._tag) {
+            case Action::Operation: {
+                auto operation = action._Operation;
+                auto _result = build_operation(_ep, builder, operation, indent);
+                if (_result != nullptr)
+                    return _result;
+                break;
+            }
+            case Action::Mutation:
+                return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "Mutation")));
+        }
+        return nullptr;
+    }
+
+    TranspilerError* build_binding(Page* _ep, StringBuilder& builder, Binding& binding, String indent) {
+        switch (binding.binding_type) {
+            case Binding::Constant: {
+                builder.append("\n auto ");
+                break;
+            }
+            case Binding::Extendable: {
+                return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "Extendable")));
+            }
+            case Binding::Mutable: {
+                builder.append("\n auto");
+                break;
+            }
+        }
+
+        if (binding.property.name != nullptr) {
+            builder.append(' ');
+            builder.append(*binding.property.name);
+        }
+
+        builder.append(" = ");
+
+        auto _result = build_operation(_ep, builder, binding.operation, indent);
+        if (_result != nullptr)
+            return _result;
+        return nullptr;
+    }
+
+    TranspilerError* build_operation(Page* _ep, StringBuilder& builder, Operation& operation, String indent) {
+        builder.append(indent);
+        {
+            auto _result = build_operands(_ep, builder, operation.operands, indent);
+            if (_result != nullptr)
+                return _result;
+        }
+
+        return nullptr;
+    }
+
+    TranspilerError* build_operands(Page* _ep, StringBuilder& builder, Vector<Operand>& operands, String indent) {
+        auto operation_iterator = VectorIterator<Operand>(&operands);
+        while (auto operand = operation_iterator.next()) {
+            switch (operand->expression._tag) {
+                case Expression::Constant:
+                    return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "Constant")));
+                case Expression::Variable: {
+                    auto variable = operand->expression._Variable;
+                    auto _result = build_variable(_ep, builder, variable);
+                    if (_result != nullptr)
+                        return _result;
+                    break;
+                }
+                case Expression::Tuple: {
+                    auto tuple = operand->expression._Tuple;
+                    auto _result = build_tuple(_ep, builder, tuple, indent);
+                    if (_result != nullptr)
+                        return _result;
+                    break;
+                }
+                case Expression::Matrix: {
+                    auto matrix = operand->expression._Matrix;
+                    auto _result = build_matrix(_ep, builder, matrix, indent);
+                    if (_result != nullptr)
+                        return _result;
+                    break;
+                }
+                case Expression::Block: {
+                    auto block = operand->expression._Block;
+                    auto _result = build_block(_ep, builder, block, indent);
+                    if (_result != nullptr)
+                        return _result;
+                    break;
+                }
+                case Expression::If: {
+                    auto if_ = operand->expression._If;
+                    auto _result = build_if(_ep, builder, if_, indent);
+                    if (_result != nullptr)
+                        return _result;
+                    break;
+                }
+                    return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "If")));
+                case Expression::For:
+                    return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "For")));
+                case Expression::While:
+                    return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "While")));
+                case Expression::SizeOf:
+                    return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "While")));
+                case Expression::Return:
+                    return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "While")));
+            }
+        }
+        
+        return nullptr;
+    }
+
+    TranspilerError* build_tuple(Page* _ep, StringBuilder& builder, Tuple& tuple, String indent) {
+        auto tuple_iterator = VectorIterator<Component>(&tuple.components);
+        bool first = true;
+        bool isStatic = true;
+        builder.append('(');
+        while (auto property = tuple_iterator.next()) {
+            if (first) {
+                first = false;
+            }
+            else {
+                builder.append(", ");
+            }
+            build_operands(_ep, builder, property->value, indent);
+        }
+        builder.append(')');
+        return nullptr;
+    }
+
+    TranspilerError* build_matrix(Page* _ep, StringBuilder& builder, Matrix& matrix, String indent) {
+        auto operations_iterator = VectorIterator<Operation>(&matrix.operations);
+        bool first = true;
+        bool isStatic = true;
+        builder.append('[');
+        while (auto operation = operations_iterator.next()) {
+            if (first) {
+                first = false;
+            }
+            else {
+                builder.append(", ");
+            }
+            build_operation(_ep, builder, *operation, indent);
+        }
+        builder.append(']');
+        return nullptr;
+    }
+
+    TranspilerError* build_variable(Page* _ep, StringBuilder& builder, String variable) {
+        builder.append(variable);
+        return nullptr;
+    }
+
+    TranspilerError* build_block(Page* _ep, StringBuilder& builder, Block& block, String indent) {
+        Region _r;
+        if (indent.equals("    ")) {
+            {
+                auto _result = build_statements(_ep, builder, block.statements, indent);
+                if (_result != nullptr)
+                    return _result;
+            }
+        }
+        else {
+            StringBuilder& indent_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(indent);
+            indent_builder.append("    ");
+            builder.append('\n');
+            builder.append(indent);
+            builder.append('{');
+            {
+                auto _result = build_statements(_ep, builder, block.statements, indent_builder.to_string(_r.get_page()));
+                if (_result != nullptr)
+                    return _result;
+            }
+            builder.append('\n');
+            builder.append(indent);
+            builder.append('}');
+        }
+        return nullptr;
+    }
+
+    TranspilerError* build_if(Page* _ep, StringBuilder& builder, If& if_, String indent) {
+        Region _r;
+        builder.append('\n');
+        builder.append(indent);
+        builder.append("if (");
+        {
+            auto _result = build_operands(_ep, builder, if_.condition, indent);
+            if (_result != nullptr)
+                return _result;
+        }
+        builder.append(") { ");
+        {
+            auto _result = build_action(_ep, builder, if_.consequent, indent);
+            if (_result != nullptr)
+                return _result;
+        }
+        builder.append("}");
+        if (if_.alternative != nullptr) {
+            builder.append(" else { ");
+            {
+                auto _result = build_action(_ep, builder, *if_.alternative, indent);
+                if (_result != nullptr)
+                    return _result;
+            }
+            builder.append("}");
+        }
+        builder.append(';');
+
+        return nullptr;
+    }
+
+    TranspilerError* build_statements(Page* _ep, StringBuilder& builder, Vector<Statement>& statements, String indent) {
+        auto statment_iterator = VectorIterator<Statement>(&statements);
+        while (auto statement = statment_iterator.next()) {
+            switch (statement->_tag) {
+                case Statement::Action: {
+                    auto action = statement->_Action;
+                    auto _result = build_action(_ep, builder, action, indent);
+                    if (_result != nullptr)
+                        return _result;
+                    break;
+                }
+                case Statement::Binding:{
+                    auto binding = statement->_Binding;
+                    auto _result = build_binding(_ep, builder, binding, indent);
+                    if (_result != nullptr)
+                        return _result;
+                    break;
+                }
+            }
+        }
+        return nullptr;
     }
 
     void function_prefix(StringBuilder& builder, Function* function, bool indent) {
