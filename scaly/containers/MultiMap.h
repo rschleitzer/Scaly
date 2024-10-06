@@ -3,9 +3,39 @@ namespace containers {
 
 using namespace scaly::memory;
 
+template<class K, class V> struct MultiMap;
+
+template<class K, class V>
+struct MultiMapIterator {
+    Vector<Vector<KeyValuePair<K, Vector<V>>>>* slots;
+    VectorIterator<Vector<KeyValuePair<K, Vector<V>>>> slot_iterator;
+    VectorIterator<KeyValuePair<K, Vector<V>>> element_iterator;
+
+    MultiMapIterator<K, V>(const MultiMap<K, V>& multi_map) 
+        : slot_iterator(VectorIterator<Vector<KeyValuePair<K, Vector<V>>>>(multi_map.slots)), element_iterator(VectorIterator<KeyValuePair<K, Vector<V>>>(slot_iterator.next())) {}
+
+    Vector<V>* next() {
+        while (true) {
+            auto ret = element_iterator.next();
+            if (ret != nullptr)
+                return &(*ret).value;
+            
+            auto next_slot = slot_iterator.next();
+            if (next_slot == nullptr)
+                return nullptr;
+            
+            element_iterator = VectorIterator<KeyValuePair<K, Vector<V>>>(next_slot);
+        }
+    }
+};
+
 template<class K, class V>
 struct MultiMap : Object {
     Vector<Vector<KeyValuePair<K, Vector<V>>>>* slots;
+
+    MultiMap<K, V>() {
+        this->slots = nullptr;
+    };
 
     MultiMap<K, V>(Page* _rp, MultiMapBuilder<K, V>& multi_map_builder) {
         Region _r;

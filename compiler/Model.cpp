@@ -402,14 +402,16 @@ struct Structure {
     Vector<Initializer> initializers;
     DeInitializer* deinitializer;
     HashMap<String, Nameable> symbols;
-    Structure(Span span, bool private_, HashMap<String, Property> properties, Vector<Use> uses, Vector<Initializer> initializers, DeInitializer* deinitializer, HashMap<String, Nameable> symbols)
+    MultiMap<String, Function> functions;
+    Structure(Span span, bool private_, HashMap<String, Property> properties, Vector<Use> uses, Vector<Initializer> initializers, DeInitializer* deinitializer, HashMap<String, Nameable> symbols, MultiMap<String, Function> functions)
       : span(span),
         private_(private_),
         properties(properties),
         uses(uses),
         initializers(initializers),
         deinitializer(deinitializer),
-        symbols(symbols) {}
+        symbols(symbols),
+        functions(functions) {}
 };
 
 
@@ -436,9 +438,11 @@ struct Union : Object {
 struct Namespace : Object {
     Span span;
     HashMap<String, Nameable> symbols;
-    Namespace(Span span, HashMap<String, Nameable> symbols)
+    MultiMap<String, Function> functions;
+    Namespace(Span span, HashMap<String, Nameable> symbols, MultiMap<String, Function> functions)
       : span(span),
-        symbols(symbols) {}
+        symbols(symbols),
+        functions(functions) {}
 };
 
 struct Definition {
@@ -495,12 +499,14 @@ struct Module : Object {
     String name;
     Vector<Use> uses;
     HashMap<String, Nameable> symbols;
-    Module(bool private_, String file, String name, Vector<Use> uses, HashMap<String, Nameable> symbols)
+    MultiMap<String, Function> functions;
+    Module(bool private_, String file, String name, Vector<Use> uses, HashMap<String, Nameable> symbols, MultiMap<String, Function> functions)
       : private_(private_),
         file(file),
         name(name),
         uses(uses),
-        symbols(symbols) {}
+        symbols(symbols),
+        functions(functions) {}
 };
 
 struct Program : Object {
@@ -519,13 +525,11 @@ struct Nameable {
         Module,
         Concept,
         Operator,
-        Functions,
     } _tag;
     union {
         struct Module _Module;
         struct Concept _Concept;
         struct Operator _Operator;
-        Vector<Function> _Functions;
     };
 };
 

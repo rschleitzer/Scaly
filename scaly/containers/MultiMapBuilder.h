@@ -33,9 +33,14 @@ struct MultiMapBuilder : Object {
     }
 
     void add(K key, V value) {
-        auto hash_code = key.hash();
-        if (this->slots == nullptr)
+        auto hash_size = get_prime(this->length + 1);
+        if (this->slots == nullptr || hash_size > this->slots->length)
             reallocate(this->length + 1);
+        add_internal(key, value);
+    }
+
+    void add_internal(K key, V value) {
+        auto hash_code = key.hash();
         auto slot_number = hash_code % this->slots->length;
         auto slot_list = (*(this->slots))[slot_number];
         auto iterator = slot_list->get_iterator();
@@ -48,12 +53,6 @@ struct MultiMapBuilder : Object {
 
         if (array == nullptr)
         {
-            auto hash_size = get_prime(this->length + 1);
-            if (hash_size > this->slots->length)
-                reallocate(this->length + 1);
-
-            slot_number = hash_code % this->slots->length;
-            slot_list = this->slots->get(slot_number);
             slot_list->add(this->slots->get_page(), Slot<KeyValuePair<K, Array<V>*>> {
                 .value = KeyValuePair<K, Array<V>*> {
                     .key = key,
