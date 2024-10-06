@@ -28,9 +28,8 @@ template<class T>
 struct HashSetBuilder : Object {
     size_t length;
     Vector<BuilderList<Slot<T>>>* slots;
-    Page* slots_page;
 
-    HashSetBuilder<T>() :length(0), slots(nullptr), slots_page(nullptr) {}
+    HashSetBuilder<T>() :length(0), slots(nullptr) {}
 
     HashSetBuilder<T>(Page* _rp, Vector<T>& vector) :HashSetBuilder<T>() {
         if (vector.length > 0) {
@@ -44,8 +43,8 @@ struct HashSetBuilder : Object {
 
     void reallocate(size_t size) {
         auto hash_size = get_prime(size);
-        this->slots_page = Page::get(this)->allocate_exclusive_page();
-        Vector<BuilderList<Slot<T>>>* slots = new(alignof(Vector<BuilderList<Slot<T>>>), this->slots_page) Vector<BuilderList<Slot<T>>>(this->slots_page, hash_size);
+        auto slots_page = Page::get(this)->allocate_exclusive_page();
+        Vector<BuilderList<Slot<T>>>* slots = new(alignof(Vector<BuilderList<Slot<T>>>), slots_page) Vector<BuilderList<Slot<T>>>(slots_page, hash_size);
 
         if (this->slots != nullptr) {
             auto vector_iterator = VectorIterator<BuilderList<Slot<T>>>(this->slots);
@@ -56,7 +55,7 @@ struct HashSetBuilder : Object {
                     auto hash_code = item->hash_code;
                     auto slot_number = hash_code % slots->length;
                     auto slot_list = (*(slots))[slot_number];
-                    slot_list->add(this->slots_page, *item);
+                    slot_list->add(slots_page, *item);
                 }
             }
             Page::get(this)->deallocate_exclusive_page(Page::get(this->slots));
@@ -82,7 +81,7 @@ struct HashSetBuilder : Object {
             }
         }
 
-        slot_list->add(this->slots_page, Slot<T> {
+        slot_list->add(this->slots->get_page(), Slot<T> {
             .value = value,
             .hash_code = hash_code,
         });

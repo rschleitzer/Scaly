@@ -7,14 +7,13 @@ template<class K, class V>
 struct MultiMapBuilder : Object {
     size_t length;
     Vector<BuilderList<Slot<KeyValuePair<K, Array<V>*>>>>* slots;
-    Page* slots_page;
 
-    MultiMapBuilder<K, V>() :length(0), slots(nullptr), slots_page(nullptr) {}
+    MultiMapBuilder<K, V>() :length(0), slots(nullptr) {}
 
     void reallocate(size_t size) {
         auto hash_size = get_prime(size);
-        this->slots_page = Page::get(this)->allocate_exclusive_page();
-        auto slots = new(alignof(Vector<BuilderList<Slot<KeyValuePair<K, Array<V>*>>>>), this->slots_page) Vector<BuilderList<Slot<KeyValuePair<K, Array<V>*>>>>(this->slots_page, hash_size);
+        auto slots_page = Page::get(this)->allocate_exclusive_page();
+        auto slots = new(alignof(Vector<BuilderList<Slot<KeyValuePair<K, Array<V>*>>>>), slots_page) Vector<BuilderList<Slot<KeyValuePair<K, Array<V>*>>>>(slots_page, hash_size);
 
         if (this->slots != nullptr) {
             auto vector_iterator = VectorIterator<BuilderList<Slot<KeyValuePair<K, Array<V>*>>>>(this->slots);
@@ -25,7 +24,7 @@ struct MultiMapBuilder : Object {
                     auto hash_code = item->hash_code;
                     auto slot_number = hash_code % slots->length;
                     auto slot_list = (*(slots))[slot_number];
-                    slot_list->add(this->slots_page, *item);
+                    slot_list->add(slots_page, *item);
                 }
             }
             Page::get(this)->deallocate_exclusive_page(Page::get(this->slots));
@@ -55,7 +54,7 @@ struct MultiMapBuilder : Object {
 
             slot_number = hash_code % this->slots->length;
             slot_list = this->slots->get(slot_number);
-            slot_list->add(this->slots_page, Slot<KeyValuePair<K, Array<V>*>> {
+            slot_list->add(this->slots->get_page(), Slot<KeyValuePair<K, Array<V>*>> {
                 .value = KeyValuePair<K, Array<V>*> {
                     .key = key,
                     .value = new (alignof(Array<V>), Page::get(this)) Array<V>(),
