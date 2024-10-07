@@ -196,9 +196,9 @@ struct For : Object {
 
 struct While : Object {
     Span span;
-    Vector<Operand> expression;
+    Vector<Operand> condition;
     Action action;
-    While(Span span, Vector<Operand> expression, Action action) : span(span), expression(expression), action(action) {}
+    While(Span span, Vector<Operand> condition, Action action) : span(span), condition(condition), action(action) {}
 };
 
 struct SizeOf : Object {

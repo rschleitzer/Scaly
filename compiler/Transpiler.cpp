@@ -374,8 +374,13 @@ struct Transpiler : Object {
                     return _result;
                 break;
             }
-            case Action::Mutation:
-                return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "Mutation")));
+            case Action::Mutation:  {
+                auto mutation = action._Mutation;
+                auto _result = build_mutation(_ep, builder, mutation, indent);
+                if (_result != nullptr)
+                    return _result;
+                break;
+            }
         }
         return nullptr;
     }
@@ -387,7 +392,8 @@ struct Transpiler : Object {
                 break;
             }
             case Binding::Extendable: {
-                return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "Extendable")));
+                builder.append("\n auto ");
+                break;
             }
             case Binding::Mutable: {
                 builder.append("\n auto");
@@ -403,6 +409,19 @@ struct Transpiler : Object {
         builder.append(" = ");
 
         auto _result = build_operation(_ep, builder, binding.operation, indent);
+        if (_result != nullptr)
+            return _result;
+        return nullptr;
+    }
+
+    TranspilerError* build_mutation(Page* _ep, StringBuilder& builder, Mutation& mutation, String indent) {
+        builder.append('\n');
+        builder.append(indent);
+        auto _result = build_operation(_ep, builder, mutation.source, indent);
+        if (_result != nullptr)
+            return _result;
+        builder.append(" = ");
+        _result = build_operation(_ep, builder, mutation.target, indent);
         if (_result != nullptr)
             return _result;
         return nullptr;
@@ -460,15 +479,29 @@ struct Transpiler : Object {
                         return _result;
                     break;
                 }
-                    return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "If")));
                 case Expression::For:
                     return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "For")));
-                case Expression::While:
-                    return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "While")));
-                case Expression::SizeOf:
-                    return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "While")));
-                case Expression::Return:
-                    return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "While")));
+                case Expression::While: {
+                    auto while_ = operand->expression._While;
+                    auto _result = build_while(_ep, builder, while_, indent);
+                    if (_result != nullptr)
+                        return _result;
+                    break;
+                }
+                case Expression::SizeOf: {
+                    auto sizeof_ = operand->expression._SizeOf;
+                    auto _result = build_sizeof(_ep, builder, sizeof_, indent);
+                    if (_result != nullptr)
+                        return _result;
+                    break;
+                }
+                case Expression::Return: {
+                    auto return_ = operand->expression._Return;
+                    auto _result = build_return(_ep, builder, return_, indent);
+                    if (_result != nullptr)
+                        return _result;
+                    break;
+                }
             }
         }
         
@@ -571,6 +604,48 @@ struct Transpiler : Object {
         }
         builder.append(';');
 
+        return nullptr;
+    }
+
+    TranspilerError* build_while(Page* _ep, StringBuilder& builder, While& while_, String indent) {
+        Region _r;
+        builder.append('\n');
+        builder.append(indent);
+        builder.append("while (");
+        {
+            auto _result = build_operands(_ep, builder, while_.condition, indent);
+            if (_result != nullptr)
+                return _result;
+        }
+        builder.append(") { ");
+        {
+            auto _result = build_action(_ep, builder, while_.action, indent);
+            if (_result != nullptr)
+                return _result;
+        }
+        builder.append("};");
+        return nullptr;
+    }
+
+    TranspilerError* build_sizeof(Page* _ep, StringBuilder& builder, SizeOf& sizeof_, String indent) {
+        Region _r;
+        builder.append("sizeof(");
+        build_type(builder, &sizeof_.type);
+        builder.append(")");
+        return nullptr;
+    }
+
+    TranspilerError* build_return(Page* _ep, StringBuilder& builder, Return& return_, String indent) {
+        Region _r;
+        builder.append('\n');
+        builder.append(indent);
+        builder.append("return (");
+        {
+            auto _result = build_operands(_ep, builder, return_.result, indent);
+            if (_result != nullptr)
+                return _result;
+        }
+        builder.append(");");
         return nullptr;
     }
 
