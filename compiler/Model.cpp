@@ -121,9 +121,9 @@ struct Property {
     bool private_;
     String* name;
     Type* type;
-    Operation* initializer;
+    Vector<Operand>* initializer;
     Vector<Attribute> attributes;
-    Property(Span span, bool private_, String* name, Type* type, Operation* initializer, Vector<Attribute> attributes)
+    Property(Span span, bool private_, String* name, Type* type, Vector<Operand>* initializer, Vector<Attribute> attributes)
       : span(span),
         private_(private_),
         name(name),

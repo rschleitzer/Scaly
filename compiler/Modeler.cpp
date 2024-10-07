@@ -36,9 +36,12 @@ Result<Property, ModelError> handle_property(Page* _rp, Page* _ep, bool private_
         type = _type_result._Ok;
     }
 
-    Operation* initializer = nullptr;
+    Vector<Operand>* initializer = nullptr;
     if (property.initializer != nullptr) {
         auto _initializer_result = handle_operands(_rp, _ep, *(property.initializer->operands), file);
+        if (_initializer_result._tag == Result<Type, ModelError>::Error)
+            return Result<Property, ModelError> { ._tag = Result<Property, ModelError>::Error, ._Error = _initializer_result._Error };
+        initializer = new (alignof(Vector<Operand>), _rp) Vector<Operand> (_rp, _initializer_result._Ok);
     }
 
     List<Attribute>& attributes = *new(alignof(List<Attribute>), _r.get_page()) List<Attribute>();
@@ -139,6 +142,7 @@ Result<HashMap<String, Property>, ModelError> handle_structure(Page* _rp, Page* 
                         return Result<HashMap<String, Property>, ModelError> { ._tag = Result<HashMap<String, Property>, ModelError>::Error, ._Error = _property_result._Error };
                     auto property = _property_result._Ok;
                     properties_builder.add(String(_rp, *property.name), property);
+                    property = _property_result._Ok;
                 }
                 break;
             }

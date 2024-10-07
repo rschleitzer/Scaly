@@ -242,6 +242,7 @@ struct Transpiler : Object {
             header_builder.append(" : Object");
         header_builder.append(" {");
 
+        bool must_build_default_initializer = false;
         auto property_iterator = HashMapIterator<String, Property>(structure.properties);
         while (auto property = property_iterator.next()) {
             if (property->type) {
@@ -256,7 +257,13 @@ struct Transpiler : Object {
                 header_builder.append(*property->name);
                 header_builder.append(';');
             }
+
+            if (property->initializer != nullptr)
+                must_build_default_initializer = true;
         }
+
+        if (must_build_default_initializer)
+            build_default_initializer(_ep, header_builder, cpp_builder, name, parameters.length > 0, structure.properties);
 
         auto initializers_iterator = VectorIterator<Initializer>(&structure.initializers);
         while (auto initializer = initializers_iterator.next()) {
@@ -291,6 +298,100 @@ struct Transpiler : Object {
         }
 
         header_builder.append("\n};\n");
+        return nullptr; 
+    }
+
+    TranspilerError* build_default_initializer(Page* _ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, bool is_generic, HashMap<String, Property>& properties) {
+        Region _r;
+        build_initializer_header(header_builder, cpp_builder, name, is_generic);
+        if (is_generic) {
+            build_initializer_list(_ep, header_builder, is_generic, properties, String(_r.get_page(), "        "));
+            header_builder.append(" {}");
+        }
+        else {
+            build_initializer_list(_ep, cpp_builder, is_generic, properties, String(_r.get_page(), "    "));
+            cpp_builder.append(" {}");
+
+        }
+        return nullptr;
+    }
+
+    TranspilerError* build_initializer_list(Page* _ep, StringBuilder& builder, bool is_generic, HashMap<String, Property>& properties, String indent) {
+        builder.append("() : ");
+        auto property_iterator = HashMapIterator<String, Property>(properties);
+        bool first = true;
+        while (auto property = property_iterator.next()) {
+            if (property->initializer == nullptr)
+                continue;
+            if (first) {
+                first = false;
+            }
+            else {
+                builder.append(", ");
+            }
+            builder.append(property->name[0]);
+            builder.append('(');
+            auto _result = build_operands(_ep, builder, *property->initializer, indent);
+            if (_result != nullptr)
+                return _result;
+            builder.append(')');
+        }
+        return nullptr;
+    }
+
+    TranspilerError* build_initializer(Page* _ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, bool is_generic, Initializer* initializer) {
+        Region _r;
+        build_initializer_header(header_builder, cpp_builder, name, is_generic);
+        if (!is_generic) {
+            build_input(cpp_builder, initializer->input);
+            cpp_builder.append(' ');
+            cpp_builder.append('{');
+            cpp_builder.append("};");
+        }
+        build_input(header_builder, initializer->input);
+        if (is_generic) {
+            header_builder.append('{');
+            header_builder.append("};");
+        }
+        else {
+            header_builder.append(';');
+        }
+
+        return nullptr; 
+    }
+
+    void build_initializer_header(StringBuilder& header_builder, StringBuilder& cpp_builder, String name, bool is_generic) {
+        header_builder.append("\n    ");
+        header_builder.append(name);
+        if (!is_generic) {
+            cpp_builder.append('\n');
+            cpp_builder.append(name);
+            cpp_builder.append("::");
+            cpp_builder.append(name);
+        }        
+    }
+    TranspilerError* build_deinitializer(Page* _ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, bool is_generic, DeInitializer* deInitializer) {
+        Region _r;
+        header_builder.append("\n    ");
+        header_builder.append('~');
+        header_builder.append(name);
+        if (!is_generic) {
+            cpp_builder.append('\n');
+            cpp_builder.append(name);
+            cpp_builder.append("::");
+            cpp_builder.append('~');
+            cpp_builder.append(name);
+            cpp_builder.append("() {");
+            cpp_builder.append("};");
+        }
+        if (is_generic) {
+            header_builder.append("() {");
+            header_builder.append("};");
+        }
+        else {
+            header_builder.append("();");
+        }
+
         return nullptr; 
     }
 
@@ -696,57 +797,6 @@ struct Transpiler : Object {
         header_builder.append(operator_.name);
         build_input(header_builder, operator_.input);
         header_builder.append(';');
-        return nullptr; 
-    }
-
-    TranspilerError* build_initializer(Page* _ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, bool is_generic, Initializer* initializer) {
-        Region _r;
-        header_builder.append("\n    ");
-        header_builder.append(name);
-        if (!is_generic) {
-            cpp_builder.append('\n');
-            cpp_builder.append(name);
-            cpp_builder.append("::");
-            cpp_builder.append(name);
-            build_input(cpp_builder, initializer->input);
-            cpp_builder.append(' ');
-            cpp_builder.append('{');
-            cpp_builder.append("};");
-        }
-        build_input(header_builder, initializer->input);
-        if (is_generic) {
-            header_builder.append('{');
-            header_builder.append("};");
-        }
-        else {
-            header_builder.append(';');
-        }
-
-        return nullptr; 
-    }
-
-    TranspilerError* build_deinitializer(Page* _ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, bool is_generic, DeInitializer* deInitializer) {
-        Region _r;
-        header_builder.append("\n    ");
-        header_builder.append('~');
-        header_builder.append(name);
-        if (!is_generic) {
-            cpp_builder.append('\n');
-            cpp_builder.append(name);
-            cpp_builder.append("::");
-            cpp_builder.append('~');
-            cpp_builder.append(name);
-            cpp_builder.append("() {");
-            cpp_builder.append("};");
-        }
-        if (is_generic) {
-            header_builder.append("() {");
-            header_builder.append("};");
-        }
-        else {
-            header_builder.append("();");
-        }
-
         return nullptr; 
     }
 
