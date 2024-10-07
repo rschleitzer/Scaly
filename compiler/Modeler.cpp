@@ -141,7 +141,7 @@ Result<Structure, ModelError> handle_class(Page* _rp, Page* _ep, String name, St
 
     if (class_syntax.body == nullptr) {
         return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Ok,
-            ._Ok = Structure(Span(class_syntax.start, class_syntax.end), private_, properties, Vector<Use>(_rp, uses), Vector<Initializer>(), nullptr, HashMap<String, Nameable>(), MultiMap<String, Function>())
+            ._Ok = Structure(Span(class_syntax.start, class_syntax.end), private_, properties, Vector<Use>(_rp, uses), Vector<Initializer>(), nullptr, HashMap<String, Nameable>())
         };
     }
     else {
@@ -247,8 +247,15 @@ Result<Structure, ModelError> handle_class(Page* _rp, Page* _ep, String name, St
             }
         }
 
+        auto multi_map = MultiMap<String, Function>(_r.get_page(), functions_builder);
+        auto multi_map_iterator = MultiMapIterator<String, Function>(multi_map);
+        while (auto functions = multi_map_iterator.next()) {
+            auto name = (*functions)[0]->name;
+            symbols_builder.add(String(name), Nameable { ._tag = Nameable::Functions, ._Functions = Vector<Function>(_rp, *functions) });
+        }
+
         return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Ok,
-            ._Ok = Structure(Span(class_syntax.start, class_syntax.end), private_, properties, Vector<Use>(_rp, uses), Vector<Initializer>(_rp, initializers_builder), deInitializer, HashMap<String, Nameable>(_rp, symbols_builder), MultiMap<String, Function>(_rp, functions_builder))
+            ._Ok = Structure(Span(class_syntax.start, class_syntax.end), private_, properties, Vector<Use>(_rp, uses), Vector<Initializer>(_rp, initializers_builder), deInitializer, HashMap<String, Nameable>(_rp, symbols_builder))
         };
     }
 }
@@ -370,8 +377,15 @@ Result<Namespace, ModelError> handle_namespace(Page* _rp, Page* _ep, String name
         }
     }
 
+    auto multi_map = MultiMap<String, Function>(_r.get_page(), functions_builder);
+    auto multi_map_iterator = MultiMapIterator<String, Function>(multi_map);
+    while (auto functions = multi_map_iterator.next()) {
+        auto name = (*functions)[0]->name;
+        symbols_builder.add(String(name), Nameable { ._tag = Nameable::Functions, ._Functions = Vector<Function>(_rp, *functions) });
+    }
+
     Span span(namespace_syntax.start, namespace_syntax.end);
-    auto ret = Namespace(span, HashMap<String, Nameable>(_rp, symbols_builder), MultiMap<String, Function>(_rp, functions_builder));
+    auto ret = Namespace(span, HashMap<String, Nameable>(_rp, symbols_builder));
     return Result<Namespace, ModelError> { ._tag = Result<Namespace, ModelError>::Ok, ._Ok = ret };
 }
 

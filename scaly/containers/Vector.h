@@ -53,6 +53,15 @@ template<class T> struct Vector : Object {
         }
     }
 
+    Vector<T>(Page* _rp, const Vector<T>& other) : length(other.length) {
+        if (this->length > 0) {
+            this->data = (T*) _rp->allocate_raw(length * sizeof(T), alignof(T));
+            memcpy(this->data, other.data, length * sizeof(T));
+        } else {
+            this->data = nullptr;
+        }
+    }
+
     Vector<T>(Page* _rp, Array<T>& array) : length(array.length) {
         if (this->length > 0) {
             this->data = (T*) _rp->allocate_raw(length * sizeof(T), alignof(T));

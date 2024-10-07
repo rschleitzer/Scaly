@@ -402,16 +402,14 @@ struct Structure {
     Vector<Initializer> initializers;
     DeInitializer* deinitializer;
     HashMap<String, Nameable> symbols;
-    MultiMap<String, Function> functions;
-    Structure(Span span, bool private_, HashMap<String, Property> properties, Vector<Use> uses, Vector<Initializer> initializers, DeInitializer* deinitializer, HashMap<String, Nameable> symbols, MultiMap<String, Function> functions)
+    Structure(Span span, bool private_, HashMap<String, Property> properties, Vector<Use> uses, Vector<Initializer> initializers, DeInitializer* deinitializer, HashMap<String, Nameable> symbols)
       : span(span),
         private_(private_),
         properties(properties),
         uses(uses),
         initializers(initializers),
         deinitializer(deinitializer),
-        symbols(symbols),
-        functions(functions) {}
+        symbols(symbols) {}
 };
 
 
@@ -438,11 +436,9 @@ struct Union : Object {
 struct Namespace : Object {
     Span span;
     HashMap<String, Nameable> symbols;
-    MultiMap<String, Function> functions;
-    Namespace(Span span, HashMap<String, Nameable> symbols, MultiMap<String, Function> functions)
+    Namespace(Span span, HashMap<String, Nameable> symbols)
       : span(span),
-        symbols(symbols),
-        functions(functions) {}
+        symbols(symbols) {}
 };
 
 struct Definition {
@@ -525,11 +521,13 @@ struct Nameable {
         Module,
         Concept,
         Operator,
+        Functions,
     } _tag;
     union {
         struct Module _Module;
         struct Concept _Concept;
         struct Operator _Operator;
+        Vector<Function> _Functions;
     };
 };
 

@@ -11,7 +11,8 @@ struct MultiMapIterator {
     VectorIterator<KeyValuePair<K, Vector<V>>> element_iterator;
 
     MultiMapIterator<K, V>(const MultiMap<K, V>& multi_map) 
-        : slot_iterator(VectorIterator<Vector<KeyValuePair<K, Vector<V>>>>(multi_map.slots)), element_iterator(VectorIterator<KeyValuePair<K, Vector<V>>>(slot_iterator.next())) {}
+        : slot_iterator(VectorIterator<Vector<KeyValuePair<K, Vector<V>>>>(multi_map.slots)), 
+          element_iterator(VectorIterator<KeyValuePair<K, Vector<V>>>(slot_iterator.next())) {}
 
     Vector<V>* next() {
         while (true) {

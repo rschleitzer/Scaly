@@ -191,12 +191,6 @@ struct Transpiler : Object {
         namespace_close = namespace_close_builder.to_string(_r.get_page());
         StringBuilder& main_header_builder = *new (alignof(StringBuilder), _r.get_page()) StringBuilder("../");
         main_header_builder.append(main_header);
-        auto functions_iterator = MultiMapIterator<String, Function>(namespace_.functions);
-        while(auto functions = functions_iterator.next()) {
-            auto _result = build_functions(_ep, header_builder, cpp_builder, *functions, &name, false);
-            if (_result != nullptr)
-                return new(alignof(TranspilerError), _ep) TranspilerError(*_result);                    
-        }
         return build_symbols(_ep, path, source, name, header_builder, cpp_builder, main_header_builder.to_string(_r.get_page()), namespace_open, namespace_close, namespace_.symbols);
     }
 
@@ -205,27 +199,31 @@ struct Transpiler : Object {
         auto member_iterator = HashMapIterator<String, Nameable>(symbols);
         while (auto member = member_iterator.next()) {
             switch (member->_tag) {
-                case Nameable::Concept:
-                    {
-                        auto _result = build_concept(_ep, path, source, header_builder, cpp_builder, main_header, namespace_open, namespace_close, member->_Concept);
-                        if (_result != nullptr)
-                            return new(alignof(TranspilerError), _ep) TranspilerError(*_result);
-                    }
+                case Nameable::Functions: {
+                    auto _result = build_functions(_ep, header_builder, cpp_builder, member->_Functions, &name, false);
+                    if (_result != nullptr)
+                        return new(alignof(TranspilerError), _ep) TranspilerError(*_result);                    
                     break;
-                case Nameable::Module:
-                    {
-                        auto _module = member->_Module;
-                        header_builder.append("#include \"");
-                        header_builder.append(name);
-                        header_builder.append('/');
-                        header_builder.append(String(_r.get_page(), _module.name));
-                        header_builder.append(".h\"\n");
-                        StringBuilder& namespace_close_builder = *new (alignof(StringBuilder), _r.get_page()) StringBuilder(namespace_close);
-                        auto _result = build_module(_ep, path, _module, main_header, namespace_open, namespace_close);
-                        if (_result != nullptr)
-                            return new(alignof(TranspilerError), _ep) TranspilerError(*_result);
-                    }
+                }
+                case Nameable::Concept: {
+                    auto _result = build_concept(_ep, path, source, header_builder, cpp_builder, main_header, namespace_open, namespace_close, member->_Concept);
+                    if (_result != nullptr)
+                        return new(alignof(TranspilerError), _ep) TranspilerError(*_result);
                     break;
+                }
+                case Nameable::Module: {
+                    auto _module = member->_Module;
+                    header_builder.append("#include \"");
+                    header_builder.append(name);
+                    header_builder.append('/');
+                    header_builder.append(String(_r.get_page(), _module.name));
+                    header_builder.append(".h\"\n");
+                    StringBuilder& namespace_close_builder = *new (alignof(StringBuilder), _r.get_page()) StringBuilder(namespace_close);
+                    auto _result = build_module(_ep, path, _module, main_header, namespace_open, namespace_close);
+                    if (_result != nullptr)
+                        return new(alignof(TranspilerError), _ep) TranspilerError(*_result);
+                    break;
+                }
                 case Nameable::Operator:
                     return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "namespace local operator")));
                 case Nameable::Package:
@@ -270,6 +268,12 @@ struct Transpiler : Object {
         auto member_iterator = HashMapIterator<String, Nameable>(structure.symbols);
         while (auto member = member_iterator.next()) {
             switch (member->_tag) {
+                case Nameable::Functions: {
+                    auto _result = build_functions(_ep, header_builder, cpp_builder, member->_Functions, &name, parameters.length > 0);
+                    if (_result != nullptr)
+                        return new(alignof(TranspilerError), _ep) TranspilerError(*_result);                    
+                    break;
+                }
                 case Nameable::Operator: {
                         auto _result = build_operator(_ep, header_builder, cpp_builder, member->_Operator);
                         if (_result != nullptr)
@@ -283,13 +287,6 @@ struct Transpiler : Object {
                 case Nameable::Concept:
                     return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "structure local concept")));
             }
-        }
-
-        auto functions_iterator = MultiMapIterator<String, Function>(structure.functions);
-        while(auto functions = functions_iterator.next()) {
-            auto _result = build_functions(_ep, header_builder, cpp_builder, *functions, &name, parameters.length > 0);
-            if (_result != nullptr)
-                return new(alignof(TranspilerError), _ep) TranspilerError(*_result);                    
         }
 
         header_builder.append("\n};\n");
