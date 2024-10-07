@@ -236,6 +236,7 @@ struct Transpiler : Object {
 
     TranspilerError* build_structure(Page* _ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, Structure& structure, Vector<GenericParameter> parameters) {
         Region _r;
+        header_builder.append('\n');
         full_struct_name(header_builder, name, parameters);
         if (!name.equals(String(_r.get_page(), "Object")))
             header_builder.append(" : Object");
@@ -401,9 +402,9 @@ struct Transpiler : Object {
             }
         }
 
-        if (binding.property.name != nullptr) {
+        if (binding.item.name != nullptr) {
             builder.append(' ');
-            builder.append(*binding.property.name);
+            builder.append(*binding.item.name);
         }
 
         builder.append(" = ");
@@ -749,10 +750,10 @@ struct Transpiler : Object {
         return nullptr; 
     }
 
-    bool build_input(StringBuilder& builder, Vector<Property> input) {
+    bool build_input(StringBuilder& builder, Vector<Item> input) {
         Region _r;
         builder.append('(');
-        auto input_iterator = VectorIterator<Property>(&input);
+        auto input_iterator = VectorIterator<Item>(&input);
         bool first = true;
         bool isStatic = true;
         while (auto property = input_iterator.next()) {

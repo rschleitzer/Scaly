@@ -7,13 +7,11 @@ define List[T @summary "The element type of the list."]
     and you can remove an element as well."
 
 (
-    head: pointer[Node[T]]
+    head: pointer[Node[T]] (null)
         @summary "The head node of the list."
         @remarks "The head of the list will always be the last element added."
 )
 {
-    init set head: null
-
     procedure add#r(this: List[T], element: T)
     {
         let new_node Node[T]#r(element, this.head)

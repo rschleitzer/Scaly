@@ -140,8 +140,16 @@
 
 <syntax id = Parameters
     <content link = left_paren
-    <content link = Property              multiple optional property = properties
+    <content link = Item                  multiple optional property = items
     <content link = right_paren
+
+<syntax id = Item                         multiple
+    <content identifier                                     property = name
+    <content link = TypeAnnotation                 optional property = annotation
+    <content link = comma                          optional
+    <content colon                                 optional
+    <content link = Attribute             multiple optional property = attributes
+    <content colon                                 optional
 
 <syntax id = Throws
     <content link = throws
@@ -328,10 +336,16 @@
 <syntax id = Property                     multiple
     <content identifier                                     property = name
     <content link = TypeAnnotation                 optional property = annotation
+    <content link = Initializer                    optional property = initializer
     <content link = comma                          optional
     <content colon                                 optional
     <content link = Attribute             multiple optional property = attributes
     <content colon                                 optional
+
+<syntax id = Initializer
+    <content link = left_paren
+    <content link = Operand               multiple          property = operands
+    <content link = right_paren
 
 <syntax id = Operand                      multiple
     <content link = Expression                              property = expression

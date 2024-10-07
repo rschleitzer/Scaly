@@ -24,6 +24,7 @@ Result<ProgramSyntax, ParserError> parse_program(Page* _rp, Page* _ep, const Str
 
 Result<Type*, ModelError> handle_type(Page* _rp, Page* _ep, TypeSyntax& type, String file);
 Result<Attribute, ModelError> handle_attribute(Page* _rp, Page* _ep, AttributeSyntax& attribute, String file);
+Result<Vector<Operand>, ModelError> handle_operands(Page* _rp, Page* _ep, Vector<OperandSyntax>& operands, String file);
 
 Result<Property, ModelError> handle_property(Page* _rp, Page* _ep, bool private_, PropertySyntax& property, String file) {
     Region _r;
@@ -33,6 +34,11 @@ Result<Property, ModelError> handle_property(Page* _rp, Page* _ep, bool private_
         if (_type_result._tag == Result<Type, ModelError>::Error)
             return Result<Property, ModelError> { ._tag = Result<Property, ModelError>::Error, ._Error = _type_result._Error };
         type = _type_result._Ok;
+    }
+
+    Operation* initializer = nullptr;
+    if (property.initializer != nullptr) {
+        auto _initializer_result = handle_operands(_rp, _ep, *(property.initializer->operands), file);
     }
 
     List<Attribute>& attributes = *new(alignof(List<Attribute>), _r.get_page()) List<Attribute>();
@@ -48,24 +54,50 @@ Result<Property, ModelError> handle_property(Page* _rp, Page* _ep, bool private_
             attributes.add(attribute);
         }
     }
-    return Result<Property, ModelError> { ._tag = Result<Property, ModelError>::Ok, ._Ok = Property(Span(property.start, property.end), false, new(alignof(String), _rp) String(_rp, property.name), type, Vector<Attribute>(_rp, attributes)) };
+    return Result<Property, ModelError> { ._tag = Result<Property, ModelError>::Ok, ._Ok = Property(Span(property.start, property.end), false, new(alignof(String), _rp) String(_rp, property.name), type, initializer, Vector<Attribute>(_rp, attributes)) };
 }
 
-Result<Vector<Property>, ModelError> handle_parameterset(Page* _rp, Page* _ep, ParameterSetSyntax& parameterSetSyntax, String file) {
+Result<Item, ModelError> handle_item(Page* _rp, Page* _ep, bool private_, ItemSyntax& item, String file) {
     Region _r;
-    List<Property>& parameters = *new(alignof(List<Property>), _r.get_page()) List<Property>();
+    Type* type = nullptr;
+    if (item.annotation != nullptr) {
+        auto _type_result = handle_type(_rp, _ep, item.annotation->type, file);
+        if (_type_result._tag == Result<Type, ModelError>::Error)
+            return Result<Item, ModelError> { ._tag = Result<Item, ModelError>::Error, ._Error = _type_result._Error };
+        type = _type_result._Ok;
+    }
+
+    List<Attribute>& attributes = *new(alignof(List<Attribute>), _r.get_page()) List<Attribute>();
+    if (item.attributes != nullptr) {
+        auto item_attributes = item.attributes;
+        auto _attribute_iterator = VectorIterator<AttributeSyntax>(item_attributes);
+        while (auto _attribute_syntax = _attribute_iterator.next()) {
+            auto attribute_syntax = *_attribute_syntax;
+            auto _attribute_result = handle_attribute(_rp, _ep, attribute_syntax, file);
+            if (_attribute_result._tag == Result<Attribute, ModelError>::Error)
+                return Result<Item, ModelError> { ._tag = Result<Item, ModelError>::Error, ._Error = _attribute_result._Error };
+            auto attribute = _attribute_result._Ok;
+            attributes.add(attribute);
+        }
+    }
+    return Result<Item, ModelError> { ._tag = Result<Item, ModelError>::Ok, ._Ok = Item(Span(item.start, item.end), false, new(alignof(String), _rp) String(_rp, item.name), type, Vector<Attribute>(_rp, attributes)) };
+}
+
+Result<Vector<Item>, ModelError> handle_parameterset(Page* _rp, Page* _ep, ParameterSetSyntax& parameterSetSyntax, String file) {
+    Region _r;
+    List<Item>& items = *new(alignof(List<Item>), _r.get_page()) List<Item>();
     switch (parameterSetSyntax._tag) {
         case ParameterSetSyntax::Parameters: {
             auto parameters_syntax = parameterSetSyntax._Parameters;
-            if (parameters_syntax.properties != nullptr) {
-                auto _property_syntax_iterator = VectorIterator<PropertySyntax>(parameters_syntax.properties);
-                while (auto _property_syntax = _property_syntax_iterator.next()) {
-                    auto property_syntax = *_property_syntax;
-                    auto _property_result = handle_property(_rp, _ep, false, property_syntax, file);
-                    if (_property_result._tag == Result<Property, ModelError>::Error)
-                        return Result<Vector<Property>, ModelError> { ._tag = Result<Vector<Property>, ModelError>::Error, ._Error = _property_result._Error };
-                    auto property = _property_result._Ok;
-                    parameters.add(property);
+            if (parameters_syntax.items != nullptr) {
+                auto _item_syntax_iterator = VectorIterator<ItemSyntax>(parameters_syntax.items);
+                while (auto _item_syntax = _item_syntax_iterator.next()) {
+                    auto item_syntax = *_item_syntax;
+                    auto _item_result = handle_item(_rp, _ep, false, item_syntax, file);
+                    if (_item_result._tag == Result<Item, ModelError>::Error)
+                        return Result<Vector<Item>, ModelError> { ._tag = Result<Vector<Item>, ModelError>::Error, ._Error = _item_result._Error };
+                    auto item = _item_result._Ok;
+                    items.add(item);
                 }
             }
         }
@@ -74,15 +106,15 @@ Result<Vector<Property>, ModelError> handle_parameterset(Page* _rp, Page* _ep, P
             auto type_syntax = parameterSetSyntax._Type;
             auto _type_result = handle_type(_rp, _ep, type_syntax, file);
             if (_type_result._tag == Result<Type, ModelError>::Error)
-                return Result<Vector<Property>, ModelError> { ._tag = Result<Vector<Property>, ModelError>::Error, ._Error = _type_result._Error };
+                return Result<Vector<Item>, ModelError> { ._tag = Result<Vector<Item>, ModelError>::Error, ._Error = _type_result._Error };
             auto type = _type_result._Ok;
-            parameters.add(Property(Span(type_syntax.start, type_syntax.end), false, nullptr, type, Vector<Attribute>()));
+            items.add(Item(Span(type_syntax.start, type_syntax.end), false, nullptr, type, Vector<Attribute>()));
         }
         break;
     }
-    return Result<Vector<Property>, ModelError> {
-        ._tag = Result<Vector<Property>, ModelError>::Ok, 
-        ._Ok = Vector<Property>(_rp, parameters) };
+    return Result<Vector<Item>, ModelError> {
+        ._tag = Result<Vector<Item>, ModelError>::Ok, 
+        ._Ok = Vector<Item>(_rp, items) };
 }
 
 Result<HashMap<String, Property>, ModelError> handle_structure(Page* _rp, Page* _ep, StructureSyntax& structure, String file) {    
@@ -612,7 +644,7 @@ Result<Vector<Statement>, ModelError> handle_statements(Page* _rp, Page* _ep, Ve
                 auto operation_result = handle_operation(_rp, _ep, binding, file);
                 if (operation_result._tag == Result<Operation, ModelError>::Error)
                     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = operation_result._Error };
-                statements_builder.add(Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Constant, Property(Span(binding.start, binding.end), false, new(alignof(String), _rp) String(_rp, statement->_Let.binding.name), type, Vector<Attribute>(_rp, 0)), operation_result._Ok) });
+                statements_builder.add(Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Constant, Item(Span(binding.start, binding.end), false, new(alignof(String), _rp) String(_rp, statement->_Let.binding.name), type, Vector<Attribute>(_rp, 0)), operation_result._Ok) });
                 return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Ok, ._Ok = Vector<Statement>(_rp, statements_builder) };
             }
             case StatementSyntax::Var: {
@@ -627,7 +659,7 @@ Result<Vector<Statement>, ModelError> handle_statements(Page* _rp, Page* _ep, Ve
                 auto operation_result = handle_operation(_rp, _ep, binding, file);
                 if (operation_result._tag == Result<Operation, ModelError>::Error)
                     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = operation_result._Error };
-                statements_builder.add(Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Extendable, Property(Span(binding.start, binding.end), false, new(alignof(String), _rp) String(_rp, statement->_Mutable.binding.name), type, Vector<Attribute>(_rp, 0)), operation_result._Ok) });
+                statements_builder.add(Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Extendable, Item(Span(binding.start, binding.end), false, new(alignof(String), _rp) String(_rp, statement->_Mutable.binding.name), type, Vector<Attribute>(_rp, 0)), operation_result._Ok) });
                 return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Ok, ._Ok = Vector<Statement>(_rp, statements_builder) };
             }
             case StatementSyntax::Mutable: {
@@ -642,7 +674,7 @@ Result<Vector<Statement>, ModelError> handle_statements(Page* _rp, Page* _ep, Ve
                 auto operation_result = handle_operation(_rp, _ep, binding, file);
                 if (operation_result._tag == Result<Operation, ModelError>::Error)
                     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = operation_result._Error };
-                statements_builder.add(Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Mutable, Property(Span(binding.start, binding.end), false, new(alignof(String), _rp) String(_rp, statement->_Mutable.binding.name), type, Vector<Attribute>(_rp, 0)), operation_result._Ok) });
+                statements_builder.add(Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Mutable, Item(Span(binding.start, binding.end), false, new(alignof(String), _rp) String(_rp, statement->_Mutable.binding.name), type, Vector<Attribute>(_rp, 0)), operation_result._Ok) });
                 return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Ok, ._Ok = Vector<Statement>(_rp, statements_builder) };
             }
             case StatementSyntax::Set:
@@ -661,8 +693,6 @@ Result<Vector<Statement>, ModelError> handle_statements(Page* _rp, Page* _ep, Ve
     
     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError> ::Ok, ._Ok = Vector<Statement>(_rp, statements_builder) };
 }
-
-Result<Vector<Operand>, ModelError> handle_operands(Page* _rp, Page* _ep, Vector<OperandSyntax>& operands, String file);
 
 Result<Component, ModelError> handle_component(Page* _rp, Page* _ep, ComponentSyntax& component, String file) {
     Region _r;
@@ -1201,8 +1231,8 @@ Result<Action, ModelError> handle_action(Page* _rp, Page* _ep, ActionSyntax& act
 }
 
 Result<Function, ModelError> build_function(Page* _rp, Page* _ep, size_t start, size_t end, TargetSyntax targetSyntax, bool private_, bool pure, String file) {
-    Vector<Property> input = Vector<Property>(_rp, 0);
-    Vector<Property> output = Vector<Property>(_rp, 0);
+    Vector<Item> input = Vector<Item>(_rp, 0);
+    Vector<Item> output = Vector<Item>(_rp, 0);
     switch (targetSyntax._tag) {
         case TargetSyntax::Routine:
             return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(file, String(_ep, "Non-Symbol Function"), Span(start, end)))) };
@@ -1212,7 +1242,7 @@ Result<Function, ModelError> build_function(Page* _rp, Page* _ep, size_t start, 
             if (symbol.routine.parameters != nullptr) {
                 ParameterSetSyntax& parameterSetSyntax = *symbol.routine.parameters;
                 auto _input_result = handle_parameterset(_rp, _ep, parameterSetSyntax, file);
-                if (_input_result._tag == Result<Vector<Property>, ModelError>::Error)
+                if (_input_result._tag == Result<Vector<Item>, ModelError>::Error)
                     return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Error, ._Error = _input_result._Error };
                 input = _input_result._Ok;
             }
@@ -1221,7 +1251,7 @@ Result<Function, ModelError> build_function(Page* _rp, Page* _ep, size_t start, 
             {
                 ParameterSetSyntax& parameterSetSyntax = symbol.routine.returns->parameters; 
                 auto _output_result = handle_parameterset(_rp, _ep, parameterSetSyntax, file);
-                if (_output_result._tag == Result<Vector<Property>, ModelError>::Error)
+                if (_output_result._tag == Result<Vector<Item>, ModelError>::Error)
                     return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Error, ._Error = _output_result._Error };
                 output = _output_result._Ok;
             }
@@ -1247,7 +1277,7 @@ Result<Function, ModelError> build_function(Page* _rp, Page* _ep, size_t start, 
 }
 
 Result<Initializer, ModelError> handle_initializer(Page* _rp, Page* _ep, InitSyntax& initializer, bool private_, String file) {
-    Vector<Property> input = Vector<Property>(_rp, 0);
+    Vector<Item> input = Vector<Item>(_rp, 0);
 
     if (initializer.parameters != nullptr) {
         ParameterSetSyntax& parameterSetSyntax = *initializer.parameters;
@@ -1271,8 +1301,8 @@ Result<DeInitializer*, ModelError> handle_deinitializer(Page* _rp, Page* _ep, De
 }
 
 Result<Operator, ModelError> handle_operator(Page* _rp, Page* _ep,  OperatorSyntax& operator_syntax, bool private_, String file) {
-    Vector<Property> input = Vector<Property>(_rp, 0);
-    Vector<Property> output = Vector<Property>(_rp, 0);
+    Vector<Item> input = Vector<Item>(_rp, 0);
+    Vector<Item> output = Vector<Item>(_rp, 0);
     auto start = operator_syntax.start;
     auto end = operator_syntax.end;
     Operation* operation = nullptr;
@@ -1284,7 +1314,7 @@ Result<Operator, ModelError> handle_operator(Page* _rp, Page* _ep,  OperatorSynt
             if (symbol.routine.parameters != nullptr) {
                 ParameterSetSyntax& parameterSetSyntax = *symbol.routine.parameters;
                 auto _input_result = handle_parameterset(_rp, _ep, parameterSetSyntax, file);
-                if (_input_result._tag == Result<Vector<Property>, ModelError>::Error)
+                if (_input_result._tag == Result<Vector<Item>, ModelError>::Error)
                     return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Error, ._Error = _input_result._Error };
                 input = _input_result._Ok;
             }
@@ -1292,7 +1322,7 @@ Result<Operator, ModelError> handle_operator(Page* _rp, Page* _ep,  OperatorSynt
             {
                 ParameterSetSyntax& parameterSetSyntax = symbol.routine.returns->parameters; 
                 auto _output_result = handle_parameterset(_rp, _ep, parameterSetSyntax, file);
-                if (_output_result._tag == Result<Vector<Property>, ModelError>::Error)
+                if (_output_result._tag == Result<Vector<Item>, ModelError>::Error)
                     return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Error, ._Error = _output_result._Error };
                 output = _output_result._Ok;
             }

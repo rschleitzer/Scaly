@@ -121,8 +121,24 @@ struct Property {
     bool private_;
     String* name;
     Type* type;
+    Operation* initializer;
     Vector<Attribute> attributes;
-    Property(Span span, bool private_, String* name, Type* type, Vector<Attribute> attributes)
+    Property(Span span, bool private_, String* name, Type* type, Operation* initializer, Vector<Attribute> attributes)
+      : span(span),
+        private_(private_),
+        name(name),
+        type(type),
+        initializer(initializer),
+        attributes(attributes) {}
+};
+
+struct Item {
+    Span span;
+    bool private_;
+    String* name;
+    Type* type;
+    Vector<Attribute> attributes;
+    Item(Span span, bool private_, String* name, Type* type, Vector<Attribute> attributes)
       : span(span),
         private_(private_),
         name(name),
@@ -139,10 +155,10 @@ struct Statement;
 
 struct Binding {
     enum Mutability { Constant, Extendable, Mutable, } binding_type;
-    Property property;
+    Item item;
     Operation operation;
-    Binding(Mutability binding_type, Property property, Operation operation)
-      : binding_type(binding_type), property(property), operation(operation) {}
+    Binding(Mutability binding_type, Item item, Operation operation)
+      : binding_type(binding_type), item(item), operation(operation) {}
 };
 
 struct Mutation : Object {
@@ -340,10 +356,10 @@ struct Function : Object {
     bool private_;
     bool pure;
     String name;
-    Vector<Property> input;
-    Vector<Property> output;
+    Vector<Item> input;
+    Vector<Item> output;
     Implementation implementation;
-    Function(Span span, bool private_, bool pure, String name, Vector<Property> input, Vector<Property> output, Implementation implementation)
+    Function(Span span, bool private_, bool pure, String name, Vector<Item> input, Vector<Item> output, Implementation implementation)
       : span(span),
         private_(private_),
         pure(pure),
@@ -356,9 +372,9 @@ struct Function : Object {
 struct Initializer : Object {
     Span span;
     bool private_;
-    Vector<Property> input;
+    Vector<Item> input;
     Implementation implementation;
-    Initializer(Span span, bool private_, Vector<Property> input, Implementation implementation)
+    Initializer(Span span, bool private_, Vector<Item> input, Implementation implementation)
       : span(span),
         private_(private_),
         input(input),
@@ -377,10 +393,10 @@ struct Operator : Object {
     Span span;
     bool private_;
     String name;
-    Vector<Property> input;
-    Vector<Property> output;
+    Vector<Item> input;
+    Vector<Item> output;
     Implementation implementation;
-    Operator(Span span, bool private_, String name, Vector<Property> input, Vector<Property> output, Implementation implementation)
+    Operator(Span span, bool private_, String name, Vector<Item> input, Vector<Item> output, Implementation implementation)
       : span(span),
         private_(private_),
         name(name),
