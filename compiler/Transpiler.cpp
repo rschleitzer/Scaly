@@ -311,7 +311,7 @@ struct Transpiler : Object {
         else {
             build_initializer_list(_ep, cpp_builder, is_generic, properties, String(_r.get_page(), "    "));
             cpp_builder.append(" {}");
-
+            header_builder.append(" ();");
         }
         return nullptr;
     }
@@ -364,7 +364,7 @@ struct Transpiler : Object {
         header_builder.append("\n    ");
         header_builder.append(name);
         if (!is_generic) {
-            cpp_builder.append('\n');
+            cpp_builder.append("\n\n");
             cpp_builder.append(name);
             cpp_builder.append("::");
             cpp_builder.append(name);
@@ -422,6 +422,7 @@ struct Transpiler : Object {
         while (auto function = function_iterator.next()) {
             function_prefix(header_builder, function, name != nullptr);
             if (!isTemplate) {
+                cpp_builder.append('\n');
                 function_prefix(cpp_builder, function, false);
                 if (name != nullptr) {
                     cpp_builder.append(*name);
@@ -429,14 +430,14 @@ struct Transpiler : Object {
                 }
                 cpp_builder.append(function->name);
                 build_input(cpp_builder, function->input);
-                auto _result = build_implementation(_ep, cpp_builder, function->implementation, String(_r.get_page(), "    "));
+                auto _result = build_implementation(_ep, cpp_builder, function->implementation, String());
                 if (_result != nullptr)
                     return _result;
             }
             header_builder.append(function->name);
             build_input(header_builder, function->input);
             if (isTemplate) {
-                auto _result = build_implementation(_ep, header_builder, function->implementation, String(_r.get_page(), "    "));
+                auto _result = build_implementation(_ep, header_builder, function->implementation, String());
                 if (_result != nullptr)
                     return _result;
             }
@@ -446,7 +447,6 @@ struct Transpiler : Object {
     }
 
     TranspilerError* build_implementation(Page* _ep, StringBuilder& builder, Implementation& implementation, String indent) {
-        builder.append(" {");
         switch (implementation._tag) {
             case Implementation::Action: {
                 auto action = implementation._Action;
@@ -463,8 +463,6 @@ struct Transpiler : Object {
                 return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "Intrinsic")));
 
         }
-        builder.append('\n');
-        builder.append("}");
         return nullptr;
     }
 
@@ -489,17 +487,19 @@ struct Transpiler : Object {
     }
 
     TranspilerError* build_binding(Page* _ep, StringBuilder& builder, Binding& binding, String indent) {
+        builder.append('\n');
+        builder.append(indent);
         switch (binding.binding_type) {
             case Binding::Constant: {
-                builder.append("\n auto ");
+                builder.append("auto ");
                 break;
             }
             case Binding::Extendable: {
-                builder.append("\n auto ");
+                builder.append("auto ");
                 break;
             }
             case Binding::Mutable: {
-                builder.append("\n auto");
+                builder.append("auto");
                 break;
             }
         }
@@ -687,28 +687,19 @@ struct Transpiler : Object {
 
     TranspilerError* build_block(Page* _ep, StringBuilder& builder, Block& block, String indent) {
         Region _r;
-        if (indent.equals("    ")) {
-            {
-                auto _result = build_statements(_ep, builder, block.statements, indent);
-                if (_result != nullptr)
-                    return _result;
-            }
+        StringBuilder& indent_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(indent);
+        indent_builder.append("    ");
+        builder.append('\n');
+        builder.append(indent);
+        builder.append('{');
+        {
+            auto _result = build_statements(_ep, builder, block.statements, indent_builder.to_string(_r.get_page()));
+            if (_result != nullptr)
+                return _result;
         }
-        else {
-            StringBuilder& indent_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(indent);
-            indent_builder.append("    ");
-            builder.append('\n');
-            builder.append(indent);
-            builder.append('{');
-            {
-                auto _result = build_statements(_ep, builder, block.statements, indent_builder.to_string(_r.get_page()));
-                if (_result != nullptr)
-                    return _result;
-            }
-            builder.append('\n');
-            builder.append(indent);
-            builder.append('}');
-        }
+        builder.append('\n');
+        builder.append(indent);
+        builder.append('}');
         return nullptr;
     }
 
@@ -717,38 +708,27 @@ struct Transpiler : Object {
         builder.append('\n');
         builder.append(indent);
         builder.append("if (");
-        StringBuilder& indent_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(indent);
-        indent_builder.append("    ");
-        auto body_indent = indent_builder.to_string(_r.get_page());
         {
             auto _result = build_operands(_ep, builder, if_.condition, indent);
             if (_result != nullptr)
                 return _result;
         }
-        builder.append(") { ");
+        builder.append(")");
         {
-            auto _result = build_action(_ep, builder, if_.consequent, body_indent);
+            auto _result = build_action(_ep, builder, if_.consequent, indent);
             if (_result != nullptr)
                 return _result;
         }
-        builder.append('\n');
-        builder.append(indent);
-        builder.append('}');
         if (if_.alternative != nullptr) {
             builder.append('\n');
             builder.append(indent);
-            builder.append("else { ");
+            builder.append("else");
             {
-                auto _result = build_action(_ep, builder, *if_.alternative, body_indent);
+                auto _result = build_action(_ep, builder, *if_.alternative, indent);
                 if (_result != nullptr)
                     return _result;
             }
-            builder.append('\n');
-            builder.append(indent);
-            builder.append('}');
-            builder.append("}");
         }
-        builder.append(';');
 
         return nullptr;
     }
@@ -791,7 +771,7 @@ struct Transpiler : Object {
             if (_result != nullptr)
                 return _result;
         }
-        builder.append(");");
+        builder.append(")");
         return nullptr;
     }
 
@@ -814,6 +794,7 @@ struct Transpiler : Object {
                     break;
                 }
             }
+            builder.append(';');
         }
         return nullptr;
     }

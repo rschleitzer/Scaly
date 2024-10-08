@@ -4,16 +4,22 @@
 #include "PageList.h"
 
 namespace scaly {
-
 namespace memory {
 
 PageList::PageList() : head(nullptr) {}
 
-void PageList::add(Page* _rp, Page* element) {
-    auto new_node = 
-        new (alignof(PageNode), _rp) PageNode(element, this->head);
+Page** PageList::get_head() {
+    if (this->head == nullptr)
+        return nullptr;
+    return &this->head->page;
+}
 
-    this->head = new_node;
+size_t PageList::count() {
+    auto list_iterator = this->get_iterator();
+    size_t i = 0;
+    while (auto item = list_iterator.next())
+        i++;
+    return i;
 }
 
 bool PageList::remove(Page* element) {
@@ -34,22 +40,15 @@ bool PageList::remove(Page* element) {
     return false;
 }
 
-Page** PageList::get_head() {
-    if (this->head == nullptr)
-        return nullptr;
-    return &this->head->page;
-}
-
-size_t PageList::count() {
-    auto list_iterator = this->get_iterator();
-    size_t i = 0;
-    while (auto item = list_iterator.next())
-        i++;
-    return i;
-}
-
 PageListIterator PageList::get_iterator()  {
     return PageListIterator(this->head);
+}
+
+void PageList::add(Page* _rp, Page* element) {
+    auto new_node = 
+        new (alignof(PageNode), _rp) PageNode(element, this->head);
+
+    this->head = new_node;
 }
 
 }

@@ -1,9 +1,19 @@
 define PageList
 (
-    head: pointer[PageNode]
+    head: pointer[PageNode] (null)
 )
 {
-    init set head: null
+    function get_head(this: PageList) returns pointer[pointer[Page]]
+    {
+        if this.head = null
+        {
+            return null
+        }
+        else
+        {
+            return this.head.page
+        }
+    }
 
     procedure add#r(this: PageList, element: pointer[Page])
     {
@@ -30,14 +40,6 @@ define PageList
         }
 
         false
-    }
-
-    function get_head(this: PageList) returns Page?
-    {
-        if this.head = null
-            return option[Page] null
-
-        return option(this.head*.element)
     }
 
     function count(this: PageList) returns size_t
