@@ -3,18 +3,6 @@ define PageList
     head: pointer[PageNode] (null)
 )
 {
-    function get_head(this: PageList) returns pointer[pointer[Page]]
-    {
-        if this.head = null
-        {
-            return null
-        }
-        else
-        {
-            return this.head.page
-        }
-    }
-
     procedure add#r(this: PageList, element: pointer[Page])
     {
         let new_node PageNode(element, this.head)
@@ -42,15 +30,8 @@ define PageList
         false
     }
 
-    function count(this: PageList) returns size_t
-    {
-        mutable list_iterator this.get_iterator()
-        var i: size_t 0
-        while list_iterator.next() <> null
-            set i: i + 1
-        i
-    }
-
     function get_iterator(this: PageList) returns PageListIterator
-        PageListIterator this.head
+    {
+        return PageListIterator(this.head)
+    }
 }

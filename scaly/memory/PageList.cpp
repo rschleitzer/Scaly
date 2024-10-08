@@ -8,20 +8,6 @@ namespace memory {
 
 PageList::PageList() : head(nullptr) {}
 
-Page** PageList::get_head() {
-    if (this->head == nullptr)
-        return nullptr;
-    return &this->head->page;
-}
-
-size_t PageList::count() {
-    auto list_iterator = this->get_iterator();
-    size_t i = 0;
-    while (auto item = list_iterator.next())
-        i++;
-    return i;
-}
-
 bool PageList::remove(Page* element) {
     auto node = this->head;
     PageNode* previous_node = nullptr;

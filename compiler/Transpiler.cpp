@@ -765,13 +765,12 @@ struct Transpiler : Object {
         Region _r;
         builder.append('\n');
         builder.append(indent);
-        builder.append("return (");
+        builder.append("return ");
         {
             auto _result = build_operands(_ep, builder, return_.result, indent);
             if (_result != nullptr)
                 return _result;
         }
-        builder.append(")");
         return nullptr;
     }
 
