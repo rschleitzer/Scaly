@@ -649,7 +649,7 @@ Result<Vector<Statement>, ModelError> handle_statements(Page* _rp, Page* _ep, Ve
                 if (operation_result._tag == Result<Operation, ModelError>::Error)
                     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = operation_result._Error };
                 statements_builder.add(Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Constant, Item(Span(binding.start, binding.end), false, new(alignof(String), _rp) String(_rp, statement->_Let.binding.name), type, Vector<Attribute>(_rp, 0)), operation_result._Ok) });
-                return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Ok, ._Ok = Vector<Statement>(_rp, statements_builder) };
+                break;
             }
             case StatementSyntax::Var: {
                 auto binding = statement->_Var.binding.operation;
@@ -664,7 +664,7 @@ Result<Vector<Statement>, ModelError> handle_statements(Page* _rp, Page* _ep, Ve
                 if (operation_result._tag == Result<Operation, ModelError>::Error)
                     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = operation_result._Error };
                 statements_builder.add(Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Extendable, Item(Span(binding.start, binding.end), false, new(alignof(String), _rp) String(_rp, statement->_Mutable.binding.name), type, Vector<Attribute>(_rp, 0)), operation_result._Ok) });
-                return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Ok, ._Ok = Vector<Statement>(_rp, statements_builder) };
+                break;
             }
             case StatementSyntax::Mutable: {
                 auto binding = statement->_Mutable.binding.operation;
@@ -679,7 +679,7 @@ Result<Vector<Statement>, ModelError> handle_statements(Page* _rp, Page* _ep, Ve
                 if (operation_result._tag == Result<Operation, ModelError>::Error)
                     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = operation_result._Error };
                 statements_builder.add(Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Mutable, Item(Span(binding.start, binding.end), false, new(alignof(String), _rp) String(_rp, statement->_Mutable.binding.name), type, Vector<Attribute>(_rp, 0)), operation_result._Ok) });
-                return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Ok, ._Ok = Vector<Statement>(_rp, statements_builder) };
+                break;
             }
             case StatementSyntax::Set:
                 auto _target_result = handle_operation(_rp, _ep, statement->_Set.target, file);
