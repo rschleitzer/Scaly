@@ -37,7 +37,7 @@ define PageList
         if this.head = null
             return option[Page] null
 
-        option(this.head*.element)
+        return option(this.head*.element)
     }
 
     function count(this: PageList) returns size_t

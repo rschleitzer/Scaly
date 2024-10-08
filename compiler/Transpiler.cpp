@@ -463,6 +463,7 @@ struct Transpiler : Object {
                 return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "Intrinsic")));
 
         }
+        builder.append('\n');
         builder.append("}");
         return nullptr;
     }
@@ -671,7 +672,7 @@ struct Transpiler : Object {
                     if (variable.equals("this"))
                         builder.append("->");
                     else
-                        builder.append(".");
+                        builder.append('.');
                     auto member_access = postfix->_MemberAccess;
                     auto member_access_iterator = VectorIterator<String>(&member_access);
                     auto member = member_access_iterator.next();
@@ -680,6 +681,7 @@ struct Transpiler : Object {
                 }
             }
         }
+
         return nullptr;
     }
 
@@ -715,6 +717,9 @@ struct Transpiler : Object {
         builder.append('\n');
         builder.append(indent);
         builder.append("if (");
+        StringBuilder& indent_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(indent);
+        indent_builder.append("    ");
+        auto body_indent = indent_builder.to_string(_r.get_page());
         {
             auto _result = build_operands(_ep, builder, if_.condition, indent);
             if (_result != nullptr)
@@ -722,18 +727,25 @@ struct Transpiler : Object {
         }
         builder.append(") { ");
         {
-            auto _result = build_action(_ep, builder, if_.consequent, indent);
+            auto _result = build_action(_ep, builder, if_.consequent, body_indent);
             if (_result != nullptr)
                 return _result;
         }
-        builder.append("}");
+        builder.append('\n');
+        builder.append(indent);
+        builder.append('}');
         if (if_.alternative != nullptr) {
-            builder.append(" else { ");
+            builder.append('\n');
+            builder.append(indent);
+            builder.append("else { ");
             {
-                auto _result = build_action(_ep, builder, *if_.alternative, indent);
+                auto _result = build_action(_ep, builder, *if_.alternative, body_indent);
                 if (_result != nullptr)
                     return _result;
             }
+            builder.append('\n');
+            builder.append(indent);
+            builder.append('}');
             builder.append("}");
         }
         builder.append(';');
