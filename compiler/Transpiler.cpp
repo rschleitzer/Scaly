@@ -491,11 +491,11 @@ struct Transpiler : Object {
         builder.append(indent);
         switch (binding.binding_type) {
             case Binding::Constant: {
-                builder.append("auto ");
+                builder.append("auto");
                 break;
             }
             case Binding::Extendable: {
-                builder.append("auto ");
+                builder.append("auto");
                 break;
             }
             case Binding::Mutable: {
@@ -520,23 +520,20 @@ struct Transpiler : Object {
     TranspilerError* build_mutation(Page* _ep, StringBuilder& builder, Mutation& mutation, String indent) {
         builder.append('\n');
         builder.append(indent);
-        auto _result = build_operation(_ep, builder, mutation.source, indent);
+        auto _result = build_operation(_ep, builder, mutation.target, indent);
         if (_result != nullptr)
             return _result;
         builder.append(" = ");
-        _result = build_operation(_ep, builder, mutation.target, indent);
+        _result = build_operation(_ep, builder, mutation.source, indent);
         if (_result != nullptr)
             return _result;
         return nullptr;
     }
 
     TranspilerError* build_operation(Page* _ep, StringBuilder& builder, Operation& operation, String indent) {
-        builder.append(indent);
-        {
-            auto _result = build_operands(_ep, builder, operation.operands, indent);
-            if (_result != nullptr)
-                return _result;
-        }
+        auto _result = build_operands(_ep, builder, operation.operands, indent);
+        if (_result != nullptr)
+            return _result;
 
         return nullptr;
     }

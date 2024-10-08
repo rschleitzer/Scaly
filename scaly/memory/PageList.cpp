@@ -8,6 +8,13 @@ namespace memory {
 
 PageList::PageList() : head(nullptr) {}
 
+void PageList::add(Page* _rp, Page* element) {
+    auto new_node = 
+        new (alignof(PageNode), _rp) PageNode(element, this->head);
+
+    this->head = new_node;
+}
+
 bool PageList::remove(Page* element) {
     auto node = this->head;
     PageNode* previous_node = nullptr;
@@ -28,13 +35,6 @@ bool PageList::remove(Page* element) {
 
 PageListIterator PageList::get_iterator()  {
     return PageListIterator(this->head);
-}
-
-void PageList::add(Page* _rp, Page* element) {
-    auto new_node = 
-        new (alignof(PageNode), _rp) PageNode(element, this->head);
-
-    this->head = new_node;
 }
 
 }

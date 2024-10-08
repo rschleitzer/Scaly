@@ -490,7 +490,7 @@ Result<Catcher, ModelError> handle_catcher(Page* _rp, Page* _ep, CatcherSyntax& 
 Result<Postfix, ModelError> handle_postfix(Page* _rp, Page* _ep, PostfixSyntax& postfix, String file) {
     Region _r;
     switch (postfix._tag) {
-        case Postfix::MemberAccess: {
+        case PostfixSyntax::MemberAccess: {
             auto member_access = postfix._MemberAccess;
             List<String>& path = *new(alignof(List<String>), _r.get_page()) List<String>();
             path.add(String(_rp, member_access.member.name));
@@ -504,7 +504,7 @@ Result<Postfix, ModelError> handle_postfix(Page* _rp, Page* _ep, PostfixSyntax& 
             }
             return Result<Postfix, ModelError> { ._tag = Result<Postfix, ModelError>::Ok, ._Ok = Postfix { ._tag = Postfix::MemberAccess, ._MemberAccess = Vector<String>(_rp, path) } };
         }
-        case Postfix::Catcher: {
+        case PostfixSyntax::Catcher: {
             auto catcher_syntax = postfix._Catcher;
             auto _catcher_result = handle_catcher(_rp, _ep, catcher_syntax, file);
             if (_catcher_result._tag == Result<Catcher, ModelError>::Error)
