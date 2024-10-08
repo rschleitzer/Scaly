@@ -343,12 +343,12 @@ struct Transpiler : Object {
         Region _r;
         build_initializer_header(header_builder, cpp_builder, name, is_generic);
         if (!is_generic) {
-            build_input(cpp_builder, initializer->input);
+            build_input(cpp_builder, initializer->input, Lifetime(Unspecified()));
             cpp_builder.append(' ');
             cpp_builder.append('{');
             cpp_builder.append("};");
         }
-        build_input(header_builder, initializer->input);
+        build_input(header_builder, initializer->input, Lifetime(Unspecified()));
         if (is_generic) {
             header_builder.append('{');
             header_builder.append("};");
@@ -429,13 +429,13 @@ struct Transpiler : Object {
                     cpp_builder.append("::");
                 }
                 cpp_builder.append(function->name);
-                build_input(cpp_builder, function->input);
+                build_input(cpp_builder, function->input, function->lifetime);
                 auto _result = build_implementation(_ep, cpp_builder, function->implementation, String());
                 if (_result != nullptr)
                     return _result;
             }
             header_builder.append(function->name);
-            build_input(header_builder, function->input);
+            build_input(header_builder, function->input, function->lifetime);
             if (isTemplate) {
                 auto _result = build_implementation(_ep, header_builder, function->implementation, String());
                 if (_result != nullptr)
@@ -847,14 +847,33 @@ struct Transpiler : Object {
             build_type(header_builder, operator_.output[0]->type);
         header_builder.append(" operator ");
         header_builder.append(operator_.name);
-        build_input(header_builder, operator_.input);
+        build_input(header_builder, operator_.input, Lifetime(Unspecified()));
         header_builder.append(';');
         return nullptr; 
     }
 
-    bool build_input(StringBuilder& builder, Vector<Item> input) {
+    bool build_input(StringBuilder& builder, Vector<Item> input, Lifetime lifetime) {
         Region _r;
         builder.append('(');
+
+        switch (lifetime._tag) {
+            case Lifetime::Unspecified:
+                break;
+            case Lifetime::Root:
+                break;
+            case Lifetime::Local: {
+                auto local = lifetime._Local;
+                builder.append("Page* _");
+                builder.append(local.location);
+                builder.append("p, ");
+                break;
+            }
+            case Lifetime::Reference:
+                break;
+            case Lifetime::Thrown:
+                break;
+        }
+
         auto input_iterator = VectorIterator<Item>(&input);
         bool first = true;
         bool isStatic = true;

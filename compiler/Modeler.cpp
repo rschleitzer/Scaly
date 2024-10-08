@@ -1263,19 +1263,37 @@ Result<Function, ModelError> build_function(Page* _rp, Page* _ep, size_t start, 
                 output = _output_result._Ok;
             }
 
+            auto lifetime = Lifetime(Unspecified());
+            if (symbol.routine.lifetime != nullptr) {
+                switch (symbol.routine.lifetime->_tag) {
+                    case LifetimeSyntax::Root:
+                        lifetime = Lifetime(Root());
+                    break;
+                    case LifetimeSyntax::Local:
+                        lifetime = Lifetime(Local(String(_rp, symbol.routine.lifetime->_Local.location)));
+                    break;
+                    case LifetimeSyntax::Reference:
+                        lifetime = Lifetime(Reference(String(_rp, symbol.routine.lifetime->_Reference.age)));
+                    break;
+                    case LifetimeSyntax::Thrown:
+                        lifetime = Lifetime(Thrown());
+                    break;    
+                }
+            }
+
             switch (symbol.routine.implementation._tag) {
                 case ImplementationSyntax::Action: {
                     auto action_result = handle_action(_rp, _ep, symbol.routine.implementation._Action, file);
                     if (action_result._tag == Result<Statement, ModelError>::Error)
                         return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Error, ._Error = action_result._Error };
-                    return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(start, end), private_, pure, String(_rp, symbol.name), input, output, Implementation { ._tag = Implementation::Action, ._Action = action_result._Ok }) };
+                    return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(start, end), private_, pure, String(_rp, symbol.name), input, output, lifetime, Implementation { ._tag = Implementation::Action, ._Action = action_result._Ok }) };
                 }
                 case ImplementationSyntax::Extern:
-                    return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(start, end), private_, pure, String(_rp, symbol.name), input, output, Implementation { ._tag = Implementation::Extern, ._Extern = Extern() }) };
+                    return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(start, end), private_, pure, String(_rp, symbol.name), input, output, lifetime, Implementation { ._tag = Implementation::Extern, ._Extern = Extern() }) };
                 case ImplementationSyntax::Instruction:
-                    return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(start, end), private_, pure, String(_rp, symbol.name), input, output, Implementation { ._tag = Implementation::Instruction, ._Instruction = Instruction() }) };
+                    return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(start, end), private_, pure, String(_rp, symbol.name), input, output, lifetime, Implementation { ._tag = Implementation::Instruction, ._Instruction = Instruction() }) };
                 case ImplementationSyntax::Intrinsic:
-                    return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(start, end), private_, pure, String(_rp, symbol.end), input, output, Implementation { ._tag = Implementation::Intrinsic, ._Intrinsic = Intrinsic() }) };
+                    return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(start, end), private_, pure, String(_rp, symbol.end), input, output, lifetime, Implementation { ._tag = Implementation::Intrinsic, ._Intrinsic = Intrinsic() }) };
                 break;
 
             }

@@ -358,14 +358,16 @@ struct Function : Object {
     String name;
     Vector<Item> input;
     Vector<Item> output;
+    Lifetime lifetime;
     Implementation implementation;
-    Function(Span span, bool private_, bool pure, String name, Vector<Item> input, Vector<Item> output, Implementation implementation)
+    Function(Span span, bool private_, bool pure, String name, Vector<Item> input, Vector<Item> output, Lifetime lifetime, Implementation implementation)
       : span(span),
         private_(private_),
         pure(pure),
         name(name),
         input(input),
         output(output),
+        lifetime(lifetime),
         implementation(implementation) {}
 };
 
