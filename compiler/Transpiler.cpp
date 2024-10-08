@@ -548,7 +548,7 @@ struct Transpiler : Object {
                     return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "Constant")));
                 case Expression::Variable: {
                     auto variable = operand->expression._Variable;
-                    auto _result = build_variable(_ep, builder, variable);
+                    auto _result = build_variable(_ep, builder, variable, *operand->postfixes);
                     if (_result != nullptr)
                         return _result;
                     break;
@@ -646,8 +646,40 @@ struct Transpiler : Object {
         return nullptr;
     }
 
-    TranspilerError* build_variable(Page* _ep, StringBuilder& builder, String variable) {
+    TranspilerError* build_variable(Page* _ep, StringBuilder& builder, String variable, Vector<Postfix>& postfixes) {
+        if (variable.equals("=")) {
+            builder.append(" == ");
+            return nullptr;
+        }            
+        if (variable.equals("<>")) {
+            builder.append(" != ");
+            return nullptr;
+        }            
+        if (variable.equals("null")) {
+            builder.append("nullptr");
+            return nullptr;
+        }
+
         builder.append(variable);
+        auto postfixes_iterator = VectorIterator<Postfix>(&postfixes);
+        auto postfix = postfixes_iterator.next();
+        if (postfix != nullptr) {
+            switch (postfix->_tag) {
+                case Postfix::Catcher:
+                    return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "Catcher")));
+                case Postfix::MemberAccess: {
+                    if (variable.equals("this"))
+                        builder.append("->");
+                    else
+                        builder.append(".");
+                    auto member_access = postfix->_MemberAccess;
+                    auto member_access_iterator = VectorIterator<String>(&member_access);
+                    auto member = member_access_iterator.next();
+                    builder.append(*member);
+                    return nullptr;
+                }
+            }
+        }
         return nullptr;
     }
 
