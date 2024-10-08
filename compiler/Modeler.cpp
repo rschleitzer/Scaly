@@ -725,8 +725,8 @@ Result<Component, ModelError> handle_component(Page* _rp, Page* _ep, ComponentSy
                     return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Error, ._Error = ModelError(ModelBuilderError(InvalidComponentName(file, Span(name_operand.start, name_operand.end)))) };
                 if (name_operand.postfixes != nullptr)
                     return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Error, ._Error = ModelError(ModelBuilderError(InvalidComponentName(file, Span(name_operand.start, name_operand.end)))) };
-                if (name_operand.expression._tag == ExpressionSyntax::Variable)
-                    name = new(alignof(String), _rp) String(_rp, name_operand.expression._Variable.identifier);
+                if (name_operand.expression._tag == ExpressionSyntax::Type)
+                    name = new(alignof(String), _rp) String(_rp, name_operand.expression._Type.name.name);
             }
         }
         auto value = component.value->value;
@@ -958,9 +958,9 @@ Result<Expression, ModelError> handle_expression(Page* _rp, Page* _ep, Expressio
                 return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = constant_result._Error };
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::Constant, ._Constant = constant_result._Ok} };
         }
-        case ExpressionSyntax::Variable: {
-            auto variable = expression._Variable;
-            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::Variable, ._Variable = String(_rp, variable.identifier)} };
+        case ExpressionSyntax::Type: {
+            auto type = expression._Type;
+            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::Variable, ._Variable = String(_rp, type.name.name)} };
         }
         case ExpressionSyntax::Object: {
             auto object = expression._Object;

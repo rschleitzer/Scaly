@@ -374,7 +374,7 @@
 
 <syntax id = Expression                            abstract
     <content link = Literal
-    <content link = Variable
+    <content link = Type
     <content link = Object
     <content link = Vector
     <content link = Block
@@ -415,9 +415,6 @@
 
 <syntax id = Literal
     <content literal                                        property = literal
-
-<syntax id = Variable
-    <content identifier                                     property = identifier
 
 <syntax id = Object
     <content link = left_paren

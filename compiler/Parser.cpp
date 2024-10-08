@@ -137,7 +137,6 @@ struct LoopSyntax;
 struct ReturnSyntax; 
 struct ThrowSyntax; 
 struct LiteralSyntax; 
-struct VariableSyntax; 
 struct ObjectSyntax; 
 struct ComponentSyntax; 
 struct ValueSyntax; 
@@ -413,13 +412,6 @@ struct ObjectSyntax : Object {
     Vector<ComponentSyntax>* components;
 };
 
-struct VariableSyntax : Object {
-    VariableSyntax(size_t start, size_t end, String identifier) : start(start), end(end), identifier(identifier) {}
-    size_t start;
-    size_t end;
-    String identifier;
-};
-
 struct LiteralSyntax : Object {
     LiteralSyntax(size_t start, size_t end, Literal literal) : start(start), end(end), literal(literal) {}
     size_t start;
@@ -465,7 +457,7 @@ struct ContinueSyntax : Object {
 
 struct ExpressionSyntax : Object {
     ExpressionSyntax(LiteralSyntax _LiteralSyntax) : _tag(Literal) { _Literal = _LiteralSyntax; }
-    ExpressionSyntax(VariableSyntax _VariableSyntax) : _tag(Variable) { _Variable = _VariableSyntax; }
+    ExpressionSyntax(TypeSyntax _TypeSyntax) : _tag(Type) { _Type = _TypeSyntax; }
     ExpressionSyntax(ObjectSyntax _ObjectSyntax) : _tag(Object) { _Object = _ObjectSyntax; }
     ExpressionSyntax(VectorSyntax _VectorSyntax) : _tag(Vector) { _Vector = _VectorSyntax; }
     ExpressionSyntax(BlockSyntax _BlockSyntax) : _tag(Block) { _Block = _BlockSyntax; }
@@ -482,7 +474,7 @@ struct ExpressionSyntax : Object {
     ExpressionSyntax(ThrowSyntax _ThrowSyntax) : _tag(Throw) { _Throw = _ThrowSyntax; }
     enum {
         Literal,
-        Variable,
+        Type,
         Object,
         Vector,
         Block,
@@ -500,7 +492,7 @@ struct ExpressionSyntax : Object {
     } _tag;
     union {
         LiteralSyntax _Literal;
-        VariableSyntax _Variable;
+        TypeSyntax _Type;
         ObjectSyntax _Object;
         VectorSyntax _Vector;
         BlockSyntax _Block;
@@ -4979,8 +4971,8 @@ struct Parser : Object {
             }
         }
         {
-            auto node_result = this->parse_variable(_rp, _ep);
-            if (node_result._tag == Result<VariableSyntax, ParserError>::Error)
+            auto node_result = this->parse_type(_rp, _ep);
+            if (node_result._tag == Result<TypeSyntax, ParserError>::Error)
             {
                 if (node_result._Error._tag == ParserError::InvalidSyntax)
                     return Result<ExpressionSyntax, ParserError> { ._tag = Result<ExpressionSyntax, ParserError>::Error, ._Error = node_result._Error };
@@ -4989,7 +4981,7 @@ struct Parser : Object {
             {
                 auto node = node_result._Ok;
                 return Result<ExpressionSyntax, ParserError> { ._tag = Result<ExpressionSyntax, ParserError>::Ok, ._Ok = 
-                    ExpressionSyntax(VariableSyntax(node))
+                    ExpressionSyntax(TypeSyntax(node))
                 };
             }
         }
@@ -5395,29 +5387,6 @@ struct Parser : Object {
         auto ret = LiteralSyntax(start, end, literal);
 
         return Result<LiteralSyntax, ParserError> { ._tag = Result<LiteralSyntax, ParserError>::Ok, ._Ok = ret };
-    }
-
-    Result<VariableSyntax, ParserError> parse_variable(Page* _rp, Page* _ep) {
-        auto start = this->lexer.previous_position;
-
-        auto start_identifier = this->lexer.previous_position;
-        auto identifier = this->lexer.parse_identifier(_rp, this->keywords);
-        if (identifier != nullptr) {
-            if (!this->is_identifier(*identifier)) {
-            return Result<VariableSyntax, ParserError> { ._tag = Result<VariableSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
-
-            }
-        }
-        else {
-            return Result<VariableSyntax, ParserError> { ._tag = Result<VariableSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
-
-        }
-
-        auto end = this->lexer.position;
-
-        auto ret = VariableSyntax(start, end, *identifier);
-
-        return Result<VariableSyntax, ParserError> { ._tag = Result<VariableSyntax, ParserError>::Ok, ._Ok = ret };
     }
 
     Result<ObjectSyntax, ParserError> parse_object(Page* _rp, Page* _ep) {

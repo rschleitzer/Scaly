@@ -5,7 +5,7 @@ define PageList
 {
     procedure add#r(this: PageList, element: pointer[Page])
     {
-        let new_node PageNode(element, this.head)
+        let new_node PageNode#r(element, this.head)
         set this.head: new_node
     }
 
