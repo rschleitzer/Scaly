@@ -544,9 +544,9 @@ struct Transpiler : Object {
             switch (operand->expression._tag) {
                 case Expression::Constant:
                     return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "Constant")));
-                case Expression::Variable: {
-                    auto variable = operand->expression._Variable;
-                    auto _result = build_variable(_ep, builder, variable, *operand->postfixes);
+                case Expression::Type: {
+                    auto type = operand->expression._Type;
+                    auto _result = build_variable(_ep, builder, type, *operand->postfixes);
                     if (_result != nullptr)
                         return _result;
                     break;
@@ -644,21 +644,43 @@ struct Transpiler : Object {
         return nullptr;
     }
 
-    TranspilerError* build_variable(Page* _ep, StringBuilder& builder, String variable, Vector<Postfix>& postfixes) {
-        if (variable.equals("=")) {
+    TranspilerError* build_variable(Page* _ep, StringBuilder& builder, Type& type, Vector<Postfix>& postfixes) {
+        auto first_name_part = type.name[0];
+        if (first_name_part->equals("=")) {
             builder.append(" == ");
             return nullptr;
         }            
-        if (variable.equals("<>")) {
+        if (first_name_part->equals("<>")) {
             builder.append(" != ");
             return nullptr;
         }            
-        if (variable.equals("null")) {
+        if (first_name_part->equals("null")) {
             builder.append("nullptr");
             return nullptr;
         }
 
-        builder.append(variable);
+        switch (type.lifetime._tag) {
+            case Lifetime::Unspecified:
+                break;
+            case Lifetime::Root:
+                return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "Root")));
+            case Lifetime::Local: {
+                auto local = type.lifetime._Local;
+                builder.append("new (alignof(");
+                builder.append(*first_name_part);
+                builder.append("), _");
+                builder.append(local.location);
+                builder.append("p) ");
+                break;
+            }
+            case Lifetime::Reference:
+                return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "Reference")));
+            case Lifetime::Thrown:
+                return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "Thrown")));
+        }
+
+        builder.append(*first_name_part);
+
         auto postfixes_iterator = VectorIterator<Postfix>(&postfixes);
         auto postfix = postfixes_iterator.next();
         if (postfix != nullptr) {
@@ -666,7 +688,7 @@ struct Transpiler : Object {
                 case Postfix::Catcher:
                     return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "Catcher")));
                 case Postfix::MemberAccess: {
-                    if (variable.equals("this"))
+                    if (first_name_part->equals("this"))
                         builder.append("->");
                     else
                         builder.append('.');

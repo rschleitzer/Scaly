@@ -232,7 +232,7 @@ struct Return : Object {
 struct Expression {
     enum {
         Constant,
-        Variable,
+        Type,
         Tuple,
         Matrix,
         Block,
@@ -244,7 +244,7 @@ struct Expression {
     } _tag;
     union {
         struct Constant _Constant;
-        struct String _Variable;
+        struct Type _Type;
         struct Tuple _Tuple;
         struct Matrix _Matrix;
         struct Block _Block;

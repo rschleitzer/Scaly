@@ -960,7 +960,10 @@ Result<Expression, ModelError> handle_expression(Page* _rp, Page* _ep, Expressio
         }
         case ExpressionSyntax::Type: {
             auto type = expression._Type;
-            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::Variable, ._Variable = String(_rp, type.name.name)} };
+            auto _type_result = handle_type(_rp, _ep, type, file);
+            if (_type_result._tag == Result<Type, ModelError>::Error)
+                return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = _type_result._Error };
+            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::Type, ._Type = *_type_result._Ok} };
         }
         case ExpressionSyntax::Object: {
             auto object = expression._Object;
