@@ -645,7 +645,8 @@ struct Transpiler : Object {
     }
 
     TranspilerError* build_variable(Page* _ep, StringBuilder& builder, Type& type, Vector<Postfix>& postfixes) {
-        auto first_name_part = type.name[0];
+        auto name_iterator = VectorIterator<String>(&type.name);
+        auto first_name_part = name_iterator.next();
         if (first_name_part->equals("=")) {
             builder.append(" == ");
             return nullptr;
@@ -680,6 +681,14 @@ struct Transpiler : Object {
         }
 
         builder.append(*first_name_part);
+
+        while (auto extension = name_iterator.next()) {
+            if (first_name_part->equals("this"))
+                builder.append("->");
+            else
+                builder.append('.');
+            builder.append(*extension);
+        }
 
         auto postfixes_iterator = VectorIterator<Postfix>(&postfixes);
         auto postfix = postfixes_iterator.next();
