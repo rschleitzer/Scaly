@@ -751,6 +751,9 @@ struct Lexer : Object {
                 empty();
                 return true;
 
+            case Token::Empty:
+                return true;
+
             default:
                 return false;
         }

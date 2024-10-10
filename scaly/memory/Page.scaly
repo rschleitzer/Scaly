@@ -5,7 +5,6 @@ define Page
     next_page: pointer[Page]
     exclusive_pages: pointer[PageList] 
 )
-;*
 {
     function reset(this: Page) {
         set this.current_page: null
@@ -126,4 +125,4 @@ define Page
         if this.exclusive_pages.remove page = false
             exit 2
     }
-}*;
+}

@@ -283,7 +283,7 @@ struct Transpiler : Object {
                     break;
                 }
                 case Nameable::Operator: {
-                        auto _result = build_operator(_ep, header_builder, cpp_builder, member->_Operator);
+                        auto _result = build_operator(_ep, header_builder, cpp_builder, member->_Operator, &name);
                         if (_result != nullptr)
                             return new(alignof(TranspilerError), _ep) TranspilerError(*_result);                    
                     }
@@ -491,18 +491,20 @@ struct Transpiler : Object {
         builder.append(indent);
         switch (binding.binding_type) {
             case Binding::Constant: {
-                builder.append("auto");
+                builder.append("const ");
                 break;
             }
             case Binding::Extendable: {
-                builder.append("auto");
                 break;
             }
             case Binding::Mutable: {
-                builder.append("auto");
                 break;
             }
         }
+        if (binding.item.type != nullptr)
+            build_type(builder, binding.item.type);
+        else
+            builder.append("auto");
 
         if (binding.item.name != nullptr) {
             builder.append(' ');
@@ -514,6 +516,7 @@ struct Transpiler : Object {
         auto _result = build_operation(_ep, builder, binding.operation, indent);
         if (_result != nullptr)
             return _result;
+        builder.append(';');
         return nullptr;
     }
 
@@ -527,6 +530,7 @@ struct Transpiler : Object {
         _result = build_operation(_ep, builder, mutation.source, indent);
         if (_result != nullptr)
             return _result;
+        builder.append(';');
         return nullptr;
     }
 
@@ -553,7 +557,7 @@ struct Transpiler : Object {
                 }
                 case Expression::Tuple: {
                     auto tuple = operand->expression._Tuple;
-                    auto _result = build_tuple(_ep, builder, tuple, indent);
+                    auto _result = build_tuple(_ep, builder, tuple, *operand->postfixes, indent);
                     if (_result != nullptr)
                         return _result;
                     break;
@@ -605,42 +609,6 @@ struct Transpiler : Object {
             }
         }
         
-        return nullptr;
-    }
-
-    TranspilerError* build_tuple(Page* _ep, StringBuilder& builder, Tuple& tuple, String indent) {
-        auto tuple_iterator = VectorIterator<Component>(&tuple.components);
-        bool first = true;
-        bool isStatic = true;
-        builder.append('(');
-        while (auto property = tuple_iterator.next()) {
-            if (first) {
-                first = false;
-            }
-            else {
-                builder.append(", ");
-            }
-            build_operands(_ep, builder, property->value, indent);
-        }
-        builder.append(')');
-        return nullptr;
-    }
-
-    TranspilerError* build_matrix(Page* _ep, StringBuilder& builder, Matrix& matrix, String indent) {
-        auto operations_iterator = VectorIterator<Operation>(&matrix.operations);
-        bool first = true;
-        bool isStatic = true;
-        builder.append('[');
-        while (auto operation = operations_iterator.next()) {
-            if (first) {
-                first = false;
-            }
-            else {
-                builder.append(", ");
-            }
-            build_operation(_ep, builder, *operation, indent);
-        }
-        builder.append(']');
         return nullptr;
     }
 
@@ -713,6 +681,60 @@ struct Transpiler : Object {
         return nullptr;
     }
 
+    TranspilerError* build_tuple(Page* _ep, StringBuilder& builder, Tuple& tuple, Vector<Postfix>& postfixes, String indent) {
+        auto tuple_iterator = VectorIterator<Component>(&tuple.components);
+        bool first = true;
+        bool isStatic = true;
+        builder.append('(');
+        while (auto property = tuple_iterator.next()) {
+            if (first) {
+                first = false;
+            }
+            else {
+                builder.append(", ");
+            }
+            build_operands(_ep, builder, property->value, indent);
+        }
+        builder.append(')');
+
+        auto postfixes_iterator = VectorIterator<Postfix>(&postfixes);
+        auto postfix = postfixes_iterator.next();
+        if (postfix != nullptr) {
+            switch (postfix->_tag) {
+                case Postfix::Catcher:
+                    return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "Catcher")));
+                case Postfix::MemberAccess: {
+                    builder.append('.');
+                    auto member_access = postfix->_MemberAccess;
+                    auto member_access_iterator = VectorIterator<String>(&member_access);
+                    auto member = member_access_iterator.next();
+                    builder.append(*member);
+                    return nullptr;
+                }
+            }
+        }
+
+        return nullptr;
+    }
+
+    TranspilerError* build_matrix(Page* _ep, StringBuilder& builder, Matrix& matrix, String indent) {
+        auto operations_iterator = VectorIterator<Operation>(&matrix.operations);
+        bool first = true;
+        bool isStatic = true;
+        builder.append('[');
+        while (auto operation = operations_iterator.next()) {
+            if (first) {
+                first = false;
+            }
+            else {
+                builder.append(", ");
+            }
+            build_operation(_ep, builder, *operation, indent);
+        }
+        builder.append(']');
+        return nullptr;
+    }
+
     TranspilerError* build_block(Page* _ep, StringBuilder& builder, Block& block, String indent) {
         Region _r;
         StringBuilder& indent_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(indent);
@@ -771,13 +793,12 @@ struct Transpiler : Object {
             if (_result != nullptr)
                 return _result;
         }
-        builder.append(") { ");
+        builder.append(")");
         {
             auto _result = build_action(_ep, builder, while_.action, indent);
             if (_result != nullptr)
                 return _result;
         }
-        builder.append("};");
         return nullptr;
     }
 
@@ -799,6 +820,7 @@ struct Transpiler : Object {
             if (_result != nullptr)
                 return _result;
         }
+        builder.append(';');
         return nullptr;
     }
 
@@ -821,7 +843,6 @@ struct Transpiler : Object {
                     break;
                 }
             }
-            builder.append(';');
         }
         return nullptr;
     }
@@ -838,7 +859,7 @@ struct Transpiler : Object {
         builder.append(' ');
     }
 
-    TranspilerError* build_operator(Page* _ep, StringBuilder& header_builder, StringBuilder& cpp_builder, Operator& operator_) {
+    TranspilerError* build_operator(Page* _ep, StringBuilder& header_builder, StringBuilder& cpp_builder, Operator& operator_, String* name) {
         Region _r;
         header_builder.append("\n    ");
         if (operator_.output.length == 0)
@@ -849,6 +870,22 @@ struct Transpiler : Object {
         header_builder.append(operator_.name);
         build_input(header_builder, operator_.input, Lifetime(Unspecified()));
         header_builder.append(';');
+
+        cpp_builder.append("\n");
+        if (operator_.output.length == 0)
+            cpp_builder.append("void");
+        else
+            build_type(cpp_builder, operator_.output[0]->type);
+
+        cpp_builder.append(' ');
+        cpp_builder.append(*name);
+        cpp_builder.append("::operator ");
+        cpp_builder.append(operator_.name);
+        build_input(cpp_builder, operator_.input, Lifetime(Unspecified()));
+        auto _result = build_implementation(_ep, cpp_builder, operator_.implementation, String());
+        if (_result != nullptr)
+            return _result;
+
         return nullptr; 
     }
 
