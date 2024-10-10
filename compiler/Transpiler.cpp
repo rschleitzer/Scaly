@@ -507,9 +507,10 @@ struct Transpiler : Object {
     }
 
     TranspilerError* build_action(Page* _ep, StringBuilder& builder, Action& action, String indent) {
-        builder.append('\n');
         builder.append(indent);
         if (action.target.length > 0) {
+            builder.append('\n');
+            builder.append(indent);
             {
                 auto _result = build_operation(_ep, builder, action.target, indent);
                 if (_result != nullptr)
@@ -517,13 +518,13 @@ struct Transpiler : Object {
             }
             builder.append(" = ");
         }
-        
         {
             auto _result = build_operation(_ep, builder, action.source, indent);
             if (_result != nullptr)
                 return _result;
         }
-        builder.append(';');
+        if (action.target.length > 0)
+            builder.append(';');
         return nullptr;
     }
 
@@ -603,7 +604,6 @@ struct Transpiler : Object {
                 }
             }
         }
-
         return nullptr;
     }
 

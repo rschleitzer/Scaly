@@ -3,17 +3,17 @@ define PageListIterator(current: pointer[PageNode])
     init(head: pointer[PageNode])
         set this.current: head
 
-    procedure next(this: PageListIterator) returns PageNode?
+    procedure next(this: PageListIterator) returns pointer[PageNode]
     {
         if this.current <> null
         {
             let current this.current
-            set this.current: this.current*.next
-            return option current.element
+            set this.current: *(this.current).next
+            return current.element
         }
         else
         {
-            option[PageNode] null
+            return null
         }
     }
 }

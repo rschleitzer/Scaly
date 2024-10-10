@@ -8,14 +8,14 @@ define Region
     }
 
     deinit() {
-        if (page <> null)
+        if page <> null
         {
-            page*.deallocate_extensions()
-            page*.forget()
+            (*page).deallocate_extensions()
+            (*page).forget()
         }
     }
 
-    function get_page(this: Region): pointer[Page] {
+    function get_page(this: Region) returns pointer[Page] {
         if this.page = null
             set this.page: Page.allocate_page()
         return this.page
