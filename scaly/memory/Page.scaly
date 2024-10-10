@@ -3,9 +3,35 @@ define Page
     next_object: pointer[void]
     current_page: pointer[Page]
     next_page: pointer[Page]
-    exclusive_pages: pointer[PageList] 
+    exclusive_pages: PageList
 )
 {
+    procedure deallocate_extensions(this: Page) {
+        ; Oversized pages cannot have extensions
+        if this.next_object = null
+            return
+
+        for exclusive_page in this.exclusive_pages
+        {
+            exclusive_page*.deallocate_extensions()
+            exclusive_page*.forget()
+        }
+
+        var page this.next_page 
+        while page <> null
+        {
+            let next_page page.next_page
+            page*.forget()
+            set page: next_page
+        }
+    }
+
+    function get(address: pointer[void]) returns pointer[Page] {
+        let mask PAGE_SIZE - 1 as[size_t] ~
+        let page = address as[size_t] & mask as pointer[Page]
+        page
+    }
+
     function reset(this: Page) {
         set this.current_page: null
         set this.next_page: null
@@ -13,16 +39,11 @@ define Page
         set this.exclusive_pages: List[pointer[Page]]()
     }
 
-    function is_oversized(this: Page) returns bool {
-        this.next_object = null
-    }
-
-    function get_capacity(this: Page, align: size_t) returns size_t {
-        var location this.next_object as[size_t]
-        var aligned_location location + align - 1 & ((align - 1)~)
-        var location_after_page this as[size_t] + PAGE_SIZE
-        var capacity location_after_page - aligned_location
-        capacity
+    function deallocate_exclusive_page(this: Page, page: pointer[Page]) {
+        page*.deallocate_extensions();
+        page*.forget();
+        if this.exclusive_pages.remove page = false
+            exit 2
     }
 
     function allocate_raw(this: Page, size: size_t, align: size_t) returns pointer[void] {
@@ -60,6 +81,34 @@ define Page
         aligned_location as[pointer[void]]
     }
 
+    function get_capacity(this: Page, align: size_t) returns size_t {
+        var location this.next_object as[size_t]
+        var aligned_location location + align - 1 & ((align - 1)~)
+        var location_after_page this as[size_t] + PAGE_SIZE
+        var capacity location_after_page - aligned_location
+        capacity
+    }
+
+    function allocate_page returns pointer[Page] {
+        var page aligned_alloc(PAGE_SIZE, PAGE_SIZE) as[pointer[Page]]
+        page*.reset()
+        page
+    }
+
+    function allocate_exclusive_page(this: Page) returns pointer[Page] {
+        let page this.allocate_page
+        this.exclusive_pages.add(page, page)
+        page
+    }
+
+    function forget(this: Page) {
+        free(this&)
+    }
+
+    function is_oversized(this: Page) returns bool {
+        this.next_object = null
+    }
+
     function allocate_oversized(this: Page, size: size_t) returns pointer[void] {
         ; We allocate oversized objects directly.
         let address aligned_alloc(PAGE_SIZE, size) as pointer[Page]
@@ -75,54 +124,5 @@ define Page
 
         ; The page offset by the null pointer for next_object
         page + 1 as pointer[void]
-    }
-
-    function allocate_page returns pointer[Page] {
-        var page aligned_alloc(PAGE_SIZE, PAGE_SIZE) as[pointer[Page]]
-        page*.reset()
-        page
-    }
-
-    function allocate_exclusive_page(this: Page) returns pointer[Page] {
-        let page this.allocate_page
-        this.exclusive_pages.add(page, page)
-        page
-    }
-
-    function deallocate_extensions(Page: this) {
-        ; Oversized pages cannot have extensions
-        if this.next_object = null
-            return
-
-        for exclusive_page in this.exclusive_pages
-        {
-            exclusive_page*.deallocate_extensions()
-            exclusive_page*.forget()
-        }
-
-        var page this.next_page 
-        while page <> null
-        {
-            let next_page page.next_page
-            page*.forget()
-            set page: next_page
-        }
-    }
-
-    function forget(this: Page) {
-        free(this&)
-    }
-
-    function get(address: pointer[void]) returns pointer[Page] {
-        let mask PAGE_SIZE - 1 as[size_t] ~
-        let page = address as[size_t] & mask as pointer[Page]
-        page
-    }
-
-    function deallocate_exclusive_page(this: Page, page: pointer[Page]) {
-        page*.deallocate_extensions();
-        page*.forget();
-        if this.exclusive_pages.remove page = false
-            exit 2
     }
 }

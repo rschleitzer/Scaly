@@ -416,14 +416,16 @@ struct Structure {
     Span span;
     bool private_;
     HashMap<String, Property> properties;
+    Vector<Module> modules;
     Vector<Use> uses;
     Vector<Initializer> initializers;
     DeInitializer* deinitializer;
     HashMap<String, Nameable> symbols;
-    Structure(Span span, bool private_, HashMap<String, Property> properties, Vector<Use> uses, Vector<Initializer> initializers, DeInitializer* deinitializer, HashMap<String, Nameable> symbols)
+    Structure(Span span, bool private_, HashMap<String, Property> properties, Vector<Module> modules, Vector<Use> uses, Vector<Initializer> initializers, DeInitializer* deinitializer, HashMap<String, Nameable> symbols)
       : span(span),
         private_(private_),
         properties(properties),
+        modules(modules),
         uses(uses),
         initializers(initializers),
         deinitializer(deinitializer),
@@ -453,9 +455,11 @@ struct Union : Object {
 
 struct Namespace : Object {
     Span span;
+    Vector<Module> modules;
     HashMap<String, Nameable> symbols;
-    Namespace(Span span, HashMap<String, Nameable> symbols)
+    Namespace(Span span, Vector<Module> modules, HashMap<String, Nameable> symbols)
       : span(span),
+        modules(modules),
         symbols(symbols) {}
 };
 
@@ -511,16 +515,16 @@ struct Module : Object {
     bool private_;
     String file;
     String name;
+    Vector<Module> modules;
     Vector<Use> uses;
     HashMap<String, Nameable> symbols;
-    MultiMap<String, Function> functions;
-    Module(bool private_, String file, String name, Vector<Use> uses, HashMap<String, Nameable> symbols, MultiMap<String, Function> functions)
+    Module(bool private_, String file, String name, Vector<Module> modules, Vector<Use> uses, HashMap<String, Nameable> symbols)
       : private_(private_),
         file(file),
         name(name),
+        modules(modules),
         uses(uses),
-        symbols(symbols),
-        functions(functions) {}
+        symbols(symbols) {}
 };
 
 struct Program : Object {
@@ -536,13 +540,11 @@ struct Program : Object {
 struct Nameable {
     enum {
         Package,
-        Module,
         Concept,
         Operator,
         Functions,
     } _tag;
     union {
-        struct Module _Module;
         struct Concept _Concept;
         struct Operator _Operator;
         Vector<Function> _Functions;

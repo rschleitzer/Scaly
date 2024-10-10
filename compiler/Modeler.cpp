@@ -173,11 +173,13 @@ Result<Structure, ModelError> handle_class(Page* _rp, Page* _ep, String name, St
         return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = properties_result._Error };
     auto properties = properties_result._Ok;
 
+    HashSetBuilder<String>& modules_checker = *new(alignof(HashSetBuilder<String>), _r.get_page()) HashSetBuilder<String>();
+    List<Module>& modules = *new(alignof(List<Module>), _r.get_page()) List<Module>();
     List<Use>& uses = *new(alignof(List<Use>), _r.get_page()) List<Use>();
 
     if (class_syntax.body == nullptr) {
         return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Ok,
-            ._Ok = Structure(Span(class_syntax.start, class_syntax.end), private_, properties, Vector<Use>(_rp, uses), Vector<Initializer>(), nullptr, HashMap<String, Nameable>())
+            ._Ok = Structure(Span(class_syntax.start, class_syntax.end), private_, properties, Vector<Module>(), Vector<Use>(), Vector<Initializer>(), nullptr, HashMap<String, Nameable>())
         };
     }
     else {
@@ -275,9 +277,10 @@ Result<Structure, ModelError> handle_class(Page* _rp, Page* _ep, String name, St
                         return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error,
                             ._Error = module_result._Error };
                     auto module = module_result._Ok;
-                    if (!symbols_builder.add(module.name, Nameable { ._tag = Nameable::Module, ._Module = module }))
+                    if (!modules_checker.add(module.name))
                         return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error,
                             ._Error = ModelError(ModelBuilderError(NonFunctionSymbolExists(file, Span(module_syntax.start, module_syntax.end)))) };
+                    modules.add(module);
                 }
                 break;
             }
@@ -291,7 +294,7 @@ Result<Structure, ModelError> handle_class(Page* _rp, Page* _ep, String name, St
         }
 
         return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Ok,
-            ._Ok = Structure(Span(class_syntax.start, class_syntax.end), private_, properties, Vector<Use>(_rp, uses), Vector<Initializer>(_rp, initializers_builder), deInitializer, HashMap<String, Nameable>(_rp, symbols_builder))
+            ._Ok = Structure(Span(class_syntax.start, class_syntax.end), private_, properties, Vector<Module>(_rp, modules), Vector<Use>(_rp, uses), Vector<Initializer>(_rp, initializers_builder), deInitializer, HashMap<String, Nameable>(_rp, symbols_builder))
         };
     }
 }
@@ -300,6 +303,8 @@ Result<Namespace, ModelError> handle_namespace(Page* _rp, Page* _ep, String name
     Region _r;
     HashMapBuilder<String, Nameable>& symbols_builder = *new(alignof(HashMapBuilder<String, Nameable>), _r.get_page()) HashMapBuilder<String, Nameable>();
     MultiMapBuilder<String, Function>& functions_builder = *new(alignof(MultiMapBuilder<String, Function>), _r.get_page()) MultiMapBuilder<String, Function>();
+    HashSetBuilder<String>& modules_checker = *new(alignof(HashSetBuilder<String>), _r.get_page()) HashSetBuilder<String>();
+    List<Module>& modules = *new(alignof(List<Module>), _r.get_page()) List<Module>();
 
     auto declarations_iterator = VectorIterator<DeclarationSyntax>(namespace_syntax.declarations);
     while (auto declaration = declarations_iterator.next()) {
@@ -351,9 +356,10 @@ Result<Namespace, ModelError> handle_namespace(Page* _rp, Page* _ep, String name
                             return Result<Namespace, ModelError> { ._tag = Result<Namespace, ModelError>::Error,
                                 ._Error = module_result._Error };
                         auto module = module_result._Ok;
-                        if (!symbols_builder.add(module.name, Nameable { ._tag = Nameable::Module, ._Module = module }))
+                        if (!modules_checker.add(module.name))
                             return Result<Namespace, ModelError> { ._tag = Result<Namespace, ModelError>::Error,
                                 ._Error = ModelError(ModelBuilderError(NonFunctionSymbolExists(file, Span(module_syntax.start, module_syntax.end)))) };
+                        modules.add(module);
                     }
                     break;
                 }
@@ -405,9 +411,10 @@ Result<Namespace, ModelError> handle_namespace(Page* _rp, Page* _ep, String name
                     return Result<Namespace, ModelError> { ._tag = Result<Namespace, ModelError>::Error,
                         ._Error = module_result._Error };
                 auto module = module_result._Ok;
-                if (!symbols_builder.add(module.name, Nameable { ._tag = Nameable::Module, ._Module = module }))
+                if (!modules_checker.add(module.name))
                     return Result<Namespace, ModelError> { ._tag = Result<Namespace, ModelError>::Error,
                         ._Error = ModelError(ModelBuilderError(NonFunctionSymbolExists(file, Span(module_syntax.start, module_syntax.end)))) };
+                modules.add(module);
             }
             break;
         }
@@ -421,7 +428,7 @@ Result<Namespace, ModelError> handle_namespace(Page* _rp, Page* _ep, String name
     }
 
     Span span(namespace_syntax.start, namespace_syntax.end);
-    auto ret = Namespace(span, HashMap<String, Nameable>(_rp, symbols_builder));
+    auto ret = Namespace(span, Vector<Module>(_rp, modules), HashMap<String, Nameable>(_rp, symbols_builder));
     return Result<Namespace, ModelError> { ._tag = Result<Namespace, ModelError>::Ok, ._Ok = ret };
 }
 
@@ -1375,6 +1382,8 @@ Result<HashMap<String, Nameable>, ModelError> build_symbols(Page* _rp, Page* _ep
     Region _r;
     HashMapBuilder<String, Nameable>& symbols_builder = *new(alignof(HashMapBuilder<String, Nameable>), _r.get_page()) HashMapBuilder<String, Nameable>();
     MultiMapBuilder<String, Function>& functions_builder = *new(alignof(MultiMapBuilder<String, Function>), _r.get_page()) MultiMapBuilder<String, Function>();
+    HashSetBuilder<String>& modules_checker = *new(alignof(HashSetBuilder<String>), _r.get_page()) HashSetBuilder<String>();
+    List<Module>& modules = *new(alignof(List<Module>), _r.get_page()) List<Module>();
 
     if (declarations != nullptr) {
         auto declarations_iterator = VectorIterator<DeclarationSyntax>(declarations);
@@ -1427,9 +1436,10 @@ Result<HashMap<String, Nameable>, ModelError> build_symbols(Page* _rp, Page* _ep
                                 return Result<HashMap<String, Nameable>, ModelError> { ._tag = Result<HashMap<String, Nameable>, ModelError>::Error,
                                     ._Error = module_result._Error };
                             auto module = module_result._Ok;
-                            if (!symbols_builder.add(module.name, Nameable { ._tag = Nameable::Module, ._Module = module }))
+                            if (!modules_checker.add(module.name))
                                 return Result<HashMap<String, Nameable>, ModelError> { ._tag = Result<HashMap<String, Nameable>, ModelError>::Error,
                                     ._Error = ModelError(ModelBuilderError(NonFunctionSymbolExists(file, Span(module_syntax.start, module_syntax.end)))) };
+                            modules.add(module);
                         }
                         break;
                     }
@@ -1482,9 +1492,10 @@ Result<HashMap<String, Nameable>, ModelError> build_symbols(Page* _rp, Page* _ep
                         return Result<HashMap<String, Nameable>, ModelError> { ._tag = Result<HashMap<String, Nameable>, ModelError>::Error,
                             ._Error = module_result._Error };
                     auto module = module_result._Ok;
-                    if (!symbols_builder.add(module.name, Nameable { ._tag = Nameable::Module, ._Module = module }))
+                    if (!modules_checker.add(module.name))
                         return Result<HashMap<String, Nameable>, ModelError> { ._tag = Result<HashMap<String, Nameable>, ModelError>::Error,
                             ._Error = ModelError(ModelBuilderError(NonFunctionSymbolExists(file, Span(module_syntax.start, module_syntax.end)))) };
+                    modules.add(module);
                 }
                 break;
             }
@@ -1512,6 +1523,8 @@ Result<Module, ModelError> build_module(Page* _rp, Page* _ep, String path, Strin
 
     HashMapBuilder<String, Nameable>& symbols_builder = *new(alignof(HashMapBuilder<String, Nameable>), _r.get_page()) HashMapBuilder<String, Nameable>();
     MultiMapBuilder<String, Function>& functions_builder = *new(alignof(MultiMapBuilder<String, Function>), _r.get_page()) MultiMapBuilder<String, Function>();
+    HashSetBuilder<String>& modules_checker = *new(alignof(HashSetBuilder<String>), _r.get_page()) HashSetBuilder<String>();
+    List<Module>& modules = *new(alignof(List<Module>), _r.get_page()) List<Module>();
 
     auto declarations_iterator = VectorIterator<DeclarationSyntax>(file_syntax.declarations);
     while (auto declaration = declarations_iterator.next()) {
@@ -1563,9 +1576,10 @@ Result<Module, ModelError> build_module(Page* _rp, Page* _ep, String path, Strin
                             return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error,
                                 ._Error = module_result._Error };
                         auto module = module_result._Ok;
-                        if (!symbols_builder.add(module.name, Nameable { ._tag = Nameable::Module, ._Module = module }))
+                        if (!modules_checker.add(module.name))
                             return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error,
                                 ._Error = ModelError(ModelBuilderError(NonFunctionSymbolExists(file_name, Span(module_syntax.start, module_syntax.end)))) };
+                        modules.add(module);
                     }
                     break;
                 }
@@ -1617,16 +1631,17 @@ Result<Module, ModelError> build_module(Page* _rp, Page* _ep, String path, Strin
                     return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error,
                         ._Error = module_result._Error };
                 auto module = module_result._Ok;
-                if (!symbols_builder.add(module.name, Nameable { ._tag = Nameable::Module, ._Module = module }))
+                    if (!modules_checker.add(module.name))
                     return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error,
                         ._Error = ModelError(ModelBuilderError(NonFunctionSymbolExists(file_name, Span(module_syntax.start, module_syntax.end)))) };
-            }
+                modules.add(module);
+           }
             break;
         }
     }
 
     Span span(file_syntax.start, file_syntax.end);
-    auto ret = Module(private_, String(_rp, file_name), name, Vector<Use>(_rp, uses), HashMap<String, Nameable>(_rp, symbols_builder), MultiMap<String, Function>(_rp, functions_builder));
+    auto ret = Module(private_, String(_rp, file_name), name, Vector<Module>(_rp, modules), Vector<Use>(_rp, uses), HashMap<String, Nameable>(_rp, symbols_builder));
     
     return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Ok,
         ._Ok = ret
