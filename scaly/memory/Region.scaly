@@ -8,7 +8,8 @@ define Region
     }
 
     deinit() {
-        if (page <> null) {
+        if (page <> null)
+        {
             page*.deallocate_extensions()
             page*.forget()
         }

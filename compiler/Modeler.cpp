@@ -640,7 +640,7 @@ Result<Vector<Statement>, ModelError> handle_statements(Page* _rp, Page* _ep, Ve
                 auto operation_result = handle_operation(_rp, _ep, statement->_Operation, file);
                 if (operation_result._tag == Result<Vector<Operand>, ModelError>::Error)
                     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = operation_result._Error };
-                statements_builder.add(Statement { ._tag = Statement::Action, ._Action = { ._tag = Action::Operation, ._Operation = operation_result._Ok }});
+                statements_builder.add(Statement { ._tag = Statement::Action, ._Action = Action(operation_result._Ok, Vector<Operand>())});
                 break;
             }
             case StatementSyntax::Let: {
@@ -697,7 +697,7 @@ Result<Vector<Statement>, ModelError> handle_statements(Page* _rp, Page* _ep, Ve
                 if (_source_result._tag == Result<Vector<Operand>, ModelError>::Error)
                     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = _source_result._Error };
                 auto source = _source_result._Ok;
-                statements_builder.add(Statement { ._tag = Statement::Action, ._Action = { ._tag = Action::Mutation, ._Mutation = Mutation(source, target) }});
+                statements_builder.add(Statement { ._tag = Statement::Action, ._Action = Action(source, target)});
                 break;
         }
     }
@@ -851,13 +851,10 @@ Result<If, ModelError> handle_if(Page* _rp, Page* _ep, IfSyntax& if_, String fil
     if (condition_result._tag == Result<Vector<Operand>, ModelError>::Error)
         return Result<If, ModelError> { ._tag = Result<If, ModelError>::Error, ._Error = condition_result._Error };
     auto condition = condition_result._Ok;
-    Action consequent = Action { ._tag = Action::Operation, ._Operation = Vector<Operand>(_rp, 0) };
-    if (if_.consequent != nullptr) {
-        auto _consequent_result = handle_action(_rp, _ep, *if_.consequent, file);
-        if (_consequent_result._tag == Result<Action, ModelError>::Error)
-            return Result<If, ModelError> { ._tag = Result<If, ModelError>::Error, ._Error = _consequent_result._Error };
-        consequent = Action(_consequent_result._Ok);
-    }
+    auto _consequent_result = handle_action(_rp, _ep, if_.consequent, file);
+    if (_consequent_result._tag == Result<Action, ModelError>::Error)
+        return Result<If, ModelError> { ._tag = Result<If, ModelError>::Error, ._Error = _consequent_result._Error };
+    auto consequent = _consequent_result._Ok;
 
     Action* alternative = nullptr;
     if (if_.alternative != nullptr) {
@@ -892,7 +889,7 @@ Result<Match, ModelError> handle_match(Page* _rp, Page* _ep, MatchSyntax& match_
         }
     }
 
-    Action alternative = Action { ._tag = Action::Operation, ._Operation = Vector<Operand>(_rp, 0) };
+    auto alternative = Action(Vector<Operand>(), Vector<Operand>());
     if (match_.alternative != nullptr) {
         auto _alternative_result = handle_action(_rp, _ep, *(*(match_.alternative)).alternative, file);
         if (_alternative_result._tag == Result<Action, ModelError>::Error)
@@ -1228,7 +1225,7 @@ Result<Action, ModelError> handle_action(Page* _rp, Page* _ep, ActionSyntax& act
             auto operation_result = handle_operation(_rp, _ep, action._Operation, file);
             if (operation_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Action, ModelError> { ._tag = Result<Action, ModelError>::Error, ._Error = operation_result._Error };
-            return Result<Action, ModelError> { ._tag = Result<Action, ModelError>::Ok, ._Ok = Action { ._tag = Action::Operation, ._Operation = operation_result._Ok } };
+            return Result<Action, ModelError> { ._tag = Result<Action, ModelError>::Ok, ._Ok = Action(operation_result._Ok, Vector<Operand>()) };
         }
         case ActionSyntax::Set: {
             auto _target_result = handle_operation(_rp, _ep, action._Set.target, file);
@@ -1239,7 +1236,7 @@ Result<Action, ModelError> handle_action(Page* _rp, Page* _ep, ActionSyntax& act
             if (_source_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Action, ModelError> { ._tag = Result<Action, ModelError>::Error, ._Error = _source_result._Error };
             auto source = _source_result._Ok;
-            return Result<Action, ModelError> { ._tag = Result<Action, ModelError>::Ok, ._Ok = Action { ._tag = Action::Mutation, ._Mutation = Mutation(source, target) } };
+            return Result<Action, ModelError> { ._tag = Result<Action, ModelError>::Ok, ._Ok = Action(source, target) };
         }
     }
 }

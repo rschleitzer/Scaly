@@ -154,21 +154,10 @@ struct Binding {
       : binding_type(binding_type), item(item), operation(operation) {}
 };
 
-struct Mutation : Object {
+struct Action : Object {
     Vector<Operand> source;
     Vector<Operand> target;
-    Mutation(Vector<Operand> source, Vector<Operand> target) : source(source), target(target) {}
-};
-
-struct Action : Object {
-    enum {
-        Operation,
-        Mutation,
-    } _tag;
-    union {
-        struct Vector<Operand> _Operation;
-        struct Mutation _Mutation;
-    };
+    Action(Vector<Operand> source, Vector<Operand> target) : source(source), target(target) {}
 };
 
 struct If : Object {

@@ -452,16 +452,8 @@
 <syntax id = If
     <content link = if
     <content link = Operation                               property = condition
-    <content link = Is                             optional property = match
-    <content link = Action                         optional property = consequent
+    <content link = Action                                  property = consequent
     <content link = Else                           optional property = alternative
-
-<syntax id = Is
-    <content link = is
-    <content identifier                                     property = name
-    <content colon
-    <content link = Type                                    property = type
-    <content colon                                 optional
 
 <syntax id = Else
     <content link = else
@@ -581,7 +573,6 @@
 <keyword id = function
 <keyword id = if
 <keyword id = init
-<keyword id = is
 <keyword id = implement
 <keyword id = in
 <keyword id = instruction
