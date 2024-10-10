@@ -57,12 +57,10 @@ struct Tuple : Object {
     Tuple(Span span, Vector<Component> components) : span(span), components(components) {}
 };
 
-struct Operation;
-
 struct Matrix : Object {
     Span span;
-    Vector<Operation> operations;
-    Matrix(Span span, Vector<Operation> operations) : span(span), operations(operations) {}
+    Vector<Vector<Operand>> operations;
+    Matrix(Span span, Vector<Vector<Operand>> operations) : span(span), operations(operations) {}
 };
 
 struct Statement;
@@ -146,25 +144,20 @@ struct Item {
         attributes(attributes) {}
 };
 
-struct Operation : Object {
-    Vector<Operand> operands;
-    Operation(Vector<Operand> operands) : operands(operands) {}
-};
-
 struct Statement;
 
 struct Binding {
     enum Mutability { Constant, Extendable, Mutable, } binding_type;
     Item item;
-    Operation operation;
-    Binding(Mutability binding_type, Item item, Operation operation)
+    Vector<Operand> operation;
+    Binding(Mutability binding_type, Item item, Vector<Operand> operation)
       : binding_type(binding_type), item(item), operation(operation) {}
 };
 
 struct Mutation : Object {
-    Operation source;
-    Operation target;
-    Mutation(Operation source, Operation target) : source(source), target(target) {}
+    Vector<Operand> source;
+    Vector<Operand> target;
+    Mutation(Vector<Operand> source, Vector<Operand> target) : source(source), target(target) {}
 };
 
 struct Action : Object {
@@ -173,7 +166,7 @@ struct Action : Object {
         Mutation,
     } _tag;
     union {
-        struct Operation _Operation;
+        struct Vector<Operand> _Operation;
         struct Mutation _Mutation;
     };
 };
@@ -282,15 +275,15 @@ struct Attribute {
 
 struct Catch {
     Span span;
-    Operation condition;
-    Operation handler;
-    Catch(Span span, Operation condition, Operation handler) : span(span), condition(condition), handler(handler) {}
+    Vector<Operand> condition;
+    Vector<Operand> handler;
+    Catch(Span span, Vector<Operand> condition, Vector<Operand> handler) : span(span), condition(condition), handler(handler) {}
 };
 
 struct Drop {
     Span span;
-    Operation handler;
-    Drop(Span span, Operation handler) : span(span), handler(handler) {}
+    Vector<Operand> handler;
+    Drop(Span span, Vector<Operand> handler) : span(span), handler(handler) {}
 };
 
 struct Catcher {
@@ -473,7 +466,7 @@ struct Definition {
     } _tag;
     union {
         struct Intrinsic _Intrinsic;
-        Operation _Constant;
+        Vector<Operand> _Constant;
         struct Namespace _Namespace;
         struct Structure _Structure;
         struct Union _Union;

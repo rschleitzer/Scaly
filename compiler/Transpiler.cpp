@@ -540,8 +540,8 @@ struct Transpiler : Object {
         return nullptr;
     }
 
-    TranspilerError* build_operation(Page* _ep, StringBuilder& builder, Operation& operation, String indent) {
-        auto _result = build_operands(_ep, builder, operation.operands, indent);
+    TranspilerError* build_operation(Page* _ep, StringBuilder& builder, Vector<Operand>& operation, String indent) {
+        auto _result = build_operands(_ep, builder, operation, indent);
         if (_result != nullptr)
             return _result;
 
@@ -778,7 +778,7 @@ struct Transpiler : Object {
     }
 
     TranspilerError* build_matrix(Page* _ep, StringBuilder& builder, Matrix& matrix, String indent) {
-        auto operations_iterator = VectorIterator<Operation>(&matrix.operations);
+        auto operations_iterator = VectorIterator<Vector<Operand>>(&matrix.operations);
         bool first = true;
         bool isStatic = true;
         builder.append('[');
