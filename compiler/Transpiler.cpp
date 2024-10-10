@@ -46,7 +46,7 @@ struct Transpiler : Object {
 
         cpp_builder.append("#include \"");
         cpp_builder.append(main_header);
-        cpp_builder.append(".h\"\n");
+        cpp_builder.append(".h\"");
         cpp_builder.append(namespace_open);
 
         header_builder.append("#ifndef _");
@@ -175,9 +175,9 @@ struct Transpiler : Object {
     TranspilerError* build_namespace(Page* _ep, String path, String source, String name, StringBuilder& header_builder, StringBuilder& cpp_builder, String main_header, String namespace_open, String namespace_close, Namespace& namespace_) {
         Region _r;
         StringBuilder& namespace_open_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(namespace_open);
-        namespace_open_builder.append("namespace ");
+        namespace_open_builder.append("\nnamespace ");
         namespace_open_builder.append(name);
-        namespace_open_builder.append(" {\n");
+        namespace_open_builder.append(" {");
         namespace_open = namespace_open_builder.to_string(_r.get_page());
         StringBuilder& namespace_close_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(namespace_close);
         namespace_close_builder.append("\n}");
@@ -965,7 +965,7 @@ struct Transpiler : Object {
         build_input(header_builder, operator_.input, Lifetime(Unspecified()));
         header_builder.append(';');
 
-        cpp_builder.append("\n");
+        cpp_builder.append("\n\n");
         if (operator_.output.length == 0)
             cpp_builder.append("void");
         else
