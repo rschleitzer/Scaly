@@ -512,10 +512,9 @@ struct Transpiler : Object {
     }
 
     TranspilerError* build_action(Page* _ep, StringBuilder& builder, Action& action, String indent) {
+        builder.append('\n');
         builder.append(indent);
         if (action.target.length > 0) {
-            builder.append('\n');
-            builder.append(indent);
             {
                 auto _result = build_operation(_ep, builder, action.target, indent);
                 if (_result != nullptr)
@@ -528,8 +527,7 @@ struct Transpiler : Object {
             if (_result != nullptr)
                 return _result;
         }
-        if (action.target.length > 0)
-            builder.append(';');
+        builder.append(';');
         return nullptr;
     }
 
@@ -627,6 +625,7 @@ struct Transpiler : Object {
                 auto integer = constant._Integer;
                 char str[32];
                 snprintf(str, 32, "%zd", integer);
+                builder.append(String(_r.get_page(), str));
                 break;
             }
 
@@ -642,6 +641,7 @@ struct Transpiler : Object {
                 auto floating_point = constant._FloatingPoint;
                 char str[32];
                 snprintf(str, 32, "%lg", floating_point);
+                builder.append(String(_r.get_page(), str));
                 break;
             }
             case Constant::String: {
@@ -785,8 +785,6 @@ struct Transpiler : Object {
         Region _r;
         StringBuilder& indent_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(indent);
         indent_builder.append("    ");
-        builder.append('\n');
-        builder.append(indent);
         builder.append('{');
         {
             auto _result = build_statements(_ep, builder, block.statements, indent_builder.to_string(_r.get_page()));
@@ -801,8 +799,6 @@ struct Transpiler : Object {
 
     TranspilerError* build_if(Page* _ep, StringBuilder& builder, If& if_, String indent) {
         Region _r;
-        builder.append('\n');
-        builder.append(indent);
         builder.append("if (");
         {
             auto _result = build_operation(_ep, builder, if_.condition, indent);
@@ -843,20 +839,24 @@ struct Transpiler : Object {
         builder.append(for_.identifier);
         builder.append(" = _");
         builder.append(for_.identifier);
-        builder.append("_iterator.next()) {\n}");
-        builder.append(indent);
+        builder.append("_iterator.next()) {\n");
+        StringBuilder& indent_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(indent);
+        indent_builder.append("    ");
+        String indented = indent_builder.to_string(_r.get_page());
+        builder.append(indented);
         builder.append("auto ");
         builder.append(for_.identifier);
         builder.append(" = _*");
         builder.append(for_.identifier);
-        builder.append(";\n}");
-        builder.append(indent);
-        builder.append(")");
+        builder.append(";");
         {
-            auto _result = build_action(_ep, builder, for_.action, indent);
+            auto _result = build_action(_ep, builder, for_.action, indented);
             if (_result != nullptr)
                 return _result;
         }
+        builder.append('\n');
+        builder.append(indent);
+        builder.append('}');
 
         return nullptr;
     }
@@ -892,13 +892,14 @@ struct Transpiler : Object {
         Region _r;
         builder.append('\n');
         builder.append(indent);
-        builder.append("return ");
+        builder.append("return");
+        if (return_.result.length > 0)
+            builder.append(' ');
         {
             auto _result = build_operation(_ep, builder, return_.result, indent);
             if (_result != nullptr)
                 return _result;
         }
-        builder.append(';');
         return nullptr;
     }
 
