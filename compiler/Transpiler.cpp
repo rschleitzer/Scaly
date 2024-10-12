@@ -507,7 +507,6 @@ struct Transpiler : Object {
         auto _result = build_operation(_ep, builder, binding.operation, indent);
         if (_result != nullptr)
             return _result;
-        builder.append(';');
         return nullptr;
     }
 
@@ -527,7 +526,6 @@ struct Transpiler : Object {
             if (_result != nullptr)
                 return _result;
         }
-        builder.append(';');
         return nullptr;
     }
 
@@ -922,6 +920,7 @@ struct Transpiler : Object {
                     break;
                 }
             }
+            builder.append(';');
         }
         return nullptr;
     }
