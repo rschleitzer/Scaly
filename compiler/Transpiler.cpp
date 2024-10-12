@@ -163,10 +163,15 @@ struct Transpiler : Object {
             case Definition::Intrinsic: {
                 return build_intrinsic(_ep, header_builder, concept.name);
             }
-            
-            default:
-                // return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented());
-                return nullptr;
+
+            case Definition::Constant: {
+                auto operation = concept.definition._Constant;
+                return build_constant_definition(_ep, header_builder, concept.name, operation);
+            }
+
+            case Definition::Union: {
+                return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "Union")));
+            }
         }
 
         return nullptr;
@@ -608,7 +613,8 @@ struct Transpiler : Object {
     }
 
     TranspilerError* build_constant(Page* _ep, StringBuilder& builder, Constant& constant) {
-           switch (constant._tag) {
+        Region _r;
+        switch (constant._tag) {
             case Constant::Boolean: {
                 auto boolean = constant._Boolean;
                 if (boolean)
@@ -628,6 +634,7 @@ struct Transpiler : Object {
                 auto integer = constant._Integer;
                 char str[32];
                 snprintf(str, 32, "0x%zx", integer);
+                builder.append(String(_r.get_page(), str));
                 break;
             }
 
@@ -1080,6 +1087,17 @@ struct Transpiler : Object {
         header_builder.append(name);
         header_builder.append(";\n");
 
+        return nullptr;
+    }
+
+    TranspilerError* build_constant_definition(Page* _ep, StringBuilder& header_builder, String name, Vector<Operand>& operation) {
+        Region _r;
+
+        header_builder.append("const int ");            
+        header_builder.append(name);
+        header_builder.append(" = ");
+        build_operation(_ep, header_builder, operation, String());
+        header_builder.append(";\n");
         return nullptr;
     }
 
