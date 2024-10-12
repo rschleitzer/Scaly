@@ -478,8 +478,6 @@ struct Transpiler : Object {
     }
 
     TranspilerError* build_binding(Page* _ep, StringBuilder& builder, Binding& binding, String indent) {
-        builder.append('\n');
-        builder.append(indent);
         switch (binding.binding_type) {
             case Binding::Constant: {
                 builder.append("const ");
@@ -511,8 +509,6 @@ struct Transpiler : Object {
     }
 
     TranspilerError* build_action(Page* _ep, StringBuilder& builder, Action& action, String indent) {
-        builder.append('\n');
-        builder.append(indent);
         if (action.target.length > 0) {
             {
                 auto _result = build_operation(_ep, builder, action.target, indent);
@@ -805,9 +801,17 @@ struct Transpiler : Object {
         }
         builder.append(")");
         {
+            bool is_block = (if_.consequent.source[0]->expression._tag == Expression::Block);
+            if (!is_block) {
+                builder.append('\n');
+                builder.append(indent);
+                builder.append("    ");
+            }
             auto _result = build_action(_ep, builder, if_.consequent, indent);
             if (_result != nullptr)
                 return _result;
+            if (!is_block)
+                builder.append(';');
         }
         if (if_.alternative != nullptr) {
             builder.append('\n');
@@ -888,8 +892,6 @@ struct Transpiler : Object {
 
     TranspilerError* build_return(Page* _ep, StringBuilder& builder, Return& return_, String indent) {
         Region _r;
-        builder.append('\n');
-        builder.append(indent);
         builder.append("return");
         if (return_.result.length > 0)
             builder.append(' ');
@@ -904,6 +906,8 @@ struct Transpiler : Object {
     TranspilerError* build_statements(Page* _ep, StringBuilder& builder, Vector<Statement>& statements, String indent) {
         auto statment_iterator = VectorIterator<Statement>(&statements);
         while (auto statement = statment_iterator.next()) {
+            builder.append('\n');
+            builder.append(indent);
             switch (statement->_tag) {
                 case Statement::Action: {
                     auto action = statement->_Action;
