@@ -155,7 +155,7 @@ struct Lexer : Object {
 
         switch (c) {
             case '\n':
-                this->token = scan_line_feed(Page::get(this)->allocate_exclusive_page());
+                this->token = scan_line_feed();
                 break;
 
             case ':':
@@ -220,7 +220,7 @@ struct Lexer : Object {
         this->token = Token(EmptyToken());
     }
 
-    Token scan_line_feed(Page* _rp) {
+    Token scan_line_feed() {
         while (true) {
             read_character();
             skip_whitespace(false);
