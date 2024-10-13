@@ -858,8 +858,6 @@ struct Transpiler : Object {
 
     TranspilerError* build_while(Page* _ep, StringBuilder& builder, While& while_, String indent) {
         Region _r;
-        builder.append('\n');
-        builder.append(indent);
         builder.append("while (");
         {
             auto _result = build_operation(_ep, builder, while_.condition, indent);

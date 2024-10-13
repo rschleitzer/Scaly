@@ -43,7 +43,7 @@ void test_lexer() {
         if (lexer.token._tag != Token::LineFeed)
             exit (-9);
         lexer.advance();
-        if (lexer.token._tag != Token::Colon)
+        if (lexer.token._tag != Token::LineFeed)
             exit (-10);
         lexer.advance();
         if (lexer.token._tag != Token::Literal)
