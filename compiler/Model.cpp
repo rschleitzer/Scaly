@@ -144,7 +144,11 @@ struct Item {
         attributes(attributes) {}
 };
 
-struct Statement;
+struct Action : Object {
+    Vector<Operand> source;
+    Vector<Operand> target;
+    Action(Vector<Operand> source, Vector<Operand> target) : source(source), target(target) {}
+};
 
 struct Binding {
     enum Mutability { Constant, Extendable, Mutable, } binding_type;
@@ -154,19 +158,32 @@ struct Binding {
       : binding_type(binding_type), item(item), operation(operation) {}
 };
 
-struct Action : Object {
-    Vector<Operand> source;
-    Vector<Operand> target;
-    Action(Vector<Operand> source, Vector<Operand> target) : source(source), target(target) {}
+struct Return : Object {
+    Span span;
+    Vector<Operand> result;
+    Return(Span span, Vector<Operand> result) : span(span), result(result) {}
+};
+
+struct Statement : Object {
+    enum {
+        Action,
+        Binding,
+        Return,
+    } _tag;
+    union {
+        struct Action _Action;
+        struct Binding _Binding;
+        struct Return _Return;
+    };
 };
 
 struct If : Object {
     Span span;
     Vector<Operand> condition;
     Property* property;
-    Action consequent;
-    Action* alternative;
-    If(Span span, Vector<Operand> condition, Property* property, Action consequent, Action* alternative) : span(span), condition(condition), property(property), consequent(consequent), alternative(alternative) {}
+    Statement consequent;
+    Statement* alternative;
+    If(Span span, Vector<Operand> condition, Property* property, Statement consequent, Statement* alternative) : span(span), condition(condition), property(property), consequent(consequent), alternative(alternative) {}
 };
 
 struct Case : Object {
@@ -205,12 +222,6 @@ struct SizeOf : Object {
     SizeOf(Span span, Type type) : span(span), type(type) {}
 };
 
-struct Return : Object {
-    Span span;
-    Vector<Operand> result;
-    Return(Span span, Vector<Operand> result) : span(span), result(result) {}
-};
-
 struct Expression {
     enum {
         Constant,
@@ -222,7 +233,6 @@ struct Expression {
         For,
         While,
         SizeOf,
-        Return,
     } _tag;
     union {
         struct Constant _Constant;
@@ -299,18 +309,6 @@ struct Operand : Object {
     Vector<Postfix>* postfixes;
     Operand(Span span, Expression expression, Vector<Postfix>* postfixes) : span(span), expression(expression), postfixes(postfixes) {}
 };
-
-struct Statement {
-    enum {
-        Action,
-        Binding,
-    } _tag;
-    union {
-        struct Action _Action;
-        struct Binding _Binding;
-    };
-};
-
 
 struct Extern {};
 

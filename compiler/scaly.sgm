@@ -282,12 +282,107 @@
     <content link = Name                                    property = name
     <content colon                                 optional
 
+<syntax id = Initializer
+    <content link = left_paren
+    <content link = Operand               multiple          property = operands
+    <content link = right_paren
+
+<syntax id = Operand                      multiple
+    <content link = Expression                              property = expression
+    <content link = Postfix               multiple optional property = postfixes
+
+<syntax id = Postfix                      multiple abstract
+    <content link = MemberAccess
+    <content link = Catcher
+
+<syntax id = MemberAccess
+    <content link = dot
+    <content link = Name                                    property = member
+
+<syntax id = Catcher
+    <content link = Catch                 multiple          property = catches
+    <content link = Drop                           optional property = dropper
+
+<syntax id = Catch                        multiple
+    <content link = catch
+    <content link = Operation                               property = condition
+    <content link = Operation                               property = handler
+
+<syntax id = Drop
+    <content link = drop
+    <content link = Operation                               property = handler
+
+<syntax id = Expression                            abstract
+    <content link = Literal
+    <content link = Type
+    <content link = Object
+    <content link = Vector
+    <content link = Block
+    <content link = If
+    <content link = Match
+    <content link = Lambda
+    <content link = For
+    <content link = While
+    <content link = Repeat
+    <content link = SizeOf
+
+<syntax id = Literal
+    <content literal                                        property = literal
+
+<syntax id = Object
+    <content link = left_paren
+    <content link = Component             multiple optional property = components
+    <content link = right_paren
+
+<syntax id = Component                    multiple
+    <content link = Operand               multiple          property = operands
+    <content link = Attribute             multiple optional property = attributes
+    <content link = Value                          optional property = value
+    <content link = comma                          optional
+
+<syntax id = Value
+    <content colon
+    <content link = Operation                               property = value
+    <content link = Attribute             multiple optional property = attributes
+
+<syntax id = Vector
+    <content link = left_bracket
+    <content link = Element               multiple          property = elements
+    <content link = right_bracket
+    <content link = Lifetime                       optional property = lifetime
+
+<syntax id = Element                      multiple
+    <content link = Operation                               property = operation
+    <content link = Attribute             multiple optional property = attributes
+    <content link = comma                          optional
+
+<syntax id = Block
+    <content link = left_curly
+    <content link = Use                   multiple optional property = uses
+    <content link = Statement             multiple optional property = statements
+    <content link = right_curly
+
+<syntax id = If
+    <content link = if
+    <content link = Operation                               property = condition
+    <content link = Statement                               property = consequent
+    <content link = Else                           optional property = alternative
+
+<syntax id = Else
+    <content link = else
+    <content colon                                 optional
+    <content link = Statement                               property = alternative
+
 <syntax id = Statement                    multiple abstract
     <content link = Operation
     <content link = Let
     <content link = Var
     <content link = Mutable
     <content link = Set
+    <content link = Continue
+    <content link = Break
+    <content link = Return
+    <content link = Throw
 
 <syntax id = Let
     <content link = let
@@ -342,54 +437,6 @@
     <content link = Attribute             multiple optional property = attributes
     <content colon                                 optional
 
-<syntax id = Initializer
-    <content link = left_paren
-    <content link = Operand               multiple          property = operands
-    <content link = right_paren
-
-<syntax id = Operand                      multiple
-    <content link = Expression                              property = expression
-    <content link = Postfix               multiple optional property = postfixes
-
-<syntax id = Postfix                      multiple abstract
-    <content link = MemberAccess
-    <content link = Catcher
-
-<syntax id = MemberAccess
-    <content link = dot
-    <content link = Name                                    property = member
-
-<syntax id = Catcher
-    <content link = Catch                 multiple          property = catches
-    <content link = Drop                           optional property = dropper
-
-<syntax id = Catch                        multiple
-    <content link = catch
-    <content link = Operation                               property = condition
-    <content link = Operation                               property = handler
-
-<syntax id = Drop
-    <content link = drop
-    <content link = Operation                               property = handler
-
-<syntax id = Expression                            abstract
-    <content link = Literal
-    <content link = Type
-    <content link = Object
-    <content link = Vector
-    <content link = Block
-    <content link = If
-    <content link = Match
-    <content link = Lambda
-    <content link = For
-    <content link = While
-    <content link = Repeat
-    <content link = SizeOf
-    <content link = Continue
-    <content link = Break
-    <content link = Return
-    <content link = Throw
-
 <syntax id = Continue
     <content link = continue
     <content link = Loop                           optional property = name
@@ -412,53 +459,6 @@
 <syntax id = Throw
     <content link = throw
     <content link = Operation                      optional property = result
-
-<syntax id = Literal
-    <content literal                                        property = literal
-
-<syntax id = Object
-    <content link = left_paren
-    <content link = Component             multiple optional property = components
-    <content link = right_paren
-
-<syntax id = Component                    multiple
-    <content link = Operand               multiple          property = operands
-    <content link = Attribute             multiple optional property = attributes
-    <content link = Value                          optional property = value
-    <content link = comma                          optional
-
-<syntax id = Value
-    <content colon
-    <content link = Operation                               property = value
-    <content link = Attribute             multiple optional property = attributes
-
-<syntax id = Vector
-    <content link = left_bracket
-    <content link = Element               multiple          property = elements
-    <content link = right_bracket
-    <content link = Lifetime                       optional property = lifetime
-
-<syntax id = Element                      multiple
-    <content link = Operation                               property = operation
-    <content link = Attribute             multiple optional property = attributes
-    <content link = comma                          optional
-
-<syntax id = Block
-    <content link = left_curly
-    <content link = Use                   multiple optional property = uses
-    <content link = Statement             multiple optional property = statements
-    <content link = right_curly
-
-<syntax id = If
-    <content link = if
-    <content link = Operation                               property = condition
-    <content link = Action                                  property = consequent
-    <content link = Else                           optional property = alternative
-
-<syntax id = Else
-    <content link = else
-    <content colon                                 optional
-    <content link = Action                                  property = alternative
 
 <syntax id = Match
     <content link = match

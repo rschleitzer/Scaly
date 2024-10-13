@@ -441,6 +441,7 @@ struct Transpiler : Object {
                 }
                 cpp_builder.append(function->name);
                 build_input(cpp_builder, function->input, function->lifetime);
+                cpp_builder.append(' ');
                 auto _result = build_implementation(_ep, cpp_builder, function->implementation, String());
                 if (_result != nullptr)
                     return _result;
@@ -448,6 +449,7 @@ struct Transpiler : Object {
             header_builder.append(function->name);
             build_input(header_builder, function->input, function->lifetime);
             if (isTemplate) {
+                header_builder.append(' ');
                 auto _result = build_implementation(_ep, header_builder, function->implementation, String());
                 if (_result != nullptr)
                     return _result;
@@ -588,13 +590,6 @@ struct Transpiler : Object {
                 case Expression::SizeOf: {
                     auto sizeof_ = operand->expression._SizeOf;
                     auto _result = build_sizeof(_ep, builder, sizeof_, indent);
-                    if (_result != nullptr)
-                        return _result;
-                    break;
-                }
-                case Expression::Return: {
-                    auto return_ = operand->expression._Return;
-                    auto _result = build_return(_ep, builder, return_, indent);
                     if (_result != nullptr)
                         return _result;
                     break;
@@ -799,26 +794,24 @@ struct Transpiler : Object {
             if (_result != nullptr)
                 return _result;
         }
-        builder.append(")");
+        builder.append(") ");
         {
-            bool is_block = (if_.consequent.source[0]->expression._tag == Expression::Block);
+            bool is_block = (if_.consequent._tag == Statement::Action && if_.consequent._Action.source[0]->expression._tag == Expression::Block);
             if (!is_block) {
                 builder.append('\n');
                 builder.append(indent);
                 builder.append("    ");
             }
-            auto _result = build_action(_ep, builder, if_.consequent, indent);
+            auto _result = build_statement(_ep, builder, &if_.consequent, indent);
             if (_result != nullptr)
                 return _result;
-            if (!is_block)
-                builder.append(';');
         }
         if (if_.alternative != nullptr) {
             builder.append('\n');
             builder.append(indent);
-            builder.append("else");
+            builder.append("else ");
             {
-                auto _result = build_action(_ep, builder, *if_.alternative, indent);
+                auto _result = build_statement(_ep, builder, if_.alternative, indent);
                 if (_result != nullptr)
                     return _result;
             }
@@ -873,7 +866,7 @@ struct Transpiler : Object {
             if (_result != nullptr)
                 return _result;
         }
-        builder.append(")");
+        builder.append(") ");
         {
             auto _result = build_action(_ep, builder, while_.action, indent);
             if (_result != nullptr)
@@ -908,23 +901,37 @@ struct Transpiler : Object {
         while (auto statement = statment_iterator.next()) {
             builder.append('\n');
             builder.append(indent);
-            switch (statement->_tag) {
-                case Statement::Action: {
-                    auto action = statement->_Action;
-                    auto _result = build_action(_ep, builder, action, indent);
-                    if (_result != nullptr)
-                        return _result;
-                    break;
-                }
-                case Statement::Binding:{
-                    auto binding = statement->_Binding;
-                    auto _result = build_binding(_ep, builder, binding, indent);
-                    if (_result != nullptr)
-                        return _result;
-                    break;
-                }
-            }
+            auto _result = build_statement(_ep, builder, statement, indent);
+            if (_result != nullptr)
+                return _result;
             builder.append(';');
+        }
+        return nullptr;
+    }
+
+    TranspilerError* build_statement(Page* _ep, StringBuilder& builder, Statement* statement, String indent) {
+        switch (statement->_tag) {
+            case Statement::Action: {
+                auto action = statement->_Action;
+                auto _result = build_action(_ep, builder, action, indent);
+                if (_result != nullptr)
+                    return _result;
+                break;
+            }
+            case Statement::Binding:{
+                auto binding = statement->_Binding;
+                auto _result = build_binding(_ep, builder, binding, indent);
+                if (_result != nullptr)
+                    return _result;
+                break;
+            }
+            case Statement::Return: {
+                auto return_ = statement->_Return;
+                auto _result = build_return(_ep, builder, return_, indent);
+                if (_result != nullptr)
+                    return _result;
+                break;
+            }
         }
         return nullptr;
     }
@@ -966,6 +973,7 @@ struct Transpiler : Object {
         cpp_builder.append("::operator ");
         cpp_builder.append(operator_.name);
         auto is_static = build_input(cpp_builder, operator_.input, Lifetime(Unspecified()));
+        cpp_builder.append(' ');
         auto _result = build_implementation(_ep, cpp_builder, operator_.implementation, String());
         if (_result != nullptr)
             return _result;
@@ -1102,10 +1110,6 @@ struct Transpiler : Object {
         header_builder.append(" = ");
         build_operation(_ep, header_builder, operation, String());
         header_builder.append(";\n");
-        return nullptr;
-    }
-
-    TranspilerError* build_statement(Page* _ep, StringBuilder& builder, Statement* statement) {
         return nullptr;
     }
 
@@ -1354,13 +1358,15 @@ typedef const char const_char;\n");
         Region _r;
         StringBuilder& builder = *new (alignof(StringBuilder), _r.get_page()) StringBuilder();
         builder.append("#include \"main.h\"\n\n");
-        builder.append("int main(int argc, char** argv) {\n");
+        builder.append("int main(int argc, char** argv) {");
 
         auto iter = VectorIterator<Statement>(&program.statements);
         while(auto statement = iter.next()) {
-            build_statement(_ep, builder, statement);
+            builder.append("\n    ");
+            build_statement(_ep, builder, statement, String());
+            builder.append(';');
         }
-        builder.append("    return 0;\n}\n");
+        builder.append("\n    return 0;\n}\n");
         if (builder.get_length() > 0) {
             auto main_file_name = Path::join(_r.get_page(), path, String(_r.get_page(), "main.cpp"));
             auto _main_result = File::write_from_string(_ep, main_file_name, builder.to_string(_r.get_page()));
