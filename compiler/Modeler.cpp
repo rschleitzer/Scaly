@@ -216,44 +216,44 @@ Result<Structure, ModelError> handle_class(Page* _rp, Page* _ep, String name, St
         MultiMapBuilder<String, Function>& functions_builder = *new(alignof(MultiMapBuilder<String, Function>), _r.get_page()) MultiMapBuilder<String, Function>();
         auto members_iterator = VectorIterator<MemberSyntax>(class_syntax.body->members);
         while (auto member = members_iterator.next()) {
-            switch (member->_tag) {
-                case MemberSyntax::Definition: {
-                    auto concept_result = handle_definition(_rp, _ep, path, member->_Definition, false, file);
+            switch (member->constituent._tag) {
+                case ConstituentSyntax::Definition: {
+                    auto concept_result = handle_definition(_rp, _ep, path, member->constituent._Definition, false, file);
                     if (concept_result._tag == Result<Function, ModelError>::Error)
                         return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = concept_result._Error };
                     auto concept = concept_result._Ok;
                     if (functions_builder.contains(concept.name))
-                        return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = ModelError(ModelBuilderError(FunctionSymbolExists(file, Span(member->_Definition.start, member->_Definition.end)))) };
+                        return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = ModelError(ModelBuilderError(FunctionSymbolExists(file, Span(member->constituent._Definition.start, member->constituent._Definition.end)))) };
 
                     symbols_builder.add(concept.name, Nameable { ._tag = Nameable::Concept, ._Concept = concept });
                 }
                 break;
-                case MemberSyntax::Function: {
-                    auto function_syntax = member->_Function;
+                case ConstituentSyntax::Function: {
+                    auto function_syntax = member->constituent._Function;
                     auto function_result = build_function(_rp, _ep, function_syntax.start, function_syntax.end, function_syntax.target, false, true, file);
                     if (function_result._tag == Result<Function, ModelError>::Error)
                         return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = function_result._Error };
                     auto function = function_result._Ok;
                     auto symbol_with_function_name = symbols_builder[function.name];
                     if (symbol_with_function_name != nullptr)
-                        return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NonFunctionSymbolExists(file, Span(member->_Function.start, member->_Function.end)))) };
+                        return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NonFunctionSymbolExists(file, Span(member->constituent._Function.start, member->constituent._Function.end)))) };
                     functions_builder.add(function.name, function);
                 }
                 break;
-                case MemberSyntax::Procedure: {
-                    auto procedure_syntax = member->_Procedure;
+                case ConstituentSyntax::Procedure: {
+                    auto procedure_syntax = member->constituent._Procedure;
                     auto procedure_result = build_function(_rp, _ep, procedure_syntax.start, procedure_syntax.end, procedure_syntax.target, false, false, file);
                     if (procedure_result._tag == Result<Function, ModelError>::Error)
                         return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = procedure_result._Error };
                     auto function = procedure_result._Ok;
                     auto symbol_with_function_name = symbols_builder[function.name];
                     if (symbol_with_function_name != nullptr)
-                        return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NonFunctionSymbolExists(file, Span(member->_Function.start, member->_Function.end)))) };
+                        return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NonFunctionSymbolExists(file, Span(member->constituent._Function.start, member->constituent._Function.end)))) };
                     functions_builder.add(function.name, function);
                 }
                 break;
-                case MemberSyntax::Operator: {
-                    auto operator_syntax = member->_Operator;
+                case ConstituentSyntax::Operator: {
+                    auto operator_syntax = member->constituent._Operator;
                     auto operator_result = handle_operator(_rp, _ep, operator_syntax, false, file);
                     if (operator_result._tag == Result<Structure, ModelError>::Error)
                         return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error,
@@ -264,14 +264,14 @@ Result<Structure, ModelError> handle_class(Page* _rp, Page* _ep, String name, St
                             ._Error = ModelError(ModelBuilderError(DuplicateName(file, Span(operator_syntax.start, operator_syntax.end)))) };
                 }
                 break;
-                case MemberSyntax::Implement:
-                    return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(file, String(_ep, "Implement"), Span(member->_Implement.start, member->_Implement.end)))) };
-                case MemberSyntax::Trait:
-                    return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(file, String(_ep, "Trait"), Span(member->_Trait.start, member->_Trait.end)))) };
-                case MemberSyntax::Macro:
-                    return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(file, String(_ep, "Macro"), Span(member->_Macro.start, member->_Macro.end)))) };
-                case MemberSyntax::Module: {
-                    auto module_syntax = member->_Module;
+                case ConstituentSyntax::Implement:
+                    return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(file, String(_ep, "Implement"), Span(member->constituent._Implement.start, member->constituent._Implement.end)))) };
+                case ConstituentSyntax::Trait:
+                    return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(file, String(_ep, "Trait"), Span(member->constituent._Trait.start, member->constituent._Trait.end)))) };
+                case ConstituentSyntax::Macro:
+                    return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(file, String(_ep, "Macro"), Span(member->constituent._Macro.start, member->constituent._Macro.end)))) };
+                case ConstituentSyntax::Module: {
+                    auto module_syntax = member->constituent._Module;
                     auto module_result = handle_module(_rp, _ep, path, module_syntax, false);
                     if (module_result._tag == Result<Structure, ModelError>::Error)
                         return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error,
@@ -641,21 +641,21 @@ Result<Return, ModelError> handle_return(Page* _rp, Page* _ep, ReturnSyntax& ret
     return Result<Return, ModelError> { ._tag = Result<Return, ModelError>::Ok, ._Ok = Return(Span(return_.start, return_.end), Vector<Operand>(_rp, 0)) };
 }
 
-Result<Statement, ModelError> handle_statement(Page* _rp, Page* _ep, StatementSyntax& statement, String file) {
+Result<Statement, ModelError> handle_command(Page* _rp, Page* _ep, CommandSyntax& command, String file) {
     Region _r;
-    switch (statement._tag)
+    switch (command._tag)
     {
-        case StatementSyntax::Operation: {
-            auto operation_result = handle_operation(_rp, _ep, statement._Operation, file);
+        case CommandSyntax::Operation: {
+            auto operation_result = handle_operation(_rp, _ep, command._Operation, file);
             if (operation_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = operation_result._Error };
             return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Ok, ._Ok = Statement { ._tag = Statement::Action, ._Action = Action(operation_result._Ok, Vector<Operand>())}};
         }
-        case StatementSyntax::Let: {
-            auto binding = statement._Let.binding.operation;
+        case CommandSyntax::Let: {
+            auto binding = command._Let.binding.operation;
             Type* type = nullptr;
-            if (statement._Let.binding.annotation != nullptr) {
-                auto _type_result = handle_binding_annotation(_rp, _ep, *statement._Let.binding.annotation, file);
+            if (command._Let.binding.annotation != nullptr) {
+                auto _type_result = handle_binding_annotation(_rp, _ep, *command._Let.binding.annotation, file);
                 if (_type_result._tag == Result<Type, ModelError>::Error)
                     return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = _type_result._Error };
                 type = _type_result._Ok;
@@ -663,13 +663,13 @@ Result<Statement, ModelError> handle_statement(Page* _rp, Page* _ep, StatementSy
             auto operation_result = handle_operation(_rp, _ep, binding, file);
             if (operation_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = operation_result._Error };
-            return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Ok, ._Ok = Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Constant, Item(Span(binding.start, binding.end), false, new(alignof(String), _rp) String(_rp, statement._Let.binding.name), type, Vector<Attribute>(_rp, 0)), operation_result._Ok) }};
+            return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Ok, ._Ok = Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Constant, Item(Span(binding.start, binding.end), false, new(alignof(String), _rp) String(_rp, command._Let.binding.name), type, Vector<Attribute>(_rp, 0)), operation_result._Ok) }};
         }
-        case StatementSyntax::Var: {
-            auto binding = statement._Var.binding.operation;
+        case CommandSyntax::Var: {
+            auto binding = command._Var.binding.operation;
             Type* type = nullptr;
-            if (statement._Var.binding.annotation != nullptr) {
-                auto _type_result = handle_binding_annotation(_rp, _ep, *statement._Var.binding.annotation, file);
+            if (command._Var.binding.annotation != nullptr) {
+                auto _type_result = handle_binding_annotation(_rp, _ep, *command._Var.binding.annotation, file);
                 if (_type_result._tag == Result<Type, ModelError>::Error)
                     return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = _type_result._Error };
                 type = _type_result._Ok;
@@ -677,13 +677,13 @@ Result<Statement, ModelError> handle_statement(Page* _rp, Page* _ep, StatementSy
             auto operation_result = handle_operation(_rp, _ep, binding, file);
             if (operation_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = operation_result._Error };
-            return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Ok, ._Ok = Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Extendable, Item(Span(binding.start, binding.end), false, new(alignof(String), _rp) String(_rp, statement._Mutable.binding.name), type, Vector<Attribute>(_rp, 0)), operation_result._Ok) }};
+            return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Ok, ._Ok = Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Extendable, Item(Span(binding.start, binding.end), false, new(alignof(String), _rp) String(_rp, command._Mutable.binding.name), type, Vector<Attribute>(_rp, 0)), operation_result._Ok) }};
         }
-        case StatementSyntax::Mutable: {
-            auto binding = statement._Mutable.binding.operation;
+        case CommandSyntax::Mutable: {
+            auto binding = command._Mutable.binding.operation;
             Type* type = nullptr;
-            if (statement._Mutable.binding.annotation != nullptr) {
-                auto _type_result = handle_binding_annotation(_rp, _ep, *statement._Mutable.binding.annotation, file);
+            if (command._Mutable.binding.annotation != nullptr) {
+                auto _type_result = handle_binding_annotation(_rp, _ep, *command._Mutable.binding.annotation, file);
                 if (_type_result._tag == Result<Type, ModelError>::Error)
                     return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = _type_result._Error };
                 type = _type_result._Ok;
@@ -691,34 +691,41 @@ Result<Statement, ModelError> handle_statement(Page* _rp, Page* _ep, StatementSy
             auto operation_result = handle_operation(_rp, _ep, binding, file);
             if (operation_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = operation_result._Error };
-            return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Ok, ._Ok = Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Mutable, Item(Span(binding.start, binding.end), false, new(alignof(String), _rp) String(_rp, statement._Mutable.binding.name), type, Vector<Attribute>(_rp, 0)), operation_result._Ok) }};
+            return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Ok, ._Ok = Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Mutable, Item(Span(binding.start, binding.end), false, new(alignof(String), _rp) String(_rp, command._Mutable.binding.name), type, Vector<Attribute>(_rp, 0)), operation_result._Ok) }};
         }
-        case StatementSyntax::Set: {
-            auto _target_result = handle_operation(_rp, _ep, statement._Set.target, file);
+        case CommandSyntax::Set: {
+            auto _target_result = handle_operation(_rp, _ep, command._Set.target, file);
             if (_target_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = _target_result._Error };
             auto target = _target_result._Ok;
-            auto _source_result = handle_operation(_rp, _ep, statement._Set.source, file);
+            auto _source_result = handle_operation(_rp, _ep, command._Set.source, file);
             if (_source_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = _source_result._Error };
             auto source = _source_result._Ok;
             return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Ok, ._Ok = Statement { ._tag = Statement::Action, ._Action = Action(source, target)}};
         }
-        case StatementSyntax::Continue:
-            return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(file, String(_ep, "Continue"), Span(statement._Continue.start, statement._Continue.end)))) };
-        case StatementSyntax::Break:
-            return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(file, String(_ep, "Break"), Span(statement._Break.start, statement._Break.end)))) };
-        case StatementSyntax::Return: {
-            auto return_ = statement._Return;
+        case CommandSyntax::Continue:
+            return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(file, String(_ep, "Continue"), Span(command._Continue.start, command._Continue.end)))) };
+        case CommandSyntax::Break:
+            return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(file, String(_ep, "Break"), Span(command._Break.start, command._Break.end)))) };
+        case CommandSyntax::Return: {
+            auto return_ = command._Return;
             auto return_result = handle_return(_rp, _ep, return_, file);
             if (return_result._tag == Result<Expression, ModelError>::Error)
                 return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = return_result._Error };
             return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Ok, ._Ok = Statement { ._tag = Statement::Return, ._Return = return_result._Ok}};
             break;
         }
-        case StatementSyntax::Throw:
-            return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(file, String(_ep, "Throw"), Span(statement._Throw.start, statement._Throw.end)))) };
+        case CommandSyntax::Throw:
+            return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(file, String(_ep, "Throw"), Span(command._Throw.start, command._Throw.end)))) };
     }
+}
+
+Result<Statement, ModelError> handle_statement(Page* _rp, Page* _ep, StatementSyntax& statement, String file) {
+    auto result = handle_command(_rp, _ep, statement.command, file);
+    if (result._tag == Result<Statement, ModelError>::Error)
+        return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = result._Error };
+    return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError> ::Ok, ._Ok = result._Ok };
 }
 
 Result<Vector<Statement>, ModelError> handle_statements(Page* _rp, Page* _ep, Vector<StatementSyntax>& statements, String file) {
@@ -880,14 +887,14 @@ Result<If, ModelError> handle_if(Page* _rp, Page* _ep, IfSyntax& if_, String fil
     if (condition_result._tag == Result<Vector<Operand>, ModelError>::Error)
         return Result<If, ModelError> { ._tag = Result<If, ModelError>::Error, ._Error = condition_result._Error };
     auto condition = condition_result._Ok;
-    auto _consequent_result = handle_statement(_rp, _ep, if_.consequent, file);
+    auto _consequent_result = handle_command(_rp, _ep, if_.consequent, file);
     if (_consequent_result._tag == Result<Action, ModelError>::Error)
         return Result<If, ModelError> { ._tag = Result<If, ModelError>::Error, ._Error = _consequent_result._Error };
     auto consequent = _consequent_result._Ok;
 
     Statement* alternative = nullptr;
     if (if_.alternative != nullptr) {
-        auto _alternative_result = handle_statement(_rp, _ep, if_.alternative->alternative, file);
+        auto _alternative_result = handle_command(_rp, _ep, if_.alternative->alternative, file);
         if (_alternative_result._tag == Result<Statement, ModelError>::Error)
             return Result<If, ModelError> { ._tag = Result<If, ModelError>::Error, ._Error = _alternative_result._Error };
         alternative = new(alignof(Statement), _rp) Statement(_alternative_result._Ok);

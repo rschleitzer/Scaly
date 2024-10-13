@@ -31,7 +31,11 @@
     <content link = Trait
     <content link = Module
 
-<syntax id = Member                  multiple abstract
+<syntax id = Member                  multiple
+    <content link = Constituent                             property = constituent
+    <content colon                                 optional
+
+<syntax id = Constituent                           abstract
     <content link = Definition
     <content link = Function
     <content link = Procedure
@@ -193,11 +197,13 @@
     <content link = ParameterSet                   optional property = parameters
     <content colon                                 optional
     <content link = Action                                  property = action
+    <content colon                                 optional
 
 <syntax id = DeInit
     <content link = deinit
     <content colon                                 optional
     <content link = Action                                  property = action
+    <content colon                                 optional
 
 <syntax id = Function
     <content link = function
@@ -365,15 +371,20 @@
 <syntax id = If
     <content link = if
     <content link = Operation                               property = condition
-    <content link = Statement                               property = consequent
+    <content colon
+    <content link = Command                                 property = consequent
     <content link = Else                           optional property = alternative
 
 <syntax id = Else
     <content link = else
     <content colon                                 optional
-    <content link = Statement                               property = alternative
+    <content link = Command                                 property = alternative
 
-<syntax id = Statement                    multiple abstract
+<syntax id = Statement                    multiple
+    <content link = Command                                 property = command
+    <content colon                                 optional
+
+<syntax id = Command                               abstract
     <content link = Operation
     <content link = Let
     <content link = Var
@@ -463,12 +474,14 @@
 <syntax id = Match
     <content link = match
     <content link = Operation                               property = scrutinee
+    <content colon
     <content link = Case                  multiple          property = cases
     <content link = Default                        optional property = alternative
 
 <syntax id = Case                         multiple
     <content link = case
     <content link = Operation                               property = condition
+    <content colon
     <content link = Action                                  property = consequent
 
 <syntax id = Default
@@ -487,6 +500,7 @@
     <content link = TypeAnnotation                 optional property = annotation
     <content link = in
     <content link = Operation                               property = operation
+    <content colon
     <content link = Label                          optional property = name
     <content link = Action                                  property = action
 
@@ -498,6 +512,7 @@
 <syntax id = While
     <content link = while
     <content link = Operation                               property = condition
+    <content colon
     <content link = Label                          optional property = name
     <content link = Action                                  property = action
 
@@ -513,11 +528,11 @@
 <syntax id = Set
     <content link = set
     <content link = Operation                               property = target
+    <content colon
     <content link = Operation                               property = source
 
 <syntax id = Operation
     <content link = Operand               multiple          property = operands
-    <content colon                                 optional
 
 <syntax id = SizeOf
     <content link = sizeof

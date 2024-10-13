@@ -68,6 +68,7 @@ struct DeclarationSyntax;
 struct PrivateSyntax; 
 struct ExportSyntax; 
 struct MemberSyntax; 
+struct ConstituentSyntax; 
 struct DefinitionSyntax; 
 struct GenericParametersSyntax; 
 struct GenericParameterSyntax; 
@@ -129,6 +130,7 @@ struct BlockSyntax;
 struct IfSyntax; 
 struct ElseSyntax; 
 struct StatementSyntax; 
+struct CommandSyntax; 
 struct LetSyntax; 
 struct VarSyntax; 
 struct MutableSyntax; 
@@ -471,16 +473,16 @@ struct LetSyntax : Object {
     BindingSyntax binding;
 };
 
-struct StatementSyntax : Object {
-    StatementSyntax(OperationSyntax _OperationSyntax) : _tag(Operation) { _Operation = _OperationSyntax; }
-    StatementSyntax(LetSyntax _LetSyntax) : _tag(Let) { _Let = _LetSyntax; }
-    StatementSyntax(VarSyntax _VarSyntax) : _tag(Var) { _Var = _VarSyntax; }
-    StatementSyntax(MutableSyntax _MutableSyntax) : _tag(Mutable) { _Mutable = _MutableSyntax; }
-    StatementSyntax(SetSyntax _SetSyntax) : _tag(Set) { _Set = _SetSyntax; }
-    StatementSyntax(ContinueSyntax _ContinueSyntax) : _tag(Continue) { _Continue = _ContinueSyntax; }
-    StatementSyntax(BreakSyntax _BreakSyntax) : _tag(Break) { _Break = _BreakSyntax; }
-    StatementSyntax(ReturnSyntax _ReturnSyntax) : _tag(Return) { _Return = _ReturnSyntax; }
-    StatementSyntax(ThrowSyntax _ThrowSyntax) : _tag(Throw) { _Throw = _ThrowSyntax; }
+struct CommandSyntax : Object {
+    CommandSyntax(OperationSyntax _OperationSyntax) : _tag(Operation) { _Operation = _OperationSyntax; }
+    CommandSyntax(LetSyntax _LetSyntax) : _tag(Let) { _Let = _LetSyntax; }
+    CommandSyntax(VarSyntax _VarSyntax) : _tag(Var) { _Var = _VarSyntax; }
+    CommandSyntax(MutableSyntax _MutableSyntax) : _tag(Mutable) { _Mutable = _MutableSyntax; }
+    CommandSyntax(SetSyntax _SetSyntax) : _tag(Set) { _Set = _SetSyntax; }
+    CommandSyntax(ContinueSyntax _ContinueSyntax) : _tag(Continue) { _Continue = _ContinueSyntax; }
+    CommandSyntax(BreakSyntax _BreakSyntax) : _tag(Break) { _Break = _BreakSyntax; }
+    CommandSyntax(ReturnSyntax _ReturnSyntax) : _tag(Return) { _Return = _ReturnSyntax; }
+    CommandSyntax(ThrowSyntax _ThrowSyntax) : _tag(Throw) { _Throw = _ThrowSyntax; }
     enum {
         Operation,
         Let,
@@ -505,19 +507,26 @@ struct StatementSyntax : Object {
     };
 };
 
-struct ElseSyntax : Object {
-    ElseSyntax(size_t start, size_t end, StatementSyntax alternative) : start(start), end(end), alternative(alternative) {}
+struct StatementSyntax : Object {
+    StatementSyntax(size_t start, size_t end, CommandSyntax command) : start(start), end(end), command(command) {}
     size_t start;
     size_t end;
-    StatementSyntax alternative;
+    CommandSyntax command;
+};
+
+struct ElseSyntax : Object {
+    ElseSyntax(size_t start, size_t end, CommandSyntax alternative) : start(start), end(end), alternative(alternative) {}
+    size_t start;
+    size_t end;
+    CommandSyntax alternative;
 };
 
 struct IfSyntax : Object {
-    IfSyntax(size_t start, size_t end, OperationSyntax condition, StatementSyntax consequent, ElseSyntax* alternative) : start(start), end(end), condition(condition), consequent(consequent), alternative(alternative) {}
+    IfSyntax(size_t start, size_t end, OperationSyntax condition, CommandSyntax consequent, ElseSyntax* alternative) : start(start), end(end), condition(condition), consequent(consequent), alternative(alternative) {}
     size_t start;
     size_t end;
     OperationSyntax condition;
-    StatementSyntax consequent;
+    CommandSyntax consequent;
     ElseSyntax* alternative;
 };
 
@@ -1073,15 +1082,15 @@ struct DefinitionSyntax : Object {
     ConceptSyntax concept_;
 };
 
-struct MemberSyntax : Object {
-    MemberSyntax(DefinitionSyntax _DefinitionSyntax) : _tag(Definition) { _Definition = _DefinitionSyntax; }
-    MemberSyntax(FunctionSyntax _FunctionSyntax) : _tag(Function) { _Function = _FunctionSyntax; }
-    MemberSyntax(ProcedureSyntax _ProcedureSyntax) : _tag(Procedure) { _Procedure = _ProcedureSyntax; }
-    MemberSyntax(OperatorSyntax _OperatorSyntax) : _tag(Operator) { _Operator = _OperatorSyntax; }
-    MemberSyntax(ImplementSyntax _ImplementSyntax) : _tag(Implement) { _Implement = _ImplementSyntax; }
-    MemberSyntax(TraitSyntax _TraitSyntax) : _tag(Trait) { _Trait = _TraitSyntax; }
-    MemberSyntax(MacroSyntax _MacroSyntax) : _tag(Macro) { _Macro = _MacroSyntax; }
-    MemberSyntax(ModuleSyntax _ModuleSyntax) : _tag(Module) { _Module = _ModuleSyntax; }
+struct ConstituentSyntax : Object {
+    ConstituentSyntax(DefinitionSyntax _DefinitionSyntax) : _tag(Definition) { _Definition = _DefinitionSyntax; }
+    ConstituentSyntax(FunctionSyntax _FunctionSyntax) : _tag(Function) { _Function = _FunctionSyntax; }
+    ConstituentSyntax(ProcedureSyntax _ProcedureSyntax) : _tag(Procedure) { _Procedure = _ProcedureSyntax; }
+    ConstituentSyntax(OperatorSyntax _OperatorSyntax) : _tag(Operator) { _Operator = _OperatorSyntax; }
+    ConstituentSyntax(ImplementSyntax _ImplementSyntax) : _tag(Implement) { _Implement = _ImplementSyntax; }
+    ConstituentSyntax(TraitSyntax _TraitSyntax) : _tag(Trait) { _Trait = _TraitSyntax; }
+    ConstituentSyntax(MacroSyntax _MacroSyntax) : _tag(Macro) { _Macro = _MacroSyntax; }
+    ConstituentSyntax(ModuleSyntax _ModuleSyntax) : _tag(Module) { _Module = _ModuleSyntax; }
     enum {
         Definition,
         Function,
@@ -1102,6 +1111,13 @@ struct MemberSyntax : Object {
         MacroSyntax _Macro;
         ModuleSyntax _Module;
     };
+};
+
+struct MemberSyntax : Object {
+    MemberSyntax(size_t start, size_t end, ConstituentSyntax constituent) : start(start), end(end), constituent(constituent) {}
+    size_t start;
+    size_t end;
+    ConstituentSyntax constituent;
 };
 
 struct ExportSyntax : Object {
@@ -1656,18 +1672,42 @@ struct Parser : Object {
     }
 
     Result<MemberSyntax, ParserError> parse_member(Page* _rp, Page* _ep) {
+        auto start = this->lexer.previous_position;
+
+        auto constituent_start = this->lexer.position;
+        auto constituent_result = this->parse_constituent(_rp, _ep);
+        if (constituent_result._tag == Result<ConstituentSyntax, ParserError>::Error)
+        {
+            return Result<MemberSyntax, ParserError> { ._tag = Result<MemberSyntax, ParserError>::Error, ._Error = constituent_result._Error };
+        }
+
+        auto constituent = constituent_result._Ok;
+
+        auto start_colon_2 = this->lexer.previous_position;
+        auto success_colon_2 = this->lexer.parse_colon(_rp);
+        if (!success_colon_2) {
+        }
+
+        auto end = this->lexer.position;
+
+        auto ret = MemberSyntax(start, end, constituent);
+
+        return Result<MemberSyntax, ParserError> { ._tag = Result<MemberSyntax, ParserError>::Ok, ._Ok = ret };
+    }
+
+    Result<ConstituentSyntax, ParserError> parse_constituent(Page* _rp, Page* _ep) {
         {
             auto node_result = this->parse_definition(_rp, _ep);
             if (node_result._tag == Result<DefinitionSyntax, ParserError>::Error)
             {
                 if (node_result._Error._tag == ParserError::InvalidSyntax)
-                    return Result<MemberSyntax, ParserError> { ._tag = Result<MemberSyntax, ParserError>::Error, ._Error = node_result._Error };
+                    return Result<ConstituentSyntax, ParserError> { ._tag = Result<ConstituentSyntax, ParserError>::Error, ._Error = node_result._Error };
             }
             else
             {
                 auto node = node_result._Ok;
-                return Result<MemberSyntax, ParserError> { ._tag = Result<MemberSyntax, ParserError>::Ok, ._Ok = 
-                    MemberSyntax(DefinitionSyntax(node))
+                return Result<ConstituentSyntax, ParserError> { ._tag = Result<ConstituentSyntax, ParserError>::Ok, ._Ok = 
+                    ConstituentSyntax(DefinitionSyntax(node))
                 };
             }
         }
@@ -1676,13 +1716,13 @@ struct Parser : Object {
             if (node_result._tag == Result<FunctionSyntax, ParserError>::Error)
             {
                 if (node_result._Error._tag == ParserError::InvalidSyntax)
-                    return Result<MemberSyntax, ParserError> { ._tag = Result<MemberSyntax, ParserError>::Error, ._Error = node_result._Error };
+                    return Result<ConstituentSyntax, ParserError> { ._tag = Result<ConstituentSyntax, ParserError>::Error, ._Error = node_result._Error };
             }
             else
             {
                 auto node = node_result._Ok;
-                return Result<MemberSyntax, ParserError> { ._tag = Result<MemberSyntax, ParserError>::Ok, ._Ok = 
-                    MemberSyntax(FunctionSyntax(node))
+                return Result<ConstituentSyntax, ParserError> { ._tag = Result<ConstituentSyntax, ParserError>::Ok, ._Ok = 
+                    ConstituentSyntax(FunctionSyntax(node))
                 };
             }
         }
@@ -1691,13 +1731,13 @@ struct Parser : Object {
             if (node_result._tag == Result<ProcedureSyntax, ParserError>::Error)
             {
                 if (node_result._Error._tag == ParserError::InvalidSyntax)
-                    return Result<MemberSyntax, ParserError> { ._tag = Result<MemberSyntax, ParserError>::Error, ._Error = node_result._Error };
+                    return Result<ConstituentSyntax, ParserError> { ._tag = Result<ConstituentSyntax, ParserError>::Error, ._Error = node_result._Error };
             }
             else
             {
                 auto node = node_result._Ok;
-                return Result<MemberSyntax, ParserError> { ._tag = Result<MemberSyntax, ParserError>::Ok, ._Ok = 
-                    MemberSyntax(ProcedureSyntax(node))
+                return Result<ConstituentSyntax, ParserError> { ._tag = Result<ConstituentSyntax, ParserError>::Ok, ._Ok = 
+                    ConstituentSyntax(ProcedureSyntax(node))
                 };
             }
         }
@@ -1706,13 +1746,13 @@ struct Parser : Object {
             if (node_result._tag == Result<OperatorSyntax, ParserError>::Error)
             {
                 if (node_result._Error._tag == ParserError::InvalidSyntax)
-                    return Result<MemberSyntax, ParserError> { ._tag = Result<MemberSyntax, ParserError>::Error, ._Error = node_result._Error };
+                    return Result<ConstituentSyntax, ParserError> { ._tag = Result<ConstituentSyntax, ParserError>::Error, ._Error = node_result._Error };
             }
             else
             {
                 auto node = node_result._Ok;
-                return Result<MemberSyntax, ParserError> { ._tag = Result<MemberSyntax, ParserError>::Ok, ._Ok = 
-                    MemberSyntax(OperatorSyntax(node))
+                return Result<ConstituentSyntax, ParserError> { ._tag = Result<ConstituentSyntax, ParserError>::Ok, ._Ok = 
+                    ConstituentSyntax(OperatorSyntax(node))
                 };
             }
         }
@@ -1721,13 +1761,13 @@ struct Parser : Object {
             if (node_result._tag == Result<ImplementSyntax, ParserError>::Error)
             {
                 if (node_result._Error._tag == ParserError::InvalidSyntax)
-                    return Result<MemberSyntax, ParserError> { ._tag = Result<MemberSyntax, ParserError>::Error, ._Error = node_result._Error };
+                    return Result<ConstituentSyntax, ParserError> { ._tag = Result<ConstituentSyntax, ParserError>::Error, ._Error = node_result._Error };
             }
             else
             {
                 auto node = node_result._Ok;
-                return Result<MemberSyntax, ParserError> { ._tag = Result<MemberSyntax, ParserError>::Ok, ._Ok = 
-                    MemberSyntax(ImplementSyntax(node))
+                return Result<ConstituentSyntax, ParserError> { ._tag = Result<ConstituentSyntax, ParserError>::Ok, ._Ok = 
+                    ConstituentSyntax(ImplementSyntax(node))
                 };
             }
         }
@@ -1736,13 +1776,13 @@ struct Parser : Object {
             if (node_result._tag == Result<TraitSyntax, ParserError>::Error)
             {
                 if (node_result._Error._tag == ParserError::InvalidSyntax)
-                    return Result<MemberSyntax, ParserError> { ._tag = Result<MemberSyntax, ParserError>::Error, ._Error = node_result._Error };
+                    return Result<ConstituentSyntax, ParserError> { ._tag = Result<ConstituentSyntax, ParserError>::Error, ._Error = node_result._Error };
             }
             else
             {
                 auto node = node_result._Ok;
-                return Result<MemberSyntax, ParserError> { ._tag = Result<MemberSyntax, ParserError>::Ok, ._Ok = 
-                    MemberSyntax(TraitSyntax(node))
+                return Result<ConstituentSyntax, ParserError> { ._tag = Result<ConstituentSyntax, ParserError>::Ok, ._Ok = 
+                    ConstituentSyntax(TraitSyntax(node))
                 };
             }
         }
@@ -1751,13 +1791,13 @@ struct Parser : Object {
             if (node_result._tag == Result<MacroSyntax, ParserError>::Error)
             {
                 if (node_result._Error._tag == ParserError::InvalidSyntax)
-                    return Result<MemberSyntax, ParserError> { ._tag = Result<MemberSyntax, ParserError>::Error, ._Error = node_result._Error };
+                    return Result<ConstituentSyntax, ParserError> { ._tag = Result<ConstituentSyntax, ParserError>::Error, ._Error = node_result._Error };
             }
             else
             {
                 auto node = node_result._Ok;
-                return Result<MemberSyntax, ParserError> { ._tag = Result<MemberSyntax, ParserError>::Ok, ._Ok = 
-                    MemberSyntax(MacroSyntax(node))
+                return Result<ConstituentSyntax, ParserError> { ._tag = Result<ConstituentSyntax, ParserError>::Ok, ._Ok = 
+                    ConstituentSyntax(MacroSyntax(node))
                 };
             }
         }
@@ -1766,17 +1806,17 @@ struct Parser : Object {
             if (node_result._tag == Result<ModuleSyntax, ParserError>::Error)
             {
                 if (node_result._Error._tag == ParserError::InvalidSyntax)
-                    return Result<MemberSyntax, ParserError> { ._tag = Result<MemberSyntax, ParserError>::Error, ._Error = node_result._Error };
+                    return Result<ConstituentSyntax, ParserError> { ._tag = Result<ConstituentSyntax, ParserError>::Error, ._Error = node_result._Error };
             }
             else
             {
                 auto node = node_result._Ok;
-                return Result<MemberSyntax, ParserError> { ._tag = Result<MemberSyntax, ParserError>::Ok, ._Ok = 
-                    MemberSyntax(ModuleSyntax(node))
+                return Result<ConstituentSyntax, ParserError> { ._tag = Result<ConstituentSyntax, ParserError>::Ok, ._Ok = 
+                    ConstituentSyntax(ModuleSyntax(node))
                 };
             }
         }
-        return Result<MemberSyntax, ParserError> { ._tag = Result<MemberSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
+        return Result<ConstituentSyntax, ParserError> { ._tag = Result<ConstituentSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
     }
 
     Result<DefinitionSyntax, ParserError> parse_definition(Page* _rp, Page* _ep) {
@@ -3222,6 +3262,11 @@ struct Parser : Object {
 
         auto action = action_result._Ok;
 
+        auto start_colon_5 = this->lexer.previous_position;
+        auto success_colon_5 = this->lexer.parse_colon(_rp);
+        if (!success_colon_5) {
+        }
+
         auto end = this->lexer.position;
 
         auto ret = InitSyntax(start, end, parameters, action);
@@ -3256,6 +3301,11 @@ struct Parser : Object {
         }
 
         auto action = action_result._Ok;
+
+        auto start_colon_4 = this->lexer.previous_position;
+        auto success_colon_4 = this->lexer.parse_colon(_rp);
+        if (!success_colon_4) {
+        }
 
         auto end = this->lexer.position;
 
@@ -4874,13 +4924,18 @@ struct Parser : Object {
 
         auto condition = condition_result._Ok;
 
+        auto start_colon_3 = this->lexer.previous_position;
+        auto success_colon_3 = this->lexer.parse_colon(_rp);
+        if (!success_colon_3) {
+            return Result<IfSyntax, ParserError> { ._tag = Result<IfSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_colon_3, lexer.position, String(_ep, "a colon or a line feed"))) };        }
+
         auto consequent_start = this->lexer.position;
-        auto consequent_result = this->parse_statement(_rp, _ep);
-        if (consequent_result._tag == Result<StatementSyntax, ParserError>::Error)
+        auto consequent_result = this->parse_command(_rp, _ep);
+        if (consequent_result._tag == Result<CommandSyntax, ParserError>::Error)
         {
             switch (consequent_result._Error._tag) {
                 case ParserError::OtherSyntax:
-                    return Result<IfSyntax, ParserError> { ._tag = Result<IfSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(consequent_start, lexer.position, String(_ep, "a valid Statement syntax"))) };
+                    return Result<IfSyntax, ParserError> { ._tag = Result<IfSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(consequent_start, lexer.position, String(_ep, "a valid Command syntax"))) };
                 case ParserError::InvalidSyntax:
                     return Result<IfSyntax, ParserError> { ._tag = Result<IfSyntax, ParserError>::Error, ._Error = consequent_result._Error };
             }
@@ -4924,12 +4979,12 @@ struct Parser : Object {
         }
 
         auto alternative_start = this->lexer.position;
-        auto alternative_result = this->parse_statement(_rp, _ep);
-        if (alternative_result._tag == Result<StatementSyntax, ParserError>::Error)
+        auto alternative_result = this->parse_command(_rp, _ep);
+        if (alternative_result._tag == Result<CommandSyntax, ParserError>::Error)
         {
             switch (alternative_result._Error._tag) {
                 case ParserError::OtherSyntax:
-                    return Result<ElseSyntax, ParserError> { ._tag = Result<ElseSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(alternative_start, lexer.position, String(_ep, "a valid Statement syntax"))) };
+                    return Result<ElseSyntax, ParserError> { ._tag = Result<ElseSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(alternative_start, lexer.position, String(_ep, "a valid Command syntax"))) };
                 case ParserError::InvalidSyntax:
                     return Result<ElseSyntax, ParserError> { ._tag = Result<ElseSyntax, ParserError>::Error, ._Error = alternative_result._Error };
             }
@@ -4970,18 +5025,42 @@ struct Parser : Object {
     }
 
     Result<StatementSyntax, ParserError> parse_statement(Page* _rp, Page* _ep) {
+        auto start = this->lexer.previous_position;
+
+        auto command_start = this->lexer.position;
+        auto command_result = this->parse_command(_rp, _ep);
+        if (command_result._tag == Result<CommandSyntax, ParserError>::Error)
+        {
+            return Result<StatementSyntax, ParserError> { ._tag = Result<StatementSyntax, ParserError>::Error, ._Error = command_result._Error };
+        }
+
+        auto command = command_result._Ok;
+
+        auto start_colon_2 = this->lexer.previous_position;
+        auto success_colon_2 = this->lexer.parse_colon(_rp);
+        if (!success_colon_2) {
+        }
+
+        auto end = this->lexer.position;
+
+        auto ret = StatementSyntax(start, end, command);
+
+        return Result<StatementSyntax, ParserError> { ._tag = Result<StatementSyntax, ParserError>::Ok, ._Ok = ret };
+    }
+
+    Result<CommandSyntax, ParserError> parse_command(Page* _rp, Page* _ep) {
         {
             auto node_result = this->parse_operation(_rp, _ep);
             if (node_result._tag == Result<OperationSyntax, ParserError>::Error)
             {
                 if (node_result._Error._tag == ParserError::InvalidSyntax)
-                    return Result<StatementSyntax, ParserError> { ._tag = Result<StatementSyntax, ParserError>::Error, ._Error = node_result._Error };
+                    return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Error, ._Error = node_result._Error };
             }
             else
             {
                 auto node = node_result._Ok;
-                return Result<StatementSyntax, ParserError> { ._tag = Result<StatementSyntax, ParserError>::Ok, ._Ok = 
-                    StatementSyntax(OperationSyntax(node))
+                return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Ok, ._Ok = 
+                    CommandSyntax(OperationSyntax(node))
                 };
             }
         }
@@ -4990,13 +5069,13 @@ struct Parser : Object {
             if (node_result._tag == Result<LetSyntax, ParserError>::Error)
             {
                 if (node_result._Error._tag == ParserError::InvalidSyntax)
-                    return Result<StatementSyntax, ParserError> { ._tag = Result<StatementSyntax, ParserError>::Error, ._Error = node_result._Error };
+                    return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Error, ._Error = node_result._Error };
             }
             else
             {
                 auto node = node_result._Ok;
-                return Result<StatementSyntax, ParserError> { ._tag = Result<StatementSyntax, ParserError>::Ok, ._Ok = 
-                    StatementSyntax(LetSyntax(node))
+                return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Ok, ._Ok = 
+                    CommandSyntax(LetSyntax(node))
                 };
             }
         }
@@ -5005,13 +5084,13 @@ struct Parser : Object {
             if (node_result._tag == Result<VarSyntax, ParserError>::Error)
             {
                 if (node_result._Error._tag == ParserError::InvalidSyntax)
-                    return Result<StatementSyntax, ParserError> { ._tag = Result<StatementSyntax, ParserError>::Error, ._Error = node_result._Error };
+                    return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Error, ._Error = node_result._Error };
             }
             else
             {
                 auto node = node_result._Ok;
-                return Result<StatementSyntax, ParserError> { ._tag = Result<StatementSyntax, ParserError>::Ok, ._Ok = 
-                    StatementSyntax(VarSyntax(node))
+                return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Ok, ._Ok = 
+                    CommandSyntax(VarSyntax(node))
                 };
             }
         }
@@ -5020,13 +5099,13 @@ struct Parser : Object {
             if (node_result._tag == Result<MutableSyntax, ParserError>::Error)
             {
                 if (node_result._Error._tag == ParserError::InvalidSyntax)
-                    return Result<StatementSyntax, ParserError> { ._tag = Result<StatementSyntax, ParserError>::Error, ._Error = node_result._Error };
+                    return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Error, ._Error = node_result._Error };
             }
             else
             {
                 auto node = node_result._Ok;
-                return Result<StatementSyntax, ParserError> { ._tag = Result<StatementSyntax, ParserError>::Ok, ._Ok = 
-                    StatementSyntax(MutableSyntax(node))
+                return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Ok, ._Ok = 
+                    CommandSyntax(MutableSyntax(node))
                 };
             }
         }
@@ -5035,13 +5114,13 @@ struct Parser : Object {
             if (node_result._tag == Result<SetSyntax, ParserError>::Error)
             {
                 if (node_result._Error._tag == ParserError::InvalidSyntax)
-                    return Result<StatementSyntax, ParserError> { ._tag = Result<StatementSyntax, ParserError>::Error, ._Error = node_result._Error };
+                    return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Error, ._Error = node_result._Error };
             }
             else
             {
                 auto node = node_result._Ok;
-                return Result<StatementSyntax, ParserError> { ._tag = Result<StatementSyntax, ParserError>::Ok, ._Ok = 
-                    StatementSyntax(SetSyntax(node))
+                return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Ok, ._Ok = 
+                    CommandSyntax(SetSyntax(node))
                 };
             }
         }
@@ -5050,13 +5129,13 @@ struct Parser : Object {
             if (node_result._tag == Result<ContinueSyntax, ParserError>::Error)
             {
                 if (node_result._Error._tag == ParserError::InvalidSyntax)
-                    return Result<StatementSyntax, ParserError> { ._tag = Result<StatementSyntax, ParserError>::Error, ._Error = node_result._Error };
+                    return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Error, ._Error = node_result._Error };
             }
             else
             {
                 auto node = node_result._Ok;
-                return Result<StatementSyntax, ParserError> { ._tag = Result<StatementSyntax, ParserError>::Ok, ._Ok = 
-                    StatementSyntax(ContinueSyntax(node))
+                return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Ok, ._Ok = 
+                    CommandSyntax(ContinueSyntax(node))
                 };
             }
         }
@@ -5065,13 +5144,13 @@ struct Parser : Object {
             if (node_result._tag == Result<BreakSyntax, ParserError>::Error)
             {
                 if (node_result._Error._tag == ParserError::InvalidSyntax)
-                    return Result<StatementSyntax, ParserError> { ._tag = Result<StatementSyntax, ParserError>::Error, ._Error = node_result._Error };
+                    return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Error, ._Error = node_result._Error };
             }
             else
             {
                 auto node = node_result._Ok;
-                return Result<StatementSyntax, ParserError> { ._tag = Result<StatementSyntax, ParserError>::Ok, ._Ok = 
-                    StatementSyntax(BreakSyntax(node))
+                return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Ok, ._Ok = 
+                    CommandSyntax(BreakSyntax(node))
                 };
             }
         }
@@ -5080,13 +5159,13 @@ struct Parser : Object {
             if (node_result._tag == Result<ReturnSyntax, ParserError>::Error)
             {
                 if (node_result._Error._tag == ParserError::InvalidSyntax)
-                    return Result<StatementSyntax, ParserError> { ._tag = Result<StatementSyntax, ParserError>::Error, ._Error = node_result._Error };
+                    return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Error, ._Error = node_result._Error };
             }
             else
             {
                 auto node = node_result._Ok;
-                return Result<StatementSyntax, ParserError> { ._tag = Result<StatementSyntax, ParserError>::Ok, ._Ok = 
-                    StatementSyntax(ReturnSyntax(node))
+                return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Ok, ._Ok = 
+                    CommandSyntax(ReturnSyntax(node))
                 };
             }
         }
@@ -5095,17 +5174,17 @@ struct Parser : Object {
             if (node_result._tag == Result<ThrowSyntax, ParserError>::Error)
             {
                 if (node_result._Error._tag == ParserError::InvalidSyntax)
-                    return Result<StatementSyntax, ParserError> { ._tag = Result<StatementSyntax, ParserError>::Error, ._Error = node_result._Error };
+                    return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Error, ._Error = node_result._Error };
             }
             else
             {
                 auto node = node_result._Ok;
-                return Result<StatementSyntax, ParserError> { ._tag = Result<StatementSyntax, ParserError>::Ok, ._Ok = 
-                    StatementSyntax(ThrowSyntax(node))
+                return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Ok, ._Ok = 
+                    CommandSyntax(ThrowSyntax(node))
                 };
             }
         }
-        return Result<StatementSyntax, ParserError> { ._tag = Result<StatementSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
+        return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
     }
 
     Result<LetSyntax, ParserError> parse_let(Page* _rp, Page* _ep) {
@@ -5811,6 +5890,11 @@ struct Parser : Object {
 
         auto scrutinee = scrutinee_result._Ok;
 
+        auto start_colon_3 = this->lexer.previous_position;
+        auto success_colon_3 = this->lexer.parse_colon(_rp);
+        if (!success_colon_3) {
+            return Result<MatchSyntax, ParserError> { ._tag = Result<MatchSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_colon_3, lexer.position, String(_ep, "a colon or a line feed"))) };        }
+
         auto cases_start = this->lexer.position;
         auto cases_result = this->parse_case_list(_rp, _ep);
         if (cases_result._tag == Result<Vector<CaseSyntax>, ParserError>::Error)
@@ -5893,6 +5977,11 @@ struct Parser : Object {
         }
 
         auto condition = condition_result._Ok;
+
+        auto start_colon_3 = this->lexer.previous_position;
+        auto success_colon_3 = this->lexer.parse_colon(_rp);
+        if (!success_colon_3) {
+            return Result<CaseSyntax, ParserError> { ._tag = Result<CaseSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_colon_3, lexer.position, String(_ep, "a colon or a line feed"))) };        }
 
         auto consequent_start = this->lexer.position;
         auto consequent_result = this->parse_action(_rp, _ep);
@@ -6047,6 +6136,11 @@ struct Parser : Object {
 
         auto operation = operation_result._Ok;
 
+        auto start_colon_6 = this->lexer.previous_position;
+        auto success_colon_6 = this->lexer.parse_colon(_rp);
+        if (!success_colon_6) {
+            return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_colon_6, lexer.position, String(_ep, "a colon or a line feed"))) };        }
+
         auto name_start = this->lexer.position;
         auto name_result = this->parse_label(_rp, _ep);
         if (name_result._tag == Result<LabelSyntax, ParserError>::Error)
@@ -6136,6 +6230,11 @@ struct Parser : Object {
         }
 
         auto condition = condition_result._Ok;
+
+        auto start_colon_3 = this->lexer.previous_position;
+        auto success_colon_3 = this->lexer.parse_colon(_rp);
+        if (!success_colon_3) {
+            return Result<WhileSyntax, ParserError> { ._tag = Result<WhileSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_colon_3, lexer.position, String(_ep, "a colon or a line feed"))) };        }
 
         auto name_start = this->lexer.position;
         auto name_result = this->parse_label(_rp, _ep);
@@ -6298,6 +6397,11 @@ struct Parser : Object {
 
         auto target = target_result._Ok;
 
+        auto start_colon_3 = this->lexer.previous_position;
+        auto success_colon_3 = this->lexer.parse_colon(_rp);
+        if (!success_colon_3) {
+            return Result<SetSyntax, ParserError> { ._tag = Result<SetSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_colon_3, lexer.position, String(_ep, "a colon or a line feed"))) };        }
+
         auto source_start = this->lexer.position;
         auto source_result = this->parse_operation(_rp, _ep);
         if (source_result._tag == Result<OperationSyntax, ParserError>::Error)
@@ -6330,11 +6434,6 @@ struct Parser : Object {
         }
 
         auto operands = operands_result._Ok;
-
-        auto start_colon_2 = this->lexer.previous_position;
-        auto success_colon_2 = this->lexer.parse_colon(_rp);
-        if (!success_colon_2) {
-        }
 
         auto end = this->lexer.position;
 
