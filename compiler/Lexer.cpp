@@ -542,7 +542,7 @@ struct Lexer : Object {
         }
     }
 
-    void skip_whitespace(bool line_feed) {
+    void skip_whitespace(bool skip_line_feed) {
         while (true) {
             switch ((size_t)this->character) {
                 case 0:
@@ -560,7 +560,7 @@ struct Lexer : Object {
                             read_character();
                             continue;
                         case '\n':
-                            if (line_feed) {
+                            if (skip_line_feed) {
                                 read_character();
                                 continue;
                             }
