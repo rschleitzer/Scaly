@@ -10,7 +10,8 @@ define PageListIterator(current: pointer[PageNode])
             let current this.current
             set this.current: *(this.current).next
             return current.element
-        } else
+        }\
+        else
         {
             return null
         }

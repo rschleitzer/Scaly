@@ -567,6 +567,25 @@ struct Lexer : Object {
                             else {
                                 return;
                             }
+                        case '\\':
+                            read_character();
+                                switch ((size_t)this->character) {
+                                    case 0:
+                                        return;
+                                    default:
+                                    {
+                                        switch(*this->character) {
+                                            case '\r':
+                                                read_character();
+                                                read_character();
+                                                continue;
+                                            case '\n':
+                                                read_character();
+                                                continue;
+                                        }
+                                    }
+                                }
+
 
                         case ';':
                             {

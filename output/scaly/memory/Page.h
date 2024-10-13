@@ -1,0 +1,25 @@
+#ifndef _Page_h
+#define _Page_h
+#include "../../scaly.h"
+using namespace scaly::memory;
+const int PAGE_SIZE = 0x1000;
+
+struct Page : Object {
+    PageList exclusive_pages;
+    void* next_object;
+    Page* next_page;
+    Page* current_page;
+    void deallocate_extensions();
+    static Page* get(void* address);
+    void reset();
+    void deallocate_exclusive_page(Page* page);
+    void* allocate_raw(size_t size, size_t align);
+    size_t get_capacity(size_t align);
+    static Page* allocate_page();
+    Page* allocate_exclusive_page();
+    void forget();
+    bool is_oversized();
+    void* allocate_oversized(size_t size);
+};
+
+#endif
