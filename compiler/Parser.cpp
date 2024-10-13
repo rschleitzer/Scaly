@@ -65,6 +65,7 @@ struct Literal : Object {
 struct ProgramSyntax; 
 struct FileSyntax; 
 struct DeclarationSyntax; 
+struct SymbolSyntax; 
 struct PrivateSyntax; 
 struct ExportSyntax; 
 struct MemberSyntax; 
@@ -99,7 +100,7 @@ struct FunctionSyntax;
 struct ProcedureSyntax; 
 struct OperatorSyntax; 
 struct TargetSyntax; 
-struct SymbolSyntax; 
+struct NamedSyntax; 
 struct RoutineSyntax; 
 struct ImplementationSyntax; 
 struct ExternSyntax; 
@@ -800,8 +801,8 @@ struct RoutineSyntax : Object {
     ImplementationSyntax implementation;
 };
 
-struct SymbolSyntax : Object {
-    SymbolSyntax(size_t start, size_t end, String name, RoutineSyntax routine) : start(start), end(end), name(name), routine(routine) {}
+struct NamedSyntax : Object {
+    NamedSyntax(size_t start, size_t end, String name, RoutineSyntax routine) : start(start), end(end), name(name), routine(routine) {}
     size_t start;
     size_t end;
     String name;
@@ -809,14 +810,14 @@ struct SymbolSyntax : Object {
 };
 
 struct TargetSyntax : Object {
-    TargetSyntax(SymbolSyntax _SymbolSyntax) : _tag(Symbol) { _Symbol = _SymbolSyntax; }
+    TargetSyntax(NamedSyntax _NamedSyntax) : _tag(Named) { _Named = _NamedSyntax; }
     TargetSyntax(RoutineSyntax _RoutineSyntax) : _tag(Routine) { _Routine = _RoutineSyntax; }
     enum {
-        Symbol,
+        Named,
         Routine,
     } _tag;
     union {
-        SymbolSyntax _Symbol;
+        NamedSyntax _Named;
         RoutineSyntax _Routine;
     };
 };
@@ -1149,14 +1150,14 @@ struct PrivateSyntax : Object {
     ExportSyntax export_;
 };
 
-struct DeclarationSyntax : Object {
-    DeclarationSyntax(PrivateSyntax _PrivateSyntax) : _tag(Private) { _Private = _PrivateSyntax; }
-    DeclarationSyntax(DefinitionSyntax _DefinitionSyntax) : _tag(Definition) { _Definition = _DefinitionSyntax; }
-    DeclarationSyntax(FunctionSyntax _FunctionSyntax) : _tag(Function) { _Function = _FunctionSyntax; }
-    DeclarationSyntax(OperatorSyntax _OperatorSyntax) : _tag(Operator) { _Operator = _OperatorSyntax; }
-    DeclarationSyntax(TraitSyntax _TraitSyntax) : _tag(Trait) { _Trait = _TraitSyntax; }
-    DeclarationSyntax(MacroSyntax _MacroSyntax) : _tag(Macro) { _Macro = _MacroSyntax; }
-    DeclarationSyntax(ModuleSyntax _ModuleSyntax) : _tag(Module) { _Module = _ModuleSyntax; }
+struct SymbolSyntax : Object {
+    SymbolSyntax(PrivateSyntax _PrivateSyntax) : _tag(Private) { _Private = _PrivateSyntax; }
+    SymbolSyntax(DefinitionSyntax _DefinitionSyntax) : _tag(Definition) { _Definition = _DefinitionSyntax; }
+    SymbolSyntax(FunctionSyntax _FunctionSyntax) : _tag(Function) { _Function = _FunctionSyntax; }
+    SymbolSyntax(OperatorSyntax _OperatorSyntax) : _tag(Operator) { _Operator = _OperatorSyntax; }
+    SymbolSyntax(TraitSyntax _TraitSyntax) : _tag(Trait) { _Trait = _TraitSyntax; }
+    SymbolSyntax(MacroSyntax _MacroSyntax) : _tag(Macro) { _Macro = _MacroSyntax; }
+    SymbolSyntax(ModuleSyntax _ModuleSyntax) : _tag(Module) { _Module = _ModuleSyntax; }
     enum {
         Private,
         Definition,
@@ -1175,6 +1176,13 @@ struct DeclarationSyntax : Object {
         MacroSyntax _Macro;
         ModuleSyntax _Module;
     };
+};
+
+struct DeclarationSyntax : Object {
+    DeclarationSyntax(size_t start, size_t end, SymbolSyntax symbol) : start(start), end(end), symbol(symbol) {}
+    size_t start;
+    size_t end;
+    SymbolSyntax symbol;
 };
 
 struct FileSyntax : Object {
@@ -1429,18 +1437,42 @@ struct Parser : Object {
     }
 
     Result<DeclarationSyntax, ParserError> parse_declaration(Page* _rp, Page* _ep) {
+        auto start = this->lexer.previous_position;
+
+        auto symbol_start = this->lexer.position;
+        auto symbol_result = this->parse_symbol(_rp, _ep);
+        if (symbol_result._tag == Result<SymbolSyntax, ParserError>::Error)
+        {
+            return Result<DeclarationSyntax, ParserError> { ._tag = Result<DeclarationSyntax, ParserError>::Error, ._Error = symbol_result._Error };
+        }
+
+        auto symbol = symbol_result._Ok;
+
+        auto start_colon_2 = this->lexer.previous_position;
+        auto success_colon_2 = this->lexer.parse_colon(_rp);
+        if (!success_colon_2) {
+        }
+
+        auto end = this->lexer.position;
+
+        auto ret = DeclarationSyntax(start, end, symbol);
+
+        return Result<DeclarationSyntax, ParserError> { ._tag = Result<DeclarationSyntax, ParserError>::Ok, ._Ok = ret };
+    }
+
+    Result<SymbolSyntax, ParserError> parse_symbol(Page* _rp, Page* _ep) {
         {
             auto node_result = this->parse_private(_rp, _ep);
             if (node_result._tag == Result<PrivateSyntax, ParserError>::Error)
             {
                 if (node_result._Error._tag == ParserError::InvalidSyntax)
-                    return Result<DeclarationSyntax, ParserError> { ._tag = Result<DeclarationSyntax, ParserError>::Error, ._Error = node_result._Error };
+                    return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Error, ._Error = node_result._Error };
             }
             else
             {
                 auto node = node_result._Ok;
-                return Result<DeclarationSyntax, ParserError> { ._tag = Result<DeclarationSyntax, ParserError>::Ok, ._Ok = 
-                    DeclarationSyntax(PrivateSyntax(node))
+                return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Ok, ._Ok = 
+                    SymbolSyntax(PrivateSyntax(node))
                 };
             }
         }
@@ -1449,13 +1481,13 @@ struct Parser : Object {
             if (node_result._tag == Result<DefinitionSyntax, ParserError>::Error)
             {
                 if (node_result._Error._tag == ParserError::InvalidSyntax)
-                    return Result<DeclarationSyntax, ParserError> { ._tag = Result<DeclarationSyntax, ParserError>::Error, ._Error = node_result._Error };
+                    return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Error, ._Error = node_result._Error };
             }
             else
             {
                 auto node = node_result._Ok;
-                return Result<DeclarationSyntax, ParserError> { ._tag = Result<DeclarationSyntax, ParserError>::Ok, ._Ok = 
-                    DeclarationSyntax(DefinitionSyntax(node))
+                return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Ok, ._Ok = 
+                    SymbolSyntax(DefinitionSyntax(node))
                 };
             }
         }
@@ -1464,13 +1496,13 @@ struct Parser : Object {
             if (node_result._tag == Result<FunctionSyntax, ParserError>::Error)
             {
                 if (node_result._Error._tag == ParserError::InvalidSyntax)
-                    return Result<DeclarationSyntax, ParserError> { ._tag = Result<DeclarationSyntax, ParserError>::Error, ._Error = node_result._Error };
+                    return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Error, ._Error = node_result._Error };
             }
             else
             {
                 auto node = node_result._Ok;
-                return Result<DeclarationSyntax, ParserError> { ._tag = Result<DeclarationSyntax, ParserError>::Ok, ._Ok = 
-                    DeclarationSyntax(FunctionSyntax(node))
+                return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Ok, ._Ok = 
+                    SymbolSyntax(FunctionSyntax(node))
                 };
             }
         }
@@ -1479,13 +1511,13 @@ struct Parser : Object {
             if (node_result._tag == Result<OperatorSyntax, ParserError>::Error)
             {
                 if (node_result._Error._tag == ParserError::InvalidSyntax)
-                    return Result<DeclarationSyntax, ParserError> { ._tag = Result<DeclarationSyntax, ParserError>::Error, ._Error = node_result._Error };
+                    return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Error, ._Error = node_result._Error };
             }
             else
             {
                 auto node = node_result._Ok;
-                return Result<DeclarationSyntax, ParserError> { ._tag = Result<DeclarationSyntax, ParserError>::Ok, ._Ok = 
-                    DeclarationSyntax(OperatorSyntax(node))
+                return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Ok, ._Ok = 
+                    SymbolSyntax(OperatorSyntax(node))
                 };
             }
         }
@@ -1494,13 +1526,13 @@ struct Parser : Object {
             if (node_result._tag == Result<TraitSyntax, ParserError>::Error)
             {
                 if (node_result._Error._tag == ParserError::InvalidSyntax)
-                    return Result<DeclarationSyntax, ParserError> { ._tag = Result<DeclarationSyntax, ParserError>::Error, ._Error = node_result._Error };
+                    return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Error, ._Error = node_result._Error };
             }
             else
             {
                 auto node = node_result._Ok;
-                return Result<DeclarationSyntax, ParserError> { ._tag = Result<DeclarationSyntax, ParserError>::Ok, ._Ok = 
-                    DeclarationSyntax(TraitSyntax(node))
+                return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Ok, ._Ok = 
+                    SymbolSyntax(TraitSyntax(node))
                 };
             }
         }
@@ -1509,13 +1541,13 @@ struct Parser : Object {
             if (node_result._tag == Result<MacroSyntax, ParserError>::Error)
             {
                 if (node_result._Error._tag == ParserError::InvalidSyntax)
-                    return Result<DeclarationSyntax, ParserError> { ._tag = Result<DeclarationSyntax, ParserError>::Error, ._Error = node_result._Error };
+                    return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Error, ._Error = node_result._Error };
             }
             else
             {
                 auto node = node_result._Ok;
-                return Result<DeclarationSyntax, ParserError> { ._tag = Result<DeclarationSyntax, ParserError>::Ok, ._Ok = 
-                    DeclarationSyntax(MacroSyntax(node))
+                return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Ok, ._Ok = 
+                    SymbolSyntax(MacroSyntax(node))
                 };
             }
         }
@@ -1524,17 +1556,17 @@ struct Parser : Object {
             if (node_result._tag == Result<ModuleSyntax, ParserError>::Error)
             {
                 if (node_result._Error._tag == ParserError::InvalidSyntax)
-                    return Result<DeclarationSyntax, ParserError> { ._tag = Result<DeclarationSyntax, ParserError>::Error, ._Error = node_result._Error };
+                    return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Error, ._Error = node_result._Error };
             }
             else
             {
                 auto node = node_result._Ok;
-                return Result<DeclarationSyntax, ParserError> { ._tag = Result<DeclarationSyntax, ParserError>::Ok, ._Ok = 
-                    DeclarationSyntax(ModuleSyntax(node))
+                return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Ok, ._Ok = 
+                    SymbolSyntax(ModuleSyntax(node))
                 };
             }
         }
-        return Result<DeclarationSyntax, ParserError> { ._tag = Result<DeclarationSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
+        return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
     }
 
     Result<PrivateSyntax, ParserError> parse_private(Page* _rp, Page* _ep) {
@@ -3406,8 +3438,8 @@ struct Parser : Object {
 
     Result<TargetSyntax, ParserError> parse_target(Page* _rp, Page* _ep) {
         {
-            auto node_result = this->parse_symbol(_rp, _ep);
-            if (node_result._tag == Result<SymbolSyntax, ParserError>::Error)
+            auto node_result = this->parse_named(_rp, _ep);
+            if (node_result._tag == Result<NamedSyntax, ParserError>::Error)
             {
                 if (node_result._Error._tag == ParserError::InvalidSyntax)
                     return Result<TargetSyntax, ParserError> { ._tag = Result<TargetSyntax, ParserError>::Error, ._Error = node_result._Error };
@@ -3416,7 +3448,7 @@ struct Parser : Object {
             {
                 auto node = node_result._Ok;
                 return Result<TargetSyntax, ParserError> { ._tag = Result<TargetSyntax, ParserError>::Ok, ._Ok = 
-                    TargetSyntax(SymbolSyntax(node))
+                    TargetSyntax(NamedSyntax(node))
                 };
             }
         }
@@ -3438,19 +3470,19 @@ struct Parser : Object {
         return Result<TargetSyntax, ParserError> { ._tag = Result<TargetSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
     }
 
-    Result<SymbolSyntax, ParserError> parse_symbol(Page* _rp, Page* _ep) {
+    Result<NamedSyntax, ParserError> parse_named(Page* _rp, Page* _ep) {
         auto start = this->lexer.previous_position;
 
         auto start_name = this->lexer.previous_position;
         auto name = this->lexer.parse_identifier(_rp, this->keywords);
         if (name != nullptr) {
             if (!this->is_identifier(*name)) {
-            return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
+            return Result<NamedSyntax, ParserError> { ._tag = Result<NamedSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
 
             }
         }
         else {
-            return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
+            return Result<NamedSyntax, ParserError> { ._tag = Result<NamedSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
 
         }
 
@@ -3460,9 +3492,9 @@ struct Parser : Object {
         {
             switch (routine_result._Error._tag) {
                 case ParserError::OtherSyntax:
-                    return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(routine_start, lexer.position, String(_ep, "a valid Routine syntax"))) };
+                    return Result<NamedSyntax, ParserError> { ._tag = Result<NamedSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(routine_start, lexer.position, String(_ep, "a valid Routine syntax"))) };
                 case ParserError::InvalidSyntax:
-                    return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Error, ._Error = routine_result._Error };
+                    return Result<NamedSyntax, ParserError> { ._tag = Result<NamedSyntax, ParserError>::Error, ._Error = routine_result._Error };
             }
         }
 
@@ -3470,9 +3502,9 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = SymbolSyntax(start, end, *name, routine);
+        auto ret = NamedSyntax(start, end, *name, routine);
 
-        return Result<SymbolSyntax, ParserError> { ._tag = Result<SymbolSyntax, ParserError>::Ok, ._Ok = ret };
+        return Result<NamedSyntax, ParserError> { ._tag = Result<NamedSyntax, ParserError>::Ok, ._Ok = ret };
     }
 
     Result<RoutineSyntax, ParserError> parse_routine(Page* _rp, Page* _ep) {

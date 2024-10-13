@@ -3,7 +3,8 @@ define ListIterator[T] (current: pointer[Node[T]]) {
     init (head: pointer[Node[T]])  { set this.current : head }
 
     procedure next: pointer[T] {
-        if this.current = null {
+        if this.current = null
+        {
             let current this.current
             set this.current: this.current*.next;
             return current*.element&;

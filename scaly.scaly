@@ -3,8 +3,8 @@ define scaly {
     ;module libc
     ;module types
     module memory
-    ;module containers
-    ;module io
+    module containers
+    module io
 }
 
 memory.test()

@@ -11,7 +11,11 @@
     <content link = Use                   multiple optional property = uses
     <content link = Declaration           multiple optional property = declarations
 
-<syntax id = Declaration                  multiple abstract
+<syntax id = Declaration                  multiple
+    <content link = Symbol                                  property = symbol
+    <content colon                                 optional
+
+<syntax id = Symbol                                abstract
     <content link = Private
     <content link = Definition
     <content link = Function
@@ -218,10 +222,10 @@
     <content link = Target                                  property = target
 
 <syntax id = Target                                abstract
-    <content link = Symbol
+    <content link = Named
     <content link = Routine
 
-<syntax id = Symbol
+<syntax id = Named
     <content identifier                                     property = name
     <content link = Routine                                 property = routine
 

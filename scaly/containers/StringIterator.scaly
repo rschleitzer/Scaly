@@ -12,9 +12,9 @@ init(string: String) {
 }
 
 function next() returns pointer[char] {
-    if this.current = last {
-        null
-    } else {
+    if this.current = last
+        null\
+    else {
         let ret this.current
         set this.current: this.current + 1
         ret
