@@ -111,7 +111,7 @@
     <content link = Class                          optional property = variant
 
 <syntax id = Constant
-    <content link = Operation                               property = operation
+    <content link = Operand               multiple          property = operation
     <content colon                                 optional
 
 <syntax id = Delegate
@@ -269,7 +269,7 @@
     <content link = macro
     <content identifier                                     property = name
     <content link = Model                                   property = model
-    <content link = Operation                               property = rule
+    <content link = Operand               multiple          property = rule
 
 <syntax id = Attribute                    multiple
     <content attribute                                      property = name
@@ -315,12 +315,13 @@
 
 <syntax id = Catch                        multiple
     <content link = catch
-    <content link = Operation                               property = condition
-    <content link = Operation                               property = handler
+    <content link = Operand               multiple          property = condition
+    <content colon
+    <content link = Operand               multiple          property = handler
 
 <syntax id = Drop
     <content link = drop
-    <content link = Operation                               property = handler
+    <content link = Operand               multiple          property = handler
 
 <syntax id = Expression                            abstract
     <content link = Literal
@@ -352,7 +353,7 @@
 
 <syntax id = Value
     <content colon
-    <content link = Operation                               property = value
+    <content link = Operand               multiple          property = value
     <content link = Attribute             multiple optional property = attributes
 
 <syntax id = Vector
@@ -362,7 +363,7 @@
     <content link = Lifetime                       optional property = lifetime
 
 <syntax id = Element                      multiple
-    <content link = Operation                               property = operation
+    <content link = Operand               multiple          property = operation
     <content link = Attribute             multiple optional property = attributes
     <content link = comma                          optional
 
@@ -374,7 +375,7 @@
 
 <syntax id = If
     <content link = if
-    <content link = Operation                               property = condition
+    <content link = Operand               multiple          property = condition
     <content colon
     <content link = Command                                 property = consequent
     <content link = Else                           optional property = alternative
@@ -414,7 +415,7 @@
 <syntax id = Binding
     <content identifier                                     property = name
     <content link = BindingAnnotation              optional property = annotation
-    <content link = Operation                               property = operation
+    <content link = Operand              multiple          property = operation
 
 <syntax id = BindingAnnotation
     <content colon
@@ -460,7 +461,7 @@
 <syntax id = Break
     <content link = break
     <content link = Loop                           optional property = name
-    <content link = Operation                      optional property = result
+    <content link = Operand               multiple optional property = result
     <content colon                                 optional
 
 <syntax id = Loop
@@ -469,22 +470,22 @@
 
 <syntax id = Return
     <content link = return
-    <content link = Operation                      optional property = result
+    <content link = Operand               multiple optional property = result
 
 <syntax id = Throw
     <content link = throw
-    <content link = Operation                      optional property = result
+    <content link = Operand               multiple optional property = result
 
 <syntax id = Match
     <content link = match
-    <content link = Operation                               property = scrutinee
+    <content link = Operand               multiple          property = scrutinee
     <content colon
     <content link = Case                  multiple          property = cases
     <content link = Default                        optional property = alternative
 
 <syntax id = Case                         multiple
     <content link = case
-    <content link = Operation                               property = condition
+    <content link = Operand               multiple          property = condition
     <content colon
     <content link = Action                                  property = consequent
 
@@ -494,7 +495,7 @@
 
 <syntax id = Lambda
     <content link = lambda
-    <content link = Operation                               property = input
+    <content link = Operand               multiple          property = input
     <content colon
     <content link = Action                                  property = block
 
@@ -503,7 +504,7 @@
     <content identifier                                     property = variable
     <content link = TypeAnnotation                 optional property = annotation
     <content link = in
-    <content link = Operation                               property = operation
+    <content link = Operand               multiple          property = operation
     <content colon
     <content link = Label                          optional property = name
     <content link = Action                                  property = action
@@ -515,7 +516,7 @@
 
 <syntax id = While
     <content link = while
-    <content link = Operation                               property = condition
+    <content link = Operand               multiple          property = condition
     <content colon
     <content link = Label                          optional property = name
     <content link = Action                                  property = action
@@ -529,14 +530,14 @@
     <content link = Operation
     <content link = Set
 
-<syntax id = Set
-    <content link = set
-    <content link = Operation                               property = target
-    <content colon
-    <content link = Operation                               property = source
-
 <syntax id = Operation
     <content link = Operand               multiple          property = operands
+
+<syntax id = Set
+    <content link = set
+    <content link = Operand               multiple          property = target
+    <content colon
+    <content link = Operand               multiple          property = source
 
 <syntax id = SizeOf
     <content link = sizeof
