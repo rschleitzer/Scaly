@@ -1648,6 +1648,13 @@ Result<Module, ModelError> build_module(Page* _rp, Page* _ep, String path, Strin
         }
     }
 
+    auto multi_map = MultiMap<String, Function>(_r.get_page(), functions_builder);
+    auto multi_map_iterator = MultiMapIterator<String, Function>(multi_map);
+    while (auto functions = multi_map_iterator.next()) {
+        auto name = (*functions)[0]->name;
+        symbols_builder.add(String(name), Nameable { ._tag = Nameable::Functions, ._Functions = Vector<Function>(_rp, *functions) });
+    }
+
     Span span(file_syntax.start, file_syntax.end);
     auto ret = Module(private_, String(_rp, file_name), name, Vector<Module>(_rp, modules), Vector<Use>(_rp, uses), HashMap<String, Nameable>(_rp, symbols_builder));
     

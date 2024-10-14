@@ -72,11 +72,6 @@ struct Transpiler : Object {
         StringBuilder& namespace_open_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(namespace_open);
 
         bool leaf_module = is_leaf_module(module);
-        if (!leaf_module) {
-            header_builder.append("namespace ");
-            header_builder.append(module.name);
-            header_builder.append(" {\n");
-        }
 
         auto _symbols_result = build_symbols(_ep, path, module.file, module.name, header_builder, cpp_builder, main_header, namespace_open, namespace_close, module.symbols);
         if (_symbols_result)
@@ -85,9 +80,6 @@ struct Transpiler : Object {
         cpp_builder.append('\n');
         cpp_builder.append(namespace_close);
 
-        if (!leaf_module) {
-            header_builder.append("\n}");
-        }
         header_builder.append("\n#endif");
 
         StringBuilder& header_name_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(path);
@@ -179,6 +171,9 @@ struct Transpiler : Object {
 
     TranspilerError* build_namespace(Page* _ep, String path, String source, String name, StringBuilder& header_builder, StringBuilder& cpp_builder, String main_header, String namespace_open, String namespace_close, Namespace& namespace_) {
         Region _r;
+        header_builder.append("namespace ");
+        header_builder.append(name);
+        header_builder.append(" {\n");
         StringBuilder& namespace_open_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(namespace_open);
         namespace_open_builder.append("\nnamespace ");
         namespace_open_builder.append(name);
@@ -199,6 +194,7 @@ struct Transpiler : Object {
             if (_result != nullptr)
                 return new(alignof(TranspilerError), _ep) TranspilerError(*_result);
         }
+        header_builder.append("\n}");
 
         return nullptr;
     }
@@ -372,6 +368,8 @@ struct Transpiler : Object {
     }
 
     void build_initializer_header(StringBuilder& header_builder, StringBuilder& cpp_builder, String name, bool is_generic) {
+        if (is_generic)
+            header_builder.append('\n');
         header_builder.append("\n    ");
         header_builder.append(name);
         if (!is_generic) {
@@ -426,13 +424,27 @@ struct Transpiler : Object {
         }
     }
 
-    TranspilerError* build_functions(Page* _ep, StringBuilder& header_builder, StringBuilder& cpp_builder, Vector<Function>& functions, String* name, bool isTemplate) {
+    TranspilerError* build_functions(Page* _ep, StringBuilder& header_builder, StringBuilder& cpp_builder, Vector<Function>& functions, String* name, bool is_template) {
         Region _r;
         auto function_iterator = VectorIterator<Function>(&functions);
         bool first = true;
         while (auto function = function_iterator.next()) {
+            if (function->implementation._tag == Implementation::Extern) {
+                header_builder.append("extern \"C\" ");
+                if (function->output.length == 0)
+                    header_builder.append("void");
+                else
+                    build_type(header_builder, function->output[0]->type);
+                header_builder.append(' ');
+                header_builder.append(function->name);
+                build_input(header_builder, function->input, function->lifetime);
+                header_builder.append(";\n");
+                continue;
+            }
+            if (is_template)
+                header_builder.append('\n');
             function_prefix(header_builder, function, name != nullptr, true);
-            if (!isTemplate) {
+            if (!is_template) {
                 cpp_builder.append('\n');
                 function_prefix(cpp_builder, function, false, false);
                 if (name != nullptr) {
@@ -448,9 +460,9 @@ struct Transpiler : Object {
             }
             header_builder.append(function->name);
             build_input(header_builder, function->input, function->lifetime);
-            if (isTemplate) {
+            if (is_template) {
                 header_builder.append(' ');
-                auto _result = build_implementation(_ep, header_builder, function->implementation, String());
+                auto _result = build_implementation(_ep, header_builder, function->implementation, String(_r.get_page(), "    "));
                 if (_result != nullptr)
                     return _result;
             }

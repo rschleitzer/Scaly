@@ -12,33 +12,6 @@ define List[T @summary "The element type of the list."]
         @remarks "The head of the list will always be the last element added."
 )
 {
-    procedure add#r(this: List[T], element: T)
-    {
-        let new_node Node[T]#r(element, this.head)
-        set this.head: new_node
-    }
-
-    procedure remove(this: List[T], element: T) returns bool
-    {
-        var node this.head
-        var previous_node: pointer[Node[T]] null
-        while node <> nullptr
-        {
-            if node*.element = element
-            {
-                if previous_node <> nullptr
-                    set previous_node*.next: node*.next
-                if node = head
-                    set head: null
-                return true
-            }
-            set previous_node: node
-            set node: node*.next
-        }
-
-        false
-    }
-
     function get_head(this: List[T]) returns T?
     {
         if this.head = null
@@ -56,6 +29,33 @@ define List[T @summary "The element type of the list."]
         i
     }
 
+    procedure remove(this: List[T], element: T) returns bool
+    {
+        var node this.head
+        var previous_node: pointer[Node[T]] null
+        while node <> nullptr
+        {
+            if (*node).element = element
+            {
+                if previous_node <> nullptr
+                    set (*previous_node).next: node*.next
+                if node = head
+                    set head: null
+                return true
+            }
+            set previous_node: node
+            set node: (*node).next
+        }
+
+        return false
+    }
+
     function get_iterator(this: List[T]) returns ListIterator[T]
         ListIterator[T] this.head
+
+    procedure add#r(this: List[T], element: T)
+    {
+        let new_node Node[T]#r(element, this.head)
+        set this.head: new_node
+    }
 }
