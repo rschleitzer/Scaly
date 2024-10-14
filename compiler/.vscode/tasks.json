@@ -27,16 +27,16 @@
 				"-o",
 				"${workspaceFolder}/bin/compiler",
 				//"`llvm-config --cxxflags --ldflags --system-libs --libs core`"
-				"-I/opt/homebrew/Cellar/llvm/17.0.5/include",
+				"-I/opt/homebrew/Cellar/llvm/19.1.1/include",
 				"-std=c++17",
 				"-stdlib=libc++",
 				"-D__STDC_CONSTANT_MACROS",
 				"-D__STDC_FORMAT_MACROS",
 				"-D__STDC_LIMIT_MACROS",
-				"-L/opt/homebrew/Cellar/llvm/17.0.5/lib",
+				"-L/opt/homebrew/Cellar/llvm/19.1.1/lib",
 				"-Wl,-search_paths_first",
 				"-Wl,-headerpad_max_install_names",
-				"-lLLVM-17",
+				"-lLLVM-19",
 			],
 			"options": {
 				"cwd": "${fileDirname}"

@@ -1249,16 +1249,16 @@ typedef const char const_char;\n");
             tasks_builder.append(program.module.name);
             tasks_builder.append("\",\n\
 				//\"`llvm-config --cxxflags --ldflags --system-libs --libs core`\"\n\
-				\"-I/opt/homebrew/Cellar/llvm/17.0.5/include\",\n\
+				\"-I/opt/homebrew/Cellar/llvm/19.1.1/include\",\n\
 				\"-std=c++17\",\n\
 				\"-stdlib=libc++\",\n\
 				\"-D__STDC_CONSTANT_MACROS\",\n\
 				\"-D__STDC_FORMAT_MACROS\",\n\
 				\"-D__STDC_LIMIT_MACROS\",\n\
-				\"-L/opt/homebrew/Cellar/llvm/17.0.5/lib\",\n\
+				\"-L/opt/homebrew/Cellar/llvm/19.1.1/lib\",\n\
 				\"-Wl,-search_paths_first\",\n\
 				\"-Wl,-headerpad_max_install_names\",\n\
-				\"-lLLVM-17\",\n\
+				\"-lLLVM-19\",\n\
 			],\n\
 			\"options\": {\n\
 				\"cwd\": \"${workspaceFolder}\"\n\
