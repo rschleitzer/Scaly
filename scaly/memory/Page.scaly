@@ -15,57 +15,56 @@ define Page
 
         for exclusive_page in this.exclusive_pages
         {
-            exclusive_page*.deallocate_extensions()
-            exclusive_page*.forget()
+            (*exclusive_page).deallocate_extensions()
+            (*exclusive_page).forget()
         }
 
         var page this.next_page 
         while page <> null
         {
-            let next_page page.next_page
-            page*.forget()
+            let next_page (*page).next_page
+            (*page).forget()
             set page: next_page
         }
     }
 
     function get(address: pointer[void]) returns pointer[Page] {
-        let mask PAGE_SIZE - 1 as[size_t] ~
-        let page = address as[size_t] & mask as pointer[Page]
-        page
+        let mask ~(size_t)(PAGE_SIZE - 1)
+        let page (Page*)((size_t)address & mask)
+        return page
     }
 
     function reset(this: Page) {
         set this.current_page: null
         set this.next_page: null
         set this.next_object: this + 1
-        set this.exclusive_pages: List[pointer[Page]]()
+        set this.exclusive_pages: PageList()
     }
 
     function deallocate_exclusive_page(this: Page, page: pointer[Page]) {
-        page*.deallocate_extensions();
-        page*.forget();
-        if this.exclusive_pages.remove page = false
-            exit 2
+        (*page).deallocate_extensions()
+        (*page).forget()
+        if (this.exclusive_pages).remove(page) = false
+            exit (2)
     }
 
     function allocate_raw(this: Page, size: size_t, align: size_t) returns pointer[void] {
-        let location this.next_object as[size_t]
-        let aligned_location (location + align - 1) & ((align - 1)~)
-        let location_after_page this + PAGE_SIZE as[size_t]
+        let location (size_t)this.next_object
+        let aligned_location (location + align - 1) & ~(align - 1)
+        let location_after_page (size_t)this + PAGE_SIZE
         let capacity location_after_page - aligned_location
 
         if capacity < size
         {
             ; We need to reserve the space for the page object
             let gross_size size + sizeof Page
-            var page pointer[Page]
             if gross_size > PAGE_SIZE
-                return this.allocate_oversized gross_size
+                return this.allocate_oversized(gross_size)
 
             if this.current_page <> null
             {
                 let object this.current_page.allocate_raw(size, align)
-                let page_of_allocated_object Page.get object
+                let page_of_allocated_object get(object)
                 if page_of_allocated_object <> this.current_page
                     set this.current_page: page_of_allocated_object
                 return object
@@ -74,57 +73,57 @@ define Page
             var page this.allocate_page()
             set this.current_page: page
             set this.next_page: page
-            return page.allocate_raw(size, align)
+            return (*page).allocate_raw(size, align)
         }
 
         ; Allocate from ourselves
         let next_location aligned_location + size
-        set this.next_object: next_location as[pointer[void]]
-        aligned_location as[pointer[void]]
+        set this.next_object: (pointer[void])next_location
+        return (pointer[void])aligned_location
     }
 
     function get_capacity(this: Page, align: size_t) returns size_t {
-        var location this.next_object as[size_t]
-        var aligned_location location + align - 1 & ((align - 1)~)
-        var location_after_page this as[size_t] + PAGE_SIZE
+        var location (size_t)this.next_object
+        let aligned_location (location + align - 1) & ~(align - 1)
+        var location_after_page (size_t)this + PAGE_SIZE
         var capacity location_after_page - aligned_location
-        capacity
+        return capacity
     }
 
     function allocate_page returns pointer[Page] {
-        var page aligned_alloc(PAGE_SIZE, PAGE_SIZE) as[pointer[Page]]
-        page*.reset()
-        page
+        var page (pointer[Page])aligned_alloc(PAGE_SIZE, PAGE_SIZE)
+        (*page).reset()
+        return page
     }
 
     function allocate_exclusive_page(this: Page) returns pointer[Page] {
-        let page this.allocate_page
-        this.exclusive_pages.add(page, page)
-        page
+        let page this.allocate_page()
+        (this.exclusive_pages).add(page, page)
+        return page
     }
 
     function forget(this: Page) {
-        free(this&)
+        free(this)
     }
 
     function is_oversized(this: Page) returns bool {
-        this.next_object = null
+        return this.next_object = null
     }
 
     function allocate_oversized(this: Page, size: size_t) returns pointer[void] {
         ; We allocate oversized objects directly.
-        let address aligned_alloc(PAGE_SIZE, size) as pointer[Page]
+        let address (pointer[Page])aligned_alloc(PAGE_SIZE,  (size + PAGE_SIZE - 1))
         if address = null
-            exit 1
-        auto page = address as pointer[Page]
+            exit(1)
+        var page (pointer[Page])address
 
         ; Oversized pages have no next_object
-        set page.next_object: null
+        set (*page).next_object: null
 
         ; An oversized page is always exclusive
-        this.exclusive_pages*.add(this&, page)
+        (this.exclusive_pages).add(this, page)
 
         ; The page offset by the null pointer for next_object
-        page + 1 as pointer[void]
+        return (pointer[void])(page + 1)
     }
 }

@@ -158,6 +158,12 @@ struct Binding {
       : binding_type(binding_type), item(item), operation(operation) {}
 };
 
+struct Break : Object {
+    Span span;
+    Vector<Operand> result;
+    Break(Span span, Vector<Operand> result) : span(span), result(result) {}
+};
+
 struct Return : Object {
     Span span;
     Vector<Operand> result;
@@ -168,11 +174,13 @@ struct Statement : Object {
     enum {
         Action,
         Binding,
+        Break,
         Return,
     } _tag;
     union {
         struct Action _Action;
         struct Binding _Binding;
+        struct Break _Break;
         struct Return _Return;
     };
 };

@@ -117,7 +117,7 @@ bool Page::is_oversized() {
 void* Page::allocate_oversized(size_t size)
 {
     // We allocate oversized objects directly.
-    auto address = aligned_alloc(PAGE_SIZE, (size + (PAGE_SIZE) - 1) & ~(PAGE_SIZE - 1));
+    auto address = aligned_alloc(PAGE_SIZE, (size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1));
     if (address == nullptr)
         exit(1);
     auto page = (Page*)address;

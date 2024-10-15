@@ -5,6 +5,7 @@ define Console {
     }
 
     function print(message: String) throws FileError {
-        print message.to_c_string()
+        var r Region()
+        print(message.to_c_string(r.get_page()))
     }
 }

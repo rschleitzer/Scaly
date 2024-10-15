@@ -3,4 +3,6 @@ define io {
     ;module Directory
     ;module File
     ;module Path
+
+    function test () {}
 }

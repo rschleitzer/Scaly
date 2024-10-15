@@ -4,4 +4,6 @@ define containers {
     module List
     module String
     module StringIterator
+
+    function test () {}
 }

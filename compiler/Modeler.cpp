@@ -629,6 +629,18 @@ Result<Type*, ModelError> handle_binding_annotation(Page* _rp, Page* _ep, Bindin
     }
 }
 
+Result<Break, ModelError> handle_break(Page* _rp, Page* _ep, BreakSyntax& return_, String file) {
+    Region _r;
+    if (return_.result != nullptr) {
+        auto result = return_.result;
+        auto result_result = handle_operands(_rp, _ep, *result, file);
+        if (result_result._tag == Result<Vector<Operand>, ModelError>::Error)
+            return Result<Break, ModelError> { ._tag = Result<Break, ModelError>::Error, ._Error = result_result._Error };
+        return Result<Break, ModelError> { ._tag = Result<Break, ModelError>::Ok, ._Ok = Break(Span(return_.start, return_.end), result_result._Ok) };
+    }
+    return Result<Break, ModelError> { ._tag = Result<Break, ModelError>::Ok, ._Ok = Break(Span(return_.start, return_.end), Vector<Operand>(_rp, 0)) };
+}
+
 Result<Return, ModelError> handle_return(Page* _rp, Page* _ep, ReturnSyntax& return_, String file) {
     Region _r;
     if (return_.result != nullptr) {
@@ -706,8 +718,14 @@ Result<Statement, ModelError> handle_command(Page* _rp, Page* _ep, CommandSyntax
         }
         case CommandSyntax::Continue:
             return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(file, String(_ep, "Continue"), Span(command._Continue.start, command._Continue.end)))) };
-        case CommandSyntax::Break:
-            return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(file, String(_ep, "Break"), Span(command._Break.start, command._Break.end)))) };
+        case CommandSyntax::Break: {
+            auto break_ = command._Break;
+            auto break_result = handle_break(_rp, _ep, break_, file);
+            if (break_result._tag == Result<Expression, ModelError>::Error)
+                return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = break_result._Error };
+            return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Ok, ._Ok = Statement { ._tag = Statement::Break, ._Break = break_result._Ok}};
+            break;
+        }
         case CommandSyntax::Return: {
             auto return_ = command._Return;
             auto return_result = handle_return(_rp, _ep, return_, file);
@@ -733,8 +751,9 @@ Result<Vector<Statement>, ModelError> handle_statements(Page* _rp, Page* _ep, Ve
     List<Statement>& statements_builder = *new(alignof(List<Statement>), _r.get_page()) List<Statement>();
     auto _statements_iterator = VectorIterator<StatementSyntax>(&statements);
     while (auto statement = _statements_iterator.next()) {
-
         auto _statement_result = handle_statement(_rp, _ep, *statement, file);
+        if (_statement_result._tag == Result<Statement, ModelError>::Error)
+            return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = _statement_result._Error };
         statements_builder.add(_statement_result._Ok);
     }
     

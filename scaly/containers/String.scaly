@@ -1,39 +1,67 @@
+define PACKED_SIZE 9
+
 define String (data: pointer[char]) {
-    init(length: size_t) {
-        let length_array: char[PACKED_SIZE] null
+    init(rp: pointer[Page], length: size_t) {
+        var length_array: char []PACKED_SIZE
         var rest length
 
         var counter: size_t 0
-        while rest >= 0x80 {
-            set length_array[counter] : rest | 0x80 as[char]
+        while rest >= 0x80
+        {
+            set length_array[counter]: (char)rest | 0x80
             rest >>= 7;
             counter += 1;
         }
 
-        set length_array[counter]: rest as[char]
+        set length_array[counter]: (char)rest
         let overall_length counter + 1 + length
-        data = rp_*.allocate_raw(overall_length, 1) as[pointer[char]]
+        set data: (char*)(*rp).allocate_raw(overall_length, 1)
         memcpy(data, length_array, counter + 1)
     }
-;*
-    String::String(Page* _rp, const char* other, size_t length) {
-        char length_array[PACKED_SIZE];
-        auto rest = length;
 
-        size_t counter = 0;
-        while (rest >= 0x80) {
-            length_array[counter] = (char)rest | 0x80;
+    init(rp: pointer[Page], other: pointer[const_char], length: size_t) {
+        var length_array: char []PACKED_SIZE
+        var rest length
+
+        var counter: size_t 0
+        while rest >= 0x80
+        {
+            set length_array[counter]: (char)rest | 0x80
             rest >>= 7;
             counter += 1;
         }
 
-        length_array[counter] = (char)rest;
-        auto overall_length = counter + 1 + length;
-        this->data = (char*)_rp->allocate_raw(overall_length, 1);
-        memcpy(this->data, length_array, counter + 1);
-        memcpy((void*)(this->data + counter + 1), other, length);
+        set length_array[counter]: (char)rest
+        let overall_length counter + 1 + length
+        set data: (char*)(*rp).allocate_raw(overall_length, 1)
+        memcpy(data, length_array, counter + 1)
+        memcpy((pointer[void])(this.data + counter + 1), other, length)
     }
 
+    function to_c_string(this: String, rp: pointer[Page]) returns pointer[const_char] {
+        var length: size_t 0
+        var bit_count 0
+        var index: size_t 0
+        while true
+        {
+            if bit_count = PACKED_SIZE * 7
+                exit(11)
+
+            var byte: char *(this.data + index)
+            set length: length | ((size_t)(byte & 0x7F)) << bit_count
+            if (byte & 0x80) == 0
+                break
+            set bit_count: bit_count + 7
+            set index: index + 1
+        }
+
+        var dest (*rp).allocate_raw(length + 1, 1)
+        memcpy(dest, this.data + index + 1, length)
+        set *((char*)dest + index + length): 0
+
+        return (const_char*)dest
+    }
+;*
     String::String(Page* _rp, Vector<char> other) : String(_rp, other.data, other.length) {}
 
     String::String(Page* _rp, const char* c_string) : String(_rp, c_string, strlen(c_string)) {}
@@ -65,30 +93,6 @@ define String (data: pointer[char]) {
         this->data = (char*)_rp->allocate_raw(2, 1);
         this->data[0] = 1;
         this->data[1] = character;
-    }
-
-    const char* String::to_c_string(Page* _rp) const {
-        size_t length = 0;
-        auto bit_count = 0;
-        size_t index = 0;
-        while (true) {
-            if (bit_count == PACKED_SIZE * 7)
-                // Bad string length
-                exit(11);
-
-            char byte = *(this->data + index);
-            length |= ((size_t)(byte & 0x7F)) << bit_count;
-            if ((byte & 0x80) == 0)
-                break;
-            bit_count += 7;
-            index += 1;
-        }
-
-        auto dest = _rp->allocate_raw(length + 1, 1);
-        memcpy(dest, this->data + index + 1, length);
-        *((char*)dest + index + length) = 0;
-
-        return (const char*)dest;
     }
 
     char* String::get_buffer() const {
@@ -208,4 +212,4 @@ define String (data: pointer[char]) {
         return scaly::containers::hash(this->data + index + 1, length);
     }
 *;
-};
+}

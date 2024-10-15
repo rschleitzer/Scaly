@@ -17,7 +17,7 @@ define List[T @summary "The element type of the list."]
         if this.head = null
             return null
 
-        option(this.head*.element)
+        return &((*(this.head)).element)
     }
 
     function count(this: List[T]) returns size_t
@@ -29,8 +29,7 @@ define List[T @summary "The element type of the list."]
         i
     }
 
-    procedure remove(this: List[T], element: T) returns bool
-    {
+    procedure remove(this: List[T], element: T) returns bool {
         var node this.head
         var previous_node: pointer[Node[T]] null
         while node <> nullptr
@@ -38,7 +37,7 @@ define List[T @summary "The element type of the list."]
             if (*node).element = element
             {
                 if previous_node <> nullptr
-                    set (*previous_node).next: node*.next
+                    set (*previous_node).next: (*node).next
                 if node = head
                     set head: null
                 return true
@@ -51,7 +50,7 @@ define List[T @summary "The element type of the list."]
     }
 
     function get_iterator(this: List[T]) returns ListIterator[T]
-        ListIterator[T] this.head
+        ListIterator[T](this.head)
 
     procedure add#r(this: List[T], element: T)
     {

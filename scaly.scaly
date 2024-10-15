@@ -1,14 +1,22 @@
+function aligned_alloc(size_t, size_t) returns pointer[void] extern
+function free(p: pointer[void]) returns void extern
 function exit(code: int) extern
+
+function memcpy(dest: pointer[void], src: pointer[const_void], size_t) returns pointer[void] extern
+function memcmp(dest: pointer[const_void], src: pointer[const_void], size_t) returns int extern
+function memset(dest: pointer[void], int, size_t) extern
+function strlen(s: pointer[const_char]) returns size_t extern
+
+define stdio intrinsic
 
 define scaly {
     ;module llvm
-    ;module libc
-    ;module types
+    ;module libc    ;module types
     module memory
     module containers
     module io
 }
 
-memory.test()
-containers.test()
-io.test()
+scaly.memory.test()
+scaly.containers.test()
+scaly.io.test()
