@@ -32,8 +32,8 @@ struct FileError : Object {
 };
 
 struct File {
-    static Result<String, FileError> read_to_string(Page* _rp, Page *_ep, const String& path);
-    static FileError* write_from_string(Page *_ep, const String& path, const String& contents);
+    static Result<String, FileError> read_to_string(Page* _rp, Page *_ep, String path);
+    static FileError* write_from_string(Page *_ep, String path, String contents);
 };
 }
 }

@@ -292,7 +292,7 @@ struct Transpiler : Object {
                     break;
                 }
                 case Nameable::Operator: {
-                        auto _result = build_operator(_ep, header_builder, cpp_builder, member->_Operator, &name);
+                        auto _result = build_operator(_ep, header_builder, cpp_builder, member->_Operator, &name, parameters.length > 0);
                         if (_result != nullptr)
                             return new(alignof(TranspilerError), _ep) TranspilerError(*_result);                    
                     }
@@ -352,14 +352,14 @@ struct Transpiler : Object {
         if (!is_generic) {
             build_input(cpp_builder, initializer->input, Lifetime(Unspecified()));
             cpp_builder.append(' ');
-            auto _result = build_implementation(_ep, cpp_builder, initializer->implementation, String());
+            auto _result = build_implementation(_ep, cpp_builder, initializer->implementation, String(), true);
             if (_result != nullptr)
                 return _result;
         }
         build_input(header_builder, initializer->input, Lifetime(Unspecified()));
         if (is_generic) {
             header_builder.append(' ');
-            auto _result = build_implementation(_ep, header_builder, initializer->implementation, String(_r.get_page(), "    "));
+            auto _result = build_implementation(_ep, header_builder, initializer->implementation, String(_r.get_page(), "    "), true);
             if (_result != nullptr)
                 return _result;
         }
@@ -457,7 +457,7 @@ struct Transpiler : Object {
                 cpp_builder.append(function->name);
                 build_input(cpp_builder, function->input, function->lifetime);
                 cpp_builder.append(' ');
-                auto _result = build_implementation(_ep, cpp_builder, function->implementation, String());
+                auto _result = build_implementation(_ep, cpp_builder, function->implementation, String(), false);
                 if (_result != nullptr)
                     return _result;
             }
@@ -465,7 +465,7 @@ struct Transpiler : Object {
             build_input(header_builder, function->input, function->lifetime);
             if (is_template) {
                 header_builder.append(' ');
-                auto _result = build_implementation(_ep, header_builder, function->implementation, String(_r.get_page(), "    "));
+                auto _result = build_implementation(_ep, header_builder, function->implementation, String(_r.get_page(), "    "), false);
                 if (_result != nullptr)
                     return _result;
             }
@@ -474,7 +474,7 @@ struct Transpiler : Object {
         return nullptr; 
     }
 
-    TranspilerError* build_implementation(Page* _ep, StringBuilder& builder, Implementation& implementation, String indent) {
+    TranspilerError* build_implementation(Page* _ep, StringBuilder& builder, Implementation& implementation, String indent, bool is_initializer) {
         switch (implementation._tag) {
             case Implementation::Action: {
                 auto action = implementation._Action;
@@ -484,13 +484,51 @@ struct Transpiler : Object {
                         return _result;
                 }
                 else {
-                    builder.append("{\n");
-                    builder.append(indent);
-                    builder.append("    return ");
-                    auto _result = build_action(_ep, builder, action, indent);
-                    if (_result != nullptr)
-                        return _result;
-                    builder.append("; }");
+                    if (is_initializer) {
+                        auto _operand_iterator = VectorIterator<Operand>(&action.source);
+                        while (auto _operand = _operand_iterator.next()) {
+                            Operand& operand = *_operand;
+                            switch (operand.expression._tag) {
+                                case Expression::Tuple: {
+                                    auto tuple = operand.expression._Tuple;
+                                    bool first = true;
+                                    auto _component_iterator = VectorIterator<Component>(&tuple.components);
+                                    while (auto _component = _component_iterator.next()) {
+                                        Component& component = *_component;
+                                        if (first) {
+                                            first = false;
+                                            builder.append(": ");
+                                        }
+                                        else {
+                                            builder.append(", ");
+                                        }
+                                        auto _result = build_operation(_ep, builder, component.value, indent);
+                                        if (_result != nullptr)
+                                            return _result;
+                                    }
+                                    break;
+                                }
+                                case Expression::Block: {
+                                    auto block = operand.expression._Block;
+                                    auto _result = build_block(_ep, builder, block, indent);
+                                    if (_result != nullptr)
+                                        return _result;
+                                    break;
+                                }
+                                default:
+                                    return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "Other than Tuple or Block in initializer implementation")));
+                            }
+                        }
+                    }
+                    else {
+                        builder.append("{\n");
+                        builder.append(indent);
+                        builder.append("    return ");
+                        auto _result = build_action(_ep, builder, action, indent);
+                        if (_result != nullptr)
+                            return _result;
+                        builder.append("; }");
+                    }
 
                 }
                 break;
@@ -1024,8 +1062,10 @@ struct Transpiler : Object {
         builder.append(' ');
     }
 
-    TranspilerError* build_operator(Page* _ep, StringBuilder& header_builder, StringBuilder& cpp_builder, Operator& operator_, String* name) {
+    TranspilerError* build_operator(Page* _ep, StringBuilder& header_builder, StringBuilder& cpp_builder, Operator& operator_, String* name, bool is_template) {
         Region _r;
+        if (is_template)
+            header_builder.append('\n');
         header_builder.append("\n    ");
         if (operator_.output.length == 0)
             header_builder.append("void");
@@ -1034,24 +1074,29 @@ struct Transpiler : Object {
         header_builder.append(" operator ");
         header_builder.append(operator_.name);
         build_input(header_builder, operator_.input, Lifetime(Unspecified()));
-        header_builder.append(';');
+        if (is_template) {
+            auto _result = build_implementation(_ep, header_builder, operator_.implementation, String(_r.get_page(), "    "), false);
+            if (_result != nullptr)
+                return _result;
+        }
+        else {
+            header_builder.append(';');
+            cpp_builder.append("\n\n");
+            if (operator_.output.length == 0)
+                cpp_builder.append("void");
+            else
+                build_type(cpp_builder, operator_.output[0]->type);
 
-        cpp_builder.append("\n\n");
-        if (operator_.output.length == 0)
-            cpp_builder.append("void");
-        else
-            build_type(cpp_builder, operator_.output[0]->type);
-
-        cpp_builder.append(' ');
-        cpp_builder.append(*name);
-        cpp_builder.append("::operator ");
-        cpp_builder.append(operator_.name);
-        auto is_static = build_input(cpp_builder, operator_.input, Lifetime(Unspecified()));
-        cpp_builder.append(' ');
-        auto _result = build_implementation(_ep, cpp_builder, operator_.implementation, String());
-        if (_result != nullptr)
-            return _result;
-
+            cpp_builder.append(' ');
+            cpp_builder.append(*name);
+            cpp_builder.append("::operator ");
+            cpp_builder.append(operator_.name);
+            auto is_static = build_input(cpp_builder, operator_.input, Lifetime(Unspecified()));
+            cpp_builder.append(' ');
+            auto _result = build_implementation(_ep, cpp_builder, operator_.implementation, String(), false);
+            if (_result != nullptr)
+                return _result;
+        }
         return nullptr; 
     }
 

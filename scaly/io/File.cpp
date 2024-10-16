@@ -29,13 +29,13 @@ String FileError::to_string(Page* _rp) {
         case NoSuchFileOrDirectory:
             message_builder.append("A file or directory with the name ");
             message_builder.append(_NoSuchFileOrDirectory.file_name);
-            message_builder.append("does not exist.");
+            message_builder.append(" does not exist.\n");
         break;
     }
     return message_builder.to_string(_rp);     
 }
 
-Result<String, FileError> File::read_to_string(Page* _rp, Page *_ep, const String& path) {
+Result<String, FileError> File::read_to_string(Page* _rp, Page *_ep, String path) {
     Region _r;
     FILE* file = fopen(path.to_c_string(_r.get_page()), "rb");
     if (!file) {
@@ -56,7 +56,7 @@ Result<String, FileError> File::read_to_string(Page* _rp, Page *_ep, const Strin
     return Result<String, FileError> { ._tag = Result<String, FileError>::Ok, ._Ok = ret };
 }
 
-FileError* File::write_from_string(Page *_ep, const String& path, const String& contents) {
+FileError* File::write_from_string(Page *_ep, String path, String contents) {
     Region _r;
     FILE* file = fopen(path.to_c_string(_r.get_page()), "wb");
     if (!file) {

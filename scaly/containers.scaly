@@ -2,6 +2,17 @@ define containers {
     module Node
     module ListIterator
     module List
+    module Vector
+    module Array
+;*    module BuilderListIterator
+    module BuilderList
+    module HashSetBuilder
+    module HashSet
+    module HashMapBuilder
+    module HashMap
+    module MultiMapBuilder
+    module MultiMap
+    module Result *;
     module String
     module StringIterator
 

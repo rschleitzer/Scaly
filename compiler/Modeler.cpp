@@ -4,21 +4,16 @@ namespace model {
 
 using namespace scaly::io;
 
-Result<FileSyntax, ParserError> parse_file(Page* _rp, Page* _ep, const String& module) {
-    Region _r;
-    {
-        Region _r_1;
-        Parser& parser = *new(alignof(Parser), _r_1.get_page()) Parser(_r_1.get_page(), module);
-        return parser.parse_file(_rp, _ep);
-    }
-}
-
 Result<ProgramSyntax, ParserError> parse_program(Page* _rp, Page* _ep, const String& program) {
     Region _r;
     {
         Region _r_1;
         Parser& parser = *new(alignof(Parser), _r_1.get_page()) Parser(_r_1.get_page(), program);
-        return parser.parse_program(_rp, _ep);
+        auto program_syntax_result = parser.parse_program(_rp, _ep);
+        if (!parser.is_at_end())
+            return Result<ProgramSyntax, ParserError> { ._tag = Result<ProgramSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(parser.lexer.previous_position, parser.lexer.position, String(_ep, "a valid declaraion"))) };
+
+        return program_syntax_result;
     }
 }
 
@@ -1366,9 +1361,43 @@ Result<Operator, ModelError> handle_operator(Page* _rp, Page* _ep,  OperatorSynt
     auto end = operator_syntax.end;
     Vector<Operand>* operation = nullptr;
     switch (operator_syntax.target._tag) {
-        case TargetSyntax::Routine:
+        case TargetSyntax::Routine: {
+            auto routine = operator_syntax.target._Routine;
+            if (routine.generics != nullptr) {
+                if (routine.parameters != nullptr) {
+                    ParameterSetSyntax& parameterSetSyntax = *routine.parameters;
+                    auto _input_result = handle_parameterset(_rp, _ep, parameterSetSyntax, file);
+                    if (_input_result._tag == Result<Vector<Item>, ModelError>::Error)
+                        return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Error, ._Error = _input_result._Error };
+                    input = _input_result._Ok;
+                }
+                if (routine.returns != nullptr)
+                {
+                    ParameterSetSyntax& parameterSetSyntax = routine.returns->parameters; 
+                    auto _output_result = handle_parameterset(_rp, _ep, parameterSetSyntax, file);
+                    if (_output_result._tag == Result<Vector<Item>, ModelError>::Error)
+                        return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Error, ._Error = _output_result._Error };
+                    output = _output_result._Ok;
+                }
+
+                switch (routine.implementation._tag) {
+                    case ImplementationSyntax::Action: {
+                        auto action_result = handle_action(_rp, _ep, routine.implementation._Action, file);
+                        if (action_result._tag == Result<Statement, ModelError>::Error)
+                            return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Error, ._Error = action_result._Error };
+                        return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Ok, ._Ok = Operator(Span(start, end), private_, String(_rp, "[]"), input, output, Implementation { ._tag = Implementation::Action, ._Action = action_result._Ok }) };
+                    }
+                    case ImplementationSyntax::Extern:
+                        return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Ok, ._Ok = Operator(Span(start, end), private_, String(_rp, "[]"), input, output, Implementation { ._tag = Implementation::Extern, ._Extern = Extern() }) };
+                    case ImplementationSyntax::Instruction:
+                        return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Ok, ._Ok = Operator(Span(start, end), private_, String(_rp, "[]"), input, output, Implementation { ._tag = Implementation::Instruction, ._Instruction = Instruction() }) };
+                    case ImplementationSyntax::Intrinsic:
+                        return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Ok, ._Ok = Operator(Span(start, end), private_, String(_rp, "[]"), input, output, Implementation { ._tag = Implementation::Intrinsic, ._Intrinsic = Intrinsic() }) };
+                }
+            }
             return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(file, String(_ep, "Non-Symbol Operator"), Span(operator_syntax.start, operator_syntax.end)))) };
-        case TargetSyntax::Named:
+        }
+        case TargetSyntax::Named: {
             auto named = operator_syntax.target._Named;
             if (named.routine.parameters != nullptr) {
                 ParameterSetSyntax& parameterSetSyntax = *named.routine.parameters;
@@ -1400,8 +1429,8 @@ Result<Operator, ModelError> handle_operator(Page* _rp, Page* _ep,  OperatorSynt
                 case ImplementationSyntax::Intrinsic:
                     return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Ok, ._Ok = Operator(Span(start, end), private_, String(_rp, named.name), input, output, Implementation { ._tag = Implementation::Intrinsic, ._Intrinsic = Intrinsic() }) };
                 break;
-
             }
+        }
     }
 }
 
@@ -1687,7 +1716,7 @@ Result<Module, ModelError> build_referenced_module(Page* _rp, Page* _ep, String 
     StringBuilder& file_name_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(Path::join(_r.get_page(), path, name));
     file_name_builder.append(".scaly");
     auto file_name = file_name_builder.to_string(_r.get_page());
-    auto module_text_result = File::read_to_string(_r.get_page(), _r.get_page(), file_name);
+    auto module_text_result = File::read_to_string(_r.get_page(), _ep, file_name);
     if (module_text_result._tag == Result<String, FileError>::Error) {
         return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = ModelError(module_text_result._Error) };
     }
@@ -1698,6 +1727,9 @@ Result<Module, ModelError> build_referenced_module(Page* _rp, Page* _ep, String 
     if (file_syntax_result._tag == Result<ModuleSyntax*, ParserError>::Error)
         return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = ModelError(ParserModelError(file_name, file_syntax_result._Error)) };
     auto file_syntax = file_syntax_result._Ok;
+    if (!parser.is_at_end())
+        return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = ModelError(ParserModelError(file_name, ParserError(InvalidSyntax(parser.lexer.previous_position, parser.lexer.position, String(_ep, "a valid declaraion")))))};
+
     return build_module(_rp, _ep, path, file_name, name, file_syntax, private_);
 }
 

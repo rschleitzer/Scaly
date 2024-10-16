@@ -1,7 +1,8 @@
 define PageListIterator(current: pointer[PageNode])
 {
-    init(head: pointer[PageNode])
+    init(head: pointer[PageNode]) {
         set this.current: head
+    }
 
     procedure next(this: PageListIterator) returns pointer[pointer[Page]]
     {

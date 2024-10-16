@@ -143,7 +143,7 @@ struct IoModelError {
     union {
         struct FileError _File;
     };
-    IoModelError(FileError file_error) : _File(file_error) {}
+    IoModelError(FileError file_error) : _tag(File), _File(file_error) {}
 
     String to_string(Page* _rp) {
         Region _r;
