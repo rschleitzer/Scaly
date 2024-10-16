@@ -1,4 +1,4 @@
-define PACKED_SIZE 9
+define PACKED_SIZE: int 9
 
 define String (data: pointer[char]) {
     init (rp: pointer[Page], length: size_t) {

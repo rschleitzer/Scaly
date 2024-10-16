@@ -985,9 +985,10 @@ struct DelegateSyntax : Object {
 };
 
 struct ConstantSyntax : Object {
-    ConstantSyntax(size_t start, size_t end, Vector<OperandSyntax>* operation) : start(start), end(end), operation(operation) {}
+    ConstantSyntax(size_t start, size_t end, TypeSyntax type, Vector<OperandSyntax>* operation) : start(start), end(end), type(type), operation(operation) {}
     size_t start;
     size_t end;
+    TypeSyntax type;
     Vector<OperandSyntax>* operation;
 };
 
@@ -2429,23 +2430,37 @@ struct Parser : Object {
     Result<ConstantSyntax, ParserError> parse_constant(Page* _rp, Page* _ep) {
         auto start = this->lexer.previous_position;
 
+        auto type_start = this->lexer.position;
+        auto type_result = this->parse_type(_rp, _ep);
+        if (type_result._tag == Result<TypeSyntax, ParserError>::Error)
+        {
+            return Result<ConstantSyntax, ParserError> { ._tag = Result<ConstantSyntax, ParserError>::Error, ._Error = type_result._Error };
+        }
+
+        auto type = type_result._Ok;
+
         auto operation_start = this->lexer.position;
         auto operation_result = this->parse_operand_list(_rp, _ep);
         if (operation_result._tag == Result<Vector<OperandSyntax>, ParserError>::Error)
         {
-            return Result<ConstantSyntax, ParserError> { ._tag = Result<ConstantSyntax, ParserError>::Error, ._Error = operation_result._Error };
+            switch (operation_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<ConstantSyntax, ParserError> { ._tag = Result<ConstantSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(operation_start, lexer.position, String(_ep, "a valid Operand syntax"))) };
+                case ParserError::InvalidSyntax:
+                    return Result<ConstantSyntax, ParserError> { ._tag = Result<ConstantSyntax, ParserError>::Error, ._Error = operation_result._Error };
+            }
         }
 
         auto operation = operation_result._Ok;
 
-        auto start_colon_2 = this->lexer.previous_position;
-        auto success_colon_2 = this->lexer.parse_colon(_rp);
-        if (!success_colon_2) {
+        auto start_colon_3 = this->lexer.previous_position;
+        auto success_colon_3 = this->lexer.parse_colon(_rp);
+        if (!success_colon_3) {
         }
 
         auto end = this->lexer.position;
 
-        auto ret = ConstantSyntax(start, end, operation);
+        auto ret = ConstantSyntax(start, end, type, operation);
 
         return Result<ConstantSyntax, ParserError> { ._tag = Result<ConstantSyntax, ParserError>::Ok, ._Ok = ret };
     }

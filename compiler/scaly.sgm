@@ -111,6 +111,7 @@
     <content link = Class                          optional property = variant
 
 <syntax id = Constant
+    <content link = Type                                    property = type
     <content link = Operand               multiple          property = operation
     <content colon                                 optional
 

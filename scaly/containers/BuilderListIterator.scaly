@@ -1,26 +1,14 @@
-namespace scaly {
-namespace containers {
+define BuilderListIterator[T] (current: pointer[Node[T]]) {
+    init (head: pointer[Node[T]]) (current(head)) {}
 
-using namespace scaly::memory;
-
-template<class T> struct BuilderList;
-
-template<class T> struct BuilderListIterator : Object {
-    Node<T>* current;
-
-    BuilderListIterator<T>(Node<T>* head) :current(head) {}
-
-    T* next() {
-        if (this->current != nullptr) {
-            auto current = this->current;
-            this->current = this->current->next;
-            return &current->element;
+    function next(this: BuilderListIterator[T]) returns pointer[T] {
+        if this.current <> null
+        {
+            let current this.current
+            set this.current: this.current.next
+            return &(*current).element;
         } else {
-            return nullptr;
+            return null
         }
     }
-};
-
-}
-
 }

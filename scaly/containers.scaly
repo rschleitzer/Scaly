@@ -4,10 +4,10 @@ define containers {
     module List
     module Vector
     module Array
-;*    module BuilderListIterator
+    module BuilderListIterator
     module BuilderList
     module HashSetBuilder
-    module HashSet
+;*    module HashSet
     module HashMapBuilder
     module HashMap
     module MultiMapBuilder
