@@ -109,9 +109,9 @@ struct Lifetime {
 struct Type : Object {
     Span span;
     Vector<String> name;
-    Vector<Type> generics;
+    Vector<Type>* generics;
     Lifetime lifetime;
-    Type(Span span, Vector<String> name, Vector<Type> generics, Lifetime lifetime) : span(span), name(name), generics(generics), lifetime(lifetime) {}
+    Type(Span span, Vector<String> name, Vector<Type>* generics, Lifetime lifetime) : span(span), name(name), generics(generics), lifetime(lifetime) {}
 };
 
 struct Property {
@@ -451,17 +451,25 @@ struct Namespace : Object {
         symbols(symbols) {}
 };
 
+struct Global : Object {
+    Span span;
+    Type type;
+    Vector<Operand> value;
+    Global(Span span, Type type, Vector<Operand> value)
+      : span(span), type(type), value(value) {}
+};
+
 struct Definition {
     enum {
         Intrinsic,
-        Constant,
+        Global,
         Namespace,
         Structure,
         Union,
     } _tag;
     union {
         struct Intrinsic _Intrinsic;
-        Vector<Operand> _Constant;
+        struct Global  _Global;
         struct Namespace _Namespace;
         struct Structure _Structure;
         struct Union _Union;

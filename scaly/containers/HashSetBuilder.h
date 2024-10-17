@@ -31,7 +31,7 @@ struct HashSetBuilder : Object {
 
     HashSetBuilder<T>() :length(0), slots(nullptr) {}
 
-    HashSetBuilder<T>(Page* _rp, Vector<T>& vector) :HashSetBuilder<T>() {
+    HashSetBuilder<T>(Vector<T>& vector) :HashSetBuilder<T>() {
         if (vector.length > 0) {
             this->reallocate(vector.length);
             auto vector_iterator = VectorIterator<T>(&vector);

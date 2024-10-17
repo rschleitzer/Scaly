@@ -1267,7 +1267,7 @@ struct Parser : Object {
 
     HashSet<String> initialize_keywords(Page* _rp) {
         Region _r;
-        HashSetBuilder<String>& hash_set_builder = *new(alignof(HashSetBuilder<String>), _r.get_page()) HashSetBuilder<String>(_r.get_page(), this->keywords_index);
+        HashSetBuilder<String>& hash_set_builder = *new(alignof(HashSetBuilder<String>), _r.get_page()) HashSetBuilder<String>(this->keywords_index);
         return HashSet<String>(_rp, hash_set_builder);
     }
 

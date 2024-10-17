@@ -1,115 +1,104 @@
-namespace scaly {
-namespace containers {
-
-using namespace scaly::memory;
-
-template<class K, class V>
-struct KeyValuePair {
+define KeyValuePair[K, V]
+(
     K key;
     V value;
-};
+)
 
-template<class K, class V>
-struct HashMapBuilder : Object {
-    size_t length;
-    Vector<BuilderList<Slot<KeyValuePair<K, V>>>>* slots;
-
-    HashMapBuilder<K, V>() :length(0), slots(nullptr) {}
-
-    HashMapBuilder<K, V>(Page* _rp, Vector<KeyValuePair<K, V>>& vector) : HashMapBuilder<K, V>() {
-        if (vector.length > 0) {
-            this->reallocate(vector.length);
-            auto vector_iterator = VectorIterator<KeyValuePair<K, V>>(&vector);
-            while (auto element = vector_iterator.next()) {
-                this->add_internal(element->key, element->value);
+define HashMapBuilder[K, V]
+(
+    length: size_t (0)
+    slots: pointer[Vector[BuilderList[Slot[KeyValuePair[K, V]]]]] (nullptr)
+)
+{
+    init(rp: pointer[Page], vector: Vector[KeyValuePair[K, V]]) (HashMapBuilder[K, V]) {
+        if vector.length > 0
+        {
+            this.reallocate(vector.length)
+            var vector_iterator VectorIterator[KeyValuePair[K, V]](&vector)
+            while element vector_iterator.next()
+            {
+                this.add_internal((*element).key, (*element).value)
             }
         }
     }
 
-    void reallocate(size_t size) {
-        auto hash_size = get_prime(size);
-        auto slots_page = Page::get(this)->allocate_exclusive_page();
-        auto slots = new(alignof(Vector<BuilderList<Slot<KeyValuePair<K, V>>>>), slots_page) Vector<BuilderList<Slot<KeyValuePair<K, V>>>>(slots_page, hash_size);
+    function reallocate(this: HashMapBuilder[K, V], size: size_t) {
+        let hash_size get_prime(size)
+        let slots_page (*Page->get(this)).allocate_exclusive_page()
+        let slots Vector[BuilderList[Slot[KeyValuePair[K, V]]]]^slots_page(slots_page, hash_size)
 
-        if (this->slots != nullptr) {
-            auto vector_iterator = VectorIterator<BuilderList<Slot<KeyValuePair<K, V>>>>(this->slots);
-            while (auto element = vector_iterator.next()) {
-                auto list_iterator = BuilderListIterator<Slot<KeyValuePair<K, V>>>(element->head);
-                while (auto item = list_iterator.next())
+        if this.slots <> null
+        {
+            let vector_iterator VectorIterator[BuilderList[Slot[KeyValuePair[K, V]]]](this.slots)
+            while element vector_iterator.next()
+            {
+                let list_iterator BuilderListIterator[Slot[KeyValuePair[K, V]]]((*element).head)
+                while item list_iterator.next()
                 {
-                    auto hash_code = item->hash_code;
-                    auto slot_number = hash_code % slots->length;
-                    auto slot_list = (*(slots))[slot_number];
-                    slot_list->add(slots_page, *item);
+                    let hash_code (*item).hash_code
+                    let slot_number hash_code % slots->length
+                    let slot_list (*(slots))[slot_number]
+                    (*slot_list).add(slots_page, *item)
                 }
             }
-            Page::get(this)->deallocate_exclusive_page(Page::get(this->slots));
+            Page->get(this)->deallocate_exclusive_page(Page->get(this.slots))
         }
-        this->slots = slots;
+        set this.slots: slots
     }
 
-    bool add(K key, V value) {
-        auto hash_size = get_prime(this->length + 1);
-        if (this->slots == nullptr || hash_size > this->slots->length)
-            reallocate(this->length + 1);
-        return add_internal(key, value);
+    function add(this: HashMapBuilder[K, V], key: K, value: V) returns bool {
+        let hash_size get_prime(this.length + 1)
+        if this.slots = null || hash_size > this.slots.length
+            reallocate(this.length + 1)
+        return add_internal(key, value)
     }
 
-    bool add_internal(K key, V value) {
-        auto hash_code = key.hash();
-        auto slot_number = hash_code % this->slots->length;
-        auto slot_list = (*(this->slots))[slot_number];
-        auto iterator = slot_list->get_iterator();
-        while (Slot<KeyValuePair<K, V>>* item = iterator.next()) {
-            if (key.equals(item->value.key)) {
-                return false;
-            }
+    function add_internal(this: HashMapBuilder[K, V], key: K, value: V) returns bool {
+        let hash_code key.hash()
+        let slot_number hash_code % this->slots->length
+        let slot_list (*(this->slots))[slot_number]
+        let iterator (*slot_list).get_iterator()
+        while item iterator.next()
+        {
+            if (key.equals((*item).value.key))
+                return false
         }
 
-        slot_list->add(this->slots->get_page(), Slot<KeyValuePair<K, V>> {
-            .value = KeyValuePair<K, V> {
-                .key = key,
-                .value = value,
-            },
-            .hash_code = hash_code,
-        });
+        (*slot_list).add(this.slots.get_page(), Slot[KeyValuePair[K, V]] (KeyValuePair<K, V> (key, value), hash_code))
 
-        this->length++;
-        return true;
+        set this.length: this.length + 1
+        return true
     }
 
-    bool contains(const K& key) {
+    function contains(this: HashMapBuilder[K, V], key: K) returns bool {
+        if this.slots = null
+            return false
+
+        let hash key.hash()
+        let slot_number hash % this.slots.length
+        let slot this.slots.get(slot_number)
+        let iterator slot.get_iterator()
+        while item iterator.next()
+        {
+            if key.equals((*item).value.key)
+                return true
+        }
+
+        return false
+    }
+
+    operator [](const K& key) returns pointer[V] {
         if (this->slots == nullptr)
-            return false;
+            return nullptr
 
-        auto hash = key.hash();
-        auto slot_number = hash % this->slots->length;
-        auto slot = this->slots->get(slot_number);
-        auto iterator = slot->get_iterator();
-        while (Slot<KeyValuePair<K, V>>* item = iterator.next()) {
-            if (key.equals(item->value.key)) {
-                return true;
-            }
+        let slot this->slots->get(key.hash() % this->slots->length)
+        let iterator slot->get_iterator()
+        while item = iterator.next()
+        {
+            if (key.equals((*item).value.key))
+                return &((*item).value.value)
         }
 
-        return false;
+        return nullptr
     }
-
-    V* operator [](const K& key) {
-        if (this->slots == nullptr)
-            return nullptr;
-
-        auto slot = this->slots->get(key.hash() % this->slots->length);
-        auto iterator = slot->get_iterator();
-        while (Slot<KeyValuePair<K, V>>* item = iterator.next()) {
-            if (key.equals(item->value.key)) {
-                return &(item->value.value);
-            }
-        }
-
-        return nullptr;
-    }
-};
-
-}
 }

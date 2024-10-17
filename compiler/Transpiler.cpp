@@ -156,9 +156,9 @@ struct Transpiler : Object {
                 return build_intrinsic(_ep, header_builder, concept.name);
             }
 
-            case Definition::Constant: {
-                auto operation = concept.definition._Constant;
-                return build_constant_definition(_ep, header_builder, concept.name, operation);
+            case Definition::Global: {
+                auto global = concept.definition._Global;
+                return build_global(_ep, header_builder, concept.name, global);
             }
 
             case Definition::Union: {
@@ -222,7 +222,7 @@ struct Transpiler : Object {
         while (auto member = member_iterator.next()) {
             switch (member->_tag) {
                 case Nameable::Functions: {
-                    auto _result = build_functions(_ep, header_builder, cpp_builder, member->_Functions, &name, false, false);
+                    auto _result = build_functions(_ep, header_builder, cpp_builder, member->_Functions, nullptr, false, false);
                     if (_result != nullptr)
                         return new(alignof(TranspilerError), _ep) TranspilerError(*_result);                    
                     break;
@@ -271,16 +271,24 @@ struct Transpiler : Object {
                 must_build_default_initializer = true;
         }
 
-        if (must_build_default_initializer)
-            build_default_initializer(_ep, header_builder, cpp_builder, name, parameters.length > 0, structure.properties);
+        if (must_build_default_initializer) {
+            auto _result = build_default_initializer(_ep, header_builder, cpp_builder, name, parameters.length > 0, structure.properties);
+            if (_result != nullptr)
+                return _result;
+        }
 
         auto initializers_iterator = VectorIterator<Initializer>(&structure.initializers);
         while (auto initializer = initializers_iterator.next()) {
-            build_initializer(_ep, header_builder, cpp_builder, name, parameters.length > 0, initializer);
+            auto _result = build_initializer(_ep, header_builder, cpp_builder, name, parameters.length > 0, initializer);
+            if (_result != nullptr)
+                return _result;
         }
 
-        if (structure.deinitializer != nullptr)
-            build_deinitializer(_ep, header_builder, cpp_builder, name, parameters.length > 0, structure.deinitializer);
+        if (structure.deinitializer != nullptr) {
+            auto _result = build_deinitializer(_ep, header_builder, cpp_builder, name, parameters.length > 0, structure.deinitializer);
+            if (_result != nullptr)
+                return _result;
+        }
 
         auto member_iterator = HashMapIterator<String, Nameable>(structure.symbols);
         while (auto member = member_iterator.next()) {
@@ -718,9 +726,13 @@ struct Transpiler : Object {
         if (first_name_part->equals("=")) {
             builder.append(" == ");
             return nullptr;
-        }            
+        }
         if (first_name_part->equals("<>")) {
             builder.append(" != ");
+            return nullptr;
+        }            
+        if (first_name_part->equals("//")) {
+            builder.append(" ^ ");
             return nullptr;
         }            
         if (first_name_part->equals("null")) {
@@ -728,7 +740,10 @@ struct Transpiler : Object {
             return nullptr;
         }
         if (first_name_part->equals("pointer")) {
-            build_variable(_ep, builder, *type.generics[0], postfixes);
+            if (type.generics != nullptr) {
+                auto generics = *(type.generics);
+                build_variable(_ep, builder, *generics[0], postfixes);
+            }
             builder.append('*');
             return nullptr;
         }
@@ -736,49 +751,94 @@ struct Transpiler : Object {
         switch (type.lifetime._tag) {
             case Lifetime::Unspecified:
                 break;
-            case Lifetime::Root:
-                return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "Root")));
+            case Lifetime::Root: {
+                builder.append("new (alignof(");
+                builder.append(*first_name_part);
+                if (type.generics != nullptr) {
+                    if (type.generics->length > 0) {
+                        builder.append("<");
+                        {
+                            auto generic_iterator = VectorIterator<Type>(type.generics);
+                            size_t i = 0;
+                            while(auto generic = generic_iterator.next()) {
+                                builder.append(*generic->name[0]);
+                                if (i < type.generics->length - 1)
+                                    builder.append(", ");
+                            }
+                        }
+                        builder.append("> ");
+                    }
+                }
+                builder.append("), r.get_page()) ");
+                break;
+            }
             case Lifetime::Local: {
                 auto local = type.lifetime._Local;
                 builder.append("new (alignof(");
                 builder.append(*first_name_part);
-                if (type.generics.length > 0) {
-                    builder.append("<");
-                    {
-                        auto generic_iterator = VectorIterator<Type>(&type.generics);
-                        size_t i = 0;
-                        while(auto generic = generic_iterator.next()) {
-                            builder.append(*generic->name[0]);
-                            if (i < type.generics.length - 1)
-                                builder.append(", ");
+                if (type.generics != nullptr) {
+                    if (type.generics->length > 0) {
+                        builder.append("<");
+                        {
+                            auto generic_iterator = VectorIterator<Type>(type.generics);
+                            size_t i = 0;
+                            while(auto generic = generic_iterator.next()) {
+                                builder.append(*generic->name[0]);
+                                if (i < type.generics->length - 1)
+                                    builder.append(", ");
+                            }
                         }
+                        builder.append("> ");
                     }
-                    builder.append("> ");
                 }
                 builder.append("), _");
                 builder.append(local.location);
                 builder.append("p) ");
                 break;
             }
-            case Lifetime::Reference:
-                return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "Reference")));
+            case Lifetime::Reference: {
+                auto reference = type.lifetime._Reference;
+                builder.append("new (alignof(");
+                builder.append(*first_name_part);
+                if (type.generics != nullptr) {
+                    if (type.generics->length > 0) {
+                        builder.append("<");
+                        {
+                            auto generic_iterator = VectorIterator<Type>(type.generics);
+                            size_t i = 0;
+                            while(auto generic = generic_iterator.next()) {
+                                builder.append(*generic->name[0]);
+                                if (i < type.generics->length - 1)
+                                    builder.append(", ");
+                            }
+                        }
+                        builder.append("> ");
+                    }
+                }
+                builder.append("), ");
+                builder.append(reference.age);
+                builder.append(") ");
+                break;
+            }
             case Lifetime::Thrown:
                 return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "Thrown")));
         }
 
         builder.append(*first_name_part);
-        if (type.generics.length > 0) {
-            builder.append("<");
-            {
-                auto generic_iterator = VectorIterator<Type>(&type.generics);
-                size_t i = 0;
-                while(auto generic = generic_iterator.next()) {
-                    builder.append(*generic->name[0]);
-                    if (i < type.generics.length - 1)
-                        builder.append(", ");
+        if (type.generics != nullptr) {
+            if (type.generics->length > 0) {
+                builder.append("<");
+                {
+                    auto generic_iterator = VectorIterator<Type>(type.generics);
+                    size_t i = 0;
+                    while(auto generic = generic_iterator.next()) {
+                        builder.append(*generic->name[0]);
+                        if (i < type.generics->length - 1)
+                            builder.append(", ");
+                    }
                 }
+                builder.append("> ");
             }
-            builder.append("> ");
         }
 
         while (auto extension = name_iterator.next()) {
@@ -1108,6 +1168,7 @@ struct Transpiler : Object {
             case Lifetime::Unspecified:
                 break;
             case Lifetime::Root:
+                builder.append("r.get_page()");
                 break;
             case Lifetime::Local: {
                 auto local = lifetime._Local;
@@ -1161,6 +1222,7 @@ struct Transpiler : Object {
                     builder.append(generic->name);
                     if (i < parameters.length - 1)
                         builder.append(", ");
+                    i = i + 1;
                 }
             }
             builder.append("> ");
@@ -1172,7 +1234,7 @@ struct Transpiler : Object {
     void build_type(StringBuilder& builder, Type* type) {
         Region _r;
         if (type->name.length == 1 && type->name[0]->equals(String(_r.get_page(), "pointer"))) {
-            auto generic_iterator = VectorIterator<Type>(&type->generics);
+            auto generic_iterator = VectorIterator<Type>(type->generics);
             while(auto generic = generic_iterator.next()) {
                 build_type(builder, generic);
                 break;
@@ -1192,18 +1254,20 @@ struct Transpiler : Object {
             }
         }
 
-        if (type->generics.length > 0) {
-            builder.append('<');
-            {
-                auto generic_iterator = VectorIterator<Type>(&type->generics);
-                size_t i = 0;
-                while(auto generic = generic_iterator.next()) {
-                    build_type(builder, generic);
-                    if (i < type->generics.length - 1)
-                        builder.append(", ");
+        if (type->generics != nullptr) {
+            if (type->generics->length > 0) {
+                builder.append('<');
+                {
+                    auto generic_iterator = VectorIterator<Type>(type->generics);
+                    size_t i = 0;
+                    while(auto generic = generic_iterator.next()) {
+                        build_type(builder, generic);
+                        if (i < type->generics->length - 1)
+                            builder.append(", ");
+                    }
                 }
+                builder.append('>');
             }
-            builder.append('>');
         }
     }
 
@@ -1223,13 +1287,32 @@ struct Transpiler : Object {
         return nullptr;
     }
 
-    TranspilerError* build_constant_definition(Page* _ep, StringBuilder& header_builder, String name, Vector<Operand>& operation) {
+    TranspilerError* build_global(Page* _ep, StringBuilder& header_builder, String name, Global& global) {
         Region _r;
 
-        header_builder.append("const int ");            
-        header_builder.append(name);
-        header_builder.append(" = ");
-        build_operation(_ep, header_builder, operation, String());
+        auto operation = global.value;
+        if (global.type.generics != nullptr && global.type.generics->length == 0 && global.value.length == 1 && global.value[0]->expression._tag == Expression::Matrix) {
+            header_builder.append("static ");
+            build_type(header_builder, &global.type);
+            header_builder.append(' ');
+            header_builder.append(name);
+            header_builder.append("[]");
+            header_builder.append(" = { ");
+            auto operations = global.value[0]->expression._Matrix.operations;
+            auto _operation_iterator = VectorIterator<Vector<Operand>>(&operations);
+            while (auto operation = _operation_iterator.next()) {
+                build_operation(_ep, header_builder, *operation, String());
+                header_builder.append(", ");
+            }
+            header_builder.append('}');
+        } else {
+            header_builder.append("const ");            
+            build_type(header_builder, &global.type);
+            header_builder.append(' ');
+            header_builder.append(name);
+            header_builder.append(" = ");
+            build_operation(_ep, header_builder, operation, String());
+        }
         header_builder.append(";\n");
         return nullptr;
     }
@@ -1240,7 +1323,8 @@ struct Transpiler : Object {
         builder.append("\
 typedef __SIZE_TYPE__ size_t;\n\
 typedef const char const_char;\n\
-typedef const void const_void;\n");
+typedef const void const_void;\n\
+#define SIZE_MAX 18446744073709551615UL\n");
         {
             auto _result = forward_includes_for_modules(_ep, builder,  program.module.modules);
             if (_result != nullptr)

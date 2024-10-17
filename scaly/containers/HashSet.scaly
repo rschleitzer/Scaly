@@ -1,51 +1,49 @@
-namespace scaly {
-namespace containers {
-
-using namespace scaly::memory;
-using namespace scaly::containers;
-
-template<class T>
-struct HashSet : Object {
-    Vector<Vector<T>>* slots;
-
-    HashSet<T>(Page* _rp, HashSetBuilder<T>& hash_set_builder) {
-        Region _r;
-        if (hash_set_builder.length == 0) {
-            this->slots = nullptr;
-            return;
+define HashSet[T]
+(
+    slots: pointer[Vector[Vector[T]]]
+)
+{
+    init(hash_set_builder: HashSetBuilder[T]) {
+        var r Region()
+        if hash_set_builder.length = 0
+        {
+            set this.slots: nullptr
+            return
         }
 
-        this->slots = new(alignof(Vector<Vector<T>>), _rp) Vector<Vector<T>>(_rp, hash_set_builder.slots->length);
-        auto length = hash_set_builder.slots->length;
-        for (size_t i = 0; i < length; i++) {
-            Region _r_1;
-            Array<T>& array = *new(alignof(Array<T>), _r_1.get_page()) Array<T>();
-            auto list_iterator = ListIterator<Slot<T>>(hash_set_builder.slots->get(i)->head);
-            while (auto item = list_iterator.next())
-                array.add(item->value);
-            if (array.length > 0)
-                this->slots->put(i, Vector<T>(_rp, array));
+        set this->slots: Vector[Vector[T]]#r((*hash_set_builder.slots).length)
+        var length (*hash_set_builder.slots).length
+        var i: size_t 0
+        while i < length
+        {
+            var array Array[T]$()
+            var list_iterator ListIterator[Slot[T]](*((*hash_set_builder.slots).get(i))->head)
+            while item list_iterator.next()
+                array.add(item->value)
+            if array.length > 0
+                this.slots.put(i, Vector[T](rp, array))
+
+            set i: i + 1
         }
     }
 
-    bool contains(const T& value) {
-        if (this->slots == nullptr)
-            return false;
+    function contains(value: T) returns bool {
+        if this.slots = null
+            return false
 
-        auto hash = value.hash();
-        auto slot_number = hash % this->slots->length;
-        auto slot = this->slots->get(slot_number);
-        auto length = slot->length;
-        for (size_t i = 0; i < length; i++) {
+        let hash value.hash()
+        let slot_number hash % this.slots.length
+        let slot = this.slots.get(slot_number)
+        let length (*slot).length
+        var i: size_t 0
+        while i < length
+        {
             if (value.equals(*slot->get(i))) {
-                return true;
+                return true
             }
+            set i: i + 1
         }
 
-        return false;
+        return false
     }
-
-};
-
-}
 }

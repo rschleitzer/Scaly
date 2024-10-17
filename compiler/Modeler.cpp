@@ -531,7 +531,7 @@ Result<Constant, ModelError> handle_literal(Page* _rp, Page* _ep, LiteralSyntax&
             return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError> ::Ok, ._Ok = Constant { ._tag = Constant::Integer, ._Integer = integer } };
         }
         case Literal::Hex: {
-            auto hex = (size_t)strtol(literal.literal._Hex.value.to_c_string(_r.get_page()), nullptr, 16);
+            auto hex = (size_t)strtoul(literal.literal._Hex.value.to_c_string(_r.get_page()), nullptr, 16);
             const bool range_error = errno == ERANGE;
             if (range_error)
                 return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError>::Error, ._Error = ModelError(ModelBuilderError(InvalidConstant(file, Span(literal.start, literal.end)))) };
@@ -568,14 +568,13 @@ Result<Type*, ModelError> handle_type(Page* _rp, Page* _ep, TypeSyntax& type, St
         }
     }
 
-    Vector<Type> generics = Vector<Type>(_rp, 0);
+    Vector<Type>* generics = nullptr;
     Lifetime lifetime = Lifetime(Unspecified());
     List<Type>& generics_builder = *new(alignof(List<Type>), _r.get_page()) List<Type>();
     if (type.generics != nullptr) {
         auto generic_arguments = type.generics->generics;
         if (generic_arguments != nullptr) {
-            auto generics = generic_arguments;
-            auto _generics_iterator = VectorIterator<GenericArgumentSyntax>(generics);
+            auto _generics_iterator = VectorIterator<GenericArgumentSyntax>(generic_arguments);
             while (auto _generic = _generics_iterator.next()) {
                 auto generic = *_generic;
                 auto _type_result = handle_type(_rp, _ep, generic.type, file);
@@ -584,6 +583,10 @@ Result<Type*, ModelError> handle_type(Page* _rp, Page* _ep, TypeSyntax& type, St
                 auto type = _type_result._Ok;
                 generics_builder.add(*type);
             }
+
+            generics = new(alignof(Vector<Type>), _rp) Vector<Type>(_rp, generics_builder);
+        } else {
+            generics = new(alignof(Vector<Type>), _rp) Vector<Type>();
         }
     }
 
@@ -605,7 +608,7 @@ Result<Type*, ModelError> handle_type(Page* _rp, Page* _ep, TypeSyntax& type, St
         }
     }
 
-    return Result<Type*, ModelError> { ._tag = Result<Type*, ModelError>::Ok, ._Ok = new(alignof(Type), _rp) Type(Span(type.start, type.end), Vector<String>(_rp, path), Vector<Type>(_rp, generics_builder), lifetime) };
+    return Result<Type*, ModelError> { ._tag = Result<Type*, ModelError>::Ok, ._Ok = new(alignof(Type), _rp) Type(Span(type.start, type.end), Vector<String>(_rp, path), generics, lifetime) };
 }
 
 Result<Type*, ModelError> handle_binding_annotation(Page* _rp, Page* _ep, BindingAnnotationSyntax& binding_annotation, String file) {
@@ -1228,10 +1231,14 @@ Result<Concept, ModelError> handle_definition(Page* _rp, Page* _ep, String path,
             auto operation_result = handle_operands(_rp, _ep, *constant.operation, file);
             if (operation_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = operation_result._Error };
+            auto _type_result = handle_type(_rp, _ep, constant.type, file);
+            if (_type_result._tag == Result<Type, ModelError>::Error)
+                return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = _type_result._Error };
+            auto type = _type_result._Ok;
             auto operation = operation_result._Ok;
             return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Ok, ._Ok = 
                 Concept(span, String(_rp, definition.name), Vector<GenericParameter>(_rp, parameters), Vector<Attribute>(_rp, attributes),
-                    Definition { ._tag = Definition::Constant, ._Constant = operation }
+                    Definition { ._tag = Definition::Global, ._Global = Global(span, *type, operation) }
                 )};
         }
         case ConceptSyntax::Delegate:
