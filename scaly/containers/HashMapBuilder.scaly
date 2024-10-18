@@ -1,7 +1,7 @@
 define KeyValuePair[K, V]
 (
-    K key;
-    V value;
+    key: K
+    value: V
 )
 
 define HashMapBuilder[K, V]
@@ -10,75 +10,73 @@ define HashMapBuilder[K, V]
     slots: pointer[Vector[BuilderList[Slot[KeyValuePair[K, V]]]]] (nullptr)
 )
 {
-    init(rp: pointer[Page], vector: Vector[KeyValuePair[K, V]]) (HashMapBuilder[K, V]) {
+    init(rp: pointer[Page], vector: Vector[KeyValuePair[K, V]]) (HashMapBuilder[K, V]()) {
         if vector.length > 0
         {
-            this.reallocate(vector.length)
+            reallocate(vector.length)
             var vector_iterator VectorIterator[KeyValuePair[K, V]](&vector)
-            while element vector_iterator.next()
-            {
-                this.add_internal((*element).key, (*element).value)
-            }
+            while let element vector_iterator.next()
+                add_internal((*element).key, (*element).value)
         }
     }
 
     function reallocate(this: HashMapBuilder[K, V], size: size_t) {
         let hash_size get_prime(size)
         let slots_page (*Page->get(this)).allocate_exclusive_page()
-        let slots Vector[BuilderList[Slot[KeyValuePair[K, V]]]]^slots_page(slots_page, hash_size)
+        let new_slots Vector[BuilderList[Slot[KeyValuePair[K, V]]]]^slots_page(slots_page, hash_size)
 
-        if this.slots <> null
+        if slots <> null
         {
-            let vector_iterator VectorIterator[BuilderList[Slot[KeyValuePair[K, V]]]](this.slots)
-            while element vector_iterator.next()
+            let vector_iterator VectorIterator[BuilderList[Slot[KeyValuePair[K, V]]]](slots)
+            while let element vector_iterator.next()
             {
                 let list_iterator BuilderListIterator[Slot[KeyValuePair[K, V]]]((*element).head)
-                while item list_iterator.next()
+                while let item list_iterator.next()
                 {
                     let hash_code (*item).hash_code
-                    let slot_number hash_code % slots->length
-                    let slot_list (*(slots))[slot_number]
+                    let slot_number hash_code % (*new_slots).length
+                    let slot_list (*(new_slots))[slot_number]
                     (*slot_list).add(slots_page, *item)
                 }
             }
-            Page->get(this)->deallocate_exclusive_page(Page->get(this.slots))
+            (*Page->get(this)).deallocate_exclusive_page(Page->get(slots))
         }
-        set this.slots: slots
+        set slots: new_slots
     }
 
     function add(this: HashMapBuilder[K, V], key: K, value: V) returns bool {
-        let hash_size get_prime(this.length + 1)
-        if this.slots = null || hash_size > this.slots.length
-            reallocate(this.length + 1)
+        let hash_size get_prime(length + 1)
+        if slots = null || hash_size > (*slots).length
+            reallocate(length + 1)
         return add_internal(key, value)
     }
 
     function add_internal(this: HashMapBuilder[K, V], key: K, value: V) returns bool {
         let hash_code key.hash()
-        let slot_number hash_code % this->slots->length
-        let slot_list (*(this->slots))[slot_number]
+        let slot_number hash_code % (*slots).length
+        let slot_list (*(slots))[slot_number]
         let iterator (*slot_list).get_iterator()
-        while item iterator.next()
+        while let item iterator.next()
         {
             if (key.equals((*item).value.key))
                 return false
         }
 
-        (*slot_list).add(this.slots.get_page(), Slot[KeyValuePair[K, V]] (KeyValuePair<K, V> (key, value), hash_code))
+        (*slot_list).add((*slots).get_page(), Slot[KeyValuePair[K, V]] (KeyValuePair<K, V> (key, value), hash_code))
 
-        set this.length: this.length + 1
+        set length: length + 1
         return true
     }
 
     function contains(this: HashMapBuilder[K, V], key: K) returns bool {
-        if this.slots = null
+        if slots = null
             return false
 
         let hash key.hash()
-        let slot_number hash % this.slots.length
-        let slot this.slots.get(slot_number)
+        let slot_number hash % (*slots).length
+        let slot (*slots).get(slot_number)
         let iterator slot.get_iterator()
-        while item iterator.next()
+        while let item iterator.next()
         {
             if key.equals((*item).value.key)
                 return true
@@ -87,13 +85,13 @@ define HashMapBuilder[K, V]
         return false
     }
 
-    operator [](const K& key) returns pointer[V] {
-        if (this->slots == nullptr)
-            return nullptr
+    operator [](key: K) returns pointer[V] {
+        if slots = null
+            return null
 
-        let slot this->slots->get(key.hash() % this->slots->length)
-        let iterator slot->get_iterator()
-        while item = iterator.next()
+        let slot (*slots).get(key.hash() % (*slots).length)
+        let iterator (*slot).get_iterator()
+        while let item iterator.next()
         {
             if (key.equals((*item).value.key))
                 return &((*item).value.value)

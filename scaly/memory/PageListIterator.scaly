@@ -1,20 +1,17 @@
 define PageListIterator(current: pointer[PageNode])
 {
     init(head: pointer[PageNode]) {
-        set this.current: head
+        set current: head
     }
 
     procedure next(this: PageListIterator) returns pointer[pointer[Page]]
     {
-        if this.current <> null
+        if current <> null
         {
-            let current this.current
-            set this.current: (*(this.current)).next
-            return &((*current).page)
-        }\
-        else
-        {
+            let previous_current current
+            set current: (*current).next
+            return &((*previous_current).page)
+        } else
             return null
-        }
     }
 }

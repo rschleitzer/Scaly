@@ -8,12 +8,12 @@ define String (data: pointer[char]) {
         var counter: size_t 0
         while rest >= 0x80
         {
-            set length_array[counter]: (char)rest | 0x80
+            set *(length_array + counter): (char)rest | 0x80
             rest >>= 7;
             counter += 1;
         }
 
-        set length_array[counter]: (char)rest
+        set *(length_array + counter): (char)rest
         let overall_length counter + 1 + length
         set data: (char*)(*rp).allocate_raw(overall_length, 1)
         memcpy(data, length_array, counter + 1)
@@ -26,16 +26,16 @@ define String (data: pointer[char]) {
         var counter: size_t 0
         while rest >= 0x80
         {
-            set length_array[counter]: (char)rest | 0x80
+            set *(length_array + counter): (char)rest | 0x80
             rest >>= 7;
             counter += 1;
         }
 
-        set length_array[counter]: (char)rest
+        set *(length_array + counter): (char)rest
         let overall_length counter + 1 + length
         set data: (char*)(*rp).allocate_raw(overall_length, 1)
         memcpy(data, length_array, counter + 1)
-        memcpy((pointer[void])(this.data + counter + 1), other, length)
+        memcpy((pointer[void])(data + counter + 1), other, length)
     }
 
     init (rp: pointer[Page], other: Vector[char])
@@ -63,16 +63,14 @@ define String (data: pointer[char]) {
             set index: index + 1
         }
         var overall_length index + 1 + length
-        set this.data: (char*)(*rp).allocate_raw(overall_length, 1)
-        memcpy(this.data, other.data, overall_length)
+        set data: (char*)(*rp).allocate_raw(overall_length, 1)
+        memcpy(data, other.data, overall_length)
     }
 
     init (rp: pointer[Page], character: char) {
-        set this.data: (char*)(*rp).allocate_raw(2, 1)
-        var zero 0
-        set this.data[zero]: 1
-        var one 1
-        set this.data[one]: character
+        set data: (char*)(*rp).allocate_raw(2, 1)
+        set *data: 1
+        set *(data + 1): character
     }
 
     function get_buffer(this: String) returns pointer[char] {
@@ -84,7 +82,7 @@ define String (data: pointer[char]) {
             if bit_count = PACKED_SIZE * 7
                 exit(11)
 
-            var byte: char *(this.data + index)
+            var byte: char *(data + index)
             set length: length | ((size_t)(byte & 0x7F)) << bit_count
             if (byte & 0x80) == 0
                 break
@@ -92,7 +90,7 @@ define String (data: pointer[char]) {
             set index: index + 1
         }
 
-        return this.data + index + 1
+        return data + index + 1
     }
 
     function to_c_string(this: String, rp: pointer[Page]) returns pointer[const_char] {
@@ -104,7 +102,7 @@ define String (data: pointer[char]) {
             if bit_count = PACKED_SIZE * 7
                 exit(11)
 
-            var byte: char *(this.data + index)
+            var byte: char *(data + index)
             set length: length | ((size_t)(byte & 0x7F)) << bit_count
             if (byte & 0x80) == 0
                 break
@@ -113,14 +111,14 @@ define String (data: pointer[char]) {
         }
 
         var dest (*rp).allocate_raw(length + 1, 1)
-        memcpy(dest, this.data + index + 1, length)
+        memcpy(dest, data + index + 1, length)
         set *((char*)dest + index + length): 0
 
         return (const_char*)dest
     }
 
     function get_length(this: String) returns size_t {
-        var length: size_t 0
+        var result: size_t 0
         var bit_count 0
         var index: size_t 0
         while true
@@ -128,8 +126,8 @@ define String (data: pointer[char]) {
             if bit_count = PACKED_SIZE * 7
                 exit(11)
 
-            var byte: char *(this.data + index)
-            set length: length | ((size_t)(byte & 0x7F)) << bit_count
+            var byte: char *(data + index)
+            set result: result | ((size_t)(byte & 0x7F)) << bit_count
             if (byte & 0x80) == 0
                 break
             set bit_count: bit_count + 7
@@ -147,14 +145,14 @@ define String (data: pointer[char]) {
             if bit_count = PACKED_SIZE * 7
                 exit(11)
 
-            var byte: char *(this.data + index)
+            var byte: char *(data + index)
             set length: length | ((size_t)(byte & 0x7F)) << bit_count
             if (byte & 0x80) == 0
                 break
             set bit_count: bit_count + 7
             set index: index + 1
         }
-        return memcmp(this.data + index + 1, other.data + index + 1, length) = 0
+        return memcmp(data + index + 1, other.data + index + 1, length) = 0
     }
 
     function equals (this: String, other: Vector[char]) returns bool {
@@ -166,7 +164,7 @@ define String (data: pointer[char]) {
             if bit_count = PACKED_SIZE * 7
                 exit(11)
 
-            var byte: char *(this.data + index)
+            var byte: char *(data + index)
             set length: length | ((size_t)(byte & 0x7F)) << bit_count
             if (byte & 0x80) == 0
                 break
@@ -177,7 +175,7 @@ define String (data: pointer[char]) {
         if length <> other.length
             return false
 
-        return memcmp(this.data + index + 1, other.data, length) = 0
+        return memcmp(data + index + 1, other.data, length) = 0
     }
 
     function hash(this: String) returns size_t {
@@ -189,7 +187,7 @@ define String (data: pointer[char]) {
             if bit_count = PACKED_SIZE * 7
                 exit(11)
 
-            var byte: char *(this.data + index)
+            var byte: char *(data + index)
             set length: length | ((size_t)(byte & 0x7F)) << bit_count
             if (byte & 0x80) == 0
                 break
@@ -197,6 +195,6 @@ define String (data: pointer[char]) {
             set index: index + 1
         }
 
-        return scaly.containers.hash(this.data + index + 1, length)
+        return scaly->containers->hash(data + index + 1, length)
     }
 }

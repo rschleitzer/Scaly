@@ -11,12 +11,13 @@ define stdio intrinsic
 
 define scaly {
     ;module llvm
-    ;module libc    ;module types
+    ;module libc
+    ;module types
     module memory
     module containers
     module io
 }
 
-scaly.memory.test()
-scaly.containers.test()
-scaly.io.test()
+scaly->memory->test()
+scaly->containers->test()
+scaly->io->test()

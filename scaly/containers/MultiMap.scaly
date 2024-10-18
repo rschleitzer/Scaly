@@ -1,102 +1,91 @@
-namespace scaly {
-namespace containers {
+define MultiMapIterator[K, V]
+(
+    slot_iterator: VectorIterator[Vector[KeyValuePair[K, Vector[V]]]]
+    element_iterator: VectorIterator[KeyValuePair[K, Vector[V]]]
+)
+{
+    init(multimap: MultiMap[K, V]) (slot_iterator(VectorIterator[Vector[KeyValuePair[K, Vector[V]]]](multimap.slots)), element_iterator(VectorIterator[KeyValuePair[K, Vector[V]]](slot_iterator.next()))) {}
 
-using namespace scaly::memory;
-
-template<class K, class V> struct MultiMap;
-
-template<class K, class V>
-struct MultiMapIterator {
-    VectorIterator<Vector<KeyValuePair<K, Vector<V>>>> slot_iterator;
-    VectorIterator<KeyValuePair<K, Vector<V>>> element_iterator;
-
-    MultiMapIterator<K, V>(const MultiMap<K, V>& multi_map) 
-        : slot_iterator(VectorIterator<Vector<KeyValuePair<K, Vector<V>>>>(multi_map.slots)), 
-          element_iterator(VectorIterator<KeyValuePair<K, Vector<V>>>(slot_iterator.next())) {}
-
-    Vector<V>* next() {
-        while (true) {
-            auto ret = element_iterator.next();
-            if (ret != nullptr)
-                return &(*ret).value;
+    function next(this: MultiMapIterator[K, V]) returns pointer[Vector[V]] {
+        while true
+        {
+            let ret element_iterator.next()
+            if ret <> null
+                return &(*ret).value
             
-            auto next_slot = slot_iterator.next();
-            if (next_slot == nullptr)
-                return nullptr;
+            let next_slot slot_iterator.next()
+            if next_slot = null
+                return null
             
-            element_iterator = VectorIterator<KeyValuePair<K, Vector<V>>>(next_slot);
+            set element_iterator: VectorIterator[KeyValuePair[K, Vector[V]]](next_slot)
         }
     }
-};
-
-template<class K, class V>
-struct MultiMap : Object {
-    Vector<Vector<KeyValuePair<K, Vector<V>>>>* slots;
-
-    MultiMap<K, V>() {
-        this->slots = nullptr;
-    };
-
-    MultiMap<K, V>(Page* _rp, MultiMapBuilder<K, V>& multi_map_builder) {
-        Region _r;
-        if (multi_map_builder.length == 0) {
-            this->slots = nullptr;
-            return;
-        }
-
-        this->slots = new(alignof(Vector<Vector<KeyValuePair<K, Vector<V>>>>), _rp) Vector<Vector<KeyValuePair<K, Vector<V>>>>(_rp, multi_map_builder.slots->length);
-        auto length = multi_map_builder.slots->length;
-        for (size_t i = 0; i < length; i++) {
-            Region _r_1;
-            Array<KeyValuePair<K, Vector<V>>>& array = *new(alignof(Array<KeyValuePair<K, Vector<V>>>), _r_1.get_page()) Array<KeyValuePair<K, Vector<V>>>();
-            auto list_iterator = ListIterator<Slot<KeyValuePair<K, Array<V>*>>>(multi_map_builder.slots->get(i)->head);
-            while (auto item = list_iterator.next()) {
-                array.add(
-                    KeyValuePair<K, Vector<V>> {
-                        .key = item->value.key,
-                        .value = Vector<V>(_rp, *item->value.value),
-                    }                
-                );
-            }
-            if (array.length > 0)
-                this->slots->put(i, Vector<KeyValuePair<K, Vector<V>>>(_rp, array));
-        }
-    }
-
-    bool contains(K& key) {
-        if (this->slots == nullptr)
-            return false;
-
-        auto hash = key.hash();
-        auto slot_number = hash % this->slots->length;
-        auto slot = this->slots->get(slot_number);
-        auto length = slot->length;
-        for (size_t i = 0; i < length; i++) {
-            if (key.equals(slot->get(i)->key)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    Vector<V>* operator [](K& key) {
-        if (this->slots == nullptr)
-            return nullptr;
-
-        auto hash = key.hash();
-        auto slot_number = hash % this->slots->length;
-        auto slot = this->slots->get(slot_number);
-        auto length = slot->length;
-        for (size_t i = 0; i < length; i++) {
-            if (key.equals(slot->get(i)->key)) {
-                return &(slot->get(i)->value);
-            }
-        }
-
-        return nullptr;
-    }
-};
-
 }
+
+define MultiMap[K, V]
+(
+    slots: pointer[Vector[Vector[KeyValuePair[K, Vector[V]]]]] (null)
+)
+{
+    init (rp: pointer[Page], multi_map_builder: MultiMapBuilder[K, V]) {
+        var r Region()
+        if multi_map_builder.length = 0
+        {
+            set slots: null
+            return
+        }
+
+        set slots: Vector[Vector[KeyValuePair[K, Vector[V]]]]^rp(rp, (*multi_map_builder.slots).length)
+        let length (*multi_map_builder.slots).length
+        var i: size_t 0
+        while i < length
+        {
+            var array Array[KeyValuePair[K, Vector[V]]]$()
+            var list_iterator ListIterator[Slot[KeyValuePair[K, pointer[Array[V]]]]]((*(*multi_map_builder.slots).get(i)).head)
+            while let item list_iterator.next()
+                array.add(KeyValuePair[K, Vector[V]] ((*item).value.key, Vector[V](rp, *(*item).value.value)))
+            if array.length > 0
+                (*slots).put(i, Vector[KeyValuePair[K, Vector[V]]](rp, array))
+        }
+    }
+
+    function contains(this: MultiMap[K, V], key: K) returns bool {
+        if slots = null
+            return false
+
+        let hash key.hash()
+        let slot_number hash % (*slots).length
+        let slot (*slots).get(slot_number)
+        let length (*slot).length
+        var i: size_t 0
+        while i < length
+        {
+            if (key.equals((*(*slot).get(i)).key))
+                return true
+                
+            set i: i + 1
+        }
+
+        return false
+    }
+
+    operator [](key: K) returns pointer[Vector[V]] {
+        if slots = null
+            return null
+
+        let hash key.hash()
+        let slot_number hash % (*slots).length
+        let slot (*slots).get(slot_number)
+        let length (*slot).length
+        var i: size_t 0
+        while i < length
+        {
+            if (key.equals((*(*slot).get(i)).key))
+                return &((*(*slot).get(i)).value)
+
+            set i: i + 1
+        }
+
+        return nullptr
+    }
 }

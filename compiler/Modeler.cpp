@@ -146,13 +146,6 @@ Result<HashMap<String, Property>, ModelError> handle_structure(Page* _rp, Page* 
     return Result<HashMap<String, Property>, ModelError> { ._tag = Result<HashMap<String, Property>, ModelError>::Ok, ._Ok = HashMap<String, Property>(_rp, properties_builder) };
 }
 
-Result<HashMap<String, Variant>, ModelError> handle_variants(Page* _rp, Page* _ep, Vector<VariantSyntax>& variants) {    
-    Region _r;
-    HashMapBuilder<String, Variant>& variants_builder = *new(alignof(HashMapBuilder<String, Variant>), _r.get_page()) HashMapBuilder<String, Variant>();
-    /// Fill it
-    return Result<HashMap<String, Variant>, ModelError> { ._tag = Result<HashMap<String, Variant>, ModelError>::Ok, ._Ok = HashMap<String, Variant>(_rp, variants_builder) };
-}
-
 Result<Concept, ModelError> handle_definition(Page* _rp, Page* _ep, String path, DefinitionSyntax& definition, bool private_, String file);
 Result<Function, ModelError> build_function(Page* _rp, Page* _ep, size_t start, size_t end, TargetSyntax targetSyntax, bool private_, bool pure, String file);
 Result<Initializer, ModelError> handle_initializer(Page* _rp, Page* _ep, InitSyntax& initializer, bool private_, String file);
@@ -428,13 +421,37 @@ Result<Namespace, ModelError> handle_namespace(Page* _rp, Page* _ep, String name
 }
 
 Result<Union, ModelError> handle_union(Page* _rp, Page* _ep, String name, String path, UnionSyntax& union_, bool private_, String file) {    
-    Region _r_1;
-    auto variants_result = handle_variants(_rp, _ep, *union_.variants);
-    if (variants_result._tag == Result<HashMap<String, Property>, ModelError>::Error)
-        return Result<Union, ModelError> { ._tag = Result<Union, ModelError>::Error, ._Error = variants_result._Error };
-    auto variants = variants_result._Ok;
+    Region _r;
+    HashMapBuilder<String, Variant>& variants_builder = *new(alignof(HashMapBuilder<String, Variant>), _r.get_page()) HashMapBuilder<String, Variant>();
+    auto variant_syntaxes = union_.variants;
+    auto _variants_iterator = VectorIterator<VariantSyntax>(variant_syntaxes);
+    while (auto _variant_syntax = _variants_iterator.next()) {
+        auto variant_syntax = *_variant_syntax;
+        Type* type = nullptr;
+        if (variant_syntax.annotation != nullptr) {
+            auto _type_result = handle_type(_rp, _ep, variant_syntax.annotation->type, file);
+            if (_type_result._tag == Result<Type, ModelError>::Error)
+                return Result<Union, ModelError> { ._tag = Result<Union, ModelError>::Error, ._Error = _type_result._Error };
+            type = _type_result._Ok;
+        }
+
+        List<Attribute>& attributes = *new(alignof(List<Attribute>), _r.get_page()) List<Attribute>();
+        if (variant_syntax.attributes != nullptr) {
+            auto _attribute_iterator = VectorIterator<AttributeSyntax>(variant_syntax.attributes);
+            while (auto _attribute_syntax = _attribute_iterator.next()) {
+                auto attribute_syntax = *_attribute_syntax;
+                auto _attribute_result = handle_attribute(_rp, _ep, attribute_syntax, file);
+                if (_attribute_result._tag == Result<Attribute, ModelError>::Error)
+                    return Result<Union, ModelError> { ._tag = Result<Union, ModelError>::Error, ._Error = _attribute_result._Error };
+                auto attribute = _attribute_result._Ok;
+                attributes.add(attribute);
+            }
+        }
+        auto variant = Variant(Span(variant_syntax.start, variant_syntax.end), variant_syntax.name, type, Vector<Attribute>(_rp, attributes));
+        variants_builder.add(variant_syntax.name, variant);
+    }
     return Result<Union, ModelError> { ._tag = Result<Union, ModelError>::Ok,
-        ._Ok = Union(Span(union_.start, union_.end), private_, variants)
+        ._Ok = Union(Span(union_.start, union_.end), private_, HashMap<String, Variant>(_rp, variants_builder))
     };
 }
 
@@ -968,9 +985,36 @@ Result<For, ModelError> handle_for(Page* _rp, Page* _ep, ForSyntax& for_, String
     return Result<For, ModelError> { ._tag = Result<For, ModelError>::Ok, ._Ok = For(Span(for_.start, for_.end), String(_rp, for_.variable), expression, action) };
 }
 
+Result<Binding, ModelError> handle_condition(Page* _rp, Page* _ep, ConditionSyntax& condition, String file) {
+    Region _r;
+    switch (condition._tag)
+    {
+        case ConditionSyntax::Operation: {
+            auto operation_result = handle_operation(_rp, _ep, condition._Operation, file);
+            if (operation_result._tag == Result<Vector<Operand>, ModelError>::Error)
+                return Result<Binding, ModelError> { ._tag = Result<Binding, ModelError>::Error, ._Error = operation_result._Error };
+            return Result<Binding, ModelError> { ._tag = Result<Binding, ModelError>::Ok, ._Ok = Binding(Binding::Mutability::Constant, Item(Span(condition._Operation.start, condition._Operation.end), false, nullptr, nullptr, Vector<Attribute>(_rp, 0)), operation_result._Ok)};
+        }
+        case ConditionSyntax::Let: {
+            auto binding = condition._Let.binding.operation;
+            Type* type = nullptr;
+            if (condition._Let.binding.annotation != nullptr) {
+                auto _type_result = handle_binding_annotation(_rp, _ep, *condition._Let.binding.annotation, file);
+                if (_type_result._tag == Result<Type, ModelError>::Error)
+                    return Result<Binding, ModelError> { ._tag = Result<Binding, ModelError>::Error, ._Error = _type_result._Error };
+                type = _type_result._Ok;
+            }
+            auto operation_result = handle_operands(_rp, _ep, *binding, file);
+            if (operation_result._tag == Result<Vector<Operand>, ModelError>::Error)
+                return Result<Binding, ModelError> { ._tag = Result<Binding, ModelError>::Error, ._Error = operation_result._Error };
+            return Result<Binding, ModelError> { ._tag = Result<Binding, ModelError>::Ok, ._Ok = Binding(Binding::Mutability::Constant, Item(Span(condition._Let.start, condition._Let.end), false, new(alignof(String), _rp) String(_rp, condition._Let.binding.name), nullptr, Vector<Attribute>(_rp, 0)), operation_result._Ok)};
+        }
+    }
+}
+
 Result<While, ModelError> handle_while(Page* _rp, Page* _ep, WhileSyntax& while_, String file) {
     Region _r;
-    auto _condition_result = handle_operands(_rp, _ep, *while_.condition, file);
+    auto _condition_result = handle_condition(_rp, _ep, while_.condition, file);
     if (_condition_result._tag == Result<Vector<Operand>, ModelError>::Error)
         return Result<While, ModelError> { ._tag = Result<While, ModelError>::Error, ._Error = _condition_result._Error };
     auto condition = _condition_result._Ok;

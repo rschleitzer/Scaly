@@ -10,7 +10,7 @@ struct MultiMapIterator {
     VectorIterator<Vector<KeyValuePair<K, Vector<V>>>> slot_iterator;
     VectorIterator<KeyValuePair<K, Vector<V>>> element_iterator;
 
-    MultiMapIterator<K, V>(const MultiMap<K, V>& multi_map) 
+    MultiMapIterator(const MultiMap<K, V>& multi_map) 
         : slot_iterator(VectorIterator<Vector<KeyValuePair<K, Vector<V>>>>(multi_map.slots)), 
           element_iterator(VectorIterator<KeyValuePair<K, Vector<V>>>(slot_iterator.next())) {}
 
@@ -33,11 +33,11 @@ template<class K, class V>
 struct MultiMap : Object {
     Vector<Vector<KeyValuePair<K, Vector<V>>>>* slots;
 
-    MultiMap<K, V>() {
+    MultiMap() {
         this->slots = nullptr;
     };
 
-    MultiMap<K, V>(Page* _rp, MultiMapBuilder<K, V>& multi_map_builder) {
+    MultiMap(Page* _rp, MultiMapBuilder<K, V>& multi_map_builder) {
         Region _r;
         if (multi_map_builder.length == 0) {
             this->slots = nullptr;

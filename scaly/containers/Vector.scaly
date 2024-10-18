@@ -7,14 +7,14 @@ define VectorIterator[T]
     init (vector: pointer[Vector[T]]) : (vector(vector), position(0)) {}
 
     function next(this: VectorIterator[T]) returns pointer[T] {
-        if this.vector = null
+        if vector = null
             return null
 
-        if position = this.vector.length
+        if position = (*vector).length
             return null
 
         set position: position + 1
-        return this.vector.get(position - 1)
+        return (*vector).get(position - 1)
     }
 }
 
@@ -29,53 +29,53 @@ define Vector[T]
     init (data: pointer[T], length: size_t) (length(length), data(data)) {}
 
     init (rp: pointer[Page], length: size_t) (length(length)) {
-        if this.length > 0
+        if length > 0
         {
-            this.data = (T*)(*rp).allocate_raw(length * sizeof T, alignof(T))
-            memset(this.data, 0, length * sizeof T)
+            data = (T*)(*rp).allocate_raw(length * sizeof T, alignof(T))
+            memset(data, 0, length * sizeof T)
         } else {
-            set this.data: null
+            set data: null
         }
     }
 
     init (rp: pointer[Page], array: pointer[T], legnth: size_t) (length(length)) {
-        if this.length > 0
+        if length > 0
         {
-            this.data = (T*)(*rp).allocate_raw(length * sizeof T, alignof(T))
-            memcpy(this.data, array, length * sizeof T)
+            data = (T*)(*rp).allocate_raw(length * sizeof T, alignof(T))
+            memcpy(data, array, length * sizeof T)
         } else {
-            set this.data: null
+            set data: null
         }
     }
 
     init (rp: pointer[Page], other: Vector[T]) (length(other.length)) {
-        if this.length > 0
+        if length > 0
         {
-            this.data = (T*)(*rp).allocate_raw(length * sizeof T, alignof(T))
-            memcpy(this.data, other.data, length * sizeof T)
+            data = (T*)(*rp).allocate_raw(length * sizeof T, alignof(T))
+            memcpy(data, other.data, length * sizeof T)
         } else {
-            set this.data: null
+            set data: null
         }
     }
 
     init (rp: pointer[Page], list: List[T]) (length(list.count())) {
-        if this.length > 0
+        if length > 0
         {
-            this.data = (T*) (*rp).allocate_raw(length * sizeof T, alignof(T))
+            data = (T*) (*rp).allocate_raw(length * sizeof T, alignof(T))
             var list_iterator list.get_iterator()
             var i: size_t length
-            while item list_iterator.next()
+            while let item list_iterator.next()
             {
                 set i: i -1
                 set *(*this)[i]: *item
             }
         } else {
-            set this.data: null
+            set data: null
         }
     }
 
     function get(this: Vector[T], i: size_t) returns pointer[T] {
-        if i >= this.length
+        if i >= length
             return null
         return (*this)[i]
     }

@@ -3,13 +3,13 @@ define BuilderList[T] (head: pointer[Node[T]]) {
     init () (head(null)) {}
 
     function add(this: BuilderList[T], rp: pointer[Page], element: T) {
-        let new_node Node[T]#r(element, this.head)
+        let new_node Node[T]^rp(element, head)
 
-        set this.head: new_node
+        set head: new_node
     }
 
     function remove(this: BuilderList[T], element: T) returns bool {
-        let node this.head
+        let node head
         var previous_node: pointer[Node[T]] null
         while node <> null
         {
@@ -28,19 +28,19 @@ define BuilderList[T] (head: pointer[Node[T]]) {
     }
 
     function get_head(this: BuilderList[T]) returns pointer[T] {
-        if this.head = null
+        if head = null
             return null
-        return &this.head.element
+        return &(*head).element
     }
 
     function count(this: BuilderList[T]) returns size_t {
-        var list_iterator this.get_iterator()
+        var list_iterator get_iterator()
         var i: size_t 0
-        while item list_iterator.next()
+        while let item list_iterator.next()
             set i: i + 1
         return i
     }
 
     function get_iterator(this: BuilderList[T]) returns BuilderListIterator[T]
-        BuilderListIterator[T](this.head)
+        BuilderListIterator[T](head)
 }

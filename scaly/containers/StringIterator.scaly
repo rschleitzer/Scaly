@@ -7,17 +7,17 @@ define StringIterator
 
 init(string: String) {
     let buffer string.get_buffer()
-    set this.current: buffer
-    set this.last: buffer + string.get_length()
+    set current: buffer
+    set last: buffer + string.get_length()
 }
 
 function next(this: StringIterator) returns pointer[char] {
-    if this.current = last
+    if current = last
     {
         return null
     } else {
-        let ret this.current
-        set this.current: this.current + 1
+        let ret current
+        set current: current + 1
         return ret
     }
 }

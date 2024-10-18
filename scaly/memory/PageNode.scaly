@@ -5,7 +5,7 @@ define PageNode
 )
 {
     init(thePage: pointer[Page], nextNode: pointer[PageNode]) {
-        set this.page: thePage
-        set this.next: nextNode 
+        set page: thePage
+        set next: nextNode 
     }
 }

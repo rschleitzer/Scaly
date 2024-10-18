@@ -10,9 +10,9 @@ define containers {
     module HashSet
     module HashMapBuilder
     module HashMap
-;*    module MultiMapBuilder
+    module MultiMapBuilder
     module MultiMap
-    module Result *;
+    module Result
     module String
     module StringIterator
 

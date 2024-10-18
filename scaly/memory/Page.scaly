@@ -10,16 +10,16 @@ define Page
 {
     procedure deallocate_extensions(this: Page) {
         ; Oversized pages cannot have extensions
-        if this.next_object = null
+        if next_object = null
             return
 
-        for exclusive_page in this.exclusive_pages
+        for exclusive_page in exclusive_pages
         {
             (*exclusive_page).deallocate_extensions()
             (*exclusive_page).forget()
         }
 
-        var page this.next_page 
+        var page next_page 
         while page <> null
         {
             let next_page (*page).next_page
@@ -35,21 +35,21 @@ define Page
     }
 
     function reset(this: Page) {
-        set this.current_page: null
-        set this.next_page: null
-        set this.next_object: this + 1
-        set this.exclusive_pages: PageList()
+        set current_page: null
+        set next_page: null
+        set next_object: this + 1
+        set exclusive_pages: PageList()
     }
 
     function deallocate_exclusive_page(this: Page, page: pointer[Page]) {
         (*page).deallocate_extensions()
         (*page).forget()
-        if (this.exclusive_pages).remove(page) = false
+        if (exclusive_pages).remove(page) = false
             exit (2)
     }
 
     function allocate_raw(this: Page, size: size_t, align: size_t) returns pointer[void] {
-        let location (size_t)this.next_object
+        let location (size_t)next_object
         let aligned_location (location + align - 1) & ~(align - 1)
         let location_after_page (size_t)this + PAGE_SIZE
         let capacity location_after_page - aligned_location
@@ -59,31 +59,31 @@ define Page
             ; We need to reserve the space for the page object
             let gross_size size + sizeof Page
             if gross_size > PAGE_SIZE
-                return this.allocate_oversized(gross_size)
+                return allocate_oversized(gross_size)
 
-            if this.current_page <> null
+            if current_page <> null
             {
-                let object this.current_page.allocate_raw(size, align)
+                let object (*current_page).allocate_raw(size, align)
                 let page_of_allocated_object get(object)
-                if page_of_allocated_object <> this.current_page
-                    set this.current_page: page_of_allocated_object
+                if page_of_allocated_object <> current_page
+                    set current_page: page_of_allocated_object
                 return object
             }
 
-            var page this.allocate_page()
-            set this.current_page: page
-            set this.next_page: page
+            var page allocate_page()
+            set current_page: page
+            set next_page: page
             return (*page).allocate_raw(size, align)
         }
 
         ; Allocate from ourselves
         let next_location aligned_location + size
-        set this.next_object: (pointer[void])next_location
+        set next_object: (pointer[void])next_location
         return (pointer[void])aligned_location
     }
 
     function get_capacity(this: Page, align: size_t) returns size_t {
-        var location (size_t)this.next_object
+        var location (size_t)next_object
         let aligned_location (location + align - 1) & ~(align - 1)
         var location_after_page (size_t)this + PAGE_SIZE
         var capacity location_after_page - aligned_location
@@ -97,8 +97,8 @@ define Page
     }
 
     function allocate_exclusive_page(this: Page) returns pointer[Page] {
-        let page this.allocate_page()
-        (this.exclusive_pages).add(page, page)
+        let page allocate_page()
+        (exclusive_pages).add(page, page)
         return page
     }
 
@@ -107,7 +107,7 @@ define Page
     }
 
     function is_oversized(this: Page) returns bool {
-        return this.next_object = null
+        return next_object = null
     }
 
     function allocate_oversized(this: Page, size: size_t) returns pointer[void] {
@@ -121,7 +121,7 @@ define Page
         set (*page).next_object: null
 
         ; An oversized page is always exclusive
-        (this.exclusive_pages).add(this, page)
+        (exclusive_pages).add(this, page)
 
         ; The page offset by the null pointer for next_object
         return (pointer[void])(page + 1)

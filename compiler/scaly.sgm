@@ -108,7 +108,8 @@
 <syntax id = Variant                      multiple
     <content identifier                                     property = name
     <content link = Attribute             multiple optional property = attributes
-    <content link = Class                          optional property = variant
+    <content link = TypeAnnotation                 optional property = annotation
+    <content link = comma                          optional
 
 <syntax id = Constant
     <content link = Type                                    property = type
@@ -401,6 +402,17 @@
     <content link = Return
     <content link = Throw
 
+<syntax id = While
+    <content link = while
+    <content link = Condition                               property = condition
+    <content colon
+    <content link = Label                          optional property = name
+    <content link = Action                                  property = action
+
+<syntax id = Condition                             abstract
+    <content link = Operation
+    <content link = Let
+
 <syntax id = Let
     <content link = let
     <content link = Binding                                 property = binding
@@ -514,13 +526,6 @@
     <content link = label
     <content identifier                                     property = name
     <content colon                                 optional
-
-<syntax id = While
-    <content link = while
-    <content link = Operand               multiple          property = condition
-    <content colon
-    <content link = Label                          optional property = name
-    <content link = Action                                  property = action
 
 <syntax id = Repeat
     <content link = repeat

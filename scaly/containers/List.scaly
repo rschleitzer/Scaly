@@ -14,23 +14,23 @@ define List[T @summary "The element type of the list."]
 {
     function get_head(this: List[T]) returns T?
     {
-        if this.head = null
+        if head = null
             return null
 
-        return &((*(this.head)).element)
+        return &((*head).element)
     }
 
     function count(this: List[T]) returns size_t
     {
-        mutable list_iterator this.get_iterator()
+        var list_iterator get_iterator()
         var i: size_t 0
         while list_iterator.next() <> null
             set i: i + 1
-        i
+        return i
     }
 
     procedure remove(this: List[T], element: T) returns bool {
-        var node this.head
+        var node head
         var previous_node: pointer[Node[T]] null
         while node <> nullptr
         {
@@ -50,11 +50,11 @@ define List[T @summary "The element type of the list."]
     }
 
     function get_iterator(this: List[T]) returns ListIterator[T]
-        ListIterator[T](this.head)
+        ListIterator[T](head)
 
     procedure add#r(this: List[T], element: T)
     {
-        let new_node Node[T]#r(element, this.head)
-        set this.head: new_node
+        let new_node Node[T]#r(element, head)
+        set head: new_node
     }
 }

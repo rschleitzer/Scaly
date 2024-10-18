@@ -219,9 +219,9 @@ struct For : Object {
 
 struct While : Object {
     Span span;
-    Vector<Operand> condition;
+    Binding condition;
     Action action;
-    While(Span span, Vector<Operand> condition, Action action) : span(span), condition(condition), action(action) {}
+    While(Span span, Binding condition, Action action) : span(span), condition(condition), action(action) {}
 };
 
 struct SizeOf : Object {
@@ -424,11 +424,13 @@ struct Structure {
 struct Variant : Object {
     Span span;
     String name;
-    HashMap<String, Property> properties;
-    Variant(Span span, String name, HashMap<String, Property> properties)
+    Type* type;
+    Vector<Attribute> attributes;
+    Variant(Span span, String name, Type* type, Vector<Attribute> attributes)
       : span(span),
         name(name),
-        properties(properties) {}
+        type(type),
+        attributes(attributes) {}
 };
 
 struct Union : Object {

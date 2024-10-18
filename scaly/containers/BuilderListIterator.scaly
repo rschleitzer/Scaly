@@ -2,11 +2,11 @@ define BuilderListIterator[T] (current: pointer[Node[T]]) {
     init (head: pointer[Node[T]]) (current(head)) {}
 
     function next(this: BuilderListIterator[T]) returns pointer[T] {
-        if this.current <> null
+        if current <> null
         {
-            let current this.current
-            set this.current: this.current.next
-            return &(*current).element;
+            let next_node current
+            set current: (*current).next
+            return &(*next_node).element;
         } else {
             return null
         }

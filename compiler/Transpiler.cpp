@@ -71,8 +71,6 @@ struct Transpiler : Object {
 
         StringBuilder& namespace_open_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(namespace_open);
 
-        bool leaf_module = is_leaf_module(module);
-
         auto _symbols_result = build_symbols(_ep, path, module.file, module.name, header_builder, cpp_builder, main_header, namespace_open, namespace_close, module.symbols);
         if (_symbols_result)
             return _symbols_result;
@@ -112,34 +110,6 @@ struct Transpiler : Object {
         return nullptr;
     }
 
-    bool is_leaf_module(const Module& module) {
-        if (module.modules.length > 0)
-            return false;
-        auto member_iterator = HashMapIterator<String, Nameable>(module.symbols);
-        while (auto member = member_iterator.next()) {
-            switch (member->_tag) {
-                case Nameable::Concept: {
-                    auto concept = member->_Concept;
-                    switch (concept.definition._tag) {
-                        case Definition::Namespace: {
-                            auto namespace_ = concept.definition._Namespace;
-                            if (namespace_.modules.length > 0)
-                                return false;
-                            break;
-                        }
-                        
-                        default:
-                            break;
-                    }
-                    break;
-                }
-                default:
-                    continue;
-            }
-        }
-        return true;
-    }
-
     TranspilerError* build_concept(Page* _ep, String path, String source, StringBuilder& header_builder, StringBuilder& cpp_builder, String main_header, String namespace_open, String namespace_close, Concept& concept) { 
         switch (concept.definition._tag) {
             case Definition::Namespace: {
@@ -162,11 +132,42 @@ struct Transpiler : Object {
             }
 
             case Definition::Union: {
-                return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "Union")));
+                auto union_ = concept.definition._Union;
+                build_union(_ep, header_builder, concept.name, union_, concept.parameters);
+                return nullptr;
             }
         }
+    }
 
-        return nullptr;
+    void build_union(Page* _ep, StringBuilder& header_builder, String name, Union& union_, Vector<GenericParameter> parameters) {
+        header_builder.append('\n');
+        full_struct_name(header_builder, name, parameters);
+        header_builder.append(" {\n    enum {\n");
+        auto variants = union_.variants;
+        {
+            auto _variant_iterator = HashMapIterator<String, Variant>(variants);
+            while (auto _variant = _variant_iterator.next()) {
+                Variant& variant = *_variant;
+                header_builder.append("        ");
+                header_builder.append(variant.name);
+                header_builder.append(",\n");
+            }
+        }
+        header_builder.append("} _tag;\n    union {\n");
+        {
+            auto _variant_iterator = HashMapIterator<String, Variant>(variants);
+            while (auto _variant = _variant_iterator.next()) {
+                Variant& variant = *_variant;
+                if (variant.type == nullptr)
+                    continue;
+                header_builder.append("        ");
+                build_type(header_builder, variant.type);
+                header_builder.append(" _");
+                header_builder.append(variant.name);
+                header_builder.append(";\n");
+            }
+            header_builder.append("    };\n};");
+        }
     }
 
     TranspilerError* build_namespace(Page* _ep, String path, String source, String name, StringBuilder& header_builder, StringBuilder& cpp_builder, String main_header, String namespace_open, String namespace_close, Namespace& namespace_) {
@@ -224,7 +225,7 @@ struct Transpiler : Object {
                 case Nameable::Functions: {
                     auto _result = build_functions(_ep, header_builder, cpp_builder, member->_Functions, nullptr, false, false);
                     if (_result != nullptr)
-                        return new(alignof(TranspilerError), _ep) TranspilerError(*_result);                    
+                        return new(alignof(TranspilerError), _ep) TranspilerError(*_result);
                     break;
                 }
                 case Nameable::Concept: {
@@ -390,7 +391,7 @@ struct Transpiler : Object {
             cpp_builder.append(name);
         }        
     }
-    TranspilerError* build_deinitializer(Page* _ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, bool is_generic, DeInitializer* deInitializer) {
+    TranspilerError* build_deinitializer(Page* _ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, bool is_generic, DeInitializer* de_initializer) {
         Region _r;
         header_builder.append("\n    ");
         header_builder.append('~');
@@ -401,12 +402,18 @@ struct Transpiler : Object {
             cpp_builder.append("::");
             cpp_builder.append('~');
             cpp_builder.append(name);
-            cpp_builder.append("() {");
-            cpp_builder.append("};");
+            cpp_builder.append("() ");
+            auto _result = build_implementation(_ep, cpp_builder, de_initializer->implementation, String(_r.get_page(), String()), true);
+            if (_result != nullptr)
+                return _result;
+            cpp_builder.append(";");
         }
         if (is_generic) {
-            header_builder.append("() {");
-            header_builder.append("};");
+            header_builder.append("() ");
+            auto _result = build_implementation(_ep, header_builder, de_initializer->implementation, String(_r.get_page(), "    "), true);
+            if (_result != nullptr)
+                return _result;
+            header_builder.append(";");
         }
         else {
             header_builder.append("();");
@@ -565,21 +572,33 @@ struct Transpiler : Object {
                 break;
             }
         }
+        bool simple_array = false;
         if (binding.item.type != nullptr)
-            build_type(builder, binding.item.type);
+        {
+            simple_array = build_type(builder, binding.item.type);
+        }
         else
+        {
             builder.append("auto");
+        }
 
         if (binding.item.name != nullptr) {
             builder.append(' ');
             builder.append(*binding.item.name);
         }
+        if (simple_array) {
+            builder.append('[');
+            auto _result = build_operation(_ep, builder, binding.operation, indent);
+            if (_result != nullptr)
+                return _result;
+            builder.append(']');
+        } else {
+            builder.append(" = ");
 
-        builder.append(" = ");
-
-        auto _result = build_operation(_ep, builder, binding.operation, indent);
-        if (_result != nullptr)
-            return _result;
+            auto _result = build_operation(_ep, builder, binding.operation, indent);
+            if (_result != nullptr)
+                return _result;
+        }
         return nullptr;
     }
 
@@ -730,11 +749,15 @@ struct Transpiler : Object {
         if (first_name_part->equals("<>")) {
             builder.append(" != ");
             return nullptr;
-        }            
+        }
         if (first_name_part->equals("//")) {
             builder.append(" ^ ");
             return nullptr;
-        }            
+        }
+        if (first_name_part->equals("->")) {
+            builder.append("::");
+            return nullptr;
+        }
         if (first_name_part->equals("null")) {
             builder.append("nullptr");
             return nullptr;
@@ -753,44 +776,14 @@ struct Transpiler : Object {
                 break;
             case Lifetime::Root: {
                 builder.append("new (alignof(");
-                builder.append(*first_name_part);
-                if (type.generics != nullptr) {
-                    if (type.generics->length > 0) {
-                        builder.append("<");
-                        {
-                            auto generic_iterator = VectorIterator<Type>(type.generics);
-                            size_t i = 0;
-                            while(auto generic = generic_iterator.next()) {
-                                builder.append(*generic->name[0]);
-                                if (i < type.generics->length - 1)
-                                    builder.append(", ");
-                            }
-                        }
-                        builder.append("> ");
-                    }
-                }
+                build_type(builder, &type);
                 builder.append("), r.get_page()) ");
                 break;
             }
             case Lifetime::Local: {
                 auto local = type.lifetime._Local;
                 builder.append("new (alignof(");
-                builder.append(*first_name_part);
-                if (type.generics != nullptr) {
-                    if (type.generics->length > 0) {
-                        builder.append("<");
-                        {
-                            auto generic_iterator = VectorIterator<Type>(type.generics);
-                            size_t i = 0;
-                            while(auto generic = generic_iterator.next()) {
-                                builder.append(*generic->name[0]);
-                                if (i < type.generics->length - 1)
-                                    builder.append(", ");
-                            }
-                        }
-                        builder.append("> ");
-                    }
-                }
+                build_type(builder, &type);
                 builder.append("), _");
                 builder.append(local.location);
                 builder.append("p) ");
@@ -799,22 +792,7 @@ struct Transpiler : Object {
             case Lifetime::Reference: {
                 auto reference = type.lifetime._Reference;
                 builder.append("new (alignof(");
-                builder.append(*first_name_part);
-                if (type.generics != nullptr) {
-                    if (type.generics->length > 0) {
-                        builder.append("<");
-                        {
-                            auto generic_iterator = VectorIterator<Type>(type.generics);
-                            size_t i = 0;
-                            while(auto generic = generic_iterator.next()) {
-                                builder.append(*generic->name[0]);
-                                if (i < type.generics->length - 1)
-                                    builder.append(", ");
-                            }
-                        }
-                        builder.append("> ");
-                    }
-                }
+                build_type(builder, &type);
                 builder.append("), ");
                 builder.append(reference.age);
                 builder.append(") ");
@@ -824,30 +802,7 @@ struct Transpiler : Object {
                 return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "Thrown")));
         }
 
-        builder.append(*first_name_part);
-        if (type.generics != nullptr) {
-            if (type.generics->length > 0) {
-                builder.append("<");
-                {
-                    auto generic_iterator = VectorIterator<Type>(type.generics);
-                    size_t i = 0;
-                    while(auto generic = generic_iterator.next()) {
-                        builder.append(*generic->name[0]);
-                        if (i < type.generics->length - 1)
-                            builder.append(", ");
-                    }
-                }
-                builder.append("> ");
-            }
-        }
-
-        while (auto extension = name_iterator.next()) {
-            if (first_name_part->equals("this"))
-                builder.append("->");
-            else
-                builder.append('.');
-            builder.append(*extension);
-        }
+        build_type(builder, &type);
 
         auto postfixes_iterator = VectorIterator<Postfix>(&postfixes);
         auto postfix = postfixes_iterator.next();
@@ -1010,11 +965,30 @@ struct Transpiler : Object {
         return nullptr;
     }
 
+    TranspilerError* build_condition(Page* _ep, StringBuilder& builder, Binding& binding, String indent) {
+
+        if (binding.item.name != nullptr) {
+            if (binding.item.type != nullptr)
+                build_type(builder, binding.item.type);
+            else
+                builder.append("auto");
+            builder.append(' ');
+            builder.append(*binding.item.name);
+
+            builder.append(" = ");
+        }
+
+        auto _result = build_operation(_ep, builder, binding.operation, indent);
+        if (_result != nullptr)
+            return _result;
+        return nullptr;
+    }
+
     TranspilerError* build_while(Page* _ep, StringBuilder& builder, While& while_, String indent) {
         Region _r;
         builder.append("while (");
         {
-            auto _result = build_operation(_ep, builder, while_.condition, indent);
+            auto _result = build_condition(_ep, builder, while_.condition, indent);
             if (_result != nullptr)
                 return _result;
         }
@@ -1225,13 +1199,13 @@ struct Transpiler : Object {
                     i = i + 1;
                 }
             }
-            builder.append("> ");
+            builder.append(">\n");
         }
         builder.append("struct ");
         builder.append(name);
     }
 
-    void build_type(StringBuilder& builder, Type* type) {
+    bool build_type(StringBuilder& builder, Type* type) {
         Region _r;
         if (type->name.length == 1 && type->name[0]->equals(String(_r.get_page(), "pointer"))) {
             auto generic_iterator = VectorIterator<Type>(type->generics);
@@ -1240,7 +1214,7 @@ struct Transpiler : Object {
                 break;
             }
             builder.append('*');
-            return;
+            return false;
         }
 
         {
@@ -1249,7 +1223,7 @@ struct Transpiler : Object {
             while (auto name_part = type_name_iterator.next()) {
                 builder.append(*name_part);
                 if (i < type->name.length - 1)
-                    builder.append("::");
+                    builder.append(".");
                 i++;
             }
         }
@@ -1264,11 +1238,16 @@ struct Transpiler : Object {
                         build_type(builder, generic);
                         if (i < type->generics->length - 1)
                             builder.append(", ");
+                        i++;
                     }
                 }
                 builder.append('>');
+                return false;
+            } else {
+                return true;
             }
         }
+        return false;
     }
 
     TranspilerError* build_intrinsic(Page* _ep, StringBuilder& header_builder, String name) {
@@ -1448,6 +1427,7 @@ typedef const void const_void;\n\
 			\"args\": [\n\
 				\"-fcolor-diagnostics\",\n\
 				\"-fansi-escape-codes\",\n\
+				\"-ferror-limit=1\",\n\
 				\"-g\",\n\
 				\"${workspaceFolder}/main.cpp\",\n");
             build_vscode_source_files(tasks_builder, String(), program.module);
