@@ -858,11 +858,12 @@ struct Transpiler : Object {
                 case Postfix::Catcher:
                     return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "Catcher")));
                 case Postfix::MemberAccess: {
-                    builder.append('.');
                     auto member_access = postfix->_MemberAccess;
                     auto member_access_iterator = VectorIterator<String>(&member_access);
-                    auto member = member_access_iterator.next();
-                    builder.append(*member);
+                    while (auto member = member_access_iterator.next()) {
+                        builder.append('.');
+                        builder.append(*member);
+                    }
                     return nullptr;
                 }
             }

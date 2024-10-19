@@ -112,7 +112,7 @@ define Page
 
     function allocate_oversized(this: Page, size: size_t) returns pointer[void] {
         ; We allocate oversized objects directly.
-        let address (pointer[Page])aligned_alloc(PAGE_SIZE,  (size + PAGE_SIZE - 1))
+        let address aligned_alloc(PAGE_SIZE,  (size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1))
         if address = null
             exit(1)
         var page (pointer[Page])address

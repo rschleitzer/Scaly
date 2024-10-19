@@ -70,7 +70,7 @@ define memory {
         let oversized_page Page->get((*(*page).exclusive_pages.head).page)
 
         ; A null next_object indicates an oversized page.
-        if oversized_page.next_object <> nullptr
+        if (*oversized_page).next_object <> nullptr
             exit (-15)
 
         ; The page of our array pointer shall be our oversized page.
