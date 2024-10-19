@@ -5,7 +5,7 @@ define MultiMapBuilder[K, V]
 )
 {
     function reallocate(this: MultiMapBuiler[K, V], size: size_t) {
-        let hash_size get_prime(size)
+        let hash_size hashing->get_prime(size)
         let slots_page (*Page->get(this)).allocate_exclusive_page()
         var new_slots Vector[BuilderList[Slot[KeyValuePair[K, Array[pointer[V]]]]]]^slots_page(slots_page, hash_size)
 
@@ -29,7 +29,7 @@ define MultiMapBuilder[K, V]
     }
 
     function add(this: MultiMapBuiler[K, V], key: K, value: V) {
-        let hash_size get_prime(length + 1)
+        let hash_size hashing->get_prime(length + 1)
         if (slots = null || hash_size > (*slots).length)
             reallocate(length + 1)
         add_internal(key, value)

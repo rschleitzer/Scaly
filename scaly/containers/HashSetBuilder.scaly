@@ -1,70 +1,3 @@
-; https://planetmath.org/goodhashtableprimes
-define HASH_PRIMES: size_t[] [
-    3, 5, 11, 23, 53, 97, 193, 389, 769, 1543, 3079, 6151, 12289, 24593, 49157, 98317, 196613,
-    393241, 786433, 1572869, 3145739, 6291469, 12582917, 25165843, 50331653, 100663319, 201326611,
-    402653189, 805306457, 1610612741,
-]
-
-function sqrt(double) returns double extern
-
-function is_prime(candidate: size_t) returns bool {
-    if (candidate & 1) <> 0
-    {
-        let limit (size_t)sqrt((double)candidate)
-        var divisor: size_t 3
-        while divisor <= limit
-        {
-            set divisor: divisor + 2
-            if (candidate % divisor) = 0
-                return false
-        }
-        return true
-    }
-
-    return candidate = 2
-}
-
-function get_prime(size: size_t) returns size_t {
-    {
-        var i: int 0
-        while i < 30
-        {
-            if *(HASH_PRIMES + i) >= size
-                return *(HASH_PRIMES + i);
-            set i: i + 1    
-        }
-    }
-
-    {
-        var i size | 1
-        while i < SIZE_MAX
-        {
-            if is_prime(i)
-                return i
-
-            set i: i + 2
-        }
-    }
-    return size
-}
-
-; FNV-1a hash
-function hash(data: pointer[char], length: size_t) returns size_t {
-    var hash: size_t 0xcbf29ce484222325
-    var prime: size_t 0x100000001b3
-    var i: int 0
-    while i < length
-    {
-        let value *(data + i)
-        set hash: hash // value
-        set hash: hash * prime
-
-        set i: i + 1    
-    }
-    return hash
-}
-
-
 define Slot[T]
 (
     value: T
@@ -90,7 +23,7 @@ define HashSetBuilder[T]
     }
 
     function reallocate(this: HashSetBuilder[T], size: size_t) {
-        let hash_size get_prime(size)
+        let hash_size hashing->get_prime(size)
         let slots_page (*Page->get(this)).allocate_exclusive_page()
         let new_slots Vector[BuilderList[Slot[T]]]^slots_page(slots_page, hash_size)
 
@@ -114,7 +47,7 @@ define HashSetBuilder[T]
     }
 
     function add(this: HashSetBuilder[T], value: T) returns bool {
-        let hash_size get_prime(length + 1)
+        let hash_size hashing->get_prime(length + 1)
         if slots = null || hash_size > (*slots).length
             reallocate(length + 1)
         return add_internal(value)

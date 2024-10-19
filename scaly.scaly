@@ -6,6 +6,7 @@ function memcpy(dest: pointer[void], src: pointer[const_void], size_t) returns p
 function memcmp(dest: pointer[const_void], src: pointer[const_void], size_t) returns int extern
 function memset(dest: pointer[void], int, size_t) extern
 function strlen(s: pointer[const_char]) returns size_t extern
+function sqrt(double) returns double extern
 
 define stdio intrinsic
 

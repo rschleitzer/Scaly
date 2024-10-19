@@ -195,6 +195,6 @@ define String (data: pointer[char]) {
             set index: index + 1
         }
 
-        return scaly->containers->hash(data + index + 1, length)
+        return hashing->hash(data + index + 1, length)
     }
 }

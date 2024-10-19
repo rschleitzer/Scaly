@@ -223,7 +223,7 @@ struct Transpiler : Object {
         while (auto member = member_iterator.next()) {
             switch (member->_tag) {
                 case Nameable::Functions: {
-                    auto _result = build_functions(_ep, header_builder, cpp_builder, member->_Functions, nullptr, false, false);
+                    auto _result = build_functions(_ep, header_builder, cpp_builder, member->_Functions, &name, false, false);
                     if (_result != nullptr)
                         return new(alignof(TranspilerError), _ep) TranspilerError(*_result);
                     break;
