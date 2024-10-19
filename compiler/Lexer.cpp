@@ -27,6 +27,11 @@ struct StringToken {
     Vector<char> value;
 };
 
+struct CharacterToken {
+    CharacterToken(Vector<char> value) : value(value) {}
+    Vector<char> value;
+};
+
 struct FragmentToken {
     FragmentToken(Vector<char> value) : value(value) {}
     Vector<char> value;
@@ -54,6 +59,7 @@ struct HexToken {
 
 struct LiteralToken : Object {
     LiteralToken(StringToken string) : _tag(String), _String(string) {}
+    LiteralToken(CharacterToken string) : _tag(Character), _Character(string) {}
     LiteralToken(FragmentToken fragment) : _tag(Fragment), _Fragment(fragment) {}
     LiteralToken(IntegerToken integer) : _tag(Integer), _Integer(integer) {}
     LiteralToken(BooleanToken boolean) : _tag(Boolean), _Boolean(boolean) {}
@@ -61,6 +67,7 @@ struct LiteralToken : Object {
     LiteralToken(HexToken hex) : _tag(Hex), _Hex(hex) {}
     enum {
         String,
+        Character,
         Fragment,
         Integer,
         Boolean,
@@ -69,6 +76,7 @@ struct LiteralToken : Object {
     } _tag;
     union {
         StringToken _String;
+        CharacterToken _Character;
         FragmentToken _Fragment;
         IntegerToken _Integer;
         BooleanToken _Boolean;
@@ -361,7 +369,7 @@ struct Lexer : Object {
             switch (c) {
                 case '\'':
                     read_character();
-                        return Token(IdentifierToken(Vector<char>(start, length - 1)));
+                        return Token(LiteralToken(CharacterToken(Vector<char>(start, length - 1))));
                 default:
                     break;
             }

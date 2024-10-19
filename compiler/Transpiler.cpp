@@ -730,6 +730,14 @@ struct Transpiler : Object {
                 builder.append('\"');
                 builder.append(string);
                 builder.append('\"');
+                break;
+            }
+            case Constant::Character: {
+                auto string = constant._String;
+                builder.append('\'');
+                builder.append(string);
+                builder.append('\'');
+                break;
             }
             case Constant::Fragment: {
                 return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "Bool")));
@@ -805,21 +813,22 @@ struct Transpiler : Object {
         build_type(builder, &type);
 
         auto postfixes_iterator = VectorIterator<Postfix>(&postfixes);
-        auto postfix = postfixes_iterator.next();
-        if (postfix != nullptr) {
-            switch (postfix->_tag) {
-                case Postfix::Catcher:
-                    return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "Catcher")));
-                case Postfix::MemberAccess: {
-                    if (first_name_part->equals("this"))
-                        builder.append("->");
-                    else
-                        builder.append('.');
-                    auto member_access = postfix->_MemberAccess;
-                    auto member_access_iterator = VectorIterator<String>(&member_access);
-                    auto member = member_access_iterator.next();
-                    builder.append(*member);
-                    return nullptr;
+        while (auto postfix = postfixes_iterator.next()) {
+            if (postfix != nullptr) {
+                switch (postfix->_tag) {
+                    case Postfix::Catcher:
+                        return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "Catcher")));
+                    case Postfix::MemberAccess: {
+                        if (first_name_part->equals("this"))
+                            builder.append("->");
+                        else
+                            builder.append('.');
+                        auto member_access = postfix->_MemberAccess;
+                        auto member_access_iterator = VectorIterator<String>(&member_access);
+                        auto member = member_access_iterator.next();
+                        builder.append(*member);
+                        return nullptr;
+                    }
                 }
             }
         }

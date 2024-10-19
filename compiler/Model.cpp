@@ -39,6 +39,7 @@ struct Constant {
         Hex,
         FloatingPoint,
         String,
+        Character,
         Fragment,
     } _tag;
     union {
@@ -47,6 +48,7 @@ struct Constant {
         size_t _Hex;
         double _FloatingPoint;
         struct String _String;
+        struct String _Character;
         struct String _Fragment;
     };
 };

@@ -6,5 +6,115 @@ define memory {
     module Page
     module Region
 
-    function test () {}
+    function test_page {
+        var r Region()
+        var page r.get_page()
+
+        ; We have no next page yet
+        if (*page).next_page <> null
+            exit(-1)
+
+        ; And we are not oversized
+        if (*page).is_oversized()
+            exit (-2)
+
+        var location (size_t)(*page).next_object
+
+        ; Allocate an int. Our location moves by bytes.
+        let answer (int*)(*page).allocate_raw(4, alignof(int))
+        location += 4
+        if (size_t)(*page).next_object <> location
+            exit (-4)
+        set *answer: 42
+
+        ; Allocate a byte character and set it to A.
+        let another_loc (*page).allocate_raw(1, alignof(char))
+        let another (char*)another_loc
+        set location: location + 1
+        if (size_t)(*page).next_object <> location
+            exit (-5)
+        set *another: 'A'
+
+        ; We allocate another int and move 7 bytes forward because of the 4 byte alignment.
+        let eau_loc (*page).allocate_raw(4, alignof(int))
+        let eau (int*)eau_loc
+        location += 7
+        if (size_t)(*page).next_object <> location
+            exit (-6)
+        set *eau: 4711
+
+        ; Ask the int for its page which shall be our own.
+        if Page->get(eau) <> page
+            exit (-7)
+
+        ; Allocate an oversized object which should cause allocating an oversized page
+        let array (size_t*)(*page).allocate_raw(PAGE_SIZE, alignof(size_t))
+        {
+            var i: int 0
+            while i <= PAGE_SIZE / sizeof size_t - 1
+            {
+                set *(array + i): i
+                set i: i + 1
+            }
+        }
+
+        ; Since an oversized page is always exclusive, we should not yet have a next page
+        if ((*page).next_page <> nullptr)
+            exit (-9)
+
+        ; Our allocator should not yet point to a current page
+        if ((*page).current_page <> nullptr)
+            exit (-10)
+
+        ; Now we look at our oversized page.
+        let oversized_page Page->get((*(*page).exclusive_pages.head).page)
+
+        ; A null next_object indicates an oversized page.
+        if oversized_page.next_object <> nullptr
+            exit (-15)
+
+        ; The page of our array pointer shall be our oversized page.
+        if Page->get(array) <> oversized_page
+            exit (-17)
+
+        ; Overflow the page
+        {
+            var i: int 0
+            while i <= PAGE_SIZE
+            {
+                (*page).allocate_raw(1, 1)
+                set i: i + 1
+            }
+        }
+
+        ; Our allocator should now point to a current page
+        if (*page).current_page = page
+            exit (-18)
+
+        ; The data shall be still intact.
+        if *answer <> 42
+            exit (-19)
+
+        if *another <> 'A'
+            exit (-20)
+
+        if *eau  <> 4711
+            exit (-21)
+
+        {
+            var i: int 0
+            while i <= PAGE_SIZE / sizeof size_t - 1
+            {
+                if *(array + i) <> i
+                    exit (-22)
+                set i: i + 1
+            }
+        }
+
+       let exclusive_page (*page).allocate_exclusive_page()
+    }
+
+    function test () {
+            test_page()
+    }
 }
