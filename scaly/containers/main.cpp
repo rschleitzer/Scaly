@@ -7,7 +7,7 @@ void test_vector()
         Region _r_1;
         Vector<int>& vector = *new(alignof(Vector<int>), _r_1.get_page()) Vector<int>(_r_1.get_page(), 2);
         *vector[0] = 1;
-        vector.set(1, 2);
+        vector.put(1, 2);
         if (*(vector.get(0)) != 1)
             exit(-1);
         if (*vector[1] != 2)
@@ -119,7 +119,7 @@ void test_hash_set() {
     array.add(String(_r.get_page(), "namespace"));
     array.add(String(_r.get_page(), "typedef"));
     Vector<String> vector = Vector<String>(_r.get_page(), array);
-    HashSetBuilder<String>& keywords_builder = *new(alignof(HashSetBuilder<String>), _r.get_page()) HashSetBuilder<String>(_r.get_page(), vector);
+    HashSetBuilder<String>& keywords_builder = *new(alignof(HashSetBuilder<String>), _r.get_page()) HashSetBuilder<String>(vector);
     if (!keywords_builder.contains(String(_r.get_page(), "using")))
         exit (-18);
     if (!keywords_builder.contains(String(_r.get_page(), "namespace")))

@@ -20,6 +20,12 @@ define String (data: pointer[char]) {
     }
 
     init (rp: pointer[Page], other: pointer[const_char], length: size_t) {
+        if length = 0
+        {
+            set data: null
+            return
+        }
+
         var length_array: char []PACKED_SIZE
         var rest length
 
@@ -27,8 +33,8 @@ define String (data: pointer[char]) {
         while rest >= 0x80
         {
             set *(length_array + counter): (char)rest | 0x80
-            rest >>= 7;
-            counter += 1;
+            set rest: rest >> 7
+            set counter: counter + 1
         }
 
         set *(length_array + counter): (char)rest
@@ -118,6 +124,9 @@ define String (data: pointer[char]) {
     }
 
     function get_length(this: String) returns size_t {
+        if data = null
+            return 0
+
         var result: size_t 0
         var bit_count 0
         var index: size_t 0
@@ -138,20 +147,30 @@ define String (data: pointer[char]) {
 
     function equals(this: String, other: String) returns bool {
         var length: size_t 0
-        var bit_count 0
         var index: size_t 0
-        while true
+        if data <> 0
         {
-            if bit_count = PACKED_SIZE * 7
-                exit(11)
+            var bit_count 0
+            while true
+            {
+                if bit_count = PACKED_SIZE * 7
+                    exit(11)
 
-            var byte: char *(data + index)
-            set length: length | ((size_t)(byte & 0x7F)) << bit_count
-            if (byte & 0x80) == 0
-                break
-            set bit_count: bit_count + 7
-            set index: index + 1
+                var byte: char *(data + index)
+                set length: length | ((size_t)(byte & 0x7F)) << bit_count
+                if (byte & 0x80) == 0
+                    break
+                set bit_count: bit_count + 7
+                set index: index + 1
+            }
         }
+
+        if length <> other.get_length()
+            return false
+
+        if data = null
+            return true
+
         return memcmp(data + index + 1, other.data + index + 1, length) = 0
     }
 
