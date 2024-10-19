@@ -18,44 +18,45 @@ define containers {
     module StringIterator
 
     function test_vector() {
-        {
-            var r Region()
-            var vector Vector[int]$(r.get_page(), 2)
-            set *(*vector).get(0): 1
-            (*vector).put(1, 2)
-            if *((*vector).get(0)) <> 1
-                exit(-1)
-            if *(*vector)[1] <> 2
-                exit(-2)
-        }
-;*        {
-            Region _r_1
-            const char* string_array[3] = {"using", "namespace", "typedef"}
-            Vector<const char*> vector = Vector<const char*>(_r_1.get_page(), (const char**)string_array, 3)
-            if (*(vector.get(0)) != string_array[0])
-                exit(-3)
-            if (*vector[1] != string_array[1])
-                exit(-4)
-            if (*(vector.get(2)) != string_array[2])
-                exit(-5)
-        }*;
-    }
-;*
-    void test_array()
-    {
-        Region _r
-        Array<int>& array = *new(alignof(Array<int>), _r.get_page()) Array<int>()
-        // A quarter gigabyte worth of ints
-        int huge_number = 1024 * 1024 * 64
-        for (int i = 1 i <= huge_number i++)
-            array.add(i)
-        
-        int* buffer = array.get_buffer()
-        for (int i = 1 i <= huge_number i++)
-            if (buffer[i - 1] != i)
-                exit(-6)
+        var r Region()
+        var vector Vector[int]$(r.get_page(), 2)
+        set *(*vector).get(0): 1
+        (*vector).put(1, 2)
+        if *((*vector).get(0)) <> 1
+            exit(-1)
+        if *(*vector)[1] <> 2
+            exit(-2)
     }
 
+    function test_array()
+    {
+        var r Region()
+        var array Array[int]$()
+
+        ; A quarter gigabyte worth of ints
+        let huge_number: int 1024 * 1024 * 64
+        {
+            var i: int 1
+            while i <= huge_number
+            {
+                (*array).add(i)
+                set i: i + 1
+            }
+        }
+        
+        let buffer: pointer[int] (*array).get_buffer()
+        {
+            var i: int 1
+            while i <= huge_number
+            {
+                if *(buffer + i - 1) <> i
+                    exit(-6)
+                set i: i + 1
+            }
+        }
+    }
+
+;*
     void test_string() {
         Region _r
         auto string = String(_r.get_page(), "Hello world!")
@@ -312,7 +313,7 @@ define containers {
     function test ()
     {
         test_vector()
-;        test_array()
+        test_array()
 ;        test_string()
 ;        test_string_builder()
 ;        test_list()
