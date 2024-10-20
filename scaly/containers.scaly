@@ -137,35 +137,34 @@ define containers {
         }
     }
 
-;*
-    void test_hash_set() {
-        Region _r
-
-        Array<String>& array = *new(alignof(Array<String>), _r.get_page()) Array<String>()
-        array.add(String(_r.get_page(), "using"))
-        array.add(String(_r.get_page(), "namespace"))
-        array.add(String(_r.get_page(), "typedef"))
-        Vector<String> vector = Vector<String>(_r.get_page(), array)
-        HashSetBuilder<String>& keywords_builder = *new(alignof(HashSetBuilder<String>), _r.get_page()) HashSetBuilder<String>(_r.get_page(), vector)
-        if (!keywords_builder.contains(String(_r.get_page(), "using")))
+    function test_hash_set() {
+        var r Region()
+        var array Array[String]$()
+        (*array).add(String(r.get_page(), "using"))
+        (*array).add(String(r.get_page(), "namespace"))
+        (*array).add(String(r.get_page(), "typedef"))
+        let vector Vector[String](r.get_page(), *array)
+        var keywords_builder HashSetBuilder[String]$(vector)
+        if (*keywords_builder).contains(String(r.get_page(), "using")) = false
             exit (-18)
-        if (!keywords_builder.contains(String(_r.get_page(), "namespace")))
+        if (*keywords_builder).contains(String(r.get_page(), "namespace")) = false
             exit (-18)
-        if (!keywords_builder.contains(String(_r.get_page(), "typedef")))
+        if (*keywords_builder).contains(String(r.get_page(), "typedef")) = false
             exit (-18)
-        if (keywords_builder.contains(String(_r.get_page(), "nix")))
+        if (*keywords_builder).contains(String(r.get_page(), "nix"))
             exit (-18)
-        HashSet<String>& keywords = *new(alignof(HashSet<String>), _r.get_page())  HashSet<String>(_r.get_page(), keywords_builder)
-        if (!keywords.contains(String(_r.get_page(), "using")))
+        var keywords HashSet[String]$(r.get_page(), *keywords_builder)
+        if (*keywords).contains(String(r.get_page(), "using")) = false
             exit (-19)
-        if (!keywords.contains(String(_r.get_page(), "namespace")))
+        if (*keywords).contains(String(r.get_page(), "namespace")) = false
             exit (-19)
-        if (!keywords.contains(String(_r.get_page(), "typedef")))
+        if (*keywords).contains(String(r.get_page(), "typedef")) = false
             exit (-19)
-        if (keywords.contains(String(_r.get_page(), "nix")))
+        if (*keywords).contains(String(r.get_page(), "nix"))
             exit (-19)
     }
 
+;*
     void test_hash_map() {
         {
             Region _r_1
@@ -328,7 +327,7 @@ define containers {
         test_string()
         test_string_builder()
         test_list()
-;        test_hash_set()
+        test_hash_set()
 ;        test_hash_map()
 ;        test_multi_map()
     }

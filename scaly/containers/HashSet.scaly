@@ -11,7 +11,7 @@ define HashSet[T]
             return
         }
 
-        set slots: Vector[Vector[T]]^rp((*hash_set_builder.slots).length)
+        set slots: Vector[Vector[T]]^rp(rp, (*hash_set_builder.slots).length)
         var length (*hash_set_builder.slots).length
         var i: size_t 0
         while i < length
@@ -19,9 +19,9 @@ define HashSet[T]
             var array Array[T]$()
             var list_iterator ListIterator[Slot[T]]((*(*hash_set_builder.slots).get(i)).head)
             while let item list_iterator.next()
-                array.add((*item).value)
-            if array.length > 0
-                (*slots).put(i, Vector[T](rp, array))
+                (*array).add((*item).value)
+            if (*array).length > 0
+                (*slots).put(i, Vector[T](rp, *array))
 
             set i: i + 1
         }

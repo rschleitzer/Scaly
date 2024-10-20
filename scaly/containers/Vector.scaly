@@ -58,6 +58,16 @@ define Vector[T]
         }
     }
 
+    init (rp: pointer[Page], array: Array[T]) (length(array.length)) {
+        if length > 0
+        {
+            set data: (T*)(*rp).allocate_raw(length * sizeof T, alignof(T))
+            memcpy(data, (*array.vector).data, length * sizeof T)
+        } else {
+            set data: null
+        }
+    }
+
     init (rp: pointer[Page], list: List[T]) (length(list.count())) {
         if length > 0
         {
