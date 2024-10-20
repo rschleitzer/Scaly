@@ -107,27 +107,37 @@ define containers {
             exit(-16)
     }
 
-;*
-    void test_list() {
-        Region _r
-        List<int>& list *new(alignof(List<int>), _r.get_page()) List<int>()
+    function test_list() {
+        var r Region()
+        var rp r.get_page()
+        var list List[int]$()
 
-        int huge_number 1024 * 1024 * 62
-        for (int i = 1 i <= huge_number  i++)
-            list.add(i)
-
-        auto iterator = list.get_iterator()
-        for (int i = huge_number i >= 1 i--)
+        let huge_number: int 1024 * 1024 * 62
         {
-            auto p = iterator.next()
-            if (p == nullptr)
-                exit(-16)
+            var i: int 1
+            while i <= huge_number
+            {
+                (*list).add(i)
+                set i: i + 1
+            }
+        }
 
-            if (*p != i)
-                exit(-17)
+        var iterator (*list).get_iterator()
+        {
+            var i: int huge_number
+            while i >= 1
+            {
+                let p iterator.next()
+                if p = null
+                    exit(-16)
+                if *p <> i
+                    exit(-17)
+                set i: i - 1
+            }
         }
     }
 
+;*
     void test_hash_set() {
         Region _r
 
@@ -317,7 +327,7 @@ define containers {
         test_array()
         test_string()
         test_string_builder()
-;        test_list()
+        test_list()
 ;        test_hash_set()
 ;        test_hash_map()
 ;        test_multi_map()

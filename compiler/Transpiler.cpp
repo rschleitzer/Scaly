@@ -792,9 +792,9 @@ struct Transpiler : Object {
                 auto local = type.lifetime._Local;
                 builder.append("new (alignof(");
                 build_type(builder, &type);
-                builder.append("), _");
+                builder.append("), ");
                 builder.append(local.location);
-                builder.append("p) ");
+                builder.append(") ");
                 break;
             }
             case Lifetime::Reference: {
@@ -1156,9 +1156,9 @@ struct Transpiler : Object {
                 break;
             case Lifetime::Local: {
                 auto local = lifetime._Local;
-                builder.append("Page* _");
+                builder.append("Page* ");
                 builder.append(local.location);
-                builder.append("p, ");
+                builder.append(", ");
                 break;
             }
             case Lifetime::Reference:

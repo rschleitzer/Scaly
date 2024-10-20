@@ -3,11 +3,11 @@ define ListIterator[T] (current: pointer[Node[T]]) {
     init (head: pointer[Node[T]])  { set current : head }
 
     procedure next(this: ListIterator[T]) returns pointer[T] {
-        if current = null
+        if current <> null
         {
-            let current (*this).current
+            var old_current (*this).current
             set current: (*current).next
-            return &((*current).element)
+            return &((*old_current).element)
         } else {
             return null
         }

@@ -52,9 +52,10 @@ define List[T @summary "The element type of the list."]
     function get_iterator(this: List[T]) returns ListIterator[T]
         ListIterator[T](head)
 
-    procedure add#r(this: List[T], element: T)
+    procedure add(this: List[T], element: T)
     {
-        let new_node Node[T]#r(element, head)
+        let lp get_page()
+        let new_node Node[T]#lp(element, head)
         set head: new_node
     }
 }

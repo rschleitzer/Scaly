@@ -1,3 +1,4 @@
 define Node[T] (element: T, next: pointer[Node[T]])
 {
+    init (element: T, next: pointer[Node[T]]) (element(element), next(next)) {}
 }
