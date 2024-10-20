@@ -1,0 +1,31 @@
+define StringBuilder
+(
+    buffer: Array[char]
+)
+{
+    init (buffer: Array[char]) (buffer(buffer)) {}
+
+    init () (StringBuilder(Array[char]())) {}
+
+    init (character: char) (StringBuilder()) { append(character) }
+
+    init (string: String) (StringBuilder()) { append(string) }
+
+    init (c_string: pointer[const_char]) (StringBuilder()) { append(c_string) }
+
+    function append(this: StringBuilder, character: char) { buffer.add(character) }
+
+    function append(this: StringBuilder, string: String) { buffer.add(Vector[char](string.get_buffer(), string.get_length())) }
+
+    function append(this: StringBuilder, c_string: pointer[const_char]) {
+        let length strlen(c_string)
+        if length = 0
+            return
+
+        buffer.add(Vector[char]((char*)c_string, length))
+    }
+
+    function get_length(this: StringBuilder) returns size_t { return buffer.get_length() }
+
+    function to_string(this: StringBuilder, rp: pointer[Page]) returns String { return String(rp, buffer.get_buffer(), buffer.get_length()) }
+}

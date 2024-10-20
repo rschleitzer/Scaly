@@ -148,7 +148,7 @@ define String (data: pointer[char]) {
     function equals(this: String, other: String) returns bool {
         var length: size_t 0
         var index: size_t 0
-        if data <> 0
+        if data <> null
         {
             var bit_count 0
             while true
@@ -172,6 +172,35 @@ define String (data: pointer[char]) {
             return true
 
         return memcmp(data + index + 1, other.data + index + 1, length) = 0
+    }
+
+    function equals(this: String, other: pointer[const_char]) returns bool {
+        var length: size_t 0
+        var index: size_t 0
+        if data <> null
+        {
+            var bit_count 0
+            while true
+            {
+                if bit_count = PACKED_SIZE * 7
+                    exit(13)
+
+                var byte: char *(data + index)
+                set length: length | ((size_t)(byte & 0x7F)) << bit_count
+                if (byte & 0x80) == 0
+                    break
+                set bit_count: bit_count + 7
+                set index: index + 1
+            }
+        }
+
+        if length <> strlen(other)
+            return false
+
+        if data = null
+            return true
+
+        return memcmp(data + index + 1, other, length) = 0
     }
 
     function equals (this: String, other: Vector[char]) returns bool {

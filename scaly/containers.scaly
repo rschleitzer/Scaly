@@ -16,6 +16,7 @@ define containers {
     module Result
     module String
     module StringIterator
+    module StringBuilder
 
     function test_vector() {
         var r Region()
@@ -77,41 +78,41 @@ define containers {
             exit(-10)
     }
 
-;*
-    void test_string_builder() {
-        Region _r
-        StringBuilder& string_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder()
-        auto length = string_builder.get_length()
-        if (length != 0)
+    function test_string_builder() {
+        var r Region()
+        var string_builder StringBuilder$()
+        let length (*string_builder).get_length()
+        if length <> 0
             exit(-11)
-        string_builder.append('a')
-        string_builder.append('b')
-        string_builder.append('c')
-        if (!string_builder.to_string(_r.get_page()).equals("abc"))
+        (*string_builder).append('a')
+        (*string_builder).append('b')
+        (*string_builder).append('c')
+        if (*string_builder).to_string(r.get_page()).equals("abc") = false
             exit(-12)
-        if (string_builder.get_length() != 3)
+        if (*string_builder).get_length() <> 3
             exit(-13)
 
-        StringBuilder& string_builder2 = *new(alignof(StringBuilder), _r.get_page()) StringBuilder('d')
-        string_builder2.append('e')
-        string_builder2.append('f')
-        string_builder2.append('g')
-        if (!string_builder2.to_string(_r.get_page()).equals("defg"))
+        var string_builder2 StringBuilder$('d')
+        (*string_builder2).append('e')
+        (*string_builder2).append('f')
+        (*string_builder2).append('g')
+        if (*string_builder2).to_string(r.get_page()).equals("defg") = false
             exit(-14)
-        if (string_builder2.get_length() != 4)
+        if (*string_builder2).get_length() <> 4
             exit(-15)
         
-        StringBuilder& string_builder3 = *new(alignof(StringBuilder), _r.get_page()) StringBuilder("hijk")    
-        string_builder3.append("lmno")
-        if (!string_builder3.to_string(_r.get_page()).equals("hijklmno"))
+        var string_builder3 StringBuilder$("hijk")    
+        (*string_builder3).append("lmno")
+        if (*string_builder3).to_string(r.get_page()).equals("hijklmno") = false
             exit(-16)
     }
 
+;*
     void test_list() {
         Region _r
-        List<int>& list = *new(alignof(List<int>), _r.get_page()) List<int>()
+        List<int>& list *new(alignof(List<int>), _r.get_page()) List<int>()
 
-        int huge_number = 1024 * 1024 * 62
+        int huge_number 1024 * 1024 * 62
         for (int i = 1 i <= huge_number  i++)
             list.add(i)
 
@@ -315,7 +316,7 @@ define containers {
         test_vector()
         test_array()
         test_string()
-;        test_string_builder()
+        test_string_builder()
 ;        test_list()
 ;        test_hash_set()
 ;        test_hash_map()
