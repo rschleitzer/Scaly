@@ -1,25 +1,25 @@
 define MultiMapBuilder[K, V]
 (
     length: size_t (0)
-    slots: pointer[Vector[BuilderList[Slot[KeyValuePair[K, Array[pointer[V]]]]]]] (null)
+    slots: pointer[Vector[BuilderList[Slot[KeyValuePair[K, pointer[Array[V]]]]]]] (null)
 )
 {
     function reallocate(this: MultiMapBuiler[K, V], size: size_t) {
         let hash_size hashing->get_prime(size)
         let slots_page (*Page->get(this)).allocate_exclusive_page()
-        var new_slots Vector[BuilderList[Slot[KeyValuePair[K, Array[pointer[V]]]]]]^slots_page(slots_page, hash_size)
+        var new_slots Vector[BuilderList[Slot[KeyValuePair[K, pointer[Array[V]]]]]]^slots_page(slots_page, hash_size)
 
         if slots <> null
         {
-            let vector_iterator VectorIterator[BuilderList[Slot[KeyValuePair[K, pointer[Array[V]]]]]](slots)
+            var vector_iterator VectorIterator[BuilderList[Slot[KeyValuePair[K, pointer[Array[V]]]]]](slots)
             while let element vector_iterator.next()
             {
-                let list_iterator BuilderListIterator[Slot[KeyValuePair[K, Array[pointer[V]]]]]((*element).head)
+                var list_iterator BuilderListIterator[Slot[KeyValuePair[K, pointer[Array[V]]]]]((*element).head)
                 while let item list_iterator.next()
                 {
                     let hash_code (*item).hash_code
                     let slot_number hash_code % (*new_slots).length
-                    let slot_list *(new_slots + slot_number)
+                    let slot_list (*new_slots)[slot_number]
                     (*slot_list).add(slots_page, *item)
                 }
             }
@@ -36,22 +36,22 @@ define MultiMapBuilder[K, V]
     }
 
     function add_internal(this: MultiMapBuiler[K, V], key: K, value: V) {
-        var r Region()
         let hash_code key.hash()
         let slot_number hash_code % (*slots).length
-        let slot_list *(slots + slot_number)
-        let iterator (*slot_list).get_iterator()
+        let slot_list (*slots)[slot_number]
+        var iterator (*slot_list).get_iterator()
         var array: pointer[Array[V]] null
         while let item iterator.next()
         {
             if (key.equals((*item).value.key))
-                array (*item).value.value
+                set array: (*item).value.value
         }
 
         if array = null
         {
+            let page get_page()
             (*slot_list).add((*slots).get_page(), Slot[KeyValuePair[K, pointer[Array[V]]]] (
-                KeyValuePair[K, pointer[Array[V]]] (key, Array[V]$()), hash_code))
+                KeyValuePair[K, pointer[Array[V]]] (key, Array[V]^page()), hash_code))
 
             set length: length + 1
             set array: (*(*slot_list).head).element.value.value
@@ -67,7 +67,7 @@ define MultiMapBuilder[K, V]
         let hash key.hash()
         let slot_number hash % (*slots).length
         let slot (*slots).get(slot_number)
-        let iterator (*slot).get_iterator()
+        var iterator (*slot).get_iterator()
         while let item iterator.next()
         {
             if key.equals((*item).value.key)
@@ -82,7 +82,7 @@ define MultiMapBuilder[K, V]
             return null
 
         let slot (*slots).get(key.hash() % (*slots).length)
-        let iterator (*slot).get_iterator()
+        var iterator (*slot).get_iterator()
         while let item iterator.next()
         {
             if key.equals((*item).value.key)

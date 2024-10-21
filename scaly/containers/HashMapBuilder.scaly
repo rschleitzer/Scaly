@@ -3,6 +3,9 @@ define KeyValuePair[K, V]
     key: K
     value: V
 )
+{
+    init (key: K, value: V) (key(key), value(value)) {}
+}
 
 define HashMapBuilder[K, V]
 (
@@ -27,10 +30,10 @@ define HashMapBuilder[K, V]
 
         if slots <> null
         {
-            let vector_iterator VectorIterator[BuilderList[Slot[KeyValuePair[K, V]]]](slots)
+            var vector_iterator VectorIterator[BuilderList[Slot[KeyValuePair[K, V]]]](slots)
             while let element vector_iterator.next()
             {
-                let list_iterator BuilderListIterator[Slot[KeyValuePair[K, V]]]((*element).head)
+                var list_iterator BuilderListIterator[Slot[KeyValuePair[K, V]]]((*element).head)
                 while let item list_iterator.next()
                 {
                     let hash_code (*item).hash_code
@@ -55,7 +58,7 @@ define HashMapBuilder[K, V]
         let hash_code key.hash()
         let slot_number hash_code % (*slots).length
         let slot_list (*(slots))[slot_number]
-        let iterator (*slot_list).get_iterator()
+        var iterator (*slot_list).get_iterator()
         while let item iterator.next()
         {
             if (key.equals((*item).value.key))
@@ -75,7 +78,7 @@ define HashMapBuilder[K, V]
         let hash key.hash()
         let slot_number hash % (*slots).length
         let slot (*slots).get(slot_number)
-        let iterator slot.get_iterator()
+        var iterator (*slot).get_iterator()
         while let item iterator.next()
         {
             if key.equals((*item).value.key)
@@ -90,7 +93,7 @@ define HashMapBuilder[K, V]
             return null
 
         let slot (*slots).get(key.hash() % (*slots).length)
-        let iterator (*slot).get_iterator()
+        var iterator (*slot).get_iterator()
         while let item iterator.next()
         {
             if (key.equals((*item).value.key))

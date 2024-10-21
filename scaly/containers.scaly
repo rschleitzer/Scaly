@@ -164,162 +164,213 @@ define containers {
             exit (-19)
     }
 
-;*
-    void test_hash_map() {
+    function test_hash_map() {
         {
-            Region _r_1
-            Array<KeyValuePair<String, int>>& array = *new(alignof(Array<KeyValuePair<String, int>>), _r_1.get_page()) Array<KeyValuePair<String, int>>()
-            array.add(KeyValuePair<String, int> { .key = String(_r_1.get_page(), "using"), .value = 1 })
-            array.add(KeyValuePair<String, int> { .key = String(_r_1.get_page(), "namespace"), .value = 2 })
-            array.add(KeyValuePair<String, int> { .key = String(_r_1.get_page(), "typedef"), .value = 3 })
-            Vector<KeyValuePair<String, int>> vector = Vector<KeyValuePair<String, int>>(_r_1.get_page(), array)
-            HashMapBuilder<String, int>& keywords_builder = *new(alignof(HashMapBuilder<String, int>), _r_1.get_page()) HashMapBuilder<String, int>(_r_1.get_page(), vector)
-            if (!keywords_builder.contains(String(_r_1.get_page(), "using")))
+            var r Region()
+            var p r.get_page()
+            var array Array[KeyValuePair[String, int]]$()
+            (*array).add(KeyValuePair[String, int](String(p, "using"), 1))
+            (*array).add(KeyValuePair[String, int](String(p, "namespace"), 2))
+            (*array).add(KeyValuePair[String, int](String(p, "typedef"), 3))
+            let vector Vector[KeyValuePair[String, int]](p, *array)
+            var keywords_builder HashMapBuilder[String, int]$(p, vector)
+            if (*keywords_builder).contains(String(p, "using")) = false
                 exit (-18)
-            if (!keywords_builder.contains(String(_r_1.get_page(), "namespace")))
+            if (*keywords_builder).contains(String(p, "namespace")) = false
                 exit (-19)
-            if (!keywords_builder.contains(String(_r_1.get_page(), "typedef")))
+            if (*keywords_builder).contains(String(p, "typedef")) = false
                 exit (-20)
-            if (keywords_builder.contains(String(_r_1.get_page(), "nix")))
+            if (*keywords_builder).contains(String(p, "nix"))
                 exit (-21)
-            if (*keywords_builder[String(_r_1.get_page(), "using")] != 1)
+            if *(*keywords_builder)[String(p, "using")] <> 1
                 exit (-22)
-            if (*keywords_builder[String(_r_1.get_page(), "namespace")] != 2)
+            if *(*keywords_builder)[String(p, "namespace")] <> 2
                 exit (-23)
-            if (*keywords_builder[String(_r_1.get_page(), "typedef")] != 3)
+            if *(*keywords_builder)[String(p, "typedef")] <> 3
                 exit (-24)
-            if (keywords_builder[String(_r_1.get_page(), "nix")] != nullptr)
+            if (*keywords_builder)[String(p, "nix")] <> nullptr
                 exit (-25)
-            HashMap<String, int>& keywords = *new(alignof(HashMap<String, int>), _r_1.get_page()) HashMap<String, int>(_r_1.get_page(), keywords_builder)
-            if (!keywords.contains(String(_r_1.get_page(), "using")))
+            var keywords HashMap[String, int]$(p, *keywords_builder)
+            if (*keywords).contains(String(p, "using")) = false
                 exit (-18)
-            if (!keywords.contains(String(_r_1.get_page(), "namespace")))
+            if (*keywords).contains(String(p, "namespace")) = false
                 exit (-19)
-            if (!keywords.contains(String(_r_1.get_page(), "typedef")))
+            if (*keywords).contains(String(p, "typedef")) = false
                 exit (-20)
-            if (keywords.contains(String(_r_1.get_page(), "nix")))
+            if (*keywords).contains(String(p, "nix"))
                 exit (-21)
-            if (*keywords[String(_r_1.get_page(), "using")] != 1)
+            if *(*keywords)[String(p, "using")] <> 1
                 exit (-22)
-            if (*keywords[String(_r_1.get_page(), "namespace")] != 2)
+            if *(*keywords)[String(p, "namespace")] <> 2
                 exit (-23)
-            if (*keywords[String(_r_1.get_page(), "typedef")] != 3)
+            if *(*keywords)[String(p, "typedef")] <> 3
                 exit (-24)
-            if (keywords[String(_r_1.get_page(), "nix")] != nullptr)
+            if (*keywords)[String(p, "nix")] <> null
                 exit (-25)
         }
         {
-            Region _r_1
-            HashMapBuilder<String, size_t>& map = *new(alignof(HashMapBuilder<String, size_t>), _r_1.get_page()) HashMapBuilder<String, size_t>()
-            HashSetBuilder<String>& set = *new(alignof(HashSetBuilder<String>), _r_1.get_page()) HashSetBuilder<String>()
-            for (char i = 'A' i <= 'Z' i++)
+            var r Region()
+            var p r.get_page()
+            var map HashMapBuilder[String, size_t]$()
+            var hash_set HashSetBuilder[String]$()
             {
-                for (char j = 'a' j <= 'z' j++)
+                var i: char 'A'
+                while i <= 'Z'
                 {
-                    for (char k = '0' k <= '9' k++)
+                    var j: char 'a'
+                    while j <= 'z'
                     {
-                        for (char l = '!' l <= '/' l++)
+                        var k: char '0'
+                        while k <= '9'
                         {
-                            Region _r_2
-                            StringBuilder& sb = *new(alignof(StringBuilder), _r_2.get_page()) StringBuilder(i)
-                            sb.append(j)
-                            sb.append(k)
-                            sb.append(l)
-                            map.add(sb.to_string(_r_1.get_page()), (size_t)i * j * k * l)
-                            set.add(sb.to_string(_r_1.get_page()))
+                            var l: char '!'
+                            while l <= '/'
+                            {
+                                var r_2 Region()
+                                var p_2 r.get_page()
+                                var sb StringBuilder^p_2(i)
+                                (*sb).append(j)
+                                (*sb).append(k)
+                                (*sb).append(l)
+                                (*map).add((*sb).to_string(p), (size_t)i * j * k * l)
+                                (*hash_set).add((*sb).to_string(p))
+
+                                set l: l + 1
+                            }
+                            set k: k + 1
                         }
+                        set j: j + 1
                     }
+                    set i: i + 1
                 }
             }
-            for (char i = 'A' i <= 'Z' i++)
+
             {
-                for (char j = 'a' j <= 'z' j++)
+                var i: char 'A'
+                while i <= 'Z'
                 {
-                    for (char k = '0' k <= '9' k++)
+                    var j: char 'a'
+                    while j <= 'z'
                     {
-                        for (char l = '!' l <= '/' l++)
+                        var k: char '0'
+                        while k <= '9'
                         {
-                            Region _r_2
-                            StringBuilder& sb = *new(alignof(StringBuilder), _r_2.get_page()) StringBuilder(i)
-                            sb.append(j)
-                            sb.append(k)
-                            sb.append(l)
-                            String theString = sb.to_string(_r_1.get_page())
-                            if (!set.contains(theString))
-                                exit(-26)
-                            if (!map.contains(theString))
-                                exit(-27)
-                            if (*map[theString] != (size_t)i * j * k * l)
-                                exit(-28)
+                            var l: char '!'
+                            while l <= '/'
+                            {
+                                var r_2 Region()
+                                var p_2 r.get_page()
+                                var sb StringBuilder^p_2(i)
+                                (*sb).append(j)
+                                (*sb).append(k)
+                                (*sb).append(l)
+                                let theString (*sb).to_string(p_2)
+                                if (*hash_set).contains(theString) = false
+                                    exit(-26)
+                                if (*map).contains(theString) = false
+                                    exit(-27)
+                                if *(*map)[theString] <> (size_t)i * j * k * l
+                                    exit(-28)
+
+                                set l: l + 1
+                            }
+                            set k: k + 1
                         }
+                        set j: j + 1
                     }
+                    set i: i + 1
                 }
             }
         }
     }
 
-    void test_multi_map() {
+    function test_multi_map() {
         {
-            Region _r_1
-            MultiMapBuilder<String, size_t>& map_builder = *new(alignof(MultiMapBuilder<String, size_t>), _r_1.get_page()) MultiMapBuilder<String, size_t>()
-            for (char i = 'A' i <= 'Z' i++)
+            var r Region()
+            var p r.get_page()
+            var map_builder MultiMapBuilder[String, size_t]$()
             {
-                for (char j = 'a' j <= 'z' j++)
+                var i: char 'A'
+                while i <= 'Z'
                 {
-                    for (char k = '0' k <= '9' k++)
+                    var j: char 'a'
+                    while j <= 'z'
                     {
-                        for (char l = '!' l <= '/' l++)
+                        var k: char '0'
+                        while k <= '9'
                         {
-                            Region _r_2
-                            StringBuilder& sb = *new(alignof(StringBuilder), _r_2.get_page()) StringBuilder(i)
-                            sb.append(j)
-                            sb.append(k)
-                            sb.append(l)
-                            map_builder.add(sb.to_string(_r_1.get_page()), (size_t)i * j * k * l)
-                            map_builder.add(sb.to_string(_r_1.get_page()), (size_t)i * j * k * l + 1)
-                            map_builder.add(sb.to_string(_r_1.get_page()), (size_t)i * j * k * l + 2)
+                            var l: char '!'
+                            while l <= '/'
+                            {
+                                var r_2 Region()
+                                var p_2 r.get_page()
+                                var sb StringBuilder^p_2(i)
+                                (*sb).append(j)
+                                (*sb).append(k)
+                                (*sb).append(l)
+                                (*map_builder).add((*sb).to_string(p), (size_t)i * j * k * l)
+                                (*map_builder).add((*sb).to_string(p), (size_t)i * j * k * l + 1)
+                                (*map_builder).add((*sb).to_string(p), (size_t)i * j * k * l + 2)
+
+                                set l: l + 1
+                            }
+                            set k: k + 1
                         }
+                        set j: j + 1
                     }
+                    set i: i + 1
                 }
             }
-            MultiMap<String, size_t>& map = *new(alignof(MultiMap<String, size_t>), _r_1.get_page()) MultiMap<String, size_t>(_r_1.get_page(), map_builder)
-            for (char i = 'A' i <= 'Z' i++)
+            var map MultiMap[String, size_t]$(p, *map_builder)
             {
-                for (char j = 'a' j <= 'z' j++)
+                var i: char 'A'
+                while i <= 'Z'
                 {
-                    for (char k = '0' k <= '9' k++)
+                    var j: char 'a'
+                    while j <= 'z'
                     {
-                        for (char l = '!' l <= '/' l++)
+                        var k: char '0'
+                        while k <= '9'
                         {
-                            Region _r_2
-                            StringBuilder& sb = *new(alignof(StringBuilder), _r_2.get_page()) StringBuilder(i)
-                            sb.append(j)
-                            sb.append(k)
-                            sb.append(l)
-                            String theString = (sb.to_string(_r_2.get_page()))
-                            if (!map_builder.contains(theString))
-                                exit(-27)
-                            if (!map.contains(theString))
-                                exit(-27)
-                            if (*map_builder[theString]->get(0) != (size_t)i * j * k * l)
-                                exit(-28)
-                            if (*map[theString]->get(0) != (size_t)i * j * k * l)
-                                exit(-28)
-                            if (*map_builder[theString]->get(1) != (size_t)i * j * k * l + 1)
-                                exit(-28)
-                            if (*map[theString]->get(1) != (size_t)i * j * k * l + 1)
-                                exit(-28)
-                            if (*map_builder[theString]->get(2) != (size_t)i * j * k * l + 2)
-                                exit(-28)
-                            if (*map[theString]->get(2) != (size_t)i * j * k * l + 2)
-                                exit(-28)
+                            var l: char '!'
+                            while l <= '/'
+                            {
+                                var r_2 Region()
+                                var p_2 r.get_page()
+                                var sb StringBuilder^p_2(i)
+                                (*sb).append(j)
+                                (*sb).append(k)
+                                (*sb).append(l)
+                                let theString (*sb).to_string(p_2)
+                                if (*map_builder).contains(theString) = false
+                                    exit(-27)
+                                if (*map).contains(theString) = false
+                                    exit(-27)
+                                if *(*(*map_builder)[theString]).get(0) <> (size_t)i * j * k * l
+                                    exit(-28)
+                                if *(*(*map)[theString]).get(0) <> (size_t)i * j * k * l
+                                    exit(-28)
+                                if *(*(*map_builder)[theString]).get(1) <> (size_t)i * j * k * l + 1
+                                    exit(-28)
+                                if *(*(*map)[theString]).get(1) <> (size_t)i * j * k * l + 1
+                                    exit(-28)
+                                if *(*(*map_builder)[theString]).get(2) <> (size_t)i * j * k * l + 2
+                                    exit(-28)
+                                if *(*(*map)[theString]).get(2) <> (size_t)i * j * k * l + 2
+                                    exit(-28)
+
+                                set l: l + 1
+                            }
+                            set k: k + 1
                         }
+                        set j: j + 1
                     }
+                    set i: i + 1
                 }
             }
         }
     }
-*;
+
     function test ()
     {
         test_vector()
@@ -328,7 +379,7 @@ define containers {
         test_string_builder()
         test_list()
         test_hash_set()
-;        test_hash_map()
-;        test_multi_map()
+        test_hash_map()
+        test_multi_map()
     }
 }

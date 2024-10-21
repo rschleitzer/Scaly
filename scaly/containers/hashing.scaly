@@ -31,7 +31,7 @@ function get_prime(size: size_t) returns size_t {
         while i < 30
         {
             if *(hashing->HASH_PRIMES + i) >= size
-                return *(hashing->HASH_PRIMES + i);
+                return *(hashing->HASH_PRIMES + i)
             set i: i + 1    
         }
     }

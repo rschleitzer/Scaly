@@ -43,9 +43,10 @@ define MultiMap[K, V]
             var array Array[KeyValuePair[K, Vector[V]]]$()
             var list_iterator ListIterator[Slot[KeyValuePair[K, pointer[Array[V]]]]]((*(*multi_map_builder.slots).get(i)).head)
             while let item list_iterator.next()
-                array.add(KeyValuePair[K, Vector[V]] ((*item).value.key, Vector[V](rp, *(*item).value.value)))
-            if array.length > 0
-                (*slots).put(i, Vector[KeyValuePair[K, Vector[V]]](rp, array))
+                (*array).add(KeyValuePair[K, Vector[V]] ((*item).value.key, Vector[V](rp, *(*item).value.value)))
+            if (*array).length > 0
+                (*slots).put(i, Vector[KeyValuePair[K, Vector[V]]](rp, *array))
+            set i: i + 1
         }
     }
 
