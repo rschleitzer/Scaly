@@ -32,7 +32,6 @@ Result<bool, FileError> Directory::exists(Page *_ep, const String& path) {
 FileError* Directory::create(Page *_ep, const String& path) {
     Region _r;
 
-    struct stat s;
     int err = mkdir(path.to_c_string(_r.get_page()), 0755);
     if(err == -1) {
         if((*__error()) == ENOENT)
@@ -46,7 +45,6 @@ FileError* Directory::create(Page *_ep, const String& path) {
 FileError* Directory::remove(Page *_ep, const String& path) {
     Region _r;
 
-    struct stat s;
     int err = rmdir(path.to_c_string(_r.get_page()));
     if (err == -1)
         return new(alignof(FileError), _ep) FileError(UnknownFileError(String(_ep, path)));

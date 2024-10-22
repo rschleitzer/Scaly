@@ -1045,6 +1045,19 @@ struct Transpiler : Object {
         return nullptr;
     }
 
+    TranspilerError* build_throw(Page* _ep, StringBuilder& builder, Throw& throw_, String indent) {
+        Region _r;
+        builder.append("throw");
+        if (throw_.result.length > 0)
+            builder.append(' ');
+        {
+            auto _result = build_operation(_ep, builder, throw_.result, indent);
+            if (_result != nullptr)
+                return _result;
+        }
+        return nullptr;
+    }
+
     TranspilerError* build_statements(Page* _ep, StringBuilder& builder, Vector<Statement>& statements, String indent) {
         auto statment_iterator = VectorIterator<Statement>(&statements);
         while (auto statement = statment_iterator.next()) {
@@ -1086,6 +1099,13 @@ struct Transpiler : Object {
                 auto _result = build_return(_ep, builder, return_, indent);
                 if (_result != nullptr)
                     return _result;
+                break;
+            }
+            case Statement::Throw: {
+                auto throw_ = statement->_Throw;
+                auto _throw = build_throw(_ep, builder, throw_, indent);
+                if (_throw != nullptr)
+                    return _throw;
                 break;
             }
         }

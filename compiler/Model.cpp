@@ -172,18 +172,26 @@ struct Return : Object {
     Return(Span span, Vector<Operand> result) : span(span), result(result) {}
 };
 
+struct Throw : Object {
+    Span span;
+    Vector<Operand> result;
+    Throw(Span span, Vector<Operand> result) : span(span), result(result) {}
+};
+
 struct Statement : Object {
     enum {
         Action,
         Binding,
         Break,
         Return,
+        Throw,
     } _tag;
     union {
         struct Action _Action;
         struct Binding _Binding;
         struct Break _Break;
         struct Return _Return;
+        struct Throw _Throw;
     };
 };
 

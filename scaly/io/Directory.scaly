@@ -1,0 +1,52 @@
+define Directory
+()
+{
+    function exists(path: String) returns bool throws FileError {
+        let r Region()
+
+        let stat: struct s
+        let err stat(path.to_c_string(r.get_page()), &s)
+        if err = -1
+        {
+            if errno = ENOENT
+            {
+                return false
+            } else {
+                throw FileError(UnknownFileError(String(ep, path)))
+            }
+        } else {
+            if S_ISDIR(s.st_mode)
+            {
+                return true
+            } else {
+                return false
+            }
+        }
+    }
+
+    function create(path: String) throws FileError {
+        let r Region()
+
+        let err mkdir(path.to_c_string(r.get_page()), 0755)
+        if err = -1
+        {
+            if errno = ENOENT
+            {
+                throw FileError(NoSuchFileOrDirectoryError(String(ep, path)))
+            } else {
+                throw FileError(UnknownFileError(String(ep, path)))
+            }
+        }    
+        return null
+    }
+
+    function remove(path: String) throws FileError {
+        let r Region()
+
+        let err rmdir(path.to_c_string(r.get_page()))
+        if err = -1
+            throw FileError(UnknownFileError(String(ep, path)))
+        
+        return null
+    }
+}

@@ -670,6 +670,18 @@ Result<Return, ModelError> handle_return(Page* _rp, Page* _ep, ReturnSyntax& ret
     return Result<Return, ModelError> { ._tag = Result<Return, ModelError>::Ok, ._Ok = Return(Span(return_.start, return_.end), Vector<Operand>(_rp, 0)) };
 }
 
+Result<Return, ModelError> handle_throw(Page* _rp, Page* _ep, ThrowSyntax& throw_, String file) {
+    Region _r;
+    if (throw_.result != nullptr) {
+        auto result = throw_.result;
+        auto result_result = handle_operands(_rp, _ep, *result, file);
+        if (result_result._tag == Result<Vector<Operand>, ModelError>::Error)
+            return Result<Return, ModelError> { ._tag = Result<Return, ModelError>::Error, ._Error = result_result._Error };
+        return Result<Return, ModelError> { ._tag = Result<Return, ModelError>::Ok, ._Ok = Return(Span(throw_.start, throw_.end), result_result._Ok) };
+    }
+    return Result<Return, ModelError> { ._tag = Result<Return, ModelError>::Ok, ._Ok = Return(Span(throw_.start, throw_.end), Vector<Operand>(_rp, 0)) };
+}
+
 Result<Statement, ModelError> handle_command(Page* _rp, Page* _ep, CommandSyntax& command, String file) {
     Region _r;
     switch (command._tag)
@@ -741,7 +753,6 @@ Result<Statement, ModelError> handle_command(Page* _rp, Page* _ep, CommandSyntax
             if (break_result._tag == Result<Expression, ModelError>::Error)
                 return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = break_result._Error };
             return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Ok, ._Ok = Statement { ._tag = Statement::Break, ._Break = break_result._Ok}};
-            break;
         }
         case CommandSyntax::Return: {
             auto return_ = command._Return;
@@ -749,10 +760,14 @@ Result<Statement, ModelError> handle_command(Page* _rp, Page* _ep, CommandSyntax
             if (return_result._tag == Result<Expression, ModelError>::Error)
                 return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = return_result._Error };
             return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Ok, ._Ok = Statement { ._tag = Statement::Return, ._Return = return_result._Ok}};
-            break;
         }
-        case CommandSyntax::Throw:
-            return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(file, String(_ep, "Throw"), Span(command._Throw.start, command._Throw.end)))) };
+        case CommandSyntax::Throw: {
+            auto throw_ = command._Throw;
+            auto throw_result = handle_throw(_rp, _ep, throw_, file);
+            if (throw_result._tag == Result<Expression, ModelError>::Error)
+                return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = throw_result._Error };
+            return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Ok, ._Ok = Statement { ._tag = Statement::Throw, ._Return = throw_result._Ok}};
+        }
     }
 }
 
