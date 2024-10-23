@@ -139,11 +139,6 @@
 <syntax id = Optional
     <content link = question
 
-<syntax id = Returns
-    <content link = returns
-    <content link = ParameterSet                            property = parameters
-    <content link = Attribute             multiple optional property = attributes
-
 <syntax id = ParameterSet                          abstract
     <content link = Parameters
     <content link = Type
@@ -160,6 +155,11 @@
     <content colon                                 optional
     <content link = Attribute             multiple optional property = attributes
     <content colon                                 optional
+
+<syntax id = Returns
+    <content link = returns
+    <content link = Type                                    property = type
+    <content link = Attribute             multiple optional property = attributes
 
 <syntax id = Throws
     <content link = throws
@@ -236,9 +236,9 @@
     <content link = Lifetime                       optional property = lifetime
     <content link = ParameterSet                   optional property = parameters
     <content link = Attribute             multiple optional property = attributes
-    <content link = Returns                        optional property = returns
+    <content link = Returns                        optional property = returns_
     <content colon                                 optional
-    <content link = Throws                         optional property = throws
+    <content link = Throws                         optional property = throws_
     <content colon                                 optional
     <content link = Implementation                          property = implementation
 

@@ -43,6 +43,13 @@ struct Parser : Object {
                         return Result<""Literal, ParserError> { ._tag = Result<""Literal, ParserError>::Ok, ._Ok = ret };
                     }
 
+                    case LiteralToken::Character:
+                    {
+                        auto ret = Literal(CharacterLiteral(String(_rp, this->lexer.token._Literal._String.value)));
+                        this->lexer.empty();
+                        return Result<""Literal, ParserError> { ._tag = Result<""Literal, ParserError>::Ok, ._Ok = ret };
+                    }
+
                     case LiteralToken::Integer:
                     {
                         auto ret = Literal(IntegerLiteral(String(_rp, this->lexer.token._Literal._String.value)));

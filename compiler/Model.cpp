@@ -355,16 +355,18 @@ struct Function : Object {
     bool pure;
     String name;
     Vector<Item> input;
-    Vector<Item> output;
+    Type* returns_;
+    Type* throws_;
     Lifetime lifetime;
     Implementation implementation;
-    Function(Span span, bool private_, bool pure, String name, Vector<Item> input, Vector<Item> output, Lifetime lifetime, Implementation implementation)
+    Function(Span span, bool private_, bool pure, String name, Vector<Item> input, Type* returns_, Type* throws_, Lifetime lifetime, Implementation implementation)
       : span(span),
         private_(private_),
         pure(pure),
         name(name),
         input(input),
-        output(output),
+        returns_(returns_),
+        throws_(throws_),
         lifetime(lifetime),
         implementation(implementation) {}
 };
@@ -394,14 +396,16 @@ struct Operator : Object {
     bool private_;
     String name;
     Vector<Item> input;
-    Vector<Item> output;
+    Type* returns_;
+    Type* throws_;
     Implementation implementation;
-    Operator(Span span, bool private_, String name, Vector<Item> input, Vector<Item> output, Implementation implementation)
+    Operator(Span span, bool private_, String name, Vector<Item> input, Type* returns_, Type* throws_, Implementation implementation)
       : span(span),
         private_(private_),
         name(name),
         input(input),
-        output(output),
+        returns_(returns_),
+        throws_(throws_),
         implementation(implementation) {}
 };
 

@@ -1351,13 +1351,14 @@ Result<Function, ModelError> build_function(Page* _rp, Page* _ep, size_t start, 
                 input = _input_result._Ok;
             }
 
-            if (named.routine.returns != nullptr)
-            {
-                ParameterSetSyntax& parameterSetSyntax = named.routine.returns->parameters; 
-                auto _output_result = handle_parameterset(_rp, _ep, parameterSetSyntax, file);
-                if (_output_result._tag == Result<Vector<Item>, ModelError>::Error)
-                    return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Error, ._Error = _output_result._Error };
-                output = _output_result._Ok;
+            Type* returns_ = nullptr;
+            if (named.routine.returns_ != nullptr) {
+                handle_type(_rp, _ep, named.routine.returns_->type, file);
+            }
+
+            Type* throws_ = nullptr;
+            if (named.routine.throws_ != nullptr) {
+                handle_type(_rp, _ep, named.routine.throws_->type, file);
             }
 
             auto lifetime = Lifetime(Unspecified());
@@ -1383,14 +1384,14 @@ Result<Function, ModelError> build_function(Page* _rp, Page* _ep, size_t start, 
                     auto action_result = handle_action(_rp, _ep, named.routine.implementation._Action, file);
                     if (action_result._tag == Result<Statement, ModelError>::Error)
                         return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Error, ._Error = action_result._Error };
-                    return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(start, end), private_, pure, String(_rp, named.name), input, output, lifetime, Implementation { ._tag = Implementation::Action, ._Action = action_result._Ok }) };
+                    return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(start, end), private_, pure, String(_rp, named.name), input, returns_, throws_, lifetime, Implementation { ._tag = Implementation::Action, ._Action = action_result._Ok }) };
                 }
                 case ImplementationSyntax::Extern:
-                    return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(start, end), private_, pure, String(_rp, named.name), input, output, lifetime, Implementation { ._tag = Implementation::Extern, ._Extern = Extern() }) };
+                    return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(start, end), private_, pure, String(_rp, named.name), input, returns_, nullptr, lifetime, Implementation { ._tag = Implementation::Extern, ._Extern = Extern() }) };
                 case ImplementationSyntax::Instruction:
-                    return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(start, end), private_, pure, String(_rp, named.name), input, output, lifetime, Implementation { ._tag = Implementation::Instruction, ._Instruction = Instruction() }) };
+                    return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(start, end), private_, pure, String(_rp, named.name), input, returns_, nullptr, lifetime, Implementation { ._tag = Implementation::Instruction, ._Instruction = Instruction() }) };
                 case ImplementationSyntax::Intrinsic:
-                    return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(start, end), private_, pure, String(_rp, named.end), input, output, lifetime, Implementation { ._tag = Implementation::Intrinsic, ._Intrinsic = Intrinsic() }) };
+                    return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(start, end), private_, pure, String(_rp, named.end), input, returns_, nullptr, lifetime, Implementation { ._tag = Implementation::Intrinsic, ._Intrinsic = Intrinsic() }) };
                 break;
 
             }
@@ -1424,7 +1425,6 @@ Result<DeInitializer*, ModelError> handle_deinitializer(Page* _rp, Page* _ep, De
 
 Result<Operator, ModelError> handle_operator(Page* _rp, Page* _ep,  OperatorSyntax& operator_syntax, bool private_, String file) {
     Vector<Item> input = Vector<Item>(_rp, 0);
-    Vector<Item> output = Vector<Item>(_rp, 0);
     auto start = operator_syntax.start;
     auto end = operator_syntax.end;
     Vector<Operand>* operation = nullptr;
@@ -1439,13 +1439,15 @@ Result<Operator, ModelError> handle_operator(Page* _rp, Page* _ep,  OperatorSynt
                         return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Error, ._Error = _input_result._Error };
                     input = _input_result._Ok;
                 }
-                if (routine.returns != nullptr)
-                {
-                    ParameterSetSyntax& parameterSetSyntax = routine.returns->parameters; 
-                    auto _output_result = handle_parameterset(_rp, _ep, parameterSetSyntax, file);
-                    if (_output_result._tag == Result<Vector<Item>, ModelError>::Error)
-                        return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Error, ._Error = _output_result._Error };
-                    output = _output_result._Ok;
+
+                Type* returns_ = nullptr;
+                if (routine.returns_ != nullptr) {
+                    handle_type(_rp, _ep, routine.returns_->type, file);
+                }
+
+                Type* throws_ = nullptr;
+                if (routine.throws_ != nullptr) {
+                    handle_type(_rp, _ep, routine.throws_->type, file);
                 }
 
                 switch (routine.implementation._tag) {
@@ -1453,14 +1455,14 @@ Result<Operator, ModelError> handle_operator(Page* _rp, Page* _ep,  OperatorSynt
                         auto action_result = handle_action(_rp, _ep, routine.implementation._Action, file);
                         if (action_result._tag == Result<Statement, ModelError>::Error)
                             return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Error, ._Error = action_result._Error };
-                        return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Ok, ._Ok = Operator(Span(start, end), private_, String(_rp, "[]"), input, output, Implementation { ._tag = Implementation::Action, ._Action = action_result._Ok }) };
+                        return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Ok, ._Ok = Operator(Span(start, end), private_, String(_rp, "[]"), input, returns_, throws_, Implementation { ._tag = Implementation::Action, ._Action = action_result._Ok }) };
                     }
                     case ImplementationSyntax::Extern:
-                        return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Ok, ._Ok = Operator(Span(start, end), private_, String(_rp, "[]"), input, output, Implementation { ._tag = Implementation::Extern, ._Extern = Extern() }) };
+                        return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Ok, ._Ok = Operator(Span(start, end), private_, String(_rp, "[]"), input, returns_, throws_, Implementation { ._tag = Implementation::Extern, ._Extern = Extern() }) };
                     case ImplementationSyntax::Instruction:
-                        return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Ok, ._Ok = Operator(Span(start, end), private_, String(_rp, "[]"), input, output, Implementation { ._tag = Implementation::Instruction, ._Instruction = Instruction() }) };
+                        return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Ok, ._Ok = Operator(Span(start, end), private_, String(_rp, "[]"), input, returns_, throws_, Implementation { ._tag = Implementation::Instruction, ._Instruction = Instruction() }) };
                     case ImplementationSyntax::Intrinsic:
-                        return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Ok, ._Ok = Operator(Span(start, end), private_, String(_rp, "[]"), input, output, Implementation { ._tag = Implementation::Intrinsic, ._Intrinsic = Intrinsic() }) };
+                        return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Ok, ._Ok = Operator(Span(start, end), private_, String(_rp, "[]"), input, returns_, throws_, Implementation { ._tag = Implementation::Intrinsic, ._Intrinsic = Intrinsic() }) };
                 }
             }
             return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(file, String(_ep, "Non-Symbol Operator"), Span(operator_syntax.start, operator_syntax.end)))) };
@@ -1474,13 +1476,15 @@ Result<Operator, ModelError> handle_operator(Page* _rp, Page* _ep,  OperatorSynt
                     return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Error, ._Error = _input_result._Error };
                 input = _input_result._Ok;
             }
-            if (named.routine.returns != nullptr)
-            {
-                ParameterSetSyntax& parameterSetSyntax = named.routine.returns->parameters; 
-                auto _output_result = handle_parameterset(_rp, _ep, parameterSetSyntax, file);
-                if (_output_result._tag == Result<Vector<Item>, ModelError>::Error)
-                    return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Error, ._Error = _output_result._Error };
-                output = _output_result._Ok;
+
+            Type* returns_ = nullptr;
+            if (named.routine.returns_ != nullptr) {
+                handle_type(_rp, _ep, named.routine.returns_->type, file);
+            }
+
+            Type* throws_ = nullptr;
+            if (named.routine.throws_ != nullptr) {
+                handle_type(_rp, _ep, named.routine.throws_->type, file);
             }
 
             switch (named.routine.implementation._tag) {
@@ -1488,14 +1492,14 @@ Result<Operator, ModelError> handle_operator(Page* _rp, Page* _ep,  OperatorSynt
                     auto action_result = handle_action(_rp, _ep, named.routine.implementation._Action, file);
                     if (action_result._tag == Result<Statement, ModelError>::Error)
                         return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Error, ._Error = action_result._Error };
-                    return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Ok, ._Ok = Operator(Span(start, end), private_, String(_rp, named.name), input, output, Implementation { ._tag = Implementation::Action, ._Action = action_result._Ok }) };
+                    return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Ok, ._Ok = Operator(Span(start, end), private_, String(_rp, named.name), input, returns_, throws_, Implementation { ._tag = Implementation::Action, ._Action = action_result._Ok }) };
                 }
                 case ImplementationSyntax::Extern:
-                    return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Ok, ._Ok = Operator(Span(start, end), private_, String(_rp, named.name), input, output, Implementation { ._tag = Implementation::Extern, ._Extern = Extern() }) };
+                    return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Ok, ._Ok = Operator(Span(start, end), private_, String(_rp, named.name), input, returns_, throws_, Implementation { ._tag = Implementation::Extern, ._Extern = Extern() }) };
                 case ImplementationSyntax::Instruction:
-                    return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Ok, ._Ok = Operator(Span(start, end), private_, String(_rp, named.name), input, output, Implementation { ._tag = Implementation::Instruction, ._Instruction = Instruction() }) };
+                    return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Ok, ._Ok = Operator(Span(start, end), private_, String(_rp, named.name), input, returns_, throws_, Implementation { ._tag = Implementation::Instruction, ._Instruction = Instruction() }) };
                 case ImplementationSyntax::Intrinsic:
-                    return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Ok, ._Ok = Operator(Span(start, end), private_, String(_rp, named.name), input, output, Implementation { ._tag = Implementation::Intrinsic, ._Intrinsic = Intrinsic() }) };
+                    return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Ok, ._Ok = Operator(Span(start, end), private_, String(_rp, named.name), input, returns_, throws_, Implementation { ._tag = Implementation::Intrinsic, ._Intrinsic = Intrinsic() }) };
                 break;
             }
         }

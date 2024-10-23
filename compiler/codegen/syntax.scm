@@ -10,6 +10,11 @@ struct StringLiteral {
     String value;
 };
 
+struct CharacterLiteral {
+    CharacterLiteral(String value) : value(value) {}
+    String value;
+};
+
 struct FragmentLiteral {
     FragmentLiteral(String value) : value(value) {}
     String value;
@@ -37,6 +42,7 @@ struct HexLiteral {
 
 struct Literal : Object {
     Literal(StringLiteral string) : _tag(String), _String(string) {}
+    Literal(CharacterLiteral string) : _tag(Character), _Character(string) {}
     Literal(FragmentLiteral fragment) : _tag(Fragment), _Fragment(fragment) {}
     Literal(IntegerLiteral integer) : _tag(Integer), _Integer(integer) {}
     Literal(BooleanLiteral boolean) : _tag(Boolean), _Boolean(boolean) {}
@@ -44,6 +50,7 @@ struct Literal : Object {
     Literal(HexLiteral hex) : _tag(Hex), _Hex(hex) {}
     enum {
         String,
+        Character,
         Fragment,
         Integer,
         Boolean,
@@ -52,6 +59,7 @@ struct Literal : Object {
     } _tag;
     union {
         StringLiteral _String;
+        CharacterLiteral _Character;
         FragmentLiteral _Fragment;
         IntegerLiteral _Integer;
         BooleanLiteral _Boolean;
