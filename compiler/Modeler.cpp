@@ -1353,12 +1353,18 @@ Result<Function, ModelError> build_function(Page* _rp, Page* _ep, size_t start, 
 
             Type* returns_ = nullptr;
             if (named.routine.returns_ != nullptr) {
-                handle_type(_rp, _ep, named.routine.returns_->type, file);
+                auto _type_result = handle_type(_rp, _ep, named.routine.returns_->type, file);
+                if (_type_result._tag == Result<Type, ModelError>::Error)
+                    return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Error, ._Error = _type_result._Error };
+                returns_ = _type_result._Ok;
             }
 
             Type* throws_ = nullptr;
             if (named.routine.throws_ != nullptr) {
-                handle_type(_rp, _ep, named.routine.throws_->type, file);
+                auto _type_result = handle_type(_rp, _ep, named.routine.throws_->type, file);
+                if (_type_result._tag == Result<Type, ModelError>::Error)
+                    return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Error, ._Error = _type_result._Error };
+                throws_ = _type_result._Ok;
             }
 
             auto lifetime = Lifetime(Unspecified());
@@ -1442,12 +1448,18 @@ Result<Operator, ModelError> handle_operator(Page* _rp, Page* _ep,  OperatorSynt
 
                 Type* returns_ = nullptr;
                 if (routine.returns_ != nullptr) {
-                    handle_type(_rp, _ep, routine.returns_->type, file);
+                    auto _type_result = handle_type(_rp, _ep, routine.returns_->type, file);
+                    if (_type_result._tag == Result<Type, ModelError>::Error)
+                        return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Error, ._Error = _type_result._Error };
+                    returns_ = _type_result._Ok;
                 }
 
                 Type* throws_ = nullptr;
                 if (routine.throws_ != nullptr) {
-                    handle_type(_rp, _ep, routine.throws_->type, file);
+                    auto _type_result = handle_type(_rp, _ep, routine.throws_->type, file);
+                    if (_type_result._tag == Result<Type, ModelError>::Error)
+                        return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Error, ._Error = _type_result._Error };
+                    throws_ = _type_result._Ok;
                 }
 
                 switch (routine.implementation._tag) {
@@ -1479,12 +1491,18 @@ Result<Operator, ModelError> handle_operator(Page* _rp, Page* _ep,  OperatorSynt
 
             Type* returns_ = nullptr;
             if (named.routine.returns_ != nullptr) {
-                handle_type(_rp, _ep, named.routine.returns_->type, file);
+                auto _type_result = handle_type(_rp, _ep, named.routine.returns_->type, file);
+                if (_type_result._tag == Result<Type, ModelError>::Error)
+                    return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Error, ._Error = _type_result._Error };
+                returns_ = _type_result._Ok;
             }
 
             Type* throws_ = nullptr;
             if (named.routine.throws_ != nullptr) {
-                handle_type(_rp, _ep, named.routine.throws_->type, file);
+                auto _type_result = handle_type(_rp, _ep, named.routine.throws_->type, file);
+                if (_type_result._tag == Result<Type, ModelError>::Error)
+                    return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Error, ._Error = _type_result._Error };
+                throws_ = _type_result._Ok;
             }
 
             switch (named.routine.implementation._tag) {
