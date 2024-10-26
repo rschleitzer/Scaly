@@ -16,7 +16,7 @@
 				"${workspaceFolder}/PageNode.cpp",
 				"${workspaceFolder}/Region.cpp",
 				"-o",
-				"${workspaceFolder}/bin/${fileBasenameNoExtension}",
+				"${workspaceFolder}/bin/memory",
 				//"`llvm-config --cxxflags`"
 				"-I/opt/homebrew/Cellar/llvm/17.0.5/include",
 				"-std=c++17",

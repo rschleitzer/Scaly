@@ -23,7 +23,7 @@
 				"${workspaceFolder}/../containers/String.cpp",
 				"${workspaceFolder}/../containers/StringBuilder.cpp",
 				"-o",
-				"${workspaceFolder}/bin/${fileBasenameNoExtension}",
+				"${workspaceFolder}/bin/io",
 				//"`llvm-config --cxxflags`"
 				"-std=c++17",
 				"-stdlib=libc++",
