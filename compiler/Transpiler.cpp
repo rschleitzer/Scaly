@@ -56,7 +56,14 @@ struct Transpiler : Object {
         header_builder.append(module.name);
         header_builder.append("_h\n");
         if (module.name.equals("scaly")) {
-            header_builder.append("#include \"forwards.h\"\n");
+            header_builder.append("\
+#include <stdlib.h>\n\
+#include <memory.h>\n\
+#include <stdio.h>\n\
+#include <sys/stat.h>\n\
+#include <errno.h>\n\
+#include <math.h>\n\
+#include \"forwards.h\"\n");
         }
         else {
             header_builder.append("#include \"");
@@ -1285,9 +1292,6 @@ struct Transpiler : Object {
 
         if (name.equals("size_t")) {
             header_builder.append("typedef __SIZE_TYPE__ size_t;\n");
-        } 
-        else  if (name.equals("stdio")) {
-            header_builder.append("#include <stdio.h>\n");
         }
         else
             return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, name)));
@@ -1330,10 +1334,8 @@ struct Transpiler : Object {
         Region _r;
         StringBuilder& builder = *new (alignof(StringBuilder), _r.get_page()) StringBuilder();
         builder.append("\
-typedef __SIZE_TYPE__ size_t;\n\
 typedef const char const_char;\n\
-typedef const void const_void;\n\
-#define SIZE_MAX 18446744073709551615UL\n");
+typedef const void const_void;\n");
         {
             auto _result = forward_includes_for_modules(_ep, builder,  program.module.modules);
             if (_result != nullptr)
