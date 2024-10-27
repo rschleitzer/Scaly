@@ -366,13 +366,13 @@ struct Transpiler : Object {
         Region _r;
         build_initializer_header(header_builder, cpp_builder, name, is_generic);
         if (!is_generic) {
-            build_input(cpp_builder, initializer->input, Lifetime(Unspecified()));
+            build_input(cpp_builder, initializer->input, nullptr, nullptr, nullptr, Lifetime(Unspecified()));
             cpp_builder.append(' ');
             auto _result = build_implementation(_ep, cpp_builder, initializer->implementation, nullptr, nullptr, String(), true);
             if (_result != nullptr)
                 return _result;
         }
-        build_input(header_builder, initializer->input, Lifetime(Unspecified()));
+        build_input(header_builder, initializer->input, nullptr, nullptr, nullptr, Lifetime(Unspecified()));
         if (is_generic) {
             header_builder.append(' ');
             auto _result = build_implementation(_ep, header_builder, initializer->implementation, nullptr, nullptr, String(_r.get_page(), "    "), true);
@@ -454,6 +454,23 @@ struct Transpiler : Object {
         auto function_iterator = VectorIterator<Function>(&functions);
         bool first = true;
         while (auto function = function_iterator.next()) {
+            String* location = nullptr;
+            switch (function->lifetime._tag) {
+                case Lifetime::Call:
+                    location = new (alignof(String), _r.get_page()) String(_r.get_page(), "rp");
+                    break;
+                case Lifetime::Reference: {
+                    auto reference = function->lifetime._Reference;
+                    location = &reference.location;
+                    break;
+                }
+                case Lifetime::Unspecified:
+                    break;
+                case Lifetime::Local:
+                    break;
+                case Lifetime::Thrown:
+                    break;
+            }
             if (function->implementation._tag == Implementation::Extern) {
                 header_builder.append("extern \"C\" ");
                 if (function->returns_ == 0)
@@ -462,7 +479,7 @@ struct Transpiler : Object {
                     build_type(header_builder, function->returns_);
                 header_builder.append(' ');
                 header_builder.append(function->name);
-                build_input(header_builder, function->input, function->lifetime);
+                build_input(header_builder, function->input, location, function->returns_, function->throws_, function->lifetime);
                 header_builder.append(";\n");
                 continue;
             }
@@ -477,14 +494,14 @@ struct Transpiler : Object {
                     cpp_builder.append("::");
                 }
                 cpp_builder.append(function->name);
-                build_input(cpp_builder, function->input, function->lifetime);
+                build_input(cpp_builder, function->input, location, function->returns_, function->throws_, function->lifetime);
                 cpp_builder.append(' ');
                 auto _result = build_implementation(_ep, cpp_builder, function->implementation, function->returns_, function->throws_, String(), false);
                 if (_result != nullptr)
                     return _result;
             }
             header_builder.append(function->name);
-            build_input(header_builder, function->input, function->lifetime);
+            build_input(header_builder, function->input, location, function->returns_, function->throws_, function->lifetime);
             if (is_template) {
                 header_builder.append(' ');
                 auto _result = build_implementation(_ep, header_builder, function->implementation, function->returns_, function->throws_, String(_r.get_page(), "    "), false);
@@ -789,19 +806,17 @@ struct Transpiler : Object {
         switch (type.lifetime._tag) {
             case Lifetime::Unspecified:
                 break;
-            case Lifetime::Root: {
+            case Lifetime::Local: {
                 builder.append("new (alignof(");
                 build_type(builder, &type);
                 builder.append("), r.get_page()) ");
                 break;
             }
-            case Lifetime::Local: {
+            case Lifetime::Call: {
                 auto local = type.lifetime._Local;
                 builder.append("new (alignof(");
                 build_type(builder, &type);
-                builder.append("), ");
-                builder.append(local.location);
-                builder.append(") ");
+                builder.append("), rp) ");
                 break;
             }
             case Lifetime::Reference: {
@@ -809,7 +824,7 @@ struct Transpiler : Object {
                 builder.append("new (alignof(");
                 build_type(builder, &type);
                 builder.append("), ");
-                builder.append(reference.age);
+                builder.append(reference.location);
                 builder.append(") ");
                 break;
             }
@@ -1144,7 +1159,7 @@ struct Transpiler : Object {
             build_type(header_builder, operator_.returns_);
         header_builder.append(" operator ");
         header_builder.append(operator_.name);
-        build_input(header_builder, operator_.input, Lifetime(Unspecified()));
+        build_input(header_builder, operator_.input, nullptr, operator_.returns_, operator_.throws_, Lifetime(Unspecified()));
         if (is_template) {
             auto _result = build_implementation(_ep, header_builder, operator_.implementation, operator_.returns_, operator_.throws_, String(_r.get_page(), "    "), false);
             if (_result != nullptr)
@@ -1162,7 +1177,7 @@ struct Transpiler : Object {
             cpp_builder.append(*name);
             cpp_builder.append("::operator ");
             cpp_builder.append(operator_.name);
-            auto is_static = build_input(cpp_builder, operator_.input, Lifetime(Unspecified()));
+            auto is_static = build_input(cpp_builder, operator_.input, nullptr, operator_.returns_, operator_.throws_, Lifetime(Unspecified()));
             cpp_builder.append(' ');
             auto _result = build_implementation(_ep, cpp_builder, operator_.implementation, operator_.returns_, operator_.throws_, String(), false);
             if (_result != nullptr)
@@ -1171,27 +1186,50 @@ struct Transpiler : Object {
         return nullptr; 
     }
 
-    bool build_input(StringBuilder& builder, Vector<Item> input, Lifetime lifetime) {
+    bool needs_return_page(Type* type) {
+        if (type == nullptr)
+            return false;
+        
+        if (type->lifetime._tag == Lifetime::Call)
+            return true;
+        
+        return false;
+    }
+
+    bool build_input(StringBuilder& builder, Vector<Item> input, String* location, Type* returns_, Type* throws_, Lifetime lifetime) {
         Region _r;
         builder.append('(');
 
-        switch (lifetime._tag) {
-            case Lifetime::Unspecified:
-                break;
-            case Lifetime::Root:
-                builder.append("r.get_page()");
-                break;
-            case Lifetime::Local: {
-                auto local = lifetime._Local;
-                builder.append("Page* ");
-                builder.append(local.location);
+        bool parameters_there = false;
+        if (input.length > 0)
+        {
+            if (input.get(0)->name->equals("this"))
+                parameters_there = input.length > 1;
+            else
+                parameters_there = true;
+        }
+
+        auto needs_rp = needs_return_page(returns_);
+        if (location != nullptr)
+        {
+            builder.append("Page* ");
+            builder.append(*location);
+            if (throws_ != nullptr || parameters_there || needs_rp)
                 builder.append(", ");
-                break;
-            }
-            case Lifetime::Reference:
-                break;
-            case Lifetime::Thrown:
-                break;
+        }
+
+        if (needs_rp)
+        {
+            builder.append("Page* rp");
+            if (throws_ != nullptr || parameters_there)
+                builder.append(", ");
+        }
+
+        if (throws_ != nullptr)
+        {
+            builder.append("Page* ep");
+            if (parameters_there)
+                builder.append(", ");
         }
 
         auto input_iterator = VectorIterator<Item>(&input);

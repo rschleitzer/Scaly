@@ -612,14 +612,14 @@ Result<Type*, ModelError> handle_type(Page* _rp, Page* _ep, TypeSyntax& type, St
     if (type.lifetime != nullptr) {
         auto lifetime_syntax = *type.lifetime;
         switch (lifetime_syntax._tag) {
-            case LifetimeSyntax::Root:
-                lifetime = Lifetime(Root());
+            case LifetimeSyntax::Call:
+                lifetime = Lifetime(Call());
             break;
             case LifetimeSyntax::Local:
-                lifetime = Lifetime(Local(String(_rp, lifetime_syntax._Local.location)));
+                lifetime = Lifetime(Local());
             break;
             case LifetimeSyntax::Reference:
-                lifetime = Lifetime(Reference(String(_rp, lifetime_syntax._Reference.age)));
+                lifetime = Lifetime(Reference(String(_rp, lifetime_syntax._Reference.location)));
             break;
             case LifetimeSyntax::Thrown:
                 lifetime = Lifetime(Thrown());
@@ -1370,14 +1370,14 @@ Result<Function, ModelError> build_function(Page* _rp, Page* _ep, size_t start, 
             auto lifetime = Lifetime(Unspecified());
             if (named.routine.lifetime != nullptr) {
                 switch (named.routine.lifetime->_tag) {
-                    case LifetimeSyntax::Root:
-                        lifetime = Lifetime(Root());
+                    case LifetimeSyntax::Call:
+                        lifetime = Lifetime(Call());
                     break;
                     case LifetimeSyntax::Local:
-                        lifetime = Lifetime(Local(String(_rp, named.routine.lifetime->_Local.location)));
+                        lifetime = Lifetime(Local());
                     break;
                     case LifetimeSyntax::Reference:
-                        lifetime = Lifetime(Reference(String(_rp, named.routine.lifetime->_Reference.age)));
+                        lifetime = Lifetime(Reference(String(_rp, named.routine.lifetime->_Reference.location)));
                     break;
                     case LifetimeSyntax::Thrown:
                         lifetime = Lifetime(Thrown());

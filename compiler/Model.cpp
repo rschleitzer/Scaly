@@ -75,33 +75,30 @@ struct Block {
 };
 
 struct Unspecified {};
-struct Root {};
-struct Local {
-    Local(String location) : location(location) {}
-    String location;
-};
+struct Call {};
+struct Local {};
 struct Reference {
-    Reference(String age) : age(age) {}
-    String age;
+    Reference(String location) : location(location) {}
+    String location;
 };
 struct Thrown {};
 
 struct Lifetime {
     Lifetime(Unspecified _Unspecified) : _tag(Unspecified), _Unspecified(_Unspecified) {}
-    Lifetime(Root _Root) : _tag(Root), _Root(_Root) {}
+    Lifetime(Call _Call) : _tag(Call), _Call(_Call) {}
     Lifetime(Local _Local) : _tag(Local), _Local(_Local) {}
     Lifetime(Reference _Reference) : _tag(Reference), _Reference(_Reference) {}
     Lifetime(Thrown _Thrown) : _tag(Thrown), _Thrown(_Thrown) {}
     enum {
         Unspecified,
-        Root,
+        Call,
         Local,
         Reference,
         Thrown,
     } _tag;
     union {
         struct Unspecified _Unspecified;
-        struct Root _Root;
+        struct Call _Call;
         struct Local _Local;
         struct Reference _Reference;
         struct Thrown _Thrown;

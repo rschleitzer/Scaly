@@ -3,9 +3,9 @@ define PageList
     head: pointer[PageNode] (null)
 )
 {
-    procedure add#r(this: PageList, element: pointer[Page])
+    procedure add^rp(this: PageList, element: pointer[Page])
     {
-        let new_node PageNode#r(element, head)
+        let new_node PageNode^rp(element, head)
         set head: new_node
     }
 

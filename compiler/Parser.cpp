@@ -173,7 +173,7 @@ struct TypeSyntax;
 struct NameSyntax; 
 struct ExtensionSyntax; 
 struct LifetimeSyntax; 
-struct RootSyntax; 
+struct CallSyntax; 
 struct LocalSyntax; 
 struct ReferenceSyntax; 
 struct ThrownSyntax; 
@@ -185,38 +185,37 @@ struct ThrownSyntax : Object {
 };
 
 struct ReferenceSyntax : Object {
-    ReferenceSyntax(size_t start, size_t end, String age) : start(start), end(end), age(age) {}
-    size_t start;
-    size_t end;
-    String age;
-};
-
-struct LocalSyntax : Object {
-    LocalSyntax(size_t start, size_t end, String location) : start(start), end(end), location(location) {}
+    ReferenceSyntax(size_t start, size_t end, String location) : start(start), end(end), location(location) {}
     size_t start;
     size_t end;
     String location;
 };
 
-struct RootSyntax : Object {
-    RootSyntax(size_t start, size_t end) : start(start), end(end) {}
+struct LocalSyntax : Object {
+    LocalSyntax(size_t start, size_t end) : start(start), end(end) {}
+    size_t start;
+    size_t end;
+};
+
+struct CallSyntax : Object {
+    CallSyntax(size_t start, size_t end) : start(start), end(end) {}
     size_t start;
     size_t end;
 };
 
 struct LifetimeSyntax : Object {
-    LifetimeSyntax(RootSyntax _RootSyntax) : _tag(Root) { _Root = _RootSyntax; }
+    LifetimeSyntax(CallSyntax _CallSyntax) : _tag(Call) { _Call = _CallSyntax; }
     LifetimeSyntax(LocalSyntax _LocalSyntax) : _tag(Local) { _Local = _LocalSyntax; }
     LifetimeSyntax(ReferenceSyntax _ReferenceSyntax) : _tag(Reference) { _Reference = _ReferenceSyntax; }
     LifetimeSyntax(ThrownSyntax _ThrownSyntax) : _tag(Thrown) { _Thrown = _ThrownSyntax; }
     enum {
-        Root,
+        Call,
         Local,
         Reference,
         Thrown,
     } _tag;
     union {
-        RootSyntax _Root;
+        CallSyntax _Call;
         LocalSyntax _Local;
         ReferenceSyntax _Reference;
         ThrownSyntax _Thrown;
@@ -6769,8 +6768,8 @@ struct Parser : Object {
 
     Result<LifetimeSyntax, ParserError> parse_lifetime(Page* _rp, Page* _ep) {
         {
-            auto node_result = this->parse_root(_rp, _ep);
-            if (node_result._tag == Result<RootSyntax, ParserError>::Error)
+            auto node_result = this->parse_call(_rp, _ep);
+            if (node_result._tag == Result<CallSyntax, ParserError>::Error)
             {
                 if (node_result._Error._tag == ParserError::InvalidSyntax)
                     return Result<LifetimeSyntax, ParserError> { ._tag = Result<LifetimeSyntax, ParserError>::Error, ._Error = node_result._Error };
@@ -6779,7 +6778,7 @@ struct Parser : Object {
             {
                 auto node = node_result._Ok;
                 return Result<LifetimeSyntax, ParserError> { ._tag = Result<LifetimeSyntax, ParserError>::Ok, ._Ok = 
-                    LifetimeSyntax(RootSyntax(node))
+                    LifetimeSyntax(CallSyntax(node))
                 };
             }
         }
@@ -6831,45 +6830,34 @@ struct Parser : Object {
         return Result<LifetimeSyntax, ParserError> { ._tag = Result<LifetimeSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
     }
 
-    Result<RootSyntax, ParserError> parse_root(Page* _rp, Page* _ep) {
-        auto start = this->lexer.previous_position;
-
-        auto start_dollar_1 = this->lexer.previous_position;
-        auto success_dollar_1 = this->lexer.parse_punctuation('$');
-        if (!success_dollar_1) {
-            return Result<RootSyntax, ParserError> { ._tag = Result<RootSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
-        }
-
-        auto end = this->lexer.position;
-
-        auto ret = RootSyntax(start, end);
-
-        return Result<RootSyntax, ParserError> { ._tag = Result<RootSyntax, ParserError>::Ok, ._Ok = ret };
-    }
-
-    Result<LocalSyntax, ParserError> parse_local(Page* _rp, Page* _ep) {
+    Result<CallSyntax, ParserError> parse_call(Page* _rp, Page* _ep) {
         auto start = this->lexer.previous_position;
 
         auto start_hash_1 = this->lexer.previous_position;
         auto success_hash_1 = this->lexer.parse_punctuation('#');
         if (!success_hash_1) {
-            return Result<LocalSyntax, ParserError> { ._tag = Result<LocalSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
-        }
-
-        auto start_location = this->lexer.previous_position;
-        auto location = this->lexer.parse_identifier(_rp, this->keywords);
-        if (location != nullptr) {
-            if (!this->is_identifier(*location)) {
-            return Result<LocalSyntax, ParserError> { ._tag = Result<LocalSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_location, lexer.position, String(_ep, "an identifier"))) };
-            }
-        }
-        else {
-            return Result<LocalSyntax, ParserError> { ._tag = Result<LocalSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_location, lexer.position, String(_ep, "an identifier"))) };
+            return Result<CallSyntax, ParserError> { ._tag = Result<CallSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
 
         auto end = this->lexer.position;
 
-        auto ret = LocalSyntax(start, end, *location);
+        auto ret = CallSyntax(start, end);
+
+        return Result<CallSyntax, ParserError> { ._tag = Result<CallSyntax, ParserError>::Ok, ._Ok = ret };
+    }
+
+    Result<LocalSyntax, ParserError> parse_local(Page* _rp, Page* _ep) {
+        auto start = this->lexer.previous_position;
+
+        auto start_dollar_1 = this->lexer.previous_position;
+        auto success_dollar_1 = this->lexer.parse_punctuation('$');
+        if (!success_dollar_1) {
+            return Result<LocalSyntax, ParserError> { ._tag = Result<LocalSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
+        }
+
+        auto end = this->lexer.position;
+
+        auto ret = LocalSyntax(start, end);
 
         return Result<LocalSyntax, ParserError> { ._tag = Result<LocalSyntax, ParserError>::Ok, ._Ok = ret };
     }
@@ -6883,20 +6871,20 @@ struct Parser : Object {
             return Result<ReferenceSyntax, ParserError> { ._tag = Result<ReferenceSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
 
-        auto start_age = this->lexer.previous_position;
-        auto age = this->lexer.parse_identifier(_rp, this->keywords);
-        if (age != nullptr) {
-            if (!this->is_identifier(*age)) {
-            return Result<ReferenceSyntax, ParserError> { ._tag = Result<ReferenceSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_age, lexer.position, String(_ep, "an identifier"))) };
+        auto start_location = this->lexer.previous_position;
+        auto location = this->lexer.parse_identifier(_rp, this->keywords);
+        if (location != nullptr) {
+            if (!this->is_identifier(*location)) {
+            return Result<ReferenceSyntax, ParserError> { ._tag = Result<ReferenceSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_location, lexer.position, String(_ep, "an identifier"))) };
             }
         }
         else {
-            return Result<ReferenceSyntax, ParserError> { ._tag = Result<ReferenceSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_age, lexer.position, String(_ep, "an identifier"))) };
+            return Result<ReferenceSyntax, ParserError> { ._tag = Result<ReferenceSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_location, lexer.position, String(_ep, "an identifier"))) };
         }
 
         auto end = this->lexer.position;
 
-        auto ret = ReferenceSyntax(start, end, *age);
+        auto ret = ReferenceSyntax(start, end, *location);
 
         return Result<ReferenceSyntax, ParserError> { ._tag = Result<ReferenceSyntax, ParserError>::Ok, ._Ok = ret };
     }

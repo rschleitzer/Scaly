@@ -6,6 +6,6 @@ define Console {
 
     function print(message: String) throws FileError {
         var r Region()
-        print(message.to_c_string(r.get_page()))
+        print(r.get_page(), message.to_c_string(r.get_page()))
     }
 }

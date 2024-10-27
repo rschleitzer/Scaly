@@ -564,21 +564,20 @@
     <content identifier                                     property = name
 
 <syntax id = Lifetime                              abstract
-    <content link = Root
+    <content link = Call
     <content link = Local
     <content link = Reference
     <content link = Thrown
 
-<syntax id = Root
-    <content link = dollar
+<syntax id = Call
+    <content link = hash
  
 <syntax id = Local
-    <content link = hash
-    <content identifier                                     property = location
+    <content link = dollar
 
 <syntax id = Reference
     <content link = caret
-    <content identifier                                     property = age
+    <content identifier                                     property = location
 
 <syntax id = Thrown
     <content link = exclamation
