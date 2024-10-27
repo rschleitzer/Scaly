@@ -110,6 +110,7 @@
     <content link = Attribute             multiple optional property = attributes
     <content link = TypeAnnotation                 optional property = annotation
     <content link = comma                          optional
+    <content colon                                 optional
 
 <syntax id = Constant
     <content link = Type                                    property = type

@@ -1,0 +1,9 @@
+use scaly.containers
+
+define UnknownFileError(file_name: String)
+define NoSuchFileOrDirectoryError(file_name: String)
+
+define FileError union (
+    Unknown: UnknownFileError,
+    NoSuchFileOrDirectory: NoSuchFileOrDirectoryError
+)

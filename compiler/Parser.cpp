@@ -2453,6 +2453,11 @@ struct Parser : Object {
         if (!success_comma_4) {
         }
 
+        auto start_colon_5 = this->lexer.previous_position;
+        auto success_colon_5 = this->lexer.parse_colon(_rp);
+        if (!success_colon_5) {
+        }
+
         auto end = this->lexer.position;
 
         auto ret = VariantSyntax(start, end, *name, attributes, annotation);
