@@ -13,7 +13,6 @@ define containers {
     module HashMap
     module MultiMapBuilder
     module MultiMap
-    module Result
     module String
     module StringIterator
     module StringBuilder

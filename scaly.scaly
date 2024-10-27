@@ -2,6 +2,7 @@ define scaly {
     ;module llvm
     ;module libc
     ;module types
+    module Result
     module memory
     module containers
     module io
