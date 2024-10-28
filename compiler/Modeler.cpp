@@ -52,7 +52,7 @@ Result<Property, ModelError> handle_property(Page* _rp, Page* _ep, bool private_
             attributes.add(attribute);
         }
     }
-    return Result<Property, ModelError> { ._tag = Result<Property, ModelError>::Ok, ._Ok = Property(Span(property.start, property.end), false, new(alignof(String), _rp) String(_rp, property.name), type, initializer, Vector<Attribute>(_rp, attributes)) };
+    return Result<Property, ModelError> { ._tag = Result<Property, ModelError>::Ok, ._Ok = Property(Span(property.start, property.end), false, String(_rp, property.name), type, initializer, Vector<Attribute>(_rp, attributes)) };
 }
 
 Result<Item, ModelError> handle_item(Page* _rp, Page* _ep, bool private_, ItemSyntax& item, String file) {
@@ -115,37 +115,6 @@ Result<Vector<Item>, ModelError> handle_parameterset(Page* _rp, Page* _ep, Param
         ._Ok = Vector<Item>(_rp, items) };
 }
 
-Result<Vector<Property>, ModelError> handle_structure(Page* _rp, Page* _ep, StructureSyntax& structure, String file) {    
-    Region _r;
-    Array<Property>& properties_builder = *new(alignof(Array<Property>), _r.get_page()) Array<Property>();
-    if (structure.parts != nullptr) {
-        auto _members_iterator = VectorIterator<PartSyntax>(structure.parts);
-        while (auto _member = _members_iterator.next()) {
-            auto member = *_member;
-            switch (member._tag) {
-                case PartSyntax::Field: {
-                    auto _property_result = handle_property(_rp, _ep, true, member._Property, file);
-                    if (_property_result._tag == Result<Property, ModelError>::Error)
-                        return Result<Vector<Property>, ModelError> { ._tag = Result<Vector<Property>, ModelError>::Error, ._Error = _property_result._Error };
-                    auto property = _property_result._Ok;
-                    properties_builder.add(property);
-                }
-                break;
-                case PartSyntax::Property: {
-                    auto _property_result = handle_property(_rp, _ep, false, member._Property, file);
-                    if (_property_result._tag == Result<Property, ModelError>::Error)
-                        return Result<Vector<Property>, ModelError> { ._tag = Result<Vector<Property>, ModelError>::Error, ._Error = _property_result._Error };
-                    auto property = _property_result._Ok;
-                    properties_builder.add(property);
-                    property = _property_result._Ok;
-                }
-                break;
-            }
-        }
-    }
-    return Result<Vector<Property>, ModelError> { ._tag = Result<Vector<Property>, ModelError>::Ok, ._Ok = Vector<Property>(_rp, properties_builder) };
-}
-
 Result<Concept, ModelError> handle_definition(Page* _rp, Page* _ep, String path, DefinitionSyntax& definition, bool private_, String file);
 Result<Function, ModelError> build_function(Page* _rp, Page* _ep, size_t start, size_t end, TargetSyntax targetSyntax, bool private_, bool pure, String file);
 Result<Initializer, ModelError> handle_initializer(Page* _rp, Page* _ep, InitSyntax& initializer, bool private_, String file);
@@ -156,10 +125,34 @@ Result<Use, ModelError> handle_use(Page* _rp, Page* _ep, UseSyntax& use_);
 
 Result<Structure, ModelError> handle_class(Page* _rp, Page* _ep, String name, String path, ClassSyntax& class_syntax, bool private_, String file) {    
     Region _r;
-    auto properties_result = handle_structure(_rp, _ep, class_syntax.structure, file);
-    if (properties_result._tag == Result<Vector<Property>, ModelError>::Error)
-        return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = properties_result._Error };
-    auto properties = properties_result._Ok;
+    HashMapBuilder<String, Nameable>& symbols_builder = *new(alignof(HashMapBuilder<String, Nameable>), _r.get_page()) HashMapBuilder<String, Nameable>();
+    Array<Property>& properties_builder = *new(alignof(Array<Property>), _r.get_page()) Array<Property>();
+    if (class_syntax.structure.parts != nullptr) {
+        auto _parts_iterator = VectorIterator<PartSyntax>(class_syntax.structure.parts);
+        while (auto _part = _parts_iterator.next()) {
+            auto part = *_part;
+            switch (part._tag) {
+                case PartSyntax::Field: {
+                    auto _property_result = handle_property(_rp, _ep, true, part._Property, file);
+                    if (_property_result._tag == Result<Property, ModelError>::Error)
+                        return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = _property_result._Error };
+                    auto property = _property_result._Ok;
+                    symbols_builder.add(property.name, Nameable { ._tag = Nameable::Property, ._Property = property });
+                    properties_builder.add(property);
+                }
+                break;
+                case PartSyntax::Property: {
+                    auto _property_result = handle_property(_rp, _ep, false, part._Property, file);
+                    if (_property_result._tag == Result<Property, ModelError>::Error)
+                        return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = _property_result._Error };
+                    auto property = _property_result._Ok;
+                    symbols_builder.add(property.name, Nameable { ._tag = Nameable::Property, ._Property = property });
+                    properties_builder.add(property);
+                }
+                break;
+            }
+        }
+    }
 
     HashSetBuilder<String>& modules_checker = *new(alignof(HashSetBuilder<String>), _r.get_page()) HashSetBuilder<String>();
     List<Module>& modules = *new(alignof(List<Module>), _r.get_page()) List<Module>();
@@ -167,7 +160,7 @@ Result<Structure, ModelError> handle_class(Page* _rp, Page* _ep, String name, St
 
     if (class_syntax.body == nullptr) {
         return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Ok,
-            ._Ok = Structure(Span(class_syntax.start, class_syntax.end), private_, properties, Vector<Module>(), Vector<Use>(), Vector<Initializer>(), nullptr, HashMap<String, Nameable>())
+            ._Ok = Structure(Span(class_syntax.start, class_syntax.end), private_, Vector<Property>(_rp, properties_builder), Vector<Module>(), Vector<Use>(), Vector<Initializer>(), nullptr, Vector<Nameable>(), HashMap<String, Nameable>())
         };
     }
     else {
@@ -200,7 +193,7 @@ Result<Structure, ModelError> handle_class(Page* _rp, Page* _ep, String name, St
                 return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = _deinitializer_result._Error };
             deInitializer = _deinitializer_result._Ok;
         }
-        HashMapBuilder<String, Nameable>& symbols_builder = *new(alignof(HashMapBuilder<String, Nameable>), _r.get_page()) HashMapBuilder<String, Nameable>();
+        Array<Nameable>& nameables_builder = *new(alignof(Array<Nameable>), _r.get_page()) Array<Nameable>();
         MultiMapBuilder<String, Function>& functions_builder = *new(alignof(MultiMapBuilder<String, Function>), _r.get_page()) MultiMapBuilder<String, Function>();
         auto members_iterator = VectorIterator<MemberSyntax>(class_syntax.body->members);
         while (auto member = members_iterator.next()) {
@@ -282,7 +275,7 @@ Result<Structure, ModelError> handle_class(Page* _rp, Page* _ep, String name, St
         }
 
         return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Ok,
-            ._Ok = Structure(Span(class_syntax.start, class_syntax.end), private_, properties, Vector<Module>(_rp, modules), Vector<Use>(_rp, uses), Vector<Initializer>(_rp, initializers_builder), deInitializer, HashMap<String, Nameable>(_rp, symbols_builder))
+            ._Ok = Structure(Span(class_syntax.start, class_syntax.end), private_, Vector<Property>(_rp, properties_builder), Vector<Module>(_rp, modules), Vector<Use>(_rp, uses), Vector<Initializer>(_rp, initializers_builder), deInitializer, Vector<Nameable>(_rp, nameables_builder), HashMap<String, Nameable>(_rp, symbols_builder))
         };
     }
 }

@@ -268,12 +268,9 @@ struct Transpiler : Object {
                 build_type(header_builder, property->type);
             }
 
-            if (property->name)
-            {
-                header_builder.append(' ');
-                header_builder.append(*property->name);
-                header_builder.append(';');
-            }
+            header_builder.append(' ');
+            header_builder.append(property->name);
+            header_builder.append(';');
 
             if (property->initializer != nullptr)
                 must_build_default_initializer = true;
@@ -352,7 +349,7 @@ struct Transpiler : Object {
             else {
                 builder.append(", ");
             }
-            builder.append(property->name[0]);
+            builder.append(property->name);
             builder.append('(');
             auto _result = build_operation(_ep, builder, *property->initializer, nullptr, nullptr, indent);
             if (_result != nullptr)

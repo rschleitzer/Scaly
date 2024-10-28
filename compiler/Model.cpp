@@ -116,11 +116,11 @@ struct Type : Object {
 struct Property {
     Span span;
     bool private_;
-    String* name;
+    String name;
     Type* type;
     Vector<Operand>* initializer;
     Vector<Attribute> attributes;
-    Property(Span span, bool private_, String* name, Type* type, Vector<Operand>* initializer, Vector<Attribute> attributes)
+    Property(Span span, bool private_, String name, Type* type, Vector<Operand>* initializer, Vector<Attribute> attributes)
       : span(span),
         private_(private_),
         name(name),
@@ -419,8 +419,9 @@ struct Structure {
     Vector<Use> uses;
     Vector<Initializer> initializers;
     DeInitializer* deinitializer;
+    Vector<Nameable> members;
     HashMap<String, Nameable> symbols;
-    Structure(Span span, bool private_, Vector<Property> properties, Vector<Module> modules, Vector<Use> uses, Vector<Initializer> initializers, DeInitializer* deinitializer, HashMap<String, Nameable> symbols)
+    Structure(Span span, bool private_, Vector<Property> properties, Vector<Module> modules, Vector<Use> uses, Vector<Initializer> initializers, DeInitializer* deinitializer, Vector<Nameable> members, HashMap<String, Nameable> symbols)
       : span(span),
         private_(private_),
         properties(properties),
@@ -428,6 +429,7 @@ struct Structure {
         uses(uses),
         initializers(initializers),
         deinitializer(deinitializer),
+        members(members),
         symbols(symbols) {}
 };
 
