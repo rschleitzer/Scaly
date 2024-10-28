@@ -1,6 +1,7 @@
 #ifndef _io_h
 #define _io_h
 #include "../scaly.h"
+using namespace scaly;
 using namespace scaly::memory;
 namespace io {
 #include "io/Console.h"

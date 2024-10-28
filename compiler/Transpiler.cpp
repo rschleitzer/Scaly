@@ -542,10 +542,7 @@ struct Transpiler : Object {
             }
             if (function->implementation._tag == Implementation::Extern) {
                 header_builder.append("extern \"C\" ");
-                if (function->returns_ == 0)
-                    header_builder.append("void");
-                else
-                    build_type(header_builder, function->returns_);
+                build_output_type(header_builder, function->returns_, function->throws_);
                 header_builder.append(' ');
                 header_builder.append(function->name);
                 build_input(header_builder, function->input, location, function->returns_, function->throws_, function->lifetime);
@@ -580,6 +577,24 @@ struct Transpiler : Object {
             header_builder.append(';');
         }
         return nullptr; 
+    }
+
+    void build_output_type(StringBuilder& builder, Type* returns_, Type* throws_) {
+        if (throws_ != nullptr) 
+        {
+            builder.append("Result<");
+            if (returns_ == nullptr)
+                builder.append("Void");
+            else
+                build_type(builder, returns_);
+            builder.append(", ");
+            build_type(builder, throws_);
+            builder.append('>');
+            
+        } else if (returns_ == nullptr) {
+            builder.append("void");
+        } else
+            build_type(builder, returns_);
     }
 
     TranspilerError* build_implementation(Page* _ep, StringBuilder& builder, Implementation& implementation, Type* returns_, Type* throws_, String indent, bool is_initializer) {
@@ -1216,10 +1231,7 @@ struct Transpiler : Object {
             builder.append("    ");
         if (static_if_applicable && ((function->input.length == 0) || (function->input[0]->name == nullptr) || (!function->input[0]->name->equals("this"))))
             builder.append("static ");
-        if (function->returns_ == nullptr)
-            builder.append("void");
-        else
-            build_type(builder, function->returns_);
+        build_output_type(builder, function->returns_, function->throws_);
         builder.append(' ');
     }
 
@@ -1228,10 +1240,7 @@ struct Transpiler : Object {
         if (is_template)
             header_builder.append('\n');
         header_builder.append("\n    ");
-        if (operator_.returns_ == nullptr)
-            header_builder.append("void");
-        else
-            build_type(header_builder, operator_.returns_);
+        build_output_type(header_builder, operator_.returns_, operator_.throws_);
         header_builder.append(" operator ");
         header_builder.append(operator_.name);
         build_input(header_builder, operator_.input, nullptr, operator_.returns_, operator_.throws_, Lifetime(Unspecified()));
@@ -1243,10 +1252,7 @@ struct Transpiler : Object {
         else {
             header_builder.append(';');
             cpp_builder.append("\n\n");
-            if (operator_.returns_ == nullptr)
-                cpp_builder.append("void");
-            else
-                build_type(cpp_builder, operator_.returns_);
+            build_output_type(cpp_builder, operator_.returns_, operator_.throws_);
 
             cpp_builder.append(' ');
             cpp_builder.append(*name);

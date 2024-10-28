@@ -58,5 +58,6 @@ namespace Console {
 }
 struct UnknownFileError;
 struct NoSuchFileOrDirectoryError;
+struct Directory;
 }
 }
