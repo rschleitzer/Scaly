@@ -115,9 +115,9 @@ Result<Vector<Item>, ModelError> handle_parameterset(Page* _rp, Page* _ep, Param
         ._Ok = Vector<Item>(_rp, items) };
 }
 
-Result<HashMap<String, Property>, ModelError> handle_structure(Page* _rp, Page* _ep, StructureSyntax& structure, String file) {    
+Result<Vector<Property>, ModelError> handle_structure(Page* _rp, Page* _ep, StructureSyntax& structure, String file) {    
     Region _r;
-    HashMapBuilder<String, Property>& properties_builder = *new(alignof(HashMapBuilder<String, Property>), _r.get_page()) HashMapBuilder<String, Property>();
+    Array<Property>& properties_builder = *new(alignof(Array<Property>), _r.get_page()) Array<Property>();
     if (structure.parts != nullptr) {
         auto _members_iterator = VectorIterator<PartSyntax>(structure.parts);
         while (auto _member = _members_iterator.next()) {
@@ -126,24 +126,24 @@ Result<HashMap<String, Property>, ModelError> handle_structure(Page* _rp, Page* 
                 case PartSyntax::Field: {
                     auto _property_result = handle_property(_rp, _ep, true, member._Property, file);
                     if (_property_result._tag == Result<Property, ModelError>::Error)
-                        return Result<HashMap<String, Property>, ModelError> { ._tag = Result<HashMap<String, Property>, ModelError>::Error, ._Error = _property_result._Error };
+                        return Result<Vector<Property>, ModelError> { ._tag = Result<Vector<Property>, ModelError>::Error, ._Error = _property_result._Error };
                     auto property = _property_result._Ok;
-                    properties_builder.add(String(_rp, *property.name), property);
+                    properties_builder.add(property);
                 }
                 break;
                 case PartSyntax::Property: {
                     auto _property_result = handle_property(_rp, _ep, false, member._Property, file);
                     if (_property_result._tag == Result<Property, ModelError>::Error)
-                        return Result<HashMap<String, Property>, ModelError> { ._tag = Result<HashMap<String, Property>, ModelError>::Error, ._Error = _property_result._Error };
+                        return Result<Vector<Property>, ModelError> { ._tag = Result<Vector<Property>, ModelError>::Error, ._Error = _property_result._Error };
                     auto property = _property_result._Ok;
-                    properties_builder.add(String(_rp, *property.name), property);
+                    properties_builder.add(property);
                     property = _property_result._Ok;
                 }
                 break;
             }
         }
     }
-    return Result<HashMap<String, Property>, ModelError> { ._tag = Result<HashMap<String, Property>, ModelError>::Ok, ._Ok = HashMap<String, Property>(_rp, properties_builder) };
+    return Result<Vector<Property>, ModelError> { ._tag = Result<Vector<Property>, ModelError>::Ok, ._Ok = Vector<Property>(_rp, properties_builder) };
 }
 
 Result<Concept, ModelError> handle_definition(Page* _rp, Page* _ep, String path, DefinitionSyntax& definition, bool private_, String file);
@@ -157,7 +157,7 @@ Result<Use, ModelError> handle_use(Page* _rp, Page* _ep, UseSyntax& use_);
 Result<Structure, ModelError> handle_class(Page* _rp, Page* _ep, String name, String path, ClassSyntax& class_syntax, bool private_, String file) {    
     Region _r;
     auto properties_result = handle_structure(_rp, _ep, class_syntax.structure, file);
-    if (properties_result._tag == Result<HashMap<String, Property>, ModelError>::Error)
+    if (properties_result._tag == Result<Vector<Property>, ModelError>::Error)
         return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = properties_result._Error };
     auto properties = properties_result._Ok;
 

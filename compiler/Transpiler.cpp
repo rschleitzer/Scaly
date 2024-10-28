@@ -260,7 +260,7 @@ struct Transpiler : Object {
         header_builder.append(" {");
 
         bool must_build_default_initializer = false;
-        auto property_iterator = HashMapIterator<String, Property>(structure.properties);
+        auto property_iterator = VectorIterator<Property>(&structure.properties);
         while (auto property = property_iterator.next()) {
             if (property->type) {
                 header_builder.append('\n');
@@ -324,7 +324,7 @@ struct Transpiler : Object {
         return nullptr; 
     }
 
-    TranspilerError* build_default_initializer(Page* _ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, bool is_generic, HashMap<String, Property>& properties) {
+    TranspilerError* build_default_initializer(Page* _ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, bool is_generic, Vector<Property>& properties) {
         Region _r;
         build_initializer_header(header_builder, cpp_builder, name, is_generic);
         if (is_generic) {
@@ -339,9 +339,9 @@ struct Transpiler : Object {
         return nullptr;
     }
 
-    TranspilerError* build_initializer_list(Page* _ep, StringBuilder& builder, bool is_generic, HashMap<String, Property>& properties, String indent) {
+    TranspilerError* build_initializer_list(Page* _ep, StringBuilder& builder, bool is_generic, Vector<Property>& properties, String indent) {
         builder.append("() : ");
-        auto property_iterator = HashMapIterator<String, Property>(properties);
+        auto property_iterator = VectorIterator<Property>(&properties);
         bool first = true;
         while (auto property = property_iterator.next()) {
             if (property->initializer == nullptr)

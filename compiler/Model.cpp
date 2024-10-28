@@ -414,13 +414,13 @@ struct Nameable;
 struct Structure {
     Span span;
     bool private_;
-    HashMap<String, Property> properties;
+    Vector<Property> properties;
     Vector<Module> modules;
     Vector<Use> uses;
     Vector<Initializer> initializers;
     DeInitializer* deinitializer;
     HashMap<String, Nameable> symbols;
-    Structure(Span span, bool private_, HashMap<String, Property> properties, Vector<Module> modules, Vector<Use> uses, Vector<Initializer> initializers, DeInitializer* deinitializer, HashMap<String, Nameable> symbols)
+    Structure(Span span, bool private_, Vector<Property> properties, Vector<Module> modules, Vector<Use> uses, Vector<Initializer> initializers, DeInitializer* deinitializer, HashMap<String, Nameable> symbols)
       : span(span),
         private_(private_),
         properties(properties),
@@ -552,11 +552,13 @@ struct Nameable {
         Concept,
         Operator,
         Functions,
+        Property,
     } _tag;
     union {
         struct Concept _Concept;
         struct Operator _Operator;
-        Vector<Function> _Functions;
+        struct Vector<Function> _Functions;
+        struct Property _Property;
     };
 };
 
