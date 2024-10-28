@@ -410,6 +410,7 @@ struct Module;
 struct Concept;
 struct Use;
 struct Nameable;
+struct Member;
 
 struct Structure {
     Span span;
@@ -419,9 +420,9 @@ struct Structure {
     Vector<Use> uses;
     Vector<Initializer> initializers;
     DeInitializer* deinitializer;
-    Vector<Nameable> members;
+    Vector<Member> members;
     HashMap<String, Nameable> symbols;
-    Structure(Span span, bool private_, Vector<Property> properties, Vector<Module> modules, Vector<Use> uses, Vector<Initializer> initializers, DeInitializer* deinitializer, Vector<Nameable> members, HashMap<String, Nameable> symbols)
+    Structure(Span span, bool private_, Vector<Property> properties, Vector<Module> modules, Vector<Use> uses, Vector<Initializer> initializers, DeInitializer* deinitializer, Vector<Member> members, HashMap<String, Nameable> symbols)
       : span(span),
         private_(private_),
         properties(properties),
@@ -449,20 +450,24 @@ struct Variant : Object {
 struct Union : Object {
     Span span;
     bool private_;
-    HashMap<String, Variant> variants;
-    Union(Span span, bool private_, HashMap<String, Variant> variants)
+    Vector<Variant> variants;
+    HashMap<String, Variant> symbols;
+    Union(Span span, bool private_, Vector<Variant> variants, HashMap<String, Variant> symbols)
       : span(span),
         private_(private_),
-        variants(variants) {}
+        variants(variants),
+        symbols(symbols) {}
 };
 
 struct Namespace : Object {
     Span span;
     Vector<Module> modules;
-    HashMap<String, Nameable> symbols;
-    Namespace(Span span, Vector<Module> modules, HashMap<String, Nameable> symbols)
+    Vector<Member> members;
+    HashMap<String, Member> symbols;
+    Namespace(Span span, Vector<Module> modules, Vector<Member> members, HashMap<String, Member> symbols)
       : span(span),
         modules(modules),
+        members(members),
         symbols(symbols) {}
 };
 
@@ -528,13 +533,15 @@ struct Module : Object {
     String name;
     Vector<Module> modules;
     Vector<Use> uses;
-    HashMap<String, Nameable> symbols;
-    Module(bool private_, String file, String name, Vector<Module> modules, Vector<Use> uses, HashMap<String, Nameable> symbols)
+    Vector<Member> members;
+    HashMap<String, Member> symbols;
+    Module(bool private_, String file, String name, Vector<Module> modules, Vector<Use> uses, Vector<Member> members, HashMap<String, Member> symbols)
       : private_(private_),
         file(file),
         name(name),
         modules(modules),
         uses(uses),
+        members(members),
         symbols(symbols) {}
 };
 
@@ -546,6 +553,20 @@ struct Program : Object {
       : packages(packages),
         module(module),
         statements(statements) {}
+};
+
+struct Member {
+    enum {
+        Package,
+        Concept,
+        Operator,
+        Functions,
+    } _tag;
+    union {
+        struct Concept _Concept;
+        struct Operator _Operator;
+        struct Vector<Function> _Functions;
+    };
 };
 
 struct Nameable {

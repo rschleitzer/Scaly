@@ -78,7 +78,7 @@ struct Transpiler : Object {
 
         StringBuilder& namespace_open_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(namespace_open);
 
-        auto _symbols_result = build_symbols(_ep, path, module.file, module.name, header_builder, cpp_builder, main_header, namespace_open, namespace_close, module.symbols);
+        auto _symbols_result = build_symbols(_ep, path, module.file, module.name, header_builder, cpp_builder, main_header, namespace_open, namespace_close, module.members);
         if (_symbols_result)
             return _symbols_result;
 
@@ -152,7 +152,7 @@ struct Transpiler : Object {
         header_builder.append(" {\n    enum {\n");
         auto variants = union_.variants;
         {
-            auto _variant_iterator = HashMapIterator<String, Variant>(variants);
+            auto _variant_iterator = VectorIterator<Variant>(&variants);
             while (auto _variant = _variant_iterator.next()) {
                 Variant& variant = *_variant;
                 header_builder.append("        ");
@@ -162,7 +162,7 @@ struct Transpiler : Object {
         }
         header_builder.append("} _tag;\n    union {\n");
         {
-            auto _variant_iterator = HashMapIterator<String, Variant>(variants);
+            auto _variant_iterator = VectorIterator<Variant>(&variants);
             while (auto _variant = _variant_iterator.next()) {
                 Variant& variant = *_variant;
                 if (variant.type == nullptr)
@@ -198,7 +198,7 @@ struct Transpiler : Object {
                 return new(alignof(TranspilerError), _ep) TranspilerError(*_result);
         }
         {
-            auto _result = build_symbols(_ep, path, source, name, header_builder, cpp_builder, main_header_builder.to_string(_r.get_page()), namespace_open, namespace_close, namespace_.symbols);
+            auto _result = build_symbols(_ep, path, source, name, header_builder, cpp_builder, main_header_builder.to_string(_r.get_page()), namespace_open, namespace_close, namespace_.members);
             if (_result != nullptr)
                 return new(alignof(TranspilerError), _ep) TranspilerError(*_result);
         }
@@ -224,26 +224,26 @@ struct Transpiler : Object {
         return nullptr;
     }
 
-    TranspilerError* build_symbols(Page* _ep, String path, String source, String name, StringBuilder& header_builder, StringBuilder& cpp_builder, String main_header, String namespace_open, String namespace_close, HashMap<String, Nameable> symbols) {
+    TranspilerError* build_symbols(Page* _ep, String path, String source, String name, StringBuilder& header_builder, StringBuilder& cpp_builder, String main_header, String namespace_open, String namespace_close, Vector<Member> symbols) {
         Region _r;
-        auto member_iterator = HashMapIterator<String, Nameable>(symbols);
+        auto member_iterator = VectorIterator<Member>(&symbols);
         while (auto member = member_iterator.next()) {
             switch (member->_tag) {
-                case Nameable::Functions: {
+                case Member::Functions: {
                     auto _result = build_functions(_ep, header_builder, cpp_builder, member->_Functions, &name, false, false);
                     if (_result != nullptr)
                         return new(alignof(TranspilerError), _ep) TranspilerError(*_result);
                     break;
                 }
-                case Nameable::Concept: {
+                case Member::Concept: {
                     auto _result = build_concept(_ep, path, source, header_builder, cpp_builder, main_header, namespace_open, namespace_close, member->_Concept);
                     if (_result != nullptr)
                         return new(alignof(TranspilerError), _ep) TranspilerError(*_result);
                     break;
                 }
-                case Nameable::Operator:
+                case Member::Operator:
                     return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "namespace local operator")));
-                case Nameable::Package:
+                case Member::Package:
                     return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "namespace local package")));
             }
         }
@@ -295,24 +295,24 @@ struct Transpiler : Object {
                 return _result;
         }
 
-        auto member_iterator = HashMapIterator<String, Nameable>(structure.symbols);
+        auto member_iterator = VectorIterator<Member>(&structure.members);
         while (auto member = member_iterator.next()) {
             switch (member->_tag) {
-                case Nameable::Functions: {
+                case Member::Functions: {
                     auto _result = build_functions(_ep, header_builder, cpp_builder, member->_Functions, &name, parameters.length > 0, true);
                     if (_result != nullptr)
                         return new(alignof(TranspilerError), _ep) TranspilerError(*_result);                    
                     break;
                 }
-                case Nameable::Operator: {
+                case Member::Operator: {
                         auto _result = build_operator(_ep, header_builder, cpp_builder, member->_Operator, &name, parameters.length > 0);
                         if (_result != nullptr)
                             return new(alignof(TranspilerError), _ep) TranspilerError(*_result);                    
                     }
                     break;
-                case Nameable::Package:
+                case Member::Package:
                     return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "structure local package")));
-                case Nameable::Concept:
+                case Member::Concept:
                     return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "structure local concept")));
             }
         }
@@ -1378,7 +1378,7 @@ typedef const void const_void;\n");
         }
 
         {
-            auto _result = forward_includes_for_symbols(_ep, builder,  program.module.symbols);
+            auto _result = forward_includes_for_symbols(_ep, builder,  program.module.members);
             if (_result != nullptr)
                 return new(alignof(TranspilerError), _ep) TranspilerError(*_result);
         }
@@ -1433,7 +1433,7 @@ typedef const void const_void;\n");
                 return _result;
         }
         {
-            auto _result = forward_includes_for_symbols(_ep, builder, namespace_.symbols);
+            auto _result = forward_includes_for_symbols(_ep, builder, namespace_.members);
             if (_result != nullptr)
                 return _result;
         }
@@ -1446,7 +1446,7 @@ typedef const void const_void;\n");
         auto module_iterator = VectorIterator<Module>(&modules);
         while (auto module = module_iterator.next()) {
             {
-                auto _result = forward_includes_for_symbols(_ep, builder, module->symbols);
+                auto _result = forward_includes_for_symbols(_ep, builder, module->members);
                 if (_result != nullptr)
                     return new(alignof(TranspilerError), _ep) TranspilerError(*_result);
             }
@@ -1455,12 +1455,12 @@ typedef const void const_void;\n");
         return nullptr;
     }
 
-    TranspilerError* forward_includes_for_symbols(Page* _ep, StringBuilder& builder, HashMap<String, Nameable> symbols) {
+    TranspilerError* forward_includes_for_symbols(Page* _ep, StringBuilder& builder, Vector<Member> members) {
         Region _r;
-        auto member_iterator = HashMapIterator<String, Nameable>(symbols);
+        auto member_iterator = VectorIterator<Member>(&members);
         while (auto member = member_iterator.next()) {
             switch (member->_tag) {
-                case Nameable::Concept:
+                case Member::Concept:
                     {
                         auto _result = forward_include(_ep, builder, member->_Concept);
                         if (_result != nullptr)
@@ -1566,33 +1566,33 @@ typedef const void const_void;\n");
         StringBuilder& path_builder = *new (alignof(StringBuilder), _r.get_page()) StringBuilder(path);
         path_builder.append(module.name);
         path_builder.append('/');
-        build_vscode_source_files_list(builder, path_builder.to_string(_r.get_page()), module.modules, module.symbols);
+        build_vscode_source_files_list(builder, path_builder.to_string(_r.get_page()), module.modules, module.members);
     }
 
 
-    void build_vscode_source_files_list(StringBuilder& builder, String path, Vector<Module>& modules, HashMap<String, Nameable> symbols) {
+    void build_vscode_source_files_list(StringBuilder& builder, String path, Vector<Module>& modules, Vector<Member> members) {
         Region _r;
         auto _module_iterator = VectorIterator<Module>(&modules);
         while (auto module = _module_iterator.next()) {
             build_vscode_source_files(builder, path, *module);
         }
 
-        auto member_iterator = HashMapIterator<String, Nameable>(symbols);
+        auto member_iterator = VectorIterator<Member>(&members);
         while (auto member = member_iterator.next()) {
             switch (member->_tag) {
-                case Nameable::Concept:
+                case Member::Concept:
                     {
                         auto concept = member->_Concept;
                         switch (concept.definition._tag) {
                             case Definition::Namespace: {
                                 auto namespace_ = concept.definition._Namespace;
-                                build_vscode_source_files_list(builder, path, namespace_.modules, namespace_.symbols);
+                                build_vscode_source_files_list(builder, path, namespace_.modules, namespace_.members);
                             }
                             break;
 
                             case Definition::Structure: {
                                 auto structure = concept.definition._Structure;
-                                build_vscode_source_files_list(builder, path, structure.modules, structure.symbols);
+                                build_vscode_source_files_list(builder, path, structure.modules, structure.members);
                             }
                             break;
                             
