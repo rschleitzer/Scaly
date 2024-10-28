@@ -1214,14 +1214,20 @@ struct Transpiler : Object {
 
     TranspilerError* build_throw(Page* _ep, StringBuilder& builder, Throw& throw_, Type* returns_, Type* throws_, String indent) {
         Region _r;
-        builder.append("throw");
-        if (throw_.result.length > 0)
-            builder.append(' ');
+        builder.append("return Result<");
+        if (returns_ == nullptr)
+            builder.append("Void");
+        else
+            build_type(builder, returns_);
+        builder.append(", ");
+        build_type(builder, throws_);
+        builder.append(">(");
         {
             auto _result = build_operation(_ep, builder, throw_.result, returns_, throws_, indent);
             if (_result != nullptr)
                 return _result;
         }
+        builder.append(")");
         return nullptr;
     }
 
