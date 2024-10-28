@@ -1,6 +1,7 @@
 define Directory
 ()
 {
+    ;*
     function exists(path: String) returns bool throws FileError {
         var r Region()
 
@@ -39,7 +40,7 @@ define Directory
         }    
         return null
     }
-
+    *;
     function remove(path: String) throws FileError {
         var r Region()
 
