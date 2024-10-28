@@ -141,24 +141,57 @@ struct Transpiler : Object {
 
             case Definition::Union: {
                 auto union_ = concept.definition._Union;
-                build_union(_ep, header_builder, concept.name, union_, concept.parameters);
+                build_union(_ep, header_builder, cpp_builder, concept.name, union_, concept.parameters);
                 return nullptr;
             }
         }
     }
 
-    void build_union(Page* _ep, StringBuilder& header_builder, String name, Union& union_, Vector<GenericParameter> parameters) {
+    void build_union(Page* _ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, Union& union_, Vector<GenericParameter> parameters) {
         header_builder.append('\n');
         full_struct_name(header_builder, name, parameters);
-        header_builder.append(" {\n    enum {\n");
+        header_builder.append(" {\n");
+        {
+            auto variants = union_.variants;
+            {
+                auto _variant_iterator = variants.get_iterator();
+                while (auto _variant = _variant_iterator.next()) {
+                    Variant& variant = *_variant;
+                    header_builder.append("    ");
+                    header_builder.append(name);
+                    header_builder.append('(');
+                    build_type(header_builder, variant.type);
+                    header_builder.append(" _");
+                    build_type(header_builder, variant.type);
+                    header_builder.append(")");
+                    if (parameters.length > 0)
+                    {
+                        header_builder.append(" : _tag(");
+                        header_builder.append(variant.name);
+                        header_builder.append(") { _");
+                        header_builder.append(variant.name);
+                        header_builder.append(" = _");
+                        build_type(header_builder, variant.type);
+                        header_builder.append(";");
+                        header_builder.append(" }");
+                    } else {
+                        header_builder.append(";");
+                    }
+                    header_builder.append("\n");
+                }
+            }
+        }
+        header_builder.append("    enum {\n");
         auto variants = union_.variants;
         {
-            auto _variant_iterator = variants.get_iterator();
-            while (auto _variant = _variant_iterator.next()) {
-                Variant& variant = *_variant;
-                header_builder.append("        ");
-                header_builder.append(variant.name);
-                header_builder.append(",\n");
+            {
+                auto _variant_iterator = variants.get_iterator();
+                while (auto _variant = _variant_iterator.next()) {
+                    Variant& variant = *_variant;
+                    header_builder.append("        ");
+                    header_builder.append(variant.name);
+                    header_builder.append(",\n");
+                }
             }
         }
         header_builder.append("} _tag;\n    union {\n");
@@ -175,6 +208,28 @@ struct Transpiler : Object {
                 header_builder.append(";\n");
             }
             header_builder.append("    };\n};");
+        }
+        if (parameters.length == 0) {
+            auto _variant_iterator = variants.get_iterator();
+            while (auto _variant = _variant_iterator.next())
+            {
+                Variant& variant = *_variant;
+                cpp_builder.append('\n');
+                cpp_builder.append(name);
+                cpp_builder.append("::");
+                cpp_builder.append(name);
+                cpp_builder.append('(');
+                build_type(cpp_builder, variant.type);
+                cpp_builder.append(" _");
+                build_type(cpp_builder, variant.type);
+                cpp_builder.append(") : _tag(");
+                cpp_builder.append(variant.name);
+                cpp_builder.append(") { _");
+                cpp_builder.append(variant.name);
+                cpp_builder.append(" = _");
+                build_type(cpp_builder, variant.type);
+                cpp_builder.append("; }\n");
+            }
         }
     }
 

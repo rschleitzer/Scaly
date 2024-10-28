@@ -17,6 +17,7 @@ struct NoSuchFileOrDirectoryError : Object {
 
 struct FileError {
     FileError(UnknownFileError _UnknownFileError);
+    FileError(NoSuchFileOrDirectoryError _NoSuchFileOrDirectoryError);
     enum {
         Unknown,
         NoSuchFileOrDirectory,

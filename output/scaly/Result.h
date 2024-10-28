@@ -9,6 +9,8 @@ struct Void {
 
 template<class OK, class ERROR>
 struct Result {
+    Result(OK _OK) : _tag(Ok) { _Ok = _OK; }
+    Result(ERROR _ERROR) : _tag(Error) { _Error = _ERROR; }
     enum {
         Ok,
         Error,

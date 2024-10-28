@@ -1,11 +1,11 @@
 use scaly.containers
 define Console {
-    function print(message: pointer[const_char]) throws FileError {
+    function print(message: pointer[const_char]) {
         fputs(message, stdout)
     }
 
-    function print(message: String) throws FileError {
+    function print(message: String) {
         var r Region()
-        print(r.get_page(), message.to_c_string(r.get_page()))
+        print(message.to_c_string(r.get_page()))
     }
 }
