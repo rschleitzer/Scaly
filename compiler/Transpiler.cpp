@@ -60,6 +60,7 @@ struct Transpiler : Object {
 #include <stdlib.h>\n\
 #include <memory.h>\n\
 #include <stdio.h>\n\
+#include <unistd.h>\n\
 #include <sys/stat.h>\n\
 #include <errno.h>\n\
 #include <math.h>\n\
