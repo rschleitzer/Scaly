@@ -1,11 +1,14 @@
 #ifndef _BuilderList_h
 #define _BuilderList_h
 #include "../../scaly.h"
+using namespace scaly;
 using namespace scaly::memory;
 
 template<class T>
 struct BuilderList : Object {
     Node<T>* head;
+
+    BuilderList(Node<T>* head) : head(head) {}
 
     BuilderList() : head(nullptr){
     }

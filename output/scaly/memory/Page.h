@@ -1,6 +1,7 @@
 #ifndef _Page_h
 #define _Page_h
 #include "../../scaly.h"
+using namespace scaly;
 using namespace scaly::memory;
 const int PAGE_SIZE = 0x1000;
 
@@ -9,6 +10,7 @@ struct Page : Object {
     Page* current_page;
     Page* next_page;
     PageList exclusive_pages;
+    Page (void* next_object, Page* current_page, Page* next_page, PageList exclusive_pages);
     static Page* get(void* address);
     void deallocate_extensions();
     void reset();

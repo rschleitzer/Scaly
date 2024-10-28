@@ -2,6 +2,8 @@
 namespace scaly {
 namespace memory {
 
+Page::Page(void* next_object, Page* current_page, Page* next_page, PageList exclusive_pages) : next_object(next_object), current_page(current_page), next_page(next_page), exclusive_pages(exclusive_pages) {}
+
 Page* Page::get(void* address) {
     const auto mask = ~(size_t)(PAGE_SIZE-1);
     const auto page = (Page*)((size_t)address&mask);

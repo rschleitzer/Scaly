@@ -1,12 +1,15 @@
 #ifndef _MultiMap_h
 #define _MultiMap_h
 #include "../../scaly.h"
+using namespace scaly;
 using namespace scaly::memory;
 
 template<class K, class V>
 struct MultiMapIterator : Object {
     VectorIterator<Vector<KeyValuePair<K, Vector<V>>>> slot_iterator;
     VectorIterator<KeyValuePair<K, Vector<V>>> element_iterator;
+
+    MultiMapIterator(VectorIterator<Vector<KeyValuePair<K, Vector<V>>>> slot_iterator, VectorIterator<KeyValuePair<K, Vector<V>>> element_iterator) : slot_iterator(slot_iterator), element_iterator(element_iterator) {}
 
     MultiMapIterator(MultiMap<K, V> multimap) : slot_iterator(VectorIterator<Vector<KeyValuePair<K, Vector<V>>>>(multimap.slots)), element_iterator(VectorIterator<KeyValuePair<K, Vector<V>>>(slot_iterator.next())){
     }
@@ -27,6 +30,8 @@ struct MultiMapIterator : Object {
 template<class K, class V>
 struct MultiMap : Object {
     Vector<Vector<KeyValuePair<K, Vector<V>>>>* slots;
+
+    MultiMap(Vector<Vector<KeyValuePair<K, Vector<V>>>>* slots) : slots(slots) {}
 
     MultiMap() : slots(nullptr) {}
 

@@ -1,11 +1,14 @@
 #ifndef _HashSet_h
 #define _HashSet_h
 #include "../../scaly.h"
+using namespace scaly;
 using namespace scaly::memory;
 
 template<class T>
 struct HashSet : Object {
     Vector<Vector<T>>* slots;
+
+    HashSet(Vector<Vector<T>>* slots) : slots(slots) {}
 
     HashSet(Page* rp, HashSetBuilder<T> hash_set_builder) {
         auto r = Region();

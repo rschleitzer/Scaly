@@ -1,1 +1,2 @@
+define Void()
 define Result[OK, ERROR] union (Ok: OK, Error: ERROR)

@@ -2,6 +2,8 @@
 namespace scaly {
 namespace memory {
 
+Region::Region(Page* page) : page(page) {}
+
 Region::Region() {
     page = nullptr;
 }

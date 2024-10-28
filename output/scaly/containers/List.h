@@ -1,11 +1,14 @@
 #ifndef _List_h
 #define _List_h
 #include "../../scaly.h"
+using namespace scaly;
 using namespace scaly::memory;
 
 template<class T>
 struct List : Object {
     Node<T>* head;
+
+    List(Node<T>* head) : head(head) {}
 
     List() : head(nullptr) {}
 

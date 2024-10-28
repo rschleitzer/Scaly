@@ -1,11 +1,12 @@
 #ifndef _StringBuilder_h
 #define _StringBuilder_h
 #include "../../scaly.h"
+using namespace scaly;
 using namespace scaly::memory;
 
 struct StringBuilder : Object {
     Array<char> buffer;
-    StringBuilder(Array<char> buffer);
+    StringBuilder (Array<char> buffer);
     StringBuilder();
     StringBuilder(char character);
     StringBuilder(String string);

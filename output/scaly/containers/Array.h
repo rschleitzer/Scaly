@@ -1,12 +1,15 @@
 #ifndef _Array_h
 #define _Array_h
 #include "../../scaly.h"
+using namespace scaly;
 using namespace scaly::memory;
 
 template<class T>
 struct Array : Object {
     size_t length;
     Vector<T>* vector;
+
+    Array(size_t length, Vector<T>* vector) : length(length), vector(vector) {}
 
     Array() : length(0), vector(nullptr){
     }

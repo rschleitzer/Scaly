@@ -1,12 +1,15 @@
 #ifndef _MultiMapBuilder_h
 #define _MultiMapBuilder_h
 #include "../../scaly.h"
+using namespace scaly;
 using namespace scaly::memory;
 
 template<class K, class V>
 struct MultiMapBuilder : Object {
     size_t length;
     Vector<BuilderList<Slot<KeyValuePair<K, Array<V>*>>>>* slots;
+
+    MultiMapBuilder(size_t length, Vector<BuilderList<Slot<KeyValuePair<K, Array<V>*>>>>* slots) : length(length), slots(slots) {}
 
     MultiMapBuilder() : length(0), slots(nullptr) {}
 

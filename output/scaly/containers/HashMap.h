@@ -1,12 +1,15 @@
 #ifndef _HashMap_h
 #define _HashMap_h
 #include "../../scaly.h"
+using namespace scaly;
 using namespace scaly::memory;
 
 template<class K, class V>
 struct HashMapIterator : Object {
     VectorIterator<Vector<KeyValuePair<K, V>>> slot_iterator;
     VectorIterator<KeyValuePair<K, V>> element_iterator;
+
+    HashMapIterator(VectorIterator<Vector<KeyValuePair<K, V>>> slot_iterator, VectorIterator<KeyValuePair<K, V>> element_iterator) : slot_iterator(slot_iterator), element_iterator(element_iterator) {}
 
     HashMapIterator(HashMap<K, V> hash_map) : slot_iterator(VectorIterator<Vector<KeyValuePair<K, V>>>(hash_map.slots)), element_iterator(VectorIterator<KeyValuePair<K, V>>(slot_iterator.next())){
     }
@@ -27,6 +30,8 @@ struct HashMapIterator : Object {
 template<class K, class V>
 struct HashMap : Object {
     Vector<Vector<KeyValuePair<K, V>>>* slots;
+
+    HashMap(Vector<Vector<KeyValuePair<K, V>>>* slots) : slots(slots) {}
 
     HashMap() : slots(nullptr) {}
 

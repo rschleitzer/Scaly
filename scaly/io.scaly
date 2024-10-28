@@ -1,7 +1,7 @@
 define io {
     module Console
     module FileError
-    module Directory
+    ;module Directory
     ;module File
     ;module Path
 

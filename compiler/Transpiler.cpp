@@ -72,7 +72,7 @@ struct Transpiler : Object {
             header_builder.append(".h\"\n");
         }
         if (!module.name.equals("scaly") && !module.name.equals("memory"))
-            header_builder.append("using namespace scaly::memory;\n");
+            header_builder.append("using namespace scaly;\nusing namespace scaly::memory;\n");
         
         build_uses(header_builder, module.uses);
         build_uses(cpp_builder, module.uses);
@@ -256,11 +256,11 @@ struct Transpiler : Object {
         Region _r;
         header_builder.append('\n');
         full_struct_name(header_builder, name, parameters);
-        if (!name.equals(String(_r.get_page(), "Object")))
+        if (!name.equals(String(_r.get_page(), "Object")) && !name.equals(String(_r.get_page(), "Void")))
             header_builder.append(" : Object");
         header_builder.append(" {");
 
-        bool must_build_default_initializer = false;
+        bool must_build_properties_initializer = false;
         auto property_iterator = structure.properties.get_iterator();
         while (auto property = property_iterator.next()) {
             if (property->type) {
@@ -274,11 +274,14 @@ struct Transpiler : Object {
             header_builder.append(';');
 
             if (property->initializer != nullptr)
-                must_build_default_initializer = true;
+                must_build_properties_initializer = true;
         }
 
-        if (must_build_default_initializer) {
-            auto _result = build_default_initializer(_ep, header_builder, cpp_builder, name, parameters.length > 0, structure.properties);
+        if (structure.properties.length > 0)
+            build_default_initializer(_ep, header_builder, cpp_builder, name, parameters.length > 0, structure.properties);
+
+        if (must_build_properties_initializer) {
+            auto _result = build_properties_initializer(_ep, header_builder, cpp_builder, name, parameters.length > 0, structure.properties);
             if (_result != nullptr)
                 return _result;
         }
@@ -326,18 +329,86 @@ struct Transpiler : Object {
         Region _r;
         build_initializer_header(header_builder, cpp_builder, name, is_generic);
         if (is_generic) {
-            build_initializer_list(_ep, header_builder, is_generic, properties, String(_r.get_page(), "        "));
+            build_default_initializer_list(_ep, header_builder, is_generic, properties, String(_r.get_page(), "        "));
             header_builder.append(" {}");
         }
         else {
-            build_initializer_list(_ep, cpp_builder, is_generic, properties, String(_r.get_page(), "    "));
+            build_default_initializer_list(_ep, cpp_builder, is_generic, properties, String(_r.get_page(), "    "));
+            cpp_builder.append(" {}");
+            header_builder.append(" (");
+            {
+                auto property_iterator = properties.get_iterator();
+                bool first = true;
+                while (auto property = property_iterator.next()) {
+                    if (first) {
+                        first = false;
+                    }
+                    else {
+                        header_builder.append(", ");
+                    }
+                    build_type(header_builder, property->type);
+                    header_builder.append(' ');
+                    header_builder.append(property->name);
+                }
+            }
+            header_builder.append(");");
+        }
+        return nullptr;
+    }
+
+    TranspilerError* build_default_initializer_list(Page* _ep, StringBuilder& builder, bool is_generic, Vector<Property>& properties, String indent) {
+        builder.append('(');
+        {
+            auto property_iterator = properties.get_iterator();
+            bool first = true;
+            while (auto property = property_iterator.next()) {
+                if (first) {
+                    first = false;
+                }
+                else {
+                    builder.append(", ");
+                }
+                build_type(builder, property->type);
+                builder.append(' ');
+                builder.append(property->name);
+            }
+        }
+        builder.append(") : ");
+        {
+            auto property_iterator = properties.get_iterator();
+            bool first = true;
+            while (auto property = property_iterator.next()) {
+                if (first) {
+                    first = false;
+                }
+                else {
+                    builder.append(", ");
+                }
+                builder.append(property->name);
+                builder.append('(');
+                builder.append(property->name);
+                builder.append(')');
+            }
+        }
+        return nullptr;
+    }
+
+    TranspilerError* build_properties_initializer(Page* _ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, bool is_generic, Vector<Property>& properties) {
+        Region _r;
+        build_initializer_header(header_builder, cpp_builder, name, is_generic);
+        if (is_generic) {
+            build_properties_initializer_list(_ep, header_builder, is_generic, properties, String(_r.get_page(), "        "));
+            header_builder.append(" {}");
+        }
+        else {
+            build_properties_initializer_list(_ep, cpp_builder, is_generic, properties, String(_r.get_page(), "    "));
             cpp_builder.append(" {}");
             header_builder.append(" ();");
         }
         return nullptr;
     }
 
-    TranspilerError* build_initializer_list(Page* _ep, StringBuilder& builder, bool is_generic, Vector<Property>& properties, String indent) {
+    TranspilerError* build_properties_initializer_list(Page* _ep, StringBuilder& builder, bool is_generic, Vector<Property>& properties, String indent) {
         builder.append("() : ");
         auto property_iterator = properties.get_iterator();
         bool first = true;

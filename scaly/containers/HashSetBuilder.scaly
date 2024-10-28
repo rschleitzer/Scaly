@@ -1,11 +1,4 @@
-define Slot[T]
-(
-    value: T
-    hash_code: size_t
-)
-{
-    init(value: T, hash_code: size_t) (value(value), hash_code(hash_code)) {}
-}
+define Slot[T](value: T, hash_code: size_t)
 
 define HashSetBuilder[T]
 (

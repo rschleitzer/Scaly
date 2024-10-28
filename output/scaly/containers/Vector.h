@@ -1,12 +1,15 @@
 #ifndef _Vector_h
 #define _Vector_h
 #include "../../scaly.h"
+using namespace scaly;
 using namespace scaly::memory;
 
 template<class T>
 struct VectorIterator : Object {
     Vector<T>* vector;
     size_t position;
+
+    VectorIterator(Vector<T>* vector, size_t position) : vector(vector), position(position) {}
 
     VectorIterator(Vector<T>* vector) : vector(vector), position(0){
     }
@@ -25,6 +28,8 @@ template<class T>
 struct Vector : Object {
     size_t length;
     T* data;
+
+    Vector(size_t length, T* data) : length(length), data(data) {}
 
     Vector() : length(0), data(nullptr){
     }

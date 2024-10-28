@@ -1,11 +1,4 @@
-define KeyValuePair[K, V]
-(
-    key: K
-    value: V
-)
-{
-    init (key: K, value: V) (key(key), value(value)) {}
-}
+define KeyValuePair[K, V](key: K, value: V)
 
 define HashMapBuilder[K, V]
 (

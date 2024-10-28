@@ -2,10 +2,7 @@
 namespace scaly {
 namespace memory {
 
-PageNode::PageNode(Page* thePage, PageNode* nextNode) {
-    page = thePage;
-    next = nextNode;
-}
+PageNode::PageNode(Page* page, PageNode* next) : page(page), next(next) {}
 
 }
 }

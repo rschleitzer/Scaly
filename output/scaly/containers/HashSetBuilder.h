@@ -1,6 +1,7 @@
 #ifndef _HashSetBuilder_h
 #define _HashSetBuilder_h
 #include "../../scaly.h"
+using namespace scaly;
 using namespace scaly::memory;
 
 template<class T>
@@ -8,14 +9,15 @@ struct Slot : Object {
     T value;
     size_t hash_code;
 
-    Slot(T value, size_t hash_code) : value(value), hash_code(hash_code){
-    }
+    Slot(T value, size_t hash_code) : value(value), hash_code(hash_code) {}
 };
 
 template<class T>
 struct HashSetBuilder : Object {
     size_t length;
     Vector<BuilderList<Slot<T>>>* slots;
+
+    HashSetBuilder(size_t length, Vector<BuilderList<Slot<T>>>* slots) : length(length), slots(slots) {}
 
     HashSetBuilder() : length(0), slots(nullptr) {}
 

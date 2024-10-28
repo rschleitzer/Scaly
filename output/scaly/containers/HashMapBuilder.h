@@ -1,6 +1,7 @@
 #ifndef _HashMapBuilder_h
 #define _HashMapBuilder_h
 #include "../../scaly.h"
+using namespace scaly;
 using namespace scaly::memory;
 
 template<class K, class V>
@@ -8,14 +9,15 @@ struct KeyValuePair : Object {
     K key;
     V value;
 
-    KeyValuePair(K key, V value) : key(key), value(value){
-    }
+    KeyValuePair(K key, V value) : key(key), value(value) {}
 };
 
 template<class K, class V>
 struct HashMapBuilder : Object {
     size_t length;
     Vector<BuilderList<Slot<KeyValuePair<K, V>>>>* slots;
+
+    HashMapBuilder(size_t length, Vector<BuilderList<Slot<KeyValuePair<K, V>>>>* slots) : length(length), slots(slots) {}
 
     HashMapBuilder() : length(0), slots(nullptr) {}
 

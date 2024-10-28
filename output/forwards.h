@@ -1,6 +1,7 @@
 typedef const char const_char;
 typedef const void const_void;
 namespace scaly {
+struct Void;
 namespace memory {
 struct Object;
 struct PageNode;
@@ -57,6 +58,5 @@ namespace Console {
 }
 struct UnknownFileError;
 struct NoSuchFileOrDirectoryError;
-struct Directory;
 }
 }

@@ -2,6 +2,8 @@
 namespace scaly {
 namespace containers {
 
+StringIterator::StringIterator(char* current, char* last) : current(current), last(last) {}
+
 StringIterator::StringIterator(String string) {
     const auto buffer = string.get_buffer();
     current = buffer;

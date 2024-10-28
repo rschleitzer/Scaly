@@ -2,8 +2,7 @@
 namespace scaly {
 namespace containers {
 
-StringBuilder::StringBuilder(Array<char> buffer) : buffer(buffer){
-}
+StringBuilder::StringBuilder(Array<char> buffer) : buffer(buffer) {}
 
 StringBuilder::StringBuilder() : StringBuilder(Array<char>()){
 }

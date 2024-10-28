@@ -1,6 +1,7 @@
 #ifndef _containers_h
 #define _containers_h
 #include "../scaly.h"
+using namespace scaly;
 using namespace scaly::memory;
 namespace containers {
 #include "containers/Node.h"

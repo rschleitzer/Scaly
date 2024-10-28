@@ -1,9 +1,5 @@
 define PageListIterator(current: pointer[PageNode])
 {
-    init(head: pointer[PageNode]) {
-        set current: head
-    }
-
     procedure next(this: PageListIterator) returns pointer[pointer[Page]]
     {
         if current <> null

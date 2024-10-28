@@ -3,8 +3,6 @@ define StringBuilder
     buffer: Array[char]
 )
 {
-    init (buffer: Array[char]) (buffer(buffer)) {}
-
     init () (StringBuilder(Array[char]())) {}
 
     init (character: char) (StringBuilder()) { append(character) }

@@ -1,9 +1,11 @@
 #ifndef _Result_h
 #define _Result_h
 #include "../scaly.h"
+using namespace scaly;
 using namespace scaly::memory;
 
-struct Void {};
+struct Void {
+};
 
 template<class OK, class ERROR>
 struct Result {

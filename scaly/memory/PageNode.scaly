@@ -3,9 +3,3 @@ define PageNode
     page: pointer[Page]
     next: pointer[PageNode]
 )
-{
-    init(thePage: pointer[Page], nextNode: pointer[PageNode]) {
-        set page: thePage
-        set next: nextNode 
-    }
-}

@@ -1,6 +1,4 @@
 define BuilderListIterator[T] (current: pointer[Node[T]]) {
-    init (head: pointer[Node[T]]) (current(head)) {}
-
     function next(this: BuilderListIterator[T]) returns pointer[T] {
         if current <> null
         {

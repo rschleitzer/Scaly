@@ -1,15 +1,14 @@
 #ifndef _ListIterator_h
 #define _ListIterator_h
 #include "../../scaly.h"
+using namespace scaly;
 using namespace scaly::memory;
 
 template<class T>
 struct ListIterator : Object {
     Node<T>* current;
 
-    ListIterator(Node<T>* head) {
-        current = head;
-    }
+    ListIterator(Node<T>* current) : current(current) {}
 
     T* next() {
         if (current != nullptr) {

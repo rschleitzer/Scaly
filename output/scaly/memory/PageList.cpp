@@ -2,6 +2,8 @@
 namespace scaly {
 namespace memory {
 
+PageList::PageList(PageNode* head) : head(head) {}
+
 PageList::PageList() : head(nullptr) {}
 
 bool PageList::remove(Page* element) {
