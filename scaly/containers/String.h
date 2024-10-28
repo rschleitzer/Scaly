@@ -5,6 +5,7 @@ using namespace scaly::memory;
 
 const size_t PACKED_SIZE = sizeof(size_t) * 8 / 7;
 
+struct StringIterator;
 struct String : Object {
     char* data;
 
@@ -21,6 +22,7 @@ struct String : Object {
     bool equals(String other) const;
     bool equals(const char* other) const;
     bool equals(Vector<char> other) const;
+    StringIterator get_iterator();
     size_t hash() const;
 };
 

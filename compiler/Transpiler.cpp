@@ -152,7 +152,7 @@ struct Transpiler : Object {
         header_builder.append(" {\n    enum {\n");
         auto variants = union_.variants;
         {
-            auto _variant_iterator = VectorIterator<Variant>(&variants);
+            auto _variant_iterator = variants.get_iterator();
             while (auto _variant = _variant_iterator.next()) {
                 Variant& variant = *_variant;
                 header_builder.append("        ");
@@ -162,7 +162,7 @@ struct Transpiler : Object {
         }
         header_builder.append("} _tag;\n    union {\n");
         {
-            auto _variant_iterator = VectorIterator<Variant>(&variants);
+            auto _variant_iterator = variants.get_iterator();
             while (auto _variant = _variant_iterator.next()) {
                 Variant& variant = *_variant;
                 if (variant.type == nullptr)
@@ -209,7 +209,7 @@ struct Transpiler : Object {
 
     TranspilerError* build_modules(Page* _ep, String path, String name, StringBuilder& header_builder, Vector<Module>& modules, String main_header, String namespace_open, String namespace_close) {
         Region _r;
-        auto module_iterator = VectorIterator<Module>(&modules);
+        auto module_iterator = modules.get_iterator();
         while (auto module = module_iterator.next()) {
             header_builder.append("#include \"");
             header_builder.append(name);
@@ -226,7 +226,7 @@ struct Transpiler : Object {
 
     TranspilerError* build_symbols(Page* _ep, String path, String source, String name, StringBuilder& header_builder, StringBuilder& cpp_builder, String main_header, String namespace_open, String namespace_close, Vector<Member> symbols) {
         Region _r;
-        auto member_iterator = VectorIterator<Member>(&symbols);
+        auto member_iterator = symbols.get_iterator();
         while (auto member = member_iterator.next()) {
             switch (member->_tag) {
                 case Member::Functions: {
@@ -260,7 +260,7 @@ struct Transpiler : Object {
         header_builder.append(" {");
 
         bool must_build_default_initializer = false;
-        auto property_iterator = VectorIterator<Property>(&structure.properties);
+        auto property_iterator = structure.properties.get_iterator();
         while (auto property = property_iterator.next()) {
             if (property->type) {
                 header_builder.append('\n');
@@ -282,7 +282,7 @@ struct Transpiler : Object {
                 return _result;
         }
 
-        auto initializers_iterator = VectorIterator<Initializer>(&structure.initializers);
+        auto initializers_iterator = structure.initializers.get_iterator();
         while (auto initializer = initializers_iterator.next()) {
             auto _result = build_initializer(_ep, header_builder, cpp_builder, name, parameters.length > 0, initializer);
             if (_result != nullptr)
@@ -295,7 +295,7 @@ struct Transpiler : Object {
                 return _result;
         }
 
-        auto member_iterator = VectorIterator<Member>(&structure.members);
+        auto member_iterator = structure.members.get_iterator();
         while (auto member = member_iterator.next()) {
             switch (member->_tag) {
                 case Member::Functions: {
@@ -338,7 +338,7 @@ struct Transpiler : Object {
 
     TranspilerError* build_initializer_list(Page* _ep, StringBuilder& builder, bool is_generic, Vector<Property>& properties, String indent) {
         builder.append("() : ");
-        auto property_iterator = VectorIterator<Property>(&properties);
+        auto property_iterator = properties.get_iterator();
         bool first = true;
         while (auto property = property_iterator.next()) {
             if (property->initializer == nullptr)
@@ -428,11 +428,11 @@ struct Transpiler : Object {
 
     void build_uses(StringBuilder& builder, Vector<Use>& uses) {
         Region _r;
-        auto uses_iterator = VectorIterator<Use>(&uses);
+        auto uses_iterator = uses.get_iterator();
         while (auto use = uses_iterator.next()) {
             builder.append("using namespace ");
             bool first = true;
-            auto namespace_iterator = VectorIterator<String>(&use->path);
+            auto namespace_iterator = use->path.get_iterator();
             while(auto namespace_ = namespace_iterator.next()) {
                 if (first) {
                     first = false;
@@ -448,7 +448,7 @@ struct Transpiler : Object {
 
     TranspilerError* build_functions(Page* _ep, StringBuilder& header_builder, StringBuilder& cpp_builder, Vector<Function>& functions, String* name, bool is_template, bool in_class) {
         Region _r;
-        auto function_iterator = VectorIterator<Function>(&functions);
+        auto function_iterator = functions.get_iterator();
         bool first = true;
         while (auto function = function_iterator.next()) {
             String* location = nullptr;
@@ -521,14 +521,14 @@ struct Transpiler : Object {
                 }
                 else {
                     if (is_initializer) {
-                        auto _operand_iterator = VectorIterator<Operand>(&action.source);
+                        auto _operand_iterator = action.source.get_iterator();
                         while (auto _operand = _operand_iterator.next()) {
                             Operand& operand = *_operand;
                             switch (operand.expression._tag) {
                                 case Expression::Tuple: {
                                     auto tuple = operand.expression._Tuple;
                                     bool first = true;
-                                    auto _component_iterator = VectorIterator<Component>(&tuple.components);
+                                    auto _component_iterator = tuple.components.get_iterator();
                                     while (auto _component = _component_iterator.next()) {
                                         Component& component = *_component;
                                         if (first) {
@@ -641,7 +641,7 @@ struct Transpiler : Object {
     }
 
     TranspilerError* build_operation(Page* _ep, StringBuilder& builder, Vector<Operand>& operation, Type* returns_, Type* throws_, String indent) {
-        auto operation_iterator = VectorIterator<Operand>(&operation);
+        auto operation_iterator = operation.get_iterator();
         while (auto operand = operation_iterator.next()) {
             switch (operand->expression._tag) {
                 case Expression::Constant: {
@@ -653,14 +653,14 @@ struct Transpiler : Object {
                 }
                 case Expression::Type: {
                     auto type = operand->expression._Type;
-                    auto _result = build_variable(_ep, builder, type, *operand->postfixes);
+                    auto _result = build_variable(_ep, builder, type, operand->postfixes);
                     if (_result != nullptr)
                         return _result;
                     break;
                 }
                 case Expression::Tuple: {
                     auto tuple = operand->expression._Tuple;
-                    auto _result = build_tuple(_ep, builder, tuple, *operand->postfixes, returns_, throws_, indent);
+                    auto _result = build_tuple(_ep, builder, tuple, operand->postfixes, returns_, throws_, indent);
                     if (_result != nullptr)
                         return _result;
                     break;
@@ -768,8 +768,8 @@ struct Transpiler : Object {
         return nullptr;
     }
 
-    TranspilerError* build_variable(Page* _ep, StringBuilder& builder, Type& type, Vector<Postfix>& postfixes) {
-        auto name_iterator = VectorIterator<String>(&type.name);
+    TranspilerError* build_variable(Page* _ep, StringBuilder& builder, Type& type, Vector<Postfix>* postfixes) {
+        auto name_iterator = type.name.get_iterator();
         auto first_name_part = name_iterator.next();
         if (first_name_part->equals("=")) {
             builder.append(" == ");
@@ -831,22 +831,25 @@ struct Transpiler : Object {
 
         build_type(builder, &type);
 
-        auto postfixes_iterator = VectorIterator<Postfix>(&postfixes);
-        while (auto postfix = postfixes_iterator.next()) {
-            if (postfix != nullptr) {
-                switch (postfix->_tag) {
-                    case Postfix::Catcher:
-                        return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "Catcher")));
-                    case Postfix::MemberAccess: {
-                        if (first_name_part->equals("this"))
-                            builder.append("->");
-                        else
-                            builder.append('.');
-                        auto member_access = postfix->_MemberAccess;
-                        auto member_access_iterator = VectorIterator<String>(&member_access);
-                        auto member = member_access_iterator.next();
-                        builder.append(*member);
-                        return nullptr;
+        if (postfixes != nullptr)
+        {
+            auto postfixes_iterator = postfixes->get_iterator();
+            while (auto postfix = postfixes_iterator.next()) {
+                if (postfix != nullptr) {
+                    switch (postfix->_tag) {
+                        case Postfix::Catcher:
+                            return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "Catcher")));
+                        case Postfix::MemberAccess: {
+                            if (first_name_part->equals("this"))
+                                builder.append("->");
+                            else
+                                builder.append('.');
+                            auto member_access = postfix->_MemberAccess;
+                            auto member_access_iterator = member_access.get_iterator();
+                            auto member = member_access_iterator.next();
+                            builder.append(*member);
+                            return nullptr;
+                        }
                     }
                 }
             }
@@ -855,8 +858,8 @@ struct Transpiler : Object {
         return nullptr;
     }
 
-    TranspilerError* build_tuple(Page* _ep, StringBuilder& builder, Tuple& tuple, Vector<Postfix>& postfixes, Type* returns_, Type* throws_, String indent) {
-        auto tuple_iterator = VectorIterator<Component>(&tuple.components);
+    TranspilerError* build_tuple(Page* _ep, StringBuilder& builder, Tuple& tuple, Vector<Postfix>* postfixes, Type* returns_, Type* throws_, String indent) {
+        auto tuple_iterator = tuple.components.get_iterator();
         bool first = true;
         builder.append('(');
         while (auto property = tuple_iterator.next()) {
@@ -870,20 +873,23 @@ struct Transpiler : Object {
         }
         builder.append(')');
 
-        auto postfixes_iterator = VectorIterator<Postfix>(&postfixes);
-        auto postfix = postfixes_iterator.next();
-        if (postfix != nullptr) {
-            switch (postfix->_tag) {
-                case Postfix::Catcher:
-                    return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "Catcher")));
-                case Postfix::MemberAccess: {
-                    auto member_access = postfix->_MemberAccess;
-                    auto member_access_iterator = VectorIterator<String>(&member_access);
-                    while (auto member = member_access_iterator.next()) {
-                        builder.append('.');
-                        builder.append(*member);
+        if (postfixes != nullptr)
+        {
+            auto postfixes_iterator = postfixes->get_iterator();
+            auto postfix = postfixes_iterator.next();
+            if (postfix != nullptr) {
+                switch (postfix->_tag) {
+                    case Postfix::Catcher:
+                        return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "Catcher")));
+                    case Postfix::MemberAccess: {
+                        auto member_access = postfix->_MemberAccess;
+                        auto member_access_iterator = member_access.get_iterator();
+                        while (auto member = member_access_iterator.next()) {
+                            builder.append('.');
+                            builder.append(*member);
+                        }
+                        return nullptr;
                     }
-                    return nullptr;
                 }
             }
         }
@@ -892,7 +898,7 @@ struct Transpiler : Object {
     }
 
     TranspilerError* build_matrix(Page* _ep, StringBuilder& builder, Matrix& matrix, Type* returns_, Type* throws_, String indent) {
-        auto operations_iterator = VectorIterator<Vector<Operand>>(&matrix.operations);
+        auto operations_iterator = matrix.operations.get_iterator();
         bool first = true;
         builder.append('[');
         while (auto operation = operations_iterator.next()) {
@@ -1078,7 +1084,7 @@ struct Transpiler : Object {
     }
 
     TranspilerError* build_statements(Page* _ep, StringBuilder& builder, Vector<Statement>& statements, Type* returns_, Type* throws_, String indent) {
-        auto statment_iterator = VectorIterator<Statement>(&statements);
+        auto statment_iterator = statements.get_iterator();
         while (auto statement = statment_iterator.next()) {
             builder.append('\n');
             builder.append(indent);
@@ -1229,7 +1235,7 @@ struct Transpiler : Object {
                 builder.append(", ");
         }
 
-        auto input_iterator = VectorIterator<Item>(&input);
+        auto input_iterator = input.get_iterator();
         bool first = true;
         bool is_static = true;
         while (auto property = input_iterator.next()) {
@@ -1261,7 +1267,7 @@ struct Transpiler : Object {
         if (parameters.length > 0) {
             builder.append("template<");
             {
-                auto generic_iterator = VectorIterator<GenericParameter>(&parameters);
+                auto generic_iterator = parameters.get_iterator();
                 size_t i = 0;
                 while(auto generic = generic_iterator.next()) {
                     builder.append("class ");
@@ -1280,7 +1286,7 @@ struct Transpiler : Object {
     bool build_type(StringBuilder& builder, Type* type) {
         Region _r;
         if (type->name.length == 1 && type->name[0]->equals(String(_r.get_page(), "pointer"))) {
-            auto generic_iterator = VectorIterator<Type>(type->generics);
+            auto generic_iterator = type->generics->get_iterator();
             while(auto generic = generic_iterator.next()) {
                 build_type(builder, generic);
                 break;
@@ -1290,7 +1296,7 @@ struct Transpiler : Object {
         }
 
         {
-            auto type_name_iterator = VectorIterator<String>(&type->name);
+            auto type_name_iterator = type->name.get_iterator();
             size_t i = 0;
             while (auto name_part = type_name_iterator.next()) {
                 builder.append(*name_part);
@@ -1304,7 +1310,7 @@ struct Transpiler : Object {
             if (type->generics->length > 0) {
                 builder.append('<');
                 {
-                    auto generic_iterator = VectorIterator<Type>(type->generics);
+                    auto generic_iterator = type->generics->get_iterator();
                     size_t i = 0;
                     while(auto generic = generic_iterator.next()) {
                         build_type(builder, generic);
@@ -1347,7 +1353,7 @@ struct Transpiler : Object {
             header_builder.append("[]");
             header_builder.append(" = { ");
             auto operations = global.value[0]->expression._Matrix.operations;
-            auto _operation_iterator = VectorIterator<Vector<Operand>>(&operations);
+            auto _operation_iterator = operations.get_iterator();
             while (auto operation = _operation_iterator.next()) {
                 build_operation(_ep, header_builder, *operation, nullptr, nullptr, String());
                 header_builder.append(", ");
@@ -1443,7 +1449,7 @@ typedef const void const_void;\n");
 
     TranspilerError* forward_includes_for_modules(Page* _ep, StringBuilder& builder, Vector<Module> modules) {
         Region _r;
-        auto module_iterator = VectorIterator<Module>(&modules);
+        auto module_iterator = modules.get_iterator();
         while (auto module = module_iterator.next()) {
             {
                 auto _result = forward_includes_for_symbols(_ep, builder, module->members);
@@ -1457,7 +1463,7 @@ typedef const void const_void;\n");
 
     TranspilerError* forward_includes_for_symbols(Page* _ep, StringBuilder& builder, Vector<Member> members) {
         Region _r;
-        auto member_iterator = VectorIterator<Member>(&members);
+        auto member_iterator = members.get_iterator();
         while (auto member = member_iterator.next()) {
             switch (member->_tag) {
                 case Member::Concept:
@@ -1572,12 +1578,12 @@ typedef const void const_void;\n");
 
     void build_vscode_source_files_list(StringBuilder& builder, String path, Vector<Module>& modules, Vector<Member> members) {
         Region _r;
-        auto _module_iterator = VectorIterator<Module>(&modules);
+        auto _module_iterator = modules.get_iterator();
         while (auto module = _module_iterator.next()) {
             build_vscode_source_files(builder, path, *module);
         }
 
-        auto member_iterator = VectorIterator<Member>(&members);
+        auto member_iterator = members.get_iterator();
         while (auto member = member_iterator.next()) {
             switch (member->_tag) {
                 case Member::Concept:
@@ -1613,7 +1619,7 @@ typedef const void const_void;\n");
         builder.append("#include \"main.h\"\n\n");
         builder.append("int main(int argc, char** argv) {");
 
-        auto iter = VectorIterator<Statement>(&program.statements);
+        auto iter = program.statements.get_iterator();
         while(auto statement = iter.next()) {
             builder.append("\n    ");
             build_statement(_ep, builder, statement, nullptr, nullptr, String());

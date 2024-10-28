@@ -11,7 +11,7 @@ struct Position {
 };
 
 Position calculate_position_from_string(Page* _rp, String text, size_t offset) {
-    StringIterator iterator(text);
+    auto iterator = text.get_iterator();
     size_t line = 1;
     size_t column = 1;
     size_t counter = 0;
@@ -30,9 +30,9 @@ Position calculate_position_from_string(Page* _rp, String text, size_t offset) {
     return Position(0, 0);
 }
 
-String build_hint_lines_from_string(Page* _rp, const String& text, size_t start_offset, size_t end_offset, Position start_position, Position end_position) {
+String build_hint_lines_from_string(Page* _rp, String text, size_t start_offset, size_t end_offset, Position start_position, Position end_position) {
     Region _r;
-    StringIterator iterator(text);
+    auto iterator = text.get_iterator();
     size_t current_line = 1;
     size_t current_column = 1;
     size_t counter = 0;

@@ -125,7 +125,7 @@ struct Lexer : Object {
     size_t position;
 
     Lexer(String deck)
-      : chars(StringIterator(deck)),
+      : chars(deck.get_iterator()),
         token(Token(EmptyToken()))
     {
         character = nullptr;

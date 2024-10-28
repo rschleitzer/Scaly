@@ -19,7 +19,7 @@ struct HashMapBuilder : Object {
     HashMapBuilder<K, V>(Page* _rp, Vector<KeyValuePair<K, V>>& vector) : HashMapBuilder<K, V>() {
         if (vector.length > 0) {
             this->reallocate(vector.length);
-            auto vector_iterator = VectorIterator<KeyValuePair<K, V>>(&vector);
+            auto vector_iterator = VectorIterator<KeyValuePair<K, V>>(vector);
             while (auto element = vector_iterator.next()) {
                 this->add_internal(element->key, element->value);
             }
@@ -32,7 +32,7 @@ struct HashMapBuilder : Object {
         auto slots = new(alignof(Vector<BuilderList<Slot<KeyValuePair<K, V>>>>), slots_page) Vector<BuilderList<Slot<KeyValuePair<K, V>>>>(slots_page, hash_size);
 
         if (this->slots != nullptr) {
-            auto vector_iterator = VectorIterator<BuilderList<Slot<KeyValuePair<K, V>>>>(this->slots);
+            auto vector_iterator = VectorIterator<BuilderList<Slot<KeyValuePair<K, V>>>>(*this->slots);
             while (auto element = vector_iterator.next()) {
                 auto list_iterator = BuilderListIterator<Slot<KeyValuePair<K, V>>>(element->head);
                 while (auto item = list_iterator.next())

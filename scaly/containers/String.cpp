@@ -253,6 +253,10 @@ bool String::equals(Vector<char> other) const {
     return memcmp(this->data + index + 1, other.data, length) == 0;
 }
 
+StringIterator String::get_iterator()  {
+    return StringIterator(*this);
+}
+
 size_t String::hash() const {
     size_t length = 0;
     if (this->data != nullptr) {

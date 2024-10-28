@@ -16,7 +16,7 @@ struct MultiMapBuilder : Object {
         auto slots = new(alignof(Vector<BuilderList<Slot<KeyValuePair<K, Array<V>*>>>>), slots_page) Vector<BuilderList<Slot<KeyValuePair<K, Array<V>*>>>>(slots_page, hash_size);
 
         if (this->slots != nullptr) {
-            auto vector_iterator = VectorIterator<BuilderList<Slot<KeyValuePair<K, Array<V>*>>>>(this->slots);
+            auto vector_iterator = VectorIterator<BuilderList<Slot<KeyValuePair<K, Array<V>*>>>>(*this->slots);
             while (auto element = vector_iterator.next()) {
                 auto list_iterator = BuilderListIterator<Slot<KeyValuePair<K, Array<V>*>>>(element->head);
                 while (auto item = list_iterator.next())

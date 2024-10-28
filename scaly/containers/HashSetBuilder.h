@@ -34,7 +34,7 @@ struct HashSetBuilder : Object {
     HashSetBuilder<T>(Vector<T>& vector) :HashSetBuilder<T>() {
         if (vector.length > 0) {
             this->reallocate(vector.length);
-            auto vector_iterator = VectorIterator<T>(&vector);
+            auto vector_iterator = VectorIterator<T>(vector);
             while (auto element = vector_iterator.next()) {
                 this->add_internal(*element);
             }
@@ -47,7 +47,7 @@ struct HashSetBuilder : Object {
         Vector<BuilderList<Slot<T>>>* slots = new(alignof(Vector<BuilderList<Slot<T>>>), slots_page) Vector<BuilderList<Slot<T>>>(slots_page, hash_size);
 
         if (this->slots != nullptr) {
-            auto vector_iterator = VectorIterator<BuilderList<Slot<T>>>(this->slots);
+            auto vector_iterator = VectorIterator<BuilderList<Slot<T>>>(*this->slots);
             while (auto element = vector_iterator.next()) {
                 auto list_iterator = BuilderListIterator<Slot<T>>(element->head);
                 while (auto item = list_iterator.next())

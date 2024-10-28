@@ -8,20 +8,18 @@ template<class T> struct Array;
 template<class T> struct Vector;
 
 template<class T> struct VectorIterator {
-    Vector<T>* vector;
+    Vector<T> vector;
     size_t position;
 
-    VectorIterator(Vector<T>* vector) : vector(vector), position(0) {}
+    VectorIterator() : vector(Vector<T>()), position(0) {}
+    VectorIterator(Vector<T> vector) : vector(vector), position(0) {}
 
     T* next() {
-        if (vector == nullptr)
-            return nullptr;
-
-        if (position == vector->length)
+        if (position == vector.length)
             return nullptr;
 
         position += 1;
-        return vector->get(position - 1);
+        return vector.get(position - 1);
     }
 };
 
@@ -103,6 +101,10 @@ template<class T> struct Vector : Object {
             return nullptr;
 
         return data + i;
+    }
+
+    VectorIterator<T> get_iterator()  {
+        return VectorIterator<T>(*this);
     }
 };
 
