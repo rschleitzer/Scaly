@@ -7,7 +7,12 @@ Result<String, FileError> File::read_to_string(Page* rp, Page* ep, String path) 
     auto file = fopen(path.to_c_string(r.get_page()), "rb");
     if (file == nullptr) {
         switch (errno) 
-        default: return Result<String, FileError>(FileError(UnknownFileError(String(ep, path))));
+        {
+            case ENOENT:
+                return Result<String, FileError>(FileError(NoSuchFileOrDirectoryError(String(ep, path))));
+            default:
+                return Result<String, FileError>(FileError(UnknownFileError(String(ep, path))));
+        }
     };
     fseek(file, 0, SEEK_END);
     const auto size = ftell(file);
@@ -24,7 +29,12 @@ Result<Void, FileError> File::write_from_string(Page* ep, String path, String co
     auto file = fopen(path.to_c_string(r.get_page()), "wb");
     if (file == nullptr) {
         switch (errno) 
-        default: return Result<Void, FileError>(FileError(UnknownFileError(String(ep, path))));
+        {
+            case ENOENT:
+                return Result<Void, FileError>(FileError(NoSuchFileOrDirectoryError(String(ep, path))));
+            default:
+                return Result<Void, FileError>(FileError(UnknownFileError(String(ep, path))));
+        }
     };
     fwrite(contents.to_c_string(r.get_page()), 1, contents.get_length(), file);
     fclose(file);

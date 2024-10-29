@@ -1122,6 +1122,10 @@ struct Transpiler : Object {
                 return _result;
         }
         builder.append(") ");
+        auto _case__iterator = match_.cases.get_iterator();
+        while (auto _case_ = _case__iterator.next()) {
+            auto case_ = *_case_;
+        }
         if (match_.alternative != nullptr) {
             builder.append('\n');
             builder.append(indent);
