@@ -1233,10 +1233,10 @@ struct Parser : Object {
 
     Parser(String text)
       : lexer(Lexer(text)),
-        keywords_index(initialize_keywords_index(Page::get(this))),
-        keywords(initialize_keywords(Page::get(this))) {}
+        keywords_index(initialize_keywords_index()),
+        keywords(initialize_keywords()) {}
 
-    Vector<String> initialize_keywords_index(Page* _rp) {
+    Vector<String> initialize_keywords_index() {
         Region _r;
         Array<String>& keywords_builder = *new(alignof(Array<String>), _r.get_page()) Array<String>();
         auto p = Page::get(this);
@@ -1284,13 +1284,13 @@ struct Parser : Object {
         keywords_builder.add(String(p, "var"));
         keywords_builder.add(String(p, "while"));
         keywords_builder.add(String(p, "package"));
-        return Vector<String>(_rp, keywords_builder);
+        return Vector<String>(p, keywords_builder);
     }
 
-    HashSet<String> initialize_keywords(Page* _rp) {
+    HashSet<String> initialize_keywords() {
         Region _r;
         HashSetBuilder<String>& hash_set_builder = *new(alignof(HashSetBuilder<String>), _r.get_page()) HashSetBuilder<String>(this->keywords_index);
-        return HashSet<String>(_rp, hash_set_builder);
+        return HashSet<String>(Page::get(this), hash_set_builder);
     }
 
     Result<Literal, ParserError> parse_literal_token(Page* _rp) {
