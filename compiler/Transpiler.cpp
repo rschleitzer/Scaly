@@ -1130,6 +1130,22 @@ struct Transpiler : Object {
         String indented = indent_builder.to_string(_r.get_page());
         while (auto _case_ = _case__iterator.next()) {
             auto case_ = *_case_;
+            builder.append('\n');
+            builder.append(indent);
+            builder.append("    case ");
+            {
+                auto _result = build_operation(_ep, builder, case_.condition, returns_, throws_, indented);
+                if (_result != nullptr)
+                    return _result;
+            }
+            builder.append(":\n");
+            builder.append(indented);
+            {
+                auto _result = build_statement(_ep, builder, &case_.consequent, returns_, throws_, indented);
+                if (_result != nullptr)
+                    return _result;
+                builder.append(';');
+            }
         }
         if (match_.alternative != nullptr) {
             builder.append('\n');
