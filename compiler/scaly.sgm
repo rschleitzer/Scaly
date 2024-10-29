@@ -388,6 +388,25 @@
     <content colon                                 optional
     <content link = Command                                 property = alternative
 
+<syntax id = Match
+    <content link = match
+    <content link = Operand               multiple          property = scrutinee
+    <content colon
+    <content link = Case                  multiple          property = cases
+    <content link = Default                        optional property = alternative
+
+<syntax id = Case                         multiple
+    <content link = case
+    <content link = Operand               multiple          property = condition
+    <content colon
+    <content link = Command                                 property = consequent
+    <content colon                                 optional
+
+<syntax id = Default
+    <content link = default
+    <content colon                                 optional
+    <content link = Command                                 property = alternative
+
 <syntax id = Statement                    multiple
     <content link = Command                                 property = command
     <content colon                                 optional
@@ -489,23 +508,6 @@
 <syntax id = Throw
     <content link = throw
     <content link = Operand               multiple optional property = result
-
-<syntax id = Match
-    <content link = match
-    <content link = Operand               multiple          property = scrutinee
-    <content colon
-    <content link = Case                  multiple          property = cases
-    <content link = Default                        optional property = alternative
-
-<syntax id = Case                         multiple
-    <content link = case
-    <content link = Operand               multiple          property = condition
-    <content colon
-    <content link = Action                                  property = consequent
-
-<syntax id = Default
-    <content link = default
-    <content link = Action                         optional property = alternative
 
 <syntax id = Lambda
     <content link = lambda

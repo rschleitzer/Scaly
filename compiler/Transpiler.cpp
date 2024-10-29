@@ -828,6 +828,13 @@ struct Transpiler : Object {
                         return _result;
                     break;
                 }
+                case Expression::Match: {
+                    auto match_ = operand->expression._Match;
+                    auto _result = build_match(_ep, builder, match_, returns_, throws_, indent);
+                    if (_result != nullptr)
+                        return _result;
+                    break;
+                }
                 case Expression::For: {
                     auto for_ = operand->expression._For;
                     auto _result = build_for(_ep, builder, for_, returns_, throws_, indent);
@@ -1106,6 +1113,29 @@ struct Transpiler : Object {
         return nullptr;
     }
 
+    TranspilerError* build_match(Page* _ep, StringBuilder& builder, Match& match_, Type* returns_, Type* throws_, String indent) {
+        Region _r;
+        builder.append("switch (");
+        {
+            auto _result = build_operation(_ep, builder, match_.condition, returns_, throws_, indent);
+            if (_result != nullptr)
+                return _result;
+        }
+        builder.append(") ");
+        if (match_.alternative != nullptr) {
+            builder.append('\n');
+            builder.append(indent);
+            builder.append("default: ");
+            {
+                auto _result = build_statement(_ep, builder, match_.alternative, returns_, throws_, indent);
+                if (_result != nullptr)
+                    return _result;
+            }
+        }
+
+        return nullptr;
+    }
+
     TranspilerError* build_for(Page* _ep, StringBuilder& builder, For& for_, Type* returns_, Type* throws_, String indent) {
         Region _r;
         builder.append('\n');
@@ -1352,11 +1382,18 @@ struct Transpiler : Object {
     bool needs_return_page(Type* type) {
         if (type == nullptr)
             return false;
+
+        if (type->name.length == 1)
+        {
+            auto name = *type->name.get(0);
+            if (name.equals("bool") || name.equals("int") || name.equals("size_t"))
+                return false;
+        }
         
-        if (type->lifetime._tag == Lifetime::Call)
-            return true;
+        if (type->lifetime._tag == Lifetime::Local)
+            return false;
         
-        return false;
+        return true;
     }
 
     bool build_input(StringBuilder& builder, Vector<Item> input, String* location, Type* returns_, Type* throws_, Lifetime lifetime) {

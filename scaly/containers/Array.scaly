@@ -6,7 +6,7 @@ define Array[T]
 {
     init () (length(0), vector(null)) {}
 
-    function get_buffer(this: Array) returns pointer[T] {
+    function get_buffer(this: Array) returns pointer[T]$ {
         if vector = null
             return null
         return (*vector).data
@@ -55,14 +55,14 @@ define Array[T]
         set length: length + items.length
     }
 
-    function get(this: Array[T], i: size_t) returns pointer[T] {
+    function get(this: Array[T], i: size_t) returns pointer[T]$ {
         if i >= length
             return null
 
         return (*this)[i]
     }
 
-    operator [](this: Array[T], i: size_t) returns pointer[T] {
+    operator [](this: Array[T], i: size_t) returns pointer[T]$ {
         if length < i + 1
             return null
         return (*vector).data + i

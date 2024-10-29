@@ -7,6 +7,7 @@ namespace io {
 #include "io/Console.h"
 #include "io/FileError.h"
 #include "io/Directory.h"
+#include "io/File.h"
 
     void test();
 }

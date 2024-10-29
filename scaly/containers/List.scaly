@@ -12,7 +12,7 @@ define List[T @summary "The element type of the list."]
         @remarks "The head of the list will always be the last element added."
 )
 {
-    function get_head(this: List[T]) returns T?
+    function get_head(this: List[T]) returns T$
     {
         if head = null
             return null
@@ -49,7 +49,7 @@ define List[T @summary "The element type of the list."]
         return false
     }
 
-    function get_iterator(this: List[T]) returns ListIterator[T]
+    function get_iterator(this: List[T]) returns ListIterator[T]$
         ListIterator[T](head)
 
     procedure add(this: List[T], element: T)

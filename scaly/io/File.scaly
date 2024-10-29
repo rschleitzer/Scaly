@@ -1,0 +1,41 @@
+define File()
+{
+    function read_to_string(path: String) returns String throws FileError {
+        var r Region()
+        var file fopen(path.to_c_string(r.get_page()), "rb")
+        if file = null
+        {
+            match errno
+                case ENOENT
+                    throw FileError(NoSuchFileOrDirectoryError(String(ep, path)))
+                default
+                    throw FileError(UnknownFileError(String(ep, path))) 
+        }
+        
+        fseek(file, 0, SEEK_END)
+        let size ftell(file)
+        rewind(file)
+        var ret String(rp, (size_t)size) 
+        let buffer ret.get_buffer()
+        fread (buffer, 1, size, file)
+        fclose (file)
+        
+        return ret
+    }
+;*
+    function write_from_string(String path, String contents) throws FileError {
+        Region _r;
+        FILE* file = fopen(path.to_c_string(_r.get_page()), "wb");
+        if (!file) {
+            switch (*__error()) {
+                case ENOENT: return new(alignof(FileError), _ep) FileError(NoSuchFileOrDirectoryError(String(_ep, path)));
+                default: return new(alignof(FileError), _ep) FileError(UnknownFileError(String(_ep, path)));
+            };
+        }
+
+        fwrite(contents.to_c_string(_r.get_page()), 1, contents.get_length(), file);
+        fclose (file);
+        return
+    }
+*;
+};

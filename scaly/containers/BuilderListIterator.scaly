@@ -1,5 +1,5 @@
 define BuilderListIterator[T] (current: pointer[Node[T]]) {
-    function next(this: BuilderListIterator[T]) returns pointer[T] {
+    function next(this: BuilderListIterator[T]) returns pointer[T]$ {
         if current <> null
         {
             let next_node current

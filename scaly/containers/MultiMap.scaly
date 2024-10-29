@@ -6,7 +6,7 @@ define MultiMapIterator[K, V]
 {
     init(multimap: MultiMap[K, V]) (slot_iterator(VectorIterator[Vector[KeyValuePair[K, Vector[V]]]](multimap.slots)), element_iterator(VectorIterator[KeyValuePair[K, Vector[V]]](slot_iterator.next()))) {}
 
-    function next(this: MultiMapIterator[K, V]) returns pointer[Vector[V]] {
+    function next(this: MultiMapIterator[K, V]) returns pointer[Vector[V]]$ {
         while true
         {
             let ret element_iterator.next()
@@ -70,7 +70,7 @@ define MultiMap[K, V]
         return false
     }
 
-    operator [](key: K) returns pointer[Vector[V]] {
+    operator [](key: K) returns pointer[Vector[V]]$ {
         if slots = null
             return null
 

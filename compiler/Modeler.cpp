@@ -983,26 +983,28 @@ Result<Match, ModelError> handle_match(Page* _rp, Page* _ep, MatchSyntax& match_
         return Result<Match, ModelError> { ._tag = Result<Match, ModelError>::Error, ._Error = condition_result._Error };
     auto condition = condition_result._Ok;
 
-    List<Case> cases_builder;
+    List<Case>& cases_builder = *new(alignof(List<Case>), _r.get_page()) List<Case>();;
     if (match_.cases != nullptr) {
         auto case_iterator = match_.cases->get_iterator();
         while (auto case_ = case_iterator.next()) {
             auto condition_result =  handle_operands(_rp, _ep, case_->condition, file);
             if (condition_result._tag == Result<Operand, ModelError>::Error)
                 return Result<Match, ModelError> { ._tag = Result<Match, ModelError>::Error, ._Error = condition_result._Error };
-            auto _consequent_result = handle_action(_rp, _ep, case_->consequent, file);
+            auto condition = condition_result._Ok;
+            auto _consequent_result = handle_command(_rp, _ep, case_->consequent, file);
             if (_consequent_result._tag == Result<Action, ModelError>::Error)
                 return Result<Match, ModelError> { ._tag = Result<Match, ModelError>::Error, ._Error = _consequent_result._Error };
-            auto consequent = Action(_consequent_result._Ok);
+            auto consequent = Case(Span(case_->start, case_->end), condition, _consequent_result._Ok);
+            cases_builder.add(consequent);
         }
     }
 
-    auto alternative = Action(Vector<Operand>(), Vector<Operand>());
+    Statement* alternative = nullptr;
     if (match_.alternative != nullptr) {
-        auto _alternative_result = handle_action(_rp, _ep, *(*(match_.alternative)).alternative, file);
-        if (_alternative_result._tag == Result<Action, ModelError>::Error)
+        auto _alternative_result = handle_command(_rp, _ep, match_.alternative->alternative, file);
+        if (_alternative_result._tag == Result<Statement, ModelError>::Error)
             return Result<Match, ModelError> { ._tag = Result<Match, ModelError>::Error, ._Error = _alternative_result._Error };
-        alternative = Action(_alternative_result._Ok);
+        alternative = new(alignof(Statement), _rp) Statement(_alternative_result._Ok);
     }
     return Result<Match, ModelError> { ._tag = Result<Match, ModelError>::Ok, ._Ok = Match(Span(match_.start, match_.end), condition, Vector<Case>(_rp, cases_builder), alternative) };
 }
@@ -1125,7 +1127,7 @@ Result<Expression, ModelError> handle_expression(Page* _rp, Page* _ep, Expressio
             auto match_result = handle_match(_rp, _ep, match_, file);
             if (match_result._tag == Result<Expression, ModelError>::Error)
                 return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = match_result._Error };
-            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::If, ._Match = match_result._Ok} };
+            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::Match, ._Match = match_result._Ok} };
         }
         case ExpressionSyntax::Lambda:
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(file, String(_ep, "Lambda"), Span(expression._Lambda.start, expression._Lambda.end)))) };

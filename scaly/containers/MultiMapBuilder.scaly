@@ -77,7 +77,7 @@ define MultiMapBuilder[K, V]
         return false
     }
 
-    operator [](this: MultiMapBuiler[K, V], key: K) returns pointer[Array[V]] {
+    operator [](this: MultiMapBuiler[K, V], key: K) returns pointer[Array[V]]$ {
         if slots = null
             return null
 

@@ -8,7 +8,7 @@ define Page
     exclusive_pages: PageList
 )
 {
-    function allocate_page returns pointer[Page] {
+    function allocate_page returns pointer[Page]$ {
         var page (pointer[Page])aligned_alloc(PAGE_SIZE, PAGE_SIZE)
         (*page).reset()
         return page
@@ -21,7 +21,7 @@ define Page
         set exclusive_pages: PageList()
     }
 
-    function allocate(this: Page, size: size_t, align: size_t) returns pointer[void] {
+    function allocate(this: Page, size: size_t, align: size_t) returns pointer[void]$ {
         let location (size_t)next_object
         let aligned_location (location + align - 1) & ~(align - 1)
         let location_after_page (size_t)this + PAGE_SIZE
@@ -55,7 +55,7 @@ define Page
         return (pointer[void])aligned_location
     }
 
-    function allocate_oversized(this: Page, size: size_t) returns pointer[void] {
+    function allocate_oversized(this: Page, size: size_t) returns pointer[void]$ {
         ; We allocate oversized objects directly.
         let address aligned_alloc(PAGE_SIZE,  (size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1))
         if address = null
@@ -72,13 +72,13 @@ define Page
         return (pointer[void])(page + 1)
     }
 
-    function get(address: pointer[void]) returns pointer[Page] {
+    function get(address: pointer[void]) returns pointer[Page]$ {
         let mask ~(size_t)(PAGE_SIZE - 1)
         let page (Page*)((size_t)address & mask)
         return page
     }
 
-    function get_capacity(this: Page, align: size_t) returns size_t {
+    function get_capacity(this: Page, align: size_t) returns size_t$ {
         var location (size_t)next_object
         let aligned_location (location + align - 1) & ~(align - 1)
         var location_after_page (size_t)this + PAGE_SIZE
@@ -86,7 +86,7 @@ define Page
         return capacity
     }
 
-    function allocate_exclusive_page(this: Page) returns pointer[Page] {
+    function allocate_exclusive_page(this: Page) returns pointer[Page]$ {
         let page allocate_page()
         (exclusive_pages).add(page, page)
         return page

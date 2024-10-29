@@ -204,16 +204,16 @@ struct If : Object {
 struct Case : Object {
     Span span;
     Vector<Operand> condition;
-    Action consequent;
-    Case(Span span, Vector<Operand> condition, Action consequent) : span(span), condition(condition), consequent(consequent) {}
+    Statement consequent;
+    Case(Span span, Vector<Operand> condition, Statement consequent) : span(span), condition(condition), consequent(consequent) {}
 };
 
 struct Match : Object {
     Span span;
     Vector<Operand> condition;
     Vector<Case> cases;
-    Action alternative;
-    Match(Span span, Vector<Operand> condition, Vector<Case> cases, Action alternative) : span(span), condition(condition), cases(cases), alternative(alternative) {}
+    Statement* alternative;
+    Match(Span span, Vector<Operand> condition, Vector<Case> cases, Statement* alternative) : span(span), condition(condition), cases(cases), alternative(alternative) {}
 };
 
 struct For : Object {
@@ -245,6 +245,7 @@ struct Expression {
         Matrix,
         Block,
         If,
+        Match,
         For,
         While,
         SizeOf,

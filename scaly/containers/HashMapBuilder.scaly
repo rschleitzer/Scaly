@@ -81,7 +81,7 @@ define HashMapBuilder[K, V]
         return false
     }
 
-    operator [](key: K) returns pointer[V] {
+    operator [](key: K) returns pointer[V]$ {
         if slots = null
             return null
 

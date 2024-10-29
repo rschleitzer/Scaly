@@ -6,7 +6,7 @@ define VectorIterator[T]
 {
     init (vector: pointer[Vector[T]]) : (vector(vector), position(0)) {}
 
-    function next(this: VectorIterator[T]) returns pointer[T] {
+    function next(this: VectorIterator[T]) returns pointer[T]$ {
         if vector = null
             return null
 
@@ -84,7 +84,7 @@ define Vector[T]
         }
     }
 
-    function get(this: Vector[T], i: size_t) returns pointer[T] {
+    function get(this: Vector[T], i: size_t) returns pointer[T]$ {
         if i >= length
             return null
         return (*this)[i]
@@ -97,7 +97,7 @@ define Vector[T]
         return true
     }
 
-    operator [](i: size_t) returns pointer[T] {
+    operator [](i: size_t) returns pointer[T]$ {
         if i >= length
             return null
 

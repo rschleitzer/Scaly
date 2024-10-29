@@ -11,7 +11,7 @@ init(string: String) {
     set last: buffer + string.get_length()
 }
 
-function next(this: StringIterator) returns pointer[char] {
+function next(this: StringIterator) returns pointer[char]$ {
     if current = last
     {
         return null

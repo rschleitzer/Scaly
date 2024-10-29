@@ -6,7 +6,7 @@ define HashMapIterator[K, V]
 {
     init (hash_map: HashMap[K, V]) (slot_iterator(VectorIterator[Vector[KeyValuePair[K, V]]](hash_map.slots)), element_iterator(VectorIterator[KeyValuePair[K, V]](slot_iterator.next()))) {}
 
-    function next(this: HashMapIterator[K, V]) returns pointer[V] {
+    function next(this: HashMapIterator[K, V]) returns pointer[V]$ {
         while true
         {
             let ret element_iterator.next()
@@ -71,7 +71,7 @@ define HashMap[K, V]
         return false
     }
 
-    operator [](key: K) returns pointer[V] {
+    operator [](key: K) returns pointer[V]$ {
         if slots = null
             return null
 
@@ -91,7 +91,7 @@ define HashMap[K, V]
         return nullptr
     }
 
-    function get_values(this: HashMap[K, V], rp: pointer[Page]) returns Vector[pointer[V]] {
+    function get_values(this: HashMap[K, V], rp: pointer[Page]) returns Vector[pointer[V]]$ {
         var r Region()
         let array Array[pointer[V]]$()
         if slots <> null

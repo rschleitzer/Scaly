@@ -1,5 +1,5 @@
 define ListIterator[T] (current: pointer[Node[T]]) {
-    procedure next(this: ListIterator[T]) returns pointer[T] {
+    procedure next(this: ListIterator[T]) returns pointer[T]$ {
         if current <> null
         {
             var old_current (*this).current

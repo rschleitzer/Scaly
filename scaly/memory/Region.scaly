@@ -15,7 +15,7 @@ define Region
         }
     }
 
-    function get_page(this: Region) returns pointer[Page] {
+    function get_page(this: Region) returns pointer[Page]$ {
         if page = null
             set page: Page->allocate_page()
         return page

@@ -25,5 +25,5 @@ define StringBuilder
 
     function get_length(this: StringBuilder) returns size_t { return buffer.get_length() }
 
-    function to_string(this: StringBuilder, rp: pointer[Page]) returns String { return String(rp, buffer.get_buffer(), buffer.get_length()) }
+    function to_string(this: StringBuilder, rp: pointer[Page]) returns String$ { return String(rp, buffer.get_buffer(), buffer.get_length()) }
 }

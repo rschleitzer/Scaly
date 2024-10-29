@@ -1,5 +1,4 @@
-define Directory
-()
+define Directory()
 {
     function exists(path: String) returns bool throws FileError {
         var r Region()

@@ -79,7 +79,7 @@ define String (data: pointer[char]) {
         set *(data + 1): character
     }
 
-    function get_buffer(this: String) returns pointer[char] {
+    function get_buffer(this: String) returns pointer[char]$ {
         var length: size_t 0
         var bit_count 0
         var index: size_t 0
@@ -99,7 +99,7 @@ define String (data: pointer[char]) {
         return data + index + 1
     }
 
-    function to_c_string(this: String, rp: pointer[Page]) returns pointer[const_char] {
+    function to_c_string(this: String, rp: pointer[Page]) returns pointer[const_char]$ {
         var length: size_t 0
         var bit_count 0
         var index: size_t 0

@@ -1,10 +1,10 @@
 define Object () {
 
-    function get_page(this: Object) returns pointer[Page] {
+    function get_page(this: Object) returns pointer[Page]$ {
         return Page->get(this)
     }
 
-    operator new (size: size_t, align: size_t, page: pointer[Page]) returns pointer[void] {
+    operator new (size: size_t, align: size_t, page: pointer[Page]) returns pointer[void]$ {
         let object (*page).allocate(size, align)
         if object = null
             exit(16)

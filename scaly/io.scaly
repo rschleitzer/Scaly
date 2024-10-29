@@ -2,7 +2,7 @@ define io {
     module Console
     module FileError
     module Directory
-    ;module File
+    module File
     ;module Path
 
     function test () {}
