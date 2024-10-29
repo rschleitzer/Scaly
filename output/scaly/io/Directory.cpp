@@ -26,7 +26,7 @@ Result<Void, FileError> Directory::create(Page* ep, String path) {
 
 Result<bool, FileError> Directory::exists(Page* ep, String path) {
     auto r = Region();
-    struct_stat* s = nullptr;
+    struct_stat* s = (struct_stat*)(*r.get_page()).allocate_raw(alignof(struct_stat), sizeof(struct_stat));
     const auto err = stat(path.to_c_string(r.get_page()), s);
     if (err == -1) {
         if (errno == ENOENT) {
