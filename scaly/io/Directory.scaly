@@ -1,11 +1,10 @@
 define Directory
 ()
 {
-    ;*
     function exists(path: String) returns bool throws FileError {
         var r Region()
 
-        let stat: struct s
+        struct stat s
         let err stat(path.to_c_string(r.get_page()), &s)
         if err = -1
         {
@@ -38,8 +37,10 @@ define Directory
                 throw FileError(UnknownFileError(String(ep, path)))
             }
         }
+
+        return
     }
-    *;
+
     function remove(path: String) throws FileError {
         var r Region()
 
