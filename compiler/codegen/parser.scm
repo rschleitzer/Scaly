@@ -7,16 +7,17 @@ struct Parser : Object {
     Vector<""String> keywords_index;
     HashSet<""String> keywords;
 
-    Parser(Page* _rp, String text)
-      : lexer(*new(alignof(Lexer), _rp) Lexer(text)),
-        keywords_index(initialize_keywords_index(_rp)),
-        keywords(initialize_keywords( _rp)) {}
+    Parser(String text)
+      : lexer(Lexer(text)),
+        keywords_index(initialize_keywords_index(Page::get(this))),
+        keywords(initialize_keywords(Page::get(this))) {}
 
     Vector<""String> initialize_keywords_index(Page* _rp) {
         Region _r;
-        List<""String>& keywords_builder = *new(alignof(List<""String>), _r.get_page()) List<""String>();
+        Array<""String>& keywords_builder = *new(alignof(Array<""String>), _r.get_page()) Array<""String>();
+        auto p = Page::get(this);
 "   (apply-to-selected-children "keyword" (lambda (keyword) ($
-"        keywords_builder.add(String(Page::get(this), \""(id keyword)"\"));
+"        keywords_builder.add(String(p, \""(id keyword)"\"));
 "   )))
 "        return Vector<""String>(_rp, keywords_builder);
     }
