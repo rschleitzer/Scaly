@@ -5,6 +5,7 @@ using namespace scaly;
 using namespace scaly::memory;
 
 struct Void {
+
 };
 
 template<class OK, class ERROR>

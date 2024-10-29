@@ -332,6 +332,9 @@ struct Transpiler : Object {
                 must_build_properties_initializer = true;
         }
 
+        if (parameters.length == 0)
+            header_builder.append('\n');
+
         if (structure.properties.length > 0)
             build_default_initializer(_ep, header_builder, cpp_builder, name, parameters.length > 0, structure.properties);
 
@@ -390,7 +393,7 @@ struct Transpiler : Object {
         else {
             build_default_initializer_list(_ep, cpp_builder, is_generic, properties, String(_r.get_page(), "    "));
             cpp_builder.append(" {}");
-            header_builder.append(" (");
+            header_builder.append("(");
             {
                 auto property_iterator = properties.get_iterator();
                 bool first = true;

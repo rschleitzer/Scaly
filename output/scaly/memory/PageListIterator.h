@@ -6,7 +6,8 @@ using namespace scaly::memory;
 
 struct PageListIterator : Object {
     PageNode* current;
-    PageListIterator (PageNode* current);
+
+    PageListIterator(PageNode* current);
     Page** next();
 };
 

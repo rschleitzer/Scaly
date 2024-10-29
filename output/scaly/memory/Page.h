@@ -10,7 +10,8 @@ struct Page : Object {
     Page* current_page;
     Page* next_page;
     PageList exclusive_pages;
-    Page (void* next_object, Page* current_page, Page* next_page, PageList exclusive_pages);
+
+    Page(void* next_object, Page* current_page, Page* next_page, PageList exclusive_pages);
     static Page* allocate_page();
     void reset();
     void* allocate(size_t size, size_t align);

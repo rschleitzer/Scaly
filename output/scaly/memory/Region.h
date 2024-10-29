@@ -6,7 +6,8 @@ using namespace scaly::memory;
 
 struct Region : Object {
     Page* page;
-    Region (Page* page);
+
+    Region(Page* page);
     Region();
     ~Region();
     Page* get_page();

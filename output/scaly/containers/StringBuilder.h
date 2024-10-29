@@ -6,7 +6,8 @@ using namespace scaly::memory;
 
 struct StringBuilder : Object {
     Array<char> buffer;
-    StringBuilder (Array<char> buffer);
+
+    StringBuilder(Array<char> buffer);
     StringBuilder();
     StringBuilder(char character);
     StringBuilder(String string);

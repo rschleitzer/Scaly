@@ -6,7 +6,8 @@ using namespace scaly::memory;
 
 struct PageList : Object {
     PageNode* head;
-    PageList (PageNode* head);
+
+    PageList(PageNode* head);
     PageList ();
     void add(Page* rp, Page* element);
     bool remove(Page* element);

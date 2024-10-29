@@ -7,12 +7,14 @@ using namespace scaly::containers;
 
 struct UnknownFileError : Object {
     String file_name;
-    UnknownFileError (String file_name);
+
+    UnknownFileError(String file_name);
 };
 
 struct NoSuchFileOrDirectoryError : Object {
     String file_name;
-    NoSuchFileOrDirectoryError (String file_name);
+
+    NoSuchFileOrDirectoryError(String file_name);
 };
 
 struct FileError {
