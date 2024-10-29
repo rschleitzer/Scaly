@@ -81,26 +81,22 @@ void Page::deallocate_extensions() {
     while (auto _exclusive_page = _exclusive_page_iterator.next()) {
         auto exclusive_page = *_exclusive_page;{
             (*exclusive_page).deallocate_extensions();
-            (*exclusive_page).forget();
+            free(exclusive_page);
         }
     };
     auto page = next_page;
     while (page != nullptr) {
         const auto next_page = (*page).next_page;
-        (*page).forget();
+        free(page);
         page = next_page;
     };
 }
 
 void Page::deallocate_exclusive_page(Page* page) {
     (*page).deallocate_extensions();
-    (*page).forget();
+    free(page);
     if ((exclusive_pages).remove(page) == false) 
         exit(2);
-}
-
-void Page::forget() {
-    free(this);
 }
 
 }

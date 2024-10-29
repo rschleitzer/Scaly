@@ -20,7 +20,6 @@ struct Page : Object {
     Page* allocate_exclusive_page();
     void deallocate_extensions();
     void deallocate_exclusive_page(Page* page);
-    void forget();
 };
 
 #endif

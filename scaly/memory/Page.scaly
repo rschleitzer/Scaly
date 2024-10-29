@@ -100,26 +100,22 @@ define Page
         for exclusive_page in exclusive_pages
         {
             (*exclusive_page).deallocate_extensions()
-            (*exclusive_page).forget()
+            free(exclusive_page)
         }
 
         var page next_page 
         while page <> null
         {
             let next_page (*page).next_page
-            (*page).forget()
+            free(page)
             set page: next_page
         }
     }
 
     function deallocate_exclusive_page(this: Page, page: pointer[Page]) {
         (*page).deallocate_extensions()
-        (*page).forget()
+        free(page)
         if (exclusive_pages).remove(page) = false
             exit (2)
-    }
-
-    function forget(this: Page) {
-        free(this)
     }
 }

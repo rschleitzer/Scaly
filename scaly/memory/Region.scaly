@@ -11,7 +11,7 @@ define Region
         if page <> null
         {
             (*page).deallocate_extensions()
-            (*page).forget()
+            free(page)
         }
     }
 

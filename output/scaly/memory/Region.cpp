@@ -10,7 +10,7 @@ Region::Region() {
 Region::~Region() {
     if (page != nullptr) {
         (*page).deallocate_extensions();
-        (*page).forget();
+        free(page);
     };
 };
 
