@@ -21,14 +21,14 @@ define memory {
         var location (size_t)(*page).next_object
 
         ; Allocate an int. Our location moves by bytes.
-        let answer (int*)(*page).allocate_raw(4, alignof(int))
+        let answer (int*)(*page).allocate(4, alignof(int))
         location += 4
         if (size_t)(*page).next_object <> location
             exit (-4)
         set *answer: 42
 
         ; Allocate a byte character and set it to A.
-        let another_loc (*page).allocate_raw(1, alignof(char))
+        let another_loc (*page).allocate(1, alignof(char))
         let another (char*)another_loc
         set location: location + 1
         if (size_t)(*page).next_object <> location
@@ -36,7 +36,7 @@ define memory {
         set *another: 'A'
 
         ; We allocate another int and move 7 bytes forward because of the 4 byte alignment.
-        let eau_loc (*page).allocate_raw(4, alignof(int))
+        let eau_loc (*page).allocate(4, alignof(int))
         let eau (int*)eau_loc
         location += 7
         if (size_t)(*page).next_object <> location
@@ -48,7 +48,7 @@ define memory {
             exit (-7)
 
         ; Allocate an oversized object which should cause allocating an oversized page
-        let array (size_t*)(*page).allocate_raw(PAGE_SIZE, alignof(size_t))
+        let array (size_t*)(*page).allocate(PAGE_SIZE, alignof(size_t))
         {
             var i: int 0
             while i <= PAGE_SIZE / sizeof size_t - 1
@@ -82,7 +82,7 @@ define memory {
             var i: int 0
             while i <= PAGE_SIZE
             {
-                (*page).allocate_raw(1, 1)
+                (*page).allocate(1, 1)
                 set i: i + 1
             }
         }

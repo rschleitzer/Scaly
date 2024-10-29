@@ -44,7 +44,7 @@ template<class T> struct Array : Object {
         }
         if (length >= this->vector->length) {
             auto own_page = Page::get(this);
-            auto data = (T*)own_page->allocate_raw(length * size, alignof(T));
+            auto data = (T*)own_page->allocate(length * size, alignof(T));
             auto bytes_to_copy = this->vector->length * size;
             if (this->vector->length > 0)
                 memcpy(data, this->vector->data, bytes_to_copy);

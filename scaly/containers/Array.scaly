@@ -40,7 +40,7 @@ define Array[T]
         if new_length >= (*vector).length
         {
             var own_page Page->get(this)
-            let data (T*)(*own_page).allocate_raw(length * size, alignof(T))
+            let data (T*)(*own_page).allocate(length * size, alignof(T))
             let bytes_to_copy (*vector).length * size
             if (*vector).length > 0
                 memcpy(data, (*vector).data, bytes_to_copy)

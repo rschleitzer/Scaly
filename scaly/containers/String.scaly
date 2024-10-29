@@ -15,7 +15,7 @@ define String (data: pointer[char]) {
 
         set *(length_array + counter): (char)rest
         let overall_length counter + 1 + length
-        set data: (char*)(*rp).allocate_raw(overall_length, 1)
+        set data: (char*)(*rp).allocate(overall_length, 1)
         memcpy(data, length_array, counter + 1)
     }
 
@@ -39,7 +39,7 @@ define String (data: pointer[char]) {
 
         set *(length_array + counter): (char)rest
         let overall_length counter + 1 + length
-        set data: (char*)(*rp).allocate_raw(overall_length, 1)
+        set data: (char*)(*rp).allocate(overall_length, 1)
         memcpy(data, length_array, counter + 1)
         memcpy((pointer[void])(data + counter + 1), other, length)
     }
@@ -69,12 +69,12 @@ define String (data: pointer[char]) {
             set index: index + 1
         }
         var overall_length index + 1 + length
-        set data: (char*)(*rp).allocate_raw(overall_length, 1)
+        set data: (char*)(*rp).allocate(overall_length, 1)
         memcpy(data, other.data, overall_length)
     }
 
     init (rp: pointer[Page], character: char) {
-        set data: (char*)(*rp).allocate_raw(2, 1)
+        set data: (char*)(*rp).allocate(2, 1)
         set *data: 1
         set *(data + 1): character
     }
@@ -116,7 +116,7 @@ define String (data: pointer[char]) {
             set index: index + 1
         }
 
-        var dest (*rp).allocate_raw(length + 1, 1)
+        var dest (*rp).allocate(length + 1, 1)
         memcpy(dest, data + index + 1, length)
         set *((char*)dest + index + length): 0
 

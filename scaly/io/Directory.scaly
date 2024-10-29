@@ -4,7 +4,7 @@ define Directory
     function exists(path: String) returns bool throws FileError {
         var r Region()
 
-        var s: pointer[struct_stat] (struct_stat*)(*r.get_page()).allocate_raw(alignof(struct_stat), sizeof struct_stat) 
+        var s: pointer[struct_stat] (struct_stat*)(*r.get_page()).allocate(alignof(struct_stat), sizeof struct_stat) 
         let err stat(path.to_c_string(r.get_page()), s)
         if err = -1
         {

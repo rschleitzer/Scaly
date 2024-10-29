@@ -14,7 +14,7 @@ String::String(Page* rp, size_t length) {
     };
     *(length_array+counter) = (char)rest;
     const auto overall_length = counter+1+length;
-    data = (char*)(*rp).allocate_raw(overall_length, 1);
+    data = (char*)(*rp).allocate(overall_length, 1);
     memcpy(data, length_array, counter+1);
 }
 
@@ -33,7 +33,7 @@ String::String(Page* rp, const_char* other, size_t length) {
     };
     *(length_array+counter) = (char)rest;
     const auto overall_length = counter+1+length;
-    data = (char*)(*rp).allocate_raw(overall_length, 1);
+    data = (char*)(*rp).allocate(overall_length, 1);
     memcpy(data, length_array, counter+1);
     memcpy((void*)(data+counter+1), other, length);
 }
@@ -59,12 +59,12 @@ String::String(Page* rp, String other) {
         index = index+1;
     };
     auto overall_length = index+1+length;
-    data = (char*)(*rp).allocate_raw(overall_length, 1);
+    data = (char*)(*rp).allocate(overall_length, 1);
     memcpy(data, other.data, overall_length);
 }
 
 String::String(Page* rp, char character) {
-    data = (char*)(*rp).allocate_raw(2, 1);
+    data = (char*)(*rp).allocate(2, 1);
     *data = 1;
     *(data+1) = character;
 }
@@ -100,7 +100,7 @@ const_char* String::to_c_string(Page* rp) {
         bit_count = bit_count+7;
         index = index+1;
     };
-    auto dest = (*rp).allocate_raw(length+1, 1);
+    auto dest = (*rp).allocate(length+1, 1);
     memcpy(dest, data+index+1, length);
     *((char*)dest+index+length) = 0;
     return (const_char*)dest;

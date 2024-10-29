@@ -44,7 +44,7 @@ struct Array : Object {
             reallocate();
         if (new_length>=(*vector).length) {
             auto own_page = Page::get(this);
-            const auto data = (T*)(*own_page).allocate_raw(length*size, alignof(T));
+            const auto data = (T*)(*own_page).allocate(length*size, alignof(T));
             const auto bytes_to_copy = (*vector).length*size;
             if ((*vector).length>0) 
                 memcpy(data, (*vector).data, bytes_to_copy);

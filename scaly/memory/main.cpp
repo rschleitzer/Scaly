@@ -28,14 +28,14 @@ void test_page()
     auto location = (size_t)page.next_object;
 
     // Allocate an int. Our location moves by bytes.
-    auto answer = (int*)page.allocate_raw(4, alignof(int));
+    auto answer = (int*)page.allocate(4, alignof(int));
     location += 4;
     if ((size_t)page.next_object != location)
         exit (-4);
     *answer = 42;
 
     // Allocate a byte character and set it to A.
-    auto another_loc = page.allocate_raw(1, alignof(char));
+    auto another_loc = page.allocate(1, alignof(char));
     auto another = (char*)another_loc;
     location += 1;
     if ((size_t)page.next_object != location)
@@ -43,7 +43,7 @@ void test_page()
     *another = 'A';
 
     // We allocate another int and move 7 bytes forward because of the 4 byte alignment.
-    auto eau_loc = page.allocate_raw(4, alignof(int));
+    auto eau_loc = page.allocate(4, alignof(int));
     auto eau = (int*)eau_loc;
     location += 7;
     if ((size_t)page.next_object != location)
@@ -55,7 +55,7 @@ void test_page()
         exit (-7);
 
     // Allocate an oversized object which should cause allocating an oversized page
-    auto array = (size_t*)page.allocate_raw(PAGE_SIZE, alignof(size_t));
+    auto array = (size_t*)page.allocate(PAGE_SIZE, alignof(size_t));
     for (int i = 0; i <= PAGE_SIZE / sizeof(size_t) - 1; i++) {
         array[i] = i;
     }
@@ -81,7 +81,7 @@ void test_page()
 
     // Overflow the page
     for (int i = 0; i <= PAGE_SIZE; i++) {
-        page.allocate_raw(1, 1);
+        page.allocate(1, 1);
     }
 
     // Our allocator should now point to a current page
@@ -116,7 +116,7 @@ void test_allocate_raw()
     size_t* p = nullptr;
     auto pointers = 128000000;
     for (int i = 1; i <= pointers; i++) {
-        p = (size_t*)page.allocate_raw(sizeof(size_t), alignof(size_t));
+        p = (size_t*)page.allocate(sizeof(size_t), alignof(size_t));
         *p = 0;
         if (i == 1) {
             start = p;

@@ -27,7 +27,7 @@ void Page::reset() {
     this->exclusive_pages = PageList();
 }
 
-void* Page::allocate_raw(size_t size, size_t align) {
+void* Page::allocate(size_t size, size_t align) {
     auto location = (size_t)this->next_object;
     auto aligned_location = (location + align - 1) & ~(align - 1);
     auto location_after_page = (size_t)this + PAGE_SIZE;
@@ -40,7 +40,7 @@ void* Page::allocate_raw(size_t size, size_t align) {
             return allocate_oversized(gross_size);
 
         if (this->current_page != nullptr) {
-            auto object = this->current_page->allocate_raw(size, align);
+            auto object = this->current_page->allocate(size, align);
             auto page_of_allocated_object = Page::get(object);
             if (page_of_allocated_object != this->current_page)
                 this->current_page = page_of_allocated_object;
@@ -50,13 +50,31 @@ void* Page::allocate_raw(size_t size, size_t align) {
         auto page = this->allocate_page();
         this->current_page = page;
         this->next_page = page;
-        return page->allocate_raw(size, align);
+        return page->allocate(size, align);
     }
 
     // Allocate from ourselves
     auto next_location = aligned_location + size;
     this->next_object = (void*)next_location;
     return (void*)aligned_location;
+}
+
+void* Page::allocate_oversized(size_t size)
+{
+    // We allocate oversized objects directly.
+    auto address = aligned_alloc(PAGE_SIZE, (size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1));
+    if (address == nullptr)
+        exit(1);
+    auto page = (Page*)address;
+
+    // Oversized pages have no next_object
+    page->next_object = nullptr;
+
+    // An oversized page is always exclusive
+    this->exclusive_pages.add(this, page);
+
+    // The page offset by the null pointer for next_object
+    return (void*)(page + 1);
 }
 
 void Page::deallocate_extensions() {
@@ -112,24 +130,6 @@ void Page::forget() {
 
 bool Page::is_oversized() {
     return this->next_object == nullptr;
-}
-
-void* Page::allocate_oversized(size_t size)
-{
-    // We allocate oversized objects directly.
-    auto address = aligned_alloc(PAGE_SIZE, (size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1));
-    if (address == nullptr)
-        exit(1);
-    auto page = (Page*)address;
-
-    // Oversized pages have no next_object
-    page->next_object = nullptr;
-
-    // An oversized page is always exclusive
-    this->exclusive_pages.add(this, page);
-
-    // The page offset by the null pointer for next_object
-    return (void*)(page + 1);
 }
 
 }

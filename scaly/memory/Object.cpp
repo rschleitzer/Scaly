@@ -16,7 +16,7 @@ Page* Object::get_page() {
 }
 
 void* Object::operator new(size_t size, size_t align, Page* page) {
-    void* object = page->allocate_raw(size, align);
+    void* object = page->allocate(size, align);
     if (!object)
         exit(16);
 

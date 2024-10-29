@@ -35,7 +35,7 @@ template<class T> struct Vector : Object {
 
     Vector(Page* _rp, size_t length) : length(length) {
         if (this->length > 0) {
-            this->data = (T*) _rp->allocate_raw(length * sizeof(T), alignof(T));
+            this->data = (T*) _rp->allocate(length * sizeof(T), alignof(T));
             memset(this->data, 0, length * sizeof(T));
         } else {
             this->data = nullptr;
@@ -44,7 +44,7 @@ template<class T> struct Vector : Object {
 
     Vector(Page* _rp, T* array, size_t length) : length(length) {
         if (this->length > 0) {
-            this->data = (T*) _rp->allocate_raw(length * sizeof(T), alignof(T));
+            this->data = (T*) _rp->allocate(length * sizeof(T), alignof(T));
             memcpy(this->data, array, length * sizeof(T));
         } else {
             this->data = nullptr;
@@ -53,7 +53,7 @@ template<class T> struct Vector : Object {
 
     Vector(Page* _rp, const Vector<T>& other) : length(other.length) {
         if (this->length > 0) {
-            this->data = (T*) _rp->allocate_raw(length * sizeof(T), alignof(T));
+            this->data = (T*) _rp->allocate(length * sizeof(T), alignof(T));
             memcpy(this->data, other.data, length * sizeof(T));
         } else {
             this->data = nullptr;
@@ -62,7 +62,7 @@ template<class T> struct Vector : Object {
 
     Vector(Page* _rp, Array<T>& array) : length(array.length) {
         if (this->length > 0) {
-            this->data = (T*) _rp->allocate_raw(length * sizeof(T), alignof(T));
+            this->data = (T*) _rp->allocate(length * sizeof(T), alignof(T));
             memcpy(this->data, array.vector->data, length * sizeof(T));
         } else {
             this->data = nullptr;
@@ -71,7 +71,7 @@ template<class T> struct Vector : Object {
 
     Vector(Page* _rp, List<T>& list) : length(list.count()) {
         if (this->length > 0) {
-            this->data = (T*) _rp->allocate_raw(length * sizeof(T), alignof(T));
+            this->data = (T*) _rp->allocate(length * sizeof(T), alignof(T));
             auto list_iterator = list.get_iterator();
             size_t i = length;
             while (auto item = list_iterator.next()) {

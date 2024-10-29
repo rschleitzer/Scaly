@@ -22,7 +22,7 @@ String::String(Page* _rp, size_t length) {
 
     length_array[counter] = (char)rest;
     auto overall_length = counter + 1 + length;
-    data = (char*)_rp->allocate_raw(overall_length, 1);
+    data = (char*)_rp->allocate(overall_length, 1);
     memcpy(data, length_array, counter + 1);
 }
 
@@ -44,7 +44,7 @@ String::String(Page* _rp, const char* other, size_t length) {
 
     length_array[counter] = (char)rest;
     auto overall_length = counter + 1 + length;
-    this->data = (char*)_rp->allocate_raw(overall_length, 1);
+    this->data = (char*)_rp->allocate(overall_length, 1);
     memcpy(this->data, length_array, counter + 1);
     memcpy((void*)(this->data + counter + 1), other, length);
 }
@@ -75,12 +75,12 @@ String::String(Page* _rp, const String& other) {
         index += 1;
     }
     auto overall_length = index + 1 + length;
-    this->data = (char*)_rp->allocate_raw(overall_length, 1);
+    this->data = (char*)_rp->allocate(overall_length, 1);
     memcpy(this->data, other.data, overall_length);
 }
 
 String::String(Page* _rp, char character) {
-    this->data = (char*)_rp->allocate_raw(2, 1);
+    this->data = (char*)_rp->allocate(2, 1);
     this->data[0] = 1;
     this->data[1] = character;
 }
@@ -104,7 +104,7 @@ const char* String::to_c_string(Page* _rp) const {
         }
     }
 
-    auto dest = _rp->allocate_raw(length + 1, 1);
+    auto dest = _rp->allocate(length + 1, 1);
     if (this->data != nullptr) {
         memcpy(dest, this->data + index + 1, length);
     }

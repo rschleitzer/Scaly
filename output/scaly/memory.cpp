@@ -9,18 +9,18 @@ void memory::test_page() {
     if ((*page).is_oversized()) 
         exit(-2);
     auto location = (size_t)(*page).next_object;
-    const auto answer = (int*)(*page).allocate_raw(4, alignof(int));
+    const auto answer = (int*)(*page).allocate(4, alignof(int));
     location+=4;
     if ((size_t)(*page).next_object != location) 
         exit(-4);
     *answer = 42;
-    const auto another_loc = (*page).allocate_raw(1, alignof(char));
+    const auto another_loc = (*page).allocate(1, alignof(char));
     const auto another = (char*)another_loc;
     location = location+1;
     if ((size_t)(*page).next_object != location) 
         exit(-5);
     *another = 'A';
-    const auto eau_loc = (*page).allocate_raw(4, alignof(int));
+    const auto eau_loc = (*page).allocate(4, alignof(int));
     const auto eau = (int*)eau_loc;
     location+=7;
     if ((size_t)(*page).next_object != location) 
@@ -28,7 +28,7 @@ void memory::test_page() {
     *eau = 4711;
     if (Page::get(eau) != page) 
         exit(-7);
-    const auto array = (size_t*)(*page).allocate_raw(PAGE_SIZE, alignof(size_t));
+    const auto array = (size_t*)(*page).allocate(PAGE_SIZE, alignof(size_t));
     {
         int i = 0;
         while (i<=PAGE_SIZE/sizeof(size_t)-1) {
@@ -48,7 +48,7 @@ void memory::test_page() {
     {
         int i = 0;
         while (i<=PAGE_SIZE) {
-            (*page).allocate_raw(1, 1);
+            (*page).allocate(1, 1);
             i = i+1;
         };
     };

@@ -17,7 +17,7 @@ void Page::reset() {
     exclusive_pages = PageList();
 }
 
-void* Page::allocate_raw(size_t size, size_t align) {
+void* Page::allocate(size_t size, size_t align) {
     const auto location = (size_t)next_object;
     const auto aligned_location = (location+align-1)&~(align-1);
     const auto location_after_page = (size_t)this+PAGE_SIZE;
@@ -27,7 +27,7 @@ void* Page::allocate_raw(size_t size, size_t align) {
         if (gross_size>PAGE_SIZE) 
             return allocate_oversized(gross_size);
         if (current_page != nullptr) {
-            const auto object = (*current_page).allocate_raw(size, align);
+            const auto object = (*current_page).allocate(size, align);
             const auto page_of_allocated_object = get(object);
             if (page_of_allocated_object != current_page) 
                 current_page = page_of_allocated_object;
@@ -36,11 +36,21 @@ void* Page::allocate_raw(size_t size, size_t align) {
         auto page = allocate_page();
         current_page = page;
         next_page = page;
-        return (*page).allocate_raw(size, align);
+        return (*page).allocate(size, align);
     };
     const auto next_location = aligned_location+size;
     next_object = (void*)next_location;
     return (void*)aligned_location;
+}
+
+void* Page::allocate_oversized(size_t size) {
+    const auto address = aligned_alloc(PAGE_SIZE, (size+PAGE_SIZE-1)&~(PAGE_SIZE-1));
+    if (address == nullptr) 
+        exit(1);
+    auto page = (Page*)address;
+    (*page).next_object = nullptr;
+    (exclusive_pages).add(this, page);
+    return (void*)(page+1);
 }
 
 void Page::deallocate_extensions() {
@@ -95,16 +105,6 @@ void Page::forget() {
 
 bool Page::is_oversized() {
     return next_object == nullptr;
-}
-
-void* Page::allocate_oversized(size_t size) {
-    const auto address = aligned_alloc(PAGE_SIZE, (size+PAGE_SIZE-1)&~(PAGE_SIZE-1));
-    if (address == nullptr) 
-        exit(1);
-    auto page = (Page*)address;
-    (*page).next_object = nullptr;
-    (exclusive_pages).add(this, page);
-    return (void*)(page+1);
 }
 
 }

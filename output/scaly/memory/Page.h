@@ -13,7 +13,8 @@ struct Page : Object {
     Page (void* next_object, Page* current_page, Page* next_page, PageList exclusive_pages);
     static Page* allocate_page();
     void reset();
-    void* allocate_raw(size_t size, size_t align);
+    void* allocate(size_t size, size_t align);
+    void* allocate_oversized(size_t size);
     void deallocate_extensions();
     static Page* get(void* address);
     void deallocate_exclusive_page(Page* page);
@@ -21,7 +22,6 @@ struct Page : Object {
     Page* allocate_exclusive_page();
     void forget();
     bool is_oversized();
-    void* allocate_oversized(size_t size);
 };
 
 #endif

@@ -39,7 +39,7 @@ struct Vector : Object {
 
     Vector(Page* rp, size_t length) : length(length){
         if (length>0) {
-            data = (T*)(*rp).allocate_raw(length*sizeof(T), alignof(T));
+            data = (T*)(*rp).allocate(length*sizeof(T), alignof(T));
             memset(data, 0, length*sizeof(T));
         }
         else {
@@ -49,7 +49,7 @@ struct Vector : Object {
 
     Vector(Page* rp, T* array, size_t legnth) : length(length){
         if (length>0) {
-            data = (T*)(*rp).allocate_raw(length*sizeof(T), alignof(T));
+            data = (T*)(*rp).allocate(length*sizeof(T), alignof(T));
             memcpy(data, array, length*sizeof(T));
         }
         else {
@@ -59,7 +59,7 @@ struct Vector : Object {
 
     Vector(Page* rp, Vector<T> other) : length(other.length){
         if (length>0) {
-            data = (T*)(*rp).allocate_raw(length*sizeof(T), alignof(T));
+            data = (T*)(*rp).allocate(length*sizeof(T), alignof(T));
             memcpy(data, other.data, length*sizeof(T));
         }
         else {
@@ -69,7 +69,7 @@ struct Vector : Object {
 
     Vector(Page* rp, Array<T> array) : length(array.length){
         if (length>0) {
-            data = (T*)(*rp).allocate_raw(length*sizeof(T), alignof(T));
+            data = (T*)(*rp).allocate(length*sizeof(T), alignof(T));
             memcpy(data, (*array.vector).data, length*sizeof(T));
         }
         else {
@@ -79,7 +79,7 @@ struct Vector : Object {
 
     Vector(Page* rp, List<T> list) : length(list.count()){
         if (length>0) {
-            data = (T*)(*rp).allocate_raw(length*sizeof(T), alignof(T));
+            data = (T*)(*rp).allocate(length*sizeof(T), alignof(T));
             auto list_iterator = list.get_iterator();
             size_t i = length;
             while (auto item = list_iterator.next()) {

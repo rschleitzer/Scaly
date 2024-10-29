@@ -21,6 +21,7 @@
 				"${workspaceFolder}/../memory/Region.cpp",
 				"${workspaceFolder}/../containers/HashSetBuilder.cpp",
 				"${workspaceFolder}/../containers/String.cpp",
+				"${workspaceFolder}/../containers/StringIterator.cpp",
 				"${workspaceFolder}/../containers/StringBuilder.cpp",
 				"-o",
 				"${workspaceFolder}/bin/io",

@@ -5,7 +5,7 @@ define Object () {
     }
 
     operator new (size: size_t, align: size_t, page: pointer[Page]) returns pointer[void] {
-        let object (*page).allocate_raw(size, align)
+        let object (*page).allocate(size, align)
         if object = null
             exit(16)
         return object
