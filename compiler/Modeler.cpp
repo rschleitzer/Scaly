@@ -19,7 +19,7 @@ Result<ProgramSyntax, ParserError> parse_program(Page* _rp, Page* _ep, const Str
 
 Result<Type*, ModelError> handle_type(Page* _rp, Page* _ep, TypeSyntax& type, String file);
 Result<Attribute, ModelError> handle_attribute(Page* _rp, Page* _ep, AttributeSyntax& attribute, String file);
-Result<Vector<Operand>, ModelError> handle_operands(Page* _rp, Page* _ep, Vector<OperandSyntax>& operands, String file);
+Result<Vector<Operand>, ModelError> handle_operands(Page* _rp, Page* _ep, Vector<OperandSyntax>* operands, String file);
 
 Result<Property, ModelError> handle_property(Page* _rp, Page* _ep, bool private_, PropertySyntax& property, String file) {
     Region _r;
@@ -33,7 +33,7 @@ Result<Property, ModelError> handle_property(Page* _rp, Page* _ep, bool private_
 
     Vector<Operand>* initializer = nullptr;
     if (property.initializer != nullptr) {
-        auto _initializer_result = handle_operands(_rp, _ep, *(property.initializer->operands), file);
+        auto _initializer_result = handle_operands(_rp, _ep, property.initializer->operands, file);
         if (_initializer_result._tag == Result<Type, ModelError>::Error)
             return Result<Property, ModelError> { ._tag = Result<Property, ModelError>::Error, ._Error = _initializer_result._Error };
         initializer = new (alignof(Vector<Operand>), _rp) Vector<Operand> (_rp, _initializer_result._Ok);
@@ -480,11 +480,11 @@ Result<Vector<Operand>, ModelError> handle_operation(Page* _rp, Page* _ep, Opera
 
 Result<Catch, ModelError> handle_catch(Page* _rp, Page* _ep, CatchSyntax& catch_, String file) {
     Region _r;
-    auto _condition_result =  handle_operands(_rp, _ep, *catch_.condition, file);
+    auto _condition_result =  handle_operands(_rp, _ep, catch_.condition, file);
     if (_condition_result._tag == Result<Operand, ModelError>::Error)
         return Result<Catch, ModelError> { ._tag = Result<Catch, ModelError>::Error, ._Error = _condition_result._Error };
     auto condition = _condition_result._Ok;
-    auto _handler_result =  handle_operands(_rp, _ep, *catch_.handler, file);
+    auto _handler_result =  handle_operands(_rp, _ep, catch_.handler, file);
     if (_handler_result._tag == Result<Operand, ModelError>::Error)
         return Result<Catch, ModelError> { ._tag = Result<Catch, ModelError>::Error, ._Error = _handler_result._Error };
     auto handler = _handler_result._Ok;
@@ -493,7 +493,7 @@ Result<Catch, ModelError> handle_catch(Page* _rp, Page* _ep, CatchSyntax& catch_
 
 Result<Drop, ModelError> handle_drop(Page* _rp, Page* _ep, DropSyntax& drop_, String file) {
     Region _r;
-    auto _handler_result =  handle_operands(_rp, _ep, *drop_.handler, file);
+    auto _handler_result =  handle_operands(_rp, _ep, drop_.handler, file);
     if (_handler_result._tag == Result<Operand, ModelError>::Error)
         return Result<Drop, ModelError> { ._tag = Result<Drop, ModelError>::Error, ._Error = _handler_result._Error };
     auto handler = _handler_result._Ok;
@@ -671,7 +671,7 @@ Result<Break, ModelError> handle_break(Page* _rp, Page* _ep, BreakSyntax& return
     Region _r;
     if (return_.result != nullptr) {
         auto result = return_.result;
-        auto result_result = handle_operands(_rp, _ep, *result, file);
+        auto result_result = handle_operands(_rp, _ep, result, file);
         if (result_result._tag == Result<Vector<Operand>, ModelError>::Error)
             return Result<Break, ModelError> { ._tag = Result<Break, ModelError>::Error, ._Error = result_result._Error };
         return Result<Break, ModelError> { ._tag = Result<Break, ModelError>::Ok, ._Ok = Break(Span(return_.start, return_.end), result_result._Ok) };
@@ -683,7 +683,7 @@ Result<Return, ModelError> handle_return(Page* _rp, Page* _ep, ReturnSyntax& ret
     Region _r;
     if (return_.result != nullptr) {
         auto result = return_.result;
-        auto result_result = handle_operands(_rp, _ep, *result, file);
+        auto result_result = handle_operands(_rp, _ep, result, file);
         if (result_result._tag == Result<Vector<Operand>, ModelError>::Error)
             return Result<Return, ModelError> { ._tag = Result<Return, ModelError>::Error, ._Error = result_result._Error };
         return Result<Return, ModelError> { ._tag = Result<Return, ModelError>::Ok, ._Ok = Return(Span(return_.start, return_.end), result_result._Ok) };
@@ -695,7 +695,7 @@ Result<Return, ModelError> handle_throw(Page* _rp, Page* _ep, ThrowSyntax& throw
     Region _r;
     if (throw_.result != nullptr) {
         auto result = throw_.result;
-        auto result_result = handle_operands(_rp, _ep, *result, file);
+        auto result_result = handle_operands(_rp, _ep, result, file);
         if (result_result._tag == Result<Vector<Operand>, ModelError>::Error)
             return Result<Return, ModelError> { ._tag = Result<Return, ModelError>::Error, ._Error = result_result._Error };
         return Result<Return, ModelError> { ._tag = Result<Return, ModelError>::Ok, ._Ok = Return(Span(throw_.start, throw_.end), result_result._Ok) };
@@ -722,7 +722,7 @@ Result<Statement, ModelError> handle_command(Page* _rp, Page* _ep, CommandSyntax
                     return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = _type_result._Error };
                 type = _type_result._Ok;
             }
-            auto operation_result = handle_operands(_rp, _ep, *binding, file);
+            auto operation_result = handle_operands(_rp, _ep, binding, file);
             if (operation_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = operation_result._Error };
             return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Ok, ._Ok = Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Constant, Item(Span(command._Let.start, command._Let.end), false, new(alignof(String), _rp) String(_rp, command._Let.binding.name), type, Vector<Attribute>(_rp, 0)), operation_result._Ok) }};
@@ -736,7 +736,7 @@ Result<Statement, ModelError> handle_command(Page* _rp, Page* _ep, CommandSyntax
                     return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = _type_result._Error };
                 type = _type_result._Ok;
             }
-            auto operation_result = handle_operands(_rp, _ep, *binding, file);
+            auto operation_result = handle_operands(_rp, _ep, binding, file);
             if (operation_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = operation_result._Error };
             return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Ok, ._Ok = Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Extendable, Item(Span(command._Var.start, command._Var.end), false, new(alignof(String), _rp) String(_rp, command._Mutable.binding.name), type, Vector<Attribute>(_rp, 0)), operation_result._Ok) }};
@@ -750,17 +750,17 @@ Result<Statement, ModelError> handle_command(Page* _rp, Page* _ep, CommandSyntax
                     return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = _type_result._Error };
                 type = _type_result._Ok;
             }
-            auto operation_result = handle_operands(_rp, _ep, *binding, file);
+            auto operation_result = handle_operands(_rp, _ep, binding, file);
             if (operation_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = operation_result._Error };
             return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Ok, ._Ok = Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Mutable, Item(Span(command._Mutable.start, command._Mutable.end), false, new(alignof(String), _rp) String(_rp, command._Mutable.binding.name), type, Vector<Attribute>(_rp, 0)), operation_result._Ok) }};
         }
         case CommandSyntax::Set: {
-            auto _target_result = handle_operands(_rp, _ep, *command._Set.target, file);
+            auto _target_result = handle_operands(_rp, _ep, command._Set.target, file);
             if (_target_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = _target_result._Error };
             auto target = _target_result._Ok;
-            auto _source_result = handle_operands(_rp, _ep, *command._Set.source, file);
+            auto _source_result = handle_operands(_rp, _ep, command._Set.source, file);
             if (_source_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = _source_result._Error };
             auto source = _source_result._Ok;
@@ -846,8 +846,7 @@ Result<Component, ModelError> handle_component(Page* _rp, Page* _ep, ComponentSy
         }
         auto value = component.value->value;
         if (value != nullptr) {
-            auto operands = *value;
-            auto value_result = handle_operands(_rp, _ep, operands, file);
+            auto value_result = handle_operands(_rp, _ep, value, file);
             if (value_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Error, ._Error = value_result._Error };
             else
@@ -857,8 +856,7 @@ Result<Component, ModelError> handle_component(Page* _rp, Page* _ep, ComponentSy
         }
     } else {
         if (component.operands != nullptr) {
-            auto operands = *component.operands;
-            auto value_result = handle_operands(_rp, _ep, operands, file);
+            auto value_result = handle_operands(_rp, _ep, component.operands, file);
             if (value_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Error, ._Error = value_result._Error };
             else
@@ -890,7 +888,7 @@ Result<Matrix, ModelError> handle_vector(Page* _rp, Page* _ep, VectorSyntax& vec
     if (vector.elements != nullptr) {
         auto elements_iterator = vector.elements->get_iterator();
         while (auto element = elements_iterator.next()) {
-            auto operation_result =  handle_operands(_rp, _ep, *element->operation, file);
+            auto operation_result =  handle_operands(_rp, _ep, element->operation, file);
             if (operation_result._tag == Result<Operand, ModelError>::Error)
                 return Result<Matrix, ModelError> { ._tag = Result<Matrix, ModelError>::Error, ._Error = operation_result._Error };
             operations_builder.add(operation_result._Ok);
@@ -955,7 +953,7 @@ Result<Action, ModelError> handle_action(Page* _rp, Page* _ep, ActionSyntax& act
 Result<If, ModelError> handle_if(Page* _rp, Page* _ep, IfSyntax& if_, String file) {
     Region _r;
     Property* property = nullptr;
-    auto condition_result = handle_operands(_rp, _ep, *if_.condition, file);
+    auto condition_result = handle_operands(_rp, _ep, if_.condition, file);
     if (condition_result._tag == Result<Vector<Operand>, ModelError>::Error)
         return Result<If, ModelError> { ._tag = Result<If, ModelError>::Error, ._Error = condition_result._Error };
     auto condition = condition_result._Ok;
@@ -978,7 +976,7 @@ Result<Match, ModelError> handle_match(Page* _rp, Page* _ep, MatchSyntax& match_
     Region _r;
     Property* property = nullptr;
 
-    auto condition_result = handle_operands(_rp, _ep, *match_.scrutinee, file);
+    auto condition_result = handle_operands(_rp, _ep, match_.scrutinee, file);
     if (condition_result._tag == Result<Vector<Operand>, ModelError>::Error)
         return Result<Match, ModelError> { ._tag = Result<Match, ModelError>::Error, ._Error = condition_result._Error };
     auto condition = condition_result._Ok;
@@ -987,7 +985,7 @@ Result<Match, ModelError> handle_match(Page* _rp, Page* _ep, MatchSyntax& match_
     if (match_.cases != nullptr) {
         auto case_iterator = match_.cases->get_iterator();
         while (auto case_ = case_iterator.next()) {
-            auto condition_result =  handle_operands(_rp, _ep, *case_->condition, file);
+            auto condition_result =  handle_operands(_rp, _ep, case_->condition, file);
             if (condition_result._tag == Result<Operand, ModelError>::Error)
                 return Result<Match, ModelError> { ._tag = Result<Match, ModelError>::Error, ._Error = condition_result._Error };
             auto _consequent_result = handle_action(_rp, _ep, case_->consequent, file);
@@ -1009,7 +1007,7 @@ Result<Match, ModelError> handle_match(Page* _rp, Page* _ep, MatchSyntax& match_
 
 Result<For, ModelError> handle_for(Page* _rp, Page* _ep, ForSyntax& for_, String file) {
     Region _r;
-    auto expression_result = handle_operands(_rp, _ep, *for_.operation, file);
+    auto expression_result = handle_operands(_rp, _ep, for_.operation, file);
     if (expression_result._tag == Result<Vector<Operand>, ModelError>::Error)
         return Result<For, ModelError> { ._tag = Result<For, ModelError>::Error, ._Error = expression_result._Error };
     auto expression = expression_result._Ok;
@@ -1042,7 +1040,7 @@ Result<Binding, ModelError> handle_condition(Page* _rp, Page* _ep, ConditionSynt
                     return Result<Binding, ModelError> { ._tag = Result<Binding, ModelError>::Error, ._Error = _type_result._Error };
                 type = _type_result._Ok;
             }
-            auto operation_result = handle_operands(_rp, _ep, *binding, file);
+            auto operation_result = handle_operands(_rp, _ep, binding, file);
             if (operation_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Binding, ModelError> { ._tag = Result<Binding, ModelError>::Error, ._Error = operation_result._Error };
             return Result<Binding, ModelError> { ._tag = Result<Binding, ModelError>::Ok, ._Ok = Binding(Binding::Mutability::Constant, Item(Span(condition._Let.start, condition._Let.end), false, new(alignof(String), _rp) String(_rp, condition._Let.binding.name), nullptr, Vector<Attribute>(_rp, 0)), operation_result._Ok)};
@@ -1179,23 +1177,25 @@ Result<Operand, ModelError> handle_operand(Page* _rp, Page* _ep, OperandSyntax& 
     return Result<Operand, ModelError> { ._tag = Result<Operand, ModelError>::Ok, ._Ok = Operand(Span(operand.expression._Literal.start, operand.expression._Literal.end), expression_result._Ok, postfixes) };
 }
 
-Result<Vector<Operand>, ModelError> handle_operands(Page* _rp, Page* _ep, Vector<OperandSyntax>& operands, String file) {
+Result<Vector<Operand>, ModelError> handle_operands(Page* _rp, Page* _ep, Vector<OperandSyntax>* operands, String file) {
     Region _r;
     List<Operand>& operands_builder = *new(alignof(List<Operand>), _r.get_page()) List<Operand>();
-    auto operands_iterator = operands.get_iterator();
-    while (auto operand = operands_iterator.next()) {
-        auto operand_result = handle_operand(_rp, _ep, *operand, file);
-        if (operand_result._tag == Result<Operand, ModelError>::Error)
-            return Result<Vector<Operand>, ModelError> { ._tag = Result<Vector<Operand>, ModelError>::Error, ._Error = operand_result._Error };
-        operands_builder.add(operand_result._Ok);
+    if (operands != nullptr)
+    {
+        auto operands_iterator = operands->get_iterator();
+        while (auto operand = operands_iterator.next()) {
+            auto operand_result = handle_operand(_rp, _ep, *operand, file);
+            if (operand_result._tag == Result<Operand, ModelError>::Error)
+                return Result<Vector<Operand>, ModelError> { ._tag = Result<Vector<Operand>, ModelError>::Error, ._Error = operand_result._Error };
+            operands_builder.add(operand_result._Ok);
+        }
     }
     return Result<Vector<Operand>, ModelError> { ._tag = Result<Vector<Operand>, ModelError>::Ok, ._Ok = (Vector<Operand>(_rp, operands_builder)) };
 }
 
 Result<Vector<Operand>, ModelError> handle_operation(Page* _rp, Page* _ep, OperationSyntax& operation, String file) {
     if (operation.operands != nullptr) {
-        auto operands = *operation.operands;
-        auto operands_result = handle_operands(_rp, _ep, operands, file);
+        auto operands_result = handle_operands(_rp, _ep, operation.operands, file);
         if (operands_result._tag == Result<Vector<Operand>, ModelError>::Error)
             return Result<Vector<Operand>, ModelError> { ._tag = Result<Vector<Operand>, ModelError>::Error, ._Error = operands_result._Error };
         return Result<Vector<Operand>, ModelError> { ._tag = Result<Vector<Operand>, ModelError>::Ok, ._Ok = operands_result._Ok };
@@ -1310,7 +1310,7 @@ Result<Concept, ModelError> handle_definition(Page* _rp, Page* _ep, String path,
         }
         case ConceptSyntax::Constant: {
             auto constant = concept._Constant;
-            auto operation_result = handle_operands(_rp, _ep, *constant.operation, file);
+            auto operation_result = handle_operands(_rp, _ep, constant.operation, file);
             if (operation_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = operation_result._Error };
             auto _type_result = handle_type(_rp, _ep, constant.type, file);
@@ -1342,11 +1342,11 @@ Result<Action, ModelError> handle_action(Page* _rp, Page* _ep, ActionSyntax& act
             return Result<Action, ModelError> { ._tag = Result<Action, ModelError>::Ok, ._Ok = Action(operation_result._Ok, Vector<Operand>()) };
         }
         case ActionSyntax::Set: {
-            auto _target_result = handle_operands(_rp, _ep, *action._Set.target, file);
+            auto _target_result = handle_operands(_rp, _ep, action._Set.target, file);
             if (_target_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Action, ModelError> { ._tag = Result<Action, ModelError>::Error, ._Error = _target_result._Error };
             auto target = _target_result._Ok;
-            auto _source_result = handle_operands(_rp, _ep, *action._Set.source, file);
+            auto _source_result = handle_operands(_rp, _ep, action._Set.source, file);
             if (_source_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Action, ModelError> { ._tag = Result<Action, ModelError>::Error, ._Error = _source_result._Error };
             auto source = _source_result._Ok;

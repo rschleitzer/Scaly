@@ -26,8 +26,8 @@ Result<Void, FileError> Directory::create(Page* ep, String path) {
 
 Result<bool, FileError> Directory::exists(Page* ep, String path) {
     auto r = Region();
-    struct stat s;
-    const auto err = stat(path.to_c_string(r.get_page()), &s);
+    struct_stat* s = nullptr;
+    const auto err = stat(path.to_c_string(r.get_page()), s);
     if (err == -1) {
         if (errno == ENOENT) {
             return Result<bool, FileError>(false);
@@ -37,7 +37,7 @@ Result<bool, FileError> Directory::exists(Page* ep, String path) {
         };
     }
     else {
-        if (S_ISDIR(s.st_mode)) {
+        if (S_ISDIR((*s).st_mode)) {
             return Result<bool, FileError>(true);
         }
         else {

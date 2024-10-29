@@ -4,8 +4,8 @@ define Directory
     function exists(path: String) returns bool throws FileError {
         var r Region()
 
-        struct stat s
-        let err stat(path.to_c_string(r.get_page()), &s)
+        var s: pointer[struct_stat] nullptr 
+        let err stat(path.to_c_string(r.get_page()), s)
         if err = -1
         {
             if errno = ENOENT
@@ -15,7 +15,7 @@ define Directory
                 throw FileError(UnknownFileError(String(ep, path)))
             }
         } else {
-            if S_ISDIR(s.st_mode)
+            if S_ISDIR((*s).st_mode)
             {
                 return true
             } else {

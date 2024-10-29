@@ -429,7 +429,7 @@
 <syntax id = Binding
     <content identifier                                     property = name
     <content link = BindingAnnotation              optional property = annotation
-    <content link = Operand              multiple          property = operation
+    <content link = Operand               multiple          property = operation
 
 <syntax id = BindingAnnotation
     <content colon

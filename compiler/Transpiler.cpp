@@ -1536,6 +1536,7 @@ struct Transpiler : Object {
         StringBuilder& builder = *new (alignof(StringBuilder), _r.get_page()) StringBuilder();
         builder.append("\
 typedef const char const_char;\n\
+typedef struct stat struct_stat;\n\
 typedef const void const_void;\n");
         {
             auto _result = forward_includes_for_modules(_ep, builder,  program.module.modules);
