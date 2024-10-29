@@ -1740,7 +1740,7 @@ Result<Module, ModelError> handle_package(Page* _rp, Page* _ep, String path, Pac
     return build_referenced_module(_rp, _ep, path, package_syntax.name.name, false);
 }
 
-Result<Program, ModelError> build_program(Page* _rp, Page* _ep, const String& file_name) {
+Result<Program, ModelError> build_program(Page* _rp, Page* _ep, String file_name, String program_name) {
     Region _r;
     auto file_text_result = File::read_to_string(_r.get_page(), _r.get_page(), file_name);
     if (file_text_result._tag == Result<String, FileError>::Error) {
@@ -1767,7 +1767,7 @@ Result<Program, ModelError> build_program(Page* _rp, Page* _ep, const String& fi
         }
     }
 
-    auto module_result = build_module(_rp, _ep, Path::get_directory_name(_rp, file_name), file_name, Path::get_file_name_without_extension(_rp, file_name), program_syntax.file, false);
+    auto module_result = build_module(_rp, _ep, Path::get_directory_name(_rp, file_name), file_name, program_name, program_syntax.file, false);
     if (module_result._tag == Result<Module, ModelError>::Error)
         return Result<Program, ModelError> { ._tag = Result<Program, ModelError>::Error, ._Error = module_result._Error };
     auto module = module_result._Ok;

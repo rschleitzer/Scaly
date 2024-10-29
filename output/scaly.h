@@ -8,7 +8,6 @@
 #include <errno.h>
 #include <math.h>
 #include <libgen.h>
-#include <filesystem>
 #include "forwards.h"
 namespace scaly {
 #include "scaly/Result.h"

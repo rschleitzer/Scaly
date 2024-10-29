@@ -1,4 +1,3 @@
-use std.filesystem
 define Path()
 {
      function get_directory_name(path: String) returns String {
@@ -17,16 +16,6 @@ define Path()
         let path_as_c_string path.to_c_string(r.get_page())
         let file_name_as_c_string basename((char*)path_as_c_string)
         let ret String(rp, file_name_as_c_string)
-        return ret
-    }
-
-    function get_file_name_without_extension(file: String) returns String {
-        var r Region()
-        let path_as_c_string file.to_c_string(r.get_page())
-        let p: path path_as_c_string
-        let stem p.stem()
-        let file_name_without_extension_as_c_string stem.c_str()
-        let ret String(rp, file_name_without_extension_as_c_string)
         return ret
     }
 

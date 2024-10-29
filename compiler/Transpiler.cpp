@@ -65,7 +65,6 @@ struct Transpiler : Object {
 #include <errno.h>\n\
 #include <math.h>\n\
 #include <libgen.h>\n\
-#include <filesystem>\n\
 #include \"forwards.h\"\n");
         }
         else {

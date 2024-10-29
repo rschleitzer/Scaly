@@ -22,9 +22,9 @@ namespace compiler {
 using namespace scaly::compiler::model;
 using namespace scaly::compiler::transpiler;
 
-CompilerError* compile(Page* _ep, const String& file_name) {
+CompilerError* compile(Page* _ep, String file_name, String program_name) {
     Region _r;
-    auto program_result = build_program(_r.get_page(), _ep, file_name);
+    auto program_result = build_program(_r.get_page(), _ep, file_name, program_name);
     if (program_result._tag == Result<Program, ModelError>::Error)
         return new(alignof(CompilerError), _ep) CompilerError(program_result._Error);
     
