@@ -1231,58 +1231,59 @@ struct Parser : Object {
     Vector<String> keywords_index;
     HashSet<String> keywords;
 
-    Parser(Page* _rp, String text)
-      : lexer(*new(alignof(Lexer), _rp) Lexer(text)),
-        keywords_index(initialize_keywords_index(_rp)),
-        keywords(initialize_keywords( _rp)) {}
+    Parser(String text)
+      : lexer(Lexer(text)),
+        keywords_index(initialize_keywords_index(Page::get(this))),
+        keywords(initialize_keywords(Page::get(this))) {}
 
     Vector<String> initialize_keywords_index(Page* _rp) {
         Region _r;
-        List<String>& keywords_builder = *new(alignof(List<String>), _r.get_page()) List<String>();
-        keywords_builder.add(String(Page::get(this), "break"));
-        keywords_builder.add(String(Page::get(this), "catch"));
-        keywords_builder.add(String(Page::get(this), "case"));
-        keywords_builder.add(String(Page::get(this), "continue"));
-        keywords_builder.add(String(Page::get(this), "define"));
-        keywords_builder.add(String(Page::get(this), "default"));
-        keywords_builder.add(String(Page::get(this), "deinit"));
-        keywords_builder.add(String(Page::get(this), "delegate"));
-        keywords_builder.add(String(Page::get(this), "drop"));
-        keywords_builder.add(String(Page::get(this), "else"));
-        keywords_builder.add(String(Page::get(this), "extends"));
-        keywords_builder.add(String(Page::get(this), "extern"));
-        keywords_builder.add(String(Page::get(this), "for"));
-        keywords_builder.add(String(Page::get(this), "function"));
-        keywords_builder.add(String(Page::get(this), "if"));
-        keywords_builder.add(String(Page::get(this), "init"));
-        keywords_builder.add(String(Page::get(this), "implement"));
-        keywords_builder.add(String(Page::get(this), "in"));
-        keywords_builder.add(String(Page::get(this), "instruction"));
-        keywords_builder.add(String(Page::get(this), "intrinsic"));
-        keywords_builder.add(String(Page::get(this), "label"));
-        keywords_builder.add(String(Page::get(this), "lambda"));
-        keywords_builder.add(String(Page::get(this), "let"));
-        keywords_builder.add(String(Page::get(this), "loop"));
-        keywords_builder.add(String(Page::get(this), "macro"));
-        keywords_builder.add(String(Page::get(this), "match"));
-        keywords_builder.add(String(Page::get(this), "module"));
-        keywords_builder.add(String(Page::get(this), "mutable"));
-        keywords_builder.add(String(Page::get(this), "operator"));
-        keywords_builder.add(String(Page::get(this), "procedure"));
-        keywords_builder.add(String(Page::get(this), "private"));
-        keywords_builder.add(String(Page::get(this), "return"));
-        keywords_builder.add(String(Page::get(this), "returns"));
-        keywords_builder.add(String(Page::get(this), "repeat"));
-        keywords_builder.add(String(Page::get(this), "set"));
-        keywords_builder.add(String(Page::get(this), "sizeof"));
-        keywords_builder.add(String(Page::get(this), "throw"));
-        keywords_builder.add(String(Page::get(this), "throws"));
-        keywords_builder.add(String(Page::get(this), "trait"));
-        keywords_builder.add(String(Page::get(this), "union"));
-        keywords_builder.add(String(Page::get(this), "use"));
-        keywords_builder.add(String(Page::get(this), "var"));
-        keywords_builder.add(String(Page::get(this), "while"));
-        keywords_builder.add(String(Page::get(this), "package"));
+        Array<String>& keywords_builder = *new(alignof(Array<String>), _r.get_page()) Array<String>();
+        auto p = Page::get(this);
+        keywords_builder.add(String(p, "break"));
+        keywords_builder.add(String(p, "catch"));
+        keywords_builder.add(String(p, "case"));
+        keywords_builder.add(String(p, "continue"));
+        keywords_builder.add(String(p, "define"));
+        keywords_builder.add(String(p, "default"));
+        keywords_builder.add(String(p, "deinit"));
+        keywords_builder.add(String(p, "delegate"));
+        keywords_builder.add(String(p, "drop"));
+        keywords_builder.add(String(p, "else"));
+        keywords_builder.add(String(p, "extends"));
+        keywords_builder.add(String(p, "extern"));
+        keywords_builder.add(String(p, "for"));
+        keywords_builder.add(String(p, "function"));
+        keywords_builder.add(String(p, "if"));
+        keywords_builder.add(String(p, "init"));
+        keywords_builder.add(String(p, "implement"));
+        keywords_builder.add(String(p, "in"));
+        keywords_builder.add(String(p, "instruction"));
+        keywords_builder.add(String(p, "intrinsic"));
+        keywords_builder.add(String(p, "label"));
+        keywords_builder.add(String(p, "lambda"));
+        keywords_builder.add(String(p, "let"));
+        keywords_builder.add(String(p, "loop"));
+        keywords_builder.add(String(p, "macro"));
+        keywords_builder.add(String(p, "match"));
+        keywords_builder.add(String(p, "module"));
+        keywords_builder.add(String(p, "mutable"));
+        keywords_builder.add(String(p, "operator"));
+        keywords_builder.add(String(p, "procedure"));
+        keywords_builder.add(String(p, "private"));
+        keywords_builder.add(String(p, "return"));
+        keywords_builder.add(String(p, "returns"));
+        keywords_builder.add(String(p, "repeat"));
+        keywords_builder.add(String(p, "set"));
+        keywords_builder.add(String(p, "sizeof"));
+        keywords_builder.add(String(p, "throw"));
+        keywords_builder.add(String(p, "throws"));
+        keywords_builder.add(String(p, "trait"));
+        keywords_builder.add(String(p, "union"));
+        keywords_builder.add(String(p, "use"));
+        keywords_builder.add(String(p, "var"));
+        keywords_builder.add(String(p, "while"));
+        keywords_builder.add(String(p, "package"));
         return Vector<String>(_rp, keywords_builder);
     }
 

@@ -171,7 +171,7 @@ void test_lexer() {
 
 void test_parser() {
     Region _r;
-    Parser& parser = *new (alignof(Parser), _r.get_page()) Parser(_r.get_page(), String(_r.get_page(), "define a 1"));
+    Parser& parser = *new (alignof(Parser), _r.get_page()) Parser(String(_r.get_page(), "define a 1"));
     auto file_syntax = parser.parse_file(_r.get_page(), _r.get_page());
     if (file_syntax._tag != Result<FileSyntax*, ParserError*>::Ok)
         exit(-1);

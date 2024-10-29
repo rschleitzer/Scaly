@@ -8,7 +8,7 @@ Result<ProgramSyntax, ParserError> parse_program(Page* _rp, Page* _ep, const Str
     Region _r;
     {
         Region _r_1;
-        Parser& parser = *new(alignof(Parser), _r_1.get_page()) Parser(_r_1.get_page(), program);
+        Parser& parser = *new(alignof(Parser), _r_1.get_page()) Parser(program);
         auto program_syntax_result = parser.parse_program(_rp, _ep);
         if (!parser.is_at_end())
             return Result<ProgramSyntax, ParserError> { ._tag = Result<ProgramSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(parser.lexer.previous_position, parser.lexer.position, String(_ep, "a valid declaraion"))) };
@@ -1719,7 +1719,7 @@ Result<Module, ModelError> build_referenced_module(Page* _rp, Page* _ep, String 
     }
     auto module_text = module_text_result._Ok;
 
-    Parser& parser = *new(alignof(Parser), _r.get_page()) Parser(_r.get_page(), module_text);
+    Parser& parser = *new(alignof(Parser), _r.get_page()) Parser(module_text);
     auto file_syntax_result = parser.parse_file(_rp, _ep);
     if (file_syntax_result._tag == Result<ModuleSyntax*, ParserError>::Error)
         return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = ModelError(ParserModelError(file_name, file_syntax_result._Error)) };
