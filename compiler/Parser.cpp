@@ -1892,12 +1892,8 @@ struct Parser : Object {
 
         auto start_name = this->lexer.previous_position;
         auto name = this->lexer.parse_identifier(_rp, this->keywords);
-        if (name != nullptr) {
-            if (!this->is_identifier(*name)) {
-            return Result<DefinitionSyntax, ParserError> { ._tag = Result<DefinitionSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_name, lexer.position, String(_ep, "an identifier"))) };
-            }
-        }
-        else {
+        if (name == nullptr)
+        {
             return Result<DefinitionSyntax, ParserError> { ._tag = Result<DefinitionSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_name, lexer.position, String(_ep, "an identifier"))) };
         }
 
@@ -2020,13 +2016,8 @@ struct Parser : Object {
 
         auto start_name = this->lexer.previous_position;
         auto name = this->lexer.parse_identifier(_rp, this->keywords);
-        if (name != nullptr) {
-            if (!this->is_identifier(*name)) {
-            return Result<GenericParameterSyntax, ParserError> { ._tag = Result<GenericParameterSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
-
-            }
-        }
-        else {
+        if (name == nullptr)
+        {
             return Result<GenericParameterSyntax, ParserError> { ._tag = Result<GenericParameterSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
 
         }
@@ -2410,13 +2401,8 @@ struct Parser : Object {
 
         auto start_name = this->lexer.previous_position;
         auto name = this->lexer.parse_identifier(_rp, this->keywords);
-        if (name != nullptr) {
-            if (!this->is_identifier(*name)) {
-            return Result<VariantSyntax, ParserError> { ._tag = Result<VariantSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
-
-            }
-        }
-        else {
+        if (name == nullptr)
+        {
             return Result<VariantSyntax, ParserError> { ._tag = Result<VariantSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
 
         }
@@ -2805,13 +2791,8 @@ struct Parser : Object {
 
         auto start_name = this->lexer.previous_position;
         auto name = this->lexer.parse_identifier(_rp, this->keywords);
-        if (name != nullptr) {
-            if (!this->is_identifier(*name)) {
-            return Result<ItemSyntax, ParserError> { ._tag = Result<ItemSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
-
-            }
-        }
-        else {
+        if (name == nullptr)
+        {
             return Result<ItemSyntax, ParserError> { ._tag = Result<ItemSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
 
         }
@@ -3529,13 +3510,8 @@ struct Parser : Object {
 
         auto start_name = this->lexer.previous_position;
         auto name = this->lexer.parse_identifier(_rp, this->keywords);
-        if (name != nullptr) {
-            if (!this->is_identifier(*name)) {
-            return Result<NamedSyntax, ParserError> { ._tag = Result<NamedSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
-
-            }
-        }
-        else {
+        if (name == nullptr)
+        {
             return Result<NamedSyntax, ParserError> { ._tag = Result<NamedSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
 
         }
@@ -3891,12 +3867,8 @@ struct Parser : Object {
 
         auto start_name = this->lexer.previous_position;
         auto name = this->lexer.parse_identifier(_rp, this->keywords);
-        if (name != nullptr) {
-            if (!this->is_identifier(*name)) {
-            return Result<MacroSyntax, ParserError> { ._tag = Result<MacroSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_name, lexer.position, String(_ep, "an identifier"))) };
-            }
-        }
-        else {
+        if (name == nullptr)
+        {
             return Result<MacroSyntax, ParserError> { ._tag = Result<MacroSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_name, lexer.position, String(_ep, "an identifier"))) };
         }
 
@@ -4071,12 +4043,8 @@ struct Parser : Object {
 
         auto start_name = this->lexer.previous_position;
         auto name = this->lexer.parse_identifier(_rp, this->keywords);
-        if (name != nullptr) {
-            if (!this->is_identifier(*name)) {
-            return Result<ModuleSyntax, ParserError> { ._tag = Result<ModuleSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_name, lexer.position, String(_ep, "an identifier"))) };
-            }
-        }
-        else {
+        if (name == nullptr)
+        {
             return Result<ModuleSyntax, ParserError> { ._tag = Result<ModuleSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_name, lexer.position, String(_ep, "an identifier"))) };
         }
 
@@ -5470,13 +5438,8 @@ struct Parser : Object {
 
         auto start_name = this->lexer.previous_position;
         auto name = this->lexer.parse_identifier(_rp, this->keywords);
-        if (name != nullptr) {
-            if (!this->is_identifier(*name)) {
-            return Result<BindingSyntax, ParserError> { ._tag = Result<BindingSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
-
-            }
-        }
-        else {
+        if (name == nullptr)
+        {
             return Result<BindingSyntax, ParserError> { ._tag = Result<BindingSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
 
         }
@@ -5809,13 +5772,8 @@ struct Parser : Object {
 
         auto start_name = this->lexer.previous_position;
         auto name = this->lexer.parse_identifier(_rp, this->keywords);
-        if (name != nullptr) {
-            if (!this->is_identifier(*name)) {
-            return Result<PropertySyntax, ParserError> { ._tag = Result<PropertySyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
-
-            }
-        }
-        else {
+        if (name == nullptr)
+        {
             return Result<PropertySyntax, ParserError> { ._tag = Result<PropertySyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
 
         }
@@ -5979,12 +5937,8 @@ struct Parser : Object {
 
         auto start_name = this->lexer.previous_position;
         auto name = this->lexer.parse_identifier(_rp, this->keywords);
-        if (name != nullptr) {
-            if (!this->is_identifier(*name)) {
-            return Result<LoopSyntax, ParserError> { ._tag = Result<LoopSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_name, lexer.position, String(_ep, "an identifier"))) };
-            }
-        }
-        else {
+        if (name == nullptr)
+        {
             return Result<LoopSyntax, ParserError> { ._tag = Result<LoopSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_name, lexer.position, String(_ep, "an identifier"))) };
         }
 
@@ -6282,12 +6236,8 @@ struct Parser : Object {
 
         auto start_variable = this->lexer.previous_position;
         auto variable = this->lexer.parse_identifier(_rp, this->keywords);
-        if (variable != nullptr) {
-            if (!this->is_identifier(*variable)) {
-            return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_variable, lexer.position, String(_ep, "an identifier"))) };
-            }
-        }
-        else {
+        if (variable == nullptr)
+        {
             return Result<ForSyntax, ParserError> { ._tag = Result<ForSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_variable, lexer.position, String(_ep, "an identifier"))) };
         }
 
@@ -6375,12 +6325,8 @@ struct Parser : Object {
 
         auto start_name = this->lexer.previous_position;
         auto name = this->lexer.parse_identifier(_rp, this->keywords);
-        if (name != nullptr) {
-            if (!this->is_identifier(*name)) {
-            return Result<LabelSyntax, ParserError> { ._tag = Result<LabelSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_name, lexer.position, String(_ep, "an identifier"))) };
-            }
-        }
-        else {
+        if (name == nullptr)
+        {
             return Result<LabelSyntax, ParserError> { ._tag = Result<LabelSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_name, lexer.position, String(_ep, "an identifier"))) };
         }
 
@@ -6688,13 +6634,8 @@ struct Parser : Object {
 
         auto start_name = this->lexer.previous_position;
         auto name = this->lexer.parse_identifier(_rp, this->keywords);
-        if (name != nullptr) {
-            if (!this->is_identifier(*name)) {
-            return Result<NameSyntax, ParserError> { ._tag = Result<NameSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
-
-            }
-        }
-        else {
+        if (name == nullptr)
+        {
             return Result<NameSyntax, ParserError> { ._tag = Result<NameSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
 
         }
@@ -6756,12 +6697,8 @@ struct Parser : Object {
 
         auto start_name = this->lexer.previous_position;
         auto name = this->lexer.parse_identifier(_rp, this->keywords);
-        if (name != nullptr) {
-            if (!this->is_identifier(*name)) {
-            return Result<ExtensionSyntax, ParserError> { ._tag = Result<ExtensionSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_name, lexer.position, String(_ep, "an identifier"))) };
-            }
-        }
-        else {
+        if (name == nullptr)
+        {
             return Result<ExtensionSyntax, ParserError> { ._tag = Result<ExtensionSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_name, lexer.position, String(_ep, "an identifier"))) };
         }
 
@@ -6879,12 +6816,8 @@ struct Parser : Object {
 
         auto start_location = this->lexer.previous_position;
         auto location = this->lexer.parse_identifier(_rp, this->keywords);
-        if (location != nullptr) {
-            if (!this->is_identifier(*location)) {
-            return Result<ReferenceSyntax, ParserError> { ._tag = Result<ReferenceSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_location, lexer.position, String(_ep, "an identifier"))) };
-            }
-        }
-        else {
+        if (location == nullptr)
+        {
             return Result<ReferenceSyntax, ParserError> { ._tag = Result<ReferenceSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_location, lexer.position, String(_ep, "an identifier"))) };
         }
 
@@ -6913,13 +6846,6 @@ struct Parser : Object {
 
     bool is_at_end() {
         return this->lexer.is_at_end();
-    }
-
-    bool is_identifier(String& id) {
-        if (this->keywords.contains(id))
-            return false;
-        else
-            return true;
     }
 };
 

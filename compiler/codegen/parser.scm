@@ -309,13 +309,8 @@ struct Parser : Object {
 "
                                     ))
                                     (("identifier") ($ 
-"        if ("(property content)" != nullptr) {
-            if (!this->is_identifier(*"(property content)")) {"
-                                    null-handler
-"
-            }
-        }
-        else {"
+"        if ("(property content)" == nullptr)
+        {"
                                     null-handler
             "
         }
@@ -354,13 +349,6 @@ struct Parser : Object {
 "
     bool is_at_end() {
         return this->lexer.is_at_end();
-    }
-
-    bool is_identifier(String& id) {
-        if (this->keywords.contains(id))
-            return false;
-        else
-            return true;
     }
 };
 
