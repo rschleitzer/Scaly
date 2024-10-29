@@ -19,5 +19,17 @@ Result<String, FileError> File::read_to_string(Page* rp, Page* ep, String path) 
     return Result<String, FileError>(ret);
 }
 
+Result<Void, FileError> File::write_from_string(Page* ep, String path, String contents) {
+    auto r = Region();
+    auto file = fopen(path.to_c_string(r.get_page()), "wb");
+    if (file == nullptr) {
+        switch (errno) 
+        default: return Result<Void, FileError>(FileError(UnknownFileError(String(ep, path))));
+    };
+    fwrite(contents.to_c_string(r.get_page()), 1, contents.get_length(), file);
+    fclose(file);
+    return Result<Void, FileError>(Void());
+}
+
 }
 }
