@@ -1121,7 +1121,9 @@ struct Transpiler : Object {
             if (_result != nullptr)
                 return _result;
         }
-        builder.append(") ");
+        builder.append(")\n");
+        builder.append(indent);
+        builder.append("{");
         auto _case__iterator = match_.cases.get_iterator();
         while (auto _case_ = _case__iterator.next()) {
             auto case_ = *_case_;
@@ -1129,13 +1131,19 @@ struct Transpiler : Object {
         if (match_.alternative != nullptr) {
             builder.append('\n');
             builder.append(indent);
-            builder.append("default: ");
+            builder.append("    default:\n");
+            builder.append(indent);
+            builder.append("        ");
             {
                 auto _result = build_statement(_ep, builder, match_.alternative, returns_, throws_, indent);
                 if (_result != nullptr)
                     return _result;
+                builder.append(';');
             }
         }
+        builder.append('\n');
+        builder.append(indent);
+        builder.append("}");
 
         return nullptr;
     }
