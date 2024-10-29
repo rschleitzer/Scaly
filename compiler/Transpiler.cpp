@@ -1202,13 +1202,34 @@ struct Transpiler : Object {
     TranspilerError* build_return(Page* _ep, StringBuilder& builder, Return& return_, Type* returns_, Type* throws_, String indent) {
         Region _r;
         builder.append("return");
-        if (return_.result.length > 0)
+        if ((return_.result.length > 0) || (throws_ != nullptr))
+        {
             builder.append(' ');
+        }
+        if (throws_ != nullptr)
+        {
+            builder.append("Result<");
+            if (returns_ == nullptr)
+                builder.append("Void");
+            else
+                build_type(builder, returns_);
+            builder.append(", ");
+            build_type(builder, throws_);
+            builder.append(">(");
+            if (return_.result.length == 0)
+            {
+                builder.append("Void()");
+            }
+        }
         {
             auto _result = build_operation(_ep, builder, return_.result, returns_, throws_, indent);
             if (_result != nullptr)
                 return _result;
         }
+
+        if (throws_ != nullptr)
+            builder.append(")");
+
         return nullptr;
     }
 

@@ -37,8 +37,7 @@ define Directory
             } else {
                 throw FileError(UnknownFileError(String(ep, path)))
             }
-        }    
-        return null
+        }
     }
     *;
     function remove(path: String) throws FileError {
@@ -48,6 +47,6 @@ define Directory
         if err = -1
             throw FileError(UnknownFileError(String(ep, path)))
         
-        return null
+        return
     }
 }
