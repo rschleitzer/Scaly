@@ -64,6 +64,8 @@ struct Transpiler : Object {
 #include <sys/stat.h>\n\
 #include <errno.h>\n\
 #include <math.h>\n\
+#include <libgen.h>\n\
+#include <filesystem>\n\
 #include \"forwards.h\"\n");
         }
         else {
@@ -560,7 +562,7 @@ struct Transpiler : Object {
         Region _r;
         auto uses_iterator = uses.get_iterator();
         while (auto use = uses_iterator.next()) {
-            builder.append("using namespace ");
+            builder.append("\nusing namespace ");
             bool first = true;
             auto namespace_iterator = use->path.get_iterator();
             while(auto namespace_ = namespace_iterator.next()) {

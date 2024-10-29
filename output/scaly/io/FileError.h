@@ -3,6 +3,7 @@
 #include "../../scaly.h"
 using namespace scaly;
 using namespace scaly::memory;
+
 using namespace scaly::containers;
 
 struct UnknownFileError : Object {

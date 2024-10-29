@@ -61,5 +61,6 @@ struct UnknownFileError;
 struct NoSuchFileOrDirectoryError;
 struct Directory;
 struct File;
+struct Path;
 }
 }

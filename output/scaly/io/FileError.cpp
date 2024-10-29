@@ -1,6 +1,7 @@
 #include "../../scaly.h"
 namespace scaly {
-namespace io {using namespace scaly::containers;
+namespace io {
+using namespace scaly::containers;
 
 
 UnknownFileError::UnknownFileError(String file_name) : file_name(file_name) {}

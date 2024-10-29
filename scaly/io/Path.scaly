@@ -1,0 +1,47 @@
+use std.filesystem
+define Path()
+{
+     function get_directory_name(path: String) returns String {
+        var r Region()
+        let path_as_c_string path.to_c_string(r.get_page())
+        let directory_name_as_c_string dirname((char*)path_as_c_string)
+        if strcmp(directory_name_as_c_string, ".") = 0
+            return String(rp, "")
+
+        let ret String(rp, directory_name_as_c_string)
+        return ret
+    }
+
+    function get_file_name(path: String) returns String {
+        var r Region()
+        let path_as_c_string path.to_c_string(r.get_page())
+        let file_name_as_c_string basename((char*)path_as_c_string)
+        let ret String(rp, file_name_as_c_string)
+        return ret
+    }
+
+    function get_file_name_without_extension(file: String) returns String {
+        var r Region()
+        let path_as_c_string file.to_c_string(r.get_page())
+        let p: path path_as_c_string
+        let stem p.stem()
+        let file_name_without_extension_as_c_string stem.c_str()
+        let ret String(rp, file_name_without_extension_as_c_string)
+        return ret
+    }
+
+    function join(path1: String, path2: String) returns String {
+        var r Region()
+        if path1.get_length() = 0
+            return String(rp, path2)
+        
+        var path StringBuilder$()
+        (*path).append(path1)
+        if path2.get_length() = 0
+            return (*path).to_string(rp)
+
+        (*path).append('/')
+        (*path).append(path2)
+        return (*path).to_string(rp)
+    }
+}

@@ -8,6 +8,7 @@ namespace io {
 #include "io/FileError.h"
 #include "io/Directory.h"
 #include "io/File.h"
+#include "io/Path.h"
 
     void test();
 }
