@@ -1125,6 +1125,9 @@ struct Transpiler : Object {
         builder.append(indent);
         builder.append("{");
         auto _case__iterator = match_.cases.get_iterator();
+        StringBuilder& indent_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(indent);
+        indent_builder.append("        ");
+        String indented = indent_builder.to_string(_r.get_page());
         while (auto _case_ = _case__iterator.next()) {
             auto case_ = *_case_;
         }
@@ -1132,10 +1135,9 @@ struct Transpiler : Object {
             builder.append('\n');
             builder.append(indent);
             builder.append("    default:\n");
-            builder.append(indent);
-            builder.append("        ");
+            builder.append(indented);
             {
-                auto _result = build_statement(_ep, builder, match_.alternative, returns_, throws_, indent);
+                auto _result = build_statement(_ep, builder, match_.alternative, returns_, throws_, indented);
                 if (_result != nullptr)
                     return _result;
                 builder.append(';');
