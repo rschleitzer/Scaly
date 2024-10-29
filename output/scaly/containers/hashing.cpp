@@ -2,6 +2,20 @@
 namespace scaly {
 namespace containers {
 
+bool hashing::is_prime(size_t candidate) {
+    if ((candidate&1) != 0) {
+        const auto limit = (size_t)sqrt((double)candidate);
+        size_t divisor = 3;
+        while (divisor<=limit) {
+            divisor = divisor+2;
+            if ((candidate%divisor) == 0) 
+                return false;
+        };
+        return true;
+    };
+    return candidate == 2;
+}
+
 size_t hashing::get_prime(size_t size) {
     {
         int i = 0;
@@ -20,20 +34,6 @@ size_t hashing::get_prime(size_t size) {
         };
     };
     return size;
-}
-
-bool hashing::is_prime(size_t candidate) {
-    if ((candidate&1) != 0) {
-        const auto limit = (size_t)sqrt((double)candidate);
-        size_t divisor = 3;
-        while (divisor<=limit) {
-            divisor = divisor+2;
-            if ((candidate%divisor) == 0) 
-                return false;
-        };
-        return true;
-    };
-    return candidate == 2;
 }
 
 size_t hashing::hash(char* data, size_t length) {

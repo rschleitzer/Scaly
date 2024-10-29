@@ -230,6 +230,7 @@ Result<Structure, ModelError> handle_class(Page* _rp, Page* _ep, String name, St
                         if (symbol_with_function_name != nullptr)
                             return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NonFunctionSymbolExists(file, Span(member->constituent._Function.start, member->constituent._Function.end)))) };
                         functions_builder.add(function.name, function);
+                        members_builder.add(Member { ._tag = Member::Function, ._Function = function });
                     }
                     break;
                     case ConstituentSyntax::Procedure: {
@@ -242,6 +243,7 @@ Result<Structure, ModelError> handle_class(Page* _rp, Page* _ep, String name, St
                         if (symbol_with_function_name != nullptr)
                             return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NonFunctionSymbolExists(file, Span(member->constituent._Function.start, member->constituent._Function.end)))) };
                         functions_builder.add(function.name, function);
+                        members_builder.add(Member { ._tag = Member::Function, ._Function = function });
                     }
                     break;
                     case ConstituentSyntax::Operator: {
@@ -285,7 +287,6 @@ Result<Structure, ModelError> handle_class(Page* _rp, Page* _ep, String name, St
         while (auto functions = multi_map_iterator.next()) {
             auto name = (*functions)[0]->name;
             symbols_builder.add(String(name), Nameable { ._tag = Nameable::Functions, ._Functions = Vector<Function>(_rp, *functions) });
-            members_builder.add(Member { ._tag = Member::Functions, ._Functions = Vector<Function>(_rp, *functions) });
         }
 
         return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Ok,
@@ -296,7 +297,7 @@ Result<Structure, ModelError> handle_class(Page* _rp, Page* _ep, String name, St
 
 Result<Namespace, ModelError> handle_namespace(Page* _rp, Page* _ep, String name, String path, NamespaceSyntax& namespace_syntax, bool private_, String file) {    
     Region _r;
-    HashMapBuilder<String, Member>& symbols_builder = *new(alignof(HashMapBuilder<String, Member>), _r.get_page()) HashMapBuilder<String, Member>();
+    HashMapBuilder<String, Nameable>& symbols_builder = *new(alignof(HashMapBuilder<String, Nameable>), _r.get_page()) HashMapBuilder<String, Nameable>();
     Array<Member>& members_builder = *new(alignof(Array<Member>), _r.get_page()) Array<Member>();
     MultiMapBuilder<String, Function>& functions_builder = *new(alignof(MultiMapBuilder<String, Function>), _r.get_page()) MultiMapBuilder<String, Function>();
     HashSetBuilder<String>& modules_checker = *new(alignof(HashSetBuilder<String>), _r.get_page()) HashSetBuilder<String>();
@@ -316,7 +317,7 @@ Result<Namespace, ModelError> handle_namespace(Page* _rp, Page* _ep, String name
                         if (functions_builder.contains(concept.name))
                             return Result<Namespace, ModelError> { ._tag = Result<Namespace, ModelError>::Error, ._Error = ModelError(ModelBuilderError(FunctionSymbolExists(file, Span(declaration->symbol._Definition.start, declaration->symbol._Definition.end)))) };
 
-                        if (!symbols_builder.add(concept.name, Member { ._tag = Member::Concept, ._Concept = concept }))
+                        if (!symbols_builder.add(concept.name, Nameable { ._tag = Nameable::Concept, ._Concept = concept }))
                             return Result<Namespace, ModelError> { ._tag = Result<Namespace, ModelError>::Error,
                                 ._Error = ModelError(ModelBuilderError(DuplicateName(concept.name, Span(export_._Definition.start, export_._Definition.end)))) };
                         members_builder.add(Member { ._tag = Member::Concept, ._Concept = concept });
@@ -332,6 +333,7 @@ Result<Namespace, ModelError> handle_namespace(Page* _rp, Page* _ep, String name
                         if (symbol_with_function_name != nullptr)
                             return Result<Namespace, ModelError> { ._tag = Result<Namespace, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NonFunctionSymbolExists(file, Span(declaration->symbol._Function.start, declaration->symbol._Function.end)))) };
                         functions_builder.add(function.name, function);
+                        members_builder.add(Member { ._tag = Member::Function, ._Function = function });
                     }
                     break;
                     case ExportSyntax::Operator: {
@@ -341,7 +343,7 @@ Result<Namespace, ModelError> handle_namespace(Page* _rp, Page* _ep, String name
                             return Result<Namespace, ModelError> { ._tag = Result<Namespace, ModelError>::Error,
                                 ._Error = operator_result._Error };
                         auto operator_ = operator_result._Ok;
-                        if (!symbols_builder.add(operator_.name, Member { ._tag = Member::Operator, ._Operator = operator_ }))
+                        if (!symbols_builder.add(operator_.name, Nameable { ._tag = Nameable::Operator, ._Operator = operator_ }))
                             return Result<Namespace, ModelError> { ._tag = Result<Namespace, ModelError>::Error,
                                 ._Error = ModelError(ModelBuilderError(DuplicateName(file, Span(operator_syntax.start, operator_syntax.end)))) };
                         members_builder.add(Member { ._tag = Member::Operator, ._Operator = operator_ });
@@ -373,7 +375,7 @@ Result<Namespace, ModelError> handle_namespace(Page* _rp, Page* _ep, String name
                 if (functions_builder.contains(concept.name))
                     return Result<Namespace, ModelError> { ._tag = Result<Namespace, ModelError>::Error, ._Error = ModelError(ModelBuilderError(FunctionSymbolExists(file, Span(declaration->symbol._Definition.start, declaration->symbol._Definition.end)))) };
 
-                if (!symbols_builder.add(concept.name, Member { ._tag = Member::Concept, ._Concept = concept }))
+                if (!symbols_builder.add(concept.name, Nameable { ._tag = Nameable::Concept, ._Concept = concept }))
                     return Result<Namespace, ModelError> { ._tag = Result<Namespace, ModelError>::Error,
                         ._Error = ModelError(ModelBuilderError(DuplicateName(file, Span(declaration->symbol._Definition.start, declaration->symbol._Definition.end)))) };
                 members_builder.add(Member { ._tag = Member::Concept, ._Concept = concept });
@@ -389,6 +391,7 @@ Result<Namespace, ModelError> handle_namespace(Page* _rp, Page* _ep, String name
                 if (symbol_with_function_name != nullptr)
                     return Result<Namespace, ModelError> { ._tag = Result<Namespace, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NonFunctionSymbolExists(file, Span(declaration->symbol._Function.start, declaration->symbol._Function.end)))) };
                 functions_builder.add(function.name, function);
+                members_builder.add(Member { ._tag = Member::Function, ._Function = function });
             }
             break;
             case SymbolSyntax::Operator: {
@@ -398,7 +401,7 @@ Result<Namespace, ModelError> handle_namespace(Page* _rp, Page* _ep, String name
                     return Result<Namespace, ModelError> { ._tag = Result<Namespace, ModelError>::Error,
                         ._Error = operator_result._Error };
                 auto operator_ = operator_result._Ok;
-                if (!symbols_builder.add(operator_.name, Member { ._tag = Member::Operator, ._Operator = operator_ }))
+                if (!symbols_builder.add(operator_.name, Nameable { ._tag = Nameable::Operator, ._Operator = operator_ }))
                     return Result<Namespace, ModelError> { ._tag = Result<Namespace, ModelError>::Error,
                         ._Error = ModelError(ModelBuilderError(DuplicateName(file, Span(operator_syntax.start, operator_syntax.end)))) };
                 members_builder.add(Member { ._tag = Member::Operator, ._Operator = operator_ });
@@ -428,12 +431,11 @@ Result<Namespace, ModelError> handle_namespace(Page* _rp, Page* _ep, String name
     auto multi_map_iterator = multi_map.get_iterator();
     while (auto functions = multi_map_iterator.next()) {
         auto name = (*functions)[0]->name;
-        symbols_builder.add(String(name), Member { ._tag = Member::Functions, ._Functions = Vector<Function>(_rp, *functions) });
-        members_builder.add(Member { ._tag = Member::Functions, ._Functions = Vector<Function>(_rp, *functions) });
+        symbols_builder.add(String(name), Nameable { ._tag = Nameable::Functions, ._Functions = Vector<Function>(_rp, *functions) });
     }
 
     Span span(namespace_syntax.start, namespace_syntax.end);
-    auto ret = Namespace(span, Vector<Module>(_rp, modules), Vector<Member>(_rp, members_builder), HashMap<String, Member>(_rp, symbols_builder));
+    auto ret = Namespace(span, Vector<Module>(_rp, modules), Vector<Member>(_rp, members_builder), HashMap<String, Nameable>(_rp, symbols_builder));
     return Result<Namespace, ModelError> { ._tag = Result<Namespace, ModelError>::Ok, ._Ok = ret };
 }
 
@@ -1562,7 +1564,7 @@ Result<Module, ModelError> build_module(Page* _rp, Page* _ep, String path, Strin
     }
 
     Array<Member>& members_builder = *new(alignof(Array<Member>), _r.get_page()) Array<Member>();
-    HashMapBuilder<String, Member>& symbols_builder = *new(alignof(HashMapBuilder<String, Member>), _r.get_page()) HashMapBuilder<String, Member>();
+    HashMapBuilder<String, Nameable>& symbols_builder = *new(alignof(HashMapBuilder<String, Nameable>), _r.get_page()) HashMapBuilder<String, Nameable>();
     MultiMapBuilder<String, Function>& functions_builder = *new(alignof(MultiMapBuilder<String, Function>), _r.get_page()) MultiMapBuilder<String, Function>();
     HashSetBuilder<String>& modules_checker = *new(alignof(HashSetBuilder<String>), _r.get_page()) HashSetBuilder<String>();
     List<Module>& modules = *new(alignof(List<Module>), _r.get_page()) List<Module>();
@@ -1581,7 +1583,7 @@ Result<Module, ModelError> build_module(Page* _rp, Page* _ep, String path, Strin
                         if (functions_builder.contains(concept.name))
                             return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = ModelError(ModelBuilderError(FunctionSymbolExists(file_name, Span(declaration->symbol._Definition.start, declaration->symbol._Definition.end)))) };
 
-                        if (!symbols_builder.add(concept.name, Member { ._tag = Member::Concept, ._Concept = concept }))
+                        if (!symbols_builder.add(concept.name, Nameable { ._tag = Nameable::Concept, ._Concept = concept }))
                             return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error,
                                 ._Error = ModelError(ModelBuilderError(DuplicateName(concept.name, Span(export_._Definition.start, export_._Definition.end)))) };
                         members_builder.add(Member { ._tag = Member::Concept, ._Concept = concept });
@@ -1597,6 +1599,7 @@ Result<Module, ModelError> build_module(Page* _rp, Page* _ep, String path, Strin
                         if (symbol_with_function_name != nullptr)
                             return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NonFunctionSymbolExists(file_name, Span(declaration->symbol._Function.start, declaration->symbol._Function.end)))) };
                         functions_builder.add(function.name, function);
+                        members_builder.add(Member { ._tag = Member::Function, ._Function = function });
                     }
                     break;
                     case ExportSyntax::Operator: {
@@ -1606,7 +1609,7 @@ Result<Module, ModelError> build_module(Page* _rp, Page* _ep, String path, Strin
                             return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error,
                                 ._Error = operator_result._Error };
                         auto operator_ = operator_result._Ok;
-                        if (!symbols_builder.add(operator_.name, Member { ._tag = Member::Operator, ._Operator = operator_ }))
+                        if (!symbols_builder.add(operator_.name, Nameable { ._tag = Nameable::Operator, ._Operator = operator_ }))
                             return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error,
                                 ._Error = ModelError(ModelBuilderError(DuplicateName(file_name, Span(operator_syntax.start, operator_syntax.end)))) };
                         members_builder.add(Member { ._tag = Member::Operator, ._Operator = operator_ });
@@ -1638,7 +1641,7 @@ Result<Module, ModelError> build_module(Page* _rp, Page* _ep, String path, Strin
                 if (functions_builder.contains(concept.name))
                     return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = ModelError(ModelBuilderError(FunctionSymbolExists(file_name, Span(declaration->symbol._Definition.start, declaration->symbol._Definition.end)))) };
 
-                if (!symbols_builder.add(concept.name, Member { ._tag = Member::Concept, ._Concept = concept }))
+                if (!symbols_builder.add(concept.name, Nameable { ._tag = Nameable::Concept, ._Concept = concept }))
                     return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error,
                         ._Error = ModelError(ModelBuilderError(DuplicateName(file_name, Span(declaration->symbol._Definition.start, declaration->symbol._Definition.end)))) };
                 members_builder.add(Member { ._tag = Member::Concept, ._Concept = concept });
@@ -1654,6 +1657,7 @@ Result<Module, ModelError> build_module(Page* _rp, Page* _ep, String path, Strin
                 if (symbol_with_function_name != nullptr)
                     return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NonFunctionSymbolExists(file_name, Span(declaration->symbol._Function.start, declaration->symbol._Function.end)))) };
                 functions_builder.add(function.name, function);
+                members_builder.add(Member { ._tag = Member::Function, ._Function = function });
             }
             break;
             case SymbolSyntax::Operator: {
@@ -1663,7 +1667,7 @@ Result<Module, ModelError> build_module(Page* _rp, Page* _ep, String path, Strin
                     return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error,
                         ._Error = operator_result._Error };
                 auto operator_ = operator_result._Ok;
-                if (!symbols_builder.add(operator_.name, Member { ._tag = Member::Operator, ._Operator = operator_ }))
+                if (!symbols_builder.add(operator_.name, Nameable { ._tag = Nameable::Operator, ._Operator = operator_ }))
                     return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error,
                         ._Error = ModelError(ModelBuilderError(DuplicateName(file_name, Span(operator_syntax.start, operator_syntax.end)))) };
                 members_builder.add(Member { ._tag = Member::Operator, ._Operator = operator_ });
@@ -1693,12 +1697,11 @@ Result<Module, ModelError> build_module(Page* _rp, Page* _ep, String path, Strin
     auto multi_map_iterator = multi_map.get_iterator();
     while (auto functions = multi_map_iterator.next()) {
         auto name = (*functions)[0]->name;
-        symbols_builder.add(String(name), Member { ._tag = Member::Functions, ._Functions = Vector<Function>(_rp, *functions) });
-        members_builder.add(Member { ._tag = Member::Functions, ._Functions = Vector<Function>(_rp, *functions) });
+        symbols_builder.add(String(name), Nameable { ._tag = Nameable::Functions, ._Functions = Vector<Function>(_rp, *functions) });
     }
 
     Span span(file_syntax.start, file_syntax.end);
-    auto ret = Module(private_, String(_rp, file_name), name, Vector<Module>(_rp, modules), Vector<Use>(_rp, uses), Vector<Member>(_rp, members_builder), HashMap<String, Member>(_rp, symbols_builder));
+    auto ret = Module(private_, String(_rp, file_name), name, Vector<Module>(_rp, modules), Vector<Use>(_rp, uses), Vector<Member>(_rp, members_builder), HashMap<String, Nameable>(_rp, symbols_builder));
     
     return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Ok,
         ._Ok = ret

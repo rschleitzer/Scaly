@@ -14,37 +14,10 @@ struct Array : Object {
     Array() : length(0), vector(nullptr){
     }
 
-    T* operator [](size_t i){
-        if (length<i+1) 
+    T* get_buffer() {
+        if (vector == nullptr) 
             return nullptr;
-        return (*vector).data+i;
-    }
-
-    void reallocate() {
-        const auto own_page = Page::get(this);
-        const auto size = sizeof(T);
-        size_t length = 0;
-        if (vector == nullptr) {
-            const auto exclusive_page = (*own_page).allocate_exclusive_page();
-            const auto capacity = (*exclusive_page).get_capacity(alignof(T))-sizeof(Vector<T>);
-            length = capacity/size;
-            vector = new (alignof(Vector<T>), exclusive_page) Vector<T>(exclusive_page, length);
-        }
-        else {
-            length = (*vector).length*2;
-            const auto new_vector = new (alignof(Vector<T>), own_page) Vector<T>(own_page, length);
-            const auto bytes_to_copy = (*vector).length*size;
-            memcpy((*new_vector).data, (*vector).data, bytes_to_copy);
-            const auto old_exclusive_page = Page::get((*vector).data);
-            (*own_page).deallocate_exclusive_page(old_exclusive_page);
-            vector = new_vector;
-        };
-    };
-
-    T* get(size_t i) {
-        if (i>=length) 
-            return nullptr;
-        return (*this)[i];
+        return (*vector).data;
     };
 
     size_t get_length() {
@@ -85,10 +58,37 @@ struct Array : Object {
         length = length+items.length;
     };
 
-    T* get_buffer() {
-        if (vector == nullptr) 
+    T* get(size_t i) {
+        if (i>=length) 
             return nullptr;
-        return (*vector).data;
+        return (*this)[i];
+    };
+
+    T* operator [](size_t i){
+        if (length<i+1) 
+            return nullptr;
+        return (*vector).data+i;
+    }
+
+    void reallocate() {
+        const auto own_page = Page::get(this);
+        const auto size = sizeof(T);
+        size_t length = 0;
+        if (vector == nullptr) {
+            const auto exclusive_page = (*own_page).allocate_exclusive_page();
+            const auto capacity = (*exclusive_page).get_capacity(alignof(T))-sizeof(Vector<T>);
+            length = capacity/size;
+            vector = new (alignof(Vector<T>), exclusive_page) Vector<T>(exclusive_page, length);
+        }
+        else {
+            length = (*vector).length*2;
+            const auto new_vector = new (alignof(Vector<T>), own_page) Vector<T>(own_page, length);
+            const auto bytes_to_copy = (*vector).length*size;
+            memcpy((*new_vector).data, (*vector).data, bytes_to_copy);
+            const auto old_exclusive_page = Page::get((*vector).data);
+            (*own_page).deallocate_exclusive_page(old_exclusive_page);
+            vector = new_vector;
+        };
     };
 };
 

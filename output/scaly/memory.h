@@ -9,7 +9,7 @@ namespace memory {
 #include "memory/Page.h"
 #include "memory/Region.h"
 
-    void test();
     void test_page();
+    void test();
 }
 #endif

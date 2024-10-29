@@ -14,13 +14,13 @@ struct String : Object {
     String(Page* rp, const_char* c_string);
     String(Page* rp, String other);
     String(Page* rp, char character);
+    char* get_buffer();
+    const_char* to_c_string(Page* rp);
+    size_t get_length();
     bool equals(String other);
     bool equals(const_char* other);
     bool equals(Vector<char> other);
-    char* get_buffer();
-    const_char* to_c_string(Page* rp);
     size_t hash();
-    size_t get_length();
 };
 
 #endif

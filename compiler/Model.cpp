@@ -463,8 +463,8 @@ struct Namespace : Object {
     Span span;
     Vector<Module> modules;
     Vector<Member> members;
-    HashMap<String, Member> symbols;
-    Namespace(Span span, Vector<Module> modules, Vector<Member> members, HashMap<String, Member> symbols)
+    HashMap<String, Nameable> symbols;
+    Namespace(Span span, Vector<Module> modules, Vector<Member> members, HashMap<String, Nameable> symbols)
       : span(span),
         modules(modules),
         members(members),
@@ -534,8 +534,8 @@ struct Module : Object {
     Vector<Module> modules;
     Vector<Use> uses;
     Vector<Member> members;
-    HashMap<String, Member> symbols;
-    Module(bool private_, String file, String name, Vector<Module> modules, Vector<Use> uses, Vector<Member> members, HashMap<String, Member> symbols)
+    HashMap<String, Nameable> symbols;
+    Module(bool private_, String file, String name, Vector<Module> modules, Vector<Use> uses, Vector<Member> members, HashMap<String, Nameable> symbols)
       : private_(private_),
         file(file),
         name(name),
@@ -560,12 +560,12 @@ struct Member {
         Package,
         Concept,
         Operator,
-        Functions,
+        Function,
     } _tag;
     union {
         struct Concept _Concept;
         struct Operator _Operator;
-        struct Vector<Function> _Functions;
+        struct Function _Function;
     };
 };
 

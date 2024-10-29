@@ -285,8 +285,8 @@ struct Transpiler : Object {
         auto member_iterator = symbols.get_iterator();
         while (auto member = member_iterator.next()) {
             switch (member->_tag) {
-                case Member::Functions: {
-                    auto _result = build_functions(_ep, header_builder, cpp_builder, member->_Functions, &name, false, false);
+                case Member::Function: {
+                    auto _result = build_function(_ep, header_builder, cpp_builder, member->_Function, &name, false, false);
                     if (_result != nullptr)
                         return new(alignof(TranspilerError), _ep) TranspilerError(*_result);
                     break;
@@ -357,8 +357,8 @@ struct Transpiler : Object {
         auto member_iterator = structure.members.get_iterator();
         while (auto member = member_iterator.next()) {
             switch (member->_tag) {
-                case Member::Functions: {
-                    auto _result = build_functions(_ep, header_builder, cpp_builder, member->_Functions, &name, parameters.length > 0, true);
+                case Member::Function: {
+                    auto _result = build_function(_ep, header_builder, cpp_builder, member->_Function, &name, parameters.length > 0, true);
                     if (_result != nullptr)
                         return new(alignof(TranspilerError), _ep) TranspilerError(*_result);                    
                     break;
@@ -573,64 +573,61 @@ struct Transpiler : Object {
         }
     }
 
-    TranspilerError* build_functions(Page* _ep, StringBuilder& header_builder, StringBuilder& cpp_builder, Vector<Function>& functions, String* name, bool is_template, bool in_class) {
+    TranspilerError* build_function(Page* _ep, StringBuilder& header_builder, StringBuilder& cpp_builder, Function& function, String* name, bool is_template, bool in_class) {
         Region _r;
-        auto function_iterator = functions.get_iterator();
-        bool first = true;
-        while (auto function = function_iterator.next()) {
-            String* location = nullptr;
-            switch (function->lifetime._tag) {
-                case Lifetime::Call:
-                    location = new (alignof(String), _r.get_page()) String(_r.get_page(), "rp");
-                    break;
-                case Lifetime::Reference: {
-                    auto reference = function->lifetime._Reference;
-                    location = &reference.location;
-                    break;
-                }
-                case Lifetime::Unspecified:
-                    break;
-                case Lifetime::Local:
-                    break;
-                case Lifetime::Thrown:
-                    break;
+        String* location = nullptr;
+        switch (function.lifetime._tag) {
+            case Lifetime::Call:
+                location = new (alignof(String), _r.get_page()) String(_r.get_page(), "rp");
+                break;
+            case Lifetime::Reference: {
+                auto reference = function.lifetime._Reference;
+                location = &reference.location;
+                break;
             }
-            if (function->implementation._tag == Implementation::Extern) {
-                header_builder.append("extern \"C\" ");
-                build_output_type(header_builder, function->returns_, function->throws_);
-                header_builder.append(' ');
-                header_builder.append(function->name);
-                build_input(header_builder, function->input, location, function->returns_, function->throws_, function->lifetime);
-                header_builder.append(";\n");
-                continue;
-            }
-            if (is_template)
-                header_builder.append('\n');
-            function_prefix(header_builder, function, name != nullptr, in_class);
-            if (!is_template) {
-                cpp_builder.append('\n');
-                function_prefix(cpp_builder, function, false, false);
-                if (name != nullptr) {
-                    cpp_builder.append(*name);
-                    cpp_builder.append("::");
-                }
-                cpp_builder.append(function->name);
-                build_input(cpp_builder, function->input, location, function->returns_, function->throws_, function->lifetime);
-                cpp_builder.append(' ');
-                auto _result = build_implementation(_ep, cpp_builder, function->implementation, function->returns_, function->throws_, String(), false);
-                if (_result != nullptr)
-                    return _result;
-            }
-            header_builder.append(function->name);
-            build_input(header_builder, function->input, location, function->returns_, function->throws_, function->lifetime);
-            if (is_template) {
-                header_builder.append(' ');
-                auto _result = build_implementation(_ep, header_builder, function->implementation, function->returns_, function->throws_, String(_r.get_page(), "    "), false);
-                if (_result != nullptr)
-                    return _result;
-            }
-            header_builder.append(';');
+            case Lifetime::Unspecified:
+                break;
+            case Lifetime::Local:
+                break;
+            case Lifetime::Thrown:
+                break;
         }
+        if (function.implementation._tag == Implementation::Extern) {
+            header_builder.append("extern \"C\" ");
+            build_output_type(header_builder, function.returns_, function.throws_);
+            header_builder.append(' ');
+            header_builder.append(function.name);
+            build_input(header_builder, function.input, location, function.returns_, function.throws_, function.lifetime);
+            header_builder.append(";\n");
+            return nullptr;
+        }
+        if (is_template)
+            header_builder.append('\n');
+        function_prefix(header_builder, function, name != nullptr, in_class);
+        if (!is_template) {
+            cpp_builder.append('\n');
+            function_prefix(cpp_builder, function, false, false);
+            if (name != nullptr) {
+                cpp_builder.append(*name);
+                cpp_builder.append("::");
+            }
+            cpp_builder.append(function.name);
+            build_input(cpp_builder, function.input, location, function.returns_, function.throws_, function.lifetime);
+            cpp_builder.append(' ');
+            auto _result = build_implementation(_ep, cpp_builder, function.implementation, function.returns_, function.throws_, String(), false);
+            if (_result != nullptr)
+                return _result;
+        }
+        header_builder.append(function.name);
+        build_input(header_builder, function.input, location, function.returns_, function.throws_, function.lifetime);
+        if (is_template) {
+            header_builder.append(' ');
+            auto _result = build_implementation(_ep, header_builder, function.implementation, function.returns_, function.throws_, String(_r.get_page(), "    "), false);
+            if (_result != nullptr)
+                return _result;
+        }
+        header_builder.append(';');
+
         return nullptr; 
     }
 
@@ -1306,14 +1303,14 @@ struct Transpiler : Object {
         return nullptr;
     }
 
-    void function_prefix(StringBuilder& builder, Function* function, bool indent, bool static_if_applicable) {
+    void function_prefix(StringBuilder& builder, Function& function, bool indent, bool static_if_applicable) {
         Region _r;
         builder.append('\n');
         if (indent)
             builder.append("    ");
-        if (static_if_applicable && ((function->input.length == 0) || (function->input[0]->name == nullptr) || (!function->input[0]->name->equals("this"))))
+        if (static_if_applicable && ((function.input.length == 0) || (function.input[0]->name == nullptr) || (!function.input[0]->name->equals("this"))))
             builder.append("static ");
-        build_output_type(builder, function->returns_, function->throws_);
+        build_output_type(builder, function.returns_, function.throws_);
         builder.append(' ');
     }
 

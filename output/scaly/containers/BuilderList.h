@@ -13,17 +13,9 @@ struct BuilderList : Object {
     BuilderList() : head(nullptr){
     }
 
-    T* get_head() {
-        if (head == nullptr) 
-            return nullptr;
-        return &(*head).element;
-    };
-
-    size_t count() {
-        auto list_iterator = get_iterator();
-        size_t i = 0;
-        while (auto item = list_iterator.next()) i = i+1;
-        return i;
+    void add(Page* rp, T element) {
+        const auto new_node = new (alignof(Node<T>), rp) Node<T>(element, head);
+        head = new_node;
     };
 
     bool remove(T element) {
@@ -42,13 +34,21 @@ struct BuilderList : Object {
         };
     };
 
+    T* get_head() {
+        if (head == nullptr) 
+            return nullptr;
+        return &(*head).element;
+    };
+
+    size_t count() {
+        auto list_iterator = get_iterator();
+        size_t i = 0;
+        while (auto item = list_iterator.next()) i = i+1;
+        return i;
+    };
+
     BuilderListIterator<T> get_iterator() {
         return BuilderListIterator<T>(head); };
-
-    void add(Page* rp, T element) {
-        const auto new_node = new (alignof(Node<T>), rp) Node<T>(element, head);
-        head = new_node;
-    };
 };
 
 #endif

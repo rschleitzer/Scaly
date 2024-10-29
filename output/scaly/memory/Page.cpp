@@ -4,12 +4,6 @@ namespace memory {
 
 Page::Page(void* next_object, Page* current_page, Page* next_page, PageList exclusive_pages) : next_object(next_object), current_page(current_page), next_page(next_page), exclusive_pages(exclusive_pages) {}
 
-Page* Page::get(void* address) {
-    const auto mask = ~(size_t)(PAGE_SIZE-1);
-    const auto page = (Page*)((size_t)address&mask);
-    return page;
-}
-
 void Page::deallocate_extensions() {
     if (next_object == nullptr) 
         return;
@@ -29,6 +23,12 @@ void Page::deallocate_extensions() {
     };
 }
 
+Page* Page::get(void* address) {
+    const auto mask = ~(size_t)(PAGE_SIZE-1);
+    const auto page = (Page*)((size_t)address&mask);
+    return page;
+}
+
 void Page::reset() {
     current_page = nullptr;
     next_page = nullptr;
@@ -41,14 +41,6 @@ void Page::deallocate_exclusive_page(Page* page) {
     (*page).forget();
     if ((exclusive_pages).remove(page) == false) 
         exit(2);
-}
-
-size_t Page::get_capacity(size_t align) {
-    auto location = (size_t)next_object;
-    const auto aligned_location = (location+align-1)&~(align-1);
-    auto location_after_page = (size_t)this+PAGE_SIZE;
-    auto capacity = location_after_page-aligned_location;
-    return capacity;
 }
 
 void* Page::allocate_raw(size_t size, size_t align) {
@@ -77,20 +69,28 @@ void* Page::allocate_raw(size_t size, size_t align) {
     return (void*)aligned_location;
 }
 
+size_t Page::get_capacity(size_t align) {
+    auto location = (size_t)next_object;
+    const auto aligned_location = (location+align-1)&~(align-1);
+    auto location_after_page = (size_t)this+PAGE_SIZE;
+    auto capacity = location_after_page-aligned_location;
+    return capacity;
+}
+
 Page* Page::allocate_page() {
     auto page = (Page*)aligned_alloc(PAGE_SIZE, PAGE_SIZE);
     (*page).reset();
     return page;
 }
 
-void Page::forget() {
-    free(this);
-}
-
 Page* Page::allocate_exclusive_page() {
     const auto page = allocate_page();
     (exclusive_pages).add(page, page);
     return page;
+}
+
+void Page::forget() {
+    free(this);
 }
 
 bool Page::is_oversized() {

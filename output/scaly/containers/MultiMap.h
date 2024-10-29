@@ -54,22 +54,6 @@ struct MultiMap : Object {
         };
     }
 
-    Vector<V>* operator [](K key){
-        if (slots == nullptr) 
-            return nullptr;
-        const auto hash = key.hash();
-        const auto slot_number = hash%(*slots).length;
-        const auto slot = (*slots).get(slot_number);
-        const auto length = (*slot).length;
-        size_t i = 0;
-        while (i<length) {
-            if ((key.equals((*(*slot).get(i)).key))) 
-                return &((*(*slot).get(i)).value);
-            i = i+1;
-        };
-        return nullptr;
-    }
-
     bool contains(K key) {
         if (slots == nullptr) 
             return false;
@@ -85,6 +69,22 @@ struct MultiMap : Object {
         };
         return false;
     };
+
+    Vector<V>* operator [](K key){
+        if (slots == nullptr) 
+            return nullptr;
+        const auto hash = key.hash();
+        const auto slot_number = hash%(*slots).length;
+        const auto slot = (*slots).get(slot_number);
+        const auto length = (*slot).length;
+        size_t i = 0;
+        while (i<length) {
+            if ((key.equals((*(*slot).get(i)).key))) 
+                return &((*(*slot).get(i)).value);
+            i = i+1;
+        };
+        return nullptr;
+    }
 };
 
 #endif

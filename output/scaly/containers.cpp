@@ -1,121 +1,6 @@
 #include "../scaly.h"
 namespace scaly {
 
-void containers::test_hash_set() {
-    auto r = Region();
-    auto array = new (alignof(Array<String>), r.get_page()) Array<String>();
-    (*array).add(String(r.get_page(), "using"));
-    (*array).add(String(r.get_page(), "namespace"));
-    (*array).add(String(r.get_page(), "typedef"));
-    const auto vector = Vector<String>(r.get_page(), *array);
-    auto keywords_builder = new (alignof(HashSetBuilder<String>), r.get_page()) HashSetBuilder<String>(vector);
-    if ((*keywords_builder).contains(String(r.get_page(), "using")) == false) 
-        exit(-18);
-    if ((*keywords_builder).contains(String(r.get_page(), "namespace")) == false) 
-        exit(-18);
-    if ((*keywords_builder).contains(String(r.get_page(), "typedef")) == false) 
-        exit(-18);
-    if ((*keywords_builder).contains(String(r.get_page(), "nix"))) 
-        exit(-18);
-    auto keywords = new (alignof(HashSet<String>), r.get_page()) HashSet<String>(r.get_page(), *keywords_builder);
-    if ((*keywords).contains(String(r.get_page(), "using")) == false) 
-        exit(-19);
-    if ((*keywords).contains(String(r.get_page(), "namespace")) == false) 
-        exit(-19);
-    if ((*keywords).contains(String(r.get_page(), "typedef")) == false) 
-        exit(-19);
-    if ((*keywords).contains(String(r.get_page(), "nix"))) 
-        exit(-19);
-}
-
-void containers::test() {
-    test_vector();
-    test_array();
-    test_string();
-    test_string_builder();
-    test_list();
-    test_hash_set();
-    test_hash_map();
-    test_multi_map();
-}
-
-void containers::test_multi_map() {
-    {
-        auto r = Region();
-        auto p = r.get_page();
-        auto map_builder = new (alignof(MultiMapBuilder<String, size_t>), r.get_page()) MultiMapBuilder<String, size_t>();
-        {
-            char i = 'A';
-            while (i<='Z') {
-                char j = 'a';
-                while (j<='z') {
-                    char k = '0';
-                    while (k<='9') {
-                        char l = '!';
-                        while (l<='/') {
-                            auto r_2 = Region();
-                            auto p_2 = r.get_page();
-                            auto sb = new (alignof(StringBuilder), p_2) StringBuilder(i);
-                            (*sb).append(j);
-                            (*sb).append(k);
-                            (*sb).append(l);
-                            (*map_builder).add((*sb).to_string(p), (size_t)i*j*k*l);
-                            (*map_builder).add((*sb).to_string(p), (size_t)i*j*k*l+1);
-                            (*map_builder).add((*sb).to_string(p), (size_t)i*j*k*l+2);
-                            l = l+1;
-                        };
-                        k = k+1;
-                    };
-                    j = j+1;
-                };
-                i = i+1;
-            };
-        };
-        auto map = new (alignof(MultiMap<String, size_t>), r.get_page()) MultiMap<String, size_t>(p, *map_builder);
-        {
-            char i = 'A';
-            while (i<='Z') {
-                char j = 'a';
-                while (j<='z') {
-                    char k = '0';
-                    while (k<='9') {
-                        char l = '!';
-                        while (l<='/') {
-                            auto r_2 = Region();
-                            auto p_2 = r.get_page();
-                            auto sb = new (alignof(StringBuilder), p_2) StringBuilder(i);
-                            (*sb).append(j);
-                            (*sb).append(k);
-                            (*sb).append(l);
-                            const auto theString = (*sb).to_string(p_2);
-                            if ((*map_builder).contains(theString) == false) 
-                                exit(-27);
-                            if ((*map).contains(theString) == false) 
-                                exit(-27);
-                            if (*(*(*map_builder)[theString]).get(0) != (size_t)i*j*k*l) 
-                                exit(-28);
-                            if (*(*(*map)[theString]).get(0) != (size_t)i*j*k*l) 
-                                exit(-28);
-                            if (*(*(*map_builder)[theString]).get(1) != (size_t)i*j*k*l+1) 
-                                exit(-28);
-                            if (*(*(*map)[theString]).get(1) != (size_t)i*j*k*l+1) 
-                                exit(-28);
-                            if (*(*(*map_builder)[theString]).get(2) != (size_t)i*j*k*l+2) 
-                                exit(-28);
-                            if (*(*(*map)[theString]).get(2) != (size_t)i*j*k*l+2) 
-                                exit(-28);
-                            l = l+1;
-                        };
-                        k = k+1;
-                    };
-                    j = j+1;
-                };
-                i = i+1;
-            };
-        };
-    };
-}
-
 void containers::test_vector() {
     auto r = Region();
     auto vector = new (alignof(Vector<int>), r.get_page()) Vector<int>(r.get_page(), 2);
@@ -149,30 +34,24 @@ void containers::test_array() {
     };
 }
 
-void containers::test_list() {
+void containers::test_string() {
     auto r = Region();
-    auto rp = r.get_page();
-    auto list = new (alignof(List<int>), r.get_page()) List<int>();
-    const int huge_number = 1024*1024*62;
-    {
-        int i = 1;
-        while (i<=huge_number) {
-            (*list).add(i);
-            i = i+1;
-        };
-    };
-    auto iterator = (*list).get_iterator();
-    {
-        int i = huge_number;
-        while (i>=1) {
-            const auto p = iterator.next();
-            if (p == nullptr) 
-                exit(-16);
-            if (*p != i) 
-                exit(-17);
-            i = i-1;
-        };
-    };
+    auto string = String(r.get_page(), "Hello world!");
+    const auto length = string.get_length();
+    if (length != 12) 
+        exit(-7);
+    auto long_string = String(r.get_page(), "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890");
+    if (long_string.get_length() != 130) 
+        exit(-8);
+    auto c_string = long_string.to_c_string(r.get_page());
+    auto string_c = String(r.get_page(), c_string);
+    auto semi = String(r.get_page(), ";");
+    auto dot = String(r.get_page(), ".");
+    if (semi.equals(dot)) 
+        exit(-9);
+    auto semi2 = String(r.get_page(), ";");
+    if (semi.equals(semi2) != true) 
+        exit(-10);
 }
 
 void containers::test_string_builder() {
@@ -202,24 +81,57 @@ void containers::test_string_builder() {
         exit(-16);
 }
 
-void containers::test_string() {
+void containers::test_list() {
     auto r = Region();
-    auto string = String(r.get_page(), "Hello world!");
-    const auto length = string.get_length();
-    if (length != 12) 
-        exit(-7);
-    auto long_string = String(r.get_page(), "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890");
-    if (long_string.get_length() != 130) 
-        exit(-8);
-    auto c_string = long_string.to_c_string(r.get_page());
-    auto string_c = String(r.get_page(), c_string);
-    auto semi = String(r.get_page(), ";");
-    auto dot = String(r.get_page(), ".");
-    if (semi.equals(dot)) 
-        exit(-9);
-    auto semi2 = String(r.get_page(), ";");
-    if (semi.equals(semi2) != true) 
-        exit(-10);
+    auto rp = r.get_page();
+    auto list = new (alignof(List<int>), r.get_page()) List<int>();
+    const int huge_number = 1024*1024*62;
+    {
+        int i = 1;
+        while (i<=huge_number) {
+            (*list).add(i);
+            i = i+1;
+        };
+    };
+    auto iterator = (*list).get_iterator();
+    {
+        int i = huge_number;
+        while (i>=1) {
+            const auto p = iterator.next();
+            if (p == nullptr) 
+                exit(-16);
+            if (*p != i) 
+                exit(-17);
+            i = i-1;
+        };
+    };
+}
+
+void containers::test_hash_set() {
+    auto r = Region();
+    auto array = new (alignof(Array<String>), r.get_page()) Array<String>();
+    (*array).add(String(r.get_page(), "using"));
+    (*array).add(String(r.get_page(), "namespace"));
+    (*array).add(String(r.get_page(), "typedef"));
+    const auto vector = Vector<String>(r.get_page(), *array);
+    auto keywords_builder = new (alignof(HashSetBuilder<String>), r.get_page()) HashSetBuilder<String>(vector);
+    if ((*keywords_builder).contains(String(r.get_page(), "using")) == false) 
+        exit(-18);
+    if ((*keywords_builder).contains(String(r.get_page(), "namespace")) == false) 
+        exit(-18);
+    if ((*keywords_builder).contains(String(r.get_page(), "typedef")) == false) 
+        exit(-18);
+    if ((*keywords_builder).contains(String(r.get_page(), "nix"))) 
+        exit(-18);
+    auto keywords = new (alignof(HashSet<String>), r.get_page()) HashSet<String>(r.get_page(), *keywords_builder);
+    if ((*keywords).contains(String(r.get_page(), "using")) == false) 
+        exit(-19);
+    if ((*keywords).contains(String(r.get_page(), "namespace")) == false) 
+        exit(-19);
+    if ((*keywords).contains(String(r.get_page(), "typedef")) == false) 
+        exit(-19);
+    if ((*keywords).contains(String(r.get_page(), "nix"))) 
+        exit(-19);
 }
 
 void containers::test_hash_map() {
@@ -329,6 +241,94 @@ void containers::test_hash_map() {
             };
         };
     };
+}
+
+void containers::test_multi_map() {
+    {
+        auto r = Region();
+        auto p = r.get_page();
+        auto map_builder = new (alignof(MultiMapBuilder<String, size_t>), r.get_page()) MultiMapBuilder<String, size_t>();
+        {
+            char i = 'A';
+            while (i<='Z') {
+                char j = 'a';
+                while (j<='z') {
+                    char k = '0';
+                    while (k<='9') {
+                        char l = '!';
+                        while (l<='/') {
+                            auto r_2 = Region();
+                            auto p_2 = r.get_page();
+                            auto sb = new (alignof(StringBuilder), p_2) StringBuilder(i);
+                            (*sb).append(j);
+                            (*sb).append(k);
+                            (*sb).append(l);
+                            (*map_builder).add((*sb).to_string(p), (size_t)i*j*k*l);
+                            (*map_builder).add((*sb).to_string(p), (size_t)i*j*k*l+1);
+                            (*map_builder).add((*sb).to_string(p), (size_t)i*j*k*l+2);
+                            l = l+1;
+                        };
+                        k = k+1;
+                    };
+                    j = j+1;
+                };
+                i = i+1;
+            };
+        };
+        auto map = new (alignof(MultiMap<String, size_t>), r.get_page()) MultiMap<String, size_t>(p, *map_builder);
+        {
+            char i = 'A';
+            while (i<='Z') {
+                char j = 'a';
+                while (j<='z') {
+                    char k = '0';
+                    while (k<='9') {
+                        char l = '!';
+                        while (l<='/') {
+                            auto r_2 = Region();
+                            auto p_2 = r.get_page();
+                            auto sb = new (alignof(StringBuilder), p_2) StringBuilder(i);
+                            (*sb).append(j);
+                            (*sb).append(k);
+                            (*sb).append(l);
+                            const auto theString = (*sb).to_string(p_2);
+                            if ((*map_builder).contains(theString) == false) 
+                                exit(-27);
+                            if ((*map).contains(theString) == false) 
+                                exit(-27);
+                            if (*(*(*map_builder)[theString]).get(0) != (size_t)i*j*k*l) 
+                                exit(-28);
+                            if (*(*(*map)[theString]).get(0) != (size_t)i*j*k*l) 
+                                exit(-28);
+                            if (*(*(*map_builder)[theString]).get(1) != (size_t)i*j*k*l+1) 
+                                exit(-28);
+                            if (*(*(*map)[theString]).get(1) != (size_t)i*j*k*l+1) 
+                                exit(-28);
+                            if (*(*(*map_builder)[theString]).get(2) != (size_t)i*j*k*l+2) 
+                                exit(-28);
+                            if (*(*(*map)[theString]).get(2) != (size_t)i*j*k*l+2) 
+                                exit(-28);
+                            l = l+1;
+                        };
+                        k = k+1;
+                    };
+                    j = j+1;
+                };
+                i = i+1;
+            };
+        };
+    };
+}
+
+void containers::test() {
+    test_vector();
+    test_array();
+    test_string();
+    test_string_builder();
+    test_list();
+    test_hash_set();
+    test_hash_map();
+    test_multi_map();
 }
 
 }

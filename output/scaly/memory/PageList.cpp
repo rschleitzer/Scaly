@@ -6,6 +6,11 @@ PageList::PageList(PageNode* head) : head(head) {}
 
 PageList::PageList() : head(nullptr) {}
 
+void PageList::add(Page* rp, Page* element) {
+    const auto new_node = new (alignof(PageNode), rp) PageNode(element, head);
+    head = new_node;
+}
+
 bool PageList::remove(Page* element) {
     auto node = head;
     PageNode* previous_node = nullptr;
@@ -21,11 +26,6 @@ bool PageList::remove(Page* element) {
         node = (*node).next;
     };
     return false;
-}
-
-void PageList::add(Page* rp, Page* element) {
-    const auto new_node = new (alignof(PageNode), rp) PageNode(element, head);
-    head = new_node;
 }
 
 PageListIterator PageList::get_iterator() {

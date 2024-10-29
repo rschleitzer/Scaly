@@ -31,33 +31,6 @@ struct HashSetBuilder : Object {
         };
     }
 
-    bool add_internal(T value) {
-        const auto hash_code = value.hash();
-        const auto slot_number = hash_code%(*slots).length;
-        const auto slot_list = (*slots).get(slot_number);
-        auto iterator = (*slot_list).get_iterator();
-        while (auto item = iterator.next()) {
-            if (value.equals((*item).value)) {
-                return false;
-            };
-        };
-        (*slot_list).add((*slots).get_page(), Slot<T>(value, hash_code));
-        length = length+1;
-        return true;
-    };
-
-    bool contains(T value) {
-        if (slots == nullptr) 
-            return false;
-        const auto hash = value.hash();
-        const auto slot_number = hash%(*slots).length;
-        const auto slot = (*slots).get(slot_number);
-        auto iterator = (*slot).get_iterator();
-        while (auto item = iterator.next()) if (value.equals((*item).value)) 
-            return true;
-        return false;
-    };
-
     void reallocate(size_t size) {
         const auto hash_size = hashing::get_prime(size);
         const auto slots_page = (*Page::get(this)).allocate_exclusive_page();
@@ -83,6 +56,33 @@ struct HashSetBuilder : Object {
         if (slots == nullptr||hash_size>(*slots).length) 
             reallocate(length+1);
         return add_internal(value);
+    };
+
+    bool add_internal(T value) {
+        const auto hash_code = value.hash();
+        const auto slot_number = hash_code%(*slots).length;
+        const auto slot_list = (*slots).get(slot_number);
+        auto iterator = (*slot_list).get_iterator();
+        while (auto item = iterator.next()) {
+            if (value.equals((*item).value)) {
+                return false;
+            };
+        };
+        (*slot_list).add((*slots).get_page(), Slot<T>(value, hash_code));
+        length = length+1;
+        return true;
+    };
+
+    bool contains(T value) {
+        if (slots == nullptr) 
+            return false;
+        const auto hash = value.hash();
+        const auto slot_number = hash%(*slots).length;
+        const auto slot = (*slots).get(slot_number);
+        auto iterator = (*slot).get_iterator();
+        while (auto item = iterator.next()) if (value.equals((*item).value)) 
+            return true;
+        return false;
     };
 };
 

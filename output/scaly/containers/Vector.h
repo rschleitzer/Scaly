@@ -92,11 +92,11 @@ struct Vector : Object {
         };
     }
 
-    T* operator [](size_t i){
+    T* get(size_t i) {
         if (i>=length) 
             return nullptr;
-        return data+i;
-    }
+        return (*this)[i];
+    };
 
     bool put(size_t i, T item) {
         if (i>=length) 
@@ -105,11 +105,11 @@ struct Vector : Object {
         return true;
     };
 
-    T* get(size_t i) {
+    T* operator [](size_t i){
         if (i>=length) 
             return nullptr;
-        return (*this)[i];
-    };
+        return data+i;
+    }
 };
 
 #endif

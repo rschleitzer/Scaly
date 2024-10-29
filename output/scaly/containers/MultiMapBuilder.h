@@ -13,17 +13,32 @@ struct MultiMapBuilder : Object {
 
     MultiMapBuilder() : length(0), slots(nullptr) {}
 
-    Array<V>* operator [](K key){
-        if (slots == nullptr) 
-            return nullptr;
-        const auto slot = (*slots).get(key.hash()%(*slots).length);
-        auto iterator = (*slot).get_iterator();
-        while (auto item = iterator.next()) {
-            if (key.equals((*item).value.key)) 
-                return (*item).value.value;
+    void reallocate(size_t size) {
+        const auto hash_size = hashing::get_prime(size);
+        const auto slots_page = (*Page::get(this)).allocate_exclusive_page();
+        auto new_slots = new (alignof(Vector<BuilderList<Slot<KeyValuePair<K, Array<V>*>>>>), slots_page) Vector<BuilderList<Slot<KeyValuePair<K, Array<V>*>>>>(slots_page, hash_size);
+        if (slots != nullptr) {
+            auto vector_iterator = VectorIterator<BuilderList<Slot<KeyValuePair<K, Array<V>*>>>>(slots);
+            while (auto element = vector_iterator.next()) {
+                auto list_iterator = BuilderListIterator<Slot<KeyValuePair<K, Array<V>*>>>((*element).head);
+                while (auto item = list_iterator.next()) {
+                    const auto hash_code = (*item).hash_code;
+                    const auto slot_number = hash_code%(*new_slots).length;
+                    const auto slot_list = (*new_slots)[slot_number];
+                    (*slot_list).add(slots_page, *item);
+                };
+            };
+            (*Page::get(this)).deallocate_exclusive_page(Page::get(slots));
         };
-        return nullptr;
-    }
+        slots = new_slots;
+    };
+
+    void add(K key, V value) {
+        const auto hash_size = hashing::get_prime(length+1);
+        if ((slots == nullptr||hash_size>(*slots).length)) 
+            reallocate(length+1);
+        add_internal(key, value);
+    };
 
     void add_internal(K key, V value) {
         const auto hash_code = key.hash();
@@ -58,32 +73,17 @@ struct MultiMapBuilder : Object {
         return false;
     };
 
-    void reallocate(size_t size) {
-        const auto hash_size = hashing::get_prime(size);
-        const auto slots_page = (*Page::get(this)).allocate_exclusive_page();
-        auto new_slots = new (alignof(Vector<BuilderList<Slot<KeyValuePair<K, Array<V>*>>>>), slots_page) Vector<BuilderList<Slot<KeyValuePair<K, Array<V>*>>>>(slots_page, hash_size);
-        if (slots != nullptr) {
-            auto vector_iterator = VectorIterator<BuilderList<Slot<KeyValuePair<K, Array<V>*>>>>(slots);
-            while (auto element = vector_iterator.next()) {
-                auto list_iterator = BuilderListIterator<Slot<KeyValuePair<K, Array<V>*>>>((*element).head);
-                while (auto item = list_iterator.next()) {
-                    const auto hash_code = (*item).hash_code;
-                    const auto slot_number = hash_code%(*new_slots).length;
-                    const auto slot_list = (*new_slots)[slot_number];
-                    (*slot_list).add(slots_page, *item);
-                };
-            };
-            (*Page::get(this)).deallocate_exclusive_page(Page::get(slots));
+    Array<V>* operator [](K key){
+        if (slots == nullptr) 
+            return nullptr;
+        const auto slot = (*slots).get(key.hash()%(*slots).length);
+        auto iterator = (*slot).get_iterator();
+        while (auto item = iterator.next()) {
+            if (key.equals((*item).value.key)) 
+                return (*item).value.value;
         };
-        slots = new_slots;
-    };
-
-    void add(K key, V value) {
-        const auto hash_size = hashing::get_prime(length+1);
-        if ((slots == nullptr||hash_size>(*slots).length)) 
-            reallocate(length+1);
-        add_internal(key, value);
-    };
+        return nullptr;
+    }
 };
 
 #endif

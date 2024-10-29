@@ -1,10 +1,6 @@
 #include "../scaly.h"
 namespace scaly {
 
-void memory::test() {
-    test_page();
-}
-
 void memory::test_page() {
     auto r = Region();
     auto page = r.get_page();
@@ -73,6 +69,10 @@ void memory::test_page() {
         };
     };
     const auto exclusive_page = (*page).allocate_exclusive_page();
+}
+
+void memory::test() {
+    test_page();
 }
 
 }

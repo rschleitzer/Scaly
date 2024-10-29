@@ -69,6 +69,62 @@ String::String(Page* rp, char character) {
     *(data+1) = character;
 }
 
+char* String::get_buffer() {
+    size_t length = 0;
+    auto bit_count = 0;
+    size_t index = 0;
+    while (true) {
+        if (bit_count == PACKED_SIZE*7) 
+            exit(11);
+        char byte = *(data+index);
+        length = length|((size_t)(byte&0x7f))<<bit_count;
+        if ((byte&0x80)==0) 
+            break;
+        bit_count = bit_count+7;
+        index = index+1;
+    };
+    return data+index+1;
+}
+
+const_char* String::to_c_string(Page* rp) {
+    size_t length = 0;
+    auto bit_count = 0;
+    size_t index = 0;
+    while (true) {
+        if (bit_count == PACKED_SIZE*7) 
+            exit(11);
+        char byte = *(data+index);
+        length = length|((size_t)(byte&0x7f))<<bit_count;
+        if ((byte&0x80)==0) 
+            break;
+        bit_count = bit_count+7;
+        index = index+1;
+    };
+    auto dest = (*rp).allocate_raw(length+1, 1);
+    memcpy(dest, data+index+1, length);
+    *((char*)dest+index+length) = 0;
+    return (const_char*)dest;
+}
+
+size_t String::get_length() {
+    if (data == nullptr) 
+        return 0;
+    size_t result = 0;
+    auto bit_count = 0;
+    size_t index = 0;
+    while (true) {
+        if (bit_count == PACKED_SIZE*7) 
+            exit(11);
+        char byte = *(data+index);
+        result = result|((size_t)(byte&0x7f))<<bit_count;
+        if ((byte&0x80)==0) 
+            break;
+        bit_count = bit_count+7;
+        index = index+1;
+    };
+    return result;
+}
+
 bool String::equals(String other) {
     size_t length = 0;
     size_t index = 0;
@@ -134,43 +190,6 @@ bool String::equals(Vector<char> other) {
     return memcmp(data+index+1, other.data, length) == 0;
 }
 
-char* String::get_buffer() {
-    size_t length = 0;
-    auto bit_count = 0;
-    size_t index = 0;
-    while (true) {
-        if (bit_count == PACKED_SIZE*7) 
-            exit(11);
-        char byte = *(data+index);
-        length = length|((size_t)(byte&0x7f))<<bit_count;
-        if ((byte&0x80)==0) 
-            break;
-        bit_count = bit_count+7;
-        index = index+1;
-    };
-    return data+index+1;
-}
-
-const_char* String::to_c_string(Page* rp) {
-    size_t length = 0;
-    auto bit_count = 0;
-    size_t index = 0;
-    while (true) {
-        if (bit_count == PACKED_SIZE*7) 
-            exit(11);
-        char byte = *(data+index);
-        length = length|((size_t)(byte&0x7f))<<bit_count;
-        if ((byte&0x80)==0) 
-            break;
-        bit_count = bit_count+7;
-        index = index+1;
-    };
-    auto dest = (*rp).allocate_raw(length+1, 1);
-    memcpy(dest, data+index+1, length);
-    *((char*)dest+index+length) = 0;
-    return (const_char*)dest;
-}
-
 size_t String::hash() {
     size_t length = 0;
     auto bit_count = 0;
@@ -186,25 +205,6 @@ size_t String::hash() {
         index = index+1;
     };
     return hashing::hash(data+index+1, length);
-}
-
-size_t String::get_length() {
-    if (data == nullptr) 
-        return 0;
-    size_t result = 0;
-    auto bit_count = 0;
-    size_t index = 0;
-    while (true) {
-        if (bit_count == PACKED_SIZE*7) 
-            exit(11);
-        char byte = *(data+index);
-        result = result|((size_t)(byte&0x7f))<<bit_count;
-        if ((byte&0x80)==0) 
-            break;
-        bit_count = bit_count+7;
-        index = index+1;
-    };
-    return result;
 }
 
 }

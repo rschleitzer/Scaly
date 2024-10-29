@@ -54,6 +54,22 @@ struct HashMap : Object {
         };
     }
 
+    bool contains(K key) {
+        if (slots == nullptr) 
+            return false;
+        const auto hash = key.hash();
+        const auto slot_number = hash%(*slots).length;
+        const auto slot = (*slots).get(slot_number);
+        const auto length = (*slot).length;
+        size_t i = 0;
+        while (i<length) {
+            if ((key.equals((*(*slot).get(i)).key))) 
+                return true;
+            i = i+1;
+        };
+        return false;
+    };
+
     V* operator [](K key){
         if (slots == nullptr) 
             return nullptr;
@@ -81,22 +97,6 @@ struct HashMap : Object {
             };
         };
         return new (alignof(Vector<V*>), rp) Vector<V*>(rp, array);
-    };
-
-    bool contains(K key) {
-        if (slots == nullptr) 
-            return false;
-        const auto hash = key.hash();
-        const auto slot_number = hash%(*slots).length;
-        const auto slot = (*slots).get(slot_number);
-        const auto length = (*slot).length;
-        size_t i = 0;
-        while (i<length) {
-            if ((key.equals((*(*slot).get(i)).key))) 
-                return true;
-            i = i+1;
-        };
-        return false;
     };
 };
 

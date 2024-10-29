@@ -11,11 +11,11 @@ struct StringBuilder : Object {
     StringBuilder(char character);
     StringBuilder(String string);
     StringBuilder(const_char* c_string);
-    String to_string(Page* rp);
-    size_t get_length();
     void append(char character);
     void append(String string);
     void append(const_char* c_string);
+    size_t get_length();
+    String to_string(Page* rp);
 };
 
 #endif
