@@ -21,10 +21,6 @@ void test_page()
     if (page.next_page != nullptr)
         exit (-1);
 
-    // And we are not oversized
-    if (page.is_oversized())
-        exit (-2);
-
     auto location = (size_t)page.next_object;
 
     // Allocate an int. Our location moves by bytes.

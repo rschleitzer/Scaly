@@ -6,8 +6,6 @@ void memory::test_page() {
     auto page = r.get_page();
     if ((*page).next_page != nullptr) 
         exit(-1);
-    if ((*page).is_oversized()) 
-        exit(-2);
     auto location = (size_t)(*page).next_object;
     const auto answer = (int*)(*page).allocate(4, alignof(int));
     location+=4;

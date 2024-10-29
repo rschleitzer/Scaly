@@ -14,10 +14,6 @@ define memory {
         if (*page).next_page <> null
             exit(-1)
 
-        ; And we are not oversized
-        if (*page).is_oversized()
-            exit (-2)
-
         var location (size_t)(*page).next_object
 
         ; Allocate an int. Our location moves by bytes.

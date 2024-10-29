@@ -72,6 +72,26 @@ define Page
         return (pointer[void])(page + 1)
     }
 
+    function get(address: pointer[void]) returns pointer[Page] {
+        let mask ~(size_t)(PAGE_SIZE - 1)
+        let page (Page*)((size_t)address & mask)
+        return page
+    }
+
+    function get_capacity(this: Page, align: size_t) returns size_t {
+        var location (size_t)next_object
+        let aligned_location (location + align - 1) & ~(align - 1)
+        var location_after_page (size_t)this + PAGE_SIZE
+        var capacity location_after_page - aligned_location
+        return capacity
+    }
+
+    function allocate_exclusive_page(this: Page) returns pointer[Page] {
+        let page allocate_page()
+        (exclusive_pages).add(page, page)
+        return page
+    }
+
     procedure deallocate_extensions(this: Page) {
         ; Oversized pages cannot have extensions
         if next_object = null
@@ -92,12 +112,6 @@ define Page
         }
     }
 
-    function get(address: pointer[void]) returns pointer[Page] {
-        let mask ~(size_t)(PAGE_SIZE - 1)
-        let page (Page*)((size_t)address & mask)
-        return page
-    }
-
     function deallocate_exclusive_page(this: Page, page: pointer[Page]) {
         (*page).deallocate_extensions()
         (*page).forget()
@@ -105,25 +119,7 @@ define Page
             exit (2)
     }
 
-    function get_capacity(this: Page, align: size_t) returns size_t {
-        var location (size_t)next_object
-        let aligned_location (location + align - 1) & ~(align - 1)
-        var location_after_page (size_t)this + PAGE_SIZE
-        var capacity location_after_page - aligned_location
-        return capacity
-    }
-
-    function allocate_exclusive_page(this: Page) returns pointer[Page] {
-        let page allocate_page()
-        (exclusive_pages).add(page, page)
-        return page
-    }
-
     function forget(this: Page) {
         free(this)
-    }
-
-    function is_oversized(this: Page) returns bool {
-        return next_object = null
     }
 }

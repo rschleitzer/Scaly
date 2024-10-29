@@ -53,6 +53,26 @@ void* Page::allocate_oversized(size_t size) {
     return (void*)(page+1);
 }
 
+Page* Page::get(void* address) {
+    const auto mask = ~(size_t)(PAGE_SIZE-1);
+    const auto page = (Page*)((size_t)address&mask);
+    return page;
+}
+
+size_t Page::get_capacity(size_t align) {
+    auto location = (size_t)next_object;
+    const auto aligned_location = (location+align-1)&~(align-1);
+    auto location_after_page = (size_t)this+PAGE_SIZE;
+    auto capacity = location_after_page-aligned_location;
+    return capacity;
+}
+
+Page* Page::allocate_exclusive_page() {
+    const auto page = allocate_page();
+    (exclusive_pages).add(page, page);
+    return page;
+}
+
 void Page::deallocate_extensions() {
     if (next_object == nullptr) 
         return;
@@ -72,12 +92,6 @@ void Page::deallocate_extensions() {
     };
 }
 
-Page* Page::get(void* address) {
-    const auto mask = ~(size_t)(PAGE_SIZE-1);
-    const auto page = (Page*)((size_t)address&mask);
-    return page;
-}
-
 void Page::deallocate_exclusive_page(Page* page) {
     (*page).deallocate_extensions();
     (*page).forget();
@@ -85,26 +99,8 @@ void Page::deallocate_exclusive_page(Page* page) {
         exit(2);
 }
 
-size_t Page::get_capacity(size_t align) {
-    auto location = (size_t)next_object;
-    const auto aligned_location = (location+align-1)&~(align-1);
-    auto location_after_page = (size_t)this+PAGE_SIZE;
-    auto capacity = location_after_page-aligned_location;
-    return capacity;
-}
-
-Page* Page::allocate_exclusive_page() {
-    const auto page = allocate_page();
-    (exclusive_pages).add(page, page);
-    return page;
-}
-
 void Page::forget() {
     free(this);
-}
-
-bool Page::is_oversized() {
-    return next_object == nullptr;
 }
 
 }

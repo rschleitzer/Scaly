@@ -77,37 +77,10 @@ void* Page::allocate_oversized(size_t size)
     return (void*)(page + 1);
 }
 
-void Page::deallocate_extensions() {
-    // Oversized pages cannot have extensions
-    if (this->next_object == nullptr)
-        return;
-
-    auto _exclusive_pages_iterator = this->exclusive_pages.get_iterator();
-    while (auto _exclusive_page = _exclusive_pages_iterator.next()) {
-        auto exclusive_page = *_exclusive_page;
-        exclusive_page->deallocate_extensions();
-        exclusive_page->forget();
-    }
-
-    auto page = this->next_page; 
-    while (page != nullptr) {
-        auto next_page = page->next_page;
-        page->forget();
-        page = next_page;
-    }
-}
-
 Page* Page::get(void* address) {
     auto mask = ~(size_t)(PAGE_SIZE - 1);
     auto page = (Page*)((size_t)address & mask);
     return page;
-}
-
-void Page::deallocate_exclusive_page(Page* page) {
-    page->deallocate_extensions();
-    page->forget();
-    if (!this->exclusive_pages.remove(page))
-        exit(2);
 }
 
 size_t Page::get_capacity(size_t align) {
@@ -124,12 +97,31 @@ Page* Page::allocate_exclusive_page() {
     return page;
 }
 
-void Page::forget() {
-    free(this);
+void Page::deallocate_exclusive_page(Page* page) {
+    page->deallocate_extensions();
+    free(page);
+    if (!this->exclusive_pages.remove(page))
+        exit(2);
 }
 
-bool Page::is_oversized() {
-    return this->next_object == nullptr;
+void Page::deallocate_extensions() {
+    // Oversized pages cannot have extensions
+    if (this->next_object == nullptr)
+        return;
+
+    auto _exclusive_pages_iterator = this->exclusive_pages.get_iterator();
+    while (auto _exclusive_page = _exclusive_pages_iterator.next()) {
+        auto exclusive_page = *_exclusive_page;
+        exclusive_page->deallocate_extensions();
+        free(exclusive_page);
+    }
+
+    auto page = this->next_page; 
+    while (page != nullptr) {
+        auto next_page = page->next_page;
+        free(page);
+        page = next_page;
+    }
 }
 
 }
