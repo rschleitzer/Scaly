@@ -254,9 +254,9 @@ struct Catcher {
 
 struct Try : Object {
     Span span;
-    Binding condition;
+    Binding binding;
     Catcher catcher;
-    Try(Span span, Binding condition, Catcher catcher) : span(span), condition(condition), catcher(catcher) {}
+    Try(Span span, Binding condition, Catcher catcher) : span(span), binding(condition), catcher(catcher) {}
 };
 
 struct SizeOf : Object {

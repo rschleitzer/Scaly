@@ -1283,19 +1283,33 @@ struct Result {\n\
 
     TranspilerError* build_try(Page* _ep, StringBuilder& builder, Try& try_, Type* returns_, Type* throws_, String indent) {
         Region _r;
-        builder.append("{\n");
-        StringBuilder& indent_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(indent);
-        indent_builder.append("    ");
-        String indented = indent_builder.to_string(_r.get_page());
-        builder.append(indented);
         builder.append("const auto _");
+        auto name = *try_.binding.item.name;
+        builder.append(name);
         builder.append("_result = ");
         {
-            auto _result = build_condition(_ep, builder, try_.condition, returns_, throws_, indent);
+            auto _result = build_operation(_ep, builder, try_.binding.operation, returns_, throws_, indent);
             if (_result != nullptr)
                 return _result;
         }
-        builder.append(") ");
+        builder.append(";\n");
+        builder.append(indent);
+        builder.append("if (_");
+        builder.append(name);
+        builder.append("_result._tag == Success::Error) {\n");
+        StringBuilder& indent_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(indent);
+        indent_builder.append("    ");
+        auto indented = indent_builder.to_string(_r.get_page());
+        builder.append(indented);
+        builder.append("const auto _");
+        builder.append(name);
+        builder.append("_Error = _");
+        builder.append(name);
+        builder.append("_result._Error;\n");
+        builder.append(indented);
+        builder.append("switch (_");
+        builder.append(name);
+        builder.append("_Error._tag) {");
         {
             auto _result = build_catcher(_ep, builder, try_.catcher, returns_, throws_, indent);
             if (_result != nullptr)
