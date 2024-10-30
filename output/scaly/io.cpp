@@ -8,6 +8,7 @@ void io::test_file() {
         const auto _file_not_found_Error = _file_not_found_result._Error;
         switch (_file_not_found_Error._tag) {
             case FileError::NoSuchFileOrDirectory: {
+                const auto error = _file_not_found_Error._NoSuchFileOrDirectory;
                 const auto _text_result = File::read_to_string(r.get_page(), r.get_page(), String(r.get_page(), "bar"));
                 if (_text_result._tag == Success::Error) {
                     const auto _text_result_Error = _file_not_found_result._Error;
