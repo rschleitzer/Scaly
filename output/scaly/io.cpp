@@ -12,8 +12,8 @@ void io::test_file() {
                 {
                     const auto _text_result = File::read_to_string(r.get_page(), r.get_page(), String(r.get_page(), "bar"));
                     if (_text_result._tag == Success::Error) {
-                        const auto _text_result_Error = _file_not_found_result._Error;
-                        switch (_text_result_Error._tag) {
+                        const auto _text_Error = _file_not_found_result._Error;
+                        switch (_text_Error._tag) {
                             default: {
                                 exit(-2);
                                 break;

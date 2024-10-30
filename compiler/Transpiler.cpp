@@ -1272,9 +1272,12 @@ struct Result {\n\
             builder.append(name);
             builder.append("_Error._");
             builder.append(*catch_.error.get(1));
-            builder.append(";");
+            builder.append(";\n");
+            // indent_builder.append("    ");
+            // String indented4 = indent_builder.to_string(_r.get_page());
+            builder.append(indented3);
             {
-                auto _result = build_action(_ep, builder, catch_.action, returns_, throws_, indented2);
+                auto _result = build_action(_ep, builder, catch_.action, returns_, throws_, indented3);
                 if (_result != nullptr)
                     return _result;
             }
