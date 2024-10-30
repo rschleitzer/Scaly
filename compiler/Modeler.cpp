@@ -508,32 +508,6 @@ Result<Drop*, ModelError> handle_drop(Page* _rp, Page* _ep, DropSyntax& drop_, S
     return Result<Drop*, ModelError> { ._tag = Result<Drop*, ModelError>::Ok, ._Ok = new(alignof(Drop), _rp) Drop(Span(drop_.start, drop_.end), handler) };
 }
 
-Result<Catcher, ModelError> handle_catcher(Page* _rp, Page* _ep, CatcherSyntax& catcher, String file) {
-    Region _r;
-    List<Catch>& catches_builder = *new(alignof(List<Catch>), _r.get_page()) List<Catch>();
-    if (catcher.catches != nullptr) {
-        auto catch_syntaxes = catcher.catches;
-        auto _catches_iterator = catch_syntaxes->get_iterator();
-        while (auto _catch_syntax = _catches_iterator.next()) {
-            auto catch_syntax = *_catch_syntax;
-            auto _catch_result = handle_catch(_rp, _ep, catch_syntax, file);
-            if (_catch_result._tag == Result<Catch, ModelError>::Error)
-                return Result<Catcher, ModelError> { ._tag = Result<Catcher, ModelError>::Error, ._Error = _catch_result._Error };
-            auto catch_ = _catch_result._Ok;
-            catches_builder.add(catch_);
-        }
-    }
-    Drop* drop_ = nullptr;
-    if (catcher.dropper != nullptr) {
-        auto drop_syntax = *catcher.dropper;
-        auto _drop_result = handle_drop(_rp, _ep, drop_syntax, file);
-        if (_drop_result._tag == Result<Drop, ModelError>::Error)
-            return Result<Catcher, ModelError> { ._tag = Result<Catcher, ModelError>::Error, ._Error = _drop_result._Error };
-        drop_ = _drop_result._Ok;
-    }
-    return Result<Catcher, ModelError> { ._tag = Result<Catcher, ModelError>::Ok, ._Ok = Catcher(Span(catcher.start, catcher.end), Vector<Catch>(_rp, catches_builder), drop_) };
-}
-
 Result<Constant, ModelError> handle_literal(Page* _rp, Page* _ep, LiteralSyntax& literal, String file) {
     Region _r;
     switch (literal.literal._tag) {
@@ -1047,12 +1021,28 @@ Result<Try, ModelError> handle_try(Page* _rp, Page* _ep, TrySyntax& try_, String
     if (_condition_result._tag == Result<Vector<Operand>, ModelError>::Error)
         return Result<Try, ModelError> { ._tag = Result<Try, ModelError>::Error, ._Error = _condition_result._Error };
     auto condition = _condition_result._Ok;
-
-    auto _catcher_result = handle_catcher(_rp, _ep, try_.catcher, file);
-    if (_catcher_result._tag == Result<Action, ModelError>::Error)
-        return Result<Try, ModelError> { ._tag = Result<Try, ModelError>::Error, ._Error = _catcher_result._Error };
-    auto catcher = _catcher_result._Ok;
-    return Result<Try, ModelError> { ._tag = Result<Try, ModelError>::Ok, ._Ok = Try(Span(try_.start, try_.end), condition, catcher) };
+    List<Catch>& catches_builder = *new(alignof(List<Catch>), _r.get_page()) List<Catch>();
+    if (try_.catches != nullptr) {
+        auto catch_syntaxes = try_.catches;
+        auto _catches_iterator = catch_syntaxes->get_iterator();
+        while (auto _catch_syntax = _catches_iterator.next()) {
+            auto catch_syntax = *_catch_syntax;
+            auto _catch_result = handle_catch(_rp, _ep, catch_syntax, file);
+            if (_catch_result._tag == Result<Catch, ModelError>::Error)
+                return Result<Try, ModelError> { ._tag = Result<Try, ModelError>::Error, ._Error = _catch_result._Error };
+            auto catch_ = _catch_result._Ok;
+            catches_builder.add(catch_);
+        }
+    }
+    Drop* drop_ = nullptr;
+    if (try_.dropper != nullptr) {
+        auto drop_syntax = *try_.dropper;
+        auto _drop_result = handle_drop(_rp, _ep, drop_syntax, file);
+        if (_drop_result._tag == Result<Drop, ModelError>::Error)
+            return Result<Try, ModelError> { ._tag = Result<Try, ModelError>::Error, ._Error = _drop_result._Error };
+        drop_ = _drop_result._Ok;
+    }
+    return Result<Try, ModelError> { ._tag = Result<Try, ModelError>::Ok, ._Ok = Try(Span(try_.start, try_.end), condition, Vector<Catch>(_rp, catches_builder), drop_) };
 }
 
 Result<SizeOf, ModelError> handle_size_of(Page* _rp, Page* _ep, SizeOfSyntax& size_of, String file) {

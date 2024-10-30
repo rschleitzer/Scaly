@@ -1255,61 +1255,6 @@ struct Result {\n\
         return nullptr;
     }
 
-    TranspilerError* build_catcher(Page* _ep, StringBuilder& builder, Catcher& catcher, String name, Type* returns_, Type* throws_, String indent) {
-        Region _r;
-        auto _catch__iterator = catcher.catches.get_iterator();
-        StringBuilder& indent_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(indent);
-        indent_builder.append("    ");
-        String indented = indent_builder.to_string(_r.get_page());
-        indent_builder.append("    ");
-        String indented2 = indent_builder.to_string(_r.get_page());
-        indent_builder.append("    ");
-        String indented3 = indent_builder.to_string(_r.get_page());
-        while (auto _catch_ = _catch__iterator.next()) {
-            auto catch_ = *_catch_;
-            builder.append('\n');
-            builder.append(indented);
-            builder.append("    case ");
-            bool first = true;
-            auto _error_iterator = catch_.error.get_iterator();
-            while (auto _error = _error_iterator.next()) {
-                if(first)
-                    first = false;
-                else
-                    builder.append("::");
-                builder.append(*_error);
-            }
-            builder.append(": {\n");
-            builder.append(indented3);
-            builder.append("const auto error = _");
-            builder.append(name);
-            builder.append("_Error._");
-            builder.append(*catch_.error.get(1));
-            builder.append(";\n");
-            // indent_builder.append("    ");
-            // String indented4 = indent_builder.to_string(_r.get_page());
-            builder.append(indented3);
-            {
-                auto _result = build_action(_ep, builder, catch_.action, returns_, throws_, indented3);
-                if (_result != nullptr)
-                    return _result;
-            }
-        }
-        if (catcher.drop != nullptr) {
-            {
-                auto _result = build_drop(_ep, builder, *catcher.drop, returns_, throws_, indented2);
-                if (_result != nullptr)
-                    return _result;
-                builder.append(';');
-            }
-        }
-        builder.append('\n');
-        builder.append(indent);
-        builder.append("}");
-
-        return nullptr;
-    }
-
     TranspilerError* build_try(Page* _ep, StringBuilder& builder, Try& try_, Type* returns_, Type* throws_, String indent) {
         Region _r;
         builder.append("const auto _");
@@ -1339,11 +1284,50 @@ struct Result {\n\
         builder.append("switch (_");
         builder.append(name);
         builder.append("_Error._tag) {");
-        {
-            auto _result = build_catcher(_ep, builder, try_.catcher, name, returns_, throws_, indent);
-            if (_result != nullptr)
-                return _result;
+        auto _catch__iterator = try_.catches.get_iterator();
+        indent_builder.append("    ");
+        String indented2 = indent_builder.to_string(_r.get_page());
+        indent_builder.append("    ");
+        String indented3 = indent_builder.to_string(_r.get_page());
+        while (auto _catch_ = _catch__iterator.next()) {
+            auto catch_ = *_catch_;
+            builder.append('\n');
+            builder.append(indented);
+            builder.append("    case ");
+            bool first = true;
+            auto _error_iterator = catch_.error.get_iterator();
+            while (auto _error = _error_iterator.next()) {
+                if(first)
+                    first = false;
+                else
+                    builder.append("::");
+                builder.append(*_error);
+            }
+            builder.append(": {\n");
+            builder.append(indented3);
+            builder.append("const auto error = _");
+            builder.append(name);
+            builder.append("_Error._");
+            builder.append(*catch_.error.get(1));
+            builder.append(";\n");
+            builder.append(indented3);
+            {
+                auto _result = build_action(_ep, builder, catch_.action, returns_, throws_, indented3);
+                if (_result != nullptr)
+                    return _result;
+            }
         }
+        if (try_.drop_ != nullptr) {
+            {
+                auto _result = build_drop(_ep, builder, *try_.drop_, returns_, throws_, indented2);
+                if (_result != nullptr)
+                    return _result;
+                builder.append(';');
+            }
+        }
+        builder.append('\n');
+        builder.append(indent);
+        builder.append("}");
         return nullptr;
     }
 

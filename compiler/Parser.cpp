@@ -142,7 +142,6 @@ struct CommandSyntax;
 struct WhileSyntax; 
 struct TrySyntax; 
 struct ConditionSyntax; 
-struct CatcherSyntax; 
 struct CatchSyntax; 
 struct DropSyntax; 
 struct LetSyntax; 
@@ -465,14 +464,6 @@ struct CatchSyntax : Object {
     ActionSyntax action;
 };
 
-struct CatcherSyntax : Object {
-    CatcherSyntax(size_t start, size_t end, Vector<CatchSyntax>* catches, DropSyntax* dropper) : start(start), end(end), catches(catches), dropper(dropper) {}
-    size_t start;
-    size_t end;
-    Vector<CatchSyntax>* catches;
-    DropSyntax* dropper;
-};
-
 struct ConditionSyntax : Object {
     ConditionSyntax(OperationSyntax _OperationSyntax) : _tag(Operation) { _Operation = _OperationSyntax; }
     ConditionSyntax(LetSyntax _LetSyntax) : _tag(Let) { _Let = _LetSyntax; }
@@ -487,11 +478,12 @@ struct ConditionSyntax : Object {
 };
 
 struct TrySyntax : Object {
-    TrySyntax(size_t start, size_t end, ConditionSyntax condition, CatcherSyntax catcher) : start(start), end(end), condition(condition), catcher(catcher) {}
+    TrySyntax(size_t start, size_t end, ConditionSyntax condition, Vector<CatchSyntax>* catches, DropSyntax* dropper) : start(start), end(end), condition(condition), catches(catches), dropper(dropper) {}
     size_t start;
     size_t end;
     ConditionSyntax condition;
-    CatcherSyntax catcher;
+    Vector<CatchSyntax>* catches;
+    DropSyntax* dropper;
 };
 
 struct WhileSyntax : Object {
@@ -5358,23 +5350,37 @@ struct Parser : Object {
         if (!success_colon_3) {
             return Result<TrySyntax, ParserError> { ._tag = Result<TrySyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_colon_3, lexer.position, String(_ep, "a colon or a line feed"))) };        }
 
-        auto catcher_start = this->lexer.position;
-        auto catcher_result = this->parse_catcher(_rp, _ep);
-        if (catcher_result._tag == Result<CatcherSyntax, ParserError>::Error)
+        auto catches_start = this->lexer.position;
+        auto catches_result = this->parse_catch_list(_rp, _ep);
+        if (catches_result._tag == Result<Vector<CatchSyntax>, ParserError>::Error)
         {
-            switch (catcher_result._Error._tag) {
+            switch (catches_result._Error._tag) {
                 case ParserError::OtherSyntax:
-                    return Result<TrySyntax, ParserError> { ._tag = Result<TrySyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(catcher_start, lexer.position, String(_ep, "a valid Catcher syntax"))) };
+                    break;
                 case ParserError::InvalidSyntax:
-                    return Result<TrySyntax, ParserError> { ._tag = Result<TrySyntax, ParserError>::Error, ._Error = catcher_result._Error };
+                    return Result<TrySyntax, ParserError> { ._tag = Result<TrySyntax, ParserError>::Error, ._Error = catches_result._Error };
             }
         }
 
-        auto catcher = catcher_result._Ok;
+        auto catches = catches_result._tag == Result<Vector<CatchSyntax>, ParserError>::Error ? nullptr : catches_result._Ok;
+
+        auto dropper_start = this->lexer.position;
+        auto dropper_result = this->parse_drop(_rp, _ep);
+        if (dropper_result._tag == Result<DropSyntax, ParserError>::Error)
+        {
+            switch (dropper_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<TrySyntax, ParserError> { ._tag = Result<TrySyntax, ParserError>::Error, ._Error = dropper_result._Error };
+            }
+        }
+
+        DropSyntax* dropper = dropper_result._tag == Result<DropSyntax, ParserError>::Error ? nullptr : new(alignof(DropSyntax), _rp) DropSyntax(dropper_result._Ok);
 
         auto end = this->lexer.position;
 
-        auto ret = TrySyntax(start, end, condition, catcher);
+        auto ret = TrySyntax(start, end, condition, catches, dropper);
 
         return Result<TrySyntax, ParserError> { ._tag = Result<TrySyntax, ParserError>::Ok, ._Ok = ret };
     }
@@ -5411,44 +5417,6 @@ struct Parser : Object {
             }
         }
         return Result<ConditionSyntax, ParserError> { ._tag = Result<ConditionSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
-    }
-
-    Result<CatcherSyntax, ParserError> parse_catcher(Page* _rp, Page* _ep) {
-        auto start = this->lexer.previous_position;
-
-        auto catches_start = this->lexer.position;
-        auto catches_result = this->parse_catch_list(_rp, _ep);
-        if (catches_result._tag == Result<Vector<CatchSyntax>, ParserError>::Error)
-        {
-            switch (catches_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    break;
-                case ParserError::InvalidSyntax:
-                    return Result<CatcherSyntax, ParserError> { ._tag = Result<CatcherSyntax, ParserError>::Error, ._Error = catches_result._Error };
-            }
-        }
-
-        auto catches = catches_result._tag == Result<Vector<CatchSyntax>, ParserError>::Error ? nullptr : catches_result._Ok;
-
-        auto dropper_start = this->lexer.position;
-        auto dropper_result = this->parse_drop(_rp, _ep);
-        if (dropper_result._tag == Result<DropSyntax, ParserError>::Error)
-        {
-            switch (dropper_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    break;
-                case ParserError::InvalidSyntax:
-                    return Result<CatcherSyntax, ParserError> { ._tag = Result<CatcherSyntax, ParserError>::Error, ._Error = dropper_result._Error };
-            }
-        }
-
-        DropSyntax* dropper = dropper_result._tag == Result<DropSyntax, ParserError>::Error ? nullptr : new(alignof(DropSyntax), _rp) DropSyntax(dropper_result._Ok);
-
-        auto end = this->lexer.position;
-
-        auto ret = CatcherSyntax(start, end, catches, dropper);
-
-        return Result<CatcherSyntax, ParserError> { ._tag = Result<CatcherSyntax, ParserError>::Ok, ._Ok = ret };
     }
 
     Result<Vector<CatchSyntax>*, ParserError> parse_catch_list(Page* _rp, Page* _ep) {

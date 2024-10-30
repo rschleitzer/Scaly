@@ -416,15 +416,12 @@
     <content link = try
     <content link = Condition                               property = condition
     <content colon
-    <content link = Catcher                                 property = catcher
+    <content link = Catch                 multiple optional property = catches
+    <content link = Drop                           optional property = dropper
 
 <syntax id = Condition                             abstract
     <content link = Operation
     <content link = Let
-
-<syntax id = Catcher
-    <content link = Catch                 multiple optional property = catches
-    <content link = Drop                           optional property = dropper
 
 <syntax id = Catch                        multiple
     <content link = catch

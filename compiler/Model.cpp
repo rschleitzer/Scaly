@@ -245,18 +245,12 @@ struct Drop : Object {
     Drop(Span span, Action action) : span(span), action(action) {}
 };
 
-struct Catcher {
-    Span span;
-    Vector<Catch> catches;
-    Drop* drop;
-    Catcher(Span span, Vector<Catch> catches, Drop* drop) : span(span), catches(catches), drop(drop) {}
-};
-
 struct Try : Object {
     Span span;
     Binding binding;
-    Catcher catcher;
-    Try(Span span, Binding condition, Catcher catcher) : span(span), binding(condition), catcher(catcher) {}
+    Vector<Catch> catches;
+    Drop* drop_;
+    Try(Span span, Binding condition, Vector<Catch> catches, Drop* drop) : span(span), binding(condition), catches(catches), drop_(drop) {}
 };
 
 struct SizeOf : Object {
