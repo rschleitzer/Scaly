@@ -25,7 +25,6 @@ struct Result {
 };
 
 namespace scaly {
-#include "scaly/Result.h"
 #include "scaly/memory.h"
 #include "scaly/containers.h"
 #include "scaly/io.h"

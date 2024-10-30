@@ -65,7 +65,19 @@ struct Transpiler : Object {
 #include <errno.h>\n\
 #include <math.h>\n\
 #include <libgen.h>\n\
-#include \"forwards.h\"\n");
+#include \"forwards.h\"\n\n\
+struct Void {};\n\
+enum Success { Ok, Error };\n\n\
+template<class OK, class ERROR>\n\
+struct Result {\n\
+    Result(OK _Ok) : _tag(Ok), _Ok(_Ok) {}\n\
+    Result(ERROR _ERROR) : _tag(Error), _Error(_ERROR) {}\n\
+    Success _tag;\n\
+    union {\n\
+        OK _Ok;\n\
+        ERROR _Error;\n\
+    };\n\
+};\n\n");
         }
         else {
             header_builder.append("#include \"");
