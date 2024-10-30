@@ -493,13 +493,13 @@ Result<Catch, ModelError> handle_catch(Page* _rp, Page* _ep, CatchSyntax& catch_
     return Result<Catch, ModelError> { ._tag = Result<Catch, ModelError>::Ok, ._Ok = Catch(Span(catch_.start, catch_.end), condition, handler) };
 }
 
-Result<Drop, ModelError> handle_drop(Page* _rp, Page* _ep, DropSyntax& drop_, String file) {
+Result<Drop*, ModelError> handle_drop(Page* _rp, Page* _ep, DropSyntax& drop_, String file) {
     Region _r;
     auto _handler_result =  handle_operands(_rp, _ep, drop_.handler, file);
     if (_handler_result._tag == Result<Operand, ModelError>::Error)
-        return Result<Drop, ModelError> { ._tag = Result<Drop, ModelError>::Error, ._Error = _handler_result._Error };
+        return Result<Drop*, ModelError> { ._tag = Result<Drop*, ModelError>::Error, ._Error = _handler_result._Error };
     auto handler = _handler_result._Ok;
-    return Result<Drop, ModelError> { ._tag = Result<Drop, ModelError>::Ok, ._Ok = Drop(Span(drop_.start, drop_.end), handler) };
+    return Result<Drop*, ModelError> { ._tag = Result<Drop*, ModelError>::Ok, ._Ok = new(alignof(Drop), _rp) Drop(Span(drop_.start, drop_.end), handler) };
 }
 
 Result<Catcher, ModelError> handle_catcher(Page* _rp, Page* _ep, CatcherSyntax& catcher, String file) {
@@ -523,8 +523,7 @@ Result<Catcher, ModelError> handle_catcher(Page* _rp, Page* _ep, CatcherSyntax& 
         auto _drop_result = handle_drop(_rp, _ep, drop_syntax, file);
         if (_drop_result._tag == Result<Drop, ModelError>::Error)
             return Result<Catcher, ModelError> { ._tag = Result<Catcher, ModelError>::Error, ._Error = _drop_result._Error };
-        auto drop_ = _drop_result._Ok;
-
+        drop_ = _drop_result._Ok;
     }
     return Result<Catcher, ModelError> { ._tag = Result<Catcher, ModelError>::Ok, ._Ok = Catcher(Span(catcher.start, catcher.end), Vector<Catch>(_rp, catches_builder), drop_) };
 }

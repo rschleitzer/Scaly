@@ -238,7 +238,7 @@ struct Catch {
     Catch(Span span, Vector<Operand> condition, Vector<Operand> handler) : span(span), condition(condition), handler(handler) {}
 };
 
-struct Drop {
+struct Drop : Object {
     Span span;
     Vector<Operand> handler;
     Drop(Span span, Vector<Operand> handler) : span(span), handler(handler) {}

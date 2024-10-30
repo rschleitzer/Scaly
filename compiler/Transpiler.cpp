@@ -1276,7 +1276,13 @@ struct Transpiler : Object {
 
     TranspilerError* build_try(Page* _ep, StringBuilder& builder, Try& try_, Type* returns_, Type* throws_, String indent) {
         Region _r;
-        builder.append("while (");
+        builder.append("{\n");
+        StringBuilder& indent_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(indent);
+        indent_builder.append("    ");
+        String indented = indent_builder.to_string(_r.get_page());
+        builder.append(indented);
+        builder.append("const auto _");
+        builder.append("_result = ");
         {
             auto _result = build_condition(_ep, builder, try_.condition, returns_, throws_, indent);
             if (_result != nullptr)
