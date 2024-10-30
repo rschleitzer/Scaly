@@ -1038,6 +1038,20 @@ Result<While, ModelError> handle_while(Page* _rp, Page* _ep, WhileSyntax& while_
     return Result<While, ModelError> { ._tag = Result<While, ModelError>::Ok, ._Ok = While(Span(while_.start, while_.end), condition, action) };
 }
 
+Result<Try, ModelError> handle_try(Page* _rp, Page* _ep, TrySyntax& try_, String file) {
+    Region _r;
+    auto _condition_result = handle_condition(_rp, _ep, try_.condition, file);
+    if (_condition_result._tag == Result<Vector<Operand>, ModelError>::Error)
+        return Result<Try, ModelError> { ._tag = Result<Try, ModelError>::Error, ._Error = _condition_result._Error };
+    auto condition = _condition_result._Ok;
+
+    auto _catcher_result = handle_catcher(_rp, _ep, try_.catcher, file);
+    if (_catcher_result._tag == Result<Action, ModelError>::Error)
+        return Result<Try, ModelError> { ._tag = Result<Try, ModelError>::Error, ._Error = _catcher_result._Error };
+    auto catcher = _catcher_result._Ok;
+    return Result<Try, ModelError> { ._tag = Result<Try, ModelError>::Ok, ._Ok = Try(Span(try_.start, try_.end), condition, catcher) };
+}
+
 Result<SizeOf, ModelError> handle_size_of(Page* _rp, Page* _ep, SizeOfSyntax& size_of, String file) {
     Region _r;
     auto type_result = handle_type(_rp, _ep, size_of.type, file);
@@ -1115,6 +1129,14 @@ Result<Expression, ModelError> handle_expression(Page* _rp, Page* _ep, Expressio
                 return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = _while_result._Error };
             auto while_ = _while_result._Ok;
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::While, ._While = while_} };
+        }
+        case ExpressionSyntax::Try: {
+            auto try_syntax = expression._Try;
+            auto _try_result = handle_try(_rp, _ep, try_syntax, file);
+            if (_try_result._tag == Result<Expression, ModelError>::Error)
+                return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = _try_result._Error };
+            auto try_ = _try_result._Ok;
+            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::Try, ._Try = try_} };
         }
         case ExpressionSyntax::Repeat:
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(file, String(_ep, "Repeat"), Span(expression._Repeat.start, expression._Repeat.end)))) };

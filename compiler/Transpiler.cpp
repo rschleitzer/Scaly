@@ -850,6 +850,13 @@ struct Transpiler : Object {
                         return _result;
                     break;
                 }
+                case Expression::Try: {
+                    auto try_ = operand->expression._Try;
+                    auto _result = build_try(_ep, builder, try_, returns_, throws_, indent);
+                    if (_result != nullptr)
+                        return _result;
+                    break;
+                }
                 case Expression::SizeOf: {
                     auto sizeof_ = operand->expression._SizeOf;
                     auto _result = build_sizeof(_ep, builder, sizeof_, indent);
@@ -1212,6 +1219,72 @@ struct Transpiler : Object {
         builder.append(") ");
         {
             auto _result = build_action(_ep, builder, while_.action, returns_, throws_, indent);
+            if (_result != nullptr)
+                return _result;
+        }
+        return nullptr;
+    }
+
+    TranspilerError* build_drop(Page* _ep, StringBuilder& builder, Drop& drop_, Type* returns_, Type* throws_, String indent) {
+        Region _r;
+        return nullptr;
+    }
+
+    TranspilerError* build_catcher(Page* _ep, StringBuilder& builder, Catcher& catcher, Type* returns_, Type* throws_, String indent) {
+        Region _r;
+        auto _catch__iterator = catcher.catches.get_iterator();
+        StringBuilder& indent_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(indent);
+        indent_builder.append("        ");
+        String indented = indent_builder.to_string(_r.get_page());
+        while (auto _catch_ = _catch__iterator.next()) {
+            auto catch_ = *_catch_;
+            builder.append('\n');
+            builder.append(indent);
+            builder.append("    case ");
+            {
+                auto _result = build_operation(_ep, builder, catch_.condition, returns_, throws_, indented);
+                if (_result != nullptr)
+                    return _result;
+            }
+            builder.append(":\n");
+            builder.append(indented);
+            {
+                auto _result = build_operation(_ep, builder, catch_.handler, returns_, throws_, indented);
+                if (_result != nullptr)
+                    return _result;
+                builder.append(';');
+            }
+        }
+        if (catcher.drop != nullptr) {
+            builder.append('\n');
+            builder.append(indent);
+            builder.append("    default:\n");
+            builder.append(indented);
+            {
+                auto _result = build_drop(_ep, builder, *catcher.drop, returns_, throws_, indented);
+                if (_result != nullptr)
+                    return _result;
+                builder.append(';');
+            }
+        }
+        builder.append('\n');
+        builder.append(indent);
+        builder.append("}");
+
+        return nullptr;
+    }
+
+    TranspilerError* build_try(Page* _ep, StringBuilder& builder, Try& try_, Type* returns_, Type* throws_, String indent) {
+        Region _r;
+        builder.append("while (");
+        {
+            auto _result = build_condition(_ep, builder, try_.condition, returns_, throws_, indent);
+            if (_result != nullptr)
+                return _result;
+        }
+        builder.append(") ");
+        {
+            auto _result = build_catcher(_ep, builder, try_.catcher, returns_, throws_, indent);
             if (_result != nullptr)
                 return _result;
         }

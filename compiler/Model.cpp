@@ -231,6 +231,33 @@ struct While : Object {
     While(Span span, Binding condition, Action action) : span(span), condition(condition), action(action) {}
 };
 
+struct Catch {
+    Span span;
+    Vector<Operand> condition;
+    Vector<Operand> handler;
+    Catch(Span span, Vector<Operand> condition, Vector<Operand> handler) : span(span), condition(condition), handler(handler) {}
+};
+
+struct Drop {
+    Span span;
+    Vector<Operand> handler;
+    Drop(Span span, Vector<Operand> handler) : span(span), handler(handler) {}
+};
+
+struct Catcher {
+    Span span;
+    Vector<Catch> catches;
+    Drop* drop;
+    Catcher(Span span, Vector<Catch> catches, Drop* drop) : span(span), catches(catches), drop(drop) {}
+};
+
+struct Try : Object {
+    Span span;
+    Binding condition;
+    Catcher catcher;
+    Try(Span span, Binding condition, Catcher catcher) : span(span), condition(condition), catcher(catcher) {}
+};
+
 struct SizeOf : Object {
     Span span;
     Type type;
@@ -248,6 +275,7 @@ struct Expression {
         Match,
         For,
         While,
+        Try,
         SizeOf,
     } _tag;
     union {
@@ -260,6 +288,7 @@ struct Expression {
         struct Match _Match;
         struct For _For;
         struct While _While;
+        struct Try _Try;
         struct SizeOf _SizeOf;
         struct Return _Return;
     };
@@ -286,26 +315,6 @@ struct Attribute {
     String name;
     Model model;
     Attribute(Span span, String name, Model model) : span(span), name(name), model(model) {}
-};
-
-struct Catch {
-    Span span;
-    Vector<Operand> condition;
-    Vector<Operand> handler;
-    Catch(Span span, Vector<Operand> condition, Vector<Operand> handler) : span(span), condition(condition), handler(handler) {}
-};
-
-struct Drop {
-    Span span;
-    Vector<Operand> handler;
-    Drop(Span span, Vector<Operand> handler) : span(span), handler(handler) {}
-};
-
-struct Catcher {
-    Span span;
-    Vector<Catch> catches;
-    Drop* drop;
-    Catcher(Span span, Vector<Catch> catches, Drop* drop) : span(span), catches(catches), drop(drop) {}
 };
 
 struct Operand : Object {

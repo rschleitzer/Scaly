@@ -308,20 +308,6 @@
     <content link = dot
     <content link = Name                                    property = name
 
-<syntax id = Catcher
-    <content link = Catch                 multiple          property = catches
-    <content link = Drop                           optional property = dropper
-
-<syntax id = Catch                        multiple
-    <content link = catch
-    <content link = Operand               multiple          property = condition
-    <content colon
-    <content link = Operand               multiple          property = handler
-
-<syntax id = Drop
-    <content link = drop
-    <content link = Operand               multiple          property = handler
-
 <syntax id = Expression                            abstract
     <content link = Literal
     <content link = Type
@@ -333,6 +319,7 @@
     <content link = Lambda
     <content link = For
     <content link = While
+    <content link = Try
     <content link = Repeat
     <content link = SizeOf
 
@@ -425,9 +412,29 @@
     <content link = Label                          optional property = name
     <content link = Action                                  property = action
 
+<syntax id = Try
+    <content link = try
+    <content link = Condition                               property = condition
+    <content colon
+    <content link = Catcher                                 property = catcher
+
 <syntax id = Condition                             abstract
     <content link = Operation
     <content link = Let
+
+<syntax id = Catcher
+    <content link = Catch                 multiple optional property = catches
+    <content link = Drop                           optional property = dropper
+
+<syntax id = Catch                        multiple
+    <content link = catch
+    <content link = Operand               multiple          property = condition
+    <content colon
+    <content link = Operand               multiple          property = handler
+
+<syntax id = Drop
+    <content link = drop
+    <content link = Operand               multiple          property = handler
 
 <syntax id = Let
     <content link = let
@@ -620,6 +627,7 @@
 <keyword id = throw
 <keyword id = throws
 <keyword id = trait
+<keyword id = try
 <keyword id = union
 <keyword id = use
 <keyword id = var
