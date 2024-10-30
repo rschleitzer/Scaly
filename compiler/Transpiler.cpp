@@ -1242,7 +1242,7 @@ struct Result {\n\
         return nullptr;
     }
 
-    TranspilerError* build_catcher(Page* _ep, StringBuilder& builder, Catcher& catcher, Type* returns_, Type* throws_, String indent) {
+    TranspilerError* build_catcher(Page* _ep, StringBuilder& builder, Catcher& catcher, String name, Type* returns_, Type* throws_, String indent) {
         Region _r;
         auto _catch__iterator = catcher.catches.get_iterator();
         StringBuilder& indent_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(indent);
@@ -1263,9 +1263,18 @@ struct Result {\n\
                 builder.append(*_error);
             }
             builder.append(": {\n");
-            builder.append(indented);
+            indent_builder.append("    ");
+            String indented2 = indent_builder.to_string(_r.get_page());
+            indent_builder.append("    ");
+            String indented3 = indent_builder.to_string(_r.get_page());
+            builder.append(indented3);
+            builder.append("const auto error = _");
+            builder.append(name);
+            builder.append("_Error._");
+            builder.append(*catch_.error.get(1));
+            builder.append(";");
             {
-                auto _result = build_action(_ep, builder, catch_.action, returns_, throws_, indent);
+                auto _result = build_action(_ep, builder, catch_.action, returns_, throws_, indented2);
                 if (_result != nullptr)
                     return _result;
             }
@@ -1319,7 +1328,7 @@ struct Result {\n\
         builder.append(name);
         builder.append("_Error._tag) {");
         {
-            auto _result = build_catcher(_ep, builder, try_.catcher, returns_, throws_, indent);
+            auto _result = build_catcher(_ep, builder, try_.catcher, name, returns_, throws_, indent);
             if (_result != nullptr)
                 return _result;
         }

@@ -9,21 +9,23 @@ void io::test_file() {
         switch (_file_not_found_Error._tag) {
             case FileError::NoSuchFileOrDirectory: {
                 const auto error = _file_not_found_Error._NoSuchFileOrDirectory;
-                const auto _text_result = File::read_to_string(r.get_page(), r.get_page(), String(r.get_page(), "bar"));
-                if (_text_result._tag == Success::Error) {
-                    const auto _text_result_Error = _file_not_found_result._Error;
-                    switch (_text_result_Error._tag) {
-                        default: {
-                            exit(-2);
-                            break;
+                {
+                    const auto _text_result = File::read_to_string(r.get_page(), r.get_page(), String(r.get_page(), "bar"));
+                    if (_text_result._tag == Success::Error) {
+                        const auto _text_result_Error = _file_not_found_result._Error;
+                        switch (_text_result_Error._tag) {
+                            default: {
+                                exit(-2);
+                                break;
+                            }
                         }
                     }
-                }
-                else
-                {
-                    auto text = _text_result._Ok;
-                    if (!text.equals(String(r.get_page(), "baz")))
-                        exit (-3);
+                    else
+                    {
+                        auto text = _text_result._Ok;
+                        if (!text.equals(String(r.get_page(), "baz")))
+                            exit (-3);
+                    }
                 }
                 break;
             }
