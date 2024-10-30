@@ -12,7 +12,6 @@
 				"-g",
 				"${workspaceFolder}/main.cpp",
 				"${workspaceFolder}/scaly.cpp",
-				"${workspaceFolder}/scaly/Result.cpp",
 				"${workspaceFolder}/scaly/memory.cpp",
 				"${workspaceFolder}/scaly/memory/Object.cpp",
 				"${workspaceFolder}/scaly/memory/PageNode.cpp",
