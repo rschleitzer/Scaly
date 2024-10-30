@@ -429,13 +429,10 @@
 <syntax id = Catch                        multiple
     <content link = catch
     <content identifier                                     property = name
-    <content link = Error                          optional property = error
+    <content colon
+    <content link = Name                                    property = error
     <content link = Action                                  property = action
     <content colon                                 optional
-
-<syntax id = Error
-    <content colon
-    <content identifier                                     property = name
 
 <syntax id = Drop
     <content link = drop

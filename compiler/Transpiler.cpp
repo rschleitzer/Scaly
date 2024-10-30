@@ -1246,15 +1246,23 @@ struct Result {\n\
         Region _r;
         auto _catch__iterator = catcher.catches.get_iterator();
         StringBuilder& indent_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(indent);
-        indent_builder.append("        ");
+        indent_builder.append("    ");
         String indented = indent_builder.to_string(_r.get_page());
         while (auto _catch_ = _catch__iterator.next()) {
             auto catch_ = *_catch_;
             builder.append('\n');
-            builder.append(indent);
+            builder.append(indented);
             builder.append("    case ");
-            builder.append(catch_.error);
-            builder.append(":\n");
+            bool first = true;
+            auto _error_iterator = catch_.error.get_iterator();
+            while (auto _error = _error_iterator.next()) {
+                if(first)
+                    first = false;
+                else
+                    builder.append("::");
+                builder.append(*_error);
+            }
+            builder.append(": {\n");
             builder.append(indented);
             {
                 auto _result = build_action(_ep, builder, catch_.action, returns_, throws_, indent);

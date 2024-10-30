@@ -484,17 +484,19 @@ Result<Action, ModelError> handle_action(Page* _rp, Page* _ep, ActionSyntax& act
 
 Result<Catch, ModelError> handle_catch(Page* _rp, Page* _ep, CatchSyntax& catch_, String file) {
     Region _r;
-    String* name = nullptr;
-    String error = catch_.name;
-    if (catch_.error != nullptr) {
-        error = catch_.error->name;
-        name = &catch_.name;
+    List<String>& name_builder = *new(alignof(List<String>), _r.get_page()) List<String>();
+    name_builder.add(catch_.error.name);
+    if (catch_.error.extensions != nullptr) {
+        auto _name_iterator = catch_.error.extensions->get_iterator();
+        while(auto _name = _name_iterator.next()) {
+            name_builder.add(_name->name);
+        }
     }
     auto _action_result =  handle_action(_rp, _ep, catch_.action, file);
     if (_action_result._tag == Result<Operand, ModelError>::Error)
         return Result<Catch, ModelError> { ._tag = Result<Catch, ModelError>::Error, ._Error = _action_result._Error };
     auto action = _action_result._Ok;
-    return Result<Catch, ModelError> { ._tag = Result<Catch, ModelError>::Ok, ._Ok = Catch(Span(catch_.start, catch_.end), name, error, action) };
+    return Result<Catch, ModelError> { ._tag = Result<Catch, ModelError>::Ok, ._Ok = Catch(Span(catch_.start, catch_.end), catch_.name, Vector<String>(_rp, name_builder), action) };
 }
 
 Result<Drop*, ModelError> handle_drop(Page* _rp, Page* _ep, DropSyntax& drop_, String file) {
@@ -954,7 +956,7 @@ Result<Match, ModelError> handle_match(Page* _rp, Page* _ep, MatchSyntax& match_
         return Result<Match, ModelError> { ._tag = Result<Match, ModelError>::Error, ._Error = condition_result._Error };
     auto condition = condition_result._Ok;
 
-    List<Case>& cases_builder = *new(alignof(List<Case>), _r.get_page()) List<Case>();;
+    List<Case>& cases_builder = *new(alignof(List<Case>), _r.get_page()) List<Case>();
     if (match_.cases != nullptr) {
         auto case_iterator = match_.cases->get_iterator();
         while (auto case_ = case_iterator.next()) {

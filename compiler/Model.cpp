@@ -233,10 +233,10 @@ struct While : Object {
 
 struct Catch {
     Span span;
-    String* name;
-    String error;
+    String name;
+    Vector<String> error;
     Action action;
-    Catch(Span span, String* name, String error, Action action) : span(span), name(name), error(error), action(action) {}
+    Catch(Span span, String name, Vector<String> error, Action action) : span(span), name(name), error(error), action(action) {}
 };
 
 struct Drop : Object {
