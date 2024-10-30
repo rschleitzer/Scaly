@@ -1239,6 +1239,19 @@ struct Result {\n\
 
     TranspilerError* build_drop(Page* _ep, StringBuilder& builder, Drop& drop_, Type* returns_, Type* throws_, String indent) {
         Region _r;
+        builder.append('\n');
+        builder.append(indent);
+        builder.append("default: {\n");
+        StringBuilder& indent_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(indent);
+        indent_builder.append("    ");
+        String indented = indent_builder.to_string(_r.get_page());
+        builder.append(indented);
+        build_operation(_ep, builder, drop_.handler, returns_, throws_, indented);
+        builder.append('\n');
+        builder.append(indented);
+        builder.append("break;\n");
+        builder.append(indent);
+        builder.append("}\n");
         return nullptr;
     }
 
@@ -1248,6 +1261,10 @@ struct Result {\n\
         StringBuilder& indent_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(indent);
         indent_builder.append("    ");
         String indented = indent_builder.to_string(_r.get_page());
+        indent_builder.append("    ");
+        String indented2 = indent_builder.to_string(_r.get_page());
+        indent_builder.append("    ");
+        String indented3 = indent_builder.to_string(_r.get_page());
         while (auto _catch_ = _catch__iterator.next()) {
             auto catch_ = *_catch_;
             builder.append('\n');
@@ -1263,10 +1280,6 @@ struct Result {\n\
                 builder.append(*_error);
             }
             builder.append(": {\n");
-            indent_builder.append("    ");
-            String indented2 = indent_builder.to_string(_r.get_page());
-            indent_builder.append("    ");
-            String indented3 = indent_builder.to_string(_r.get_page());
             builder.append(indented3);
             builder.append("const auto error = _");
             builder.append(name);
@@ -1283,12 +1296,8 @@ struct Result {\n\
             }
         }
         if (catcher.drop != nullptr) {
-            builder.append('\n');
-            builder.append(indent);
-            builder.append("    default:\n");
-            builder.append(indented);
             {
-                auto _result = build_drop(_ep, builder, *catcher.drop, returns_, throws_, indented);
+                auto _result = build_drop(_ep, builder, *catcher.drop, returns_, throws_, indented2);
                 if (_result != nullptr)
                     return _result;
                 builder.append(';');
