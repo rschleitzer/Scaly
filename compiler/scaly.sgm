@@ -428,9 +428,14 @@
 
 <syntax id = Catch                        multiple
     <content link = catch
-    <content link = Operand               multiple          property = condition
+    <content identifier                                     property = name
+    <content link = Error                          optional property = error
+    <content link = Action                                  property = action
+    <content colon                                 optional
+
+<syntax id = Error
     <content colon
-    <content link = Operand               multiple          property = handler
+    <content identifier                                     property = name
 
 <syntax id = Drop
     <content link = drop

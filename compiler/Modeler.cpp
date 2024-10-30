@@ -480,17 +480,21 @@ Result<Union, ModelError> handle_union(Page* _rp, Page* _ep, String name, String
 
 Result<Vector<Operand>, ModelError> handle_operation(Page* _rp, Page* _ep, OperationSyntax& operation, String file);
 
+Result<Action, ModelError> handle_action(Page* _rp, Page* _ep, ActionSyntax& action, String file);
+
 Result<Catch, ModelError> handle_catch(Page* _rp, Page* _ep, CatchSyntax& catch_, String file) {
     Region _r;
-    auto _condition_result =  handle_operands(_rp, _ep, catch_.condition, file);
-    if (_condition_result._tag == Result<Operand, ModelError>::Error)
-        return Result<Catch, ModelError> { ._tag = Result<Catch, ModelError>::Error, ._Error = _condition_result._Error };
-    auto condition = _condition_result._Ok;
-    auto _handler_result =  handle_operands(_rp, _ep, catch_.handler, file);
-    if (_handler_result._tag == Result<Operand, ModelError>::Error)
-        return Result<Catch, ModelError> { ._tag = Result<Catch, ModelError>::Error, ._Error = _handler_result._Error };
-    auto handler = _handler_result._Ok;
-    return Result<Catch, ModelError> { ._tag = Result<Catch, ModelError>::Ok, ._Ok = Catch(Span(catch_.start, catch_.end), condition, handler) };
+    String* name = nullptr;
+    String error = catch_.name;
+    if (catch_.error != nullptr) {
+        error = catch_.error->name;
+        name = &catch_.name;
+    }
+    auto _action_result =  handle_action(_rp, _ep, catch_.action, file);
+    if (_action_result._tag == Result<Operand, ModelError>::Error)
+        return Result<Catch, ModelError> { ._tag = Result<Catch, ModelError>::Error, ._Error = _action_result._Error };
+    auto action = _action_result._Ok;
+    return Result<Catch, ModelError> { ._tag = Result<Catch, ModelError>::Ok, ._Ok = Catch(Span(catch_.start, catch_.end), name, error, action) };
 }
 
 Result<Drop*, ModelError> handle_drop(Page* _rp, Page* _ep, DropSyntax& drop_, String file) {
@@ -918,8 +922,6 @@ Result<Block, ModelError> handle_block(Page* _rp, Page* _ep, BlockSyntax& block,
 
     return Result<Block, ModelError> { ._tag = Result<Block, ModelError>::Ok, ._Ok = Block(Span(block.start, block.end), Vector<Statement>(_rp, 0)) };
 }
-
-Result<Action, ModelError> handle_action(Page* _rp, Page* _ep, ActionSyntax& action, String file);
 
 Result<If, ModelError> handle_if(Page* _rp, Page* _ep, IfSyntax& if_, String file) {
     Region _r;

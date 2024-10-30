@@ -144,6 +144,7 @@ struct TrySyntax;
 struct ConditionSyntax; 
 struct CatcherSyntax; 
 struct CatchSyntax; 
+struct ErrorSyntax; 
 struct DropSyntax; 
 struct LetSyntax; 
 struct VarSyntax; 
@@ -456,12 +457,20 @@ struct DropSyntax : Object {
     Vector<OperandSyntax>* handler;
 };
 
-struct CatchSyntax : Object {
-    CatchSyntax(size_t start, size_t end, Vector<OperandSyntax>* condition, Vector<OperandSyntax>* handler) : start(start), end(end), condition(condition), handler(handler) {}
+struct ErrorSyntax : Object {
+    ErrorSyntax(size_t start, size_t end, String name) : start(start), end(end), name(name) {}
     size_t start;
     size_t end;
-    Vector<OperandSyntax>* condition;
-    Vector<OperandSyntax>* handler;
+    String name;
+};
+
+struct CatchSyntax : Object {
+    CatchSyntax(size_t start, size_t end, String name, ErrorSyntax* error, ActionSyntax action) : start(start), end(end), name(name), error(error), action(action) {}
+    size_t start;
+    size_t end;
+    String name;
+    ErrorSyntax* error;
+    ActionSyntax action;
 };
 
 struct CatcherSyntax : Object {
@@ -5484,44 +5493,74 @@ struct Parser : Object {
             return Result<CatchSyntax, ParserError> { ._tag = Result<CatchSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
 
-        auto condition_start = this->lexer.position;
-        auto condition_result = this->parse_operand_list(_rp, _ep);
-        if (condition_result._tag == Result<Vector<OperandSyntax>, ParserError>::Error)
+        auto start_name = this->lexer.previous_position;
+        auto name = this->lexer.parse_identifier(_rp, this->keywords);
+        if (name == nullptr)
         {
-            switch (condition_result._Error._tag) {
+            return Result<CatchSyntax, ParserError> { ._tag = Result<CatchSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_name, lexer.position, String(_ep, "an identifier"))) };
+        }
+
+        auto error_start = this->lexer.position;
+        auto error_result = this->parse_error(_rp, _ep);
+        if (error_result._tag == Result<ErrorSyntax, ParserError>::Error)
+        {
+            switch (error_result._Error._tag) {
                 case ParserError::OtherSyntax:
-                    return Result<CatchSyntax, ParserError> { ._tag = Result<CatchSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(condition_start, lexer.position, String(_ep, "a valid Operand syntax"))) };
+                    break;
                 case ParserError::InvalidSyntax:
-                    return Result<CatchSyntax, ParserError> { ._tag = Result<CatchSyntax, ParserError>::Error, ._Error = condition_result._Error };
+                    return Result<CatchSyntax, ParserError> { ._tag = Result<CatchSyntax, ParserError>::Error, ._Error = error_result._Error };
             }
         }
 
-        auto condition = condition_result._Ok;
+        ErrorSyntax* error = error_result._tag == Result<ErrorSyntax, ParserError>::Error ? nullptr : new(alignof(ErrorSyntax), _rp) ErrorSyntax(error_result._Ok);
 
-        auto start_colon_3 = this->lexer.previous_position;
-        auto success_colon_3 = this->lexer.parse_colon(_rp);
-        if (!success_colon_3) {
-            return Result<CatchSyntax, ParserError> { ._tag = Result<CatchSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_colon_3, lexer.position, String(_ep, "a colon or a line feed"))) };        }
-
-        auto handler_start = this->lexer.position;
-        auto handler_result = this->parse_operand_list(_rp, _ep);
-        if (handler_result._tag == Result<Vector<OperandSyntax>, ParserError>::Error)
+        auto action_start = this->lexer.position;
+        auto action_result = this->parse_action(_rp, _ep);
+        if (action_result._tag == Result<ActionSyntax, ParserError>::Error)
         {
-            switch (handler_result._Error._tag) {
+            switch (action_result._Error._tag) {
                 case ParserError::OtherSyntax:
-                    return Result<CatchSyntax, ParserError> { ._tag = Result<CatchSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(handler_start, lexer.position, String(_ep, "a valid Operand syntax"))) };
+                    return Result<CatchSyntax, ParserError> { ._tag = Result<CatchSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(action_start, lexer.position, String(_ep, "a valid Action syntax"))) };
                 case ParserError::InvalidSyntax:
-                    return Result<CatchSyntax, ParserError> { ._tag = Result<CatchSyntax, ParserError>::Error, ._Error = handler_result._Error };
+                    return Result<CatchSyntax, ParserError> { ._tag = Result<CatchSyntax, ParserError>::Error, ._Error = action_result._Error };
             }
         }
 
-        auto handler = handler_result._Ok;
+        auto action = action_result._Ok;
+
+        auto start_colon_5 = this->lexer.previous_position;
+        auto success_colon_5 = this->lexer.parse_colon(_rp);
+        if (!success_colon_5) {
+        }
 
         auto end = this->lexer.position;
 
-        auto ret = CatchSyntax(start, end, condition, handler);
+        auto ret = CatchSyntax(start, end, *name, error, action);
 
         return Result<CatchSyntax, ParserError> { ._tag = Result<CatchSyntax, ParserError>::Ok, ._Ok = ret };
+    }
+
+    Result<ErrorSyntax, ParserError> parse_error(Page* _rp, Page* _ep) {
+        auto start = this->lexer.previous_position;
+
+        auto start_colon_1 = this->lexer.previous_position;
+        auto success_colon_1 = this->lexer.parse_colon(_rp);
+        if (!success_colon_1) {
+            return Result<ErrorSyntax, ParserError> { ._tag = Result<ErrorSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
+        }
+
+        auto start_name = this->lexer.previous_position;
+        auto name = this->lexer.parse_identifier(_rp, this->keywords);
+        if (name == nullptr)
+        {
+            return Result<ErrorSyntax, ParserError> { ._tag = Result<ErrorSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_name, lexer.position, String(_ep, "an identifier"))) };
+        }
+
+        auto end = this->lexer.position;
+
+        auto ret = ErrorSyntax(start, end, *name);
+
+        return Result<ErrorSyntax, ParserError> { ._tag = Result<ErrorSyntax, ParserError>::Ok, ._Ok = ret };
     }
 
     Result<DropSyntax, ParserError> parse_drop(Page* _rp, Page* _ep) {

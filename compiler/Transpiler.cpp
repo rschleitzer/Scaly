@@ -1241,18 +1241,13 @@ struct Transpiler : Object {
             builder.append('\n');
             builder.append(indent);
             builder.append("    case ");
-            {
-                auto _result = build_operation(_ep, builder, catch_.condition, returns_, throws_, indented);
-                if (_result != nullptr)
-                    return _result;
-            }
+            builder.append(catch_.error);
             builder.append(":\n");
             builder.append(indented);
             {
-                auto _result = build_operation(_ep, builder, catch_.handler, returns_, throws_, indented);
+                auto _result = build_action(_ep, builder, catch_.action, returns_, throws_, indent);
                 if (_result != nullptr)
                     return _result;
-                builder.append(';');
             }
         }
         if (catcher.drop != nullptr) {

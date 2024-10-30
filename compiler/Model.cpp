@@ -233,9 +233,10 @@ struct While : Object {
 
 struct Catch {
     Span span;
-    Vector<Operand> condition;
-    Vector<Operand> handler;
-    Catch(Span span, Vector<Operand> condition, Vector<Operand> handler) : span(span), condition(condition), handler(handler) {}
+    String* name;
+    String error;
+    Action action;
+    Catch(Span span, String* name, String error, Action action) : span(span), name(name), error(error), action(action) {}
 };
 
 struct Drop : Object {
