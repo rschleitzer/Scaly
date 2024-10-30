@@ -501,10 +501,10 @@ Result<Catch, ModelError> handle_catch(Page* _rp, Page* _ep, CatchSyntax& catch_
 
 Result<Drop*, ModelError> handle_drop(Page* _rp, Page* _ep, DropSyntax& drop_, String file) {
     Region _r;
-    auto _handler_result =  handle_operands(_rp, _ep, drop_.handler, file);
-    if (_handler_result._tag == Result<Operand, ModelError>::Error)
-        return Result<Drop*, ModelError> { ._tag = Result<Drop*, ModelError>::Error, ._Error = _handler_result._Error };
-    auto handler = _handler_result._Ok;
+    auto _action_result =  handle_action(_rp, _ep, drop_.action, file);
+    if (_action_result._tag == Result<Operand, ModelError>::Error)
+        return Result<Drop*, ModelError> { ._tag = Result<Drop*, ModelError>::Error, ._Error = _action_result._Error };
+    auto handler = _action_result._Ok;
     return Result<Drop*, ModelError> { ._tag = Result<Drop*, ModelError>::Ok, ._Ok = new(alignof(Drop), _rp) Drop(Span(drop_.start, drop_.end), handler) };
 }
 

@@ -24,13 +24,13 @@ void io::test_file() {
                     {
                         auto text = _text_result._Ok;
                         if (!text.equals(String(r.get_page(), "baz")))
-                            exit (-3);
+                            exit(-3);
                     }
                 }
                 break;
             }
             default: {
-                exit (-4);
+                exit(-4);
                 break;
             }
         }

@@ -450,10 +450,10 @@ struct LetSyntax : Object {
 };
 
 struct DropSyntax : Object {
-    DropSyntax(size_t start, size_t end, Vector<OperandSyntax>* handler) : start(start), end(end), handler(handler) {}
+    DropSyntax(size_t start, size_t end, ActionSyntax action) : start(start), end(end), action(action) {}
     size_t start;
     size_t end;
-    Vector<OperandSyntax>* handler;
+    ActionSyntax action;
 };
 
 struct CatchSyntax : Object {
@@ -5546,23 +5546,28 @@ struct Parser : Object {
             return Result<DropSyntax, ParserError> { ._tag = Result<DropSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
 
-        auto handler_start = this->lexer.position;
-        auto handler_result = this->parse_operand_list(_rp, _ep);
-        if (handler_result._tag == Result<Vector<OperandSyntax>, ParserError>::Error)
+        auto action_start = this->lexer.position;
+        auto action_result = this->parse_action(_rp, _ep);
+        if (action_result._tag == Result<ActionSyntax, ParserError>::Error)
         {
-            switch (handler_result._Error._tag) {
+            switch (action_result._Error._tag) {
                 case ParserError::OtherSyntax:
-                    return Result<DropSyntax, ParserError> { ._tag = Result<DropSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(handler_start, lexer.position, String(_ep, "a valid Operand syntax"))) };
+                    return Result<DropSyntax, ParserError> { ._tag = Result<DropSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(action_start, lexer.position, String(_ep, "a valid Action syntax"))) };
                 case ParserError::InvalidSyntax:
-                    return Result<DropSyntax, ParserError> { ._tag = Result<DropSyntax, ParserError>::Error, ._Error = handler_result._Error };
+                    return Result<DropSyntax, ParserError> { ._tag = Result<DropSyntax, ParserError>::Error, ._Error = action_result._Error };
             }
         }
 
-        auto handler = handler_result._Ok;
+        auto action = action_result._Ok;
+
+        auto start_colon_3 = this->lexer.previous_position;
+        auto success_colon_3 = this->lexer.parse_colon(_rp);
+        if (!success_colon_3) {
+        }
 
         auto end = this->lexer.position;
 
-        auto ret = DropSyntax(start, end, handler);
+        auto ret = DropSyntax(start, end, action);
 
         return Result<DropSyntax, ParserError> { ._tag = Result<DropSyntax, ParserError>::Ok, ._Ok = ret };
     }

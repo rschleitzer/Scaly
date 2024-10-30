@@ -436,7 +436,8 @@
 
 <syntax id = Drop
     <content link = drop
-    <content link = Operand               multiple          property = handler
+    <content link = Action                                  property = action
+    <content colon                                 optional
 
 <syntax id = Let
     <content link = let

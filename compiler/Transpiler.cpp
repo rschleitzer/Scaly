@@ -1246,8 +1246,8 @@ struct Result {\n\
         indent_builder.append("    ");
         String indented = indent_builder.to_string(_r.get_page());
         builder.append(indented);
-        build_operation(_ep, builder, drop_.handler, returns_, throws_, indented);
-        builder.append('\n');
+        build_action(_ep, builder, drop_.action, returns_, throws_, indented);
+        builder.append(";\n");
         builder.append(indented);
         builder.append("break;\n");
         builder.append(indent);

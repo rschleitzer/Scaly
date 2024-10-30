@@ -241,8 +241,8 @@ struct Catch {
 
 struct Drop : Object {
     Span span;
-    Vector<Operand> handler;
-    Drop(Span span, Vector<Operand> handler) : span(span), handler(handler) {}
+    Action action;
+    Drop(Span span, Action action) : span(span), action(action) {}
 };
 
 struct Catcher {
