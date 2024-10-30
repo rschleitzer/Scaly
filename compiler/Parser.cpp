@@ -123,7 +123,6 @@ struct ModuleSyntax;
 struct PackageSyntax; 
 struct InitializerSyntax; 
 struct OperandSyntax; 
-struct PostfixSyntax; 
 struct MemberAccessSyntax; 
 struct CatcherSyntax; 
 struct CatchSyntax; 
@@ -674,31 +673,18 @@ struct CatcherSyntax : Object {
 };
 
 struct MemberAccessSyntax : Object {
-    MemberAccessSyntax(size_t start, size_t end, NameSyntax member) : start(start), end(end), member(member) {}
+    MemberAccessSyntax(size_t start, size_t end, NameSyntax name) : start(start), end(end), name(name) {}
     size_t start;
     size_t end;
-    NameSyntax member;
-};
-
-struct PostfixSyntax : Object {
-    PostfixSyntax(MemberAccessSyntax _MemberAccessSyntax) : _tag(MemberAccess) { _MemberAccess = _MemberAccessSyntax; }
-    PostfixSyntax(CatcherSyntax _CatcherSyntax) : _tag(Catcher) { _Catcher = _CatcherSyntax; }
-    enum {
-        MemberAccess,
-        Catcher,
-    } _tag;
-    union {
-        MemberAccessSyntax _MemberAccess;
-        CatcherSyntax _Catcher;
-    };
+    NameSyntax name;
 };
 
 struct OperandSyntax : Object {
-    OperandSyntax(size_t start, size_t end, ExpressionSyntax expression, Vector<PostfixSyntax>* postfixes) : start(start), end(end), expression(expression), postfixes(postfixes) {}
+    OperandSyntax(size_t start, size_t end, ExpressionSyntax expression, Vector<MemberAccessSyntax>* members) : start(start), end(end), expression(expression), members(members) {}
     size_t start;
     size_t end;
     ExpressionSyntax expression;
-    Vector<PostfixSyntax>* postfixes;
+    Vector<MemberAccessSyntax>* members;
 };
 
 struct InitializerSyntax : Object {
@@ -4192,84 +4178,50 @@ struct Parser : Object {
 
         auto expression = expression_result._Ok;
 
-        auto postfixes_start = this->lexer.position;
-        auto postfixes_result = this->parse_postfix_list(_rp, _ep);
-        if (postfixes_result._tag == Result<Vector<PostfixSyntax>, ParserError>::Error)
+        auto members_start = this->lexer.position;
+        auto members_result = this->parse_memberaccess_list(_rp, _ep);
+        if (members_result._tag == Result<Vector<MemberAccessSyntax>, ParserError>::Error)
         {
-            switch (postfixes_result._Error._tag) {
+            switch (members_result._Error._tag) {
                 case ParserError::OtherSyntax:
                     break;
                 case ParserError::InvalidSyntax:
-                    return Result<OperandSyntax, ParserError> { ._tag = Result<OperandSyntax, ParserError>::Error, ._Error = postfixes_result._Error };
+                    return Result<OperandSyntax, ParserError> { ._tag = Result<OperandSyntax, ParserError>::Error, ._Error = members_result._Error };
             }
         }
 
-        auto postfixes = postfixes_result._tag == Result<Vector<PostfixSyntax>, ParserError>::Error ? nullptr : postfixes_result._Ok;
+        auto members = members_result._tag == Result<Vector<MemberAccessSyntax>, ParserError>::Error ? nullptr : members_result._Ok;
 
         auto end = this->lexer.position;
 
-        auto ret = OperandSyntax(start, end, expression, postfixes);
+        auto ret = OperandSyntax(start, end, expression, members);
 
         return Result<OperandSyntax, ParserError> { ._tag = Result<OperandSyntax, ParserError>::Ok, ._Ok = ret };
     }
 
-    Result<Vector<PostfixSyntax>*, ParserError> parse_postfix_list(Page* _rp, Page* _ep) {
+    Result<Vector<MemberAccessSyntax>*, ParserError> parse_memberaccess_list(Page* _rp, Page* _ep) {
         Region _r;
-        List<PostfixSyntax>& list = *new(alignof(List<PostfixSyntax>), _r.get_page()) List<PostfixSyntax>();;
+        List<MemberAccessSyntax>& list = *new(alignof(List<MemberAccessSyntax>), _r.get_page()) List<MemberAccessSyntax>();;
         while(true) {
-            auto node_result = this->parse_postfix(_rp, _ep);
-            if ((node_result._tag == Result<PostfixSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
-                return Result<Vector<PostfixSyntax>*, ParserError> { ._tag = Result<Vector<PostfixSyntax>*, ParserError>::Error, ._Error = node_result._Error };
-            if (node_result._tag == Result<PostfixSyntax, ParserError>::Ok) {
+            auto node_result = this->parse_memberaccess(_rp, _ep);
+            if ((node_result._tag == Result<MemberAccessSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
+                return Result<Vector<MemberAccessSyntax>*, ParserError> { ._tag = Result<Vector<MemberAccessSyntax>*, ParserError>::Error, ._Error = node_result._Error };
+            if (node_result._tag == Result<MemberAccessSyntax, ParserError>::Ok) {
                 auto node = node_result._Ok;
                 list.add(node);
             } else {
-                if ((list.count() == 0) && (node_result._tag == Result<PostfixSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
-                    return Result<Vector<PostfixSyntax>*, ParserError> { ._tag = Result<Vector<PostfixSyntax>*, ParserError>::Error, ._Error = node_result._Error };
+                if ((list.count() == 0) && (node_result._tag == Result<MemberAccessSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
+                    return Result<Vector<MemberAccessSyntax>*, ParserError> { ._tag = Result<Vector<MemberAccessSyntax>*, ParserError>::Error, ._Error = node_result._Error };
                 break;
             }
         }
 
         if (list.count() == 0)
-            return Result<Vector<PostfixSyntax>*, ParserError> { ._tag = Result<Vector<PostfixSyntax>*, ParserError>::Ok, ._Ok = nullptr };
+            return Result<Vector<MemberAccessSyntax>*, ParserError> { ._tag = Result<Vector<MemberAccessSyntax>*, ParserError>::Ok, ._Ok = nullptr };
         
-        return Result<Vector<PostfixSyntax>*, ParserError> {
-            ._tag = Result<Vector<PostfixSyntax>*, ParserError>::Ok,
-            ._Ok = new(alignof(Vector<PostfixSyntax>), _rp) Vector<PostfixSyntax>(_rp, list) };
-    }
-
-    Result<PostfixSyntax, ParserError> parse_postfix(Page* _rp, Page* _ep) {
-        {
-            auto node_result = this->parse_memberaccess(_rp, _ep);
-            if (node_result._tag == Result<MemberAccessSyntax, ParserError>::Error)
-            {
-                if (node_result._Error._tag == ParserError::InvalidSyntax)
-                    return Result<PostfixSyntax, ParserError> { ._tag = Result<PostfixSyntax, ParserError>::Error, ._Error = node_result._Error };
-            }
-            else
-            {
-                auto node = node_result._Ok;
-                return Result<PostfixSyntax, ParserError> { ._tag = Result<PostfixSyntax, ParserError>::Ok, ._Ok = 
-                    PostfixSyntax(MemberAccessSyntax(node))
-                };
-            }
-        }
-        {
-            auto node_result = this->parse_catcher(_rp, _ep);
-            if (node_result._tag == Result<CatcherSyntax, ParserError>::Error)
-            {
-                if (node_result._Error._tag == ParserError::InvalidSyntax)
-                    return Result<PostfixSyntax, ParserError> { ._tag = Result<PostfixSyntax, ParserError>::Error, ._Error = node_result._Error };
-            }
-            else
-            {
-                auto node = node_result._Ok;
-                return Result<PostfixSyntax, ParserError> { ._tag = Result<PostfixSyntax, ParserError>::Ok, ._Ok = 
-                    PostfixSyntax(CatcherSyntax(node))
-                };
-            }
-        }
-        return Result<PostfixSyntax, ParserError> { ._tag = Result<PostfixSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
+        return Result<Vector<MemberAccessSyntax>*, ParserError> {
+            ._tag = Result<Vector<MemberAccessSyntax>*, ParserError>::Ok,
+            ._Ok = new(alignof(Vector<MemberAccessSyntax>), _rp) Vector<MemberAccessSyntax>(_rp, list) };
     }
 
     Result<MemberAccessSyntax, ParserError> parse_memberaccess(Page* _rp, Page* _ep) {
@@ -4281,23 +4233,23 @@ struct Parser : Object {
             return Result<MemberAccessSyntax, ParserError> { ._tag = Result<MemberAccessSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
         }
 
-        auto member_start = this->lexer.position;
-        auto member_result = this->parse_name(_rp, _ep);
-        if (member_result._tag == Result<NameSyntax, ParserError>::Error)
+        auto name_start = this->lexer.position;
+        auto name_result = this->parse_name(_rp, _ep);
+        if (name_result._tag == Result<NameSyntax, ParserError>::Error)
         {
-            switch (member_result._Error._tag) {
+            switch (name_result._Error._tag) {
                 case ParserError::OtherSyntax:
-                    return Result<MemberAccessSyntax, ParserError> { ._tag = Result<MemberAccessSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(member_start, lexer.position, String(_ep, "a valid Name syntax"))) };
+                    return Result<MemberAccessSyntax, ParserError> { ._tag = Result<MemberAccessSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(name_start, lexer.position, String(_ep, "a valid Name syntax"))) };
                 case ParserError::InvalidSyntax:
-                    return Result<MemberAccessSyntax, ParserError> { ._tag = Result<MemberAccessSyntax, ParserError>::Error, ._Error = member_result._Error };
+                    return Result<MemberAccessSyntax, ParserError> { ._tag = Result<MemberAccessSyntax, ParserError>::Error, ._Error = name_result._Error };
             }
         }
 
-        auto member = member_result._Ok;
+        auto name = name_result._Ok;
 
         auto end = this->lexer.position;
 
-        auto ret = MemberAccessSyntax(start, end, member);
+        auto ret = MemberAccessSyntax(start, end, name);
 
         return Result<MemberAccessSyntax, ParserError> { ._tag = Result<MemberAccessSyntax, ParserError>::Ok, ._Ok = ret };
     }

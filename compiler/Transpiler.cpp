@@ -796,14 +796,14 @@ struct Transpiler : Object {
                 }
                 case Expression::Type: {
                     auto type = operand->expression._Type;
-                    auto _result = build_variable(_ep, builder, type, operand->postfixes);
+                    auto _result = build_variable(_ep, builder, type, operand->member_access);
                     if (_result != nullptr)
                         return _result;
                     break;
                 }
                 case Expression::Tuple: {
                     auto tuple = operand->expression._Tuple;
-                    auto _result = build_tuple(_ep, builder, tuple, operand->postfixes, returns_, throws_, indent);
+                    auto _result = build_tuple(_ep, builder, tuple, operand->member_access, returns_, throws_, indent);
                     if (_result != nullptr)
                         return _result;
                     break;
@@ -918,7 +918,7 @@ struct Transpiler : Object {
         return nullptr;
     }
 
-    TranspilerError* build_variable(Page* _ep, StringBuilder& builder, Type& type, Vector<Postfix>* postfixes) {
+    TranspilerError* build_variable(Page* _ep, StringBuilder& builder, Type& type, Vector<String>* member_access) {
         auto name_iterator = type.name.get_iterator();
         auto first_name_part = name_iterator.next();
         if (first_name_part->equals("=")) {
@@ -944,7 +944,7 @@ struct Transpiler : Object {
         if (first_name_part->equals("pointer")) {
             if (type.generics != nullptr) {
                 auto generics = *(type.generics);
-                build_variable(_ep, builder, *generics[0], postfixes);
+                build_variable(_ep, builder, *generics[0], member_access);
             }
             builder.append('*');
             return nullptr;
@@ -981,26 +981,17 @@ struct Transpiler : Object {
 
         build_type(builder, &type);
 
-        if (postfixes != nullptr)
+        if (member_access != nullptr)
         {
-            auto postfixes_iterator = postfixes->get_iterator();
-            while (auto postfix = postfixes_iterator.next()) {
-                if (postfix != nullptr) {
-                    switch (postfix->_tag) {
-                        case Postfix::Catcher:
-                            return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "Catcher")));
-                        case Postfix::MemberAccess: {
-                            if (first_name_part->equals("this"))
-                                builder.append("->");
-                            else
-                                builder.append('.');
-                            auto member_access = postfix->_MemberAccess;
-                            auto member_access_iterator = member_access.get_iterator();
-                            auto member = member_access_iterator.next();
-                            builder.append(*member);
-                            return nullptr;
-                        }
-                    }
+            auto members_iterator = member_access->get_iterator();
+            while (auto _member = members_iterator.next()) {
+                if (_member != nullptr) {
+                    auto member = *_member;
+                    if (first_name_part->equals("this"))
+                        builder.append("->");
+                    else
+                        builder.append('.');
+                    builder.append(member);
                 }
             }
         }
@@ -1008,7 +999,7 @@ struct Transpiler : Object {
         return nullptr;
     }
 
-    TranspilerError* build_tuple(Page* _ep, StringBuilder& builder, Tuple& tuple, Vector<Postfix>* postfixes, Type* returns_, Type* throws_, String indent) {
+    TranspilerError* build_tuple(Page* _ep, StringBuilder& builder, Tuple& tuple, Vector<String>* member_access, Type* returns_, Type* throws_, String indent) {
         auto tuple_iterator = tuple.components.get_iterator();
         bool first = true;
         builder.append('(');
@@ -1023,24 +1014,12 @@ struct Transpiler : Object {
         }
         builder.append(')');
 
-        if (postfixes != nullptr)
+        if (member_access != nullptr)
         {
-            auto postfixes_iterator = postfixes->get_iterator();
-            auto postfix = postfixes_iterator.next();
-            if (postfix != nullptr) {
-                switch (postfix->_tag) {
-                    case Postfix::Catcher:
-                        return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "Catcher")));
-                    case Postfix::MemberAccess: {
-                        auto member_access = postfix->_MemberAccess;
-                        auto member_access_iterator = member_access.get_iterator();
-                        while (auto member = member_access_iterator.next()) {
-                            builder.append('.');
-                            builder.append(*member);
-                        }
-                        return nullptr;
-                    }
-                }
+            auto _members_iterator = member_access->get_iterator();
+            while(auto _member = _members_iterator.next()) {
+                builder.append('.');
+                builder.append(*_member);
             }
         }
 

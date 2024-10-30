@@ -308,22 +308,11 @@ struct Catcher {
     Catcher(Span span, Vector<Catch> catches, Drop* drop) : span(span), catches(catches), drop(drop) {}
 };
 
-struct Postfix {
-    enum {
-        MemberAccess,
-        Catcher,
-    } _tag;
-    union {
-        Vector<String> _MemberAccess;
-        struct Catcher _Catcher;
-    };
-};
-
 struct Operand : Object {
     Span span;
     Expression expression;
-    Vector<Postfix>* postfixes;
-    Operand(Span span, Expression expression, Vector<Postfix>* postfixes) : span(span), expression(expression), postfixes(postfixes) {}
+    Vector<String>* member_access;
+    Operand(Span span, Expression expression, Vector<String>* member_access) : span(span), expression(expression), member_access(member_access) {}
 };
 
 struct Extern {};

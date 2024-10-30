@@ -302,15 +302,11 @@
 
 <syntax id = Operand                      multiple
     <content link = Expression                              property = expression
-    <content link = Postfix               multiple optional property = postfixes
+    <content link = MemberAccess          multiple optional property = members
 
-<syntax id = Postfix                      multiple abstract
-    <content link = MemberAccess
-    <content link = Catcher
-
-<syntax id = MemberAccess
+<syntax id = MemberAccess                 multiple
     <content link = dot
-    <content link = Name                                    property = member
+    <content link = Name                                    property = name
 
 <syntax id = Catcher
     <content link = Catch                 multiple          property = catches

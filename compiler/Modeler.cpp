@@ -529,34 +529,6 @@ Result<Catcher, ModelError> handle_catcher(Page* _rp, Page* _ep, CatcherSyntax& 
     return Result<Catcher, ModelError> { ._tag = Result<Catcher, ModelError>::Ok, ._Ok = Catcher(Span(catcher.start, catcher.end), Vector<Catch>(_rp, catches_builder), drop_) };
 }
 
-Result<Postfix, ModelError> handle_postfix(Page* _rp, Page* _ep, PostfixSyntax& postfix, String file) {
-    Region _r;
-    switch (postfix._tag) {
-        case PostfixSyntax::MemberAccess: {
-            auto member_access = postfix._MemberAccess;
-            List<String>& path = *new(alignof(List<String>), _r.get_page()) List<String>();
-            path.add(String(_rp, member_access.member.name));
-            if (member_access.member.extensions != nullptr) {
-                auto extensions = member_access.member.extensions;
-                auto _extensions_iterator = extensions->get_iterator();
-                while (auto _extension = _extensions_iterator.next()) {
-                    auto extension = *_extension;
-                    path.add(extension.name);
-                }
-            }
-            return Result<Postfix, ModelError> { ._tag = Result<Postfix, ModelError>::Ok, ._Ok = Postfix { ._tag = Postfix::MemberAccess, ._MemberAccess = Vector<String>(_rp, path) } };
-        }
-        case PostfixSyntax::Catcher: {
-            auto catcher_syntax = postfix._Catcher;
-            auto _catcher_result = handle_catcher(_rp, _ep, catcher_syntax, file);
-            if (_catcher_result._tag == Result<Catcher, ModelError>::Error)
-                return Result<Postfix, ModelError> { ._tag = Result<Postfix, ModelError>::Error, ._Error = _catcher_result._Error };
-            auto catcher = _catcher_result._Ok;
-            return Result<Postfix, ModelError> { ._tag = Result<Postfix, ModelError>::Ok, ._Ok = Postfix { ._tag = Postfix::Catcher, ._Catcher = catcher } };
-        }
-    }
-}
-
 Result<Constant, ModelError> handle_literal(Page* _rp, Page* _ep, LiteralSyntax& literal, String file) {
     Region _r;
     switch (literal.literal._tag) {
@@ -839,8 +811,6 @@ Result<Component, ModelError> handle_component(Page* _rp, Page* _ep, ComponentSy
             if (name_operands.length > 0) {
                 auto name_operand = *name_operands[0];
                 if (name_operands.length > 1)
-                    return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Error, ._Error = ModelError(ModelBuilderError(InvalidComponentName(file, Span(name_operand.start, name_operand.end)))) };
-                if (name_operand.postfixes != nullptr)
                     return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Error, ._Error = ModelError(ModelBuilderError(InvalidComponentName(file, Span(name_operand.start, name_operand.end)))) };
                 if (name_operand.expression._tag == ExpressionSyntax::Type)
                     name = new(alignof(String), _rp) String(_rp, name_operand.expression._Type.name.name);
@@ -1160,25 +1130,31 @@ Result<Expression, ModelError> handle_expression(Page* _rp, Page* _ep, Expressio
 
 Result<Operand, ModelError> handle_operand(Page* _rp, Page* _ep, OperandSyntax& operand, String file) {
     Region _r;
-    Vector<Postfix>* postfixes = nullptr;
-    if (operand.postfixes != nullptr) {
-        Region _r_1;
-        List<Postfix>& postfixes_builder = *new(alignof(List<Postfix>), _r.get_page()) List<Postfix>();
-        auto postfixes_iterator = operand.postfixes->get_iterator();
-        while (auto postfix = postfixes_iterator.next()) {
-            auto postfix_result = handle_postfix(_rp, _ep, *postfix, file);
-            if (postfix_result._tag == Result<Operand, ModelError>::Error)
-                return Result<Operand, ModelError> { ._tag = Result<Operand, ModelError>::Error, ._Error = postfix_result._Error };
-            postfixes_builder.add(postfix_result._Ok);
+    Vector<String>* member_access = nullptr;
+    if (operand.members != nullptr) {
+        List<String>& path = *new(alignof(List<String>), _r.get_page()) List<String>();
+        auto _member_iterator = operand.members->get_iterator();
+        while (auto _member = _member_iterator.next()) {
+            auto member = *_member;
+            path.add(String(_rp, member.name.name));
+            if (member.name.extensions != nullptr) {
+                auto extensions = member.name.extensions;
+                auto _extensions_iterator = extensions->get_iterator();
+                while (auto _extension = _extensions_iterator.next()) {
+                    auto extension = *_extension;
+                    path.add(extension.name);
+                }
+            }
+
         }
-        postfixes = new(alignof(Vector<Postfix>), _rp) Vector<Postfix>(_rp, postfixes_builder);
+        member_access = new(alignof(Vector<String>), _rp) Vector<String>(_rp, path);
     }
 
     auto expression_result = handle_expression(_rp, _ep, operand.expression, file);
     if (expression_result._tag == Result<Expression, ModelError>::Error)
         return Result<Operand, ModelError> { ._tag = Result<Operand, ModelError>::Error, ._Error = expression_result._Error };
 
-    return Result<Operand, ModelError> { ._tag = Result<Operand, ModelError>::Ok, ._Ok = Operand(Span(operand.expression._Literal.start, operand.expression._Literal.end), expression_result._Ok, postfixes) };
+    return Result<Operand, ModelError> { ._tag = Result<Operand, ModelError>::Ok, ._Ok = Operand(Span(operand.expression._Literal.start, operand.expression._Literal.end), expression_result._Ok, member_access) };
 }
 
 Result<Vector<Operand>, ModelError> handle_operands(Page* _rp, Page* _ep, Vector<OperandSyntax>* operands, String file) {
