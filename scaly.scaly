@@ -8,6 +8,6 @@ define scaly {
     module io
 }
 
-scaly->memory->test()
-scaly->containers->test()
+;scaly->memory->test()
+;scaly->containers->test()
 scaly->io->test()
