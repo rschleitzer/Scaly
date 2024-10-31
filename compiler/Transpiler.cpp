@@ -1268,6 +1268,12 @@ struct Result {\n\
         }
         builder.append(";\n");
         builder.append(indent);
+        builder.append("auto ");
+        builder.append(name);
+        builder.append(" = _");
+        builder.append(name);
+        builder.append("_result._Ok;\n");
+        builder.append(indent);
         builder.append("if (_");
         builder.append(name);
         builder.append("_result._tag == Success::Error) {\n");
@@ -1330,16 +1336,6 @@ struct Result {\n\
         builder.append(indent);
         builder.append("}\n");
         builder.append(indent);
-        builder.append("else\n");
-        builder.append(indent);
-        builder.append("{\n");
-        builder.append(indented);
-        builder.append("auto ");
-        builder.append(name);
-        builder.append(" = _");
-        builder.append(name);
-        builder.append("_result._Ok;\n");
-        builder.append(indented);
         return nullptr;
     }
 
