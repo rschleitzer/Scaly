@@ -74,4 +74,31 @@ struct HexToken : Object {
     HexToken(Vector<char> value);
 };
 
+struct LiteralToken {
+    LiteralToken(StringToken _StringToken);
+    LiteralToken(CharacterToken _CharacterToken);
+    LiteralToken(FragmentToken _FragmentToken);
+    LiteralToken(IntegerToken _IntegerToken);
+    LiteralToken(BooleanToken _BooleanToken);
+    LiteralToken(FloatingPointToken _FloatingPointToken);
+    LiteralToken(HexToken _HexToken);
+    enum {
+        String,
+        Character,
+        Fragment,
+        Integer,
+        Boolean,
+        FloatingPoint,
+        Hex,
+} _tag;
+    union {
+        StringToken _String;
+        CharacterToken _Character;
+        FragmentToken _Fragment;
+        IntegerToken _Integer;
+        BooleanToken _Boolean;
+        FloatingPointToken _FloatingPoint;
+        HexToken _Hex;
+    };
+};
 #endif

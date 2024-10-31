@@ -12,3 +12,13 @@ define IntegerToken(value: Vector[char])
 define BooleanToken(value: bool)
 define FloatingPointToken(value: Vector[char])
 define HexToken(value: Vector[char])
+
+define LiteralToken union (
+    String: StringToken
+    Character: CharacterToken
+    Fragment: FragmentToken
+    Integer: IntegerToken
+    Boolean: BooleanToken
+    FloatingPoint: FloatingPointToken
+    Hex: HexToken
+)
