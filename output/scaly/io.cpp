@@ -23,7 +23,7 @@ void io::test_file() {
                     else
                     {
                         auto text = _text_result._Ok;
-                        if (!text.equals(String(r.get_page(), "baz")))
+                        if (text.equals(String(r.get_page(), "baz"))==false)
                             exit(-3);
                     }
                 }
