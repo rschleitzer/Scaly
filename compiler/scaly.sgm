@@ -124,10 +124,6 @@
     <content link = Returns                        optional property = result
     <content link = Throws                         optional property = error
 
-<syntax id = TypeAnnotation
-    <content colon
-    <content link = Type                                    property = type
-
 <syntax id = GenericArguments
     <content link = left_bracket
     <content link = GenericArgument       multiple optional property = generics
@@ -482,12 +478,16 @@
 
 <syntax id = Property                     multiple
     <content identifier                                     property = name
-    <content link = TypeAnnotation                 optional property = annotation
+    <content link = TypeAnnotation                          property = annotation
     <content link = Initializer                    optional property = initializer
     <content link = comma                          optional
     <content colon                                 optional
     <content link = Attribute             multiple optional property = attributes
     <content colon                                 optional
+
+<syntax id = TypeAnnotation
+    <content colon
+    <content link = Type                                    property = type
 
 <syntax id = Continue
     <content link = continue

@@ -24,12 +24,10 @@ Result<Vector<Operand>, ModelError> handle_operands(Page* _rp, Page* _ep, Vector
 Result<Property, ModelError> handle_property(Page* _rp, Page* _ep, bool private_, PropertySyntax& property, String file) {
     Region _r;
     Type* type = nullptr;
-    if (property.annotation != nullptr) {
-        auto _type_result = handle_type(_rp, _ep, property.annotation->type, file);
-        if (_type_result._tag == Result<Type, ModelError>::Error)
-            return Result<Property, ModelError> { ._tag = Result<Property, ModelError>::Error, ._Error = _type_result._Error };
-        type = _type_result._Ok;
-    }
+    auto _type_result = handle_type(_rp, _ep, property.annotation.type, file);
+    if (_type_result._tag == Result<Type, ModelError>::Error)
+        return Result<Property, ModelError> { ._tag = Result<Property, ModelError>::Error, ._Error = _type_result._Error };
+    type = _type_result._Ok;
 
     Vector<Operand>* initializer = nullptr;
     if (property.initializer != nullptr) {

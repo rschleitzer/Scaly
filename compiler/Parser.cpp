@@ -89,7 +89,6 @@ struct UnionSyntax;
 struct VariantSyntax; 
 struct ConstantSyntax; 
 struct DelegateSyntax; 
-struct TypeAnnotationSyntax; 
 struct GenericArgumentsSyntax; 
 struct GenericArgumentSyntax; 
 struct OptionalSyntax; 
@@ -155,6 +154,7 @@ struct StructureSyntax;
 struct PartSyntax; 
 struct FieldSyntax; 
 struct PropertySyntax; 
+struct TypeAnnotationSyntax; 
 struct ContinueSyntax; 
 struct BreakSyntax; 
 struct LoopSyntax; 
@@ -351,12 +351,19 @@ struct ContinueSyntax : Object {
     LoopSyntax* name;
 };
 
+struct TypeAnnotationSyntax : Object {
+    TypeAnnotationSyntax(size_t start, size_t end, TypeSyntax type) : start(start), end(end), type(type) {}
+    size_t start;
+    size_t end;
+    TypeSyntax type;
+};
+
 struct PropertySyntax : Object {
-    PropertySyntax(size_t start, size_t end, String name, TypeAnnotationSyntax* annotation, InitializerSyntax* initializer, Vector<AttributeSyntax>* attributes) : start(start), end(end), name(name), annotation(annotation), initializer(initializer), attributes(attributes) {}
+    PropertySyntax(size_t start, size_t end, String name, TypeAnnotationSyntax annotation, InitializerSyntax* initializer, Vector<AttributeSyntax>* attributes) : start(start), end(end), name(name), annotation(annotation), initializer(initializer), attributes(attributes) {}
     size_t start;
     size_t end;
     String name;
-    TypeAnnotationSyntax* annotation;
+    TypeAnnotationSyntax annotation;
     InitializerSyntax* initializer;
     Vector<AttributeSyntax>* attributes;
 };
@@ -977,13 +984,6 @@ struct GenericArgumentsSyntax : Object {
     size_t start;
     size_t end;
     Vector<GenericArgumentSyntax>* generics;
-};
-
-struct TypeAnnotationSyntax : Object {
-    TypeAnnotationSyntax(size_t start, size_t end, TypeSyntax type) : start(start), end(end), type(type) {}
-    size_t start;
-    size_t end;
-    TypeSyntax type;
 };
 
 struct DelegateSyntax : Object {
@@ -2552,36 +2552,6 @@ struct Parser : Object {
         auto ret = DelegateSyntax(start, end, parameters, attributes, result, error);
 
         return Result<DelegateSyntax, ParserError> { ._tag = Result<DelegateSyntax, ParserError>::Ok, ._Ok = ret };
-    }
-
-    Result<TypeAnnotationSyntax, ParserError> parse_typeannotation(Page* _rp, Page* _ep) {
-        auto start = this->lexer.previous_position;
-
-        auto start_colon_1 = this->lexer.previous_position;
-        auto success_colon_1 = this->lexer.parse_colon(_rp);
-        if (!success_colon_1) {
-            return Result<TypeAnnotationSyntax, ParserError> { ._tag = Result<TypeAnnotationSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
-        }
-
-        auto type_start = this->lexer.position;
-        auto type_result = this->parse_type(_rp, _ep);
-        if (type_result._tag == Result<TypeSyntax, ParserError>::Error)
-        {
-            switch (type_result._Error._tag) {
-                case ParserError::OtherSyntax:
-                    return Result<TypeAnnotationSyntax, ParserError> { ._tag = Result<TypeAnnotationSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(type_start, lexer.position, String(_ep, "a valid Type syntax"))) };
-                case ParserError::InvalidSyntax:
-                    return Result<TypeAnnotationSyntax, ParserError> { ._tag = Result<TypeAnnotationSyntax, ParserError>::Error, ._Error = type_result._Error };
-            }
-        }
-
-        auto type = type_result._Ok;
-
-        auto end = this->lexer.position;
-
-        auto ret = TypeAnnotationSyntax(start, end, type);
-
-        return Result<TypeAnnotationSyntax, ParserError> { ._tag = Result<TypeAnnotationSyntax, ParserError>::Ok, ._Ok = ret };
     }
 
     Result<GenericArgumentsSyntax, ParserError> parse_genericarguments(Page* _rp, Page* _ep) {
@@ -5981,13 +5951,13 @@ struct Parser : Object {
         {
             switch (annotation_result._Error._tag) {
                 case ParserError::OtherSyntax:
-                    break;
+                    return Result<PropertySyntax, ParserError> { ._tag = Result<PropertySyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(annotation_start, lexer.position, String(_ep, "a valid TypeAnnotation syntax"))) };
                 case ParserError::InvalidSyntax:
                     return Result<PropertySyntax, ParserError> { ._tag = Result<PropertySyntax, ParserError>::Error, ._Error = annotation_result._Error };
             }
         }
 
-        TypeAnnotationSyntax* annotation = annotation_result._tag == Result<TypeAnnotationSyntax, ParserError>::Error ? nullptr : new(alignof(TypeAnnotationSyntax), _rp) TypeAnnotationSyntax(annotation_result._Ok);
+        auto annotation = annotation_result._Ok;
 
         auto initializer_start = this->lexer.position;
         auto initializer_result = this->parse_initializer(_rp, _ep);
@@ -6037,6 +6007,36 @@ struct Parser : Object {
         auto ret = PropertySyntax(start, end, *name, annotation, initializer, attributes);
 
         return Result<PropertySyntax, ParserError> { ._tag = Result<PropertySyntax, ParserError>::Ok, ._Ok = ret };
+    }
+
+    Result<TypeAnnotationSyntax, ParserError> parse_typeannotation(Page* _rp, Page* _ep) {
+        auto start = this->lexer.previous_position;
+
+        auto start_colon_1 = this->lexer.previous_position;
+        auto success_colon_1 = this->lexer.parse_colon(_rp);
+        if (!success_colon_1) {
+            return Result<TypeAnnotationSyntax, ParserError> { ._tag = Result<TypeAnnotationSyntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
+        }
+
+        auto type_start = this->lexer.position;
+        auto type_result = this->parse_type(_rp, _ep);
+        if (type_result._tag == Result<TypeSyntax, ParserError>::Error)
+        {
+            switch (type_result._Error._tag) {
+                case ParserError::OtherSyntax:
+                    return Result<TypeAnnotationSyntax, ParserError> { ._tag = Result<TypeAnnotationSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(type_start, lexer.position, String(_ep, "a valid Type syntax"))) };
+                case ParserError::InvalidSyntax:
+                    return Result<TypeAnnotationSyntax, ParserError> { ._tag = Result<TypeAnnotationSyntax, ParserError>::Error, ._Error = type_result._Error };
+            }
+        }
+
+        auto type = type_result._Ok;
+
+        auto end = this->lexer.position;
+
+        auto ret = TypeAnnotationSyntax(start, end, type);
+
+        return Result<TypeAnnotationSyntax, ParserError> { ._tag = Result<TypeAnnotationSyntax, ParserError>::Ok, ._Ok = ret };
     }
 
     Result<ContinueSyntax, ParserError> parse_continue(Page* _rp, Page* _ep) {
