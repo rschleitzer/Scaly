@@ -1257,10 +1257,17 @@ struct Result {\n\
 
     TranspilerError* build_try(Page* _ep, StringBuilder& builder, Try& try_, Type* returns_, Type* throws_, String indent) {
         Region _r;
-        builder.append("const auto _");
         auto name = String(_r.get_page(), "void");
-        if (try_.binding.item.name != nullptr)
+        StringBuilder& indent_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(indent);
+        if (try_.binding.item.name != nullptr) {
             name = *try_.binding.item.name;
+        } else {
+            builder.append("{\n");
+            indent_builder.append("    ");
+            indent = indent_builder.to_string(_r.get_page());
+            builder.append(indent);
+        }
+        builder.append("const auto _");
         builder.append(name);
         builder.append("_result = ");
         {
@@ -1281,7 +1288,6 @@ struct Result {\n\
         builder.append("if (_");
         builder.append(name);
         builder.append("_result._tag == Success::Error) {\n");
-        StringBuilder& indent_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(indent);
         indent_builder.append("    ");
         auto indented = indent_builder.to_string(_r.get_page());
         builder.append(indented);
@@ -1344,6 +1350,10 @@ struct Result {\n\
         builder.append(indent);
         builder.append("}\n");
         builder.append(indent);
+        if (name.equals("void")) {
+            builder.append("}\n");
+            builder.append(indent);
+        }
         return nullptr;
     }
 

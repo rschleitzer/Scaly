@@ -71,7 +71,7 @@ void io::test_directory() {
         exit(-10);
     {
         const auto _void_result = Directory::create(r.get_page(), foo);
-            if (_void_result._tag == Success::Error) {
+                if (_void_result._tag == Success::Error) {
             const auto _void_Error = _void_result._Error;
             switch (_void_Error._tag) {
                 default: {
@@ -80,8 +80,8 @@ void io::test_directory() {
                 }
             }
         }
-    }
-    const auto _dir_exists_now_result = Directory::exists(r.get_page(), foo);
+        }
+        const auto _dir_exists_now_result = Directory::exists(r.get_page(), foo);
     auto dir_exists_now = _dir_exists_now_result._Ok;
     if (_dir_exists_now_result._tag == Success::Error) {
         const auto _dir_exists_now_Error = _dir_exists_now_result._Error;
@@ -96,7 +96,7 @@ void io::test_directory() {
         exit(-13);
     {
         const auto _void_result = Directory::remove(r.get_page(), foo);
-            if (_void_result._tag == Success::Error) {
+                if (_void_result._tag == Success::Error) {
             const auto _void_Error = _void_result._Error;
             switch (_void_Error._tag) {
                 default: {
@@ -105,8 +105,8 @@ void io::test_directory() {
                 }
             }
         }
-    }
-    ;
+        }
+        ;
 }
 
 void io::test() {
