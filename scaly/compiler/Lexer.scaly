@@ -47,16 +47,16 @@ define Lexer
 {
     init(deck: String) (Lexer()) {
         set chars: deck.get_iterator()
-        ;read_character()
+        read_character()
         ;skip_whitespace(true)
     }
-;*
 
-    void read_character() {
-        this->character = chars.next();
-        if (this->character != nullptr)
-            this->position++;        
+    function read_character(this: Lexer) {
+        set character: chars.next()
+        if character <> null
+            set position: position + 1        
     }
+;*
 
     void advance() {
         this->previous_position = this->position;
