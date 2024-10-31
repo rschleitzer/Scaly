@@ -53,7 +53,64 @@ void io::test_path() {
         exit(-7);
 }
 
+void io::test_directory() {
+    auto r = Region();
+    const auto foo = String(r.get_page(), "foo");
+    const auto _dir_exists_result = Directory::exists(r.get_page(), foo);
+    auto dir_exists = _dir_exists_result._Ok;
+    if (_dir_exists_result._tag == Success::Error) {
+        const auto _dir_exists_Error = _dir_exists_result._Error;
+        switch (_dir_exists_Error._tag) {
+            default: {
+                exit(-9);
+                break;
+            }
+        }
+    }
+    if (dir_exists) 
+        exit(-10);
+    {
+        const auto _void_result = Directory::create(r.get_page(), foo);
+            if (_void_result._tag == Success::Error) {
+            const auto _void_Error = _void_result._Error;
+            switch (_void_Error._tag) {
+                default: {
+                    exit(-11);
+                    break;
+                }
+            }
+        }
+    }
+    const auto _dir_exists_now_result = Directory::exists(r.get_page(), foo);
+    auto dir_exists_now = _dir_exists_now_result._Ok;
+    if (_dir_exists_now_result._tag == Success::Error) {
+        const auto _dir_exists_now_Error = _dir_exists_now_result._Error;
+        switch (_dir_exists_now_Error._tag) {
+            default: {
+                exit(-12);
+                break;
+            }
+        }
+    }
+    if (dir_exists_now == false) 
+        exit(-13);
+    {
+        const auto _void_result = Directory::remove(r.get_page(), foo);
+            if (_void_result._tag == Success::Error) {
+            const auto _void_Error = _void_result._Error;
+            switch (_void_Error._tag) {
+                default: {
+                    exit(-14);
+                    break;
+                }
+            }
+        }
+    }
+    ;
+}
+
 void io::test() {
+    test_directory();
     test_path();
     test_file();
 }

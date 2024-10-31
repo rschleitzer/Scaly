@@ -12,6 +12,7 @@ namespace io {
 
     void test_file();
     void test_path();
+    void test_directory();
     void test();
 }
 #endif

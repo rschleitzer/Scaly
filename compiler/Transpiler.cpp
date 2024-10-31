@@ -1258,7 +1258,9 @@ struct Result {\n\
     TranspilerError* build_try(Page* _ep, StringBuilder& builder, Try& try_, Type* returns_, Type* throws_, String indent) {
         Region _r;
         builder.append("const auto _");
-        auto name = *try_.binding.item.name;
+        auto name = String(_r.get_page(), "void");
+        if (try_.binding.item.name != nullptr)
+            name = *try_.binding.item.name;
         builder.append(name);
         builder.append("_result = ");
         {
@@ -1268,11 +1270,13 @@ struct Result {\n\
         }
         builder.append(";\n");
         builder.append(indent);
-        builder.append("auto ");
-        builder.append(name);
-        builder.append(" = _");
-        builder.append(name);
-        builder.append("_result._Ok;\n");
+        if (!name.equals("void")) {
+            builder.append("auto ");
+            builder.append(name);
+            builder.append(" = _");
+            builder.append(name);
+            builder.append("_result._Ok;\n");
+        }
         builder.append(indent);
         builder.append("if (_");
         builder.append(name);

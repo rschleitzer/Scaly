@@ -37,30 +37,30 @@ define io {
         if directory_name.equals(String(r.get_page(), "")) = false
             exit(-7)
     }
-;*
-    void test_directory() {
-        Region r
+
+    function test_directory() {
+        var r Region()
 
         let foo String(r.get_page(), "foo")
-        {
-            let dir_exists_result Directory->exists(r.get_page(), foo)
-            if (dir_exists_result._tag =Result<bool, FileError>->Error)
-                exit(-9)
-            if (dir_exists_result._Ok)
-                exit(-10)
-        }
-        {
-            let dir_exists_result Directory->create(r.get_page(), foo)
-            if (dir_exists_result !nullptr)
-                exit(-11)
-        }
-        {
-            let dir_exists_result Directory->exists(r.get_page(), foo)
-            if (dir_exists_result._tag =Result<bool, FileError>->Error)
-                exit(-12)
-            if (!dir_exists_result._Ok)
-                exit(-13)
-        }
+
+        try let dir_exists Directory->exists(r.get_page(), foo)
+            drop exit(-9)
+
+        if dir_exists
+            exit(-10)
+
+        try Directory->create(r.get_page(), foo)
+            drop exit(-11)
+
+        try let dir_exists_now Directory->exists(r.get_page(), foo)
+            drop exit(-12)
+
+        if dir_exists_now = false
+            exit(-13)
+        
+        try Directory->remove(r.get_page(), foo)
+            drop exit(-14)
+;*
         {
             let dir_exists_result Directory->remove(r.get_page(), foo)
             if (dir_exists_result !nullptr)
@@ -73,10 +73,11 @@ define io {
             if (dir_exists_result._Ok)
                 exit(-16)
         }
-    }
 *;
+    }
+
     function test () {
-;        test_directory()
+        test_directory()
         test_path()
         test_file()
     }
