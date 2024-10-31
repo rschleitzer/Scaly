@@ -4,7 +4,9 @@
 using namespace scaly;
 using namespace scaly::memory;
 namespace compiler {
+#include "compiler/Lexer.h"
 
+    void test_lexer();
     void test();
 }
 #endif

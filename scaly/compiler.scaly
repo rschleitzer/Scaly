@@ -1,4 +1,11 @@
 define compiler {
+    module Lexer
+
+    function test_lexer() {
+        
+    }
+
     function test () {
+        test_lexer()
     }
 }
