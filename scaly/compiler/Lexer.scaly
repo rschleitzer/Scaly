@@ -1,0 +1,14 @@
+use scaly.containers
+
+define EmptyToken()
+define InvalidToken()
+define IdentifierToken(name: Vector[char])
+define AttributeToken(name: Vector[char])
+define PunctuationToken(sign: char)
+define StringToken(value: Vector[char])
+define CharacterToken(value: Vector[char])
+define FragmentToken(value: Vector[char])
+define IntegerToken(value: Vector[char])
+define BooleanToken(value: bool)
+define FloatingPointToken(value: Vector[char])
+define HexToken(value: Vector[char])

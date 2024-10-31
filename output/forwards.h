@@ -63,5 +63,17 @@ struct File;
 struct Path;
 }
 namespace compiler {
+struct EmptyToken;
+struct InvalidToken;
+struct IdentifierToken;
+struct AttributeToken;
+struct PunctuationToken;
+struct StringToken;
+struct CharacterToken;
+struct FragmentToken;
+struct IntegerToken;
+struct BooleanToken;
+struct FloatingPointToken;
+struct HexToken;
 }
 }
