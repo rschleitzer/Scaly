@@ -140,6 +140,8 @@ struct Lexer : Object {
     size_t position;
 
     Lexer(Token token, char* character, StringIterator chars, size_t previous_position, size_t position);
+    Lexer ();
+    Lexer(String deck);
 };
 
 #endif

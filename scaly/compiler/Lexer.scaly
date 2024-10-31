@@ -38,24 +38,19 @@ define Token union (
 
 define Lexer
 (
-    token: Token
-    character: pointer[char]
-    chars: StringIterator
-    previous_position: size_t
-    position: size_t
+    token: Token(EmptyToken())
+    character: pointer[char](nullptr)
+    chars: StringIterator(StringIterator(String()))
+    previous_position: size_t(0)
+    position: size_t(0)
 )
 {
-;*
-    init(deck: String)
-      : chars(deck.get_iterator()),
-        token(Token(EmptyToken()))
-    {
-        character = nullptr;
-        previous_position = 0,
-        position = 0,
-        read_character();
-        skip_whitespace(true);
+    init(deck: String) (Lexer()) {
+        ;set chars: deck.get_iterator()
+        ;read_character()
+        ;skip_whitespace(true)
     }
+;*
 
     void read_character() {
         this->character = chars.next();

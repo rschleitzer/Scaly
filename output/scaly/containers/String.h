@@ -9,6 +9,7 @@ struct String : Object {
     char* data;
 
     String(char* data);
+    String ();
     String(Page* rp, size_t length);
     String(Page* rp, const_char* other, size_t length);
     String(Page* rp, Vector<char> other);

@@ -1,6 +1,6 @@
 define PACKED_SIZE: int 9
 
-define String (data: pointer[char]) {
+define String (data: pointer[char](nullptr)) {
     init (rp: pointer[Page], length: size_t) {
         var length_array: char []PACKED_SIZE
         var rest length

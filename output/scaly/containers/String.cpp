@@ -4,6 +4,8 @@ namespace containers {
 
 String::String(char* data) : data(data) {}
 
+String::String() : data(nullptr) {}
+
 String::String(Page* rp, size_t length) {
     char length_array[PACKED_SIZE];
     auto rest = length;

@@ -54,5 +54,10 @@ Token::Token(ColonToken _ColonToken) : _tag(Colon) { _Colon = _ColonToken; }
 
 Lexer::Lexer(Token token, char* character, StringIterator chars, size_t previous_position, size_t position) : token(token), character(character), chars(chars), previous_position(previous_position), position(position) {}
 
+Lexer::Lexer() : token(EmptyToken()), character(nullptr), chars(StringIterator(String())), previous_position(0), position(0) {}
+
+Lexer::Lexer(String deck) : Lexer(){
+}
+
 }
 }
