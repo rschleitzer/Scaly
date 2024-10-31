@@ -37,6 +37,20 @@ LiteralToken::LiteralToken(FloatingPointToken _FloatingPointToken) : _tag(Floati
 
 LiteralToken::LiteralToken(HexToken _HexToken) : _tag(Hex) { _Hex = _HexToken; }
 
+Token::Token(EmptyToken _EmptyToken) : _tag(Empty) { _Empty = _EmptyToken; }
+
+Token::Token(InvalidToken _InvalidToken) : _tag(Invalid) { _Invalid = _InvalidToken; }
+
+Token::Token(IdentifierToken _IdentifierToken) : _tag(Identifier) { _Identifier = _IdentifierToken; }
+
+Token::Token(AttributeToken _AttributeToken) : _tag(Attribute) { _Attribute = _AttributeToken; }
+
+Token::Token(PunctuationToken _PunctuationToken) : _tag(Punctuation) { _Punctuation = _PunctuationToken; }
+
+Token::Token(LiteralToken _LiteralToken) : _tag(Literal) { _Literal = _LiteralToken; }
+
+Token::Token(ColonToken _ColonToken) : _tag(Colon) { _Colon = _ColonToken; }
+
 
 }
 }

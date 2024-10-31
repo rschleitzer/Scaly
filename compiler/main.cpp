@@ -40,10 +40,10 @@ void test_lexer() {
         if (!String(_r_1.get_page(), "42").equals(lexer.token._Literal._Integer.value))
             exit (-8);
         lexer.advance();
-        if (lexer.token._tag != Token::LineFeed)
+        if (lexer.token._tag != Token::Colon)
             exit (-9);
         lexer.advance();
-        if (lexer.token._tag != Token::LineFeed)
+        if (lexer.token._tag != Token::Colon)
             exit (-10);
         lexer.advance();
         if (lexer.token._tag != Token::Literal)

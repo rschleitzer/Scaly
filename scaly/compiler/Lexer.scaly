@@ -2,6 +2,8 @@ use scaly.containers
 
 define EmptyToken()
 define InvalidToken()
+define ColonToken()
+
 define IdentifierToken(name: Vector[char])
 define AttributeToken(name: Vector[char])
 define PunctuationToken(sign: char)
@@ -21,4 +23,14 @@ define LiteralToken union (
     Boolean: BooleanToken
     FloatingPoint: FloatingPointToken
     Hex: HexToken
+)
+
+define Token union (
+    Empty: EmptyToken
+    Invalid: InvalidToken
+    Identifier: IdentifierToken
+    Attribute: AttributeToken
+    Punctuation: PunctuationToken
+    Literal: LiteralToken
+    Colon: ColonToken
 )

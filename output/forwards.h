@@ -65,6 +65,7 @@ struct Path;
 namespace compiler {
 struct EmptyToken;
 struct InvalidToken;
+struct ColonToken;
 struct IdentifierToken;
 struct AttributeToken;
 struct PunctuationToken;

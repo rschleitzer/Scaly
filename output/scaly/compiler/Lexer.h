@@ -14,6 +14,10 @@ struct InvalidToken : Object {
 
 };
 
+struct ColonToken : Object {
+
+};
+
 struct IdentifierToken : Object {
     Vector<char> name;
 
@@ -99,6 +103,33 @@ struct LiteralToken {
         BooleanToken _Boolean;
         FloatingPointToken _FloatingPoint;
         HexToken _Hex;
+    };
+};
+struct Token {
+    Token(EmptyToken _EmptyToken);
+    Token(InvalidToken _InvalidToken);
+    Token(IdentifierToken _IdentifierToken);
+    Token(AttributeToken _AttributeToken);
+    Token(PunctuationToken _PunctuationToken);
+    Token(LiteralToken _LiteralToken);
+    Token(ColonToken _ColonToken);
+    enum {
+        Empty,
+        Invalid,
+        Identifier,
+        Attribute,
+        Punctuation,
+        Literal,
+        Colon,
+} _tag;
+    union {
+        EmptyToken _Empty;
+        InvalidToken _Invalid;
+        IdentifierToken _Identifier;
+        AttributeToken _Attribute;
+        PunctuationToken _Punctuation;
+        LiteralToken _Literal;
+        ColonToken _Colon;
     };
 };
 #endif

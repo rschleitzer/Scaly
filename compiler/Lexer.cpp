@@ -86,7 +86,6 @@ struct LiteralToken : Object {
     };
 };
 
-struct LineFeedToken {};
 struct ColonToken {};
 
 struct Token : Object {
@@ -96,7 +95,7 @@ struct Token : Object {
     Token(AttributeToken attribute) : _tag(Attribute), _Attribute(attribute) {}
     Token(PunctuationToken punctuation) : _tag(Punctuation), _Punctuation(punctuation) {}
     Token(LiteralToken literal) : _tag(Literal), _Literal(literal) {}
-    Token(LineFeedToken line_feed) : _tag(LineFeed) {}
+    Token(ColonToken line_feed) : _tag(Colon) {}
     enum {
         Empty,
         Invalid,
@@ -104,7 +103,7 @@ struct Token : Object {
         Attribute,
         Punctuation,
         Literal,
-        LineFeed,
+        Colon,
     } _tag;
     union {
         EmptyToken _Empty;
@@ -113,7 +112,7 @@ struct Token : Object {
         AttributeToken _Attribute;
         PunctuationToken _Punctuation;
         LiteralToken _Literal;
-        LineFeedToken _LineFeed;
+        ColonToken _LineFeed;
     };
 };
 
@@ -168,7 +167,7 @@ struct Lexer : Object {
 
             case ':':
                 read_character();
-                this->token = Token(LineFeedToken());
+                this->token = Token(ColonToken());
                 break;
 
             case '0':
@@ -233,12 +232,12 @@ struct Lexer : Object {
             read_character();
             skip_whitespace(false);
             if (this->character == nullptr)
-                return Token(LineFeedToken());
+                return Token(ColonToken());
 
             if (*this->character == '\n')
                 continue;
 
-            return Token(LineFeedToken());
+            return Token(ColonToken());
         }
     }
 
@@ -771,7 +770,7 @@ struct Lexer : Object {
 
         switch (token._tag)
         {
-            case Token::LineFeed:
+            case Token::Colon:
                 empty();
                 return true;
 
