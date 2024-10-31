@@ -28,6 +28,7 @@ namespace scaly {
 #include "scaly/memory.h"
 #include "scaly/containers.h"
 #include "scaly/io.h"
+#include "scaly/compiler.h"
 
 }
 #endif

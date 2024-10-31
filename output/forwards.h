@@ -62,4 +62,6 @@ struct Directory;
 struct File;
 struct Path;
 }
+namespace compiler {
+}
 }

@@ -43,6 +43,7 @@
 				"${workspaceFolder}/scaly/io/Directory.cpp",
 				"${workspaceFolder}/scaly/io/File.cpp",
 				"${workspaceFolder}/scaly/io/Path.cpp",
+				"${workspaceFolder}/scaly/compiler.cpp",
 				"-o",
 				"${workspaceFolder}/bin/scaly",
 				//"`llvm-config --cxxflags --ldflags --system-libs --libs core`"
