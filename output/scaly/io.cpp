@@ -23,7 +23,7 @@ void io::test_file() {
                     else
                     {
                         auto text = _text_result._Ok;
-                        if (text.equals(String(r.get_page(), "baz"))==false)
+                        if (text.equals(String(r.get_page(), "baz")) == false)
                             exit(-3);
                     }
                 }
@@ -37,7 +37,7 @@ void io::test_file() {
     }
     else
     {
-        const auto file_not_found = _file_not_found_result._Ok;
+        auto file_not_found = _file_not_found_result._Ok;
         exit(-1);
     }
 }

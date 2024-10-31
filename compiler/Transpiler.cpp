@@ -1339,6 +1339,7 @@ struct Result {\n\
         builder.append(" = _");
         builder.append(name);
         builder.append("_result._Ok;\n");
+        builder.append(indented);
         return nullptr;
     }
 
