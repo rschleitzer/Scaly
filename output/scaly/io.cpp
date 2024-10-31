@@ -36,7 +36,25 @@ void io::test_file() {
     ;
 }
 
+void io::test_path() {
+    auto r = Region();
+    const auto path = String(r.get_page(), "../foo.scaly");
+    auto directory_name = Path::get_directory_name(r.get_page(), path);
+    if (directory_name.equals(String(r.get_page(), "..")) == false) 
+        exit(-4);
+    auto file_name = Path::get_file_name(r.get_page(), String(r.get_page(), path));
+    if (file_name.equals(String(r.get_page(), "foo.scaly")) == false) 
+        exit(-5);
+    auto joined_path = Path::join(r.get_page(), directory_name, file_name);
+    if (joined_path.equals(path) == false) 
+        exit(-6);
+    directory_name = Path::get_directory_name(r.get_page(), file_name);
+    if (directory_name.equals(String(r.get_page(), "")) == false) 
+        exit(-7);
+}
+
 void io::test() {
+    test_path();
     test_file();
 }
 

@@ -11,6 +11,7 @@ namespace io {
 #include "io/Path.h"
 
     void test_file();
+    void test_path();
     void test();
 }
 #endif

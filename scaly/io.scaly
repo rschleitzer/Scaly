@@ -16,63 +16,59 @@ define io {
             }
             drop exit(-4)
     }
-;*
-    void test_path() {
-        Region _r
 
-        auto path = String(_r.get_page(), "../foo.scaly")
-        auto directory_name = Path::get_directory_name(_r.get_page(), path)
-        if (!directory_name.equals(String(_r.get_page(), "..")))
+    function test_path() {
+        var r Region()
+
+        let path String(r.get_page(), "../foo.scaly")
+        var directory_name Path->get_directory_name(r.get_page(), path)
+        if directory_name.equals(String(r.get_page(), "..")) = false
             exit(-4)
 
-        auto file_name = Path::get_file_name(_r.get_page(), String(_r.get_page(), path))
-        if (!file_name.equals(String(_r.get_page(), "foo.scaly")))
+        var file_name Path->get_file_name(r.get_page(), String(r.get_page(), path))
+        if file_name.equals(String(r.get_page(), "foo.scaly")) = false
             exit(-5)
 
-        auto joined_path = Path::join(_r.get_page(), directory_name, file_name)
-        if (!joined_path.equals(path))
+        var joined_path Path->join(r.get_page(), directory_name, file_name)
+        if joined_path.equals(path) = false
             exit(-6)
 
-        directory_name = Path::get_directory_name(_r.get_page(), file_name)
-        if (!directory_name.equals(String(_r.get_page(), "")))
+        set directory_name: Path->get_directory_name(r.get_page(), file_name)
+        if directory_name.equals(String(r.get_page(), "")) = false
             exit(-7)
-
-        auto file_name_without_extension = Path::get_file_name_without_extension(_r.get_page(), path)
-        if (!file_name_without_extension.equals(String(_r.get_page(), "foo")))
-            exit(-8)
     }
-
+;*
     void test_directory() {
-        Region _r
+        Region r
 
-        auto foo = String(_r.get_page(), "foo")
+        let foo String(r.get_page(), "foo")
         {
-            auto dir_exists_result = Directory::exists(_r.get_page(), foo)
-            if (dir_exists_result._tag == Result<bool, FileError>::Error)
+            let dir_exists_result Directory->exists(r.get_page(), foo)
+            if (dir_exists_result._tag =Result<bool, FileError>->Error)
                 exit(-9)
             if (dir_exists_result._Ok)
                 exit(-10)
         }
         {
-            auto dir_exists_result = Directory::create(_r.get_page(), foo)
-            if (dir_exists_result != nullptr)
+            let dir_exists_result Directory->create(r.get_page(), foo)
+            if (dir_exists_result !nullptr)
                 exit(-11)
         }
         {
-            auto dir_exists_result = Directory::exists(_r.get_page(), foo)
-            if (dir_exists_result._tag == Result<bool, FileError>::Error)
+            let dir_exists_result Directory->exists(r.get_page(), foo)
+            if (dir_exists_result._tag =Result<bool, FileError>->Error)
                 exit(-12)
             if (!dir_exists_result._Ok)
                 exit(-13)
         }
         {
-            auto dir_exists_result = Directory::remove(_r.get_page(), foo)
-            if (dir_exists_result != nullptr)
+            let dir_exists_result Directory->remove(r.get_page(), foo)
+            if (dir_exists_result !nullptr)
                 exit(-14)
         }
         {
-            auto dir_exists_result = Directory::exists(_r.get_page(), foo)
-            if (dir_exists_result._tag == Result<bool, FileError>::Error)
+            let dir_exists_result Directory->exists(r.get_page(), foo)
+            if (dir_exists_result._tag =Result<bool, FileError>->Error)
                 exit(-15)
             if (dir_exists_result._Ok)
                 exit(-16)
@@ -81,7 +77,7 @@ define io {
 *;
     function test () {
 ;        test_directory()
-;        test_path()
+        test_path()
         test_file()
     }
 }
