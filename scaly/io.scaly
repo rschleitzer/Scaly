@@ -60,20 +60,12 @@ define io {
         
         try Directory->remove(r.get_page(), foo)
             drop exit(-14)
-;*
-        {
-            let dir_exists_result Directory->remove(r.get_page(), foo)
-            if (dir_exists_result !nullptr)
-                exit(-14)
-        }
-        {
-            let dir_exists_result Directory->exists(r.get_page(), foo)
-            if (dir_exists_result._tag =Result<bool, FileError>->Error)
-                exit(-15)
-            if (dir_exists_result._Ok)
-                exit(-16)
-        }
-*;
+
+        try let dir_exists_still Directory->exists(r.get_page(), foo)
+            drop exit(-15)
+
+        if dir_exists_still
+            exit(-16)
     }
 
     function test () {

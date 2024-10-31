@@ -106,7 +106,19 @@ void io::test_directory() {
             }
         }
         }
-        ;
+        const auto _dir_exists_still_result = Directory::exists(r.get_page(), foo);
+    auto dir_exists_still = _dir_exists_still_result._Ok;
+    if (_dir_exists_still_result._tag == Success::Error) {
+        const auto _dir_exists_still_Error = _dir_exists_still_result._Error;
+        switch (_dir_exists_still_Error._tag) {
+            default: {
+                exit(-15);
+                break;
+            }
+        }
+    }
+    if (dir_exists_still) 
+        exit(-16);
 }
 
 void io::test() {
