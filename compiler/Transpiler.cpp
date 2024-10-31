@@ -1322,13 +1322,17 @@ struct Result {\n\
                 if (_result != nullptr)
                     return _result;
             }
+            builder.append("\n");
+            builder.append(indented3);
+            builder.append("break;\n");
+            builder.append(indented2);
+            builder.append("}");
         }
         if (try_.drop_ != nullptr) {
             {
                 auto _result = build_drop(_ep, builder, *try_.drop_, returns_, throws_, indented2);
                 if (_result != nullptr)
                     return _result;
-                // builder.append(';');
             }
         }
         builder.append(indented);

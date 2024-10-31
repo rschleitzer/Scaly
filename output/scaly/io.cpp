@@ -33,6 +33,7 @@ void io::test_file() {
             }
         }
     }
+    ;
 }
 
 void io::test() {
