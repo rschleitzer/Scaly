@@ -132,4 +132,14 @@ struct Token {
         ColonToken _Colon;
     };
 };
+struct Lexer : Object {
+    Token token;
+    char* character;
+    StringIterator chars;
+    size_t previous_position;
+    size_t position;
+
+    Lexer(Token token, char* character, StringIterator chars, size_t previous_position, size_t position);
+};
+
 #endif

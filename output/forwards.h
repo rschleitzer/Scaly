@@ -76,5 +76,6 @@ struct IntegerToken;
 struct BooleanToken;
 struct FloatingPointToken;
 struct HexToken;
+struct Lexer;
 }
 }

@@ -52,5 +52,7 @@ Token::Token(LiteralToken _LiteralToken) : _tag(Literal) { _Literal = _LiteralTo
 Token::Token(ColonToken _ColonToken) : _tag(Colon) { _Colon = _ColonToken; }
 
 
+Lexer::Lexer(Token token, char* character, StringIterator chars, size_t previous_position, size_t position) : token(token), character(character), chars(chars), previous_position(previous_position), position(position) {}
+
 }
 }
