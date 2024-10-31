@@ -23,6 +23,7 @@ struct String : Object {
     bool equals(const_char* other);
     bool equals(Vector<char> other);
     size_t hash();
+    StringIterator get_iterator();
 };
 
 #endif

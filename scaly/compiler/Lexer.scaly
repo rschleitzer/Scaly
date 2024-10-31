@@ -46,7 +46,7 @@ define Lexer
 )
 {
     init(deck: String) (Lexer()) {
-        ;set chars: deck.get_iterator()
+        set chars: deck.get_iterator()
         ;read_character()
         ;skip_whitespace(true)
     }

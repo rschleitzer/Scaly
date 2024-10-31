@@ -57,6 +57,7 @@ Lexer::Lexer(Token token, char* character, StringIterator chars, size_t previous
 Lexer::Lexer() : token(EmptyToken()), character(nullptr), chars(StringIterator(String())), previous_position(0), position(0) {}
 
 Lexer::Lexer(String deck) : Lexer(){
+    chars = deck.get_iterator();
 }
 
 }

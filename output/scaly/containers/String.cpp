@@ -209,5 +209,9 @@ size_t String::hash() {
     return hashing::hash(data+index+1, length);
 }
 
+StringIterator String::get_iterator() {
+    return StringIterator(*this);
+}
+
 }
 }

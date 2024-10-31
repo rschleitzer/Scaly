@@ -245,4 +245,8 @@ define String (data: pointer[char](nullptr)) {
 
         return hashing->hash(data + index + 1, length)
     }
+
+    function get_iterator(this: String) returns StringIterator$ {
+        return StringIterator(*this)
+    }
 }
