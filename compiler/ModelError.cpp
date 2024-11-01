@@ -166,7 +166,7 @@ struct ParserModelError {
     String to_string(Page* _rp) {
         Region _r;
         switch (error._tag) {
-            case ParserError::OtherSyntax:
+            case ParserError::DifferentSyntax:
                 return String(_rp, "An other syntax was expected here.");     
             case ParserError::InvalidSyntax:
                 return build_error_message(_rp,  error._InvalidSyntax);

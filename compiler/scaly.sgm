@@ -315,6 +315,7 @@
     <content link = Lambda
     <content link = For
     <content link = While
+    <content link = Choose
     <content link = Try
     <content link = Repeat
     <content link = SizeOf
@@ -407,6 +408,26 @@
     <content colon
     <content link = Label                          optional property = name
     <content link = Action                                  property = action
+
+<syntax id = Choose
+    <content link = choose
+    <content link = Condition                               property = condition
+    <content colon
+    <content link = When                  multiple optional property = cases
+    <content link = Other                          optional property = other
+
+<syntax id = When                         multiple
+    <content link = when
+    <content identifier                                     property = name
+    <content colon
+    <content link = Name                                    property = variant
+    <content link = Action                                  property = action
+    <content colon                                 optional
+
+<syntax id = Other
+    <content link = other
+    <content link = Action                                  property = action
+    <content colon                                 optional
 
 <syntax id = Try
     <content link = try
@@ -591,6 +612,7 @@
 <keyword id = break
 <keyword id = catch
 <keyword id = case
+<keyword id = choose
 <keyword id = continue
 <keyword id = define
 <keyword id = default
@@ -617,6 +639,7 @@
 <keyword id = module
 <keyword id = mutable
 <keyword id = operator
+<keyword id = other
 <keyword id = procedure
 <keyword id = private
 <keyword id = return
@@ -631,6 +654,7 @@
 <keyword id = union
 <keyword id = use
 <keyword id = var
+<keyword id = when
 <keyword id = while
 <keyword id = package
 

@@ -87,7 +87,7 @@ struct Parser : Object {
                     }
                 }
             default:
-                return Result<""Literal, ParserError> { ._tag = Result<""Literal, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
+                return Result<""Literal, ParserError> { ._tag = Result<""Literal, ParserError>::Error, ._Error = ParserError(DifferentSyntax()) };
         }
     }
 "
@@ -105,7 +105,7 @@ struct Parser : Object {
                 auto node = node_result._Ok;
                 list.add(node);
             } else {
-                if ((list.count() == 0) && (node_result._tag == Result<"(id syntax)"Syntax, ParserError>::Error) && (node_result._Error._tag == ParserError::OtherSyntax))
+                if ((list.count() == 0) && (node_result._tag == Result<"(id syntax)"Syntax, ParserError>::Error) && (node_result._Error._tag == ParserError::DifferentSyntax))
                     return Result<""Vector<"(id syntax)"Syntax>*, ParserError> { ._tag = Result<""Vector<"(id syntax)"Syntax>*, ParserError>::Error, ._Error = node_result._Error };
                 break;
             }
@@ -142,7 +142,7 @@ struct Parser : Object {
         }
 "
                 )))
-"        return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
+"        return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(DifferentSyntax()) };
 "
             )
             ($ ; non-abstract syntax
@@ -159,7 +159,7 @@ struct Parser : Object {
                             (if (optional? content)
                                 ($
 "            switch ("(property content)"_result._Error._tag) {
-                case ParserError::OtherSyntax:
+                case ParserError::DifferentSyntax:
                     break;
                 case ParserError::InvalidSyntax:
                     return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = "(property content)"_result._Error };
@@ -172,7 +172,7 @@ struct Parser : Object {
 "                                   )
                                     ($
 "            switch ("(property content)"_result._Error._tag) {
-                case ParserError::OtherSyntax:
+                case ParserError::DifferentSyntax:
                     return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax("(property content)"_start, lexer.position, String(_ep, \"a valid "(link content)" syntax\"))) };
                 case ParserError::InvalidSyntax:
                     return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = "(property content)"_result._Error };
@@ -218,10 +218,10 @@ struct Parser : Object {
         if ("(property content)"_result._tag == Result<""Literal, ParserError>::Error)
         {
 "                           (if (optional? content) "" ($
-"            if ("(property content)"_result._Error._tag == ParserError::OtherSyntax)
+"            if ("(property content)"_result._Error._tag == ParserError::DifferentSyntax)
 "                               (if (equal? 1 (child-number content))
                                     ($
-"               return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
+"               return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(DifferentSyntax()) };
 "                                   )
                                     ($
 "               return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax("(property content)"_start, lexer.position, String(_ep, \"a literal\"))) };
@@ -282,7 +282,7 @@ struct Parser : Object {
                                             (if (equal? 1 (child-number content))
                                                 ($
 "
-            return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(OtherSyntax()) };
+            return Result<"(id syntax)"Syntax, ParserError> { ._tag = Result<"(id syntax)"Syntax, ParserError>::Error, ._Error = ParserError(DifferentSyntax()) };
 "                                               )
                                                 ($
 "

@@ -1,7 +1,7 @@
 namespace scaly {
 namespace compiler {
 
-struct OtherSyntax {};
+struct DifferentSyntax {};
 
 struct InvalidSyntax {
     InvalidSyntax(size_t start, size_t end, String expected) : start(start), end(end), expected(expected) {}
@@ -11,14 +11,14 @@ struct InvalidSyntax {
 };
 
 struct ParserError : Object {
-    ParserError(OtherSyntax otherSyntax) : _tag(OtherSyntax) { _OtherSyntax = otherSyntax; }
+    ParserError(DifferentSyntax differentSyntax) : _tag(DifferentSyntax) { _DifferentSyntax = differentSyntax; }
     ParserError(InvalidSyntax invalidSyntax) : _tag(InvalidSyntax) { _InvalidSyntax = invalidSyntax; }
     enum {
-        OtherSyntax,
+        DifferentSyntax,
         InvalidSyntax,
     } _tag;
     union {
-        struct OtherSyntax _OtherSyntax;
+        struct DifferentSyntax _DifferentSyntax;
         struct InvalidSyntax _InvalidSyntax;
     };
 };
