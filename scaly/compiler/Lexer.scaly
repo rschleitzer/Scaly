@@ -151,31 +151,33 @@ define Lexer
             if character = null
                 return Token(ColonToken())
 
-            if (*character == '\n')
+            if (*character = '\n')
                 continue
 
             return Token(ColonToken())
         }
     }
-;*
 
     function scan_identifier() returns Token$ {
-        char* start = character
-        size_t length = 0
-        while (true) {
-            if character = null {
-                if (length == 0)
+        let start character
+        var length: size_t 0
+        while true
+        {
+            if character = null
+            {
+                if length = 0
+                {
                     return Token(InvalidToken())
-                else
+                } else {
                     return Token(IdentifierToken(Vector<char>(start, length)))
-            }
-            else {
+                }
+            } else {
                 char c = *character
-                if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || ((c >= '0') && (c <= '9')) || (c == '_')) {
+                if ((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || ((c >= '0') && (c <= '9')) || (c = '_')
+                {
                     read_character()
                     set length: length + 1
-                }
-                else {
+                } else {
                     return Token(IdentifierToken(Vector<char>(start, length)))
                 }
             }
@@ -183,22 +185,25 @@ define Lexer
     }
 
     function scan_attribute() returns Token$ {
-        char* start = character
+        let start character
         size_t length = 0
-        while (true) {
-            if character = null {
-                if (length == 0)
+        while true
+        {
+            if character = null
+            {
+                if length = 0
+                {
                     return Token(InvalidToken())
-                else
+                } else {
                     return Token(AttributeToken(Vector<char>(start, length)))
-            }
-            else {
+                }
+            } else {
                 char c = *character
-                if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || ((c >= '0') && (c <= '9')) || (c == '_')) {
+                if ((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || ((c >= '0') && (c <= '9')) || (c = '_')
+                {
                     read_character()
                     set length: length + 1
-                }
-                else {
+                } else {
                     return Token(AttributeToken(Vector<char>(start, length)))
                 }
             }
@@ -206,35 +211,35 @@ define Lexer
     }
 
     function scan_operator() returns Token$ {
-        char* start = character
+        let start character
         size_t length = 0
-        while (true) {
+        while true
+        {
             read_character()
             set length: length + 1
-            if character = null {
-                if (length == 1)
-                    return Token(InvalidToken())
-                else
-                    return Token(IdentifierToken(Vector<char>(start, length)))
-            }
-
-            auto c = *character
-            switch (c)
+            if character = null
             {
-                case '+' || c = '-' || c = '*' || c = '/' || c = '=' || c = '%' || c = '&' || c = '|' || c = '^' || c = '~' || c = '<' || c = '>':
-                    break
-
-                default:{
+                if length = 1
+                {
+                    return Token(InvalidToken())
+                } else {
                     return Token(IdentifierToken(Vector<char>(start, length)))
                 }
             }
+
+            let c *character
+            if c = '+' || c = '-' || c = '*' || c = '/' || c = '=' || c = '%' || c = '&' || c = '|' || c = '^' || c = '~' || c = '<' || c = '>'
+                continue
+            else
+                return Token(IdentifierToken(Vector<char>(start, length)))
         }
     }
 
     function scan_string_literal() returns Token$ {
-        char* start = character + 1
+        let start character + 1
         size_t length = 0
-        while (true) {
+        while true
+        {
             read_character()
             set length: length + 1
             if character = null
@@ -261,74 +266,75 @@ define Lexer
     }
 
     function scan_string_identifier() returns Token$ {
-        char* start = character + 1
+        let start character + 1
         size_t length = 0
-        while (true) {
+        while true
+        {
             read_character()
             set length: length + 1
             if character = null
                 return Token(InvalidToken())
 
             auto c = *character
-            switch (c) {
-;                case '\'':
+;            match c
+;                case '\''
 ;                    read_character()
-                        return Token(LiteralToken(CharacterToken(Vector<char>(start, length - 1))))
-                default:
-                    break
-            }
+;                        return Token(LiteralToken(CharacterToken(Vector<char>(start, length - 1))))
+;                default
+;                    break
         }
     }
 
     function scan_fragment_literal() returns Token$ {
-        char* start = character + 1
+        let start character + 1
         size_t length = 0
-        while (true) {
+        while true
+        {
             read_character()
             set length: length + 1
             if character = null
                 return Token(InvalidToken())
 
-            switch (*character)
-            {
-                case '`'
-                    read_character()
-                    return Token(LiteralToken(FragmentToken(Vector<char>(start, length - 1))))
+            match *character
+;                case '`'
+;                { 
+;                    read_character()
+;                    return Token(LiteralToken(FragmentToken(Vector<char>(start, length - 1))))
+;                }
 
                 case '\\' 
+                {
                     read_character()
                     set length: length + 1
                     if character = null
                         return Token(InvalidToken())
 
-                    switch (*character) {
-                        case '`':
+                    match *character
+                        case '`'
                             break
-                        case '\\':
+                        case '\\'
                             break
-;                        case '\'':
+;                        case '\''
 ;                            break
-                        case 'n':
+                        case 'n'
                             break
-                        case 'r':
+                        case 'r'
                             break
-                        case 't':
+                        case 't'
                             break
-                        case '0':
+                        case '0'
                             break
-                        default:
+                        default
                             return Token(InvalidToken())                            
-                    }
-                    break
+                }
 
-                default:
+                default
                     break
-            }
         }
     }
 
     function scan_numeric_literal() returns Token$ {
-        char* start = character
+        let start character
         size_t length = 0
         read_character()
         set length: length + 1
@@ -337,58 +343,52 @@ define Lexer
 
         auto c = *character
 
-        if ((c >= '0') && (c <= '9')) {
+        if (c >= '0') && (c <= '9')
             return scan_integer_literal(start, length)
-        }
 
-        switch (c) {
-            case '.':
+        match c
+            case '.'
                 return scan_fraction(start, length)
-
-            case 'E':
-            case 'e':
+            case 'E'
                 return scan_exponent(start, length)
-
-            case 'x':
+            case 'e'
+                return scan_exponent(start, length)
+            case 'x'
                 return scan_hex_literal(start, length)
-
-            case 'B':
+            case 'B'
                 return scan_boolean_literal()
-
-            default:
+            default
                 return Token(LiteralToken(IntegerToken(Vector<char>(start, length))))
-        }
     }
 
     function scan_integer_literal(char* start, size_t length) returns Token$ {
-        while (true) {
+        while true
+        {
             read_character()
             set length: length + 1
             if character = null
                 return Token(LiteralToken(IntegerToken(Vector<char>(start, length))))
 
-            auto c = *character
+            let c *character
 
-            if ((c >= '0') && (c <= '9')) {
+            if (c >= '0') && (c <= '9')
                 continue
-            }
 
-            switch (c) {
-                case '.':
+            match c
+                case '.'
                     return scan_fraction(start, length)
-
-                case 'E':
-                case 'e':
+                case 'E'
                     return scan_exponent(start, length)
-
-                default:
+                case 'e'
+                    return scan_exponent(start, length)
+                default
                     return Token(LiteralToken(IntegerToken(Vector<char>(start, length))))
-            }
         }
     }
 
     function scan_fraction(char* start, size_t length) returns Token$ {
-        while (true) {
+        while true
+        {
             read_character()
             set length: length + 1
             if character = null
@@ -396,22 +396,22 @@ define Lexer
 
             auto c = *character
 
-            if ((c >= '0') && (c <= '9'))
+            if (c >= '0') && (c <= '9')
                 continue
 
-            switch (c) {
-                case 'E':
-                case 'e':
+            match c
+                case 'E'
                     return scan_exponent(start, length)
-
-                default:
+                case 'e'
+                    return scan_exponent(start, length)
+                default
                     return Token(LiteralToken(FloatingPointToken(Vector<char>(start, length))))
-            }
         }
     }
 
     function scan_exponent(char* start, size_t length) returns Token$ {
-        while (true) {
+        while true
+        {
             read_character()
             set length: length + 1
             if character = null
@@ -427,15 +427,16 @@ define Lexer
     }
 
     function scan_hex_literal(char* start, size_t length) returns Token$ {
-        while (true) {
+        while true
+        {
             read_character()
             set length: length + 1
             if character = null
                 return Token(LiteralToken(HexToken(Vector<char>(start, length))))
 
-            auto c = *character
+            let c *character
 
-            if (((c >= '0') && (c <= '9')) || (c >= 'A') && (c <= 'F') || ((c >= 'a') && (c <= 'f')))
+            if ((c >= '0') && (c <= '9')) || (c >= 'A') && (c <= 'F') || ((c >= 'a') && (c <= 'f'))
                 continue
 
             return Token(LiteralToken(HexToken(Vector<char>(start, length))))
@@ -447,248 +448,243 @@ define Lexer
         if character = null
             return Token(InvalidToken())
 
-        auto c = *character
+        let c *character
 
-        if (c != '0' && c != '1') {
+        if c <> '0' && c <> '1'
+        {
             return Token(InvalidToken())
-        }
-        else {
+        } else {
             read_character()
-            return Token(LiteralToken(BooleanToken(c == '1')))
+            return Token(LiteralToken(BooleanToken(c = '1')))
         }
     }
 
     function skip_whitespace(skip_line_feed: bool) {
-        while (true) {
-            switch ((size_t)character) {
-                case 0:
+        while true
+        {
+            match (size_t)character
+                case 0
                     return
-                default:
+                default
                 {
-                    switch(*character) {
-                        case ' ':
+                    match *character
+                        case ' '
+                        {
                             read_character()
                             continue
-                        case '\t':
+                        }
+                        case '\t'
+                        {
                             read_character()
                             continue
-                        case '\r':
+                        }
+                        case '\r'
+                        {
                             read_character()
                             continue
-                        case '\n':
-                            if (skip_line_feed) {
-                                read_character()
-                                continue
-                            }
-                            else {
-                                return
-                            }
-                        case '\\':
-                            read_character()
-                                switch ((size_t)character) {
-                                    case 0:
-                                        return
-                                    default:
-                                    {
-                                        switch(*character) {
-                                            case '\r':
-                                                read_character()
-                                                read_character()
-                                                continue
-                                            case '\n':
-                                                read_character()
-                                                continue
-                                        }
-                                    }
-                                }
-
-
-                        case ';':
+                        }
+                        case '\n'
+                            if (skip_line_feed)
                             {
                                 read_character()
-                                switch ((size_t)character) {
-                                    case 0:
+                                continue
+                            } else {
+                                return
+                            }
+                        case '\\'
+                        {
+                            read_character()
+                                match (size_t)character
+                                    case 0
                                         return
-                                    default:
+                                    default
                                     {
-                                        if (*character != '*') {
-                                            read_character()
-                                            handle_single_line_comment()
-                                        }
-                                        else {
-                                            read_character()
-                                            handle_multi_line_comment()
-                                        }
+                                        match *character 
+                                            case '\r'
+                                            {
+                                                read_character()
+                                                read_character()
+                                                continue
+                                            }
+                                            case '\n'
+                                            {
+                                                read_character()
+                                                continue
+                                            }
+                                    }
+                        }
+
+                        case ';'
+                        {
+                            read_character()
+                            match (size_t)character
+                                case 0
+                                    return
+                                default
+                                {
+                                    if *character <> '*'
+                                    {
+                                        read_character()
+                                        handle_single_line_comment()
+                                    } else {
+                                        read_character()
+                                        handle_multi_line_comment()
                                     }
                                 }
-                            }
-                            break
-                        default:
+                        }
+                        default
                             return
-                    }
                 }
             }
         }
     }
 
-    void handle_single_line_comment() {
-        while (true) {
-            switch ((size_t)character) {
-                case 0:
+    function handle_single_line_comment() {
+        while true
+        {
+            match (size_t)character
+                case 0
                     return
-                default:
+                default
                 {
-                    if (*character == '\n')
+                    if *character = '\n'
                     {
                         read_character()
                         return
-                    }
-                    else
-                    {
+                    } else {
                         read_character()
                         continue
                     }
                 }
-            }
         }
     }
 
-    void handle_multi_line_comment() {
-        while (true) {
-            switch ((size_t)character) {
-                case 0:
+    function handle_multi_line_comment() {
+        while true
+        {
+            match (size_t)character
+                case 0
                     return
-                default:
+                default
                 {
-                    switch (*character)
-                    {
-                        case ';':
+                    match *character
+                        case ';'
+                        {
                             read_character()
-                            switch ((size_t)character) {
-                                case 0:
+                            match (size_t)character
+                                case 0
                                     return
-                                default:
-                                    switch (*character)
-                                    {
-                                        case '*':
+                                default
+                                    match *character
+                                        case '*'
                                             handle_multi_line_comment()
-                                        default:
+                                        default
                                             continue
-                                    }
-                            }
-                            break
+                        }
 
-                        case '*':
+                        case '*'
+                        {
                             read_character()
-                            switch ((size_t)character) {
-                                case 0:
+                            match (size_t)character
+                                case 0
                                     return
-                                default:
-                                    switch (*character)
-                                    {
-                                        case ';':
+                                default
+                                    match *character
+                                        case ';'
                                             read_character()
                                             return
-                                    }
-                            }
-                            break
-
-                        default:
+                        }
+                        default
+                        {
                             read_character()
                             continue
-                    }
+                        }
                 }
-            }
         }
     }
 
-    bool parse_keyword(Page* _rp, const String& fixed_string) {
-        if (token._tag == Token::Empty)
+    function parse_keyword(fixed_string: String) returns bool {
+        if token.tag = Token->Empty
             advance()
 
-        switch (token._tag) {
-            case Token::Identifier:
+        match token.tag
+            case Token->Identifier
             {
-                auto right_keyword = (fixed_string.equals(token._Identifier.name))
-                if (right_keyword)
+                let right_keyword fixed_string.equals(token.Identifier.name)
+                if right_keyword
                     empty()
 
                 return right_keyword
             }
 
-            default:
+            default
                 return false
-        }
     }
 
-    String* parse_identifier(Page* _rp, HashSet<String>& keywords) {
-        if (token._tag == Token::Empty)
+    function parse_identifier(keywords: HashSet<String>) returns pointer[String] {
+        if token.tag = Token->Empty
             advance()
 
-        switch (token._tag) {
-            case Token::Identifier: {
-                Region _r_1
-                if (keywords.contains(String(_r_1.get_page(), token._Identifier.name)))
+        match token.tag 
+            case Token->Identifier
+            {
+                if (keywords.contains(token.Identifier.name))
                     return null
-                auto ret = new(alignof(String), _rp) String(_rp, token._Identifier.name)
+                let ret String#(rp, token.Identifier.name)
                 empty()
                 return ret
             }
-            default:
+            default
                 return null
-        }
     }
 
-    String* parse_attribute(Page* _rp) {
-        if (token._tag == Token::Empty)
+    function parse_attribute() returns pointer[String] {
+        if token.tag = Token->Empty
             advance()
 
-        switch (token._tag) {
-            case Token::Attribute:
+        match token.tag 
+            case Token->Attribute
             {
-                auto ret = new(alignof(String), _rp) String(_rp, token._Attribute.name)
+                let ret String#(token.Attribute.name)
                 empty()
                 return ret
             }
-            default:
+            default
                 return null
-        }
     }
 
-    bool parse_punctuation(char character) {
-        if (token._tag == Token::Empty)
+    function parse_punctuation(character: char) returns bool {
+        if token.tag = Token->Empty
             advance()
 
-        switch (token._tag) {
-            case Token::Punctuation:
+        match token.tag 
+            case Token->Punctuation
             {
-                bool ret = (character == token._Punctuation.sign)
-                if (ret)
+                let ret character = token.Punctuation.sign
+                if ret
                     empty()
 
                 return ret
             }
-            default:
+            default
                 return false
-        }
     }
 
-    function parse_colon(Page* _rp) {
-        if (token._tag == Token::Empty)
+    function parse_colon() returns bool {
+        if token.tag = Token->Empty
             advance()
 
-        switch (token._tag)
-        {
-            case Token::Colon:
+        match token.tag
+            case Token->Colon
+            {
                 empty()
                 return true
-
-            case Token::Empty:
+            }
+            case Token->Empty
                 return true
 
-            default:
+            default
                 return false
-        }
     }
 
     function is_at_end() returns bool {
@@ -697,5 +693,4 @@ define Lexer
 
         return false
     }
-    *;
 }

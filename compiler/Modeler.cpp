@@ -11,7 +11,7 @@ Result<ProgramSyntax, ParserError> parse_program(Page* _rp, Page* _ep, const Str
         Parser& parser = *new(alignof(Parser), _r_1.get_page()) Parser(program);
         auto program_syntax_result = parser.parse_program(_rp, _ep);
         if (!parser.is_at_end())
-            return Result<ProgramSyntax, ParserError> { ._tag = Result<ProgramSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(parser.lexer.previous_position, parser.lexer.position, String(_ep, "a valid declaraion"))) };
+            return Result<ProgramSyntax, ParserError> { ._tag = Result<ProgramSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(parser.lexer.previous_position, parser.lexer.position, String(_ep, "a valid declaration"))) };
 
         return program_syntax_result;
     }
@@ -1728,7 +1728,7 @@ Result<Module, ModelError> build_referenced_module(Page* _rp, Page* _ep, String 
         return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = ModelError(ParserModelError(file_name, file_syntax_result._Error)) };
     auto file_syntax = file_syntax_result._Ok;
     if (!parser.is_at_end())
-        return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = ModelError(ParserModelError(file_name, ParserError(InvalidSyntax(parser.lexer.previous_position, parser.lexer.position, String(_ep, "a valid declaraion")))))};
+        return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = ModelError(ParserModelError(file_name, ParserError(InvalidSyntax(parser.lexer.previous_position, parser.lexer.position, String(_ep, "a valid declaration")))))};
 
     return build_module(_rp, _ep, path, file_name, name, file_syntax, private_);
 }
