@@ -103,22 +103,28 @@ void Lexer::advance() {
     {
         case '\n':
             token = scan_line_feed();
+            break;
         case ':':
             {
                 read_character();
                 token = Token(ColonToken());
             };
+            break;
         case '0':
             token = scan_numeric_literal();
+            break;
         case '@':
             {
                 read_character();
                 token = scan_attribute();
             };
+            break;
         case '\"':
             token = scan_string_literal();
+            break;
         case '`':
             token = scan_fragment_literal();
+            break;
         default:
             token = Token(InvalidToken());
     };
@@ -228,6 +234,7 @@ Token Lexer::scan_string_literal() {
                     read_character();
                     return Token(LiteralToken(StringToken(Vector<char>(start, length-1))));
                 };
+                break;
             case '\\':
                 {
                     read_character();
@@ -235,6 +242,7 @@ Token Lexer::scan_string_literal() {
                     if (character == nullptr) 
                         return Token(InvalidToken());
                 };
+                break;
         };
     };
 }
@@ -271,20 +279,27 @@ Token Lexer::scan_fragment_literal() {
                     {
                         case '`':
                             break;
+                            break;
                         case '\\':
+                            break;
                             break;
                         case 'n':
                             break;
+                            break;
                         case 'r':
+                            break;
                             break;
                         case 't':
                             break;
+                            break;
                         case '0':
+                            break;
                             break;
                         default:
                             return Token(InvalidToken());
                     };
                 };
+                break;
             default:
                 break;
         };
@@ -305,14 +320,19 @@ Token Lexer::scan_numeric_literal() {
     {
         case '.':
             return scan_fraction(start, length);
+            break;
         case 'E':
             return scan_exponent(start, length);
+            break;
         case 'e':
             return scan_exponent(start, length);
+            break;
         case 'x':
             return scan_hex_literal(start, length);
+            break;
         case 'B':
             return scan_boolean_literal();
+            break;
         default:
             return Token(LiteralToken(IntegerToken(Vector<char>(start, length))));
     };
@@ -330,10 +350,13 @@ Token Lexer::scan_integer_literal(char* start, size_t length) {
         {
             case '.':
                 return scan_fraction(start, length);
+                break;
             case 'E':
                 return scan_exponent(start, length);
+                break;
             case 'e':
                 return scan_exponent(start, length);
+                break;
             default:
                 return Token(LiteralToken(IntegerToken(Vector<char>(start, length))));
         };
@@ -352,8 +375,10 @@ Token Lexer::scan_fraction(char* start, size_t length) {
         {
             case 'E':
                 return scan_exponent(start, length);
+                break;
             case 'e':
                 return scan_exponent(start, length);
+                break;
             default:
                 return Token(LiteralToken(FloatingPointToken(Vector<char>(start, length))));
         };
@@ -406,6 +431,7 @@ void Lexer::skip_whitespace(bool skip_line_feed) {
         {
             case 0:
                 return;
+                break;
             default:
                 {
                     switch (*character)
@@ -415,16 +441,19 @@ void Lexer::skip_whitespace(bool skip_line_feed) {
                                 read_character();
                                 continue;
                             };
+                            break;
                         case '\t':
                             {
                                 read_character();
                                 continue;
                             };
+                            break;
                         case '\r':
                             {
                                 read_character();
                                 continue;
                             };
+                            break;
                         case '\n':
                             if ((skip_line_feed)) {
                                 read_character();
@@ -433,6 +462,7 @@ void Lexer::skip_whitespace(bool skip_line_feed) {
                             else {
                                 return;
                             };
+                            break;
                         case '\\':
                             {
                                 read_character();
@@ -440,6 +470,7 @@ void Lexer::skip_whitespace(bool skip_line_feed) {
                                 {
                                     case 0:
                                         return;
+                                        break;
                                     default:
                                         {
                                             switch (*character)
@@ -450,15 +481,18 @@ void Lexer::skip_whitespace(bool skip_line_feed) {
                                                         read_character();
                                                         continue;
                                                     };
+                                                    break;
                                                 case '\n':
                                                     {
                                                         read_character();
                                                         continue;
                                                     };
+                                                    break;
                                             };
                                         };
                                 };
                             };
+                            break;
                         case ';':
                             {
                                 read_character();
@@ -466,6 +500,7 @@ void Lexer::skip_whitespace(bool skip_line_feed) {
                                 {
                                     case 0:
                                         return;
+                                        break;
                                     default:
                                         {
                                             if (*character != '*') {
@@ -479,6 +514,7 @@ void Lexer::skip_whitespace(bool skip_line_feed) {
                                         };
                                 };
                             };
+                            break;
                         default:
                             return;
                     };
@@ -493,6 +529,7 @@ void Lexer::handle_single_line_comment() {
         {
             case 0:
                 return;
+                break;
             default:
                 {
                     if (*character == '\n') {
@@ -514,6 +551,7 @@ void Lexer::handle_multi_line_comment() {
         {
             case 0:
                 return;
+                break;
             default:
                 {
                     switch (*character)
@@ -525,16 +563,19 @@ void Lexer::handle_multi_line_comment() {
                                 {
                                     case 0:
                                         return;
+                                        break;
                                     default:
                                         switch (*character)
                                         {
                                             case '*':
                                                 handle_multi_line_comment();
+                                                break;
                                             default:
                                                 continue;
                                         };
                                 };
                             };
+                            break;
                         case '*':
                             {
                                 read_character();
@@ -542,15 +583,18 @@ void Lexer::handle_multi_line_comment() {
                                 {
                                     case 0:
                                         return;
+                                        break;
                                     default:
                                         switch (*character)
                                         {
                                             case ';':
                                                 read_character();
+                                                break;
                                         };
                                 };
                                 return;
                             };
+                            break;
                         default:
                             {
                                 read_character();
@@ -574,6 +618,7 @@ bool Lexer::parse_keyword(String fixed_string) {
                     empty();
                 return right_keyword;
             };
+            break;
         default:
             return false;
     };
@@ -592,6 +637,7 @@ String* Lexer::parse_identifier(Page* rp, HashSet<String> keywords) {
                 empty();
                 return ret;
             };
+            break;
         default:
             return nullptr;
     };
@@ -608,6 +654,7 @@ String* Lexer::parse_attribute(Page* rp) {
                 empty();
                 return ret;
             };
+            break;
         default:
             return nullptr;
     };
@@ -625,6 +672,7 @@ bool Lexer::parse_punctuation(char character) {
                     empty();
                 return ret;
             };
+            break;
         default:
             return false;
     };
@@ -640,8 +688,10 @@ bool Lexer::parse_colon() {
                 empty();
                 return true;
             };
+            break;
         case Token::Empty:
             return true;
+            break;
         default:
             return false;
     };

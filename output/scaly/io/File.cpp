@@ -10,6 +10,7 @@ Result<String, FileError> File::read_to_string(Page* rp, Page* ep, String path) 
         {
             case ENOENT:
                 return Result<String, FileError>(FileError(NoSuchFileOrDirectoryError(String(ep, path))));
+                break;
             default:
                 return Result<String, FileError>(FileError(UnknownFileError(String(ep, path))));
         };
@@ -32,6 +33,7 @@ Result<Void, FileError> File::write_from_string(Page* ep, String path, String co
         {
             case ENOENT:
                 return Result<Void, FileError>(FileError(NoSuchFileOrDirectoryError(String(ep, path))));
+                break;
             default:
                 return Result<Void, FileError>(FileError(UnknownFileError(String(ep, path))));
         };

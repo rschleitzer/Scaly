@@ -1145,6 +1145,9 @@ struct Result {\n\
                     return _result;
                 builder.append(';');
             }
+            builder.append('\n');
+            builder.append(indented);
+            builder.append("break;");
         }
         if (match_.alternative != nullptr) {
             builder.append('\n');
