@@ -143,6 +143,8 @@ struct Lexer : Object {
     Lexer ();
     Lexer(String deck);
     void read_character();
+    static void advance();
+    static void empty();
 };
 
 #endif

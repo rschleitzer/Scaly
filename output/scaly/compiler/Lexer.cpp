@@ -59,12 +59,78 @@ Lexer::Lexer() : token(EmptyToken()), character(nullptr), chars(StringIterator(S
 Lexer::Lexer(String deck) : Lexer(){
     chars = deck.get_iterator();
     read_character();
+    skip_whitespace(true);
 }
 
 void Lexer::read_character() {
     character = chars.next();
     if (character != nullptr) 
         position = position+1;
+}
+
+void Lexer::advance() {
+    previous_position = position;
+    if (character == nullptr) 
+        return;
+    const auto c = *character;
+    if (((c>='a')&&(c<='z'))||((c>='A')&&(c<='Z'))) {
+        token = scan_identifier();
+        skip_whitespace(false);
+        return;
+    };
+    if ((c>='1')&&(c<='9')) {
+        token = scan_integer_literal(character, 0);
+        skip_whitespace(false);
+        return;
+    };
+    if (c == '+'||c == '-'||c == '*'||c == '/'||c == '='||c == '%'||c == '&'||c == '|'||c == '~'||c == '<'||c == '>') {
+        token = scan_operator();
+        break;
+    };
+    if (c == '}'||c == ')'||c == ']'||c == '.'||c == '?'||c == '!'||c == '$'||c == '#'||c == '^') {
+        token = Token(PunctuationToken(*character));
+        read_character();
+        skip_whitespace(false);
+        return;
+    };
+    if (c == '{'||c == '('||c == '['||c == ',') {
+        token = Token(PunctuationToken(*character));
+        read_character();
+        skip_whitespace(true);
+        return;
+    };
+    switch (c)
+    {
+        case '\n':
+            token = scan_line_feed();
+        case ':':
+            {
+                read_character();
+                token = Token(ColonToken());
+            };
+        case '0':
+            {
+                auto r_1 = Region();
+                StringBuilder&value == *new(alignof(StringBuilder), r_1.get_page())StringBuilder();
+                token = scan_numeric_literal();
+            };
+        case '@':
+            {
+                read_character();
+                token = scan_attribute();
+            };
+        case '\"':
+            token = scan_string_literal();
+        case '`':
+            token = scan_fragment_literal();
+        default:
+            token = Token(InvalidToken());
+    };
+    skip_whitespace(false);
+}
+
+void Lexer::empty() {
+    token = Token(EmptyToken());
 }
 
 }
