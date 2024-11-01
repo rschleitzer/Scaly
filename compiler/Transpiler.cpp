@@ -1175,23 +1175,30 @@ struct Result {\n\
 
     TranspilerError* build_choose(Page* _ep, StringBuilder& builder, Choose& choose_, Type* returns_, Type* throws_, String indent) {
         Region _r;
-        builder.append("switch (");
+        builder.append("{\n");
+        builder.append(indent);
+        StringBuilder& indent_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(indent);
+        builder.append(indent);
+        builder.append("auto _result = ");
         {
             auto _result = build_operation(_ep, builder, choose_.condition, returns_, throws_, indent);
             if (_result != nullptr)
                 return _result;
         }
-        builder.append("._tag)\n");
-        builder.append(indent);
+        builder.append(";\n");
+        indent_builder.append("    ");
+        String indent1 = indent_builder.to_string(_r.get_page());
+        builder.append(indent1);
+        builder.append("switch (_result._tag)\n");
+        builder.append(indent1);
         builder.append("{");
         auto _case__iterator = choose_.cases.get_iterator();
-        StringBuilder& indent_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(indent);
-        indent_builder.append("        ");
+        indent_builder.append(indent1);
         String indented = indent_builder.to_string(_r.get_page());
         while (auto _case_ = _case__iterator.next()) {
             auto case_ = *_case_;
             builder.append('\n');
-            builder.append(indent);
+            builder.append(indent1);
             builder.append("    case ");
             bool first = true;
             auto _variant_iterator = case_.variant.get_iterator();
@@ -1203,30 +1210,37 @@ struct Result {\n\
                 builder.append(*_variant);
             }
             builder.append(":\n");
-            builder.append(indent);
+            builder.append(indent1);
             builder.append("    {\n");
             builder.append(indented);
             builder.append("auto ");
             builder.append(case_.name);
-            builder.append(" = ");
-
+            builder.append(" = _result._");
+            _variant_iterator = case_.variant.get_iterator();
+            first = true;
+            while (auto _variant = _variant_iterator.next()) {
+                if(first)
+                    first = false;
+                else
+                    builder.append(*_variant);
+            }
+            builder.append(";\n");
             builder.append(indented);
             {
                 auto _result = build_action(_ep, builder, case_.action, returns_, throws_, indented);
                 if (_result != nullptr)
                     return _result;
-                builder.append(';');
+                builder.append(";\n");
             }
-            builder.append('\n');
             builder.append(indented);
             builder.append("break;");
             builder.append('\n');
-            builder.append(indent);
+            builder.append(indent1);
             builder.append("    }");
         }
         if (choose_.alternative != nullptr) {
             builder.append('\n');
-            builder.append(indent);
+            builder.append(indent1);
             builder.append("    default:\n");
             builder.append(indented);
             {
@@ -1237,6 +1251,8 @@ struct Result {\n\
             }
         }
         builder.append('\n');
+        builder.append(indent);
+        builder.append("    }\n");
         builder.append(indent);
         builder.append("}");
 

@@ -618,15 +618,16 @@ define Lexer
 
     function parse_identifier(this: Lexer, keywords: HashSet[String]) returns pointer[String] {
         var r Region()
-        if token.tag = Token->Empty
-            advance()
+        choose token
+            when empty: Token.Empty advance()
+            default {}
 
-        match token.tag 
-            case Token->Identifier
+        choose token
+            when identifier: Token.Identifier
             {
-                if keywords.contains(*String$(r.get_page(), token.Identifier_.name))
+                if keywords.contains(*String$(r.get_page(), identifier.name))
                     return null
-                let ret String#(rp, token.Identifier_.name)
+                let ret String#(rp, identifier.name)
                 empty()
                 return ret
             }
@@ -635,13 +636,14 @@ define Lexer
     }
 
     function parse_attribute(this: Lexer) returns pointer[String] {
-        if token.tag = Token->Empty
-            advance()
+        choose token
+            when empty: Token.Empty advance()
+            default {}
 
-        match token.tag 
-            case Token->Attribute
+        choose token
+            when attribute: Token.Attribute
             {
-                let ret String#(rp, token.Attribute_.name)
+                let ret String#(rp, attribute.name)
                 empty()
                 return ret
             }
@@ -650,13 +652,14 @@ define Lexer
     }
 
     function parse_punctuation(this: Lexer, character: char) returns bool {
-        if token.tag = Token->Empty
-            advance()
+        choose token
+            when empty: Token.Empty advance()
+            default {}
 
-        match token.tag 
-            case Token->Punctuation
+        choose token
+            when punctuation: Token.Punctuation
             {
-                let ret character = token.Punctuation_.sign
+                let ret character = punctuation.sign
                 if ret
                     empty()
 
@@ -667,18 +670,20 @@ define Lexer
     }
 
     function parse_colon(this: Lexer) returns bool {
-        if token.tag = Token->Empty
-            advance()
+        choose token
+            when empty: Token.Empty advance()
+            default {}
 
-        match token.tag
-            case Token->Colon
+        choose token
+            when c: Token.Colon
             {
                 empty()
                 return true
             }
-            case Token->Empty
+            when e: Token.Empty
+            {
                 return true
-
+            }
             default
                 return false
     }

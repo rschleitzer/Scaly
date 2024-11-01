@@ -615,11 +615,13 @@ bool Lexer::parse_keyword(String fixed_string) {
             {
                 auto empty = _result._Empty;
                 advance();
+                break;
             }
             default:
-                {}
+                {
+                };
         }
-    }
+    };
     {
         auto _result = token;
         switch (_result._tag)
@@ -637,128 +639,162 @@ bool Lexer::parse_keyword(String fixed_string) {
             }
             default:
                 return false;
-        };
-    }
+        }
+    };
 }
 
 String* Lexer::parse_identifier(Page* rp, HashSet<String> keywords) {
     auto r = Region();
-    switch (token._tag)
     {
-        case Token::Empty:
+        auto _result = token;
+        switch (_result._tag)
         {
-            auto empty = token._Empty;
-            advance();
-        }
-        default:
-            {}
-    }
-    switch (token._tag)
-    {
-        case Token::Identifier:
-        {
-            auto identifier = token._Identifier;
+            case Token::Empty:
             {
-                if (keywords.contains(*new (alignof(String), r.get_page()) String(r.get_page(), identifier.name))) 
-                    return nullptr;
-                const auto ret = new (alignof(String), rp) String(rp, identifier.name);
-                empty();
-                return ret;
-            };
-            break;
+                auto empty = _result._Empty;
+                advance();
+                break;
+            }
+            default:
+                {
+                };
         }
-        default:
-            return nullptr;
+    };
+    {
+        auto _result = token;
+        switch (_result._tag)
+        {
+            case Token::Identifier:
+            {
+                auto identifier = _result._Identifier;
+                {
+                    if (keywords.contains(*new (alignof(String), r.get_page()) String(r.get_page(), identifier.name))) 
+                        return nullptr;
+                    const auto ret = new (alignof(String), rp) String(rp, identifier.name);
+                    empty();
+                    return ret;
+                };
+                break;
+            }
+            default:
+                return nullptr;
+        }
     };
 }
 
 String* Lexer::parse_attribute(Page* rp) {
-    switch (token._tag)
     {
-        case Token::Empty:
+        auto _result = token;
+        switch (_result._tag)
         {
-            auto empty = token._Empty;
-            advance();
-        }
-        default:
-            {}
-    }
-    switch (token._tag)
-    {
-        case Token::Attribute:
-        {
-            auto attribute = token._Attribute;
+            case Token::Empty:
             {
-                const auto ret = new (alignof(String), rp) String(rp, attribute.name);
-                empty();
-                return ret;
-            };
-            break;
+                auto empty = _result._Empty;
+                advance();
+                break;
+            }
+            default:
+                {
+                };
         }
-        default:
-            return nullptr;
+    };
+    {
+        auto _result = token;
+        switch (_result._tag)
+        {
+            case Token::Attribute:
+            {
+                auto attribute = _result._Attribute;
+                {
+                    const auto ret = new (alignof(String), rp) String(rp, attribute.name);
+                    empty();
+                    return ret;
+                };
+                break;
+            }
+            default:
+                return nullptr;
+        }
     };
 }
 
 bool Lexer::parse_punctuation(char character) {
-    switch (token._tag)
     {
-        case Token::Empty:
+        auto _result = token;
+        switch (_result._tag)
         {
-            auto empty = token._Empty;
-            advance();
-        }
-        default:
-            {}
-    }
-    switch (token._tag)
-    {
-        case Token::Punctuation:
-        {
-            auto punctuation = token._Punctuation;
+            case Token::Empty:
             {
-                const auto ret = character == punctuation.sign;
-                if (ret) 
-                    empty();
-                return ret;
-            };
-            break;
+                auto empty = _result._Empty;
+                advance();
+                break;
+            }
+            default:
+                {
+                };
         }
-        default:
-            return false;
+    };
+    {
+        auto _result = token;
+        switch (_result._tag)
+        {
+            case Token::Punctuation:
+            {
+                auto punctuation = _result._Punctuation;
+                {
+                    const auto ret = character == punctuation.sign;
+                    if (ret) 
+                        empty();
+                    return ret;
+                };
+                break;
+            }
+            default:
+                return false;
+        }
     };
 }
 
 bool Lexer::parse_colon() {
-    switch (token._tag)
     {
-        case Token::Empty:
+        auto _result = token;
+        switch (_result._tag)
         {
-            auto empty = token._Empty;
-            advance();
-        }
-        default:
-            {}
-    }
-    switch (token._tag)
-    {
-        case Token::Colon:
-        {
-            auto colon = token._Colon;
+            case Token::Empty:
             {
-                empty();
-                return true;
-            };
-            break;
+                auto empty = _result._Empty;
+                advance();
+                break;
+            }
+            default:
+                {
+                };
         }
-        case Token::Empty:
+    };
+    {
+        auto _result = token;
+        switch (_result._tag)
         {
-            auto empty = token._Empty;
-            return true;
-            break;
+            case Token::Colon:
+            {
+                auto c = _result._Colon;
+                {
+                    empty();
+                    return true;
+                };
+                break;
+            }
+            case Token::Empty:
+            {
+                auto e = _result._Empty;
+                {
+                    return true;
+                };
+                break;
+            }
+            default:
+                return false;
         }
-        default:
-            return false;
     };
 }
 
