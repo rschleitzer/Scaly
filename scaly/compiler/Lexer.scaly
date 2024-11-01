@@ -605,7 +605,7 @@ define Lexer
         match token.tag
             case Token->Identifier
             {
-                let right_keyword fixed_string.equals(token.Identifier.name)
+                let right_keyword fixed_string.equals(token.Identifier_.name)
                 if right_keyword
                     empty()
 
@@ -617,15 +617,16 @@ define Lexer
     }
 
     function parse_identifier(this: Lexer, keywords: HashSet[String]) returns pointer[String] {
+        var r Region()
         if token.tag = Token->Empty
             advance()
 
         match token.tag 
             case Token->Identifier
             {
-                if (keywords.contains(token.Identifier.name))
+                if keywords.contains(*String$(r.get_page(), token.Identifier_.name))
                     return null
-                let ret String#(rp, token.Identifier.name)
+                let ret String#(rp, token.Identifier_.name)
                 empty()
                 return ret
             }
@@ -640,7 +641,7 @@ define Lexer
         match token.tag 
             case Token->Attribute
             {
-                let ret String#(token.Attribute.name)
+                let ret String#(rp, token.Attribute_.name)
                 empty()
                 return ret
             }
@@ -655,7 +656,7 @@ define Lexer
         match token.tag 
             case Token->Punctuation
             {
-                let ret character = token.Punctuation.sign
+                let ret character = token.Punctuation_.sign
                 if ret
                     empty()
 

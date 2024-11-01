@@ -625,14 +625,14 @@ bool Lexer::parse_keyword(String fixed_string) {
 }
 
 String* Lexer::parse_identifier(Page* rp, HashSet<String> keywords) {
-    Region r;
+    auto r = Region();
     if (token.tag == Token::Empty) 
         advance();
     switch (token.tag)
     {
         case Token::Identifier:
             {
-                if (keywords.contains(String(r.get_page(), token.Identifier_.name)))
+                if (keywords.contains(*new (alignof(String), r.get_page()) String(r.get_page(), token.Identifier_.name))) 
                     return nullptr;
                 const auto ret = new (alignof(String), rp) String(rp, token.Identifier_.name);
                 empty();
@@ -651,7 +651,7 @@ String* Lexer::parse_attribute(Page* rp) {
     {
         case Token::Attribute:
             {
-                const auto ret = new(alignof(String), rp) String(rp, token.Attribute_.name);
+                const auto ret = new (alignof(String), rp) String(rp, token.Attribute_.name);
                 empty();
                 return ret;
             };
