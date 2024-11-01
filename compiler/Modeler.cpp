@@ -964,6 +964,56 @@ Result<Match, ModelError> handle_match(Page* _rp, Page* _ep, MatchSyntax& match_
     return Result<Match, ModelError> { ._tag = Result<Match, ModelError>::Ok, ._Ok = Match(Span(match_.start, match_.end), condition, Vector<Case>(_rp, cases_builder), alternative) };
 }
 
+Result<When, ModelError> handle_when(Page* _rp, Page* _ep, WhenSyntax& when_, String file) {
+    Region _r;
+    List<String>& name_builder = *new(alignof(List<String>), _r.get_page()) List<String>();
+    name_builder.add(when_.variant.name);
+    if (when_.variant.extensions != nullptr) {
+        auto _name_iterator = when_.variant.extensions->get_iterator();
+        while(auto _name = _name_iterator.next()) {
+            name_builder.add(_name->name);
+        }
+    }
+    auto _action_result =  handle_action(_rp, _ep, when_.action, file);
+    if (_action_result._tag == Result<Operand, ModelError>::Error)
+        return Result<When, ModelError> { ._tag = Result<When, ModelError>::Error, ._Error = _action_result._Error };
+    auto action = _action_result._Ok;
+    return Result<When, ModelError> { ._tag = Result<When, ModelError>::Ok, ._Ok = When(Span(when_.start, when_.end), when_.name, Vector<String>(_rp, name_builder), action) };
+}
+
+Result<Choose, ModelError> handle_choose(Page* _rp, Page* _ep, ChooseSyntax& choose_, String file) {
+    Region _r;
+    Property* property = nullptr;
+
+    auto condition_result = handle_operands(_rp, _ep, choose_.condition, file);
+    if (condition_result._tag == Result<Vector<Operand>, ModelError>::Error)
+        return Result<Choose, ModelError> { ._tag = Result<Choose, ModelError>::Error, ._Error = condition_result._Error };
+    auto condition = condition_result._Ok;
+
+    List<When>& cases_builder = *new(alignof(List<When>), _r.get_page()) List<When>();
+    if (choose_.cases != nullptr) {
+        auto when_syntaxes = choose_.cases;
+        auto _cases_iterator = when_syntaxes->get_iterator();
+        while (auto _case_syntax = _cases_iterator.next()) {
+            auto case_syntax = *_case_syntax;
+            auto _case_result = handle_when(_rp, _ep, case_syntax, file);
+            if (_case_result._tag == Result<Catch, ModelError>::Error)
+                return Result<Choose, ModelError> { ._tag = Result<Choose, ModelError>::Error, ._Error = _case_result._Error };
+            auto case_ = _case_result._Ok;
+            cases_builder.add(case_);
+        }
+    }
+
+    Statement* alternative = nullptr;
+    if (choose_.alternative != nullptr) {
+        auto _alternative_result = handle_command(_rp, _ep, choose_.alternative->alternative, file);
+        if (_alternative_result._tag == Result<Statement, ModelError>::Error)
+            return Result<Choose, ModelError> { ._tag = Result<Choose, ModelError>::Error, ._Error = _alternative_result._Error };
+        alternative = new(alignof(Statement), _rp) Statement(_alternative_result._Ok);
+    }
+    return Result<Choose, ModelError> { ._tag = Result<Choose, ModelError>::Ok, ._Ok = Choose(Span(choose_.start, choose_.end), condition, Vector<When>(_rp, cases_builder), alternative) };
+}
+
 Result<For, ModelError> handle_for(Page* _rp, Page* _ep, ForSyntax& for_, String file) {
     Region _r;
     auto expression_result = handle_operands(_rp, _ep, for_.operation, file);
@@ -1130,6 +1180,13 @@ Result<Expression, ModelError> handle_expression(Page* _rp, Page* _ep, Expressio
                 return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = _while_result._Error };
             auto while_ = _while_result._Ok;
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::While, ._While = while_} };
+        }
+        case ExpressionSyntax::Choose: {
+            auto choose_ = expression._Choose;
+            auto choose_result = handle_choose(_rp, _ep, choose_, file);
+            if (choose_result._tag == Result<Expression, ModelError>::Error)
+                return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = choose_result._Error };
+            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::Choose, ._Choose = choose_result._Ok} };
         }
         case ExpressionSyntax::Try: {
             auto try_syntax = expression._Try;

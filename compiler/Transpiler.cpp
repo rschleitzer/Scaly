@@ -846,6 +846,13 @@ struct Result {\n\
                         return _result;
                     break;
                 }
+                case Expression::Choose: {
+                    auto choose_ = operand->expression._Choose;
+                    auto _result = build_choose(_ep, builder, choose_, returns_, throws_, indent);
+                    if (_result != nullptr)
+                        return _result;
+                    break;
+                }
                 case Expression::For: {
                     auto for_ = operand->expression._For;
                     auto _result = build_for(_ep, builder, for_, returns_, throws_, indent);
@@ -1154,6 +1161,76 @@ struct Result {\n\
             builder.append(indented);
             {
                 auto _result = build_statement(_ep, builder, match_.alternative, returns_, throws_, indented);
+                if (_result != nullptr)
+                    return _result;
+                builder.append(';');
+            }
+        }
+        builder.append('\n');
+        builder.append(indent);
+        builder.append("}");
+
+        return nullptr;
+    }
+
+    TranspilerError* build_choose(Page* _ep, StringBuilder& builder, Choose& choose_, Type* returns_, Type* throws_, String indent) {
+        Region _r;
+        builder.append("switch (");
+        {
+            auto _result = build_operation(_ep, builder, choose_.condition, returns_, throws_, indent);
+            if (_result != nullptr)
+                return _result;
+        }
+        builder.append("._tag)\n");
+        builder.append(indent);
+        builder.append("{");
+        auto _case__iterator = choose_.cases.get_iterator();
+        StringBuilder& indent_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(indent);
+        indent_builder.append("        ");
+        String indented = indent_builder.to_string(_r.get_page());
+        while (auto _case_ = _case__iterator.next()) {
+            auto case_ = *_case_;
+            builder.append('\n');
+            builder.append(indent);
+            builder.append("    case ");
+            bool first = true;
+            auto _variant_iterator = case_.variant.get_iterator();
+            while (auto _variant = _variant_iterator.next()) {
+                if(first)
+                    first = false;
+                else
+                    builder.append("::");
+                builder.append(*_variant);
+            }
+            builder.append(":\n");
+            builder.append(indent);
+            builder.append("    {\n");
+            builder.append(indented);
+            builder.append("auto ");
+            builder.append(case_.name);
+            builder.append(" = ");
+
+            builder.append(indented);
+            {
+                auto _result = build_action(_ep, builder, case_.action, returns_, throws_, indented);
+                if (_result != nullptr)
+                    return _result;
+                builder.append(';');
+            }
+            builder.append('\n');
+            builder.append(indented);
+            builder.append("break;");
+            builder.append('\n');
+            builder.append(indent);
+            builder.append("    }");
+        }
+        if (choose_.alternative != nullptr) {
+            builder.append('\n');
+            builder.append(indent);
+            builder.append("    default:\n");
+            builder.append(indented);
+            {
+                auto _result = build_statement(_ep, builder, choose_.alternative, returns_, throws_, indented);
                 if (_result != nullptr)
                     return _result;
                 builder.append(';');

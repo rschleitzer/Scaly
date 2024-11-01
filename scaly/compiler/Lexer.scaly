@@ -599,19 +599,19 @@ define Lexer
     }
 
     function parse_keyword(this: Lexer, fixed_string: String) returns bool {
-        if token.tag = Token->Empty
-            advance()
+        choose token
+            when empty: Token.Empty advance()
+            default {}
 
-        match token.tag
-            case Token->Identifier
+        choose token
+            when identifier: Token.Identifier
             {
-                let right_keyword fixed_string.equals(token.Identifier_.name)
+                let right_keyword fixed_string.equals(identifier.name)
                 if right_keyword
                     empty()
 
                 return right_keyword
             }
-
             default
                 return false
     }

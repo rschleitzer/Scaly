@@ -223,6 +223,22 @@ struct Match : Object {
     Match(Span span, Vector<Operand> condition, Vector<Case> cases, Statement* alternative) : span(span), condition(condition), cases(cases), alternative(alternative) {}
 };
 
+struct When : Object {
+    Span span;
+    String name;
+    Vector<String> variant;
+    Action action;
+    When(Span span, String name, Vector<String> variant, Action action) : span(span), name(name), variant(variant), action(action) {}
+};
+
+struct Choose : Object {
+    Span span;
+    Vector<Operand> condition;
+    Vector<When> cases;
+    Statement* alternative;
+    Choose(Span span, Vector<Operand> condition, Vector<When> cases, Statement* alternative) : span(span), condition(condition), cases(cases), alternative(alternative) {}
+};
+
 struct For : Object {
     Span span;
     String identifier;
@@ -238,7 +254,7 @@ struct While : Object {
     While(Span span, Binding condition, Action action) : span(span), condition(condition), action(action) {}
 };
 
-struct Catch {
+struct Catch : Object {
     Span span;
     String name;
     Vector<String> error;
@@ -275,6 +291,7 @@ struct Expression {
         Block,
         If,
         Match,
+        Choose,
         For,
         While,
         Try,
@@ -288,6 +305,7 @@ struct Expression {
         struct Block _Block;
         struct If _If;
         struct Match _Match;
+        struct Choose _Choose;
         struct For _For;
         struct While _While;
         struct Try _Try;

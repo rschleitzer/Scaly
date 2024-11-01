@@ -411,21 +411,17 @@
 
 <syntax id = Choose
     <content link = choose
-    <content link = Condition                               property = condition
+    <content link = Operand               multiple          property = condition
     <content colon
     <content link = When                  multiple optional property = cases
-    <content link = Other                          optional property = other
+    <content link = Default                        optional property = alternative
 
 <syntax id = When                         multiple
     <content link = when
     <content identifier                                     property = name
     <content colon
     <content link = Name                                    property = variant
-    <content link = Action                                  property = action
     <content colon                                 optional
-
-<syntax id = Other
-    <content link = other
     <content link = Action                                  property = action
     <content colon                                 optional
 
@@ -445,6 +441,7 @@
     <content identifier                                     property = name
     <content colon
     <content link = Name                                    property = error
+    <content colon                                 optional
     <content link = Action                                  property = action
     <content colon                                 optional
 
@@ -639,7 +636,6 @@
 <keyword id = module
 <keyword id = mutable
 <keyword id = operator
-<keyword id = other
 <keyword id = procedure
 <keyword id = private
 <keyword id = return
