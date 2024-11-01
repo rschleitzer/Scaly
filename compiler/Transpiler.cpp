@@ -1383,7 +1383,7 @@ struct Result {\n\
 
     TranspilerError* build_continue(Page* _ep, StringBuilder& builder, Continue& continue_, Type* returns_, Type* throws_, String indent) {
         Region _r;
-        builder.append("continue");
+        builder.append("continue;");
         return nullptr;
     }
 

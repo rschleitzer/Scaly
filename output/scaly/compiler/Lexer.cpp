@@ -141,8 +141,8 @@ Token Lexer::scan_line_feed() {
         skip_whitespace(false);
         if (character == nullptr) 
             return Token(ColonToken());
-        if ((*character == '\n')) 
-            continue;
+        if (*character == '\n') 
+            continue;;
         return Token(ColonToken());
     };
 }
@@ -160,7 +160,7 @@ Token Lexer::scan_identifier() {
             };
         }
         else {
-            charc == *character;
+            const auto c = *character;
             if (((c>='a')&&(c<='z'))||((c>='A')&&(c<='Z'))||((c>='0')&&(c<='9'))||(c == '_')) {
                 read_character();
                 length = length+1;
@@ -174,7 +174,7 @@ Token Lexer::scan_identifier() {
 
 Token Lexer::scan_attribute() {
     const auto start = character;
-    size_tlength == 0;
+    size_t length = 0;
     while (true) {
         if (character == nullptr) {
             if (length == 0) {
@@ -185,7 +185,7 @@ Token Lexer::scan_attribute() {
             };
         }
         else {
-            charc == *character;
+            const auto c = *character;
             if (((c>='a')&&(c<='z'))||((c>='A')&&(c<='Z'))||((c>='0')&&(c<='9'))||(c == '_')) {
                 read_character();
                 length = length+1;
@@ -199,7 +199,7 @@ Token Lexer::scan_attribute() {
 
 Token Lexer::scan_operator() {
     const auto start = character;
-    size_tlength == 0;
+    size_t length = 0;
     while (true) {
         read_character();
         length = length+1;
@@ -213,14 +213,14 @@ Token Lexer::scan_operator() {
         };
         const auto c = *character;
         if (c == '+'||c == '-'||c == '*'||c == '/'||c == '='||c == '%'||c == '&'||c == '|'||c == '^'||c == '~'||c == '<'||c == '>') 
-            continue
+            continue;
         else return Token(IdentifierToken(Vector<char>(start, length)));
     };
 }
 
 Token Lexer::scan_string_literal() {
     const auto start = character+1;
-    size_tlength == 0;
+    size_t length = 0;
     while (true) {
         read_character();
         length = length+1;
@@ -249,19 +249,19 @@ Token Lexer::scan_string_literal() {
 
 Token Lexer::scan_string_identifier() {
     const auto start = character+1;
-    size_tlength == 0;
+    size_t length = 0;
     while (true) {
         read_character();
         length = length+1;
         if (character == nullptr) 
             return Token(InvalidToken());
-        autoc == *character;
+        const auto c = *character;
     };
 }
 
 Token Lexer::scan_fragment_literal() {
     const auto start = character+1;
-    size_tlength == 0;
+    size_t length = 0;
     while (true) {
         read_character();
         length = length+1;
@@ -308,12 +308,12 @@ Token Lexer::scan_fragment_literal() {
 
 Token Lexer::scan_numeric_literal() {
     const auto start = character;
-    size_tlength == 0;
+    size_t length = 0;
     read_character();
     length = length+1;
     if (character == nullptr) 
         return Token(LiteralToken(IntegerToken(Vector<char>(start, length))));
-    autoc == *character;
+    const auto c = *character;
     if ((c>='0')&&(c<='9')) 
         return scan_integer_literal(start, length);
     switch (c)
@@ -346,7 +346,7 @@ Token Lexer::scan_integer_literal(char* start, size_t length) {
             return Token(LiteralToken(IntegerToken(Vector<char>(start, length))));
         const auto c = *character;
         if ((c>='0')&&(c<='9')) 
-            continueswitch (c)
+            continue;switch (c)
         {
             case '.':
                 return scan_fraction(start, length);
@@ -369,9 +369,9 @@ Token Lexer::scan_fraction(char* start, size_t length) {
         length = length+1;
         if (character == nullptr) 
             return Token(LiteralToken(FloatingPointToken(Vector<char>(start, length))));
-        autoc == *character;
+        const auto c = *character;
         if ((c>='0')&&(c<='9')) 
-            continueswitch (c)
+            continue;switch (c)
         {
             case 'E':
                 return scan_exponent(start, length);
@@ -391,9 +391,9 @@ Token Lexer::scan_exponent(char* start, size_t length) {
         length = length+1;
         if (character == nullptr) 
             return Token(LiteralToken(FloatingPointToken(Vector<char>(start, length))));
-        autoc == *character;
+        const auto c = *character;
         if (((c>='0')&&(c<='9'))) 
-            continue;
+            continue;;
         return Token(LiteralToken(FloatingPointToken(Vector<char>(start, length))));
     };
 }
@@ -406,7 +406,7 @@ Token Lexer::scan_hex_literal(char* start, size_t length) {
             return Token(LiteralToken(HexToken(Vector<char>(start, length))));
         const auto c = *character;
         if (((c>='0')&&(c<='9'))||(c>='A')&&(c<='F')||((c>='a')&&(c<='f'))) 
-            continue;
+            continue;;
         return Token(LiteralToken(HexToken(Vector<char>(start, length))));
     };
 }
@@ -439,25 +439,25 @@ void Lexer::skip_whitespace(bool skip_line_feed) {
                         case ' ':
                             {
                                 read_character();
-                                continue;
+                                continue;;
                             };
                             break;
                         case '\t':
                             {
                                 read_character();
-                                continue;
+                                continue;;
                             };
                             break;
                         case '\r':
                             {
                                 read_character();
-                                continue;
+                                continue;;
                             };
                             break;
                         case '\n':
                             if ((skip_line_feed)) {
                                 read_character();
-                                continue;
+                                continue;;
                             }
                             else {
                                 return;
@@ -479,13 +479,13 @@ void Lexer::skip_whitespace(bool skip_line_feed) {
                                                     {
                                                         read_character();
                                                         read_character();
-                                                        continue;
+                                                        continue;;
                                                     };
                                                     break;
                                                 case '\n':
                                                     {
                                                         read_character();
-                                                        continue;
+                                                        continue;;
                                                     };
                                                     break;
                                             };
@@ -538,7 +538,7 @@ void Lexer::handle_single_line_comment() {
                     }
                     else {
                         read_character();
-                        continue;
+                        continue;;
                     };
                 };
         };
@@ -571,7 +571,7 @@ void Lexer::handle_multi_line_comment() {
                                                 handle_multi_line_comment();
                                                 break;
                                             default:
-                                                continue;
+                                                continue;;
                                         };
                                 };
                             };
@@ -598,7 +598,7 @@ void Lexer::handle_multi_line_comment() {
                         default:
                             {
                                 read_character();
-                                continue;
+                                continue;;
                             };
                     };
                 };

@@ -135,11 +135,11 @@ define Lexer
         skip_whitespace(false)
     }
 
-    function empty() {
+    function empty(this: Lexer) {
         set token: Token(EmptyToken())
     }
 
-    function scan_line_feed() returns Token$ {
+    function scan_line_feed(this: Lexer) returns Token$ {
         while true
         {
             read_character()
@@ -147,14 +147,14 @@ define Lexer
             if character = null
                 return Token(ColonToken())
 
-            if (*character = '\n')
+            if *character = '\n'
                 continue
 
             return Token(ColonToken())
         }
     }
 
-    function scan_identifier() returns Token$ {
+    function scan_identifier(this: Lexer) returns Token$ {
         let start character
         var length: size_t 0
         while true
@@ -168,7 +168,7 @@ define Lexer
                     return Token(IdentifierToken(Vector<char>(start, length)))
                 }
             } else {
-                char c = *character
+                let c *character
                 if ((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || ((c >= '0') && (c <= '9')) || (c = '_')
                 {
                     read_character()
@@ -180,9 +180,9 @@ define Lexer
         }
     }
 
-    function scan_attribute() returns Token$ {
+    function scan_attribute(this: Lexer) returns Token$ {
         let start character
-        size_t length = 0
+        var length: size_t 0
         while true
         {
             if character = null
@@ -194,7 +194,7 @@ define Lexer
                     return Token(AttributeToken(Vector<char>(start, length)))
                 }
             } else {
-                char c = *character
+                let c *character
                 if ((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || ((c >= '0') && (c <= '9')) || (c = '_')
                 {
                     read_character()
@@ -206,9 +206,9 @@ define Lexer
         }
     }
 
-    function scan_operator() returns Token$ {
+    function scan_operator(this: Lexer) returns Token$ {
         let start character
-        size_t length = 0
+        var length: size_t 0
         while true
         {
             read_character()
@@ -231,9 +231,9 @@ define Lexer
         }
     }
 
-    function scan_string_literal() returns Token$ {
+    function scan_string_literal(this: Lexer) returns Token$ {
         let start character + 1
-        size_t length = 0
+        var length: size_t 0
         while true
         {
             read_character()
@@ -261,9 +261,9 @@ define Lexer
         }
     }
 
-    function scan_string_identifier() returns Token$ {
+    function scan_string_identifier(this: Lexer) returns Token$ {
         let start character + 1
-        size_t length = 0
+        var length: size_t 0
         while true
         {
             read_character()
@@ -271,7 +271,7 @@ define Lexer
             if character = null
                 return Token(InvalidToken())
 
-            auto c = *character
+            let c *character
 ;            match c
 ;                case '\''
 ;                    read_character()
@@ -281,9 +281,9 @@ define Lexer
         }
     }
 
-    function scan_fragment_literal() returns Token$ {
+    function scan_fragment_literal(this: Lexer) returns Token$ {
         let start character + 1
-        size_t length = 0
+        var length: size_t 0
         while true
         {
             read_character()
@@ -329,15 +329,15 @@ define Lexer
         }
     }
 
-    function scan_numeric_literal() returns Token$ {
+    function scan_numeric_literal(this: Lexer) returns Token$ {
         let start character
-        size_t length = 0
+        var length: size_t 0
         read_character()
         set length: length + 1
         if character = null
             return Token(LiteralToken(IntegerToken(Vector<char>(start, length))))
 
-        auto c = *character
+        let c *character
 
         if (c >= '0') && (c <= '9')
             return scan_integer_literal(start, length)
@@ -357,7 +357,7 @@ define Lexer
                 return Token(LiteralToken(IntegerToken(Vector<char>(start, length))))
     }
 
-    function scan_integer_literal(start: pointer[char], length: size_t) returns Token$ {
+    function scan_integer_literal(this: Lexer, start: pointer[char], length: size_t) returns Token$ {
         while true
         {
             read_character()
@@ -382,7 +382,7 @@ define Lexer
         }
     }
 
-    function scan_fraction(start: pointer[char], length: size_t) returns Token$ {
+    function scan_fraction(this: Lexer, start: pointer[char], length: size_t) returns Token$ {
         while true
         {
             read_character()
@@ -390,7 +390,7 @@ define Lexer
             if character = null
                 return Token(LiteralToken(FloatingPointToken(Vector<char>(start, length))))
 
-            auto c = *character
+            let c *character
 
             if (c >= '0') && (c <= '9')
                 continue
@@ -405,7 +405,7 @@ define Lexer
         }
     }
 
-    function scan_exponent(start: pointer[char], length: size_t) returns Token$ {
+    function scan_exponent(this: Lexer, start: pointer[char], length: size_t) returns Token$ {
         while true
         {
             read_character()
@@ -413,7 +413,7 @@ define Lexer
             if character = null
                 return Token(LiteralToken(FloatingPointToken(Vector<char>(start, length))))
 
-            auto c = *character
+            let c *character
 
             if ((c >= '0') && (c <= '9'))
                 continue
@@ -422,7 +422,7 @@ define Lexer
         }
     }
 
-    function scan_hex_literal(start: pointer[char], length: size_t) returns Token$ {
+    function scan_hex_literal(this: Lexer, start: pointer[char], length: size_t) returns Token$ {
         while true
         {
             read_character()
@@ -439,7 +439,7 @@ define Lexer
         }
     }
 
-    function scan_boolean_literal() returns Token$ {
+    function scan_boolean_literal(this: Lexer) returns Token$ {
         read_character()
         if character = null
             return Token(InvalidToken())
@@ -455,7 +455,7 @@ define Lexer
         }
     }
 
-    function skip_whitespace(skip_line_feed: bool) {
+    function skip_whitespace(this: Lexer, skip_line_feed: bool) {
         while true
         {
             match (size_t)character
@@ -534,7 +534,7 @@ define Lexer
         }
     }
 
-    function handle_single_line_comment() {
+    function handle_single_line_comment(this: Lexer) {
         while true
         {
             match (size_t)character
@@ -554,7 +554,7 @@ define Lexer
         }
     }
 
-    function handle_multi_line_comment() {
+    function handle_multi_line_comment(this: Lexer) {
         while true
         {
             match (size_t)character
@@ -598,7 +598,7 @@ define Lexer
         }
     }
 
-    function parse_keyword(fixed_string: String) returns bool {
+    function parse_keyword(this: Lexer, fixed_string: String) returns bool {
         if token.tag = Token->Empty
             advance()
 
@@ -616,7 +616,7 @@ define Lexer
                 return false
     }
 
-    function parse_identifier(keywords: HashSet[String]) returns pointer[String] {
+    function parse_identifier(this: Lexer, keywords: HashSet[String]) returns pointer[String] {
         if token.tag = Token->Empty
             advance()
 
@@ -633,7 +633,7 @@ define Lexer
                 return null
     }
 
-    function parse_attribute() returns pointer[String] {
+    function parse_attribute(this: Lexer) returns pointer[String] {
         if token.tag = Token->Empty
             advance()
 
@@ -648,7 +648,7 @@ define Lexer
                 return null
     }
 
-    function parse_punctuation(character: char) returns bool {
+    function parse_punctuation(this: Lexer, character: char) returns bool {
         if token.tag = Token->Empty
             advance()
 
@@ -665,7 +665,7 @@ define Lexer
                 return false
     }
 
-    function parse_colon() returns bool {
+    function parse_colon(this: Lexer) returns bool {
         if token.tag = Token->Empty
             advance()
 
@@ -682,7 +682,7 @@ define Lexer
                 return false
     }
 
-    function is_at_end() returns bool {
+    function is_at_end(this: Lexer) returns bool {
         if character = null
             return true
 
