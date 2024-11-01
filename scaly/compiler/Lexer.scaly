@@ -143,9 +143,9 @@ define Lexer
         set token: Token(EmptyToken())
     }
 
-;*
     function scan_line_feed() returns Token$ {
-        while (true) {
+        while true
+        {
             read_character()
             skip_whitespace(false)
             if character = null
@@ -157,6 +157,7 @@ define Lexer
             return Token(ColonToken())
         }
     }
+;*
 
     function scan_identifier() returns Token$ {
         char* start = character

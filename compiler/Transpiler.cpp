@@ -1378,6 +1378,12 @@ struct Result {\n\
         return nullptr;
     }
 
+    TranspilerError* build_continue(Page* _ep, StringBuilder& builder, Continue& continue_, Type* returns_, Type* throws_, String indent) {
+        Region _r;
+        builder.append("continue");
+        return nullptr;
+    }
+
     TranspilerError* build_return(Page* _ep, StringBuilder& builder, Return& return_, Type* returns_, Type* throws_, String indent) {
         Region _r;
         builder.append("return");
@@ -1461,8 +1467,15 @@ struct Result {\n\
                 break;
             }
             case Statement::Break: {
-                auto return_ = statement->_Break;
-                auto _result = build_break(_ep, builder, return_, returns_, throws_, indent);
+                auto break_ = statement->_Break;
+                auto _result = build_break(_ep, builder, break_, returns_, throws_, indent);
+                if (_result != nullptr)
+                    return _result;
+                break;
+            }
+            case Statement::Continue: {
+                auto continue_ = statement->_Continue;
+                auto _result = build_continue(_ep, builder, continue_, returns_, throws_, indent);
                 if (_result != nullptr)
                     return _result;
                 break;

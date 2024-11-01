@@ -133,5 +133,17 @@ void Lexer::empty() {
     token = Token(EmptyToken());
 }
 
+Token Lexer::scan_line_feed() {
+    while (true) {
+        read_character();
+        skip_whitespace(false);
+        if (character == nullptr) 
+            return Token(ColonToken());
+        if ((*character=='\n')) 
+            continue;
+        return Token(ColonToken());
+    };
+}
+
 }
 }

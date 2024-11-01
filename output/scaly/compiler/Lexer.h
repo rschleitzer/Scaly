@@ -145,6 +145,7 @@ struct Lexer : Object {
     void read_character();
     static void advance();
     static void empty();
+    static Token scan_line_feed();
 };
 
 #endif

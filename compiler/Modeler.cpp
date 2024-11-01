@@ -618,16 +618,21 @@ Result<Type*, ModelError> handle_binding_annotation(Page* _rp, Page* _ep, Bindin
     }
 }
 
-Result<Break, ModelError> handle_break(Page* _rp, Page* _ep, BreakSyntax& return_, String file) {
+Result<Break, ModelError> handle_break(Page* _rp, Page* _ep, BreakSyntax& break_, String file) {
     Region _r;
-    if (return_.result != nullptr) {
-        auto result = return_.result;
+    if (break_.result != nullptr) {
+        auto result = break_.result;
         auto result_result = handle_operands(_rp, _ep, result, file);
         if (result_result._tag == Result<Vector<Operand>, ModelError>::Error)
             return Result<Break, ModelError> { ._tag = Result<Break, ModelError>::Error, ._Error = result_result._Error };
-        return Result<Break, ModelError> { ._tag = Result<Break, ModelError>::Ok, ._Ok = Break(Span(return_.start, return_.end), result_result._Ok) };
+        return Result<Break, ModelError> { ._tag = Result<Break, ModelError>::Ok, ._Ok = Break(Span(break_.start, break_.end), result_result._Ok) };
     }
-    return Result<Break, ModelError> { ._tag = Result<Break, ModelError>::Ok, ._Ok = Break(Span(return_.start, return_.end), Vector<Operand>(_rp, 0)) };
+    return Result<Break, ModelError> { ._tag = Result<Break, ModelError>::Ok, ._Ok = Break(Span(break_.start, break_.end), Vector<Operand>(_rp, 0)) };
+}
+
+Result<Continue, ModelError> handle_continue(Page* _rp, Page* _ep, ContinueSyntax& continue_, String file) {
+    Region _r;
+    return Result<Continue, ModelError> { ._tag = Result<Continue, ModelError>::Ok, ._Ok = Continue(Span(continue_.start, continue_.end)) };
 }
 
 Result<Return, ModelError> handle_return(Page* _rp, Page* _ep, ReturnSyntax& return_, String file) {
@@ -717,8 +722,13 @@ Result<Statement, ModelError> handle_command(Page* _rp, Page* _ep, CommandSyntax
             auto source = _source_result._Ok;
             return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Ok, ._Ok = Statement { ._tag = Statement::Action, ._Action = Action(source, target)}};
         }
-        case CommandSyntax::Continue:
-            return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(file, String(_ep, "Continue"), Span(command._Continue.start, command._Continue.end)))) };
+        case CommandSyntax::Continue: {
+            auto continue_ = command._Continue;
+            auto continue_result = handle_continue(_rp, _ep, continue_, file);
+            if (continue_result._tag == Result<Expression, ModelError>::Error)
+                return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = continue_result._Error };
+            return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Ok, ._Ok = Statement { ._tag = Statement::Continue, ._Continue = continue_result._Ok}};
+        }
         case CommandSyntax::Break: {
             auto break_ = command._Break;
             auto break_result = handle_break(_rp, _ep, break_, file);

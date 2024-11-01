@@ -163,6 +163,11 @@ struct Break : Object {
     Break(Span span, Vector<Operand> result) : span(span), result(result) {}
 };
 
+struct Continue : Object {
+    Span span;
+    Continue(Span span) : span(span) {}
+};
+
 struct Return : Object {
     Span span;
     Vector<Operand> result;
@@ -180,6 +185,7 @@ struct Statement : Object {
         Action,
         Binding,
         Break,
+        Continue,
         Return,
         Throw,
     } _tag;
@@ -187,6 +193,7 @@ struct Statement : Object {
         struct Action _Action;
         struct Binding _Binding;
         struct Break _Break;
+        struct Continue _Continue;
         struct Return _Return;
         struct Throw _Throw;
     };
