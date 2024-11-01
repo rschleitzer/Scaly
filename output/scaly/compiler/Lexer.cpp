@@ -607,32 +607,38 @@ void Lexer::handle_multi_line_comment() {
 }
 
 bool Lexer::parse_keyword(String fixed_string) {
-    switch (token._tag)
     {
-        case Token::Empty:
+        auto _result = token;
+        switch (_result._tag)
         {
-            auto empty = token._Empty;
-            advance();
-        }
-        default:
-            {}
-    }
-    switch (token._tag)
-    {
-        case Token::Identifier:
-        {
-            auto identifier = token._Identifier;
+            case Token::Empty:
             {
-                const auto right_keyword = fixed_string.equals(identifier.name);
-                if (right_keyword) 
-                    empty();
-                return right_keyword;
-            };
-            break;
+                auto empty = _result._Empty;
+                advance();
+            }
+            default:
+                {}
         }
-        default:
-            return false;
-    };
+    }
+    {
+        auto _result = token;
+        switch (_result._tag)
+        {
+            case Token::Identifier:
+            {
+                auto identifier = _result._Identifier;
+                {
+                    const auto right_keyword = fixed_string.equals(identifier.name);
+                    if (right_keyword) 
+                        empty();
+                    return right_keyword;
+                };
+                break;
+            }
+            default:
+                return false;
+        };
+    }
 }
 
 String* Lexer::parse_identifier(Page* rp, HashSet<String> keywords) {
