@@ -365,6 +365,28 @@ struct Lexer : Object {
                 case '\'':
                     read_character();
                         return Token(LiteralToken(CharacterToken(Vector<char>(start, length - 1))));
+
+                case '\\': 
+                    read_character();
+                    length++;
+                    if (character == nullptr)
+                        return Token(InvalidToken());
+
+                    switch (*character) {
+                        case '\"': case '\\': case '\'':
+                            break;
+                        case 'n':
+                            break;
+                        case 'r':
+                            break;
+                        case 't':
+                            break;
+                        case '0':
+                            break;
+                        default:
+                            return Token(InvalidToken());                            
+                    }
+                    break;
                 default:
                     break;
             }

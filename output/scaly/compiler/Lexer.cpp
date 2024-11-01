@@ -122,6 +122,9 @@ void Lexer::advance() {
         case '\"':
             token = scan_string_literal();
             break;
+        case '\'':
+            token = scan_string_identifier();
+            break;
         case '`':
             token = scan_fragment_literal();
             break;
@@ -243,7 +246,8 @@ Token Lexer::scan_string_literal() {
                         return Token(InvalidToken());
                 };
                 break;
-        };
+        }if (c != '\"'&&c != '\\'&&c != '\''&&c != 'n'&&c != 'r'&&c != 't'&&c != '0') 
+            return Token(InvalidToken());
     };
 }
 
@@ -256,6 +260,58 @@ Token Lexer::scan_string_identifier() {
         if (character == nullptr) 
             return Token(InvalidToken());
         const auto c = *character;
+        switch (c)
+        {
+            case '\'':
+                {
+                    read_character();
+                    return Token(LiteralToken(CharacterToken(Vector<char>(start, length-1))));
+                };
+                break;
+            case '\\':
+                {
+                    read_character();
+                    length = length+1;
+                    if (character == nullptr) 
+                        return Token(InvalidToken());
+                    switch (*character)
+                    {
+                        case '\"':
+                            {
+                            };
+                            break;
+                        case '\\':
+                            {
+                            };
+                            break;
+                        case '\'':
+                            {
+                            };
+                            break;
+                        case 'n':
+                            {
+                            };
+                            break;
+                        case 'r':
+                            {
+                            };
+                            break;
+                        case 't':
+                            {
+                            };
+                            break;
+                        case '0':
+                            {
+                            };
+                            break;
+                        default:
+                            return Token(InvalidToken());
+                    };
+                };
+                break;
+            default:
+                break;
+        };
     };
 }
 
@@ -269,6 +325,12 @@ Token Lexer::scan_fragment_literal() {
             return Token(InvalidToken());
         switch (*character)
         {
+            case '`':
+                {
+                    read_character();
+                    return Token(LiteralToken(FragmentToken(Vector<char>(start, length-1))));
+                };
+                break;
             case '\\':
                 {
                     read_character();
@@ -281,6 +343,9 @@ Token Lexer::scan_fragment_literal() {
                             break;
                             break;
                         case '\\':
+                            break;
+                            break;
+                        case '\'':
                             break;
                             break;
                         case 'n':

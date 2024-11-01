@@ -123,8 +123,8 @@ define Lexer
             case '\"'
                 set token: scan_string_literal()
 
-;            case '\''
-;                set token: scan_string_identifier()
+            case '\''
+                set token: scan_string_identifier()
 
             case '`'
                 set token: scan_fragment_literal()
@@ -256,8 +256,8 @@ define Lexer
                         return Token(InvalidToken())
                 }
 
-;            if c <> '\"' && c <> '\\' && c <> '\'' && c <> 'n' && c <> 'r' && c <> 't' && c <> '0'
-;                return Token(InvalidToken())                            
+            if c <> '\"' && c <> '\\' && c <> '\'' && c <> 'n' && c <> 'r' && c <> 't' && c <> '0'
+                return Token(InvalidToken())                            
         }
     }
 
@@ -272,12 +272,32 @@ define Lexer
                 return Token(InvalidToken())
 
             let c *character
-;            match c
-;                case '\''
-;                    read_character()
-;                        return Token(LiteralToken(CharacterToken(Vector<char>(start, length - 1))))
-;                default
-;                    break
+            match c
+                case '\''
+                {
+                    read_character()
+                        return Token(LiteralToken(CharacterToken(Vector<char>(start, length - 1))))
+                }
+                case '\\'
+                {
+                    read_character()
+                    set length: length + 1
+                    if character = null
+                        return Token(InvalidToken())
+
+                    match *character
+                        case '\"':{}
+                        case '\\':{}
+                        case '\'':{}
+                        case 'n':{}
+                        case 'r':{}
+                        case 't':{}
+                        case '0':{}
+                        default
+                            return Token(InvalidToken())                        
+                }
+                default
+                    break
         }
     }
 
@@ -292,11 +312,11 @@ define Lexer
                 return Token(InvalidToken())
 
             match *character
-;                case '`'
-;                { 
-;                    read_character()
-;                    return Token(LiteralToken(FragmentToken(Vector<char>(start, length - 1))))
-;                }
+                case '`'
+                { 
+                    read_character()
+                    return Token(LiteralToken(FragmentToken(Vector<char>(start, length - 1))))
+                }
 
                 case '\\' 
                 {
@@ -310,8 +330,8 @@ define Lexer
                             break
                         case '\\'
                             break
-;                        case '\''
-;                            break
+                        case '\''
+                            break
                         case 'n'
                             break
                         case 'r'
