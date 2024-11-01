@@ -19,12 +19,12 @@ struct NoSuchFileOrDirectoryError : Object {
 };
 
 struct FileError {
-    FileError(UnknownFileError _UnknownFileError);
-    FileError(NoSuchFileOrDirectoryError _NoSuchFileOrDirectoryError);
+    FileError(UnknownFileError);
+    FileError(NoSuchFileOrDirectoryError);
     enum {
         Unknown,
         NoSuchFileOrDirectory,
-    } tag;
+    } _tag;
     union {
         UnknownFileError _Unknown;
         NoSuchFileOrDirectoryError _NoSuchFileOrDirectory;

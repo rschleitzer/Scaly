@@ -79,13 +79,13 @@ struct HexToken : Object {
 };
 
 struct LiteralToken {
-    LiteralToken(StringToken _StringToken);
-    LiteralToken(CharacterToken _CharacterToken);
-    LiteralToken(FragmentToken _FragmentToken);
-    LiteralToken(IntegerToken _IntegerToken);
-    LiteralToken(BooleanToken _BooleanToken);
-    LiteralToken(FloatingPointToken _FloatingPointToken);
-    LiteralToken(HexToken _HexToken);
+    LiteralToken(StringToken);
+    LiteralToken(CharacterToken);
+    LiteralToken(FragmentToken);
+    LiteralToken(IntegerToken);
+    LiteralToken(BooleanToken);
+    LiteralToken(FloatingPointToken);
+    LiteralToken(HexToken);
     enum {
         String,
         Character,
@@ -94,7 +94,7 @@ struct LiteralToken {
         Boolean,
         FloatingPoint,
         Hex,
-    } tag;
+    } _tag;
     union {
         StringToken _String;
         CharacterToken _Character;

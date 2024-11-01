@@ -23,21 +23,21 @@ BooleanToken::BooleanToken(bool value) : value(value) {}
 FloatingPointToken::FloatingPointToken(Vector<char> value) : value(value) {}
 
 HexToken::HexToken(Vector<char> value) : value(value) {}
-LiteralToken::LiteralToken(StringToken _StringToken) : tag(String) { _String = _StringToken; }
+LiteralToken::LiteralToken(StringToken _String) : _tag(String), _String(_String) {}
 
-LiteralToken::LiteralToken(CharacterToken _CharacterToken) : tag(Character) { _Character = _CharacterToken; }
+LiteralToken::LiteralToken(CharacterToken _Character) : _tag(Character), _Character(_Character) {}
 
-LiteralToken::LiteralToken(FragmentToken _FragmentToken) : tag(Fragment) { _Fragment = _FragmentToken; }
+LiteralToken::LiteralToken(FragmentToken _Fragment) : _tag(Fragment), _Fragment(_Fragment) {}
 
-LiteralToken::LiteralToken(IntegerToken _IntegerToken) : tag(Integer) { _Integer = _IntegerToken; }
+LiteralToken::LiteralToken(IntegerToken _Integer) : _tag(Integer), _Integer(_Integer) {}
 
-LiteralToken::LiteralToken(BooleanToken _BooleanToken) : tag(Boolean) { _Boolean = _BooleanToken; }
+LiteralToken::LiteralToken(BooleanToken _Boolean) : _tag(Boolean), _Boolean(_Boolean) {}
 
-LiteralToken::LiteralToken(FloatingPointToken _FloatingPointToken) : tag(FloatingPoint) { _FloatingPoint = _FloatingPointToken; }
+LiteralToken::LiteralToken(FloatingPointToken _FloatingPoint) : _tag(FloatingPoint), _FloatingPoint(_FloatingPoint) {}
 
-LiteralToken::LiteralToken(HexToken _HexToken) : tag(Hex) { _Hex = _HexToken; }
+LiteralToken::LiteralToken(HexToken _Hex) : _tag(Hex), _Hex(_Hex) {}
 
-Token::Token(EmptyToken Empty_) : _tag(Empty), _Empty(Empty_) {}
+Token::Token(EmptyToken _Empty) : _tag(Empty), _Empty(_Empty) {}
 
 Token::Token(InvalidToken _Invalid) : _tag(Invalid), _Invalid(_Invalid) {}
 

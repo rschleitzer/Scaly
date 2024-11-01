@@ -174,8 +174,6 @@ struct Result {\n\
                     header_builder.append(name);
                     header_builder.append('(');
                     build_type(header_builder, variant.type);
-                    header_builder.append(" _");
-                    build_type(header_builder, variant.type);
                     header_builder.append(")");
                     if (parameters.length > 0)
                     {
@@ -207,7 +205,7 @@ struct Result {\n\
                 }
             }
         }
-        header_builder.append("    } tag;\n    union {\n");
+        header_builder.append("    } _tag;\n    union {\n");
         {
             auto _variant_iterator = variants.get_iterator();
             while (auto _variant = _variant_iterator.next()) {
@@ -234,14 +232,14 @@ struct Result {\n\
                 cpp_builder.append('(');
                 build_type(cpp_builder, variant.type);
                 cpp_builder.append(" _");
-                build_type(cpp_builder, variant.type);
-                cpp_builder.append(") : tag(");
                 cpp_builder.append(variant.name);
-                cpp_builder.append(") { _");
+                cpp_builder.append(") : _tag(");
                 cpp_builder.append(variant.name);
-                cpp_builder.append(" = _");
-                build_type(cpp_builder, variant.type);
-                cpp_builder.append("; }\n");
+                cpp_builder.append("), _");
+                cpp_builder.append(variant.name);
+                cpp_builder.append("(_");
+                cpp_builder.append(variant.name);
+                cpp_builder.append(") {}\n");
             }
         }
     }
@@ -1302,7 +1300,7 @@ struct Result {\n\
         builder.append(indented);
         builder.append("switch (_");
         builder.append(name);
-        builder.append("_Error.tag) {");
+        builder.append("_Error._tag) {");
         auto _catch__iterator = try_.catches.get_iterator();
         indent_builder.append("    ");
         String indented2 = indent_builder.to_string(_r.get_page());
