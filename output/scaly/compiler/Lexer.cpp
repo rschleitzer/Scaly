@@ -85,7 +85,7 @@ void Lexer::advance() {
     };
     if (c == '+'||c == '-'||c == '*'||c == '/'||c == '='||c == '%'||c == '&'||c == '|'||c == '~'||c == '<'||c == '>') {
         token = scan_operator();
-        break;
+        return;
     };
     if (c == '}'||c == ')'||c == ']'||c == '.'||c == '?'||c == '!'||c == '$'||c == '#'||c == '^') {
         token = Token(PunctuationToken(*character));
@@ -109,11 +109,7 @@ void Lexer::advance() {
                 token = Token(ColonToken());
             };
         case '0':
-            {
-                auto r_1 = Region();
-                StringBuilder&value == *new(alignof(StringBuilder), r_1.get_page())StringBuilder();
-                token = scan_numeric_literal();
-            };
+            token = scan_numeric_literal();
         case '@':
             {
                 read_character();
@@ -322,7 +318,7 @@ Token Lexer::scan_numeric_literal() {
     };
 }
 
-Token Lexer::scan_integer_literal(char, *, start, size_t, length) {
+Token Lexer::scan_integer_literal(char* start, size_t length) {
     while (true) {
         read_character();
         length = length+1;
@@ -344,7 +340,7 @@ Token Lexer::scan_integer_literal(char, *, start, size_t, length) {
     };
 }
 
-Token Lexer::scan_fraction(char, *, start, size_t, length) {
+Token Lexer::scan_fraction(char* start, size_t length) {
     while (true) {
         read_character();
         length = length+1;
@@ -364,7 +360,7 @@ Token Lexer::scan_fraction(char, *, start, size_t, length) {
     };
 }
 
-Token Lexer::scan_exponent(char, *, start, size_t, length) {
+Token Lexer::scan_exponent(char* start, size_t length) {
     while (true) {
         read_character();
         length = length+1;
@@ -377,7 +373,7 @@ Token Lexer::scan_exponent(char, *, start, size_t, length) {
     };
 }
 
-Token Lexer::scan_hex_literal(char, *, start, size_t, length) {
+Token Lexer::scan_hex_literal(char* start, size_t length) {
     while (true) {
         read_character();
         length = length+1;
@@ -583,7 +579,7 @@ bool Lexer::parse_keyword(String fixed_string) {
     };
 }
 
-String* Lexer::parse_identifier(Page* rp, HashSet keywords, <, String, >) {
+String* Lexer::parse_identifier(Page* rp, HashSet<String> keywords) {
     if (token.tag == Token::Empty) 
         advance();
     switch (token.tag)

@@ -171,11 +171,7 @@ struct Lexer : Object {
                 break;
 
             case '0':
-                {
-                    Region _r_1;
-                    StringBuilder& value = *new (alignof(StringBuilder), _r_1.get_page()) StringBuilder();
-                    this->token = scan_numeric_literal();
-                }
+                this->token = scan_numeric_literal();
                 break;
 
             case '@':

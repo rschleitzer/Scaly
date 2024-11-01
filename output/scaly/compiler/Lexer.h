@@ -143,7 +143,7 @@ struct Lexer : Object {
     Lexer ();
     Lexer(String deck);
     void read_character();
-    static void advance();
+    void advance();
     static void empty();
     static Token scan_line_feed();
     static Token scan_identifier();
@@ -153,20 +153,20 @@ struct Lexer : Object {
     static Token scan_string_identifier();
     static Token scan_fragment_literal();
     static Token scan_numeric_literal();
-    static Token scan_integer_literal(char, *, start, size_t, length);
-    static Token scan_fraction(char, *, start, size_t, length);
-    static Token scan_exponent(char, *, start, size_t, length);
-    static Token scan_hex_literal(char, *, start, size_t, length);
+    static Token scan_integer_literal(char* start, size_t length);
+    static Token scan_fraction(char* start, size_t length);
+    static Token scan_exponent(char* start, size_t length);
+    static Token scan_hex_literal(char* start, size_t length);
     static Token scan_boolean_literal();
     static void skip_whitespace(bool skip_line_feed);
+    static void handle_single_line_comment();
+    static void handle_multi_line_comment();
+    static bool parse_keyword(String fixed_string);
+    static String* parse_identifier(Page* rp, HashSet<String> keywords);
+    static String* parse_attribute(Page* rp);
+    static bool parse_punctuation(char character);
+    static bool parse_colon();
+    static bool is_at_end();
 };
 
-    void handle_single_line_comment();
-    void handle_multi_line_comment();
-    bool parse_keyword(String fixed_string);
-    String* parse_identifier(Page* rp, HashSet keywords, <, String, >);
-    String* parse_attribute(Page* rp);
-    bool parse_punctuation(char character);
-    bool parse_colon();
-    bool is_at_end();
 #endif

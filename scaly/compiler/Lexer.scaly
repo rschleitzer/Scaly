@@ -57,7 +57,7 @@ define Lexer
             set position: position + 1        
     }
 
-    function advance() {
+    function advance(this: Lexer) {
         set previous_position: position
 
         if character = null
@@ -82,7 +82,7 @@ define Lexer
         if c = '+' || c = '-' || c = '*' || c = '/' || c = '=' || c = '%' || c = '&' || c = '|' || c = '~' || c = '<' || c = '>'
         {
             set token: scan_operator()
-            break
+            return
         }
 
         if c = '}' || c = ')' || c = ']' || c = '.' || c = '?' || c = '!' || c = '$' || c = '#' || c = '^'
@@ -112,11 +112,7 @@ define Lexer
             }
 
             case '0'
-            {
-                var r_1 Region()
-                StringBuilder& value = *new (alignof(StringBuilder), r_1.get_page()) StringBuilder()
                 set token: scan_numeric_literal()
-            }
 
             case '@'
             {
@@ -361,7 +357,7 @@ define Lexer
                 return Token(LiteralToken(IntegerToken(Vector<char>(start, length))))
     }
 
-    function scan_integer_literal(char* start, size_t length) returns Token$ {
+    function scan_integer_literal(start: pointer[char], length: size_t) returns Token$ {
         while true
         {
             read_character()
@@ -386,7 +382,7 @@ define Lexer
         }
     }
 
-    function scan_fraction(char* start, size_t length) returns Token$ {
+    function scan_fraction(start: pointer[char], length: size_t) returns Token$ {
         while true
         {
             read_character()
@@ -409,7 +405,7 @@ define Lexer
         }
     }
 
-    function scan_exponent(char* start, size_t length) returns Token$ {
+    function scan_exponent(start: pointer[char], length: size_t) returns Token$ {
         while true
         {
             read_character()
@@ -426,7 +422,7 @@ define Lexer
         }
     }
 
-    function scan_hex_literal(char* start, size_t length) returns Token$ {
+    function scan_hex_literal(start: pointer[char], length: size_t) returns Token$ {
         while true
         {
             read_character()
@@ -534,7 +530,6 @@ define Lexer
                         }
                         default
                             return
-                }
             }
         }
     }
@@ -621,7 +616,7 @@ define Lexer
                 return false
     }
 
-    function parse_identifier(keywords: HashSet<String>) returns pointer[String] {
+    function parse_identifier(keywords: HashSet[String]) returns pointer[String] {
         if token.tag = Token->Empty
             advance()
 
