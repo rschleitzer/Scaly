@@ -121,15 +121,15 @@ struct Token {
         Punctuation,
         Literal,
         Colon,
-    } tag;
+    } _tag;
     union {
-        EmptyToken Empty_;
-        InvalidToken Invalid_;
-        IdentifierToken Identifier_;
-        AttributeToken Attribute_;
-        PunctuationToken Punctuation_;
-        LiteralToken Literal_;
-        ColonToken Colon_;
+        EmptyToken _Empty;
+        InvalidToken _Invalid;
+        IdentifierToken _Identifier;
+        AttributeToken _Attribute;
+        PunctuationToken _Punctuation;
+        LiteralToken _Literal;
+        ColonToken _Colon;
     };
 };
 struct Lexer : Object {

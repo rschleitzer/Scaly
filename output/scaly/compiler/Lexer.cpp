@@ -37,19 +37,19 @@ LiteralToken::LiteralToken(FloatingPointToken _FloatingPointToken) : tag(Floatin
 
 LiteralToken::LiteralToken(HexToken _HexToken) : tag(Hex) { _Hex = _HexToken; }
 
-Token::Token(EmptyToken Empty_) : tag(Empty) { Empty_ = Empty_; }
+Token::Token(EmptyToken Empty_) : _tag(Empty), _Empty(Empty_) {}
 
-Token::Token(InvalidToken Invalid_) : tag(Invalid), Invalid_(Invalid_) {}
+Token::Token(InvalidToken _Invalid) : _tag(Invalid), _Invalid(_Invalid) {}
 
-Token::Token(IdentifierToken Identifier_) : tag(Identifier), Identifier_(Identifier_) {}
+Token::Token(IdentifierToken _Identifier) : _tag(Identifier), _Identifier(_Identifier) {}
 
-Token::Token(AttributeToken Attribute_) : tag(Attribute), Attribute_(Attribute_) {}
+Token::Token(AttributeToken _Attribute) : _tag(Attribute), _Attribute(_Attribute) {}
 
-Token::Token(PunctuationToken Punctuation_) : tag(Punctuation), Punctuation_(Punctuation_) {}
+Token::Token(PunctuationToken _Punctuation) : _tag(Punctuation), _Punctuation(_Punctuation) {}
 
-Token::Token(LiteralToken Literal_) : tag(Literal), Literal_(Literal_) {}
+Token::Token(LiteralToken _Literal) : _tag(Literal), _Literal(_Literal) {}
 
-Token::Token(ColonToken Colon_) : tag(Colon), Colon_(Colon_) {}
+Token::Token(ColonToken _Colon) : _tag(Colon), _Colon(_Colon) {}
 
 
 Lexer::Lexer(Token token, char* character, StringIterator chars, size_t previous_position, size_t position) : token(token), character(character), chars(chars), previous_position(previous_position), position(position) {}
@@ -607,18 +607,29 @@ void Lexer::handle_multi_line_comment() {
 }
 
 bool Lexer::parse_keyword(String fixed_string) {
-    if (token.tag == Token::Empty) 
-        advance();
-    switch (token.tag)
+    switch (token._tag)
+    {
+        case Token::Empty:
+        {
+            auto empty = token._Empty;
+            advance();
+        }
+        default:
+            {}
+    }
+    switch (token._tag)
     {
         case Token::Identifier:
+        {
+            auto identifier = token._Identifier;
             {
-                const auto right_keyword = fixed_string.equals(token.Identifier_.name);
+                const auto right_keyword = fixed_string.equals(identifier.name);
                 if (right_keyword) 
                     empty();
                 return right_keyword;
             };
             break;
+        }
         default:
             return false;
     };
@@ -626,73 +637,120 @@ bool Lexer::parse_keyword(String fixed_string) {
 
 String* Lexer::parse_identifier(Page* rp, HashSet<String> keywords) {
     auto r = Region();
-    if (token.tag == Token::Empty) 
-        advance();
-    switch (token.tag)
+    switch (token._tag)
+    {
+        case Token::Empty:
+        {
+            auto empty = token._Empty;
+            advance();
+        }
+        default:
+            {}
+    }
+    switch (token._tag)
     {
         case Token::Identifier:
+        {
+            auto identifier = token._Identifier;
             {
-                if (keywords.contains(*new (alignof(String), r.get_page()) String(r.get_page(), token.Identifier_.name))) 
+                if (keywords.contains(*new (alignof(String), r.get_page()) String(r.get_page(), identifier.name))) 
                     return nullptr;
-                const auto ret = new (alignof(String), rp) String(rp, token.Identifier_.name);
+                const auto ret = new (alignof(String), rp) String(rp, identifier.name);
                 empty();
                 return ret;
             };
             break;
+        }
         default:
             return nullptr;
     };
 }
 
 String* Lexer::parse_attribute(Page* rp) {
-    if (token.tag == Token::Empty) 
-        advance();
-    switch (token.tag)
+    switch (token._tag)
+    {
+        case Token::Empty:
+        {
+            auto empty = token._Empty;
+            advance();
+        }
+        default:
+            {}
+    }
+    switch (token._tag)
     {
         case Token::Attribute:
+        {
+            auto attribute = token._Attribute;
             {
-                const auto ret = new (alignof(String), rp) String(rp, token.Attribute_.name);
+                const auto ret = new (alignof(String), rp) String(rp, attribute.name);
                 empty();
                 return ret;
             };
             break;
+        }
         default:
             return nullptr;
     };
 }
 
 bool Lexer::parse_punctuation(char character) {
-    if (token.tag == Token::Empty) 
-        advance();
-    switch (token.tag)
+    switch (token._tag)
+    {
+        case Token::Empty:
+        {
+            auto empty = token._Empty;
+            advance();
+        }
+        default:
+            {}
+    }
+    switch (token._tag)
     {
         case Token::Punctuation:
+        {
+            auto punctuation = token._Punctuation;
             {
-                const auto ret = character == token.Punctuation_.sign;
+                const auto ret = character == punctuation.sign;
                 if (ret) 
                     empty();
                 return ret;
             };
             break;
+        }
         default:
             return false;
     };
 }
 
 bool Lexer::parse_colon() {
-    if (token.tag == Token::Empty) 
-        advance();
-    switch (token.tag)
+    switch (token._tag)
+    {
+        case Token::Empty:
+        {
+            auto empty = token._Empty;
+            advance();
+        }
+        default:
+            {}
+    }
+    switch (token._tag)
     {
         case Token::Colon:
+        {
+            auto colon = token._Colon;
             {
                 empty();
                 return true;
             };
             break;
+        }
         case Token::Empty:
+        {
+            auto empty = token._Empty;
             return true;
             break;
+        }
         default:
             return false;
     };
