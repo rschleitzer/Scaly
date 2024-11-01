@@ -24,7 +24,7 @@ struct FileError {
     enum {
         Unknown,
         NoSuchFileOrDirectory,
-} _tag;
+    } tag;
     union {
         UnknownFileError _Unknown;
         NoSuchFileOrDirectoryError _NoSuchFileOrDirectory;

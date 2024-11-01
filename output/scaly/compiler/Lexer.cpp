@@ -23,33 +23,33 @@ BooleanToken::BooleanToken(bool value) : value(value) {}
 FloatingPointToken::FloatingPointToken(Vector<char> value) : value(value) {}
 
 HexToken::HexToken(Vector<char> value) : value(value) {}
-LiteralToken::LiteralToken(StringToken _StringToken) : _tag(String) { _String = _StringToken; }
+LiteralToken::LiteralToken(StringToken _StringToken) : tag(String) { _String = _StringToken; }
 
-LiteralToken::LiteralToken(CharacterToken _CharacterToken) : _tag(Character) { _Character = _CharacterToken; }
+LiteralToken::LiteralToken(CharacterToken _CharacterToken) : tag(Character) { _Character = _CharacterToken; }
 
-LiteralToken::LiteralToken(FragmentToken _FragmentToken) : _tag(Fragment) { _Fragment = _FragmentToken; }
+LiteralToken::LiteralToken(FragmentToken _FragmentToken) : tag(Fragment) { _Fragment = _FragmentToken; }
 
-LiteralToken::LiteralToken(IntegerToken _IntegerToken) : _tag(Integer) { _Integer = _IntegerToken; }
+LiteralToken::LiteralToken(IntegerToken _IntegerToken) : tag(Integer) { _Integer = _IntegerToken; }
 
-LiteralToken::LiteralToken(BooleanToken _BooleanToken) : _tag(Boolean) { _Boolean = _BooleanToken; }
+LiteralToken::LiteralToken(BooleanToken _BooleanToken) : tag(Boolean) { _Boolean = _BooleanToken; }
 
-LiteralToken::LiteralToken(FloatingPointToken _FloatingPointToken) : _tag(FloatingPoint) { _FloatingPoint = _FloatingPointToken; }
+LiteralToken::LiteralToken(FloatingPointToken _FloatingPointToken) : tag(FloatingPoint) { _FloatingPoint = _FloatingPointToken; }
 
-LiteralToken::LiteralToken(HexToken _HexToken) : _tag(Hex) { _Hex = _HexToken; }
+LiteralToken::LiteralToken(HexToken _HexToken) : tag(Hex) { _Hex = _HexToken; }
 
-Token::Token(EmptyToken _EmptyToken) : _tag(Empty) { _Empty = _EmptyToken; }
+Token::Token(EmptyToken Empty_) : tag(Empty) { Empty_ = Empty_; }
 
-Token::Token(InvalidToken _InvalidToken) : _tag(Invalid) { _Invalid = _InvalidToken; }
+Token::Token(InvalidToken Invalid_) : tag(Invalid), Invalid_(Invalid_) {}
 
-Token::Token(IdentifierToken _IdentifierToken) : _tag(Identifier) { _Identifier = _IdentifierToken; }
+Token::Token(IdentifierToken Identifier_) : tag(Identifier), Identifier_(Identifier_) {}
 
-Token::Token(AttributeToken _AttributeToken) : _tag(Attribute) { _Attribute = _AttributeToken; }
+Token::Token(AttributeToken Attribute_) : tag(Attribute), Attribute_(Attribute_) {}
 
-Token::Token(PunctuationToken _PunctuationToken) : _tag(Punctuation) { _Punctuation = _PunctuationToken; }
+Token::Token(PunctuationToken Punctuation_) : tag(Punctuation), Punctuation_(Punctuation_) {}
 
-Token::Token(LiteralToken _LiteralToken) : _tag(Literal) { _Literal = _LiteralToken; }
+Token::Token(LiteralToken Literal_) : tag(Literal), Literal_(Literal_) {}
 
-Token::Token(ColonToken _ColonToken) : _tag(Colon) { _Colon = _ColonToken; }
+Token::Token(ColonToken Colon_) : tag(Colon), Colon_(Colon_) {}
 
 
 Lexer::Lexer(Token token, char* character, StringIterator chars, size_t previous_position, size_t position) : token(token), character(character), chars(chars), previous_position(previous_position), position(position) {}
@@ -613,7 +613,7 @@ bool Lexer::parse_keyword(String fixed_string) {
     {
         case Token::Identifier:
             {
-                const auto right_keyword = fixed_string.equals(token.Identifier.name);
+                const auto right_keyword = fixed_string.equals(token.Identifier_.name);
                 if (right_keyword) 
                     empty();
                 return right_keyword;
@@ -625,15 +625,16 @@ bool Lexer::parse_keyword(String fixed_string) {
 }
 
 String* Lexer::parse_identifier(Page* rp, HashSet<String> keywords) {
+    Region r;
     if (token.tag == Token::Empty) 
         advance();
     switch (token.tag)
     {
         case Token::Identifier:
             {
-                if ((keywords.contains(token.Identifier.name))) 
+                if (keywords.contains(String(r.get_page(), token.Identifier_.name)))
                     return nullptr;
-                const auto ret = new (alignof(String), rp) String(rp, token.Identifier.name);
+                const auto ret = new (alignof(String), rp) String(rp, token.Identifier_.name);
                 empty();
                 return ret;
             };
@@ -650,7 +651,7 @@ String* Lexer::parse_attribute(Page* rp) {
     {
         case Token::Attribute:
             {
-                const auto ret = new (alignof(String), rp) String(token.Attribute.name);
+                const auto ret = new(alignof(String), rp) String(rp, token.Attribute_.name);
                 empty();
                 return ret;
             };
@@ -667,7 +668,7 @@ bool Lexer::parse_punctuation(char character) {
     {
         case Token::Punctuation:
             {
-                const auto ret = character == token.Punctuation.sign;
+                const auto ret = character == token.Punctuation_.sign;
                 if (ret) 
                     empty();
                 return ret;

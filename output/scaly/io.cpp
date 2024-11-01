@@ -7,7 +7,7 @@ void io::test_file() {
     auto file_not_found = _file_not_found_result._Ok;
     if (_file_not_found_result._tag == Success::Error) {
         const auto _file_not_found_Error = _file_not_found_result._Error;
-        switch (_file_not_found_Error._tag) {
+        switch (_file_not_found_Error.tag) {
             case FileError::NoSuchFileOrDirectory: {
                 const auto error = _file_not_found_Error._NoSuchFileOrDirectory;
                 {
@@ -15,7 +15,7 @@ void io::test_file() {
                     auto text = _text_result._Ok;
                     if (_text_result._tag == Success::Error) {
                         const auto _text_Error = _text_result._Error;
-                        switch (_text_Error._tag) {
+                        switch (_text_Error.tag) {
                             default: {
                                 exit(-2);
                                 break;
@@ -60,7 +60,7 @@ void io::test_directory() {
     auto dir_exists = _dir_exists_result._Ok;
     if (_dir_exists_result._tag == Success::Error) {
         const auto _dir_exists_Error = _dir_exists_result._Error;
-        switch (_dir_exists_Error._tag) {
+        switch (_dir_exists_Error.tag) {
             default: {
                 exit(-9);
                 break;
@@ -73,7 +73,7 @@ void io::test_directory() {
         const auto _void_result = Directory::create(r.get_page(), foo);
                 if (_void_result._tag == Success::Error) {
             const auto _void_Error = _void_result._Error;
-            switch (_void_Error._tag) {
+            switch (_void_Error.tag) {
                 default: {
                     exit(-11);
                     break;
@@ -85,7 +85,7 @@ void io::test_directory() {
     auto dir_exists_now = _dir_exists_now_result._Ok;
     if (_dir_exists_now_result._tag == Success::Error) {
         const auto _dir_exists_now_Error = _dir_exists_now_result._Error;
-        switch (_dir_exists_now_Error._tag) {
+        switch (_dir_exists_now_Error.tag) {
             default: {
                 exit(-12);
                 break;
@@ -98,7 +98,7 @@ void io::test_directory() {
         const auto _void_result = Directory::remove(r.get_page(), foo);
                 if (_void_result._tag == Success::Error) {
             const auto _void_Error = _void_result._Error;
-            switch (_void_Error._tag) {
+            switch (_void_Error.tag) {
                 default: {
                     exit(-14);
                     break;
@@ -110,7 +110,7 @@ void io::test_directory() {
     auto dir_exists_still = _dir_exists_still_result._Ok;
     if (_dir_exists_still_result._tag == Success::Error) {
         const auto _dir_exists_still_Error = _dir_exists_still_result._Error;
-        switch (_dir_exists_still_Error._tag) {
+        switch (_dir_exists_still_Error.tag) {
             default: {
                 exit(-15);
                 break;

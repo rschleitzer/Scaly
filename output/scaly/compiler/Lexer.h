@@ -94,7 +94,7 @@ struct LiteralToken {
         Boolean,
         FloatingPoint,
         Hex,
-} _tag;
+    } tag;
     union {
         StringToken _String;
         CharacterToken _Character;
@@ -106,13 +106,13 @@ struct LiteralToken {
     };
 };
 struct Token {
-    Token(EmptyToken _EmptyToken);
-    Token(InvalidToken _InvalidToken);
-    Token(IdentifierToken _IdentifierToken);
-    Token(AttributeToken _AttributeToken);
-    Token(PunctuationToken _PunctuationToken);
-    Token(LiteralToken _LiteralToken);
-    Token(ColonToken _ColonToken);
+    Token(EmptyToken);
+    Token(InvalidToken);
+    Token(IdentifierToken);
+    Token(AttributeToken);
+    Token(PunctuationToken);
+    Token(LiteralToken);
+    Token(ColonToken);
     enum {
         Empty,
         Invalid,
@@ -121,15 +121,15 @@ struct Token {
         Punctuation,
         Literal,
         Colon,
-} _tag;
+    } tag;
     union {
-        EmptyToken _Empty;
-        InvalidToken _Invalid;
-        IdentifierToken _Identifier;
-        AttributeToken _Attribute;
-        PunctuationToken _Punctuation;
-        LiteralToken _Literal;
-        ColonToken _Colon;
+        EmptyToken Empty_;
+        InvalidToken Invalid_;
+        IdentifierToken Identifier_;
+        AttributeToken Attribute_;
+        PunctuationToken Punctuation_;
+        LiteralToken Literal_;
+        ColonToken Colon_;
     };
 };
 struct Lexer : Object {

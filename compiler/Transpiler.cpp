@@ -207,7 +207,7 @@ struct Result {\n\
                 }
             }
         }
-        header_builder.append("} _tag;\n    union {\n");
+        header_builder.append("    } tag;\n    union {\n");
         {
             auto _variant_iterator = variants.get_iterator();
             while (auto _variant = _variant_iterator.next()) {
@@ -235,7 +235,7 @@ struct Result {\n\
                 build_type(cpp_builder, variant.type);
                 cpp_builder.append(" _");
                 build_type(cpp_builder, variant.type);
-                cpp_builder.append(") : _tag(");
+                cpp_builder.append(") : tag(");
                 cpp_builder.append(variant.name);
                 cpp_builder.append(") { _");
                 cpp_builder.append(variant.name);
@@ -1302,7 +1302,7 @@ struct Result {\n\
         builder.append(indented);
         builder.append("switch (_");
         builder.append(name);
-        builder.append("_Error._tag) {");
+        builder.append("_Error.tag) {");
         auto _catch__iterator = try_.catches.get_iterator();
         indent_builder.append("    ");
         String indented2 = indent_builder.to_string(_r.get_page());
