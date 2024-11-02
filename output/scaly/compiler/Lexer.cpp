@@ -85,6 +85,7 @@ void Lexer::advance() {
     };
     if (c == '+'||c == '-'||c == '*'||c == '/'||c == '='||c == '%'||c == '&'||c == '|'||c == '~'||c == '<'||c == '>') {
         token = scan_operator();
+        skip_whitespace(false);
         return;
     };
     if (c == '}'||c == ')'||c == ']'||c == '.'||c == '?'||c == '!'||c == '$'||c == '#'||c == '^') {
@@ -244,10 +245,12 @@ Token Lexer::scan_string_literal() {
                     length = length+1;
                     if (character == nullptr) 
                         return Token(InvalidToken());
+                    const auto c = *character;
+                    if (c != '\"'&&c != '\\'&&c != '\''&&c != 'n'&&c != 'r'&&c != 't'&&c != '0') 
+                        return Token(InvalidToken());
                 };
                 break;
-        }if (c != '\"'&&c != '\\'&&c != '\''&&c != 'n'&&c != 'r'&&c != 't'&&c != '0') 
-            return Token(InvalidToken());
+        };
     };
 }
 

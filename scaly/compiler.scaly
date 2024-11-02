@@ -21,9 +21,7 @@ define compiler {
 line
 comment;*nested comment*;
 comment end*;
-abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1
-@ttribute + -0815 /* <> \"a string\" \"\\\"\\n\\r\\t\" 
-'a string identifier' `a string fragment \\`\\n\\r\\t`"))
+abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute + -0815 /* <> \"a string\" \"\\\"\\n\\r\\t\" 'a string identifier' `a string fragment \\`\\n\\r\\t`"))
 
             choose lexer.token
                 when e: Token.Empty lexer.advance()
@@ -204,6 +202,117 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1
                     lexer.advance()
                 }
                 default exit(39)
+
+            choose lexer.token
+                when identifier: Token.Identifier
+                {
+                    if String(r.get_page(), "+").equals(identifier.name) = false
+                        exit(40)
+                    lexer.advance()
+                }
+                default exit(41)
+
+            choose lexer.token
+                when identifier: Token.Identifier
+                {
+                    if String(r.get_page(), "-").equals(identifier.name) = false
+                        exit(42)
+                    lexer.advance()
+                }
+                default exit(43)
+
+            choose lexer.token
+                when literal: Token.Literal
+                {
+                    choose literal
+                        when integer: LiteralToken.Integer
+                        {
+                            if String(r.get_page(), "0815").equals(integer.value) = false
+                                exit(44)
+                            lexer.advance()
+                        }
+                        default exit(45)
+
+                }
+                default: exit(8)
+
+            choose lexer.token
+                when identifier: Token.Identifier
+                {
+                    if String(r.get_page(), "/*").equals(identifier.name) = false
+                        exit(46)
+                    lexer.advance()
+                }
+                default exit(47)
+
+            choose lexer.token
+                when identifier: Token.Identifier
+                {
+                    if String(r.get_page(), "<>").equals(identifier.name) = false
+                        exit(48)
+                    lexer.advance()
+                }
+                default exit(49)
+
+            choose lexer.token
+                when literal: Token.Literal
+                {
+                    choose literal
+                        when string: LiteralToken.String
+                        {
+                            if String(r.get_page(), "a string").equals(string.value) = false
+                                exit(50)
+                            lexer.advance()
+                        }
+                        default exit(51)
+
+                }
+                default: exit(52)
+
+            choose lexer.token
+                when literal: Token.Literal
+                {
+                    choose literal
+                        when string: LiteralToken.String
+                        {
+                            if String(r.get_page(), "\\\"\\n\\r\\t").equals(string.value) = false
+                                exit(53)
+                            lexer.advance()
+                        }
+                        default exit(54)
+
+                }
+                default: exit(55)
+
+            choose lexer.token
+                when literal: Token.Literal
+                {
+                    choose literal
+                        when character: LiteralToken.Character
+                        {
+                            if String(r.get_page(), "a string identifier").equals(character.value) = false
+                                exit(56)
+                            lexer.advance()
+                        }
+                        default exit(57)
+
+                }
+                default: exit(58)
+
+            choose lexer.token
+                when literal: Token.Literal
+                {
+                    choose literal
+                        when fragment: LiteralToken.Fragment
+                        {
+                            if String(r.get_page(), "a string fragment \\`\\n\\r\\t").equals(fragment.value) = false
+                                exit(58)
+                            lexer.advance()
+                        }
+                        default exit(59)
+
+                }
+                default: exit(60)
         }
     }
 

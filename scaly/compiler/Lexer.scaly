@@ -82,6 +82,7 @@ define Lexer
         if c = '+' || c = '-' || c = '*' || c = '/' || c = '=' || c = '%' || c = '&' || c = '|' || c = '~' || c = '<' || c = '>'
         {
             set token: scan_operator()
+            skip_whitespace(false)
             return
         }
 
@@ -254,10 +255,10 @@ define Lexer
                     set length: length + 1
                     if character = null
                         return Token(InvalidToken())
+                    let c *character
+                    if c <> '\"' && c <> '\\' && c <> '\'' && c <> 'n' && c <> 'r' && c <> 't' && c <> '0'
+                        return Token(InvalidToken())                            
                 }
-
-            if c <> '\"' && c <> '\\' && c <> '\'' && c <> 'n' && c <> 'r' && c <> 't' && c <> '0'
-                return Token(InvalidToken())                            
         }
     }
 
