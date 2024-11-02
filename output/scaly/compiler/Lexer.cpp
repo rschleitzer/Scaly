@@ -688,7 +688,7 @@ bool Lexer::parse_keyword(String fixed_string) {
             }
             default:
                 {
-                };
+            };
         }
     };
     {
@@ -726,7 +726,7 @@ String* Lexer::parse_identifier(Page* rp, HashSet<String> keywords) {
             }
             default:
                 {
-                };
+            };
         }
     };
     {
@@ -764,7 +764,7 @@ String* Lexer::parse_attribute(Page* rp) {
             }
             default:
                 {
-                };
+            };
         }
     };
     {
@@ -800,7 +800,7 @@ bool Lexer::parse_punctuation(char character) {
             }
             default:
                 {
-                };
+            };
         }
     };
     {
@@ -837,7 +837,7 @@ bool Lexer::parse_colon() {
             }
             default:
                 {
-                };
+            };
         }
     };
     {

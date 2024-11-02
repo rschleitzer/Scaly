@@ -46,11 +46,16 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1
                         {
                             if String(r.get_page(), "42").equals(integer.value) = false
                                 exit(6)
+                                lexer.advance()
                         }
                         default exit(7)
 
                 }
                 default: exit(8)
+
+            choose lexer.token
+                when c: Token.Colon lexer.advance()
+                default exit(9)
         }
     }
 
