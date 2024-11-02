@@ -886,6 +886,19 @@ struct Result {\n\
         return nullptr;
     }
 
+    void build_string(StringBuilder& builder, String string) {
+        builder.append('\"');
+        auto _string_iterator = string.get_iterator();
+        while (auto _c = _string_iterator.next())
+        {
+            auto c = *_c;
+            if (c == '\n')
+                builder.append("\\n\\");
+            builder.append(c);
+        }
+        builder.append('\"');
+    }
+
     TranspilerError* build_constant(Page* _ep, StringBuilder& builder, Constant& constant) {
         Region _r;
         switch (constant._tag) {
@@ -921,10 +934,7 @@ struct Result {\n\
                 break;
             }
             case Constant::String: {
-                auto string = constant._String;
-                builder.append('\"');
-                builder.append(string);
-                builder.append('\"');
+                build_string(builder, constant._String);
                 break;
             }
             case Constant::Character: {
