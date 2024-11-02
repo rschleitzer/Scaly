@@ -272,8 +272,8 @@ struct Try : Object {
     Span span;
     Binding binding;
     Vector<Catch> catches;
-    Drop* drop_;
-    Try(Span span, Binding condition, Vector<Catch> catches, Drop* drop) : span(span), binding(condition), catches(catches), drop_(drop) {}
+    Statement* alternative;
+    Try(Span span, Binding condition, Vector<Catch> catches, Statement* alternative) : span(span), binding(condition), catches(catches), alternative(alternative) {}
 };
 
 struct SizeOf : Object {

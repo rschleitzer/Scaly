@@ -430,7 +430,7 @@
     <content link = Condition                               property = condition
     <content colon
     <content link = Catch                 multiple optional property = catches
-    <content link = Drop                           optional property = dropper
+    <content link = Default                        optional property = dropper
 
 <syntax id = Condition                             abstract
     <content link = Operation
@@ -442,11 +442,6 @@
     <content colon
     <content link = Name                                    property = error
     <content colon                                 optional
-    <content link = Action                                  property = action
-    <content colon                                 optional
-
-<syntax id = Drop
-    <content link = drop
     <content link = Action                                  property = action
     <content colon                                 optional
 
@@ -615,7 +610,6 @@
 <keyword id = default
 <keyword id = deinit
 <keyword id = delegate
-<keyword id = drop
 <keyword id = else
 <keyword id = extends
 <keyword id = extern

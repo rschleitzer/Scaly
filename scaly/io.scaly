@@ -10,11 +10,11 @@ define io {
         try let file_not_found File->read_to_string(r.get_page(), r.get_page(), String(r.get_page(), "foo"))
             catch error: FileError.NoSuchFileOrDirectory {
                 try let text File->read_to_string(r.get_page(), r.get_page(), String(r.get_page(), "bar"))
-                    drop exit(-2)
+                    default exit(-2)
                 if text.equals(String(r.get_page(), "baz")) = false
                     exit(-3)
             }
-            drop exit(-4)
+            default exit(-4)
     }
 
     function test_path() {
@@ -44,25 +44,25 @@ define io {
         let foo String(r.get_page(), "foo")
 
         try let dir_exists Directory->exists(r.get_page(), foo)
-            drop exit(-9)
+            default exit(-9)
 
         if dir_exists
             exit(-10)
 
         try Directory->create(r.get_page(), foo)
-            drop exit(-11)
+            default exit(-11)
 
         try let dir_exists_now Directory->exists(r.get_page(), foo)
-            drop exit(-12)
+            default exit(-12)
 
         if dir_exists_now = false
             exit(-13)
         
         try Directory->remove(r.get_page(), foo)
-            drop exit(-14)
+            default exit(-14)
 
         try let dir_exists_still Directory->exists(r.get_page(), foo)
-            drop exit(-15)
+            default exit(-15)
 
         if dir_exists_still
             exit(-16)

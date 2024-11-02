@@ -497,15 +497,6 @@ Result<Catch, ModelError> handle_catch(Page* _rp, Page* _ep, CatchSyntax& catch_
     return Result<Catch, ModelError> { ._tag = Result<Catch, ModelError>::Ok, ._Ok = Catch(Span(catch_.start, catch_.end), catch_.name, Vector<String>(_rp, name_builder), action) };
 }
 
-Result<Drop*, ModelError> handle_drop(Page* _rp, Page* _ep, DropSyntax& drop_, String file) {
-    Region _r;
-    auto _action_result =  handle_action(_rp, _ep, drop_.action, file);
-    if (_action_result._tag == Result<Operand, ModelError>::Error)
-        return Result<Drop*, ModelError> { ._tag = Result<Drop*, ModelError>::Error, ._Error = _action_result._Error };
-    auto handler = _action_result._Ok;
-    return Result<Drop*, ModelError> { ._tag = Result<Drop*, ModelError>::Ok, ._Ok = new(alignof(Drop), _rp) Drop(Span(drop_.start, drop_.end), handler) };
-}
-
 Result<Constant, ModelError> handle_literal(Page* _rp, Page* _ep, LiteralSyntax& literal, String file) {
     Region _r;
     switch (literal.literal._tag) {
@@ -1092,13 +1083,13 @@ Result<Try, ModelError> handle_try(Page* _rp, Page* _ep, TrySyntax& try_, String
             catches_builder.add(catch_);
         }
     }
-    Drop* drop_ = nullptr;
+    Statement* drop_ = nullptr;
     if (try_.dropper != nullptr) {
         auto drop_syntax = *try_.dropper;
-        auto _drop_result = handle_drop(_rp, _ep, drop_syntax, file);
+        auto _drop_result = handle_command(_rp, _ep, drop_syntax.alternative, file);
         if (_drop_result._tag == Result<Drop, ModelError>::Error)
             return Result<Try, ModelError> { ._tag = Result<Try, ModelError>::Error, ._Error = _drop_result._Error };
-        drop_ = _drop_result._Ok;
+        drop_ = new(alignof(Statement), _rp) Statement(_drop_result._Ok);
     }
     return Result<Try, ModelError> { ._tag = Result<Try, ModelError>::Ok, ._Ok = Try(Span(try_.start, try_.end), condition, Vector<Catch>(_rp, catches_builder), drop_) };
 }
