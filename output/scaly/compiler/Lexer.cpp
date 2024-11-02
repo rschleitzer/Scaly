@@ -83,25 +83,73 @@ void Lexer::advance() {
         skip_whitespace(false);
         return;
     };
-    if (c == '+'||c == '-'||c == '*'||c == '/'||c == '='||c == '%'||c == '&'||c == '|'||c == '~'||c == '<'||c == '>') {
-        token = scan_operator();
-        skip_whitespace(false);
-        return;
-    };
-    if (c == '}'||c == ')'||c == ']'||c == '.'||c == '?'||c == '!'||c == '$'||c == '#'||c == '^') {
-        token = Token(PunctuationToken(*character));
-        read_character();
-        skip_whitespace(false);
-        return;
-    };
-    if (c == '{'||c == '('||c == '['||c == ',') {
-        token = Token(PunctuationToken(*character));
-        read_character();
-        skip_whitespace(true);
-        return;
-    };
     switch (c)
     {
+        case '+':
+            
+        case '-':
+            
+        case '*':
+            
+        case '/':
+            
+        case '=':
+            
+        case '%':
+            
+        case '&':
+            
+        case '|':
+            
+        case '~':
+            
+        case '<':
+            
+        case '>':
+            {
+                token = scan_operator();
+                skip_whitespace(false);
+                return;
+            };
+            break;
+        case '}':
+            
+        case ')':
+            
+        case ']':
+            
+        case '.':
+            
+        case '?':
+            
+        case '!':
+            
+        case '$':
+            
+        case '#':
+            
+        case '^':
+            {
+                token = Token(PunctuationToken(*character));
+                read_character();
+                skip_whitespace(false);
+                return;
+            };
+            break;
+        case '{':
+            
+        case '(':
+            
+        case '[':
+            
+        case ',':
+            {
+                token = Token(PunctuationToken(*character));
+                read_character();
+                skip_whitespace(true);
+                return;
+            };
+            break;
         case '\n':
             token = scan_line_feed();
             break;

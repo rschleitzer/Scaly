@@ -79,30 +79,30 @@ define Lexer
             return
         }
 
-        if c = '+' || c = '-' || c = '*' || c = '/' || c = '=' || c = '%' || c = '&' || c = '|' || c = '~' || c = '<' || c = '>'
-        {
-            set token: scan_operator()
-            skip_whitespace(false)
-            return
-        }
-
-        if c = '}' || c = ')' || c = ']' || c = '.' || c = '?' || c = '!' || c = '$' || c = '#' || c = '^'
-        {
-            set token: Token(PunctuationToken(*character))
-            read_character()
-            skip_whitespace(false)
-            return
-        }
-
-        if c = '{' || c = '(' || c = '[' || c = ','
-        {
-            set token: Token(PunctuationToken(*character))
-            read_character()
-            skip_whitespace(true)
-            return
-        }
-
         match c
+            case '+' case '-' case '*' case '/' case '=' case '%' case '&' case '|' case '~' case '<' case '>'
+            {
+                set token: scan_operator()
+                skip_whitespace(false)
+                return
+            }
+
+            case '}' case ')' case ']' case '.' case '?' case '!' case '$' case '#' case '^'
+            {
+                set token: Token(PunctuationToken(*character))
+                read_character()
+                skip_whitespace(false)
+                return
+            }
+
+            case '{' case '(' case '[' case ','
+            {
+                set token: Token(PunctuationToken(*character))
+                read_character()
+                skip_whitespace(true)
+                return
+            }
+
             case '\n'
                 set token: scan_line_feed()
 
