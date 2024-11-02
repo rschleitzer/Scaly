@@ -592,7 +592,11 @@ define Lexer
                                 default
                                     match *character
                                         case '*'
+                                        {
+                                            read_character()
                                             handle_multi_line_comment()
+                                            continue
+                                        }
                                         default
                                             continue
                         }

@@ -7,20 +7,50 @@ define compiler {
             var lexer Lexer(String(r.get_page(), ""))
             choose lexer.token
                 when e: Token.Empty lexer.advance()
-                default exit(-1)
+                default exit(1)
             choose lexer.token
                 when e: Token.Empty {}
-                default exit(-2)                
+                default exit(2)                
         }
         {
             var r Region()
 
-            var lexer Lexer(String(r.get_page(), " \t\r\n;single line comment
-;*multi\nline\ncomment;*nested comment*;
+            var lexer Lexer(String(r.get_page(), " \t\r
+;single line comment
+;*multi
+line
+comment;*nested comment*;
 comment end*;
 abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1
 @ttribute + -0815 /* <> \"a string\" \"\\\"\\n\\r\\t\" 
 'a string identifier' `a string fragment \\`\\n\\r\\t`"))
+
+            choose lexer.token
+                when e: Token.Empty lexer.advance()
+                default exit(3)
+
+            choose lexer.token
+                when identifier: Token.Identifier
+                {
+                    if String(r.get_page(), "abc_AZ0815_7").equals(identifier.name) = false
+                        exit(4)
+                    lexer.advance()
+                }
+                default exit(5)
+
+            choose lexer.token
+                when literal: Token.Literal
+                {
+                    choose literal
+                        when integer: LiteralToken.Integer
+                        {
+                            if String(r.get_page(), "42").equals(integer.value) = false
+                                exit(6)
+                        }
+                        default exit(7)
+
+                }
+                default: exit(8)
         }
     }
 
