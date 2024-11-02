@@ -379,8 +379,7 @@
     <content link = case
     <content link = Operand               multiple          property = condition
     <content colon
-    <content link = Command                                 property = consequent
-    <content colon                                 optional
+    <content link = Statement                               property = consequent
 
 <syntax id = Default
     <content link = default

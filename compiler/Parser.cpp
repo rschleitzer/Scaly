@@ -553,11 +553,11 @@ struct DefaultSyntax : Object {
 };
 
 struct CaseSyntax : Object {
-    CaseSyntax(size_t start, size_t end, Vector<OperandSyntax>* condition, CommandSyntax consequent) : start(start), end(end), condition(condition), consequent(consequent) {}
+    CaseSyntax(size_t start, size_t end, Vector<OperandSyntax>* condition, StatementSyntax consequent) : start(start), end(end), condition(condition), consequent(consequent) {}
     size_t start;
     size_t end;
     Vector<OperandSyntax>* condition;
-    CommandSyntax consequent;
+    StatementSyntax consequent;
 };
 
 struct MatchSyntax : Object {
@@ -5001,23 +5001,18 @@ struct Parser : Object {
             return Result<CaseSyntax, ParserError> { ._tag = Result<CaseSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_colon_3, lexer.position, String(_ep, "a colon or a line feed"))) };        }
 
         auto consequent_start = this->lexer.position;
-        auto consequent_result = this->parse_command(_rp, _ep);
-        if (consequent_result._tag == Result<CommandSyntax, ParserError>::Error)
+        auto consequent_result = this->parse_statement(_rp, _ep);
+        if (consequent_result._tag == Result<StatementSyntax, ParserError>::Error)
         {
             switch (consequent_result._Error._tag) {
                 case ParserError::DifferentSyntax:
-                    return Result<CaseSyntax, ParserError> { ._tag = Result<CaseSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(consequent_start, lexer.position, String(_ep, "a valid Command syntax"))) };
+                    return Result<CaseSyntax, ParserError> { ._tag = Result<CaseSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(consequent_start, lexer.position, String(_ep, "a valid Statement syntax"))) };
                 case ParserError::InvalidSyntax:
                     return Result<CaseSyntax, ParserError> { ._tag = Result<CaseSyntax, ParserError>::Error, ._Error = consequent_result._Error };
             }
         }
 
         auto consequent = consequent_result._Ok;
-
-        auto start_colon_5 = this->lexer.previous_position;
-        auto success_colon_5 = this->lexer.parse_colon(_rp);
-        if (!success_colon_5) {
-        }
 
         auto end = this->lexer.position;
 

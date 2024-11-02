@@ -920,7 +920,7 @@ Result<Match, ModelError> handle_match(Page* _rp, Page* _ep, MatchSyntax& match_
             if (condition_result._tag == Result<Operand, ModelError>::Error)
                 return Result<Match, ModelError> { ._tag = Result<Match, ModelError>::Error, ._Error = condition_result._Error };
             auto condition = condition_result._Ok;
-            auto _consequent_result = handle_command(_rp, _ep, case_->consequent, file);
+            auto _consequent_result = handle_statement(_rp, _ep, case_->consequent, file);
             if (_consequent_result._tag == Result<Action, ModelError>::Error)
                 return Result<Match, ModelError> { ._tag = Result<Match, ModelError>::Error, ._Error = _consequent_result._Error };
             auto consequent = Case(Span(case_->start, case_->end), condition, _consequent_result._Ok);
