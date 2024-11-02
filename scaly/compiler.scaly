@@ -2,7 +2,26 @@ define compiler {
     module Lexer
 
     function test_lexer() {
-        
+        {
+            var r Region()
+            var lexer Lexer(String(r.get_page(), ""))
+            choose lexer.token
+                when e: Token.Empty lexer.advance()
+                default exit(-1)
+            choose lexer.token
+                when e: Token.Empty {}
+                default exit(-2)                
+        }
+        {
+            var r Region()
+
+            var lexer Lexer(String(r.get_page(), " \t\r\n;single line comment
+;*multi\nline\ncomment;*nested comment*;
+comment end*;
+abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1
+@ttribute + -0815 /* <> \"a string\" \"\\\"\\n\\r\\t\" 
+'a string identifier' `a string fragment \\`\\n\\r\\t`"))
+        }
     }
 
     function test () {

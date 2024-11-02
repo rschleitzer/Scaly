@@ -6,9 +6,12 @@ define StringIterator
 {
 
 init(string: String) {
-    let buffer string.get_buffer()
-    set current: buffer
-    set last: buffer + string.get_length()
+    if string.get_length() > 0
+    {
+        let buffer string.get_buffer()
+        set current: buffer
+        set last: buffer + string.get_length()
+    }
 }
 
 function next(this: StringIterator) returns pointer[char]$ {

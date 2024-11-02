@@ -5,9 +5,11 @@ namespace containers {
 StringIterator::StringIterator(char* current, char* last) : current(current), last(last) {}
 
 StringIterator::StringIterator(String string) {
-    const auto buffer = string.get_buffer();
-    current = buffer;
-    last = buffer+string.get_length();
+    if (string.get_length()>0) {
+        const auto buffer = string.get_buffer();
+        current = buffer;
+        last = buffer+string.get_length();
+    };
 }
 
 char* StringIterator::next() {
