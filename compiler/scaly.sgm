@@ -416,31 +416,22 @@
     <content link = When                  multiple optional property = cases
     <content link = Default                        optional property = alternative
 
-<syntax id = When                         multiple
-    <content link = when
-    <content identifier                                     property = name
-    <content colon
-    <content link = Name                                    property = variant
-    <content colon                                 optional
-    <content link = Action                                  property = action
-    <content colon                                 optional
-
 <syntax id = Try
     <content link = try
     <content link = Condition                               property = condition
     <content colon
-    <content link = Catch                 multiple optional property = catches
+    <content link = When                  multiple optional property = cases
     <content link = Default                        optional property = dropper
 
 <syntax id = Condition                             abstract
     <content link = Operation
     <content link = Let
 
-<syntax id = Catch                        multiple
-    <content link = catch
+<syntax id = When                         multiple
+    <content link = when
     <content identifier                                     property = name
     <content colon
-    <content link = Name                                    property = error
+    <content link = Name                                    property = variant
     <content colon                                 optional
     <content link = Action                                  property = action
     <content colon                                 optional
@@ -602,7 +593,6 @@
     <content link = exclamation
 
 <keyword id = break
-<keyword id = catch
 <keyword id = case
 <keyword id = choose
 <keyword id = continue

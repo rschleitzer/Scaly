@@ -480,23 +480,6 @@ Result<Vector<Operand>, ModelError> handle_operation(Page* _rp, Page* _ep, Opera
 
 Result<Action, ModelError> handle_action(Page* _rp, Page* _ep, ActionSyntax& action, String file);
 
-Result<Catch, ModelError> handle_catch(Page* _rp, Page* _ep, CatchSyntax& catch_, String file) {
-    Region _r;
-    List<String>& name_builder = *new(alignof(List<String>), _r.get_page()) List<String>();
-    name_builder.add(catch_.error.name);
-    if (catch_.error.extensions != nullptr) {
-        auto _name_iterator = catch_.error.extensions->get_iterator();
-        while(auto _name = _name_iterator.next()) {
-            name_builder.add(_name->name);
-        }
-    }
-    auto _action_result =  handle_action(_rp, _ep, catch_.action, file);
-    if (_action_result._tag == Result<Operand, ModelError>::Error)
-        return Result<Catch, ModelError> { ._tag = Result<Catch, ModelError>::Error, ._Error = _action_result._Error };
-    auto action = _action_result._Ok;
-    return Result<Catch, ModelError> { ._tag = Result<Catch, ModelError>::Ok, ._Ok = Catch(Span(catch_.start, catch_.end), catch_.name, Vector<String>(_rp, name_builder), action) };
-}
-
 Result<Constant, ModelError> handle_literal(Page* _rp, Page* _ep, LiteralSyntax& literal, String file) {
     Region _r;
     switch (literal.literal._tag) {
@@ -988,7 +971,7 @@ Result<Choose, ModelError> handle_choose(Page* _rp, Page* _ep, ChooseSyntax& cho
         while (auto _case_syntax = _cases_iterator.next()) {
             auto case_syntax = *_case_syntax;
             auto _case_result = handle_when(_rp, _ep, case_syntax, file);
-            if (_case_result._tag == Result<Catch, ModelError>::Error)
+            if (_case_result._tag == Result<Choose, ModelError>::Error)
                 return Result<Choose, ModelError> { ._tag = Result<Choose, ModelError>::Error, ._Error = _case_result._Error };
             auto case_ = _case_result._Ok;
             cases_builder.add(case_);
@@ -1070,14 +1053,14 @@ Result<Try, ModelError> handle_try(Page* _rp, Page* _ep, TrySyntax& try_, String
     if (_condition_result._tag == Result<Vector<Operand>, ModelError>::Error)
         return Result<Try, ModelError> { ._tag = Result<Try, ModelError>::Error, ._Error = _condition_result._Error };
     auto condition = _condition_result._Ok;
-    List<Catch>& catches_builder = *new(alignof(List<Catch>), _r.get_page()) List<Catch>();
-    if (try_.catches != nullptr) {
-        auto catch_syntaxes = try_.catches;
+    List<When>& catches_builder = *new(alignof(List<When>), _r.get_page()) List<When>();
+    if (try_.cases != nullptr) {
+        auto catch_syntaxes = try_.cases;
         auto _catches_iterator = catch_syntaxes->get_iterator();
         while (auto _catch_syntax = _catches_iterator.next()) {
             auto catch_syntax = *_catch_syntax;
-            auto _catch_result = handle_catch(_rp, _ep, catch_syntax, file);
-            if (_catch_result._tag == Result<Catch, ModelError>::Error)
+            auto _catch_result = handle_when(_rp, _ep, catch_syntax, file);
+            if (_catch_result._tag == Result<When, ModelError>::Error)
                 return Result<Try, ModelError> { ._tag = Result<Try, ModelError>::Error, ._Error = _catch_result._Error };
             auto catch_ = _catch_result._Ok;
             catches_builder.add(catch_);
@@ -1091,7 +1074,7 @@ Result<Try, ModelError> handle_try(Page* _rp, Page* _ep, TrySyntax& try_, String
             return Result<Try, ModelError> { ._tag = Result<Try, ModelError>::Error, ._Error = _drop_result._Error };
         drop_ = new(alignof(Statement), _rp) Statement(_drop_result._Ok);
     }
-    return Result<Try, ModelError> { ._tag = Result<Try, ModelError>::Ok, ._Ok = Try(Span(try_.start, try_.end), condition, Vector<Catch>(_rp, catches_builder), drop_) };
+    return Result<Try, ModelError> { ._tag = Result<Try, ModelError>::Ok, ._Ok = Try(Span(try_.start, try_.end), condition, Vector<When>(_rp, catches_builder), drop_) };
 }
 
 Result<SizeOf, ModelError> handle_size_of(Page* _rp, Page* _ep, SizeOfSyntax& size_of, String file) {

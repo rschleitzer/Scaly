@@ -1405,18 +1405,18 @@ struct Result {\n\
         builder.append("switch (_");
         builder.append(name);
         builder.append("_Error._tag) {");
-        auto _catch__iterator = try_.catches.get_iterator();
+        auto _case__iterator = try_.cases.get_iterator();
         indent_builder.append("    ");
         String indented2 = indent_builder.to_string(_r.get_page());
         indent_builder.append("    ");
         String indented3 = indent_builder.to_string(_r.get_page());
-        while (auto _catch_ = _catch__iterator.next()) {
-            auto catch_ = *_catch_;
+        while (auto _case_ = _case__iterator.next()) {
+            auto case_ = *_case_;
             builder.append('\n');
             builder.append(indented);
             builder.append("    case ");
             bool first = true;
-            auto _error_iterator = catch_.error.get_iterator();
+            auto _error_iterator = case_.variant.get_iterator();
             while (auto _error = _error_iterator.next()) {
                 if(first)
                     first = false;
@@ -1429,11 +1429,11 @@ struct Result {\n\
             builder.append("const auto error = _");
             builder.append(name);
             builder.append("_Error._");
-            builder.append(*catch_.error.get(1));
+            builder.append(*case_.variant.get(1));
             builder.append(";\n");
             builder.append(indented3);
             {
-                auto _result = build_action(_ep, builder, catch_.action, returns_, throws_, indented3);
+                auto _result = build_action(_ep, builder, case_.action, returns_, throws_, indented3);
                 if (_result != nullptr)
                     return _result;
             }

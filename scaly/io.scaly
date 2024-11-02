@@ -8,7 +8,7 @@ define io {
     function test_file() {
         var r Region()
         try let file_not_found File->read_to_string(r.get_page(), r.get_page(), String(r.get_page(), "foo"))
-            catch error: FileError.NoSuchFileOrDirectory {
+            when error: FileError.NoSuchFileOrDirectory {
                 try let text File->read_to_string(r.get_page(), r.get_page(), String(r.get_page(), "bar"))
                     default exit(-2)
                 if text.equals(String(r.get_page(), "baz")) = false

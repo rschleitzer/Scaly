@@ -254,14 +254,6 @@ struct While : Object {
     While(Span span, Binding condition, Action action) : span(span), condition(condition), action(action) {}
 };
 
-struct Catch : Object {
-    Span span;
-    String name;
-    Vector<String> error;
-    Action action;
-    Catch(Span span, String name, Vector<String> error, Action action) : span(span), name(name), error(error), action(action) {}
-};
-
 struct Drop : Object {
     Span span;
     Action action;
@@ -271,9 +263,9 @@ struct Drop : Object {
 struct Try : Object {
     Span span;
     Binding binding;
-    Vector<Catch> catches;
+    Vector<When> cases;
     Statement* alternative;
-    Try(Span span, Binding condition, Vector<Catch> catches, Statement* alternative) : span(span), binding(condition), catches(catches), alternative(alternative) {}
+    Try(Span span, Binding condition, Vector<When> catches, Statement* alternative) : span(span), binding(condition), cases(catches), alternative(alternative) {}
 };
 
 struct SizeOf : Object {
