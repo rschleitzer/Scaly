@@ -46,7 +46,7 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1
                         {
                             if String(r.get_page(), "42").equals(integer.value) = false
                                 exit(6)
-                                lexer.advance()
+                            lexer.advance()
                         }
                         default exit(7)
 
@@ -56,6 +56,154 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1
             choose lexer.token
                 when c: Token.Colon lexer.advance()
                 default exit(9)
+
+            choose lexer.token
+                when c: Token.Colon lexer.advance()
+                default exit(10)
+
+            choose lexer.token
+                when literal: Token.Literal
+                {
+                    choose literal
+                        when integer: LiteralToken.Integer
+                        {
+                            if String(r.get_page(), "0").equals(integer.value) = false
+                                exit(11)
+                            lexer.advance()
+                        }
+                        default exit(12)
+
+                }
+                default: exit(13)
+
+            choose lexer.token
+                when literal: Token.Literal
+                {
+                    choose literal
+                        when integer: LiteralToken.Integer
+                        {
+                            if String(r.get_page(), "012").equals(integer.value) = false
+                                exit(14)
+                            lexer.advance()
+                        }
+                        default exit(15)
+
+                }
+                default: exit(16)
+
+            choose lexer.token
+                when literal: Token.Literal
+                {
+                    choose literal
+                        when fp: LiteralToken.FloatingPoint
+                        {
+                            if String(r.get_page(), "0.34").equals(fp.value) = false
+                                exit(17)
+                            lexer.advance()
+                        }
+                        default exit(18)
+
+                }
+                default exit(19)
+
+            choose lexer.token
+                when literal: Token.Literal
+                {
+                    choose literal
+                        when fp: LiteralToken.FloatingPoint
+                        {
+                            if String(r.get_page(), "0.56E12").equals(fp.value) = false
+                                exit(20)
+                            lexer.advance()
+                        }
+                        default exit(21)
+
+                }
+                default exit(22)
+
+            choose lexer.token
+                when literal: Token.Literal
+                {
+                    choose literal
+                        when fp: LiteralToken.FloatingPoint
+                        {
+                            if String(r.get_page(), "0.78e13").equals(fp.value) = false
+                                exit(23)
+                            lexer.advance()
+                        }
+                        default exit(24)
+
+                }
+                default exit(25)
+
+            choose lexer.token
+                when literal: Token.Literal
+                {
+                    choose literal
+                        when hex: LiteralToken.Hex
+                        {
+                            if String(r.get_page(), "0xaB").equals(hex.value) = false
+                                exit(26)
+                            lexer.advance()
+                        }
+                        default exit(27)
+
+                }
+                default exit(28)
+
+            choose lexer.token
+                when literal: Token.Literal
+                {
+                    choose literal
+                        when hex: LiteralToken.Hex
+                        {
+                            if String(r.get_page(), "0xCdEf02").equals(hex.value) = false
+                                exit(29)
+                            lexer.advance()
+                        }
+                        default exit(30)
+
+                }
+                default exit(31)
+
+            choose lexer.token
+                when literal: Token.Literal
+                {
+                    choose literal
+                        when b: LiteralToken.Boolean
+                        {
+                            if b.value
+                                exit(32)
+                            lexer.advance()
+                        }
+                        default exit(33)
+
+                }
+                default exit(34)
+
+            choose lexer.token
+                when literal: Token.Literal
+                {
+                    choose literal
+                        when b: LiteralToken.Boolean
+                        {
+                            if b.value = false
+                                exit(35)
+                            lexer.advance()
+                        }
+                        default exit(36)
+
+                }
+                default exit(37)
+
+            choose lexer.token
+                when a: Token.Attribute
+                {
+                    if String(r.get_page(), "ttribute").equals(a.name) = false
+                        exit(38)
+                    lexer.advance()
+                }
+                default exit(39)
         }
     }
 
