@@ -134,6 +134,7 @@ struct BlockSyntax;
 struct IfSyntax; 
 struct ElseSyntax; 
 struct MatchSyntax; 
+struct BranchSyntax; 
 struct CaseSyntax; 
 struct DefaultSyntax; 
 struct StatementSyntax; 
@@ -553,19 +554,26 @@ struct DefaultSyntax : Object {
 };
 
 struct CaseSyntax : Object {
-    CaseSyntax(size_t start, size_t end, Vector<OperandSyntax>* condition, StatementSyntax consequent) : start(start), end(end), condition(condition), consequent(consequent) {}
+    CaseSyntax(size_t start, size_t end, Vector<OperandSyntax>* condition) : start(start), end(end), condition(condition) {}
     size_t start;
     size_t end;
     Vector<OperandSyntax>* condition;
+};
+
+struct BranchSyntax : Object {
+    BranchSyntax(size_t start, size_t end, Vector<CaseSyntax>* cases, StatementSyntax consequent) : start(start), end(end), cases(cases), consequent(consequent) {}
+    size_t start;
+    size_t end;
+    Vector<CaseSyntax>* cases;
     StatementSyntax consequent;
 };
 
 struct MatchSyntax : Object {
-    MatchSyntax(size_t start, size_t end, Vector<OperandSyntax>* scrutinee, Vector<CaseSyntax>* cases, DefaultSyntax* alternative) : start(start), end(end), scrutinee(scrutinee), cases(cases), alternative(alternative) {}
+    MatchSyntax(size_t start, size_t end, Vector<OperandSyntax>* scrutinee, Vector<BranchSyntax>* branches, DefaultSyntax* alternative) : start(start), end(end), scrutinee(scrutinee), branches(branches), alternative(alternative) {}
     size_t start;
     size_t end;
     Vector<OperandSyntax>* scrutinee;
-    Vector<CaseSyntax>* cases;
+    Vector<BranchSyntax>* branches;
     DefaultSyntax* alternative;
 };
 
@@ -4912,19 +4920,19 @@ struct Parser : Object {
         if (!success_colon_3) {
             return Result<MatchSyntax, ParserError> { ._tag = Result<MatchSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_colon_3, lexer.position, String(_ep, "a colon or a line feed"))) };        }
 
-        auto cases_start = this->lexer.position;
-        auto cases_result = this->parse_case_list(_rp, _ep);
-        if (cases_result._tag == Result<Vector<CaseSyntax>, ParserError>::Error)
+        auto branches_start = this->lexer.position;
+        auto branches_result = this->parse_branch_list(_rp, _ep);
+        if (branches_result._tag == Result<Vector<BranchSyntax>, ParserError>::Error)
         {
-            switch (cases_result._Error._tag) {
+            switch (branches_result._Error._tag) {
                 case ParserError::DifferentSyntax:
-                    return Result<MatchSyntax, ParserError> { ._tag = Result<MatchSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(cases_start, lexer.position, String(_ep, "a valid Case syntax"))) };
+                    return Result<MatchSyntax, ParserError> { ._tag = Result<MatchSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(branches_start, lexer.position, String(_ep, "a valid Branch syntax"))) };
                 case ParserError::InvalidSyntax:
-                    return Result<MatchSyntax, ParserError> { ._tag = Result<MatchSyntax, ParserError>::Error, ._Error = cases_result._Error };
+                    return Result<MatchSyntax, ParserError> { ._tag = Result<MatchSyntax, ParserError>::Error, ._Error = branches_result._Error };
             }
         }
 
-        auto cases = cases_result._Ok;
+        auto branches = branches_result._Ok;
 
         auto alternative_start = this->lexer.position;
         auto alternative_result = this->parse_default(_rp, _ep);
@@ -4942,9 +4950,72 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = MatchSyntax(start, end, scrutinee, cases, alternative);
+        auto ret = MatchSyntax(start, end, scrutinee, branches, alternative);
 
         return Result<MatchSyntax, ParserError> { ._tag = Result<MatchSyntax, ParserError>::Ok, ._Ok = ret };
+    }
+
+    Result<Vector<BranchSyntax>*, ParserError> parse_branch_list(Page* _rp, Page* _ep) {
+        Region _r;
+        List<BranchSyntax>& list = *new(alignof(List<BranchSyntax>), _r.get_page()) List<BranchSyntax>();;
+        while(true) {
+            auto node_result = this->parse_branch(_rp, _ep);
+            if ((node_result._tag == Result<BranchSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
+                return Result<Vector<BranchSyntax>*, ParserError> { ._tag = Result<Vector<BranchSyntax>*, ParserError>::Error, ._Error = node_result._Error };
+            if (node_result._tag == Result<BranchSyntax, ParserError>::Ok) {
+                auto node = node_result._Ok;
+                list.add(node);
+            } else {
+                if ((list.count() == 0) && (node_result._tag == Result<BranchSyntax, ParserError>::Error) && (node_result._Error._tag == ParserError::DifferentSyntax))
+                    return Result<Vector<BranchSyntax>*, ParserError> { ._tag = Result<Vector<BranchSyntax>*, ParserError>::Error, ._Error = node_result._Error };
+                break;
+            }
+        }
+
+        if (list.count() == 0)
+            return Result<Vector<BranchSyntax>*, ParserError> { ._tag = Result<Vector<BranchSyntax>*, ParserError>::Ok, ._Ok = nullptr };
+        
+        return Result<Vector<BranchSyntax>*, ParserError> {
+            ._tag = Result<Vector<BranchSyntax>*, ParserError>::Ok,
+            ._Ok = new(alignof(Vector<BranchSyntax>), _rp) Vector<BranchSyntax>(_rp, list) };
+    }
+
+    Result<BranchSyntax, ParserError> parse_branch(Page* _rp, Page* _ep) {
+        auto start = this->lexer.previous_position;
+
+        auto cases_start = this->lexer.position;
+        auto cases_result = this->parse_case_list(_rp, _ep);
+        if (cases_result._tag == Result<Vector<CaseSyntax>, ParserError>::Error)
+        {
+            return Result<BranchSyntax, ParserError> { ._tag = Result<BranchSyntax, ParserError>::Error, ._Error = cases_result._Error };
+        }
+
+        auto cases = cases_result._Ok;
+
+        auto start_colon_2 = this->lexer.previous_position;
+        auto success_colon_2 = this->lexer.parse_colon(_rp);
+        if (!success_colon_2) {
+            return Result<BranchSyntax, ParserError> { ._tag = Result<BranchSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_colon_2, lexer.position, String(_ep, "a colon or a line feed"))) };        }
+
+        auto consequent_start = this->lexer.position;
+        auto consequent_result = this->parse_statement(_rp, _ep);
+        if (consequent_result._tag == Result<StatementSyntax, ParserError>::Error)
+        {
+            switch (consequent_result._Error._tag) {
+                case ParserError::DifferentSyntax:
+                    return Result<BranchSyntax, ParserError> { ._tag = Result<BranchSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(consequent_start, lexer.position, String(_ep, "a valid Statement syntax"))) };
+                case ParserError::InvalidSyntax:
+                    return Result<BranchSyntax, ParserError> { ._tag = Result<BranchSyntax, ParserError>::Error, ._Error = consequent_result._Error };
+            }
+        }
+
+        auto consequent = consequent_result._Ok;
+
+        auto end = this->lexer.position;
+
+        auto ret = BranchSyntax(start, end, cases, consequent);
+
+        return Result<BranchSyntax, ParserError> { ._tag = Result<BranchSyntax, ParserError>::Ok, ._Ok = ret };
     }
 
     Result<Vector<CaseSyntax>*, ParserError> parse_case_list(Page* _rp, Page* _ep) {
@@ -4995,28 +5066,9 @@ struct Parser : Object {
 
         auto condition = condition_result._Ok;
 
-        auto start_colon_3 = this->lexer.previous_position;
-        auto success_colon_3 = this->lexer.parse_colon(_rp);
-        if (!success_colon_3) {
-            return Result<CaseSyntax, ParserError> { ._tag = Result<CaseSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(start_colon_3, lexer.position, String(_ep, "a colon or a line feed"))) };        }
-
-        auto consequent_start = this->lexer.position;
-        auto consequent_result = this->parse_statement(_rp, _ep);
-        if (consequent_result._tag == Result<StatementSyntax, ParserError>::Error)
-        {
-            switch (consequent_result._Error._tag) {
-                case ParserError::DifferentSyntax:
-                    return Result<CaseSyntax, ParserError> { ._tag = Result<CaseSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(consequent_start, lexer.position, String(_ep, "a valid Statement syntax"))) };
-                case ParserError::InvalidSyntax:
-                    return Result<CaseSyntax, ParserError> { ._tag = Result<CaseSyntax, ParserError>::Error, ._Error = consequent_result._Error };
-            }
-        }
-
-        auto consequent = consequent_result._Ok;
-
         auto end = this->lexer.position;
 
-        auto ret = CaseSyntax(start, end, condition, consequent);
+        auto ret = CaseSyntax(start, end, condition);
 
         return Result<CaseSyntax, ParserError> { ._tag = Result<CaseSyntax, ParserError>::Ok, ._Ok = ret };
     }

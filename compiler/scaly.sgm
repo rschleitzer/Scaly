@@ -372,14 +372,17 @@
     <content link = match
     <content link = Operand               multiple          property = scrutinee
     <content colon
-    <content link = Case                  multiple          property = cases
+    <content link = Branch                multiple          property = branches
     <content link = Default                        optional property = alternative
+
+<syntax id = Branch                       multiple
+    <content link = Case                  multiple          property = cases
+    <content colon
+    <content link = Statement                               property = consequent
 
 <syntax id = Case                         multiple
     <content link = case
     <content link = Operand               multiple          property = condition
-    <content colon
-    <content link = Statement                               property = consequent
 
 <syntax id = Default
     <content link = default

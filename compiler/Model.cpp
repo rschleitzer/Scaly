@@ -211,16 +211,22 @@ struct If : Object {
 struct Case : Object {
     Span span;
     Vector<Operand> condition;
+    Case(Span span, Vector<Operand> condition) : span(span), condition(condition) {}
+};
+
+struct Branch : Object {
+    Span span;
+    Vector<Case> cases;
     Statement consequent;
-    Case(Span span, Vector<Operand> condition, Statement consequent) : span(span), condition(condition), consequent(consequent) {}
+    Branch(Span span, Vector<Case> cases, Statement consequent) : span(span), cases(cases), consequent(consequent) {}
 };
 
 struct Match : Object {
     Span span;
     Vector<Operand> condition;
-    Vector<Case> cases;
+    Vector<Branch> branches;
     Statement* alternative;
-    Match(Span span, Vector<Operand> condition, Vector<Case> cases, Statement* alternative) : span(span), condition(condition), cases(cases), alternative(alternative) {}
+    Match(Span span, Vector<Operand> condition, Vector<Branch> branches, Statement* alternative) : span(span), condition(condition), branches(branches), alternative(alternative) {}
 };
 
 struct When : Object {

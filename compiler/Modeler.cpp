@@ -912,19 +912,28 @@ Result<Match, ModelError> handle_match(Page* _rp, Page* _ep, MatchSyntax& match_
         return Result<Match, ModelError> { ._tag = Result<Match, ModelError>::Error, ._Error = condition_result._Error };
     auto condition = condition_result._Ok;
 
-    List<Case>& cases_builder = *new(alignof(List<Case>), _r.get_page()) List<Case>();
-    if (match_.cases != nullptr) {
-        auto case_iterator = match_.cases->get_iterator();
-        while (auto case_ = case_iterator.next()) {
-            auto condition_result =  handle_operands(_rp, _ep, case_->condition, file);
-            if (condition_result._tag == Result<Operand, ModelError>::Error)
-                return Result<Match, ModelError> { ._tag = Result<Match, ModelError>::Error, ._Error = condition_result._Error };
-            auto condition = condition_result._Ok;
-            auto _consequent_result = handle_statement(_rp, _ep, case_->consequent, file);
+    List<Branch>& branches_builder = *new(alignof(List<Branch>), _r.get_page()) List<Branch>();
+    if (match_.branches != nullptr) {
+        auto _branch_iterator = match_.branches->get_iterator();
+        while (auto _branch = _branch_iterator.next()) {
+            auto branch = *_branch;
+
+            List<Case>& cases_builder = *new(alignof(List<Case>), _r.get_page()) List<Case>();
+            auto _case_iterator = branch.cases->get_iterator();
+            while (auto _case = _case_iterator.next()) {
+                auto case_ = *_case;
+                auto condition_result =  handle_operands(_rp, _ep, case_.condition, file);
+                if (condition_result._tag == Result<Operand, ModelError>::Error)
+                    return Result<Match, ModelError> { ._tag = Result<Match, ModelError>::Error, ._Error = condition_result._Error };
+                auto condition =  Case(Span(case_.start, case_.end),  condition_result._Ok);
+                cases_builder.add(condition);
+            }
+
+            auto _consequent_result = handle_statement(_rp, _ep, branch.consequent, file);
             if (_consequent_result._tag == Result<Action, ModelError>::Error)
                 return Result<Match, ModelError> { ._tag = Result<Match, ModelError>::Error, ._Error = _consequent_result._Error };
-            auto consequent = Case(Span(case_->start, case_->end), condition, _consequent_result._Ok);
-            cases_builder.add(consequent);
+            auto consequent = Branch(Span(branch.start, branch.end), Vector<Case>(_rp, cases_builder), _consequent_result._Ok);
+            branches_builder.add(consequent);
         }
     }
 
@@ -935,7 +944,7 @@ Result<Match, ModelError> handle_match(Page* _rp, Page* _ep, MatchSyntax& match_
             return Result<Match, ModelError> { ._tag = Result<Match, ModelError>::Error, ._Error = _alternative_result._Error };
         alternative = new(alignof(Statement), _rp) Statement(_alternative_result._Ok);
     }
-    return Result<Match, ModelError> { ._tag = Result<Match, ModelError>::Ok, ._Ok = Match(Span(match_.start, match_.end), condition, Vector<Case>(_rp, cases_builder), alternative) };
+    return Result<Match, ModelError> { ._tag = Result<Match, ModelError>::Ok, ._Ok = Match(Span(match_.start, match_.end), condition, Vector<Branch>(_rp, branches_builder), alternative) };
 }
 
 Result<When, ModelError> handle_when(Page* _rp, Page* _ep, WhenSyntax& when_, String file) {

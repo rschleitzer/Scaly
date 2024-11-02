@@ -280,29 +280,17 @@ Token Lexer::scan_string_identifier() {
                     switch (*character)
                     {
                         case '\"':
-                            {
-                            };
-                            break;
+                            
                         case '\\':
-                            {
-                            };
-                            break;
+                            
                         case '\'':
-                            {
-                            };
-                            break;
+                            
                         case 'n':
-                            {
-                            };
-                            break;
+                            
                         case 'r':
-                            {
-                            };
-                            break;
+                            
                         case 't':
-                            {
-                            };
-                            break;
+                            
                         case '0':
                             {
                             };

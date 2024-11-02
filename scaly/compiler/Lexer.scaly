@@ -287,13 +287,7 @@ define Lexer
                         return Token(InvalidToken())
 
                     match *character
-                        case '\"':{}
-                        case '\\':{}
-                        case '\'':{}
-                        case 'n':{}
-                        case 'r':{}
-                        case 't':{}
-                        case '0':{}
+                        case '\"' case '\\' case '\'' case 'n' case 'r' case 't' case '0': {}
                         default
                             return Token(InvalidToken())                        
                 }
