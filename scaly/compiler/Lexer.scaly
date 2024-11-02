@@ -224,11 +224,11 @@ define Lexer
                 }
             }
 
-            let c *character
-            if c = '+' || c = '-' || c = '*' || c = '/' || c = '=' || c = '%' || c = '&' || c = '|' || c = '^' || c = '~' || c = '<' || c = '>'
-                continue
-            else
-                return Token(IdentifierToken(Vector<char>(start, length)))
+            match *character
+                case '+' case '-' case '*' case '/' case '=' case '%' case '&' case '|' case '^' case '~' case '<' case '>'
+                    continue
+                default
+                    return Token(IdentifierToken(Vector<char>(start, length)))
         }
     }
 
@@ -255,9 +255,9 @@ define Lexer
                     set length: length + 1
                     if character = null
                         return Token(InvalidToken())
-                    let c *character
-                    if c <> '\"' && c <> '\\' && c <> '\'' && c <> 'n' && c <> 'r' && c <> 't' && c <> '0'
-                        return Token(InvalidToken())                            
+                    match *character
+                        case '\"' case '\\' case '\'' case 'n' case 'r' case 't' case '0': {}
+                        default return Token(InvalidToken())                            
                 }
         }
     }
@@ -321,19 +321,7 @@ define Lexer
                         return Token(InvalidToken())
 
                     match *character
-                        case '`'
-                            break
-                        case '\\'
-                            break
-                        case '\''
-                            break
-                        case 'n'
-                            break
-                        case 'r'
-                            break
-                        case 't'
-                            break
-                        case '0'
+                        case '`' case '\\' case '\'' case 'n' case 'r' case 't' case '0'
                             break
                         default
                             return Token(InvalidToken())                            
