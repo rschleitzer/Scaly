@@ -1145,21 +1145,22 @@ struct Result {\n\
         String indented = indent_builder.to_string(_r.get_page());
         while (auto _branch = _branch_iterator.next()) {
             auto branch = *_branch;
+            builder.append('\n');
+            builder.append(indent);
+            builder.append("    ");
             auto _case__iterator = branch.cases.get_iterator();
             while (auto _case_ = _case__iterator.next()) {
                 auto case_ = *_case_;
-                builder.append('\n');
-                builder.append(indent);
-                builder.append("    case ");
+                builder.append("case ");
                 {
                     auto _result = build_operation(_ep, builder, case_.condition, returns_, throws_, indented);
                     if (_result != nullptr)
                         return _result;
                 }
-                builder.append(":\n");
-                builder.append(indented);
+                builder.append(": ");
             }
-
+            builder.append('\n');
+            builder.append(indented);
             {
                 auto _result = build_statement(_ep, builder, &branch.consequent, returns_, throws_, indented);
                 if (_result != nullptr)

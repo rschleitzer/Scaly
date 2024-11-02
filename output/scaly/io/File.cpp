@@ -8,7 +8,7 @@ Result<String, FileError> File::read_to_string(Page* rp, Page* ep, String path) 
     if (file == nullptr) {
         switch (errno)
         {
-            case ENOENT:
+            case ENOENT: 
                 return Result<String, FileError>(FileError(NoSuchFileOrDirectoryError(String(ep, path))));
                 break;
             default:
@@ -31,7 +31,7 @@ Result<Void, FileError> File::write_from_string(Page* ep, String path, String co
     if (file == nullptr) {
         switch (errno)
         {
-            case ENOENT:
+            case ENOENT: 
                 return Result<Void, FileError>(FileError(NoSuchFileOrDirectoryError(String(ep, path))));
                 break;
             default:

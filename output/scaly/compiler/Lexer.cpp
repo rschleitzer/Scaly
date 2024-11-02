@@ -85,50 +85,14 @@ void Lexer::advance() {
     };
     switch (c)
     {
-        case '+':
-            
-        case '-':
-            
-        case '*':
-            
-        case '/':
-            
-        case '=':
-            
-        case '%':
-            
-        case '&':
-            
-        case '|':
-            
-        case '~':
-            
-        case '<':
-            
-        case '>':
+        case '+': case '-': case '*': case '/': case '=': case '%': case '&': case '|': case '~': case '<': case '>': 
             {
                 token = scan_operator();
                 skip_whitespace(false);
                 return;
             };
             break;
-        case '}':
-            
-        case ')':
-            
-        case ']':
-            
-        case '.':
-            
-        case '?':
-            
-        case '!':
-            
-        case '$':
-            
-        case '#':
-            
-        case '^':
+        case '}': case ')': case ']': case '.': case '?': case '!': case '$': case '#': case '^': 
             {
                 token = Token(PunctuationToken(*character));
                 read_character();
@@ -136,13 +100,7 @@ void Lexer::advance() {
                 return;
             };
             break;
-        case '{':
-            
-        case '(':
-            
-        case '[':
-            
-        case ',':
+        case '{': case '(': case '[': case ',': 
             {
                 token = Token(PunctuationToken(*character));
                 read_character();
@@ -150,31 +108,31 @@ void Lexer::advance() {
                 return;
             };
             break;
-        case '\n':
+        case '\n': 
             token = scan_line_feed();
             break;
-        case ':':
+        case ':': 
             {
                 read_character();
                 token = Token(ColonToken());
             };
             break;
-        case '0':
+        case '0': 
             token = scan_numeric_literal();
             break;
-        case '@':
+        case '@': 
             {
                 read_character();
                 token = scan_attribute();
             };
             break;
-        case '\"':
+        case '\"': 
             token = scan_string_literal();
             break;
-        case '\'':
+        case '\'': 
             token = scan_string_identifier();
             break;
-        case '`':
+        case '`': 
             token = scan_fragment_literal();
             break;
         default:
@@ -265,29 +223,7 @@ Token Lexer::scan_operator() {
         };
         switch (*character)
         {
-            case '+':
-                
-            case '-':
-                
-            case '*':
-                
-            case '/':
-                
-            case '=':
-                
-            case '%':
-                
-            case '&':
-                
-            case '|':
-                
-            case '^':
-                
-            case '~':
-                
-            case '<':
-                
-            case '>':
+            case '+': case '-': case '*': case '/': case '=': case '%': case '&': case '|': case '^': case '~': case '<': case '>': 
                 continue;;
                 break;
             default:
@@ -307,13 +243,13 @@ Token Lexer::scan_string_literal() {
         const auto c = *character;
         switch (c)
         {
-            case '\"':
+            case '\"': 
                 {
                     read_character();
                     return Token(LiteralToken(StringToken(Vector<char>(start, length-1))));
                 };
                 break;
-            case '\\':
+            case '\\': 
                 {
                     read_character();
                     length = length+1;
@@ -321,19 +257,7 @@ Token Lexer::scan_string_literal() {
                         return Token(InvalidToken());
                     switch (*character)
                     {
-                        case '\"':
-                            
-                        case '\\':
-                            
-                        case '\'':
-                            
-                        case 'n':
-                            
-                        case 'r':
-                            
-                        case 't':
-                            
-                        case '0':
+                        case '\"': case '\\': case '\'': case 'n': case 'r': case 't': case '0': 
                             {
                             };
                             break;
@@ -357,13 +281,13 @@ Token Lexer::scan_string_identifier() {
         const auto c = *character;
         switch (c)
         {
-            case '\'':
+            case '\'': 
                 {
                     read_character();
                     return Token(LiteralToken(CharacterToken(Vector<char>(start, length-1))));
                 };
                 break;
-            case '\\':
+            case '\\': 
                 {
                     read_character();
                     length = length+1;
@@ -371,19 +295,7 @@ Token Lexer::scan_string_identifier() {
                         return Token(InvalidToken());
                     switch (*character)
                     {
-                        case '\"':
-                            
-                        case '\\':
-                            
-                        case '\'':
-                            
-                        case 'n':
-                            
-                        case 'r':
-                            
-                        case 't':
-                            
-                        case '0':
+                        case '\"': case '\\': case '\'': case 'n': case 'r': case 't': case '0': 
                             {
                             };
                             break;
@@ -408,13 +320,13 @@ Token Lexer::scan_fragment_literal() {
             return Token(InvalidToken());
         switch (*character)
         {
-            case '`':
+            case '`': 
                 {
                     read_character();
                     return Token(LiteralToken(FragmentToken(Vector<char>(start, length-1))));
                 };
                 break;
-            case '\\':
+            case '\\': 
                 {
                     read_character();
                     length = length+1;
@@ -422,19 +334,7 @@ Token Lexer::scan_fragment_literal() {
                         return Token(InvalidToken());
                     switch (*character)
                     {
-                        case '`':
-                            
-                        case '\\':
-                            
-                        case '\'':
-                            
-                        case 'n':
-                            
-                        case 'r':
-                            
-                        case 't':
-                            
-                        case '0':
+                        case '`': case '\\': case '\'': case 'n': case 'r': case 't': case '0': 
                             break;
                             break;
                         default:
@@ -460,19 +360,19 @@ Token Lexer::scan_numeric_literal() {
         return scan_integer_literal(start, length);
     switch (c)
     {
-        case '.':
+        case '.': 
             return scan_fraction(start, length);
             break;
-        case 'E':
+        case 'E': 
             return scan_exponent(start, length);
             break;
-        case 'e':
+        case 'e': 
             return scan_exponent(start, length);
             break;
-        case 'x':
+        case 'x': 
             return scan_hex_literal(start, length);
             break;
-        case 'B':
+        case 'B': 
             return scan_boolean_literal();
             break;
         default:
@@ -490,13 +390,13 @@ Token Lexer::scan_integer_literal(char* start, size_t length) {
         if ((c>='0')&&(c<='9')) 
             continue;switch (c)
         {
-            case '.':
+            case '.': 
                 return scan_fraction(start, length);
                 break;
-            case 'E':
+            case 'E': 
                 return scan_exponent(start, length);
                 break;
-            case 'e':
+            case 'e': 
                 return scan_exponent(start, length);
                 break;
             default:
@@ -515,10 +415,10 @@ Token Lexer::scan_fraction(char* start, size_t length) {
         if ((c>='0')&&(c<='9')) 
             continue;switch (c)
         {
-            case 'E':
+            case 'E': 
                 return scan_exponent(start, length);
                 break;
-            case 'e':
+            case 'e': 
                 return scan_exponent(start, length);
                 break;
             default:
@@ -571,32 +471,32 @@ void Lexer::skip_whitespace(bool skip_line_feed) {
     while (true) {
         switch ((size_t)character)
         {
-            case 0:
+            case 0: 
                 return;
                 break;
             default:
                 {
                     switch (*character)
                     {
-                        case ' ':
+                        case ' ': 
                             {
                                 read_character();
                                 continue;;
                             };
                             break;
-                        case '\t':
+                        case '\t': 
                             {
                                 read_character();
                                 continue;;
                             };
                             break;
-                        case '\r':
+                        case '\r': 
                             {
                                 read_character();
                                 continue;;
                             };
                             break;
-                        case '\n':
+                        case '\n': 
                             if ((skip_line_feed)) {
                                 read_character();
                                 continue;;
@@ -605,26 +505,26 @@ void Lexer::skip_whitespace(bool skip_line_feed) {
                                 return;
                             };
                             break;
-                        case '\\':
+                        case '\\': 
                             {
                                 read_character();
                                 switch ((size_t)character)
                                 {
-                                    case 0:
+                                    case 0: 
                                         return;
                                         break;
                                     default:
                                         {
                                             switch (*character)
                                             {
-                                                case '\r':
+                                                case '\r': 
                                                     {
                                                         read_character();
                                                         read_character();
                                                         continue;;
                                                     };
                                                     break;
-                                                case '\n':
+                                                case '\n': 
                                                     {
                                                         read_character();
                                                         continue;;
@@ -635,12 +535,12 @@ void Lexer::skip_whitespace(bool skip_line_feed) {
                                 };
                             };
                             break;
-                        case ';':
+                        case ';': 
                             {
                                 read_character();
                                 switch ((size_t)character)
                                 {
-                                    case 0:
+                                    case 0: 
                                         return;
                                         break;
                                     default:
@@ -669,7 +569,7 @@ void Lexer::handle_single_line_comment() {
     while (true) {
         switch ((size_t)character)
         {
-            case 0:
+            case 0: 
                 return;
                 break;
             default:
@@ -691,25 +591,25 @@ void Lexer::handle_multi_line_comment() {
     while (true) {
         switch ((size_t)character)
         {
-            case 0:
+            case 0: 
                 return;
                 break;
             default:
                 {
                     switch (*character)
                     {
-                        case ';':
+                        case ';': 
                             {
                                 read_character();
                                 switch ((size_t)character)
                                 {
-                                    case 0:
+                                    case 0: 
                                         return;
                                         break;
                                     default:
                                         switch (*character)
                                         {
-                                            case '*':
+                                            case '*': 
                                                 {
                                                     read_character();
                                                     handle_multi_line_comment();
@@ -722,18 +622,18 @@ void Lexer::handle_multi_line_comment() {
                                 };
                             };
                             break;
-                        case '*':
+                        case '*': 
                             {
                                 read_character();
                                 switch ((size_t)character)
                                 {
-                                    case 0:
+                                    case 0: 
                                         return;
                                         break;
                                     default:
                                         switch (*character)
                                         {
-                                            case ';':
+                                            case ';': 
                                                 read_character();
                                                 break;
                                         };
