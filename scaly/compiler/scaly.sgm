@@ -1,0 +1,657 @@
+<!DOCTYPE grammar SYSTEM "grammar.dtd">
+
+<grammar>
+
+<syntax id = Program
+    <content link = File                                    property = file
+    <content link = Statement             multiple optional property = statements
+
+<syntax id = File
+    <content link = Package               multiple optional property = packages
+    <content link = Use                   multiple optional property = uses
+    <content link = Declaration           multiple optional property = declarations
+
+<syntax id = Declaration                  multiple
+    <content link = Symbol                                  property = symbol
+    <content colon                                 optional
+
+<syntax id = Symbol                                abstract
+    <content link = Private
+    <content link = Definition
+    <content link = Function
+    <content link = Operator
+    <content link = Trait
+    <content link = Macro
+    <content link = Module
+
+<syntax id = Private
+    <content link = private
+    <content link = Export                                  property = export_
+
+<syntax id = Export                                abstract
+    <content link = Definition
+    <content link = Function
+    <content link = Operator
+    <content link = Trait
+    <content link = Module
+
+<syntax id = Member                  multiple
+    <content link = Constituent                             property = constituent
+    <content colon                                 optional
+
+<syntax id = Constituent                           abstract
+    <content link = Definition
+    <content link = Function
+    <content link = Procedure
+    <content link = Operator
+    <content link = Implement
+    <content link = Trait
+    <content link = Macro
+    <content link = Module
+
+<syntax id = Definition
+    <content link = define
+    <content identifier                                     property = name
+    <content link = GenericParameters              optional property = parameters
+    <content colon                                 optional
+    <content link = Attribute             multiple optional property = attributes
+    <content link = Concept                                 property = concept_
+
+<syntax id = GenericParameters
+    <content link = left_bracket
+    <content link = GenericParameter      multiple          property = parameters
+    <content link = right_bracket
+
+<syntax id = GenericParameter             multiple
+    <content identifier                                     property = name
+    <content link = Attribute             multiple optional property = attributes
+    <content link = comma                          optional 
+
+<syntax id = Concept                               abstract
+    <content link = Class
+    <content link = Namespace
+    <content link = Union
+    <content link = Constant
+    <content link = Delegate
+    <content link = Intrinsic
+
+<syntax id = Class
+    <content link = Structure                               property = structure
+    <content colon                                 optional
+    <content link = Body                           optional property = body
+    <content colon                                 optional
+
+<syntax id = Body
+    <content link = left_curly
+    <content link = Use                   multiple optional property = uses
+    <content link = Init                  multiple optional property = inits
+    <content link = DeInit                         optional property = deInit
+    <content link = Member                multiple optional property = members
+    <content link = right_curly
+    <content colon                                 optional
+
+<syntax id = Namespace
+    <content link = left_curly
+    <content link = Use                   multiple optional property = uses
+    <content link = Declaration           multiple optional property = declarations
+    <content link = right_curly
+    <content colon                                 optional
+
+<syntax id = Union
+    <content link = union
+    <content colon                                 optional
+    <content link = left_paren
+    <content link = Variant               multiple          property = variants
+    <content link = right_paren
+    <content colon                                 optional
+
+<syntax id = Variant                      multiple
+    <content identifier                                     property = name
+    <content link = Attribute             multiple optional property = attributes
+    <content link = TypeAnnotation                 optional property = annotation
+    <content link = comma                          optional
+    <content colon                                 optional
+
+<syntax id = Constant
+    <content link = Type                                    property = type
+    <content link = Operand               multiple          property = operation
+    <content colon                                 optional
+
+<syntax id = Delegate
+    <content link = delegate
+    <content link = ParameterSet                   optional property = parameters
+    <content link = Attribute             multiple optional property = attributes
+    <content link = Returns                        optional property = result
+    <content link = Throws                         optional property = error
+
+<syntax id = GenericArguments
+    <content link = left_bracket
+    <content link = GenericArgument       multiple optional property = generics
+    <content link = right_bracket
+
+<syntax id = GenericArgument              multiple
+    <content link = Type                                    property = type
+    <content link = comma                          optional
+
+<syntax id = Optional
+    <content link = question
+
+<syntax id = ParameterSet                          abstract
+    <content link = Parameters
+    <content link = Type
+
+<syntax id = Parameters
+    <content link = left_paren
+    <content link = Item                  multiple optional property = items
+    <content link = right_paren
+
+<syntax id = Item                         multiple
+    <content identifier                                     property = name
+    <content link = TypeAnnotation                 optional property = annotation
+    <content link = comma                          optional
+    <content colon                                 optional
+    <content link = Attribute             multiple optional property = attributes
+    <content colon                                 optional
+
+<syntax id = Returns
+    <content link = returns
+    <content link = Type                                    property = type
+    <content link = Attribute             multiple optional property = attributes
+
+<syntax id = Throws
+    <content link = throws
+    <content link = Type                                    property = type
+    <content link = Attribute             multiple optional property = attributes
+
+<syntax id = Use                          multiple
+    <content link = use
+    <content link = Name                                    property = name
+    <content colon                                 optional
+
+<syntax id = Implement
+    <content link = implement
+    <content link = Type                                    property = type
+    <content link = Attribute             multiple optional property = attributes
+    <content colon                                 optional
+    <content link = left_curly
+    <content link = Use                   multiple optional property = uses
+    <content link = Method                multiple optional property = methods
+    <content link = right_curly
+    <content colon                                 optional
+
+<syntax id = Trait
+    <content link = trait
+    <content link = Name                                    property = name
+    <content link = Extends                        optional property = extension
+    <content link = Attribute             multiple optional property = attributes
+    <content link = left_curly
+    <content link = Use                   multiple optional property = uses
+    <content link = Method                multiple optional property = functions
+    <content link = right_curly
+    <content colon                                 optional
+
+<syntax id = Method                       multiple abstract
+    <content link = Function
+    <content link = Procedure
+    <content link = Operator
+
+<syntax id = Init                         multiple
+    <content link = init
+    <content link = ParameterSet                   optional property = parameters
+    <content colon                                 optional
+    <content link = Action                                  property = action
+    <content colon                                 optional
+
+<syntax id = DeInit
+    <content link = deinit
+    <content colon                                 optional
+    <content link = Action                                  property = action
+    <content colon                                 optional
+
+<syntax id = Function
+    <content link = function
+    <content link = Target                                  property = target
+
+<syntax id = Procedure
+    <content link = procedure
+    <content link = Target                                  property = target
+
+<syntax id = Operator
+    <content link = operator
+    <content link = Target                                  property = target
+
+<syntax id = Target                                abstract
+    <content link = Named
+    <content link = Routine
+
+<syntax id = Named
+    <content identifier                                     property = name
+    <content link = Routine                                 property = routine
+
+<syntax id = Routine
+    <content link = GenericArguments               optional property = generics
+    <content link = Lifetime                       optional property = lifetime
+    <content link = ParameterSet                   optional property = parameters
+    <content link = Attribute             multiple optional property = attributes
+    <content link = Returns                        optional property = returns_
+    <content colon                                 optional
+    <content link = Throws                         optional property = throws_
+    <content colon                                 optional
+    <content link = Implementation                          property = implementation
+
+<syntax id = Implementation                        abstract
+    <content link = Action
+    <content link = Extern
+    <content link = Instruction
+    <content link = Intrinsic
+
+<syntax id = Extern
+    <content link = extern
+
+<syntax id = Instruction
+    <content link = instruction
+    <content colon                                 optional
+
+<syntax id = Intrinsic
+    <content link = intrinsic
+    <content colon                                 optional
+
+<syntax id = Extends
+    <content link = extends
+    <content link = Extend                multiple optional property = extensions
+
+<syntax id = Extend                       multiple
+    <content link = Type                                    property = type
+    <content link = comma                          optional
+
+<syntax id = Macro
+    <content link = macro
+    <content identifier                                     property = name
+    <content link = Model                                   property = model
+    <content link = Operand               multiple          property = rule
+
+<syntax id = Attribute                    multiple
+    <content attribute                                      property = name
+    <content link = Model                                   property = model
+    <content colon                                 optional
+
+<syntax id = Model                                 abstract
+    <content link = Literal
+    <content link = Name
+    <content link = Object
+    <content link = Vector
+
+<syntax id = Module
+    <content link = module
+    <content identifier                                     property = name
+    <content colon                                 optional
+
+<syntax id = Package                      multiple
+    <content link = package
+    <content link = Name                                    property = name
+    <content colon                                 optional
+
+<syntax id = Initializer
+    <content link = left_paren
+    <content link = Operand               multiple          property = operands
+    <content link = right_paren
+
+<syntax id = Operand                      multiple
+    <content link = Expression                              property = expression
+    <content link = MemberAccess          multiple optional property = members
+
+<syntax id = MemberAccess                 multiple
+    <content link = dot
+    <content link = Name                                    property = name
+
+<syntax id = Expression                            abstract
+    <content link = Literal
+    <content link = Type
+    <content link = Object
+    <content link = Vector
+    <content link = Block
+    <content link = If
+    <content link = Match
+    <content link = Lambda
+    <content link = For
+    <content link = While
+    <content link = Choose
+    <content link = Try
+    <content link = Repeat
+    <content link = SizeOf
+
+<syntax id = Literal
+    <content literal                                        property = literal
+
+<syntax id = Object
+    <content link = left_paren
+    <content link = Component             multiple optional property = components
+    <content link = right_paren
+
+<syntax id = Component                    multiple
+    <content link = Operand               multiple          property = operands
+    <content link = Attribute             multiple optional property = attributes
+    <content link = Value                          optional property = value
+    <content link = comma                          optional
+
+<syntax id = Value
+    <content colon
+    <content link = Operand               multiple          property = value
+    <content link = Attribute             multiple optional property = attributes
+
+<syntax id = Vector
+    <content link = left_bracket
+    <content link = Element               multiple          property = elements
+    <content link = right_bracket
+    <content link = Lifetime                       optional property = lifetime
+
+<syntax id = Element                      multiple
+    <content link = Operand               multiple          property = operation
+    <content link = Attribute             multiple optional property = attributes
+    <content link = comma                          optional
+
+<syntax id = Block
+    <content link = left_curly
+    <content link = Use                   multiple optional property = uses
+    <content link = Statement             multiple optional property = statements
+    <content link = right_curly
+
+<syntax id = If
+    <content link = if
+    <content link = Operand               multiple          property = condition
+    <content colon
+    <content link = Command                                 property = consequent
+    <content link = Else                           optional property = alternative
+
+<syntax id = Else
+    <content link = else
+    <content colon                                 optional
+    <content link = Command                                 property = alternative
+
+<syntax id = Match
+    <content link = match
+    <content link = Operand               multiple          property = scrutinee
+    <content colon
+    <content link = Branch                multiple          property = branches
+    <content link = Default                        optional property = alternative
+
+<syntax id = Branch                       multiple
+    <content link = Case                  multiple          property = cases
+    <content colon
+    <content link = Statement                               property = consequent
+
+<syntax id = Case                         multiple
+    <content link = case
+    <content link = Operand               multiple          property = condition
+
+<syntax id = Default
+    <content link = default
+    <content colon                                 optional
+    <content link = Command                                 property = alternative
+
+<syntax id = Statement                    multiple
+    <content link = Command                                 property = command
+    <content colon                                 optional
+
+<syntax id = Command                               abstract
+    <content link = Operation
+    <content link = Let
+    <content link = Var
+    <content link = Mutable
+    <content link = Set
+    <content link = Continue
+    <content link = Break
+    <content link = Return
+    <content link = Throw
+
+<syntax id = While
+    <content link = while
+    <content link = Condition                               property = condition
+    <content colon
+    <content link = Label                          optional property = name
+    <content link = Action                                  property = action
+
+<syntax id = Choose
+    <content link = choose
+    <content link = Operand               multiple          property = condition
+    <content colon
+    <content link = When                  multiple optional property = cases
+    <content link = Default                        optional property = alternative
+
+<syntax id = Try
+    <content link = try
+    <content link = Condition                               property = condition
+    <content colon
+    <content link = When                  multiple optional property = cases
+    <content link = Default                        optional property = dropper
+
+<syntax id = Condition                             abstract
+    <content link = Operation
+    <content link = Let
+
+<syntax id = When                         multiple
+    <content link = when
+    <content identifier                                     property = name
+    <content colon
+    <content link = Name                                    property = variant
+    <content colon                                 optional
+    <content link = Action                                  property = action
+    <content colon                                 optional
+
+<syntax id = Let
+    <content link = let
+    <content link = Binding                                 property = binding
+
+<syntax id = Var
+    <content link = var
+    <content link = Binding                                 property = binding
+
+<syntax id = Mutable
+    <content link = mutable
+    <content link = Binding                                 property = binding
+
+<syntax id = Binding
+    <content identifier                                     property = name
+    <content link = BindingAnnotation              optional property = annotation
+    <content link = Operand               multiple          property = operation
+
+<syntax id = BindingAnnotation
+    <content colon
+    <content link = BindingSpec                                property = spec
+
+<syntax id = BindingSpec                  multiple abstract
+    <content link = Structure
+    <content link = Type
+    <content link = Array
+
+<syntax id = Array
+    <content link = left_bracket
+    <content link = Type                  multiple optional property = members
+    <content link = right_bracket
+
+<syntax id = Structure
+    <content link = left_paren
+    <content link = Part                  multiple optional property = parts
+    <content link = right_paren
+
+<syntax id = Part                         multiple abstract
+    <content link = Field
+    <content link = Property
+
+<syntax id = Field
+    <content link = private
+    <content link = Property                                property = property
+
+<syntax id = Property                     multiple
+    <content identifier                                     property = name
+    <content link = TypeAnnotation                          property = annotation
+    <content link = Initializer                    optional property = initializer
+    <content link = comma                          optional
+    <content colon                                 optional
+    <content link = Attribute             multiple optional property = attributes
+    <content colon                                 optional
+
+<syntax id = TypeAnnotation
+    <content colon
+    <content link = Type                                    property = type
+
+<syntax id = Continue
+    <content link = continue
+    <content link = Loop                           optional property = name
+    <content colon                                 optional
+
+<syntax id = Break
+    <content link = break
+    <content link = Loop                           optional property = name
+    <content link = Operand               multiple optional property = result
+    <content colon                                 optional
+
+<syntax id = Loop
+    <content link = loop
+    <content identifier                                     property = name
+
+<syntax id = Return
+    <content link = return
+    <content link = Operand               multiple optional property = result
+
+<syntax id = Throw
+    <content link = throw
+    <content link = Operand               multiple optional property = result
+
+<syntax id = Lambda
+    <content link = lambda
+    <content link = Operand               multiple          property = input
+    <content colon
+    <content link = Action                                  property = block
+
+<syntax id = For
+    <content link = for
+    <content identifier                                     property = variable
+    <content link = TypeAnnotation                 optional property = annotation
+    <content link = in
+    <content link = Operand               multiple          property = operation
+    <content colon
+    <content link = Label                          optional property = name
+    <content link = Action                                  property = action
+
+<syntax id = Label
+    <content link = label
+    <content identifier                                     property = name
+    <content colon                                 optional
+
+<syntax id = Repeat
+    <content link = repeat
+    <content link = Label                          optional property = name
+    <content link = Action                                  property = action
+
+<syntax id = Action                       multiple abstract
+    <content link = Operation
+    <content link = Set
+
+<syntax id = Operation
+    <content link = Operand               multiple          property = operands
+
+<syntax id = Set
+    <content link = set
+    <content link = Operand               multiple          property = target
+    <content colon
+    <content link = Operand               multiple          property = source
+
+<syntax id = SizeOf
+    <content link = sizeof
+    <content link = Type                                    property = type
+
+<syntax id = Type                        multiple
+    <content link = Name                                    property = name
+    <content link = GenericArguments               optional property = generics
+    <content link = Optional                       optional property = optional
+    <content link = Lifetime                       optional property = lifetime
+
+<syntax id = Name
+    <content identifier                                     property = name
+    <content link = Extension             multiple optional property = extensions
+
+<syntax id = Extension                    multiple
+    <content link = dot
+    <content identifier                                     property = name
+
+<syntax id = Lifetime                              abstract
+    <content link = Call
+    <content link = Local
+    <content link = Reference
+    <content link = Thrown
+
+<syntax id = Call
+    <content link = hash
+ 
+<syntax id = Local
+    <content link = dollar
+
+<syntax id = Reference
+    <content link = caret
+    <content identifier                                     property = location
+
+<syntax id = Thrown
+    <content link = exclamation
+
+<keyword id = break
+<keyword id = case
+<keyword id = choose
+<keyword id = continue
+<keyword id = define
+<keyword id = default
+<keyword id = deinit
+<keyword id = delegate
+<keyword id = else
+<keyword id = extends
+<keyword id = extern
+<keyword id = for
+<keyword id = function
+<keyword id = if
+<keyword id = init
+<keyword id = implement
+<keyword id = in
+<keyword id = instruction
+<keyword id = intrinsic
+<keyword id = label
+<keyword id = lambda
+<keyword id = let
+<keyword id = loop
+<keyword id = macro
+<keyword id = match
+<keyword id = module
+<keyword id = mutable
+<keyword id = operator
+<keyword id = procedure
+<keyword id = private
+<keyword id = return
+<keyword id = returns
+<keyword id = repeat
+<keyword id = set
+<keyword id = sizeof
+<keyword id = throw
+<keyword id = throws
+<keyword id = trait
+<keyword id = try
+<keyword id = union
+<keyword id = use
+<keyword id = var
+<keyword id = when
+<keyword id = while
+<keyword id = package
+
+<punctuation id = dot               value = "."
+<punctuation id = comma             value = ","
+<punctuation id = question          value = "?"
+<punctuation id = exclamation       value = "!"
+<punctuation id = left_paren        value = "("
+<punctuation id = right_paren       value = ")"
+<punctuation id = left_curly        value = "{"
+<punctuation id = right_curly       value = "}"
+<punctuation id = left_bracket      value = "["
+<punctuation id = right_bracket     value = "]"
+<punctuation id = dollar            value = "$"
+<punctuation id = hash              value = "#"
+<punctuation id = caret             value = "^"
+
+</grammar>
