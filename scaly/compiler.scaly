@@ -1,5 +1,6 @@
 define compiler {
     module Lexer
+    module Parser
 
     function test_lexer() {
         {

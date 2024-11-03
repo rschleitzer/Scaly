@@ -1899,9 +1899,15 @@ typedef const void const_void;\n");
                 }
                 return nullptr;
             }
+
+            case Definition::Union: {
+                builder.append("struct ");
+                builder.append(concept.name);
+                builder.append(";\n");
+                return nullptr;
+            }
             
             default:
-                // return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented());
                 return nullptr;
         }
 
