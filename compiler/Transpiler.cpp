@@ -675,12 +675,12 @@ struct Result {\n\
                 else {
                     if (is_initializer) {
                         auto _operand_iterator = action.source.get_iterator();
+                        bool first = true;
                         while (auto _operand = _operand_iterator.next()) {
                             Operand& operand = *_operand;
                             switch (operand.expression._tag) {
                                 case Expression::Tuple: {
                                     auto tuple = operand.expression._Tuple;
-                                    bool first = true;
                                     auto _component_iterator = tuple.components.get_iterator();
                                     while (auto _component = _component_iterator.next()) {
                                         Component& component = *_component;
