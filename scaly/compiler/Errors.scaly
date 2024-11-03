@@ -1,0 +1,16 @@
+use scaly.containers
+
+define DifferentSyntax()
+
+define InvalidSyntax
+(
+    start: size_t
+    end: size_t
+    expected: String
+)
+
+define ParserError union
+(
+    Different: DifferentSyntax
+    Invalid: InvalidSyntax
+)

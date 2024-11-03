@@ -916,5 +916,60 @@ define Parser
         var hash_set_builder HashSetBuilder[String]$(keywords_index)
         return HashSet[String](Page->get(this), *hash_set_builder)
     }
+
+    function parse_literal_token(this: Parser) returns Literal throws ParserError {
+        choose lexer.token
+            when empty: Token.Empty lexer.advance()
+            default {}
+
+        choose lexer.token
+            when literal: Token.Literal
+            {
+                choose literal
+                    when string: LiteralToken.String {
+                        let ret Literal(StringLiteral(String(rp, string.value)))
+                        lexer.empty()
+                        return ret
+                    }
+
+                    when character: LiteralToken.Character {
+                        let ret Literal(CharacterLiteral(String(rp, character.value)))
+                        lexer.empty()
+                        return ret
+                    }
+
+                    when integer: LiteralToken.Integer {
+                        let ret Literal(IntegerLiteral(String(rp, integer.value)))
+                        lexer.empty()
+                        return ret
+                    }
+
+                    when fp: LiteralToken.FloatingPoint {
+                        let ret Literal(FloatingPointLiteral(String(rp, fp.value)))
+                        lexer.empty()
+                        return ret
+                    }
+
+                    when hex: LiteralToken.Hex {
+                        let ret Literal(HexLiteral(String(rp, hex.value)))
+                        lexer.empty()
+                        return ret
+                    }
+
+                    when boolean: LiteralToken.Boolean {
+                        let ret Literal(BooleanLiteral(boolean.value))
+                        lexer.empty()
+                        return ret
+                    }
+
+                    when fragment: LiteralToken.Fragment {
+                        let ret Literal(FragmentLiteral(String(rp, fragment.value)))
+                        lexer.empty()
+                        return ret
+                    }
+            }
+            default
+                return Result[Literal, ParserError](ParserError(DifferentSyntax()))
+    }
 }
 

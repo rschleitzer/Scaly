@@ -44,6 +44,7 @@
 				"${workspaceFolder}/scaly/io/File.cpp",
 				"${workspaceFolder}/scaly/io/Path.cpp",
 				"${workspaceFolder}/scaly/compiler.cpp",
+				"${workspaceFolder}/scaly/compiler/Errors.cpp",
 				"${workspaceFolder}/scaly/compiler/Lexer.cpp",
 				"${workspaceFolder}/scaly/compiler/Parser.cpp",
 				"-o",

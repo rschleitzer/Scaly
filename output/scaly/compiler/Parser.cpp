@@ -433,5 +433,114 @@ HashSet<String> Parser::initialize_keywords() {
     return HashSet<String>(Page::get(this), *hash_set_builder);
 }
 
+Result<Literal, ParserError> Parser::parse_literal_token(Page* rp, Page* ep) {
+    {
+        auto _result = lexer.token;
+        switch (_result._tag)
+        {
+            case Token::Empty:
+            {
+                auto empty = _result._Empty;
+                lexer.advance();
+                break;
+            }
+            default:
+                {
+            };
+        }
+    };
+    {
+        auto _result = lexer.token;
+        switch (_result._tag)
+        {
+            case Token::Literal:
+            {
+                auto literal = _result._Literal;
+                {
+                    {
+                        auto _result = literal;
+                        switch (_result._tag)
+                        {
+                            case LiteralToken::String:
+                            {
+                                auto string = _result._String;
+                                {
+                                    const auto ret = Literal(StringLiteral(String(rp, string.value)));
+                                    lexer.empty();
+                                    return Result<Literal, ParserError>(ret);
+                                };
+                                break;
+                            }
+                            case LiteralToken::Character:
+                            {
+                                auto character = _result._Character;
+                                {
+                                    const auto ret = Literal(CharacterLiteral(String(rp, character.value)));
+                                    lexer.empty();
+                                    return Result<Literal, ParserError>(ret);
+                                };
+                                break;
+                            }
+                            case LiteralToken::Integer:
+                            {
+                                auto integer = _result._Integer;
+                                {
+                                    const auto ret = Literal(IntegerLiteral(String(rp, integer.value)));
+                                    lexer.empty();
+                                    return Result<Literal, ParserError>(ret);
+                                };
+                                break;
+                            }
+                            case LiteralToken::FloatingPoint:
+                            {
+                                auto fp = _result._FloatingPoint;
+                                {
+                                    const auto ret = Literal(FloatingPointLiteral(String(rp, fp.value)));
+                                    lexer.empty();
+                                    return Result<Literal, ParserError>(ret);
+                                };
+                                break;
+                            }
+                            case LiteralToken::Hex:
+                            {
+                                auto hex = _result._Hex;
+                                {
+                                    const auto ret = Literal(HexLiteral(String(rp, hex.value)));
+                                    lexer.empty();
+                                    return Result<Literal, ParserError>(ret);
+                                };
+                                break;
+                            }
+                            case LiteralToken::Boolean:
+                            {
+                                auto boolean = _result._Boolean;
+                                {
+                                    const auto ret = Literal(BooleanLiteral(boolean.value));
+                                    lexer.empty();
+                                    return Result<Literal, ParserError>(ret);
+                                };
+                                break;
+                            }
+                            case LiteralToken::Fragment:
+                            {
+                                auto fragment = _result._Fragment;
+                                {
+                                    const auto ret = Literal(FragmentLiteral(String(rp, fragment.value)));
+                                    lexer.empty();
+                                    return Result<Literal, ParserError>(ret);
+                                };
+                                break;
+                            }
+                        }
+                    };
+                };
+                break;
+            }
+            default:
+                return Result<Literal, ParserError>(Result<Literal, ParserError>(ParserError(DifferentSyntax())));
+        }
+    };
+}
+
 }
 }

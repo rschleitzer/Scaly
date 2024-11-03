@@ -1215,6 +1215,7 @@ struct Parser : Object {
     Parser(String text);
     Vector<String> initialize_keywords_index();
     HashSet<String> initialize_keywords();
+    Result<Literal, ParserError> parse_literal_token(Page* rp, Page* ep);
 };
 
 #endif

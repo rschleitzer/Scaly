@@ -24,70 +24,62 @@ define Parser
         var hash_set_builder HashSetBuilder[String]$(keywords_index)
         return HashSet[String](Page->get(this), *hash_set_builder)
     }
-<!--
-    Result[Literal, ParserError] parse_literal_token(Page* _rp) {
-        if (lexer.token._tag = Token::Empty)
-            lexer.advance()
 
-        switch (lexer.token._tag)
-        {
-            case Token::Literal:
-                switch (lexer.token._Literal._tag)
-                {
-                    case LiteralToken::String:
-                    {
-                        auto ret Literal(StringLiteral(String(_rp, lexer.token._Literal._String.value)))
+    function parse_literal_token(this: Parser) returns Literal throws ParserError {
+        choose lexer.token
+            when empty: Token.Empty lexer.advance()
+            default {}
+
+        choose lexer.token
+            when literal: Token.Literal
+            {
+                choose literal
+                    when string: LiteralToken.String {
+                        let ret Literal(StringLiteral(String(rp, string.value)))
                         lexer.empty()
-                        return Result[Literal, ParserError] { ._tag = Result[Literal, ParserError]::Ok, ._Ok = ret }
+                        return ret
                     }
 
-                    case LiteralToken::Character:
-                    {
-                        auto ret = Literal(CharacterLiteral(String(_rp, lexer.token._Literal._String.value)))
+                    when character: LiteralToken.Character {
+                        let ret Literal(CharacterLiteral(String(rp, character.value)))
                         lexer.empty()
-                        return Result[Literal, ParserError] { ._tag = Result[Literal, ParserError]::Ok, ._Ok = ret }
+                        return ret
                     }
 
-                    case LiteralToken::Integer:
-                    {
-                        auto ret = Literal(IntegerLiteral(String(_rp, lexer.token._Literal._String.value)))
+                    when integer: LiteralToken.Integer {
+                        let ret Literal(IntegerLiteral(String(rp, integer.value)))
                         lexer.empty()
-                        return Result[Literal, ParserError] { ._tag = Result[Literal, ParserError]::Ok, ._Ok = ret }
+                        return ret
                     }
 
-                    case LiteralToken::FloatingPoint:
-                    {
-                        auto ret = Literal(FloatingPointLiteral(String(_rp, lexer.token._Literal._String.value)))
+                    when fp: LiteralToken.FloatingPoint {
+                        let ret Literal(FloatingPointLiteral(String(rp, fp.value)))
                         lexer.empty()
-                        return Result[Literal, ParserError] { ._tag = Result[Literal, ParserError]::Ok, ._Ok = ret }
+                        return ret
                     }
 
-                    case LiteralToken::Hex:
-                    {
-                        auto ret = Literal(HexLiteral(String(_rp, lexer.token._Literal._String.value)))
+                    when hex: LiteralToken.Hex {
+                        let ret Literal(HexLiteral(String(rp, hex.value)))
                         lexer.empty()
-                        return Result[Literal, ParserError] { ._tag = Result[Literal, ParserError]::Ok, ._Ok = ret }
+                        return ret
                     }
 
-                    case LiteralToken::Boolean:
-                    {
-                        auto ret = Literal(BooleanLiteral(lexer.token._Literal._Boolean.value))
+                    when boolean: LiteralToken.Boolean {
+                        let ret Literal(BooleanLiteral(boolean.value))
                         lexer.empty()
-                        return Result[Literal, ParserError] { ._tag = Result[Literal, ParserError]::Ok, ._Ok = ret }
+                        return ret
                     }
 
-                    case LiteralToken::Fragment:
-                    {
-                        auto ret = Literal(FragmentLiteral(String(_rp, lexer.token._Literal._String.value)))
+                    when fragment: LiteralToken.Fragment {
+                        let ret Literal(FragmentLiteral(String(rp, fragment.value)))
                         lexer.empty()
-                        return Result[Literal, ParserError] { ._tag = Result[Literal, ParserError]::Ok, ._Ok = ret }
+                        return ret
                     }
-                }
-            default:
-                return Result[Literal, ParserError] { ._tag = Result[Literal, ParserError]::Error, ._Error = ParserError(DifferentSyntax()) }
-        }
+            }
+            default
+                return Result[Literal, ParserError](ParserError(DifferentSyntax()))
     }
-"
+<!--"
     (apply-to-selected-children "syntax" (lambda (syntax) ($
         (if (multiple? syntax) ($
 "

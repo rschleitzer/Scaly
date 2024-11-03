@@ -64,6 +64,9 @@ struct File;
 struct Path;
 }
 namespace compiler {
+struct DifferentSyntax;
+struct InvalidSyntax;
+struct ParserError;
 struct EmptyToken;
 struct InvalidToken;
 struct ColonToken;
