@@ -370,5 +370,68 @@ FileSyntax::FileSyntax(size_t start, size_t end, Vector<PackageSyntax>* packages
 
 ProgramSyntax::ProgramSyntax(size_t start, size_t end, FileSyntax file, Vector<StatementSyntax>* statements) : start(start), end(end), file(file), statements(statements) {}
 
+Parser::Parser(Lexer lexer, Vector<String> keywords_index, HashSet<String> keywords) : lexer(lexer), keywords_index(keywords_index), keywords(keywords) {}
+
+Parser::Parser(String text) : lexer(Lexer(text)), keywords_index(initialize_keywords_index()), keywords(initialize_keywords()){
+}
+
+Vector<String> Parser::initialize_keywords_index() {
+    auto r = Region();
+    auto keywords_builder = new (alignof(Array<String>), r.get_page()) Array<String>();
+    auto p = Page::get(this);
+    (*keywords_builder).add(String(p, "break"));
+    (*keywords_builder).add(String(p, "case"));
+    (*keywords_builder).add(String(p, "choose"));
+    (*keywords_builder).add(String(p, "continue"));
+    (*keywords_builder).add(String(p, "define"));
+    (*keywords_builder).add(String(p, "default"));
+    (*keywords_builder).add(String(p, "deinit"));
+    (*keywords_builder).add(String(p, "delegate"));
+    (*keywords_builder).add(String(p, "else"));
+    (*keywords_builder).add(String(p, "extends"));
+    (*keywords_builder).add(String(p, "extern"));
+    (*keywords_builder).add(String(p, "for"));
+    (*keywords_builder).add(String(p, "function"));
+    (*keywords_builder).add(String(p, "if"));
+    (*keywords_builder).add(String(p, "init"));
+    (*keywords_builder).add(String(p, "implement"));
+    (*keywords_builder).add(String(p, "in"));
+    (*keywords_builder).add(String(p, "instruction"));
+    (*keywords_builder).add(String(p, "intrinsic"));
+    (*keywords_builder).add(String(p, "label"));
+    (*keywords_builder).add(String(p, "lambda"));
+    (*keywords_builder).add(String(p, "let"));
+    (*keywords_builder).add(String(p, "loop"));
+    (*keywords_builder).add(String(p, "macro"));
+    (*keywords_builder).add(String(p, "match"));
+    (*keywords_builder).add(String(p, "module"));
+    (*keywords_builder).add(String(p, "mutable"));
+    (*keywords_builder).add(String(p, "operator"));
+    (*keywords_builder).add(String(p, "procedure"));
+    (*keywords_builder).add(String(p, "private"));
+    (*keywords_builder).add(String(p, "return"));
+    (*keywords_builder).add(String(p, "returns"));
+    (*keywords_builder).add(String(p, "repeat"));
+    (*keywords_builder).add(String(p, "set"));
+    (*keywords_builder).add(String(p, "sizeof"));
+    (*keywords_builder).add(String(p, "throw"));
+    (*keywords_builder).add(String(p, "throws"));
+    (*keywords_builder).add(String(p, "trait"));
+    (*keywords_builder).add(String(p, "try"));
+    (*keywords_builder).add(String(p, "union"));
+    (*keywords_builder).add(String(p, "use"));
+    (*keywords_builder).add(String(p, "var"));
+    (*keywords_builder).add(String(p, "when"));
+    (*keywords_builder).add(String(p, "while"));
+    (*keywords_builder).add(String(p, "package"));
+    return Vector<String>(p, *keywords_builder);
+}
+
+HashSet<String> Parser::initialize_keywords() {
+    auto r = Region();
+    auto hash_set_builder = new (alignof(HashSetBuilder<String>), r.get_page()) HashSetBuilder<String>(keywords_index);
+    return HashSet<String>(Page::get(this), *hash_set_builder);
+}
+
 }
 }

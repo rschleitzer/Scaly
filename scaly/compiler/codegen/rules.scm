@@ -2,7 +2,7 @@
     (file ($ "Parser.scaly")
         ($
             (syntax)
-            ;(parser)
+            (parser)
         )
     )
 )

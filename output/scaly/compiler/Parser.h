@@ -1206,4 +1206,15 @@ struct ProgramSyntax : Object {
     ProgramSyntax(size_t start, size_t end, FileSyntax file, Vector<StatementSyntax>* statements);
 };
 
+struct Parser : Object {
+    Lexer lexer;
+    Vector<String> keywords_index;
+    HashSet<String> keywords;
+
+    Parser(Lexer lexer, Vector<String> keywords_index, HashSet<String> keywords);
+    Parser(String text);
+    Vector<String> initialize_keywords_index();
+    HashSet<String> initialize_keywords();
+};
+
 #endif

@@ -196,5 +196,6 @@ struct SymbolSyntax;
 struct DeclarationSyntax;
 struct FileSyntax;
 struct ProgramSyntax;
+struct Parser;
 }
 }
