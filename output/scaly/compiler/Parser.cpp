@@ -6078,16 +6078,9 @@ Result<LiteralSyntax, ParserError> Parser::parse_literal(Page* rp, Page* ep) {
     if (_literal_result._tag == Success::Error) {
         const auto _literal_Error = _literal_result._Error;
         switch (_literal_Error._tag) {
-            case ParserError::Different: {
-                const auto d = _literal_Error._Different;
-                return Result<LiteralSyntax, ParserError>(d);
-                break;
-            }
-            case ParserError::Invalid: {
-                const auto i = _literal_Error._Invalid;
-                return Result<LiteralSyntax, ParserError>(i);
-                break;
-            }
+        default:
+            return Result<LiteralSyntax, ParserError>(_literal_result._Error);
+
         }
     }
     ;

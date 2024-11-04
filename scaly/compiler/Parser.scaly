@@ -3432,8 +3432,7 @@ define Parser
         let start lexer.previous_position
 
         try let literal parse_literal_token(rp, ep)
-            when d: ParserError.Different throw d
-            when i: ParserError.Invalid throw i
+            else throw
 
         let end lexer.position
 
