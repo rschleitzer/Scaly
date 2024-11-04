@@ -444,9 +444,9 @@ struct TrySyntax : Object {
     size_t end;
     ConditionSyntax condition;
     Vector<WhenSyntax>* cases;
-    DefaultSyntax* dropper;
+    ElseSyntax* dropper;
 
-    TrySyntax(size_t start, size_t end, ConditionSyntax condition, Vector<WhenSyntax>* cases, DefaultSyntax* dropper);
+    TrySyntax(size_t start, size_t end, ConditionSyntax condition, Vector<WhenSyntax>* cases, ElseSyntax* dropper);
 };
 
 struct ChooseSyntax : Object {
@@ -454,9 +454,9 @@ struct ChooseSyntax : Object {
     size_t end;
     Vector<OperandSyntax> condition;
     Vector<WhenSyntax>* cases;
-    DefaultSyntax* alternative;
+    ElseSyntax* alternative;
 
-    ChooseSyntax(size_t start, size_t end, Vector<OperandSyntax> condition, Vector<WhenSyntax>* cases, DefaultSyntax* alternative);
+    ChooseSyntax(size_t start, size_t end, Vector<OperandSyntax> condition, Vector<WhenSyntax>* cases, ElseSyntax* alternative);
 };
 
 struct WhileSyntax : Object {
@@ -475,14 +475,6 @@ struct StatementSyntax : Object {
     CommandSyntax command;
 
     StatementSyntax(size_t start, size_t end, CommandSyntax command);
-};
-
-struct DefaultSyntax : Object {
-    size_t start;
-    size_t end;
-    CommandSyntax alternative;
-
-    DefaultSyntax(size_t start, size_t end, CommandSyntax alternative);
 };
 
 struct CaseSyntax : Object {
@@ -507,9 +499,9 @@ struct MatchSyntax : Object {
     size_t end;
     Vector<OperandSyntax> scrutinee;
     Vector<BranchSyntax> branches;
-    DefaultSyntax* alternative;
+    ElseSyntax* alternative;
 
-    MatchSyntax(size_t start, size_t end, Vector<OperandSyntax> scrutinee, Vector<BranchSyntax> branches, DefaultSyntax* alternative);
+    MatchSyntax(size_t start, size_t end, Vector<OperandSyntax> scrutinee, Vector<BranchSyntax> branches, ElseSyntax* alternative);
 };
 
 struct ElseSyntax : Object {
@@ -1300,7 +1292,6 @@ struct Parser : Object {
     Result<BranchSyntax, ParserError> parse_branch(Page* rp, Page* ep);
     Result<Vector<CaseSyntax>*, ParserError> parse_case_list(Page* rp, Page* ep);
     Result<CaseSyntax, ParserError> parse_case(Page* rp, Page* ep);
-    Result<DefaultSyntax, ParserError> parse_default(Page* rp, Page* ep);
     Result<Vector<StatementSyntax>*, ParserError> parse_statement_list(Page* rp, Page* ep);
     Result<StatementSyntax, ParserError> parse_statement(Page* rp, Page* ep);
     Result<WhileSyntax, ParserError> parse_while(Page* rp, Page* ep);

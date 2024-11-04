@@ -373,7 +373,7 @@
     <content link = Operand               multiple          property = scrutinee
     <content colon
     <content link = Branch                multiple          property = branches
-    <content link = Default                        optional property = alternative
+    <content link = Else                           optional property = alternative
 
 <syntax id = Branch                       multiple
     <content link = Case                  multiple          property = cases
@@ -383,11 +383,6 @@
 <syntax id = Case                         multiple
     <content link = case
     <content link = Operand               multiple          property = condition
-
-<syntax id = Default
-    <content link = default
-    <content colon                                 optional
-    <content link = Command                                 property = alternative
 
 <syntax id = Statement                    multiple
     <content link = Command                                 property = command
@@ -405,14 +400,14 @@
     <content link = Operand               multiple          property = condition
     <content colon
     <content link = When                  multiple optional property = cases
-    <content link = Default                        optional property = alternative
+    <content link = Else                           optional property = alternative
 
 <syntax id = Try
     <content link = try
     <content link = Condition                               property = condition
     <content colon
     <content link = When                  multiple optional property = cases
-    <content link = Default                        optional property = dropper
+    <content link = Else                           optional property = dropper
 
 <syntax id = Condition                             abstract
     <content link = Operation
@@ -599,7 +594,6 @@
 <keyword id = choose
 <keyword id = continue
 <keyword id = define
-<keyword id = default
 <keyword id = deinit
 <keyword id = delegate
 <keyword id = else

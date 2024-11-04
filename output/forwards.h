@@ -132,7 +132,6 @@ struct TrySyntax;
 struct ChooseSyntax;
 struct WhileSyntax;
 struct StatementSyntax;
-struct DefaultSyntax;
 struct CaseSyntax;
 struct BranchSyntax;
 struct MatchSyntax;
