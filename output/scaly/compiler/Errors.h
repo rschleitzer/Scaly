@@ -18,7 +18,7 @@ struct InvalidSyntax : Object {
     InvalidSyntax(size_t start, size_t end, String expected);
 };
 
-struct ParserError {
+struct ParserError : Object {
     ParserError(DifferentSyntax);
     ParserError(InvalidSyntax);
     enum {
@@ -26,8 +26,8 @@ struct ParserError {
         Invalid,
     } _tag;
     union {
-        DifferentSyntax _Different;
-        InvalidSyntax _Invalid;
+        struct DifferentSyntax _Different;
+        struct InvalidSyntax _Invalid;
     };
 };
 #endif

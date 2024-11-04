@@ -138,12 +138,12 @@ struct BranchSyntax;
 struct CaseSyntax; 
 struct DefaultSyntax; 
 struct StatementSyntax; 
-struct CommandSyntax; 
 struct WhileSyntax; 
 struct ChooseSyntax; 
 struct TrySyntax; 
 struct ConditionSyntax; 
 struct WhenSyntax; 
+struct CommandSyntax; 
 struct LetSyntax; 
 struct VarSyntax; 
 struct MutableSyntax; 
@@ -456,13 +456,47 @@ struct LetSyntax : Object {
     BindingSyntax binding;
 };
 
+struct CommandSyntax : Object {
+    CommandSyntax(OperationSyntax _OperationSyntax) : _tag(Operation) { _Operation = _OperationSyntax; }
+    CommandSyntax(LetSyntax _LetSyntax) : _tag(Let) { _Let = _LetSyntax; }
+    CommandSyntax(VarSyntax _VarSyntax) : _tag(Var) { _Var = _VarSyntax; }
+    CommandSyntax(MutableSyntax _MutableSyntax) : _tag(Mutable) { _Mutable = _MutableSyntax; }
+    CommandSyntax(SetSyntax _SetSyntax) : _tag(Set) { _Set = _SetSyntax; }
+    CommandSyntax(ContinueSyntax _ContinueSyntax) : _tag(Continue) { _Continue = _ContinueSyntax; }
+    CommandSyntax(BreakSyntax _BreakSyntax) : _tag(Break) { _Break = _BreakSyntax; }
+    CommandSyntax(ReturnSyntax _ReturnSyntax) : _tag(Return) { _Return = _ReturnSyntax; }
+    CommandSyntax(ThrowSyntax _ThrowSyntax) : _tag(Throw) { _Throw = _ThrowSyntax; }
+    enum {
+        Operation,
+        Let,
+        Var,
+        Mutable,
+        Set,
+        Continue,
+        Break,
+        Return,
+        Throw,
+    } _tag;
+    union {
+        OperationSyntax _Operation;
+        LetSyntax _Let;
+        VarSyntax _Var;
+        MutableSyntax _Mutable;
+        SetSyntax _Set;
+        ContinueSyntax _Continue;
+        BreakSyntax _Break;
+        ReturnSyntax _Return;
+        ThrowSyntax _Throw;
+    };
+};
+
 struct WhenSyntax : Object {
-    WhenSyntax(size_t start, size_t end, String name, NameSyntax variant, ActionSyntax action) : start(start), end(end), name(name), variant(variant), action(action) {}
+    WhenSyntax(size_t start, size_t end, String name, NameSyntax variant, CommandSyntax command) : start(start), end(end), name(name), variant(variant), command(command) {}
     size_t start;
     size_t end;
     String name;
     NameSyntax variant;
-    ActionSyntax action;
+    CommandSyntax command;
 };
 
 struct ConditionSyntax : Object {
@@ -503,40 +537,6 @@ struct WhileSyntax : Object {
     ConditionSyntax condition;
     LabelSyntax* name;
     ActionSyntax action;
-};
-
-struct CommandSyntax : Object {
-    CommandSyntax(OperationSyntax _OperationSyntax) : _tag(Operation) { _Operation = _OperationSyntax; }
-    CommandSyntax(LetSyntax _LetSyntax) : _tag(Let) { _Let = _LetSyntax; }
-    CommandSyntax(VarSyntax _VarSyntax) : _tag(Var) { _Var = _VarSyntax; }
-    CommandSyntax(MutableSyntax _MutableSyntax) : _tag(Mutable) { _Mutable = _MutableSyntax; }
-    CommandSyntax(SetSyntax _SetSyntax) : _tag(Set) { _Set = _SetSyntax; }
-    CommandSyntax(ContinueSyntax _ContinueSyntax) : _tag(Continue) { _Continue = _ContinueSyntax; }
-    CommandSyntax(BreakSyntax _BreakSyntax) : _tag(Break) { _Break = _BreakSyntax; }
-    CommandSyntax(ReturnSyntax _ReturnSyntax) : _tag(Return) { _Return = _ReturnSyntax; }
-    CommandSyntax(ThrowSyntax _ThrowSyntax) : _tag(Throw) { _Throw = _ThrowSyntax; }
-    enum {
-        Operation,
-        Let,
-        Var,
-        Mutable,
-        Set,
-        Continue,
-        Break,
-        Return,
-        Throw,
-    } _tag;
-    union {
-        OperationSyntax _Operation;
-        LetSyntax _Let;
-        VarSyntax _Var;
-        MutableSyntax _Mutable;
-        SetSyntax _Set;
-        ContinueSyntax _Continue;
-        BreakSyntax _Break;
-        ReturnSyntax _Return;
-        ThrowSyntax _Throw;
-    };
 };
 
 struct StatementSyntax : Object {
@@ -5157,145 +5157,6 @@ struct Parser : Object {
         return Result<StatementSyntax, ParserError> { ._tag = Result<StatementSyntax, ParserError>::Ok, ._Ok = ret };
     }
 
-    Result<CommandSyntax, ParserError> parse_command(Page* _rp, Page* _ep) {
-        {
-            auto node_result = this->parse_operation(_rp, _ep);
-            if (node_result._tag == Result<OperationSyntax, ParserError>::Error)
-            {
-                if (node_result._Error._tag == ParserError::InvalidSyntax)
-                    return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Error, ._Error = node_result._Error };
-            }
-            else
-            {
-                auto node = node_result._Ok;
-                return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Ok, ._Ok = 
-                    CommandSyntax(OperationSyntax(node))
-                };
-            }
-        }
-        {
-            auto node_result = this->parse_let(_rp, _ep);
-            if (node_result._tag == Result<LetSyntax, ParserError>::Error)
-            {
-                if (node_result._Error._tag == ParserError::InvalidSyntax)
-                    return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Error, ._Error = node_result._Error };
-            }
-            else
-            {
-                auto node = node_result._Ok;
-                return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Ok, ._Ok = 
-                    CommandSyntax(LetSyntax(node))
-                };
-            }
-        }
-        {
-            auto node_result = this->parse_var(_rp, _ep);
-            if (node_result._tag == Result<VarSyntax, ParserError>::Error)
-            {
-                if (node_result._Error._tag == ParserError::InvalidSyntax)
-                    return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Error, ._Error = node_result._Error };
-            }
-            else
-            {
-                auto node = node_result._Ok;
-                return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Ok, ._Ok = 
-                    CommandSyntax(VarSyntax(node))
-                };
-            }
-        }
-        {
-            auto node_result = this->parse_mutable(_rp, _ep);
-            if (node_result._tag == Result<MutableSyntax, ParserError>::Error)
-            {
-                if (node_result._Error._tag == ParserError::InvalidSyntax)
-                    return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Error, ._Error = node_result._Error };
-            }
-            else
-            {
-                auto node = node_result._Ok;
-                return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Ok, ._Ok = 
-                    CommandSyntax(MutableSyntax(node))
-                };
-            }
-        }
-        {
-            auto node_result = this->parse_set(_rp, _ep);
-            if (node_result._tag == Result<SetSyntax, ParserError>::Error)
-            {
-                if (node_result._Error._tag == ParserError::InvalidSyntax)
-                    return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Error, ._Error = node_result._Error };
-            }
-            else
-            {
-                auto node = node_result._Ok;
-                return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Ok, ._Ok = 
-                    CommandSyntax(SetSyntax(node))
-                };
-            }
-        }
-        {
-            auto node_result = this->parse_continue(_rp, _ep);
-            if (node_result._tag == Result<ContinueSyntax, ParserError>::Error)
-            {
-                if (node_result._Error._tag == ParserError::InvalidSyntax)
-                    return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Error, ._Error = node_result._Error };
-            }
-            else
-            {
-                auto node = node_result._Ok;
-                return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Ok, ._Ok = 
-                    CommandSyntax(ContinueSyntax(node))
-                };
-            }
-        }
-        {
-            auto node_result = this->parse_break(_rp, _ep);
-            if (node_result._tag == Result<BreakSyntax, ParserError>::Error)
-            {
-                if (node_result._Error._tag == ParserError::InvalidSyntax)
-                    return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Error, ._Error = node_result._Error };
-            }
-            else
-            {
-                auto node = node_result._Ok;
-                return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Ok, ._Ok = 
-                    CommandSyntax(BreakSyntax(node))
-                };
-            }
-        }
-        {
-            auto node_result = this->parse_return(_rp, _ep);
-            if (node_result._tag == Result<ReturnSyntax, ParserError>::Error)
-            {
-                if (node_result._Error._tag == ParserError::InvalidSyntax)
-                    return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Error, ._Error = node_result._Error };
-            }
-            else
-            {
-                auto node = node_result._Ok;
-                return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Ok, ._Ok = 
-                    CommandSyntax(ReturnSyntax(node))
-                };
-            }
-        }
-        {
-            auto node_result = this->parse_throw(_rp, _ep);
-            if (node_result._tag == Result<ThrowSyntax, ParserError>::Error)
-            {
-                if (node_result._Error._tag == ParserError::InvalidSyntax)
-                    return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Error, ._Error = node_result._Error };
-            }
-            else
-            {
-                auto node = node_result._Ok;
-                return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Ok, ._Ok = 
-                    CommandSyntax(ThrowSyntax(node))
-                };
-            }
-        }
-        return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Error, ._Error = ParserError(DifferentSyntax()) };
-    }
-
     Result<WhileSyntax, ParserError> parse_while(Page* _rp, Page* _ep) {
         auto start = this->lexer.previous_position;
 
@@ -5584,19 +5445,19 @@ struct Parser : Object {
         if (!success_colon_5) {
         }
 
-        auto action_start = this->lexer.position;
-        auto action_result = this->parse_action(_rp, _ep);
-        if (action_result._tag == Result<ActionSyntax, ParserError>::Error)
+        auto command_start = this->lexer.position;
+        auto command_result = this->parse_command(_rp, _ep);
+        if (command_result._tag == Result<CommandSyntax, ParserError>::Error)
         {
-            switch (action_result._Error._tag) {
+            switch (command_result._Error._tag) {
                 case ParserError::DifferentSyntax:
-                    return Result<WhenSyntax, ParserError> { ._tag = Result<WhenSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(action_start, lexer.position, String(_ep, "a valid Action syntax"))) };
+                    return Result<WhenSyntax, ParserError> { ._tag = Result<WhenSyntax, ParserError>::Error, ._Error = ParserError(InvalidSyntax(command_start, lexer.position, String(_ep, "a valid Command syntax"))) };
                 case ParserError::InvalidSyntax:
-                    return Result<WhenSyntax, ParserError> { ._tag = Result<WhenSyntax, ParserError>::Error, ._Error = action_result._Error };
+                    return Result<WhenSyntax, ParserError> { ._tag = Result<WhenSyntax, ParserError>::Error, ._Error = command_result._Error };
             }
         }
 
-        auto action = action_result._Ok;
+        auto command = command_result._Ok;
 
         auto start_colon_7 = this->lexer.previous_position;
         auto success_colon_7 = this->lexer.parse_colon(_rp);
@@ -5605,9 +5466,148 @@ struct Parser : Object {
 
         auto end = this->lexer.position;
 
-        auto ret = WhenSyntax(start, end, *name, variant, action);
+        auto ret = WhenSyntax(start, end, *name, variant, command);
 
         return Result<WhenSyntax, ParserError> { ._tag = Result<WhenSyntax, ParserError>::Ok, ._Ok = ret };
+    }
+
+    Result<CommandSyntax, ParserError> parse_command(Page* _rp, Page* _ep) {
+        {
+            auto node_result = this->parse_operation(_rp, _ep);
+            if (node_result._tag == Result<OperationSyntax, ParserError>::Error)
+            {
+                if (node_result._Error._tag == ParserError::InvalidSyntax)
+                    return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Error, ._Error = node_result._Error };
+            }
+            else
+            {
+                auto node = node_result._Ok;
+                return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Ok, ._Ok = 
+                    CommandSyntax(OperationSyntax(node))
+                };
+            }
+        }
+        {
+            auto node_result = this->parse_let(_rp, _ep);
+            if (node_result._tag == Result<LetSyntax, ParserError>::Error)
+            {
+                if (node_result._Error._tag == ParserError::InvalidSyntax)
+                    return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Error, ._Error = node_result._Error };
+            }
+            else
+            {
+                auto node = node_result._Ok;
+                return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Ok, ._Ok = 
+                    CommandSyntax(LetSyntax(node))
+                };
+            }
+        }
+        {
+            auto node_result = this->parse_var(_rp, _ep);
+            if (node_result._tag == Result<VarSyntax, ParserError>::Error)
+            {
+                if (node_result._Error._tag == ParserError::InvalidSyntax)
+                    return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Error, ._Error = node_result._Error };
+            }
+            else
+            {
+                auto node = node_result._Ok;
+                return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Ok, ._Ok = 
+                    CommandSyntax(VarSyntax(node))
+                };
+            }
+        }
+        {
+            auto node_result = this->parse_mutable(_rp, _ep);
+            if (node_result._tag == Result<MutableSyntax, ParserError>::Error)
+            {
+                if (node_result._Error._tag == ParserError::InvalidSyntax)
+                    return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Error, ._Error = node_result._Error };
+            }
+            else
+            {
+                auto node = node_result._Ok;
+                return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Ok, ._Ok = 
+                    CommandSyntax(MutableSyntax(node))
+                };
+            }
+        }
+        {
+            auto node_result = this->parse_set(_rp, _ep);
+            if (node_result._tag == Result<SetSyntax, ParserError>::Error)
+            {
+                if (node_result._Error._tag == ParserError::InvalidSyntax)
+                    return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Error, ._Error = node_result._Error };
+            }
+            else
+            {
+                auto node = node_result._Ok;
+                return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Ok, ._Ok = 
+                    CommandSyntax(SetSyntax(node))
+                };
+            }
+        }
+        {
+            auto node_result = this->parse_continue(_rp, _ep);
+            if (node_result._tag == Result<ContinueSyntax, ParserError>::Error)
+            {
+                if (node_result._Error._tag == ParserError::InvalidSyntax)
+                    return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Error, ._Error = node_result._Error };
+            }
+            else
+            {
+                auto node = node_result._Ok;
+                return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Ok, ._Ok = 
+                    CommandSyntax(ContinueSyntax(node))
+                };
+            }
+        }
+        {
+            auto node_result = this->parse_break(_rp, _ep);
+            if (node_result._tag == Result<BreakSyntax, ParserError>::Error)
+            {
+                if (node_result._Error._tag == ParserError::InvalidSyntax)
+                    return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Error, ._Error = node_result._Error };
+            }
+            else
+            {
+                auto node = node_result._Ok;
+                return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Ok, ._Ok = 
+                    CommandSyntax(BreakSyntax(node))
+                };
+            }
+        }
+        {
+            auto node_result = this->parse_return(_rp, _ep);
+            if (node_result._tag == Result<ReturnSyntax, ParserError>::Error)
+            {
+                if (node_result._Error._tag == ParserError::InvalidSyntax)
+                    return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Error, ._Error = node_result._Error };
+            }
+            else
+            {
+                auto node = node_result._Ok;
+                return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Ok, ._Ok = 
+                    CommandSyntax(ReturnSyntax(node))
+                };
+            }
+        }
+        {
+            auto node_result = this->parse_throw(_rp, _ep);
+            if (node_result._tag == Result<ThrowSyntax, ParserError>::Error)
+            {
+                if (node_result._Error._tag == ParserError::InvalidSyntax)
+                    return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Error, ._Error = node_result._Error };
+            }
+            else
+            {
+                auto node = node_result._Ok;
+                return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Ok, ._Ok = 
+                    CommandSyntax(ThrowSyntax(node))
+                };
+            }
+        }
+        return Result<CommandSyntax, ParserError> { ._tag = Result<CommandSyntax, ParserError>::Error, ._Error = ParserError(DifferentSyntax()) };
     }
 
     Result<LetSyntax, ParserError> parse_let(Page* _rp, Page* _ep) {

@@ -163,6 +163,7 @@ struct Result {\n\
     void build_union(Page* _ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, Union& union_, Vector<GenericParameter> parameters) {
         header_builder.append('\n');
         full_struct_name(header_builder, name, parameters);
+        header_builder.append(" : Object");
         header_builder.append(" {\n");
         {
             auto variants = union_.variants;
@@ -212,7 +213,7 @@ struct Result {\n\
                 Variant& variant = *_variant;
                 if (variant.type == nullptr)
                     continue;
-                header_builder.append("        ");
+                header_builder.append("        struct ");
                 build_type(header_builder, variant.type);
                 header_builder.append(" _");
                 header_builder.append(variant.name);
@@ -229,7 +230,7 @@ struct Result {\n\
                 cpp_builder.append(name);
                 cpp_builder.append("::");
                 cpp_builder.append(name);
-                cpp_builder.append('(');
+                cpp_builder.append("(struct ");
                 build_type(cpp_builder, variant.type);
                 cpp_builder.append(" _");
                 cpp_builder.append(variant.name);
@@ -734,18 +735,8 @@ struct Result {\n\
     }
 
     TranspilerError* build_binding(Page* _ep, StringBuilder& builder, Binding& binding, Type* returns_, Type* throws_, String indent) {
-        switch (binding.binding_type) {
-            case Binding::Constant: {
-                builder.append("const ");
-                break;
-            }
-            case Binding::Extendable: {
-                break;
-            }
-            case Binding::Mutable: {
-                break;
-            }
-        }
+        if (binding.binding_type.equals("const"))
+            builder.append("const ");
         bool simple_array = false;
         if (binding.item.type != nullptr)
         {
@@ -904,7 +895,7 @@ struct Result {\n\
         switch (constant._tag) {
             case Constant::Boolean: {
                 auto boolean = constant._Boolean;
-                if (boolean)
+                if (boolean.value)
                     builder.append("true");
                 else
                     builder.append("false");
@@ -913,15 +904,15 @@ struct Result {\n\
             case Constant::Integer: {
                 auto integer = constant._Integer;
                 char str[32];
-                snprintf(str, 32, "%zd", integer);
+                snprintf(str, 32, "%zd", integer.value);
                 builder.append(String(_r.get_page(), str));
                 break;
             }
 
             case Constant::Hex:  {
-                auto integer = constant._Integer;
+                auto hex = constant._Hex;
                 char str[32];
-                snprintf(str, 32, "0x%zx", integer);
+                snprintf(str, 32, "0x%zx", hex.value);
                 builder.append(String(_r.get_page(), str));
                 break;
             }
@@ -929,18 +920,18 @@ struct Result {\n\
             case Constant::FloatingPoint: {
                 auto floating_point = constant._FloatingPoint;
                 char str[32];
-                snprintf(str, 32, "%lg", floating_point);
+                snprintf(str, 32, "%lg", floating_point.value);
                 builder.append(String(_r.get_page(), str));
                 break;
             }
             case Constant::String: {
-                build_string(builder, constant._String);
+                build_string(builder, constant._String.value);
                 break;
             }
             case Constant::Character: {
                 auto string = constant._String;
                 builder.append('\'');
-                builder.append(string);
+                builder.append(string.value);
                 builder.append('\'');
                 break;
             }
@@ -1246,7 +1237,7 @@ struct Result {\n\
             builder.append(";\n");
             builder.append(indented2);
             {
-                auto _result = build_action(_ep, builder, case_.action, returns_, throws_, indented2);
+                auto _result = build_statement(_ep, builder, &case_.consequent, returns_, throws_, indented2);
                 if (_result != nullptr)
                     return _result;
                 builder.append(";\n");
@@ -1434,18 +1425,20 @@ struct Result {\n\
             }
             builder.append(": {\n");
             builder.append(indented3);
-            builder.append("const auto error = _");
+            builder.append("const auto ");
+            builder.append(case_.name);
+            builder.append(" = _");
             builder.append(name);
             builder.append("_Error._");
             builder.append(*case_.variant.get(1));
             builder.append(";\n");
             builder.append(indented3);
             {
-                auto _result = build_action(_ep, builder, case_.action, returns_, throws_, indented3);
+                auto _result = build_statement(_ep, builder, &case_.consequent, returns_, throws_, indented3);
                 if (_result != nullptr)
                     return _result;
             }
-            builder.append("\n");
+            builder.append(";\n");
             builder.append(indented3);
             builder.append("break;\n");
             builder.append(indented2);
@@ -1465,6 +1458,7 @@ struct Result {\n\
             }
             }
         }
+        builder.append('\n');
         builder.append(indented);
         builder.append("}\n");
         builder.append(indent);

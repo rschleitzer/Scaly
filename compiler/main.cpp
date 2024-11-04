@@ -155,9 +155,9 @@ void test_lexer() {
         if (!String(_r_1.get_page(), "\\\"\\n\\r\\t").equals(lexer.token._Literal._String.value))
             exit (-53);
         lexer.advance();
-        if (lexer.token._tag != Token::Identifier)
+        if (lexer.token._tag != Token::Literal)
             exit (-54);
-        if (!String(_r_1.get_page(), "a string identifier").equals(lexer.token._Identifier.name))
+        if (!String(_r_1.get_page(), "a string identifier").equals(lexer.token._Literal._Character.value))
             exit (-55);
         lexer.advance();
         if (lexer.token._tag != Token::Literal)
@@ -171,7 +171,7 @@ void test_lexer() {
 
 void test_parser() {
     Region _r;
-    Parser& parser = *new (alignof(Parser), _r.get_page()) Parser(String(_r.get_page(), "define a 1"));
+    Parser& parser = *new (alignof(Parser), _r.get_page()) Parser(String(_r.get_page(), "define a ()"));
     auto file_syntax = parser.parse_file(_r.get_page(), _r.get_page());
     if (file_syntax._tag != Result<FileSyntax*, ParserError*>::Ok)
         exit(-1);
@@ -196,8 +196,8 @@ void test_compiler() {
 }
 
 int main(int argc, char** argv) {
-    // test_lexer();
-    // test_parser();
+    test_lexer();
+    test_parser();
     // test_generator();
     test_compiler();
 }

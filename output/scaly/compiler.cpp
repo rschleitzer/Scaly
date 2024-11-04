@@ -1,10 +1,15 @@
 #include "../scaly.h"
 namespace scaly {
+using namespace scaly::containers;
+
+using namespace scaly::io;
+
 
 void compiler::test_lexer() {
     {
         auto r = Region();
-        auto lexer = Lexer(String(r.get_page(), ""));
+        auto p = r.get_page();
+        auto lexer = Lexer(String(p, ""));
         {
             auto _result = lexer.token;
             switch (_result._tag)
@@ -37,7 +42,8 @@ void compiler::test_lexer() {
     };
     {
         auto r = Region();
-        auto lexer = Lexer(String(r.get_page(), " \t\r\n\
+        auto p = r.get_page();
+        auto lexer = Lexer(String(p, " \t\r\n\
 ;single line comment\n\
 ;*multi\n\
 line\n\
@@ -66,7 +72,7 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                 {
                     auto identifier = _result._Identifier;
                     {
-                        if (String(r.get_page(), "abc_AZ0815_7").equals(identifier.name) == false) 
+                        if (String(p, "abc_AZ0815_7").equals(identifier.name) == false) 
                             exit(4);
                         lexer.advance();
                     };
@@ -92,7 +98,7 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                                 {
                                     auto integer = _result._Integer;
                                     {
-                                        if (String(r.get_page(), "42").equals(integer.value) == false) 
+                                        if (String(p, "42").equals(integer.value) == false) 
                                             exit(6);
                                         lexer.advance();
                                     };
@@ -153,7 +159,7 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                                 {
                                     auto integer = _result._Integer;
                                     {
-                                        if (String(r.get_page(), "0").equals(integer.value) == false) 
+                                        if (String(p, "0").equals(integer.value) == false) 
                                             exit(11);
                                         lexer.advance();
                                     };
@@ -186,7 +192,7 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                                 {
                                     auto integer = _result._Integer;
                                     {
-                                        if (String(r.get_page(), "012").equals(integer.value) == false) 
+                                        if (String(p, "012").equals(integer.value) == false) 
                                             exit(14);
                                         lexer.advance();
                                     };
@@ -219,7 +225,7 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                                 {
                                     auto fp = _result._FloatingPoint;
                                     {
-                                        if (String(r.get_page(), "0.34").equals(fp.value) == false) 
+                                        if (String(p, "0.34").equals(fp.value) == false) 
                                             exit(17);
                                         lexer.advance();
                                     };
@@ -252,7 +258,7 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                                 {
                                     auto fp = _result._FloatingPoint;
                                     {
-                                        if (String(r.get_page(), "0.56E12").equals(fp.value) == false) 
+                                        if (String(p, "0.56E12").equals(fp.value) == false) 
                                             exit(20);
                                         lexer.advance();
                                     };
@@ -285,7 +291,7 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                                 {
                                     auto fp = _result._FloatingPoint;
                                     {
-                                        if (String(r.get_page(), "0.78e13").equals(fp.value) == false) 
+                                        if (String(p, "0.78e13").equals(fp.value) == false) 
                                             exit(23);
                                         lexer.advance();
                                     };
@@ -318,7 +324,7 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                                 {
                                     auto hex = _result._Hex;
                                     {
-                                        if (String(r.get_page(), "0xaB").equals(hex.value) == false) 
+                                        if (String(p, "0xaB").equals(hex.value) == false) 
                                             exit(26);
                                         lexer.advance();
                                     };
@@ -351,7 +357,7 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                                 {
                                     auto hex = _result._Hex;
                                     {
-                                        if (String(r.get_page(), "0xCdEf02").equals(hex.value) == false) 
+                                        if (String(p, "0xCdEf02").equals(hex.value) == false) 
                                             exit(29);
                                         lexer.advance();
                                     };
@@ -442,7 +448,7 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                 {
                     auto a = _result._Attribute;
                     {
-                        if (String(r.get_page(), "ttribute").equals(a.name) == false) 
+                        if (String(p, "ttribute").equals(a.name) == false) 
                             exit(38);
                         lexer.advance();
                     };
@@ -460,7 +466,7 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                 {
                     auto identifier = _result._Identifier;
                     {
-                        if (String(r.get_page(), "+").equals(identifier.name) == false) 
+                        if (String(p, "+").equals(identifier.name) == false) 
                             exit(40);
                         lexer.advance();
                     };
@@ -478,7 +484,7 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                 {
                     auto identifier = _result._Identifier;
                     {
-                        if (String(r.get_page(), "-").equals(identifier.name) == false) 
+                        if (String(p, "-").equals(identifier.name) == false) 
                             exit(42);
                         lexer.advance();
                     };
@@ -504,7 +510,7 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                                 {
                                     auto integer = _result._Integer;
                                     {
-                                        if (String(r.get_page(), "0815").equals(integer.value) == false) 
+                                        if (String(p, "0815").equals(integer.value) == false) 
                                             exit(44);
                                         lexer.advance();
                                     };
@@ -529,7 +535,7 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                 {
                     auto identifier = _result._Identifier;
                     {
-                        if (String(r.get_page(), "/*").equals(identifier.name) == false) 
+                        if (String(p, "/*").equals(identifier.name) == false) 
                             exit(46);
                         lexer.advance();
                     };
@@ -547,7 +553,7 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                 {
                     auto identifier = _result._Identifier;
                     {
-                        if (String(r.get_page(), "<>").equals(identifier.name) == false) 
+                        if (String(p, "<>").equals(identifier.name) == false) 
                             exit(48);
                         lexer.advance();
                     };
@@ -573,7 +579,7 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                                 {
                                     auto string = _result._String;
                                     {
-                                        if (String(r.get_page(), "a string").equals(string.value) == false) 
+                                        if (String(p, "a string").equals(string.value) == false) 
                                             exit(50);
                                         lexer.advance();
                                     };
@@ -606,7 +612,7 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                                 {
                                     auto string = _result._String;
                                     {
-                                        if (String(r.get_page(), "\\\"\\n\\r\\t").equals(string.value) == false) 
+                                        if (String(p, "\\\"\\n\\r\\t").equals(string.value) == false) 
                                             exit(53);
                                         lexer.advance();
                                     };
@@ -639,7 +645,7 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                                 {
                                     auto character = _result._Character;
                                     {
-                                        if (String(r.get_page(), "a string identifier").equals(character.value) == false) 
+                                        if (String(p, "a string identifier").equals(character.value) == false) 
                                             exit(56);
                                         lexer.advance();
                                     };
@@ -672,7 +678,7 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                                 {
                                     auto fragment = _result._Fragment;
                                     {
-                                        if (String(r.get_page(), "a string fragment \\`\\n\\r\\t").equals(fragment.value) == false) 
+                                        if (String(p, "a string fragment \\`\\n\\r\\t").equals(fragment.value) == false) 
                                             exit(58);
                                         lexer.advance();
                                     };
@@ -692,8 +698,64 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
     };
 }
 
+void compiler::test_parser() {
+    {
+        auto r = Region();
+        auto p = r.get_page();
+        auto parser = new (alignof(Parser), r.get_page()) Parser(String(p, "define a ()"));
+        const auto _file_syntax_result = (*parser).parse_file(p, p);
+        auto file_syntax = _file_syntax_result._Ok;
+        if (_file_syntax_result._tag == Success::Error) {
+            const auto _file_syntax_Error = _file_syntax_result._Error;
+            switch (_file_syntax_Error._tag) {
+                case ParserError::Invalid: {
+                    const auto i = _file_syntax_Error._Invalid;
+                    exit(61);
+                    break;
+                }
+                case ParserError::Different: {
+                    const auto d = _file_syntax_Error._Different;
+                    exit(62);
+                    break;
+                }
+            }
+        }
+        ;
+    };
+    {
+        auto r = Region();
+        auto p = r.get_page();
+        const auto _file_text_result = File::read_to_string(p, p, String(p, "../scaly.scaly"));
+        auto file_text = _file_text_result._Ok;
+        if (_file_text_result._tag == Success::Error) {
+            const auto _file_text_Error = _file_text_result._Error;
+            switch (_file_text_Error._tag) {
+            default:
+                exit(63);
+
+            }
+        }
+        ;
+        auto parser = new (alignof(Parser), r.get_page()) Parser(file_text);
+        const auto _program_syntax_result = (*parser).parse_program(p, p);
+        auto program_syntax = _program_syntax_result._Ok;
+        if (_program_syntax_result._tag == Success::Error) {
+            const auto _program_syntax_Error = _program_syntax_result._Error;
+            switch (_program_syntax_Error._tag) {
+            default:
+                exit(64);
+
+            }
+        }
+        ;
+        if ((*parser).is_at_end() == false) 
+            exit(65);
+    };
+}
+
 void compiler::test() {
     test_lexer();
+    test_parser();
 }
 
 }

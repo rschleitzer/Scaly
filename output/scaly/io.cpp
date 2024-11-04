@@ -18,16 +18,18 @@ void io::test_file() {
                         switch (_text_Error._tag) {
                         default:
                             exit(-2);
+
                         }
                     }
                     ;
                     if (text.equals(String(r.get_page(), "baz")) == false) 
                         exit(-3);
-                }
+                };
                 break;
             }
         default:
             exit(-4);
+
         }
     }
     ;
@@ -60,6 +62,7 @@ void io::test_directory() {
         switch (_dir_exists_Error._tag) {
         default:
             exit(-9);
+
         }
     }
     ;
@@ -72,6 +75,7 @@ void io::test_directory() {
             switch (_void_Error._tag) {
             default:
                 exit(-11);
+
             }
         }
         }
@@ -83,6 +87,7 @@ void io::test_directory() {
         switch (_dir_exists_now_Error._tag) {
         default:
             exit(-12);
+
         }
     }
     ;
@@ -95,6 +100,7 @@ void io::test_directory() {
             switch (_void_Error._tag) {
             default:
                 exit(-14);
+
             }
         }
         }
@@ -106,6 +112,7 @@ void io::test_directory() {
         switch (_dir_exists_still_Error._tag) {
         default:
             exit(-15);
+
         }
     }
     ;

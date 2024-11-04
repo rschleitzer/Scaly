@@ -78,7 +78,7 @@ struct HexToken : Object {
     HexToken(Vector<char> value);
 };
 
-struct LiteralToken {
+struct LiteralToken : Object {
     LiteralToken(StringToken);
     LiteralToken(CharacterToken);
     LiteralToken(FragmentToken);
@@ -96,16 +96,16 @@ struct LiteralToken {
         Hex,
     } _tag;
     union {
-        StringToken _String;
-        CharacterToken _Character;
-        FragmentToken _Fragment;
-        IntegerToken _Integer;
-        BooleanToken _Boolean;
-        FloatingPointToken _FloatingPoint;
-        HexToken _Hex;
+        struct StringToken _String;
+        struct CharacterToken _Character;
+        struct FragmentToken _Fragment;
+        struct IntegerToken _Integer;
+        struct BooleanToken _Boolean;
+        struct FloatingPointToken _FloatingPoint;
+        struct HexToken _Hex;
     };
 };
-struct Token {
+struct Token : Object {
     Token(EmptyToken);
     Token(InvalidToken);
     Token(IdentifierToken);
@@ -123,13 +123,13 @@ struct Token {
         Colon,
     } _tag;
     union {
-        EmptyToken _Empty;
-        InvalidToken _Invalid;
-        IdentifierToken _Identifier;
-        AttributeToken _Attribute;
-        PunctuationToken _Punctuation;
-        LiteralToken _Literal;
-        ColonToken _Colon;
+        struct EmptyToken _Empty;
+        struct InvalidToken _Invalid;
+        struct IdentifierToken _Identifier;
+        struct AttributeToken _Attribute;
+        struct PunctuationToken _Punctuation;
+        struct LiteralToken _Literal;
+        struct ColonToken _Colon;
     };
 };
 struct Lexer : Object {

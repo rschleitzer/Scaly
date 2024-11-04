@@ -23,33 +23,33 @@ BooleanToken::BooleanToken(bool value) : value(value) {}
 FloatingPointToken::FloatingPointToken(Vector<char> value) : value(value) {}
 
 HexToken::HexToken(Vector<char> value) : value(value) {}
-LiteralToken::LiteralToken(StringToken _String) : _tag(String), _String(_String) {}
+LiteralToken::LiteralToken(struct StringToken _String) : _tag(String), _String(_String) {}
 
-LiteralToken::LiteralToken(CharacterToken _Character) : _tag(Character), _Character(_Character) {}
+LiteralToken::LiteralToken(struct CharacterToken _Character) : _tag(Character), _Character(_Character) {}
 
-LiteralToken::LiteralToken(FragmentToken _Fragment) : _tag(Fragment), _Fragment(_Fragment) {}
+LiteralToken::LiteralToken(struct FragmentToken _Fragment) : _tag(Fragment), _Fragment(_Fragment) {}
 
-LiteralToken::LiteralToken(IntegerToken _Integer) : _tag(Integer), _Integer(_Integer) {}
+LiteralToken::LiteralToken(struct IntegerToken _Integer) : _tag(Integer), _Integer(_Integer) {}
 
-LiteralToken::LiteralToken(BooleanToken _Boolean) : _tag(Boolean), _Boolean(_Boolean) {}
+LiteralToken::LiteralToken(struct BooleanToken _Boolean) : _tag(Boolean), _Boolean(_Boolean) {}
 
-LiteralToken::LiteralToken(FloatingPointToken _FloatingPoint) : _tag(FloatingPoint), _FloatingPoint(_FloatingPoint) {}
+LiteralToken::LiteralToken(struct FloatingPointToken _FloatingPoint) : _tag(FloatingPoint), _FloatingPoint(_FloatingPoint) {}
 
-LiteralToken::LiteralToken(HexToken _Hex) : _tag(Hex), _Hex(_Hex) {}
+LiteralToken::LiteralToken(struct HexToken _Hex) : _tag(Hex), _Hex(_Hex) {}
 
-Token::Token(EmptyToken _Empty) : _tag(Empty), _Empty(_Empty) {}
+Token::Token(struct EmptyToken _Empty) : _tag(Empty), _Empty(_Empty) {}
 
-Token::Token(InvalidToken _Invalid) : _tag(Invalid), _Invalid(_Invalid) {}
+Token::Token(struct InvalidToken _Invalid) : _tag(Invalid), _Invalid(_Invalid) {}
 
-Token::Token(IdentifierToken _Identifier) : _tag(Identifier), _Identifier(_Identifier) {}
+Token::Token(struct IdentifierToken _Identifier) : _tag(Identifier), _Identifier(_Identifier) {}
 
-Token::Token(AttributeToken _Attribute) : _tag(Attribute), _Attribute(_Attribute) {}
+Token::Token(struct AttributeToken _Attribute) : _tag(Attribute), _Attribute(_Attribute) {}
 
-Token::Token(PunctuationToken _Punctuation) : _tag(Punctuation), _Punctuation(_Punctuation) {}
+Token::Token(struct PunctuationToken _Punctuation) : _tag(Punctuation), _Punctuation(_Punctuation) {}
 
-Token::Token(LiteralToken _Literal) : _tag(Literal), _Literal(_Literal) {}
+Token::Token(struct LiteralToken _Literal) : _tag(Literal), _Literal(_Literal) {}
 
-Token::Token(ColonToken _Colon) : _tag(Colon), _Colon(_Colon) {}
+Token::Token(struct ColonToken _Colon) : _tag(Colon), _Colon(_Colon) {}
 
 
 Lexer::Lexer(Token token, char* character, StringIterator chars, size_t previous_position, size_t position) : token(token), character(character), chars(chars), previous_position(previous_position), position(position) {}

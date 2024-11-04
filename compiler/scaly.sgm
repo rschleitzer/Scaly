@@ -393,17 +393,6 @@
     <content link = Command                                 property = command
     <content colon                                 optional
 
-<syntax id = Command                               abstract
-    <content link = Operation
-    <content link = Let
-    <content link = Var
-    <content link = Mutable
-    <content link = Set
-    <content link = Continue
-    <content link = Break
-    <content link = Return
-    <content link = Throw
-
 <syntax id = While
     <content link = while
     <content link = Condition                               property = condition
@@ -435,8 +424,19 @@
     <content colon
     <content link = Name                                    property = variant
     <content colon                                 optional
-    <content link = Action                                  property = action
+    <content link = Command                                 property = command
     <content colon                                 optional
+
+<syntax id = Command                               abstract
+    <content link = Operation
+    <content link = Let
+    <content link = Var
+    <content link = Mutable
+    <content link = Set
+    <content link = Continue
+    <content link = Break
+    <content link = Return
+    <content link = Throw
 
 <syntax id = Let
     <content link = let

@@ -47,6 +47,7 @@
 				"${workspaceFolder}/scaly/compiler/Errors.cpp",
 				"${workspaceFolder}/scaly/compiler/Lexer.cpp",
 				"${workspaceFolder}/scaly/compiler/Parser.cpp",
+				"${workspaceFolder}/scaly/compiler/Model.cpp",
 				"-o",
 				"${workspaceFolder}/bin/scaly",
 				//"`llvm-config --cxxflags --ldflags --system-libs --libs core`"

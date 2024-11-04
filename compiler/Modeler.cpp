@@ -484,14 +484,14 @@ Result<Constant, ModelError> handle_literal(Page* _rp, Page* _ep, LiteralSyntax&
     Region _r;
     switch (literal.literal._tag) {
         case Literal::Boolean:
-            return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError> ::Ok, ._Ok = Constant { ._tag = Constant::Boolean, ._Boolean = literal.literal._Boolean.value } };
+            return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError> ::Ok, ._Ok = Constant(BooleanConstant(literal.literal._Boolean.value)) };
         case Literal::Integer: {
             auto integer = (size_t)strtol(literal.literal._Integer.value.to_c_string(_r.get_page()), nullptr, 10);
             const bool range_error = errno == ERANGE;
             if (range_error)
                 return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError>::Error, ._Error = ModelError(ModelBuilderError(InvalidConstant(file, Span(literal.start, literal.end)))) };
 
-            return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError> ::Ok, ._Ok = Constant { ._tag = Constant::Integer, ._Integer = integer } };
+            return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError> ::Ok, ._Ok = Constant(IntegerConstant(integer)) };
         }
         case Literal::Hex: {
             auto hex = (size_t)strtoul(literal.literal._Hex.value.to_c_string(_r.get_page()), nullptr, 16);
@@ -499,7 +499,7 @@ Result<Constant, ModelError> handle_literal(Page* _rp, Page* _ep, LiteralSyntax&
             if (range_error)
                 return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError>::Error, ._Error = ModelError(ModelBuilderError(InvalidConstant(file, Span(literal.start, literal.end)))) };
 
-            return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError> ::Ok, ._Ok = Constant { ._tag = Constant::Hex, ._Hex = hex } };
+            return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError> ::Ok, ._Ok = Constant(HexConstant(hex)) };
         }
         case Literal::FloatingPoint: {
             auto floating_point = strtod(literal.literal._FloatingPoint.value.to_c_string(_r.get_page()), nullptr);
@@ -507,14 +507,14 @@ Result<Constant, ModelError> handle_literal(Page* _rp, Page* _ep, LiteralSyntax&
             if (range_error)
                 return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError>::Error, ._Error = ModelError(ModelBuilderError(InvalidConstant(file, Span(literal.start, literal.end)))) };
 
-            return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError>::Ok, ._Ok = Constant { ._tag = Constant::FloatingPoint, ._FloatingPoint = floating_point } };
+            return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError>::Ok, ._Ok = Constant(FloatingPointConstant(floating_point)) };
         }
         case Literal::String:
-            return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError>::Ok, ._Ok = Constant { ._tag = Constant::String, ._String = literal.literal._String.value } };
+            return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError>::Ok, ._Ok = Constant(StringConstant(literal.literal._String.value)) };
         case Literal::Character:
-            return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError>::Ok, ._Ok = Constant { ._tag = Constant::Character, ._Character = literal.literal._Character.value } };
+            return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError>::Ok, ._Ok = Constant(CharacterConstant(literal.literal._Character.value)) };
         case Literal::Fragment:
-            return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError>::Ok, ._Ok = Constant { ._tag = Constant::Fragment, ._Fragment = literal.literal._Fragment.value } };
+            return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError>::Ok, ._Ok = Constant(FragmentConstant(literal.literal._Fragment.value)) };
         break;
     }
 }
@@ -655,7 +655,7 @@ Result<Statement, ModelError> handle_command(Page* _rp, Page* _ep, CommandSyntax
             auto operation_result = handle_operands(_rp, _ep, binding, file);
             if (operation_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = operation_result._Error };
-            return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Ok, ._Ok = Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Constant, Item(Span(command._Let.start, command._Let.end), false, new(alignof(String), _rp) String(_rp, command._Let.binding.name), type, Vector<Attribute>(_rp, 0)), operation_result._Ok) }};
+            return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Ok, ._Ok = Statement { ._tag = Statement::Binding, ._Binding = Binding(String(_rp, "const"), Item(Span(command._Let.start, command._Let.end), false, new(alignof(String), _rp) String(_rp, command._Let.binding.name), type, Vector<Attribute>(_rp, 0)), operation_result._Ok) }};
         }
         case CommandSyntax::Var: {
             auto binding = command._Var.binding.operation;
@@ -669,7 +669,7 @@ Result<Statement, ModelError> handle_command(Page* _rp, Page* _ep, CommandSyntax
             auto operation_result = handle_operands(_rp, _ep, binding, file);
             if (operation_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = operation_result._Error };
-            return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Ok, ._Ok = Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Extendable, Item(Span(command._Var.start, command._Var.end), false, new(alignof(String), _rp) String(_rp, command._Mutable.binding.name), type, Vector<Attribute>(_rp, 0)), operation_result._Ok) }};
+            return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Ok, ._Ok = Statement { ._tag = Statement::Binding, ._Binding = Binding(String(_rp, "var"), Item(Span(command._Var.start, command._Var.end), false, new(alignof(String), _rp) String(_rp, command._Mutable.binding.name), type, Vector<Attribute>(_rp, 0)), operation_result._Ok) }};
         }
         case CommandSyntax::Mutable: {
             auto binding = command._Mutable.binding.operation;
@@ -683,7 +683,7 @@ Result<Statement, ModelError> handle_command(Page* _rp, Page* _ep, CommandSyntax
             auto operation_result = handle_operands(_rp, _ep, binding, file);
             if (operation_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = operation_result._Error };
-            return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Ok, ._Ok = Statement { ._tag = Statement::Binding, ._Binding = Binding(Binding::Mutability::Mutable, Item(Span(command._Mutable.start, command._Mutable.end), false, new(alignof(String), _rp) String(_rp, command._Mutable.binding.name), type, Vector<Attribute>(_rp, 0)), operation_result._Ok) }};
+            return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Ok, ._Ok = Statement { ._tag = Statement::Binding, ._Binding = Binding(String(_rp, "mutable"), Item(Span(command._Mutable.start, command._Mutable.end), false, new(alignof(String), _rp) String(_rp, command._Mutable.binding.name), type, Vector<Attribute>(_rp, 0)), operation_result._Ok) }};
         }
         case CommandSyntax::Set: {
             auto _target_result = handle_operands(_rp, _ep, command._Set.target, file);
@@ -957,11 +957,11 @@ Result<When, ModelError> handle_when(Page* _rp, Page* _ep, WhenSyntax& when_, St
             name_builder.add(_name->name);
         }
     }
-    auto _action_result =  handle_action(_rp, _ep, when_.action, file);
-    if (_action_result._tag == Result<Operand, ModelError>::Error)
-        return Result<When, ModelError> { ._tag = Result<When, ModelError>::Error, ._Error = _action_result._Error };
-    auto action = _action_result._Ok;
-    return Result<When, ModelError> { ._tag = Result<When, ModelError>::Ok, ._Ok = When(Span(when_.start, when_.end), when_.name, Vector<String>(_rp, name_builder), action) };
+    auto _command_result = handle_command(_rp, _ep, when_.command, file);
+    if (_command_result._tag == Result<Statement, ModelError>::Error)
+        return Result<When, ModelError> { ._tag = Result<When, ModelError>::Error, ._Error = _command_result._Error };
+    auto consequent = _command_result._Ok;
+    return Result<When, ModelError> { ._tag = Result<When, ModelError>::Ok, ._Ok = When(Span(when_.start, when_.end), when_.name, Vector<String>(_rp, name_builder), consequent)};
 }
 
 Result<Choose, ModelError> handle_choose(Page* _rp, Page* _ep, ChooseSyntax& choose_, String file) {
@@ -1021,7 +1021,7 @@ Result<Binding, ModelError> handle_condition(Page* _rp, Page* _ep, ConditionSynt
             auto operation_result = handle_operation(_rp, _ep, condition._Operation, file);
             if (operation_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Binding, ModelError> { ._tag = Result<Binding, ModelError>::Error, ._Error = operation_result._Error };
-            return Result<Binding, ModelError> { ._tag = Result<Binding, ModelError>::Ok, ._Ok = Binding(Binding::Mutability::Constant, Item(Span(condition._Operation.start, condition._Operation.end), false, nullptr, nullptr, Vector<Attribute>(_rp, 0)), operation_result._Ok)};
+            return Result<Binding, ModelError> { ._tag = Result<Binding, ModelError>::Ok, ._Ok = Binding(String(_rp, "const"), Item(Span(condition._Operation.start, condition._Operation.end), false, nullptr, nullptr, Vector<Attribute>(_rp, 0)), operation_result._Ok)};
         }
         case ConditionSyntax::Let: {
             auto binding = condition._Let.binding.operation;
@@ -1035,7 +1035,7 @@ Result<Binding, ModelError> handle_condition(Page* _rp, Page* _ep, ConditionSynt
             auto operation_result = handle_operands(_rp, _ep, binding, file);
             if (operation_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Binding, ModelError> { ._tag = Result<Binding, ModelError>::Error, ._Error = operation_result._Error };
-            return Result<Binding, ModelError> { ._tag = Result<Binding, ModelError>::Ok, ._Ok = Binding(Binding::Mutability::Constant, Item(Span(condition._Let.start, condition._Let.end), false, new(alignof(String), _rp) String(_rp, condition._Let.binding.name), nullptr, Vector<Attribute>(_rp, 0)), operation_result._Ok)};
+            return Result<Binding, ModelError> { ._tag = Result<Binding, ModelError>::Ok, ._Ok = Binding(String(_rp, "const"), Item(Span(condition._Let.start, condition._Let.end), false, new(alignof(String), _rp) String(_rp, condition._Let.binding.name), nullptr, Vector<Attribute>(_rp, 0)), operation_result._Ok)};
         }
     }
 }

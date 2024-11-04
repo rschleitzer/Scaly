@@ -54,7 +54,7 @@ struct HexLiteral : Object {
     HexLiteral(String value);
 };
 
-struct Literal {
+struct Literal : Object {
     Literal(StringLiteral);
     Literal(CharacterLiteral);
     Literal(FragmentLiteral);
@@ -72,13 +72,13 @@ struct Literal {
         Hex,
     } _tag;
     union {
-        StringLiteral _String;
-        CharacterLiteral _Character;
-        FragmentLiteral _Fragment;
-        IntegerLiteral _Integer;
-        BooleanLiteral _Boolean;
-        FloatingPointLiteral _FloatingPoint;
-        HexLiteral _Hex;
+        struct StringLiteral _String;
+        struct CharacterLiteral _Character;
+        struct FragmentLiteral _Fragment;
+        struct IntegerLiteral _Integer;
+        struct BooleanLiteral _Boolean;
+        struct FloatingPointLiteral _FloatingPoint;
+        struct HexLiteral _Hex;
     };
 };
 struct ThrownSyntax : Object {
@@ -110,7 +110,7 @@ struct CallSyntax : Object {
     CallSyntax(size_t start, size_t end);
 };
 
-struct LifetimeSyntax {
+struct LifetimeSyntax : Object {
     LifetimeSyntax(CallSyntax);
     LifetimeSyntax(LocalSyntax);
     LifetimeSyntax(ReferenceSyntax);
@@ -122,10 +122,10 @@ struct LifetimeSyntax {
         Thrown,
     } _tag;
     union {
-        CallSyntax _Call;
-        LocalSyntax _Local;
-        ReferenceSyntax _Reference;
-        ThrownSyntax _Thrown;
+        struct CallSyntax _Call;
+        struct LocalSyntax _Local;
+        struct ReferenceSyntax _Reference;
+        struct ThrownSyntax _Thrown;
     };
 };
 struct ExtensionSyntax : Object {
@@ -181,7 +181,7 @@ struct OperationSyntax : Object {
     OperationSyntax(size_t start, size_t end, Vector<OperandSyntax> operands);
 };
 
-struct ActionSyntax {
+struct ActionSyntax : Object {
     ActionSyntax(OperationSyntax);
     ActionSyntax(SetSyntax);
     enum {
@@ -189,8 +189,8 @@ struct ActionSyntax {
         Set,
     } _tag;
     union {
-        OperationSyntax _Operation;
-        SetSyntax _Set;
+        struct OperationSyntax _Operation;
+        struct SetSyntax _Set;
     };
 };
 struct RepeatSyntax : Object {
@@ -299,7 +299,7 @@ struct FieldSyntax : Object {
     FieldSyntax(size_t start, size_t end, PropertySyntax property);
 };
 
-struct PartSyntax {
+struct PartSyntax : Object {
     PartSyntax(FieldSyntax);
     PartSyntax(PropertySyntax);
     enum {
@@ -307,8 +307,8 @@ struct PartSyntax {
         Property,
     } _tag;
     union {
-        FieldSyntax _Field;
-        PropertySyntax _Property;
+        struct FieldSyntax _Field;
+        struct PropertySyntax _Property;
     };
 };
 struct StructureSyntax : Object {
@@ -327,7 +327,7 @@ struct ArraySyntax : Object {
     ArraySyntax(size_t start, size_t end, Vector<TypeSyntax>* members);
 };
 
-struct BindingSpecSyntax {
+struct BindingSpecSyntax : Object {
     BindingSpecSyntax(StructureSyntax);
     BindingSpecSyntax(TypeSyntax);
     BindingSpecSyntax(ArraySyntax);
@@ -337,9 +337,9 @@ struct BindingSpecSyntax {
         Array,
     } _tag;
     union {
-        StructureSyntax _Structure;
-        TypeSyntax _Type;
-        ArraySyntax _Array;
+        struct StructureSyntax _Structure;
+        struct TypeSyntax _Type;
+        struct ArraySyntax _Array;
     };
 };
 struct BindingAnnotationSyntax : Object {
@@ -384,17 +384,50 @@ struct LetSyntax : Object {
     LetSyntax(size_t start, size_t end, BindingSyntax binding);
 };
 
+struct CommandSyntax : Object {
+    CommandSyntax(OperationSyntax);
+    CommandSyntax(LetSyntax);
+    CommandSyntax(VarSyntax);
+    CommandSyntax(MutableSyntax);
+    CommandSyntax(SetSyntax);
+    CommandSyntax(ContinueSyntax);
+    CommandSyntax(BreakSyntax);
+    CommandSyntax(ReturnSyntax);
+    CommandSyntax(ThrowSyntax);
+    enum {
+        Operation,
+        Let,
+        Var,
+        Mutable,
+        Set,
+        Continue,
+        Break,
+        Return,
+        Throw,
+    } _tag;
+    union {
+        struct OperationSyntax _Operation;
+        struct LetSyntax _Let;
+        struct VarSyntax _Var;
+        struct MutableSyntax _Mutable;
+        struct SetSyntax _Set;
+        struct ContinueSyntax _Continue;
+        struct BreakSyntax _Break;
+        struct ReturnSyntax _Return;
+        struct ThrowSyntax _Throw;
+    };
+};
 struct WhenSyntax : Object {
     size_t start;
     size_t end;
     String name;
     NameSyntax variant;
-    ActionSyntax action;
+    CommandSyntax command;
 
-    WhenSyntax(size_t start, size_t end, String name, NameSyntax variant, ActionSyntax action);
+    WhenSyntax(size_t start, size_t end, String name, NameSyntax variant, CommandSyntax command);
 };
 
-struct ConditionSyntax {
+struct ConditionSyntax : Object {
     ConditionSyntax(OperationSyntax);
     ConditionSyntax(LetSyntax);
     enum {
@@ -402,8 +435,8 @@ struct ConditionSyntax {
         Let,
     } _tag;
     union {
-        OperationSyntax _Operation;
-        LetSyntax _Let;
+        struct OperationSyntax _Operation;
+        struct LetSyntax _Let;
     };
 };
 struct TrySyntax : Object {
@@ -436,39 +469,6 @@ struct WhileSyntax : Object {
     WhileSyntax(size_t start, size_t end, ConditionSyntax condition, LabelSyntax* name, ActionSyntax action);
 };
 
-struct CommandSyntax {
-    CommandSyntax(OperationSyntax);
-    CommandSyntax(LetSyntax);
-    CommandSyntax(VarSyntax);
-    CommandSyntax(MutableSyntax);
-    CommandSyntax(SetSyntax);
-    CommandSyntax(ContinueSyntax);
-    CommandSyntax(BreakSyntax);
-    CommandSyntax(ReturnSyntax);
-    CommandSyntax(ThrowSyntax);
-    enum {
-        Operation,
-        Let,
-        Var,
-        Mutable,
-        Set,
-        Continue,
-        Break,
-        Return,
-        Throw,
-    } _tag;
-    union {
-        OperationSyntax _Operation;
-        LetSyntax _Let;
-        VarSyntax _Var;
-        MutableSyntax _Mutable;
-        SetSyntax _Set;
-        ContinueSyntax _Continue;
-        BreakSyntax _Break;
-        ReturnSyntax _Return;
-        ThrowSyntax _Throw;
-    };
-};
 struct StatementSyntax : Object {
     size_t start;
     size_t end;
@@ -592,7 +592,7 @@ struct LiteralSyntax : Object {
     LiteralSyntax(size_t start, size_t end, Literal literal);
 };
 
-struct ExpressionSyntax {
+struct ExpressionSyntax : Object {
     ExpressionSyntax(LiteralSyntax);
     ExpressionSyntax(TypeSyntax);
     ExpressionSyntax(ObjectSyntax);
@@ -624,20 +624,20 @@ struct ExpressionSyntax {
         SizeOf,
     } _tag;
     union {
-        LiteralSyntax _Literal;
-        TypeSyntax _Type;
-        ObjectSyntax _Object;
-        VectorSyntax _Vector;
-        BlockSyntax _Block;
-        IfSyntax _If;
-        MatchSyntax _Match;
-        LambdaSyntax _Lambda;
-        ForSyntax _For;
-        WhileSyntax _While;
-        ChooseSyntax _Choose;
-        TrySyntax _Try;
-        RepeatSyntax _Repeat;
-        SizeOfSyntax _SizeOf;
+        struct LiteralSyntax _Literal;
+        struct TypeSyntax _Type;
+        struct ObjectSyntax _Object;
+        struct VectorSyntax _Vector;
+        struct BlockSyntax _Block;
+        struct IfSyntax _If;
+        struct MatchSyntax _Match;
+        struct LambdaSyntax _Lambda;
+        struct ForSyntax _For;
+        struct WhileSyntax _While;
+        struct ChooseSyntax _Choose;
+        struct TrySyntax _Try;
+        struct RepeatSyntax _Repeat;
+        struct SizeOfSyntax _SizeOf;
     };
 };
 struct MemberAccessSyntax : Object {
@@ -681,7 +681,7 @@ struct ModuleSyntax : Object {
     ModuleSyntax(size_t start, size_t end, String name);
 };
 
-struct ModelSyntax {
+struct ModelSyntax : Object {
     ModelSyntax(LiteralSyntax);
     ModelSyntax(NameSyntax);
     ModelSyntax(ObjectSyntax);
@@ -693,10 +693,10 @@ struct ModelSyntax {
         Vector,
     } _tag;
     union {
-        LiteralSyntax _Literal;
-        NameSyntax _Name;
-        ObjectSyntax _Object;
-        VectorSyntax _Vector;
+        struct LiteralSyntax _Literal;
+        struct NameSyntax _Name;
+        struct ObjectSyntax _Object;
+        struct VectorSyntax _Vector;
     };
 };
 struct AttributeSyntax : Object {
@@ -755,7 +755,7 @@ struct ExternSyntax : Object {
     ExternSyntax(size_t start, size_t end);
 };
 
-struct ImplementationSyntax {
+struct ImplementationSyntax : Object {
     ImplementationSyntax(ActionSyntax);
     ImplementationSyntax(ExternSyntax);
     ImplementationSyntax(InstructionSyntax);
@@ -767,10 +767,10 @@ struct ImplementationSyntax {
         Intrinsic,
     } _tag;
     union {
-        ActionSyntax _Action;
-        ExternSyntax _Extern;
-        InstructionSyntax _Instruction;
-        IntrinsicSyntax _Intrinsic;
+        struct ActionSyntax _Action;
+        struct ExternSyntax _Extern;
+        struct InstructionSyntax _Instruction;
+        struct IntrinsicSyntax _Intrinsic;
     };
 };
 struct RoutineSyntax : Object {
@@ -796,7 +796,7 @@ struct NamedSyntax : Object {
     NamedSyntax(size_t start, size_t end, String name, RoutineSyntax routine);
 };
 
-struct TargetSyntax {
+struct TargetSyntax : Object {
     TargetSyntax(NamedSyntax);
     TargetSyntax(RoutineSyntax);
     enum {
@@ -804,8 +804,8 @@ struct TargetSyntax {
         Routine,
     } _tag;
     union {
-        NamedSyntax _Named;
-        RoutineSyntax _Routine;
+        struct NamedSyntax _Named;
+        struct RoutineSyntax _Routine;
     };
 };
 struct OperatorSyntax : Object {
@@ -849,7 +849,7 @@ struct InitSyntax : Object {
     InitSyntax(size_t start, size_t end, ParameterSetSyntax* parameters, ActionSyntax action);
 };
 
-struct MethodSyntax {
+struct MethodSyntax : Object {
     MethodSyntax(FunctionSyntax);
     MethodSyntax(ProcedureSyntax);
     MethodSyntax(OperatorSyntax);
@@ -859,9 +859,9 @@ struct MethodSyntax {
         Operator,
     } _tag;
     union {
-        FunctionSyntax _Function;
-        ProcedureSyntax _Procedure;
-        OperatorSyntax _Operator;
+        struct FunctionSyntax _Function;
+        struct ProcedureSyntax _Procedure;
+        struct OperatorSyntax _Operator;
     };
 };
 struct TraitSyntax : Object {
@@ -931,7 +931,7 @@ struct ParametersSyntax : Object {
     ParametersSyntax(size_t start, size_t end, Vector<ItemSyntax>* items);
 };
 
-struct ParameterSetSyntax {
+struct ParameterSetSyntax : Object {
     ParameterSetSyntax(ParametersSyntax);
     ParameterSetSyntax(TypeSyntax);
     enum {
@@ -939,8 +939,8 @@ struct ParameterSetSyntax {
         Type,
     } _tag;
     union {
-        ParametersSyntax _Parameters;
-        TypeSyntax _Type;
+        struct ParametersSyntax _Parameters;
+        struct TypeSyntax _Type;
     };
 };
 struct OptionalSyntax : Object {
@@ -1033,7 +1033,7 @@ struct ClassSyntax : Object {
     ClassSyntax(size_t start, size_t end, StructureSyntax structure, BodySyntax* body);
 };
 
-struct ConceptSyntax {
+struct ConceptSyntax : Object {
     ConceptSyntax(ClassSyntax);
     ConceptSyntax(NamespaceSyntax);
     ConceptSyntax(UnionSyntax);
@@ -1049,12 +1049,12 @@ struct ConceptSyntax {
         Intrinsic,
     } _tag;
     union {
-        ClassSyntax _Class;
-        NamespaceSyntax _Namespace;
-        UnionSyntax _Union;
-        ConstantSyntax _Constant;
-        DelegateSyntax _Delegate;
-        IntrinsicSyntax _Intrinsic;
+        struct ClassSyntax _Class;
+        struct NamespaceSyntax _Namespace;
+        struct UnionSyntax _Union;
+        struct ConstantSyntax _Constant;
+        struct DelegateSyntax _Delegate;
+        struct IntrinsicSyntax _Intrinsic;
     };
 };
 struct GenericParameterSyntax : Object {
@@ -1085,7 +1085,7 @@ struct DefinitionSyntax : Object {
     DefinitionSyntax(size_t start, size_t end, String name, GenericParametersSyntax* parameters, Vector<AttributeSyntax>* attributes, ConceptSyntax concept_);
 };
 
-struct ConstituentSyntax {
+struct ConstituentSyntax : Object {
     ConstituentSyntax(DefinitionSyntax);
     ConstituentSyntax(FunctionSyntax);
     ConstituentSyntax(ProcedureSyntax);
@@ -1105,14 +1105,14 @@ struct ConstituentSyntax {
         Module,
     } _tag;
     union {
-        DefinitionSyntax _Definition;
-        FunctionSyntax _Function;
-        ProcedureSyntax _Procedure;
-        OperatorSyntax _Operator;
-        ImplementSyntax _Implement;
-        TraitSyntax _Trait;
-        MacroSyntax _Macro;
-        ModuleSyntax _Module;
+        struct DefinitionSyntax _Definition;
+        struct FunctionSyntax _Function;
+        struct ProcedureSyntax _Procedure;
+        struct OperatorSyntax _Operator;
+        struct ImplementSyntax _Implement;
+        struct TraitSyntax _Trait;
+        struct MacroSyntax _Macro;
+        struct ModuleSyntax _Module;
     };
 };
 struct MemberSyntax : Object {
@@ -1123,7 +1123,7 @@ struct MemberSyntax : Object {
     MemberSyntax(size_t start, size_t end, ConstituentSyntax constituent);
 };
 
-struct ExportSyntax {
+struct ExportSyntax : Object {
     ExportSyntax(DefinitionSyntax);
     ExportSyntax(FunctionSyntax);
     ExportSyntax(OperatorSyntax);
@@ -1137,11 +1137,11 @@ struct ExportSyntax {
         Module,
     } _tag;
     union {
-        DefinitionSyntax _Definition;
-        FunctionSyntax _Function;
-        OperatorSyntax _Operator;
-        TraitSyntax _Trait;
-        ModuleSyntax _Module;
+        struct DefinitionSyntax _Definition;
+        struct FunctionSyntax _Function;
+        struct OperatorSyntax _Operator;
+        struct TraitSyntax _Trait;
+        struct ModuleSyntax _Module;
     };
 };
 struct PrivateSyntax : Object {
@@ -1152,7 +1152,7 @@ struct PrivateSyntax : Object {
     PrivateSyntax(size_t start, size_t end, ExportSyntax export_);
 };
 
-struct SymbolSyntax {
+struct SymbolSyntax : Object {
     SymbolSyntax(PrivateSyntax);
     SymbolSyntax(DefinitionSyntax);
     SymbolSyntax(FunctionSyntax);
@@ -1170,13 +1170,13 @@ struct SymbolSyntax {
         Module,
     } _tag;
     union {
-        PrivateSyntax _Private;
-        DefinitionSyntax _Definition;
-        FunctionSyntax _Function;
-        OperatorSyntax _Operator;
-        TraitSyntax _Trait;
-        MacroSyntax _Macro;
-        ModuleSyntax _Module;
+        struct PrivateSyntax _Private;
+        struct DefinitionSyntax _Definition;
+        struct FunctionSyntax _Function;
+        struct OperatorSyntax _Operator;
+        struct TraitSyntax _Trait;
+        struct MacroSyntax _Macro;
+        struct ModuleSyntax _Module;
     };
 };
 struct DeclarationSyntax : Object {
@@ -1216,6 +1216,140 @@ struct Parser : Object {
     Vector<String> initialize_keywords_index();
     HashSet<String> initialize_keywords();
     Result<Literal, ParserError> parse_literal_token(Page* rp, Page* ep);
+    Result<ProgramSyntax, ParserError> parse_program(Page* rp, Page* ep);
+    Result<FileSyntax, ParserError> parse_file(Page* rp, Page* ep);
+    Result<Vector<DeclarationSyntax>*, ParserError> parse_declaration_list(Page* rp, Page* ep);
+    Result<DeclarationSyntax, ParserError> parse_declaration(Page* rp, Page* ep);
+    Result<SymbolSyntax, ParserError> parse_symbol(Page* rp, Page* ep);
+    Result<PrivateSyntax, ParserError> parse_private(Page* rp, Page* ep);
+    Result<ExportSyntax, ParserError> parse_export(Page* rp, Page* ep);
+    Result<Vector<MemberSyntax>*, ParserError> parse_member_list(Page* rp, Page* ep);
+    Result<MemberSyntax, ParserError> parse_member(Page* rp, Page* ep);
+    Result<ConstituentSyntax, ParserError> parse_constituent(Page* rp, Page* ep);
+    Result<DefinitionSyntax, ParserError> parse_definition(Page* rp, Page* ep);
+    Result<GenericParametersSyntax, ParserError> parse_genericparameters(Page* rp, Page* ep);
+    Result<Vector<GenericParameterSyntax>*, ParserError> parse_genericparameter_list(Page* rp, Page* ep);
+    Result<GenericParameterSyntax, ParserError> parse_genericparameter(Page* rp, Page* ep);
+    Result<ConceptSyntax, ParserError> parse_concept(Page* rp, Page* ep);
+    Result<ClassSyntax, ParserError> parse_class(Page* rp, Page* ep);
+    Result<BodySyntax, ParserError> parse_body(Page* rp, Page* ep);
+    Result<NamespaceSyntax, ParserError> parse_namespace(Page* rp, Page* ep);
+    Result<UnionSyntax, ParserError> parse_union(Page* rp, Page* ep);
+    Result<Vector<VariantSyntax>*, ParserError> parse_variant_list(Page* rp, Page* ep);
+    Result<VariantSyntax, ParserError> parse_variant(Page* rp, Page* ep);
+    Result<ConstantSyntax, ParserError> parse_constant(Page* rp, Page* ep);
+    Result<DelegateSyntax, ParserError> parse_delegate(Page* rp, Page* ep);
+    Result<GenericArgumentsSyntax, ParserError> parse_genericarguments(Page* rp, Page* ep);
+    Result<Vector<GenericArgumentSyntax>*, ParserError> parse_genericargument_list(Page* rp, Page* ep);
+    Result<GenericArgumentSyntax, ParserError> parse_genericargument(Page* rp, Page* ep);
+    Result<OptionalSyntax, ParserError> parse_optional(Page* rp, Page* ep);
+    Result<ParameterSetSyntax, ParserError> parse_parameterset(Page* rp, Page* ep);
+    Result<ParametersSyntax, ParserError> parse_parameters(Page* rp, Page* ep);
+    Result<Vector<ItemSyntax>*, ParserError> parse_item_list(Page* rp, Page* ep);
+    Result<ItemSyntax, ParserError> parse_item(Page* rp, Page* ep);
+    Result<ReturnsSyntax, ParserError> parse_returns(Page* rp, Page* ep);
+    Result<ThrowsSyntax, ParserError> parse_throws(Page* rp, Page* ep);
+    Result<Vector<UseSyntax>*, ParserError> parse_use_list(Page* rp, Page* ep);
+    Result<UseSyntax, ParserError> parse_use(Page* rp, Page* ep);
+    Result<ImplementSyntax, ParserError> parse_implement(Page* rp, Page* ep);
+    Result<TraitSyntax, ParserError> parse_trait(Page* rp, Page* ep);
+    Result<Vector<MethodSyntax>*, ParserError> parse_method_list(Page* rp, Page* ep);
+    Result<MethodSyntax, ParserError> parse_method(Page* rp, Page* ep);
+    Result<Vector<InitSyntax>*, ParserError> parse_init_list(Page* rp, Page* ep);
+    Result<InitSyntax, ParserError> parse_init(Page* rp, Page* ep);
+    Result<DeInitSyntax, ParserError> parse_deinit(Page* rp, Page* ep);
+    Result<FunctionSyntax, ParserError> parse_function(Page* rp, Page* ep);
+    Result<ProcedureSyntax, ParserError> parse_procedure(Page* rp, Page* ep);
+    Result<OperatorSyntax, ParserError> parse_operator(Page* rp, Page* ep);
+    Result<TargetSyntax, ParserError> parse_target(Page* rp, Page* ep);
+    Result<NamedSyntax, ParserError> parse_named(Page* rp, Page* ep);
+    Result<RoutineSyntax, ParserError> parse_routine(Page* rp, Page* ep);
+    Result<ImplementationSyntax, ParserError> parse_implementation(Page* rp, Page* ep);
+    Result<ExternSyntax, ParserError> parse_extern(Page* rp, Page* ep);
+    Result<InstructionSyntax, ParserError> parse_instruction(Page* rp, Page* ep);
+    Result<IntrinsicSyntax, ParserError> parse_intrinsic(Page* rp, Page* ep);
+    Result<ExtendsSyntax, ParserError> parse_extends(Page* rp, Page* ep);
+    Result<Vector<ExtendSyntax>*, ParserError> parse_extend_list(Page* rp, Page* ep);
+    Result<ExtendSyntax, ParserError> parse_extend(Page* rp, Page* ep);
+    Result<MacroSyntax, ParserError> parse_macro(Page* rp, Page* ep);
+    Result<Vector<AttributeSyntax>*, ParserError> parse_attribute_list(Page* rp, Page* ep);
+    Result<AttributeSyntax, ParserError> parse_attribute(Page* rp, Page* ep);
+    Result<ModelSyntax, ParserError> parse_model(Page* rp, Page* ep);
+    Result<ModuleSyntax, ParserError> parse_module(Page* rp, Page* ep);
+    Result<Vector<PackageSyntax>*, ParserError> parse_package_list(Page* rp, Page* ep);
+    Result<PackageSyntax, ParserError> parse_package(Page* rp, Page* ep);
+    Result<InitializerSyntax, ParserError> parse_initializer(Page* rp, Page* ep);
+    Result<Vector<OperandSyntax>*, ParserError> parse_operand_list(Page* rp, Page* ep);
+    Result<OperandSyntax, ParserError> parse_operand(Page* rp, Page* ep);
+    Result<Vector<MemberAccessSyntax>*, ParserError> parse_memberaccess_list(Page* rp, Page* ep);
+    Result<MemberAccessSyntax, ParserError> parse_memberaccess(Page* rp, Page* ep);
+    Result<ExpressionSyntax, ParserError> parse_expression(Page* rp, Page* ep);
+    Result<LiteralSyntax, ParserError> parse_literal(Page* rp, Page* ep);
+    Result<ObjectSyntax, ParserError> parse_object(Page* rp, Page* ep);
+    Result<Vector<ComponentSyntax>*, ParserError> parse_component_list(Page* rp, Page* ep);
+    Result<ComponentSyntax, ParserError> parse_component(Page* rp, Page* ep);
+    Result<ValueSyntax, ParserError> parse_value(Page* rp, Page* ep);
+    Result<VectorSyntax, ParserError> parse_vector(Page* rp, Page* ep);
+    Result<Vector<ElementSyntax>*, ParserError> parse_element_list(Page* rp, Page* ep);
+    Result<ElementSyntax, ParserError> parse_element(Page* rp, Page* ep);
+    Result<BlockSyntax, ParserError> parse_block(Page* rp, Page* ep);
+    Result<IfSyntax, ParserError> parse_if(Page* rp, Page* ep);
+    Result<ElseSyntax, ParserError> parse_else(Page* rp, Page* ep);
+    Result<MatchSyntax, ParserError> parse_match(Page* rp, Page* ep);
+    Result<Vector<BranchSyntax>*, ParserError> parse_branch_list(Page* rp, Page* ep);
+    Result<BranchSyntax, ParserError> parse_branch(Page* rp, Page* ep);
+    Result<Vector<CaseSyntax>*, ParserError> parse_case_list(Page* rp, Page* ep);
+    Result<CaseSyntax, ParserError> parse_case(Page* rp, Page* ep);
+    Result<DefaultSyntax, ParserError> parse_default(Page* rp, Page* ep);
+    Result<Vector<StatementSyntax>*, ParserError> parse_statement_list(Page* rp, Page* ep);
+    Result<StatementSyntax, ParserError> parse_statement(Page* rp, Page* ep);
+    Result<WhileSyntax, ParserError> parse_while(Page* rp, Page* ep);
+    Result<ChooseSyntax, ParserError> parse_choose(Page* rp, Page* ep);
+    Result<TrySyntax, ParserError> parse_try(Page* rp, Page* ep);
+    Result<ConditionSyntax, ParserError> parse_condition(Page* rp, Page* ep);
+    Result<Vector<WhenSyntax>*, ParserError> parse_when_list(Page* rp, Page* ep);
+    Result<WhenSyntax, ParserError> parse_when(Page* rp, Page* ep);
+    Result<CommandSyntax, ParserError> parse_command(Page* rp, Page* ep);
+    Result<LetSyntax, ParserError> parse_let(Page* rp, Page* ep);
+    Result<VarSyntax, ParserError> parse_var(Page* rp, Page* ep);
+    Result<MutableSyntax, ParserError> parse_mutable(Page* rp, Page* ep);
+    Result<BindingSyntax, ParserError> parse_binding(Page* rp, Page* ep);
+    Result<BindingAnnotationSyntax, ParserError> parse_bindingannotation(Page* rp, Page* ep);
+    Result<Vector<BindingSpecSyntax>*, ParserError> parse_bindingspec_list(Page* rp, Page* ep);
+    Result<BindingSpecSyntax, ParserError> parse_bindingspec(Page* rp, Page* ep);
+    Result<ArraySyntax, ParserError> parse_array(Page* rp, Page* ep);
+    Result<StructureSyntax, ParserError> parse_structure(Page* rp, Page* ep);
+    Result<Vector<PartSyntax>*, ParserError> parse_part_list(Page* rp, Page* ep);
+    Result<PartSyntax, ParserError> parse_part(Page* rp, Page* ep);
+    Result<FieldSyntax, ParserError> parse_field(Page* rp, Page* ep);
+    Result<Vector<PropertySyntax>*, ParserError> parse_property_list(Page* rp, Page* ep);
+    Result<PropertySyntax, ParserError> parse_property(Page* rp, Page* ep);
+    Result<TypeAnnotationSyntax, ParserError> parse_typeannotation(Page* rp, Page* ep);
+    Result<ContinueSyntax, ParserError> parse_continue(Page* rp, Page* ep);
+    Result<BreakSyntax, ParserError> parse_break(Page* rp, Page* ep);
+    Result<LoopSyntax, ParserError> parse_loop(Page* rp, Page* ep);
+    Result<ReturnSyntax, ParserError> parse_return(Page* rp, Page* ep);
+    Result<ThrowSyntax, ParserError> parse_throw(Page* rp, Page* ep);
+    Result<LambdaSyntax, ParserError> parse_lambda(Page* rp, Page* ep);
+    Result<ForSyntax, ParserError> parse_for(Page* rp, Page* ep);
+    Result<LabelSyntax, ParserError> parse_label(Page* rp, Page* ep);
+    Result<RepeatSyntax, ParserError> parse_repeat(Page* rp, Page* ep);
+    Result<Vector<ActionSyntax>*, ParserError> parse_action_list(Page* rp, Page* ep);
+    Result<ActionSyntax, ParserError> parse_action(Page* rp, Page* ep);
+    Result<OperationSyntax, ParserError> parse_operation(Page* rp, Page* ep);
+    Result<SetSyntax, ParserError> parse_set(Page* rp, Page* ep);
+    Result<SizeOfSyntax, ParserError> parse_sizeof(Page* rp, Page* ep);
+    Result<Vector<TypeSyntax>*, ParserError> parse_type_list(Page* rp, Page* ep);
+    Result<TypeSyntax, ParserError> parse_type(Page* rp, Page* ep);
+    Result<NameSyntax, ParserError> parse_name(Page* rp, Page* ep);
+    Result<Vector<ExtensionSyntax>*, ParserError> parse_extension_list(Page* rp, Page* ep);
+    Result<ExtensionSyntax, ParserError> parse_extension(Page* rp, Page* ep);
+    Result<LifetimeSyntax, ParserError> parse_lifetime(Page* rp, Page* ep);
+    Result<CallSyntax, ParserError> parse_call(Page* rp, Page* ep);
+    Result<LocalSyntax, ParserError> parse_local(Page* rp, Page* ep);
+    Result<ReferenceSyntax, ParserError> parse_reference(Page* rp, Page* ep);
+    Result<ThrownSyntax, ParserError> parse_thrown(Page* rp, Page* ep);
+    bool is_at_end();
 };
 
 #endif

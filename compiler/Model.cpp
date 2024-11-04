@@ -31,8 +31,56 @@ struct Name : Object {
     Name(Span span, Vector<String> path) : span(span), path(path) {}
 };
 
+struct BooleanConstant : Object {
+    bool value;
 
-struct Constant {
+    BooleanConstant(bool value) : value(value) {}
+};
+
+struct IntegerConstant : Object {
+    size_t value;
+
+    IntegerConstant(size_t value) : value(value) {}
+};
+
+struct HexConstant : Object {
+    size_t value;
+
+    HexConstant(size_t value) : value(value) {}
+};
+
+struct FloatingPointConstant : Object {
+    double value;
+
+    FloatingPointConstant(double value) : value(value) {}
+};
+
+struct StringConstant : Object {
+    String value;
+
+    StringConstant(String value) : value(value) {}
+};
+
+struct CharacterConstant : Object {
+    String value;
+
+    CharacterConstant(String value) : value(value) {}
+};
+
+struct FragmentConstant : Object {
+    String value;
+
+    FragmentConstant(String value) : value(value) {}
+};
+
+struct Constant : Object {
+    Constant(BooleanConstant _Boolean) : _tag(Boolean), _Boolean(_Boolean) {}
+    Constant(IntegerConstant _Integer) : _tag(Integer), _Integer(_Integer) {}
+    Constant(HexConstant _Hex) : _tag(Hex), _Hex(_Hex) {}
+    Constant(FloatingPointConstant _FloatingPoint) : _tag(FloatingPoint), _FloatingPoint(_FloatingPoint) {}
+    Constant(StringConstant _String) : _tag(String), _String(_String) {}
+    Constant(CharacterConstant _Character) : _tag(Character), _Character(_Character) {}
+    Constant(FragmentConstant _Fragment) : _tag(Fragment), _Fragment(_Fragment) {}
     enum {
         Boolean,
         Integer,
@@ -43,13 +91,13 @@ struct Constant {
         Fragment,
     } _tag;
     union {
-        bool _Boolean;
-        size_t _Integer;
-        size_t _Hex;
-        double _FloatingPoint;
-        struct String _String;
-        struct String _Character;
-        struct String _Fragment;
+        BooleanConstant _Boolean;
+        IntegerConstant _Integer;
+        HexConstant _Hex;
+        FloatingPointConstant _FloatingPoint;
+        StringConstant _String;
+        CharacterConstant _Character;
+        FragmentConstant _Fragment;
     };
 };
 
@@ -150,10 +198,10 @@ struct Action : Object {
 };
 
 struct Binding {
-    enum Mutability { Constant, Extendable, Mutable, } binding_type;
+    String binding_type;
     Item item;
     Vector<Operand> operation;
-    Binding(Mutability binding_type, Item item, Vector<Operand> operation)
+    Binding(String binding_type, Item item, Vector<Operand> operation)
       : binding_type(binding_type), item(item), operation(operation) {}
 };
 
@@ -233,8 +281,8 @@ struct When : Object {
     Span span;
     String name;
     Vector<String> variant;
-    Action action;
-    When(Span span, String name, Vector<String> variant, Action action) : span(span), name(name), variant(variant), action(action) {}
+    Statement consequent;
+    When(Span span, String name, Vector<String> variant, Statement consequent) : span(span), name(name), variant(variant), consequent(consequent) {}
 };
 
 struct Choose : Object {
@@ -506,7 +554,7 @@ struct Definition {
     } _tag;
     union {
         struct Intrinsic _Intrinsic;
-        struct Global  _Global;
+        struct Global _Global;
         struct Namespace _Namespace;
         struct Structure _Structure;
         struct Union _Union;

@@ -85,27 +85,24 @@ define Parser
 "
     function parse_"(downcase-string (id syntax))"_list(this: Parser) returns pointer[Vector["(id syntax)"Syntax]] throws ParserError {
         var r Region()
-        List<"(id syntax)"Syntax]& list = *new(alignof(List<"(id syntax)"Syntax]), _r.get_page()) List<"(id syntax)"Syntax]()
-        while(true) {
-            let node_result = parse_"(downcase-string (id syntax))"(rp, ep)
-            if ((node_result._tag == Result["(id syntax)"Syntax, ParserError]::Error) && (node_result._Error._tag == ParserError::InvalidSyntax))
-                return Result[Vector<"(id syntax)"Syntax]*, ParserError] { ._tag = Result[Vector<"(id syntax)"Syntax]*, ParserError]::Error, ._Error = node_result._Error }
-            if (node_result._tag == Result["(id syntax)"Syntax, ParserError]::Ok) {
-                let node = node_result._Ok
-                list.add(node)
-            } else {
-                if ((list.count() == 0) && (node_result._tag == Result["(id syntax)"Syntax, ParserError]::Error) && (node_result._Error._tag == ParserError::DifferentSyntax))
-                    return Result[Vector<"(id syntax)"Syntax]*, ParserError] { ._tag = Result[Vector<"(id syntax)"Syntax]*, ParserError]::Error, ._Error = node_result._Error }
-                break
-            }
-        }
+        var list List["(id syntax)"Syntax]$()
+        while true
+        {
+            try let node parse_"(downcase-string (id syntax))"(rp, ep)
+                when i: ParserError.Invalid
+                    throw i
+                when d: ParserError.Different
+                {
+                    if (*list).head = 0
+                    {
+                        throw d
+                    } else {
+                        return Vector["(id syntax)"Syntax]#(rp, *list)
+                    }
+                }
 
-        if (list.count() == 0)
-            return Result[Vector<"(id syntax)"Syntax]*, ParserError] { ._tag = Result[Vector<"(id syntax)"Syntax]*, ParserError]::Ok, ._Ok = nullptr }
-        
-        return Result[Vector<"(id syntax)"Syntax]*, ParserError] {
-            ._tag = Result[Vector<"(id syntax)"Syntax]*, ParserError]::Ok,
-            ._Ok = new(alignof(Vector<"(id syntax)"Syntax]), _rp) Vector<"(id syntax)"Syntax](_rp, list) }
+            (*list).add(node)
+        }
     }
 "       )"")
 "
@@ -113,165 +110,96 @@ define Parser
 "       (if (abstract? syntax)
             ($
                 (apply-to-children-of syntax (lambda (content) ($
-"        try let node parse_"(downcase-string (link content))"(rp, ep)
-            when error: ParserError.InvalidSyntax
-                throw error
-        return"(id syntax)"Syntax("(link content)"Syntax(node))
+"        {
+            choose parse_"(downcase-string (link content))"(rp, ep)
+                when error: Success.Error
+                {
+                    choose error
+                        when i: ParserError.Invalid throw i
+                        when d: ParserError.Different {}
+                }
+                when node: Success.Ok
+                    return "(id syntax)"Syntax("(link content)"Syntax(node))
+        }
 "
                 )))
 "        throw ParserError(DifferentSyntax())
 "
             )
             ($ ; non-abstract syntax
-"        let start = lexer.previous_position
+"        let start lexer.previous_position
 "               (apply-to-children-of syntax (lambda (content) ($
                     (case (type content)
                         (("syntax") ($
 "
-        let "(property content)"_start = lexer.position
+        let "(property content)"_start lexer.position
 "
-                            (if (and (optional? content)(not (multiple? content)))
-                                ($
-"        let "(property content)"_result = parse_"(downcase-string (link content))(if (multiple? content) "_list" "")"(rp, ep)
-        if ("(property content)"_result._tag == Result["(if (multiple? content) "Vector<" "")(link content)"Syntax"(if (multiple? content) "]" "")", ParserError]::Error)
-        {
-            switch ("(property content)"_result._Error._tag) {
-                case ParserError::DifferentSyntax:
-                    break
-                case ParserError::InvalidSyntax:
-                    return Result["(id syntax)"Syntax, ParserError] { ._tag = Result["(id syntax)"Syntax, ParserError]::Error, ._Error = "(property content)"_result._Error }
-            }
-        }
-
-        "(link content)"Syntax* "(property content)" = "(property content)"_result._tag == Result["(link content)"Syntax, ParserError]::Error ? nullptr : new(alignof("(link content)"Syntax), _rp) "(link content)"Syntax("(property content)
-                                    "_result._Ok)
-    "
-                                ) ; end optional and not multiple
-                                ($ ; non-optional or multiple
-"        let "(property content)"_result = parse_"(downcase-string (link content))(if (multiple? content) "_list" "")"(rp, ep)
-        choose "(property content)"_result
+                            (if (optional? content) ($
+"        var "(property content)": pointer["(if (multiple? content) "Vector[" "")(link content)"Syntax"(if (multiple? content) "]" "")"] null 
+        choose parse_"(downcase-string (link content))(if (multiple? content) "_list" "")"(rp, ep)
             when error: Success.Error
             {
                 choose error
-"
-                                    (if (optional? content)
-                                        ($
-"                    when d: ParserError.DifferentSyntax {}
-"                                       )
-                                        (if (equal? 1 (child-number content))
-                                            ($
-"                    when d: ParserError.DifferentSyntax throw d
-"                                           )
-                                            ($
-"                    when d: ParserError.DifferentSyntax
-                        throw InvalidSyntax("(property content)"_start, lexer.position, String(ep, \"a valid "(link content)" syntax\"))
-"                                           )
-                                        )
-                                    )
-"                    when i: ParserError.InvalidSyntax throw i
+                    when d: ParserError.Different {}
+                    when i: ParserError.Invalid
+                        throw i
             }
-        let "
-                                    (property content)
-                                    " = "
-                                    (if (optional? content)
+            when success: Success.Ok
+                set "(property content)": "(if (multiple? content) "" ($ (link content)"Syntax#("))"success"(if (multiple? content) "" ")")"
+"
+                                ) ; end optional
+                                ($ ; non-optional
+"        try let "(property content)" parse_"(downcase-string (link content))(if (multiple? content) "_list" "")"(rp, ep)
+"
+                                    (if (equal? 1 (child-number content))
                                         ($
-                                            (property content)
-                                            "_result._tag == Result["
-                                            (if (multiple? content) "Vector[" "")
-                                            (link content)
-                                            "Syntax"
-                                            (if (multiple? content) "]" "")
-                                            ", ParserError]::Error ? nullptr : "
-                                            (if (multiple? content) "" ($
-                                            "new(alignof("(link content)"Syntax), _rp) "(link content)"Syntax("
-                                            ))
-                                        )
-                                        ""
+"            when d: ParserError.Different throw d
+"                                       )
+                                        ($
+"            when d: ParserError.Different
+                throw InvalidSyntax("(property content)"_start, lexer.position, String(ep, \"a valid "(link content)" syntax\"))
+"                                       )
                                     )
-                                    (property content)                            
-                                    "_result._Ok"
-                                    (if (and (optional? content)(not (multiple? content))) ")" "")
-                                "
-    "
+"            when i: ParserError.Invalid throw i
+"
                                 ) ; non-optional or multiple
                             )
                         ))
                         (("literal") ($
 "
-        let "(property content)"_start = lexer.previous_position
-        let "(property content)"_result = parse_literal_token(_rp)
-        if ("(property content)"_result._tag == Result[Literal, ParserError]::Error)
-        {
-"                           (if (optional? content) "" ($
-"            if ("(property content)"_result._Error._tag == ParserError::DifferentSyntax)
-"                               (if (equal? 1 (child-number content))
-                                    ($
-"               return Result["(id syntax)"Syntax, ParserError] { ._tag = Result["(id syntax)"Syntax, ParserError]::Error, ._Error = ParserError(DifferentSyntax()) }
-"                                   )
-                                    ($
-"               return Result["(id syntax)"Syntax, ParserError] { ._tag = Result["(id syntax)"Syntax, ParserError]::Error, ._Error = ParserError(InvalidSyntax("(property content)"_start, lexer.position, String(_ep, \"a literal\"))) }
-"                                   )
-                                )
-                            ))
-"        }
-
-        "                   (if (and (optional? content)(not (multiple? content))(link content))
-                                ($ (link content)"Syntax*")
-                                "let"
-                            )
-                            " "
-                            (property content)
-                            " = "
-                            (if (optional? content)
-                                ($
-                                    (property content)
-                                    "_result._tag == Result["
-                                    (if (multiple? content) "Vector[" "")
-                                    (link content)
-                                    "Syntax"
-                                    (if (multiple? content) "]" "")
-                                    ", ParserError]::Error ? nullptr : "
-                                    (if (multiple? content) "" ($
-                                    "new(alignof("(link content)"Syntax), _rp) "(link content)"Syntax("
-                                    ))
-                                )
-                                ""
-                            )
-                            (property content)                            
-                            "_result._Ok"
-                            (if (and (optional? content)(not (multiple? content))) ")" "")
-                            "
+        try let "(property content)" parse_literal_token(rp, ep)
+            when d: ParserError.Different throw d
+            when i: ParserError.Invalid throw i
 "
                         ))
                         (else (let ((syntax-moniker (if (property content) (property content) ($ (case (type content) (("colon" "semicolon") (type content)) (else (link content)))"_"(number->string (child-number content)))))) ($ ; terminals
 "
-        let start_"syntax-moniker" = lexer.previous_position
+        let start_"syntax-moniker" lexer.previous_position
         let "
                             (case (type content)
                                 (("keyword" "punctuation" "colon" "semicolon") ($ "success_"syntax-moniker))
                                 (else (property content))
                             )
-            " = lexer.parse_"(type content)"("
+            " lexer.parse_"(type content)"("
                             (case (type content)
-                                (("keyword")     ($ "_rp, *keywords_index["(number->string (- (child-number (element-with-id (link content))) 1))"]"))
+                                (("keyword")     ($ "*keywords_index.get("(number->string (- (child-number (element-with-id (link content))) 1))")"))
                                 (("punctuation") ($ "'"(value (element-with-id (link content)))"'"))
-                                (("identifier")  ($ "_rp, keywords"))
-                                (("attribute" "colon" "semicolon") "_rp")
+                                (("identifier")  ($ "rp, keywords"))
+                                (("colon" "semicolon") "")
+                                (("attribute") "rp")
                             )")
 "
                             (let
                                 ((null-handler
-                                    (if (optional? content) 
-"
-"                                       ($
+                                    (if (optional? content) "" ($
                                             (if (equal? 1 (child-number content))
                                                 ($
 "
-            return Result["(id syntax)"Syntax, ParserError] { ._tag = Result["(id syntax)"Syntax, ParserError]::Error, ._Error = ParserError(DifferentSyntax()) }
+            throw ParserError(DifferentSyntax())
 "                                               )
                                                 ($
 "
-            return Result["(id syntax)"Syntax, ParserError] { ._tag = Result["(id syntax)"Syntax, ParserError]::Error, ._Error = ParserError(InvalidSyntax(start_"syntax-moniker", lexer.position, String(_ep, \""
+            throw ParserError(InvalidSyntax(start_"syntax-moniker", lexer.position, String(ep, \""
                                                     (case (type content)
                                                         (("keyword")     (link content))
                                                         (("punctuation") (value (element-with-id (link content))))
@@ -280,59 +208,60 @@ define Parser
                                                         (("colon") "a colon or a line feed")
                                                         (("semicolon") "a semicolon")
                                                     )
-            "\"))) }"
+            "\")))"
                                                 )
                                             )
-                                        )
-                                    )
+                                    ))
                                 ))
+                                (if (string=? "" null-handler) "" ($
                                 (case (type content)
                                     (("keyword" "punctuation" "colon" "semicolon") ($ 
-"        if (!success_"(if (property content) (property content) ($ (case (type content) (("colon" "semicolon") (type content)) (else (link content)))"_"(number->string (child-number content))))") {"
-                                    null-handler
+"        if success_"(if (property content) (property content) ($ (case (type content) (("colon" "semicolon") (type content)) (else (link content)))"_"(number->string (child-number content))))" = false
+        {"
+                                            null-handler
 "        }
 "
-                                    ))
-                                    (("identifier") ($ 
-"        if ("(property content)" == nullptr)
+                                        ))
+                                        (("identifier") ($ 
+"        if "(property content)" = null
         {"
-                                    null-handler
+                                            null-handler
             "
         }
-"                                   ))
-                                    (else ($ 
-"        if ("(property content)" == nullptr) {
-"                                       null-handler
+"                                       ))
+                                        (else ($ 
+"        if "(property content)" = null
+        {
+"                                           null-handler
 "        }
-"                                   ))
-                                )
+"                                       ))
+                                    )
+                                ))
                             )
                         )))  ;terminal
                     ) ; syntax, literal or other stuff
                 ))) ; apply to children of syntax
 "
-        let end = lexer.position
+        let end lexer.position
 
-        let ret = "(id syntax)"Syntax(start, end"
+        return "(id syntax)"Syntax(start, end"
                 (apply-to-property-children-of syntax (lambda (content) ($
                     ", "
                     (case (type content)
                         (("keyword" "punctuation") "*")
                         (("identifier" "attribute") (if (optional? content) "" "*"))
-                        (else "")
+                        (else (if (and (multiple? content) (not (optional? content))) "*" ""))
                     )
                     (property content)
                 )))
                 ")
-
-        return Result["(id syntax)"Syntax, ParserError] { ._tag = Result["(id syntax)"Syntax, ParserError]::Ok, ._Ok = ret }
 "
             ) ; $
         ) ; abstract or not
 "    }
 "   )))
 "
-    bool is_at_end() {
+    function is_at_end(this: Parser) returns bool {
         return lexer.is_at_end()
     }
 }
