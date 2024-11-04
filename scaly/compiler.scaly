@@ -14,10 +14,10 @@ define compiler {
             var lexer Lexer(String(p, ""))
             choose lexer.token
                 when e: Token.Empty lexer.advance()
-                default exit(1)
+                else exit(1)
             choose lexer.token
                 when e: Token.Empty {}
-                default exit(2)                
+                else exit(2)                
         }
         {
             var r Region()
@@ -32,7 +32,7 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
 
             choose lexer.token
                 when e: Token.Empty lexer.advance()
-                default exit(3)
+                else exit(3)
 
             choose lexer.token
                 when identifier: Token.Identifier
@@ -41,7 +41,7 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                         exit(4)
                     lexer.advance()
                 }
-                default exit(5)
+                else exit(5)
 
             choose lexer.token
                 when literal: Token.Literal
@@ -53,18 +53,18 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                                 exit(6)
                             lexer.advance()
                         }
-                        default exit(7)
+                        else exit(7)
 
                 }
-                default: exit(8)
+                else: exit(8)
 
             choose lexer.token
                 when c: Token.Colon lexer.advance()
-                default exit(9)
+                else exit(9)
 
             choose lexer.token
                 when c: Token.Colon lexer.advance()
-                default exit(10)
+                else exit(10)
 
             choose lexer.token
                 when literal: Token.Literal
@@ -76,10 +76,10 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                                 exit(11)
                             lexer.advance()
                         }
-                        default exit(12)
+                        else exit(12)
 
                 }
-                default: exit(13)
+                else: exit(13)
 
             choose lexer.token
                 when literal: Token.Literal
@@ -91,10 +91,10 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                                 exit(14)
                             lexer.advance()
                         }
-                        default exit(15)
+                        else exit(15)
 
                 }
-                default: exit(16)
+                else: exit(16)
 
             choose lexer.token
                 when literal: Token.Literal
@@ -106,10 +106,10 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                                 exit(17)
                             lexer.advance()
                         }
-                        default exit(18)
+                        else exit(18)
 
                 }
-                default exit(19)
+                else exit(19)
 
             choose lexer.token
                 when literal: Token.Literal
@@ -121,10 +121,10 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                                 exit(20)
                             lexer.advance()
                         }
-                        default exit(21)
+                        else exit(21)
 
                 }
-                default exit(22)
+                else exit(22)
 
             choose lexer.token
                 when literal: Token.Literal
@@ -136,10 +136,10 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                                 exit(23)
                             lexer.advance()
                         }
-                        default exit(24)
+                        else exit(24)
 
                 }
-                default exit(25)
+                else exit(25)
 
             choose lexer.token
                 when literal: Token.Literal
@@ -151,10 +151,10 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                                 exit(26)
                             lexer.advance()
                         }
-                        default exit(27)
+                        else exit(27)
 
                 }
-                default exit(28)
+                else exit(28)
 
             choose lexer.token
                 when literal: Token.Literal
@@ -166,10 +166,10 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                                 exit(29)
                             lexer.advance()
                         }
-                        default exit(30)
+                        else exit(30)
 
                 }
-                default exit(31)
+                else exit(31)
 
             choose lexer.token
                 when literal: Token.Literal
@@ -181,10 +181,10 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                                 exit(32)
                             lexer.advance()
                         }
-                        default exit(33)
+                        else exit(33)
 
                 }
-                default exit(34)
+                else exit(34)
 
             choose lexer.token
                 when literal: Token.Literal
@@ -196,10 +196,10 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                                 exit(35)
                             lexer.advance()
                         }
-                        default exit(36)
+                        else exit(36)
 
                 }
-                default exit(37)
+                else exit(37)
 
             choose lexer.token
                 when a: Token.Attribute
@@ -208,7 +208,7 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                         exit(38)
                     lexer.advance()
                 }
-                default exit(39)
+                else exit(39)
 
             choose lexer.token
                 when identifier: Token.Identifier
@@ -217,7 +217,7 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                         exit(40)
                     lexer.advance()
                 }
-                default exit(41)
+                else exit(41)
 
             choose lexer.token
                 when identifier: Token.Identifier
@@ -226,7 +226,7 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                         exit(42)
                     lexer.advance()
                 }
-                default exit(43)
+                else exit(43)
 
             choose lexer.token
                 when literal: Token.Literal
@@ -238,10 +238,10 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                                 exit(44)
                             lexer.advance()
                         }
-                        default exit(45)
+                        else exit(45)
 
                 }
-                default: exit(8)
+                else: exit(8)
 
             choose lexer.token
                 when identifier: Token.Identifier
@@ -250,7 +250,7 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                         exit(46)
                     lexer.advance()
                 }
-                default exit(47)
+                else exit(47)
 
             choose lexer.token
                 when identifier: Token.Identifier
@@ -259,7 +259,7 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                         exit(48)
                     lexer.advance()
                 }
-                default exit(49)
+                else exit(49)
 
             choose lexer.token
                 when literal: Token.Literal
@@ -271,10 +271,10 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                                 exit(50)
                             lexer.advance()
                         }
-                        default exit(51)
+                        else exit(51)
 
                 }
-                default: exit(52)
+                else: exit(52)
 
             choose lexer.token
                 when literal: Token.Literal
@@ -286,10 +286,10 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                                 exit(53)
                             lexer.advance()
                         }
-                        default exit(54)
+                        else exit(54)
 
                 }
-                default: exit(55)
+                else: exit(55)
 
             choose lexer.token
                 when literal: Token.Literal
@@ -301,10 +301,10 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                                 exit(56)
                             lexer.advance()
                         }
-                        default exit(57)
+                        else exit(57)
 
                 }
-                default: exit(58)
+                else: exit(58)
 
             choose lexer.token
                 when literal: Token.Literal
@@ -316,10 +316,10 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
                                 exit(58)
                             lexer.advance()
                         }
-                        default exit(59)
+                        else exit(59)
 
                 }
-                default: exit(60)
+                else: exit(60)
         }
     }
 
@@ -338,11 +338,11 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
         var r Region()
         var p r.get_page()
         try let file_text File->read_to_string(p, p, String(p, "../scaly.scaly"))
-            default exit(63)
+            else exit(63)
 
         var parser Parser$(file_text)
         try let program_syntax (*parser).parse_program(p, p)
-            default exit(64)
+            else exit(64)
 
         if (*parser).is_at_end() = false
             exit(65)

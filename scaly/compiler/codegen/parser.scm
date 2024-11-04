@@ -28,7 +28,7 @@ define Parser
     function parse_literal_token(this: Parser) returns Literal throws ParserError {
         choose lexer.token
             when empty: Token.Empty lexer.advance()
-            default {}
+            else {}
 
         choose lexer.token
             when literal: Token.Literal
@@ -76,7 +76,7 @@ define Parser
                         return ret
                     }
             }
-            default
+            else
                 return Result[Literal, ParserError](ParserError(DifferentSyntax()))
     }
 "

@@ -130,7 +130,7 @@ define Lexer
             case '`'
                 set token: scan_fragment_literal()
 
-            default
+            else
                 set token: Token(InvalidToken())
 
         skip_whitespace(false)
@@ -227,7 +227,7 @@ define Lexer
             match *character
                 case '+' case '-' case '*' case '/' case '=' case '%' case '&' case '|' case '^' case '~' case '<' case '>'
                     continue
-                default
+                else
                     return Token(IdentifierToken(Vector<char>(start, length)))
         }
     }
@@ -257,7 +257,7 @@ define Lexer
                         return Token(InvalidToken())
                     match *character
                         case '\"' case '\\' case '\'' case 'n' case 'r' case 't' case '0': {}
-                        default return Token(InvalidToken())                            
+                        else return Token(InvalidToken())                            
                 }
         }
     }
@@ -288,10 +288,10 @@ define Lexer
 
                     match *character
                         case '\"' case '\\' case '\'' case 'n' case 'r' case 't' case '0': {}
-                        default
+                        else
                             return Token(InvalidToken())                        
                 }
-                default
+                else
                     break
         }
     }
@@ -323,11 +323,11 @@ define Lexer
                     match *character
                         case '`' case '\\' case '\'' case 'n' case 'r' case 't' case '0'
                             break
-                        default
+                        else
                             return Token(InvalidToken())                            
                 }
 
-                default
+                else
                     break
         }
     }
@@ -356,7 +356,7 @@ define Lexer
                 return scan_hex_literal(start, length)
             case 'B'
                 return scan_boolean_literal()
-            default
+            else
                 return Token(LiteralToken(IntegerToken(Vector<char>(start, length))))
     }
 
@@ -380,7 +380,7 @@ define Lexer
                     return scan_exponent(start, length)
                 case 'e'
                     return scan_exponent(start, length)
-                default
+                else
                     return Token(LiteralToken(IntegerToken(Vector<char>(start, length))))
         }
     }
@@ -403,7 +403,7 @@ define Lexer
                     return scan_exponent(start, length)
                 case 'e'
                     return scan_exponent(start, length)
-                default
+                else
                     return Token(LiteralToken(FloatingPointToken(Vector<char>(start, length))))
         }
     }
@@ -464,7 +464,7 @@ define Lexer
             match (size_t)character
                 case 0
                     return
-                default
+                else
                 {
                     match *character
                         case ' '
@@ -496,7 +496,7 @@ define Lexer
                                 match (size_t)character
                                     case 0
                                         return
-                                    default
+                                    else
                                     {
                                         match *character 
                                             case '\r'
@@ -519,7 +519,7 @@ define Lexer
                             match (size_t)character
                                 case 0
                                     return
-                                default
+                                else
                                 {
                                     if *character <> '*'
                                     {
@@ -531,7 +531,7 @@ define Lexer
                                     }
                                 }
                         }
-                        default
+                        else
                             return
             }
         }
@@ -543,7 +543,7 @@ define Lexer
             match (size_t)character
                 case 0
                     return
-                default
+                else
                 {
                     if *character = '\n'
                     {
@@ -563,7 +563,7 @@ define Lexer
             match (size_t)character
                 case 0
                     return
-                default
+                else
                 {
                     match *character
                         case ';'
@@ -572,7 +572,7 @@ define Lexer
                             match (size_t)character
                                 case 0
                                     return
-                                default
+                                else
                                     match *character
                                         case '*'
                                         {
@@ -580,7 +580,7 @@ define Lexer
                                             handle_multi_line_comment()
                                             continue
                                         }
-                                        default
+                                        else
                                             continue
                         }
 
@@ -590,13 +590,13 @@ define Lexer
                             match (size_t)character
                                 case 0
                                     return
-                                default
+                                else
                                     match *character
                                         case ';'
                                             read_character()
                                             return
                         }
-                        default
+                        else
                         {
                             read_character()
                             continue
@@ -608,7 +608,7 @@ define Lexer
     function parse_keyword(this: Lexer, fixed_string: String) returns bool {
         choose token
             when empty: Token.Empty advance()
-            default {}
+            else {}
 
         choose token
             when identifier: Token.Identifier
@@ -619,7 +619,7 @@ define Lexer
 
                 return right_keyword
             }
-            default
+            else
                 return false
     }
 
@@ -627,7 +627,7 @@ define Lexer
         var r Region()
         choose token
             when empty: Token.Empty advance()
-            default {}
+            else {}
 
         choose token
             when identifier: Token.Identifier
@@ -638,14 +638,14 @@ define Lexer
                 empty()
                 return ret
             }
-            default
+            else
                 return null
     }
 
     function parse_attribute(this: Lexer) returns pointer[String] {
         choose token
             when empty: Token.Empty advance()
-            default {}
+            else {}
 
         choose token
             when attribute: Token.Attribute
@@ -654,14 +654,14 @@ define Lexer
                 empty()
                 return ret
             }
-            default
+            else
                 return null
     }
 
     function parse_punctuation(this: Lexer, character: char) returns bool {
         choose token
             when empty: Token.Empty advance()
-            default {}
+            else {}
 
         choose token
             when punctuation: Token.Punctuation
@@ -672,14 +672,14 @@ define Lexer
 
                 return ret
             }
-            default
+            else
                 return false
     }
 
     function parse_colon(this: Lexer) returns bool {
         choose token
             when empty: Token.Empty advance()
-            default {}
+            else {}
 
         choose token
             when c: Token.Colon
@@ -691,7 +691,7 @@ define Lexer
             {
                 return true
             }
-            default
+            else
                 return false
     }
 

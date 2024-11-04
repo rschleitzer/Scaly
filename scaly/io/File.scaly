@@ -8,7 +8,7 @@ define File()
             match errno
                 case ENOENT
                     throw FileError(NoSuchFileOrDirectoryError(String(ep, path)))
-                default
+                else
                     throw FileError(UnknownFileError(String(ep, path))) 
         }
         
@@ -31,7 +31,7 @@ define File()
             match errno
                 case ENOENT
                     throw FileError(NoSuchFileOrDirectoryError(String(ep, path)))
-                default
+                else
                     throw FileError(UnknownFileError(String(ep, path))) 
         }
 
