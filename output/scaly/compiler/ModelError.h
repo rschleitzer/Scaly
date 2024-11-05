@@ -13,5 +13,5 @@ struct Position : Object {
     Position(size_t line, size_t column);
 };
 
-    Position calculate_position_from_string(Page* rp, String text, size_t offset);
+Position calculate_position_from_string(Page* rp, String text, size_t offset);
 #endif

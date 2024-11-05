@@ -92,7 +92,7 @@ struct Result {\n\
 
         StringBuilder& namespace_open_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(namespace_open);
 
-        auto _symbols_result = build_symbols(_ep, path, module.file, module.name, header_builder, cpp_builder, main_header, namespace_open, namespace_close, module.members);
+        auto _symbols_result = build_symbols(_ep, path, module.file, nullptr, header_builder, cpp_builder, main_header, namespace_open, namespace_close, module.members);
         if (_symbols_result)
             return _symbols_result;
 
@@ -266,7 +266,7 @@ struct Result {\n\
                 return new(alignof(TranspilerError), _ep) TranspilerError(*_result);
         }
         {
-            auto _result = build_symbols(_ep, path, source, name, header_builder, cpp_builder, main_header_builder.to_string(_r.get_page()), namespace_open, namespace_close, namespace_.members);
+            auto _result = build_symbols(_ep, path, source, &name, header_builder, cpp_builder, main_header_builder.to_string(_r.get_page()), namespace_open, namespace_close, namespace_.members);
             if (_result != nullptr)
                 return new(alignof(TranspilerError), _ep) TranspilerError(*_result);
         }
@@ -292,13 +292,13 @@ struct Result {\n\
         return nullptr;
     }
 
-    TranspilerError* build_symbols(Page* _ep, String path, String source, String name, StringBuilder& header_builder, StringBuilder& cpp_builder, String main_header, String namespace_open, String namespace_close, Vector<Member> symbols) {
+    TranspilerError* build_symbols(Page* _ep, String path, String source, String* name, StringBuilder& header_builder, StringBuilder& cpp_builder, String main_header, String namespace_open, String namespace_close, Vector<Member> symbols) {
         Region _r;
         auto member_iterator = symbols.get_iterator();
         while (auto member = member_iterator.next()) {
             switch (member->_tag) {
                 case Member::Function: {
-                    auto _result = build_function(_ep, header_builder, cpp_builder, member->_Function, &name, false, false);
+                    auto _result = build_function(_ep, header_builder, cpp_builder, member->_Function, name, false, false);
                     if (_result != nullptr)
                         return new(alignof(TranspilerError), _ep) TranspilerError(*_result);
                     break;
