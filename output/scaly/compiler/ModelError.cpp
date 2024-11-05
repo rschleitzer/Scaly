@@ -121,5 +121,31 @@ String to_string(Page* rp, size_t number) {
     return String(rp, str);
 }
 
+void append_error_message_header(StringBuilder& builder, String file, size_t offset) {
+    auto r = Region();
+    builder.append(file);
+    builder.append(':');
+    {
+        auto _result = calculate_position(r.get_page(), r.get_page(), file, offset);
+        switch (_result._tag)
+        {
+            case Success::Ok:
+            {
+                auto position_start = _result._Ok;
+                {
+                    builder.append(to_string(r.get_page(), position_start.line));
+                    builder.append(':');
+                    builder.append(to_string(r.get_page(), position_start.column));
+                    builder.append(": error: ");
+                };
+                break;
+            }
+            default:
+                {
+            };
+        }
+    };
+}
+
 }
 }

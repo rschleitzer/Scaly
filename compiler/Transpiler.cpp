@@ -1774,6 +1774,16 @@ struct Result {\n\
             return false;
         }
 
+        if (type->name.length == 1 && type->name[0]->equals(String(_r.get_page(), "ref"))) {
+            auto generic_iterator = type->generics->get_iterator();
+            while(auto generic = generic_iterator.next()) {
+                build_type(builder, generic);
+                break;
+            }
+            builder.append('&');
+            return false;
+        }
+
         {
             auto type_name_iterator = type->name.get_iterator();
             size_t i = 0;

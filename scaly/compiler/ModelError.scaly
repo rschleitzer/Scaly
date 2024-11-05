@@ -101,21 +101,22 @@ function to_string(number: size_t) returns String {
     return String(rp, str)
 }
 
-;*
-void append_error_message_header(StringBuilder& builder, String file, size_t offset) {
-    Region _r
+function append_error_message_header(builder: ref[StringBuilder], file: String, offset: size_t) {
+    var r Region()
     builder.append(file)
     builder.append(':')
-    let position_result_start = calculate_position(_r.get_page(), _r.get_page(), file, offset)
-    if (position_result_start._tag == Result<Position, FileError>::Ok) {
-        let position_start = position_result_start._Ok
-        builder.append(to_string(_r.get_page(), position_start.line))
-        builder.append(':')
-        builder.append(to_string(_r.get_page(), position_start.column))
-        builder.append(": error: ")
-    }
+    choose calculate_position(r.get_page(), r.get_page(), file, offset)
+        when position_start: Success.Ok
+        {
+            builder.append(to_string(r.get_page(), position_start.line))
+            builder.append(':')
+            builder.append(to_string(r.get_page(), position_start.column))
+            builder.append(": error: ")
+        }
+        else {}
 }
 
+;*
 void append_hint_lines(StringBuilder& builder, String file, size_t start, size_t end) {
     Region _r
     builder.append('\n')
