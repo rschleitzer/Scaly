@@ -1445,7 +1445,6 @@ struct Result {\n\
             builder.append("}");
         }
         if (try_.alternative != nullptr) {
-            {
             builder.append('\n');
             builder.append(indented);
             builder.append("default:\n");
@@ -1460,14 +1459,12 @@ struct Result {\n\
                     return _result;
                 builder.append(";\n");
             }
-            }
         }
         builder.append('\n');
         builder.append(indented);
         builder.append("}\n");
         builder.append(indent);
-        builder.append("}\n");
-        builder.append(indent);
+        builder.append("}");
         if (name.equals("void")) {
             builder.append("}\n");
             builder.append(indent);

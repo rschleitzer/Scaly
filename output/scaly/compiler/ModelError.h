@@ -15,4 +15,6 @@ struct Position : Object {
 
 Position calculate_position_from_string(String text, size_t offset);
 String build_hint_lines_from_string(Page* rp, String text, size_t start_offset, size_t end_offset, Position start_position, Position end_position);
+Result<String, FileError> build_hint_lines(Page* rp, Page* ep, String file, size_t start_offset, size_t end_offset, Position start_position, Position end_position);
+Result<Position, FileError> calculate_position(Page* rp, Page* ep, String file, size_t offset);
 #endif

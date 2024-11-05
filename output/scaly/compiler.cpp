@@ -719,8 +719,7 @@ void compiler::test_parser() {
                     break;
                 }
             }
-        }
-        ;
+        };
     };
     {
         auto r = Region();
@@ -734,8 +733,7 @@ void compiler::test_parser() {
                 exit(63);
 
             }
-        }
-        ;
+        };
         auto parser = new (alignof(Parser), r.get_page()) Parser(file_text);
         const auto _program_syntax_result = (*parser).parse_program(p, p);
         auto program_syntax = _program_syntax_result._Ok;
@@ -746,8 +744,7 @@ void compiler::test_parser() {
                 exit(64);
 
             }
-        }
-        ;
+        };
         if ((*parser).is_at_end() == false) 
             exit(65);
     };

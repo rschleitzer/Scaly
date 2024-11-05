@@ -85,5 +85,35 @@ String build_hint_lines_from_string(Page* rp, String text, size_t start_offset, 
     return (*output_builder).to_string(rp);
 }
 
+Result<String, FileError> build_hint_lines(Page* rp, Page* ep, String file, size_t start_offset, size_t end_offset, Position start_position, Position end_position) {
+    auto r = Region();
+    const auto _text_result = File::read_to_string(r.get_page(), r.get_page(), file);
+    auto text = _text_result._Ok;
+    if (_text_result._tag == Success::Error) {
+        const auto _text_Error = _text_result._Error;
+        switch (_text_Error._tag) {
+        default:
+            return Result<String, FileError>(_text_result._Error);
+
+        }
+    };
+    return Result<String, FileError>(build_hint_lines_from_string(rp, text, start_offset, end_offset, start_position, end_position));
+}
+
+Result<Position, FileError> calculate_position(Page* rp, Page* ep, String file, size_t offset) {
+    auto r = Region();
+    const auto _text_result = File::read_to_string(r.get_page(), r.get_page(), file);
+    auto text = _text_result._Ok;
+    if (_text_result._tag == Success::Error) {
+        const auto _text_Error = _text_result._Error;
+        switch (_text_Error._tag) {
+        default:
+            return Result<Position, FileError>(_text_result._Error);
+
+        }
+    };
+    return Result<Position, FileError>(calculate_position_from_string(text, offset));
+}
+
 }
 }

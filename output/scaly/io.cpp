@@ -20,8 +20,7 @@ void io::test_file() {
                             exit(-2);
 
                         }
-                    }
-                    ;
+                    };
                     if (text.equals(String(r.get_page(), "baz")) == false) 
                         exit(-3);
                 };
@@ -31,8 +30,7 @@ void io::test_file() {
             exit(-4);
 
         }
-    }
-    ;
+    };
 }
 
 void io::test_path() {
@@ -64,8 +62,7 @@ void io::test_directory() {
             exit(-9);
 
         }
-    }
-    ;
+    };
     if (dir_exists) 
         exit(-10);
     {
@@ -77,8 +74,7 @@ void io::test_directory() {
                 exit(-11);
 
             }
-        }
-        }
+        }}
         ;
     const auto _dir_exists_now_result = Directory::exists(r.get_page(), foo);
     auto dir_exists_now = _dir_exists_now_result._Ok;
@@ -89,8 +85,7 @@ void io::test_directory() {
             exit(-12);
 
         }
-    }
-    ;
+    };
     if (dir_exists_now == false) 
         exit(-13);
     {
@@ -102,8 +97,7 @@ void io::test_directory() {
                 exit(-14);
 
             }
-        }
-        }
+        }}
         ;
     const auto _dir_exists_still_result = Directory::exists(r.get_page(), foo);
     auto dir_exists_still = _dir_exists_still_result._Ok;
@@ -114,8 +108,7 @@ void io::test_directory() {
             exit(-15);
 
         }
-    }
-    ;
+    };
     if (dir_exists_still) 
         exit(-16);
 }

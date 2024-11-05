@@ -558,8 +558,7 @@ Result<ProgramSyntax, ParserError> Parser::parse_program(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto statements_start = lexer.position;
     Vector<StatementSyntax>* statements = nullptr;
     {
@@ -757,8 +756,7 @@ Result<Vector<DeclarationSyntax>*, ParserError> Parser::parse_declaration_list(P
                     break;
                 }
             }
-        }
-        (*list).add(node);
+        }(*list).add(node);
     };
 }
 
@@ -781,8 +779,7 @@ Result<DeclarationSyntax, ParserError> Parser::parse_declaration(Page* rp, Page*
                 break;
             }
         }
-    }
-    ;
+    };
     const auto start_colon_2 = lexer.previous_position;
     const auto success_colon_2 = lexer.parse_colon();
     const auto end = lexer.position;
@@ -1097,8 +1094,7 @@ Result<PrivateSyntax, ParserError> Parser::parse_private(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto end = lexer.position;
     return Result<PrivateSyntax, ParserError>(PrivateSyntax(start, end, export_));
 }
@@ -1334,8 +1330,7 @@ Result<Vector<MemberSyntax>*, ParserError> Parser::parse_member_list(Page* rp, P
                     break;
                 }
             }
-        }
-        (*list).add(node);
+        }(*list).add(node);
     };
 }
 
@@ -1358,8 +1353,7 @@ Result<MemberSyntax, ParserError> Parser::parse_member(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto start_colon_2 = lexer.previous_position;
     const auto success_colon_2 = lexer.parse_colon();
     const auto end = lexer.position;
@@ -1801,8 +1795,7 @@ Result<DefinitionSyntax, ParserError> Parser::parse_definition(Page* rp, Page* e
                 break;
             }
         }
-    }
-    ;
+    };
     const auto end = lexer.position;
     return Result<DefinitionSyntax, ParserError>(DefinitionSyntax(start, end, *name, parameters, attributes, concept_));
 }
@@ -1831,8 +1824,7 @@ Result<GenericParametersSyntax, ParserError> Parser::parse_genericparameters(Pag
                 break;
             }
         }
-    }
-    ;
+    };
     const auto start_right_bracket_3 = lexer.previous_position;
     const auto success_right_bracket_3 = lexer.parse_punctuation(']');
     if (success_right_bracket_3 == false) {
@@ -1869,8 +1861,7 @@ Result<Vector<GenericParameterSyntax>*, ParserError> Parser::parse_genericparame
                     break;
                 }
             }
-        }
-        (*list).add(node);
+        }(*list).add(node);
     };
 }
 
@@ -2190,8 +2181,7 @@ Result<ClassSyntax, ParserError> Parser::parse_class(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto start_colon_2 = lexer.previous_position;
     const auto success_colon_2 = lexer.parse_colon();
     const auto body_start = lexer.position;
@@ -2547,8 +2537,7 @@ Result<UnionSyntax, ParserError> Parser::parse_union(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto start_right_paren_5 = lexer.previous_position;
     const auto success_right_paren_5 = lexer.parse_punctuation(')');
     if (success_right_paren_5 == false) {
@@ -2587,8 +2576,7 @@ Result<Vector<VariantSyntax>*, ParserError> Parser::parse_variant_list(Page* rp,
                     break;
                 }
             }
-        }
-        (*list).add(node);
+        }(*list).add(node);
     };
 }
 
@@ -2706,8 +2694,7 @@ Result<ConstantSyntax, ParserError> Parser::parse_constant(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto operation_start = lexer.position;
     const auto _operation_result = parse_operand_list(rp, ep);
     auto operation = _operation_result._Ok;
@@ -2725,8 +2712,7 @@ Result<ConstantSyntax, ParserError> Parser::parse_constant(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto start_colon_3 = lexer.previous_position;
     const auto success_colon_3 = lexer.parse_colon();
     const auto end = lexer.position;
@@ -2987,8 +2973,7 @@ Result<Vector<GenericArgumentSyntax>*, ParserError> Parser::parse_genericargumen
                     break;
                 }
             }
-        }
-        (*list).add(node);
+        }(*list).add(node);
     };
 }
 
@@ -3011,8 +2996,7 @@ Result<GenericArgumentSyntax, ParserError> Parser::parse_genericargument(Page* r
                 break;
             }
         }
-    }
-    ;
+    };
     const auto start_comma_2 = lexer.previous_position;
     const auto success_comma_2 = lexer.parse_punctuation(',');
     const auto end = lexer.position;
@@ -3197,8 +3181,7 @@ Result<Vector<ItemSyntax>*, ParserError> Parser::parse_item_list(Page* rp, Page*
                     break;
                 }
             }
-        }
-        (*list).add(node);
+        }(*list).add(node);
     };
 }
 
@@ -3323,8 +3306,7 @@ Result<ReturnsSyntax, ParserError> Parser::parse_returns(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto attributes_start = lexer.position;
     Vector<AttributeSyntax>* attributes = nullptr;
     {
@@ -3393,8 +3375,7 @@ Result<ThrowsSyntax, ParserError> Parser::parse_throws(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto attributes_start = lexer.position;
     Vector<AttributeSyntax>* attributes = nullptr;
     {
@@ -3466,8 +3447,7 @@ Result<Vector<UseSyntax>*, ParserError> Parser::parse_use_list(Page* rp, Page* e
                     break;
                 }
             }
-        }
-        (*list).add(node);
+        }(*list).add(node);
     };
 }
 
@@ -3495,8 +3475,7 @@ Result<UseSyntax, ParserError> Parser::parse_use(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto start_colon_3 = lexer.previous_position;
     const auto success_colon_3 = lexer.parse_colon();
     const auto end = lexer.position;
@@ -3527,8 +3506,7 @@ Result<ImplementSyntax, ParserError> Parser::parse_implement(Page* rp, Page* ep)
                 break;
             }
         }
-    }
-    ;
+    };
     const auto attributes_start = lexer.position;
     Vector<AttributeSyntax>* attributes = nullptr;
     {
@@ -3691,8 +3669,7 @@ Result<TraitSyntax, ParserError> Parser::parse_trait(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto extension_start = lexer.position;
     ExtendsSyntax* extension = nullptr;
     {
@@ -3896,8 +3873,7 @@ Result<Vector<MethodSyntax>*, ParserError> Parser::parse_method_list(Page* rp, P
                     break;
                 }
             }
-        }
-        (*list).add(node);
+        }(*list).add(node);
     };
 }
 
@@ -4052,8 +4028,7 @@ Result<Vector<InitSyntax>*, ParserError> Parser::parse_init_list(Page* rp, Page*
                     break;
                 }
             }
-        }
-        (*list).add(node);
+        }(*list).add(node);
     };
 }
 
@@ -4123,8 +4098,7 @@ Result<InitSyntax, ParserError> Parser::parse_init(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto start_colon_5 = lexer.previous_position;
     const auto success_colon_5 = lexer.parse_colon();
     const auto end = lexer.position;
@@ -4157,8 +4131,7 @@ Result<DeInitSyntax, ParserError> Parser::parse_deinit(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto start_colon_4 = lexer.previous_position;
     const auto success_colon_4 = lexer.parse_colon();
     const auto end = lexer.position;
@@ -4189,8 +4162,7 @@ Result<FunctionSyntax, ParserError> Parser::parse_function(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto end = lexer.position;
     return Result<FunctionSyntax, ParserError>(FunctionSyntax(start, end, target));
 }
@@ -4219,8 +4191,7 @@ Result<ProcedureSyntax, ParserError> Parser::parse_procedure(Page* rp, Page* ep)
                 break;
             }
         }
-    }
-    ;
+    };
     const auto end = lexer.position;
     return Result<ProcedureSyntax, ParserError>(ProcedureSyntax(start, end, target));
 }
@@ -4249,8 +4220,7 @@ Result<OperatorSyntax, ParserError> Parser::parse_operator(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto end = lexer.position;
     return Result<OperatorSyntax, ParserError>(OperatorSyntax(start, end, target));
 }
@@ -4363,8 +4333,7 @@ Result<NamedSyntax, ParserError> Parser::parse_named(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto end = lexer.position;
     return Result<NamedSyntax, ParserError>(NamedSyntax(start, end, *name, routine));
 }
@@ -4632,8 +4601,7 @@ Result<RoutineSyntax, ParserError> Parser::parse_routine(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto end = lexer.position;
     return Result<RoutineSyntax, ParserError>(RoutineSyntax(start, end, generics, lifetime, parameters, attributes, returns_, throws_, implementation));
 }
@@ -4917,8 +4885,7 @@ Result<Vector<ExtendSyntax>*, ParserError> Parser::parse_extend_list(Page* rp, P
                     break;
                 }
             }
-        }
-        (*list).add(node);
+        }(*list).add(node);
     };
 }
 
@@ -4941,8 +4908,7 @@ Result<ExtendSyntax, ParserError> Parser::parse_extend(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto start_comma_2 = lexer.previous_position;
     const auto success_comma_2 = lexer.parse_punctuation(',');
     const auto end = lexer.position;
@@ -4978,8 +4944,7 @@ Result<MacroSyntax, ParserError> Parser::parse_macro(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto rule_start = lexer.position;
     const auto _rule_result = parse_operand_list(rp, ep);
     auto rule = _rule_result._Ok;
@@ -4997,8 +4962,7 @@ Result<MacroSyntax, ParserError> Parser::parse_macro(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto end = lexer.position;
     return Result<MacroSyntax, ParserError>(MacroSyntax(start, end, *name, model, *rule));
 }
@@ -5030,8 +4994,7 @@ Result<Vector<AttributeSyntax>*, ParserError> Parser::parse_attribute_list(Page*
                     break;
                 }
             }
-        }
-        (*list).add(node);
+        }(*list).add(node);
     };
 }
 
@@ -5059,8 +5022,7 @@ Result<AttributeSyntax, ParserError> Parser::parse_attribute(Page* rp, Page* ep)
                 break;
             }
         }
-    }
-    ;
+    };
     const auto start_colon_3 = lexer.previous_position;
     const auto success_colon_3 = lexer.parse_colon();
     const auto end = lexer.position;
@@ -5276,8 +5238,7 @@ Result<Vector<PackageSyntax>*, ParserError> Parser::parse_package_list(Page* rp,
                     break;
                 }
             }
-        }
-        (*list).add(node);
+        }(*list).add(node);
     };
 }
 
@@ -5305,8 +5266,7 @@ Result<PackageSyntax, ParserError> Parser::parse_package(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto start_colon_3 = lexer.previous_position;
     const auto success_colon_3 = lexer.parse_colon();
     const auto end = lexer.position;
@@ -5337,8 +5297,7 @@ Result<InitializerSyntax, ParserError> Parser::parse_initializer(Page* rp, Page*
                 break;
             }
         }
-    }
-    ;
+    };
     const auto start_right_paren_3 = lexer.previous_position;
     const auto success_right_paren_3 = lexer.parse_punctuation(')');
     if (success_right_paren_3 == false) {
@@ -5375,8 +5334,7 @@ Result<Vector<OperandSyntax>*, ParserError> Parser::parse_operand_list(Page* rp,
                     break;
                 }
             }
-        }
-        (*list).add(node);
+        }(*list).add(node);
     };
 }
 
@@ -5399,8 +5357,7 @@ Result<OperandSyntax, ParserError> Parser::parse_operand(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto members_start = lexer.position;
     Vector<MemberAccessSyntax>* members = nullptr;
     {
@@ -5472,8 +5429,7 @@ Result<Vector<MemberAccessSyntax>*, ParserError> Parser::parse_memberaccess_list
                     break;
                 }
             }
-        }
-        (*list).add(node);
+        }(*list).add(node);
     };
 }
 
@@ -5501,8 +5457,7 @@ Result<MemberAccessSyntax, ParserError> Parser::parse_memberaccess(Page* rp, Pag
                 break;
             }
         }
-    }
-    ;
+    };
     const auto end = lexer.position;
     return Result<MemberAccessSyntax, ParserError>(MemberAccessSyntax(start, end, name));
 }
@@ -6082,8 +6037,7 @@ Result<LiteralSyntax, ParserError> Parser::parse_literal(Page* rp, Page* ep) {
             return Result<LiteralSyntax, ParserError>(_literal_result._Error);
 
         }
-    }
-    ;
+    };
     const auto end = lexer.position;
     return Result<LiteralSyntax, ParserError>(LiteralSyntax(start, end, literal));
 }
@@ -6171,8 +6125,7 @@ Result<Vector<ComponentSyntax>*, ParserError> Parser::parse_component_list(Page*
                     break;
                 }
             }
-        }
-        (*list).add(node);
+        }(*list).add(node);
     };
 }
 
@@ -6195,8 +6148,7 @@ Result<ComponentSyntax, ParserError> Parser::parse_component(Page* rp, Page* ep)
                 break;
             }
         }
-    }
-    ;
+    };
     const auto attributes_start = lexer.position;
     Vector<AttributeSyntax>* attributes = nullptr;
     {
@@ -6307,8 +6259,7 @@ Result<ValueSyntax, ParserError> Parser::parse_value(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto attributes_start = lexer.position;
     Vector<AttributeSyntax>* attributes = nullptr;
     {
@@ -6377,8 +6328,7 @@ Result<VectorSyntax, ParserError> Parser::parse_vector(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto start_right_bracket_3 = lexer.previous_position;
     const auto success_right_bracket_3 = lexer.parse_punctuation(']');
     if (success_right_bracket_3 == false) {
@@ -6455,8 +6405,7 @@ Result<Vector<ElementSyntax>*, ParserError> Parser::parse_element_list(Page* rp,
                     break;
                 }
             }
-        }
-        (*list).add(node);
+        }(*list).add(node);
     };
 }
 
@@ -6479,8 +6428,7 @@ Result<ElementSyntax, ParserError> Parser::parse_element(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto attributes_start = lexer.position;
     Vector<AttributeSyntax>* attributes = nullptr;
     {
@@ -6647,8 +6595,7 @@ Result<IfSyntax, ParserError> Parser::parse_if(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto start_colon_3 = lexer.previous_position;
     const auto success_colon_3 = lexer.parse_colon();
     if (success_colon_3 == false) {
@@ -6671,8 +6618,7 @@ Result<IfSyntax, ParserError> Parser::parse_if(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto alternative_start = lexer.position;
     ElseSyntax* alternative = nullptr;
     {
@@ -6743,8 +6689,7 @@ Result<ElseSyntax, ParserError> Parser::parse_else(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto end = lexer.position;
     return Result<ElseSyntax, ParserError>(ElseSyntax(start, end, alternative));
 }
@@ -6773,8 +6718,7 @@ Result<MatchSyntax, ParserError> Parser::parse_match(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto start_colon_3 = lexer.previous_position;
     const auto success_colon_3 = lexer.parse_colon();
     if (success_colon_3 == false) {
@@ -6797,8 +6741,7 @@ Result<MatchSyntax, ParserError> Parser::parse_match(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto alternative_start = lexer.position;
     ElseSyntax* alternative = nullptr;
     {
@@ -6870,8 +6813,7 @@ Result<Vector<BranchSyntax>*, ParserError> Parser::parse_branch_list(Page* rp, P
                     break;
                 }
             }
-        }
-        (*list).add(node);
+        }(*list).add(node);
     };
 }
 
@@ -6894,8 +6836,7 @@ Result<BranchSyntax, ParserError> Parser::parse_branch(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto start_colon_2 = lexer.previous_position;
     const auto success_colon_2 = lexer.parse_colon();
     if (success_colon_2 == false) {
@@ -6918,8 +6859,7 @@ Result<BranchSyntax, ParserError> Parser::parse_branch(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto end = lexer.position;
     return Result<BranchSyntax, ParserError>(BranchSyntax(start, end, *cases, consequent));
 }
@@ -6951,8 +6891,7 @@ Result<Vector<CaseSyntax>*, ParserError> Parser::parse_case_list(Page* rp, Page*
                     break;
                 }
             }
-        }
-        (*list).add(node);
+        }(*list).add(node);
     };
 }
 
@@ -6980,8 +6919,7 @@ Result<CaseSyntax, ParserError> Parser::parse_case(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto end = lexer.position;
     return Result<CaseSyntax, ParserError>(CaseSyntax(start, end, *condition));
 }
@@ -7013,8 +6951,7 @@ Result<Vector<StatementSyntax>*, ParserError> Parser::parse_statement_list(Page*
                     break;
                 }
             }
-        }
-        (*list).add(node);
+        }(*list).add(node);
     };
 }
 
@@ -7037,8 +6974,7 @@ Result<StatementSyntax, ParserError> Parser::parse_statement(Page* rp, Page* ep)
                 break;
             }
         }
-    }
-    ;
+    };
     const auto start_colon_2 = lexer.previous_position;
     const auto success_colon_2 = lexer.parse_colon();
     const auto end = lexer.position;
@@ -7069,8 +7005,7 @@ Result<WhileSyntax, ParserError> Parser::parse_while(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto start_colon_3 = lexer.previous_position;
     const auto success_colon_3 = lexer.parse_colon();
     if (success_colon_3 == false) {
@@ -7133,8 +7068,7 @@ Result<WhileSyntax, ParserError> Parser::parse_while(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto end = lexer.position;
     return Result<WhileSyntax, ParserError>(WhileSyntax(start, end, condition, name, action));
 }
@@ -7163,8 +7097,7 @@ Result<ChooseSyntax, ParserError> Parser::parse_choose(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto start_colon_3 = lexer.previous_position;
     const auto success_colon_3 = lexer.parse_colon();
     if (success_colon_3 == false) {
@@ -7278,8 +7211,7 @@ Result<TrySyntax, ParserError> Parser::parse_try(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto start_colon_3 = lexer.previous_position;
     const auto success_colon_3 = lexer.parse_colon();
     if (success_colon_3 == false) {
@@ -7480,8 +7412,7 @@ Result<Vector<WhenSyntax>*, ParserError> Parser::parse_when_list(Page* rp, Page*
                     break;
                 }
             }
-        }
-        (*list).add(node);
+        }(*list).add(node);
     };
 }
 
@@ -7519,8 +7450,7 @@ Result<WhenSyntax, ParserError> Parser::parse_when(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto start_colon_5 = lexer.previous_position;
     const auto success_colon_5 = lexer.parse_colon();
     const auto command_start = lexer.position;
@@ -7540,8 +7470,7 @@ Result<WhenSyntax, ParserError> Parser::parse_when(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto start_colon_7 = lexer.previous_position;
     const auto success_colon_7 = lexer.parse_colon();
     const auto end = lexer.position;
@@ -7936,8 +7865,7 @@ Result<LetSyntax, ParserError> Parser::parse_let(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto end = lexer.position;
     return Result<LetSyntax, ParserError>(LetSyntax(start, end, binding));
 }
@@ -7966,8 +7894,7 @@ Result<VarSyntax, ParserError> Parser::parse_var(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto end = lexer.position;
     return Result<VarSyntax, ParserError>(VarSyntax(start, end, binding));
 }
@@ -7996,8 +7923,7 @@ Result<MutableSyntax, ParserError> Parser::parse_mutable(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto end = lexer.position;
     return Result<MutableSyntax, ParserError>(MutableSyntax(start, end, binding));
 }
@@ -8066,8 +7992,7 @@ Result<BindingSyntax, ParserError> Parser::parse_binding(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto end = lexer.position;
     return Result<BindingSyntax, ParserError>(BindingSyntax(start, end, *name, annotation, *operation));
 }
@@ -8096,8 +8021,7 @@ Result<BindingAnnotationSyntax, ParserError> Parser::parse_bindingannotation(Pag
                 break;
             }
         }
-    }
-    ;
+    };
     const auto end = lexer.position;
     return Result<BindingAnnotationSyntax, ParserError>(BindingAnnotationSyntax(start, end, spec));
 }
@@ -8129,8 +8053,7 @@ Result<Vector<BindingSpecSyntax>*, ParserError> Parser::parse_bindingspec_list(P
                     break;
                 }
             }
-        }
-        (*list).add(node);
+        }(*list).add(node);
     };
 }
 
@@ -8397,8 +8320,7 @@ Result<Vector<PartSyntax>*, ParserError> Parser::parse_part_list(Page* rp, Page*
                     break;
                 }
             }
-        }
-        (*list).add(node);
+        }(*list).add(node);
     };
 }
 
@@ -8510,8 +8432,7 @@ Result<FieldSyntax, ParserError> Parser::parse_field(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto end = lexer.position;
     return Result<FieldSyntax, ParserError>(FieldSyntax(start, end, property));
 }
@@ -8543,8 +8464,7 @@ Result<Vector<PropertySyntax>*, ParserError> Parser::parse_property_list(Page* r
                     break;
                 }
             }
-        }
-        (*list).add(node);
+        }(*list).add(node);
     };
 }
 
@@ -8572,8 +8492,7 @@ Result<PropertySyntax, ParserError> Parser::parse_property(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto initializer_start = lexer.position;
     InitializerSyntax* initializer = nullptr;
     {
@@ -8688,8 +8607,7 @@ Result<TypeAnnotationSyntax, ParserError> Parser::parse_typeannotation(Page* rp,
                 break;
             }
         }
-    }
-    ;
+    };
     const auto end = lexer.position;
     return Result<TypeAnnotationSyntax, ParserError>(TypeAnnotationSyntax(start, end, type));
 }
@@ -8982,8 +8900,7 @@ Result<LambdaSyntax, ParserError> Parser::parse_lambda(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto start_colon_3 = lexer.previous_position;
     const auto success_colon_3 = lexer.parse_colon();
     if (success_colon_3 == false) {
@@ -9006,8 +8923,7 @@ Result<LambdaSyntax, ParserError> Parser::parse_lambda(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto end = lexer.position;
     return Result<LambdaSyntax, ParserError>(LambdaSyntax(start, end, *input, block));
 }
@@ -9086,8 +9002,7 @@ Result<ForSyntax, ParserError> Parser::parse_for(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto start_colon_6 = lexer.previous_position;
     const auto success_colon_6 = lexer.parse_colon();
     if (success_colon_6 == false) {
@@ -9150,8 +9065,7 @@ Result<ForSyntax, ParserError> Parser::parse_for(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto end = lexer.position;
     return Result<ForSyntax, ParserError>(ForSyntax(start, end, *variable, annotation, *operation, name, action));
 }
@@ -9238,8 +9152,7 @@ Result<RepeatSyntax, ParserError> Parser::parse_repeat(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto end = lexer.position;
     return Result<RepeatSyntax, ParserError>(RepeatSyntax(start, end, name, action));
 }
@@ -9271,8 +9184,7 @@ Result<Vector<ActionSyntax>*, ParserError> Parser::parse_action_list(Page* rp, P
                     break;
                 }
             }
-        }
-        (*list).add(node);
+        }(*list).add(node);
     };
 }
 
@@ -9379,8 +9291,7 @@ Result<OperationSyntax, ParserError> Parser::parse_operation(Page* rp, Page* ep)
                 break;
             }
         }
-    }
-    ;
+    };
     const auto end = lexer.position;
     return Result<OperationSyntax, ParserError>(OperationSyntax(start, end, *operands));
 }
@@ -9409,8 +9320,7 @@ Result<SetSyntax, ParserError> Parser::parse_set(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto start_colon_3 = lexer.previous_position;
     const auto success_colon_3 = lexer.parse_colon();
     if (success_colon_3 == false) {
@@ -9433,8 +9343,7 @@ Result<SetSyntax, ParserError> Parser::parse_set(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto end = lexer.position;
     return Result<SetSyntax, ParserError>(SetSyntax(start, end, *target, *source));
 }
@@ -9463,8 +9372,7 @@ Result<SizeOfSyntax, ParserError> Parser::parse_sizeof(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto end = lexer.position;
     return Result<SizeOfSyntax, ParserError>(SizeOfSyntax(start, end, type));
 }
@@ -9496,8 +9404,7 @@ Result<Vector<TypeSyntax>*, ParserError> Parser::parse_type_list(Page* rp, Page*
                     break;
                 }
             }
-        }
-        (*list).add(node);
+        }(*list).add(node);
     };
 }
 
@@ -9520,8 +9427,7 @@ Result<TypeSyntax, ParserError> Parser::parse_type(Page* rp, Page* ep) {
                 break;
             }
         }
-    }
-    ;
+    };
     const auto generics_start = lexer.position;
     GenericArgumentsSyntax* generics = nullptr;
     {
@@ -9724,8 +9630,7 @@ Result<Vector<ExtensionSyntax>*, ParserError> Parser::parse_extension_list(Page*
                     break;
                 }
             }
-        }
-        (*list).add(node);
+        }(*list).add(node);
     };
 }
 
