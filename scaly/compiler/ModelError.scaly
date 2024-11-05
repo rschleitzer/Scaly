@@ -5,7 +5,7 @@ define Position (
     column: size_t
 )
 
-function calculate_position_from_string(text: String, offset: size_t) returns Position {
+function calculate_position_from_string(text: String, offset: size_t) returns Position$ {
     let iterator text.get_iterator()
     var line: size_t 1
     var column: size_t 1
@@ -25,59 +25,64 @@ function calculate_position_from_string(text: String, offset: size_t) returns Po
     }
     return Position(0, 0)
 }
-;*
-String build_hint_lines_from_string(Page* _rp, String text, size_t start_offset, size_t end_offset, Position start_position, Position end_position) {
-    Region _r
-    let iterator = text.get_iterator()
-    size_t current_line = 1
-    size_t current_column = 1
-    size_t counter = 0
-    let start_line = start_position.line
-    let end_line = end_position.line
-    let start_column = start_position.column
-    let end_column = end_position.column
-    StringBuilder& line_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder()
-    StringBuilder& indicator_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder()
-    StringBuilder& output_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder()
-    while (let character = iterator.next()) {
+
+function build_hint_lines_from_string(text: String, start_offset: size_t, end_offset: size_t, start_position: Position, end_position: Position) returns String {
+    var r Region()
+    var current_line: size_t 1
+    var current_column: size_t 1
+    var counter: size_t 0
+    let start_line start_position.line
+    let end_line end_position.line
+    let start_column start_position.column
+    let end_column end_position.column
+    var line_builder StringBuilder$()
+    var indicator_builder StringBuilder$()
+    var output_builder StringBuilder$()
+
+    for character in text
+    {
         counter++
-        if (*character == '\n') {
-            if (current_line >= start_line && current_line <= end_line) {
-                line_builder.append('\n')
-                output_builder.append(line_builder.to_string(_r.get_page()))
-                indicator_builder.append('\n')
-                output_builder.append(indicator_builder.to_string(_r.get_page()))
+        if character = '\n'
+        {
+            if current_line >= start_line && current_line <= end_line
+            {
+                (*line_builder).append('\n')
+                (*output_builder).append((*line_builder).to_string(r.get_page()))
+                (*indicator_builder).append('\n')
+                (*output_builder).append((*indicator_builder).to_string(r.get_page()))
             }
             current_line++
-            current_column = 1
-            if (current_line > end_line) {
-                return output_builder.to_string(_rp)
-            }
-            else {
-                line_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder()
-                indicator_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder()
+            set current_column: 1
+            if current_line > end_line
+            {
+                return (*output_builder).to_string(rp)
+            } else {
+                set line_builder: StringBuilder$()
+                set indicator_builder: StringBuilder$()
             }
 
-        }
-        else {
-            if (current_line >= start_line && current_line <= end_line) {
-                line_builder.append(*character)
+        } else {
+            if current_line >= start_line && current_line <= end_line
+            {
+                (*line_builder).append(character)
                 if (counter >= start_offset && counter < end_offset)
-                    indicator_builder.append('^')
-                else
-                    indicator_builder.append(' ')
+                {
+                    (*indicator_builder).append('^')
+                } else {
+                    (*indicator_builder).append(' ')
+                }
             }
-            current_column++
+            set current_column: current_column + 1
         }
     }
 
-    line_builder.append('\n')
-    output_builder.append(line_builder.to_string(_r.get_page()))
-    indicator_builder.append('\n')
-    output_builder.append(indicator_builder.to_string(_r.get_page()))
-    return output_builder.to_string(_rp)
+    (*line_builder).append('\n')
+    (*output_builder).append((*line_builder).to_string(r.get_page()))
+    (*indicator_builder).append('\n')
+    (*output_builder).append((*indicator_builder).to_string(r.get_page()))
+    return (*output_builder).to_string(rp)
 }
-
+;*
 Result<String, FileError> build_hint_lines(Page* _rp, String file, size_t start_offset, size_t end_offset, Position start_position, Position end_position) {
     Region _r
     let text_result = File::read_to_string(_r.get_page(), _r.get_page(), file)

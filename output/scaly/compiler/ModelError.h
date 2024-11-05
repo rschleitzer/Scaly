@@ -13,5 +13,6 @@ struct Position : Object {
     Position(size_t line, size_t column);
 };
 
-Position calculate_position_from_string(Page* rp, String text, size_t offset);
+Position calculate_position_from_string(String text, size_t offset);
+String build_hint_lines_from_string(Page* rp, String text, size_t start_offset, size_t end_offset, Position start_position, Position end_position);
 #endif
