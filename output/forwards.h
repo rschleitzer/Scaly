@@ -265,5 +265,6 @@ struct Module;
 struct Program;
 struct Member;
 struct Nameable;
+struct Position;
 }
 }

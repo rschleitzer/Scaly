@@ -6,6 +6,7 @@ define compiler {
     module Lexer
     module Parser
     module Model
+    module ModelError
 
     function test_lexer() {
         {
