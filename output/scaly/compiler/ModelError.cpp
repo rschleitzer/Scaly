@@ -115,5 +115,11 @@ Result<Position, FileError> calculate_position(Page* rp, Page* ep, String file, 
     return Result<Position, FileError>(calculate_position_from_string(text, offset));
 }
 
+String to_string(Page* rp, size_t number) {
+    auto str = "                      ";
+    snprintf((char*)str, 22, "%zd", number);
+    return String(rp, str);
+}
+
 }
 }

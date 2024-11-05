@@ -95,13 +95,13 @@ function calculate_position(file: String, offset: size_t) returns Position throw
     return calculate_position_from_string(text, offset)
 }
 
-;*
-String to_string(Page* _rp, size_t number) {
-    char str[22]
-    snprintf(str, 22, "%zd", number)
-    return String(_rp, str)
+function to_string(number: size_t) returns String {
+    var str "                      "
+    snprintf((char*)str, 22, "%zd", number)
+    return String(rp, str)
 }
 
+;*
 void append_error_message_header(StringBuilder& builder, String file, size_t offset) {
     Region _r
     builder.append(file)
