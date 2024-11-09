@@ -19,4 +19,14 @@ Result<String, FileError> build_hint_lines(Page* rp, Page* ep, String file, size
 Result<Position, FileError> calculate_position(Page* rp, Page* ep, String file, size_t offset);
 String to_string(Page* rp, size_t number);
 void append_error_message_header(StringBuilder& builder, String file, size_t offset);
+void append_hint_lines(StringBuilder& builder, String file, size_t start, size_t end);
+struct IoModelError : Object {
+    IoModelError(FileError);
+    enum {
+        File,
+    } _tag;
+    union {
+        struct FileError _File;
+    };
+};
 #endif

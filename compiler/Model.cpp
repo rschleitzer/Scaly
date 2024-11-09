@@ -499,7 +499,6 @@ struct Structure {
         symbols(symbols) {}
 };
 
-
 struct Variant : Object {
     Span span;
     String name;
@@ -516,11 +515,13 @@ struct Union : Object {
     Span span;
     bool private_;
     Vector<Variant> variants;
-    HashMap<String, Variant> symbols;
-    Union(Span span, bool private_, Vector<Variant> variants, HashMap<String, Variant> symbols)
+    Vector<Member> members;
+    HashMap<String, Nameable> symbols;
+    Union(Span span, bool private_, Vector<Variant> variants, Vector<Member> members, HashMap<String, Nameable> symbols)
       : span(span),
         private_(private_),
         variants(variants),
+        members(members),
         symbols(symbols) {}
 };
 
@@ -641,12 +642,14 @@ struct Nameable {
         Operator,
         Functions,
         Property,
+        Variant,
     } _tag;
     union {
         struct Concept _Concept;
         struct Operator _Operator;
         struct Vector<Function> _Functions;
         struct Property _Property;
+        struct Variant _Variant;
     };
 };
 

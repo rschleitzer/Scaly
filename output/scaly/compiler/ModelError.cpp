@@ -147,5 +147,59 @@ void append_error_message_header(StringBuilder& builder, String file, size_t off
     };
 }
 
+void append_hint_lines(StringBuilder& builder, String file, size_t start, size_t end) {
+    auto r = Region();
+    builder.append('\n');
+    {
+        auto _result = calculate_position(r.get_page(), r.get_page(), file, end);
+        switch (_result._tag)
+        {
+            case Success::Ok:
+            {
+                auto position_end = _result._Ok;
+                {
+                    {
+                        auto _result = calculate_position(r.get_page(), r.get_page(), file, start);
+                        switch (_result._tag)
+                        {
+                            case Success::Ok:
+                            {
+                                auto position_start = _result._Ok;
+                                {
+                                    {
+                                        auto _result = build_hint_lines(r.get_page(), r.get_page(), file, start, end, position_start, position_end);
+                                        switch (_result._tag)
+                                        {
+                                            case Success::Ok:
+                                            {
+                                                auto hint_lines = _result._Ok;
+                                                builder.append(hint_lines);
+                                                break;
+                                            }
+                                            default:
+                                                {
+                                            };
+                                        }
+                                    };
+                                };
+                                break;
+                            }
+                            default:
+                                {
+                            };
+                        }
+                    };
+                };
+                break;
+            }
+            default:
+                {
+            };
+        }
+    };
+}
+IoModelError::IoModelError(struct FileError _File) : _tag(File), _File(_File) {}
+
+
 }
 }

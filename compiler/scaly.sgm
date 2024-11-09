@@ -104,6 +104,8 @@
     <content link = Variant               multiple          property = variants
     <content link = right_paren
     <content colon                                 optional
+    <content link = Body                           optional property = body
+    <content colon                                 optional
 
 <syntax id = Variant                      multiple
     <content identifier                                     property = name

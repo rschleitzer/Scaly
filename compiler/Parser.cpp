@@ -1019,10 +1019,11 @@ struct VariantSyntax : Object {
 };
 
 struct UnionSyntax : Object {
-    UnionSyntax(size_t start, size_t end, Vector<VariantSyntax>* variants) : start(start), end(end), variants(variants) {}
+    UnionSyntax(size_t start, size_t end, Vector<VariantSyntax>* variants, BodySyntax* body) : start(start), end(end), variants(variants), body(body) {}
     size_t start;
     size_t end;
     Vector<VariantSyntax>* variants;
+    BodySyntax* body;
 };
 
 struct NamespaceSyntax : Object {
@@ -2360,9 +2361,28 @@ struct Parser : Object {
         if (!success_colon_6) {
         }
 
+        auto body_start = this->lexer.position;
+        auto body_result = this->parse_body(_rp, _ep);
+        if (body_result._tag == Result<BodySyntax, ParserError>::Error)
+        {
+            switch (body_result._Error._tag) {
+                case ParserError::DifferentSyntax:
+                    break;
+                case ParserError::InvalidSyntax:
+                    return Result<UnionSyntax, ParserError> { ._tag = Result<UnionSyntax, ParserError>::Error, ._Error = body_result._Error };
+            }
+        }
+
+        BodySyntax* body = body_result._tag == Result<BodySyntax, ParserError>::Error ? nullptr : new(alignof(BodySyntax), _rp) BodySyntax(body_result._Ok);
+
+        auto start_colon_8 = this->lexer.previous_position;
+        auto success_colon_8 = this->lexer.parse_colon(_rp);
+        if (!success_colon_8) {
+        }
+
         auto end = this->lexer.position;
 
-        auto ret = UnionSyntax(start, end, variants);
+        auto ret = UnionSyntax(start, end, variants, body);
 
         return Result<UnionSyntax, ParserError> { ._tag = Result<UnionSyntax, ParserError>::Ok, ._Ok = ret };
     }

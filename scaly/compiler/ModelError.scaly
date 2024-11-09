@@ -116,44 +116,42 @@ function append_error_message_header(builder: ref[StringBuilder], file: String, 
         else {}
 }
 
-;*
-void append_hint_lines(StringBuilder& builder, String file, size_t start, size_t end) {
-    Region _r
+function append_hint_lines(builder: ref[StringBuilder], file: String, start: size_t, end: size_t) {
+    var r Region()
     builder.append('\n')
-    let position_result_end = calculate_position(_r.get_page(), _r.get_page(), file, end)
-    if (position_result_end._tag == Result<Position, FileError>::Ok) {
-        let position_end = position_result_end._Ok
-        let position_result_start = calculate_position(_r.get_page(), _r.get_page(), file, start)
-        if (position_result_start._tag == Result<Position, FileError>::Ok) {
-            let hint_lines_result = build_hint_lines(_r.get_page(), file, start, end, position_result_start._Ok, position_end)
-            if (hint_lines_result._tag == Result<String, FileError>::Ok) {
-                builder.append(hint_lines_result._Ok)
-            }
+    choose calculate_position(r.get_page(), r.get_page(), file, end)
+        when position_end: Success.Ok
+        {
+            choose calculate_position(r.get_page(), r.get_page(), file, start)
+                when position_start: Success.Ok
+                {
+                    choose build_hint_lines(r.get_page(), r.get_page(), file, start, end, position_start, position_end)
+                        when hint_lines: Success.Ok
+                            builder.append(hint_lines)
+                        else {}
+                }
+                else {}
         }
+        else {}
+}
+
+define IoModelError union
+(
+    File: FileError
+)
+{
+    function to_string() returns String {
+        var r Region()
+        var message_builder: ref[StringBuilder]  *StringBuilder$()
+        choose this
+            when file: IoModelError.File
+                message_builder.append(file.to_string(rp))
+            else {}
+        return message_builder.to_string(rp)     
     }
 }
 
-struct IoModelError {
-    enum {
-        File,
-    } _tag
-    union {
-        struct FileError _File
-    }
-    IoModelError(FileError file_error) : _tag(File), _File(file_error) {}
-
-    String to_string(Page* _rp) {
-        Region _r
-        StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder()
-        switch (_tag) {
-            case File:
-                message_builder.append(_File.to_string(_rp))
-            break
-        }
-        return message_builder.to_string(_rp)     
-    }
-}
-
+;*
 struct ParserModelError {
     ParserModelError(String file, ParserError parser_error) : file(file), error(parser_error) {}
 
