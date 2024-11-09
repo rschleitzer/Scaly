@@ -28,5 +28,6 @@ struct IoModelError : Object {
     union {
         struct FileError _File;
     };
+    String to_string(Page* rp);
 };
 #endif

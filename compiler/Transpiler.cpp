@@ -154,13 +154,12 @@ struct Result {\n\
 
             case Definition::Union: {
                 auto union_ = concept.definition._Union;
-                build_union(_ep, header_builder, cpp_builder, concept.name, union_, concept.parameters);
-                return nullptr;
+                return build_union(_ep, header_builder, cpp_builder, concept.name, union_, concept.parameters);
             }
         }
     }
 
-    void build_union(Page* _ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, Union& union_, Vector<GenericParameter> parameters) {
+    TranspilerError* build_union(Page* _ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, Union& union_, Vector<GenericParameter> parameters) {
         header_builder.append('\n');
         full_struct_name(header_builder, name, parameters);
         header_builder.append(" : Object");
@@ -219,8 +218,33 @@ struct Result {\n\
                 header_builder.append(variant.name);
                 header_builder.append(";\n");
             }
-            header_builder.append("    };\n};");
         }
+        header_builder.append("    };");
+
+        auto member_iterator = union_.members.get_iterator();
+        while (auto member = member_iterator.next()) {
+            switch (member->_tag) {
+                case Member::Function: {
+                    auto _result = build_function(_ep, header_builder, cpp_builder, member->_Function, &name, parameters.length > 0, true);
+                    if (_result != nullptr)
+                        return new(alignof(TranspilerError), _ep) TranspilerError(*_result);                    
+                    break;
+                }
+                case Member::Operator: {
+                        auto _result = build_operator(_ep, header_builder, cpp_builder, member->_Operator, &name, parameters.length > 0);
+                        if (_result != nullptr)
+                            return new(alignof(TranspilerError), _ep) TranspilerError(*_result);                    
+                    }
+                    break;
+                case Member::Package:
+                    return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "structure local package")));
+                case Member::Concept:
+                    return new(alignof(TranspilerError), _ep) TranspilerError(NotImplemented(String(_ep, "structure local concept")));
+            }
+        }
+
+        header_builder.append("\n};");
+
         if (parameters.length == 0) {
             auto _variant_iterator = variants.get_iterator();
             while (auto _variant = _variant_iterator.next())
@@ -243,6 +267,7 @@ struct Result {\n\
                 cpp_builder.append(") {}\n");
             }
         }
+        return nullptr;
     }
 
     TranspilerError* build_namespace(Page* _ep, String path, String source, String name, StringBuilder& header_builder, StringBuilder& cpp_builder, String main_header, String namespace_open, String namespace_close, Namespace& namespace_) {

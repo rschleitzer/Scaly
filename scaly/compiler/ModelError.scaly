@@ -140,10 +140,10 @@ define IoModelError union
     File: FileError
 )
 {
-    function to_string() returns String {
+    function to_string(this: IoModelError) returns String {
         var r Region()
         var message_builder: ref[StringBuilder]  *StringBuilder$()
-        choose this
+        choose *this
             when file: IoModelError.File
                 message_builder.append(file.to_string(rp))
             else {}

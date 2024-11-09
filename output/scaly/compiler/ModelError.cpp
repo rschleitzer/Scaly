@@ -198,6 +198,27 @@ void append_hint_lines(StringBuilder& builder, String file, size_t start, size_t
         }
     };
 }
+
+String IoModelError::to_string(Page* rp) {
+    auto r = Region();
+    StringBuilder& message_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder();
+    {
+        auto _result = *this;
+        switch (_result._tag)
+        {
+            case IoModelError::File:
+            {
+                auto file = _result._File;
+                message_builder.append(file.to_string(rp));
+                break;
+            }
+            default:
+                {
+            };
+        }
+    };
+    return message_builder.to_string(rp);
+}
 IoModelError::IoModelError(struct FileError _File) : _tag(File), _File(_File) {}
 
 

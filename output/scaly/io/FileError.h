@@ -29,5 +29,6 @@ struct FileError : Object {
         struct UnknownFileError _Unknown;
         struct NoSuchFileOrDirectoryError _NoSuchFileOrDirectory;
     };
+    String to_string(Page* rp);
 };
 #endif

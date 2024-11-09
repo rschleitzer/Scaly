@@ -7,3 +7,24 @@ define FileError union (
     Unknown: UnknownFileError,
     NoSuchFileOrDirectory: NoSuchFileOrDirectoryError
 )
+{
+    function to_string(this: IoModelError) returns String {
+        var r Region()
+        var message_builder: ref[StringBuilder]  *StringBuilder$()
+        choose *this
+            when unknown: FileError.Unknown
+            {
+                message_builder.append("An unknown file error occurred with the file ")
+                message_builder.append(unknown.file_name)
+                message_builder.append(".")
+            }
+            when no_such: FileError.NoSuchFileOrDirectory
+            {
+                message_builder.append("A file or directory with the name ")
+                message_builder.append(no_such.file_name)
+                message_builder.append(" does not exist.\n")
+            }
+
+        return message_builder.to_string(rp)
+    }
+}
