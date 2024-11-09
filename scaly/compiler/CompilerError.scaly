@@ -1,0 +1,32 @@
+
+define MultipleMainFunctions()
+define MainIsNotAFunction()
+define ProgramModuleIsNotANameSpace()
+
+define CompilerError union
+(
+    Transpiler: TranspilerError
+    Model: ModelError
+    MultipleMainFunctions: MultipleMainFunctions
+    MainIsNotAFunction: MainIsNotAFunction
+    ProgramModuleIsNotANameSpace: ProgramModuleIsNotANameSpace
+)
+{
+    function to_string(this: CompilerError) returns String {
+        var r Region()
+        var message_builder: ref[StringBuilder] *StringBuilder$()
+        choose *this
+            when t: CompilerError.Transpiler
+                message_builder.append(t.to_string(rp))
+            when m: CompilerError.Model
+                message_builder.append(m.to_string(rp))
+            when mm: CompilerError.MultipleMainFunctions
+                message_builder.append("Multiple main functions have been defined. There can only be one main function.")
+            when mf: CompilerError.MainIsNotAFunction
+                message_builder.append("The item called main is not a function.")
+            when pm: CompilerError.ProgramModuleIsNotANameSpace
+                message_builder.append("The root concept of a program is not a name space.")
+
+        return message_builder.to_string(rp)
+    }
+}

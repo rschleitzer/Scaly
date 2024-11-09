@@ -278,5 +278,12 @@ struct InvalidComponentName;
 struct ModuleRootMustBeConcept;
 struct ModelBuilderError;
 struct ModelError;
+struct FeatureNotImplemented;
+struct OnlyFile;
+struct TranspilerError;
+struct MultipleMainFunctions;
+struct MainIsNotAFunction;
+struct ProgramModuleIsNotANameSpace;
+struct CompilerError;
 }
 }

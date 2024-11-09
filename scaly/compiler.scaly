@@ -7,6 +7,8 @@ define compiler {
     module Parser
     module Model
     module ModelError
+    module TranspilerError
+    module CompilerError
 
     function test_lexer() {
         {

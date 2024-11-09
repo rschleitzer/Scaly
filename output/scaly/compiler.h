@@ -13,6 +13,8 @@ namespace compiler {
 #include "compiler/Parser.h"
 #include "compiler/Model.h"
 #include "compiler/ModelError.h"
+#include "compiler/TranspilerError.h"
+#include "compiler/CompilerError.h"
 
     void test_lexer();
     void test_parser();

@@ -1,0 +1,31 @@
+use scaly.io
+
+define FeatureNotImplemented(expected: String)
+define OnlyFile()
+
+define TranspilerError union
+(
+    NotImplemented: FeatureNotImplemented
+    OnlyFile: OnlyFile
+    FileError: FileError
+)
+{
+    function to_string(this: TranspilerError) returns String {
+        var r Region()
+        var message_builder: ref[StringBuilder] *StringBuilder$()
+        choose *this
+            when ni: TranspilerError.NotImplemented
+            {
+                message_builder.append("The transpiler feature \"")
+                message_builder.append(ni.expected)
+                message_builder.append("\" is not implemented.")
+            }
+            when o: TranspilerError.OnlyFile
+                message_builder.append("Only a file can be transpiled.")
+            when fe: TranspilerError.FileError
+                message_builder.append(fe.to_string(r.get_page()))
+
+        message_builder.append('\n')
+        return message_builder.to_string(rp)
+    }
+}
