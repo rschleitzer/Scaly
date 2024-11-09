@@ -222,5 +222,242 @@ String IoModelError::to_string(Page* rp) {
 IoModelError::IoModelError(struct FileError _File) : _tag(File), _File(_File) {}
 
 
+ParserModelError::ParserModelError(String file, ParserError error) : file(file), error(error) {}
+
+String ParserModelError::to_string(Page* rp) {
+    auto r = Region();
+    {
+        auto _result = error;
+        switch (_result._tag)
+        {
+            case ParserError::Different:
+            {
+                auto d = _result._Different;
+                return String(rp, "An other syntax was expected here.");
+                break;
+            }
+            case ParserError::Invalid:
+            {
+                auto i = _result._Invalid;
+                return build_error_message(rp, i);
+                break;
+            }
+        }
+    };
+}
+
+String ParserModelError::build_error_message(Page* rp, InvalidSyntax invalid_syntax) {
+    auto r = Region();
+    StringBuilder& message_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder();
+    append_error_message_header(message_builder, file, invalid_syntax.start);
+    message_builder.append("Expected ");
+    message_builder.append(invalid_syntax.expected);
+    message_builder.append('.');
+    append_hint_lines(message_builder, file, invalid_syntax.start, invalid_syntax.end);
+    return message_builder.to_string(rp);
+}
+
+NotImplemented::NotImplemented(String file, String name, Span span) : file(file), name(name), span(span) {}
+
+String NotImplemented::to_string(Page* rp) {
+    auto r = Region();
+    StringBuilder& message_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder();
+    append_error_message_header(message_builder, file, span.start);
+    message_builder.append("The ");
+    message_builder.append(name);
+    message_builder.append(" syntax cannot be processed by the modeler yet.");
+    append_hint_lines(message_builder, file, span.start, span.end);
+    return message_builder.to_string(rp);
+}
+
+DuplicateName::DuplicateName(String file, Span span) : file(file), span(span) {}
+
+String DuplicateName::to_string(Page* rp) {
+    auto r = Region();
+    StringBuilder& message_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder();
+    append_error_message_header(message_builder, file, span.start);
+    message_builder.append("This declaration already exists.");
+    append_hint_lines(message_builder, file, span.start, span.end);
+    return message_builder.to_string(rp);
+}
+
+NonFunctionSymbolExists::NonFunctionSymbolExists(String file, Span span) : file(file), span(span) {}
+
+String NonFunctionSymbolExists::to_string(Page* rp) {
+    auto r = Region();
+    StringBuilder& message_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder();
+    append_error_message_header(message_builder, file, span.start);
+    message_builder.append("This declaration already exists, but not as a function.");
+    append_hint_lines(message_builder, file, span.start, span.end);
+    return message_builder.to_string(rp);
+}
+
+FunctionSymbolExists::FunctionSymbolExists(String file, Span span) : file(file), span(span) {}
+
+String FunctionSymbolExists::to_string(Page* rp) {
+    auto r = Region();
+    StringBuilder& message_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder();
+    append_error_message_header(message_builder, file, span.start);
+    message_builder.append("This declaration already exists, but as a function.");
+    append_hint_lines(message_builder, file, span.start, span.end);
+    return message_builder.to_string(rp);
+}
+
+DeInitializerExists::DeInitializerExists(String file, Span span) : file(file), span(span) {}
+
+String DeInitializerExists::to_string(Page* rp) {
+    auto r = Region();
+    StringBuilder& message_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder();
+    append_error_message_header(message_builder, file, span.start);
+    message_builder.append("A deinitializer has already been defined.");
+    append_hint_lines(message_builder, file, span.start, span.end);
+    return message_builder.to_string(rp);
+}
+
+InvalidConstant::InvalidConstant(String file, Span span) : file(file), span(span) {}
+
+String InvalidConstant::to_string(Page* rp) {
+    auto r = Region();
+    StringBuilder& message_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder();
+    append_error_message_header(message_builder, file, span.start);
+    message_builder.append("This is an invalid constant.");
+    append_hint_lines(message_builder, file, span.start, span.end);
+    return message_builder.to_string(rp);
+}
+
+InvalidComponentName::InvalidComponentName(String file, Span span) : file(file), span(span) {}
+
+String InvalidComponentName::to_string(Page* rp) {
+    auto r = Region();
+    StringBuilder& message_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder();
+    append_error_message_header(message_builder, file, span.start);
+    message_builder.append("The component does not have an identifier as name.");
+    append_hint_lines(message_builder, file, span.start, span.end);
+    return message_builder.to_string(rp);
+}
+
+ModuleRootMustBeConcept::ModuleRootMustBeConcept(String file, Span span) : file(file), span(span) {}
+
+String ModuleRootMustBeConcept::to_string(Page* rp) {
+    auto r = Region();
+    StringBuilder& message_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder();
+    append_error_message_header(message_builder, file, span.start);
+    message_builder.append("The root definition of a module must be a concept.");
+    append_hint_lines(message_builder, file, span.start, span.end);
+    return message_builder.to_string(rp);
+}
+
+String ModelBuilderError::to_string(Page* rp) {
+    auto r = Region();
+    StringBuilder& message_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder();
+    {
+        auto _result = *this;
+        switch (_result._tag)
+        {
+            case ModelBuilderError::NotImplemented:
+            {
+                auto ni = _result._NotImplemented;
+                message_builder.append(ni.to_string(rp));
+                break;
+            }
+            case ModelBuilderError::DuplicateName:
+            {
+                auto dn = _result._DuplicateName;
+                message_builder.append(dn.to_string(rp));
+                break;
+            }
+            case ModelBuilderError::NonFunctionSymbolExists:
+            {
+                auto nfse = _result._NonFunctionSymbolExists;
+                message_builder.append(nfse.to_string(rp));
+                break;
+            }
+            case ModelBuilderError::FunctionSymbolExists:
+            {
+                auto fse = _result._FunctionSymbolExists;
+                message_builder.append(fse.to_string(rp));
+                break;
+            }
+            case ModelBuilderError::DeInitializerExists:
+            {
+                auto di = _result._DeInitializerExists;
+                message_builder.append(di.to_string(rp));
+                break;
+            }
+            case ModelBuilderError::InvalidConstant:
+            {
+                auto ic = _result._InvalidConstant;
+                message_builder.append(ic.to_string(rp));
+                break;
+            }
+            case ModelBuilderError::InvalidComponentName:
+            {
+                auto icn = _result._InvalidComponentName;
+                message_builder.append(icn.to_string(rp));
+                break;
+            }
+            case ModelBuilderError::ModuleRootMustBeConcept:
+            {
+                auto mrmbc = _result._ModuleRootMustBeConcept;
+                message_builder.append(mrmbc.to_string(rp));
+                break;
+            }
+        }
+    };
+    return message_builder.to_string(rp);
+}
+ModelBuilderError::ModelBuilderError(struct NotImplemented _NotImplemented) : _tag(NotImplemented), _NotImplemented(_NotImplemented) {}
+
+ModelBuilderError::ModelBuilderError(struct DuplicateName _DuplicateName) : _tag(DuplicateName), _DuplicateName(_DuplicateName) {}
+
+ModelBuilderError::ModelBuilderError(struct NonFunctionSymbolExists _NonFunctionSymbolExists) : _tag(NonFunctionSymbolExists), _NonFunctionSymbolExists(_NonFunctionSymbolExists) {}
+
+ModelBuilderError::ModelBuilderError(struct FunctionSymbolExists _FunctionSymbolExists) : _tag(FunctionSymbolExists), _FunctionSymbolExists(_FunctionSymbolExists) {}
+
+ModelBuilderError::ModelBuilderError(struct DeInitializerExists _DeInitializerExists) : _tag(DeInitializerExists), _DeInitializerExists(_DeInitializerExists) {}
+
+ModelBuilderError::ModelBuilderError(struct InvalidConstant _InvalidConstant) : _tag(InvalidConstant), _InvalidConstant(_InvalidConstant) {}
+
+ModelBuilderError::ModelBuilderError(struct InvalidComponentName _InvalidComponentName) : _tag(InvalidComponentName), _InvalidComponentName(_InvalidComponentName) {}
+
+ModelBuilderError::ModelBuilderError(struct ModuleRootMustBeConcept _ModuleRootMustBeConcept) : _tag(ModuleRootMustBeConcept), _ModuleRootMustBeConcept(_ModuleRootMustBeConcept) {}
+
+
+String ModelError::to_string(Page* rp) {
+    auto r = Region();
+    StringBuilder& message_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder();
+    {
+        auto _result = *this;
+        switch (_result._tag)
+        {
+            case ModelError::Io:
+            {
+                auto io = _result._Io;
+                message_builder.append(io.to_string(rp));
+                break;
+            }
+            case ModelError::Parser:
+            {
+                auto p = _result._Parser;
+                message_builder.append(p.to_string(rp));
+                break;
+            }
+            case ModelError::Builder:
+            {
+                auto b = _result._Builder;
+                message_builder.append(b.to_string(rp));
+                break;
+            }
+        }
+    };
+    return message_builder.to_string(rp);
+}
+ModelError::ModelError(struct IoModelError _Io) : _tag(Io), _Io(_Io) {}
+
+ModelError::ModelError(struct ParserModelError _Parser) : _tag(Parser), _Parser(_Parser) {}
+
+ModelError::ModelError(struct ModelBuilderError _Builder) : _tag(Builder), _Builder(_Builder) {}
+
+
 }
 }

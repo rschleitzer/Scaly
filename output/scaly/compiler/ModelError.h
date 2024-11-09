@@ -30,4 +30,125 @@ struct IoModelError : Object {
     };
     String to_string(Page* rp);
 };
+struct ParserModelError : Object {
+    String file;
+    ParserError error;
+
+    ParserModelError(String file, ParserError error);
+    String to_string(Page* rp);
+    String build_error_message(Page* rp, InvalidSyntax invalid_syntax);
+};
+
+struct NotImplemented : Object {
+    String file;
+    String name;
+    Span span;
+
+    NotImplemented(String file, String name, Span span);
+    String to_string(Page* rp);
+};
+
+struct DuplicateName : Object {
+    String file;
+    Span span;
+
+    DuplicateName(String file, Span span);
+    String to_string(Page* rp);
+};
+
+struct NonFunctionSymbolExists : Object {
+    String file;
+    Span span;
+
+    NonFunctionSymbolExists(String file, Span span);
+    String to_string(Page* rp);
+};
+
+struct FunctionSymbolExists : Object {
+    String file;
+    Span span;
+
+    FunctionSymbolExists(String file, Span span);
+    String to_string(Page* rp);
+};
+
+struct DeInitializerExists : Object {
+    String file;
+    Span span;
+
+    DeInitializerExists(String file, Span span);
+    String to_string(Page* rp);
+};
+
+struct InvalidConstant : Object {
+    String file;
+    Span span;
+
+    InvalidConstant(String file, Span span);
+    String to_string(Page* rp);
+};
+
+struct InvalidComponentName : Object {
+    String file;
+    Span span;
+
+    InvalidComponentName(String file, Span span);
+    String to_string(Page* rp);
+};
+
+struct ModuleRootMustBeConcept : Object {
+    String file;
+    Span span;
+
+    ModuleRootMustBeConcept(String file, Span span);
+    String to_string(Page* rp);
+};
+
+struct ModelBuilderError : Object {
+    ModelBuilderError(NotImplemented);
+    ModelBuilderError(DuplicateName);
+    ModelBuilderError(NonFunctionSymbolExists);
+    ModelBuilderError(FunctionSymbolExists);
+    ModelBuilderError(DeInitializerExists);
+    ModelBuilderError(InvalidConstant);
+    ModelBuilderError(InvalidComponentName);
+    ModelBuilderError(ModuleRootMustBeConcept);
+    enum {
+        NotImplemented,
+        DuplicateName,
+        NonFunctionSymbolExists,
+        FunctionSymbolExists,
+        DeInitializerExists,
+        InvalidConstant,
+        InvalidComponentName,
+        ModuleRootMustBeConcept,
+    } _tag;
+    union {
+        struct NotImplemented _NotImplemented;
+        struct DuplicateName _DuplicateName;
+        struct NonFunctionSymbolExists _NonFunctionSymbolExists;
+        struct FunctionSymbolExists _FunctionSymbolExists;
+        struct DeInitializerExists _DeInitializerExists;
+        struct InvalidConstant _InvalidConstant;
+        struct InvalidComponentName _InvalidComponentName;
+        struct ModuleRootMustBeConcept _ModuleRootMustBeConcept;
+    };
+    String to_string(Page* rp);
+};
+struct ModelError : Object {
+    ModelError(IoModelError);
+    ModelError(ParserModelError);
+    ModelError(ModelBuilderError);
+    enum {
+        Io,
+        Parser,
+        Builder,
+    } _tag;
+    union {
+        struct IoModelError _Io;
+        struct ParserModelError _Parser;
+        struct ModelBuilderError _Builder;
+    };
+    String to_string(Page* rp);
+};
 #endif

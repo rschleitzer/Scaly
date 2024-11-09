@@ -135,14 +135,11 @@ function append_hint_lines(builder: ref[StringBuilder], file: String, start: siz
         else {}
 }
 
-define IoModelError union
-(
-    File: FileError
-)
+define IoModelError union(File: FileError)
 {
     function to_string(this: IoModelError) returns String {
         var r Region()
-        var message_builder: ref[StringBuilder]  *StringBuilder$()
+        var message_builder: ref[StringBuilder] *StringBuilder$()
         choose *this
             when file: IoModelError.File
                 message_builder.append(file.to_string(rp))
@@ -151,260 +148,192 @@ define IoModelError union
     }
 }
 
-;*
-struct ParserModelError {
-    ParserModelError(String file, ParserError parser_error) : file(file), error(parser_error) {}
-
-    String file
-    ParserError error
-
-    String to_string(Page* _rp) {
-        Region _r
-        switch (error._tag) {
-            case ParserError::DifferentSyntax:
-                return String(_rp, "An other syntax was expected here.")     
-            case ParserError::InvalidSyntax:
-                return build_error_message(_rp,  error._InvalidSyntax)
-        }
+define ParserModelError(file: String, error: ParserError)
+{
+    function to_string(this: ParserModelError) returns String {
+        var r Region()
+        choose error
+            when d: ParserError.Different
+                return String(rp, "An other syntax was expected here.")     
+            when i: ParserError.Invalid
+                return build_error_message(rp,  i)
     }
 
-    String build_error_message(Page* _rp, InvalidSyntax invalid_syntax) {
-        Region _r
-        StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder()
-        append_error_message_header(message_builder, this->file, invalid_syntax.start)
+    function build_error_message(this: ParserModelError, invalid_syntax: InvalidSyntax) returns String {
+        var r Region()
+        var message_builder: ref[StringBuilder] *StringBuilder$()
+        append_error_message_header(message_builder, file, invalid_syntax.start)
         message_builder.append("Expected ")
         message_builder.append(invalid_syntax.expected)
         message_builder.append('.')
-        append_hint_lines(message_builder, this->file, invalid_syntax.start, invalid_syntax.end)
+        append_hint_lines(message_builder, file, invalid_syntax.start, invalid_syntax.end)
 
-        return message_builder.to_string(_rp)
+        return message_builder.to_string(rp)
     }
 }
 
-struct NotImplemented
+define NotImplemented(file: String, name: String,span: Span)
 {
-    NotImplemented(String file, String name, Span span) : file(file), name(name), span(span) {}
-    String file
-    String name
-    Span span
-
-    String to_string(Page* _rp) {
-        Region _r
-        StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder()
-        append_error_message_header(message_builder, this->file, span.start)
+    function to_string(this: NotImplemented) returns String {
+        var r Region()
+        var message_builder: ref[StringBuilder] *StringBuilder$()
+        append_error_message_header(message_builder, file, span.start)
         message_builder.append("The ")
         message_builder.append(name)
         message_builder.append(" syntax cannot be processed by the modeler yet.")
-        append_hint_lines(message_builder, this->file, span.start, span.end)
+        append_hint_lines(message_builder, file, span.start, span.end)
 
-        return message_builder.to_string(_rp)
+        return message_builder.to_string(rp)
     }
 }
 
-struct DuplicateName {
-    DuplicateName(String file, Span span) : file(file), span(span) {}
-    String file
-    Span span
-
-    String to_string(Page* _rp) {
-        Region _r
-        StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder()
-        append_error_message_header(message_builder, this->file, span.start)
+define DuplicateName(file: String, span: Span)
+{
+    function to_string(this: DuplicateName) returns String {
+        var r Region()
+        var message_builder: ref[StringBuilder] *StringBuilder$()
+        append_error_message_header(message_builder, file, span.start)
         message_builder.append("This declaration already exists.")
-        append_hint_lines(message_builder, this->file, span.start, span.end)
+        append_hint_lines(message_builder, file, span.start, span.end)
 
-        return message_builder.to_string(_rp)
+        return message_builder.to_string(rp)
     }
 }
 
-struct NonFunctionSymbolExists {
-    NonFunctionSymbolExists(String file, Span span) : file(file), span(span) {}
-    String file
-    Span span
-
-    String to_string(Page* _rp) {
-        Region _r
-        StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder()
-        append_error_message_header(message_builder, this->file, span.start)
+define NonFunctionSymbolExists(file: String, span: Span)
+{
+    function to_string(this: NonFunctionSymbolExists) returns String {
+        var r Region()
+        var message_builder: ref[StringBuilder] *StringBuilder$()
+        append_error_message_header(message_builder, file, span.start)
         message_builder.append("This declaration already exists, but not as a function.")
-        append_hint_lines(message_builder, this->file, span.start, span.end)
+        append_hint_lines(message_builder, file, span.start, span.end)
 
-        return message_builder.to_string(_rp)
+        return message_builder.to_string(rp)
     }
 }
 
-struct FunctionSymbolExists {
-    FunctionSymbolExists(String file, Span span) : file(file), span(span) {}
-    String file
-    Span span
-
-    String to_string(Page* _rp) {
-        Region _r
-        StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder()
-        append_error_message_header(message_builder, this->file, span.start)
+define FunctionSymbolExists(file: String, span: Span)
+{
+    function to_string(this: FunctionSymbolExists) returns String {
+        var r Region()
+        var message_builder: ref[StringBuilder] *StringBuilder$()
+        append_error_message_header(message_builder, file, span.start)
         message_builder.append("This declaration already exists, but as a function.")
-        append_hint_lines(message_builder, this->file, span.start, span.end)
+        append_hint_lines(message_builder, file, span.start, span.end)
 
-        return message_builder.to_string(_rp)
+        return message_builder.to_string(rp)
     }
 }
 
-struct DeInitializerExists {
-    DeInitializerExists(String file, Span span) : file(file), span(span) {}
-    String file
-    Span span
-
-    String to_string(Page* _rp) {
-        Region _r
-        StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder()
-        append_error_message_header(message_builder, this->file, span.start)
+define DeInitializerExists(file: String, span: Span)
+{
+    function to_string(this: DeInitializerExists) returns String {
+        var r Region()
+        var message_builder: ref[StringBuilder] *StringBuilder$()
+        append_error_message_header(message_builder, file, span.start)
         message_builder.append("A deinitializer has already been defined.")
-        append_hint_lines(message_builder, this->file, span.start, span.end)
+        append_hint_lines(message_builder, file, span.start, span.end)
 
-        return message_builder.to_string(_rp)
+        return message_builder.to_string(rp)
     }
 }
-struct InvalidConstant {
-    InvalidConstant(String file, Span span) : file(file), span(span) {}
-    String file
-    Span span
 
-    String to_string(Page* _rp) {
-        Region _r
-        StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder()
-        append_error_message_header(message_builder, this->file, span.start)
+define InvalidConstant(file: String, span: Span)
+{
+    function to_string(this: InvalidConstant) returns String {
+        var r Region()
+        var message_builder: ref[StringBuilder] *StringBuilder$()
+        append_error_message_header(message_builder, file, span.start)
         message_builder.append("This is an invalid constant.")
-        append_hint_lines(message_builder, this->file, span.start, span.end)
+        append_hint_lines(message_builder, file, span.start, span.end)
 
-        return message_builder.to_string(_rp)
+        return message_builder.to_string(rp)
     }
 }
 
-struct InvalidComponentName {
-    InvalidComponentName(String file, Span span) : file(file), span(span) {}
-    String file
-    Span span
-
-    String to_string(Page* _rp) {
-        Region _r
-        StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder()
-        append_error_message_header(message_builder, this->file, span.start)
+define InvalidComponentName(file: String, span: Span)
+{
+    function to_string(this: InvalidComponentName) returns String {
+        var r Region()
+        var message_builder: ref[StringBuilder] *StringBuilder$()
+        append_error_message_header(message_builder, file, span.start)
         message_builder.append("The component does not have an identifier as name.")
-        append_hint_lines(message_builder, this->file, span.start, span.end)
+        append_hint_lines(message_builder, file, span.start, span.end)
 
-        return message_builder.to_string(_rp)
+        return message_builder.to_string(rp)
     }
 }
 
-struct ModuleRootMustBeConcept {
-    ModuleRootMustBeConcept(String file, Span span) : file(file), span(span) {}
-    String file
-    Span span
-
-    String to_string(Page* _rp) {
-        Region _r
-        StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder()
-        append_error_message_header(message_builder, this->file, span.start)
+define ModuleRootMustBeConcept(file: String, span: Span)
+{
+    function to_string(this: ModuleRootMustBeConcept) returns String {
+        var r Region()
+        var message_builder: ref[StringBuilder] *StringBuilder$()
+        append_error_message_header(message_builder, file, span.start)
         message_builder.append("The root definition of a module must be a concept.")
-        append_hint_lines(message_builder, this->file, span.start, span.end)
+        append_hint_lines(message_builder, file, span.start, span.end)
 
-        return message_builder.to_string(_rp)
+        return message_builder.to_string(rp)
     }
 }
 
-struct ModelBuilderError {
-    ModelBuilderError(NotImplemented _NotImplementedModelError) : _tag(NotImplemented), _NotImplemented(_NotImplementedModelError) {}
-    ModelBuilderError(DuplicateName _DuplicateName) : _tag(DuplicateName), _DuplicateName(_DuplicateName) {}
-    ModelBuilderError(NonFunctionSymbolExists _NonFunctionSymbolExists) : _tag(NonFunctionSymbolExists), _NonFunctionSymbolExists(_NonFunctionSymbolExists) {}
-    ModelBuilderError(FunctionSymbolExists _FunctionSymbolExists) : _tag(FunctionSymbolExists), _FunctionSymbolExists(_FunctionSymbolExists) {}
-    ModelBuilderError(DeInitializerExists _DeInitializerExists) : _tag(DeInitializerExists), _DeInitializerExists(_DeInitializerExists) {}
-    ModelBuilderError(InvalidConstant _InvalidConstant) : _tag(InvalidConstant), _InvalidConstant(_InvalidConstant) {}
-    ModelBuilderError(InvalidComponentName _InvalidComponentName) : _tag(InvalidComponentName), _InvalidComponentName(_InvalidComponentName) {}
-    ModelBuilderError(ModuleRootMustBeConcept _ModuleRootMustBeConcept) : _tag(ModuleRootMustBeConcept), _ModuleRootMustBeConcept(_ModuleRootMustBeConcept) {}
-    enum {
-        NotImplemented,
-        DuplicateName,
-        NonFunctionSymbolExists,
-        FunctionSymbolExists,
-        DeInitializerExists,
-        InvalidConstant,
-        InvalidComponentName,
-        ModuleRootMustBeConcept
-    } _tag
-    union {
-        struct NotImplemented _NotImplemented
-        struct DuplicateName _DuplicateName
-        struct NonFunctionSymbolExists _NonFunctionSymbolExists
-        struct FunctionSymbolExists _FunctionSymbolExists
-        struct DeInitializerExists _DeInitializerExists
-        struct InvalidConstant _InvalidConstant
-        struct InvalidComponentName _InvalidComponentName
-        struct ModuleRootMustBeConcept _ModuleRootMustBeConcept
-    }
+define ModelBuilderError union
+(
+    NotImplemented: NotImplemented
+    DuplicateName: DuplicateName
+    NonFunctionSymbolExists: NonFunctionSymbolExists
+    FunctionSymbolExists: FunctionSymbolExists
+    DeInitializerExists: DeInitializerExists
+    InvalidConstant: InvalidConstant
+    InvalidComponentName: InvalidComponentName
+    ModuleRootMustBeConcept: ModuleRootMustBeConcept
+)
+{
+    function to_string(this: ModuleRootMustBeConcept) returns String {
+        var r Region()
+        var message_builder: ref[StringBuilder] *StringBuilder$()
+        choose *this
+            when ni: ModelBuilderError.NotImplemented
+                message_builder.append(ni.to_string(rp))
+            when dn: ModelBuilderError.DuplicateName
+                message_builder.append(dn.to_string(rp))
+            when nfse: ModelBuilderError.NonFunctionSymbolExists
+                message_builder.append(nfse.to_string(rp))
+            when fse: ModelBuilderError.FunctionSymbolExists
+                message_builder.append(fse.to_string(rp))
+            when di: ModelBuilderError.DeInitializerExists
+                message_builder.append(di.to_string(rp))
+            when ic: ModelBuilderError.InvalidConstant
+                message_builder.append(ic.to_string(rp))
+            when icn: ModelBuilderError.InvalidComponentName
+                message_builder.append(icn.to_string(rp))
+            when mrmbc: ModelBuilderError.ModuleRootMustBeConcept
+                message_builder.append(mrmbc.to_string(rp))
 
-    String to_string(Page* _rp) {
-        Region _r
-        StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder()
-        switch (_tag) {
-            case NotImplemented:
-                message_builder.append(_NotImplemented.to_string(_rp))
-            break
-            case DuplicateName:
-                message_builder.append(_DuplicateName.to_string(_rp))
-            break
-            case NonFunctionSymbolExists:
-                message_builder.append(_NonFunctionSymbolExists.to_string(_rp))
-            break
-            case FunctionSymbolExists:
-                message_builder.append(_FunctionSymbolExists.to_string(_rp))
-            break
-            case DeInitializerExists:
-                message_builder.append(_DeInitializerExists.to_string(_rp))
-            break
-            case InvalidConstant:
-                message_builder.append(_InvalidConstant.to_string(_rp))
-            break
-            case InvalidComponentName:
-                message_builder.append(_InvalidComponentName.to_string(_rp))
-            break
-            case ModuleRootMustBeConcept:
-                message_builder.append(_ModuleRootMustBeConcept.to_string(_rp))
-            break
-        }
-        return message_builder.to_string(_rp)     
+        return message_builder.to_string(rp)
     }
 }
 
-struct ModelError : Object {
-    ModelError(IoModelError ioModelError) : _tag(Io), _Io(ioModelError) {}
-    ModelError(ParserModelError parserError) : _tag(Parser),  _Parser(parserError) {}
-    ModelError(ModelBuilderError modelBuilderError) : _tag(Builder), _Builder(modelBuilderError) {}
-    enum {
-        Io,
-        Parser,
-        Builder,
-    } _tag
-    union {
-        IoModelError _Io
-        ParserModelError _Parser
-        ModelBuilderError _Builder
-    }
+define ModelError union
+(
+    Io: IoModelError
+    Parser: ParserModelError
+    Builder: ModelBuilderError
+)
+{
+    function to_string(this: ModelError) returns String {
+        var r Region()
+        var message_builder: ref[StringBuilder] *StringBuilder$()
+        choose *this
+            when io: ModelError.Io
+                message_builder.append(io.to_string(rp))
+            when p: ModelError.Parser
+                message_builder.append(p.to_string(rp))
+            when b: ModelError.Builder
+                message_builder.append(b.to_string(rp))
 
-    String to_string(Page* _rp) {
-        Region _r
-        StringBuilder& message_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder()
-        switch (_tag) {
-            case Io:
-                message_builder.append(_Io.to_string(_rp))
-            break
-            case Parser:
-                message_builder.append(_Parser.to_string(_rp))
-            break
-            case Builder:
-                message_builder.append(_Builder.to_string(_rp))
-            break
-        }
-        return message_builder.to_string(_rp)     
+        return message_builder.to_string(rp)
     }
-*;
+}
 

@@ -267,5 +267,16 @@ struct Member;
 struct Nameable;
 struct Position;
 struct IoModelError;
+struct ParserModelError;
+struct NotImplemented;
+struct DuplicateName;
+struct NonFunctionSymbolExists;
+struct FunctionSymbolExists;
+struct DeInitializerExists;
+struct InvalidConstant;
+struct InvalidComponentName;
+struct ModuleRootMustBeConcept;
+struct ModelBuilderError;
+struct ModelError;
 }
 }
