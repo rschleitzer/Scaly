@@ -249,7 +249,7 @@ define Parser
                     (case (type content)
                         (("keyword" "punctuation") "*")
                         (("identifier" "attribute") (if (optional? content) "" "*"))
-                        (else (if (and (multiple? content) (not (optional? content))) "*" ""))
+                        (else  "")
                     )
                     (property content)
                 )))

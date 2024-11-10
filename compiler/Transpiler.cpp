@@ -2021,7 +2021,7 @@ typedef const void const_void;\n");
 			\"args\": [\n\
 				\"-fcolor-diagnostics\",\n\
 				\"-fansi-escape-codes\",\n\
-				\"-ferror-limit=1\",\n\
+				\"-ferror-limit=5\",\n\
 				\"-g\",\n\
 				\"${workspaceFolder}/main.cpp\",\n");
             build_vscode_source_files(tasks_builder, String(), program.module);

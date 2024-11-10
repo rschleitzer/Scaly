@@ -86,15 +86,15 @@ define SetSyntax
 (
     start: size_t
     end: size_t
-    target: Vector[OperandSyntax]
-    source: Vector[OperandSyntax]
+    target: pointer[Vector[OperandSyntax]]
+    source: pointer[Vector[OperandSyntax]]
 )
 
 define OperationSyntax
 (
     start: size_t
     end: size_t
-    operands: Vector[OperandSyntax]
+    operands: pointer[Vector[OperandSyntax]]
 )
 
 define ActionSyntax union (
@@ -123,7 +123,7 @@ define ForSyntax
     end: size_t
     variable: String
     annotation: pointer[TypeAnnotationSyntax]
-    operation: Vector[OperandSyntax]
+    operation: pointer[Vector[OperandSyntax]]
     name: pointer[LabelSyntax]
     action: ActionSyntax
 )
@@ -132,7 +132,7 @@ define LambdaSyntax
 (
     start: size_t
     end: size_t
-    input: Vector[OperandSyntax]
+    input: pointer[Vector[OperandSyntax]]
     block: ActionSyntax
 )
 
@@ -234,7 +234,7 @@ define BindingSyntax
     end: size_t
     name: String
     annotation: pointer[BindingAnnotationSyntax]
-    operation: Vector[OperandSyntax]
+    operation: pointer[Vector[OperandSyntax]]
 )
 
 define MutableSyntax
@@ -297,7 +297,7 @@ define ChooseSyntax
 (
     start: size_t
     end: size_t
-    condition: Vector[OperandSyntax]
+    condition: pointer[Vector[OperandSyntax]]
     cases: pointer[Vector[WhenSyntax]]
     alternative: pointer[ElseSyntax]
 )
@@ -322,14 +322,14 @@ define CaseSyntax
 (
     start: size_t
     end: size_t
-    condition: Vector[OperandSyntax]
+    condition: pointer[Vector[OperandSyntax]]
 )
 
 define BranchSyntax
 (
     start: size_t
     end: size_t
-    cases: Vector[CaseSyntax]
+    cases: pointer[Vector[CaseSyntax]]
     consequent: StatementSyntax
 )
 
@@ -337,8 +337,8 @@ define MatchSyntax
 (
     start: size_t
     end: size_t
-    scrutinee: Vector[OperandSyntax]
-    branches: Vector[BranchSyntax]
+    scrutinee: pointer[Vector[OperandSyntax]]
+    branches: pointer[Vector[BranchSyntax]]
     alternative: pointer[ElseSyntax]
 )
 
@@ -353,7 +353,7 @@ define IfSyntax
 (
     start: size_t
     end: size_t
-    condition: Vector[OperandSyntax]
+    condition: pointer[Vector[OperandSyntax]]
     consequent: CommandSyntax
     alternative: pointer[ElseSyntax]
 )
@@ -370,7 +370,7 @@ define ElementSyntax
 (
     start: size_t
     end: size_t
-    operation: Vector[OperandSyntax]
+    operation: pointer[Vector[OperandSyntax]]
     attributes: pointer[Vector[AttributeSyntax]]
 )
 
@@ -378,7 +378,7 @@ define VectorSyntax
 (
     start: size_t
     end: size_t
-    elements: Vector[ElementSyntax]
+    elements: pointer[Vector[ElementSyntax]]
     lifetime: pointer[LifetimeSyntax]
 )
 
@@ -386,7 +386,7 @@ define ValueSyntax
 (
     start: size_t
     end: size_t
-    value: Vector[OperandSyntax]
+    value: pointer[Vector[OperandSyntax]]
     attributes: pointer[Vector[AttributeSyntax]]
 )
 
@@ -394,7 +394,7 @@ define ComponentSyntax
 (
     start: size_t
     end: size_t
-    operands: Vector[OperandSyntax]
+    operands: pointer[Vector[OperandSyntax]]
     attributes: pointer[Vector[AttributeSyntax]]
     value: pointer[ValueSyntax]
 )
@@ -449,7 +449,7 @@ define InitializerSyntax
 (
     start: size_t
     end: size_t
-    operands: Vector[OperandSyntax]
+    operands: pointer[Vector[OperandSyntax]]
 )
 
 define PackageSyntax
@@ -487,7 +487,7 @@ define MacroSyntax
     end: size_t
     name: String
     model: ModelSyntax
-    rule: Vector[OperandSyntax]
+    rule: pointer[Vector[OperandSyntax]]
 )
 
 define ExtendSyntax
@@ -697,7 +697,7 @@ define ConstantSyntax
     start: size_t
     end: size_t
     type: TypeSyntax
-    operation: Vector[OperandSyntax]
+    operation: pointer[Vector[OperandSyntax]]
 )
 
 define VariantSyntax
@@ -713,7 +713,7 @@ define UnionSyntax
 (
     start: size_t
     end: size_t
-    variants: Vector[VariantSyntax]
+    variants: pointer[Vector[VariantSyntax]]
 )
 
 define NamespaceSyntax
@@ -763,7 +763,7 @@ define GenericParametersSyntax
 (
     start: size_t
     end: size_t
-    parameters: Vector[GenericParameterSyntax]
+    parameters: pointer[Vector[GenericParameterSyntax]]
 )
 
 define DefinitionSyntax
@@ -1447,7 +1447,7 @@ define Parser
 
         let end lexer.position
 
-        return GenericParametersSyntax(start, end, *parameters)
+        return GenericParametersSyntax(start, end, parameters)
     }
 
     function parse_genericparameter_list(this: Parser) returns pointer[Vector[GenericParameterSyntax]] throws ParserError {
@@ -1768,7 +1768,7 @@ define Parser
 
         let end lexer.position
 
-        return UnionSyntax(start, end, *variants)
+        return UnionSyntax(start, end, variants)
     }
 
     function parse_variant_list(this: Parser) returns pointer[Vector[VariantSyntax]] throws ParserError {
@@ -1860,7 +1860,7 @@ define Parser
 
         let end lexer.position
 
-        return ConstantSyntax(start, end, type, *operation)
+        return ConstantSyntax(start, end, type, operation)
     }
 
     function parse_delegate(this: Parser) returns DelegateSyntax throws ParserError {
@@ -2983,7 +2983,7 @@ define Parser
 
         let end lexer.position
 
-        return MacroSyntax(start, end, *name, model, *rule)
+        return MacroSyntax(start, end, *name, model, rule)
     }
 
     function parse_attribute_list(this: Parser) returns pointer[Vector[AttributeSyntax]] throws ParserError {
@@ -3176,7 +3176,7 @@ define Parser
 
         let end lexer.position
 
-        return InitializerSyntax(start, end, *operands)
+        return InitializerSyntax(start, end, operands)
     }
 
     function parse_operand_list(this: Parser) returns pointer[Vector[OperandSyntax]] throws ParserError {
@@ -3534,7 +3534,7 @@ define Parser
 
         let end lexer.position
 
-        return ComponentSyntax(start, end, *operands, attributes, value)
+        return ComponentSyntax(start, end, operands, attributes, value)
     }
 
     function parse_value(this: Parser) returns ValueSyntax throws ParserError {
@@ -3568,7 +3568,7 @@ define Parser
 
         let end lexer.position
 
-        return ValueSyntax(start, end, *value, attributes)
+        return ValueSyntax(start, end, value, attributes)
     }
 
     function parse_vector(this: Parser) returns VectorSyntax throws ParserError {
@@ -3608,7 +3608,7 @@ define Parser
 
         let end lexer.position
 
-        return VectorSyntax(start, end, *elements, lifetime)
+        return VectorSyntax(start, end, elements, lifetime)
     }
 
     function parse_element_list(this: Parser) returns pointer[Vector[ElementSyntax]] throws ParserError {
@@ -3659,7 +3659,7 @@ define Parser
 
         let end lexer.position
 
-        return ElementSyntax(start, end, *operation, attributes)
+        return ElementSyntax(start, end, operation, attributes)
     }
 
     function parse_block(this: Parser) returns BlockSyntax throws ParserError {
@@ -3752,7 +3752,7 @@ define Parser
 
         let end lexer.position
 
-        return IfSyntax(start, end, *condition, consequent, alternative)
+        return IfSyntax(start, end, condition, consequent, alternative)
     }
 
     function parse_else(this: Parser) returns ElseSyntax throws ParserError {
@@ -3822,7 +3822,7 @@ define Parser
 
         let end lexer.position
 
-        return MatchSyntax(start, end, *scrutinee, *branches, alternative)
+        return MatchSyntax(start, end, scrutinee, branches, alternative)
     }
 
     function parse_branch_list(this: Parser) returns pointer[Vector[BranchSyntax]] throws ParserError {
@@ -3869,7 +3869,7 @@ define Parser
 
         let end lexer.position
 
-        return BranchSyntax(start, end, *cases, consequent)
+        return BranchSyntax(start, end, cases, consequent)
     }
 
     function parse_case_list(this: Parser) returns pointer[Vector[CaseSyntax]] throws ParserError {
@@ -3912,7 +3912,7 @@ define Parser
 
         let end lexer.position
 
-        return CaseSyntax(start, end, *condition)
+        return CaseSyntax(start, end, condition)
     }
 
     function parse_statement_list(this: Parser) returns pointer[Vector[StatementSyntax]] throws ParserError {
@@ -4049,7 +4049,7 @@ define Parser
 
         let end lexer.position
 
-        return ChooseSyntax(start, end, *condition, cases, alternative)
+        return ChooseSyntax(start, end, condition, cases, alternative)
     }
 
     function parse_try(this: Parser) returns TrySyntax throws ParserError {
@@ -4397,7 +4397,7 @@ define Parser
 
         let end lexer.position
 
-        return BindingSyntax(start, end, *name, annotation, *operation)
+        return BindingSyntax(start, end, *name, annotation, operation)
     }
 
     function parse_bindingannotation(this: Parser) returns BindingAnnotationSyntax throws ParserError {
@@ -4900,7 +4900,7 @@ define Parser
 
         let end lexer.position
 
-        return LambdaSyntax(start, end, *input, block)
+        return LambdaSyntax(start, end, input, block)
     }
 
     function parse_for(this: Parser) returns ForSyntax throws ParserError {
@@ -4972,7 +4972,7 @@ define Parser
 
         let end lexer.position
 
-        return ForSyntax(start, end, *variable, annotation, *operation, name, action)
+        return ForSyntax(start, end, *variable, annotation, operation, name, action)
     }
 
     function parse_label(this: Parser) returns LabelSyntax throws ParserError {
@@ -5092,7 +5092,7 @@ define Parser
 
         let end lexer.position
 
-        return OperationSyntax(start, end, *operands)
+        return OperationSyntax(start, end, operands)
     }
 
     function parse_set(this: Parser) returns SetSyntax throws ParserError {
@@ -5125,7 +5125,7 @@ define Parser
 
         let end lexer.position
 
-        return SetSyntax(start, end, *target, *source)
+        return SetSyntax(start, end, target, source)
     }
 
     function parse_sizeof(this: Parser) returns SizeOfSyntax throws ParserError {

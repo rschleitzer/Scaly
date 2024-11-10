@@ -110,6 +110,10 @@ struct Vector : Object {
             return nullptr;
         return data+i;
     }
+
+    VectorIterator<T> get_iterator() {
+        return VectorIterator<T>(this);
+    };
 };
 
 #endif

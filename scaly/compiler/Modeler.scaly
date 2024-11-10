@@ -24,24 +24,26 @@ function handle_property(private_: bool, property: ref[PropertySyntax], file: St
     {
         try let i handle_operands(rp, ep, (*property.initializer).operands, file)
             else throw
-        set initializer: i
+        set initializer: Vector[Operand]$(i)
     }
 
     var attributes: ref[List[Attribute]] *List[Attribute]$()
     if property.attributes <> null
-        for attribute_syntax in property.attributes
+    {
+        for attribute_syntax in (*property.attributes)
             try let attribute handle_attribute(rp, ep, attribute_syntax, file)
-                else throw                
+                else throw
+    }
 
     return Property(Span(property.start, property.end), false, String(rp, property.name), type, initializer, Vector[Attribute](rp, attributes))
 }
 
 ;*
-Result<Item, ModelError> handle_item(bool private_, ItemSyntax& item, String file) {
+Result<Item, ModelError> handle_item(bool private_, ItemSyntax& item, file: String) {
     var r Region()
     Type* type null
     if (item.annotation <> null) {
-        auto _type_result = handle_type(_rp, _ep, item.annotation->type, file)
+        auto _type_result = handle_type(rp, ep, item.annotation->type, file)
         if (_type_result._tag == Result<Type, ModelError>::Error)
             return Result<Item, ModelError> { ._tag = Result<Item, ModelError>::Error, ._Error = _type_result._Error }
         type = _type_result._Ok
@@ -53,7 +55,7 @@ Result<Item, ModelError> handle_item(bool private_, ItemSyntax& item, String fil
         auto _attribute_iterator = item_attributes->get_iterator()
         while (auto _attribute_syntax = _attribute_iterator.next()) {
             auto attribute_syntax = *_attribute_syntax
-            auto _attribute_result = handle_attribute(_rp, _ep, attribute_syntax, file)
+            auto _attribute_result = handle_attribute(rp, ep, attribute_syntax, file)
             if (_attribute_result._tag == Result<Attribute, ModelError>::Error)
                 return Result<Item, ModelError> { ._tag = Result<Item, ModelError>::Error, ._Error = _attribute_result._Error }
             auto attribute = _attribute_result._Ok
@@ -63,7 +65,7 @@ Result<Item, ModelError> handle_item(bool private_, ItemSyntax& item, String fil
     return Result<Item, ModelError> { ._tag = Result<Item, ModelError>::Ok, ._Ok = Item(Span(item.start, item.end), false, new(alignof(String), _rp) String(_rp, item.name), type, Vector<Attribute>(_rp, attributes)) }
 }
 
-Result<Vector<Item>, ModelError> handle_parameterset(ParameterSetSyntax& parameterSetSyntax, String file) {
+Result<Vector<Item>, ModelError> handle_parameterset(ParameterSetSyntax& parameterSetSyntax, file: String) {
     var r Region()
     List<Item>& items = *new(alignof(List<Item>), _r.get_page()) List<Item>()
     switch (parameterSetSyntax._tag) {
@@ -73,7 +75,7 @@ Result<Vector<Item>, ModelError> handle_parameterset(ParameterSetSyntax& paramet
                 auto _item_syntax_iterator = parameters_syntax.items->get_iterator()
                 while (auto _item_syntax = _item_syntax_iterator.next()) {
                     auto item_syntax = *_item_syntax
-                    auto _item_result = handle_item(_rp, _ep, false, item_syntax, file)
+                    auto _item_result = handle_item(rp, ep, false, item_syntax, file)
                     if (_item_result._tag == Result<Item, ModelError>::Error)
                         return Result<Vector<Item>, ModelError> { ._tag = Result<Vector<Item>, ModelError>::Error, ._Error = _item_result._Error }
                     auto item = _item_result._Ok
@@ -84,7 +86,7 @@ Result<Vector<Item>, ModelError> handle_parameterset(ParameterSetSyntax& paramet
         break
         case ParameterSetSyntax::Type: {
             auto type_syntax = parameterSetSyntax._Type
-            auto _type_result = handle_type(_rp, _ep, type_syntax, file)
+            auto _type_result = handle_type(rp, ep, type_syntax, file)
             if (_type_result._tag == Result<Type, ModelError>::Error)
                 return Result<Vector<Item>, ModelError> { ._tag = Result<Vector<Item>, ModelError>::Error, ._Error = _type_result._Error }
             auto type = _type_result._Ok
@@ -97,22 +99,22 @@ Result<Vector<Item>, ModelError> handle_parameterset(ParameterSetSyntax& paramet
         ._Ok = Vector<Item>(_rp, items) }
 }
 
-Result<Concept, ModelError> handle_definition(String path, DefinitionSyntax& definition, bool private_, String file)
-Result<Function, ModelError> build_function(size_t start, size_t end, TargetSyntax targetSyntax, bool private_, bool pure, String file)
-Result<Initializer, ModelError> handle_initializer(InitSyntax& initializer, bool private_, String file)
-Result<DeInitializer*, ModelError> handle_deinitializer(DeInitSyntax& deinitializer, String file)
-Result<Operator, ModelError> handle_operator( OperatorSyntax& operator_syntax, bool private_, String file)
+Result<Concept, ModelError> handle_definition(String path, DefinitionSyntax& definition, bool private_, file: String)
+Result<Function, ModelError> build_function(size_t start, size_t end, TargetSyntax targetSyntax, bool private_, bool pure, file: String)
+Result<Initializer, ModelError> handle_initializer(InitSyntax& initializer, bool private_, file: String)
+Result<DeInitializer*, ModelError> handle_deinitializer(DeInitSyntax& deinitializer, file: String)
+Result<Operator, ModelError> handle_operator( OperatorSyntax& operator_syntax, bool private_, file: String)
 Result<Module, ModelError> handle_module(String path, ModuleSyntax& module_syntax, bool private_)
 Result<Use, ModelError> handle_use(UseSyntax& use_)
 
-Result<DeInitializer*, ModelError> handle_body(String name, String path, BodySyntax body, List<Use>& uses, HashSetBuilder<String>& modules_checker, List<Module>& modules, List<Initializer>& initializers_builder, MultiMapBuilder<String, Function>& functions_builder, Array<Member>& members_builder, HashMapBuilder<String, Nameable>& symbols_builder, String file) {
+Result<DeInitializer*, ModelError> handle_body(String name, String path, BodySyntax body, List<Use>& uses, HashSetBuilder<String>& modules_checker, List<Module>& modules, List<Initializer>& initializers_builder, MultiMapBuilder<String, Function>& functions_builder, Array<Member>& members_builder, HashMapBuilder<String, Nameable>& symbols_builder, file: String) {
     var r Region()
     if (body.uses <> null) {
         auto use_syntaxes = body.uses
         auto _uses_iterator = use_syntaxes->get_iterator()
         while (auto use_syntax = _uses_iterator.next()) {
             auto use = *use_syntax
-            auto _use_result = handle_use(_rp, _ep, *use_syntax)
+            auto _use_result = handle_use(rp, ep, *use_syntax)
             if (_use_result._tag == Result<Use, ModelError>::Error)
                 return Result<DeInitializer*, ModelError> { ._tag = Result<DeInitializer*, ModelError>::Error, ._Error = _use_result._Error }
             auto use_ = _use_result._Ok
@@ -125,7 +127,7 @@ Result<DeInitializer*, ModelError> handle_body(String name, String path, BodySyn
     {
         auto initializers_iterator = body.inits->get_iterator()
         while (auto initializer = initializers_iterator.next()) {
-            auto _initializer_result = handle_initializer(_rp, _ep, *initializer, false, file)
+            auto _initializer_result = handle_initializer(rp, ep, *initializer, false, file)
             if (_initializer_result._tag == Result<Initializer, ModelError>::Error)
                 return Result<DeInitializer*, ModelError> { ._tag = Result<DeInitializer*, ModelError>::Error, ._Error = _initializer_result._Error }
             initializers_builder.add(_initializer_result._Ok)
@@ -134,7 +136,7 @@ Result<DeInitializer*, ModelError> handle_body(String name, String path, BodySyn
 
     DeInitializer* deInitializer null
     if (body.deInit <> null) {
-        auto _deinitializer_result = handle_deinitializer(_rp, _ep, *body.deInit, file)
+        auto _deinitializer_result = handle_deinitializer(rp, ep, *body.deInit, file)
         if (_deinitializer_result._tag == Result<DeInitializer*, ModelError>::Error)
             return Result<DeInitializer*, ModelError> { ._tag = Result<DeInitializer*, ModelError>::Error, ._Error = _deinitializer_result._Error }
         deInitializer = _deinitializer_result._Ok
@@ -145,7 +147,7 @@ Result<DeInitializer*, ModelError> handle_body(String name, String path, BodySyn
         while (auto member = members_iterator.next()) {
             switch (member->constituent._tag) {
                 case ConstituentSyntax::Definition: {
-                    auto concept_result = handle_definition(_rp, _ep, path, member->constituent._Definition, false, file)
+                    auto concept_result = handle_definition(rp, ep, path, member->constituent._Definition, false, file)
                     if (concept_result._tag == Result<Function, ModelError>::Error)
                         return Result<DeInitializer*, ModelError> { ._tag = Result<DeInitializer*, ModelError>::Error, ._Error = concept_result._Error }
                     auto concept = concept_result._Ok
@@ -160,7 +162,7 @@ Result<DeInitializer*, ModelError> handle_body(String name, String path, BodySyn
                 break
                 case ConstituentSyntax::Function: {
                     auto function_syntax = member->constituent._Function
-                    auto function_result = build_function(_rp, _ep, function_syntax.start, function_syntax.end, function_syntax.target, false, true, file)
+                    auto function_result = build_function(rp, ep, function_syntax.start, function_syntax.end, function_syntax.target, false, true, file)
                     if (function_result._tag == Result<Function, ModelError>::Error)
                         return Result<DeInitializer*, ModelError> { ._tag = Result<DeInitializer*, ModelError>::Error, ._Error = function_result._Error }
                     auto function = function_result._Ok
@@ -173,7 +175,7 @@ Result<DeInitializer*, ModelError> handle_body(String name, String path, BodySyn
                 break
                 case ConstituentSyntax::Procedure: {
                     auto procedure_syntax = member->constituent._Procedure
-                    auto procedure_result = build_function(_rp, _ep, procedure_syntax.start, procedure_syntax.end, procedure_syntax.target, false, false, file)
+                    auto procedure_result = build_function(rp, ep, procedure_syntax.start, procedure_syntax.end, procedure_syntax.target, false, false, file)
                     if (procedure_result._tag == Result<Function, ModelError>::Error)
                         return Result<DeInitializer*, ModelError> { ._tag = Result<DeInitializer*, ModelError>::Error, ._Error = procedure_result._Error }
                     auto function = procedure_result._Ok
@@ -186,7 +188,7 @@ Result<DeInitializer*, ModelError> handle_body(String name, String path, BodySyn
                 break
                 case ConstituentSyntax::Operator: {
                     auto operator_syntax = member->constituent._Operator
-                    auto operator_result = handle_operator(_rp, _ep, operator_syntax, false, file)
+                    auto operator_result = handle_operator(rp, ep, operator_syntax, false, file)
                     if (operator_result._tag == Result<DeInitializer*, ModelError>::Error)
                         return Result<DeInitializer*, ModelError> { ._tag = Result<DeInitializer*, ModelError>::Error,
                             ._Error = operator_result._Error }
@@ -205,7 +207,7 @@ Result<DeInitializer*, ModelError> handle_body(String name, String path, BodySyn
                     return Result<DeInitializer*, ModelError> { ._tag = Result<DeInitializer*, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(file, String(_ep, "Macro"), Span(member->constituent._Macro.start, member->constituent._Macro.end)))) }
                 case ConstituentSyntax::Module: {
                     auto module_syntax = member->constituent._Module
-                    auto module_result = handle_module(_rp, _ep, path, module_syntax, false)
+                    auto module_result = handle_module(rp, ep, path, module_syntax, false)
                     if (module_result._tag == Result<DeInitializer*, ModelError>::Error)
                         return Result<DeInitializer*, ModelError> { ._tag = Result<DeInitializer*, ModelError>::Error,
                             ._Error = module_result._Error }
@@ -230,7 +232,7 @@ Result<DeInitializer*, ModelError> handle_body(String name, String path, BodySyn
     return Result<DeInitializer*, ModelError> { ._tag = Result<DeInitializer*, ModelError>::Ok, ._Ok = deInitializer }
 }
 
-Result<Structure, ModelError> handle_class(String name, String path, ClassSyntax& class_syntax, bool private_, String file) {    
+Result<Structure, ModelError> handle_class(String name, String path, ClassSyntax& class_syntax, bool private_, file: String) {    
     var r Region()
     HashMapBuilder<String, Nameable>& symbols_builder = *new(alignof(HashMapBuilder<String, Nameable>), _r.get_page()) HashMapBuilder<String, Nameable>()
     Array<Property>& properties_builder = *new(alignof(Array<Property>), _r.get_page()) Array<Property>()
@@ -240,7 +242,7 @@ Result<Structure, ModelError> handle_class(String name, String path, ClassSyntax
             auto part = *_part
             switch (part._tag) {
                 case PartSyntax::Field: {
-                    auto _property_result = handle_property(_rp, _ep, true, part._Property, file)
+                    auto _property_result = handle_property(rp, ep, true, part._Property, file)
                     if (_property_result._tag == Result<Property, ModelError>::Error)
                         return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = _property_result._Error }
                     auto property = _property_result._Ok
@@ -251,7 +253,7 @@ Result<Structure, ModelError> handle_class(String name, String path, ClassSyntax
                 }
                 break
                 case PartSyntax::Property: {
-                    auto _property_result = handle_property(_rp, _ep, false, part._Property, file)
+                    auto _property_result = handle_property(rp, ep, false, part._Property, file)
                     if (_property_result._tag == Result<Property, ModelError>::Error)
                         return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = _property_result._Error }
                     auto property = _property_result._Ok
@@ -274,7 +276,7 @@ Result<Structure, ModelError> handle_class(String name, String path, ClassSyntax
     DeInitializer* deInitializer null
     if (class_syntax.body <> null) {
         {
-            auto _deInitializer_result = handle_body(_rp, _ep, name, path, *class_syntax.body, uses, modules_checker, modules, initializers_builder, functions_builder, members_builder, symbols_builder, file)
+            auto _deInitializer_result = handle_body(rp, ep, name, path, *class_syntax.body, uses, modules_checker, modules, initializers_builder, functions_builder, members_builder, symbols_builder, file)
             if (_deInitializer_result._tag == Result<DeInitializer, ModelError>::Error)
                 return Result<Structure, ModelError> { ._tag = Result<Structure, ModelError>::Error, ._Error = _deInitializer_result._Error }
             deInitializer = _deInitializer_result._Ok
@@ -286,7 +288,7 @@ Result<Structure, ModelError> handle_class(String name, String path, ClassSyntax
     }
 }
 
-Result<Namespace, ModelError> handle_namespace(String name, String path, NamespaceSyntax& namespace_syntax, bool private_, String file) {    
+Result<Namespace, ModelError> handle_namespace(String name, String path, NamespaceSyntax& namespace_syntax, bool private_, file: String) {    
     var r Region()
     HashMapBuilder<String, Nameable>& symbols_builder = *new(alignof(HashMapBuilder<String, Nameable>), _r.get_page()) HashMapBuilder<String, Nameable>()
     Array<Member>& members_builder = *new(alignof(Array<Member>), _r.get_page()) Array<Member>()
@@ -301,7 +303,7 @@ Result<Namespace, ModelError> handle_namespace(String name, String path, Namespa
                 auto export_ = declaration->symbol._Private.export_
                 switch (export_._tag) {
                     case ExportSyntax::Definition: {
-                        auto concept_result = handle_definition(_rp, _ep, path, export_._Definition, true, file)
+                        auto concept_result = handle_definition(rp, ep, path, export_._Definition, true, file)
                         if (concept_result._tag == Result<Function, ModelError>::Error)
                             return Result<Namespace, ModelError> { ._tag = Result<Namespace, ModelError>::Error, ._Error = concept_result._Error }
                         auto concept = concept_result._Ok
@@ -316,7 +318,7 @@ Result<Namespace, ModelError> handle_namespace(String name, String path, Namespa
                     break
                     case ExportSyntax::Function: {
                         auto function_syntax = export_._Function
-                        auto function_result = build_function(_rp, _ep, function_syntax.start, function_syntax.end, function_syntax.target, true, true, file)
+                        auto function_result = build_function(rp, ep, function_syntax.start, function_syntax.end, function_syntax.target, true, true, file)
                         if (function_result._tag == Result<Function, ModelError>::Error)
                             return Result<Namespace, ModelError> { ._tag = Result<Namespace, ModelError>::Error, ._Error = function_result._Error }
                         auto function = function_result._Ok
@@ -329,7 +331,7 @@ Result<Namespace, ModelError> handle_namespace(String name, String path, Namespa
                     break
                     case ExportSyntax::Operator: {
                         auto operator_syntax = export_._Operator
-                        auto operator_result = handle_operator(_rp, _ep, operator_syntax, true, file)
+                        auto operator_result = handle_operator(rp, ep, operator_syntax, true, file)
                         if (operator_result._tag == Result<Namespace, ModelError>::Error)
                             return Result<Namespace, ModelError> { ._tag = Result<Namespace, ModelError>::Error,
                                 ._Error = operator_result._Error }
@@ -344,7 +346,7 @@ Result<Namespace, ModelError> handle_namespace(String name, String path, Namespa
                         return Result<Namespace, ModelError> { ._tag = Result<Namespace, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(file, String(_ep, "Private Trait"), Span(declaration->symbol._Trait.start, declaration->symbol._Trait.end)))) }
                     case ExportSyntax::Module: {
                         auto module_syntax = export_._Module
-                        auto module_result = handle_module(_rp, _ep, path, module_syntax, true)
+                        auto module_result = handle_module(rp, ep, path, module_syntax, true)
                         if (module_result._tag == Result<Namespace, ModelError>::Error)
                             return Result<Namespace, ModelError> { ._tag = Result<Namespace, ModelError>::Error,
                                 ._Error = module_result._Error }
@@ -359,7 +361,7 @@ Result<Namespace, ModelError> handle_namespace(String name, String path, Namespa
             }
             break
             case SymbolSyntax::Definition: {
-                auto concept_result = handle_definition(_rp, _ep, path, declaration->symbol._Definition, false, file)
+                auto concept_result = handle_definition(rp, ep, path, declaration->symbol._Definition, false, file)
                 if (concept_result._tag == Result<Function, ModelError>::Error)
                     return Result<Namespace, ModelError> { ._tag = Result<Namespace, ModelError>::Error, ._Error = concept_result._Error }
                 auto concept = concept_result._Ok
@@ -374,7 +376,7 @@ Result<Namespace, ModelError> handle_namespace(String name, String path, Namespa
             break
             case SymbolSyntax::Function: {
                 auto function_syntax = declaration->symbol._Function
-                auto function_result = build_function(_rp, _ep, function_syntax.start, function_syntax.end, function_syntax.target, false, true, file)
+                auto function_result = build_function(rp, ep, function_syntax.start, function_syntax.end, function_syntax.target, false, true, file)
                 if (function_result._tag == Result<Function, ModelError>::Error)
                     return Result<Namespace, ModelError> { ._tag = Result<Namespace, ModelError>::Error, ._Error = function_result._Error }
                 auto function = function_result._Ok
@@ -387,7 +389,7 @@ Result<Namespace, ModelError> handle_namespace(String name, String path, Namespa
             break
             case SymbolSyntax::Operator: {
                 auto operator_syntax = declaration->symbol._Operator
-                auto operator_result = handle_operator(_rp, _ep, operator_syntax, false, file)
+                auto operator_result = handle_operator(rp, ep, operator_syntax, false, file)
                 if (operator_result._tag == Result<Namespace, ModelError>::Error)
                     return Result<Namespace, ModelError> { ._tag = Result<Namespace, ModelError>::Error,
                         ._Error = operator_result._Error }
@@ -404,7 +406,7 @@ Result<Namespace, ModelError> handle_namespace(String name, String path, Namespa
                 return Result<Namespace, ModelError> { ._tag = Result<Namespace, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(file, String(_ep, "Macro"), Span(declaration->symbol._Macro.start, declaration->symbol._Macro.end)))) }
             case SymbolSyntax::Module: {
                 auto module_syntax = declaration->symbol._Module
-                auto module_result = handle_module(_rp, _ep, path, module_syntax, false)
+                auto module_result = handle_module(rp, ep, path, module_syntax, false)
                 if (module_result._tag == Result<Namespace, ModelError>::Error)
                     return Result<Namespace, ModelError> { ._tag = Result<Namespace, ModelError>::Error,
                         ._Error = module_result._Error }
@@ -430,7 +432,7 @@ Result<Namespace, ModelError> handle_namespace(String name, String path, Namespa
     return Result<Namespace, ModelError> { ._tag = Result<Namespace, ModelError>::Ok, ._Ok = ret }
 }
 
-Result<Union, ModelError> handle_union(String name, String path, UnionSyntax& union_, bool private_, String file) {    
+Result<Union, ModelError> handle_union(String name, String path, UnionSyntax& union_, bool private_, file: String) {    
     var r Region()
     Array<Variant>& variants_builder = *new(alignof(Array<Variant>), _r.get_page()) Array<Variant>()
     HashMapBuilder<String, Nameable>& symbols_builder = *new(alignof(HashMapBuilder<String, Nameable>), _r.get_page()) HashMapBuilder<String, Nameable>()
@@ -440,7 +442,7 @@ Result<Union, ModelError> handle_union(String name, String path, UnionSyntax& un
         auto variant_syntax = *_variant_syntax
         Type* type null
         if (variant_syntax.annotation <> null) {
-            auto _type_result = handle_type(_rp, _ep, variant_syntax.annotation->type, file)
+            auto _type_result = handle_type(rp, ep, variant_syntax.annotation->type, file)
             if (_type_result._tag == Result<Type, ModelError>::Error)
                 return Result<Union, ModelError> { ._tag = Result<Union, ModelError>::Error, ._Error = _type_result._Error }
             type = _type_result._Ok
@@ -451,7 +453,7 @@ Result<Union, ModelError> handle_union(String name, String path, UnionSyntax& un
             auto _attribute_iterator = variant_syntax.attributes->get_iterator()
             while (auto _attribute_syntax = _attribute_iterator.next()) {
                 auto attribute_syntax = *_attribute_syntax
-                auto _attribute_result = handle_attribute(_rp, _ep, attribute_syntax, file)
+                auto _attribute_result = handle_attribute(rp, ep, attribute_syntax, file)
                 if (_attribute_result._tag == Result<Attribute, ModelError>::Error)
                     return Result<Union, ModelError> { ._tag = Result<Union, ModelError>::Error, ._Error = _attribute_result._Error }
                 auto attribute = _attribute_result._Ok
@@ -474,7 +476,7 @@ Result<Union, ModelError> handle_union(String name, String path, UnionSyntax& un
     DeInitializer* deInitializer null
     if (union_.body <> null) {
         {
-            auto _deInitializer_result = handle_body(_rp, _ep, name, path, *union_.body, uses, modules_checker, modules, initializers_builder, functions_builder, members_builder, symbols_builder, file)
+            auto _deInitializer_result = handle_body(rp, ep, name, path, *union_.body, uses, modules_checker, modules, initializers_builder, functions_builder, members_builder, symbols_builder, file)
             if (_deInitializer_result._tag == Result<DeInitializer, ModelError>::Error)
                 return Result<Union, ModelError> { ._tag = Result<Union, ModelError>::Error, ._Error = _deInitializer_result._Error }
             deInitializer = _deInitializer_result._Ok
@@ -485,59 +487,61 @@ Result<Union, ModelError> handle_union(String name, String path, UnionSyntax& un
     }
 }
 
-Result<Vector<Operand>, ModelError> handle_operation(OperationSyntax& operation, String file)
+Result<Vector<Operand>, ModelError> handle_operation(OperationSyntax& operation, file: String)
 
-Result<Action, ModelError> handle_action(ActionSyntax& action, String file)
-
-Result<Constant, ModelError> handle_literal(LiteralSyntax& literal, String file) {
-    var r Region()
-    switch (literal.literal._tag) {
-        case Literal::Boolean:
-            return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError> ::Ok, ._Ok = Constant(BooleanConstant(literal.literal._Boolean.value)) }
-        case Literal::Integer: {
-            auto integer = (size_t)strtol(literal.literal._Integer.value.to_c_string(_r.get_page()), nullptr, 10)
-            const bool range_error = errno == ERANGE
-            if (range_error)
-                return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError>::Error, ._Error = ModelError(ModelBuilderError(InvalidConstant(file, Span(literal.start, literal.end)))) }
-
-            return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError> ::Ok, ._Ok = Constant(IntegerConstant(integer)) }
-        }
-        case Literal::Hex: {
-            auto hex = (size_t)strtoul(literal.literal._Hex.value.to_c_string(_r.get_page()), nullptr, 16)
-            const bool range_error = errno == ERANGE
-            if (range_error)
-                return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError>::Error, ._Error = ModelError(ModelBuilderError(InvalidConstant(file, Span(literal.start, literal.end)))) }
-
-            return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError> ::Ok, ._Ok = Constant(HexConstant(hex)) }
-        }
-        case Literal::FloatingPoint: {
-            auto floating_point = strtod(literal.literal._FloatingPoint.value.to_c_string(_r.get_page()), nullptr)
-            const bool range_error = errno == ERANGE
-            if (range_error)
-                return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError>::Error, ._Error = ModelError(ModelBuilderError(InvalidConstant(file, Span(literal.start, literal.end)))) }
-
-            return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError>::Ok, ._Ok = Constant(FloatingPointConstant(floating_point)) }
-        }
-        case Literal::String:
-            return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError>::Ok, ._Ok = Constant(StringConstant(literal.literal._String.value)) }
-        case Literal::Character:
-            return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError>::Ok, ._Ok = Constant(CharacterConstant(literal.literal._Character.value)) }
-        case Literal::Fragment:
-            return Result<Constant, ModelError> { ._tag = Result<Constant, ModelError>::Ok, ._Ok = Constant(FragmentConstant(literal.literal._Fragment.value)) }
-        break
-    }
-}
+Result<Action, ModelError> handle_action(ActionSyntax& action, file: String)
 
 *;
+
+function handle_literal(literal: ref[LiteralSyntax], file: String) returns Constant throws ModelError {
+    var r Region()
+    choose literal.literal
+        when boolean: Literal.Boolean
+            return Constant(BooleanConstant(boolean.value))
+        when integer: Literal.Integer
+        {
+            let value (size_t)strtol(integer.value.to_c_string(r.get_page()), nullptr, 10)
+            if errno = ERANGE
+                throw ModelError(ModelBuilderError(InvalidConstant(file, Span(literal.start, literal.end))))
+
+            return Constant(IntegerConstant(value))
+        }
+        when hex: Literal.Hex
+        {
+            let value (size_t)strtoul(hex.value.to_c_string(r.get_page()), nullptr, 16)
+            if errno = ERANGE
+                throw ModelError(ModelBuilderError(InvalidConstant(file, Span(literal.start, literal.end))))
+
+            return Constant(HexConstant(value))
+        }
+        when floating_point: Literal.FloatingPoint
+        {
+            let value strtod(floating_point.value.to_c_string(r.get_page()), nullptr)
+            if errno = ERANGE
+                ModelError(ModelBuilderError(InvalidConstant(file, Span(literal.start, literal.end))))
+
+            return Constant(FloatingPointConstant(floating_point))
+        }
+        when string: Literal.String
+            Constant(StringConstant(string.value))
+        when character: Literal.Character
+            return Constant(CharacterConstant(character.value))
+        when fragment: Literal.Fragment
+            return Constant(FragmentConstant(fragment.value))
+}
 
 function handle_type(type_syntax: ref[TypeSyntax], file: String) returns pointer[Type] throws ModelError {
     var r Region()
 
-    var path: ref[List[String]] path *List[String]$()
+    var path: ref[List[String]] *List[String]$()
     path.add(String(rp, type_syntax.name.name))
     if type_syntax.name.extensions <> null
-        for extension in type_syntax.name.extensions
+    {
+        for extension in (*type_syntax.name.extensions)
+        {
             path.add(extension.name)
+        }
+    }
 
     var generics: pointer[Vector[Type]] null
     var lifetime Lifetime(Unspecified())
@@ -547,7 +551,7 @@ function handle_type(type_syntax: ref[TypeSyntax], file: String) returns pointer
         let generic_arguments (*type_syntax.generics).generics
         if generic_arguments <> null
         {
-            for generic in generic_arguments
+            for generic in (*generic_arguments)
             {
                 try let type handle_type(rp, ep, generic.type, file)
                     else throw
@@ -557,7 +561,7 @@ function handle_type(type_syntax: ref[TypeSyntax], file: String) returns pointer
 
             set generics: Vector[Type]#(rp, generics_builder)
         } else {
-            generics = Vector[Type]#()
+            set generics: Vector[Type]#()
         }
     }
 
@@ -570,7 +574,7 @@ function handle_type(type_syntax: ref[TypeSyntax], file: String) returns pointer
             when l: LifetimeSyntax.Local
                 set lifetime: Lifetime(Local())
             when r: LifetimeSyntax.Reference
-                set lifetime: Lifetime(Reference(String(rp, rlocation)))
+                set lifetime: Lifetime(Reference(String(rp, r.location)))
             when t: LifetimeSyntax.Thrown
                 set lifetime: Lifetime(Thrown())
     }
@@ -580,10 +584,10 @@ function handle_type(type_syntax: ref[TypeSyntax], file: String) returns pointer
 
 ;*
 
-Result<Type*, ModelError> handle_binding_annotation(BindingAnnotationSyntax& binding_annotation, String file) {
+Result<Type*, ModelError> handle_binding_annotation(BindingAnnotationSyntax& binding_annotation, file: String) {
     switch (binding_annotation.spec._tag) {
         case BindingSpecSyntax::Type: {
-            auto type_result = handle_type(_rp, _ep, binding_annotation.spec._Type, file)
+            auto type_result = handle_type(rp, ep, binding_annotation.spec._Type, file)
             if (type_result._tag == Result<Type, ModelError>::Error)
                 return Result<Type*, ModelError> { ._tag = Result<Type*, ModelError>::Error, ._Error = type_result._Error }
             return Result<Type*, ModelError> { ._tag = Result<Type*, ModelError>::Ok, ._Ok = type_result._Ok }
@@ -596,11 +600,11 @@ Result<Type*, ModelError> handle_binding_annotation(BindingAnnotationSyntax& bin
     }
 }
 
-Result<Break, ModelError> handle_break(BreakSyntax& break_, String file) {
+Result<Break, ModelError> handle_break(BreakSyntax& break_, file: String) {
     var r Region()
     if (break_.result <> null) {
         auto result = break_.result
-        auto result_result = handle_operands(_rp, _ep, result, file)
+        auto result_result = handle_operands(rp, ep, result, file)
         if (result_result._tag == Result<Vector<Operand>, ModelError>::Error)
             return Result<Break, ModelError> { ._tag = Result<Break, ModelError>::Error, ._Error = result_result._Error }
         return Result<Break, ModelError> { ._tag = Result<Break, ModelError>::Ok, ._Ok = Break(Span(break_.start, break_.end), result_result._Ok) }
@@ -608,16 +612,16 @@ Result<Break, ModelError> handle_break(BreakSyntax& break_, String file) {
     return Result<Break, ModelError> { ._tag = Result<Break, ModelError>::Ok, ._Ok = Break(Span(break_.start, break_.end), Vector<Operand>(_rp, 0)) }
 }
 
-Result<Continue, ModelError> handle_continue(ContinueSyntax& continue_, String file) {
+Result<Continue, ModelError> handle_continue(ContinueSyntax& continue_, file: String) {
     var r Region()
     return Result<Continue, ModelError> { ._tag = Result<Continue, ModelError>::Ok, ._Ok = Continue(Span(continue_.start, continue_.end)) }
 }
 
-Result<Return, ModelError> handle_return(ReturnSyntax& return_, String file) {
+Result<Return, ModelError> handle_return(ReturnSyntax& return_, file: String) {
     var r Region()
     if (return_.result <> null) {
         auto result = return_.result
-        auto result_result = handle_operands(_rp, _ep, result, file)
+        auto result_result = handle_operands(rp, ep, result, file)
         if (result_result._tag == Result<Vector<Operand>, ModelError>::Error)
             return Result<Return, ModelError> { ._tag = Result<Return, ModelError>::Error, ._Error = result_result._Error }
         return Result<Return, ModelError> { ._tag = Result<Return, ModelError>::Ok, ._Ok = Return(Span(return_.start, return_.end), result_result._Ok) }
@@ -625,11 +629,11 @@ Result<Return, ModelError> handle_return(ReturnSyntax& return_, String file) {
     return Result<Return, ModelError> { ._tag = Result<Return, ModelError>::Ok, ._Ok = Return(Span(return_.start, return_.end), Vector<Operand>(_rp, 0)) }
 }
 
-Result<Return, ModelError> handle_throw(ThrowSyntax& throw_, String file) {
+Result<Return, ModelError> handle_throw(ThrowSyntax& throw_, file: String) {
     var r Region()
     if (throw_.result <> null) {
         auto result = throw_.result
-        auto result_result = handle_operands(_rp, _ep, result, file)
+        auto result_result = handle_operands(rp, ep, result, file)
         if (result_result._tag == Result<Vector<Operand>, ModelError>::Error)
             return Result<Return, ModelError> { ._tag = Result<Return, ModelError>::Error, ._Error = result_result._Error }
         return Result<Return, ModelError> { ._tag = Result<Return, ModelError>::Ok, ._Ok = Return(Span(throw_.start, throw_.end), result_result._Ok) }
@@ -637,12 +641,12 @@ Result<Return, ModelError> handle_throw(ThrowSyntax& throw_, String file) {
     return Result<Return, ModelError> { ._tag = Result<Return, ModelError>::Ok, ._Ok = Return(Span(throw_.start, throw_.end), Vector<Operand>(_rp, 0)) }
 }
 
-Result<Statement, ModelError> handle_command(CommandSyntax& command, String file) {
+Result<Statement, ModelError> handle_command(CommandSyntax& command, file: String) {
     var r Region()
     switch (command._tag)
     {
         case CommandSyntax::Operation: {
-            auto operation_result = handle_operation(_rp, _ep, command._Operation, file)
+            auto operation_result = handle_operation(rp, ep, command._Operation, file)
             if (operation_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = operation_result._Error }
             return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Ok, ._Ok = Statement { ._tag = Statement::Action, ._Action = Action(operation_result._Ok, Vector<Operand>())}}
@@ -651,12 +655,12 @@ Result<Statement, ModelError> handle_command(CommandSyntax& command, String file
             auto binding = command._Let.binding.operation
             Type* type null
             if (command._Let.binding.annotation <> null) {
-                auto _type_result = handle_binding_annotation(_rp, _ep, *command._Let.binding.annotation, file)
+                auto _type_result = handle_binding_annotation(rp, ep, *command._Let.binding.annotation, file)
                 if (_type_result._tag == Result<Type, ModelError>::Error)
                     return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = _type_result._Error }
                 type = _type_result._Ok
             }
-            auto operation_result = handle_operands(_rp, _ep, binding, file)
+            auto operation_result = handle_operands(rp, ep, binding, file)
             if (operation_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = operation_result._Error }
             return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Ok, ._Ok = Statement { ._tag = Statement::Binding, ._Binding = Binding(String(_rp, "const"), Item(Span(command._Let.start, command._Let.end), false, new(alignof(String), _rp) String(_rp, command._Let.binding.name), type, Vector<Attribute>(_rp, 0)), operation_result._Ok) }}
@@ -665,12 +669,12 @@ Result<Statement, ModelError> handle_command(CommandSyntax& command, String file
             auto binding = command._Var.binding.operation
             Type* type null
             if (command._Var.binding.annotation <> null) {
-                auto _type_result = handle_binding_annotation(_rp, _ep, *command._Var.binding.annotation, file)
+                auto _type_result = handle_binding_annotation(rp, ep, *command._Var.binding.annotation, file)
                 if (_type_result._tag == Result<Type, ModelError>::Error)
                     return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = _type_result._Error }
                 type = _type_result._Ok
             }
-            auto operation_result = handle_operands(_rp, _ep, binding, file)
+            auto operation_result = handle_operands(rp, ep, binding, file)
             if (operation_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = operation_result._Error }
             return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Ok, ._Ok = Statement { ._tag = Statement::Binding, ._Binding = Binding(String(_rp, "var"), Item(Span(command._Var.start, command._Var.end), false, new(alignof(String), _rp) String(_rp, command._Mutable.binding.name), type, Vector<Attribute>(_rp, 0)), operation_result._Ok) }}
@@ -679,22 +683,22 @@ Result<Statement, ModelError> handle_command(CommandSyntax& command, String file
             auto binding = command._Mutable.binding.operation
             Type* type null
             if (command._Mutable.binding.annotation <> null) {
-                auto _type_result = handle_binding_annotation(_rp, _ep, *command._Mutable.binding.annotation, file)
+                auto _type_result = handle_binding_annotation(rp, ep, *command._Mutable.binding.annotation, file)
                 if (_type_result._tag == Result<Type, ModelError>::Error)
                     return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = _type_result._Error }
                 type = _type_result._Ok
             }
-            auto operation_result = handle_operands(_rp, _ep, binding, file)
+            auto operation_result = handle_operands(rp, ep, binding, file)
             if (operation_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = operation_result._Error }
             return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Ok, ._Ok = Statement { ._tag = Statement::Binding, ._Binding = Binding(String(_rp, "mutable"), Item(Span(command._Mutable.start, command._Mutable.end), false, new(alignof(String), _rp) String(_rp, command._Mutable.binding.name), type, Vector<Attribute>(_rp, 0)), operation_result._Ok) }}
         }
         case CommandSyntax::Set: {
-            auto _target_result = handle_operands(_rp, _ep, command._Set.target, file)
+            auto _target_result = handle_operands(rp, ep, command._Set.target, file)
             if (_target_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = _target_result._Error }
             auto target = _target_result._Ok
-            auto _source_result = handle_operands(_rp, _ep, command._Set.source, file)
+            auto _source_result = handle_operands(rp, ep, command._Set.source, file)
             if (_source_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = _source_result._Error }
             auto source = _source_result._Ok
@@ -702,28 +706,28 @@ Result<Statement, ModelError> handle_command(CommandSyntax& command, String file
         }
         case CommandSyntax::Continue: {
             auto continue_ = command._Continue
-            auto continue_result = handle_continue(_rp, _ep, continue_, file)
+            auto continue_result = handle_continue(rp, ep, continue_, file)
             if (continue_result._tag == Result<Expression, ModelError>::Error)
                 return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = continue_result._Error }
             return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Ok, ._Ok = Statement { ._tag = Statement::Continue, ._Continue = continue_result._Ok}}
         }
         case CommandSyntax::Break: {
             auto break_ = command._Break
-            auto break_result = handle_break(_rp, _ep, break_, file)
+            auto break_result = handle_break(rp, ep, break_, file)
             if (break_result._tag == Result<Expression, ModelError>::Error)
                 return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = break_result._Error }
             return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Ok, ._Ok = Statement { ._tag = Statement::Break, ._Break = break_result._Ok}}
         }
         case CommandSyntax::Return: {
             auto return_ = command._Return
-            auto return_result = handle_return(_rp, _ep, return_, file)
+            auto return_result = handle_return(rp, ep, return_, file)
             if (return_result._tag == Result<Expression, ModelError>::Error)
                 return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = return_result._Error }
             return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Ok, ._Ok = Statement { ._tag = Statement::Return, ._Return = return_result._Ok}}
         }
         case CommandSyntax::Throw: {
             auto throw_ = command._Throw
-            auto throw_result = handle_throw(_rp, _ep, throw_, file)
+            auto throw_result = handle_throw(rp, ep, throw_, file)
             if (throw_result._tag == Result<Expression, ModelError>::Error)
                 return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = throw_result._Error }
             return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Ok, ._Ok = Statement { ._tag = Statement::Throw, ._Return = throw_result._Ok}}
@@ -731,19 +735,19 @@ Result<Statement, ModelError> handle_command(CommandSyntax& command, String file
     }
 }
 
-Result<Statement, ModelError> handle_statement(StatementSyntax& statement, String file) {
-    auto result = handle_command(_rp, _ep, statement.command, file)
+Result<Statement, ModelError> handle_statement(StatementSyntax& statement, file: String) {
+    auto result = handle_command(rp, ep, statement.command, file)
     if (result._tag == Result<Statement, ModelError>::Error)
         return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError>::Error, ._Error = result._Error }
     return Result<Statement, ModelError> { ._tag = Result<Statement, ModelError> ::Ok, ._Ok = result._Ok }
 }
 
-Result<Vector<Statement>, ModelError> handle_statements(Vector<StatementSyntax>& statements, String file) {
+Result<Vector<Statement>, ModelError> handle_statements(Vector<StatementSyntax>& statements, file: String) {
     var r Region()
     List<Statement>& statements_builder = *new(alignof(List<Statement>), _r.get_page()) List<Statement>()
     auto _statements_iterator = statements.get_iterator()
     while (auto statement = _statements_iterator.next()) {
-        auto _statement_result = handle_statement(_rp, _ep, *statement, file)
+        auto _statement_result = handle_statement(rp, ep, *statement, file)
         if (_statement_result._tag == Result<Statement, ModelError>::Error)
             return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError>::Error, ._Error = _statement_result._Error }
         statements_builder.add(_statement_result._Ok)
@@ -752,7 +756,7 @@ Result<Vector<Statement>, ModelError> handle_statements(Vector<StatementSyntax>&
     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError> ::Ok, ._Ok = Vector<Statement>(_rp, statements_builder) }
 }
 
-Result<Component, ModelError> handle_component(ComponentSyntax& component, String file) {
+Result<Component, ModelError> handle_component(ComponentSyntax& component, file: String) {
     var r Region()
     String* name null
 
@@ -762,7 +766,7 @@ Result<Component, ModelError> handle_component(ComponentSyntax& component, Strin
         auto _attribute_iterator = definition_attributes->get_iterator()
         while (auto _attribute_syntax = _attribute_iterator.next()) {
             auto attribute_syntax = *_attribute_syntax
-            auto _attribute_result = handle_attribute(_rp, _ep, attribute_syntax, file)
+            auto _attribute_result = handle_attribute(rp, ep, attribute_syntax, file)
             if (_attribute_result._tag == Result<Attribute, ModelError>::Error)
                 return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Error, ._Error = _attribute_result._Error }
             auto attribute = _attribute_result._Ok
@@ -783,7 +787,7 @@ Result<Component, ModelError> handle_component(ComponentSyntax& component, Strin
         }
         auto value = component.value->value
         if (value <> null) {
-            auto value_result = handle_operands(_rp, _ep, value, file)
+            auto value_result = handle_operands(rp, ep, value, file)
             if (value_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Error, ._Error = value_result._Error }
             else
@@ -793,7 +797,7 @@ Result<Component, ModelError> handle_component(ComponentSyntax& component, Strin
         }
     } else {
         if (component.operands <> null) {
-            auto value_result = handle_operands(_rp, _ep, component.operands, file)
+            auto value_result = handle_operands(rp, ep, component.operands, file)
             if (value_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Error, ._Error = value_result._Error }
             else
@@ -804,13 +808,13 @@ Result<Component, ModelError> handle_component(ComponentSyntax& component, Strin
     }
 }
 
-Result<Tuple, ModelError> handle_object(ObjectSyntax& object, String file) {
+Result<Tuple, ModelError> handle_object(ObjectSyntax& object, file: String) {
     var r Region()
     List<Component>& components_builder = *new(alignof(List<Component>), _r.get_page()) List<Component>()
     if (object.components <> null) {
         auto components_iterator = object.components->get_iterator()
         while (auto component = components_iterator.next()) {
-            auto component_result =  handle_component(_rp, _ep, *component, file)
+            auto component_result =  handle_component(rp, ep, *component, file)
             if (component_result._tag == Result<Operand, ModelError>::Error)
                 return Result<Tuple, ModelError> { ._tag = Result<Tuple, ModelError>::Error, ._Error = component_result._Error }
             components_builder.add(component_result._Ok)
@@ -819,13 +823,13 @@ Result<Tuple, ModelError> handle_object(ObjectSyntax& object, String file) {
     return Result<Tuple, ModelError> { ._tag = Result<Tuple, ModelError>::Ok, ._Ok = Tuple(Span(object.start, object.end), Vector<Component>(_rp, components_builder)) }
 }
 
-Result<Matrix, ModelError> handle_vector(VectorSyntax& vector, String file) {
+Result<Matrix, ModelError> handle_vector(VectorSyntax& vector, file: String) {
     var r Region()
     List<Vector<Operand>>& operations_builder = *new(alignof(List<Vector<Operand>>), _r.get_page()) List<Vector<Operand>>()
     if (vector.elements <> null) {
         auto elements_iterator = vector.elements->get_iterator()
         while (auto element = elements_iterator.next()) {
-            auto operation_result =  handle_operands(_rp, _ep, element->operation, file)
+            auto operation_result =  handle_operands(rp, ep, element->operation, file)
             if (operation_result._tag == Result<Operand, ModelError>::Error)
                 return Result<Matrix, ModelError> { ._tag = Result<Matrix, ModelError>::Error, ._Error = operation_result._Error }
             operations_builder.add(operation_result._Ok)
@@ -834,48 +838,46 @@ Result<Matrix, ModelError> handle_vector(VectorSyntax& vector, String file) {
     return Result<Matrix, ModelError> { ._tag = Result<Matrix, ModelError>::Ok, ._Ok = Matrix(Span(vector.start, vector.end), Vector<Vector<Operand>>(_rp, operations_builder)) }
 }
 
-Result<Model, ModelError> handle_model(ModelSyntax& model, String file) {
-    switch (model._tag) {
-        case ModelSyntax::Literal: {
-            auto literal = model._Literal
-            auto constant_result = handle_literal(_rp, _ep, literal, file)
-            if (constant_result._tag == Result<Constant, ModelError>::Error)
-                return Result<Model, ModelError> { ._tag = Result<Model, ModelError>::Error, ._Error = constant_result._Error }
-            return Result<Model, ModelError> { ._tag = Result<Model, ModelError>::Ok, ._Ok = Model { ._tag = Model::Constant, ._Constant = constant_result._Ok} }
+*;
+
+function handle_model(model: ref[ModelSyntax], file: String) returns Model throws ModelError {
+    choose model
+        when literal: ModelSyntax.Literal
+        {
+            try let constant handle_literal(rp, ep, literal, file)
+                else throw
+            return constant
         }
-        case ModelSyntax::Name: {
-            auto variable = model._Name
-            return Result<Model, ModelError> { ._tag = Result<Model, ModelError>::Ok, ._Ok = Model { ._tag = Model::Variable, ._Variable = String(_rp, variable.name)} }
+        when name: ModelSyntax.Name
+        {
+            return String(rp, name.name)
         }
-        case ModelSyntax::Object: {
-            auto object = model._Object
-            auto object_result = handle_object(_rp, _ep, object, file)
-            if (object_result._tag == Result<Expression, ModelError>::Error)
-                return Result<Model, ModelError> { ._tag = Result<Model, ModelError>::Error, ._Error = object_result._Error }
-            return Result<Model, ModelError> { ._tag = Result<Model, ModelError>::Ok, ._Ok = Model { ._tag = Model::Tuple, ._Tuple = object_result._Ok} }
+        when object_syntax: ModelSyntax.Object
+        {
+            try let tuple handle_object(rp, ep, object_syntax, file)
+                else throw
+            return tuple
         }
-        case ExpressionSyntax::Vector: {
-            auto vector = model._Vector
-            auto vector_result = handle_vector(_rp, _ep, vector, file)
-            if (vector_result._tag == Result<Expression, ModelError>::Error)
-                return Result<Model, ModelError> { ._tag = Result<Model, ModelError>::Error, ._Error = vector_result._Error }
-            return Result<Model, ModelError> { ._tag = Result<Model, ModelError>::Ok, ._Ok = Model { ._tag = Model::Matrix, ._Matrix = vector_result._Ok} }
+        when vector: ExpressionSyntax.Vector
+        {
+            try let matrix handle_vector(rp, ep, vector, file)
+                else throw
+            return matrix
         }
-    }
 }
 
-Result<Attribute, ModelError> handle_attribute(AttributeSyntax& attribute, String file) {
-    auto _model_result = handle_model(_rp, _ep, attribute.model, file)
-    if (_model_result._tag == Result<Model, ModelError>::Error)
-        return Result<Attribute, ModelError> { ._tag = Result<Attribute, ModelError>::Error, ._Error = _model_result._Error }
-    auto model = _model_result._Ok
-    return Result<Attribute, ModelError> { ._tag = Result<Attribute, ModelError>::Ok, ._Ok = Attribute(Span(attribute.start, attribute.end), attribute.name, model) }
+function handle_attribute(attribute: ref[AttributeSyntax], file: String) returns Attribute throws ModelError {
+    try let model handle_model(rp, ep, attribute.model, file)
+        else throw
+    return Attribute(Span(attribute.start, attribute.end), attribute.name, model)
 }
 
-Result<Block, ModelError> handle_block(BlockSyntax& block, String file) {
+;*
+
+Result<Block, ModelError> handle_block(BlockSyntax& block, file: String) {
     var r Region()
     if (block.statements <> null) {
-        auto _statements_result = handle_statements(_rp, _ep, *block.statements, file)
+        auto _statements_result = handle_statements(rp, ep, *block.statements, file)
         if (_statements_result._tag == Result<Vector<Statement>, ModelError>::Error)
             return Result<Block, ModelError> { ._tag = Result<Block, ModelError>::Error, ._Error = _statements_result._Error }
         auto statements = _statements_result._Ok
@@ -885,21 +887,21 @@ Result<Block, ModelError> handle_block(BlockSyntax& block, String file) {
     return Result<Block, ModelError> { ._tag = Result<Block, ModelError>::Ok, ._Ok = Block(Span(block.start, block.end), Vector<Statement>(_rp, 0)) }
 }
 
-Result<If, ModelError> handle_if(IfSyntax& if_, String file) {
+Result<If, ModelError> handle_if(IfSyntax& if_, file: String) {
     var r Region()
     Property* property null
-    auto condition_result = handle_operands(_rp, _ep, if_.condition, file)
+    auto condition_result = handle_operands(rp, ep, if_.condition, file)
     if (condition_result._tag == Result<Vector<Operand>, ModelError>::Error)
         return Result<If, ModelError> { ._tag = Result<If, ModelError>::Error, ._Error = condition_result._Error }
     auto condition = condition_result._Ok
-    auto _consequent_result = handle_command(_rp, _ep, if_.consequent, file)
+    auto _consequent_result = handle_command(rp, ep, if_.consequent, file)
     if (_consequent_result._tag == Result<Action, ModelError>::Error)
         return Result<If, ModelError> { ._tag = Result<If, ModelError>::Error, ._Error = _consequent_result._Error }
     auto consequent = _consequent_result._Ok
 
     Statement* alternative null
     if (if_.alternative <> null) {
-        auto _alternative_result = handle_command(_rp, _ep, if_.alternative->alternative, file)
+        auto _alternative_result = handle_command(rp, ep, if_.alternative->alternative, file)
         if (_alternative_result._tag == Result<Statement, ModelError>::Error)
             return Result<If, ModelError> { ._tag = Result<If, ModelError>::Error, ._Error = _alternative_result._Error }
         alternative = new(alignof(Statement), _rp) Statement(_alternative_result._Ok)
@@ -907,11 +909,11 @@ Result<If, ModelError> handle_if(IfSyntax& if_, String file) {
     return Result<If, ModelError> { ._tag = Result<If, ModelError>::Ok, ._Ok = If(Span(if_.start, if_.end), condition, property, consequent, alternative) }
 }
 
-Result<Match, ModelError> handle_match(MatchSyntax& match_, String file) {
+Result<Match, ModelError> handle_match(MatchSyntax& match_, file: String) {
     var r Region()
     Property* property null
 
-    auto condition_result = handle_operands(_rp, _ep, match_.scrutinee, file)
+    auto condition_result = handle_operands(rp, ep, match_.scrutinee, file)
     if (condition_result._tag == Result<Vector<Operand>, ModelError>::Error)
         return Result<Match, ModelError> { ._tag = Result<Match, ModelError>::Error, ._Error = condition_result._Error }
     auto condition = condition_result._Ok
@@ -926,14 +928,14 @@ Result<Match, ModelError> handle_match(MatchSyntax& match_, String file) {
             auto _case_iterator = branch.cases->get_iterator()
             while (auto _case = _case_iterator.next()) {
                 auto case_ = *_case
-                auto condition_result =  handle_operands(_rp, _ep, case_.condition, file)
+                auto condition_result =  handle_operands(rp, ep, case_.condition, file)
                 if (condition_result._tag == Result<Operand, ModelError>::Error)
                     return Result<Match, ModelError> { ._tag = Result<Match, ModelError>::Error, ._Error = condition_result._Error }
                 auto condition =  Case(Span(case_.start, case_.end),  condition_result._Ok)
                 cases_builder.add(condition)
             }
 
-            auto _consequent_result = handle_statement(_rp, _ep, branch.consequent, file)
+            auto _consequent_result = handle_statement(rp, ep, branch.consequent, file)
             if (_consequent_result._tag == Result<Action, ModelError>::Error)
                 return Result<Match, ModelError> { ._tag = Result<Match, ModelError>::Error, ._Error = _consequent_result._Error }
             auto consequent = Branch(Span(branch.start, branch.end), Vector<Case>(_rp, cases_builder), _consequent_result._Ok)
@@ -943,7 +945,7 @@ Result<Match, ModelError> handle_match(MatchSyntax& match_, String file) {
 
     Statement* alternative null
     if (match_.alternative <> null) {
-        auto _alternative_result = handle_command(_rp, _ep, match_.alternative->alternative, file)
+        auto _alternative_result = handle_command(rp, ep, match_.alternative->alternative, file)
         if (_alternative_result._tag == Result<Statement, ModelError>::Error)
             return Result<Match, ModelError> { ._tag = Result<Match, ModelError>::Error, ._Error = _alternative_result._Error }
         alternative = new(alignof(Statement), _rp) Statement(_alternative_result._Ok)
@@ -951,7 +953,7 @@ Result<Match, ModelError> handle_match(MatchSyntax& match_, String file) {
     return Result<Match, ModelError> { ._tag = Result<Match, ModelError>::Ok, ._Ok = Match(Span(match_.start, match_.end), condition, Vector<Branch>(_rp, branches_builder), alternative) }
 }
 
-Result<When, ModelError> handle_when(WhenSyntax& when_, String file) {
+Result<When, ModelError> handle_when(WhenSyntax& when_, file: String) {
     var r Region()
     List<String>& name_builder = *new(alignof(List<String>), _r.get_page()) List<String>()
     name_builder.add(when_.variant.name)
@@ -961,18 +963,18 @@ Result<When, ModelError> handle_when(WhenSyntax& when_, String file) {
             name_builder.add(_name->name)
         }
     }
-    auto _command_result = handle_command(_rp, _ep, when_.command, file)
+    auto _command_result = handle_command(rp, ep, when_.command, file)
     if (_command_result._tag == Result<Statement, ModelError>::Error)
         return Result<When, ModelError> { ._tag = Result<When, ModelError>::Error, ._Error = _command_result._Error }
     auto consequent = _command_result._Ok
     return Result<When, ModelError> { ._tag = Result<When, ModelError>::Ok, ._Ok = When(Span(when_.start, when_.end), when_.name, Vector<String>(_rp, name_builder), consequent)}
 }
 
-Result<Choose, ModelError> handle_choose(ChooseSyntax& choose_, String file) {
+Result<Choose, ModelError> handle_choose(ChooseSyntax& choose_, file: String) {
     var r Region()
     Property* property null
 
-    auto condition_result = handle_operands(_rp, _ep, choose_.condition, file)
+    auto condition_result = handle_operands(rp, ep, choose_.condition, file)
     if (condition_result._tag == Result<Vector<Operand>, ModelError>::Error)
         return Result<Choose, ModelError> { ._tag = Result<Choose, ModelError>::Error, ._Error = condition_result._Error }
     auto condition = condition_result._Ok
@@ -983,7 +985,7 @@ Result<Choose, ModelError> handle_choose(ChooseSyntax& choose_, String file) {
         auto _cases_iterator = when_syntaxes->get_iterator()
         while (auto _case_syntax = _cases_iterator.next()) {
             auto case_syntax = *_case_syntax
-            auto _case_result = handle_when(_rp, _ep, case_syntax, file)
+            auto _case_result = handle_when(rp, ep, case_syntax, file)
             if (_case_result._tag == Result<Choose, ModelError>::Error)
                 return Result<Choose, ModelError> { ._tag = Result<Choose, ModelError>::Error, ._Error = _case_result._Error }
             auto case_ = _case_result._Ok
@@ -993,7 +995,7 @@ Result<Choose, ModelError> handle_choose(ChooseSyntax& choose_, String file) {
 
     Statement* alternative null
     if (choose_.alternative <> null) {
-        auto _alternative_result = handle_command(_rp, _ep, choose_.alternative->alternative, file)
+        auto _alternative_result = handle_command(rp, ep, choose_.alternative->alternative, file)
         if (_alternative_result._tag == Result<Statement, ModelError>::Error)
             return Result<Choose, ModelError> { ._tag = Result<Choose, ModelError>::Error, ._Error = _alternative_result._Error }
         alternative = new(alignof(Statement), _rp) Statement(_alternative_result._Ok)
@@ -1001,28 +1003,28 @@ Result<Choose, ModelError> handle_choose(ChooseSyntax& choose_, String file) {
     return Result<Choose, ModelError> { ._tag = Result<Choose, ModelError>::Ok, ._Ok = Choose(Span(choose_.start, choose_.end), condition, Vector<When>(_rp, cases_builder), alternative) }
 }
 
-Result<For, ModelError> handle_for(ForSyntax& for_, String file) {
+Result<For, ModelError> handle_for(ForSyntax& for_, file: String) {
     var r Region()
-    auto expression_result = handle_operands(_rp, _ep, for_.operation, file)
+    auto expression_result = handle_operands(rp, ep, for_.operation, file)
     if (expression_result._tag == Result<Vector<Operand>, ModelError>::Error)
         return Result<For, ModelError> { ._tag = Result<For, ModelError>::Error, ._Error = expression_result._Error }
     auto expression = expression_result._Ok
     if (for_.name <> null)
         return Result<For, ModelError> { ._tag = Result<For, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(file, String(_ep, "Label in For"), Span(for_.name->start, for_.name->end)))) }
 
-    auto _action_result = handle_action(_rp, _ep, for_.action, file)
+    auto _action_result = handle_action(rp, ep, for_.action, file)
     if (_action_result._tag == Result<Action, ModelError>::Error)
         return Result<For, ModelError> { ._tag = Result<For, ModelError>::Error, ._Error = _action_result._Error }
     auto action = Action(_action_result._Ok)
     return Result<For, ModelError> { ._tag = Result<For, ModelError>::Ok, ._Ok = For(Span(for_.start, for_.end), String(_rp, for_.variable), expression, action) }
 }
 
-Result<Binding, ModelError> handle_condition(ConditionSyntax& condition, String file) {
+Result<Binding, ModelError> handle_condition(ConditionSyntax& condition, file: String) {
     var r Region()
     switch (condition._tag)
     {
         case ConditionSyntax::Operation: {
-            auto operation_result = handle_operation(_rp, _ep, condition._Operation, file)
+            auto operation_result = handle_operation(rp, ep, condition._Operation, file)
             if (operation_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Binding, ModelError> { ._tag = Result<Binding, ModelError>::Error, ._Error = operation_result._Error }
             return Result<Binding, ModelError> { ._tag = Result<Binding, ModelError>::Ok, ._Ok = Binding(String(_rp, "const"), Item(Span(condition._Operation.start, condition._Operation.end), false, nullptr, nullptr, Vector<Attribute>(_rp, 0)), operation_result._Ok)}
@@ -1031,12 +1033,12 @@ Result<Binding, ModelError> handle_condition(ConditionSyntax& condition, String 
             auto binding = condition._Let.binding.operation
             Type* type null
             if (condition._Let.binding.annotation <> null) {
-                auto _type_result = handle_binding_annotation(_rp, _ep, *condition._Let.binding.annotation, file)
+                auto _type_result = handle_binding_annotation(rp, ep, *condition._Let.binding.annotation, file)
                 if (_type_result._tag == Result<Type, ModelError>::Error)
                     return Result<Binding, ModelError> { ._tag = Result<Binding, ModelError>::Error, ._Error = _type_result._Error }
                 type = _type_result._Ok
             }
-            auto operation_result = handle_operands(_rp, _ep, binding, file)
+            auto operation_result = handle_operands(rp, ep, binding, file)
             if (operation_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Binding, ModelError> { ._tag = Result<Binding, ModelError>::Error, ._Error = operation_result._Error }
             return Result<Binding, ModelError> { ._tag = Result<Binding, ModelError>::Ok, ._Ok = Binding(String(_rp, "const"), Item(Span(condition._Let.start, condition._Let.end), false, new(alignof(String), _rp) String(_rp, condition._Let.binding.name), nullptr, Vector<Attribute>(_rp, 0)), operation_result._Ok)}
@@ -1044,25 +1046,25 @@ Result<Binding, ModelError> handle_condition(ConditionSyntax& condition, String 
     }
 }
 
-Result<While, ModelError> handle_while(WhileSyntax& while_, String file) {
+Result<While, ModelError> handle_while(WhileSyntax& while_, file: String) {
     var r Region()
-    auto _condition_result = handle_condition(_rp, _ep, while_.condition, file)
+    auto _condition_result = handle_condition(rp, ep, while_.condition, file)
     if (_condition_result._tag == Result<Vector<Operand>, ModelError>::Error)
         return Result<While, ModelError> { ._tag = Result<While, ModelError>::Error, ._Error = _condition_result._Error }
     auto condition = _condition_result._Ok
     if (while_.name <> null)
         return Result<While, ModelError> { ._tag = Result<While, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(file, String(_ep, "Label in While"), Span(while_.name->start, while_.name->end)))) }
 
-    auto _action_result = handle_action(_rp, _ep, while_.action, file)
+    auto _action_result = handle_action(rp, ep, while_.action, file)
     if (_action_result._tag == Result<Action, ModelError>::Error)
         return Result<While, ModelError> { ._tag = Result<While, ModelError>::Error, ._Error = _action_result._Error }
     auto action = Action(_action_result._Ok)
     return Result<While, ModelError> { ._tag = Result<While, ModelError>::Ok, ._Ok = While(Span(while_.start, while_.end), condition, action) }
 }
 
-Result<Try, ModelError> handle_try(TrySyntax& try_, String file) {
+Result<Try, ModelError> handle_try(TrySyntax& try_, file: String) {
     var r Region()
-    auto _condition_result = handle_condition(_rp, _ep, try_.condition, file)
+    auto _condition_result = handle_condition(rp, ep, try_.condition, file)
     if (_condition_result._tag == Result<Vector<Operand>, ModelError>::Error)
         return Result<Try, ModelError> { ._tag = Result<Try, ModelError>::Error, ._Error = _condition_result._Error }
     auto condition = _condition_result._Ok
@@ -1072,7 +1074,7 @@ Result<Try, ModelError> handle_try(TrySyntax& try_, String file) {
         auto _catches_iterator = catch_syntaxes->get_iterator()
         while (auto _catch_syntax = _catches_iterator.next()) {
             auto catch_syntax = *_catch_syntax
-            auto _catch_result = handle_when(_rp, _ep, catch_syntax, file)
+            auto _catch_result = handle_when(rp, ep, catch_syntax, file)
             if (_catch_result._tag == Result<When, ModelError>::Error)
                 return Result<Try, ModelError> { ._tag = Result<Try, ModelError>::Error, ._Error = _catch_result._Error }
             auto catch_ = _catch_result._Ok
@@ -1082,7 +1084,7 @@ Result<Try, ModelError> handle_try(TrySyntax& try_, String file) {
     Statement* drop_ null
     if (try_.dropper <> null) {
         auto drop_syntax = *try_.dropper
-        auto _drop_result = handle_command(_rp, _ep, drop_syntax.alternative, file)
+        auto _drop_result = handle_command(rp, ep, drop_syntax.alternative, file)
         if (_drop_result._tag == Result<Drop, ModelError>::Error)
             return Result<Try, ModelError> { ._tag = Result<Try, ModelError>::Error, ._Error = _drop_result._Error }
         drop_ = new(alignof(Statement), _rp) Statement(_drop_result._Ok)
@@ -1090,63 +1092,63 @@ Result<Try, ModelError> handle_try(TrySyntax& try_, String file) {
     return Result<Try, ModelError> { ._tag = Result<Try, ModelError>::Ok, ._Ok = Try(Span(try_.start, try_.end), condition, Vector<When>(_rp, catches_builder), drop_) }
 }
 
-Result<SizeOf, ModelError> handle_size_of(SizeOfSyntax& size_of, String file) {
+Result<SizeOf, ModelError> handle_size_of(SizeOfSyntax& size_of, file: String) {
     var r Region()
-    auto type_result = handle_type(_rp, _ep, size_of.type, file)
+    auto type_result = handle_type(rp, ep, size_of.type, file)
     if (type_result._tag == Result<Vector<Operand>, ModelError>::Error)
         return Result<SizeOf, ModelError> { ._tag = Result<SizeOf, ModelError>::Error, ._Error = type_result._Error }
     auto type = type_result._Ok
     return Result<SizeOf, ModelError> { ._tag = Result<SizeOf, ModelError>::Ok, ._Ok = SizeOf(Span(size_of.start, size_of.end), *type) }
 }
 
-Result<Expression, ModelError> handle_expression(ExpressionSyntax& expression, String file) {
+Result<Expression, ModelError> handle_expression(ExpressionSyntax& expression, file: String) {
     var r Region()
     switch (expression._tag) {
         case ExpressionSyntax::Literal: {
             auto literal = expression._Literal
-            auto constant_result = handle_literal(_rp, _ep, literal, file)
+            auto constant_result = handle_literal(rp, ep, literal, file)
             if (constant_result._tag == Result<Constant, ModelError>::Error)
                 return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = constant_result._Error }
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::Constant, ._Constant = constant_result._Ok} }
         }
         case ExpressionSyntax::Type: {
             auto type = expression._Type
-            auto _type_result = handle_type(_rp, _ep, type, file)
+            auto _type_result = handle_type(rp, ep, type, file)
             if (_type_result._tag == Result<Type, ModelError>::Error)
                 return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = _type_result._Error }
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::Type, ._Type = *_type_result._Ok} }
         }
         case ExpressionSyntax::Object: {
             auto object = expression._Object
-            auto object_result = handle_object(_rp, _ep, object, file)
+            auto object_result = handle_object(rp, ep, object, file)
             if (object_result._tag == Result<Expression, ModelError>::Error)
                 return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = object_result._Error }
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::Tuple, ._Tuple = object_result._Ok} }
         }
         case ExpressionSyntax::Vector: {
             auto vector = expression._Vector
-            auto vector_result = handle_vector(_rp, _ep, vector, file)
+            auto vector_result = handle_vector(rp, ep, vector, file)
             if (vector_result._tag == Result<Expression, ModelError>::Error)
                 return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = vector_result._Error }
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::Matrix, ._Matrix = vector_result._Ok} }
         }
         case ExpressionSyntax::Block: {
             auto block = expression._Block
-            auto block_result = handle_block(_rp, _ep, block, file)
+            auto block_result = handle_block(rp, ep, block, file)
             if (block_result._tag == Result<Expression, ModelError>::Error)
                 return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = block_result._Error }
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::Block, ._Block = block_result._Ok} }
         }
         case ExpressionSyntax::If: {
             auto if_ = expression._If
-            auto if_result = handle_if(_rp, _ep, if_, file)
+            auto if_result = handle_if(rp, ep, if_, file)
             if (if_result._tag == Result<Expression, ModelError>::Error)
                 return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = if_result._Error }
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::If, ._If = if_result._Ok} }
         }
         case ExpressionSyntax::Match: {
             auto match_ = expression._Match
-            auto match_result = handle_match(_rp, _ep, match_, file)
+            auto match_result = handle_match(rp, ep, match_, file)
             if (match_result._tag == Result<Expression, ModelError>::Error)
                 return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = match_result._Error }
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::Match, ._Match = match_result._Ok} }
@@ -1155,14 +1157,14 @@ Result<Expression, ModelError> handle_expression(ExpressionSyntax& expression, S
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(file, String(_ep, "Lambda"), Span(expression._Lambda.start, expression._Lambda.end)))) }
         case ExpressionSyntax::For: {
             auto for_ = expression._For
-            auto for_result = handle_for(_rp, _ep, for_, file)
+            auto for_result = handle_for(rp, ep, for_, file)
             if (for_result._tag == Result<Expression, ModelError>::Error)
                 return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = for_result._Error }
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::For, ._For = for_result._Ok} }
         }
         case ExpressionSyntax::While: {
             auto while_syntax = expression._While
-            auto _while_result = handle_while(_rp, _ep, while_syntax, file)
+            auto _while_result = handle_while(rp, ep, while_syntax, file)
             if (_while_result._tag == Result<Expression, ModelError>::Error)
                 return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = _while_result._Error }
             auto while_ = _while_result._Ok
@@ -1170,14 +1172,14 @@ Result<Expression, ModelError> handle_expression(ExpressionSyntax& expression, S
         }
         case ExpressionSyntax::Choose: {
             auto choose_ = expression._Choose
-            auto choose_result = handle_choose(_rp, _ep, choose_, file)
+            auto choose_result = handle_choose(rp, ep, choose_, file)
             if (choose_result._tag == Result<Expression, ModelError>::Error)
                 return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = choose_result._Error }
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::Choose, ._Choose = choose_result._Ok} }
         }
         case ExpressionSyntax::Try: {
             auto try_syntax = expression._Try
-            auto _try_result = handle_try(_rp, _ep, try_syntax, file)
+            auto _try_result = handle_try(rp, ep, try_syntax, file)
             if (_try_result._tag == Result<Expression, ModelError>::Error)
                 return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = _try_result._Error }
             auto try_ = _try_result._Ok
@@ -1187,7 +1189,7 @@ Result<Expression, ModelError> handle_expression(ExpressionSyntax& expression, S
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(file, String(_ep, "Repeat"), Span(expression._Repeat.start, expression._Repeat.end)))) }
         case ExpressionSyntax::SizeOf: {
             auto size_of = expression._SizeOf
-            auto size_of_result = handle_size_of(_rp, _ep, size_of, file)
+            auto size_of_result = handle_size_of(rp, ep, size_of, file)
             if (size_of_result._tag == Result<Expression, ModelError>::Error)
                 return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = size_of_result._Error }
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::SizeOf, ._SizeOf = size_of_result._Ok} }
@@ -1202,13 +1204,17 @@ function handle_operand(operand: ref[OperandSyntax], file: String) returns Opera
     var member_access: pointer[Vector[String]] null
     if operand.members <> null
     {
-        let path: ref[List[String]] path List[String]$()
-        for member in *operand.members
+        var path: ref[List[String]] *List[String]$()
+        for member in (*operand.members)
         {
             path.add(String(rp, member.name.name))
             if member.name.extensions <> null
-                for extension in *member.name.extensions
+            {
+                for extension in (*member.name.extensions)
+                {
                     path.add(extension.name)
+                }
+            }
         }
         set member_access: Vector[String]#(rp, path)
     }
@@ -1224,9 +1230,9 @@ function handle_operands(operands: pointer[Vector[OperandSyntax]], file: String)
     var operands_builder: ref[List[Operand]] *List[Operand]$()
     if operands <> null
     {
-        for operand_syntax in operands
+        for operand_syntax in (*operands)
         {
-            try let operand handle_operand(rp, ep, *operand, file)
+            try let operand handle_operand(rp, ep, operand_syntax, file)
                 else throw
             operands_builder.add(operand)
         }
@@ -1236,9 +1242,9 @@ function handle_operands(operands: pointer[Vector[OperandSyntax]], file: String)
 
 ;*
 
-Result<Vector<Operand>, ModelError> handle_operation(OperationSyntax& operation, String file) {
+Result<Vector<Operand>, ModelError> handle_operation(OperationSyntax& operation, file: String) {
     if (operation.operands <> null) {
-        auto operands_result = handle_operands(_rp, _ep, operation.operands, file)
+        auto operands_result = handle_operands(rp, ep, operation.operands, file)
         if (operands_result._tag == Result<Vector<Operand>, ModelError>::Error)
             return Result<Vector<Operand>, ModelError> { ._tag = Result<Vector<Operand>, ModelError>::Error, ._Error = operands_result._Error }
         return Result<Vector<Operand>, ModelError> { ._tag = Result<Vector<Operand>, ModelError>::Ok, ._Ok = operands_result._Ok }
@@ -1246,7 +1252,7 @@ Result<Vector<Operand>, ModelError> handle_operation(OperationSyntax& operation,
     return Result<Vector<Operand>, ModelError> { ._tag = Result<Vector<Operand>, ModelError>::Ok, ._Ok = Vector<Operand>(_rp, 0) }
 }
 
-Result<GenericParameter, ModelError> handle_generic_parameter(GenericParameterSyntax& generic_parameter, String file) {
+Result<GenericParameter, ModelError> handle_generic_parameter(GenericParameterSyntax& generic_parameter, file: String) {
     var r Region()
     List<Attribute>& attributes = *new(alignof(List<Attribute>), _r.get_page()) List<Attribute>()
     if (generic_parameter.attributes <> null) {
@@ -1254,7 +1260,7 @@ Result<GenericParameter, ModelError> handle_generic_parameter(GenericParameterSy
         auto _attribute_iterator = definition_attributes->get_iterator()
         while (auto _attribute_syntax = _attribute_iterator.next()) {
             auto attribute_syntax = *_attribute_syntax
-            auto _attribute_result = handle_attribute(_rp, _ep, attribute_syntax, file)
+            auto _attribute_result = handle_attribute(rp, ep, attribute_syntax, file)
             if (_attribute_result._tag == Result<Attribute, ModelError>::Error)
                 return Result<GenericParameter, ModelError> { ._tag = Result<GenericParameter, ModelError>::Error, ._Error = _attribute_result._Error }
             auto attribute = _attribute_result._Ok
@@ -1280,7 +1286,7 @@ Result<Use, ModelError> handle_use(UseSyntax& use_) {
     return Result<Use, ModelError> { ._tag = Result<Use, ModelError>::Ok, ._Ok = Use(Span(use_.start, use_.end), Vector<String>(_rp, path)) }
 }
 
-Result<Concept, ModelError> handle_definition(String path, DefinitionSyntax& definition, bool private_, String file) {
+Result<Concept, ModelError> handle_definition(String path, DefinitionSyntax& definition, bool private_, file: String) {
     var r Region()
     auto concept = definition.concept_
     Span span(definition.start, definition.end)
@@ -1292,7 +1298,7 @@ Result<Concept, ModelError> handle_definition(String path, DefinitionSyntax& def
             auto _parameters_iterator = generic_parameters.parameters->get_iterator()
             while (auto _generic_parameter = _parameters_iterator.next()) {
                 auto generic_parameter = *_generic_parameter
-                auto _parameter_result = handle_generic_parameter(_rp, _ep, generic_parameter, file)
+                auto _parameter_result = handle_generic_parameter(rp, ep, generic_parameter, file)
                 if (_parameter_result._tag == Result<GenericParameter, ModelError>::Error)
                     return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = _parameter_result._Error }
                 auto parameter = _parameter_result._Ok
@@ -1308,7 +1314,7 @@ Result<Concept, ModelError> handle_definition(String path, DefinitionSyntax& def
         auto _attribute_iterator = definition_attributes->get_iterator()
         while (auto _attribute_syntax = _attribute_iterator.next()) {
             auto attribute_syntax = *_attribute_syntax
-            auto _attribute_result = handle_attribute(_rp, _ep, attribute_syntax, file)
+            auto _attribute_result = handle_attribute(rp, ep, attribute_syntax, file)
             if (_attribute_result._tag == Result<Attribute, ModelError>::Error)
                 return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = _attribute_result._Error }
             auto attribute = _attribute_result._Ok
@@ -1320,7 +1326,7 @@ Result<Concept, ModelError> handle_definition(String path, DefinitionSyntax& def
     {
         case ConceptSyntax::Class: {
             auto class_ = concept._Class
-            auto structure_result = handle_class(_rp, _ep, definition.name, path, class_, private_, file)
+            auto structure_result = handle_class(rp, ep, definition.name, path, class_, private_, file)
             if (structure_result._tag == Result<Structure, ModelError>::Error)
                 return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = structure_result._Error }
             auto structure = structure_result._Ok
@@ -1331,7 +1337,7 @@ Result<Concept, ModelError> handle_definition(String path, DefinitionSyntax& def
         }
         case ConceptSyntax::Namespace: {
             auto namespace_syntax = concept._Namespace
-            auto _namespace_result = handle_namespace(_rp, _ep, definition.name, Path::join(_rp, path, definition.name), namespace_syntax, private_, file)
+            auto _namespace_result = handle_namespace(rp, ep, definition.name, Path::join(_rp, path, definition.name), namespace_syntax, private_, file)
             if (_namespace_result._tag == Result<Namespace, ModelError>::Error)
                 return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = _namespace_result._Error }
             auto namespace_ = _namespace_result._Ok
@@ -1342,7 +1348,7 @@ Result<Concept, ModelError> handle_definition(String path, DefinitionSyntax& def
         }
         case ConceptSyntax::Union: {
             auto union_syntax = concept._Union
-            auto _union__result = handle_union(_rp, _ep, definition.name, path, union_syntax, private_, file)
+            auto _union__result = handle_union(rp, ep, definition.name, path, union_syntax, private_, file)
             if (_union__result._tag == Result<Structure, ModelError>::Error)
                 return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = _union__result._Error }
             auto union_ = _union__result._Ok
@@ -1353,10 +1359,10 @@ Result<Concept, ModelError> handle_definition(String path, DefinitionSyntax& def
         }
         case ConceptSyntax::Constant: {
             auto constant = concept._Constant
-            auto operation_result = handle_operands(_rp, _ep, constant.operation, file)
+            auto operation_result = handle_operands(rp, ep, constant.operation, file)
             if (operation_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = operation_result._Error }
-            auto _type_result = handle_type(_rp, _ep, constant.type, file)
+            auto _type_result = handle_type(rp, ep, constant.type, file)
             if (_type_result._tag == Result<Type, ModelError>::Error)
                 return Result<Concept, ModelError> { ._tag = Result<Concept, ModelError>::Error, ._Error = _type_result._Error }
             auto type = _type_result._Ok
@@ -1376,20 +1382,20 @@ Result<Concept, ModelError> handle_definition(String path, DefinitionSyntax& def
     }
 }
 
-Result<Action, ModelError> handle_action(ActionSyntax& action, String file) {
+Result<Action, ModelError> handle_action(ActionSyntax& action, file: String) {
     switch (action._tag) {
         case ActionSyntax::Operation: {
-            auto operation_result = handle_operation(_rp, _ep, action._Operation, file)
+            auto operation_result = handle_operation(rp, ep, action._Operation, file)
             if (operation_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Action, ModelError> { ._tag = Result<Action, ModelError>::Error, ._Error = operation_result._Error }
             return Result<Action, ModelError> { ._tag = Result<Action, ModelError>::Ok, ._Ok = Action(operation_result._Ok, Vector<Operand>()) }
         }
         case ActionSyntax::Set: {
-            auto _target_result = handle_operands(_rp, _ep, action._Set.target, file)
+            auto _target_result = handle_operands(rp, ep, action._Set.target, file)
             if (_target_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Action, ModelError> { ._tag = Result<Action, ModelError>::Error, ._Error = _target_result._Error }
             auto target = _target_result._Ok
-            auto _source_result = handle_operands(_rp, _ep, action._Set.source, file)
+            auto _source_result = handle_operands(rp, ep, action._Set.source, file)
             if (_source_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Action, ModelError> { ._tag = Result<Action, ModelError>::Error, ._Error = _source_result._Error }
             auto source = _source_result._Ok
@@ -1398,7 +1404,7 @@ Result<Action, ModelError> handle_action(ActionSyntax& action, String file) {
     }
 }
 
-Result<Function, ModelError> build_function(size_t start, size_t end, TargetSyntax targetSyntax, bool private_, bool pure, String file) {
+Result<Function, ModelError> build_function(size_t start, size_t end, TargetSyntax targetSyntax, bool private_, bool pure, file: String) {
     Vector<Item> input = Vector<Item>(_rp, 0)
     Vector<Item> output = Vector<Item>(_rp, 0)
     switch (targetSyntax._tag) {
@@ -1409,7 +1415,7 @@ Result<Function, ModelError> build_function(size_t start, size_t end, TargetSynt
 
             if (named.routine.parameters <> null) {
                 ParameterSetSyntax& parameterSetSyntax = *named.routine.parameters
-                auto _input_result = handle_parameterset(_rp, _ep, parameterSetSyntax, file)
+                auto _input_result = handle_parameterset(rp, ep, parameterSetSyntax, file)
                 if (_input_result._tag == Result<Vector<Item>, ModelError>::Error)
                     return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Error, ._Error = _input_result._Error }
                 input = _input_result._Ok
@@ -1417,7 +1423,7 @@ Result<Function, ModelError> build_function(size_t start, size_t end, TargetSynt
 
             Type* returns_ null
             if (named.routine.returns_ <> null) {
-                auto _type_result = handle_type(_rp, _ep, named.routine.returns_->type, file)
+                auto _type_result = handle_type(rp, ep, named.routine.returns_->type, file)
                 if (_type_result._tag == Result<Type, ModelError>::Error)
                     return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Error, ._Error = _type_result._Error }
                 returns_ = _type_result._Ok
@@ -1425,7 +1431,7 @@ Result<Function, ModelError> build_function(size_t start, size_t end, TargetSynt
 
             Type* throws_ null
             if (named.routine.throws_ <> null) {
-                auto _type_result = handle_type(_rp, _ep, named.routine.throws_->type, file)
+                auto _type_result = handle_type(rp, ep, named.routine.throws_->type, file)
                 if (_type_result._tag == Result<Type, ModelError>::Error)
                     return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Error, ._Error = _type_result._Error }
                 throws_ = _type_result._Ok
@@ -1451,7 +1457,7 @@ Result<Function, ModelError> build_function(size_t start, size_t end, TargetSynt
 
             switch (named.routine.implementation._tag) {
                 case ImplementationSyntax::Action: {
-                    auto action_result = handle_action(_rp, _ep, named.routine.implementation._Action, file)
+                    auto action_result = handle_action(rp, ep, named.routine.implementation._Action, file)
                     if (action_result._tag == Result<Statement, ModelError>::Error)
                         return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Error, ._Error = action_result._Error }
                     return Result<Function, ModelError> { ._tag = Result<Function, ModelError>::Ok, ._Ok = Function(Span(start, end), private_, pure, String(_rp, named.name), input, returns_, throws_, lifetime, Implementation { ._tag = Implementation::Action, ._Action = action_result._Ok }) }
@@ -1469,31 +1475,31 @@ Result<Function, ModelError> build_function(size_t start, size_t end, TargetSynt
 
 }
 
-Result<Initializer, ModelError> handle_initializer(InitSyntax& initializer, bool private_, String file) {
+Result<Initializer, ModelError> handle_initializer(InitSyntax& initializer, bool private_, file: String) {
     Vector<Item> input = Vector<Item>(_rp, 0)
 
     if (initializer.parameters <> null) {
         ParameterSetSyntax& parameterSetSyntax = *initializer.parameters
-        auto parameterset_result = handle_parameterset(_rp, _ep, parameterSetSyntax, file)
+        auto parameterset_result = handle_parameterset(rp, ep, parameterSetSyntax, file)
         input = parameterset_result._Ok
     }
 
-    auto action_result = handle_action(_rp, _ep, initializer.action, file)
+    auto action_result = handle_action(rp, ep, initializer.action, file)
     if (action_result._tag == Result<Statement, ModelError>::Error)
         return Result<Initializer, ModelError> { ._tag = Result<Initializer, ModelError>::Error, ._Error = action_result._Error }
 
     return Result<Initializer, ModelError> { ._tag = Result<Initializer, ModelError>::Ok, ._Ok = Initializer(Span(initializer.start, initializer.end), private_, input, Implementation { ._tag = Implementation::Action, ._Action = action_result._Ok }) }
 }
 
-Result<DeInitializer*, ModelError> handle_deinitializer(DeInitSyntax& deinitializer, String file) {
-    auto action_result = handle_action(_rp, _ep, deinitializer.action, file)
+Result<DeInitializer*, ModelError> handle_deinitializer(DeInitSyntax& deinitializer, file: String) {
+    auto action_result = handle_action(rp, ep, deinitializer.action, file)
     if (action_result._tag == Result<Statement, ModelError>::Error)
         return Result<DeInitializer*, ModelError> { ._tag = Result<DeInitializer*, ModelError>::Error, ._Error = action_result._Error }
 
     return Result<DeInitializer*, ModelError> { ._tag = Result<DeInitializer*, ModelError>::Ok, ._Ok = new(alignof(DeInitializer), _rp) DeInitializer(Span(deinitializer.start, deinitializer.end), Implementation { ._tag = Implementation::Action, ._Action = action_result._Ok }) }
 }
 
-Result<Operator, ModelError> handle_operator( OperatorSyntax& operator_syntax, bool private_, String file) {
+Result<Operator, ModelError> handle_operator( OperatorSyntax& operator_syntax, bool private_, file: String) {
     Vector<Item> input = Vector<Item>(_rp, 0)
     auto start = operator_syntax.start
     auto end = operator_syntax.end
@@ -1504,7 +1510,7 @@ Result<Operator, ModelError> handle_operator( OperatorSyntax& operator_syntax, b
             if (routine.generics <> null) {
                 if (routine.parameters <> null) {
                     ParameterSetSyntax& parameterSetSyntax = *routine.parameters
-                    auto _input_result = handle_parameterset(_rp, _ep, parameterSetSyntax, file)
+                    auto _input_result = handle_parameterset(rp, ep, parameterSetSyntax, file)
                     if (_input_result._tag == Result<Vector<Item>, ModelError>::Error)
                         return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Error, ._Error = _input_result._Error }
                     input = _input_result._Ok
@@ -1512,7 +1518,7 @@ Result<Operator, ModelError> handle_operator( OperatorSyntax& operator_syntax, b
 
                 Type* returns_ null
                 if (routine.returns_ <> null) {
-                    auto _type_result = handle_type(_rp, _ep, routine.returns_->type, file)
+                    auto _type_result = handle_type(rp, ep, routine.returns_->type, file)
                     if (_type_result._tag == Result<Type, ModelError>::Error)
                         return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Error, ._Error = _type_result._Error }
                     returns_ = _type_result._Ok
@@ -1520,7 +1526,7 @@ Result<Operator, ModelError> handle_operator( OperatorSyntax& operator_syntax, b
 
                 Type* throws_ null
                 if (routine.throws_ <> null) {
-                    auto _type_result = handle_type(_rp, _ep, routine.throws_->type, file)
+                    auto _type_result = handle_type(rp, ep, routine.throws_->type, file)
                     if (_type_result._tag == Result<Type, ModelError>::Error)
                         return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Error, ._Error = _type_result._Error }
                     throws_ = _type_result._Ok
@@ -1528,7 +1534,7 @@ Result<Operator, ModelError> handle_operator( OperatorSyntax& operator_syntax, b
 
                 switch (routine.implementation._tag) {
                     case ImplementationSyntax::Action: {
-                        auto action_result = handle_action(_rp, _ep, routine.implementation._Action, file)
+                        auto action_result = handle_action(rp, ep, routine.implementation._Action, file)
                         if (action_result._tag == Result<Statement, ModelError>::Error)
                             return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Error, ._Error = action_result._Error }
                         return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Ok, ._Ok = Operator(Span(start, end), private_, String(_rp, "[]"), input, returns_, throws_, Implementation { ._tag = Implementation::Action, ._Action = action_result._Ok }) }
@@ -1547,7 +1553,7 @@ Result<Operator, ModelError> handle_operator( OperatorSyntax& operator_syntax, b
             auto named = operator_syntax.target._Named
             if (named.routine.parameters <> null) {
                 ParameterSetSyntax& parameterSetSyntax = *named.routine.parameters
-                auto _input_result = handle_parameterset(_rp, _ep, parameterSetSyntax, file)
+                auto _input_result = handle_parameterset(rp, ep, parameterSetSyntax, file)
                 if (_input_result._tag == Result<Vector<Item>, ModelError>::Error)
                     return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Error, ._Error = _input_result._Error }
                 input = _input_result._Ok
@@ -1555,7 +1561,7 @@ Result<Operator, ModelError> handle_operator( OperatorSyntax& operator_syntax, b
 
             Type* returns_ null
             if (named.routine.returns_ <> null) {
-                auto _type_result = handle_type(_rp, _ep, named.routine.returns_->type, file)
+                auto _type_result = handle_type(rp, ep, named.routine.returns_->type, file)
                 if (_type_result._tag == Result<Type, ModelError>::Error)
                     return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Error, ._Error = _type_result._Error }
                 returns_ = _type_result._Ok
@@ -1563,7 +1569,7 @@ Result<Operator, ModelError> handle_operator( OperatorSyntax& operator_syntax, b
 
             Type* throws_ null
             if (named.routine.throws_ <> null) {
-                auto _type_result = handle_type(_rp, _ep, named.routine.throws_->type, file)
+                auto _type_result = handle_type(rp, ep, named.routine.throws_->type, file)
                 if (_type_result._tag == Result<Type, ModelError>::Error)
                     return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Error, ._Error = _type_result._Error }
                 throws_ = _type_result._Ok
@@ -1571,7 +1577,7 @@ Result<Operator, ModelError> handle_operator( OperatorSyntax& operator_syntax, b
 
             switch (named.routine.implementation._tag) {
                 case ImplementationSyntax::Action: {
-                    auto action_result = handle_action(_rp, _ep, named.routine.implementation._Action, file)
+                    auto action_result = handle_action(rp, ep, named.routine.implementation._Action, file)
                     if (action_result._tag == Result<Statement, ModelError>::Error)
                         return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Error, ._Error = action_result._Error }
                     return Result<Operator, ModelError> { ._tag = Result<Operator, ModelError>::Ok, ._Ok = Operator(Span(start, end), private_, String(_rp, named.name), input, returns_, throws_, Implementation { ._tag = Implementation::Action, ._Action = action_result._Ok }) }
@@ -1596,7 +1602,7 @@ Result<Module, ModelError> build_module(String path, String file_name, String na
         auto _uses_iterator = use_syntaxes->get_iterator()
         while (auto _use_ = _uses_iterator.next()) {
             auto use = *_use_
-            auto _use_result = handle_use(_rp, _ep, use)
+            auto _use_result = handle_use(rp, ep, use)
             if (_use_result._tag == Result<Use, ModelError>::Error)
                 return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = _use_result._Error }
             auto use_ = _use_result._Ok
@@ -1618,7 +1624,7 @@ Result<Module, ModelError> build_module(String path, String file_name, String na
                     auto export_ = declaration->symbol._Private.export_
                     switch (export_._tag) {
                         case ExportSyntax::Definition: {
-                            auto concept_result = handle_definition(_rp, _ep, path, export_._Definition, true, file_name)
+                            auto concept_result = handle_definition(rp, ep, path, export_._Definition, true, file_name)
                             if (concept_result._tag == Result<Function, ModelError>::Error)
                                 return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = concept_result._Error }
                             auto concept = concept_result._Ok
@@ -1633,7 +1639,7 @@ Result<Module, ModelError> build_module(String path, String file_name, String na
                         break
                         case ExportSyntax::Function: {
                             auto function_syntax = export_._Function
-                            auto function_result = build_function(_rp, _ep, function_syntax.start, function_syntax.end, function_syntax.target, true, true, file_name)
+                            auto function_result = build_function(rp, ep, function_syntax.start, function_syntax.end, function_syntax.target, true, true, file_name)
                             if (function_result._tag == Result<Function, ModelError>::Error)
                                 return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = function_result._Error }
                             auto function = function_result._Ok
@@ -1646,7 +1652,7 @@ Result<Module, ModelError> build_module(String path, String file_name, String na
                         break
                         case ExportSyntax::Operator: {
                             auto operator_syntax = export_._Operator
-                            auto operator_result = handle_operator(_rp, _ep, operator_syntax, true, file_name)
+                            auto operator_result = handle_operator(rp, ep, operator_syntax, true, file_name)
                             if (operator_result._tag == Result<Module, ModelError>::Error)
                                 return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error,
                                     ._Error = operator_result._Error }
@@ -1661,7 +1667,7 @@ Result<Module, ModelError> build_module(String path, String file_name, String na
                             return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(file_name, String(_ep, "Private Trait"), Span(declaration->symbol._Trait.start, declaration->symbol._Trait.end)))) }
                         case ExportSyntax::Module: {
                             auto module_syntax = export_._Module
-                            auto module_result = handle_module(_rp, _ep, path, module_syntax, true)
+                            auto module_result = handle_module(rp, ep, path, module_syntax, true)
                             if (module_result._tag == Result<Module, ModelError>::Error)
                                 return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error,
                                     ._Error = module_result._Error }
@@ -1676,7 +1682,7 @@ Result<Module, ModelError> build_module(String path, String file_name, String na
                 }
                 break
                 case SymbolSyntax::Definition: {
-                    auto concept_result = handle_definition(_rp, _ep, path, declaration->symbol._Definition, false, file_name)
+                    auto concept_result = handle_definition(rp, ep, path, declaration->symbol._Definition, false, file_name)
                     if (concept_result._tag == Result<Function, ModelError>::Error)
                         return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = concept_result._Error }
                     auto concept = concept_result._Ok
@@ -1691,7 +1697,7 @@ Result<Module, ModelError> build_module(String path, String file_name, String na
                 break
                 case SymbolSyntax::Function: {
                     auto function_syntax = declaration->symbol._Function
-                    auto function_result = build_function(_rp, _ep, function_syntax.start, function_syntax.end, function_syntax.target, false, true, file_name)
+                    auto function_result = build_function(rp, ep, function_syntax.start, function_syntax.end, function_syntax.target, false, true, file_name)
                     if (function_result._tag == Result<Function, ModelError>::Error)
                         return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = function_result._Error }
                     auto function = function_result._Ok
@@ -1704,7 +1710,7 @@ Result<Module, ModelError> build_module(String path, String file_name, String na
                 break
                 case SymbolSyntax::Operator: {
                     auto operator_syntax = declaration->symbol._Operator
-                    auto operator_result = handle_operator(_rp, _ep, operator_syntax, false, file_name)
+                    auto operator_result = handle_operator(rp, ep, operator_syntax, false, file_name)
                     if (operator_result._tag == Result<Module, ModelError>::Error)
                         return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error,
                             ._Error = operator_result._Error }
@@ -1721,7 +1727,7 @@ Result<Module, ModelError> build_module(String path, String file_name, String na
                     return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = ModelError(ModelBuilderError(NotImplemented(file_name, String(_ep, "Macro"), Span(declaration->symbol._Macro.start, declaration->symbol._Macro.end)))) }
                 case SymbolSyntax::Module: {
                     auto module_syntax = declaration->symbol._Module
-                    auto module_result = handle_module(_rp, _ep, path, module_syntax, false)
+                    auto module_result = handle_module(rp, ep, path, module_syntax, false)
                     if (module_result._tag == Result<Module, ModelError>::Error)
                         return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error,
                             ._Error = module_result._Error }
@@ -1770,15 +1776,15 @@ Result<Module, ModelError> build_referenced_module(String path, String name, boo
     if (!parser.is_at_end())
         return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = ModelError(ParserModelError(file_name, ParserError(InvalidSyntax(parser.lexer.previous_position, parser.lexer.position, String(_ep, "a valid declaration")))))}
 
-    return build_module(_rp, _ep, path, file_name, name, file_syntax, private_)
+    return build_module(rp, ep, path, file_name, name, file_syntax, private_)
 }
 
 Result<Module, ModelError> handle_module(String path, ModuleSyntax& module_syntax, bool private_) {
-    return build_referenced_module(_rp, _ep, path, module_syntax.name, private_)
+    return build_referenced_module(rp, ep, path, module_syntax.name, private_)
 }
 
 Result<Module, ModelError> handle_package(String path, PackageSyntax package_syntax) {
-    return build_referenced_module(_rp, _ep, path, package_syntax.name.name, false)
+    return build_referenced_module(rp, ep, path, package_syntax.name.name, false)
 }
 
 Result<Program, ModelError> build_program(String file_name, String program_name) {
@@ -1788,7 +1794,7 @@ Result<Program, ModelError> build_program(String file_name, String program_name)
         return Result<Program, ModelError> { ._tag = Result<Program, ModelError>::Error, ._Error = ModelError(file_text_result._Error) }
     }
     auto file_text = file_text_result._Ok
-    auto program_result = parse_program(_rp, _ep, file_text)
+    auto program_result = parse_program(rp, ep, file_text)
     if (program_result._tag == Result<Vector<DeclarationSyntax>*, ParserError>::Error)
         return Result<Program, ModelError> { ._tag = Result<Program, ModelError>::Error, ._Error = ModelError(ParserModelError(file_name, program_result._Error)) }
     auto program_syntax = program_result._Ok
@@ -1800,7 +1806,7 @@ Result<Program, ModelError> build_program(String file_name, String program_name)
         auto _package_iterator = file_packages->get_iterator()
         while (auto _package_syntax = _package_iterator.next()) {
             auto package_syntax = *_package_syntax
-            auto _package_result = build_referenced_module(_rp, _ep, path, _package_syntax->name.name, false)
+            auto _package_result = build_referenced_module(rp, ep, path, _package_syntax->name.name, false)
             if (_package_result._tag == Result<Module, ModelError>::Error)
                 return Result<Program, ModelError> { ._tag = Result<Program, ModelError>::Error, ._Error = _package_result._Error }
             auto package = _package_result._Ok
@@ -1808,14 +1814,14 @@ Result<Program, ModelError> build_program(String file_name, String program_name)
         }
     }
 
-    auto module_result = build_module(_rp, _ep, Path::get_directory_name(_rp, file_name), file_name, program_name, program_syntax.file, false)
+    auto module_result = build_module(rp, ep, Path::get_directory_name(_rp, file_name), file_name, program_name, program_syntax.file, false)
     if (module_result._tag == Result<Module, ModelError>::Error)
         return Result<Program, ModelError> { ._tag = Result<Program, ModelError>::Error, ._Error = module_result._Error }
     auto module = module_result._Ok
 
     Vector<Statement> statements = Vector<Statement>()
     if (program_syntax.statements <> null) {
-        auto _statements_result = handle_statements(_rp, _ep, *program_syntax.statements, file_name)
+        auto _statements_result = handle_statements(rp, ep, *program_syntax.statements, file_name)
         if (_statements_result._tag == Result<Vector<Statement>, ModelError>::Error)
             return Result<Program, ModelError> { ._tag = Result<Program, ModelError>::Error, ._Error = _statements_result._Error }
         statements = _statements_result._Ok

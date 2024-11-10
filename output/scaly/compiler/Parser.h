@@ -167,18 +167,18 @@ struct SizeOfSyntax : Object {
 struct SetSyntax : Object {
     size_t start;
     size_t end;
-    Vector<OperandSyntax> target;
-    Vector<OperandSyntax> source;
+    Vector<OperandSyntax>* target;
+    Vector<OperandSyntax>* source;
 
-    SetSyntax(size_t start, size_t end, Vector<OperandSyntax> target, Vector<OperandSyntax> source);
+    SetSyntax(size_t start, size_t end, Vector<OperandSyntax>* target, Vector<OperandSyntax>* source);
 };
 
 struct OperationSyntax : Object {
     size_t start;
     size_t end;
-    Vector<OperandSyntax> operands;
+    Vector<OperandSyntax>* operands;
 
-    OperationSyntax(size_t start, size_t end, Vector<OperandSyntax> operands);
+    OperationSyntax(size_t start, size_t end, Vector<OperandSyntax>* operands);
 };
 
 struct ActionSyntax : Object {
@@ -215,20 +215,20 @@ struct ForSyntax : Object {
     size_t end;
     String variable;
     TypeAnnotationSyntax* annotation;
-    Vector<OperandSyntax> operation;
+    Vector<OperandSyntax>* operation;
     LabelSyntax* name;
     ActionSyntax action;
 
-    ForSyntax(size_t start, size_t end, String variable, TypeAnnotationSyntax* annotation, Vector<OperandSyntax> operation, LabelSyntax* name, ActionSyntax action);
+    ForSyntax(size_t start, size_t end, String variable, TypeAnnotationSyntax* annotation, Vector<OperandSyntax>* operation, LabelSyntax* name, ActionSyntax action);
 };
 
 struct LambdaSyntax : Object {
     size_t start;
     size_t end;
-    Vector<OperandSyntax> input;
+    Vector<OperandSyntax>* input;
     ActionSyntax block;
 
-    LambdaSyntax(size_t start, size_t end, Vector<OperandSyntax> input, ActionSyntax block);
+    LambdaSyntax(size_t start, size_t end, Vector<OperandSyntax>* input, ActionSyntax block);
 };
 
 struct ThrowSyntax : Object {
@@ -355,9 +355,9 @@ struct BindingSyntax : Object {
     size_t end;
     String name;
     BindingAnnotationSyntax* annotation;
-    Vector<OperandSyntax> operation;
+    Vector<OperandSyntax>* operation;
 
-    BindingSyntax(size_t start, size_t end, String name, BindingAnnotationSyntax* annotation, Vector<OperandSyntax> operation);
+    BindingSyntax(size_t start, size_t end, String name, BindingAnnotationSyntax* annotation, Vector<OperandSyntax>* operation);
 };
 
 struct MutableSyntax : Object {
@@ -452,11 +452,11 @@ struct TrySyntax : Object {
 struct ChooseSyntax : Object {
     size_t start;
     size_t end;
-    Vector<OperandSyntax> condition;
+    Vector<OperandSyntax>* condition;
     Vector<WhenSyntax>* cases;
     ElseSyntax* alternative;
 
-    ChooseSyntax(size_t start, size_t end, Vector<OperandSyntax> condition, Vector<WhenSyntax>* cases, ElseSyntax* alternative);
+    ChooseSyntax(size_t start, size_t end, Vector<OperandSyntax>* condition, Vector<WhenSyntax>* cases, ElseSyntax* alternative);
 };
 
 struct WhileSyntax : Object {
@@ -480,28 +480,28 @@ struct StatementSyntax : Object {
 struct CaseSyntax : Object {
     size_t start;
     size_t end;
-    Vector<OperandSyntax> condition;
+    Vector<OperandSyntax>* condition;
 
-    CaseSyntax(size_t start, size_t end, Vector<OperandSyntax> condition);
+    CaseSyntax(size_t start, size_t end, Vector<OperandSyntax>* condition);
 };
 
 struct BranchSyntax : Object {
     size_t start;
     size_t end;
-    Vector<CaseSyntax> cases;
+    Vector<CaseSyntax>* cases;
     StatementSyntax consequent;
 
-    BranchSyntax(size_t start, size_t end, Vector<CaseSyntax> cases, StatementSyntax consequent);
+    BranchSyntax(size_t start, size_t end, Vector<CaseSyntax>* cases, StatementSyntax consequent);
 };
 
 struct MatchSyntax : Object {
     size_t start;
     size_t end;
-    Vector<OperandSyntax> scrutinee;
-    Vector<BranchSyntax> branches;
+    Vector<OperandSyntax>* scrutinee;
+    Vector<BranchSyntax>* branches;
     ElseSyntax* alternative;
 
-    MatchSyntax(size_t start, size_t end, Vector<OperandSyntax> scrutinee, Vector<BranchSyntax> branches, ElseSyntax* alternative);
+    MatchSyntax(size_t start, size_t end, Vector<OperandSyntax>* scrutinee, Vector<BranchSyntax>* branches, ElseSyntax* alternative);
 };
 
 struct ElseSyntax : Object {
@@ -515,11 +515,11 @@ struct ElseSyntax : Object {
 struct IfSyntax : Object {
     size_t start;
     size_t end;
-    Vector<OperandSyntax> condition;
+    Vector<OperandSyntax>* condition;
     CommandSyntax consequent;
     ElseSyntax* alternative;
 
-    IfSyntax(size_t start, size_t end, Vector<OperandSyntax> condition, CommandSyntax consequent, ElseSyntax* alternative);
+    IfSyntax(size_t start, size_t end, Vector<OperandSyntax>* condition, CommandSyntax consequent, ElseSyntax* alternative);
 };
 
 struct BlockSyntax : Object {
@@ -534,38 +534,38 @@ struct BlockSyntax : Object {
 struct ElementSyntax : Object {
     size_t start;
     size_t end;
-    Vector<OperandSyntax> operation;
+    Vector<OperandSyntax>* operation;
     Vector<AttributeSyntax>* attributes;
 
-    ElementSyntax(size_t start, size_t end, Vector<OperandSyntax> operation, Vector<AttributeSyntax>* attributes);
+    ElementSyntax(size_t start, size_t end, Vector<OperandSyntax>* operation, Vector<AttributeSyntax>* attributes);
 };
 
 struct VectorSyntax : Object {
     size_t start;
     size_t end;
-    Vector<ElementSyntax> elements;
+    Vector<ElementSyntax>* elements;
     LifetimeSyntax* lifetime;
 
-    VectorSyntax(size_t start, size_t end, Vector<ElementSyntax> elements, LifetimeSyntax* lifetime);
+    VectorSyntax(size_t start, size_t end, Vector<ElementSyntax>* elements, LifetimeSyntax* lifetime);
 };
 
 struct ValueSyntax : Object {
     size_t start;
     size_t end;
-    Vector<OperandSyntax> value;
+    Vector<OperandSyntax>* value;
     Vector<AttributeSyntax>* attributes;
 
-    ValueSyntax(size_t start, size_t end, Vector<OperandSyntax> value, Vector<AttributeSyntax>* attributes);
+    ValueSyntax(size_t start, size_t end, Vector<OperandSyntax>* value, Vector<AttributeSyntax>* attributes);
 };
 
 struct ComponentSyntax : Object {
     size_t start;
     size_t end;
-    Vector<OperandSyntax> operands;
+    Vector<OperandSyntax>* operands;
     Vector<AttributeSyntax>* attributes;
     ValueSyntax* value;
 
-    ComponentSyntax(size_t start, size_t end, Vector<OperandSyntax> operands, Vector<AttributeSyntax>* attributes, ValueSyntax* value);
+    ComponentSyntax(size_t start, size_t end, Vector<OperandSyntax>* operands, Vector<AttributeSyntax>* attributes, ValueSyntax* value);
 };
 
 struct ObjectSyntax : Object {
@@ -652,9 +652,9 @@ struct OperandSyntax : Object {
 struct InitializerSyntax : Object {
     size_t start;
     size_t end;
-    Vector<OperandSyntax> operands;
+    Vector<OperandSyntax>* operands;
 
-    InitializerSyntax(size_t start, size_t end, Vector<OperandSyntax> operands);
+    InitializerSyntax(size_t start, size_t end, Vector<OperandSyntax>* operands);
 };
 
 struct PackageSyntax : Object {
@@ -705,9 +705,9 @@ struct MacroSyntax : Object {
     size_t end;
     String name;
     ModelSyntax model;
-    Vector<OperandSyntax> rule;
+    Vector<OperandSyntax>* rule;
 
-    MacroSyntax(size_t start, size_t end, String name, ModelSyntax model, Vector<OperandSyntax> rule);
+    MacroSyntax(size_t start, size_t end, String name, ModelSyntax model, Vector<OperandSyntax>* rule);
 };
 
 struct ExtendSyntax : Object {
@@ -973,9 +973,9 @@ struct ConstantSyntax : Object {
     size_t start;
     size_t end;
     TypeSyntax type;
-    Vector<OperandSyntax> operation;
+    Vector<OperandSyntax>* operation;
 
-    ConstantSyntax(size_t start, size_t end, TypeSyntax type, Vector<OperandSyntax> operation);
+    ConstantSyntax(size_t start, size_t end, TypeSyntax type, Vector<OperandSyntax>* operation);
 };
 
 struct VariantSyntax : Object {
@@ -991,9 +991,9 @@ struct VariantSyntax : Object {
 struct UnionSyntax : Object {
     size_t start;
     size_t end;
-    Vector<VariantSyntax> variants;
+    Vector<VariantSyntax>* variants;
 
-    UnionSyntax(size_t start, size_t end, Vector<VariantSyntax> variants);
+    UnionSyntax(size_t start, size_t end, Vector<VariantSyntax>* variants);
 };
 
 struct NamespaceSyntax : Object {
@@ -1061,9 +1061,9 @@ struct GenericParameterSyntax : Object {
 struct GenericParametersSyntax : Object {
     size_t start;
     size_t end;
-    Vector<GenericParameterSyntax> parameters;
+    Vector<GenericParameterSyntax>* parameters;
 
-    GenericParametersSyntax(size_t start, size_t end, Vector<GenericParameterSyntax> parameters);
+    GenericParametersSyntax(size_t start, size_t end, Vector<GenericParameterSyntax>* parameters);
 };
 
 struct DefinitionSyntax : Object {

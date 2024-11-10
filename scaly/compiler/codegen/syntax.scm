@@ -34,7 +34,7 @@ define "(id syntax-node)"Syntax
                         (property content)
 ": "
                         (case (type content)
-                            (("syntax") ($ (if (optional? content) "pointer[" "")(if (multiple? content) ($ "Vector[") "")(link content)"Syntax"(if (multiple? content)"]" "")(if (or (optional? content))"]" "")))
+                            (("syntax") ($ (if (or (optional? content) (multiple? content)) "pointer[" "")(if (multiple? content) ($ "Vector[") "")(link content)"Syntax"(if (multiple? content)"]" "")(if (or (optional? content)(multiple? content))"]" "")))
                             (("identifier" "attribute") ($ "String"(if (optional? content)"*" "")))
                             (("literal") "Literal")
                             (("keyword" "punctuation") "bool")

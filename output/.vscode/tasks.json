@@ -8,7 +8,7 @@
 			"args": [
 				"-fcolor-diagnostics",
 				"-fansi-escape-codes",
-				"-ferror-limit=1",
+				"-ferror-limit=5",
 				"-g",
 				"${workspaceFolder}/main.cpp",
 				"${workspaceFolder}/scaly.cpp",

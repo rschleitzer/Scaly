@@ -58,9 +58,9 @@ TypeSyntax::TypeSyntax(size_t start, size_t end, NameSyntax name, GenericArgumen
 
 SizeOfSyntax::SizeOfSyntax(size_t start, size_t end, TypeSyntax type) : start(start), end(end), type(type) {}
 
-SetSyntax::SetSyntax(size_t start, size_t end, Vector<OperandSyntax> target, Vector<OperandSyntax> source) : start(start), end(end), target(target), source(source) {}
+SetSyntax::SetSyntax(size_t start, size_t end, Vector<OperandSyntax>* target, Vector<OperandSyntax>* source) : start(start), end(end), target(target), source(source) {}
 
-OperationSyntax::OperationSyntax(size_t start, size_t end, Vector<OperandSyntax> operands) : start(start), end(end), operands(operands) {}
+OperationSyntax::OperationSyntax(size_t start, size_t end, Vector<OperandSyntax>* operands) : start(start), end(end), operands(operands) {}
 ActionSyntax::ActionSyntax(struct OperationSyntax _Operation) : _tag(Operation), _Operation(_Operation) {}
 
 ActionSyntax::ActionSyntax(struct SetSyntax _Set) : _tag(Set), _Set(_Set) {}
@@ -70,9 +70,9 @@ RepeatSyntax::RepeatSyntax(size_t start, size_t end, LabelSyntax* name, ActionSy
 
 LabelSyntax::LabelSyntax(size_t start, size_t end, String name) : start(start), end(end), name(name) {}
 
-ForSyntax::ForSyntax(size_t start, size_t end, String variable, TypeAnnotationSyntax* annotation, Vector<OperandSyntax> operation, LabelSyntax* name, ActionSyntax action) : start(start), end(end), variable(variable), annotation(annotation), operation(operation), name(name), action(action) {}
+ForSyntax::ForSyntax(size_t start, size_t end, String variable, TypeAnnotationSyntax* annotation, Vector<OperandSyntax>* operation, LabelSyntax* name, ActionSyntax action) : start(start), end(end), variable(variable), annotation(annotation), operation(operation), name(name), action(action) {}
 
-LambdaSyntax::LambdaSyntax(size_t start, size_t end, Vector<OperandSyntax> input, ActionSyntax block) : start(start), end(end), input(input), block(block) {}
+LambdaSyntax::LambdaSyntax(size_t start, size_t end, Vector<OperandSyntax>* input, ActionSyntax block) : start(start), end(end), input(input), block(block) {}
 
 ThrowSyntax::ThrowSyntax(size_t start, size_t end, Vector<OperandSyntax>* result) : start(start), end(end), result(result) {}
 
@@ -106,7 +106,7 @@ BindingSpecSyntax::BindingSpecSyntax(struct ArraySyntax _Array) : _tag(Array), _
 
 BindingAnnotationSyntax::BindingAnnotationSyntax(size_t start, size_t end, BindingSpecSyntax spec) : start(start), end(end), spec(spec) {}
 
-BindingSyntax::BindingSyntax(size_t start, size_t end, String name, BindingAnnotationSyntax* annotation, Vector<OperandSyntax> operation) : start(start), end(end), name(name), annotation(annotation), operation(operation) {}
+BindingSyntax::BindingSyntax(size_t start, size_t end, String name, BindingAnnotationSyntax* annotation, Vector<OperandSyntax>* operation) : start(start), end(end), name(name), annotation(annotation), operation(operation) {}
 
 MutableSyntax::MutableSyntax(size_t start, size_t end, BindingSyntax binding) : start(start), end(end), binding(binding) {}
 
@@ -140,31 +140,31 @@ ConditionSyntax::ConditionSyntax(struct LetSyntax _Let) : _tag(Let), _Let(_Let) 
 
 TrySyntax::TrySyntax(size_t start, size_t end, ConditionSyntax condition, Vector<WhenSyntax>* cases, ElseSyntax* dropper) : start(start), end(end), condition(condition), cases(cases), dropper(dropper) {}
 
-ChooseSyntax::ChooseSyntax(size_t start, size_t end, Vector<OperandSyntax> condition, Vector<WhenSyntax>* cases, ElseSyntax* alternative) : start(start), end(end), condition(condition), cases(cases), alternative(alternative) {}
+ChooseSyntax::ChooseSyntax(size_t start, size_t end, Vector<OperandSyntax>* condition, Vector<WhenSyntax>* cases, ElseSyntax* alternative) : start(start), end(end), condition(condition), cases(cases), alternative(alternative) {}
 
 WhileSyntax::WhileSyntax(size_t start, size_t end, ConditionSyntax condition, LabelSyntax* name, ActionSyntax action) : start(start), end(end), condition(condition), name(name), action(action) {}
 
 StatementSyntax::StatementSyntax(size_t start, size_t end, CommandSyntax command) : start(start), end(end), command(command) {}
 
-CaseSyntax::CaseSyntax(size_t start, size_t end, Vector<OperandSyntax> condition) : start(start), end(end), condition(condition) {}
+CaseSyntax::CaseSyntax(size_t start, size_t end, Vector<OperandSyntax>* condition) : start(start), end(end), condition(condition) {}
 
-BranchSyntax::BranchSyntax(size_t start, size_t end, Vector<CaseSyntax> cases, StatementSyntax consequent) : start(start), end(end), cases(cases), consequent(consequent) {}
+BranchSyntax::BranchSyntax(size_t start, size_t end, Vector<CaseSyntax>* cases, StatementSyntax consequent) : start(start), end(end), cases(cases), consequent(consequent) {}
 
-MatchSyntax::MatchSyntax(size_t start, size_t end, Vector<OperandSyntax> scrutinee, Vector<BranchSyntax> branches, ElseSyntax* alternative) : start(start), end(end), scrutinee(scrutinee), branches(branches), alternative(alternative) {}
+MatchSyntax::MatchSyntax(size_t start, size_t end, Vector<OperandSyntax>* scrutinee, Vector<BranchSyntax>* branches, ElseSyntax* alternative) : start(start), end(end), scrutinee(scrutinee), branches(branches), alternative(alternative) {}
 
 ElseSyntax::ElseSyntax(size_t start, size_t end, CommandSyntax alternative) : start(start), end(end), alternative(alternative) {}
 
-IfSyntax::IfSyntax(size_t start, size_t end, Vector<OperandSyntax> condition, CommandSyntax consequent, ElseSyntax* alternative) : start(start), end(end), condition(condition), consequent(consequent), alternative(alternative) {}
+IfSyntax::IfSyntax(size_t start, size_t end, Vector<OperandSyntax>* condition, CommandSyntax consequent, ElseSyntax* alternative) : start(start), end(end), condition(condition), consequent(consequent), alternative(alternative) {}
 
 BlockSyntax::BlockSyntax(size_t start, size_t end, Vector<UseSyntax>* uses, Vector<StatementSyntax>* statements) : start(start), end(end), uses(uses), statements(statements) {}
 
-ElementSyntax::ElementSyntax(size_t start, size_t end, Vector<OperandSyntax> operation, Vector<AttributeSyntax>* attributes) : start(start), end(end), operation(operation), attributes(attributes) {}
+ElementSyntax::ElementSyntax(size_t start, size_t end, Vector<OperandSyntax>* operation, Vector<AttributeSyntax>* attributes) : start(start), end(end), operation(operation), attributes(attributes) {}
 
-VectorSyntax::VectorSyntax(size_t start, size_t end, Vector<ElementSyntax> elements, LifetimeSyntax* lifetime) : start(start), end(end), elements(elements), lifetime(lifetime) {}
+VectorSyntax::VectorSyntax(size_t start, size_t end, Vector<ElementSyntax>* elements, LifetimeSyntax* lifetime) : start(start), end(end), elements(elements), lifetime(lifetime) {}
 
-ValueSyntax::ValueSyntax(size_t start, size_t end, Vector<OperandSyntax> value, Vector<AttributeSyntax>* attributes) : start(start), end(end), value(value), attributes(attributes) {}
+ValueSyntax::ValueSyntax(size_t start, size_t end, Vector<OperandSyntax>* value, Vector<AttributeSyntax>* attributes) : start(start), end(end), value(value), attributes(attributes) {}
 
-ComponentSyntax::ComponentSyntax(size_t start, size_t end, Vector<OperandSyntax> operands, Vector<AttributeSyntax>* attributes, ValueSyntax* value) : start(start), end(end), operands(operands), attributes(attributes), value(value) {}
+ComponentSyntax::ComponentSyntax(size_t start, size_t end, Vector<OperandSyntax>* operands, Vector<AttributeSyntax>* attributes, ValueSyntax* value) : start(start), end(end), operands(operands), attributes(attributes), value(value) {}
 
 ObjectSyntax::ObjectSyntax(size_t start, size_t end, Vector<ComponentSyntax>* components) : start(start), end(end), components(components) {}
 
@@ -202,7 +202,7 @@ MemberAccessSyntax::MemberAccessSyntax(size_t start, size_t end, NameSyntax name
 
 OperandSyntax::OperandSyntax(size_t start, size_t end, ExpressionSyntax expression, Vector<MemberAccessSyntax>* members) : start(start), end(end), expression(expression), members(members) {}
 
-InitializerSyntax::InitializerSyntax(size_t start, size_t end, Vector<OperandSyntax> operands) : start(start), end(end), operands(operands) {}
+InitializerSyntax::InitializerSyntax(size_t start, size_t end, Vector<OperandSyntax>* operands) : start(start), end(end), operands(operands) {}
 
 PackageSyntax::PackageSyntax(size_t start, size_t end, NameSyntax name) : start(start), end(end), name(name) {}
 
@@ -218,7 +218,7 @@ ModelSyntax::ModelSyntax(struct VectorSyntax _Vector) : _tag(Vector), _Vector(_V
 
 AttributeSyntax::AttributeSyntax(size_t start, size_t end, String name, ModelSyntax model) : start(start), end(end), name(name), model(model) {}
 
-MacroSyntax::MacroSyntax(size_t start, size_t end, String name, ModelSyntax model, Vector<OperandSyntax> rule) : start(start), end(end), name(name), model(model), rule(rule) {}
+MacroSyntax::MacroSyntax(size_t start, size_t end, String name, ModelSyntax model, Vector<OperandSyntax>* rule) : start(start), end(end), name(name), model(model), rule(rule) {}
 
 ExtendSyntax::ExtendSyntax(size_t start, size_t end, TypeSyntax type) : start(start), end(end), type(type) {}
 
@@ -288,11 +288,11 @@ GenericArgumentsSyntax::GenericArgumentsSyntax(size_t start, size_t end, Vector<
 
 DelegateSyntax::DelegateSyntax(size_t start, size_t end, ParameterSetSyntax* parameters, Vector<AttributeSyntax>* attributes, ReturnsSyntax* result, ThrowsSyntax* error) : start(start), end(end), parameters(parameters), attributes(attributes), result(result), error(error) {}
 
-ConstantSyntax::ConstantSyntax(size_t start, size_t end, TypeSyntax type, Vector<OperandSyntax> operation) : start(start), end(end), type(type), operation(operation) {}
+ConstantSyntax::ConstantSyntax(size_t start, size_t end, TypeSyntax type, Vector<OperandSyntax>* operation) : start(start), end(end), type(type), operation(operation) {}
 
 VariantSyntax::VariantSyntax(size_t start, size_t end, String name, Vector<AttributeSyntax>* attributes, TypeAnnotationSyntax* annotation) : start(start), end(end), name(name), attributes(attributes), annotation(annotation) {}
 
-UnionSyntax::UnionSyntax(size_t start, size_t end, Vector<VariantSyntax> variants) : start(start), end(end), variants(variants) {}
+UnionSyntax::UnionSyntax(size_t start, size_t end, Vector<VariantSyntax>* variants) : start(start), end(end), variants(variants) {}
 
 NamespaceSyntax::NamespaceSyntax(size_t start, size_t end, Vector<UseSyntax>* uses, Vector<DeclarationSyntax>* declarations) : start(start), end(end), uses(uses), declarations(declarations) {}
 
@@ -314,7 +314,7 @@ ConceptSyntax::ConceptSyntax(struct IntrinsicSyntax _Intrinsic) : _tag(Intrinsic
 
 GenericParameterSyntax::GenericParameterSyntax(size_t start, size_t end, String name, Vector<AttributeSyntax>* attributes) : start(start), end(end), name(name), attributes(attributes) {}
 
-GenericParametersSyntax::GenericParametersSyntax(size_t start, size_t end, Vector<GenericParameterSyntax> parameters) : start(start), end(end), parameters(parameters) {}
+GenericParametersSyntax::GenericParametersSyntax(size_t start, size_t end, Vector<GenericParameterSyntax>* parameters) : start(start), end(end), parameters(parameters) {}
 
 DefinitionSyntax::DefinitionSyntax(size_t start, size_t end, String name, GenericParametersSyntax* parameters, Vector<AttributeSyntax>* attributes, ConceptSyntax concept_) : start(start), end(end), name(name), parameters(parameters), attributes(attributes), concept_(concept_) {}
 ConstituentSyntax::ConstituentSyntax(struct DefinitionSyntax _Definition) : _tag(Definition), _Definition(_Definition) {}
@@ -1831,7 +1831,7 @@ Result<GenericParametersSyntax, ParserError> Parser::parse_genericparameters(Pag
         return Result<GenericParametersSyntax, ParserError>(ParserError(InvalidSyntax(start_right_bracket_3, lexer.position, String(ep, "]"))));
     };
     const auto end = lexer.position;
-    return Result<GenericParametersSyntax, ParserError>(GenericParametersSyntax(start, end, *parameters));
+    return Result<GenericParametersSyntax, ParserError>(GenericParametersSyntax(start, end, parameters));
 }
 
 Result<Vector<GenericParameterSyntax>*, ParserError> Parser::parse_genericparameter_list(Page* rp, Page* ep) {
@@ -2546,7 +2546,7 @@ Result<UnionSyntax, ParserError> Parser::parse_union(Page* rp, Page* ep) {
     const auto start_colon_6 = lexer.previous_position;
     const auto success_colon_6 = lexer.parse_colon();
     const auto end = lexer.position;
-    return Result<UnionSyntax, ParserError>(UnionSyntax(start, end, *variants));
+    return Result<UnionSyntax, ParserError>(UnionSyntax(start, end, variants));
 }
 
 Result<Vector<VariantSyntax>*, ParserError> Parser::parse_variant_list(Page* rp, Page* ep) {
@@ -2716,7 +2716,7 @@ Result<ConstantSyntax, ParserError> Parser::parse_constant(Page* rp, Page* ep) {
     const auto start_colon_3 = lexer.previous_position;
     const auto success_colon_3 = lexer.parse_colon();
     const auto end = lexer.position;
-    return Result<ConstantSyntax, ParserError>(ConstantSyntax(start, end, type, *operation));
+    return Result<ConstantSyntax, ParserError>(ConstantSyntax(start, end, type, operation));
 }
 
 Result<DelegateSyntax, ParserError> Parser::parse_delegate(Page* rp, Page* ep) {
@@ -4964,7 +4964,7 @@ Result<MacroSyntax, ParserError> Parser::parse_macro(Page* rp, Page* ep) {
         }
     };
     const auto end = lexer.position;
-    return Result<MacroSyntax, ParserError>(MacroSyntax(start, end, *name, model, *rule));
+    return Result<MacroSyntax, ParserError>(MacroSyntax(start, end, *name, model, rule));
 }
 
 Result<Vector<AttributeSyntax>*, ParserError> Parser::parse_attribute_list(Page* rp, Page* ep) {
@@ -5304,7 +5304,7 @@ Result<InitializerSyntax, ParserError> Parser::parse_initializer(Page* rp, Page*
         return Result<InitializerSyntax, ParserError>(ParserError(InvalidSyntax(start_right_paren_3, lexer.position, String(ep, ")"))));
     };
     const auto end = lexer.position;
-    return Result<InitializerSyntax, ParserError>(InitializerSyntax(start, end, *operands));
+    return Result<InitializerSyntax, ParserError>(InitializerSyntax(start, end, operands));
 }
 
 Result<Vector<OperandSyntax>*, ParserError> Parser::parse_operand_list(Page* rp, Page* ep) {
@@ -6232,7 +6232,7 @@ Result<ComponentSyntax, ParserError> Parser::parse_component(Page* rp, Page* ep)
     const auto start_comma_4 = lexer.previous_position;
     const auto success_comma_4 = lexer.parse_punctuation(',');
     const auto end = lexer.position;
-    return Result<ComponentSyntax, ParserError>(ComponentSyntax(start, end, *operands, attributes, value));
+    return Result<ComponentSyntax, ParserError>(ComponentSyntax(start, end, operands, attributes, value));
 }
 
 Result<ValueSyntax, ParserError> Parser::parse_value(Page* rp, Page* ep) {
@@ -6301,7 +6301,7 @@ Result<ValueSyntax, ParserError> Parser::parse_value(Page* rp, Page* ep) {
         }
     };
     const auto end = lexer.position;
-    return Result<ValueSyntax, ParserError>(ValueSyntax(start, end, *value, attributes));
+    return Result<ValueSyntax, ParserError>(ValueSyntax(start, end, value, attributes));
 }
 
 Result<VectorSyntax, ParserError> Parser::parse_vector(Page* rp, Page* ep) {
@@ -6375,7 +6375,7 @@ Result<VectorSyntax, ParserError> Parser::parse_vector(Page* rp, Page* ep) {
         }
     };
     const auto end = lexer.position;
-    return Result<VectorSyntax, ParserError>(VectorSyntax(start, end, *elements, lifetime));
+    return Result<VectorSyntax, ParserError>(VectorSyntax(start, end, elements, lifetime));
 }
 
 Result<Vector<ElementSyntax>*, ParserError> Parser::parse_element_list(Page* rp, Page* ep) {
@@ -6472,7 +6472,7 @@ Result<ElementSyntax, ParserError> Parser::parse_element(Page* rp, Page* ep) {
     const auto start_comma_3 = lexer.previous_position;
     const auto success_comma_3 = lexer.parse_punctuation(',');
     const auto end = lexer.position;
-    return Result<ElementSyntax, ParserError>(ElementSyntax(start, end, *operation, attributes));
+    return Result<ElementSyntax, ParserError>(ElementSyntax(start, end, operation, attributes));
 }
 
 Result<BlockSyntax, ParserError> Parser::parse_block(Page* rp, Page* ep) {
@@ -6660,7 +6660,7 @@ Result<IfSyntax, ParserError> Parser::parse_if(Page* rp, Page* ep) {
         }
     };
     const auto end = lexer.position;
-    return Result<IfSyntax, ParserError>(IfSyntax(start, end, *condition, consequent, alternative));
+    return Result<IfSyntax, ParserError>(IfSyntax(start, end, condition, consequent, alternative));
 }
 
 Result<ElseSyntax, ParserError> Parser::parse_else(Page* rp, Page* ep) {
@@ -6783,7 +6783,7 @@ Result<MatchSyntax, ParserError> Parser::parse_match(Page* rp, Page* ep) {
         }
     };
     const auto end = lexer.position;
-    return Result<MatchSyntax, ParserError>(MatchSyntax(start, end, *scrutinee, *branches, alternative));
+    return Result<MatchSyntax, ParserError>(MatchSyntax(start, end, scrutinee, branches, alternative));
 }
 
 Result<Vector<BranchSyntax>*, ParserError> Parser::parse_branch_list(Page* rp, Page* ep) {
@@ -6861,7 +6861,7 @@ Result<BranchSyntax, ParserError> Parser::parse_branch(Page* rp, Page* ep) {
         }
     };
     const auto end = lexer.position;
-    return Result<BranchSyntax, ParserError>(BranchSyntax(start, end, *cases, consequent));
+    return Result<BranchSyntax, ParserError>(BranchSyntax(start, end, cases, consequent));
 }
 
 Result<Vector<CaseSyntax>*, ParserError> Parser::parse_case_list(Page* rp, Page* ep) {
@@ -6921,7 +6921,7 @@ Result<CaseSyntax, ParserError> Parser::parse_case(Page* rp, Page* ep) {
         }
     };
     const auto end = lexer.position;
-    return Result<CaseSyntax, ParserError>(CaseSyntax(start, end, *condition));
+    return Result<CaseSyntax, ParserError>(CaseSyntax(start, end, condition));
 }
 
 Result<Vector<StatementSyntax>*, ParserError> Parser::parse_statement_list(Page* rp, Page* ep) {
@@ -7184,7 +7184,7 @@ Result<ChooseSyntax, ParserError> Parser::parse_choose(Page* rp, Page* ep) {
         }
     };
     const auto end = lexer.position;
-    return Result<ChooseSyntax, ParserError>(ChooseSyntax(start, end, *condition, cases, alternative));
+    return Result<ChooseSyntax, ParserError>(ChooseSyntax(start, end, condition, cases, alternative));
 }
 
 Result<TrySyntax, ParserError> Parser::parse_try(Page* rp, Page* ep) {
@@ -7994,7 +7994,7 @@ Result<BindingSyntax, ParserError> Parser::parse_binding(Page* rp, Page* ep) {
         }
     };
     const auto end = lexer.position;
-    return Result<BindingSyntax, ParserError>(BindingSyntax(start, end, *name, annotation, *operation));
+    return Result<BindingSyntax, ParserError>(BindingSyntax(start, end, *name, annotation, operation));
 }
 
 Result<BindingAnnotationSyntax, ParserError> Parser::parse_bindingannotation(Page* rp, Page* ep) {
@@ -8925,7 +8925,7 @@ Result<LambdaSyntax, ParserError> Parser::parse_lambda(Page* rp, Page* ep) {
         }
     };
     const auto end = lexer.position;
-    return Result<LambdaSyntax, ParserError>(LambdaSyntax(start, end, *input, block));
+    return Result<LambdaSyntax, ParserError>(LambdaSyntax(start, end, input, block));
 }
 
 Result<ForSyntax, ParserError> Parser::parse_for(Page* rp, Page* ep) {
@@ -9067,7 +9067,7 @@ Result<ForSyntax, ParserError> Parser::parse_for(Page* rp, Page* ep) {
         }
     };
     const auto end = lexer.position;
-    return Result<ForSyntax, ParserError>(ForSyntax(start, end, *variable, annotation, *operation, name, action));
+    return Result<ForSyntax, ParserError>(ForSyntax(start, end, *variable, annotation, operation, name, action));
 }
 
 Result<LabelSyntax, ParserError> Parser::parse_label(Page* rp, Page* ep) {
@@ -9293,7 +9293,7 @@ Result<OperationSyntax, ParserError> Parser::parse_operation(Page* rp, Page* ep)
         }
     };
     const auto end = lexer.position;
-    return Result<OperationSyntax, ParserError>(OperationSyntax(start, end, *operands));
+    return Result<OperationSyntax, ParserError>(OperationSyntax(start, end, operands));
 }
 
 Result<SetSyntax, ParserError> Parser::parse_set(Page* rp, Page* ep) {
@@ -9345,7 +9345,7 @@ Result<SetSyntax, ParserError> Parser::parse_set(Page* rp, Page* ep) {
         }
     };
     const auto end = lexer.position;
-    return Result<SetSyntax, ParserError>(SetSyntax(start, end, *target, *source));
+    return Result<SetSyntax, ParserError>(SetSyntax(start, end, target, source));
 }
 
 Result<SizeOfSyntax, ParserError> Parser::parse_sizeof(Page* rp, Page* ep) {
