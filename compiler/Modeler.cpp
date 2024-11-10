@@ -930,7 +930,6 @@ Result<If, ModelError> handle_if(Page* _rp, Page* _ep, IfSyntax& if_, String fil
 
 Result<Match, ModelError> handle_match(Page* _rp, Page* _ep, MatchSyntax& match_, String file) {
     Region _r;
-    Property* property = nullptr;
 
     auto condition_result = handle_operands(_rp, _ep, match_.scrutinee, file);
     if (condition_result._tag == Result<Vector<Operand>, ModelError>::Error)
@@ -991,8 +990,6 @@ Result<When, ModelError> handle_when(Page* _rp, Page* _ep, WhenSyntax& when_, St
 
 Result<Choose, ModelError> handle_choose(Page* _rp, Page* _ep, ChooseSyntax& choose_, String file) {
     Region _r;
-    Property* property = nullptr;
-
     auto condition_result = handle_operands(_rp, _ep, choose_.condition, file);
     if (condition_result._tag == Result<Vector<Operand>, ModelError>::Error)
         return Result<Choose, ModelError> { ._tag = Result<Choose, ModelError>::Error, ._Error = condition_result._Error };
@@ -1049,7 +1046,6 @@ Result<Binding, ModelError> handle_condition(Page* _rp, Page* _ep, ConditionSynt
             return Result<Binding, ModelError> { ._tag = Result<Binding, ModelError>::Ok, ._Ok = Binding(String(_rp, "const"), Item(Span(condition._Operation.start, condition._Operation.end), false, nullptr, nullptr, Vector<Attribute>(_rp, 0)), operation_result._Ok)};
         }
         case ConditionSyntax::Let: {
-            auto binding = condition._Let.binding.operation;
             Type* type = nullptr;
             if (condition._Let.binding.annotation != nullptr) {
                 auto _type_result = handle_binding_annotation(_rp, _ep, *condition._Let.binding.annotation, file);
@@ -1057,7 +1053,8 @@ Result<Binding, ModelError> handle_condition(Page* _rp, Page* _ep, ConditionSynt
                     return Result<Binding, ModelError> { ._tag = Result<Binding, ModelError>::Error, ._Error = _type_result._Error };
                 type = _type_result._Ok;
             }
-            auto operation_result = handle_operands(_rp, _ep, binding, file);
+
+            auto operation_result = handle_operands(_rp, _ep, condition._Let.binding.operation, file);
             if (operation_result._tag == Result<Vector<Operand>, ModelError>::Error)
                 return Result<Binding, ModelError> { ._tag = Result<Binding, ModelError>::Error, ._Error = operation_result._Error };
             return Result<Binding, ModelError> { ._tag = Result<Binding, ModelError>::Ok, ._Ok = Binding(String(_rp, "const"), Item(Span(condition._Let.start, condition._Let.end), false, new(alignof(String), _rp) String(_rp, condition._Let.binding.name), nullptr, Vector<Attribute>(_rp, 0)), operation_result._Ok)};
