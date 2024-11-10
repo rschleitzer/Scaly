@@ -810,7 +810,7 @@ Result<Component, ModelError> handle_component(Page* _rp, Page* _ep, ComponentSy
             else
                 return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Ok, ._Ok = Component(Span(component.start, component.end), name, value_result._Ok, Vector<Attribute>(_rp,attributes))};
         } else {
-            return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Ok, ._Ok = Component(Span(component.start, component.end), name, Vector<Operand>(_rp, 0), Vector<Attribute>(_rp,attributes))};
+            return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Ok, ._Ok = Component(Span(component.start, component.end), name, Vector<Operand>(), Vector<Attribute>(_rp,attributes))};
         }
     } else {
         if (component.operands != nullptr) {
@@ -820,7 +820,7 @@ Result<Component, ModelError> handle_component(Page* _rp, Page* _ep, ComponentSy
             else
                 return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Ok, ._Ok = Component(Span(component.start, component.end), name, value_result._Ok, Vector<Attribute>(_rp,attributes))};
         } else {
-            return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Ok, ._Ok = Component(Span(component.start, component.end), name, Vector<Operand>(_rp, 0), Vector<Attribute>(_rp,attributes))};
+            return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Ok, ._Ok = Component(Span(component.start, component.end), name, Vector<Operand>(), Vector<Attribute>(_rp,attributes))};
         }
     }
 }

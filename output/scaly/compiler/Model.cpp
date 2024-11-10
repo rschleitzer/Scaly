@@ -42,7 +42,7 @@ Constant::Constant(struct FragmentConstant _Fragment) : _tag(Fragment), _Fragmen
 
 Tuple::Tuple(Span span, Vector<Component> components) : span(span), components(components) {}
 
-Matrix::Matrix(Span span, Vector<Component> operations) : span(span), operations(operations) {}
+Matrix::Matrix(Span span, Vector<Vector<Operand>> operations) : span(span), operations(operations) {}
 
 Block::Block(Span span, Vector<Statement> statements) : span(span), statements(statements) {}
 

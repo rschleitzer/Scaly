@@ -101,8 +101,8 @@ Result<Constant, ModelError> model::handle_literal(Page* rp, Page* ep, LiteralSy
                 {
                     const auto value = strtod(floating_point.value.to_c_string(r.get_page()), nullptr);
                     if (errno == ERANGE) 
-                        ModelError(ModelBuilderError(InvalidConstant(file, Span(literal.start, literal.end))));
-                    return Result<Constant, ModelError>(Constant(FloatingPointConstant(floating_point)));
+                        return Result<Constant, ModelError>(ModelError(ModelBuilderError(InvalidConstant(file, Span(literal.start, literal.end)))));
+                    return Result<Constant, ModelError>(Constant(FloatingPointConstant(value)));
                 };
                 break;
             }
@@ -126,6 +126,7 @@ Result<Constant, ModelError> model::handle_literal(Page* rp, Page* ep, LiteralSy
             }
         }
     };
+    return Result<Constant, ModelError>(ModelError(ModelBuilderError(InvalidConstant(file, Span(literal.start, literal.end)))));
 }
 
 Result<Type*, ModelError> model::handle_type(Page* rp, Page* ep, TypeSyntax& type_syntax, String file) {
@@ -204,6 +205,141 @@ Result<Type*, ModelError> model::handle_type(Page* rp, Page* ep, TypeSyntax& typ
         };
     };
     return Result<Type*, ModelError>(new (alignof(Type), rp) Type(Span(type_syntax.start, type_syntax.end), Vector<String>(rp, path), generics, lifetime));
+}
+
+Result<Component, ModelError> model::handle_component(Page* rp, Page* ep, ComponentSyntax& component, String file) {
+    auto r = Region();
+    String* name = nullptr;
+    auto attributes = *new (alignof(List<Attribute>), r.get_page()) List<Attribute>();
+    if (component.attributes != nullptr) {
+        
+        auto _attribute_syntax_iterator = (*component.attributes).get_iterator();
+        while (auto _attribute_syntax = _attribute_syntax_iterator.next()) {
+            auto attribute_syntax = *_attribute_syntax;{
+                const auto _attribute_result = handle_attribute(rp, ep, attribute_syntax, file);
+                auto attribute = _attribute_result._Ok;
+                if (_attribute_result._tag == Success::Error) {
+                    const auto _attribute_Error = _attribute_result._Error;
+                    switch (_attribute_Error._tag) {
+                    default:
+                        return Result<Component, ModelError>(_attribute_result._Error);
+
+                    }
+                };
+                attributes.add(attribute);
+            }
+        };
+    };
+    if (component.value != nullptr) {
+        if (component.operands != nullptr) {
+            auto name_operands = *component.operands;
+            if (name_operands.length>0) {
+                auto name_operand = *name_operands.get(0);
+                if (name_operands.length>1) 
+                    return Result<Component, ModelError>(ModelError(ModelBuilderError(InvalidComponentName(file, Span(name_operand.start, name_operand.end)))));
+                {
+                    auto _result = name_operand.expression;
+                    switch (_result._tag)
+                    {
+                        case ExpressionSyntax::Type:
+                        {
+                            auto type = _result._Type;
+                            name = new (alignof(String), rp) String(rp, type.name.name);
+                            break;
+                        }
+                        default:
+                            {
+                        };
+                    }
+                };
+            };
+        };
+        const auto value = (*component.value).value;
+        if (value != nullptr) {
+            const auto _value_result_result = handle_operands(rp, ep, value, file);
+            auto value_result = _value_result_result._Ok;
+            if (_value_result_result._tag == Success::Error) {
+                const auto _value_result_Error = _value_result_result._Error;
+                switch (_value_result_Error._tag) {
+                default:
+                    return Result<Component, ModelError>(_value_result_result._Error);
+
+                }
+            };
+            return Result<Component, ModelError>(Component(Span(component.start, component.end), name, value_result, Vector<Attribute>(rp, attributes)));
+        }
+        else {
+            return Result<Component, ModelError>(Component(Span(component.start, component.end), name, Vector<Operand>(), Vector<Attribute>(rp, attributes)));
+        };
+    }
+    else {
+        if (component.operands != nullptr) {
+            const auto _value_result_result = handle_operands(rp, ep, component.operands, file);
+            auto value_result = _value_result_result._Ok;
+            if (_value_result_result._tag == Success::Error) {
+                const auto _value_result_Error = _value_result_result._Error;
+                switch (_value_result_Error._tag) {
+                default:
+                    return Result<Component, ModelError>(_value_result_result._Error);
+
+                }
+            };
+            return Result<Component, ModelError>(Component(Span(component.start, component.end), name, value_result, Vector<Attribute>(rp, attributes)));
+        }
+        else {
+            return Result<Component, ModelError>(Component(Span(component.start, component.end), name, Vector<Operand>(), Vector<Attribute>(rp, attributes)));
+        };
+    };
+}
+
+Result<Tuple, ModelError> model::handle_object(Page* rp, Page* ep, ObjectSyntax& object, String file) {
+    auto r = Region();
+    auto components_builder = *new (alignof(List<Component>), r.get_page()) List<Component>();
+    if (object.components != nullptr) {
+        
+        auto _component_iterator = (*object.components).get_iterator();
+        while (auto _component = _component_iterator.next()) {
+            auto component = *_component;{
+                const auto _component_result_result = handle_component(rp, ep, component, file);
+                auto component_result = _component_result_result._Ok;
+                if (_component_result_result._tag == Success::Error) {
+                    const auto _component_result_Error = _component_result_result._Error;
+                    switch (_component_result_Error._tag) {
+                    default:
+                        return Result<Tuple, ModelError>(_component_result_result._Error);
+
+                    }
+                };
+                components_builder.add(component_result);
+            }
+        };
+    };
+    return Result<Tuple, ModelError>(Tuple(Span(object.start, object.end), Vector<Component>(rp, components_builder)));
+}
+
+Result<Matrix, ModelError> model::handle_vector(Page* rp, Page* ep, VectorSyntax& vector, String file) {
+    auto r = Region();
+    auto operations_builder = *new (alignof(List<Vector<Operand>>), r.get_page()) List<Vector<Operand>>();
+    if (vector.elements != nullptr) {
+        
+        auto _element_iterator = (*vector.elements).get_iterator();
+        while (auto _element = _element_iterator.next()) {
+            auto element = *_element;{
+                const auto _operation_result_result = handle_operands(rp, ep, element.operation, file);
+                auto operation_result = _operation_result_result._Ok;
+                if (_operation_result_result._tag == Success::Error) {
+                    const auto _operation_result_Error = _operation_result_result._Error;
+                    switch (_operation_result_Error._tag) {
+                    default:
+                        return Result<Matrix, ModelError>(_operation_result_result._Error);
+
+                    }
+                };
+                operations_builder.add(operation_result);
+            }
+        };
+    };
+    return Result<Matrix, ModelError>(Matrix(Span(vector.start, vector.end), Vector<Vector<Operand>>(rp, operations_builder)));
 }
 
 Result<Model, ModelError> model::handle_model(Page* rp, Page* ep, ModelSyntax& model, String file) {

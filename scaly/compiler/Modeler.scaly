@@ -518,9 +518,9 @@ function handle_literal(literal: ref[LiteralSyntax], file: String) returns Const
         {
             let value strtod(floating_point.value.to_c_string(r.get_page()), nullptr)
             if errno = ERANGE
-                ModelError(ModelBuilderError(InvalidConstant(file, Span(literal.start, literal.end))))
+                throw ModelError(ModelBuilderError(InvalidConstant(file, Span(literal.start, literal.end))))
 
-            return Constant(FloatingPointConstant(floating_point))
+            return Constant(FloatingPointConstant(value))
         }
         when string: Literal.String
             Constant(StringConstant(string.value))
@@ -528,6 +528,8 @@ function handle_literal(literal: ref[LiteralSyntax], file: String) returns Const
             return Constant(CharacterConstant(character.value))
         when fragment: Literal.Fragment
             return Constant(FragmentConstant(fragment.value))
+
+    throw ModelError(ModelBuilderError(InvalidConstant(file, Span(literal.start, literal.end))))
 }
 
 function handle_type(type_syntax: ref[TypeSyntax], file: String) returns pointer[Type] throws ModelError {
@@ -756,89 +758,91 @@ Result<Vector<Statement>, ModelError> handle_statements(Vector<StatementSyntax>&
     return Result<Vector<Statement>, ModelError> { ._tag = Result<Vector<Statement>, ModelError> ::Ok, ._Ok = Vector<Statement>(_rp, statements_builder) }
 }
 
-Result<Component, ModelError> handle_component(ComponentSyntax& component, file: String) {
-    var r Region()
-    String* name null
+*;
 
-    List<Attribute>& attributes = *new(alignof(List<Attribute>), _r.get_page()) List<Attribute>()
-    if (component.attributes <> null) {
-        auto definition_attributes = component.attributes
-        auto _attribute_iterator = definition_attributes->get_iterator()
-        while (auto _attribute_syntax = _attribute_iterator.next()) {
-            auto attribute_syntax = *_attribute_syntax
-            auto _attribute_result = handle_attribute(rp, ep, attribute_syntax, file)
-            if (_attribute_result._tag == Result<Attribute, ModelError>::Error)
-                return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Error, ._Error = _attribute_result._Error }
-            auto attribute = _attribute_result._Ok
+function handle_component(component: ref[ComponentSyntax], file: String) returns Component throws ModelError {
+    var r Region()
+    var name: pointer[String] null
+
+    var attributes *List[Attribute]$()
+    if component.attributes <> null
+    {
+        for attribute_syntax in (*component.attributes)
+        {
+            try let attribute handle_attribute(rp, ep, attribute_syntax, file)
+                else throw
             attributes.add(attribute)
         }
     }
 
-    if (component.value <> null) {
-        if (component.operands <> null) {
-            auto name_operands = *component.operands
-            if (name_operands.length > 0) {
-                auto name_operand = *name_operands[0]
-                if (name_operands.length > 1)
-                    return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Error, ._Error = ModelError(ModelBuilderError(InvalidComponentName(file, Span(name_operand.start, name_operand.end)))) }
-                if (name_operand.expression._tag == ExpressionSyntax::Type)
-                    name = new(alignof(String), _rp) String(_rp, name_operand.expression._Type.name.name)
+    if component.value <> null
+    {
+        if component.operands <> null
+        {
+            var name_operands *component.operands
+            if name_operands.length > 0
+            {
+                var name_operand *name_operands.get(0)
+                if name_operands.length > 1
+                    return ModelError(ModelBuilderError(InvalidComponentName(file, Span(name_operand.start, name_operand.end))))
+                choose name_operand.expression
+                    when type: ExpressionSyntax.Type
+                        set name: String#(rp, type.name.name)
+                    else {}
             }
         }
-        auto value = component.value->value
-        if (value <> null) {
-            auto value_result = handle_operands(rp, ep, value, file)
-            if (value_result._tag == Result<Vector<Operand>, ModelError>::Error)
-                return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Error, ._Error = value_result._Error }
-            else
-                return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Ok, ._Ok = Component(Span(component.start, component.end), name, value_result._Ok, Vector<Attribute>(_rp,attributes))}
+
+        let value (*component.value).value
+        if value <> null
+        {
+            try let value_result handle_operands(rp, ep, value, file)
+                else throw
+            return Component(Span(component.start, component.end), name, value_result, Vector[Attribute](rp, attributes))
         } else {
-            return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Ok, ._Ok = Component(Span(component.start, component.end), name, Vector<Operand>(_rp, 0), Vector<Attribute>(_rp,attributes))}
+            return Component(Span(component.start, component.end), name, Vector[Operand](), Vector[Attribute](rp, attributes))
         }
     } else {
-        if (component.operands <> null) {
-            auto value_result = handle_operands(rp, ep, component.operands, file)
-            if (value_result._tag == Result<Vector<Operand>, ModelError>::Error)
-                return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Error, ._Error = value_result._Error }
-            else
-                return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Ok, ._Ok = Component(Span(component.start, component.end), name, value_result._Ok, Vector<Attribute>(_rp,attributes))}
+        if component.operands <> null
+        {
+            try let value_result handle_operands(rp, ep, component.operands, file)
+                else throw
+            return Component(Span(component.start, component.end), name, value_result, Vector[Attribute](rp, attributes))
         } else {
-            return Result<Component, ModelError> { ._tag = Result<Component, ModelError>::Ok, ._Ok = Component(Span(component.start, component.end), name, Vector<Operand>(_rp, 0), Vector<Attribute>(_rp,attributes))}
+            return Component(Span(component.start, component.end), name, Vector[Operand](), Vector[Attribute](rp, attributes))
         }
     }
 }
 
-Result<Tuple, ModelError> handle_object(ObjectSyntax& object, file: String) {
+function handle_object(object: ref[ObjectSyntax], file: String) returns Tuple throws ModelError {
     var r Region()
-    List<Component>& components_builder = *new(alignof(List<Component>), _r.get_page()) List<Component>()
-    if (object.components <> null) {
-        auto components_iterator = object.components->get_iterator()
-        while (auto component = components_iterator.next()) {
-            auto component_result =  handle_component(rp, ep, *component, file)
-            if (component_result._tag == Result<Operand, ModelError>::Error)
-                return Result<Tuple, ModelError> { ._tag = Result<Tuple, ModelError>::Error, ._Error = component_result._Error }
-            components_builder.add(component_result._Ok)
+    var components_builder *List[Component]$()
+    if object.components <> null
+    {
+        for component in (*object.components)
+        {
+            try let component_result handle_component(rp, ep, component, file)
+                else throw
+
+            components_builder.add(component_result)
         }
     }
-    return Result<Tuple, ModelError> { ._tag = Result<Tuple, ModelError>::Ok, ._Ok = Tuple(Span(object.start, object.end), Vector<Component>(_rp, components_builder)) }
+    return Tuple(Span(object.start, object.end), Vector[Component](rp, components_builder))
 }
 
-Result<Matrix, ModelError> handle_vector(VectorSyntax& vector, file: String) {
+function handle_vector(vector: ref[VectorSyntax], file: String) returns Matrix throws ModelError {
     var r Region()
-    List<Vector<Operand>>& operations_builder = *new(alignof(List<Vector<Operand>>), _r.get_page()) List<Vector<Operand>>()
-    if (vector.elements <> null) {
-        auto elements_iterator = vector.elements->get_iterator()
-        while (auto element = elements_iterator.next()) {
-            auto operation_result =  handle_operands(rp, ep, element->operation, file)
-            if (operation_result._tag == Result<Operand, ModelError>::Error)
-                return Result<Matrix, ModelError> { ._tag = Result<Matrix, ModelError>::Error, ._Error = operation_result._Error }
-            operations_builder.add(operation_result._Ok)
+    var operations_builder *List[Vector[Operand]]$()
+    if vector.elements <> null
+    {
+        for element in (*vector.elements)
+        {
+            try let operation_result handle_operands(rp, ep, element.operation, file)
+                else throw
+            operations_builder.add(operation_result)
         }
     }
-    return Result<Matrix, ModelError> { ._tag = Result<Matrix, ModelError>::Ok, ._Ok = Matrix(Span(vector.start, vector.end), Vector<Vector<Operand>>(_rp, operations_builder)) }
+    return Matrix(Span(vector.start, vector.end), Vector[Vector[Operand]](rp, operations_builder))
 }
-
-*;
 
 function handle_model(model: ref[ModelSyntax], file: String) returns Model throws ModelError {
     choose model

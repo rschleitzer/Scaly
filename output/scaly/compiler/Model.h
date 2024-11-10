@@ -109,9 +109,9 @@ struct Tuple : Object {
 
 struct Matrix : Object {
     Span span;
-    Vector<Component> operations;
+    Vector<Vector<Operand>> operations;
 
-    Matrix(Span span, Vector<Component> operations);
+    Matrix(Span span, Vector<Vector<Operand>> operations);
 };
 
 struct Block : Object {

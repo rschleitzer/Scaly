@@ -24,7 +24,7 @@ define Constant union (
 )
 
 define Tuple(span: Span, components: Vector[Component])
-define Matrix(span: Span, operations: Vector[Component])
+define Matrix(span: Span, operations: Vector[Vector[Operand]])
 define Block(span: Span, statements: Vector[Statement])
 
 define Unspecified()
