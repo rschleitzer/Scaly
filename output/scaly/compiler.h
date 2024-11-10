@@ -12,6 +12,7 @@ namespace compiler {
 #include "compiler/Lexer.h"
 #include "compiler/Parser.h"
 #include "compiler/Model.h"
+#include "compiler/Modeler.h"
 #include "compiler/ModelError.h"
 #include "compiler/TranspilerError.h"
 #include "compiler/CompilerError.h"

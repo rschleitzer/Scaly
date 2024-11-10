@@ -48,6 +48,7 @@
 				"${workspaceFolder}/scaly/compiler/Lexer.cpp",
 				"${workspaceFolder}/scaly/compiler/Parser.cpp",
 				"${workspaceFolder}/scaly/compiler/Model.cpp",
+				"${workspaceFolder}/scaly/compiler/Modeler.cpp",
 				"${workspaceFolder}/scaly/compiler/ModelError.cpp",
 				"${workspaceFolder}/scaly/compiler/TranspilerError.cpp",
 				"${workspaceFolder}/scaly/compiler/CompilerError.cpp",

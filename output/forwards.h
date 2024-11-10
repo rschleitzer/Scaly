@@ -265,6 +265,8 @@ struct Module;
 struct Program;
 struct Member;
 struct Nameable;
+namespace model {
+}
 struct Position;
 struct IoModelError;
 struct ParserModelError;
