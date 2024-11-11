@@ -81,7 +81,7 @@ define HashMapBuilder[K, V]
         return false
     }
 
-    operator [](key: K) returns pointer[V]$ {
+    function get(this: HashMapBuilder[K, V], key: K) returns pointer[V]$ {
         if slots = null
             return null
 
@@ -94,5 +94,8 @@ define HashMapBuilder[K, V]
         }
 
         return nullptr
+    }
+    operator [](key: K) returns pointer[V]$ {
+        return get(key)
     }
 }

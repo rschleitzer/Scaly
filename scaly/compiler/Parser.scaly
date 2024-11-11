@@ -714,6 +714,7 @@ define UnionSyntax
     start: size_t
     end: size_t
     variants: pointer[Vector[VariantSyntax]]
+    body: pointer[BodySyntax]
 )
 
 define NamespaceSyntax
@@ -1766,9 +1767,25 @@ define Parser
         let start_colon_6 lexer.previous_position
         let success_colon_6 lexer.parse_colon()
 
+        let body_start lexer.position
+        var body: pointer[BodySyntax] null 
+        choose parse_body(rp, ep)
+            when error: Success.Error
+            {
+                choose error
+                    when d: ParserError.Different {}
+                    when i: ParserError.Invalid
+                        throw i
+            }
+            when success: Success.Ok
+                set body: BodySyntax#(success)
+
+        let start_colon_8 lexer.previous_position
+        let success_colon_8 lexer.parse_colon()
+
         let end lexer.position
 
-        return UnionSyntax(start, end, variants)
+        return UnionSyntax(start, end, variants, body)
     }
 
     function parse_variant_list(this: Parser) returns pointer[Vector[VariantSyntax]] throws ParserError {

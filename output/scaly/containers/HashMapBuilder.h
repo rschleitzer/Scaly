@@ -84,7 +84,7 @@ struct HashMapBuilder : Object {
         return false;
     };
 
-    V* operator [](K key){
+    V* get(K key) {
         if (slots == nullptr) 
             return nullptr;
         const auto slot = (*slots).get(key.hash()%(*slots).length);
@@ -94,6 +94,10 @@ struct HashMapBuilder : Object {
                 return &((*item).value.value);
         };
         return nullptr;
+    };
+
+    V* operator [](K key){
+        return get(key);
     }
 };
 

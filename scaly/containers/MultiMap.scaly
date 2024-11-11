@@ -89,4 +89,8 @@ define MultiMap[K, V]
 
         return nullptr
     }
+
+    function get_iterator(this: MultiMap[K, V]) returns MultiMapIterator[K, V]$ {
+        return MultiMapIterator[K, V](*this)
+    }
 }

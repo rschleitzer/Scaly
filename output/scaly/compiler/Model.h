@@ -530,9 +530,10 @@ struct Union : Object {
     Span span;
     bool private_;
     Vector<Variant> variants;
-    HashMap<String, Variant> symbols;
+    Vector<Member> members;
+    HashMap<String, Nameable> symbols;
 
-    Union(Span span, bool private_, Vector<Variant> variants, HashMap<String, Variant> symbols);
+    Union(Span span, bool private_, Vector<Variant> variants, Vector<Member> members, HashMap<String, Nameable> symbols);
 };
 
 struct Namespace : Object {
@@ -638,17 +639,20 @@ struct Nameable : Object {
     Nameable(Operator);
     Nameable(Vector<Function>);
     Nameable(Property);
+    Nameable(Variant);
     enum {
         Concept,
         Operator,
         Functions,
         Property,
+        Variant,
     } _tag;
     union {
         struct Concept _Concept;
         struct Operator _Operator;
         struct Vector<Function> _Functions;
         struct Property _Property;
+        struct Variant _Variant;
     };
 };
 #endif

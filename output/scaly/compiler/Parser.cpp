@@ -292,7 +292,7 @@ ConstantSyntax::ConstantSyntax(size_t start, size_t end, TypeSyntax type, Vector
 
 VariantSyntax::VariantSyntax(size_t start, size_t end, String name, Vector<AttributeSyntax>* attributes, TypeAnnotationSyntax* annotation) : start(start), end(end), name(name), attributes(attributes), annotation(annotation) {}
 
-UnionSyntax::UnionSyntax(size_t start, size_t end, Vector<VariantSyntax>* variants) : start(start), end(end), variants(variants) {}
+UnionSyntax::UnionSyntax(size_t start, size_t end, Vector<VariantSyntax>* variants, BodySyntax* body) : start(start), end(end), variants(variants), body(body) {}
 
 NamespaceSyntax::NamespaceSyntax(size_t start, size_t end, Vector<UseSyntax>* uses, Vector<DeclarationSyntax>* declarations) : start(start), end(end), uses(uses), declarations(declarations) {}
 
@@ -2545,8 +2545,50 @@ Result<UnionSyntax, ParserError> Parser::parse_union(Page* rp, Page* ep) {
     };
     const auto start_colon_6 = lexer.previous_position;
     const auto success_colon_6 = lexer.parse_colon();
+    const auto body_start = lexer.position;
+    BodySyntax* body = nullptr;
+    {
+        auto _result = parse_body(rp, ep);
+        switch (_result._tag)
+        {
+            case Success::Error:
+            {
+                auto error = _result._Error;
+                {
+                    {
+                        auto _result = error;
+                        switch (_result._tag)
+                        {
+                            case ParserError::Different:
+                            {
+                                auto d = _result._Different;
+                                {
+                                };
+                                break;
+                            }
+                            case ParserError::Invalid:
+                            {
+                                auto i = _result._Invalid;
+                                return Result<UnionSyntax, ParserError>(i);
+                                break;
+                            }
+                        }
+                    };
+                };
+                break;
+            }
+            case Success::Ok:
+            {
+                auto success = _result._Ok;
+                body = new (alignof(BodySyntax), rp) BodySyntax(success);
+                break;
+            }
+        }
+    };
+    const auto start_colon_8 = lexer.previous_position;
+    const auto success_colon_8 = lexer.parse_colon();
     const auto end = lexer.position;
-    return Result<UnionSyntax, ParserError>(UnionSyntax(start, end, variants));
+    return Result<UnionSyntax, ParserError>(UnionSyntax(start, end, variants, body));
 }
 
 Result<Vector<VariantSyntax>*, ParserError> Parser::parse_variant_list(Page* rp, Page* ep) {

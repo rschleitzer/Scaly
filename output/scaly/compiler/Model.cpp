@@ -168,7 +168,7 @@ Structure::Structure(Span span, bool private_, Vector<Property> properties, Vect
 
 Variant::Variant(Span span, String name, Type* type, Vector<Attribute> attributes) : span(span), name(name), type(type), attributes(attributes) {}
 
-Union::Union(Span span, bool private_, Vector<Variant> variants, HashMap<String, Variant> symbols) : span(span), private_(private_), variants(variants), symbols(symbols) {}
+Union::Union(Span span, bool private_, Vector<Variant> variants, Vector<Member> members, HashMap<String, Nameable> symbols) : span(span), private_(private_), variants(variants), members(members), symbols(symbols) {}
 
 Namespace::Namespace(Span span, Vector<Module> modules, Vector<Member> members, HashMap<String, Nameable> symbols) : span(span), modules(modules), members(members), symbols(symbols) {}
 
@@ -206,6 +206,8 @@ Nameable::Nameable(struct Operator _Operator) : _tag(Operator), _Operator(_Opera
 Nameable::Nameable(struct Vector<Function> _Functions) : _tag(Functions), _Functions(_Functions) {}
 
 Nameable::Nameable(struct Property _Property) : _tag(Property), _Property(_Property) {}
+
+Nameable::Nameable(struct Variant _Variant) : _tag(Variant), _Variant(_Variant) {}
 
 
 }

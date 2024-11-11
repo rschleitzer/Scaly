@@ -992,8 +992,9 @@ struct UnionSyntax : Object {
     size_t start;
     size_t end;
     Vector<VariantSyntax>* variants;
+    BodySyntax* body;
 
-    UnionSyntax(size_t start, size_t end, Vector<VariantSyntax>* variants);
+    UnionSyntax(size_t start, size_t end, Vector<VariantSyntax>* variants, BodySyntax* body);
 };
 
 struct NamespaceSyntax : Object {

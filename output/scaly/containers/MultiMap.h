@@ -85,6 +85,10 @@ struct MultiMap : Object {
         };
         return nullptr;
     }
+
+    MultiMapIterator<K, V> get_iterator() {
+        return MultiMapIterator<K, V>(*this);
+    };
 };
 
 #endif

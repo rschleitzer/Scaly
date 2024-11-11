@@ -119,7 +119,7 @@ define Operator(span: Span, private_: bool, name: String, input: Vector[Item], r
 
 define Structure(span: Span, private_: bool, properties: Vector[Property], modules: Vector[Module], uses: Vector[Use], initializers: Vector[Initializer], deinitializer: pointer[DeInitializer], members: Vector[Member], symbols: HashMap[String, Nameable])
 define Variant(span: Span, name: String, type: pointer[Type], attributes: Vector[Attribute])
-define Union(span: Span, private_: bool, variants: Vector[Variant], symbols: HashMap[String, Variant])
+define Union(span: Span, private_: bool, variants: Vector[Variant], members: Vector[Member], symbols: HashMap[String, Nameable])
 define Namespace(span: Span, modules: Vector[Module], members: Vector[Member], symbols: HashMap[String, Nameable])
 define Global(span: Span, type: Type, value: Vector[Operand])
 
@@ -151,5 +151,6 @@ define Nameable union (
     Operator: Operator
     Functions: Vector[Function]
     Property: Property
+    Variant: Variant
 )
 
