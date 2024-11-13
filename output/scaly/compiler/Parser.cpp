@@ -56,6 +56,8 @@ NameSyntax::NameSyntax(size_t start, size_t end, String name, Vector<ExtensionSy
 
 TypeSyntax::TypeSyntax(size_t start, size_t end, NameSyntax name, GenericArgumentsSyntax* generics, OptionalSyntax* optional, LifetimeSyntax* lifetime) : start(start), end(end), name(name), generics(generics), optional(optional), lifetime(lifetime) {}
 
+IsSyntax::IsSyntax(size_t start, size_t end, NameSyntax name) : start(start), end(end), name(name) {}
+
 SizeOfSyntax::SizeOfSyntax(size_t start, size_t end, TypeSyntax type) : start(start), end(end), type(type) {}
 
 SetSyntax::SetSyntax(size_t start, size_t end, Vector<OperandSyntax>* target, Vector<OperandSyntax>* source) : start(start), end(end), target(target), source(source) {}
@@ -196,6 +198,8 @@ ExpressionSyntax::ExpressionSyntax(struct TrySyntax _Try) : _tag(Try), _Try(_Try
 ExpressionSyntax::ExpressionSyntax(struct RepeatSyntax _Repeat) : _tag(Repeat), _Repeat(_Repeat) {}
 
 ExpressionSyntax::ExpressionSyntax(struct SizeOfSyntax _SizeOf) : _tag(SizeOf), _SizeOf(_SizeOf) {}
+
+ExpressionSyntax::ExpressionSyntax(struct IsSyntax _Is) : _tag(Is), _Is(_Is) {}
 
 
 MemberAccessSyntax::MemberAccessSyntax(size_t start, size_t end, NameSyntax name) : start(start), end(end), name(name) {}
@@ -390,6 +394,7 @@ Vector<String> Parser::initialize_keywords_index() {
     (*keywords_builder).add(String(p, "for"));
     (*keywords_builder).add(String(p, "function"));
     (*keywords_builder).add(String(p, "if"));
+    (*keywords_builder).add(String(p, "is"));
     (*keywords_builder).add(String(p, "init"));
     (*keywords_builder).add(String(p, "implement"));
     (*keywords_builder).add(String(p, "in"));
@@ -1073,7 +1078,7 @@ Result<SymbolSyntax, ParserError> Parser::parse_symbol(Page* rp, Page* ep) {
 Result<PrivateSyntax, ParserError> Parser::parse_private(Page* rp, Page* ep) {
     const auto start = lexer.previous_position;
     const auto start_private_1 = lexer.previous_position;
-    const auto success_private_1 = lexer.parse_keyword(*keywords_index.get(28));
+    const auto success_private_1 = lexer.parse_keyword(*keywords_index.get(29));
     if (success_private_1 == false) {
         return Result<PrivateSyntax, ParserError>(ParserError(DifferentSyntax()));
     };
@@ -2509,7 +2514,7 @@ Result<NamespaceSyntax, ParserError> Parser::parse_namespace(Page* rp, Page* ep)
 Result<UnionSyntax, ParserError> Parser::parse_union(Page* rp, Page* ep) {
     const auto start = lexer.previous_position;
     const auto start_union_1 = lexer.previous_position;
-    const auto success_union_1 = lexer.parse_keyword(*keywords_index.get(38));
+    const auto success_union_1 = lexer.parse_keyword(*keywords_index.get(39));
     if (success_union_1 == false) {
         return Result<UnionSyntax, ParserError>(ParserError(DifferentSyntax()));
     };
@@ -3327,7 +3332,7 @@ Result<ItemSyntax, ParserError> Parser::parse_item(Page* rp, Page* ep) {
 Result<ReturnsSyntax, ParserError> Parser::parse_returns(Page* rp, Page* ep) {
     const auto start = lexer.previous_position;
     const auto start_returns_1 = lexer.previous_position;
-    const auto success_returns_1 = lexer.parse_keyword(*keywords_index.get(30));
+    const auto success_returns_1 = lexer.parse_keyword(*keywords_index.get(31));
     if (success_returns_1 == false) {
         return Result<ReturnsSyntax, ParserError>(ParserError(DifferentSyntax()));
     };
@@ -3396,7 +3401,7 @@ Result<ReturnsSyntax, ParserError> Parser::parse_returns(Page* rp, Page* ep) {
 Result<ThrowsSyntax, ParserError> Parser::parse_throws(Page* rp, Page* ep) {
     const auto start = lexer.previous_position;
     const auto start_throws_1 = lexer.previous_position;
-    const auto success_throws_1 = lexer.parse_keyword(*keywords_index.get(35));
+    const auto success_throws_1 = lexer.parse_keyword(*keywords_index.get(36));
     if (success_throws_1 == false) {
         return Result<ThrowsSyntax, ParserError>(ParserError(DifferentSyntax()));
     };
@@ -3496,7 +3501,7 @@ Result<Vector<UseSyntax>*, ParserError> Parser::parse_use_list(Page* rp, Page* e
 Result<UseSyntax, ParserError> Parser::parse_use(Page* rp, Page* ep) {
     const auto start = lexer.previous_position;
     const auto start_use_1 = lexer.previous_position;
-    const auto success_use_1 = lexer.parse_keyword(*keywords_index.get(39));
+    const auto success_use_1 = lexer.parse_keyword(*keywords_index.get(40));
     if (success_use_1 == false) {
         return Result<UseSyntax, ParserError>(ParserError(DifferentSyntax()));
     };
@@ -3527,7 +3532,7 @@ Result<UseSyntax, ParserError> Parser::parse_use(Page* rp, Page* ep) {
 Result<ImplementSyntax, ParserError> Parser::parse_implement(Page* rp, Page* ep) {
     const auto start = lexer.previous_position;
     const auto start_implement_1 = lexer.previous_position;
-    const auto success_implement_1 = lexer.parse_keyword(*keywords_index.get(14));
+    const auto success_implement_1 = lexer.parse_keyword(*keywords_index.get(15));
     if (success_implement_1 == false) {
         return Result<ImplementSyntax, ParserError>(ParserError(DifferentSyntax()));
     };
@@ -3690,7 +3695,7 @@ Result<ImplementSyntax, ParserError> Parser::parse_implement(Page* rp, Page* ep)
 Result<TraitSyntax, ParserError> Parser::parse_trait(Page* rp, Page* ep) {
     const auto start = lexer.previous_position;
     const auto start_trait_1 = lexer.previous_position;
-    const auto success_trait_1 = lexer.parse_keyword(*keywords_index.get(36));
+    const auto success_trait_1 = lexer.parse_keyword(*keywords_index.get(37));
     if (success_trait_1 == false) {
         return Result<TraitSyntax, ParserError>(ParserError(DifferentSyntax()));
     };
@@ -4077,7 +4082,7 @@ Result<Vector<InitSyntax>*, ParserError> Parser::parse_init_list(Page* rp, Page*
 Result<InitSyntax, ParserError> Parser::parse_init(Page* rp, Page* ep) {
     const auto start = lexer.previous_position;
     const auto start_init_1 = lexer.previous_position;
-    const auto success_init_1 = lexer.parse_keyword(*keywords_index.get(13));
+    const auto success_init_1 = lexer.parse_keyword(*keywords_index.get(14));
     if (success_init_1 == false) {
         return Result<InitSyntax, ParserError>(ParserError(DifferentSyntax()));
     };
@@ -4212,7 +4217,7 @@ Result<FunctionSyntax, ParserError> Parser::parse_function(Page* rp, Page* ep) {
 Result<ProcedureSyntax, ParserError> Parser::parse_procedure(Page* rp, Page* ep) {
     const auto start = lexer.previous_position;
     const auto start_procedure_1 = lexer.previous_position;
-    const auto success_procedure_1 = lexer.parse_keyword(*keywords_index.get(27));
+    const auto success_procedure_1 = lexer.parse_keyword(*keywords_index.get(28));
     if (success_procedure_1 == false) {
         return Result<ProcedureSyntax, ParserError>(ParserError(DifferentSyntax()));
     };
@@ -4241,7 +4246,7 @@ Result<ProcedureSyntax, ParserError> Parser::parse_procedure(Page* rp, Page* ep)
 Result<OperatorSyntax, ParserError> Parser::parse_operator(Page* rp, Page* ep) {
     const auto start = lexer.previous_position;
     const auto start_operator_1 = lexer.previous_position;
-    const auto success_operator_1 = lexer.parse_keyword(*keywords_index.get(26));
+    const auto success_operator_1 = lexer.parse_keyword(*keywords_index.get(27));
     if (success_operator_1 == false) {
         return Result<OperatorSyntax, ParserError>(ParserError(DifferentSyntax()));
     };
@@ -4826,7 +4831,7 @@ Result<ExternSyntax, ParserError> Parser::parse_extern(Page* rp, Page* ep) {
 Result<InstructionSyntax, ParserError> Parser::parse_instruction(Page* rp, Page* ep) {
     const auto start = lexer.previous_position;
     const auto start_instruction_1 = lexer.previous_position;
-    const auto success_instruction_1 = lexer.parse_keyword(*keywords_index.get(16));
+    const auto success_instruction_1 = lexer.parse_keyword(*keywords_index.get(17));
     if (success_instruction_1 == false) {
         return Result<InstructionSyntax, ParserError>(ParserError(DifferentSyntax()));
     };
@@ -4839,7 +4844,7 @@ Result<InstructionSyntax, ParserError> Parser::parse_instruction(Page* rp, Page*
 Result<IntrinsicSyntax, ParserError> Parser::parse_intrinsic(Page* rp, Page* ep) {
     const auto start = lexer.previous_position;
     const auto start_intrinsic_1 = lexer.previous_position;
-    const auto success_intrinsic_1 = lexer.parse_keyword(*keywords_index.get(17));
+    const auto success_intrinsic_1 = lexer.parse_keyword(*keywords_index.get(18));
     if (success_intrinsic_1 == false) {
         return Result<IntrinsicSyntax, ParserError>(ParserError(DifferentSyntax()));
     };
@@ -4960,7 +4965,7 @@ Result<ExtendSyntax, ParserError> Parser::parse_extend(Page* rp, Page* ep) {
 Result<MacroSyntax, ParserError> Parser::parse_macro(Page* rp, Page* ep) {
     const auto start = lexer.previous_position;
     const auto start_macro_1 = lexer.previous_position;
-    const auto success_macro_1 = lexer.parse_keyword(*keywords_index.get(22));
+    const auto success_macro_1 = lexer.parse_keyword(*keywords_index.get(23));
     if (success_macro_1 == false) {
         return Result<MacroSyntax, ParserError>(ParserError(DifferentSyntax()));
     };
@@ -5238,7 +5243,7 @@ Result<ModelSyntax, ParserError> Parser::parse_model(Page* rp, Page* ep) {
 Result<ModuleSyntax, ParserError> Parser::parse_module(Page* rp, Page* ep) {
     const auto start = lexer.previous_position;
     const auto start_module_1 = lexer.previous_position;
-    const auto success_module_1 = lexer.parse_keyword(*keywords_index.get(24));
+    const auto success_module_1 = lexer.parse_keyword(*keywords_index.get(25));
     if (success_module_1 == false) {
         return Result<ModuleSyntax, ParserError>(ParserError(DifferentSyntax()));
     };
@@ -5287,7 +5292,7 @@ Result<Vector<PackageSyntax>*, ParserError> Parser::parse_package_list(Page* rp,
 Result<PackageSyntax, ParserError> Parser::parse_package(Page* rp, Page* ep) {
     const auto start = lexer.previous_position;
     const auto start_package_1 = lexer.previous_position;
-    const auto success_package_1 = lexer.parse_keyword(*keywords_index.get(43));
+    const auto success_package_1 = lexer.parse_keyword(*keywords_index.get(44));
     if (success_package_1 == false) {
         return Result<PackageSyntax, ParserError>(ParserError(DifferentSyntax()));
     };
@@ -6065,6 +6070,46 @@ Result<ExpressionSyntax, ParserError> Parser::parse_expression(Page* rp, Page* e
             }
         };
     };
+    {
+        {
+            auto _result = parse_is(rp, ep);
+            switch (_result._tag)
+            {
+                case Success::Error:
+                {
+                    auto error = _result._Error;
+                    {
+                        {
+                            auto _result = error;
+                            switch (_result._tag)
+                            {
+                                case ParserError::Invalid:
+                                {
+                                    auto i = _result._Invalid;
+                                    return Result<ExpressionSyntax, ParserError>(i);
+                                    break;
+                                }
+                                case ParserError::Different:
+                                {
+                                    auto d = _result._Different;
+                                    {
+                                    };
+                                    break;
+                                }
+                            }
+                        };
+                    };
+                    break;
+                }
+                case Success::Ok:
+                {
+                    auto node = _result._Ok;
+                    return Result<ExpressionSyntax, ParserError>(ExpressionSyntax(IsSyntax(node)));
+                    break;
+                }
+            }
+        };
+    };
     return Result<ExpressionSyntax, ParserError>(ParserError(DifferentSyntax()));
 }
 
@@ -6075,9 +6120,16 @@ Result<LiteralSyntax, ParserError> Parser::parse_literal(Page* rp, Page* ep) {
     if (_literal_result._tag == Success::Error) {
         const auto _literal_Error = _literal_result._Error;
         switch (_literal_Error._tag) {
-        default:
-            return Result<LiteralSyntax, ParserError>(_literal_result._Error);
-
+            case ParserError::Different: {
+                const auto d = _literal_Error._Different;
+                return Result<LiteralSyntax, ParserError>(d);
+                break;
+            }
+            case ParserError::Invalid: {
+                const auto i = _literal_Error._Invalid;
+                return Result<LiteralSyntax, ParserError>(i);
+                break;
+            }
         }
     };
     const auto end = lexer.position;
@@ -6739,7 +6791,7 @@ Result<ElseSyntax, ParserError> Parser::parse_else(Page* rp, Page* ep) {
 Result<MatchSyntax, ParserError> Parser::parse_match(Page* rp, Page* ep) {
     const auto start = lexer.previous_position;
     const auto start_match_1 = lexer.previous_position;
-    const auto success_match_1 = lexer.parse_keyword(*keywords_index.get(23));
+    const auto success_match_1 = lexer.parse_keyword(*keywords_index.get(24));
     if (success_match_1 == false) {
         return Result<MatchSyntax, ParserError>(ParserError(DifferentSyntax()));
     };
@@ -7026,7 +7078,7 @@ Result<StatementSyntax, ParserError> Parser::parse_statement(Page* rp, Page* ep)
 Result<WhileSyntax, ParserError> Parser::parse_while(Page* rp, Page* ep) {
     const auto start = lexer.previous_position;
     const auto start_while_1 = lexer.previous_position;
-    const auto success_while_1 = lexer.parse_keyword(*keywords_index.get(42));
+    const auto success_while_1 = lexer.parse_keyword(*keywords_index.get(43));
     if (success_while_1 == false) {
         return Result<WhileSyntax, ParserError>(ParserError(DifferentSyntax()));
     };
@@ -7232,7 +7284,7 @@ Result<ChooseSyntax, ParserError> Parser::parse_choose(Page* rp, Page* ep) {
 Result<TrySyntax, ParserError> Parser::parse_try(Page* rp, Page* ep) {
     const auto start = lexer.previous_position;
     const auto start_try_1 = lexer.previous_position;
-    const auto success_try_1 = lexer.parse_keyword(*keywords_index.get(37));
+    const auto success_try_1 = lexer.parse_keyword(*keywords_index.get(38));
     if (success_try_1 == false) {
         return Result<TrySyntax, ParserError>(ParserError(DifferentSyntax()));
     };
@@ -7461,7 +7513,7 @@ Result<Vector<WhenSyntax>*, ParserError> Parser::parse_when_list(Page* rp, Page*
 Result<WhenSyntax, ParserError> Parser::parse_when(Page* rp, Page* ep) {
     const auto start = lexer.previous_position;
     const auto start_when_1 = lexer.previous_position;
-    const auto success_when_1 = lexer.parse_keyword(*keywords_index.get(41));
+    const auto success_when_1 = lexer.parse_keyword(*keywords_index.get(42));
     if (success_when_1 == false) {
         return Result<WhenSyntax, ParserError>(ParserError(DifferentSyntax()));
     };
@@ -7886,7 +7938,7 @@ Result<CommandSyntax, ParserError> Parser::parse_command(Page* rp, Page* ep) {
 Result<LetSyntax, ParserError> Parser::parse_let(Page* rp, Page* ep) {
     const auto start = lexer.previous_position;
     const auto start_let_1 = lexer.previous_position;
-    const auto success_let_1 = lexer.parse_keyword(*keywords_index.get(20));
+    const auto success_let_1 = lexer.parse_keyword(*keywords_index.get(21));
     if (success_let_1 == false) {
         return Result<LetSyntax, ParserError>(ParserError(DifferentSyntax()));
     };
@@ -7915,7 +7967,7 @@ Result<LetSyntax, ParserError> Parser::parse_let(Page* rp, Page* ep) {
 Result<VarSyntax, ParserError> Parser::parse_var(Page* rp, Page* ep) {
     const auto start = lexer.previous_position;
     const auto start_var_1 = lexer.previous_position;
-    const auto success_var_1 = lexer.parse_keyword(*keywords_index.get(40));
+    const auto success_var_1 = lexer.parse_keyword(*keywords_index.get(41));
     if (success_var_1 == false) {
         return Result<VarSyntax, ParserError>(ParserError(DifferentSyntax()));
     };
@@ -7944,7 +7996,7 @@ Result<VarSyntax, ParserError> Parser::parse_var(Page* rp, Page* ep) {
 Result<MutableSyntax, ParserError> Parser::parse_mutable(Page* rp, Page* ep) {
     const auto start = lexer.previous_position;
     const auto start_mutable_1 = lexer.previous_position;
-    const auto success_mutable_1 = lexer.parse_keyword(*keywords_index.get(25));
+    const auto success_mutable_1 = lexer.parse_keyword(*keywords_index.get(26));
     if (success_mutable_1 == false) {
         return Result<MutableSyntax, ParserError>(ParserError(DifferentSyntax()));
     };
@@ -8453,7 +8505,7 @@ Result<PartSyntax, ParserError> Parser::parse_part(Page* rp, Page* ep) {
 Result<FieldSyntax, ParserError> Parser::parse_field(Page* rp, Page* ep) {
     const auto start = lexer.previous_position;
     const auto start_private_1 = lexer.previous_position;
-    const auto success_private_1 = lexer.parse_keyword(*keywords_index.get(28));
+    const auto success_private_1 = lexer.parse_keyword(*keywords_index.get(29));
     if (success_private_1 == false) {
         return Result<FieldSyntax, ParserError>(ParserError(DifferentSyntax()));
     };
@@ -8803,7 +8855,7 @@ Result<BreakSyntax, ParserError> Parser::parse_break(Page* rp, Page* ep) {
 Result<LoopSyntax, ParserError> Parser::parse_loop(Page* rp, Page* ep) {
     const auto start = lexer.previous_position;
     const auto start_loop_1 = lexer.previous_position;
-    const auto success_loop_1 = lexer.parse_keyword(*keywords_index.get(21));
+    const auto success_loop_1 = lexer.parse_keyword(*keywords_index.get(22));
     if (success_loop_1 == false) {
         return Result<LoopSyntax, ParserError>(ParserError(DifferentSyntax()));
     };
@@ -8819,7 +8871,7 @@ Result<LoopSyntax, ParserError> Parser::parse_loop(Page* rp, Page* ep) {
 Result<ReturnSyntax, ParserError> Parser::parse_return(Page* rp, Page* ep) {
     const auto start = lexer.previous_position;
     const auto start_return_1 = lexer.previous_position;
-    const auto success_return_1 = lexer.parse_keyword(*keywords_index.get(29));
+    const auto success_return_1 = lexer.parse_keyword(*keywords_index.get(30));
     if (success_return_1 == false) {
         return Result<ReturnSyntax, ParserError>(ParserError(DifferentSyntax()));
     };
@@ -8870,7 +8922,7 @@ Result<ReturnSyntax, ParserError> Parser::parse_return(Page* rp, Page* ep) {
 Result<ThrowSyntax, ParserError> Parser::parse_throw(Page* rp, Page* ep) {
     const auto start = lexer.previous_position;
     const auto start_throw_1 = lexer.previous_position;
-    const auto success_throw_1 = lexer.parse_keyword(*keywords_index.get(34));
+    const auto success_throw_1 = lexer.parse_keyword(*keywords_index.get(35));
     if (success_throw_1 == false) {
         return Result<ThrowSyntax, ParserError>(ParserError(DifferentSyntax()));
     };
@@ -8921,7 +8973,7 @@ Result<ThrowSyntax, ParserError> Parser::parse_throw(Page* rp, Page* ep) {
 Result<LambdaSyntax, ParserError> Parser::parse_lambda(Page* rp, Page* ep) {
     const auto start = lexer.previous_position;
     const auto start_lambda_1 = lexer.previous_position;
-    const auto success_lambda_1 = lexer.parse_keyword(*keywords_index.get(19));
+    const auto success_lambda_1 = lexer.parse_keyword(*keywords_index.get(20));
     if (success_lambda_1 == false) {
         return Result<LambdaSyntax, ParserError>(ParserError(DifferentSyntax()));
     };
@@ -9023,7 +9075,7 @@ Result<ForSyntax, ParserError> Parser::parse_for(Page* rp, Page* ep) {
         }
     };
     const auto start_in_4 = lexer.previous_position;
-    const auto success_in_4 = lexer.parse_keyword(*keywords_index.get(15));
+    const auto success_in_4 = lexer.parse_keyword(*keywords_index.get(16));
     if (success_in_4 == false) {
         return Result<ForSyntax, ParserError>(ParserError(InvalidSyntax(start_in_4, lexer.position, String(ep, "in"))));
     };
@@ -9115,7 +9167,7 @@ Result<ForSyntax, ParserError> Parser::parse_for(Page* rp, Page* ep) {
 Result<LabelSyntax, ParserError> Parser::parse_label(Page* rp, Page* ep) {
     const auto start = lexer.previous_position;
     const auto start_label_1 = lexer.previous_position;
-    const auto success_label_1 = lexer.parse_keyword(*keywords_index.get(18));
+    const auto success_label_1 = lexer.parse_keyword(*keywords_index.get(19));
     if (success_label_1 == false) {
         return Result<LabelSyntax, ParserError>(ParserError(DifferentSyntax()));
     };
@@ -9133,7 +9185,7 @@ Result<LabelSyntax, ParserError> Parser::parse_label(Page* rp, Page* ep) {
 Result<RepeatSyntax, ParserError> Parser::parse_repeat(Page* rp, Page* ep) {
     const auto start = lexer.previous_position;
     const auto start_repeat_1 = lexer.previous_position;
-    const auto success_repeat_1 = lexer.parse_keyword(*keywords_index.get(31));
+    const auto success_repeat_1 = lexer.parse_keyword(*keywords_index.get(32));
     if (success_repeat_1 == false) {
         return Result<RepeatSyntax, ParserError>(ParserError(DifferentSyntax()));
     };
@@ -9341,7 +9393,7 @@ Result<OperationSyntax, ParserError> Parser::parse_operation(Page* rp, Page* ep)
 Result<SetSyntax, ParserError> Parser::parse_set(Page* rp, Page* ep) {
     const auto start = lexer.previous_position;
     const auto start_set_1 = lexer.previous_position;
-    const auto success_set_1 = lexer.parse_keyword(*keywords_index.get(32));
+    const auto success_set_1 = lexer.parse_keyword(*keywords_index.get(33));
     if (success_set_1 == false) {
         return Result<SetSyntax, ParserError>(ParserError(DifferentSyntax()));
     };
@@ -9393,7 +9445,7 @@ Result<SetSyntax, ParserError> Parser::parse_set(Page* rp, Page* ep) {
 Result<SizeOfSyntax, ParserError> Parser::parse_sizeof(Page* rp, Page* ep) {
     const auto start = lexer.previous_position;
     const auto start_sizeof_1 = lexer.previous_position;
-    const auto success_sizeof_1 = lexer.parse_keyword(*keywords_index.get(33));
+    const auto success_sizeof_1 = lexer.parse_keyword(*keywords_index.get(34));
     if (success_sizeof_1 == false) {
         return Result<SizeOfSyntax, ParserError>(ParserError(DifferentSyntax()));
     };
@@ -9417,6 +9469,35 @@ Result<SizeOfSyntax, ParserError> Parser::parse_sizeof(Page* rp, Page* ep) {
     };
     const auto end = lexer.position;
     return Result<SizeOfSyntax, ParserError>(SizeOfSyntax(start, end, type));
+}
+
+Result<IsSyntax, ParserError> Parser::parse_is(Page* rp, Page* ep) {
+    const auto start = lexer.previous_position;
+    const auto start_is_1 = lexer.previous_position;
+    const auto success_is_1 = lexer.parse_keyword(*keywords_index.get(13));
+    if (success_is_1 == false) {
+        return Result<IsSyntax, ParserError>(ParserError(DifferentSyntax()));
+    };
+    const auto name_start = lexer.position;
+    const auto _name_result = parse_name(rp, ep);
+    auto name = _name_result._Ok;
+    if (_name_result._tag == Success::Error) {
+        const auto _name_Error = _name_result._Error;
+        switch (_name_Error._tag) {
+            case ParserError::Different: {
+                const auto d = _name_Error._Different;
+                return Result<IsSyntax, ParserError>(InvalidSyntax(name_start, lexer.position, String(ep, "a valid Name syntax")));
+                break;
+            }
+            case ParserError::Invalid: {
+                const auto i = _name_Error._Invalid;
+                return Result<IsSyntax, ParserError>(i);
+                break;
+            }
+        }
+    };
+    const auto end = lexer.position;
+    return Result<IsSyntax, ParserError>(IsSyntax(start, end, name));
 }
 
 Result<Vector<TypeSyntax>*, ParserError> Parser::parse_type_list(Page* rp, Page* ep) {

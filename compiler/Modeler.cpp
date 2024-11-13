@@ -1116,6 +1116,19 @@ Result<SizeOf, ModelError> handle_size_of(Page* _rp, Page* _ep, SizeOfSyntax& si
     return Result<SizeOf, ModelError> { ._tag = Result<SizeOf, ModelError>::Ok, ._Ok = SizeOf(Span(size_of.start, size_of.end), *type) };
 }
 
+Result<Is, ModelError> handle_is(Page* _rp, Page* _ep, IsSyntax& is_syntax, String file) {
+    Region _r;
+    List<String>& name_builder = *new(alignof(List<String>), _r.get_page()) List<String>();
+    name_builder.add(is_syntax.name.name);
+    if (is_syntax.name.extensions != nullptr) {
+        auto _name_iterator = is_syntax.name.extensions->get_iterator();
+        while(auto _name = _name_iterator.next()) {
+            name_builder.add(_name->name);
+        }
+    }
+    return Result<Is, ModelError> { ._tag = Result<Is, ModelError>::Ok, ._Ok = Is(Span(is_syntax.start, is_syntax.end), Vector<String>(_rp, name_builder)) };
+}
+
 Result<Expression, ModelError> handle_expression(Page* _rp, Page* _ep, ExpressionSyntax& expression, String file) {
     Region _r;
     switch (expression._tag) {
@@ -1208,6 +1221,13 @@ Result<Expression, ModelError> handle_expression(Page* _rp, Page* _ep, Expressio
             if (size_of_result._tag == Result<Expression, ModelError>::Error)
                 return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = size_of_result._Error };
             return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::SizeOf, ._SizeOf = size_of_result._Ok} };
+        }
+        case ExpressionSyntax::Is: {
+            auto is_syntax = expression._Is;
+            auto is_result = handle_is(_rp, _ep, is_syntax, file);
+            if (is_result._tag == Result<Expression, ModelError>::Error)
+                return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Error, ._Error = is_result._Error };
+            return Result<Expression, ModelError> { ._tag = Result<Expression, ModelError>::Ok, ._Ok = Expression { ._tag = Expression::Is, ._Is = is_result._Ok} };
         }
     }
 }
@@ -1776,7 +1796,7 @@ Result<Module, ModelError> build_referenced_module(Page* _rp, Page* _ep, String 
     Region _r;
     StringBuilder& file_name_builder = *new(alignof(StringBuilder), _r.get_page()) StringBuilder(Path::join(_r.get_page(), path, name));
     file_name_builder.append(".scaly");
-    auto file_name = file_name_builder.to_string(_r.get_page());
+    auto file_name = file_name_builder.to_string(_rp);
     auto module_text_result = File::read_to_string(_r.get_page(), _ep, file_name);
     if (module_text_result._tag == Result<String, FileError>::Error) {
         return Result<Module, ModelError> { ._tag = Result<Module, ModelError>::Error, ._Error = ModelError(module_text_result._Error) };

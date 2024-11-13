@@ -12,7 +12,8 @@ String::String(Page* rp, size_t length) {
     size_t counter = 0;
     while (rest>=0x80) {
         *(length_array+counter) = (char)rest|0x80;
-        rest>>=7;
+        rest = rest>>7;
+        counter = counter+1;
     };
     *(length_array+counter) = (char)rest;
     const auto overall_length = counter+1+length;
@@ -47,6 +48,8 @@ String::String(Page* rp, const_char* c_string) : String(rp, c_string, strlen(c_s
 }
 
 String::String(Page* rp, String other) {
+    if (other.data == nullptr) 
+        return;
     size_t length = 0;
     auto bit_count = 0;
     auto index = 0;
@@ -72,6 +75,8 @@ String::String(Page* rp, char character) {
 }
 
 char* String::get_buffer() {
+    if (data == nullptr) 
+        return nullptr;
     size_t length = 0;
     auto bit_count = 0;
     size_t index = 0;

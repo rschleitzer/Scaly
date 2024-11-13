@@ -15,10 +15,13 @@ namespace compiler {
 #include "compiler/Modeler.h"
 #include "compiler/ModelError.h"
 #include "compiler/TranspilerError.h"
+#include "compiler/Transpiler.h"
 #include "compiler/CompilerError.h"
+#include "compiler/Compiler.h"
 
     void test_lexer();
     void test_parser();
+    void test_compiler();
     void test();
 }
 #endif

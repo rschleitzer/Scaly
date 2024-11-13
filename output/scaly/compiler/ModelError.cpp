@@ -116,8 +116,9 @@ Result<Position, FileError> calculate_position(Page* rp, Page* ep, String file, 
 }
 
 String to_string(Page* rp, size_t number) {
-    auto str = "                      ";
-    snprintf((char*)str, 22, "%zd", number);
+    auto r = Region();
+    auto str = (char*)(*r.get_page()).allocate(32, 1);
+    snprintf(str, 22, "%zd", number);
     return String(rp, str);
 }
 

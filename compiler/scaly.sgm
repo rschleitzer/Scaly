@@ -321,6 +321,7 @@
     <content link = Try
     <content link = Repeat
     <content link = SizeOf
+    <content link = Is
 
 <syntax id = Literal
     <content literal                                        property = literal
@@ -558,6 +559,10 @@
     <content link = sizeof
     <content link = Type                                    property = type
 
+<syntax id = Is
+    <content link = is
+    <content link = Name                                    property = name
+
 <syntax id = Type                        multiple
     <content link = Name                                    property = name
     <content link = GenericArguments               optional property = generics
@@ -604,6 +609,7 @@
 <keyword id = for
 <keyword id = function
 <keyword id = if
+<keyword id = is
 <keyword id = init
 <keyword id = implement
 <keyword id = in

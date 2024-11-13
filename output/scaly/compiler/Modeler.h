@@ -42,6 +42,7 @@ namespace model {
     Result<While, ModelError> handle_while(Page* rp, Page* ep, WhileSyntax& while_syntax, String file);
     Result<Try, ModelError> handle_try(Page* rp, Page* ep, TrySyntax& try_syntax, String file);
     Result<SizeOf, ModelError> handle_size_of(Page* rp, Page* ep, SizeOfSyntax& size_of_syntax, String file);
+    Result<Is, ModelError> handle_is(Page* rp, Page* ep, IsSyntax& is_syntax, String file);
     Result<Expression, ModelError> handle_expression(Page* rp, Page* ep, ExpressionSyntax& expression, String file);
     Result<Operand, ModelError> handle_operand(Page* rp, Page* ep, OperandSyntax& operand, String file);
     Result<Vector<Operand>, ModelError> handle_operands(Page* rp, Page* ep, Vector<OperandSyntax>* operands, String file);

@@ -1,0 +1,19 @@
+use scaly.containers
+use scaly.io
+use scaly.compiler.model
+use scaly.compiler.transpiler
+
+define compiler {
+
+function compile(file_name: String, program_name: String) throws CompilerError {
+    var r Region()
+    try let prog build_program(r.get_page(), ep, file_name, program_name)
+        else throw
+
+    try program(r.get_page(), prog)
+        else throw
+    
+    return Void()
+}
+
+}

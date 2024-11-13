@@ -317,15 +317,21 @@ struct Drop : Object {
 struct Try : Object {
     Span span;
     Binding binding;
-    Vector<When> cases;
+    Vector<When> catches;
     Statement* alternative;
-    Try(Span span, Binding condition, Vector<When> catches, Statement* alternative) : span(span), binding(condition), cases(catches), alternative(alternative) {}
+    Try(Span span, Binding condition, Vector<When> catches, Statement* alternative) : span(span), binding(condition), catches(catches), alternative(alternative) {}
 };
 
 struct SizeOf : Object {
     Span span;
     Type type;
     SizeOf(Span span, Type type) : span(span), type(type) {}
+};
+
+struct Is : Object {
+    Span span;
+    Vector<String> name;
+    Is(Span span, Vector<String> name) : span(span), name(name) {}
 };
 
 struct Expression {
@@ -342,6 +348,7 @@ struct Expression {
         While,
         Try,
         SizeOf,
+        Is,
     } _tag;
     union {
         struct Constant _Constant;
@@ -356,7 +363,7 @@ struct Expression {
         struct While _While;
         struct Try _Try;
         struct SizeOf _SizeOf;
-        struct Return _Return;
+        struct Is _Is;
     };
 
 };
@@ -613,11 +620,11 @@ struct Module : Object {
 
 struct Program : Object {
     Vector<Module> packages;
-    Module module;
+    Module module_;
     Vector<Statement> statements;
     Program(Vector<Module> packages, Module module, Vector<Statement> statements)
       : packages(packages),
-        module(module),
+        module_(module),
         statements(statements) {}
 };
 

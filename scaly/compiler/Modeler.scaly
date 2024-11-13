@@ -3,7 +3,7 @@ use scaly.io
 
 define model {
 
-function  parse_program(program: String) returns ProgramSyntax throws ParserError {
+function parse_program(program: String) returns ProgramSyntax throws ParserError {
     var r Region()
     var parser: ref[Parser] *Parser$(program)
     let program_syntax_result parser.parse_program(rp, ep)
@@ -24,7 +24,7 @@ function handle_property(private_: bool, property: ref[PropertySyntax], file: St
     {
         try let i handle_operands(rp, ep, (*property.initializer).operands, file)
             else throw
-        set initializer: Vector[Operand]$(i)
+        set initializer: Vector[Operand]#(i)
     }
 
     var attributes: ref[List[Attribute]] *List[Attribute]$()
@@ -456,7 +456,7 @@ function handle_literal(literal: ref[LiteralSyntax], file: String) returns Const
             return Constant(FloatingPointConstant(value))
         }
         when string: Literal.String
-            Constant(StringConstant(string.value))
+            return Constant(StringConstant(string.value))
         when character: Literal.Character
             return Constant(CharacterConstant(character.value))
         when fragment: Literal.Fragment
@@ -680,7 +680,7 @@ function handle_component(component: ref[ComponentSyntax], file: String) returns
     var r Region()
     var name: pointer[String] null
 
-    var attributes *List[Attribute]$()
+    var attributes: ref[List[Attribute]] *List[Attribute]$()
     if component.attributes <> null
     {
         for attribute_syntax in (*component.attributes)
@@ -731,7 +731,7 @@ function handle_component(component: ref[ComponentSyntax], file: String) returns
 
 function handle_object(object: ref[ObjectSyntax], file: String) returns Tuple throws ModelError {
     var r Region()
-    var components_builder *List[Component]$()
+    var components_builder: ref[List[Component]] *List[Component]$()
     if object.components <> null
     {
         for component in (*object.components)
@@ -747,7 +747,7 @@ function handle_object(object: ref[ObjectSyntax], file: String) returns Tuple th
 
 function handle_vector(vector: ref[VectorSyntax], file: String) returns Matrix throws ModelError {
     var r Region()
-    var operations_builder *List[Vector[Operand]]$()
+    var operations_builder: ref[List[Vector[Operand]]] *List[Vector[Operand]]$()
     if vector.elements <> null
     {
         for element in (*vector.elements)
@@ -1006,6 +1006,20 @@ function handle_size_of(size_of_syntax: ref[SizeOfSyntax] file: String) returns 
     return SizeOf(Span(size_of_syntax.start, size_of_syntax.end), *type)
 }
 
+function handle_is(is_syntax: ref[IsSyntax] file: String) returns Is throws ModelError {
+    var r Region()
+    var name_builder: ref[List[String]] *List[String]$()
+    name_builder.add(is_syntax.name.name)
+    if is_syntax.name.extensions <> null
+    {
+        for name in (*is_syntax.name.extensions)
+        {
+            name_builder.add(name.name)
+        }
+    }
+    return Is(Span(is_syntax.start, is_syntax.end), Vector[String](rp, name_builder))
+}
+
 function handle_expression(expression: ref[ExpressionSyntax], file: String) returns Expression throws ModelError {
     var r Region()
     choose expression
@@ -1084,6 +1098,12 @@ function handle_expression(expression: ref[ExpressionSyntax], file: String) retu
             try let size_of_result handle_size_of(rp, ep, sizeof_syntax, file)
                 else throw
             return size_of_result
+        }
+        when is_syntax: ExpressionSyntax.Is
+        {
+            try let is_result handle_is(rp, ep, is_syntax, file)
+                else throw
+            return is_result
         }
 }
 
@@ -1577,7 +1597,7 @@ function build_referenced_module(path: String, name: String, private_: bool) ret
     var r Region()
     var file_name_builder: ref[StringBuilder] *StringBuilder$(Path->join(r.get_page(), path, name))
     file_name_builder.append(".scaly")
-    let file_name file_name_builder.to_string(r.get_page())
+    let file_name file_name_builder.to_string(rp)
     let module_text_result File->read_to_string(r.get_page(), ep, file_name)
     choose module_text_result
         when error: Success.Error

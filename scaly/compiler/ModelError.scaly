@@ -96,8 +96,9 @@ function calculate_position(file: String, offset: size_t) returns Position throw
 }
 
 function to_string(number: size_t) returns String {
-    var str "                      "
-    snprintf((char*)str, 22, "%zd", number)
+    var r Region()
+    var str (char*)(*r.get_page()).allocate(32, 1)
+    snprintf(str, 22, "%zd", number)
     return String(rp, str)
 }
 

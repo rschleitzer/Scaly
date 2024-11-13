@@ -70,8 +70,9 @@ define Choose(span: Span , condition: Vector[Operand], cases: Vector[When], alte
 define For(span: Span, identifier: String, expression: Vector[Operand], action: Action)
 define While(span: Span, condition: Binding, action: Action)
 define Drop(span: Span, action: Action)
-define Try(span: Span, condition: Binding, catches: Vector[When], alternative: pointer[Statement])
+define Try(span: Span, binding: Binding, catches: Vector[When], alternative: pointer[Statement])
 define SizeOf(span: Span, type: Type)
+define Is(span: Span, name: Vector[String])
 
 define Expression union (
     Constant: Constant
@@ -86,7 +87,7 @@ define Expression union (
     While: While
     Try: Try
     SizeOf: SizeOf
-    Return: Return
+    Is: Is
 )
 
 define Operand(span: Span, expression: Expression, member_access: pointer[Vector[String]])
@@ -136,17 +137,19 @@ define GenericParameter(span: Span, name: String, attributes: Vector[Attribute])
 
 define Concept(span: Span, name: String, parameters: Vector[GenericParameter], attributes: Vector[Attribute], definition: Definition)
 
-define Module(private_: bool, file: String, name: String, modules: Vector[Module], uses: Vector[Use], mambers: Vector[Member], symbols: HashMap[String, Nameable])
+define Module(private_: bool, file: String, name: String, modules: Vector[Module], uses: Vector[Use], members: Vector[Member], symbols: HashMap[String, Nameable])
 
 define Program(packages: Vector[Module], module_: Module, statements: Vector[Statement])
 
 define Member union (
+    Package: Vector[Module]
     Concept: Concept
     Operator: Operator
     Function: Function
 )
 
 define Nameable union (
+    Package: Vector[Module]
     Concept: Concept
     Operator: Operator
     Functions: Vector[Function]

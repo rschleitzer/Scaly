@@ -168,7 +168,8 @@ define Parser
                         (("literal") ($
 "
         try let "(property content)" parse_literal_token(rp, ep)
-            else throw
+            when d: ParserError.Different throw d
+            when i: ParserError.Invalid throw i
 "
                         ))
                         (else (let ((syntax-moniker (if (property content) (property content) ($ (case (type content) (("colon" "semicolon") (type content)) (else (link content)))"_"(number->string (child-number content)))))) ($ ; terminals

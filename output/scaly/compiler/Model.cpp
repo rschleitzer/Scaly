@@ -106,9 +106,11 @@ While::While(Span span, Binding condition, Action action) : span(span), conditio
 
 Drop::Drop(Span span, Action action) : span(span), action(action) {}
 
-Try::Try(Span span, Binding condition, Vector<When> catches, Statement* alternative) : span(span), condition(condition), catches(catches), alternative(alternative) {}
+Try::Try(Span span, Binding binding, Vector<When> catches, Statement* alternative) : span(span), binding(binding), catches(catches), alternative(alternative) {}
 
 SizeOf::SizeOf(Span span, Type type) : span(span), type(type) {}
+
+Is::Is(Span span, Vector<String> name) : span(span), name(name) {}
 Expression::Expression(struct Constant _Constant) : _tag(Constant), _Constant(_Constant) {}
 
 Expression::Expression(struct Type _Type) : _tag(Type), _Type(_Type) {}
@@ -133,7 +135,7 @@ Expression::Expression(struct Try _Try) : _tag(Try), _Try(_Try) {}
 
 Expression::Expression(struct SizeOf _SizeOf) : _tag(SizeOf), _SizeOf(_SizeOf) {}
 
-Expression::Expression(struct Return _Return) : _tag(Return), _Return(_Return) {}
+Expression::Expression(struct Is _Is) : _tag(Is), _Is(_Is) {}
 
 
 Operand::Operand(Span span, Expression expression, Vector<String>* member_access) : span(span), expression(expression), member_access(member_access) {}
@@ -190,14 +192,18 @@ GenericParameter::GenericParameter(Span span, String name, Vector<Attribute> att
 
 Concept::Concept(Span span, String name, Vector<GenericParameter> parameters, Vector<Attribute> attributes, Definition definition) : span(span), name(name), parameters(parameters), attributes(attributes), definition(definition) {}
 
-Module::Module(bool private_, String file, String name, Vector<Module> modules, Vector<Use> uses, Vector<Member> mambers, HashMap<String, Nameable> symbols) : private_(private_), file(file), name(name), modules(modules), uses(uses), mambers(mambers), symbols(symbols) {}
+Module::Module(bool private_, String file, String name, Vector<Module> modules, Vector<Use> uses, Vector<Member> members, HashMap<String, Nameable> symbols) : private_(private_), file(file), name(name), modules(modules), uses(uses), members(members), symbols(symbols) {}
 
 Program::Program(Vector<Module> packages, Module module_, Vector<Statement> statements) : packages(packages), module_(module_), statements(statements) {}
+Member::Member(struct Vector<Module> _Package) : _tag(Package), _Package(_Package) {}
+
 Member::Member(struct Concept _Concept) : _tag(Concept), _Concept(_Concept) {}
 
 Member::Member(struct Operator _Operator) : _tag(Operator), _Operator(_Operator) {}
 
 Member::Member(struct Function _Function) : _tag(Function), _Function(_Function) {}
+
+Nameable::Nameable(struct Vector<Module> _Package) : _tag(Package), _Package(_Package) {}
 
 Nameable::Nameable(struct Concept _Concept) : _tag(Concept), _Concept(_Concept) {}
 

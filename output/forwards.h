@@ -100,6 +100,7 @@ struct LifetimeSyntax;
 struct ExtensionSyntax;
 struct NameSyntax;
 struct TypeSyntax;
+struct IsSyntax;
 struct SizeOfSyntax;
 struct SetSyntax;
 struct OperationSyntax;
@@ -240,6 +241,7 @@ struct While;
 struct Drop;
 struct Try;
 struct SizeOf;
+struct Is;
 struct Expression;
 struct Operand;
 struct Extern;
@@ -283,9 +285,13 @@ struct ModelError;
 struct FeatureNotImplemented;
 struct OnlyFile;
 struct TranspilerError;
+namespace transpiler {
+}
 struct MultipleMainFunctions;
 struct MainIsNotAFunction;
 struct ProgramModuleIsNotANameSpace;
 struct CompilerError;
+namespace compiler {
+}
 }
 }

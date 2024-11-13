@@ -9,8 +9,8 @@ define String (data: pointer[char](nullptr)) {
         while rest >= 0x80
         {
             set *(length_array + counter): (char)rest | 0x80
-            rest >>= 7;
-            counter += 1;
+            set rest: rest >> 7
+            set counter: counter + 1
         }
 
         set *(length_array + counter): (char)rest
@@ -51,6 +51,8 @@ define String (data: pointer[char](nullptr)) {
         (String(rp, c_string, strlen(c_string))) {}
 
     init (rp: pointer[Page], other: String) {
+        if other.data = null
+            return
         var length: size_t 0
         var bit_count 0
         var index 0
@@ -80,6 +82,9 @@ define String (data: pointer[char](nullptr)) {
     }
 
     function get_buffer(this: String) returns pointer[char]$ {
+        if data = null
+            return nullptr
+
         var length: size_t 0
         var bit_count 0
         var index: size_t 0

@@ -338,11 +338,11 @@ struct Drop : Object {
 
 struct Try : Object {
     Span span;
-    Binding condition;
+    Binding binding;
     Vector<When> catches;
     Statement* alternative;
 
-    Try(Span span, Binding condition, Vector<When> catches, Statement* alternative);
+    Try(Span span, Binding binding, Vector<When> catches, Statement* alternative);
 };
 
 struct SizeOf : Object {
@@ -350,6 +350,13 @@ struct SizeOf : Object {
     Type type;
 
     SizeOf(Span span, Type type);
+};
+
+struct Is : Object {
+    Span span;
+    Vector<String> name;
+
+    Is(Span span, Vector<String> name);
 };
 
 struct Expression : Object {
@@ -365,7 +372,7 @@ struct Expression : Object {
     Expression(While);
     Expression(Try);
     Expression(SizeOf);
-    Expression(Return);
+    Expression(Is);
     enum {
         Constant,
         Type,
@@ -379,7 +386,7 @@ struct Expression : Object {
         While,
         Try,
         SizeOf,
-        Return,
+        Is,
     } _tag;
     union {
         struct Constant _Constant;
@@ -394,7 +401,7 @@ struct Expression : Object {
         struct While _While;
         struct Try _Try;
         struct SizeOf _SizeOf;
-        struct Return _Return;
+        struct Is _Is;
     };
 };
 struct Operand : Object {
@@ -605,10 +612,10 @@ struct Module : Object {
     String name;
     Vector<Module> modules;
     Vector<Use> uses;
-    Vector<Member> mambers;
+    Vector<Member> members;
     HashMap<String, Nameable> symbols;
 
-    Module(bool private_, String file, String name, Vector<Module> modules, Vector<Use> uses, Vector<Member> mambers, HashMap<String, Nameable> symbols);
+    Module(bool private_, String file, String name, Vector<Module> modules, Vector<Use> uses, Vector<Member> members, HashMap<String, Nameable> symbols);
 };
 
 struct Program : Object {
@@ -620,27 +627,32 @@ struct Program : Object {
 };
 
 struct Member : Object {
+    Member(Vector<Module>);
     Member(Concept);
     Member(Operator);
     Member(Function);
     enum {
+        Package,
         Concept,
         Operator,
         Function,
     } _tag;
     union {
+        struct Vector<Module> _Package;
         struct Concept _Concept;
         struct Operator _Operator;
         struct Function _Function;
     };
 };
 struct Nameable : Object {
+    Nameable(Vector<Module>);
     Nameable(Concept);
     Nameable(Operator);
     Nameable(Vector<Function>);
     Nameable(Property);
     Nameable(Variant);
     enum {
+        Package,
         Concept,
         Operator,
         Functions,
@@ -648,6 +660,7 @@ struct Nameable : Object {
         Variant,
     } _tag;
     union {
+        struct Vector<Module> _Package;
         struct Concept _Concept;
         struct Operator _Operator;
         struct Vector<Function> _Functions;

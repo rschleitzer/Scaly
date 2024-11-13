@@ -750,9 +750,31 @@ void compiler::test_parser() {
     };
 }
 
+void compiler::test_compiler() {
+    auto r = Region();
+    {
+        auto _result = compiler::compile(r.get_page(), String(r.get_page(), "../scaly.scaly"), String(r.get_page(), "scaly"));
+        switch (_result._tag)
+        {
+            case Success::Error:
+            {
+                auto error = _result._Error;
+                {
+                    auto error_message = error.to_string(r.get_page());
+                    Console::print(error_message);
+                    exit(-2);
+                };
+                break;
+            }
+            default:
+                {
+            };
+        }
+    };
+}
+
 void compiler::test() {
-    test_lexer();
-    test_parser();
+    test_compiler();
 }
 
 }

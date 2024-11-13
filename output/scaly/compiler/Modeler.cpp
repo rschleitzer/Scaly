@@ -39,7 +39,7 @@ Result<Property, ModelError> model::handle_property(Page* rp, Page* ep, bool pri
 
             }
         };
-        initializer = new (alignof(Vector<Operand>), r.get_page()) Vector<Operand>(i);
+        initializer = new (alignof(Vector<Operand>), rp) Vector<Operand>(i);
     };
     List<Attribute>& attributes = *new (alignof(List<Attribute>), r.get_page()) List<Attribute>();
     if (property.attributes != nullptr) {
@@ -796,7 +796,7 @@ Result<Constant, ModelError> model::handle_literal(Page* rp, Page* ep, LiteralSy
             case Literal::String:
             {
                 auto string = _result._String;
-                Constant(StringConstant(string.value));
+                return Result<Constant, ModelError>(Constant(StringConstant(string.value)));
                 break;
             }
             case Literal::Character:
@@ -1255,7 +1255,7 @@ Result<Vector<Statement>, ModelError> model::handle_statements(Page* rp, Page* e
 Result<Component, ModelError> model::handle_component(Page* rp, Page* ep, ComponentSyntax& component, String file) {
     auto r = Region();
     String* name = nullptr;
-    auto attributes = *new (alignof(List<Attribute>), r.get_page()) List<Attribute>();
+    List<Attribute>& attributes = *new (alignof(List<Attribute>), r.get_page()) List<Attribute>();
     if (component.attributes != nullptr) {
         
         auto _attribute_syntax_iterator = (*component.attributes).get_iterator();
@@ -1339,7 +1339,7 @@ Result<Component, ModelError> model::handle_component(Page* rp, Page* ep, Compon
 
 Result<Tuple, ModelError> model::handle_object(Page* rp, Page* ep, ObjectSyntax& object, String file) {
     auto r = Region();
-    auto components_builder = *new (alignof(List<Component>), r.get_page()) List<Component>();
+    List<Component>& components_builder = *new (alignof(List<Component>), r.get_page()) List<Component>();
     if (object.components != nullptr) {
         
         auto _component_iterator = (*object.components).get_iterator();
@@ -1364,7 +1364,7 @@ Result<Tuple, ModelError> model::handle_object(Page* rp, Page* ep, ObjectSyntax&
 
 Result<Matrix, ModelError> model::handle_vector(Page* rp, Page* ep, VectorSyntax& vector, String file) {
     auto r = Region();
-    auto operations_builder = *new (alignof(List<Vector<Operand>>), r.get_page()) List<Vector<Operand>>();
+    List<Vector<Operand>>& operations_builder = *new (alignof(List<Vector<Operand>>), r.get_page()) List<Vector<Operand>>();
     if (vector.elements != nullptr) {
         
         auto _element_iterator = (*vector.elements).get_iterator();
@@ -1851,6 +1851,22 @@ Result<SizeOf, ModelError> model::handle_size_of(Page* rp, Page* ep, SizeOfSynta
     return Result<SizeOf, ModelError>(SizeOf(Span(size_of_syntax.start, size_of_syntax.end), *type));
 }
 
+Result<Is, ModelError> model::handle_is(Page* rp, Page* ep, IsSyntax& is_syntax, String file) {
+    auto r = Region();
+    List<String>& name_builder = *new (alignof(List<String>), r.get_page()) List<String>();
+    name_builder.add(is_syntax.name.name);
+    if (is_syntax.name.extensions != nullptr) {
+        
+        auto _name_iterator = (*is_syntax.name.extensions).get_iterator();
+        while (auto _name = _name_iterator.next()) {
+            auto name = *_name;{
+                name_builder.add(name.name);
+            }
+        };
+    };
+    return Result<Is, ModelError>(Is(Span(is_syntax.start, is_syntax.end), Vector<String>(rp, name_builder)));
+}
+
 Result<Expression, ModelError> model::handle_expression(Page* rp, Page* ep, ExpressionSyntax& expression, String file) {
     auto r = Region();
     {
@@ -2082,6 +2098,24 @@ Result<Expression, ModelError> model::handle_expression(Page* rp, Page* ep, Expr
                         }
                     };
                     return Result<Expression, ModelError>(size_of_result);
+                };
+                break;
+            }
+            case ExpressionSyntax::Is:
+            {
+                auto is_syntax = _result._Is;
+                {
+                    const auto _is_result_result = handle_is(rp, ep, is_syntax, file);
+                    auto is_result = _is_result_result._Ok;
+                    if (_is_result_result._tag == Success::Error) {
+                        const auto _is_result_Error = _is_result_result._Error;
+                        switch (_is_result_Error._tag) {
+                        default:
+                            return Result<Expression, ModelError>(_is_result_result._Error);
+
+                        }
+                    };
+                    return Result<Expression, ModelError>(is_result);
                 };
                 break;
             }
@@ -3046,7 +3080,7 @@ Result<Module, ModelError> model::build_referenced_module(Page* rp, Page* ep, St
     auto r = Region();
     StringBuilder& file_name_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder(Path::join(r.get_page(), path, name));
     file_name_builder.append(".scaly");
-    const auto file_name = file_name_builder.to_string(r.get_page());
+    const auto file_name = file_name_builder.to_string(rp);
     const auto module_text_result = File::read_to_string(r.get_page(), ep, file_name);
     {
         auto _result = module_text_result;

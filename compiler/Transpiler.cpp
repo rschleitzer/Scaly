@@ -7,7 +7,7 @@ struct Transpiler : Object {
     TranspilerError* program(Page* _ep, Program& program) {
         Region _r;
 
-        auto file = program.module.file;
+        auto file = program.module_.file;
         auto path = String(_r.get_page(), Path::join(_r.get_page(), Path::get_directory_name(_r.get_page(), file), String(_r.get_page(), "output")));
         auto _exists_result = Directory::exists(_ep, path);
         if (_exists_result._tag == scaly::containers::Result<bool, FileError>::Error)
@@ -18,14 +18,14 @@ struct Transpiler : Object {
             if (_result != nullptr)
                 return new(alignof(TranspilerError), _ep) TranspilerError(*_result);
         }
-        auto _result = build_module(_ep, path, program.module, program.module.name, String(), String());
+        auto _result = build_module(_ep, path, program.module_, program.module_.name, String(), String());
         if (_result != nullptr)
             return new(alignof(TranspilerError), _ep) TranspilerError(*_result);
 
         if (program.statements.length > 0) {
             main_file(_ep, path, program);
         }
-        main_include_file(_ep, path, program.module.name);
+        main_include_file(_ep, path, program.module_.name);
         forward_includes(_ep, path, program);
         vscode_files(_ep, path, program);
 
@@ -309,7 +309,6 @@ struct Result {\n\
             header_builder.append('/');
             header_builder.append(String(_r.get_page(), module->name));
             header_builder.append(".h\"\n");
-            StringBuilder& namespace_close_builder = *new (alignof(StringBuilder), _r.get_page()) StringBuilder(namespace_close);
             auto _result = build_module(_ep, path, *module, main_header, namespace_open, namespace_close);
             if (_result != nullptr)
                 return new(alignof(TranspilerError), _ep) TranspilerError(*_result);
@@ -897,6 +896,13 @@ struct Result {\n\
                         return _result;
                     break;
                 }
+                case Expression::Is: {
+                    auto is_ = operand->expression._Is;
+                    auto _result = build_is(_ep, builder, is_, indent);
+                    if (_result != nullptr)
+                        return _result;
+                    break;
+                }
             }
         }
         return nullptr;
@@ -1412,8 +1418,8 @@ struct Result {\n\
             builder.append(" = _");
             builder.append(name);
             builder.append("_result._Ok;\n");
+            builder.append(indent);
         }
-        builder.append(indent);
         builder.append("if (_");
         builder.append(name);
         builder.append("_result._tag == Success::Error) {\n");
@@ -1429,7 +1435,7 @@ struct Result {\n\
         builder.append("switch (_");
         builder.append(name);
         builder.append("_Error._tag) {");
-        auto _case__iterator = try_.cases.get_iterator();
+        auto _case__iterator = try_.catches.get_iterator();
         indent_builder.append("    ");
         String indented2 = indent_builder.to_string(_r.get_page());
         indent_builder.append("    ");
@@ -1502,6 +1508,21 @@ struct Result {\n\
         builder.append("sizeof(");
         build_type(builder, &sizeof_.type);
         builder.append(")");
+        return nullptr;
+    }
+
+    TranspilerError* build_is(Page* _ep, StringBuilder& builder, Is& is_, String indent) {
+        Region _r;
+        builder.append("._tag == ");
+        bool first = true;
+        auto _name_iterator = is_.name.get_iterator();
+        while (auto _name = _name_iterator.next()) {
+            if(first)
+                first = false;
+            else
+                builder.append("::");
+            builder.append(*_name);
+        }
         return nullptr;
     }
 
@@ -1893,13 +1914,13 @@ typedef const char const_char;\n\
 typedef struct stat struct_stat;\n\
 typedef const void const_void;\n");
         {
-            auto _result = forward_includes_for_modules(_ep, builder,  program.module.modules);
+            auto _result = forward_includes_for_modules(_ep, builder,  program.module_.modules);
             if (_result != nullptr)
                 return new(alignof(TranspilerError), _ep) TranspilerError(*_result);
         }
 
         {
-            auto _result = forward_includes_for_symbols(_ep, builder,  program.module.members);
+            auto _result = forward_includes_for_symbols(_ep, builder,  program.module_.members);
             if (_result != nullptr)
                 return new(alignof(TranspilerError), _ep) TranspilerError(*_result);
         }
@@ -2024,11 +2045,11 @@ typedef const void const_void;\n");
 				\"-ferror-limit=5\",\n\
 				\"-g\",\n\
 				\"${workspaceFolder}/main.cpp\",\n");
-            build_vscode_source_files(tasks_builder, String(), program.module);
+            build_vscode_source_files(tasks_builder, String(), program.module_);
             tasks_builder.append("\
 				\"-o\",\n\
 				\"${workspaceFolder}/bin/");
-            tasks_builder.append(program.module.name);
+            tasks_builder.append(program.module_.name);
             tasks_builder.append("\",\n\
 				//\"`llvm-config --cxxflags --ldflags --system-libs --libs core`\"\n\
 				\"-I/opt/homebrew/Cellar/llvm/19.1.1/include\",\n\
@@ -2070,7 +2091,7 @@ typedef const void const_void;\n");
             \"request\": \"launch\",\n\
             \"name\": \"Debug\",\n\
             \"program\": \"${workspaceFolder}/bin/");
-            launch_builder.append(program.module.name);
+            launch_builder.append(program.module_.name);
             launch_builder.append("\",\n\
             \"args\": [],\n\
             \"cwd\": \"${workspaceFolder}\"\n\

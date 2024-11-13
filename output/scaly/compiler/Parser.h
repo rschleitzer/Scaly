@@ -156,6 +156,14 @@ struct TypeSyntax : Object {
     TypeSyntax(size_t start, size_t end, NameSyntax name, GenericArgumentsSyntax* generics, OptionalSyntax* optional, LifetimeSyntax* lifetime);
 };
 
+struct IsSyntax : Object {
+    size_t start;
+    size_t end;
+    NameSyntax name;
+
+    IsSyntax(size_t start, size_t end, NameSyntax name);
+};
+
 struct SizeOfSyntax : Object {
     size_t start;
     size_t end;
@@ -599,6 +607,7 @@ struct ExpressionSyntax : Object {
     ExpressionSyntax(TrySyntax);
     ExpressionSyntax(RepeatSyntax);
     ExpressionSyntax(SizeOfSyntax);
+    ExpressionSyntax(IsSyntax);
     enum {
         Literal,
         Type,
@@ -614,6 +623,7 @@ struct ExpressionSyntax : Object {
         Try,
         Repeat,
         SizeOf,
+        Is,
     } _tag;
     union {
         struct LiteralSyntax _Literal;
@@ -630,6 +640,7 @@ struct ExpressionSyntax : Object {
         struct TrySyntax _Try;
         struct RepeatSyntax _Repeat;
         struct SizeOfSyntax _SizeOf;
+        struct IsSyntax _Is;
     };
 };
 struct MemberAccessSyntax : Object {
@@ -1331,6 +1342,7 @@ struct Parser : Object {
     Result<OperationSyntax, ParserError> parse_operation(Page* rp, Page* ep);
     Result<SetSyntax, ParserError> parse_set(Page* rp, Page* ep);
     Result<SizeOfSyntax, ParserError> parse_sizeof(Page* rp, Page* ep);
+    Result<IsSyntax, ParserError> parse_is(Page* rp, Page* ep);
     Result<Vector<TypeSyntax>*, ParserError> parse_type_list(Page* rp, Page* ep);
     Result<TypeSyntax, ParserError> parse_type(Page* rp, Page* ep);
     Result<NameSyntax, ParserError> parse_name(Page* rp, Page* ep);
