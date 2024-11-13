@@ -74,8 +74,7 @@ Result<Void, TranspilerError> transpiler::build_module(Page* ep, String path, Mo
     header_builder.append(module_.name);
     header_builder.append("_h\n");
     if ((module_.name.equals("scaly"))) {
-        header_builder.append("\n\
-#include <stdlib.h>\n\
+        header_builder.append("#include <stdlib.h>\n\
 #include <memory.h>\n\
 #include <stdio.h>\n\
 #include <unistd.h>\n\

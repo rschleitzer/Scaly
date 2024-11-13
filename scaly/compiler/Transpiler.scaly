@@ -53,8 +53,7 @@ function build_module(path: String, module_: ref[Module], main_header: String, n
     header_builder.append("_h\n")
     if (module_.name.equals("scaly"))
     {
-        header_builder.append("
-#include <stdlib.h>
+        header_builder.append("#include <stdlib.h>
 #include <memory.h>
 #include <stdio.h>
 #include <unistd.h>
