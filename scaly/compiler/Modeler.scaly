@@ -559,15 +559,15 @@ function handle_return(return_syntax: ref[ReturnSyntax], file: String) returns R
     return Return(Span(return_syntax.start, return_syntax.end), Vector[Operand]())
 }
 
-function handle_throw(throw_syntax: ref[ThrowSyntax], file: String) returns Return throws ModelError {
+function handle_throw(throw_syntax: ref[ThrowSyntax], file: String) returns Throw throws ModelError {
     var r Region()
     if throw_syntax.result <> null
     {
         try let result handle_operands(rp, ep, throw_syntax.result, file)
             else throw
-        return Return(Span(throw_syntax.start, throw_syntax.end), result)
+        return Throw(Span(throw_syntax.start, throw_syntax.end), result)
     }
-    return Return(Span(throw_syntax.start, throw_syntax.end), Vector[Operand]())
+    return Throw(Span(throw_syntax.start, throw_syntax.end), Vector[Operand]())
 }
 
 function handle_command(command_syntax: ref[CommandSyntax], file: String) returns Statement throws ModelError {

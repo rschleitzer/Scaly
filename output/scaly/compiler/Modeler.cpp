@@ -973,7 +973,7 @@ Result<Return, ModelError> model::handle_return(Page* rp, Page* ep, ReturnSyntax
     return Result<Return, ModelError>(Return(Span(return_syntax.start, return_syntax.end), Vector<Operand>()));
 }
 
-Result<Return, ModelError> model::handle_throw(Page* rp, Page* ep, ThrowSyntax& throw_syntax, String file) {
+Result<Throw, ModelError> model::handle_throw(Page* rp, Page* ep, ThrowSyntax& throw_syntax, String file) {
     auto r = Region();
     if (throw_syntax.result != nullptr) {
         const auto _result_result = handle_operands(rp, ep, throw_syntax.result, file);
@@ -982,13 +982,13 @@ Result<Return, ModelError> model::handle_throw(Page* rp, Page* ep, ThrowSyntax& 
             const auto _result_Error = _result_result._Error;
             switch (_result_Error._tag) {
             default:
-                return Result<Return, ModelError>(_result_result._Error);
+                return Result<Throw, ModelError>(_result_result._Error);
 
             }
         };
-        return Result<Return, ModelError>(Return(Span(throw_syntax.start, throw_syntax.end), result));
+        return Result<Throw, ModelError>(Throw(Span(throw_syntax.start, throw_syntax.end), result));
     };
-    return Result<Return, ModelError>(Return(Span(throw_syntax.start, throw_syntax.end), Vector<Operand>()));
+    return Result<Throw, ModelError>(Throw(Span(throw_syntax.start, throw_syntax.end), Vector<Operand>()));
 }
 
 Result<Statement, ModelError> model::handle_command(Page* rp, Page* ep, CommandSyntax& command_syntax, String file) {

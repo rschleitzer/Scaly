@@ -23,7 +23,7 @@ namespace model {
     Result<Break, ModelError> handle_break(Page* rp, Page* ep, BreakSyntax& break_syntax, String file);
     Result<Continue, ModelError> handle_continue(Page* rp, Page* ep, ContinueSyntax& continue_syntax, String file);
     Result<Return, ModelError> handle_return(Page* rp, Page* ep, ReturnSyntax& return_syntax, String file);
-    Result<Return, ModelError> handle_throw(Page* rp, Page* ep, ThrowSyntax& throw_syntax, String file);
+    Result<Throw, ModelError> handle_throw(Page* rp, Page* ep, ThrowSyntax& throw_syntax, String file);
     Result<Statement, ModelError> handle_command(Page* rp, Page* ep, CommandSyntax& command_syntax, String file);
     Result<Statement, ModelError> handle_statement(Page* rp, Page* ep, StatementSyntax& statement_syntax, String file);
     Result<Vector<Statement>, ModelError> handle_statements(Page* rp, Page* ep, Vector<StatementSyntax>& statements, String file);
