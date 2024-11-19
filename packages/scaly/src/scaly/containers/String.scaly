@@ -1,0 +1,261 @@
+define PACKED_SIZE: int 9
+
+define String (data: pointer[char](nullptr)) {
+    init (rp: pointer[Page], length: size_t) {
+        var length_array: char []PACKED_SIZE
+        var rest length
+
+        var counter: size_t 0
+        while rest >= 0x80
+        {
+            set *(length_array + counter): (char)rest | 0x80
+            set rest: rest >> 7
+            set counter: counter + 1
+        }
+
+        set *(length_array + counter): (char)rest
+        let overall_length counter + 1 + length
+        set data: (char*)(*rp).allocate(overall_length, 1)
+        memcpy(data, length_array, counter + 1)
+    }
+
+    init (rp: pointer[Page], other: pointer[const_char], length: size_t) {
+        if length = 0
+        {
+            set data: null
+            return
+        }
+
+        var length_array: char []PACKED_SIZE
+        var rest length
+
+        var counter: size_t 0
+        while rest >= 0x80
+        {
+            set *(length_array + counter): (char)rest | 0x80
+            set rest: rest >> 7
+            set counter: counter + 1
+        }
+
+        set *(length_array + counter): (char)rest
+        let overall_length counter + 1 + length
+        set data: (char*)(*rp).allocate(overall_length, 1)
+        memcpy(data, length_array, counter + 1)
+        memcpy((pointer[void])(data + counter + 1), other, length)
+    }
+
+    init (rp: pointer[Page], other: Vector[char])
+        (String(rp, other.data, other.length)) {}
+
+    init (rp: pointer[Page], c_string: pointer[const_char])
+        (String(rp, c_string, strlen(c_string))) {}
+
+    init (rp: pointer[Page], other: String) {
+        if other.data = null
+            return
+        var length: size_t 0
+        var bit_count 0
+        var index 0
+        while true
+        {
+            if bit_count = PACKED_SIZE * 7
+                ; Bad string length
+                exit(12)
+
+            let byte *(other.data + index)
+            set length: length | ((size_t)(byte & 0x7F)) << bit_count
+            if (byte & 0x80) = 0
+                break;
+
+            set bit_count: bit_count + 7
+            set index: index + 1
+        }
+        var overall_length index + 1 + length
+        set data: (char*)(*rp).allocate(overall_length, 1)
+        memcpy(data, other.data, overall_length)
+    }
+
+    init (rp: pointer[Page], character: char) {
+        set data: (char*)(*rp).allocate(2, 1)
+        set *data: 1
+        set *(data + 1): character
+    }
+
+    function get_buffer(this: String) returns pointer[char]$ {
+        if data = null
+            return nullptr
+
+        var length: size_t 0
+        var bit_count 0
+        var index: size_t 0
+        while true
+        {
+            if bit_count = PACKED_SIZE * 7
+                exit(11)
+
+            var byte: char *(data + index)
+            set length: length | ((size_t)(byte & 0x7F)) << bit_count
+            if (byte & 0x80) == 0
+                break
+            set bit_count: bit_count + 7
+            set index: index + 1
+        }
+
+        return data + index + 1
+    }
+
+    function to_c_string(this: String, rp: pointer[Page]) returns pointer[const_char]$ {
+        var length: size_t 0
+        var bit_count 0
+        var index: size_t 0
+        if data <> null
+        {
+            while true
+            {
+                if bit_count = PACKED_SIZE * 7
+                    exit(11)
+
+                var byte: char *(data + index)
+                set length: length | ((size_t)(byte & 0x7F)) << bit_count
+                if (byte & 0x80) == 0
+                    break
+                set bit_count: bit_count + 7
+                set index: index + 1
+            }
+        }
+
+        var dest (*rp).allocate(length + 1, 1)
+        if data <> null
+            memcpy(dest, data + index + 1, length)
+        set *((char*)dest + index + length): 0
+
+        return (const_char*)dest
+    }
+
+    function get_length(this: String) returns size_t {
+        if data = null
+            return 0
+
+        var result: size_t 0
+        var bit_count 0
+        var index: size_t 0
+        while true
+        {
+            if bit_count = PACKED_SIZE * 7
+                exit(11)
+
+            var byte: char *(data + index)
+            set result: result | ((size_t)(byte & 0x7F)) << bit_count
+            if (byte & 0x80) == 0
+                break
+            set bit_count: bit_count + 7
+            set index: index + 1
+        }
+        return result
+    }
+
+    function equals(this: String, other: String) returns bool {
+        var length: size_t 0
+        var index: size_t 0
+        if data <> null
+        {
+            var bit_count 0
+            while true
+            {
+                if bit_count = PACKED_SIZE * 7
+                    exit(11)
+
+                var byte: char *(data + index)
+                set length: length | ((size_t)(byte & 0x7F)) << bit_count
+                if (byte & 0x80) == 0
+                    break
+                set bit_count: bit_count + 7
+                set index: index + 1
+            }
+        }
+
+        if length <> other.get_length()
+            return false
+
+        if data = null
+            return true
+
+        return memcmp(data + index + 1, other.data + index + 1, length) = 0
+    }
+
+    function equals(this: String, other: pointer[const_char]) returns bool {
+        var length: size_t 0
+        var index: size_t 0
+        if data <> null
+        {
+            var bit_count 0
+            while true
+            {
+                if bit_count = PACKED_SIZE * 7
+                    exit(13)
+
+                var byte: char *(data + index)
+                set length: length | ((size_t)(byte & 0x7F)) << bit_count
+                if (byte & 0x80) == 0
+                    break
+                set bit_count: bit_count + 7
+                set index: index + 1
+            }
+        }
+
+        if length <> strlen(other)
+            return false
+
+        if data = null
+            return true
+
+        return memcmp(data + index + 1, other, length) = 0
+    }
+
+    function equals (this: String, other: Vector[char]) returns bool {
+        var length: size_t 0
+        var bit_count 0
+        var index: size_t 0
+        while true
+        {
+            if bit_count = PACKED_SIZE * 7
+                exit(11)
+
+            var byte: char *(data + index)
+            set length: length | ((size_t)(byte & 0x7F)) << bit_count
+            if (byte & 0x80) == 0
+                break
+            set bit_count: bit_count + 7
+            set index: index + 1
+        }
+
+        if length <> other.length
+            return false
+
+        return memcmp(data + index + 1, other.data, length) = 0
+    }
+
+    function hash(this: String) returns size_t {
+        var length: size_t 0
+        var bit_count 0
+        var index: size_t 0
+        while true
+        {
+            if bit_count = PACKED_SIZE * 7
+                exit(11)
+
+            var byte: char *(data + index)
+            set length: length | ((size_t)(byte & 0x7F)) << bit_count
+            if (byte & 0x80) == 0
+                break
+            set bit_count: bit_count + 7
+            set index: index + 1
+        }
+
+        return hashing->hash(data + index + 1, length)
+    }
+
+    function get_iterator(this: String) returns StringIterator$ {
+        return StringIterator(*this)
+    }
+}

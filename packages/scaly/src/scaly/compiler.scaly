@@ -1,0 +1,388 @@
+use scaly.containers
+use scaly.io
+
+define compiler {
+    module Errors
+    module Lexer
+    module Parser
+    module Model
+    module Modeler
+    module ModelError
+    module TranspilerError
+    module Transpiler
+    module Generator
+    module CompilerError
+    module Compiler
+
+    function test_lexer() {
+        {
+            var r Region()
+            var p r.get_page()
+            var lexer Lexer(String(p, ""))
+            choose lexer.token
+                when e: Token.Empty lexer.advance()
+                else exit(1)
+            choose lexer.token
+                when e: Token.Empty {}
+                else exit(2)                
+        }
+        {
+            var r Region()
+            var p r.get_page()
+            var lexer Lexer(String(p, " \t\r
+;single line comment
+;*multi
+line
+comment;*nested comment*;
+comment end*;
+abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute + -0815 /* <> \"a string\" \"\\\"\\n\\r\\t\" 'a string identifier' `a string fragment \\`\\n\\r\\t`"))
+
+            choose lexer.token
+                when e: Token.Empty lexer.advance()
+                else exit(3)
+
+            choose lexer.token
+                when identifier: Token.Identifier
+                {
+                    if String(p, "abc_AZ0815_7").equals(identifier.name) = false
+                        exit(4)
+                    lexer.advance()
+                }
+                else exit(5)
+
+            choose lexer.token
+                when literal: Token.Literal
+                {
+                    choose literal
+                        when integer: LiteralToken.Integer
+                        {
+                            if String(p, "42").equals(integer.value) = false
+                                exit(6)
+                            lexer.advance()
+                        }
+                        else exit(7)
+
+                }
+                else: exit(8)
+
+            choose lexer.token
+                when c: Token.Colon lexer.advance()
+                else exit(9)
+
+            choose lexer.token
+                when c: Token.Colon lexer.advance()
+                else exit(10)
+
+            choose lexer.token
+                when literal: Token.Literal
+                {
+                    choose literal
+                        when integer: LiteralToken.Integer
+                        {
+                            if String(p, "0").equals(integer.value) = false
+                                exit(11)
+                            lexer.advance()
+                        }
+                        else exit(12)
+
+                }
+                else: exit(13)
+
+            choose lexer.token
+                when literal: Token.Literal
+                {
+                    choose literal
+                        when integer: LiteralToken.Integer
+                        {
+                            if String(p, "012").equals(integer.value) = false
+                                exit(14)
+                            lexer.advance()
+                        }
+                        else exit(15)
+
+                }
+                else: exit(16)
+
+            choose lexer.token
+                when literal: Token.Literal
+                {
+                    choose literal
+                        when fp: LiteralToken.FloatingPoint
+                        {
+                            if String(p, "0.34").equals(fp.value) = false
+                                exit(17)
+                            lexer.advance()
+                        }
+                        else exit(18)
+
+                }
+                else exit(19)
+
+            choose lexer.token
+                when literal: Token.Literal
+                {
+                    choose literal
+                        when fp: LiteralToken.FloatingPoint
+                        {
+                            if String(p, "0.56E12").equals(fp.value) = false
+                                exit(20)
+                            lexer.advance()
+                        }
+                        else exit(21)
+
+                }
+                else exit(22)
+
+            choose lexer.token
+                when literal: Token.Literal
+                {
+                    choose literal
+                        when fp: LiteralToken.FloatingPoint
+                        {
+                            if String(p, "0.78e13").equals(fp.value) = false
+                                exit(23)
+                            lexer.advance()
+                        }
+                        else exit(24)
+
+                }
+                else exit(25)
+
+            choose lexer.token
+                when literal: Token.Literal
+                {
+                    choose literal
+                        when hex: LiteralToken.Hex
+                        {
+                            if String(p, "0xaB").equals(hex.value) = false
+                                exit(26)
+                            lexer.advance()
+                        }
+                        else exit(27)
+
+                }
+                else exit(28)
+
+            choose lexer.token
+                when literal: Token.Literal
+                {
+                    choose literal
+                        when hex: LiteralToken.Hex
+                        {
+                            if String(p, "0xCdEf02").equals(hex.value) = false
+                                exit(29)
+                            lexer.advance()
+                        }
+                        else exit(30)
+
+                }
+                else exit(31)
+
+            choose lexer.token
+                when literal: Token.Literal
+                {
+                    choose literal
+                        when b: LiteralToken.Boolean
+                        {
+                            if b.value
+                                exit(32)
+                            lexer.advance()
+                        }
+                        else exit(33)
+
+                }
+                else exit(34)
+
+            choose lexer.token
+                when literal: Token.Literal
+                {
+                    choose literal
+                        when b: LiteralToken.Boolean
+                        {
+                            if b.value = false
+                                exit(35)
+                            lexer.advance()
+                        }
+                        else exit(36)
+
+                }
+                else exit(37)
+
+            choose lexer.token
+                when a: Token.Attribute
+                {
+                    if String(p, "ttribute").equals(a.name) = false
+                        exit(38)
+                    lexer.advance()
+                }
+                else exit(39)
+
+            choose lexer.token
+                when identifier: Token.Identifier
+                {
+                    if String(p, "+").equals(identifier.name) = false
+                        exit(40)
+                    lexer.advance()
+                }
+                else exit(41)
+
+            choose lexer.token
+                when identifier: Token.Identifier
+                {
+                    if String(p, "-").equals(identifier.name) = false
+                        exit(42)
+                    lexer.advance()
+                }
+                else exit(43)
+
+            choose lexer.token
+                when literal: Token.Literal
+                {
+                    choose literal
+                        when integer: LiteralToken.Integer
+                        {
+                            if String(p, "0815").equals(integer.value) = false
+                                exit(44)
+                            lexer.advance()
+                        }
+                        else exit(45)
+
+                }
+                else: exit(8)
+
+            choose lexer.token
+                when identifier: Token.Identifier
+                {
+                    if String(p, "/*").equals(identifier.name) = false
+                        exit(46)
+                    lexer.advance()
+                }
+                else exit(47)
+
+            choose lexer.token
+                when identifier: Token.Identifier
+                {
+                    if String(p, "<>").equals(identifier.name) = false
+                        exit(48)
+                    lexer.advance()
+                }
+                else exit(49)
+
+            choose lexer.token
+                when literal: Token.Literal
+                {
+                    choose literal
+                        when string: LiteralToken.String
+                        {
+                            if String(p, "a string").equals(string.value) = false
+                                exit(50)
+                            lexer.advance()
+                        }
+                        else exit(51)
+
+                }
+                else: exit(52)
+
+            choose lexer.token
+                when literal: Token.Literal
+                {
+                    choose literal
+                        when string: LiteralToken.String
+                        {
+                            if String(p, "\\\"\\n\\r\\t").equals(string.value) = false
+                                exit(53)
+                            lexer.advance()
+                        }
+                        else exit(54)
+
+                }
+                else: exit(55)
+
+            choose lexer.token
+                when literal: Token.Literal
+                {
+                    choose literal
+                        when character: LiteralToken.Character
+                        {
+                            if String(p, "a string identifier").equals(character.value) = false
+                                exit(56)
+                            lexer.advance()
+                        }
+                        else exit(57)
+
+                }
+                else: exit(58)
+
+            choose lexer.token
+                when literal: Token.Literal
+                {
+                    choose literal
+                        when fragment: LiteralToken.Fragment
+                        {
+                            if String(p, "a string fragment \\`\\n\\r\\t").equals(fragment.value) = false
+                                exit(58)
+                            lexer.advance()
+                        }
+                        else exit(59)
+
+                }
+                else: exit(60)
+        }
+    }
+
+    function test_parser() {
+    {
+        var r Region()
+        var p r.get_page()
+        var parser Parser$(String(p, "define a ()"))
+        try let file_syntax (*parser).parse_file(p, p)
+            when i: ParserError.Invalid
+                exit(61)
+            when d: ParserError.Different
+                exit(62)
+    }
+    {
+        var r Region()
+        var p r.get_page()
+        try let file_text File->read_to_string(p, p, String(p, "../scaly.scaly"))
+            else exit(63)
+
+        var parser Parser$(file_text)
+        try let program_syntax (*parser).parse_program(p, p)
+            else exit(64)
+
+        if (*parser).is_at_end() = false
+            exit(65)
+    }
+
+    }
+
+;*
+    void test_generator() {
+        Region _r;
+        Generator& generator = new (alignof(Generator), _r.get_page()) Generator();
+        generator.initialize_module(String(_r.get_page(), "foo"));
+        generator.print_module();
+        generator.save_module_to_file(String(_r.get_page(), "foo.ll"));
+    }
+*;
+
+    function test_compiler() {
+        var r Region()
+        choose compiler->compile(r.get_page(), String(r.get_page(), "scaly.scaly"), String(r.get_page(), "scaly"))
+            when error: Success.Error
+            {
+                var error_message error.to_string(r.get_page())
+                Console->print(error_message)
+                exit(-2)
+            }
+            else {}
+    }
+
+    function test () {
+;        test_lexer()
+;        test_parser()
+;        test_generator()
+        test_compiler()
+    }
+}
