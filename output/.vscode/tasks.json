@@ -52,6 +52,7 @@
 				"${workspaceFolder}/scaly/compiler/ModelError.cpp",
 				"${workspaceFolder}/scaly/compiler/TranspilerError.cpp",
 				"${workspaceFolder}/scaly/compiler/Transpiler.cpp",
+				"${workspaceFolder}/scaly/compiler/Generator.cpp",
 				"${workspaceFolder}/scaly/compiler/CompilerError.cpp",
 				"${workspaceFolder}/scaly/compiler/Compiler.cpp",
 				"-o",

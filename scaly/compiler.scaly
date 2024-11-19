@@ -10,6 +10,7 @@ define compiler {
     module ModelError
     module TranspilerError
     module Transpiler
+    module Generator
     module CompilerError
     module Compiler
 

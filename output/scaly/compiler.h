@@ -16,6 +16,7 @@ namespace compiler {
 #include "compiler/ModelError.h"
 #include "compiler/TranspilerError.h"
 #include "compiler/Transpiler.h"
+#include "compiler/Generator.h"
 #include "compiler/CompilerError.h"
 #include "compiler/Compiler.h"
 
