@@ -46,6 +46,11 @@ Result<Void, TranspilerError> transpiler::program(Page* ep, Program& program) {
             }
         }}
         ;
+    if (program.statements.length>0) 
+        main_file(ep, path, program);
+    main_include_file(ep, path, program.module_.name);
+    forward_includes(ep, path, program);
+    vscode_files(ep, path, program);
     return Result<Void, TranspilerError>(Void());
 }
 
@@ -2735,10 +2740,9 @@ void transpiler::full_struct_name(StringBuilder& builder, String name, Vector<Ge
 Result<Void, TranspilerError> transpiler::forward_includes(Page* ep, String path, Program& program) {
     auto r = Region();
     StringBuilder& builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder();
-    builder.append("\n\
-typedef const char const_char\n\
-typedef struct stat struct_stat\n\
-typedef const void const_void\n");
+    builder.append("typedef const char const_char;\n\
+typedef struct stat struct_stat;\n\
+typedef const void const_void;\n");
     {
         const auto _void_result = forward_includes_for_modules(ep, builder, program.module_.modules);
         if (_void_result._tag == Success::Error) {
@@ -2943,49 +2947,48 @@ Result<Void, TranspilerError> transpiler::vscode_files(Page* ep, String path, Pr
         ;
     StringBuilder& tasks_file_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder(Path::join(r.get_page(), vscode_dir, String(r.get_page(), "tasks.json")));
     StringBuilder& tasks_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder("{\n\
-\"version\": \"2.0.0\",\n\
-\"tasks\": [\n\
-    {\n\
-        \"type\": \"cppbuild\",\n\
-        \"label\": \"C/C++: clang++ Aktive Datei kompilieren\",\n\
-        \"command\": \"/opt/homebrew/opt/llvm/bin/clang++\",\n\
-        \"args\": [\n\
-            \"-fcolor-diagnostics\",\n\
-            \"-fansi-escape-codes\",\n\
-            \"-ferror-limit=5\",\n\
-            \"-g\",\n\
-            \"${workspaceFolder}/main.cpp\",\n");
+	\"version\": \"2.0.0\",\n\
+	\"tasks\": [\n\
+		{\n\
+			\"type\": \"cppbuild\",\n\
+			\"label\": \"C/C++: clang++ Aktive Datei kompilieren\",\n\
+			\"command\": \"/opt/homebrew/opt/llvm/bin/clang++\",\n\
+			\"args\": [\n\
+				\"-fcolor-diagnostics\",\n\
+				\"-fansi-escape-codes\",\n\
+				\"-ferror-limit=5\",\n\
+				\"-g\",\n\
+				\"${workspaceFolder}/main.cpp\",\n");
     build_vscode_source_files(tasks_builder, String(), program.module_);
-    tasks_builder.append("\n\
-            \"-o\",\n\
-            \"${workspaceFolder}/bin/");
+    tasks_builder.append("				\"-o\",\n\
+				\"${workspaceFolder}/bin/");
     tasks_builder.append(program.module_.name);
     tasks_builder.append("\",\n\
-            //\"`llvm-config --cxxflags --ldflags --system-libs --libs core`\"\n\
-            \"-I/opt/homebrew/Cellar/llvm/19.1.1/include\",\n\
-            \"-std=c++17\",\n\
-            \"-stdlib=libc++\",\n\
-            \"-D__STDC_CONSTANT_MACROS\",\n\
-            \"-D__STDC_FORMAT_MACROS\",\n\
-            \"-D__STDC_LIMIT_MACROS\",\n\
-            \"-L/opt/homebrew/Cellar/llvm/19.1.1/lib\",\n\
-            \"-Wl,-search_paths_first\",\n\
-            \"-Wl,-headerpad_max_install_names\",\n\
-            \"-lLLVM-19\",\n\
-        ],\n\
-        \"options\": {\n\
-            \"cwd\": \"${workspaceFolder}\"\n\
-        },\n\
-        \"problemMatcher\": [\n\
-            \"$gcc\"\n\
-        ],\n\
-        \"group\": {\n\
-            \"kind\": \"build\",\n\
-            \"isDefault\": true\n\
-        },\n\
-        \"detail\": \"compiler: /usr/bin/clang++\"\n\
-    }\n\
-]\n\
+				//\"`llvm-config --cxxflags --ldflags --system-libs --libs core`\"\n\
+				\"-I/opt/homebrew/Cellar/llvm/19.1.1/include\",\n\
+				\"-std=c++17\",\n\
+				\"-stdlib=libc++\",\n\
+				\"-D__STDC_CONSTANT_MACROS\",\n\
+				\"-D__STDC_FORMAT_MACROS\",\n\
+				\"-D__STDC_LIMIT_MACROS\",\n\
+				\"-L/opt/homebrew/Cellar/llvm/19.1.1/lib\",\n\
+				\"-Wl,-search_paths_first\",\n\
+				\"-Wl,-headerpad_max_install_names\",\n\
+				\"-lLLVM-19\",\n\
+			],\n\
+			\"options\": {\n\
+				\"cwd\": \"${workspaceFolder}\"\n\
+			},\n\
+			\"problemMatcher\": [\n\
+				\"$gcc\"\n\
+			],\n\
+			\"group\": {\n\
+				\"kind\": \"build\",\n\
+				\"isDefault\": true\n\
+			},\n\
+			\"detail\": \"compiler: /usr/bin/clang++\"\n\
+		}\n\
+	]\n\
 }");
     {
         const auto _void_result = File::write_from_string(ep, tasks_file_builder.to_string(r.get_page()), tasks_builder.to_string(r.get_page()));
@@ -2999,19 +3002,19 @@ Result<Void, TranspilerError> transpiler::vscode_files(Page* ep, String path, Pr
         }}
         ;
     StringBuilder& launch_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder("{\n\
-\"version\": \"0.2.0\",\n\
-\"configurations\": [\n\
-    {\n\
-        \"type\": \"lldb\",\n\
-        \"request\": \"launch\",\n\
-        \"name\": \"Debug\",\n\
-        \"program\": \"${workspaceFolder}/bin/");
+	\"version\": \"0.2.0\",\n\
+	\"configurations\": [\n\
+		{\n\
+			\"type\": \"lldb\",\n\
+			\"request\": \"launch\",\n\
+			\"name\": \"Debug\",\n\
+			\"program\": \"${workspaceFolder}/bin/");
     launch_builder.append(program.module_.name);
     launch_builder.append("\",\n\
-        \"args\": [],\n\
-        \"cwd\": \"${workspaceFolder}\"\n\
-    }\n\
-]\n\
+			\"args\": [],\n\
+			\"cwd\": \"${workspaceFolder}\"\n\
+		}\n\
+	]\n\
 }");
     {
         const auto _void_result = File::write_from_string(ep, Path::join(r.get_page(), vscode_dir, String(r.get_page(), "launch.json")), launch_builder.to_string(r.get_page()));
@@ -3106,7 +3109,7 @@ int main(int argc, char** argv) {");
             builder.append(';');
         }
     };
-    builder.append("\n    return 0\n}\n");
+    builder.append("\n    return 0;\n}\n");
     if (builder.get_length()>0) {
         const auto main_file_name = Path::join(r.get_page(), path, String(r.get_page(), "main.cpp"));
         {

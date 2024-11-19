@@ -22,11 +22,11 @@ function program(program: ref[Program]) throws TranspilerError {
     try build_module(ep, path, program.module_, program.module_.name, String(), String())
        else throw
 
-    ;if program.statements.length > 0
-    ;    main_file(ep, path, program)
-    ;main_include_file(ep, path, program.module_.name)
-    ;forward_includes(ep, path, program)
-    ;vscode_files(ep, path, program)*;
+    if program.statements.length > 0
+        main_file(ep, path, program)
+    main_include_file(ep, path, program.module_.name)
+    forward_includes(ep, path, program)
+    vscode_files(ep, path, program)
 
     return Void()
 }
@@ -1726,10 +1726,10 @@ function full_struct_name(builder: ref[StringBuilder], name: String, parameters:
 function forward_includes(path: String, program: ref[Program]) throws TranspilerError {
     var r Region()
     var builder: ref[StringBuilder] *StringBuilder$()
-    builder.append("
-typedef const char const_char
-typedef struct stat struct_stat
-typedef const void const_void\n")
+    builder.append(
+"typedef const char const_char;
+typedef struct stat struct_stat;
+typedef const void const_void;\n")
     try forward_includes_for_modules(ep, builder,  program.module_.modules)
         else throw
     try forward_includes_for_symbols(ep, builder,  program.module_.members)
@@ -1820,67 +1820,67 @@ function vscode_files(path: String, program: ref[Program]) throws TranspilerErro
 
     var tasks_file_builder: ref[StringBuilder] *StringBuilder$(Path->join(r.get_page(), vscode_dir, String(r.get_page(), "tasks.json")))
     var tasks_builder: ref[StringBuilder] *StringBuilder$("{
-\"version\": \"2.0.0\",
-\"tasks\": [
-    {
-        \"type\": \"cppbuild\",
-        \"label\": \"C/C++: clang++ Aktive Datei kompilieren\",
-        \"command\": \"/opt/homebrew/opt/llvm/bin/clang++\",
-        \"args\": [
-            \"-fcolor-diagnostics\",
-            \"-fansi-escape-codes\",
-            \"-ferror-limit=5\",
-            \"-g\",
-            \"${workspaceFolder}/main.cpp\",\n")
+	\"version\": \"2.0.0\",
+	\"tasks\": [
+		{
+			\"type\": \"cppbuild\",
+			\"label\": \"C/C++: clang++ Aktive Datei kompilieren\",
+			\"command\": \"/opt/homebrew/opt/llvm/bin/clang++\",
+			\"args\": [
+				\"-fcolor-diagnostics\",
+				\"-fansi-escape-codes\",
+				\"-ferror-limit=5\",
+				\"-g\",
+				\"${workspaceFolder}/main.cpp\",\n")
     build_vscode_source_files(tasks_builder, String(), program.module_)
-    tasks_builder.append("
-            \"-o\",
-            \"${workspaceFolder}/bin/")
+    tasks_builder.append(
+"				\"-o\",
+				\"${workspaceFolder}/bin/")
     tasks_builder.append(program.module_.name)
     tasks_builder.append("\",
-            //\"`llvm-config --cxxflags --ldflags --system-libs --libs core`\"
-            \"-I/opt/homebrew/Cellar/llvm/19.1.1/include\",
-            \"-std=c++17\",
-            \"-stdlib=libc++\",
-            \"-D__STDC_CONSTANT_MACROS\",
-            \"-D__STDC_FORMAT_MACROS\",
-            \"-D__STDC_LIMIT_MACROS\",
-            \"-L/opt/homebrew/Cellar/llvm/19.1.1/lib\",
-            \"-Wl,-search_paths_first\",
-            \"-Wl,-headerpad_max_install_names\",
-            \"-lLLVM-19\",
-        ],
-        \"options\": {
-            \"cwd\": \"${workspaceFolder}\"
-        },
-        \"problemMatcher\": [
-            \"$gcc\"
-        ],
-        \"group\": {
-            \"kind\": \"build\",
-            \"isDefault\": true
-        },
-        \"detail\": \"compiler: /usr/bin/clang++\"
-    }
-]
+				//\"`llvm-config --cxxflags --ldflags --system-libs --libs core`\"
+				\"-I/opt/homebrew/Cellar/llvm/19.1.1/include\",
+				\"-std=c++17\",
+				\"-stdlib=libc++\",
+				\"-D__STDC_CONSTANT_MACROS\",
+				\"-D__STDC_FORMAT_MACROS\",
+				\"-D__STDC_LIMIT_MACROS\",
+				\"-L/opt/homebrew/Cellar/llvm/19.1.1/lib\",
+				\"-Wl,-search_paths_first\",
+				\"-Wl,-headerpad_max_install_names\",
+				\"-lLLVM-19\",
+			],
+			\"options\": {
+				\"cwd\": \"${workspaceFolder}\"
+			},
+			\"problemMatcher\": [
+				\"$gcc\"
+			],
+			\"group\": {
+				\"kind\": \"build\",
+				\"isDefault\": true
+			},
+			\"detail\": \"compiler: /usr/bin/clang++\"
+		}
+	]
 }")
     try File->write_from_string(ep, tasks_file_builder.to_string(r.get_page()), tasks_builder.to_string(r.get_page()))
         else throw
 
     var launch_builder: ref[StringBuilder] *StringBuilder$("{
-\"version\": \"0.2.0\",
-\"configurations\": [
-    {
-        \"type\": \"lldb\",
-        \"request\": \"launch\",
-        \"name\": \"Debug\",
-        \"program\": \"${workspaceFolder}/bin/")
+	\"version\": \"0.2.0\",
+	\"configurations\": [
+		{
+			\"type\": \"lldb\",
+			\"request\": \"launch\",
+			\"name\": \"Debug\",
+			\"program\": \"${workspaceFolder}/bin/")
         launch_builder.append(program.module_.name)
         launch_builder.append("\",
-        \"args\": [],
-        \"cwd\": \"${workspaceFolder}\"
-    }
-]
+			\"args\": [],
+			\"cwd\": \"${workspaceFolder}\"
+		}
+	]
 }")
     try File->write_from_string(ep, Path->join(r.get_page(), vscode_dir, String(r.get_page(), "launch.json")), launch_builder.to_string(r.get_page()))
         else throw
@@ -1933,7 +1933,7 @@ int main(int argc, char** argv) {")
         build_statement(ep, builder, statement, null, null, null, String())
         builder.append(';')
     }
-    builder.append("\n    return 0\n}\n")
+    builder.append("\n    return 0;\n}\n")
     if builder.get_length() > 0
     {
         let main_file_name Path->join(r.get_page(), path, String(r.get_page(), "main.cpp"))
