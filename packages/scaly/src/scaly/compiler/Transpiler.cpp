@@ -3023,7 +3023,7 @@ rm \\\n\
 			},\n\
 			\"presentation\": {\n\
 				\"reveal\": \"always\",\n\
-				\"panel\": \"new\"\n\
+				\"panel\": \"shared\"\n\
 			},\n\
 			\"problemMatcher\": []\n\
 		}\n\
