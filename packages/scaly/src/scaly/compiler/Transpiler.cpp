@@ -3017,11 +3017,15 @@ rm \\\n\
 			\"label\": \"Build Scaly package\",\n\
 			\"type\": \"shell\",\n\
 			\"command\": \"./build.sh\",\n\
-			\"group\": \"build\",\n\
+			\"group\": {\n\
+				\"kind\": \"build\",\n\
+				\"isDefault\": true\n\
+			},\n\
 			\"presentation\": {\n\
 				\"reveal\": \"always\",\n\
 				\"panel\": \"new\"\n\
-			}\n\
+			},\n\
+			\"problemMatcher\": []\n\
 		}\n\
 	]\n\
 }"));
