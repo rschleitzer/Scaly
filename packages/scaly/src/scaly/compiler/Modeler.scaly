@@ -1626,12 +1626,6 @@ function handle_module(path: String, module_syntax: ref[ModuleSyntax], private_:
     return module_result
 }
 
-function handle_package(path: String, package_syntax: ref[PackageSyntax]) returns Module throws ModelError {
-    try let module_result build_referenced_module(rp, ep, path, package_syntax.name.name, false)
-        else throw
-    return module_result
-}
-
 function build_program(file_name: String, program_name: String) returns Program throws ModelError {
     var r Region()
     let file_text_result File->read_to_string(r.get_page(), r.get_page(), file_name)
@@ -1652,7 +1646,9 @@ function build_program(file_name: String, program_name: String) returns Program 
             {
                 for package_syntax in (*program_syntax.file.packages)
                 {
-                    try let package_result build_referenced_module(rp, ep, path, package_syntax.name.name, false)
+                    var file_name_builder *StringBuilder$(Path->join(r.get_page(), String(rp, "../.."), package_syntax.name.name))
+                    file_name_builder.append("/src")
+                    try let package_result build_referenced_module(rp, ep, file_name_builder.to_string(rp), package_syntax.name.name, false)
                         else throw
                     packages.add(package_result)
                 }

@@ -58,7 +58,6 @@ namespace model {
     Result<Module, ModelError> build_module(Page* rp, Page* ep, String path, String file_name, String name, FileSyntax& file_syntax, bool private_);
     Result<Module, ModelError> build_referenced_module(Page* rp, Page* ep, String path, String name, bool private_);
     Result<Module, ModelError> handle_module(Page* rp, Page* ep, String path, ModuleSyntax& module_syntax, bool private_);
-    Result<Module, ModelError> handle_package(Page* rp, Page* ep, String path, PackageSyntax& package_syntax);
     Result<Program, ModelError> build_program(Page* rp, Page* ep, String file_name, String program_name);
 }
 #endif

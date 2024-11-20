@@ -1,0 +1,42 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "cppbuild",
+			"label": "C/C++: clang++ Aktive Datei kompilieren",
+			"command": "/opt/homebrew/opt/llvm/bin/clang++",
+			"args": [
+				"-fcolor-diagnostics",
+				"-fansi-escape-codes",
+				"-ferror-limit=5",
+				"-g",
+				"${workspaceFolder}/main.cpp",
+				"${workspaceFolder}/scalyc.cpp",
+				"-o",
+				"${workspaceFolder}/bin/scalyc",
+				//"`llvm-config --cxxflags --ldflags --system-libs --libs core`"
+				"-I/opt/homebrew/Cellar/llvm/19.1.1/include",
+				"-std=c++17",
+				"-stdlib=libc++",
+				"-D__STDC_CONSTANT_MACROS",
+				"-D__STDC_FORMAT_MACROS",
+				"-D__STDC_LIMIT_MACROS",
+				"-L/opt/homebrew/Cellar/llvm/19.1.1/lib",
+				"-Wl,-search_paths_first",
+				"-Wl,-headerpad_max_install_names",
+				"-lLLVM-19",
+			],
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"detail": "compiler: /usr/bin/clang++"
+		}
+	]
+}

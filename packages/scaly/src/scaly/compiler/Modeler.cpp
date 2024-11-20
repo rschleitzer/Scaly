@@ -3147,20 +3147,6 @@ Result<Module, ModelError> model::handle_module(Page* rp, Page* ep, String path,
     return Result<Module, ModelError>(module_result);
 }
 
-Result<Module, ModelError> model::handle_package(Page* rp, Page* ep, String path, PackageSyntax& package_syntax) {
-    const auto _module_result_result = build_referenced_module(rp, ep, path, package_syntax.name.name, false);
-    auto module_result = _module_result_result._Ok;
-    if (_module_result_result._tag == Success::Error) {
-        const auto _module_result_Error = _module_result_result._Error;
-        switch (_module_result_Error._tag) {
-        default:
-            return Result<Module, ModelError>(_module_result_result._Error);
-
-        }
-    };
-    return Result<Module, ModelError>(module_result);
-}
-
 Result<Program, ModelError> model::build_program(Page* rp, Page* ep, String file_name, String program_name) {
     auto r = Region();
     const auto file_text_result = File::read_to_string(r.get_page(), r.get_page(), file_name);
@@ -3202,7 +3188,9 @@ Result<Program, ModelError> model::build_program(Page* rp, Page* ep, String file
                         auto _package_syntax_iterator = (*program_syntax.file.packages).get_iterator();
                         while (auto _package_syntax = _package_syntax_iterator.next()) {
                             auto package_syntax = *_package_syntax;{
-                                const auto _package_result_result = build_referenced_module(rp, ep, path, package_syntax.name.name, false);
+                                StringBuilder& file_name_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder(Path::join(r.get_page(), String(rp, "../.."), package_syntax.name.name));
+                                file_name_builder.append("/src");
+                                const auto _package_result_result = build_referenced_module(rp, ep, file_name_builder.to_string(rp), package_syntax.name.name, false);
                                 auto package_result = _package_result_result._Ok;
                                 if (_package_result_result._tag == Success::Error) {
                                     const auto _package_result_Error = _package_result_result._Error;

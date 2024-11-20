@@ -773,8 +773,31 @@ void compiler::test_compiler() {
     };
 }
 
+void compiler::test_compile_scalyc() {
+    auto r = Region();
+    {
+        auto _result = compiler::compile(r.get_page(), String(r.get_page(), "../../scalyc/scalyc.scaly"), String(r.get_page(), "scalyc"));
+        switch (_result._tag)
+        {
+            case Success::Error:
+            {
+                auto error = _result._Error;
+                {
+                    auto error_message = error.to_string(r.get_page());
+                    Console::print(error_message);
+                    exit(-2);
+                };
+                break;
+            }
+            default:
+                {
+            };
+        }
+    };
+}
+
 void compiler::test() {
-    test_compiler();
+    test_compile_scalyc();
 }
 
 }
