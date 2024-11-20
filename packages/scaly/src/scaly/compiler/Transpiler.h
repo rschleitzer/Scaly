@@ -68,8 +68,10 @@ namespace transpiler {
     Result<Void, TranspilerError> forward_includes_for_modules(Page* ep, StringBuilder& builder, Vector<Module>& modules);
     Result<Void, TranspilerError> forward_includes_for_symbols(Page* ep, StringBuilder& builder, Vector<Member>& members);
     Result<Void, TranspilerError> vscode_files(Page* ep, String path, Program& program);
-    void build_vscode_source_files(StringBuilder& builder, String path, Module& module_);
-    void build_vscode_source_files_list(StringBuilder& builder, String path, Vector<Module>& modules, Vector<Member>& members);
+    void build_tasks_source_files(StringBuilder& builder, String path, Module& module_);
+    void build_tasks_source_files_list(StringBuilder& builder, String path, Vector<Module>& modules, Vector<Member>& members);
+    void build_script_files(StringBuilder& builder, String path, Module& module_, String extension, bool include_path);
+    void build_script_files_list(StringBuilder& builder, String path, Vector<Module>& modules, Vector<Member>& members, String extension, bool include_path);
     Result<Void, TranspilerError> main_file(Page* ep, String path, Program& program);
     Result<Void, TranspilerError> main_include_file(Page* ep, String path, String name);
 }

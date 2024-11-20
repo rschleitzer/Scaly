@@ -1646,7 +1646,7 @@ function build_program(file_name: String, program_name: String) returns Program 
             {
                 for package_syntax in (*program_syntax.file.packages)
                 {
-                    var file_name_builder *StringBuilder$(Path->join(r.get_page(), String(rp, "../.."), package_syntax.name.name))
+                    var file_name_builder: ref[StringBuilder] *StringBuilder$(Path->join(r.get_page(), String(rp, "../.."), package_syntax.name.name))
                     file_name_builder.append("/src")
                     try let package_result build_referenced_module(rp, ep, file_name_builder.to_string(rp), package_syntax.name.name, false)
                         else throw

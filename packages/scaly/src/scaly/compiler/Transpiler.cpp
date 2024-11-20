@@ -80,8 +80,9 @@ Result<Void, TranspilerError> transpiler::build_module(Page* ep, String path, Mo
     header_builder.append("#define _");
     header_builder.append(module_.name);
     header_builder.append("_h\n");
-    if ((module_.name.equals("scaly"))) {
-        header_builder.append("#include <stdlib.h>\n\
+    if (module_.name.equals(main_header)) {
+        if (module_.name.equals("scaly")) {
+            header_builder.append("#include <stdlib.h>\n\
 #include <memory.h>\n\
 #include <stdio.h>\n\
 #include <unistd.h>\n\
@@ -106,6 +107,10 @@ struct Result {\n\
 };\n\
 \n\
 ");
+        }
+        else {
+            header_builder.append("#include \"../scaly/src/scaly.h\"\n");
+        };
     }
     else {
         header_builder.append("#include \"");
@@ -2945,6 +2950,64 @@ Result<Void, TranspilerError> transpiler::vscode_files(Page* ep, String path, Pr
             }
         }}
         ;
+    StringBuilder& script_file_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder(Path::join(r.get_page(), path, String(r.get_page(), "build.sh")));
+    StringBuilder& script_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder("#!/usr/bin/env bash\n\
+set -x\n\
+/opt/homebrew/opt/llvm/bin/clang++ -fcolor-diagnostics -fansi-escape-codes -ferror-limit=5 \\\n\
+    -g \\\n\
+");
+    build_script_files(script_builder, String(), program.module_, String(r.get_page(), ".cpp"), true);
+    
+    auto _package__iterator = program.packages.get_iterator();
+    while (auto _package_ = _package__iterator.next()) {
+        auto package_ = *_package_;{
+            script_builder.append("    ../");
+            script_builder.append(package_.name);
+            script_builder.append("/src/");
+            script_builder.append(package_.name);
+            script_builder.append(".a \\\n\
+");
+        }
+    };
+    if (program.statements.length>0) {
+        script_builder.append("    main.cpp \\\n\
+");
+        script_builder.append("    -o bin/");
+        script_builder.append(program.module_.name);
+        script_builder.append("\\\n\
+    `llvm-config --cxxflags --ldflags --system-libs --libs core`\n\
+");
+    }
+    else {
+        script_builder.append("    -c\\\n\
+    `llvm-config --cxxflags`\n\
+\n\
+/opt/homebrew/opt/llvm/bin/llvm-ar \\\n\
+    rc ");
+        script_builder.append(program.module_.name);
+        script_builder.append(".a \\\n\
+");
+        build_script_files(script_builder, String(), program.module_, String(r.get_page(), ".o"), false);
+        script_builder.append("\n\
+rm \\\n\
+");
+        build_script_files(script_builder, String(), program.module_, String(r.get_page(), ".o"), false);
+    };
+    auto script_file = script_file_builder.to_string(r.get_page());
+    {
+        const auto _void_result = File::write_from_string(ep, script_file, script_builder.to_string(r.get_page()));
+        if (_void_result._tag == Success::Error) {
+            const auto _void_Error = _void_result._Error;
+            switch (_void_Error._tag) {
+            default:
+                return Result<Void, TranspilerError>(_void_result._Error);
+
+            }
+        }}
+        ;
+    auto mask_string = String(r.get_page(), "0755");
+    auto i = strtol(mask_string.get_buffer(), 0, 8);
+    chmod(script_file.to_c_string(r.get_page()), i);
     StringBuilder& tasks_file_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder(Path::join(r.get_page(), vscode_dir, String(r.get_page(), "tasks.json")));
     StringBuilder& tasks_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder("{\n\
 	\"version\": \"2.0.0\",\n\
@@ -2959,7 +3022,7 @@ Result<Void, TranspilerError> transpiler::vscode_files(Page* ep, String path, Pr
 				\"-ferror-limit=5\",\n\
 				\"-g\",\n\
 				\"${workspaceFolder}/main.cpp\",\n");
-    build_vscode_source_files(tasks_builder, String(), program.module_);
+    build_tasks_source_files(tasks_builder, String(), program.module_);
     tasks_builder.append("				\"-o\",\n\
 				\"${workspaceFolder}/bin/");
     tasks_builder.append(program.module_.name);
@@ -3030,7 +3093,7 @@ Result<Void, TranspilerError> transpiler::vscode_files(Page* ep, String path, Pr
     return Result<Void, TranspilerError>(Void());
 }
 
-void transpiler::build_vscode_source_files(StringBuilder& builder, String path, Module& module_) {
+void transpiler::build_tasks_source_files(StringBuilder& builder, String path, Module& module_) {
     auto r = Region();
     builder.append("				\"${workspaceFolder}/");
     builder.append(path);
@@ -3039,16 +3102,16 @@ void transpiler::build_vscode_source_files(StringBuilder& builder, String path, 
     StringBuilder& path_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder(path);
     path_builder.append(module_.name);
     path_builder.append('/');
-    build_vscode_source_files_list(builder, path_builder.to_string(r.get_page()), module_.modules, module_.members);
+    build_tasks_source_files_list(builder, path_builder.to_string(r.get_page()), module_.modules, module_.members);
 }
 
-void transpiler::build_vscode_source_files_list(StringBuilder& builder, String path, Vector<Module>& modules, Vector<Member>& members) {
+void transpiler::build_tasks_source_files_list(StringBuilder& builder, String path, Vector<Module>& modules, Vector<Member>& members) {
     auto r = Region();
     
     auto _module__iterator = modules.get_iterator();
     while (auto _module_ = _module__iterator.next()) {
         auto module_ = *_module_;{
-            build_vscode_source_files(builder, path, module_);
+            build_tasks_source_files(builder, path, module_);
         }
     };
     
@@ -3070,13 +3133,85 @@ void transpiler::build_vscode_source_files_list(StringBuilder& builder, String p
                                     case Definition::Namespace:
                                     {
                                         auto namespace_ = _result._Namespace;
-                                        build_vscode_source_files_list(builder, path, namespace_.modules, namespace_.members);
+                                        build_tasks_source_files_list(builder, path, namespace_.modules, namespace_.members);
                                         break;
                                     }
                                     case Definition::Structure:
                                     {
                                         auto structure = _result._Structure;
-                                        build_vscode_source_files_list(builder, path, structure.modules, structure.members);
+                                        build_tasks_source_files_list(builder, path, structure.modules, structure.members);
+                                        break;
+                                    }
+                                    default:
+                                        {
+                                    };
+                                }
+                            };
+                        };
+                        break;
+                    }
+                    default:
+                        continue;;
+                }
+            };
+        }
+    };
+}
+
+void transpiler::build_script_files(StringBuilder& builder, String path, Module& module_, String extension, bool include_path) {
+    auto r = Region();
+    builder.append("    ");
+    if (include_path) 
+        builder.append(path);
+    builder.append(module_.name);
+    builder.append(extension);
+    builder.append(" \\\n");
+    if (include_path) {
+        StringBuilder& path_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder(path);
+        path_builder.append(module_.name);
+        path_builder.append('/');
+        build_script_files_list(builder, path_builder.to_string(r.get_page()), module_.modules, module_.members, extension, include_path);
+    }
+    else {
+        build_script_files_list(builder, path, module_.modules, module_.members, extension, include_path);
+    };
+}
+
+void transpiler::build_script_files_list(StringBuilder& builder, String path, Vector<Module>& modules, Vector<Member>& members, String extension, bool include_path) {
+    auto r = Region();
+    
+    auto _module__iterator = modules.get_iterator();
+    while (auto _module_ = _module__iterator.next()) {
+        auto module_ = *_module_;{
+            build_script_files(builder, path, module_, extension, include_path);
+        }
+    };
+    
+    auto _member_iterator = members.get_iterator();
+    while (auto _member = _member_iterator.next()) {
+        auto member = *_member;{
+            {
+                auto _result = member;
+                switch (_result._tag)
+                {
+                    case Member::Concept:
+                    {
+                        auto concept = _result._Concept;
+                        {
+                            {
+                                auto _result = concept.definition;
+                                switch (_result._tag)
+                                {
+                                    case Definition::Namespace:
+                                    {
+                                        auto namespace_ = _result._Namespace;
+                                        build_script_files_list(builder, path, namespace_.modules, namespace_.members, extension, include_path);
+                                        break;
+                                    }
+                                    case Definition::Structure:
+                                    {
+                                        auto structure = _result._Structure;
+                                        build_script_files_list(builder, path, structure.modules, structure.members, extension, include_path);
                                         break;
                                     }
                                     default:

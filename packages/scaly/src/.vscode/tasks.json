@@ -54,7 +54,7 @@
 				"${workspaceFolder}/scaly/compiler/Transpiler.cpp",
 				"${workspaceFolder}/scaly/compiler/Generator.cpp",
 				"${workspaceFolder}/scaly/compiler/CompilerError.cpp",
-				"${workspaceFolder}/scaly/compiler/Compiler.cpp",
+				"${workspaceFolder}/scaly/compiler/Driver.cpp",
 				"-o",
 				"${workspaceFolder}/bin/scaly",
 				//"`llvm-config --cxxflags --ldflags --system-libs --libs core`"

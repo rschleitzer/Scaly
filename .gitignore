@@ -38,3 +38,5 @@ scaly/.vscode
 .DS_Store
 *.bc
 bin/
+*.o
+*.a

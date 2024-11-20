@@ -53,9 +53,11 @@ function build_module(path: String, module_: ref[Module], main_header: String, n
     header_builder.append("#define _")
     header_builder.append(module_.name)
     header_builder.append("_h\n")
-    if (module_.name.equals("scaly"))
+    if module_.name.equals(main_header)
     {
-        header_builder.append("#include <stdlib.h>
+        if module_.name.equals("scaly")
+        {
+            header_builder.append("#include <stdlib.h>
 #include <memory.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -80,6 +82,9 @@ struct Result {
 };
 
 ")
+        } else {
+            header_builder.append("#include \"../scaly/src/scaly.h\"\n")
+        }
     } else {
         header_builder.append("#include \"")
         header_builder.append(main_header)
@@ -1818,6 +1823,58 @@ function vscode_files(path: String, program: ref[Program]) throws TranspilerErro
     try create_directory(ep, vscode_dir)
         else throw
 
+    var script_file_builder:ref[StringBuilder] *StringBuilder$(Path->join(r.get_page(), path, String(r.get_page(), "build.sh"))) 
+    var script_builder:ref[StringBuilder] *StringBuilder$(
+"#!/usr/bin/env bash
+set -x
+/opt/homebrew/opt/llvm/bin/clang++ -fcolor-diagnostics -fansi-escape-codes -ferror-limit=5 \\
+    -g \\
+")
+    build_script_files(script_builder, String(), program.module_, String(r.get_page(), ".cpp"), true)
+    for package_ in program.packages
+    {
+        script_builder.append("    ../")
+        script_builder.append(package_.name)
+        script_builder.append("/src/")
+        script_builder.append(package_.name)
+        script_builder.append(".a \\
+")
+    }
+    if program.statements.length > 0
+    {
+        script_builder.append("    main.cpp \\
+")
+        script_builder.append(
+"    -o bin/")
+        script_builder.append(program.module_.name)
+        script_builder.append("\\
+    `llvm-config --cxxflags --ldflags --system-libs --libs core`
+")
+    } else {
+        script_builder.append(
+"    -c\\
+    `llvm-config --cxxflags`
+
+/opt/homebrew/opt/llvm/bin/llvm-ar \\
+    rc ")
+        script_builder.append(program.module_.name)
+        script_builder.append(".a \\
+")
+        build_script_files(script_builder, String(), program.module_, String(r.get_page(), ".o"), false)
+        script_builder.append(
+"
+rm \\
+")
+        build_script_files(script_builder, String(), program.module_, String(r.get_page(), ".o"), false)
+    }
+    var script_file script_file_builder.to_string(r.get_page())
+    try File->write_from_string(ep, script_file, script_builder.to_string(r.get_page()))
+        else throw
+    
+    var mask_string String(r.get_page(), "0755")
+    var i strtol(mask_string.get_buffer(), 0, 8)
+    chmod(script_file.to_c_string(r.get_page()), i)
+
     var tasks_file_builder: ref[StringBuilder] *StringBuilder$(Path->join(r.get_page(), vscode_dir, String(r.get_page(), "tasks.json")))
     var tasks_builder: ref[StringBuilder] *StringBuilder$("{
 	\"version\": \"2.0.0\",
@@ -1832,7 +1889,7 @@ function vscode_files(path: String, program: ref[Program]) throws TranspilerErro
 				\"-ferror-limit=5\",
 				\"-g\",
 				\"${workspaceFolder}/main.cpp\",\n")
-    build_vscode_source_files(tasks_builder, String(), program.module_)
+    build_tasks_source_files(tasks_builder, String(), program.module_)
     tasks_builder.append(
 "				\"-o\",
 				\"${workspaceFolder}/bin/")
@@ -1887,7 +1944,7 @@ function vscode_files(path: String, program: ref[Program]) throws TranspilerErro
     return Void()
 }
 
-function build_vscode_source_files(builder: ref[StringBuilder], path: String, module_: ref[Module]) {
+function build_tasks_source_files(builder: ref[StringBuilder], path: String, module_: ref[Module]) {
     var r Region()
     builder.append("				\"${workspaceFolder}/")
     builder.append(path)
@@ -1896,14 +1953,14 @@ function build_vscode_source_files(builder: ref[StringBuilder], path: String, mo
     var path_builder: ref[StringBuilder] *StringBuilder$(path)
     path_builder.append(module_.name)
     path_builder.append('/')
-    build_vscode_source_files_list(builder, path_builder.to_string(r.get_page()), module_.modules, module_.members)
+    build_tasks_source_files_list(builder, path_builder.to_string(r.get_page()), module_.modules, module_.members)
 }
 
-function build_vscode_source_files_list(builder: ref[StringBuilder], path: String, modules: ref[Vector[Module]], members: ref[Vector[Member]]) {
+function build_tasks_source_files_list(builder: ref[StringBuilder], path: String, modules: ref[Vector[Module]], members: ref[Vector[Member]]) {
     var r Region()
     for module_ in modules
     {
-        build_vscode_source_files(builder, path, module_)
+        build_tasks_source_files(builder, path, module_)
     }
 
     for member in members
@@ -1913,9 +1970,52 @@ function build_vscode_source_files_list(builder: ref[StringBuilder], path: Strin
                 {
                     choose concept.definition
                         when namespace_: Definition.Namespace
-                            build_vscode_source_files_list(builder, path, namespace_.modules, namespace_.members)
+                            build_tasks_source_files_list(builder, path, namespace_.modules, namespace_.members)
                         when structure: Definition.Structure
-                            build_vscode_source_files_list(builder, path, structure.modules, structure.members)
+                            build_tasks_source_files_list(builder, path, structure.modules, structure.members)
+                        else {}
+                }
+            else continue
+    }
+}
+
+
+function build_script_files(builder: ref[StringBuilder], path: String, module_: ref[Module], extension: String, include_path: bool) {
+    var r Region()
+    builder.append("    ")
+    if include_path
+        builder.append(path)
+    builder.append(module_.name)
+    builder.append(extension)
+    builder.append(" \\\n")
+    if include_path
+    {
+        var path_builder: ref[StringBuilder] *StringBuilder$(path)
+        path_builder.append(module_.name)
+        path_builder.append('/')
+        build_script_files_list(builder, path_builder.to_string(r.get_page()), module_.modules, module_.members, extension, include_path)
+    } else {
+        build_script_files_list(builder, path, module_.modules, module_.members, extension, include_path)
+    }
+}
+
+function build_script_files_list(builder: ref[StringBuilder], path: String, modules: ref[Vector[Module]], members: ref[Vector[Member]], extension: String, include_path: bool) {
+    var r Region()
+    for module_ in modules
+    {
+        build_script_files(builder, path, module_, extension, include_path)
+    }
+
+    for member in members
+    {
+        choose member
+            when concept: Member.Concept
+                {
+                    choose concept.definition
+                        when namespace_: Definition.Namespace
+                            build_script_files_list(builder, path, namespace_.modules, namespace_.members, extension, include_path)
+                        when structure: Definition.Structure
+                            build_script_files_list(builder, path, structure.modules, structure.members, extension, include_path)
                         else {}
                 }
             else continue

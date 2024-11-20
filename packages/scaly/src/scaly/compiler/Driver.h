@@ -1,5 +1,5 @@
-#ifndef _Compiler_h
-#define _Compiler_h
+#ifndef _Driver_h
+#define _Driver_h
 #include "../../scaly.h"
 using namespace scaly;
 using namespace scaly::memory;
