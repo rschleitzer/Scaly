@@ -797,7 +797,7 @@ void compiler::test_compile_scalyc() {
 }
 
 void compiler::test() {
-    test_compile_scalyc();
+    test_compiler();
 }
 
 }

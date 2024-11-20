@@ -3009,52 +3009,22 @@ rm \\\n\
     auto i = strtol(mask_string.get_buffer(), 0, 8);
     chmod(script_file.to_c_string(r.get_page()), i);
     StringBuilder& tasks_file_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder(Path::join(r.get_page(), vscode_dir, String(r.get_page(), "tasks.json")));
-    StringBuilder& tasks_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder("{\n\
+    {
+        const auto _void_result = File::write_from_string(ep, tasks_file_builder.to_string(r.get_page()), String(r.get_page(), "{\n\
 	\"version\": \"2.0.0\",\n\
 	\"tasks\": [\n\
 		{\n\
-			\"type\": \"cppbuild\",\n\
-			\"label\": \"C/C++: clang++ Aktive Datei kompilieren\",\n\
-			\"command\": \"/opt/homebrew/opt/llvm/bin/clang++\",\n\
-			\"args\": [\n\
-				\"-fcolor-diagnostics\",\n\
-				\"-fansi-escape-codes\",\n\
-				\"-ferror-limit=5\",\n\
-				\"-g\",\n\
-				\"${workspaceFolder}/main.cpp\",\n");
-    build_tasks_source_files(tasks_builder, String(), program.module_);
-    tasks_builder.append("				\"-o\",\n\
-				\"${workspaceFolder}/bin/");
-    tasks_builder.append(program.module_.name);
-    tasks_builder.append("\",\n\
-				//\"`llvm-config --cxxflags --ldflags --system-libs --libs core`\"\n\
-				\"-I/opt/homebrew/Cellar/llvm/19.1.1/include\",\n\
-				\"-std=c++17\",\n\
-				\"-stdlib=libc++\",\n\
-				\"-D__STDC_CONSTANT_MACROS\",\n\
-				\"-D__STDC_FORMAT_MACROS\",\n\
-				\"-D__STDC_LIMIT_MACROS\",\n\
-				\"-L/opt/homebrew/Cellar/llvm/19.1.1/lib\",\n\
-				\"-Wl,-search_paths_first\",\n\
-				\"-Wl,-headerpad_max_install_names\",\n\
-				\"-lLLVM-19\",\n\
-			],\n\
-			\"options\": {\n\
-				\"cwd\": \"${workspaceFolder}\"\n\
-			},\n\
-			\"problemMatcher\": [\n\
-				\"$gcc\"\n\
-			],\n\
-			\"group\": {\n\
-				\"kind\": \"build\",\n\
-				\"isDefault\": true\n\
-			},\n\
-			\"detail\": \"compiler: /usr/bin/clang++\"\n\
+			\"label\": \"Build Scaly package\",\n\
+			\"type\": \"shell\",\n\
+			\"command\": \"./build.sh\",\n\
+			\"group\": \"build\",\n\
+			\"presentation\": {\n\
+				\"reveal\": \"always\",\n\
+				\"panel\": \"new\"\n\
+			}\n\
 		}\n\
 	]\n\
-}");
-    {
-        const auto _void_result = File::write_from_string(ep, tasks_file_builder.to_string(r.get_page()), tasks_builder.to_string(r.get_page()));
+}"));
         if (_void_result._tag == Success::Error) {
             const auto _void_Error = _void_result._Error;
             switch (_void_Error._tag) {
@@ -3091,71 +3061,6 @@ rm \\\n\
         }}
         ;
     return Result<Void, TranspilerError>(Void());
-}
-
-void transpiler::build_tasks_source_files(StringBuilder& builder, String path, Module& module_) {
-    auto r = Region();
-    builder.append("				\"${workspaceFolder}/");
-    builder.append(path);
-    builder.append(module_.name);
-    builder.append(".cpp\",\n");
-    StringBuilder& path_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder(path);
-    path_builder.append(module_.name);
-    path_builder.append('/');
-    build_tasks_source_files_list(builder, path_builder.to_string(r.get_page()), module_.modules, module_.members);
-}
-
-void transpiler::build_tasks_source_files_list(StringBuilder& builder, String path, Vector<Module>& modules, Vector<Member>& members) {
-    auto r = Region();
-    
-    auto _module__iterator = modules.get_iterator();
-    while (auto _module_ = _module__iterator.next()) {
-        auto module_ = *_module_;{
-            build_tasks_source_files(builder, path, module_);
-        }
-    };
-    
-    auto _member_iterator = members.get_iterator();
-    while (auto _member = _member_iterator.next()) {
-        auto member = *_member;{
-            {
-                auto _result = member;
-                switch (_result._tag)
-                {
-                    case Member::Concept:
-                    {
-                        auto concept = _result._Concept;
-                        {
-                            {
-                                auto _result = concept.definition;
-                                switch (_result._tag)
-                                {
-                                    case Definition::Namespace:
-                                    {
-                                        auto namespace_ = _result._Namespace;
-                                        build_tasks_source_files_list(builder, path, namespace_.modules, namespace_.members);
-                                        break;
-                                    }
-                                    case Definition::Structure:
-                                    {
-                                        auto structure = _result._Structure;
-                                        build_tasks_source_files_list(builder, path, structure.modules, structure.members);
-                                        break;
-                                    }
-                                    default:
-                                        {
-                                    };
-                                }
-                            };
-                        };
-                        break;
-                    }
-                    default:
-                        continue;;
-                }
-            };
-        }
-    };
 }
 
 void transpiler::build_script_files(StringBuilder& builder, String path, Module& module_, String extension, bool include_path) {

@@ -2,84 +2,18 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"type": "cppbuild",
-			"label": "C/C++: clang++ Aktive Datei kompilieren",
-			"command": "/opt/homebrew/opt/llvm/bin/clang++",
-			"args": [
-				"-fcolor-diagnostics",
-				"-fansi-escape-codes",
-				"-ferror-limit=5",
-				"-g",
-				"${workspaceFolder}/main.cpp",
-				"${workspaceFolder}/scaly.cpp",
-				"${workspaceFolder}/scaly/memory.cpp",
-				"${workspaceFolder}/scaly/memory/Object.cpp",
-				"${workspaceFolder}/scaly/memory/PageNode.cpp",
-				"${workspaceFolder}/scaly/memory/PageList.cpp",
-				"${workspaceFolder}/scaly/memory/PageListIterator.cpp",
-				"${workspaceFolder}/scaly/memory/Page.cpp",
-				"${workspaceFolder}/scaly/memory/Region.cpp",
-				"${workspaceFolder}/scaly/containers.cpp",
-				"${workspaceFolder}/scaly/containers/Node.cpp",
-				"${workspaceFolder}/scaly/containers/ListIterator.cpp",
-				"${workspaceFolder}/scaly/containers/List.cpp",
-				"${workspaceFolder}/scaly/containers/Vector.cpp",
-				"${workspaceFolder}/scaly/containers/Array.cpp",
-				"${workspaceFolder}/scaly/containers/BuilderListIterator.cpp",
-				"${workspaceFolder}/scaly/containers/BuilderList.cpp",
-				"${workspaceFolder}/scaly/containers/hashing.cpp",
-				"${workspaceFolder}/scaly/containers/HashSetBuilder.cpp",
-				"${workspaceFolder}/scaly/containers/HashSet.cpp",
-				"${workspaceFolder}/scaly/containers/HashMapBuilder.cpp",
-				"${workspaceFolder}/scaly/containers/HashMap.cpp",
-				"${workspaceFolder}/scaly/containers/MultiMapBuilder.cpp",
-				"${workspaceFolder}/scaly/containers/MultiMap.cpp",
-				"${workspaceFolder}/scaly/containers/String.cpp",
-				"${workspaceFolder}/scaly/containers/StringIterator.cpp",
-				"${workspaceFolder}/scaly/containers/StringBuilder.cpp",
-				"${workspaceFolder}/scaly/io.cpp",
-				"${workspaceFolder}/scaly/io/Console.cpp",
-				"${workspaceFolder}/scaly/io/FileError.cpp",
-				"${workspaceFolder}/scaly/io/Directory.cpp",
-				"${workspaceFolder}/scaly/io/File.cpp",
-				"${workspaceFolder}/scaly/io/Path.cpp",
-				"${workspaceFolder}/scaly/compiler.cpp",
-				"${workspaceFolder}/scaly/compiler/Errors.cpp",
-				"${workspaceFolder}/scaly/compiler/Lexer.cpp",
-				"${workspaceFolder}/scaly/compiler/Parser.cpp",
-				"${workspaceFolder}/scaly/compiler/Model.cpp",
-				"${workspaceFolder}/scaly/compiler/Modeler.cpp",
-				"${workspaceFolder}/scaly/compiler/ModelError.cpp",
-				"${workspaceFolder}/scaly/compiler/TranspilerError.cpp",
-				"${workspaceFolder}/scaly/compiler/Transpiler.cpp",
-				"${workspaceFolder}/scaly/compiler/Generator.cpp",
-				"${workspaceFolder}/scaly/compiler/CompilerError.cpp",
-				"${workspaceFolder}/scaly/compiler/Driver.cpp",
-				"-o",
-				"${workspaceFolder}/bin/scaly",
-				//"`llvm-config --cxxflags --ldflags --system-libs --libs core`"
-				"-I/opt/homebrew/Cellar/llvm/19.1.1/include",
-				"-std=c++17",
-				"-stdlib=libc++",
-				"-D__STDC_CONSTANT_MACROS",
-				"-D__STDC_FORMAT_MACROS",
-				"-D__STDC_LIMIT_MACROS",
-				"-L/opt/homebrew/Cellar/llvm/19.1.1/lib",
-				"-Wl,-search_paths_first",
-				"-Wl,-headerpad_max_install_names",
-				"-lLLVM-19",
-			],
-			"options": {
-				"cwd": "${workspaceFolder}"
-			},
-			"problemMatcher": [
-				"$gcc"
-			],
+			"label": "Build Scaly package",
+			"type": "shell",
+			"command": "./build.sh",
 			"group": {
 				"kind": "build",
 				"isDefault": true
 			},
-			"detail": "compiler: /usr/bin/clang++"
+			"presentation": {
+				"reveal": "always",
+				"panel": "new"
+			},
+			"problemMatcher": []
 		}
 	]
 }

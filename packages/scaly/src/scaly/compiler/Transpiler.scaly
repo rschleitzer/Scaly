@@ -1876,52 +1876,21 @@ rm \\
     chmod(script_file.to_c_string(r.get_page()), i)
 
     var tasks_file_builder: ref[StringBuilder] *StringBuilder$(Path->join(r.get_page(), vscode_dir, String(r.get_page(), "tasks.json")))
-    var tasks_builder: ref[StringBuilder] *StringBuilder$("{
+    try File->write_from_string(ep, tasks_file_builder.to_string(r.get_page()), String(r.get_page(), "{
 	\"version\": \"2.0.0\",
 	\"tasks\": [
 		{
-			\"type\": \"cppbuild\",
-			\"label\": \"C/C++: clang++ Aktive Datei kompilieren\",
-			\"command\": \"/opt/homebrew/opt/llvm/bin/clang++\",
-			\"args\": [
-				\"-fcolor-diagnostics\",
-				\"-fansi-escape-codes\",
-				\"-ferror-limit=5\",
-				\"-g\",
-				\"${workspaceFolder}/main.cpp\",\n")
-    build_tasks_source_files(tasks_builder, String(), program.module_)
-    tasks_builder.append(
-"				\"-o\",
-				\"${workspaceFolder}/bin/")
-    tasks_builder.append(program.module_.name)
-    tasks_builder.append("\",
-				//\"`llvm-config --cxxflags --ldflags --system-libs --libs core`\"
-				\"-I/opt/homebrew/Cellar/llvm/19.1.1/include\",
-				\"-std=c++17\",
-				\"-stdlib=libc++\",
-				\"-D__STDC_CONSTANT_MACROS\",
-				\"-D__STDC_FORMAT_MACROS\",
-				\"-D__STDC_LIMIT_MACROS\",
-				\"-L/opt/homebrew/Cellar/llvm/19.1.1/lib\",
-				\"-Wl,-search_paths_first\",
-				\"-Wl,-headerpad_max_install_names\",
-				\"-lLLVM-19\",
-			],
-			\"options\": {
-				\"cwd\": \"${workspaceFolder}\"
-			},
-			\"problemMatcher\": [
-				\"$gcc\"
-			],
-			\"group\": {
-				\"kind\": \"build\",
-				\"isDefault\": true
-			},
-			\"detail\": \"compiler: /usr/bin/clang++\"
+			\"label\": \"Build Scaly package\",
+			\"type\": \"shell\",
+			\"command\": \"./build.sh\",
+			\"group\": \"build\",
+			\"presentation\": {
+				\"reveal\": \"always\",
+				\"panel\": \"new\"
+			}
 		}
 	]
-}")
-    try File->write_from_string(ep, tasks_file_builder.to_string(r.get_page()), tasks_builder.to_string(r.get_page()))
+}"))
         else throw
 
     var launch_builder: ref[StringBuilder] *StringBuilder$("{
@@ -1943,42 +1912,6 @@ rm \\
         else throw
     return Void()
 }
-
-function build_tasks_source_files(builder: ref[StringBuilder], path: String, module_: ref[Module]) {
-    var r Region()
-    builder.append("				\"${workspaceFolder}/")
-    builder.append(path)
-    builder.append(module_.name)
-    builder.append(".cpp\",\n")
-    var path_builder: ref[StringBuilder] *StringBuilder$(path)
-    path_builder.append(module_.name)
-    path_builder.append('/')
-    build_tasks_source_files_list(builder, path_builder.to_string(r.get_page()), module_.modules, module_.members)
-}
-
-function build_tasks_source_files_list(builder: ref[StringBuilder], path: String, modules: ref[Vector[Module]], members: ref[Vector[Member]]) {
-    var r Region()
-    for module_ in modules
-    {
-        build_tasks_source_files(builder, path, module_)
-    }
-
-    for member in members
-    {
-        choose member
-            when concept: Member.Concept
-                {
-                    choose concept.definition
-                        when namespace_: Definition.Namespace
-                            build_tasks_source_files_list(builder, path, namespace_.modules, namespace_.members)
-                        when structure: Definition.Structure
-                            build_tasks_source_files_list(builder, path, structure.modules, structure.members)
-                        else {}
-                }
-            else continue
-    }
-}
-
 
 function build_script_files(builder: ref[StringBuilder], path: String, module_: ref[Module], extension: String, include_path: bool) {
     var r Region()
