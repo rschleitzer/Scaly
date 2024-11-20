@@ -8,4 +8,4 @@ define scaly {
 ;scaly->memory->test()
 ;scaly->containers->test()
 ;scaly->io->test()
-scaly->compiler->test()
+;scaly->compiler->test()

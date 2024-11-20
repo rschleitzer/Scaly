@@ -1,3 +1,11 @@
 package scaly
 
-scaly->compiler->test()
+var r Region()
+choose scaly->compiler->compiler->compile(r.get_page(), String(r.get_page(), *(argv + 1)), String(r.get_page(), *(argv + 2)))
+    when error: Success.Error
+    {
+        var error_message error.to_string(r.get_page())
+        Console->print(error_message)
+        exit(-2)
+    }
+    else {}
