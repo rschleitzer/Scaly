@@ -6,10 +6,7 @@
 			"request": "launch",
 			"name": "Debug",
 			"program": "${workspaceFolder}/bin/scalyc",
-			"args": [
-				"../scals/scals.scaly",
-				"scals"
-			],
+			"args": [],
 			"cwd": "${workspaceFolder}"
 		}
 	]

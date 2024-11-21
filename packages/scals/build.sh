@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -x
-/opt/homebrew/opt/llvm/bin/clang++ -fcolor-diagnostics -fansi-escape-codes -ferror-limit=5 \
+set -e
+scalyc scals.scaly scals
+clang++ -fcolor-diagnostics -fansi-escape-codes -ferror-limit=5 \
     -g \
     scals.cpp \
     main.cpp \

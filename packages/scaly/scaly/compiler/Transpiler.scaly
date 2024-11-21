@@ -1827,7 +1827,13 @@ function vscode_files(path: String, program: ref[Program]) throws TranspilerErro
     var script_builder:ref[StringBuilder] *StringBuilder$(
 "#!/usr/bin/env bash
 set -x
-/opt/homebrew/opt/llvm/bin/clang++ -fcolor-diagnostics -fansi-escape-codes -ferror-limit=5 \\
+set -e
+scalyc ")
+    script_builder.append(program.module_.name)
+    script_builder.append(".scaly ")
+    script_builder.append(program.module_.name)
+    script_builder.append("
+clang++ -fcolor-diagnostics -fansi-escape-codes -ferror-limit=5 \\
     -g \\
 ")
     build_script_files(script_builder, String(), program.module_, String(r.get_page(), ".cpp"), true)

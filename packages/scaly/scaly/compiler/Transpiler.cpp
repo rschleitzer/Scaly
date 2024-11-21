@@ -2953,7 +2953,13 @@ Result<Void, TranspilerError> transpiler::vscode_files(Page* ep, String path, Pr
     StringBuilder& script_file_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder(Path::join(r.get_page(), path, String(r.get_page(), "build.sh")));
     StringBuilder& script_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder("#!/usr/bin/env bash\n\
 set -x\n\
-/opt/homebrew/opt/llvm/bin/clang++ -fcolor-diagnostics -fansi-escape-codes -ferror-limit=5 \\\n\
+set -e\n\
+scalyc ");
+    script_builder.append(program.module_.name);
+    script_builder.append(".scaly ");
+    script_builder.append(program.module_.name);
+    script_builder.append("\n\
+clang++ -fcolor-diagnostics -fansi-escape-codes -ferror-limit=5 \\\n\
     -g \\\n\
 ");
     build_script_files(script_builder, String(), program.module_, String(r.get_page(), ".cpp"), true);
