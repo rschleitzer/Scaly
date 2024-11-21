@@ -776,7 +776,7 @@ void compiler::test_compiler() {
 void compiler::test_compile_scalyc() {
     auto r = Region();
     {
-        auto _result = compiler::compile(r.get_page(), String(r.get_page(), "../../scalyc/scalyc.scaly"), String(r.get_page(), "scalyc"));
+        auto _result = compiler::compile(r.get_page(), String(r.get_page(), "../scalyc/scalyc.scaly"), String(r.get_page(), "scalyc"));
         switch (_result._tag)
         {
             case Success::Error:

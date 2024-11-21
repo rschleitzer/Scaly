@@ -109,7 +109,7 @@ struct Result {\n\
 ");
         }
         else {
-            header_builder.append("#include \"../scaly/src/scaly.h\"\n");
+            header_builder.append("#include \"../scaly/scaly.h\"\n");
         };
     }
     else {
@@ -2963,7 +2963,7 @@ set -x\n\
         auto package_ = *_package_;{
             script_builder.append("    ../");
             script_builder.append(package_.name);
-            script_builder.append("/src/");
+            script_builder.append('/');
             script_builder.append(package_.name);
             script_builder.append(".a \\\n\
 ");

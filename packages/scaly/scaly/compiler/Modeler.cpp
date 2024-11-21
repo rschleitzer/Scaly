@@ -3188,9 +3188,7 @@ Result<Program, ModelError> model::build_program(Page* rp, Page* ep, String file
                         auto _package_syntax_iterator = (*program_syntax.file.packages).get_iterator();
                         while (auto _package_syntax = _package_syntax_iterator.next()) {
                             auto package_syntax = *_package_syntax;{
-                                StringBuilder& file_name_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder(Path::join(r.get_page(), String(rp, "../.."), package_syntax.name.name));
-                                file_name_builder.append("/src");
-                                const auto _package_result_result = build_referenced_module(rp, ep, file_name_builder.to_string(rp), package_syntax.name.name, false);
+                                const auto _package_result_result = build_referenced_module(rp, ep, Path::join(r.get_page(), String(rp, ".."), package_syntax.name.name), package_syntax.name.name, false);
                                 auto package_result = _package_result_result._Ok;
                                 if (_package_result_result._tag == Success::Error) {
                                     const auto _package_result_Error = _package_result_result._Error;
