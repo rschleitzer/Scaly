@@ -90,6 +90,7 @@ Result<Void, TranspilerError> transpiler::build_module(Page* ep, String path, Mo
 #include <errno.h>\n\
 #include <math.h>\n\
 #include <libgen.h>\n\
+#include <fcntl.h>\n\
 #include \"forwards.h\"\n\
 \n\
 struct Void {};\n\
@@ -3035,32 +3036,6 @@ rm \\\n\
 		}\n\
 	]\n\
 }"));
-        if (_void_result._tag == Success::Error) {
-            const auto _void_Error = _void_result._Error;
-            switch (_void_Error._tag) {
-            default:
-                return Result<Void, TranspilerError>(_void_result._Error);
-
-            }
-        }}
-        ;
-    StringBuilder& launch_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder("{\n\
-	\"version\": \"0.2.0\",\n\
-	\"configurations\": [\n\
-		{\n\
-			\"type\": \"lldb\",\n\
-			\"request\": \"launch\",\n\
-			\"name\": \"Debug\",\n\
-			\"program\": \"${workspaceFolder}/bin/");
-    launch_builder.append(program.module_.name);
-    launch_builder.append("\",\n\
-			\"args\": [],\n\
-			\"cwd\": \"${workspaceFolder}\"\n\
-		}\n\
-	]\n\
-}");
-    {
-        const auto _void_result = File::write_from_string(ep, Path::join(r.get_page(), vscode_dir, String(r.get_page(), "launch.json")), launch_builder.to_string(r.get_page()));
         if (_void_result._tag == Success::Error) {
             const auto _void_Error = _void_result._Error;
             switch (_void_Error._tag) {

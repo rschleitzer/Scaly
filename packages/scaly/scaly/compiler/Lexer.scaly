@@ -593,8 +593,12 @@ define Lexer
                                 else
                                     match *character
                                         case ';'
+                                        {
                                             read_character()
                                             return
+                                        }
+                                        else
+                                            read_character()
                         }
                         else
                         {

@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <math.h>
 #include <libgen.h>
+#include <fcntl.h>
 #include "forwards.h"
 
 struct Void {};

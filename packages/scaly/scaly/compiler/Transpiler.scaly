@@ -65,6 +65,7 @@ function build_module(path: String, module_: ref[Module], main_header: String, n
 #include <errno.h>
 #include <math.h>
 #include <libgen.h>
+#include <fcntl.h>
 #include \"forwards.h\"
 
 struct Void {};
@@ -1903,7 +1904,7 @@ rm \\
 }"))
         else throw
 
-    var launch_builder: ref[StringBuilder] *StringBuilder$("{
+;*    var launch_builder: ref[StringBuilder] *StringBuilder$("{
 	\"version\": \"0.2.0\",
 	\"configurations\": [
 		{
@@ -1920,6 +1921,7 @@ rm \\
 }")
     try File->write_from_string(ep, Path->join(r.get_page(), vscode_dir, String(r.get_page(), "launch.json")), launch_builder.to_string(r.get_page()))
         else throw
+*;
     return Void()
 }
 

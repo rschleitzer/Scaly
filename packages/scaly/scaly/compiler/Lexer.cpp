@@ -634,11 +634,15 @@ void Lexer::handle_multi_line_comment() {
                                         switch (*character)
                                         {
                                             case ';': 
-                                                read_character();
+                                                {
+                                                    read_character();
+                                                    return;
+                                                };
                                                 break;
+                                            default:
+                                                read_character();
                                         };
                                 };
-                                return;
                             };
                             break;
                         default:

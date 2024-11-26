@@ -1,1 +1,57 @@
-return 0
+package scaly
+
+function get_message_length(buf: pointer[pointer[char]], end: pointer[char]) returns size_t {
+    var ret: size_t 0
+    while *buf < end
+    {
+        if **buf >= '0' && **buf <= '9': break
+        set *buf: *buf + 1
+    }
+    let last *buf
+    while *buf < end
+    {
+        if **buf < '0' || **buf > '9': break
+        set *buf: *buf + 1
+    }
+    var current *buf - 1
+    var multiplier 1
+    while current >= last
+    {
+        set ret: ret + (*current - '0') * multiplier
+        set multiplier: multiplier * 10
+        set current: current - 1
+    }
+
+    return ret
+}
+
+function get_message(fd: int) returns pointer[String] {
+    var r Region()
+    var builder: ref[StringBuilder] *StringBuilder$()
+    let buffer_size: size_t 0x800
+    var buf: pointer[char] (char*)(*r.get_page()).allocate(buffer_size, 1)
+    let bytes_read read(fd, buf, buffer_size)
+    let end buf + bytes_read
+    write(2, buf, bytes_read)
+
+    var message_length get_message_length(&buf, end)
+
+    return String#()
+}
+
+function process_message(message: String) {
+
+}
+
+var r Region()
+
+var fd 0
+if argc = 2
+{
+    let arg *(argv + 1)
+    var argument String(r.get_page(), arg)
+    set fd: open(argument.to_c_string(r.get_page()), 0)
+}
+
+while let message get_message(r.get_page(), fd)
+    process_message(*message)
