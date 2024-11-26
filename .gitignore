@@ -40,3 +40,8 @@ scaly/.vscode
 bin/
 *.o
 *.a
+out
+node_modules
+client/server
+.vscode-test
+tsconfig.tsbuildinfo
