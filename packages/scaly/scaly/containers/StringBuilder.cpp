@@ -7,6 +7,9 @@ StringBuilder::StringBuilder(Array<char> buffer) : buffer(buffer) {}
 StringBuilder::StringBuilder() : StringBuilder(Array<char>()){
 }
 
+StringBuilder::StringBuilder(size_t size) : StringBuilder(Array<char>(size)){
+}
+
 StringBuilder::StringBuilder(char character) : StringBuilder(){
     append(character);
 }
@@ -32,6 +35,10 @@ void StringBuilder::append(const_char* c_string) {
     if (length == 0) 
         return;
     buffer.add(Vector<char>((char*)c_string, length));
+}
+
+void StringBuilder::append(char* start, size_t length) {
+    buffer.add(Vector<char>(start, length));
 }
 
 size_t StringBuilder::get_length() {

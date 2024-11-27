@@ -1,0 +1,55 @@
+<!DOCTYPE grammar SYSTEM "../compiler/grammar.dtd">
+
+<grammar name = Json>
+
+<syntax id = Property                     multiple
+    <content link = Literal                                 property = name
+    <content colon
+    <content link = Value                                   property = value
+    <content link = comma                          optional 
+
+<syntax id = Constituent                  multiple
+    <content link = Value                                   property = value
+    <content link = comma                          optional
+
+<syntax id = Value                                 abstract
+    <content link = Object
+    <content link = Array
+    <content link = Literal
+    <content link = True
+    <content link = False
+    <content link = Null
+
+<syntax id = Object
+    <content link = left_curly
+    <content link = Property              multiple          property = properties
+    <content link = right_curly
+
+<syntax id = Array
+    <content link = left_bracket
+    <content link = Constituent           multiple optional property = values
+    <content link = right_bracket
+
+<syntax id = Literal
+    <content literal                                        property = literal
+
+<syntax id = True
+    <content link = true
+
+<syntax id = False
+    <content link = false
+
+<syntax id = Null
+    <content link = null
+
+<keyword id = true
+<keyword id = false
+<keyword id = null
+
+<punctuation id = comma             value = ","
+<punctuation id = left_curly        value = "{"
+<punctuation id = right_curly       value = "}"
+<punctuation id = left_bracket      value = "["
+<punctuation id = right_bracket     value = "]"
+
+</grammar>

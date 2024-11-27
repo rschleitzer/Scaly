@@ -1,46 +1,149 @@
 package scaly
 
-function get_message_length(buf: pointer[pointer[char]], end: pointer[char]) returns size_t {
-    var ret: size_t 0
-    while *buf < end
-    {
-        if **buf >= '0' && **buf <= '9': break
-        set *buf: *buf + 1
-    }
-    let last *buf
-    while *buf < end
-    {
-        if **buf < '0' || **buf > '9': break
-        set *buf: *buf + 1
-    }
-    var current *buf - 1
-    var multiplier 1
-    while current >= last
-    {
-        set ret: ret + (*current - '0') * multiplier
-        set multiplier: multiplier * 10
-        set current: current - 1
-    }
+use scaly.json
 
-    return ret
+define scals
+{
+    module Lsp
+}
+
+function process_message(message: String) {
+    var r Region()
+    var p r.get_page()
+    var parser: ref[Parser] *Parser$(message)
+    try let value_syntax parser.parse_value(p, p)
+        when i: ParserError.Invalid
+            exit(1)
+        when d: ParserError.Different
+            exit(2)
+    if parser.is_at_end() = false
+        exit(3)
+    
+    choose value_syntax
+        when o: ValueSyntax.Object
+        {
+            var id: size_t 0
+            var method String()
+            for property in (*o.properties)
+            {
+                choose property.name.literal
+                    when s: Literal.String
+                    {
+                        if s.value.equals("id")
+                        {
+                            choose property.value
+                                when l: ValueSyntax.Literal
+                                {
+                                    choose l.literal
+                                        when i: Literal.Integer
+                                        {
+                                            let value (size_t)strtol(i.value.to_c_string(r.get_page()), null, 10)
+                                            if errno = ERANGE
+                                                exit(9)
+                                            set id: value
+                                        }
+                                        else exit(8)
+                                }
+                                else exit(7)
+
+                        } else if s.value.equals("method")
+                        {
+                            choose property.value
+                                when s: ValueSyntax.Literal
+                                {
+                                    choose s.literal
+                                        when sm: Literal.String
+                                        {
+                                            set method: sm.value
+                                        }
+                                        else exit(8)
+                                }
+                                else exit(9)
+
+                        }
+                    }
+                    else exit(6)
+
+            }
+            
+        }
+        else exit(4)
+
 }
 
 function get_message(fd: int) returns pointer[String] {
     var r Region()
-    var builder: ref[StringBuilder] *StringBuilder$()
     let buffer_size: size_t 0x800
-    var buf: pointer[char] (char*)(*r.get_page()).allocate(buffer_size, 1)
-    let bytes_read read(fd, buf, buffer_size)
-    let end buf + bytes_read
-    write(2, buf, bytes_read)
+    var buffer: pointer[char] (char*)(*r.get_page()).allocate(buffer_size, 1)
+    var bytes_read read(fd, buffer, buffer_size)
+    if bytes_read = -1
+        exit(-1)
+    if bytes_read = 0
+        return null
+    var end buffer + bytes_read
+    write(2, buffer, bytes_read)
 
-    var message_length get_message_length(&buf, end)
+    var index buffer
+    var length: size_t 0
+    while index < end
+    {
+        if *index >= '0' && *index <= '9': break
+        set index: index + 1
+    }
 
-    return String#()
-}
+    let last index
+    while index < end
+    {
+        if *index < '0' || *index > '9': break
+        set index: index + 1
+    }
 
-function process_message(message: String) {
+    var current index - 1
+    var multiplier 1
+    while current >= last
+    {
+        set length: length + (*current - '0') * multiplier
+        set multiplier: multiplier * 10
+        set current: current - 1
+    }
 
+    while index < end
+    {
+        if *index <> '\r' && *index > '\n': break
+        set index: index + 1
+    }
+
+    if length = 0
+        return null    
+
+    var builder: ref[StringBuilder] *StringBuilder$(length)
+    while length > 0
+    {
+        let remainder end - index
+        builder.append(index, remainder)
+
+        set length: length - remainder
+        if length < 0
+            exit(-1)
+        if length = 0
+            break
+        
+        var bytes_to_read length
+        if bytes_to_read > buffer_size
+            set bytes_to_read: buffer_size
+
+        set bytes_read: read(fd, buffer, bytes_to_read)
+        if bytes_read = -1
+            exit(-2)
+
+        if bytes_read = 0
+            return null
+        set index: buffer
+        set end: buffer + bytes_read
+        write(2, index, bytes_read)
+    }
+
+    return String#(rp, builder.to_string(r.get_page()))
 }
 
 var r Region()
@@ -53,5 +156,14 @@ if argc = 2
     set fd: open(argument.to_c_string(r.get_page()), 0)
 }
 
-while let message get_message(r.get_page(), fd)
+while true
+{
+    var r_1 Region()
+    let message get_message(r_1.get_page(), fd)
+    if message = null
+    {
+        break
+    }
+
     process_message(*message)
+}

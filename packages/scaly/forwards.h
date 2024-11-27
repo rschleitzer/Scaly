@@ -63,6 +63,46 @@ struct Directory;
 struct File;
 struct Path;
 }
+namespace json {
+struct DifferentSyntax;
+struct InvalidSyntax;
+struct ParserError;
+struct EmptyToken;
+struct InvalidToken;
+struct ColonToken;
+struct IdentifierToken;
+struct AttributeToken;
+struct PunctuationToken;
+struct StringToken;
+struct CharacterToken;
+struct FragmentToken;
+struct IntegerToken;
+struct BooleanToken;
+struct FloatingPointToken;
+struct HexToken;
+struct LiteralToken;
+struct Token;
+struct Lexer;
+struct IdentifierLiteral;
+struct StringLiteral;
+struct CharacterLiteral;
+struct FragmentLiteral;
+struct IntegerLiteral;
+struct BooleanLiteral;
+struct FloatingPointLiteral;
+struct HexLiteral;
+struct Literal;
+struct NullSyntax;
+struct FalseSyntax;
+struct TrueSyntax;
+struct LiteralSyntax;
+struct ArraySyntax;
+struct ObjectSyntax;
+struct ValueSyntax;
+struct ConstituentSyntax;
+struct PropertySyntax;
+struct Parser;
+}
 namespace compiler {
 struct DifferentSyntax;
 struct InvalidSyntax;

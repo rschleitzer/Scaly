@@ -14,6 +14,11 @@ struct Array : Object {
     Array() : length(0), vector(nullptr){
     }
 
+    Array(size_t size) : length(0), vector(nullptr){
+        const auto exclusive_page = (*Page::get(this)).allocate_exclusive_page();
+        vector = new (alignof(Vector<T>), exclusive_page) Vector<T>(exclusive_page, size);
+    }
+
     T* get_buffer() {
         if (vector == nullptr) 
             return nullptr;
@@ -40,9 +45,9 @@ struct Array : Object {
     void add(Vector<T> items) {
         auto new_length = length+items.length;
         const auto size = sizeof(T);
-        if (vector == nullptr||new_length>=(*vector).length) 
+        if (vector == nullptr||new_length>(*vector).length) 
             reallocate();
-        if (new_length>=(*vector).length) {
+        if (new_length>(*vector).length) {
             auto own_page = Page::get(this);
             const auto data = (T*)(*own_page).allocate(length*size, alignof(T));
             const auto bytes_to_copy = (*vector).length*size;

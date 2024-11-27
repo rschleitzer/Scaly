@@ -46,6 +46,23 @@ Result<Void, TranspilerError> transpiler::program(Page* ep, Program& program) {
             }
         }}
         ;
+    
+    auto _module__iterator = program.module_.modules.get_iterator();
+    while (auto _module_ = _module__iterator.next()) {
+        auto module_ = *_module_;{
+            {
+                const auto _void_result = build_module(ep, path, module_, module_.name, String(), String());
+                if (_void_result._tag == Success::Error) {
+                    const auto _void_Error = _void_result._Error;
+                    switch (_void_Error._tag) {
+                    default:
+                        return Result<Void, TranspilerError>(_void_result._Error);
+
+                    }
+                }}
+                ;
+        }
+    };
     if (program.statements.length>0) 
         main_file(ep, path, program);
     main_include_file(ep, path, program.module_.name);

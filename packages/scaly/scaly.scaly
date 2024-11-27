@@ -2,10 +2,12 @@ define scaly {
     module memory
     module containers
     module io
+    module json
     module compiler
 }
 
 ;scaly->memory->test()
 ;scaly->containers->test()
 ;scaly->io->test()
+;scaly->json->test()
 ;scaly->compiler->test()

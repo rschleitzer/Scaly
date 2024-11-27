@@ -5,6 +5,7 @@ scalyc scals.scaly scals
 clang++ -fcolor-diagnostics -fansi-escape-codes -ferror-limit=5 \
     -g \
     scals.cpp \
+    scals/Lsp.cpp \
     ../scaly/scaly.a \
     main.cpp \
     -o bin/scals\

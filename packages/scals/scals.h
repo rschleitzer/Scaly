@@ -4,7 +4,11 @@
 using namespace scaly;
 using namespace scaly::memory;
 
-size_t get_message_length(char** buf, char* end);
-String* get_message(Page* rp, int fd);
+using namespace scaly::json;
+namespace scals {
+#include "scals/Lsp.h"
+
+}
 void process_message(String message);
+String* get_message(Page* rp, int fd);
 #endif

@@ -36,6 +36,10 @@ clang++ -fcolor-diagnostics -fansi-escape-codes -ferror-limit=5 \
     scaly/io/Directory.cpp \
     scaly/io/File.cpp \
     scaly/io/Path.cpp \
+    scaly/json.cpp \
+    scaly/json/JsonErrors.cpp \
+    scaly/json/JsonLexer.cpp \
+    scaly/json/JsonParser.cpp \
     scaly/compiler.cpp \
     scaly/compiler/Errors.cpp \
     scaly/compiler/Lexer.cpp \
@@ -85,6 +89,10 @@ clang++ -fcolor-diagnostics -fansi-escape-codes -ferror-limit=5 \
     Directory.o \
     File.o \
     Path.o \
+    json.o \
+    JsonErrors.o \
+    JsonLexer.o \
+    JsonParser.o \
     compiler.o \
     Errors.o \
     Lexer.o \
@@ -131,6 +139,10 @@ rm \
     Directory.o \
     File.o \
     Path.o \
+    json.o \
+    JsonErrors.o \
+    JsonLexer.o \
+    JsonParser.o \
     compiler.o \
     Errors.o \
     Lexer.o \

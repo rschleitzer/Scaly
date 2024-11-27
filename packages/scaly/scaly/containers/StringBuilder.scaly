@@ -5,6 +5,8 @@ define StringBuilder
 {
     init () (StringBuilder(Array[char]())) {}
 
+    init (size: size_t) (StringBuilder(Array[char](size))) {}
+
     init (character: char) (StringBuilder()) { append(character) }
 
     init (string: String) (StringBuilder()) { append(string) }
@@ -21,6 +23,10 @@ define StringBuilder
             return
 
         buffer.add(Vector[char]((char*)c_string, length))
+    }
+
+    function append(this: StringBuilder, start: pointer[char], length: size_t) {
+        buffer.add(Vector[char](start, length))
     }
 
     function get_length(this: StringBuilder) returns size_t { return buffer.get_length() }

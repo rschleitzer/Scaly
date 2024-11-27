@@ -1,0 +1,4 @@
+define RequestMessage(jsonrpc: String, id: size_t, method: String)
+
+function de_serialize_requestMessage(json: String) returns RequestMessage {
+}

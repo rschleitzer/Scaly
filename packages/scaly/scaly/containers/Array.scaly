@@ -6,6 +6,11 @@ define Array[T]
 {
     init () (length(0), vector(null)) {}
 
+    init (size: size_t) (length(0), vector(null)) {
+        let exclusive_page (*Page->get(this)).allocate_exclusive_page()
+        set vector: Vector[T]^exclusive_page(exclusive_page, size)
+    }
+
     function get_buffer(this: Array) returns pointer[T]$ {
         if vector = null
             return null
@@ -34,10 +39,10 @@ define Array[T]
     function add(this: Array[T], items: Vector[T]) {
         var new_length length + items.length
         let size sizeof T
-        if vector = nullptr || new_length >= (*vector).length
+        if vector = nullptr || new_length > (*vector).length
             reallocate()
 
-        if new_length >= (*vector).length
+        if new_length > (*vector).length
         {
             var own_page Page->get(this)
             let data (T*)(*own_page).allocate(length * size, alignof(T))

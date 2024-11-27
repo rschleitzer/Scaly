@@ -1,0 +1,444 @@
+use scaly.containers
+define IdentifierLiteral(name: String)
+define StringLiteral(value: String)
+define CharacterLiteral(value: String)
+define FragmentLiteral(value: String)
+define IntegerLiteral(value: String)
+define BooleanLiteral(value: bool)
+define FloatingPointLiteral(value: String)
+define HexLiteral(value: String)
+
+define Literal union (
+    String: StringLiteral
+    Character: CharacterLiteral
+    Fragment: FragmentLiteral
+    Integer: IntegerLiteral
+    Boolean: BooleanLiteral
+    FloatingPoint: FloatingPointLiteral
+    Hex: HexLiteral
+)
+
+define NullSyntax
+(
+    start: size_t
+    end: size_t
+)
+
+define FalseSyntax
+(
+    start: size_t
+    end: size_t
+)
+
+define TrueSyntax
+(
+    start: size_t
+    end: size_t
+)
+
+define LiteralSyntax
+(
+    start: size_t
+    end: size_t
+    literal: Literal
+)
+
+define ArraySyntax
+(
+    start: size_t
+    end: size_t
+    values: pointer[Vector[ConstituentSyntax]]
+)
+
+define ObjectSyntax
+(
+    start: size_t
+    end: size_t
+    properties: pointer[Vector[PropertySyntax]]
+)
+
+define ValueSyntax union (
+    Object: ObjectSyntax
+    Array: ArraySyntax
+    Literal: LiteralSyntax
+    True: TrueSyntax
+    False: FalseSyntax
+    Null: NullSyntax
+)
+
+define ConstituentSyntax
+(
+    start: size_t
+    end: size_t
+    value: ValueSyntax
+)
+
+define PropertySyntax
+(
+    start: size_t
+    end: size_t
+    name: LiteralSyntax
+    value: ValueSyntax
+)
+
+define Parser
+(
+    lexer: Lexer
+    keywords_index: Vector[String]
+    keywords: HashSet[String]
+)
+{
+    init(text: String) (lexer(Lexer(text))) (keywords_index(initialize_keywords_index())) (keywords(initialize_keywords())) {}
+
+    function initialize_keywords_index(this: Parser) returns Vector[String]$ {
+        var r Region()
+        var keywords_builder Array[String]$()
+        var p Page->get(this)
+        (*keywords_builder).add(String(p, "true"))
+        (*keywords_builder).add(String(p, "false"))
+        (*keywords_builder).add(String(p, "null"))
+        return Vector[String](p, *keywords_builder)
+    }
+
+    function initialize_keywords(this: Parser) returns HashSet[String]$ {
+        var r Region()
+        var hash_set_builder HashSetBuilder[String]$(keywords_index)
+        return HashSet[String](Page->get(this), *hash_set_builder)
+    }
+
+    function parse_literal_token(this: Parser) returns Literal throws ParserError {
+        choose lexer.token
+            when empty: Token.Empty lexer.advance()
+            else {}
+
+        choose lexer.token
+            when literal: Token.Literal
+            {
+                choose literal
+                    when string: LiteralToken.String {
+                        let ret Literal(StringLiteral(String(rp, string.value)))
+                        lexer.empty()
+                        return ret
+                    }
+
+                    when character: LiteralToken.Character {
+                        let ret Literal(CharacterLiteral(String(rp, character.value)))
+                        lexer.empty()
+                        return ret
+                    }
+
+                    when integer: LiteralToken.Integer {
+                        let ret Literal(IntegerLiteral(String(rp, integer.value)))
+                        lexer.empty()
+                        return ret
+                    }
+
+                    when fp: LiteralToken.FloatingPoint {
+                        let ret Literal(FloatingPointLiteral(String(rp, fp.value)))
+                        lexer.empty()
+                        return ret
+                    }
+
+                    when hex: LiteralToken.Hex {
+                        let ret Literal(HexLiteral(String(rp, hex.value)))
+                        lexer.empty()
+                        return ret
+                    }
+
+                    when boolean: LiteralToken.Boolean {
+                        let ret Literal(BooleanLiteral(boolean.value))
+                        lexer.empty()
+                        return ret
+                    }
+
+                    when fragment: LiteralToken.Fragment {
+                        let ret Literal(FragmentLiteral(String(rp, fragment.value)))
+                        lexer.empty()
+                        return ret
+                    }
+            }
+            else
+                return Result[Literal, ParserError](ParserError(DifferentSyntax()))
+    }
+
+    function parse_property_list(this: Parser) returns pointer[Vector[PropertySyntax]] throws ParserError {
+        var r Region()
+        var list List[PropertySyntax]$()
+        while true
+        {
+            try let node parse_property(rp, ep)
+                when i: ParserError.Invalid
+                    throw i
+                when d: ParserError.Different
+                {
+                    if (*list).head = 0
+                    {
+                        throw d
+                    } else {
+                        return Vector[PropertySyntax]#(rp, *list)
+                    }
+                }
+
+            (*list).add(node)
+        }
+    }
+
+    function parse_property(this: Parser) returns PropertySyntax throws ParserError {
+        let start lexer.previous_position
+
+        let name_start lexer.position
+        try let name parse_literal(rp, ep)
+            when d: ParserError.Different throw d
+            when i: ParserError.Invalid throw i
+
+        let start_colon_2 lexer.previous_position
+        let success_colon_2 lexer.parse_colon()
+        if success_colon_2 = false
+        {
+            throw ParserError(InvalidSyntax(start_colon_2, lexer.position, String(ep, "a colon or a line feed")))        }
+
+        let value_start lexer.position
+        try let value parse_value(rp, ep)
+            when d: ParserError.Different
+                throw InvalidSyntax(value_start, lexer.position, String(ep, "a valid Value syntax"))
+            when i: ParserError.Invalid throw i
+
+        let start_comma_4 lexer.previous_position
+        let success_comma_4 lexer.parse_punctuation(',')
+
+        let end lexer.position
+
+        return PropertySyntax(start, end, name, value)
+    }
+
+    function parse_constituent_list(this: Parser) returns pointer[Vector[ConstituentSyntax]] throws ParserError {
+        var r Region()
+        var list List[ConstituentSyntax]$()
+        while true
+        {
+            try let node parse_constituent(rp, ep)
+                when i: ParserError.Invalid
+                    throw i
+                when d: ParserError.Different
+                {
+                    if (*list).head = 0
+                    {
+                        throw d
+                    } else {
+                        return Vector[ConstituentSyntax]#(rp, *list)
+                    }
+                }
+
+            (*list).add(node)
+        }
+    }
+
+    function parse_constituent(this: Parser) returns ConstituentSyntax throws ParserError {
+        let start lexer.previous_position
+
+        let value_start lexer.position
+        try let value parse_value(rp, ep)
+            when d: ParserError.Different throw d
+            when i: ParserError.Invalid throw i
+
+        let start_comma_2 lexer.previous_position
+        let success_comma_2 lexer.parse_punctuation(',')
+
+        let end lexer.position
+
+        return ConstituentSyntax(start, end, value)
+    }
+
+    function parse_value(this: Parser) returns ValueSyntax throws ParserError {
+        {
+            choose parse_object(rp, ep)
+                when error: Success.Error
+                {
+                    choose error
+                        when i: ParserError.Invalid throw i
+                        when d: ParserError.Different {}
+                }
+                when node: Success.Ok
+                    return ValueSyntax(ObjectSyntax(node))
+        }
+        {
+            choose parse_array(rp, ep)
+                when error: Success.Error
+                {
+                    choose error
+                        when i: ParserError.Invalid throw i
+                        when d: ParserError.Different {}
+                }
+                when node: Success.Ok
+                    return ValueSyntax(ArraySyntax(node))
+        }
+        {
+            choose parse_literal(rp, ep)
+                when error: Success.Error
+                {
+                    choose error
+                        when i: ParserError.Invalid throw i
+                        when d: ParserError.Different {}
+                }
+                when node: Success.Ok
+                    return ValueSyntax(LiteralSyntax(node))
+        }
+        {
+            choose parse_true(rp, ep)
+                when error: Success.Error
+                {
+                    choose error
+                        when i: ParserError.Invalid throw i
+                        when d: ParserError.Different {}
+                }
+                when node: Success.Ok
+                    return ValueSyntax(TrueSyntax(node))
+        }
+        {
+            choose parse_false(rp, ep)
+                when error: Success.Error
+                {
+                    choose error
+                        when i: ParserError.Invalid throw i
+                        when d: ParserError.Different {}
+                }
+                when node: Success.Ok
+                    return ValueSyntax(FalseSyntax(node))
+        }
+        {
+            choose parse_null(rp, ep)
+                when error: Success.Error
+                {
+                    choose error
+                        when i: ParserError.Invalid throw i
+                        when d: ParserError.Different {}
+                }
+                when node: Success.Ok
+                    return ValueSyntax(NullSyntax(node))
+        }
+        throw ParserError(DifferentSyntax())
+    }
+
+    function parse_object(this: Parser) returns ObjectSyntax throws ParserError {
+        let start lexer.previous_position
+
+        let start_left_curly_1 lexer.previous_position
+        let success_left_curly_1 lexer.parse_punctuation('{')
+        if success_left_curly_1 = false
+        {
+            throw ParserError(DifferentSyntax())
+        }
+
+        let properties_start lexer.position
+        try let properties parse_property_list(rp, ep)
+            when d: ParserError.Different
+                throw InvalidSyntax(properties_start, lexer.position, String(ep, "a valid Property syntax"))
+            when i: ParserError.Invalid throw i
+
+        let start_right_curly_3 lexer.previous_position
+        let success_right_curly_3 lexer.parse_punctuation('}')
+        if success_right_curly_3 = false
+        {
+            throw ParserError(InvalidSyntax(start_right_curly_3, lexer.position, String(ep, "}")))        }
+
+        let end lexer.position
+
+        return ObjectSyntax(start, end, properties)
+    }
+
+    function parse_array(this: Parser) returns ArraySyntax throws ParserError {
+        let start lexer.previous_position
+
+        let start_left_bracket_1 lexer.previous_position
+        let success_left_bracket_1 lexer.parse_punctuation('[')
+        if success_left_bracket_1 = false
+        {
+            throw ParserError(DifferentSyntax())
+        }
+
+        let values_start lexer.position
+        var values: pointer[Vector[ConstituentSyntax]] null 
+        choose parse_constituent_list(rp, ep)
+            when error: Success.Error
+            {
+                choose error
+                    when d: ParserError.Different {}
+                    when i: ParserError.Invalid
+                        throw i
+            }
+            when success: Success.Ok
+                set values: success
+
+        let start_right_bracket_3 lexer.previous_position
+        let success_right_bracket_3 lexer.parse_punctuation(']')
+        if success_right_bracket_3 = false
+        {
+            throw ParserError(InvalidSyntax(start_right_bracket_3, lexer.position, String(ep, "]")))        }
+
+        let end lexer.position
+
+        return ArraySyntax(start, end, values)
+    }
+
+    function parse_literal(this: Parser) returns LiteralSyntax throws ParserError {
+        let start lexer.previous_position
+
+        try let literal parse_literal_token(rp, ep)
+            when d: ParserError.Different throw d
+            when i: ParserError.Invalid throw i
+
+        let end lexer.position
+
+        return LiteralSyntax(start, end, literal)
+    }
+
+    function parse_true(this: Parser) returns TrueSyntax throws ParserError {
+        let start lexer.previous_position
+
+        let start_true_1 lexer.previous_position
+        let success_true_1 lexer.parse_keyword(*keywords_index.get(0))
+        if success_true_1 = false
+        {
+            throw ParserError(DifferentSyntax())
+        }
+
+        let end lexer.position
+
+        return TrueSyntax(start, end)
+    }
+
+    function parse_false(this: Parser) returns FalseSyntax throws ParserError {
+        let start lexer.previous_position
+
+        let start_false_1 lexer.previous_position
+        let success_false_1 lexer.parse_keyword(*keywords_index.get(1))
+        if success_false_1 = false
+        {
+            throw ParserError(DifferentSyntax())
+        }
+
+        let end lexer.position
+
+        return FalseSyntax(start, end)
+    }
+
+    function parse_null(this: Parser) returns NullSyntax throws ParserError {
+        let start lexer.previous_position
+
+        let start_null_1 lexer.previous_position
+        let success_null_1 lexer.parse_keyword(*keywords_index.get(2))
+        if success_null_1 = false
+        {
+            throw ParserError(DifferentSyntax())
+        }
+
+        let end lexer.position
+
+        return NullSyntax(start, end)
+    }
+
+    function is_at_end(this: Parser) returns bool {
+        return lexer.is_at_end()
+    }
+}
+

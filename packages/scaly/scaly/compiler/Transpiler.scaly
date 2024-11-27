@@ -22,6 +22,12 @@ function program(program: ref[Program]) throws TranspilerError {
     try build_module(ep, path, program.module_, program.module_.name, String(), String())
        else throw
 
+    for module_ in program.module_.modules
+    {
+        try build_module(ep, path, module_, module_.name, String(), String())
+            else throw
+    }
+
     if program.statements.length > 0
         main_file(ep, path, program)
     main_include_file(ep, path, program.module_.name)

@@ -1,5 +1,8 @@
   <!ELEMENT grammar - - (syntax+, keyword*, punctuation*)>
-
+  <!ATTLIST grammar
+    name        CDATA                               #IMPLIED
+  >
+  
   <!ELEMENT syntax - O (content)*>
   <!ATTLIST syntax
     id          ID                                  #REQUIRED

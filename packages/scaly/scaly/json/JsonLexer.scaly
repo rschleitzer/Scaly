@@ -1,0 +1,708 @@
+use scaly.containers
+
+define EmptyToken()
+define InvalidToken()
+define ColonToken()
+
+define IdentifierToken(name: Vector[char])
+define AttributeToken(name: Vector[char])
+define PunctuationToken(sign: char)
+define StringToken(value: Vector[char])
+define CharacterToken(value: Vector[char])
+define FragmentToken(value: Vector[char])
+define IntegerToken(value: Vector[char])
+define BooleanToken(value: bool)
+define FloatingPointToken(value: Vector[char])
+define HexToken(value: Vector[char])
+
+define LiteralToken union (
+    String: StringToken
+    Character: CharacterToken
+    Fragment: FragmentToken
+    Integer: IntegerToken
+    Boolean: BooleanToken
+    FloatingPoint: FloatingPointToken
+    Hex: HexToken
+)
+
+define Token union (
+    Empty: EmptyToken
+    Invalid: InvalidToken
+    Identifier: IdentifierToken
+    Attribute: AttributeToken
+    Punctuation: PunctuationToken
+    Literal: LiteralToken
+    Colon: ColonToken
+)
+
+
+define Lexer
+(
+    token: Token(EmptyToken())
+    character: pointer[char](null)
+    chars: StringIterator(StringIterator(String()))
+    previous_position: size_t(0)
+    position: size_t(0)
+)
+{
+    init(deck: String) (Lexer()) {
+        set chars: deck.get_iterator()
+        read_character()
+        skip_whitespace(true)
+    }
+
+    function read_character(this: Lexer) {
+        set character: chars.next()
+        if character <> null
+            set position: position + 1        
+    }
+
+    function advance(this: Lexer) {
+        set previous_position: position
+
+        if character = null
+            return
+
+        let c *character
+
+        if ((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z'))
+        {
+            set token: scan_identifier()
+            skip_whitespace(false)
+            return
+        }
+
+        if (c >= '1') && (c <= '9')
+        {
+            set token: scan_integer_literal(character, 0)
+            skip_whitespace(false)
+            return
+        }
+
+        match c
+            case '+' case '-' case '*' case '/' case '=' case '%' case '&' case '|' case '~' case '<' case '>'
+            {
+                set token: scan_operator()
+                skip_whitespace(false)
+                return
+            }
+
+            case '}' case ')' case ']' case '.' case '?' case '!' case '$' case '#' case '^'
+            {
+                set token: Token(PunctuationToken(*character))
+                read_character()
+                skip_whitespace(false)
+                return
+            }
+
+            case '{' case '(' case '[' case ','
+            {
+                set token: Token(PunctuationToken(*character))
+                read_character()
+                skip_whitespace(true)
+                return
+            }
+
+            case '\n'
+                set token: scan_line_feed()
+
+            case ':' 
+            {
+                read_character()
+                set token: Token(ColonToken())
+            }
+
+            case '0'
+                set token: scan_numeric_literal()
+
+            case '@'
+            {
+                read_character()
+                set token: scan_attribute()
+            }
+
+            case '\"'
+                set token: scan_string_literal()
+
+            case '\''
+                set token: scan_string_identifier()
+
+            case '`'
+                set token: scan_fragment_literal()
+
+            else
+                set token: Token(InvalidToken())
+
+        skip_whitespace(false)
+    }
+
+    function empty(this: Lexer) {
+        set token: Token(EmptyToken())
+    }
+
+    function scan_line_feed(this: Lexer) returns Token$ {
+        while true
+        {
+            read_character()
+            skip_whitespace(false)
+            if character = null
+                return Token(ColonToken())
+
+            if *character = '\n'
+                continue
+
+            return Token(ColonToken())
+        }
+    }
+
+    function scan_identifier(this: Lexer) returns Token$ {
+        let start character
+        var length: size_t 0
+        while true
+        {
+            if character = null
+            {
+                if length = 0
+                {
+                    return Token(InvalidToken())
+                } else {
+                    return Token(IdentifierToken(Vector<char>(start, length)))
+                }
+            } else {
+                let c *character
+                if ((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || ((c >= '0') && (c <= '9')) || (c = '_')
+                {
+                    read_character()
+                    set length: length + 1
+                } else {
+                    return Token(IdentifierToken(Vector<char>(start, length)))
+                }
+            }
+        }
+    }
+
+    function scan_attribute(this: Lexer) returns Token$ {
+        let start character
+        var length: size_t 0
+        while true
+        {
+            if character = null
+            {
+                if length = 0
+                {
+                    return Token(InvalidToken())
+                } else {
+                    return Token(AttributeToken(Vector<char>(start, length)))
+                }
+            } else {
+                let c *character
+                if ((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || ((c >= '0') && (c <= '9')) || (c = '_')
+                {
+                    read_character()
+                    set length: length + 1
+                } else {
+                    return Token(AttributeToken(Vector<char>(start, length)))
+                }
+            }
+        }
+    }
+
+    function scan_operator(this: Lexer) returns Token$ {
+        let start character
+        var length: size_t 0
+        while true
+        {
+            read_character()
+            set length: length + 1
+            if character = null
+            {
+                if length = 1
+                {
+                    return Token(InvalidToken())
+                } else {
+                    return Token(IdentifierToken(Vector<char>(start, length)))
+                }
+            }
+
+            match *character
+                case '+' case '-' case '*' case '/' case '=' case '%' case '&' case '|' case '^' case '~' case '<' case '>'
+                    continue
+                else
+                    return Token(IdentifierToken(Vector<char>(start, length)))
+        }
+    }
+
+    function scan_string_literal(this: Lexer) returns Token$ {
+        let start character + 1
+        var length: size_t 0
+        while true
+        {
+            read_character()
+            set length: length + 1
+            if character = null
+                return Token(InvalidToken())
+
+            let c *character
+            match c
+                case '\"'
+                {
+                    read_character()
+                    return Token(LiteralToken(StringToken(Vector<char>(start, length - 1))))
+                }
+                case '\\'
+                {
+                    read_character()
+                    set length: length + 1
+                    if character = null
+                        return Token(InvalidToken())
+                    match *character
+                        case '\"' case '\\' case '\'' case 'n' case 'r' case 't' case '0': {}
+                        else return Token(InvalidToken())                            
+                }
+        }
+    }
+
+    function scan_string_identifier(this: Lexer) returns Token$ {
+        let start character + 1
+        var length: size_t 0
+        while true
+        {
+            read_character()
+            set length: length + 1
+            if character = null
+                return Token(InvalidToken())
+
+            let c *character
+            match c
+                case '\''
+                {
+                    read_character()
+                        return Token(LiteralToken(CharacterToken(Vector<char>(start, length - 1))))
+                }
+                case '\\'
+                {
+                    read_character()
+                    set length: length + 1
+                    if character = null
+                        return Token(InvalidToken())
+
+                    match *character
+                        case '\"' case '\\' case '\'' case 'n' case 'r' case 't' case '0': {}
+                        else
+                            return Token(InvalidToken())                        
+                }
+                else
+                    break
+        }
+    }
+
+    function scan_fragment_literal(this: Lexer) returns Token$ {
+        let start character + 1
+        var length: size_t 0
+        while true
+        {
+            read_character()
+            set length: length + 1
+            if character = null
+                return Token(InvalidToken())
+
+            match *character
+                case '`'
+                { 
+                    read_character()
+                    return Token(LiteralToken(FragmentToken(Vector<char>(start, length - 1))))
+                }
+
+                case '\\' 
+                {
+                    read_character()
+                    set length: length + 1
+                    if character = null
+                        return Token(InvalidToken())
+
+                    match *character
+                        case '`' case '\\' case '\'' case 'n' case 'r' case 't' case '0'
+                            break
+                        else
+                            return Token(InvalidToken())                            
+                }
+
+                else
+                    break
+        }
+    }
+
+    function scan_numeric_literal(this: Lexer) returns Token$ {
+        let start character
+        var length: size_t 0
+        read_character()
+        set length: length + 1
+        if character = null
+            return Token(LiteralToken(IntegerToken(Vector<char>(start, length))))
+
+        let c *character
+
+        if (c >= '0') && (c <= '9')
+            return scan_integer_literal(start, length)
+
+        match c
+            case '.'
+                return scan_fraction(start, length)
+            case 'E'
+                return scan_exponent(start, length)
+            case 'e'
+                return scan_exponent(start, length)
+            case 'x'
+                return scan_hex_literal(start, length)
+            case 'B'
+                return scan_boolean_literal()
+            else
+                return Token(LiteralToken(IntegerToken(Vector<char>(start, length))))
+    }
+
+    function scan_integer_literal(this: Lexer, start: pointer[char], length: size_t) returns Token$ {
+        while true
+        {
+            read_character()
+            set length: length + 1
+            if character = null
+                return Token(LiteralToken(IntegerToken(Vector<char>(start, length))))
+
+            let c *character
+
+            if (c >= '0') && (c <= '9')
+                continue
+
+            match c
+                case '.'
+                    return scan_fraction(start, length)
+                case 'E'
+                    return scan_exponent(start, length)
+                case 'e'
+                    return scan_exponent(start, length)
+                else
+                    return Token(LiteralToken(IntegerToken(Vector<char>(start, length))))
+        }
+    }
+
+    function scan_fraction(this: Lexer, start: pointer[char], length: size_t) returns Token$ {
+        while true
+        {
+            read_character()
+            set length: length + 1
+            if character = null
+                return Token(LiteralToken(FloatingPointToken(Vector<char>(start, length))))
+
+            let c *character
+
+            if (c >= '0') && (c <= '9')
+                continue
+
+            match c
+                case 'E'
+                    return scan_exponent(start, length)
+                case 'e'
+                    return scan_exponent(start, length)
+                else
+                    return Token(LiteralToken(FloatingPointToken(Vector<char>(start, length))))
+        }
+    }
+
+    function scan_exponent(this: Lexer, start: pointer[char], length: size_t) returns Token$ {
+        while true
+        {
+            read_character()
+            set length: length + 1
+            if character = null
+                return Token(LiteralToken(FloatingPointToken(Vector<char>(start, length))))
+
+            let c *character
+
+            if ((c >= '0') && (c <= '9'))
+                continue
+
+            return Token(LiteralToken(FloatingPointToken(Vector<char>(start, length))))
+        }
+    }
+
+    function scan_hex_literal(this: Lexer, start: pointer[char], length: size_t) returns Token$ {
+        while true
+        {
+            read_character()
+            set length: length + 1
+            if character = null
+                return Token(LiteralToken(HexToken(Vector<char>(start, length))))
+
+            let c *character
+
+            if ((c >= '0') && (c <= '9')) || (c >= 'A') && (c <= 'F') || ((c >= 'a') && (c <= 'f'))
+                continue
+
+            return Token(LiteralToken(HexToken(Vector<char>(start, length))))
+        }
+    }
+
+    function scan_boolean_literal(this: Lexer) returns Token$ {
+        read_character()
+        if character = null
+            return Token(InvalidToken())
+
+        let c *character
+
+        if c <> '0' && c <> '1'
+        {
+            return Token(InvalidToken())
+        } else {
+            read_character()
+            return Token(LiteralToken(BooleanToken(c = '1')))
+        }
+    }
+
+    function skip_whitespace(this: Lexer, skip_line_feed: bool) {
+        while true
+        {
+            match (size_t)character
+                case 0
+                    return
+                else
+                {
+                    match *character
+                        case ' '
+                        {
+                            read_character()
+                            continue
+                        }
+                        case '\t'
+                        {
+                            read_character()
+                            continue
+                        }
+                        case '\r'
+                        {
+                            read_character()
+                            continue
+                        }
+                        case '\n'
+                            if (skip_line_feed)
+                            {
+                                read_character()
+                                continue
+                            } else {
+                                return
+                            }
+                        case '\\'
+                        {
+                            read_character()
+                                match (size_t)character
+                                    case 0
+                                        return
+                                    else
+                                    {
+                                        match *character 
+                                            case '\r'
+                                            {
+                                                read_character()
+                                                read_character()
+                                                continue
+                                            }
+                                            case '\n'
+                                            {
+                                                read_character()
+                                                continue
+                                            }
+                                    }
+                        }
+
+                        case ';'
+                        {
+                            read_character()
+                            match (size_t)character
+                                case 0
+                                    return
+                                else
+                                {
+                                    if *character <> '*'
+                                    {
+                                        read_character()
+                                        handle_single_line_comment()
+                                    } else {
+                                        read_character()
+                                        handle_multi_line_comment()
+                                    }
+                                }
+                        }
+                        else
+                            return
+            }
+        }
+    }
+
+    function handle_single_line_comment(this: Lexer) {
+        while true
+        {
+            match (size_t)character
+                case 0
+                    return
+                else
+                {
+                    if *character = '\n'
+                    {
+                        read_character()
+                        return
+                    } else {
+                        read_character()
+                        continue
+                    }
+                }
+        }
+    }
+
+    function handle_multi_line_comment(this: Lexer) {
+        while true
+        {
+            match (size_t)character
+                case 0
+                    return
+                else
+                {
+                    match *character
+                        case ';'
+                        {
+                            read_character()
+                            match (size_t)character
+                                case 0
+                                    return
+                                else
+                                    match *character
+                                        case '*'
+                                        {
+                                            read_character()
+                                            handle_multi_line_comment()
+                                            continue
+                                        }
+                                        else
+                                            continue
+                        }
+
+                        case '*'
+                        {
+                            read_character()
+                            match (size_t)character
+                                case 0
+                                    return
+                                else
+                                    match *character
+                                        case ';'
+                                        {
+                                            read_character()
+                                            return
+                                        }
+                                        else
+                                            read_character()
+                        }
+                        else
+                        {
+                            read_character()
+                            continue
+                        }
+                }
+        }
+    }
+
+    function parse_keyword(this: Lexer, fixed_string: String) returns bool {
+        choose token
+            when empty: Token.Empty advance()
+            else {}
+
+        choose token
+            when identifier: Token.Identifier
+            {
+                let right_keyword fixed_string.equals(identifier.name)
+                if right_keyword
+                    empty()
+
+                return right_keyword
+            }
+            else
+                return false
+    }
+
+    function parse_identifier(this: Lexer, keywords: HashSet[String]) returns pointer[String] {
+        var r Region()
+        choose token
+            when empty: Token.Empty advance()
+            else {}
+
+        choose token
+            when identifier: Token.Identifier
+            {
+                if keywords.contains(*String$(r.get_page(), identifier.name))
+                    return null
+                let ret String#(rp, identifier.name)
+                empty()
+                return ret
+            }
+            else
+                return null
+    }
+
+    function parse_attribute(this: Lexer) returns pointer[String] {
+        choose token
+            when empty: Token.Empty advance()
+            else {}
+
+        choose token
+            when attribute: Token.Attribute
+            {
+                let ret String#(rp, attribute.name)
+                empty()
+                return ret
+            }
+            else
+                return null
+    }
+
+    function parse_punctuation(this: Lexer, character: char) returns bool {
+        choose token
+            when empty: Token.Empty advance()
+            else {}
+
+        choose token
+            when punctuation: Token.Punctuation
+            {
+                let ret character = punctuation.sign
+                if ret
+                    empty()
+
+                return ret
+            }
+            else
+                return false
+    }
+
+    function parse_colon(this: Lexer) returns bool {
+        choose token
+            when empty: Token.Empty advance()
+            else {}
+
+        choose token
+            when c: Token.Colon
+            {
+                empty()
+                return true
+            }
+            when e: Token.Empty
+            {
+                return true
+            }
+            else
+                return false
+    }
+
+    function is_at_end(this: Lexer) returns bool {
+        if character = null
+            return true
+
+        return false
+    }
+}
