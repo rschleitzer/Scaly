@@ -9,66 +9,7 @@ define scals
 
 function process_message(message: String) {
     var r Region()
-    var p r.get_page()
-    var parser: ref[Parser] *Parser$(message)
-    try let value_syntax parser.parse_value(p, p)
-        when i: ParserError.Invalid
-            exit(1)
-        when d: ParserError.Different
-            exit(2)
-    if parser.is_at_end() = false
-        exit(3)
-    
-    choose value_syntax
-        when o: ValueSyntax.Object
-        {
-            var id: size_t 0
-            var method String()
-            for property in (*o.properties)
-            {
-                choose property.name.literal
-                    when s: Literal.String
-                    {
-                        if s.value.equals("id")
-                        {
-                            choose property.value
-                                when l: ValueSyntax.Literal
-                                {
-                                    choose l.literal
-                                        when i: Literal.Integer
-                                        {
-                                            let value (size_t)strtol(i.value.to_c_string(r.get_page()), null, 10)
-                                            if errno = ERANGE
-                                                exit(9)
-                                            set id: value
-                                        }
-                                        else exit(8)
-                                }
-                                else exit(7)
-
-                        } else if s.value.equals("method")
-                        {
-                            choose property.value
-                                when s: ValueSyntax.Literal
-                                {
-                                    choose s.literal
-                                        when sm: Literal.String
-                                        {
-                                            set method: sm.value
-                                        }
-                                        else exit(8)
-                                }
-                                else exit(9)
-
-                        }
-                    }
-                    else exit(6)
-
-            }
-            
-        }
-        else exit(4)
-
+    let requestMessage scals->de_serialize_requestMessage(r.get_page(), message)
 }
 
 function get_message(fd: int) returns pointer[String] {

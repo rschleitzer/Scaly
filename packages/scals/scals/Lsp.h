@@ -4,6 +4,8 @@
 using namespace scaly;
 using namespace scaly::memory;
 
+using namespace scaly::json;
+
 struct RequestMessage : Object {
     String jsonrpc;
     size_t id;

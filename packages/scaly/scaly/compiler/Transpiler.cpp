@@ -127,7 +127,7 @@ struct Result {\n\
 ");
         }
         else {
-            header_builder.append("#include \"../scaly/scaly.h\"\n");
+            header_builder.append("#include \"../scaly/scaly.h\"\n#include \"forwards.h\"\n");
         };
     }
     else {
