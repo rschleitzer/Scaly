@@ -2,7 +2,24 @@ use scaly.containers
 use scaly.io
 
 define planner {
-    function plan_program(program: ref[Program]) returns Plan throws TranspilerError {
-        return Plan()
+
+function plan_program(program: ref[Program]) returns Plan throws TranspilerError {
+    var r Region()
+
+    let file program.module_.file
+    var path Path->get_directory_name(r.get_page(), file)
+    if path.get_length() > 0
+    {
+        try let exists Directory->exists(ep, path)
+            else throw
+
+        if exists = false
+        {
+            try Directory->create(ep, path)
+                else throw
+        }
     }
+    return Plan(path, program.module_.name)
+}
+
 }

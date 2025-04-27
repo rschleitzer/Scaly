@@ -1,1 +1,1 @@
-define Plan()
+define Plan(path: String, name: String)
