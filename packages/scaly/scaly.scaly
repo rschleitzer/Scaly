@@ -10,4 +10,4 @@ define scaly {
 ;scaly->containers->test()
 ;scaly->io->test()
 ;scaly->json->test()
-;scaly->compiler->test()
+scaly->compiler->test()
