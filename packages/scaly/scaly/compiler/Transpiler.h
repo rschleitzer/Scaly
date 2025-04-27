@@ -9,7 +9,7 @@ using namespace scaly::containers;
 using namespace scaly::io;
 namespace transpiler {
 
-    Result<Void, TranspilerError> program(Page* ep, Program& program);
+    Result<Void, TranspilerError> transpile_program(Page* ep, Program& program);
     Result<Void, TranspilerError> build_module(Page* ep, String path, Module& module_, String main_header, String namespace_open, String namespace_close);
     Result<Void, FileError> create_directory(Page* ep, String path);
     Result<Void, TranspilerError> build_concept(Page* ep, String path, String source, StringBuilder& header_builder, StringBuilder& cpp_builder, String main_header, String namespace_open, String namespace_close, Concept& concept);

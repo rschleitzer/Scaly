@@ -4,4 +4,11 @@
 using namespace scaly;
 using namespace scaly::memory;
 
+using namespace scaly::containers;
+
+using namespace scaly::io;
+namespace coder {
+
+    Result<Void, TranspilerError> code_plan(Page* ep, Plan& plan);
+}
 #endif

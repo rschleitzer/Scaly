@@ -3,6 +3,7 @@ use scaly.io
 use scaly.compiler.model
 use scaly.compiler.transpiler
 use scaly.compiler.planner
+use scaly.compiler.coder
 
 define compiler {
 
@@ -11,10 +12,13 @@ function compile(file_name: String, program_name: String) throws CompilerError {
     try let prog build_program(r.get_page(), ep, file_name, program_name)
         else throw
 
-    try program(r.get_page(), prog)
+    try transpile_program(r.get_page(), prog)
         else throw
 
-    try let plan plan(r.get_page(), ep, prog)
+    try let plan plan_program(r.get_page(), ep, prog)
+        else throw
+
+    try code_plan(r.get_page(), plan)
         else throw
     
     return Void()

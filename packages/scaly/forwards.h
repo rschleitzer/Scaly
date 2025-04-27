@@ -336,5 +336,7 @@ namespace compiler {
 struct Plan;
 namespace planner {
 }
+namespace coder {
+}
 }
 }

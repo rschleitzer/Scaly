@@ -1,0 +1,10 @@
+use scaly.containers
+use scaly.io
+
+define coder {
+
+function code_plan(plan: ref[Plan]) throws TranspilerError {
+    return Void()
+}
+
+}

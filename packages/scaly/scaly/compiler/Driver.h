@@ -13,6 +13,8 @@ using namespace scaly::compiler::model;
 using namespace scaly::compiler::transpiler;
 
 using namespace scaly::compiler::planner;
+
+using namespace scaly::compiler::coder;
 namespace compiler {
 
     Result<Void, CompilerError> compile(Page* ep, String file_name, String program_name);

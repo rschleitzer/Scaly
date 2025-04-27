@@ -6,7 +6,7 @@ using namespace scaly::containers;
 using namespace scaly::io;
 
 
-Result<Void, TranspilerError> transpiler::program(Page* ep, Program& program) {
+Result<Void, TranspilerError> transpiler::transpile_program(Page* ep, Program& program) {
     auto r = Region();
     const auto file = program.module_.file;
     auto path = Path::get_directory_name(r.get_page(), file);

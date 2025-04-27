@@ -6,7 +6,7 @@ using namespace scaly::containers;
 using namespace scaly::io;
 
 
-Result<Plan, TranspilerError> planner::plan(Page* rp, Page* ep, Program& program) {
+Result<Plan, TranspilerError> planner::plan_program(Page* rp, Page* ep, Program& program) {
     return Result<Plan, TranspilerError>(Plan());
 }
 

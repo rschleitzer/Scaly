@@ -3,7 +3,7 @@ use scaly.io
 
 define transpiler {
 
-function program(program: ref[Program]) throws TranspilerError {
+function transpile_program(program: ref[Program]) throws TranspilerError {
     var r Region()
 
     let file program.module_.file

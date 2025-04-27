@@ -11,6 +11,8 @@ using namespace scaly::compiler::transpiler;
 
 using namespace scaly::compiler::planner;
 
+using namespace scaly::compiler::coder;
+
 
 Result<Void, CompilerError> compiler::compile(Page* ep, String file_name, String program_name) {
     auto r = Region();
@@ -25,7 +27,7 @@ Result<Void, CompilerError> compiler::compile(Page* ep, String file_name, String
         }
     };
     {
-        const auto _void_result = program(r.get_page(), prog);
+        const auto _void_result = transpile_program(r.get_page(), prog);
         if (_void_result._tag == Success::Error) {
             const auto _void_Error = _void_result._Error;
             switch (_void_Error._tag) {
@@ -35,7 +37,7 @@ Result<Void, CompilerError> compiler::compile(Page* ep, String file_name, String
             }
         }}
         ;
-    const auto _plan_result = plan(r.get_page(), ep, prog);
+    const auto _plan_result = plan_program(r.get_page(), ep, prog);
     auto plan = _plan_result._Ok;
     if (_plan_result._tag == Success::Error) {
         const auto _plan_Error = _plan_result._Error;
@@ -45,6 +47,17 @@ Result<Void, CompilerError> compiler::compile(Page* ep, String file_name, String
 
         }
     };
+    {
+        const auto _void_result = code_plan(r.get_page(), plan);
+        if (_void_result._tag == Success::Error) {
+            const auto _void_Error = _void_result._Error;
+            switch (_void_Error._tag) {
+            default:
+                return Result<Void, CompilerError>(_void_result._Error);
+
+            }
+        }}
+        ;
     return Result<Void, CompilerError>(Void());
 }
 
