@@ -25,6 +25,7 @@ namespace compiler {
 
     void test_lexer();
     void test_parser();
+    void test_transpiler();
     void test_compiler();
     void test_compile_scalyc();
     void test();

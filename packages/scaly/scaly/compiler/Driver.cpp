@@ -14,7 +14,7 @@ using namespace scaly::compiler::planner;
 using namespace scaly::compiler::coder;
 
 
-Result<Void, CompilerError> compiler::compile(Page* ep, String file_name, String program_name) {
+Result<Void, CompilerError> compiler::transpile(Page* ep, String file_name, String program_name) {
     auto r = Region();
     const auto _prog_result = build_program(r.get_page(), ep, file_name, program_name);
     auto prog = _prog_result._Ok;
@@ -37,6 +37,21 @@ Result<Void, CompilerError> compiler::compile(Page* ep, String file_name, String
             }
         }}
         ;
+    return Result<Void, CompilerError>(Void());
+}
+
+Result<Void, CompilerError> compiler::compile(Page* ep, String file_name, String program_name) {
+    auto r = Region();
+    const auto _prog_result = build_program(r.get_page(), ep, file_name, program_name);
+    auto prog = _prog_result._Ok;
+    if (_prog_result._tag == Success::Error) {
+        const auto _prog_Error = _prog_result._Error;
+        switch (_prog_Error._tag) {
+        default:
+            return Result<Void, CompilerError>(_prog_result._Error);
+
+        }
+    };
     const auto _plan_result = plan_program(r.get_page(), ep, prog);
     auto plan = _plan_result._Ok;
     if (_plan_result._tag == Success::Error) {

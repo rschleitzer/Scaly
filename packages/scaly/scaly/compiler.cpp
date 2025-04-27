@@ -750,10 +750,33 @@ void compiler::test_parser() {
     };
 }
 
+void compiler::test_transpiler() {
+    auto r = Region();
+    {
+        auto _result = compiler::transpile(r.get_page(), String(r.get_page(), "scaly.scaly"), String(r.get_page(), "scaly"));
+        switch (_result._tag)
+        {
+            case Success::Error:
+            {
+                auto error = _result._Error;
+                {
+                    auto error_message = error.to_string(r.get_page());
+                    Console::print(error_message);
+                    exit(-2);
+                };
+                break;
+            }
+            default:
+                {
+            };
+        }
+    };
+}
+
 void compiler::test_compiler() {
     auto r = Region();
     {
-        auto _result = compiler::compile(r.get_page(), String(r.get_page(), "scaly.scaly"), String(r.get_page(), "scaly"));
+        auto _result = compiler::compile(r.get_page(), String(r.get_page(), "../test/test.scaly"), String(r.get_page(), "test"));
         switch (_result._tag)
         {
             case Success::Error:
@@ -797,6 +820,7 @@ void compiler::test_compile_scalyc() {
 }
 
 void compiler::test() {
+    test_transpiler();
     test_compiler();
 }
 

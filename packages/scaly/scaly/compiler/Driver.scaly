@@ -7,12 +7,20 @@ use scaly.compiler.coder
 
 define compiler {
 
-function compile(file_name: String, program_name: String) throws CompilerError {
+function transpile(file_name: String, program_name: String) throws CompilerError {
     var r Region()
     try let prog build_program(r.get_page(), ep, file_name, program_name)
         else throw
 
     try transpile_program(r.get_page(), prog)
+        else throw
+    
+    return Void()
+}
+
+function compile(file_name: String, program_name: String) throws CompilerError {
+    var r Region()
+    try let prog build_program(r.get_page(), ep, file_name, program_name)
         else throw
 
     try let plan plan_program(r.get_page(), ep, prog)
@@ -23,5 +31,4 @@ function compile(file_name: String, program_name: String) throws CompilerError {
     
     return Void()
 }
-
 }
