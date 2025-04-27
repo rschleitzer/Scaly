@@ -19,6 +19,9 @@ namespace compiler {
 #include "compiler/Generator.h"
 #include "compiler/CompilerError.h"
 #include "compiler/Driver.h"
+#include "compiler/Plan.h"
+#include "compiler/Planner.h"
+#include "compiler/Coder.h"
 
     void test_lexer();
     void test_parser();

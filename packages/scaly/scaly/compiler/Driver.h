@@ -11,6 +11,8 @@ using namespace scaly::io;
 using namespace scaly::compiler::model;
 
 using namespace scaly::compiler::transpiler;
+
+using namespace scaly::compiler::planner;
 namespace compiler {
 
     Result<Void, CompilerError> compile(Page* ep, String file_name, String program_name);

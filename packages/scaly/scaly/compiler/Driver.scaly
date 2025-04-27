@@ -2,6 +2,7 @@ use scaly.containers
 use scaly.io
 use scaly.compiler.model
 use scaly.compiler.transpiler
+use scaly.compiler.planner
 
 define compiler {
 
@@ -11,6 +12,9 @@ function compile(file_name: String, program_name: String) throws CompilerError {
         else throw
 
     try program(r.get_page(), prog)
+        else throw
+
+    try let plan plan(r.get_page(), ep, prog)
         else throw
     
     return Void()

@@ -13,6 +13,9 @@ define compiler {
     module Generator
     module CompilerError
     module Driver
+    module Plan
+    module Planner
+    module Coder
 
     function test_lexer() {
         {

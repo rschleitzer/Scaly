@@ -1,0 +1,8 @@
+use scaly.containers
+use scaly.io
+
+define planner {
+    function plan(program: ref[Program]) returns Plan throws TranspilerError {
+        return Plan()
+    }
+}

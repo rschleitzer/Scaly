@@ -9,6 +9,8 @@ using namespace scaly::compiler::model;
 
 using namespace scaly::compiler::transpiler;
 
+using namespace scaly::compiler::planner;
+
 
 Result<Void, CompilerError> compiler::compile(Page* ep, String file_name, String program_name) {
     auto r = Region();
@@ -33,6 +35,16 @@ Result<Void, CompilerError> compiler::compile(Page* ep, String file_name, String
             }
         }}
         ;
+    const auto _plan_result = plan(r.get_page(), ep, prog);
+    auto plan = _plan_result._Ok;
+    if (_plan_result._tag == Success::Error) {
+        const auto _plan_Error = _plan_result._Error;
+        switch (_plan_Error._tag) {
+        default:
+            return Result<Void, CompilerError>(_plan_result._Error);
+
+        }
+    };
     return Result<Void, CompilerError>(Void());
 }
 
