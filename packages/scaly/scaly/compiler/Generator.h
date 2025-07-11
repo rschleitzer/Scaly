@@ -4,4 +4,8 @@
 using namespace scaly;
 using namespace scaly::memory;
 
+namespace generator {
+    void generate_module(Plan& plan);
+}
+
 #endif

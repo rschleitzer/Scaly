@@ -156,8 +156,9 @@ struct Result {\n\
     header_builder.append("\n#endif");
     StringBuilder& header_name_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder(path);
     header_name_builder.append(".h");
-    const auto header_name = header_name_builder.to_string(r.get_page());
-    {
+    auto header_name = header_name_builder.to_string(r.get_page());
+    if (header_name.equals("scaly/compiler/Generator.h") == false) 
+        {
         const auto _void_result = File::write_from_string(ep, header_name, header_builder.to_string(r.get_page()));
         if (_void_result._tag == Success::Error) {
             const auto _void_Error = _void_result._Error;
@@ -170,8 +171,9 @@ struct Result {\n\
         ;
     StringBuilder& cpp_name_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder(path);
     cpp_name_builder.append(".cpp");
-    const auto cpp_name = cpp_name_builder.to_string(r.get_page());
-    {
+    auto cpp_name = cpp_name_builder.to_string(r.get_page());
+    if (cpp_name.equals("scaly/compiler/Generator.cpp") == false) 
+        {
         const auto _void_result = File::write_from_string(ep, cpp_name, cpp_builder.to_string(r.get_page()));
         if (_void_result._tag == Success::Error) {
             const auto _void_Error = _void_result._Error;

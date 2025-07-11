@@ -15,6 +15,8 @@ using namespace scaly::compiler::transpiler;
 using namespace scaly::compiler::planner;
 
 using namespace scaly::compiler::coder;
+
+using namespace scaly::compiler::generator;
 namespace compiler {
 
     Result<Void, CompilerError> transpile(Page* ep, String file_name, String program_name);

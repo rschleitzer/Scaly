@@ -4,6 +4,7 @@ use scaly.compiler.model
 use scaly.compiler.transpiler
 use scaly.compiler.planner
 use scaly.compiler.coder
+use scaly.compiler.generator
 
 define compiler {
 
@@ -26,8 +27,7 @@ function compile(file_name: String, program_name: String) throws CompilerError {
     try let plan plan_program(r.get_page(), ep, prog)
         else throw
 
-    try code_plan(r.get_page(), plan)
-        else throw
+    generate_module(plan)
     
     return Void()
 }

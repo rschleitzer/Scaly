@@ -115,15 +115,17 @@ struct Result {
 
     var header_name_builder: ref[StringBuilder] *StringBuilder$(path)
     header_name_builder.append(".h")
-    let header_name header_name_builder.to_string(r.get_page())
-    try File->write_from_string(ep, header_name, header_builder.to_string(r.get_page()))
-        else throw
+    var header_name header_name_builder.to_string(r.get_page())
+    if header_name.equals("scaly/compiler/Generator.h") = false
+        try File->write_from_string(ep, header_name, header_builder.to_string(r.get_page()))
+            else throw
 
     var cpp_name_builder: ref[StringBuilder] *StringBuilder$(path)
     cpp_name_builder.append(".cpp")
-    let cpp_name cpp_name_builder.to_string(r.get_page())
-    try File->write_from_string(ep, cpp_name, cpp_builder.to_string(r.get_page()))
-        else throw
+    var cpp_name cpp_name_builder.to_string(r.get_page())
+    if cpp_name.equals("scaly/compiler/Generator.cpp") = false
+        try File->write_from_string(ep, cpp_name, cpp_builder.to_string(r.get_page()))
+            else throw
 
     return Void()
 }
