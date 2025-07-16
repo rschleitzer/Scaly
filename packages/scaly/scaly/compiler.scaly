@@ -374,7 +374,7 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
 
     function test_compiler() {
         var r Region()
-        choose compiler->compile(r.get_page(), String(r.get_page(), "../test/test.scaly"), String(r.get_page(), "test"))
+        choose compiler->compile(r.get_page(), String(r.get_page(), "test.scaly"), String(r.get_page(), "test"))
             when error: Success.Error
             {
                 var error_message error.to_string(r.get_page())

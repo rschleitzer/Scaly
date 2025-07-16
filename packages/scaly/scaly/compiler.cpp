@@ -776,7 +776,7 @@ void compiler::test_transpiler() {
 void compiler::test_compiler() {
     auto r = Region();
     {
-        auto _result = compiler::compile(r.get_page(), String(r.get_page(), "../test/test.scaly"), String(r.get_page(), "test"));
+        auto _result = compiler::compile(r.get_page(), String(r.get_page(), "test.scaly"), String(r.get_page(), "test"));
         switch (_result._tag)
         {
             case Success::Error:
