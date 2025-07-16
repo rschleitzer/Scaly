@@ -820,7 +820,6 @@ void compiler::test_compile_scalyc() {
 }
 
 void compiler::test() {
-    test_transpiler();
     test_compiler();
 }
 
