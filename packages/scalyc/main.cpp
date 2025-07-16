@@ -3,7 +3,7 @@
 int main(int argc, char** argv) {
     auto r = Region();
     {
-    auto _result = scaly::compiler::compiler::compile(r.get_page(), String(r.get_page(), *(argv+1)), String(r.get_page(), *(argv+2)));
+    auto _result = scaly::compiler::compiler::transpile(r.get_page(), String(r.get_page(), *(argv+1)), String(r.get_page(), *(argv+2)));
     switch (_result._tag)
     {
         case Success::Error:

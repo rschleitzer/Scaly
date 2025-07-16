@@ -1,7 +1,7 @@
 package scaly
 
 var r Region()
-choose scaly->compiler->compiler->compile(r.get_page(), String(r.get_page(), *(argv + 1)), String(r.get_page(), *(argv + 2)))
+choose scaly->compiler->compiler->transpile(r.get_page(), String(r.get_page(), *(argv + 1)), String(r.get_page(), *(argv + 2)))
     when error: Success.Error
     {
         var error_message error.to_string(r.get_page())
