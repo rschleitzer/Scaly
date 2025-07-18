@@ -1,0 +1,10 @@
+define llvm
+{
+    define double intrinsic
+
+    function fmul[T](op1: T, op2: T) returns T instruction
+}
+
+function foo(a: double, b: double) returns double {
+    llvm.fmul(a, b)
+}
