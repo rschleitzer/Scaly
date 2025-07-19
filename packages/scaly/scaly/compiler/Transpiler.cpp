@@ -268,7 +268,7 @@ Result<Void, TranspilerError> transpiler::build_union(Page* ep, StringBuilder& h
                 header_builder.append("    ");
                 header_builder.append(name);
                 header_builder.append('(');
-                build_type(header_builder, variant.type);
+                build_type(header_builder, variant.type, true);
                 header_builder.append(")");
                 if ((parameters.length>0)) {
                     header_builder.append(" : _tag(");
@@ -276,7 +276,7 @@ Result<Void, TranspilerError> transpiler::build_union(Page* ep, StringBuilder& h
                     header_builder.append(") { _");
                     header_builder.append(variant.name);
                     header_builder.append(" = _");
-                    build_type(header_builder, variant.type);
+                    build_type(header_builder, variant.type, true);
                     header_builder.append("; }");
                 }
                 else {
@@ -304,7 +304,7 @@ Result<Void, TranspilerError> transpiler::build_union(Page* ep, StringBuilder& h
             auto variant = *_variant;{
                 if (variant.type == nullptr) 
                     continue;header_builder.append("        struct ");
-                build_type(header_builder, variant.type);
+                build_type(header_builder, variant.type, true);
                 header_builder.append(" _");
                 header_builder.append(variant.name);
                 header_builder.append(";\n");
@@ -379,7 +379,7 @@ Result<Void, TranspilerError> transpiler::build_union(Page* ep, StringBuilder& h
                 cpp_builder.append("::");
                 cpp_builder.append(name);
                 cpp_builder.append("(struct ");
-                build_type(cpp_builder, variant.type);
+                build_type(cpp_builder, variant.type, true);
                 cpp_builder.append(" _");
                 cpp_builder.append(variant.name);
                 cpp_builder.append(") : _tag(");
@@ -395,14 +395,14 @@ Result<Void, TranspilerError> transpiler::build_union(Page* ep, StringBuilder& h
     return Result<Void, TranspilerError>(Void());
 }
 
-bool transpiler::build_type(StringBuilder& builder, Type* type) {
+bool transpiler::build_type(StringBuilder& builder, Type* type, bool colons) {
     auto r = Region();
     if ((*type).name.length==1&&(*(*type).name.get(0)).equals(String(r.get_page(), "pointer"))) {
         
         auto _generic_iterator = (*(*type).generics).get_iterator();
         while (auto _generic = _generic_iterator.next()) {
             auto generic = *_generic;{
-                build_type(builder, &generic);
+                build_type(builder, &generic, colons);
                 break;
             }
         };
@@ -414,7 +414,7 @@ bool transpiler::build_type(StringBuilder& builder, Type* type) {
         auto _generic_iterator = (*(*type).generics).get_iterator();
         while (auto _generic = _generic_iterator.next()) {
             auto generic = *_generic;{
-                build_type(builder, &generic);
+                build_type(builder, &generic, colons);
                 break;
             }
         };
@@ -428,8 +428,14 @@ bool transpiler::build_type(StringBuilder& builder, Type* type) {
         while (auto _name_part = _name_part_iterator.next()) {
             auto name_part = *_name_part;{
                 builder.append(name_part);
-                if (i<(*type).name.length-1) 
-                    builder.append(".");
+                if (i<(*type).name.length-1) {
+                    if (colons) {
+                        builder.append("::");
+                    }
+                    else {
+                        builder.append(".");
+                    };
+                };
                 i = i+1;
             }
         };
@@ -442,7 +448,7 @@ bool transpiler::build_type(StringBuilder& builder, Type* type) {
             auto _generic_iterator = (*(*type).generics).get_iterator();
             while (auto _generic = _generic_iterator.next()) {
                 auto generic = *_generic;{
-                    build_type(builder, &generic);
+                    build_type(builder, &generic, colons);
                     if (i<(*(*type).generics).length-1) 
                         builder.append(", ");
                     i = i+1;
@@ -602,7 +608,7 @@ Result<Void, TranspilerError> transpiler::build_structure(Page* ep, StringBuilde
             if ((property.type)) {
                 header_builder.append('\n');
                 header_builder.append("    ");
-                build_type(header_builder, property.type);
+                build_type(header_builder, property.type, true);
             };
             header_builder.append(' ');
             header_builder.append(property.name);
@@ -738,7 +744,7 @@ Result<Void, TranspilerError> transpiler::build_default_initializer(Page* ep, St
                 else {
                     header_builder.append(", ");
                 };
-                build_type(header_builder, property.type);
+                build_type(header_builder, property.type, true);
                 header_builder.append(' ');
                 header_builder.append(property.name);
             }
@@ -762,7 +768,7 @@ Result<Void, TranspilerError> transpiler::build_default_initializer_list(Page* e
                 else {
                     builder.append(", ");
                 };
-                build_type(builder, property.type);
+                build_type(builder, property.type, true);
                 builder.append(' ');
                 builder.append(property.name);
             }
@@ -985,7 +991,7 @@ Result<Void, TranspilerError> transpiler::build_global(Page* ep, StringBuilder& 
                     auto matrix = _result._Matrix;
                     {
                         header_builder.append("static ");
-                        build_type(header_builder, &global.type);
+                        build_type(header_builder, &global.type, true);
                         header_builder.append(' ');
                         header_builder.append(name);
                         header_builder.append("[]");
@@ -1010,7 +1016,7 @@ Result<Void, TranspilerError> transpiler::build_global(Page* ep, StringBuilder& 
     }
     else {
         header_builder.append("const ");
-        build_type(header_builder, &global.type);
+        build_type(header_builder, &global.type, true);
         header_builder.append(' ');
         header_builder.append(name);
         header_builder.append(" = ");
@@ -1136,10 +1142,10 @@ void transpiler::build_output_type(StringBuilder& builder, Type* returns_, Type*
             builder.append("Void");
         }
         else {
-            build_type(builder, returns_);
+            build_type(builder, returns_, true);
         };
         builder.append(", ");
-        build_type(builder, throws_);
+        build_type(builder, throws_, true);
         builder.append('>');
     }
     else {
@@ -1147,7 +1153,7 @@ void transpiler::build_output_type(StringBuilder& builder, Type* returns_, Type*
             builder.append("void");
         }
         else {
-            build_type(builder, returns_);
+            build_type(builder, returns_, true);
         };
     };
 }
@@ -1290,7 +1296,7 @@ Result<Void, TranspilerError> transpiler::build_binding(Page* ep, StringBuilder&
         builder.append("const ");
     auto simple_array = false;
     if (binding.item.type != nullptr) {
-        simple_array = build_type(builder, binding.item.type);
+        simple_array = build_type(builder, binding.item.type, true);
     }
     else {
         builder.append("auto");
@@ -1705,7 +1711,7 @@ Result<Void, TranspilerError> transpiler::build_variable(Page* ep, StringBuilder
                 auto l = _result._Local;
                 {
                     builder.append("new (alignof(");
-                    build_type(builder, &type);
+                    build_type(builder, &type, true);
                     builder.append("), r.get_page()) ");
                 };
                 break;
@@ -1715,7 +1721,7 @@ Result<Void, TranspilerError> transpiler::build_variable(Page* ep, StringBuilder
                 auto call = _result._Call;
                 {
                     builder.append("new (alignof(");
-                    build_type(builder, &type);
+                    build_type(builder, &type, true);
                     builder.append("), rp) ");
                 };
                 break;
@@ -1725,7 +1731,7 @@ Result<Void, TranspilerError> transpiler::build_variable(Page* ep, StringBuilder
                 auto reference = _result._Reference;
                 {
                     builder.append("new (alignof(");
-                    build_type(builder, &type);
+                    build_type(builder, &type, true);
                     builder.append("), ");
                     builder.append(reference.location);
                     builder.append(") ");
@@ -1739,7 +1745,7 @@ Result<Void, TranspilerError> transpiler::build_variable(Page* ep, StringBuilder
                 break;
             }
         }
-    }build_type(builder, &type);
+    }build_type(builder, &type, false);
     if (member_access != nullptr) {
         
         auto _member_iterator = (*member_access).get_iterator();
@@ -2163,7 +2169,7 @@ Result<Void, TranspilerError> transpiler::build_for(Page* ep, StringBuilder& bui
 Result<Void, TranspilerError> transpiler::build_condition(Page* ep, StringBuilder& builder, Binding& binding, Type* returns_, Type* throws_, String* re_throw, String indent) {
     if (binding.item.name != nullptr) {
         if (binding.item.type != nullptr) {
-            build_type(builder, binding.item.type);
+            build_type(builder, binding.item.type, false);
         }
         else {
             builder.append("auto");
@@ -2377,7 +2383,7 @@ Result<Void, TranspilerError> transpiler::build_try(Page* ep, StringBuilder& bui
 void transpiler::build_sizeof(StringBuilder& builder, SizeOf& sizeof_, String indent) {
     auto r = Region();
     builder.append("sizeof(");
-    build_type(builder, &sizeof_.type);
+    build_type(builder, &sizeof_.type, true);
     builder.append(")");
 }
 
@@ -2434,10 +2440,10 @@ Result<Void, TranspilerError> transpiler::build_return(Page* ep, StringBuilder& 
             builder.append("Void");
         }
         else {
-            build_type(builder, returns_);
+            build_type(builder, returns_, true);
         };
         builder.append(", ");
-        build_type(builder, throws_);
+        build_type(builder, throws_, true);
         builder.append(">(");
         if (return_.result.length == 0) 
             builder.append("Void()");
@@ -2465,10 +2471,10 @@ Result<Void, TranspilerError> transpiler::build_throw(Page* ep, StringBuilder& b
         builder.append("Void");
     }
     else {
-        build_type(builder, returns_);
+        build_type(builder, returns_, true);
     };
     builder.append(", ");
-    build_type(builder, throws_);
+    build_type(builder, throws_, true);
     builder.append(">(");
     if (throw_.result.length == 0&&re_throw) {
         builder.append(*re_throw);
@@ -2727,7 +2733,7 @@ bool transpiler::build_input(StringBuilder& builder, Vector<Item> input, String*
                 builder.append(", ");
             };
             if ((property.type != nullptr)) {
-                build_type(builder, property.type);
+                build_type(builder, property.type, true);
                 builder.append(' ');
             };
             if (property.name != nullptr) 

@@ -14,7 +14,7 @@ namespace transpiler {
     Result<Void, FileError> create_directory(Page* ep, String path);
     Result<Void, TranspilerError> build_concept(Page* ep, String path, String source, StringBuilder& header_builder, StringBuilder& cpp_builder, String main_header, String namespace_open, String namespace_close, Concept& concept);
     Result<Void, TranspilerError> build_union(Page* ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, Union& union_, Vector<GenericParameter> parameters);
-    bool build_type(StringBuilder& builder, Type* type);
+    bool build_type(StringBuilder& builder, Type* type, bool colons);
     Result<Void, TranspilerError> build_namespace(Page* ep, String path, String source, String name, StringBuilder& header_builder, StringBuilder& cpp_builder, String main_header, String namespace_open, String namespace_close, Namespace& namespace_);
     Result<Void, TranspilerError> build_modules(Page* ep, String path, String name, StringBuilder& header_builder, Vector<Module>& modules, String main_header, String namespace_open, String namespace_close);
     Result<Void, TranspilerError> build_symbols(Page* ep, String path, String source, String* name, StringBuilder& header_builder, StringBuilder& cpp_builder, String main_header, String namespace_open, String namespace_close, Vector<Member> symbols);
