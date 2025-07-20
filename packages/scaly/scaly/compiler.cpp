@@ -822,7 +822,7 @@ void test_compile_scalyc() {
 }
 
 void test() {
-    test_transpiler();
+    test_compiler();
 }
 
 }

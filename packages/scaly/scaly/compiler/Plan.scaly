@@ -1,6 +1,6 @@
-;define Planner
-;{
-;    define Type(name: String)
-;    define FunctionPlan(name: String, input: Vector[Type], output: Type)
+define Planner
+{
+    define Type(name: String)
+    define Function(name: String, input: Vector[Type], output: Type)
     define Plan(path: String, name: String;*, functions: Vector[Function]*;)
-;}
+}

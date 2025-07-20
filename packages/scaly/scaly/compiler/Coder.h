@@ -9,6 +9,6 @@ using namespace scaly::containers;
 using namespace scaly::io;
 namespace coder {
 
-Result<Void, TranspilerError> code_plan(Page* ep, Plan& plan);
+Result<Void, TranspilerError> code_plan(Page* ep, Planner::Plan& plan);
 }
 #endif

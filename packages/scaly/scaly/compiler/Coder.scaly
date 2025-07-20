@@ -3,7 +3,7 @@ use scaly.io
 
 define coder {
 
-function code_plan(plan: ref[Plan]) throws TranspilerError {
+function code_plan(plan: ref[Planner.Plan]) throws TranspilerError {
     var r Region()
     var ll_file_builder: ref[StringBuilder]  *StringBuilder$(Path->join(r.get_page(), plan.path, plan.name))
     ll_file_builder.append(".ll")

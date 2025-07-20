@@ -8,7 +8,7 @@ using namespace scaly::io;
 namespace coder {
 
 
-Result<Void, TranspilerError> code_plan(Page* ep, Plan& plan) {
+Result<Void, TranspilerError> code_plan(Page* ep, Planner::Plan& plan) {
     auto r = Region();
     StringBuilder& ll_file_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder(Path::join(r.get_page(), plan.path, plan.name));
     ll_file_builder.append(".ll");

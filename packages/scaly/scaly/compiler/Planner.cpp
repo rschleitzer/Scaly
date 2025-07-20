@@ -8,7 +8,7 @@ using namespace scaly::io;
 namespace planner {
 
 
-Result<Plan, TranspilerError> plan_program(Page* rp, Page* ep, Program& program) {
+Result<Planner::Plan, TranspilerError> plan_program(Page* rp, Page* ep, Program& program) {
     auto r = Region();
     const auto file = program.module_.file;
     auto path = Path::get_directory_name(r.get_page(), file);
@@ -19,7 +19,7 @@ Result<Plan, TranspilerError> plan_program(Page* rp, Page* ep, Program& program)
             const auto _exists_Error = _exists_result._Error;
             switch (_exists_Error._tag) {
             default:
-                return Result<Plan, TranspilerError>(_exists_result._Error);
+                return Result<Planner::Plan, TranspilerError>(_exists_result._Error);
 
             }
         };
@@ -30,7 +30,7 @@ Result<Plan, TranspilerError> plan_program(Page* rp, Page* ep, Program& program)
                     const auto _void_Error = _void_result._Error;
                     switch (_void_Error._tag) {
                     default:
-                        return Result<Plan, TranspilerError>(_void_result._Error);
+                        return Result<Planner::Plan, TranspilerError>(_void_result._Error);
 
                     }
                 }}
@@ -43,7 +43,7 @@ Result<Plan, TranspilerError> plan_program(Page* rp, Page* ep, Program& program)
             const auto _void_Error = _void_result._Error;
             switch (_void_Error._tag) {
             default:
-                return Result<Plan, TranspilerError>(_void_result._Error);
+                return Result<Planner::Plan, TranspilerError>(_void_result._Error);
 
             }
         }}
@@ -58,14 +58,14 @@ Result<Plan, TranspilerError> plan_program(Page* rp, Page* ep, Program& program)
                     const auto _void_Error = _void_result._Error;
                     switch (_void_Error._tag) {
                     default:
-                        return Result<Plan, TranspilerError>(_void_result._Error);
+                        return Result<Planner::Plan, TranspilerError>(_void_result._Error);
 
                     }
                 }}
                 ;
         }
     };
-    return Result<Plan, TranspilerError>(Plan(path, program.module_.name));
+    return Result<Planner::Plan, TranspilerError>(Planner::Plan(path, program.module_.name));
 }
 
 Result<Void, TranspilerError> plan_module(Page* ep, String path, Module& module_, String main_header, String namespace_open, String namespace_close) {

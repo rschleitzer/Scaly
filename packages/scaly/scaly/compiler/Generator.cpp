@@ -53,7 +53,7 @@ namespace scaly {
 namespace compiler {
 namespace generator {
 
-    void generate_module(Plan& plan) {
+    void generate_module(Planner::Plan& plan) {
         Region _r;
         LLVMContext context;
         llvm::Module module(plan.name.to_c_string(_r.get_page()), context);

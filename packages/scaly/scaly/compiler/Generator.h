@@ -5,7 +5,7 @@ using namespace scaly;
 using namespace scaly::memory;
 
 namespace generator {
-    void generate_module(Plan& plan);
+    void generate_module(Planner::Plan& plan);
 }
 
 #endif

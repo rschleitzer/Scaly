@@ -333,7 +333,11 @@ struct ProgramModuleIsNotANameSpace;
 struct CompilerError;
 namespace compiler {
 }
+namespace Planner {
+struct Type;
+struct Function;
 struct Plan;
+}
 namespace planner {
 }
 namespace coder {
