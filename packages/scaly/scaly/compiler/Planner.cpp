@@ -48,6 +48,8 @@ Result<Plan::Module, PlannerError> plan_program(Page* rp, Page* ep, Program& pro
             }
         }}
         ;
+    HashSetBuilder<String>& intrinsics_builder = *new (alignof(HashSetBuilder<String>), r.get_page()) HashSetBuilder<String>();
+    HashMapBuilder<String, Function>& functions_builder = *new (alignof(HashMapBuilder<String, Function>), r.get_page()) HashMapBuilder<String, Function>();
     
     auto _module__iterator = program.module_.modules.get_iterator();
     while (auto _module_ = _module__iterator.next()) {

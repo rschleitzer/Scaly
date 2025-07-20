@@ -22,6 +22,9 @@ function plan_program(program: ref[Program]) returns Plan.Module throws PlannerE
     try plan_module(ep, program.module_)
        else throw
 
+    var intrinsics_builder: ref[HashSetBuilder[String]] *HashSetBuilder[String]$()
+    var functions_builder: ref[HashMapBuilder[String, Function]] *HashMapBuilder[String, Function]$()
+
     for module_ in program.module_.modules
     {
         try plan_module(ep, module_)
