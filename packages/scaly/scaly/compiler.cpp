@@ -4,8 +4,10 @@ using namespace scaly::containers;
 
 using namespace scaly::io;
 
+namespace compiler {
 
-void compiler::test_lexer() {
+
+void test_lexer() {
     {
         auto r = Region();
         auto p = r.get_page();
@@ -698,7 +700,7 @@ abc_AZ0815_7 42 \n : 0 012 0.34 0.56E12 0.78e13 0xaB 0xCdEf02 0B0 0B1 @ttribute 
     };
 }
 
-void compiler::test_parser() {
+void test_parser() {
     {
         auto r = Region();
         auto p = r.get_page();
@@ -750,7 +752,7 @@ void compiler::test_parser() {
     };
 }
 
-void compiler::test_transpiler() {
+void test_transpiler() {
     auto r = Region();
     {
         auto _result = compiler::transpile(r.get_page(), String(r.get_page(), "scaly.scaly"), String(r.get_page(), "scaly"));
@@ -773,7 +775,7 @@ void compiler::test_transpiler() {
     };
 }
 
-void compiler::test_compiler() {
+void test_compiler() {
     auto r = Region();
     {
         auto _result = compiler::compile(r.get_page(), String(r.get_page(), "test.scaly"), String(r.get_page(), "test"));
@@ -796,7 +798,7 @@ void compiler::test_compiler() {
     };
 }
 
-void compiler::test_compile_scalyc() {
+void test_compile_scalyc() {
     auto r = Region();
     {
         auto _result = compiler::compile(r.get_page(), String(r.get_page(), "../scalyc/scalyc.scaly"), String(r.get_page(), "scalyc"));
@@ -819,8 +821,10 @@ void compiler::test_compile_scalyc() {
     };
 }
 
-void compiler::test() {
-    test_compiler();
+void test() {
+    test_transpiler();
+}
+
 }
 
 }

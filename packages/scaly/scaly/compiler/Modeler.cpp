@@ -5,8 +5,10 @@ using namespace scaly::containers;
 
 using namespace scaly::io;
 
+namespace model {
 
-Result<ProgramSyntax, ParserError> model::parse_program(Page* rp, Page* ep, String program) {
+
+Result<ProgramSyntax, ParserError> parse_program(Page* rp, Page* ep, String program) {
     auto r = Region();
     Parser& parser = *new (alignof(Parser), r.get_page()) Parser(program);
     const auto program_syntax_result = parser.parse_program(rp, ep);
@@ -15,7 +17,7 @@ Result<ProgramSyntax, ParserError> model::parse_program(Page* rp, Page* ep, Stri
     return Result<ProgramSyntax, ParserError>(program_syntax_result);
 }
 
-Result<Property, ModelError> model::handle_property(Page* rp, Page* ep, bool private_, PropertySyntax& property, String file) {
+Result<Property, ModelError> handle_property(Page* rp, Page* ep, bool private_, PropertySyntax& property, String file) {
     auto r = Region();
     const auto _type_result = handle_type(rp, ep, property.annotation.type, file);
     auto type = _type_result._Ok;
@@ -61,7 +63,7 @@ Result<Property, ModelError> model::handle_property(Page* rp, Page* ep, bool pri
     return Result<Property, ModelError>(Property(Span(property.start, property.end), false, String(rp, property.name), type, initializer, Vector<Attribute>(rp, attributes)));
 }
 
-Result<Item, ModelError> model::handle_item(Page* rp, Page* ep, bool private_, ItemSyntax& item, String file) {
+Result<Item, ModelError> handle_item(Page* rp, Page* ep, bool private_, ItemSyntax& item, String file) {
     auto r = Region();
     Type* type = nullptr;
     if (item.annotation != nullptr) {
@@ -100,7 +102,7 @@ Result<Item, ModelError> model::handle_item(Page* rp, Page* ep, bool private_, I
     return Result<Item, ModelError>(Item(Span(item.start, item.end), false, new (alignof(String), rp) String(rp, item.name), type, Vector<Attribute>(rp, attributes)));
 }
 
-Result<Vector<Item>, ModelError> model::handle_parameterset(Page* rp, Page* ep, ParameterSetSyntax& parameterSetSyntax, String file) {
+Result<Vector<Item>, ModelError> handle_parameterset(Page* rp, Page* ep, ParameterSetSyntax& parameterSetSyntax, String file) {
     auto r = Region();
     List<Item>& items = *new (alignof(List<Item>), r.get_page()) List<Item>();
     {
@@ -156,7 +158,7 @@ Result<Vector<Item>, ModelError> model::handle_parameterset(Page* rp, Page* ep, 
     return Result<Vector<Item>, ModelError>(Vector<Item>(rp, items));
 }
 
-Result<DeInitializer*, ModelError> model::handle_body(Page* rp, Page* ep, String name, String path, BodySyntax& body, List<Use>& uses, HashSetBuilder<String>& modules_checker, List<Module>& modules, List<Initializer>& initializers_builder, MultiMapBuilder<String, Function>& functions_builder, Array<Member>& members_builder, HashMapBuilder<String, Nameable>& symbols_builder, String file) {
+Result<DeInitializer*, ModelError> handle_body(Page* rp, Page* ep, String name, String path, BodySyntax& body, List<Use>& uses, HashSetBuilder<String>& modules_checker, List<Module>& modules, List<Initializer>& initializers_builder, MultiMapBuilder<String, Function>& functions_builder, Array<Member>& members_builder, HashMapBuilder<String, Nameable>& symbols_builder, String file) {
     auto r = Region();
     if (body.uses != nullptr) {
         
@@ -360,7 +362,7 @@ Result<DeInitializer*, ModelError> model::handle_body(Page* rp, Page* ep, String
     return Result<DeInitializer*, ModelError>(de_initializer);
 }
 
-Result<Structure, ModelError> model::handle_class(Page* rp, Page* ep, String name, String path, ClassSyntax& class_syntax, bool private_, String file) {
+Result<Structure, ModelError> handle_class(Page* rp, Page* ep, String name, String path, ClassSyntax& class_syntax, bool private_, String file) {
     auto r = Region();
     HashMapBuilder<String, Nameable>& symbols_builder = *new (alignof(HashMapBuilder<String, Nameable>), r.get_page()) HashMapBuilder<String, Nameable>();
     Array<Property>& properties_builder = *new (alignof(Array<Property>), r.get_page()) Array<Property>();
@@ -441,7 +443,7 @@ Result<Structure, ModelError> model::handle_class(Page* rp, Page* ep, String nam
     return Result<Structure, ModelError>(Structure(Span(class_syntax.start, class_syntax.end), private_, Vector<Property>(rp, properties_builder), Vector<Module>(rp, modules), Vector<Use>(rp, uses), Vector<Initializer>(rp, initializers_builder), de_initializer, Vector<Member>(rp, members_builder), HashMap<String, Nameable>(rp, symbols_builder)));
 }
 
-Result<Namespace, ModelError> model::handle_namespace(Page* rp, Page* ep, String name, String path, NamespaceSyntax& namespace_syntax, bool private_, String file) {
+Result<Namespace, ModelError> handle_namespace(Page* rp, Page* ep, String name, String path, NamespaceSyntax& namespace_syntax, bool private_, String file) {
     auto r = Region();
     HashMapBuilder<String, Nameable>& symbols_builder = *new (alignof(HashMapBuilder<String, Nameable>), r.get_page()) HashMapBuilder<String, Nameable>();
     Array<Member>& members_builder = *new (alignof(Array<Member>), r.get_page()) Array<Member>();
@@ -675,7 +677,7 @@ Result<Namespace, ModelError> model::handle_namespace(Page* rp, Page* ep, String
     return Result<Namespace, ModelError>(Namespace(Span(namespace_syntax.start, namespace_syntax.end), Vector<Module>(rp, modules), Vector<Member>(rp, members_builder), HashMap<String, Nameable>(rp, symbols_builder)));
 }
 
-Result<Union, ModelError> model::handle_union(Page* rp, Page* ep, String name, String path, UnionSyntax& union_syntax, bool private_, String file) {
+Result<Union, ModelError> handle_union(Page* rp, Page* ep, String name, String path, UnionSyntax& union_syntax, bool private_, String file) {
     auto r = Region();
     Array<Variant>& variants_builder = *new (alignof(Array<Variant>), r.get_page()) Array<Variant>();
     HashMapBuilder<String, Nameable>& symbols_builder = *new (alignof(HashMapBuilder<String, Nameable>), r.get_page()) HashMapBuilder<String, Nameable>();
@@ -748,7 +750,7 @@ Result<Union, ModelError> model::handle_union(Page* rp, Page* ep, String name, S
     return Result<Union, ModelError>(Union(Span(union_syntax.start, union_syntax.end), private_, Vector<Variant>(rp, variants_builder), Vector<Member>(rp, members_builder), HashMap<String, Nameable>(rp, symbols_builder)));
 }
 
-Result<Constant, ModelError> model::handle_literal(Page* rp, Page* ep, LiteralSyntax& literal, String file) {
+Result<Constant, ModelError> handle_literal(Page* rp, Page* ep, LiteralSyntax& literal, String file) {
     auto r = Region();
     {
         auto _result = literal.literal;
@@ -816,7 +818,7 @@ Result<Constant, ModelError> model::handle_literal(Page* rp, Page* ep, LiteralSy
     return Result<Constant, ModelError>(ModelError(ModelBuilderError(InvalidConstant(file, Span(literal.start, literal.end)))));
 }
 
-Result<Type*, ModelError> model::handle_type(Page* rp, Page* ep, TypeSyntax& type_syntax, String file) {
+Result<Type*, ModelError> handle_type(Page* rp, Page* ep, TypeSyntax& type_syntax, String file) {
     auto r = Region();
     List<String>& path = *new (alignof(List<String>), r.get_page()) List<String>();
     path.add(String(rp, type_syntax.name.name));
@@ -894,7 +896,7 @@ Result<Type*, ModelError> model::handle_type(Page* rp, Page* ep, TypeSyntax& typ
     return Result<Type*, ModelError>(new (alignof(Type), rp) Type(Span(type_syntax.start, type_syntax.end), Vector<String>(rp, path), generics, lifetime));
 }
 
-Result<Type*, ModelError> model::handle_binding_annotation(Page* rp, Page* ep, BindingAnnotationSyntax& binding_annotation, String file) {
+Result<Type*, ModelError> handle_binding_annotation(Page* rp, Page* ep, BindingAnnotationSyntax& binding_annotation, String file) {
     {
         auto _result = binding_annotation.spec;
         switch (_result._tag)
@@ -933,7 +935,7 @@ Result<Type*, ModelError> model::handle_binding_annotation(Page* rp, Page* ep, B
     };
 }
 
-Result<Break, ModelError> model::handle_break(Page* rp, Page* ep, BreakSyntax& break_syntax, String file) {
+Result<Break, ModelError> handle_break(Page* rp, Page* ep, BreakSyntax& break_syntax, String file) {
     auto r = Region();
     if (break_syntax.result != nullptr) {
         const auto _result_result = handle_operands(rp, ep, break_syntax.result, file);
@@ -951,11 +953,11 @@ Result<Break, ModelError> model::handle_break(Page* rp, Page* ep, BreakSyntax& b
     return Result<Break, ModelError>(Break(Span(break_syntax.start, break_syntax.end), Vector<Operand>()));
 }
 
-Result<Continue, ModelError> model::handle_continue(Page* rp, Page* ep, ContinueSyntax& continue_syntax, String file) {
+Result<Continue, ModelError> handle_continue(Page* rp, Page* ep, ContinueSyntax& continue_syntax, String file) {
     return Result<Continue, ModelError>(Continue(Span(continue_syntax.start, continue_syntax.end)));
 }
 
-Result<Return, ModelError> model::handle_return(Page* rp, Page* ep, ReturnSyntax& return_syntax, String file) {
+Result<Return, ModelError> handle_return(Page* rp, Page* ep, ReturnSyntax& return_syntax, String file) {
     auto r = Region();
     if (return_syntax.result != nullptr) {
         const auto _result_result = handle_operands(rp, ep, return_syntax.result, file);
@@ -973,7 +975,7 @@ Result<Return, ModelError> model::handle_return(Page* rp, Page* ep, ReturnSyntax
     return Result<Return, ModelError>(Return(Span(return_syntax.start, return_syntax.end), Vector<Operand>()));
 }
 
-Result<Throw, ModelError> model::handle_throw(Page* rp, Page* ep, ThrowSyntax& throw_syntax, String file) {
+Result<Throw, ModelError> handle_throw(Page* rp, Page* ep, ThrowSyntax& throw_syntax, String file) {
     auto r = Region();
     if (throw_syntax.result != nullptr) {
         const auto _result_result = handle_operands(rp, ep, throw_syntax.result, file);
@@ -991,7 +993,7 @@ Result<Throw, ModelError> model::handle_throw(Page* rp, Page* ep, ThrowSyntax& t
     return Result<Throw, ModelError>(Throw(Span(throw_syntax.start, throw_syntax.end), Vector<Operand>()));
 }
 
-Result<Statement, ModelError> model::handle_command(Page* rp, Page* ep, CommandSyntax& command_syntax, String file) {
+Result<Statement, ModelError> handle_command(Page* rp, Page* ep, CommandSyntax& command_syntax, String file) {
     auto r = Region();
     {
         auto _result = command_syntax;
@@ -1215,7 +1217,7 @@ Result<Statement, ModelError> model::handle_command(Page* rp, Page* ep, CommandS
     };
 }
 
-Result<Statement, ModelError> model::handle_statement(Page* rp, Page* ep, StatementSyntax& statement_syntax, String file) {
+Result<Statement, ModelError> handle_statement(Page* rp, Page* ep, StatementSyntax& statement_syntax, String file) {
     const auto _statement_result = handle_command(rp, ep, statement_syntax.command, file);
     auto statement = _statement_result._Ok;
     if (_statement_result._tag == Success::Error) {
@@ -1229,7 +1231,7 @@ Result<Statement, ModelError> model::handle_statement(Page* rp, Page* ep, Statem
     return Result<Statement, ModelError>(statement);
 }
 
-Result<Vector<Statement>, ModelError> model::handle_statements(Page* rp, Page* ep, Vector<StatementSyntax>& statements, String file) {
+Result<Vector<Statement>, ModelError> handle_statements(Page* rp, Page* ep, Vector<StatementSyntax>& statements, String file) {
     auto r = Region();
     List<Statement>& statements_builder = *new (alignof(List<Statement>), r.get_page()) List<Statement>();
     
@@ -1252,7 +1254,7 @@ Result<Vector<Statement>, ModelError> model::handle_statements(Page* rp, Page* e
     return Result<Vector<Statement>, ModelError>(Vector<Statement>(rp, statements_builder));
 }
 
-Result<Component, ModelError> model::handle_component(Page* rp, Page* ep, ComponentSyntax& component, String file) {
+Result<Component, ModelError> handle_component(Page* rp, Page* ep, ComponentSyntax& component, String file) {
     auto r = Region();
     String* name = nullptr;
     List<Attribute>& attributes = *new (alignof(List<Attribute>), r.get_page()) List<Attribute>();
@@ -1337,7 +1339,7 @@ Result<Component, ModelError> model::handle_component(Page* rp, Page* ep, Compon
     };
 }
 
-Result<Tuple, ModelError> model::handle_object(Page* rp, Page* ep, ObjectSyntax& object, String file) {
+Result<Tuple, ModelError> handle_object(Page* rp, Page* ep, ObjectSyntax& object, String file) {
     auto r = Region();
     List<Component>& components_builder = *new (alignof(List<Component>), r.get_page()) List<Component>();
     if (object.components != nullptr) {
@@ -1362,7 +1364,7 @@ Result<Tuple, ModelError> model::handle_object(Page* rp, Page* ep, ObjectSyntax&
     return Result<Tuple, ModelError>(Tuple(Span(object.start, object.end), Vector<Component>(rp, components_builder)));
 }
 
-Result<Matrix, ModelError> model::handle_vector(Page* rp, Page* ep, VectorSyntax& vector, String file) {
+Result<Matrix, ModelError> handle_vector(Page* rp, Page* ep, VectorSyntax& vector, String file) {
     auto r = Region();
     List<Vector<Operand>>& operations_builder = *new (alignof(List<Vector<Operand>>), r.get_page()) List<Vector<Operand>>();
     if (vector.elements != nullptr) {
@@ -1387,7 +1389,7 @@ Result<Matrix, ModelError> model::handle_vector(Page* rp, Page* ep, VectorSyntax
     return Result<Matrix, ModelError>(Matrix(Span(vector.start, vector.end), Vector<Vector<Operand>>(rp, operations_builder)));
 }
 
-Result<Model, ModelError> model::handle_model(Page* rp, Page* ep, ModelSyntax& model, String file) {
+Result<Model, ModelError> handle_model(Page* rp, Page* ep, ModelSyntax& model, String file) {
     {
         auto _result = model;
         switch (_result._tag)
@@ -1458,7 +1460,7 @@ Result<Model, ModelError> model::handle_model(Page* rp, Page* ep, ModelSyntax& m
     };
 }
 
-Result<Attribute, ModelError> model::handle_attribute(Page* rp, Page* ep, AttributeSyntax& attribute, String file) {
+Result<Attribute, ModelError> handle_attribute(Page* rp, Page* ep, AttributeSyntax& attribute, String file) {
     const auto _model_result = handle_model(rp, ep, attribute.model, file);
     auto model = _model_result._Ok;
     if (_model_result._tag == Success::Error) {
@@ -1472,7 +1474,7 @@ Result<Attribute, ModelError> model::handle_attribute(Page* rp, Page* ep, Attrib
     return Result<Attribute, ModelError>(Attribute(Span(attribute.start, attribute.end), attribute.name, model));
 }
 
-Result<Block, ModelError> model::handle_block(Page* rp, Page* ep, BlockSyntax& block, String file) {
+Result<Block, ModelError> handle_block(Page* rp, Page* ep, BlockSyntax& block, String file) {
     auto r = Region();
     if (block.statements != nullptr) {
         const auto _statements_result = handle_statements(rp, ep, *block.statements, file);
@@ -1490,7 +1492,7 @@ Result<Block, ModelError> model::handle_block(Page* rp, Page* ep, BlockSyntax& b
     return Result<Block, ModelError>(Block(Span(block.start, block.end), Vector<Statement>()));
 }
 
-Result<If, ModelError> model::handle_if(Page* rp, Page* ep, IfSyntax& if_syntax, String file) {
+Result<If, ModelError> handle_if(Page* rp, Page* ep, IfSyntax& if_syntax, String file) {
     auto r = Region();
     Property* property = nullptr;
     const auto _condition_result = handle_operands(rp, ep, if_syntax.condition, file);
@@ -1530,7 +1532,7 @@ Result<If, ModelError> model::handle_if(Page* rp, Page* ep, IfSyntax& if_syntax,
     return Result<If, ModelError>(If(Span(if_syntax.start, if_syntax.end), condition, property, consequent, alternative));
 }
 
-Result<Match, ModelError> model::handle_match(Page* rp, Page* ep, MatchSyntax& match_syntax, String file) {
+Result<Match, ModelError> handle_match(Page* rp, Page* ep, MatchSyntax& match_syntax, String file) {
     auto r = Region();
     const auto _condition_result = handle_operands(rp, ep, match_syntax.scrutinee, file);
     auto condition = _condition_result._Ok;
@@ -1597,7 +1599,7 @@ Result<Match, ModelError> model::handle_match(Page* rp, Page* ep, MatchSyntax& m
     return Result<Match, ModelError>(Match(Span(match_syntax.start, match_syntax.end), condition, Vector<Branch>(rp, branches_builder), alternative));
 }
 
-Result<When, ModelError> model::handle_when(Page* rp, Page* ep, WhenSyntax& when_syntax, String file) {
+Result<When, ModelError> handle_when(Page* rp, Page* ep, WhenSyntax& when_syntax, String file) {
     auto r = Region();
     List<String>& name_builder = *new (alignof(List<String>), r.get_page()) List<String>();
     name_builder.add(when_syntax.variant.name);
@@ -1623,7 +1625,7 @@ Result<When, ModelError> model::handle_when(Page* rp, Page* ep, WhenSyntax& when
     return Result<When, ModelError>(When(Span(when_syntax.start, when_syntax.end), when_syntax.name, Vector<String>(rp, name_builder), consequent));
 }
 
-Result<Choose, ModelError> model::handle_choose(Page* rp, Page* ep, ChooseSyntax& choose_syntax, String file) {
+Result<Choose, ModelError> handle_choose(Page* rp, Page* ep, ChooseSyntax& choose_syntax, String file) {
     auto r = Region();
     const auto _condition_result = handle_operands(rp, ep, choose_syntax.condition, file);
     auto condition = _condition_result._Ok;
@@ -1672,7 +1674,7 @@ Result<Choose, ModelError> model::handle_choose(Page* rp, Page* ep, ChooseSyntax
     return Result<Choose, ModelError>(Choose(Span(choose_syntax.start, choose_syntax.end), condition, Vector<When>(rp, cases_builder), alternative));
 }
 
-Result<For, ModelError> model::handle_for(Page* rp, Page* ep, ForSyntax& for_syntax, String file) {
+Result<For, ModelError> handle_for(Page* rp, Page* ep, ForSyntax& for_syntax, String file) {
     auto r = Region();
     const auto _expression_result = handle_operands(rp, ep, for_syntax.operation, file);
     auto expression = _expression_result._Ok;
@@ -1699,7 +1701,7 @@ Result<For, ModelError> model::handle_for(Page* rp, Page* ep, ForSyntax& for_syn
     return Result<For, ModelError>(For(Span(for_syntax.start, for_syntax.end), String(rp, for_syntax.variable), expression, action));
 }
 
-Result<Binding, ModelError> model::handle_condition(Page* rp, Page* ep, ConditionSyntax& condition, String file) {
+Result<Binding, ModelError> handle_condition(Page* rp, Page* ep, ConditionSyntax& condition, String file) {
     auto r = Region();
     {
         auto _result = condition;
@@ -1759,7 +1761,7 @@ Result<Binding, ModelError> model::handle_condition(Page* rp, Page* ep, Conditio
     };
 }
 
-Result<While, ModelError> model::handle_while(Page* rp, Page* ep, WhileSyntax& while_syntax, String file) {
+Result<While, ModelError> handle_while(Page* rp, Page* ep, WhileSyntax& while_syntax, String file) {
     auto r = Region();
     const auto _condition_result = handle_condition(rp, ep, while_syntax.condition, file);
     auto condition = _condition_result._Ok;
@@ -1786,7 +1788,7 @@ Result<While, ModelError> model::handle_while(Page* rp, Page* ep, WhileSyntax& w
     return Result<While, ModelError>(While(Span(while_syntax.start, while_syntax.end), condition, action));
 }
 
-Result<Try, ModelError> model::handle_try(Page* rp, Page* ep, TrySyntax& try_syntax, String file) {
+Result<Try, ModelError> handle_try(Page* rp, Page* ep, TrySyntax& try_syntax, String file) {
     auto r = Region();
     const auto _condition_result = handle_condition(rp, ep, try_syntax.condition, file);
     auto condition = _condition_result._Ok;
@@ -1836,7 +1838,7 @@ Result<Try, ModelError> model::handle_try(Page* rp, Page* ep, TrySyntax& try_syn
     return Result<Try, ModelError>(Try(Span(try_syntax.start, try_syntax.end), condition, Vector<When>(rp, catches_builder), dropper));
 }
 
-Result<SizeOf, ModelError> model::handle_size_of(Page* rp, Page* ep, SizeOfSyntax& size_of_syntax, String file) {
+Result<SizeOf, ModelError> handle_size_of(Page* rp, Page* ep, SizeOfSyntax& size_of_syntax, String file) {
     auto r = Region();
     const auto _type_result = handle_type(rp, ep, size_of_syntax.type, file);
     auto type = _type_result._Ok;
@@ -1851,7 +1853,7 @@ Result<SizeOf, ModelError> model::handle_size_of(Page* rp, Page* ep, SizeOfSynta
     return Result<SizeOf, ModelError>(SizeOf(Span(size_of_syntax.start, size_of_syntax.end), *type));
 }
 
-Result<Is, ModelError> model::handle_is(Page* rp, Page* ep, IsSyntax& is_syntax, String file) {
+Result<Is, ModelError> handle_is(Page* rp, Page* ep, IsSyntax& is_syntax, String file) {
     auto r = Region();
     List<String>& name_builder = *new (alignof(List<String>), r.get_page()) List<String>();
     name_builder.add(is_syntax.name.name);
@@ -1867,7 +1869,7 @@ Result<Is, ModelError> model::handle_is(Page* rp, Page* ep, IsSyntax& is_syntax,
     return Result<Is, ModelError>(Is(Span(is_syntax.start, is_syntax.end), Vector<String>(rp, name_builder)));
 }
 
-Result<Expression, ModelError> model::handle_expression(Page* rp, Page* ep, ExpressionSyntax& expression, String file) {
+Result<Expression, ModelError> handle_expression(Page* rp, Page* ep, ExpressionSyntax& expression, String file) {
     auto r = Region();
     {
         auto _result = expression;
@@ -2123,7 +2125,7 @@ Result<Expression, ModelError> model::handle_expression(Page* rp, Page* ep, Expr
     };
 }
 
-Result<Operand, ModelError> model::handle_operand(Page* rp, Page* ep, OperandSyntax& operand, String file) {
+Result<Operand, ModelError> handle_operand(Page* rp, Page* ep, OperandSyntax& operand, String file) {
     auto r = Region();
     Vector<String>* member_access = nullptr;
     if (operand.members != nullptr) {
@@ -2159,7 +2161,7 @@ Result<Operand, ModelError> model::handle_operand(Page* rp, Page* ep, OperandSyn
     return Result<Operand, ModelError>(Operand(Span(operand.start, operand.end), expression, member_access));
 }
 
-Result<Vector<Operand>, ModelError> model::handle_operands(Page* rp, Page* ep, Vector<OperandSyntax>* operands, String file) {
+Result<Vector<Operand>, ModelError> handle_operands(Page* rp, Page* ep, Vector<OperandSyntax>* operands, String file) {
     auto r = Region();
     List<Operand>& operands_builder = *new (alignof(List<Operand>), r.get_page()) List<Operand>();
     if (operands != nullptr) {
@@ -2184,7 +2186,7 @@ Result<Vector<Operand>, ModelError> model::handle_operands(Page* rp, Page* ep, V
     return Result<Vector<Operand>, ModelError>(Vector<Operand>(rp, operands_builder));
 }
 
-Result<Vector<Operand>, ModelError> model::handle_operation(Page* rp, Page* ep, OperationSyntax& operation, String file) {
+Result<Vector<Operand>, ModelError> handle_operation(Page* rp, Page* ep, OperationSyntax& operation, String file) {
     if (operation.operands != nullptr) {
         const auto _operands_result_result = handle_operands(rp, ep, operation.operands, file);
         auto operands_result = _operands_result_result._Ok;
@@ -2201,7 +2203,7 @@ Result<Vector<Operand>, ModelError> model::handle_operation(Page* rp, Page* ep, 
     return Result<Vector<Operand>, ModelError>(Vector<Operand>());
 }
 
-Result<GenericParameter, ModelError> model::handle_generic_parameter(Page* rp, Page* ep, GenericParameterSyntax& generic_parameter, String file) {
+Result<GenericParameter, ModelError> handle_generic_parameter(Page* rp, Page* ep, GenericParameterSyntax& generic_parameter, String file) {
     auto r = Region();
     List<Attribute>& attributes = *new (alignof(List<Attribute>), r.get_page()) List<Attribute>();
     if (generic_parameter.attributes != nullptr) {
@@ -2226,7 +2228,7 @@ Result<GenericParameter, ModelError> model::handle_generic_parameter(Page* rp, P
     return Result<GenericParameter, ModelError>(GenericParameter(Span(generic_parameter.start, generic_parameter.end), String(rp, generic_parameter.name), Vector<Attribute>(rp, attributes)));
 }
 
-Result<Use, ModelError> model::handle_use(Page* rp, Page* ep, UseSyntax& use_syntax) {
+Result<Use, ModelError> handle_use(Page* rp, Page* ep, UseSyntax& use_syntax) {
     auto r = Region();
     List<String>& path = *new (alignof(List<String>), r.get_page()) List<String>();
     path.add(String(rp, use_syntax.name.name));
@@ -2242,7 +2244,7 @@ Result<Use, ModelError> model::handle_use(Page* rp, Page* ep, UseSyntax& use_syn
     return Result<Use, ModelError>(Use(Span(use_syntax.start, use_syntax.end), Vector<String>(rp, path)));
 }
 
-Result<Concept, ModelError> model::handle_definition(Page* rp, Page* ep, String path, DefinitionSyntax& definition, bool private_, String file) {
+Result<Concept, ModelError> handle_definition(Page* rp, Page* ep, String path, DefinitionSyntax& definition, bool private_, String file) {
     auto r = Region();
     const auto concept = definition.concept_;
     const auto span = Span(definition.start, definition.end);
@@ -2391,7 +2393,7 @@ Result<Concept, ModelError> model::handle_definition(Page* rp, Page* ep, String 
     };
 }
 
-Result<Action, ModelError> model::handle_action(Page* rp, Page* ep, ActionSyntax& action, String file) {
+Result<Action, ModelError> handle_action(Page* rp, Page* ep, ActionSyntax& action, String file) {
     {
         auto _result = action;
         switch (_result._tag)
@@ -2446,7 +2448,7 @@ Result<Action, ModelError> model::handle_action(Page* rp, Page* ep, ActionSyntax
     };
 }
 
-Result<Function, ModelError> model::build_function(Page* rp, Page* ep, size_t start, size_t end, TargetSyntax& target_syntax, bool private_, bool pure, String file) {
+Result<Function, ModelError> build_function(Page* rp, Page* ep, size_t start, size_t end, TargetSyntax& target_syntax, bool private_, bool pure, String file) {
     auto input = Vector<Item>();
     auto output = Vector<Item>();
     {
@@ -2586,7 +2588,7 @@ Result<Function, ModelError> model::build_function(Page* rp, Page* ep, size_t st
     };
 }
 
-Result<Initializer, ModelError> model::handle_initializer(Page* rp, Page* ep, InitSyntax& init_syntax, bool private_, String file) {
+Result<Initializer, ModelError> handle_initializer(Page* rp, Page* ep, InitSyntax& init_syntax, bool private_, String file) {
     auto input = Vector<Item>();
     if (init_syntax.parameters != nullptr) {
         const auto _parameter_set_result = handle_parameterset(rp, ep, *init_syntax.parameters, file);
@@ -2614,7 +2616,7 @@ Result<Initializer, ModelError> model::handle_initializer(Page* rp, Page* ep, In
     return Result<Initializer, ModelError>(Initializer(Span(init_syntax.start, init_syntax.end), private_, input, Implementation(action)));
 }
 
-Result<DeInitializer*, ModelError> model::handle_deinitializer(Page* rp, Page* ep, DeInitSyntax& de_init_syntax, String file) {
+Result<DeInitializer*, ModelError> handle_deinitializer(Page* rp, Page* ep, DeInitSyntax& de_init_syntax, String file) {
     const auto _action_result = handle_action(rp, ep, de_init_syntax.action, file);
     auto action = _action_result._Ok;
     if (_action_result._tag == Success::Error) {
@@ -2628,7 +2630,7 @@ Result<DeInitializer*, ModelError> model::handle_deinitializer(Page* rp, Page* e
     return Result<DeInitializer*, ModelError>(new (alignof(DeInitializer), rp) DeInitializer(Span(de_init_syntax.start, de_init_syntax.end), Implementation(action)));
 }
 
-Result<Operator, ModelError> model::handle_operator(Page* rp, Page* ep, OperatorSyntax& operator_syntax, bool private_, String file) {
+Result<Operator, ModelError> handle_operator(Page* rp, Page* ep, OperatorSyntax& operator_syntax, bool private_, String file) {
     auto input = Vector<Item>();
     const auto start = operator_syntax.start;
     const auto end = operator_syntax.end;
@@ -2824,7 +2826,7 @@ Result<Operator, ModelError> model::handle_operator(Page* rp, Page* ep, Operator
     };
 }
 
-Result<Module, ModelError> model::build_module(Page* rp, Page* ep, String path, String file_name, String name, FileSyntax& file_syntax, bool private_) {
+Result<Module, ModelError> build_module(Page* rp, Page* ep, String path, String file_name, String name, FileSyntax& file_syntax, bool private_) {
     auto r = Region();
     List<Use>& uses = *new (alignof(List<Use>), r.get_page()) List<Use>();
     if (file_syntax.uses != nullptr) {
@@ -3076,7 +3078,7 @@ Result<Module, ModelError> model::build_module(Page* rp, Page* ep, String path, 
     return Result<Module, ModelError>(Module(private_, String(rp, file_name), name, Vector<Module>(rp, modules), Vector<Use>(rp, uses), Vector<Member>(rp, members_builder), HashMap<String, Nameable>(rp, symbols_builder)));
 }
 
-Result<Module, ModelError> model::build_referenced_module(Page* rp, Page* ep, String path, String name, bool private_) {
+Result<Module, ModelError> build_referenced_module(Page* rp, Page* ep, String path, String name, bool private_) {
     auto r = Region();
     StringBuilder& file_name_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder(Path::join(r.get_page(), path, name));
     file_name_builder.append(".scaly");
@@ -3133,7 +3135,7 @@ Result<Module, ModelError> model::build_referenced_module(Page* rp, Page* ep, St
     };
 }
 
-Result<Module, ModelError> model::handle_module(Page* rp, Page* ep, String path, ModuleSyntax& module_syntax, bool private_) {
+Result<Module, ModelError> handle_module(Page* rp, Page* ep, String path, ModuleSyntax& module_syntax, bool private_) {
     const auto _module_result_result = build_referenced_module(rp, ep, path, module_syntax.name, private_);
     auto module_result = _module_result_result._Ok;
     if (_module_result_result._tag == Success::Error) {
@@ -3147,7 +3149,7 @@ Result<Module, ModelError> model::handle_module(Page* rp, Page* ep, String path,
     return Result<Module, ModelError>(module_result);
 }
 
-Result<Program, ModelError> model::build_program(Page* rp, Page* ep, String file_name, String program_name) {
+Result<Program, ModelError> build_program(Page* rp, Page* ep, String file_name, String program_name) {
     auto r = Region();
     const auto file_text_result = File::read_to_string(r.get_page(), r.get_page(), file_name);
     {
@@ -3232,6 +3234,8 @@ Result<Program, ModelError> model::build_program(Page* rp, Page* ep, String file
             }
         }
     };
+}
+
 }
 
 }

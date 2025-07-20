@@ -22,13 +22,12 @@ namespace compiler {
 #include "compiler/Plan.h"
 #include "compiler/Planner.h"
 #include "compiler/Coder.h"
-#include "compiler/Test.h"
 
-    void test_lexer();
-    void test_parser();
-    void test_transpiler();
-    void test_compiler();
-    void test_compile_scalyc();
-    void test();
+void test_lexer();
+void test_parser();
+void test_transpiler();
+void test_compiler();
+void test_compile_scalyc();
+void test();
 }
 #endif

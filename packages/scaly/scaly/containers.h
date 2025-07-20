@@ -22,14 +22,14 @@ namespace containers {
 #include "containers/StringIterator.h"
 #include "containers/StringBuilder.h"
 
-    void test_vector();
-    void test_array();
-    void test_string();
-    void test_string_builder();
-    void test_list();
-    void test_hash_set();
-    void test_hash_map();
-    void test_multi_map();
-    void test();
+void test_vector();
+void test_array();
+void test_string();
+void test_string_builder();
+void test_list();
+void test_hash_set();
+void test_hash_map();
+void test_multi_map();
+void test();
 }
 #endif

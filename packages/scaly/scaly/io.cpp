@@ -1,7 +1,9 @@
 #include "../scaly.h"
 namespace scaly {
+namespace io {
 
-void io::test_file() {
+
+void test_file() {
     auto r = Region();
     const auto _file_not_found_result = File::read_to_string(r.get_page(), r.get_page(), String(r.get_page(), "foo"));
     auto file_not_found = _file_not_found_result._Ok;
@@ -33,7 +35,7 @@ void io::test_file() {
     };
 }
 
-void io::test_path() {
+void test_path() {
     auto r = Region();
     const auto path = String(r.get_page(), "../foo.scaly");
     auto directory_name = Path::get_directory_name(r.get_page(), path);
@@ -50,7 +52,7 @@ void io::test_path() {
         exit(-7);
 }
 
-void io::test_directory() {
+void test_directory() {
     auto r = Region();
     const auto foo = String(r.get_page(), "foo");
     const auto _dir_exists_result = Directory::exists(r.get_page(), foo);
@@ -113,10 +115,12 @@ void io::test_directory() {
         exit(-16);
 }
 
-void io::test() {
+void test() {
     test_directory();
     test_path();
     test_file();
+}
+
 }
 
 }

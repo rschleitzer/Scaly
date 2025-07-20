@@ -1,7 +1,9 @@
 #include "../scaly.h"
 namespace scaly {
+namespace containers {
 
-void containers::test_vector() {
+
+void test_vector() {
     auto r = Region();
     auto vector = new (alignof(Vector<int>), r.get_page()) Vector<int>(r.get_page(), 2);
     *(*vector).get(0) = 1;
@@ -12,7 +14,7 @@ void containers::test_vector() {
         exit(-2);
 }
 
-void containers::test_array() {
+void test_array() {
     auto r = Region();
     auto array = new (alignof(Array<int>), r.get_page()) Array<int>();
     const int huge_number = 1024*1024*64;
@@ -34,7 +36,7 @@ void containers::test_array() {
     };
 }
 
-void containers::test_string() {
+void test_string() {
     auto r = Region();
     auto string = String(r.get_page(), "Hello world!");
     const auto length = string.get_length();
@@ -54,7 +56,7 @@ void containers::test_string() {
         exit(-10);
 }
 
-void containers::test_string_builder() {
+void test_string_builder() {
     auto r = Region();
     auto string_builder = new (alignof(StringBuilder), r.get_page()) StringBuilder();
     const auto length = (*string_builder).get_length();
@@ -81,7 +83,7 @@ void containers::test_string_builder() {
         exit(-16);
 }
 
-void containers::test_list() {
+void test_list() {
     auto r = Region();
     auto rp = r.get_page();
     auto list = new (alignof(List<int>), r.get_page()) List<int>();
@@ -107,7 +109,7 @@ void containers::test_list() {
     };
 }
 
-void containers::test_hash_set() {
+void test_hash_set() {
     auto r = Region();
     auto array = new (alignof(Array<String>), r.get_page()) Array<String>();
     (*array).add(String(r.get_page(), "using"));
@@ -134,7 +136,7 @@ void containers::test_hash_set() {
         exit(-19);
 }
 
-void containers::test_hash_map() {
+void test_hash_map() {
     {
         auto r = Region();
         auto p = r.get_page();
@@ -243,7 +245,7 @@ void containers::test_hash_map() {
     };
 }
 
-void containers::test_multi_map() {
+void test_multi_map() {
     {
         auto r = Region();
         auto p = r.get_page();
@@ -320,7 +322,7 @@ void containers::test_multi_map() {
     };
 }
 
-void containers::test() {
+void test() {
     test_vector();
     test_array();
     test_string();
@@ -329,6 +331,8 @@ void containers::test() {
     test_hash_set();
     test_hash_map();
     test_multi_map();
+}
+
 }
 
 }

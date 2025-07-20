@@ -1,8 +1,10 @@
 #include "../../scaly.h"
 namespace scaly {
 namespace containers {
+namespace hashing {
 
-bool hashing::is_prime(size_t candidate) {
+
+bool is_prime(size_t candidate) {
     if ((candidate&1) != 0) {
         const auto limit = (size_t)sqrt((double)candidate);
         size_t divisor = 3;
@@ -16,7 +18,7 @@ bool hashing::is_prime(size_t candidate) {
     return candidate == 2;
 }
 
-size_t hashing::get_prime(size_t size) {
+size_t get_prime(size_t size) {
     {
         int i = 0;
         while (i<30) {
@@ -36,7 +38,7 @@ size_t hashing::get_prime(size_t size) {
     return size;
 }
 
-size_t hashing::hash(char* data, size_t length) {
+size_t hash(char* data, size_t length) {
     size_t hash = 0xcbf29ce484222325;
     size_t prime = 0x100000001b3;
     int i = 0;
@@ -47,6 +49,8 @@ size_t hashing::hash(char* data, size_t length) {
         i = i+1;
     };
     return hash;
+}
+
 }
 
 }

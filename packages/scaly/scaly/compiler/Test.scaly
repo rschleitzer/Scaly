@@ -1,4 +1,0 @@
-;define Tester
-;{
-    define Test(path: String, name: String)
-;}

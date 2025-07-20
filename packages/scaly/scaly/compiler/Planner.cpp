@@ -5,8 +5,10 @@ using namespace scaly::containers;
 
 using namespace scaly::io;
 
+namespace planner {
 
-Result<Plan, TranspilerError> planner::plan_program(Page* rp, Page* ep, Program& program) {
+
+Result<Plan, TranspilerError> plan_program(Page* rp, Page* ep, Program& program) {
     auto r = Region();
     const auto file = program.module_.file;
     auto path = Path::get_directory_name(r.get_page(), file);
@@ -66,9 +68,11 @@ Result<Plan, TranspilerError> planner::plan_program(Page* rp, Page* ep, Program&
     return Result<Plan, TranspilerError>(Plan(path, program.module_.name));
 }
 
-Result<Void, TranspilerError> planner::plan_module(Page* ep, String path, Module& module_, String main_header, String namespace_open, String namespace_close) {
+Result<Void, TranspilerError> plan_module(Page* ep, String path, Module& module_, String main_header, String namespace_open, String namespace_close) {
     auto r = Region();
     return Result<Void, TranspilerError>(Void());
+}
+
 }
 
 }

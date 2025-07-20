@@ -7,7 +7,7 @@ using namespace scaly::memory;
 using namespace scaly::containers;
 namespace Console {
 
-    void print(const_char* message);
-    void print(String message);
+void print(const_char* message);
+void print(String message);
 }
 #endif

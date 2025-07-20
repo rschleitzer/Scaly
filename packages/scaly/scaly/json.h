@@ -12,7 +12,7 @@ namespace json {
 #include "json/JsonLexer.h"
 #include "json/JsonParser.h"
 
-    void test_parser();
-    void test();
+void test_parser();
+void test();
 }
 #endif

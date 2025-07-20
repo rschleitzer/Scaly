@@ -10,9 +10,9 @@ namespace io {
 #include "io/File.h"
 #include "io/Path.h"
 
-    void test_file();
-    void test_path();
-    void test_directory();
-    void test();
+void test_file();
+void test_path();
+void test_directory();
+void test();
 }
 #endif

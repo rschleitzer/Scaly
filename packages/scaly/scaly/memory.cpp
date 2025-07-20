@@ -1,7 +1,9 @@
 #include "../scaly.h"
 namespace scaly {
+namespace memory {
 
-void memory::test_page() {
+
+void test_page() {
     auto r = Region();
     auto page = r.get_page();
     if ((*page).next_page != nullptr) 
@@ -69,8 +71,10 @@ void memory::test_page() {
     const auto exclusive_page = (*page).allocate_exclusive_page();
 }
 
-void memory::test() {
+void test() {
     test_page();
+}
+
 }
 
 }

@@ -5,8 +5,10 @@ using namespace scaly::containers;
 
 using namespace scaly::io;
 
+namespace coder {
 
-Result<Void, TranspilerError> coder::code_plan(Page* ep, Plan& plan) {
+
+Result<Void, TranspilerError> code_plan(Page* ep, Plan& plan) {
     auto r = Region();
     StringBuilder& ll_file_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder(Path::join(r.get_page(), plan.path, plan.name));
     ll_file_builder.append(".ll");
@@ -23,6 +25,8 @@ Result<Void, TranspilerError> coder::code_plan(Page* ep, Plan& plan) {
         }}
         ;
     return Result<Void, TranspilerError>(Void());
+}
+
 }
 
 }

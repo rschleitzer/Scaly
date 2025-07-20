@@ -15,8 +15,10 @@ using namespace scaly::compiler::coder;
 
 using namespace scaly::compiler::generator;
 
+namespace compiler {
 
-Result<Void, CompilerError> compiler::transpile(Page* ep, String file_name, String program_name) {
+
+Result<Void, CompilerError> transpile(Page* ep, String file_name, String program_name) {
     auto r = Region();
     const auto _prog_result = build_program(r.get_page(), ep, file_name, program_name);
     auto prog = _prog_result._Ok;
@@ -42,7 +44,7 @@ Result<Void, CompilerError> compiler::transpile(Page* ep, String file_name, Stri
     return Result<Void, CompilerError>(Void());
 }
 
-Result<Void, CompilerError> compiler::compile(Page* ep, String file_name, String program_name) {
+Result<Void, CompilerError> compile(Page* ep, String file_name, String program_name) {
     auto r = Region();
     const auto _prog_result = build_program(r.get_page(), ep, file_name, program_name);
     auto prog = _prog_result._Ok;
@@ -66,6 +68,8 @@ Result<Void, CompilerError> compiler::compile(Page* ep, String file_name, String
     };
     generate_module(plan);
     return Result<Void, CompilerError>(Void());
+}
+
 }
 
 }

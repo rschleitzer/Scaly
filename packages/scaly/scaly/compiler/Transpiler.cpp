@@ -5,8 +5,10 @@ using namespace scaly::containers;
 
 using namespace scaly::io;
 
+namespace transpiler {
 
-Result<Void, TranspilerError> transpiler::transpile_program(Page* ep, Program& program) {
+
+Result<Void, TranspilerError> transpile_program(Page* ep, Program& program) {
     auto r = Region();
     const auto file = program.module_.file;
     auto path = Path::get_directory_name(r.get_page(), file);
@@ -71,7 +73,7 @@ Result<Void, TranspilerError> transpiler::transpile_program(Page* ep, Program& p
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> transpiler::build_module(Page* ep, String path, Module& module_, String main_header, String namespace_open, String namespace_close) {
+Result<Void, TranspilerError> build_module(Page* ep, String path, Module& module_, String main_header, String namespace_open, String namespace_close) {
     auto r = Region();
     {
         const auto _void_result = create_directory(ep, path);
@@ -187,7 +189,7 @@ struct Result {\n\
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, FileError> transpiler::create_directory(Page* ep, String path) {
+Result<Void, FileError> create_directory(Page* ep, String path) {
     if (path.get_length()>0) {
         const auto _exists_result = Directory::exists(ep, path);
         auto exists = _exists_result._Ok;
@@ -216,7 +218,7 @@ Result<Void, FileError> transpiler::create_directory(Page* ep, String path) {
     return Result<Void, FileError>(Void());
 }
 
-Result<Void, TranspilerError> transpiler::build_concept(Page* ep, String path, String source, StringBuilder& header_builder, StringBuilder& cpp_builder, String main_header, String namespace_open, String namespace_close, Concept& concept) {
+Result<Void, TranspilerError> build_concept(Page* ep, String path, String source, StringBuilder& header_builder, StringBuilder& cpp_builder, String main_header, String namespace_open, String namespace_close, Concept& concept) {
     {
         auto _result = concept.definition;
         switch (_result._tag)
@@ -255,7 +257,7 @@ Result<Void, TranspilerError> transpiler::build_concept(Page* ep, String path, S
     };
 }
 
-Result<Void, TranspilerError> transpiler::build_union(Page* ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, Union& union_, Vector<GenericParameter> parameters) {
+Result<Void, TranspilerError> build_union(Page* ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, Union& union_, Vector<GenericParameter> parameters) {
     header_builder.append('\n');
     full_struct_name(header_builder, name, parameters);
     header_builder.append(" : Object");
@@ -395,7 +397,7 @@ Result<Void, TranspilerError> transpiler::build_union(Page* ep, StringBuilder& h
     return Result<Void, TranspilerError>(Void());
 }
 
-bool transpiler::build_type(StringBuilder& builder, Type* type, bool colons) {
+bool build_type(StringBuilder& builder, Type* type, bool colons) {
     auto r = Region();
     if ((*type).name.length==1&&(*(*type).name.get(0)).equals(String(r.get_page(), "pointer"))) {
         
@@ -464,11 +466,14 @@ bool transpiler::build_type(StringBuilder& builder, Type* type, bool colons) {
     return false;
 }
 
-Result<Void, TranspilerError> transpiler::build_namespace(Page* ep, String path, String source, String name, StringBuilder& header_builder, StringBuilder& cpp_builder, String main_header, String namespace_open, String namespace_close, Namespace& namespace_) {
+Result<Void, TranspilerError> build_namespace(Page* ep, String path, String source, String name, StringBuilder& header_builder, StringBuilder& cpp_builder, String main_header, String namespace_open, String namespace_close, Namespace& namespace_) {
     auto r = Region();
     header_builder.append("namespace ");
     header_builder.append(name);
     header_builder.append(" {\n");
+    cpp_builder.append("\nnamespace ");
+    cpp_builder.append(name);
+    cpp_builder.append(" {\n");
     StringBuilder& namespace_open_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder(namespace_open);
     namespace_open_builder.append("\nnamespace ");
     namespace_open_builder.append(name);
@@ -491,7 +496,7 @@ Result<Void, TranspilerError> transpiler::build_namespace(Page* ep, String path,
         }}
         ;
     {
-        const auto _void_result = build_symbols(ep, path, source, &name, header_builder, cpp_builder, main_header_builder.to_string(r.get_page()), namespace_open, namespace_close, namespace_.members);
+        const auto _void_result = build_symbols(ep, path, source, nullptr, header_builder, cpp_builder, main_header_builder.to_string(r.get_page()), namespace_open, namespace_close, namespace_.members);
         if (_void_result._tag == Success::Error) {
             const auto _void_Error = _void_result._Error;
             switch (_void_Error._tag) {
@@ -502,10 +507,11 @@ Result<Void, TranspilerError> transpiler::build_namespace(Page* ep, String path,
         }}
         ;
     header_builder.append("\n}");
+    cpp_builder.append("\n\n}");
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> transpiler::build_modules(Page* ep, String path, String name, StringBuilder& header_builder, Vector<Module>& modules, String main_header, String namespace_open, String namespace_close) {
+Result<Void, TranspilerError> build_modules(Page* ep, String path, String name, StringBuilder& header_builder, Vector<Module>& modules, String main_header, String namespace_open, String namespace_close) {
     auto r = Region();
     
     auto _module__iterator = modules.get_iterator();
@@ -532,7 +538,7 @@ Result<Void, TranspilerError> transpiler::build_modules(Page* ep, String path, S
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> transpiler::build_symbols(Page* ep, String path, String source, String* name, StringBuilder& header_builder, StringBuilder& cpp_builder, String main_header, String namespace_open, String namespace_close, Vector<Member> symbols) {
+Result<Void, TranspilerError> build_symbols(Page* ep, String path, String source, String* name, StringBuilder& header_builder, StringBuilder& cpp_builder, String main_header, String namespace_open, String namespace_close, Vector<Member> symbols) {
     auto r = Region();
     
     auto _member_iterator = symbols.get_iterator();
@@ -593,7 +599,7 @@ Result<Void, TranspilerError> transpiler::build_symbols(Page* ep, String path, S
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> transpiler::build_structure(Page* ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, Structure& structure, Vector<GenericParameter> parameters) {
+Result<Void, TranspilerError> build_structure(Page* ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, Structure& structure, Vector<GenericParameter> parameters) {
     auto r = Region();
     header_builder.append('\n');
     full_struct_name(header_builder, name, parameters);
@@ -722,7 +728,7 @@ Result<Void, TranspilerError> transpiler::build_structure(Page* ep, StringBuilde
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> transpiler::build_default_initializer(Page* ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, bool is_generic, Vector<Property>& properties) {
+Result<Void, TranspilerError> build_default_initializer(Page* ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, bool is_generic, Vector<Property>& properties) {
     auto r = Region();
     build_initializer_header(header_builder, cpp_builder, name, is_generic);
     if (is_generic) {
@@ -754,7 +760,7 @@ Result<Void, TranspilerError> transpiler::build_default_initializer(Page* ep, St
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> transpiler::build_default_initializer_list(Page* ep, StringBuilder& builder, bool is_generic, Vector<Property>& properties, String indent) {
+Result<Void, TranspilerError> build_default_initializer_list(Page* ep, StringBuilder& builder, bool is_generic, Vector<Property>& properties, String indent) {
     builder.append('(');
     {
         auto first = true;
@@ -797,7 +803,7 @@ Result<Void, TranspilerError> transpiler::build_default_initializer_list(Page* e
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> transpiler::build_properties_initializer(Page* ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, bool is_generic, Vector<Property>& properties) {
+Result<Void, TranspilerError> build_properties_initializer(Page* ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, bool is_generic, Vector<Property>& properties) {
     auto r = Region();
     build_initializer_header(header_builder, cpp_builder, name, is_generic);
     if ((is_generic)) {
@@ -812,7 +818,7 @@ Result<Void, TranspilerError> transpiler::build_properties_initializer(Page* ep,
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> transpiler::build_properties_initializer_list(Page* ep, StringBuilder& builder, bool is_generic, Vector<Property>& properties, String indent) {
+Result<Void, TranspilerError> build_properties_initializer_list(Page* ep, StringBuilder& builder, bool is_generic, Vector<Property>& properties, String indent) {
     builder.append("() : ");
     auto first = true;
     
@@ -845,7 +851,7 @@ Result<Void, TranspilerError> transpiler::build_properties_initializer_list(Page
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> transpiler::build_initializer(Page* ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, bool is_generic, Initializer* initializer) {
+Result<Void, TranspilerError> build_initializer(Page* ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, bool is_generic, Initializer* initializer) {
     auto r = Region();
     build_initializer_header(header_builder, cpp_builder, name, is_generic);
     if (is_generic == false) {
@@ -884,7 +890,7 @@ Result<Void, TranspilerError> transpiler::build_initializer(Page* ep, StringBuil
     return Result<Void, TranspilerError>(Void());
 }
 
-void transpiler::build_initializer_header(StringBuilder& header_builder, StringBuilder& cpp_builder, String name, bool is_generic) {
+void build_initializer_header(StringBuilder& header_builder, StringBuilder& cpp_builder, String name, bool is_generic) {
     if ((is_generic)) 
         header_builder.append('\n');
     header_builder.append("\n    ");
@@ -897,7 +903,7 @@ void transpiler::build_initializer_header(StringBuilder& header_builder, StringB
     };
 }
 
-Result<Void, TranspilerError> transpiler::build_deinitializer(Page* ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, bool is_generic, DeInitializer* de_initializer) {
+Result<Void, TranspilerError> build_deinitializer(Page* ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, bool is_generic, DeInitializer* de_initializer) {
     auto r = Region();
     header_builder.append("\n    ");
     header_builder.append('~');
@@ -942,7 +948,7 @@ Result<Void, TranspilerError> transpiler::build_deinitializer(Page* ep, StringBu
     return Result<Void, TranspilerError>(Void());
 }
 
-void transpiler::build_uses(StringBuilder& builder, Vector<Use>& uses) {
+void build_uses(StringBuilder& builder, Vector<Use>& uses) {
     auto r = Region();
     
     auto _use__iterator = uses.get_iterator();
@@ -968,7 +974,7 @@ void transpiler::build_uses(StringBuilder& builder, Vector<Use>& uses) {
     };
 }
 
-Result<Void, TranspilerError> transpiler::build_intrinsic(Page* ep, StringBuilder& header_builder, String name) {
+Result<Void, TranspilerError> build_intrinsic(Page* ep, StringBuilder& header_builder, String name) {
     auto r = Region();
     if (name.equals("size_t")) {
         header_builder.append("typedef __SIZE_TYPE__ size_t\n");
@@ -979,7 +985,7 @@ Result<Void, TranspilerError> transpiler::build_intrinsic(Page* ep, StringBuilde
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> transpiler::build_global(Page* ep, StringBuilder& header_builder, String name, Global& global) {
+Result<Void, TranspilerError> build_global(Page* ep, StringBuilder& header_builder, String name, Global& global) {
     auto r = Region();
     if (global.type.generics != nullptr&&(*global.type.generics).length == 0&&global.value.length == 1&&(*global.value.get(0)).expression._tag == Expression::Matrix) {
         {
@@ -1026,7 +1032,7 @@ Result<Void, TranspilerError> transpiler::build_global(Page* ep, StringBuilder& 
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> transpiler::build_function(Page* ep, StringBuilder& header_builder, StringBuilder& cpp_builder, Function& func, String* name, bool is_template, bool in_class) {
+Result<Void, TranspilerError> build_function(Page* ep, StringBuilder& header_builder, StringBuilder& cpp_builder, Function& func, String* name, bool is_template, bool in_class) {
     auto r = Region();
     String* location = nullptr;
     {
@@ -1135,7 +1141,7 @@ Result<Void, TranspilerError> transpiler::build_function(Page* ep, StringBuilder
     return Result<Void, TranspilerError>(Void());
 }
 
-void transpiler::build_output_type(StringBuilder& builder, Type* returns_, Type* throws_) {
+void build_output_type(StringBuilder& builder, Type* returns_, Type* throws_) {
     if (throws_ != nullptr) {
         builder.append("Result<");
         if (returns_ == nullptr) {
@@ -1158,7 +1164,7 @@ void transpiler::build_output_type(StringBuilder& builder, Type* returns_, Type*
     };
 }
 
-Result<Void, TranspilerError> transpiler::build_implementation(Page* ep, StringBuilder& builder, Implementation& implementation, Type* returns_, Type* throws_, String indent, bool is_initializer) {
+Result<Void, TranspilerError> build_implementation(Page* ep, StringBuilder& builder, Implementation& implementation, Type* returns_, Type* throws_, String indent, bool is_initializer) {
     {
         auto _result = implementation;
         switch (_result._tag)
@@ -1291,7 +1297,7 @@ Result<Void, TranspilerError> transpiler::build_implementation(Page* ep, StringB
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> transpiler::build_binding(Page* ep, StringBuilder& builder, Binding& binding, Type* returns_, Type* throws_, String* re_throw, String indent) {
+Result<Void, TranspilerError> build_binding(Page* ep, StringBuilder& builder, Binding& binding, Type* returns_, Type* throws_, String* re_throw, String indent) {
     if (binding.binding_type.equals("const")) 
         builder.append("const ");
     auto simple_array = false;
@@ -1337,7 +1343,7 @@ Result<Void, TranspilerError> transpiler::build_binding(Page* ep, StringBuilder&
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> transpiler::build_action(Page* ep, StringBuilder& builder, Action& action, Type* returns_, Type* throws_, String* re_throw, String indent) {
+Result<Void, TranspilerError> build_action(Page* ep, StringBuilder& builder, Action& action, Type* returns_, Type* throws_, String* re_throw, String indent) {
     if (action.target.length>0) {
         {
             const auto _void_result = build_operation(ep, builder, action.target, returns_, throws_, re_throw, indent);
@@ -1366,7 +1372,7 @@ Result<Void, TranspilerError> transpiler::build_action(Page* ep, StringBuilder& 
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> transpiler::build_operation(Page* ep, StringBuilder& builder, Vector<Operand>& operation, Type* returns_, Type* throws_, String* re_throw, String indent) {
+Result<Void, TranspilerError> build_operation(Page* ep, StringBuilder& builder, Vector<Operand>& operation, Type* returns_, Type* throws_, String* re_throw, String indent) {
     
     auto _operand_iterator = operation.get_iterator();
     while (auto _operand = _operand_iterator.next()) {
@@ -1570,7 +1576,7 @@ Result<Void, TranspilerError> transpiler::build_operation(Page* ep, StringBuilde
     return Result<Void, TranspilerError>(Void());
 }
 
-void transpiler::build_string(StringBuilder& builder, String string) {
+void build_string(StringBuilder& builder, String string) {
     builder.append('\"');
     
     auto _c_iterator = string.get_iterator();
@@ -1584,7 +1590,7 @@ void transpiler::build_string(StringBuilder& builder, String string) {
     builder.append('\"');
 }
 
-Result<Void, TranspilerError> transpiler::build_constant(Page* ep, StringBuilder& builder, Constant& constant) {
+Result<Void, TranspilerError> build_constant(Page* ep, StringBuilder& builder, Constant& constant) {
     auto r = Region();
     {
         auto _result = constant;
@@ -1664,7 +1670,7 @@ Result<Void, TranspilerError> transpiler::build_constant(Page* ep, StringBuilder
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> transpiler::build_variable(Page* ep, StringBuilder& builder, Type& type, Vector<String>* member_access) {
+Result<Void, TranspilerError> build_variable(Page* ep, StringBuilder& builder, Type& type, Vector<String>* member_access) {
     auto name_iterator = type.name.get_iterator();
     const auto first_name_part = name_iterator.next();
     if ((*first_name_part).equals("=")) {
@@ -1764,7 +1770,7 @@ Result<Void, TranspilerError> transpiler::build_variable(Page* ep, StringBuilder
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> transpiler::build_tuple(Page* ep, StringBuilder& builder, Tuple& tuple, Vector<String>* member_access, Type* returns_, Type* throws_, String* re_throw, String indent) {
+Result<Void, TranspilerError> build_tuple(Page* ep, StringBuilder& builder, Tuple& tuple, Vector<String>* member_access, Type* returns_, Type* throws_, String* re_throw, String indent) {
     builder.append('(');
     auto first = true;
     
@@ -1794,7 +1800,7 @@ Result<Void, TranspilerError> transpiler::build_tuple(Page* ep, StringBuilder& b
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> transpiler::build_matrix(Page* ep, StringBuilder& builder, Matrix& matrix, Type* returns_, Type* throws_, String* re_throw, String indent) {
+Result<Void, TranspilerError> build_matrix(Page* ep, StringBuilder& builder, Matrix& matrix, Type* returns_, Type* throws_, String* re_throw, String indent) {
     builder.append('[');
     auto first = true;
     
@@ -1824,7 +1830,7 @@ Result<Void, TranspilerError> transpiler::build_matrix(Page* ep, StringBuilder& 
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> transpiler::build_block(Page* ep, StringBuilder& builder, Block& block, Type* returns_, Type* throws_, String* re_throw, String indent) {
+Result<Void, TranspilerError> build_block(Page* ep, StringBuilder& builder, Block& block, Type* returns_, Type* throws_, String* re_throw, String indent) {
     auto r = Region();
     StringBuilder& indent_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder(indent);
     indent_builder.append("    ");
@@ -1846,7 +1852,7 @@ Result<Void, TranspilerError> transpiler::build_block(Page* ep, StringBuilder& b
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> transpiler::build_if(Page* ep, StringBuilder& builder, If& if_, Type* returns_, Type* throws_, String* re_throw, String indent) {
+Result<Void, TranspilerError> build_if(Page* ep, StringBuilder& builder, If& if_, Type* returns_, Type* throws_, String* re_throw, String indent) {
     auto r = Region();
     builder.append("if (");
     {
@@ -1915,7 +1921,7 @@ Result<Void, TranspilerError> transpiler::build_if(Page* ep, StringBuilder& buil
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> transpiler::build_match(Page* ep, StringBuilder& builder, Match& match_, Type* returns_, Type* throws_, String* re_throw, String indent) {
+Result<Void, TranspilerError> build_match(Page* ep, StringBuilder& builder, Match& match_, Type* returns_, Type* throws_, String* re_throw, String indent) {
     auto r = Region();
     builder.append("switch (");
     {
@@ -2005,7 +2011,7 @@ Result<Void, TranspilerError> transpiler::build_match(Page* ep, StringBuilder& b
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> transpiler::build_choose(Page* ep, StringBuilder& builder, Choose& choose_, Type* returns_, Type* throws_, String* re_throw, String indent) {
+Result<Void, TranspilerError> build_choose(Page* ep, StringBuilder& builder, Choose& choose_, Type* returns_, Type* throws_, String* re_throw, String indent) {
     auto r = Region();
     builder.append("{\n");
     StringBuilder& indent_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder(indent);
@@ -2125,7 +2131,7 @@ Result<Void, TranspilerError> transpiler::build_choose(Page* ep, StringBuilder& 
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> transpiler::build_for(Page* ep, StringBuilder& builder, For& for_, Type* returns_, Type* throws_, String* re_throw, String indent) {
+Result<Void, TranspilerError> build_for(Page* ep, StringBuilder& builder, For& for_, Type* returns_, Type* throws_, String* re_throw, String indent) {
     auto r = Region();
     builder.append('\n');
     builder.append(indent);
@@ -2166,7 +2172,7 @@ Result<Void, TranspilerError> transpiler::build_for(Page* ep, StringBuilder& bui
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> transpiler::build_condition(Page* ep, StringBuilder& builder, Binding& binding, Type* returns_, Type* throws_, String* re_throw, String indent) {
+Result<Void, TranspilerError> build_condition(Page* ep, StringBuilder& builder, Binding& binding, Type* returns_, Type* throws_, String* re_throw, String indent) {
     if (binding.item.name != nullptr) {
         if (binding.item.type != nullptr) {
             build_type(builder, binding.item.type, false);
@@ -2192,7 +2198,7 @@ Result<Void, TranspilerError> transpiler::build_condition(Page* ep, StringBuilde
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> transpiler::build_while(Page* ep, StringBuilder& builder, While& while_, Type* returns_, Type* throws_, String* re_throw, String indent) {
+Result<Void, TranspilerError> build_while(Page* ep, StringBuilder& builder, While& while_, Type* returns_, Type* throws_, String* re_throw, String indent) {
     auto r = Region();
     builder.append("while (");
     {
@@ -2221,7 +2227,7 @@ Result<Void, TranspilerError> transpiler::build_while(Page* ep, StringBuilder& b
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> transpiler::build_drop(Page* ep, StringBuilder& builder, Drop& drop_, Type* returns_, Type* throws_, String* re_throw, String indent) {
+Result<Void, TranspilerError> build_drop(Page* ep, StringBuilder& builder, Drop& drop_, Type* returns_, Type* throws_, String* re_throw, String indent) {
     auto r = Region();
     builder.append('\n');
     builder.append(indent);
@@ -2239,7 +2245,7 @@ Result<Void, TranspilerError> transpiler::build_drop(Page* ep, StringBuilder& bu
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> transpiler::build_try(Page* ep, StringBuilder& builder, Try& try_, Type* returns_, Type* throws_, String* re_throw, String indent) {
+Result<Void, TranspilerError> build_try(Page* ep, StringBuilder& builder, Try& try_, Type* returns_, Type* throws_, String* re_throw, String indent) {
     auto r = Region();
     auto name = String(r.get_page(), "void");
     StringBuilder& indent_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder(indent);
@@ -2380,14 +2386,14 @@ Result<Void, TranspilerError> transpiler::build_try(Page* ep, StringBuilder& bui
     return Result<Void, TranspilerError>(Void());
 }
 
-void transpiler::build_sizeof(StringBuilder& builder, SizeOf& sizeof_, String indent) {
+void build_sizeof(StringBuilder& builder, SizeOf& sizeof_, String indent) {
     auto r = Region();
     builder.append("sizeof(");
     build_type(builder, &sizeof_.type, true);
     builder.append(")");
 }
 
-void transpiler::build_is(StringBuilder& builder, Is& is_, String indent) {
+void build_is(StringBuilder& builder, Is& is_, String indent) {
     auto r = Region();
     builder.append("._tag == ");
     auto first = true;
@@ -2406,7 +2412,7 @@ void transpiler::build_is(StringBuilder& builder, Is& is_, String indent) {
     };
 }
 
-Result<Void, TranspilerError> transpiler::build_break(Page* ep, StringBuilder& builder, Break& break_, Type* returns_, Type* throws_, String* re_throw, String indent) {
+Result<Void, TranspilerError> build_break(Page* ep, StringBuilder& builder, Break& break_, Type* returns_, Type* throws_, String* re_throw, String indent) {
     auto r = Region();
     builder.append("break");
     if ((break_.result.length>0)) 
@@ -2425,11 +2431,11 @@ Result<Void, TranspilerError> transpiler::build_break(Page* ep, StringBuilder& b
     return Result<Void, TranspilerError>(Void());
 }
 
-void transpiler::build_continue(StringBuilder& builder, Continue& continue_, Type* returns_, Type* throws_, String* re_throw, String indent) {
+void build_continue(StringBuilder& builder, Continue& continue_, Type* returns_, Type* throws_, String* re_throw, String indent) {
     builder.append("continue;");
 }
 
-Result<Void, TranspilerError> transpiler::build_return(Page* ep, StringBuilder& builder, Return& return_, Type* returns_, Type* throws_, String* re_throw, String indent) {
+Result<Void, TranspilerError> build_return(Page* ep, StringBuilder& builder, Return& return_, Type* returns_, Type* throws_, String* re_throw, String indent) {
     auto r = Region();
     builder.append("return");
     if ((return_.result.length>0)||(throws_ != nullptr)) 
@@ -2464,7 +2470,7 @@ Result<Void, TranspilerError> transpiler::build_return(Page* ep, StringBuilder& 
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> transpiler::build_throw(Page* ep, StringBuilder& builder, Throw& throw_, Type* returns_, Type* throws_, String* re_throw, String indent) {
+Result<Void, TranspilerError> build_throw(Page* ep, StringBuilder& builder, Throw& throw_, Type* returns_, Type* throws_, String* re_throw, String indent) {
     auto r = Region();
     builder.append("return Result<");
     if (returns_ == nullptr) {
@@ -2496,7 +2502,7 @@ Result<Void, TranspilerError> transpiler::build_throw(Page* ep, StringBuilder& b
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> transpiler::build_statements(Page* ep, StringBuilder& builder, Vector<Statement>& statements, Type* returns_, Type* throws_, String* re_throw, String indent) {
+Result<Void, TranspilerError> build_statements(Page* ep, StringBuilder& builder, Vector<Statement>& statements, Type* returns_, Type* throws_, String* re_throw, String indent) {
     
     auto _statement_iterator = statements.get_iterator();
     while (auto _statement = _statement_iterator.next()) {
@@ -2520,7 +2526,7 @@ Result<Void, TranspilerError> transpiler::build_statements(Page* ep, StringBuild
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> transpiler::build_statement(Page* ep, StringBuilder& builder, Statement& statement, Type* returns_, Type* throws_, String* re_throw, String indent) {
+Result<Void, TranspilerError> build_statement(Page* ep, StringBuilder& builder, Statement& statement, Type* returns_, Type* throws_, String* re_throw, String indent) {
     {
         auto _result = statement;
         switch (_result._tag)
@@ -2616,7 +2622,7 @@ Result<Void, TranspilerError> transpiler::build_statement(Page* ep, StringBuilde
     return Result<Void, TranspilerError>(Void());
 }
 
-void transpiler::function_prefix(StringBuilder& builder, Function& func, bool indent, bool static_if_applicable) {
+void function_prefix(StringBuilder& builder, Function& func, bool indent, bool static_if_applicable) {
     auto r = Region();
     builder.append('\n');
     if (indent) 
@@ -2627,7 +2633,7 @@ void transpiler::function_prefix(StringBuilder& builder, Function& func, bool in
     builder.append(' ');
 }
 
-Result<Void, TranspilerError> transpiler::build_operator(Page* ep, StringBuilder& header_builder, StringBuilder& cpp_builder, Operator& operator_, String* name, bool is_template) {
+Result<Void, TranspilerError> build_operator(Page* ep, StringBuilder& header_builder, StringBuilder& cpp_builder, Operator& operator_, String* name, bool is_template) {
     auto r = Region();
     if (is_template) 
         header_builder.append('\n');
@@ -2674,7 +2680,7 @@ Result<Void, TranspilerError> transpiler::build_operator(Page* ep, StringBuilder
     return Result<Void, TranspilerError>(Void());
 }
 
-bool transpiler::needs_return_page(Type* type) {
+bool needs_return_page(Type* type) {
     if (type == nullptr) 
         return false;
     if ((*type).name.length == 1) {
@@ -2687,7 +2693,7 @@ bool transpiler::needs_return_page(Type* type) {
     return true;
 }
 
-bool transpiler::build_input(StringBuilder& builder, Vector<Item> input, String* location, Type* returns_, Type* throws_, Lifetime lifetime) {
+bool build_input(StringBuilder& builder, Vector<Item> input, String* location, Type* returns_, Type* throws_, Lifetime lifetime) {
     auto r = Region();
     builder.append('(');
     auto parameters_there = false;
@@ -2744,7 +2750,7 @@ bool transpiler::build_input(StringBuilder& builder, Vector<Item> input, String*
     return is_static;
 }
 
-void transpiler::full_struct_name(StringBuilder& builder, String name, Vector<GenericParameter> parameters) {
+void full_struct_name(StringBuilder& builder, String name, Vector<GenericParameter> parameters) {
     auto r = Region();
     if (parameters.length>0) {
         builder.append("template<");
@@ -2768,7 +2774,7 @@ void transpiler::full_struct_name(StringBuilder& builder, String name, Vector<Ge
     builder.append(name);
 }
 
-Result<Void, TranspilerError> transpiler::forward_includes(Page* ep, String path, Program& program) {
+Result<Void, TranspilerError> forward_includes(Page* ep, String path, Program& program) {
     auto r = Region();
     StringBuilder& builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder();
     builder.append("typedef const char const_char;\n\
@@ -2813,7 +2819,7 @@ typedef const void const_void;\n");
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> transpiler::forward_include(Page* ep, StringBuilder& builder, Concept& concept) {
+Result<Void, TranspilerError> forward_include(Page* ep, StringBuilder& builder, Concept& concept) {
     auto r = Region();
     {
         auto _result = concept.definition;
@@ -2874,7 +2880,7 @@ Result<Void, TranspilerError> transpiler::forward_include(Page* ep, StringBuilde
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> transpiler::forward_includes_for_namespace(Page* ep, String name, StringBuilder& builder, Namespace& namespace_) {
+Result<Void, TranspilerError> forward_includes_for_namespace(Page* ep, String name, StringBuilder& builder, Namespace& namespace_) {
     auto r = Region();
     builder.append("namespace ");
     builder.append(name);
@@ -2905,7 +2911,7 @@ Result<Void, TranspilerError> transpiler::forward_includes_for_namespace(Page* e
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> transpiler::forward_includes_for_modules(Page* ep, StringBuilder& builder, Vector<Module>& modules) {
+Result<Void, TranspilerError> forward_includes_for_modules(Page* ep, StringBuilder& builder, Vector<Module>& modules) {
     auto r = Region();
     
     auto _module__iterator = modules.get_iterator();
@@ -2927,7 +2933,7 @@ Result<Void, TranspilerError> transpiler::forward_includes_for_modules(Page* ep,
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> transpiler::forward_includes_for_symbols(Page* ep, StringBuilder& builder, Vector<Member>& members) {
+Result<Void, TranspilerError> forward_includes_for_symbols(Page* ep, StringBuilder& builder, Vector<Member>& members) {
     auto r = Region();
     
     auto _member_iterator = members.get_iterator();
@@ -2962,7 +2968,7 @@ Result<Void, TranspilerError> transpiler::forward_includes_for_symbols(Page* ep,
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> transpiler::vscode_files(Page* ep, String path, Program& program) {
+Result<Void, TranspilerError> vscode_files(Page* ep, String path, Program& program) {
     auto r = Region();
     const auto vscode_dir = Path::join(r.get_page(), path, String(r.get_page(), ".vscode"));
     {
@@ -3073,7 +3079,7 @@ rm \\\n\
     return Result<Void, TranspilerError>(Void());
 }
 
-void transpiler::build_script_files(StringBuilder& builder, String path, Module& module_, String extension, bool include_path) {
+void build_script_files(StringBuilder& builder, String path, Module& module_, String extension, bool include_path) {
     auto r = Region();
     builder.append("    ");
     if (include_path) 
@@ -3092,7 +3098,7 @@ void transpiler::build_script_files(StringBuilder& builder, String path, Module&
     };
 }
 
-void transpiler::build_script_files_list(StringBuilder& builder, String path, Vector<Module>& modules, Vector<Member>& members, String extension, bool include_path) {
+void build_script_files_list(StringBuilder& builder, String path, Vector<Module>& modules, Vector<Member>& members, String extension, bool include_path) {
     auto r = Region();
     
     auto _module__iterator = modules.get_iterator();
@@ -3145,7 +3151,7 @@ void transpiler::build_script_files_list(StringBuilder& builder, String path, Ve
     };
 }
 
-Result<Void, TranspilerError> transpiler::main_file(Page* ep, String path, Program& program) {
+Result<Void, TranspilerError> main_file(Page* ep, String path, Program& program) {
     auto r = Region();
     StringBuilder& builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder("#include \"main.h\"\n\
 \n\
@@ -3177,7 +3183,7 @@ int main(int argc, char** argv) {");
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> transpiler::main_include_file(Page* ep, String path, String name) {
+Result<Void, TranspilerError> main_include_file(Page* ep, String path, String name) {
     auto r = Region();
     StringBuilder& main_include_file_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder(Path::join(r.get_page(), path, String(r.get_page(), "main")));
     main_include_file_builder.append(".h");
@@ -3196,6 +3202,8 @@ Result<Void, TranspilerError> transpiler::main_include_file(Page* ep, String pat
         }}
         ;
     return Result<Void, TranspilerError>(Void());
+}
+
 }
 
 }
