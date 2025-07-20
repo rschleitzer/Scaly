@@ -16,6 +16,7 @@ define compiler {
     module Plan
     module Planner
     module Coder
+    module Test
 
     function test_lexer() {
         {

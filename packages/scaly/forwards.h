@@ -338,5 +338,6 @@ namespace planner {
 }
 namespace coder {
 }
+struct Test;
 }
 }
