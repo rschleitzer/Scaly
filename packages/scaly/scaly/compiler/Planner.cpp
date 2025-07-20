@@ -70,6 +70,127 @@ Result<Plan::Module, PlannerError> plan_program(Page* rp, Page* ep, Program& pro
 
 Result<Void, PlannerError> plan_module(Page* ep, Module& module_) {
     auto r = Region();
+    {
+        const auto _void_result = plan_symbols(ep, module_.members);
+        if (_void_result._tag == Success::Error) {
+            const auto _void_Error = _void_result._Error;
+            switch (_void_Error._tag) {
+            default:
+                return Result<Void, PlannerError>(_void_result._Error);
+
+            }
+        }}
+        ;
+    return Result<Void, PlannerError>(Void());
+}
+
+Result<Void, PlannerError> plan_symbols(Page* ep, Vector<Member> symbols) {
+    auto r = Region();
+    
+    auto _member_iterator = symbols.get_iterator();
+    while (auto _member = _member_iterator.next()) {
+        auto member = *_member;{
+            {
+                auto _result = member;
+                switch (_result._tag)
+                {
+                    case Member::Function:
+                    {
+                        auto func = _result._Function;
+                        {
+                            const auto _void_result = plan_function(ep, func);
+                            if (_void_result._tag == Success::Error) {
+                                const auto _void_Error = _void_result._Error;
+                                switch (_void_Error._tag) {
+                                default:
+                                    return Result<Void, PlannerError>(_void_result._Error);
+
+                                }
+                            }}
+                            ;
+                        break;
+                    }
+                    case Member::Concept:
+                    {
+                        auto concept = _result._Concept;
+                        {
+                            const auto _void_result = plan_concept(ep, concept);
+                            if (_void_result._tag == Success::Error) {
+                                const auto _void_Error = _void_result._Error;
+                                switch (_void_Error._tag) {
+                                default:
+                                    return Result<Void, PlannerError>(_void_result._Error);
+
+                                }
+                            }}
+                            ;
+                        break;
+                    }
+                    case Member::Operator:
+                    {
+                        auto op = _result._Operator;
+                        return Result<Void, PlannerError>(FeatureNotImplemented(String(ep, "namespace local operator")));
+                        break;
+                    }
+                    case Member::Package:
+                    {
+                        auto p = _result._Package;
+                        return Result<Void, PlannerError>(FeatureNotImplemented(String(ep, "namespace local package")));
+                        break;
+                    }
+                }
+            };
+        }
+    };
+    return Result<Void, PlannerError>(Void());
+}
+
+Result<Void, PlannerError> plan_concept(Page* ep, Concept& concept) {
+    {
+        auto _result = concept.definition;
+        switch (_result._tag)
+        {
+            case Definition::Namespace:
+            {
+                auto ns = _result._Namespace;
+                return Result<Void, PlannerError>(FeatureNotImplemented(String(ep, "namespace")));
+                break;
+            }
+            case Definition::Structure:
+            {
+                auto structure = _result._Structure;
+                return Result<Void, PlannerError>(FeatureNotImplemented(String(ep, "structure")));
+                break;
+            }
+            case Definition::Intrinsic:
+            {
+                auto i = _result._Intrinsic;
+                return Result<Void, PlannerError>(plan_intrinsic(ep, concept.name));
+                break;
+            }
+            case Definition::Global:
+            {
+                auto g = _result._Global;
+                return Result<Void, PlannerError>(FeatureNotImplemented(String(ep, "global")));
+                break;
+            }
+            case Definition::Union:
+            {
+                auto u = _result._Union;
+                return Result<Void, PlannerError>(FeatureNotImplemented(String(ep, "union")));
+                break;
+            }
+        }
+    };
+}
+
+Result<Void, PlannerError> plan_intrinsic(Page* ep, String name) {
+    auto r = Region();
+    return Result<Void, PlannerError>(Void());
+}
+
+Result<Void, PlannerError> plan_function(Page* ep, Function& func) {
+    auto r = Region();
     return Result<Void, PlannerError>(Void());
 }
 

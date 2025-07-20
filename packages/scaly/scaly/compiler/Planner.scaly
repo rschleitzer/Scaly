@@ -30,7 +30,59 @@ function plan_program(program: ref[Program]) returns Plan.Module throws PlannerE
 
     return Plan->Module(path, program.module_.name)
 }
+
 function plan_module(module_: ref[Module]) throws PlannerError {
+    var r Region()
+
+    try plan_symbols(ep, module_.members)
+        else throw
+
+    return Void()
+}
+
+function plan_symbols(symbols: Vector[Member]) throws PlannerError {
+    var r Region()
+
+    for member in symbols
+    {
+        choose member
+            when func: Member.Function
+                try plan_function(ep, func)
+                    else throw
+            when concept: Member.Concept
+                try plan_concept(ep, concept)
+                    else throw
+            when op: Member.Operator
+                throw FeatureNotImplemented(String(ep, "namespace local operator"))
+            when p: Member.Package
+                throw FeatureNotImplemented(String(ep, "namespace local package"))
+    }
+
+    return Void()
+}
+
+function plan_concept(concept: ref[Concept]) throws PlannerError { 
+    choose concept.definition
+        when ns: Definition.Namespace
+            throw FeatureNotImplemented(String(ep, "namespace"))
+        when structure: Definition.Structure
+            throw FeatureNotImplemented(String(ep, "structure"))
+        when i: Definition.Intrinsic
+            return plan_intrinsic(ep, concept.name)
+        when g: Definition.Global
+            throw FeatureNotImplemented(String(ep, "global"))
+        when u: Definition.Union
+            throw FeatureNotImplemented(String(ep, "union"))
+}
+
+function plan_intrinsic(name: String) throws PlannerError {
+    var r Region()
+
+    return Void()
+}
+
+
+function plan_function(func: ref[Function]) throws PlannerError {
     var r Region()
 
     return Void()
