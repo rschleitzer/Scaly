@@ -3,7 +3,7 @@ use scaly.io
 
 define planner {
 
-function plan_program(program: ref[Program]) returns Planner.Plan throws TranspilerError {
+function plan_program(program: ref[Program]) returns Plan.Module throws TranspilerError {
     var r Region()
 
     let file program.module_.file
@@ -28,7 +28,7 @@ function plan_program(program: ref[Program]) returns Planner.Plan throws Transpi
             else throw
     }
 
-    return Planner->Plan(path, program.module_.name)
+    return Plan->Module(path, program.module_.name)
 }
 function plan_module(path: String, module_: ref[Module], main_header: String, namespace_open: String, namespace_close: String) throws TranspilerError {
     var r Region()

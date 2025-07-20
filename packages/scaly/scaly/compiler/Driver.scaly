@@ -3,7 +3,6 @@ use scaly.io
 use scaly.compiler.model
 use scaly.compiler.transpiler
 use scaly.compiler.planner
-use scaly.compiler.coder
 use scaly.compiler.generator
 
 define compiler {

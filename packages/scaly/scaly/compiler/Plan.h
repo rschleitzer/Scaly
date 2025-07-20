@@ -3,7 +3,7 @@
 #include "../../scaly.h"
 using namespace scaly;
 using namespace scaly::memory;
-namespace Planner {
+namespace Plan {
 
 struct Type : Object {
     String name;
@@ -19,11 +19,11 @@ struct Function : Object {
     Function(String name, Vector<Type> input, Type output);
 };
 
-struct Plan : Object {
+struct Module : Object {
     String path;
     String name;
 
-    Plan(String path, String name);
+    Module(String path, String name);
 };
 
 }

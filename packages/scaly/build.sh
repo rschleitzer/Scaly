@@ -54,7 +54,6 @@ clang++ -fcolor-diagnostics -fansi-escape-codes -ferror-limit=5 \
     scaly/compiler/Driver.cpp \
     scaly/compiler/Plan.cpp \
     scaly/compiler/Planner.cpp \
-    scaly/compiler/Coder.cpp \
     main.cpp \
     -o bin/scaly\
     `llvm-config --cxxflags --ldflags --system-libs --libs core`
