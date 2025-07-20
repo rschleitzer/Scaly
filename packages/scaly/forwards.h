@@ -322,11 +322,11 @@ struct InvalidComponentName;
 struct ModuleRootMustBeConcept;
 struct ModelBuilderError;
 struct ModelError;
-struct FeatureNotImplemented;
-struct OnlyFile;
-struct TranspilerError;
 namespace transpiler {
 }
+struct FeatureNotImplemented;
+struct TranspilerError;
+struct PlannerError;
 struct MultipleMainFunctions;
 struct MainIsNotAFunction;
 struct ProgramModuleIsNotANameSpace;

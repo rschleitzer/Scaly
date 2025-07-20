@@ -9,6 +9,12 @@ String CompilerError::to_string(Page* rp) {
         auto _result = *this;
         switch (_result._tag)
         {
+            case CompilerError::Planner:
+            {
+                auto p = _result._Planner;
+                message_builder.append(p.to_string(rp));
+                break;
+            }
             case CompilerError::Transpiler:
             {
                 auto t = _result._Transpiler;
@@ -43,6 +49,8 @@ String CompilerError::to_string(Page* rp) {
     };
     return message_builder.to_string(rp);
 }
+CompilerError::CompilerError(struct PlannerError _Planner) : _tag(Planner), _Planner(_Planner) {}
+
 CompilerError::CompilerError(struct TranspilerError _Transpiler) : _tag(Transpiler), _Transpiler(_Transpiler) {}
 
 CompilerError::CompilerError(struct ModelError _Model) : _tag(Model), _Model(_Model) {}

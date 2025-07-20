@@ -8,9 +8,10 @@ define compiler {
     module Model
     module Modeler
     module ModelError
-    module TranspilerError
     module Transpiler
+    module TranspilerError
     module Generator
+    module PlannerError
     module CompilerError
     module Driver
     module Plan

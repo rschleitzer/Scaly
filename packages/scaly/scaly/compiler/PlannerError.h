@@ -1,20 +1,14 @@
-#ifndef _TranspilerError_h
-#define _TranspilerError_h
+#ifndef _PlannerError_h
+#define _PlannerError_h
 #include "../../scaly.h"
 using namespace scaly;
 using namespace scaly::memory;
 
 using namespace scaly::io;
 
-struct FeatureNotImplemented : Object {
-    String expected;
-
-    FeatureNotImplemented(String expected);
-};
-
-struct TranspilerError : Object {
-    TranspilerError(FeatureNotImplemented);
-    TranspilerError(FileError);
+struct PlannerError : Object {
+    PlannerError(FeatureNotImplemented);
+    PlannerError(FileError);
     enum {
         NotImplemented,
         FileError,

@@ -8,7 +8,7 @@ using namespace scaly::io;
 namespace planner {
 
 
-Result<Plan::Module, TranspilerError> plan_program(Page* rp, Page* ep, Program& program) {
+Result<Plan::Module, PlannerError> plan_program(Page* rp, Page* ep, Program& program) {
     auto r = Region();
     const auto file = program.module_.file;
     auto path = Path::get_directory_name(r.get_page(), file);
@@ -19,7 +19,7 @@ Result<Plan::Module, TranspilerError> plan_program(Page* rp, Page* ep, Program& 
             const auto _exists_Error = _exists_result._Error;
             switch (_exists_Error._tag) {
             default:
-                return Result<Plan::Module, TranspilerError>(_exists_result._Error);
+                return Result<Plan::Module, PlannerError>(_exists_result._Error);
 
             }
         };
@@ -30,7 +30,7 @@ Result<Plan::Module, TranspilerError> plan_program(Page* rp, Page* ep, Program& 
                     const auto _void_Error = _void_result._Error;
                     switch (_void_Error._tag) {
                     default:
-                        return Result<Plan::Module, TranspilerError>(_void_result._Error);
+                        return Result<Plan::Module, PlannerError>(_void_result._Error);
 
                     }
                 }}
@@ -38,12 +38,12 @@ Result<Plan::Module, TranspilerError> plan_program(Page* rp, Page* ep, Program& 
         };
     };
     {
-        const auto _void_result = plan_module(ep, path, program.module_, program.module_.name, String(), String());
+        const auto _void_result = plan_module(ep, program.module_);
         if (_void_result._tag == Success::Error) {
             const auto _void_Error = _void_result._Error;
             switch (_void_Error._tag) {
             default:
-                return Result<Plan::Module, TranspilerError>(_void_result._Error);
+                return Result<Plan::Module, PlannerError>(_void_result._Error);
 
             }
         }}
@@ -53,24 +53,24 @@ Result<Plan::Module, TranspilerError> plan_program(Page* rp, Page* ep, Program& 
     while (auto _module_ = _module__iterator.next()) {
         auto module_ = *_module_;{
             {
-                const auto _void_result = plan_module(ep, path, module_, module_.name, String(), String());
+                const auto _void_result = plan_module(ep, module_);
                 if (_void_result._tag == Success::Error) {
                     const auto _void_Error = _void_result._Error;
                     switch (_void_Error._tag) {
                     default:
-                        return Result<Plan::Module, TranspilerError>(_void_result._Error);
+                        return Result<Plan::Module, PlannerError>(_void_result._Error);
 
                     }
                 }}
                 ;
         }
     };
-    return Result<Plan::Module, TranspilerError>(Plan::Module(path, program.module_.name));
+    return Result<Plan::Module, PlannerError>(Plan::Module(path, program.module_.name));
 }
 
-Result<Void, TranspilerError> plan_module(Page* ep, String path, Module& module_, String main_header, String namespace_open, String namespace_close) {
+Result<Void, PlannerError> plan_module(Page* ep, Module& module_) {
     auto r = Region();
-    return Result<Void, TranspilerError>(Void());
+    return Result<Void, PlannerError>(Void());
 }
 
 }

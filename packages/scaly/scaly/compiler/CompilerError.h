@@ -17,12 +17,14 @@ struct ProgramModuleIsNotANameSpace : Object {
 };
 
 struct CompilerError : Object {
+    CompilerError(PlannerError);
     CompilerError(TranspilerError);
     CompilerError(ModelError);
     CompilerError(MultipleMainFunctions);
     CompilerError(MainIsNotAFunction);
     CompilerError(ProgramModuleIsNotANameSpace);
     enum {
+        Planner,
         Transpiler,
         Model,
         MultipleMainFunctions,
@@ -30,6 +32,7 @@ struct CompilerError : Object {
         ProgramModuleIsNotANameSpace,
     } _tag;
     union {
+        struct PlannerError _Planner;
         struct TranspilerError _Transpiler;
         struct ModelError _Model;
         struct MultipleMainFunctions _MultipleMainFunctions;

@@ -47,9 +47,10 @@ clang++ -fcolor-diagnostics -fansi-escape-codes -ferror-limit=5 \
     scaly/compiler/Model.cpp \
     scaly/compiler/Modeler.cpp \
     scaly/compiler/ModelError.cpp \
-    scaly/compiler/TranspilerError.cpp \
     scaly/compiler/Transpiler.cpp \
+    scaly/compiler/TranspilerError.cpp \
     scaly/compiler/Generator.cpp \
+    scaly/compiler/PlannerError.cpp \
     scaly/compiler/CompilerError.cpp \
     scaly/compiler/Driver.cpp \
     scaly/compiler/Plan.cpp \

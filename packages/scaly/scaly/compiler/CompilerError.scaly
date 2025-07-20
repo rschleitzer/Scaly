@@ -5,6 +5,7 @@ define ProgramModuleIsNotANameSpace()
 
 define CompilerError union
 (
+    Planner: PlannerError
     Transpiler: TranspilerError
     Model: ModelError
     MultipleMainFunctions: MultipleMainFunctions
@@ -16,6 +17,8 @@ define CompilerError union
         var r Region()
         var message_builder: ref[StringBuilder] *StringBuilder$()
         choose *this
+            when p: CompilerError.Planner
+                message_builder.append(p.to_string(rp))
             when t: CompilerError.Transpiler
                 message_builder.append(t.to_string(rp))
             when m: CompilerError.Model
