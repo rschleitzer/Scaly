@@ -111,6 +111,8 @@ Try::Try(Span span, Binding binding, Vector<When> catches, Statement* alternativ
 SizeOf::SizeOf(Span span, Type type) : span(span), type(type) {}
 
 Is::Is(Span span, Vector<String> name) : span(span), name(name) {}
+
+New::New(Span span, Type type, Tuple arguments) : span(span), type(type), arguments(arguments) {}
 Expression::Expression(struct Constant _Constant) : _tag(Constant), _Constant(_Constant) {}
 
 Expression::Expression(struct Type _Type) : _tag(Type), _Type(_Type) {}
@@ -136,6 +138,8 @@ Expression::Expression(struct Try _Try) : _tag(Try), _Try(_Try) {}
 Expression::Expression(struct SizeOf _SizeOf) : _tag(SizeOf), _SizeOf(_SizeOf) {}
 
 Expression::Expression(struct Is _Is) : _tag(Is), _Is(_Is) {}
+
+Expression::Expression(struct New _New) : _tag(New), _New(_New) {}
 
 
 Operand::Operand(Span span, Expression expression, Vector<String>* member_access) : span(span), expression(expression), member_access(member_access) {}

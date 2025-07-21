@@ -584,6 +584,15 @@ struct ObjectSyntax : Object {
     ObjectSyntax(size_t start, size_t end, Vector<ComponentSyntax>* components);
 };
 
+struct NewSyntax : Object {
+    size_t start;
+    size_t end;
+    TypeSyntax type;
+    ObjectSyntax arguments;
+
+    NewSyntax(size_t start, size_t end, TypeSyntax type, ObjectSyntax arguments);
+};
+
 struct LiteralSyntax : Object {
     size_t start;
     size_t end;
@@ -608,6 +617,7 @@ struct ExpressionSyntax : Object {
     ExpressionSyntax(RepeatSyntax);
     ExpressionSyntax(SizeOfSyntax);
     ExpressionSyntax(IsSyntax);
+    ExpressionSyntax(NewSyntax);
     enum {
         Literal,
         Type,
@@ -624,6 +634,7 @@ struct ExpressionSyntax : Object {
         Repeat,
         SizeOf,
         Is,
+        New,
     } _tag;
     union {
         struct LiteralSyntax _Literal;
@@ -641,6 +652,7 @@ struct ExpressionSyntax : Object {
         struct RepeatSyntax _Repeat;
         struct SizeOfSyntax _SizeOf;
         struct IsSyntax _Is;
+        struct NewSyntax _New;
     };
 };
 struct MemberAccessSyntax : Object {
@@ -1289,6 +1301,7 @@ struct Parser : Object {
     Result<MemberAccessSyntax, ParserError> parse_memberaccess(Page* rp, Page* ep);
     Result<ExpressionSyntax, ParserError> parse_expression(Page* rp, Page* ep);
     Result<LiteralSyntax, ParserError> parse_literal(Page* rp, Page* ep);
+    Result<NewSyntax, ParserError> parse_new(Page* rp, Page* ep);
     Result<ObjectSyntax, ParserError> parse_object(Page* rp, Page* ep);
     Result<Vector<ComponentSyntax>*, ParserError> parse_component_list(Page* rp, Page* ep);
     Result<ComponentSyntax, ParserError> parse_component(Page* rp, Page* ep);

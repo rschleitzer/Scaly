@@ -73,6 +73,7 @@ define Drop(span: Span, action: Action)
 define Try(span: Span, binding: Binding, catches: Vector[When], alternative: pointer[Statement])
 define SizeOf(span: Span, type: Type)
 define Is(span: Span, name: Vector[String])
+define New(span: Span, type: Type, arguments: Tuple)
 
 define Expression union (
     Constant: Constant
@@ -88,6 +89,7 @@ define Expression union (
     Try: Try
     SizeOf: SizeOf
     Is: Is
+    New: New
 )
 
 define Operand(span: Span, expression: Expression, member_access: pointer[Vector[String]])

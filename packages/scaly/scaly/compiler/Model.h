@@ -359,6 +359,14 @@ struct Is : Object {
     Is(Span span, Vector<String> name);
 };
 
+struct New : Object {
+    Span span;
+    Type type;
+    Tuple arguments;
+
+    New(Span span, Type type, Tuple arguments);
+};
+
 struct Expression : Object {
     Expression(Constant);
     Expression(Type);
@@ -373,6 +381,7 @@ struct Expression : Object {
     Expression(Try);
     Expression(SizeOf);
     Expression(Is);
+    Expression(New);
     enum {
         Constant,
         Type,
@@ -387,6 +396,7 @@ struct Expression : Object {
         Try,
         SizeOf,
         Is,
+        New,
     } _tag;
     union {
         struct Constant _Constant;
@@ -402,6 +412,7 @@ struct Expression : Object {
         struct Try _Try;
         struct SizeOf _SizeOf;
         struct Is _Is;
+        struct New _New;
     };
 };
 struct Operand : Object {

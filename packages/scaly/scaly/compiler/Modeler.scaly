@@ -1020,6 +1020,18 @@ function handle_is(is_syntax: ref[IsSyntax] file: String) returns Is throws Mode
     return Is(Span(is_syntax.start, is_syntax.end), Vector[String](rp, name_builder))
 }
 
+function handle_new(new_syntax: ref[NewSyntax] file: String) returns New throws ModelError {
+    var r Region()
+
+    try let type handle_type(rp, ep, new_syntax.type, file)
+        else throw
+
+    try let arguments handle_object(rp, ep, new_syntax.arguments, file)
+        else throw
+
+    return New(Span(new_syntax.start, new_syntax.end), *type, arguments)
+}
+
 function handle_expression(expression: ref[ExpressionSyntax], file: String) returns Expression throws ModelError {
     var r Region()
     choose expression
@@ -1104,6 +1116,12 @@ function handle_expression(expression: ref[ExpressionSyntax], file: String) retu
             try let is_result handle_is(rp, ep, is_syntax, file)
                 else throw
             return is_result
+        }
+        when new_syntax: ExpressionSyntax.New
+        {
+            try let new_result handle_new(rp, ep, new_syntax, file)
+                else throw
+            return new_result
         }
 }
 

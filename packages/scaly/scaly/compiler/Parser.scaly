@@ -413,6 +413,14 @@ define ObjectSyntax
     components: pointer[Vector[ComponentSyntax]]
 )
 
+define NewSyntax
+(
+    start: size_t
+    end: size_t
+    type: TypeSyntax
+    arguments: ObjectSyntax
+)
+
 define LiteralSyntax
 (
     start: size_t
@@ -436,6 +444,7 @@ define ExpressionSyntax union (
     Repeat: RepeatSyntax
     SizeOf: SizeOfSyntax
     Is: IsSyntax
+    New: NewSyntax
 )
 
 define MemberAccessSyntax
@@ -892,6 +901,7 @@ define Parser
         (*keywords_builder).add(String(p, "match"))
         (*keywords_builder).add(String(p, "module"))
         (*keywords_builder).add(String(p, "mutable"))
+        (*keywords_builder).add(String(p, "new_"))
         (*keywords_builder).add(String(p, "operator"))
         (*keywords_builder).add(String(p, "procedure"))
         (*keywords_builder).add(String(p, "private"))
@@ -1170,7 +1180,7 @@ define Parser
         let start lexer.previous_position
 
         let start_private_1 lexer.previous_position
-        let success_private_1 lexer.parse_keyword(*keywords_index.get(29))
+        let success_private_1 lexer.parse_keyword(*keywords_index.get(30))
         if success_private_1 = false
         {
             throw ParserError(DifferentSyntax())
@@ -1746,7 +1756,7 @@ define Parser
         let start lexer.previous_position
 
         let start_union_1 lexer.previous_position
-        let success_union_1 lexer.parse_keyword(*keywords_index.get(39))
+        let success_union_1 lexer.parse_keyword(*keywords_index.get(40))
         if success_union_1 = false
         {
             throw ParserError(DifferentSyntax())
@@ -2180,7 +2190,7 @@ define Parser
         let start lexer.previous_position
 
         let start_returns_1 lexer.previous_position
-        let success_returns_1 lexer.parse_keyword(*keywords_index.get(31))
+        let success_returns_1 lexer.parse_keyword(*keywords_index.get(32))
         if success_returns_1 = false
         {
             throw ParserError(DifferentSyntax())
@@ -2214,7 +2224,7 @@ define Parser
         let start lexer.previous_position
 
         let start_throws_1 lexer.previous_position
-        let success_throws_1 lexer.parse_keyword(*keywords_index.get(36))
+        let success_throws_1 lexer.parse_keyword(*keywords_index.get(37))
         if success_throws_1 = false
         {
             throw ParserError(DifferentSyntax())
@@ -2270,7 +2280,7 @@ define Parser
         let start lexer.previous_position
 
         let start_use_1 lexer.previous_position
-        let success_use_1 lexer.parse_keyword(*keywords_index.get(40))
+        let success_use_1 lexer.parse_keyword(*keywords_index.get(41))
         if success_use_1 = false
         {
             throw ParserError(DifferentSyntax())
@@ -2372,7 +2382,7 @@ define Parser
         let start lexer.previous_position
 
         let start_trait_1 lexer.previous_position
-        let success_trait_1 lexer.parse_keyword(*keywords_index.get(37))
+        let success_trait_1 lexer.parse_keyword(*keywords_index.get(38))
         if success_trait_1 = false
         {
             throw ParserError(DifferentSyntax())
@@ -2629,7 +2639,7 @@ define Parser
         let start lexer.previous_position
 
         let start_procedure_1 lexer.previous_position
-        let success_procedure_1 lexer.parse_keyword(*keywords_index.get(28))
+        let success_procedure_1 lexer.parse_keyword(*keywords_index.get(29))
         if success_procedure_1 = false
         {
             throw ParserError(DifferentSyntax())
@@ -2650,7 +2660,7 @@ define Parser
         let start lexer.previous_position
 
         let start_operator_1 lexer.previous_position
-        let success_operator_1 lexer.parse_keyword(*keywords_index.get(27))
+        let success_operator_1 lexer.parse_keyword(*keywords_index.get(28))
         if success_operator_1 = false
         {
             throw ParserError(DifferentSyntax())
@@ -3158,7 +3168,7 @@ define Parser
         let start lexer.previous_position
 
         let start_package_1 lexer.previous_position
-        let success_package_1 lexer.parse_keyword(*keywords_index.get(44))
+        let success_package_1 lexer.parse_keyword(*keywords_index.get(45))
         if success_package_1 = false
         {
             throw ParserError(DifferentSyntax())
@@ -3462,6 +3472,17 @@ define Parser
                 when node: Success.Ok
                     return ExpressionSyntax(IsSyntax(node))
         }
+        {
+            choose parse_new(rp, ep)
+                when error: Success.Error
+                {
+                    choose error
+                        when i: ParserError.Invalid throw i
+                        when d: ParserError.Different {}
+                }
+                when node: Success.Ok
+                    return ExpressionSyntax(NewSyntax(node))
+        }
         throw ParserError(DifferentSyntax())
     }
 
@@ -3475,6 +3496,33 @@ define Parser
         let end lexer.position
 
         return LiteralSyntax(start, end, literal)
+    }
+
+    function parse_new(this: Parser) returns NewSyntax throws ParserError {
+        let start lexer.previous_position
+
+        let start_new__1 lexer.previous_position
+        let success_new__1 lexer.parse_keyword(*keywords_index.get(27))
+        if success_new__1 = false
+        {
+            throw ParserError(DifferentSyntax())
+        }
+
+        let type_start lexer.position
+        try let type parse_type(rp, ep)
+            when d: ParserError.Different
+                throw InvalidSyntax(type_start, lexer.position, String(ep, "a valid Type syntax"))
+            when i: ParserError.Invalid throw i
+
+        let arguments_start lexer.position
+        try let arguments parse_object(rp, ep)
+            when d: ParserError.Different
+                throw InvalidSyntax(arguments_start, lexer.position, String(ep, "a valid Object syntax"))
+            when i: ParserError.Invalid throw i
+
+        let end lexer.position
+
+        return NewSyntax(start, end, type, arguments)
     }
 
     function parse_object(this: Parser) returns ObjectSyntax throws ParserError {
@@ -3995,7 +4043,7 @@ define Parser
         let start lexer.previous_position
 
         let start_while_1 lexer.previous_position
-        let success_while_1 lexer.parse_keyword(*keywords_index.get(43))
+        let success_while_1 lexer.parse_keyword(*keywords_index.get(44))
         if success_while_1 = false
         {
             throw ParserError(DifferentSyntax())
@@ -4094,7 +4142,7 @@ define Parser
         let start lexer.previous_position
 
         let start_try_1 lexer.previous_position
-        let success_try_1 lexer.parse_keyword(*keywords_index.get(38))
+        let success_try_1 lexer.parse_keyword(*keywords_index.get(39))
         if success_try_1 = false
         {
             throw ParserError(DifferentSyntax())
@@ -4195,7 +4243,7 @@ define Parser
         let start lexer.previous_position
 
         let start_when_1 lexer.previous_position
-        let success_when_1 lexer.parse_keyword(*keywords_index.get(42))
+        let success_when_1 lexer.parse_keyword(*keywords_index.get(43))
         if success_when_1 = false
         {
             throw ParserError(DifferentSyntax())
@@ -4365,7 +4413,7 @@ define Parser
         let start lexer.previous_position
 
         let start_var_1 lexer.previous_position
-        let success_var_1 lexer.parse_keyword(*keywords_index.get(41))
+        let success_var_1 lexer.parse_keyword(*keywords_index.get(42))
         if success_var_1 = false
         {
             throw ParserError(DifferentSyntax())
@@ -4638,7 +4686,7 @@ define Parser
         let start lexer.previous_position
 
         let start_private_1 lexer.previous_position
-        let success_private_1 lexer.parse_keyword(*keywords_index.get(29))
+        let success_private_1 lexer.parse_keyword(*keywords_index.get(30))
         if success_private_1 = false
         {
             throw ParserError(DifferentSyntax())
@@ -4856,7 +4904,7 @@ define Parser
         let start lexer.previous_position
 
         let start_return_1 lexer.previous_position
-        let success_return_1 lexer.parse_keyword(*keywords_index.get(30))
+        let success_return_1 lexer.parse_keyword(*keywords_index.get(31))
         if success_return_1 = false
         {
             throw ParserError(DifferentSyntax())
@@ -4884,7 +4932,7 @@ define Parser
         let start lexer.previous_position
 
         let start_throw_1 lexer.previous_position
-        let success_throw_1 lexer.parse_keyword(*keywords_index.get(35))
+        let success_throw_1 lexer.parse_keyword(*keywords_index.get(36))
         if success_throw_1 = false
         {
             throw ParserError(DifferentSyntax())
@@ -5042,7 +5090,7 @@ define Parser
         let start lexer.previous_position
 
         let start_repeat_1 lexer.previous_position
-        let success_repeat_1 lexer.parse_keyword(*keywords_index.get(32))
+        let success_repeat_1 lexer.parse_keyword(*keywords_index.get(33))
         if success_repeat_1 = false
         {
             throw ParserError(DifferentSyntax())
@@ -5137,7 +5185,7 @@ define Parser
         let start lexer.previous_position
 
         let start_set_1 lexer.previous_position
-        let success_set_1 lexer.parse_keyword(*keywords_index.get(33))
+        let success_set_1 lexer.parse_keyword(*keywords_index.get(34))
         if success_set_1 = false
         {
             throw ParserError(DifferentSyntax())
@@ -5170,7 +5218,7 @@ define Parser
         let start lexer.previous_position
 
         let start_sizeof_1 lexer.previous_position
-        let success_sizeof_1 lexer.parse_keyword(*keywords_index.get(34))
+        let success_sizeof_1 lexer.parse_keyword(*keywords_index.get(35))
         if success_sizeof_1 = false
         {
             throw ParserError(DifferentSyntax())

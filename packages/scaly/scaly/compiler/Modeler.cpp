@@ -1869,6 +1869,31 @@ Result<Is, ModelError> handle_is(Page* rp, Page* ep, IsSyntax& is_syntax, String
     return Result<Is, ModelError>(Is(Span(is_syntax.start, is_syntax.end), Vector<String>(rp, name_builder)));
 }
 
+Result<New, ModelError> handle_new(Page* rp, Page* ep, NewSyntax& new_syntax, String file) {
+    auto r = Region();
+    const auto _type_result = handle_type(rp, ep, new_syntax.type, file);
+    auto type = _type_result._Ok;
+    if (_type_result._tag == Success::Error) {
+        const auto _type_Error = _type_result._Error;
+        switch (_type_Error._tag) {
+        default:
+            return Result<New, ModelError>(_type_result._Error);
+
+        }
+    };
+    const auto _arguments_result = handle_object(rp, ep, new_syntax.arguments, file);
+    auto arguments = _arguments_result._Ok;
+    if (_arguments_result._tag == Success::Error) {
+        const auto _arguments_Error = _arguments_result._Error;
+        switch (_arguments_Error._tag) {
+        default:
+            return Result<New, ModelError>(_arguments_result._Error);
+
+        }
+    };
+    return Result<New, ModelError>(New(Span(new_syntax.start, new_syntax.end), *type, arguments));
+}
+
 Result<Expression, ModelError> handle_expression(Page* rp, Page* ep, ExpressionSyntax& expression, String file) {
     auto r = Region();
     {
@@ -2118,6 +2143,24 @@ Result<Expression, ModelError> handle_expression(Page* rp, Page* ep, ExpressionS
                         }
                     };
                     return Result<Expression, ModelError>(is_result);
+                };
+                break;
+            }
+            case ExpressionSyntax::New:
+            {
+                auto new_syntax = _result._New;
+                {
+                    const auto _new_result_result = handle_new(rp, ep, new_syntax, file);
+                    auto new_result = _new_result_result._Ok;
+                    if (_new_result_result._tag == Success::Error) {
+                        const auto _new_result_Error = _new_result_result._Error;
+                        switch (_new_result_Error._tag) {
+                        default:
+                            return Result<Expression, ModelError>(_new_result_result._Error);
+
+                        }
+                    };
+                    return Result<Expression, ModelError>(new_result);
                 };
                 break;
             }

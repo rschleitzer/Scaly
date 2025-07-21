@@ -1569,6 +1569,12 @@ Result<Void, TranspilerError> build_operation(Page* ep, StringBuilder& builder, 
                         build_is(builder, is_, indent);
                         break;
                     }
+                    case Expression::New:
+                    {
+                        auto new__ = _result._New;
+                        build_new(ep, builder, new__, returns_, throws_, re_throw, indent);
+                        break;
+                    }
                 }
             };
         }
@@ -2410,6 +2416,78 @@ void build_is(StringBuilder& builder, Is& is_, String indent) {
             builder.append(name);
         }
     };
+}
+
+Result<Void, TranspilerError> build_new(Page* ep, StringBuilder& builder, New& new__, Type* returns_, Type* throws_, String* re_throw, String indent) {
+    auto r = Region();
+    {
+        auto _result = new__.type.lifetime;
+        switch (_result._tag)
+        {
+            case Lifetime::Unspecified:
+            {
+                auto u = _result._Unspecified;
+                {
+                };
+                break;
+            }
+            case Lifetime::Local:
+            {
+                auto l = _result._Local;
+                {
+                    builder.append("new (alignof(");
+                    build_type(builder, &new__.type, true);
+                    builder.append("), r.get_page()) ");
+                };
+                break;
+            }
+            case Lifetime::Call:
+            {
+                auto call = _result._Call;
+                {
+                    builder.append("new (alignof(");
+                    build_type(builder, &new__.type, true);
+                    builder.append("), rp) ");
+                };
+                break;
+            }
+            case Lifetime::Reference:
+            {
+                auto reference = _result._Reference;
+                {
+                    builder.append("new (alignof(");
+                    build_type(builder, &new__.type, true);
+                    builder.append("), ");
+                    builder.append(reference.location);
+                    builder.append(") ");
+                };
+                break;
+            }
+            case Lifetime::Thrown:
+            {
+                auto t = _result._Thrown;
+                return Result<Void, TranspilerError>(FeatureNotImplemented(String(ep, "Thrown")));
+                break;
+            }
+        }
+    }build_type(builder, &new__.type, true);
+    builder.append('(');
+    auto first = true;
+    
+    auto _property_iterator = new__.arguments.components.get_iterator();
+    while (auto _property = _property_iterator.next()) {
+        auto property = *_property;{
+            if (first) {
+                first = false;
+            }
+            else {
+                builder.append(", ");
+            };
+            build_operation(ep, builder, property.value, returns_, throws_, re_throw, indent);
+        }
+    };
+    builder.append(')');
+    return Result<Void, TranspilerError>(Void());
 }
 
 Result<Void, TranspilerError> build_break(Page* ep, StringBuilder& builder, Break& break_, Type* returns_, Type* throws_, String* re_throw, String indent) {

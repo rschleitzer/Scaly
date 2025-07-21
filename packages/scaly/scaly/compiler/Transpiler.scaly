@@ -907,6 +907,8 @@ function build_operation(builder: ref[StringBuilder], operation: ref[Vector[Oper
                 build_sizeof(builder, sizeof_, indent)
             when is_: Expression.Is
                 build_is(builder, is_, indent)
+            when new__: Expression.New
+                build_new(ep, builder, new__, returns_, throws_, re_throw, indent)
     }
     return Void()
 }
@@ -1500,6 +1502,53 @@ function build_is(builder: ref[StringBuilder], is_: ref[Is], indent: String) {
         }
         builder.append(name)
     }
+}
+
+function build_new(builder: ref[StringBuilder], new__: ref[New], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {
+    var r Region()
+
+    choose new__.type.lifetime
+        when u: Lifetime.Unspecified
+            {}
+        when l: Lifetime.Local
+        {
+            builder.append("new (alignof(")
+            build_type(builder, &new__.type, true)
+            builder.append("), r.get_page()) ")
+        }
+        when call: Lifetime.Call
+        {
+            builder.append("new (alignof(")
+            build_type(builder, &new__.type, true)
+            builder.append("), rp) ")
+        }
+        when reference: Lifetime.Reference
+        {
+            builder.append("new (alignof(")
+            build_type(builder, &new__.type, true)
+            builder.append("), ")
+            builder.append(reference.location)
+            builder.append(") ")
+        }
+        when t: Lifetime.Thrown
+            throw FeatureNotImplemented(String(ep, "Thrown"))
+
+    build_type(builder, &new__.type, true)
+
+    builder.append('(')
+    var first true
+    for property in new__.arguments.components
+    {
+        if first
+        {
+            set first: false
+        } else {
+            builder.append(", ")
+        }
+        build_operation(ep, builder, property.value, returns_, throws_, re_throw, indent)
+    }
+    builder.append(')')
+    return Void()
 }
 
 function build_break(builder: ref[StringBuilder], break_: ref[Break], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {

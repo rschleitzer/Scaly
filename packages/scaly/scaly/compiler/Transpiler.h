@@ -51,6 +51,7 @@ Result<Void, TranspilerError> build_drop(Page* ep, StringBuilder& builder, Drop&
 Result<Void, TranspilerError> build_try(Page* ep, StringBuilder& builder, Try& try_, Type* returns_, Type* throws_, String* re_throw, String indent);
 void build_sizeof(StringBuilder& builder, SizeOf& sizeof_, String indent);
 void build_is(StringBuilder& builder, Is& is_, String indent);
+Result<Void, TranspilerError> build_new(Page* ep, StringBuilder& builder, New& new__, Type* returns_, Type* throws_, String* re_throw, String indent);
 Result<Void, TranspilerError> build_break(Page* ep, StringBuilder& builder, Break& break_, Type* returns_, Type* throws_, String* re_throw, String indent);
 void build_continue(StringBuilder& builder, Continue& continue_, Type* returns_, Type* throws_, String* re_throw, String indent);
 Result<Void, TranspilerError> build_return(Page* ep, StringBuilder& builder, Return& return_, Type* returns_, Type* throws_, String* re_throw, String indent);
