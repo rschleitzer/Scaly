@@ -340,7 +340,6 @@ struct Type;
 struct Function;
 struct Module;
 }
-namespace planner {
-}
+struct Planner;
 }
 }

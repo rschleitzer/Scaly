@@ -9,8 +9,6 @@ using namespace scaly::compiler::model;
 
 using namespace scaly::compiler::transpiler;
 
-using namespace scaly::compiler::planner;
-
 using namespace scaly::compiler::generator;
 
 namespace compiler {
@@ -54,7 +52,8 @@ Result<Void, CompilerError> compile(Page* ep, String file_name, String program_n
 
         }
     };
-    const auto _plan_result = plan_program(r.get_page(), ep, prog);
+    Planner& planner = *new (alignof(Planner), r.get_page()) Planner(prog);
+    const auto _plan_result = planner.plan_program(r.get_page(), ep);
     auto plan = _plan_result._Ok;
     if (_plan_result._tag == Success::Error) {
         const auto _plan_Error = _plan_result._Error;

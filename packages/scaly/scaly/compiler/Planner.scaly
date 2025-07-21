@@ -1,38 +1,44 @@
 use scaly.containers
 use scaly.io
 
-define planner {
+define Planner
+(
+    program: ref[Program]
+    intrinsics_builder: HashSetBuilder[String]
+    functions_builder: HashMapBuilder[String, Plan.Function]
+)
+{
 
-function plan_program(program: ref[Program]) returns Plan.Module throws PlannerError {
-    var r Region()
+    init(program: ref[Program]) (program(program))(intrinsics_builder(new_ HashSetBuilder[String]())) (functions_builder(new_ HashMapBuilder[String, Plan.Function]())) {}
 
-    let file program.module_.file
-    var path Path->get_directory_name(r.get_page(), file)
-    if path.get_length() > 0
-    {
-        try let exists Directory->exists(ep, path)
-            else throw
+    function plan_program(this: Planner) returns Plan.Module throws PlannerError {
+        var r Region()
 
-        if exists = false
+        let file program.module_.file
+        var path Path->get_directory_name(r.get_page(), file)
+        if path.get_length() > 0
         {
-            try Directory->create(ep, path)
+            try let exists Directory->exists(ep, path)
+                else throw
+
+            if exists = false
+            {
+                try Directory->create(ep, path)
+                    else throw
+            }
+        }
+
+        try plan_module(ep, program.module_)
+        else throw
+
+        for module_ in program.module_.modules
+        {
+            try plan_module(ep, module_)
                 else throw
         }
+
+        return Plan->Module(path, program.module_.name)
     }
-    try plan_module(ep, program.module_)
-       else throw
-
-    var intrinsics_builder: ref[HashSetBuilder[String]] *HashSetBuilder[String]$()
-    var functions_builder: ref[HashMapBuilder[String, Plan.Function]] * new_ HashMapBuilder[String, Plan.Function]$()
-
-    for module_ in program.module_.modules
-    {
-        try plan_module(ep, module_)
-            else throw
-    }
-
-    return Plan->Module(path, program.module_.name)
-}
 
 function plan_module(module_: ref[Module]) throws PlannerError {
     var r Region()

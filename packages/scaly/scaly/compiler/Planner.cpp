@@ -5,10 +5,13 @@ using namespace scaly::containers;
 
 using namespace scaly::io;
 
-namespace planner {
 
+Planner::Planner(Program& program, HashSetBuilder<String> intrinsics_builder, HashMapBuilder<String, Plan::Function> functions_builder) : program(program), intrinsics_builder(intrinsics_builder), functions_builder(functions_builder) {}
 
-Result<Plan::Module, PlannerError> plan_program(Page* rp, Page* ep, Program& program) {
+Planner::Planner(Program& program) : program(program), intrinsics_builder(HashSetBuilder<String>()), functions_builder(HashMapBuilder<String, Plan::Function>()){
+}
+
+Result<Plan::Module, PlannerError> Planner::plan_program(Page* rp, Page* ep) {
     auto r = Region();
     const auto file = program.module_.file;
     auto path = Path::get_directory_name(r.get_page(), file);
@@ -48,8 +51,6 @@ Result<Plan::Module, PlannerError> plan_program(Page* rp, Page* ep, Program& pro
             }
         }}
         ;
-    HashSetBuilder<String>& intrinsics_builder = *new (alignof(HashSetBuilder<String>), r.get_page()) HashSetBuilder<String>();
-    HashMapBuilder<String, Plan::Function>& functions_builder = *new (alignof(HashMapBuilder<String, Plan::Function>), r.get_page()) HashMapBuilder<String, Plan::Function>();
     
     auto _module__iterator = program.module_.modules.get_iterator();
     while (auto _module_ = _module__iterator.next()) {
@@ -70,7 +71,7 @@ Result<Plan::Module, PlannerError> plan_program(Page* rp, Page* ep, Program& pro
     return Result<Plan::Module, PlannerError>(Plan::Module(path, program.module_.name));
 }
 
-Result<Void, PlannerError> plan_module(Page* ep, Module& module_) {
+Result<Void, PlannerError> Planner::plan_module(Page* ep, Module& module_) {
     auto r = Region();
     {
         const auto _void_result = plan_symbols(ep, module_.members);
@@ -86,7 +87,7 @@ Result<Void, PlannerError> plan_module(Page* ep, Module& module_) {
     return Result<Void, PlannerError>(Void());
 }
 
-Result<Void, PlannerError> plan_symbols(Page* ep, Vector<Member> symbols) {
+Result<Void, PlannerError> Planner::plan_symbols(Page* ep, Vector<Member> symbols) {
     auto r = Region();
     
     auto _member_iterator = symbols.get_iterator();
@@ -147,7 +148,7 @@ Result<Void, PlannerError> plan_symbols(Page* ep, Vector<Member> symbols) {
     return Result<Void, PlannerError>(Void());
 }
 
-Result<Void, PlannerError> plan_concept(Page* ep, Concept& concept) {
+Result<Void, PlannerError> Planner::plan_concept(Page* ep, Concept& concept) {
     {
         auto _result = concept.definition;
         switch (_result._tag)
@@ -186,16 +187,14 @@ Result<Void, PlannerError> plan_concept(Page* ep, Concept& concept) {
     };
 }
 
-Result<Void, PlannerError> plan_intrinsic(Page* ep, String name) {
+Result<Void, PlannerError> Planner::plan_intrinsic(Page* ep, String name) {
     auto r = Region();
     return Result<Void, PlannerError>(Void());
 }
 
-Result<Void, PlannerError> plan_function(Page* ep, Function& func) {
+Result<Void, PlannerError> Planner::plan_function(Page* ep, Function& func) {
     auto r = Region();
     return Result<Void, PlannerError>(Void());
-}
-
 }
 
 }

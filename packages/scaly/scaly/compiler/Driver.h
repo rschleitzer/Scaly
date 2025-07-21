@@ -12,8 +12,6 @@ using namespace scaly::compiler::model;
 
 using namespace scaly::compiler::transpiler;
 
-using namespace scaly::compiler::planner;
-
 using namespace scaly::compiler::generator;
 namespace compiler {
 

@@ -2,7 +2,6 @@ use scaly.containers
 use scaly.io
 use scaly.compiler.model
 use scaly.compiler.transpiler
-use scaly.compiler.planner
 use scaly.compiler.generator
 
 define compiler {
@@ -23,7 +22,8 @@ function compile(file_name: String, program_name: String) throws CompilerError {
     try let prog build_program(r.get_page(), ep, file_name, program_name)
         else throw
 
-    try let plan plan_program(r.get_page(), ep, prog)
+    var planner: ref[Planner] *Planner$(prog)
+    try let plan planner.plan_program(r.get_page(), ep)
         else throw
 
     generate_module(plan)
