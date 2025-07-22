@@ -16,10 +16,10 @@ struct Planner : Object {
     Planner(Program& program, HashSetBuilder<String> intrinsics_builder, HashMapBuilder<String, Plan::Function> functions_builder);
     Planner(Program& program);
     Result<Plan::Module, PlannerError> plan_program(Page* rp, Page* ep);
-    static Result<Void, PlannerError> plan_module(Page* ep, Module& module_);
-    static Result<Void, PlannerError> plan_symbols(Page* ep, Vector<Member> symbols);
-    static Result<Void, PlannerError> plan_concept(Page* ep, Concept& concept);
-    static Result<Void, PlannerError> plan_intrinsic(Page* ep, String name);
+    Result<Void, PlannerError> plan_module(Page* ep, Module& module_);
+    Result<Void, PlannerError> plan_symbols(Page* ep, Vector<Member> symbols);
+    Result<Void, PlannerError> plan_concept(Page* ep, Concept& concept);
+    Result<Void, PlannerError> plan_intrinsic(Page* ep, String name);
     static Result<Void, PlannerError> plan_function(Page* ep, Function& func);
 };
 

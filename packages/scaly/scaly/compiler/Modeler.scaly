@@ -127,7 +127,7 @@ function handle_body(name: String, path: String, body: ref[BodySyntax], uses: re
                     try let concept handle_definition(rp, ep, path, definition_syntax, false, file)
                         else throw
 
-                    if (functions_builder.contains(concept.name))
+                    if functions_builder.contains(concept.name)
                         throw ModelError(ModelBuilderError(FunctionSymbolExists(file, Span(definition_syntax.start, definition_syntax.end))))
 
                     if symbols_builder.add(concept.name, Nameable(concept)) = false

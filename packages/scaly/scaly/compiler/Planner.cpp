@@ -132,13 +132,13 @@ Result<Void, PlannerError> Planner::plan_symbols(Page* ep, Vector<Member> symbol
                     case Member::Operator:
                     {
                         auto op = _result._Operator;
-                        return Result<Void, PlannerError>(FeatureNotImplemented(String(ep, "namespace local operator")));
+                        return Result<Void, PlannerError>(FeatureNotImplemented(String(ep, "operator symbol")));
                         break;
                     }
                     case Member::Package:
                     {
                         auto p = _result._Package;
-                        return Result<Void, PlannerError>(FeatureNotImplemented(String(ep, "namespace local package")));
+                        return Result<Void, PlannerError>(FeatureNotImplemented(String(ep, "package")));
                         break;
                     }
                 }
@@ -189,6 +189,9 @@ Result<Void, PlannerError> Planner::plan_concept(Page* ep, Concept& concept) {
 
 Result<Void, PlannerError> Planner::plan_intrinsic(Page* ep, String name) {
     auto r = Region();
+    if (intrinsics_builder.contains(name)) 
+        return Result<Void, PlannerError>(DuplicateIntrinsic(String(ep, name)));
+    intrinsics_builder.add(name);
     return Result<Void, PlannerError>(Void());
 }
 

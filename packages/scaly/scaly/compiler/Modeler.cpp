@@ -235,7 +235,7 @@ Result<DeInitializer*, ModelError> handle_body(Page* rp, Page* ep, String name, 
 
                                     }
                                 };
-                                if ((functions_builder.contains(concept.name))) 
+                                if (functions_builder.contains(concept.name)) 
                                     return Result<DeInitializer*, ModelError>(ModelError(ModelBuilderError(FunctionSymbolExists(file, Span(definition_syntax.start, definition_syntax.end)))));
                                 if (symbols_builder.add(concept.name, Nameable(concept)) == false) 
                                     return Result<DeInitializer*, ModelError>(ModelError(ModelBuilderError(DuplicateName(concept.name, Span(definition_syntax.start, definition_syntax.end)))));

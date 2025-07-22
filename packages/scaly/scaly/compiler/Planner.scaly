@@ -8,8 +8,7 @@ define Planner
     functions_builder: HashMapBuilder[String, Plan.Function]
 )
 {
-
-    init(program: ref[Program]) (program(program))(intrinsics_builder(new_ HashSetBuilder[String]())) (functions_builder(new_ HashMapBuilder[String, Plan.Function]())) {}
+    init(program: ref[Program]) (program(program)) (intrinsics_builder(new_ HashSetBuilder[String]())) (functions_builder(new_ HashMapBuilder[String, Plan.Function]())) {}
 
     function plan_program(this: Planner) returns Plan.Module throws PlannerError {
         var r Region()
@@ -40,7 +39,7 @@ define Planner
         return Plan->Module(path, program.module_.name)
     }
 
-function plan_module(module_: ref[Module]) throws PlannerError {
+function plan_module(this: Planner, module_: ref[Module]) throws PlannerError {
     var r Region()
 
     try plan_symbols(ep, module_.members)
@@ -49,7 +48,7 @@ function plan_module(module_: ref[Module]) throws PlannerError {
     return Void()
 }
 
-function plan_symbols(symbols: Vector[Member]) throws PlannerError {
+function plan_symbols(this: Planner, symbols: Vector[Member]) throws PlannerError {
     var r Region()
 
     for member in symbols
@@ -62,15 +61,15 @@ function plan_symbols(symbols: Vector[Member]) throws PlannerError {
                 try plan_concept(ep, concept)
                     else throw
             when op: Member.Operator
-                throw FeatureNotImplemented(String(ep, "namespace local operator"))
+                throw FeatureNotImplemented(String(ep, "operator symbol"))
             when p: Member.Package
-                throw FeatureNotImplemented(String(ep, "namespace local package"))
+                throw FeatureNotImplemented(String(ep, "package"))
     }
 
     return Void()
 }
 
-function plan_concept(concept: ref[Concept]) throws PlannerError { 
+function plan_concept(this: Planner, concept: ref[Concept]) throws PlannerError { 
     choose concept.definition
         when ns: Definition.Namespace
             throw FeatureNotImplemented(String(ep, "namespace"))
@@ -84,8 +83,13 @@ function plan_concept(concept: ref[Concept]) throws PlannerError {
             throw FeatureNotImplemented(String(ep, "union"))
 }
 
-function plan_intrinsic(name: String) throws PlannerError {
+function plan_intrinsic(this: Planner, name: String) throws PlannerError {
     var r Region()
+
+    if intrinsics_builder.contains(name)
+        throw DuplicateIntrinsic(String(ep, name))
+    
+    intrinsics_builder.add(name)
 
     return Void()
 }

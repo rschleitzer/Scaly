@@ -1,9 +1,12 @@
 use scaly.io
 
+define DuplicateIntrinsic(name: String)
+
 define PlannerError union
 (
     NotImplemented: FeatureNotImplemented
     FileError: FileError
+    DuplicateIntrinsic: DuplicateIntrinsic
 )
 {
     function to_string(this: PlannerError) returns String {
@@ -18,6 +21,12 @@ define PlannerError union
             }
             when fe: PlannerError.FileError
                 message_builder.append(fe.to_string(r.get_page()))
+            when di: PlannerError.DuplicateIntrinsic
+            {
+                message_builder.append("The planner feature \"")
+                message_builder.append(di.name)
+                message_builder.append("\" is not implemented.")
+            }
 
         message_builder.append('\n')
         return message_builder.to_string(rp)
