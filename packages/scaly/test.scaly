@@ -1,7 +1,7 @@
 define double intrinsic
 
-function fmul[T](op1: T, op2: T) returns T instruction
+function fmul(op1: double, op2: double) returns double instruction
 
 function foo(a: double, b: double) returns double {
-    fmul[double](a, b)
+    fmul(a, b)
 }

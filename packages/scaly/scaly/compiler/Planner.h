@@ -20,7 +20,7 @@ struct Planner : Object {
     Result<Void, PlannerError> plan_symbols(Page* ep, Vector<Member> symbols);
     Result<Void, PlannerError> plan_concept(Page* ep, Concept& concept);
     Result<Void, PlannerError> plan_intrinsic(Page* ep, String name);
-    static Result<Void, PlannerError> plan_function(Page* ep, Function& func);
+    Result<Void, PlannerError> plan_function(Page* ep, Function& func);
 };
 
 #endif

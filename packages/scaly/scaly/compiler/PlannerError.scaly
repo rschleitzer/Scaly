@@ -1,12 +1,14 @@
 use scaly.io
 
 define DuplicateIntrinsic(name: String)
+define DuplicateFunction(name: String)
 
 define PlannerError union
 (
     NotImplemented: FeatureNotImplemented
     FileError: FileError
     DuplicateIntrinsic: DuplicateIntrinsic
+    DuplicateFunction: DuplicateFunction
 )
 {
     function to_string(this: PlannerError) returns String {
@@ -23,9 +25,15 @@ define PlannerError union
                 message_builder.append(fe.to_string(r.get_page()))
             when di: PlannerError.DuplicateIntrinsic
             {
-                message_builder.append("The planner feature \"")
+                message_builder.append("The intrinsic \"")
                 message_builder.append(di.name)
-                message_builder.append("\" is not implemented.")
+                message_builder.append("\" is already defined.")
+            }
+            when df: PlannerError.DuplicateFunction
+            {
+                message_builder.append("The function \"")
+                message_builder.append(df.name)
+                message_builder.append("\" is already defined.")
             }
 
         message_builder.append('\n')

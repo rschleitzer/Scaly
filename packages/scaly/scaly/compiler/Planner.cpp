@@ -68,7 +68,7 @@ Result<Plan::Module, PlannerError> Planner::plan_program(Page* rp, Page* ep) {
                 ;
         }
     };
-    return Result<Plan::Module, PlannerError>(Plan::Module(path, program.module_.name));
+    return Result<Plan::Module, PlannerError>(Plan::Module(path, program.module_.name, HashMap<String, Plan::Function>(rp, functions_builder)));
 }
 
 Result<Void, PlannerError> Planner::plan_module(Page* ep, Module& module_) {
@@ -197,6 +197,12 @@ Result<Void, PlannerError> Planner::plan_intrinsic(Page* ep, String name) {
 
 Result<Void, PlannerError> Planner::plan_function(Page* ep, Function& func) {
     auto r = Region();
+    if (functions_builder.contains(func.name)) 
+        return Result<Void, PlannerError>(DuplicateFunction(String(ep, func.name)));
+    String* returnType = nullptr;
+    Vector<String> input = Vector<String>();
+    Plan::Function planFunction = Plan::Function(func.name, input, returnType);
+    functions_builder.add(func.name, planFunction);
     return Result<Void, PlannerError>(Void());
 }
 

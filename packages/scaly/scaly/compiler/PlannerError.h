@@ -12,19 +12,28 @@ struct DuplicateIntrinsic : Object {
     DuplicateIntrinsic(String name);
 };
 
+struct DuplicateFunction : Object {
+    String name;
+
+    DuplicateFunction(String name);
+};
+
 struct PlannerError : Object {
     PlannerError(FeatureNotImplemented);
     PlannerError(FileError);
     PlannerError(DuplicateIntrinsic);
+    PlannerError(DuplicateFunction);
     enum {
         NotImplemented,
         FileError,
         DuplicateIntrinsic,
+        DuplicateFunction,
     } _tag;
     union {
         struct FeatureNotImplemented _NotImplemented;
         struct FileError _FileError;
         struct DuplicateIntrinsic _DuplicateIntrinsic;
+        struct DuplicateFunction _DuplicateFunction;
     };
     String to_string(Page* rp);
 };

@@ -329,6 +329,7 @@ namespace transpiler {
 struct FeatureNotImplemented;
 struct TranspilerError;
 struct DuplicateIntrinsic;
+struct DuplicateFunction;
 struct PlannerError;
 struct MultipleMainFunctions;
 struct MainIsNotAFunction;

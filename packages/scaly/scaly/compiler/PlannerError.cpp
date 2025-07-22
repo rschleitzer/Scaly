@@ -6,6 +6,8 @@ using namespace scaly::io;
 
 DuplicateIntrinsic::DuplicateIntrinsic(String name) : name(name) {}
 
+DuplicateFunction::DuplicateFunction(String name) : name(name) {}
+
 String PlannerError::to_string(Page* rp) {
     auto r = Region();
     StringBuilder& message_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder();
@@ -33,9 +35,19 @@ String PlannerError::to_string(Page* rp) {
             {
                 auto di = _result._DuplicateIntrinsic;
                 {
-                    message_builder.append("The planner feature \"");
+                    message_builder.append("The intrinsic \"");
                     message_builder.append(di.name);
-                    message_builder.append("\" is not implemented.");
+                    message_builder.append("\" is already defined.");
+                };
+                break;
+            }
+            case PlannerError::DuplicateFunction:
+            {
+                auto df = _result._DuplicateFunction;
+                {
+                    message_builder.append("The function \"");
+                    message_builder.append(df.name);
+                    message_builder.append("\" is already defined.");
                 };
                 break;
             }
@@ -48,6 +60,8 @@ PlannerError::PlannerError(struct FeatureNotImplemented _NotImplemented) : _tag(
 PlannerError::PlannerError(struct FileError _FileError) : _tag(FileError), _FileError(_FileError) {}
 
 PlannerError::PlannerError(struct DuplicateIntrinsic _DuplicateIntrinsic) : _tag(DuplicateIntrinsic), _DuplicateIntrinsic(_DuplicateIntrinsic) {}
+
+PlannerError::PlannerError(struct DuplicateFunction _DuplicateFunction) : _tag(DuplicateFunction), _DuplicateFunction(_DuplicateFunction) {}
 
 
 }

@@ -36,7 +36,7 @@ define Planner
                 else throw
         }
 
-        return Plan->Module(path, program.module_.name)
+        return Plan->Module(path, program.module_.name, new_ HashMap[String, Plan.Function](rp, functions_builder))
     }
 
 function plan_module(this: Planner, module_: ref[Module]) throws PlannerError {
@@ -95,8 +95,16 @@ function plan_intrinsic(this: Planner, name: String) throws PlannerError {
 }
 
 
-function plan_function(func: ref[Function]) throws PlannerError {
+function plan_function(this: Planner, func: ref[Function]) throws PlannerError {
     var r Region()
+
+    if functions_builder.contains(func.name)
+        throw DuplicateFunction(String(ep, func.name))
+
+    var returnType: pointer[String] null
+    var input: Vector[String] Vector[String]()
+    var planFunction: Plan.Function Plan->Function(func.name, input, returnType)
+    functions_builder.add(func.name, planFunction)
 
     return Void()
 }

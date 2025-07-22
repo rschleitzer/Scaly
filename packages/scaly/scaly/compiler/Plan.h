@@ -7,23 +7,25 @@ namespace Plan {
 
 struct Type : Object {
     String name;
+    Vector<String> fields;
 
-    Type(String name);
+    Type(String name, Vector<String> fields);
 };
 
 struct Function : Object {
     String name;
-    Vector<Type> input;
-    Type output;
+    Vector<String> input;
+    String* output;
 
-    Function(String name, Vector<Type> input, Type output);
+    Function(String name, Vector<String> input, String* output);
 };
 
 struct Module : Object {
     String path;
     String name;
+    HashMap<String, Function> functions;
 
-    Module(String path, String name);
+    Module(String path, String name, HashMap<String, Function> functions);
 };
 
 }
