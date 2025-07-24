@@ -53,11 +53,23 @@ namespace scaly {
 namespace compiler {
 namespace generator {
 
-    void generate_module(Plan::Module& plan) {
+    void generate_module(Plan::Module& planModule) {
         Region _r;
         LLVMContext context;
-        llvm::Module module(plan.name.to_c_string(_r.get_page()), context);
+        llvm::Module module(planModule.name.to_c_string(_r.get_page()), context);
         IRBuilder<> Builder(context);
+
+        auto _function_iterator = planModule.functions.get_iterator();
+        while (auto _function = _function_iterator.next()) {
+            auto function = *_function;
+        }        
+
+        // auto _functions_values = planModule.functions.get_values(_r.get_page());
+        // auto _functions_iterator = _functions_values.get_iterator();
+        // while (auto _functions = _functions_iterator.next())
+        // {
+        //     auto function_ = *_functions;
+        // }
 
         llvm::FunctionType *funcType = llvm::FunctionType::get
         (

@@ -90,21 +90,4 @@ define HashMap[K, V]
 
         return nullptr
     }
-
-    function get_values(this: HashMap[K, V], rp: pointer[Page]) returns Vector[pointer[V]]$ {
-        var r Region()
-        let array Array[pointer[V]]$()
-        if slots <> null
-        {
-            let slot_iterator VectorIterator[Vector[KeyValuePair[K, V]]](slots)
-            while let slot slot_iterator.next()
-            {
-                let element_iterator VectorIterator[KeyValuePair[K, V]](slot)
-                while let element element_iterator.next()
-                    array.add(&(*element).value)
-            }
-        }
-
-        return Vector[pointer[V]]^rp(rp, array)
-    }
 }

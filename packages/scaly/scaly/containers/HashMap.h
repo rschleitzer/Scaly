@@ -85,19 +85,6 @@ struct HashMap : Object {
         };
         return nullptr;
     }
-
-    Vector<V*> get_values(Page* rp) {
-        auto r = Region();
-        const auto array = new (alignof(Array<V*>), r.get_page()) Array<V*>();
-        if (slots != nullptr) {
-            const auto slot_iterator = VectorIterator<Vector<KeyValuePair<K, V>>>(slots);
-            while (auto slot = slot_iterator.next()) {
-                const auto element_iterator = VectorIterator<KeyValuePair<K, V>>(slot);
-                while (auto element = element_iterator.next()) array.add(&(*element).value);
-            };
-        };
-        return new (alignof(Vector<V*>), rp) Vector<V*>(rp, array);
-    };
 };
 
 #endif

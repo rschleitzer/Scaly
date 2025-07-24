@@ -5,10 +5,13 @@ define Planner
 (
     program: ref[Program]
     intrinsics_builder: HashSetBuilder[String]
+    types_list: List[Plan.Type]
+    types_builder: HashMapBuilder[String, Plan.Type]
+    functions_list: List[Plan.Function]
     functions_builder: HashMapBuilder[String, Plan.Function]
 )
 {
-    init(program: ref[Program]) (program(program)) (intrinsics_builder(new_ HashSetBuilder[String]())) (functions_builder(new_ HashMapBuilder[String, Plan.Function]())) {}
+    init(program: ref[Program]) (program(program)) (intrinsics_builder(new_ HashSetBuilder[String]())) (types_builder(new_ HashMapBuilder[String, Plan.Type]())) (functions_builder(new_ HashMapBuilder[String, Plan.Function]())) {}
 
     function plan_program(this: Planner) returns Plan.Module throws PlannerError {
         var r Region()
@@ -36,7 +39,11 @@ define Planner
                 else throw
         }
 
-        return Plan->Module(path, program.module_.name, new_ HashMap[String, Plan.Function](rp, functions_builder))
+        return Plan->Module(path, program.module_.name, 
+            new_ Vector[Plan.Type](rp, types_list),
+            new_ HashMap[String, Plan.Type](rp, types_builder),
+            new_ Vector[Plan.Function](rp, functions_list),
+            new_ HashMap[String, Plan.Function](rp, functions_builder))
     }
 
 function plan_module(this: Planner, module_: ref[Module]) throws PlannerError {
@@ -101,10 +108,18 @@ function plan_function(this: Planner, func: ref[Function]) throws PlannerError {
     if functions_builder.contains(func.name)
         throw DuplicateFunction(String(ep, func.name))
 
-    var returnType: pointer[String] null
+    var returnType String(get_page(), "double")
     var input: Vector[String] Vector[String]()
-    var planFunction: Plan.Function Plan->Function(func.name, input, returnType)
+    var blocks: ref[List[Plan.Block]] *new_ List[Plan.Block]$()
+    var instructions: ref[List[Plan.Instruction]] *new_ List[Plan.Instruction]$()
+    var inputs: ref[List[String]] *new_ List[String]$()
+    inputs.add(String(get_page(), "a"))
+    inputs.add(String(get_page(), "b"))
+    instructions.add(Plan->Instruction(String(get_page(), "fmul"), String(get_page(), "double"), new_ Vector[String](get_page(), inputs)))
+    var block new_ Plan.Block(new_ Vector[Plan.Instruction](get_page(), instructions))
+    var planFunction: Plan.Function Plan->Function(func.name, input, returnType, new_ Vector[Plan.Block](get_page(), blocks))
     functions_builder.add(func.name, planFunction)
+    functions_list.add(planFunction)
 
     return Void()
 }

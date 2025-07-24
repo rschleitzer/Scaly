@@ -1,6 +1,24 @@
 define Plan
 {
+    define Module
+    (
+        path: String,
+        name: String,
+        types: Vector[Type],
+        type_map: HashMap[String, Type],
+        functions: Vector[Function]
+        function_map: HashMap[String, Function]
+    )
+
     define Type(name: String, fields: Vector[String])
-    define Function(name: String, input: Vector[String], output: pointer[String])
-    define Module(path: String, name: String, functions: HashMap[String, Function])
+    define Instruction(name: String, type: String, input: Vector[String])
+    define Block(instructions: Vector[Instruction])
+    
+    define Function
+    (
+        name: String,
+        input: Vector[String],
+        output: String,
+        blocks: Vector[Block]
+    )
 }

@@ -11,9 +11,12 @@ using namespace scaly::io;
 struct Planner : Object {
     Program& program;
     HashSetBuilder<String> intrinsics_builder;
+    List<Plan::Type> types_list;
+    HashMapBuilder<String, Plan::Type> types_builder;
+    List<Plan::Function> functions_list;
     HashMapBuilder<String, Plan::Function> functions_builder;
 
-    Planner(Program& program, HashSetBuilder<String> intrinsics_builder, HashMapBuilder<String, Plan::Function> functions_builder);
+    Planner(Program& program, HashSetBuilder<String> intrinsics_builder, List<Plan::Type> types_list, HashMapBuilder<String, Plan::Type> types_builder, List<Plan::Function> functions_list, HashMapBuilder<String, Plan::Function> functions_builder);
     Planner(Program& program);
     Result<Plan::Module, PlannerError> plan_program(Page* rp, Page* ep);
     Result<Void, PlannerError> plan_module(Page* ep, Module& module_);

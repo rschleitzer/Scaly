@@ -6,9 +6,9 @@ using namespace scaly::containers;
 using namespace scaly::io;
 
 
-Planner::Planner(Program& program, HashSetBuilder<String> intrinsics_builder, HashMapBuilder<String, Plan::Function> functions_builder) : program(program), intrinsics_builder(intrinsics_builder), functions_builder(functions_builder) {}
+Planner::Planner(Program& program, HashSetBuilder<String> intrinsics_builder, List<Plan::Type> types_list, HashMapBuilder<String, Plan::Type> types_builder, List<Plan::Function> functions_list, HashMapBuilder<String, Plan::Function> functions_builder) : program(program), intrinsics_builder(intrinsics_builder), types_list(types_list), types_builder(types_builder), functions_list(functions_list), functions_builder(functions_builder) {}
 
-Planner::Planner(Program& program) : program(program), intrinsics_builder(HashSetBuilder<String>()), functions_builder(HashMapBuilder<String, Plan::Function>()){
+Planner::Planner(Program& program) : program(program), intrinsics_builder(HashSetBuilder<String>()), types_builder(HashMapBuilder<String, Plan::Type>()), functions_builder(HashMapBuilder<String, Plan::Function>()){
 }
 
 Result<Plan::Module, PlannerError> Planner::plan_program(Page* rp, Page* ep) {
@@ -68,7 +68,7 @@ Result<Plan::Module, PlannerError> Planner::plan_program(Page* rp, Page* ep) {
                 ;
         }
     };
-    return Result<Plan::Module, PlannerError>(Plan::Module(path, program.module_.name, HashMap<String, Plan::Function>(rp, functions_builder)));
+    return Result<Plan::Module, PlannerError>(Plan::Module(path, program.module_.name, Vector<Plan::Type>(rp, types_list), HashMap<String, Plan::Type>(rp, types_builder), Vector<Plan::Function>(rp, functions_list), HashMap<String, Plan::Function>(rp, functions_builder)));
 }
 
 Result<Void, PlannerError> Planner::plan_module(Page* ep, Module& module_) {
@@ -199,10 +199,18 @@ Result<Void, PlannerError> Planner::plan_function(Page* ep, Function& func) {
     auto r = Region();
     if (functions_builder.contains(func.name)) 
         return Result<Void, PlannerError>(DuplicateFunction(String(ep, func.name)));
-    String* returnType = nullptr;
+    auto returnType = String(get_page(), "double");
     Vector<String> input = Vector<String>();
-    Plan::Function planFunction = Plan::Function(func.name, input, returnType);
+    List<Plan::Block>& blocks = *new (alignof(List<Plan::Block>), r.get_page()) List<Plan::Block>();
+    List<Plan::Instruction>& instructions = *new (alignof(List<Plan::Instruction>), r.get_page()) List<Plan::Instruction>();
+    List<String>& inputs = *new (alignof(List<String>), r.get_page()) List<String>();
+    inputs.add(String(get_page(), "a"));
+    inputs.add(String(get_page(), "b"));
+    instructions.add(Plan::Instruction(String(get_page(), "fmul"), String(get_page(), "double"), Vector<String>(get_page(), inputs)));
+    auto block = Plan::Block(Vector<Plan::Instruction>(get_page(), instructions));
+    Plan::Function planFunction = Plan::Function(func.name, input, returnType, Vector<Plan::Block>(get_page(), blocks));
     functions_builder.add(func.name, planFunction);
+    functions_list.add(planFunction);
     return Result<Void, PlannerError>(Void());
 }
 

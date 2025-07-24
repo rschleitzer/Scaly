@@ -105,7 +105,18 @@ define Implementation union (
     Intrinsic: Intrinsic
 )
 
-define Function(span: Span, private_: bool, pure: bool, name: String, input: Vector[Item], returns_: pointer[Type], throws_: pointer[Type], lifetime: Lifetime, implementation: Implementation)
+define Function
+(
+    span: Span, 
+    private_: bool, 
+    pure: bool, 
+    name: String, 
+    input: Vector[Item], 
+    returns_: pointer[Type], 
+    throws_: pointer[Type], 
+    lifetime: Lifetime, 
+    implementation: Implementation
+)
 
 define Model union (
     Constant: Constant

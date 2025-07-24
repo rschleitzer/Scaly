@@ -338,9 +338,11 @@ struct CompilerError;
 namespace compiler {
 }
 namespace Plan {
-struct Type;
-struct Function;
 struct Module;
+struct Type;
+struct Instruction;
+struct Block;
+struct Function;
 }
 struct Planner;
 }
