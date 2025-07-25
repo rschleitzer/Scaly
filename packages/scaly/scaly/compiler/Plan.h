@@ -23,28 +23,61 @@ struct Type : Object {
     Type(String name, Vector<String> fields);
 };
 
-struct Instruction : Object {
-    String name;
-    String type;
-    Vector<String> input;
-
-    Instruction(String name, String type, Vector<String> input);
-};
-
-struct Block : Object {
-    Vector<Instruction> instructions;
-
-    Block(Vector<Instruction> instructions);
-};
-
 struct Function : Object {
     String name;
-    Vector<String> input;
+    Vector<Argument> input;
     String output;
     Vector<Block> blocks;
 
-    Function(String name, Vector<String> input, String output, Vector<Block> blocks);
+    Function(String name, Vector<Argument> input, String output, Vector<Block> blocks);
 };
 
+struct Argument : Object {
+    String name;
+    String type;
+
+    Argument(String name, String type);
+};
+
+struct Block : Object {
+    String name;
+    Vector<Instruction> instructions;
+
+    Block(String name, Vector<Instruction> instructions);
+};
+
+struct FMul : Object {
+    String l;
+    String r;
+    String result;
+
+    FMul(String l, String r, String result);
+};
+
+struct Ret : Object {
+    String v;
+
+    Ret(String v);
+};
+
+struct RetVoid : Object {
+
+};
+
+struct Instruction : Object {
+    Instruction(FMul);
+    Instruction(Ret);
+    Instruction(RetVoid);
+    enum {
+        FMul,
+        Ret,
+        RetVoid,
+    } _tag;
+    union {
+        struct FMul _FMul;
+        struct Ret _Ret;
+        struct RetVoid _RetVoid;
+    };
+};
 }
 #endif

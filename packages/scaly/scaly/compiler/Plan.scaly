@@ -11,14 +11,26 @@ define Plan
     )
 
     define Type(name: String, fields: Vector[String])
-    define Instruction(name: String, type: String, input: Vector[String])
-    define Block(instructions: Vector[Instruction])
     
     define Function
     (
         name: String,
-        input: Vector[String],
+        input: Vector[Argument],
         output: String,
         blocks: Vector[Block]
+    )
+
+    define Argument(name: String, type: String)
+ 
+    define Block(name: String, instructions: Vector[Instruction])
+
+    define FMul(l: String, r: String, result: String)
+    define Ret(v: String)
+    define RetVoid()
+ 
+    define Instruction union (
+        FMul: FMul
+        Ret: Ret
+        RetVoid: RetVoid
     )
 }

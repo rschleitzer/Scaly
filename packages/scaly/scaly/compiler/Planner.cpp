@@ -197,20 +197,52 @@ Result<Void, PlannerError> Planner::plan_intrinsic(Page* ep, String name) {
 
 Result<Void, PlannerError> Planner::plan_function(Page* ep, Function& func) {
     auto r = Region();
-    if (functions_builder.contains(func.name)) 
-        return Result<Void, PlannerError>(DuplicateFunction(String(ep, func.name)));
-    auto returnType = String(get_page(), "double");
-    Vector<String> input = Vector<String>();
-    List<Plan::Block>& blocks = *new (alignof(List<Plan::Block>), r.get_page()) List<Plan::Block>();
-    List<Plan::Instruction>& instructions = *new (alignof(List<Plan::Instruction>), r.get_page()) List<Plan::Instruction>();
-    List<String>& inputs = *new (alignof(List<String>), r.get_page()) List<String>();
-    inputs.add(String(get_page(), "a"));
-    inputs.add(String(get_page(), "b"));
-    instructions.add(Plan::Instruction(String(get_page(), "fmul"), String(get_page(), "double"), Vector<String>(get_page(), inputs)));
-    auto block = Plan::Block(Vector<Plan::Instruction>(get_page(), instructions));
-    Plan::Function planFunction = Plan::Function(func.name, input, returnType, Vector<Plan::Block>(get_page(), blocks));
-    functions_builder.add(func.name, planFunction);
-    functions_list.add(planFunction);
+    {
+        auto _result = func.implementation;
+        switch (_result._tag)
+        {
+            case Implementation::Action:
+            {
+                auto action = _result._Action;
+                {
+                    if (functions_builder.contains(func.name)) 
+                        return Result<Void, PlannerError>(DuplicateFunction(String(ep, func.name)));
+                    auto returnType = String(get_page(), "double");
+                    List<Plan::Argument>& input_list = *new (alignof(List<Plan::Argument>), r.get_page()) List<Plan::Argument>();
+                    input_list.add(Plan::Argument(String(get_page(), "a"), String(get_page(), "double")));
+                    input_list.add(Plan::Argument(String(get_page(), "b"), String(get_page(), "double")));
+                    List<Plan::Block>& blocks = *new (alignof(List<Plan::Block>), r.get_page()) List<Plan::Block>();
+                    List<Plan::Instruction>& instructions = *new (alignof(List<Plan::Instruction>), r.get_page()) List<Plan::Instruction>();
+                    instructions.add(Plan::Instruction(Plan::FMul(String(get_page(), "a"), String(get_page(), "b"), String(get_page(), "_ret"))));
+                    instructions.add(Plan::Instruction(Plan::Ret(String(get_page(), "_ret"))));
+                    auto block = Plan::Block(String(get_page(), "entry"), Vector<Plan::Instruction>(get_page(), instructions));
+                    blocks.add(block);
+                    Plan::Function plan_function = Plan::Function(func.name, Vector<Plan::Argument>(get_page(), input_list), returnType, Vector<Plan::Block>(get_page(), blocks));
+                    functions_builder.add(func.name, plan_function);
+                    functions_list.add(plan_function);
+                };
+                break;
+            }
+            case Implementation::Extern:
+            {
+                auto e = _result._Extern;
+                return Result<Void, PlannerError>(FeatureNotImplemented(String(ep, "Extern")));
+                break;
+            }
+            case Implementation::Instruction:
+            {
+                auto i = _result._Instruction;
+                return Result<Void, PlannerError>(Void());
+                break;
+            }
+            case Implementation::Intrinsic:
+            {
+                auto i = _result._Intrinsic;
+                return Result<Void, PlannerError>(FeatureNotImplemented(String(ep, "Intrinsic")));
+                break;
+            }
+        }
+    };
     return Result<Void, PlannerError>(Void());
 }
 

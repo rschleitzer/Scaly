@@ -53,6 +53,95 @@ namespace scaly {
 namespace compiler {
 namespace generator {
 
+    llvm::Type* get_Type(LLVMContext& context, String& type) {
+        return llvm::Type::getDoubleTy(context);
+    }
+
+    llvm::Value* get_value(String& value, HashMap<String, llvm::Value*>& argument_values_map, HashMapBuilder<String, llvm::Value*>& block_values_builder) {
+        if (argument_values_map.contains(value))
+            return *argument_values_map[value];
+
+        if (block_values_builder.contains(value))
+            return *block_values_builder[value];
+
+        return nullptr;
+    }
+
+    void add_instruction(IRBuilder<>& builder, HashMap<String, llvm::Value*>& argument_values_map, HashMapBuilder<String, llvm::Value*>& block_values_builder, Plan::Instruction instruction) {
+        auto r = Region();
+        switch (instruction._tag) {
+            case Plan::Instruction::FMul:
+            {
+                auto fMul = instruction._FMul;
+                auto lValue = get_value(fMul.l, argument_values_map, block_values_builder);
+                auto rValue = get_value(fMul.r, argument_values_map, block_values_builder);
+                auto result = builder.CreateFMul(lValue, rValue, fMul.result.to_c_string(r.get_page()));
+                block_values_builder.add(fMul.result, result);
+                break;
+            }
+            case Plan::Instruction::Ret:
+            {
+                auto ret = instruction._Ret;
+                builder.CreateRet(get_value(ret.v, argument_values_map, block_values_builder));
+                break;
+            }
+            case Plan::Instruction::RetVoid:
+            {
+                auto retVoid = instruction._RetVoid;
+                builder.CreateRetVoid();
+                break;
+            }
+        }
+    }
+
+    llvm::Function* generate_function(llvm::Module& module, Plan::Function& plan_function) {
+        auto r = Region();
+        LLVMContext& context = module.getContext();
+        llvm::Type* return_type = get_Type(context, plan_function.output);
+
+        std::vector<llvm::Type*> llvm_argument_types;
+        auto _argument_iterator = plan_function.input.get_iterator();
+        while (auto _argument = _argument_iterator.next()) {
+            auto argument = *_argument;
+            llvm::Type* argument_type = get_Type(context, argument.type);
+            llvm_argument_types.push_back(argument_type);
+        }
+
+        FunctionType* llvm_function_type = FunctionType::get(return_type, llvm_argument_types, false);
+        llvm::Function* llvm_function = llvm::Function::Create(llvm_function_type, llvm::Function::ExternalLinkage, plan_function.name.to_c_string(r.get_page()), module);
+
+        HashMapBuilder<String, llvm::Value*>& argument_values_builder = *new (alignof(HashMapBuilder<String, llvm::Value>*), r.get_page()) HashMapBuilder<String, llvm::Value*>();
+        _argument_iterator = plan_function.input.get_iterator();
+        {
+            int i = 0;
+            while (auto _argument = _argument_iterator.next()) {
+                auto argument = *_argument;
+                auto llvm_argument = llvm_function->getArg(i);
+                llvm_argument->setName(argument.name.to_c_string(r.get_page()));
+                argument_values_builder.add(argument.name, llvm_argument);
+                i++;
+            }
+        }
+
+        auto argument_values_map = HashMap<String, llvm::Value*>(r.get_page(), argument_values_builder);
+        auto _block_iterator = plan_function.blocks.get_iterator();
+        while (auto _block = _block_iterator.next()) {
+            auto block = *_block;
+            llvm::BasicBlock* basicBlock = llvm::BasicBlock::Create(context, block.name.to_c_string(r.get_page()), llvm_function);
+            IRBuilder<> Builder(context);
+            Builder.SetInsertPoint(basicBlock);
+
+            HashMapBuilder<String, llvm::Value*>& block_values_builder = *new (alignof(HashMapBuilder<String, llvm::Value*>), r.get_page()) HashMapBuilder<String, llvm::Value*>();
+            auto _instruction_iterator = block.instructions.get_iterator();
+            while (auto _instruction = _instruction_iterator.next()) {
+                auto instruction = *_instruction;
+                add_instruction(Builder, argument_values_map, block_values_builder, instruction);
+            }
+        }
+
+        return llvm_function;
+    }
+
     void generate_module(Plan::Module& planModule) {
         Region _r;
         LLVMContext context;
@@ -61,43 +150,15 @@ namespace generator {
 
         auto _function_iterator = planModule.functions.get_iterator();
         while (auto _function = _function_iterator.next()) {
-            auto function = *_function;
+            auto planFunction = *_function;
+            auto function = generate_function(module, planFunction);
         }        
 
-        // auto _functions_values = planModule.functions.get_values(_r.get_page());
-        // auto _functions_iterator = _functions_values.get_iterator();
-        // while (auto _functions = _functions_iterator.next())
-        // {
-        //     auto function_ = *_functions;
-        // }
-
-        llvm::FunctionType *funcType = llvm::FunctionType::get
-        (
-            Builder.getInt32Ty(),
-            {
-                Builder.getInt32Ty(),
-                Builder.getInt32Ty()
-            },
-            false
-        );
-
-        llvm::Function *func = llvm::Function::Create
-        (
-            funcType,
-            llvm::Function::ExternalLinkage,
-            "add",
-            module
-        );
-
-        llvm::BasicBlock *entry = llvm::BasicBlock::Create(context, "entry", func);
-        Builder.SetInsertPoint(entry);
-
-        llvm::Value *sum = Builder.CreateAdd(func->getArg(0), func->getArg(1), "sum");
-        Builder.CreateRet(sum);
         if (llvm::verifyModule(module, &llvm::errs())) {
                 llvm::errs() << "Error: Invalid module!\n";
                 exit(1);
             }
+
         module.print(llvm::outs(), nullptr);
     }
 }

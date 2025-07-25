@@ -340,9 +340,13 @@ namespace compiler {
 namespace Plan {
 struct Module;
 struct Type;
-struct Instruction;
-struct Block;
 struct Function;
+struct Argument;
+struct Block;
+struct FMul;
+struct Ret;
+struct RetVoid;
+struct Instruction;
 }
 struct Planner;
 }

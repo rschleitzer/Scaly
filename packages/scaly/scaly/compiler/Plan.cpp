@@ -8,11 +8,21 @@ Module::Module(String path, String name, Vector<Type> types, HashMap<String, Typ
 
 Type::Type(String name, Vector<String> fields) : name(name), fields(fields) {}
 
-Instruction::Instruction(String name, String type, Vector<String> input) : name(name), type(type), input(input) {}
+Function::Function(String name, Vector<Argument> input, String output, Vector<Block> blocks) : name(name), input(input), output(output), blocks(blocks) {}
 
-Block::Block(Vector<Instruction> instructions) : instructions(instructions) {}
+Argument::Argument(String name, String type) : name(name), type(type) {}
 
-Function::Function(String name, Vector<String> input, String output, Vector<Block> blocks) : name(name), input(input), output(output), blocks(blocks) {}
+Block::Block(String name, Vector<Instruction> instructions) : name(name), instructions(instructions) {}
+
+FMul::FMul(String l, String r, String result) : l(l), r(r), result(result) {}
+
+Ret::Ret(String v) : v(v) {}
+Instruction::Instruction(struct FMul _FMul) : _tag(FMul), _FMul(_FMul) {}
+
+Instruction::Instruction(struct Ret _Ret) : _tag(Ret), _Ret(_Ret) {}
+
+Instruction::Instruction(struct RetVoid _RetVoid) : _tag(RetVoid), _RetVoid(_RetVoid) {}
+
 
 }
 
