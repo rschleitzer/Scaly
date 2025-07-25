@@ -2233,24 +2233,6 @@ Result<Void, TranspilerError> build_while(Page* ep, StringBuilder& builder, Whil
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> build_drop(Page* ep, StringBuilder& builder, Drop& drop_, Type* returns_, Type* throws_, String* re_throw, String indent) {
-    auto r = Region();
-    builder.append('\n');
-    builder.append(indent);
-    builder.append("default: {\n");
-    StringBuilder& indent_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder(indent);
-    indent_builder.append("    ");
-    const auto indented = indent_builder.to_string(r.get_page());
-    builder.append(indented);
-    build_action(ep, builder, drop_.action, returns_, throws_, re_throw, indented);
-    builder.append(";\n");
-    builder.append(indented);
-    builder.append("break;\n");
-    builder.append(indent);
-    builder.append("}\n");
-    return Result<Void, TranspilerError>(Void());
-}
-
 Result<Void, TranspilerError> build_try(Page* ep, StringBuilder& builder, Try& try_, Type* returns_, Type* throws_, String* re_throw, String indent) {
     auto r = Region();
     auto name = String(r.get_page(), "void");

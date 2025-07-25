@@ -8,10 +8,6 @@ using namespace scaly::io;
 
 Span::Span(size_t start, size_t end) : start(start), end(end) {}
 
-Component::Component(Span span, String* name, Vector<Operand> value, Vector<Attribute> attributes) : span(span), name(name), value(value), attributes(attributes) {}
-
-Name::Name(Span span, Vector<String> path) : span(span), path(path) {}
-
 BooleanConstant::BooleanConstant(bool value) : value(value) {}
 
 IntegerConstant::IntegerConstant(size_t value) : value(value) {}
@@ -39,6 +35,8 @@ Constant::Constant(struct CharacterConstant _Character) : _tag(Character), _Char
 
 Constant::Constant(struct FragmentConstant _Fragment) : _tag(Fragment), _Fragment(_Fragment) {}
 
+
+Component::Component(Span span, String* name, Vector<Operand> value, Vector<Attribute> attributes) : span(span), name(name), value(value), attributes(attributes) {}
 
 Tuple::Tuple(Span span, Vector<Component> components) : span(span), components(components) {}
 
@@ -103,8 +101,6 @@ Choose::Choose(Span span, Vector<Operand> condition, Vector<When> cases, Stateme
 For::For(Span span, String identifier, Vector<Operand> expression, Action action) : span(span), identifier(identifier), expression(expression), action(action) {}
 
 While::While(Span span, Binding condition, Action action) : span(span), condition(condition), action(action) {}
-
-Drop::Drop(Span span, Action action) : span(span), action(action) {}
 
 Try::Try(Span span, Binding binding, Vector<When> catches, Statement* alternative) : span(span), binding(binding), catches(catches), alternative(alternative) {}
 

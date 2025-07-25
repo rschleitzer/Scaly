@@ -2,8 +2,6 @@ use scaly.containers
 use scaly.io
 
 define Span(start: size_t, end: size_t)
-define Component(span: Span, name: pointer[String], value: Vector[Operand], attributes: Vector[Attribute])
-define Name(span: Span, path: Vector[String])
 
 define BooleanConstant(value: bool)
 define IntegerConstant(value: size_t)
@@ -21,6 +19,14 @@ define Constant union (
     String: StringConstant
     Character: CharacterConstant
     Fragment: FragmentConstant
+)
+
+define Component
+(
+    span: Span,
+    name: pointer[String],
+    value: Vector[Operand],
+    attributes: Vector[Attribute]
 )
 
 define Tuple(span: Span, components: Vector[Component])
@@ -41,9 +47,28 @@ define Lifetime union (
     Thrown: Thrown
 )
 
-define Action(source: Vector[Operand], target: Vector[Operand])
-define Item(span: Span, private_: bool, name: pointer[String], type: pointer[Type], attributes: Vector[Attribute])
-define Binding(binding_type: String, item: Item, operation: Vector[Operand])
+define Action
+(
+    source: Vector[Operand],
+    target: Vector[Operand]
+)
+
+define Item
+(
+    span: Span,
+    private_: bool,
+    name: pointer[String],
+    type: pointer[Type],
+    attributes: Vector[Attribute]
+)
+
+define Binding
+(
+    binding_type: String,
+    item: Item,
+    operation: Vector[Operand]
+)
+
 define Break(span: Span, result: Vector[Operand])
 define Continue(span: Span)
 define Return(span: Span, result: Vector[Operand])
@@ -58,22 +83,102 @@ define Statement union (
     Throw: Throw
 )
 
-define Type(span: Span, name: Vector[String], generics: pointer[Vector[Type]], lifetime: Lifetime)
-define Property(span: Span, private_: bool, name: String, type: pointer[Type], initializer: pointer[Vector[Operand]], attributes: Vector[Attribute])
+define Type
+(
+    span: Span,
+    name: Vector[String],
+    generics: pointer[Vector[Type]],
+    lifetime: Lifetime
+)
 
-define If(span: Span, condition: Vector[Operand], property: pointer[Property], consequent: Statement, alternative: pointer[Statement])
-define Case(span: Span, condition: Vector[Operand])
-define Branch(span: Span, cases: Vector[Case], consequent: Statement)
-define Match(span: Span, condition: Vector[Operand], branches: Vector[Branch], alternative: pointer[Statement])
-define When(span: Span, name: String, variant: Vector[String], consequent: Statement)
-define Choose(span: Span , condition: Vector[Operand], cases: Vector[When], alternative: pointer[Statement])
-define For(span: Span, identifier: String, expression: Vector[Operand], action: Action)
-define While(span: Span, condition: Binding, action: Action)
-define Drop(span: Span, action: Action)
-define Try(span: Span, binding: Binding, catches: Vector[When], alternative: pointer[Statement])
+define Property
+(
+    span: Span,
+    private_: bool,
+    name: String,
+    type: pointer[Type],
+    initializer: pointer[Vector[Operand]],
+    attributes: Vector[Attribute]
+)
+
+define If
+(
+    span: Span,
+    condition: Vector[Operand], 
+    property: pointer[Property],
+    consequent: Statement,
+    alternative: pointer[Statement]
+)
+
+define Case
+(
+    span: Span,
+    condition: Vector[Operand]
+)
+
+define Branch
+(
+    span: Span,
+    cases: Vector[Case],
+    consequent: Statement
+)
+
+define Match
+(
+    span: Span,
+    condition: Vector[Operand],
+    branches: Vector[Branch],
+    alternative: pointer[Statement]
+)
+
+define When
+(
+    span: Span,
+    name: String,
+    variant: Vector[String],
+    consequent: Statement
+)
+
+define Choose
+(
+    span: Span,
+    condition: Vector[Operand],
+    cases: Vector[When],
+    alternative: pointer[Statement]
+)
+
+define For
+(
+    span: Span,
+    identifier: String,
+    expression: Vector[Operand],
+    action: Action
+)
+
+define While
+(
+    span: Span,
+    condition: Binding,
+    action: Action
+)
+
+define Try
+(
+    span: Span,
+    binding: Binding,
+    catches: Vector[When],
+    alternative: pointer[Statement]
+)
+
 define SizeOf(span: Span, type: Type)
 define Is(span: Span, name: Vector[String])
-define New(span: Span, type: Type, arguments: Tuple)
+
+define New
+(
+    span: Span,
+    type: Type, 
+    arguments: Tuple
+)
 
 define Expression union (
     Constant: Constant
@@ -92,7 +197,12 @@ define Expression union (
     New: New
 )
 
-define Operand(span: Span, expression: Expression, member_access: pointer[Vector[String]])
+define Operand
+(
+    span: Span,
+    expression: Expression,
+    member_access: pointer[Vector[String]]
+)
 
 define Extern()
 define Instruction()
@@ -125,17 +235,78 @@ define Model union (
     Matrix: Matrix
 )
 
-define Attribute(span: Span, name: String, model: Model)
+define Attribute
+(
+    span: Span,
+    name: String,
+    model: Model
+)
 
-define Initializer(span: Span, private_: bool, input: Vector[Item], implementation: Implementation)
+define Initializer
+(
+    span: Span,
+    private_: bool,
+    input: Vector[Item],
+    implementation: Implementation
+)
+
 define DeInitializer(span: Span, implementation: Implementation)
-define Operator(span: Span, private_: bool, name: String, input: Vector[Item], returns_: pointer[Type], throws_: pointer[Type], implementation: Implementation)
 
-define Structure(span: Span, private_: bool, properties: Vector[Property], modules: Vector[Module], uses: Vector[Use], initializers: Vector[Initializer], deinitializer: pointer[DeInitializer], members: Vector[Member], symbols: HashMap[String, Nameable])
-define Variant(span: Span, name: String, type: pointer[Type], attributes: Vector[Attribute])
-define Union(span: Span, private_: bool, variants: Vector[Variant], members: Vector[Member], symbols: HashMap[String, Nameable])
-define Namespace(span: Span, modules: Vector[Module], members: Vector[Member], symbols: HashMap[String, Nameable])
-define Global(span: Span, type: Type, value: Vector[Operand])
+define Operator
+(
+    span: Span,
+    private_: bool,
+    name: String,
+    input: Vector[Item],
+    returns_: pointer[Type],
+    throws_: pointer[Type],
+    implementation: Implementation
+)
+
+define Structure
+(
+    span: Span,
+    private_: bool,
+    properties: Vector[Property],
+    modules: Vector[Module],
+    uses: Vector[Use],
+    initializers: Vector[Initializer],
+    deinitializer: pointer[DeInitializer],
+    members: Vector[Member],
+    symbols: HashMap[String, Nameable]
+)
+
+define Variant
+(
+    span: Span,
+    name: String,
+    type: pointer[Type],
+    attributes: Vector[Attribute]
+)
+
+define Union
+(
+    span: Span,
+    private_: bool,
+    variants: Vector[Variant],
+    members: Vector[Member],
+    symbols: HashMap[String, Nameable]
+)
+
+define Namespace
+(
+    span: Span,
+    modules: Vector[Module],
+    members: Vector[Member],
+    symbols: HashMap[String, Nameable]
+)
+
+define Global
+(
+    span: Span,
+    type: Type,
+    value: Vector[Operand]
+)
 
 define Definition union (
     Intrinsic: Intrinsic
@@ -146,22 +317,51 @@ define Definition union (
 )
 
 define Use(span: Span, path: Vector[String])
-define GenericParameter(span: Span, name: String, attributes: Vector[Attribute])
 
-define Concept(span: Span, name: String, parameters: Vector[GenericParameter], attributes: Vector[Attribute], definition: Definition)
+define GenericParameter
+(
+    span: Span,
+    name: String,
+    attributes: Vector[Attribute]
+)
 
-define Module(private_: bool, file: String, name: String, modules: Vector[Module], uses: Vector[Use], members: Vector[Member], symbols: HashMap[String, Nameable])
+define Concept
+(
+    span: Span,
+    name: String,
+    parameters: Vector[GenericParameter],
+    attributes: Vector[Attribute],
+    definition: Definition
+)
 
-define Program(packages: Vector[Module], module_: Module, statements: Vector[Statement])
+define Module
+(
+    private_: bool, 
+    file: String, 
+    name: String,
+    modules: Vector[Module],
+    uses: Vector[Use],
+    members: Vector[Member],
+    symbols: HashMap[String, Nameable]
+)
 
-define Member union (
+define Program
+(
+    packages: Vector[Module],
+    module_: Module,
+    statements: Vector[Statement]
+)
+
+define Member union
+(
     Package: Vector[Module]
     Concept: Concept
     Operator: Operator
     Function: Function
 )
 
-define Nameable union (
+define Nameable union
+(
     Package: Vector[Module]
     Concept: Concept
     Operator: Operator

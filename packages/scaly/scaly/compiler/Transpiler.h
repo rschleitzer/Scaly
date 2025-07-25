@@ -47,7 +47,6 @@ Result<Void, TranspilerError> build_choose(Page* ep, StringBuilder& builder, Cho
 Result<Void, TranspilerError> build_for(Page* ep, StringBuilder& builder, For& for_, Type* returns_, Type* throws_, String* re_throw, String indent);
 Result<Void, TranspilerError> build_condition(Page* ep, StringBuilder& builder, Binding& binding, Type* returns_, Type* throws_, String* re_throw, String indent);
 Result<Void, TranspilerError> build_while(Page* ep, StringBuilder& builder, While& while_, Type* returns_, Type* throws_, String* re_throw, String indent);
-Result<Void, TranspilerError> build_drop(Page* ep, StringBuilder& builder, Drop& drop_, Type* returns_, Type* throws_, String* re_throw, String indent);
 Result<Void, TranspilerError> build_try(Page* ep, StringBuilder& builder, Try& try_, Type* returns_, Type* throws_, String* re_throw, String indent);
 void build_sizeof(StringBuilder& builder, SizeOf& sizeof_, String indent);
 void build_is(StringBuilder& builder, Is& is_, String indent);

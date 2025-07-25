@@ -15,22 +15,6 @@ struct Span : Object {
     Span(size_t start, size_t end);
 };
 
-struct Component : Object {
-    Span span;
-    String* name;
-    Vector<Operand> value;
-    Vector<Attribute> attributes;
-
-    Component(Span span, String* name, Vector<Operand> value, Vector<Attribute> attributes);
-};
-
-struct Name : Object {
-    Span span;
-    Vector<String> path;
-
-    Name(Span span, Vector<String> path);
-};
-
 struct BooleanConstant : Object {
     bool value;
 
@@ -100,6 +84,15 @@ struct Constant : Object {
         struct FragmentConstant _Fragment;
     };
 };
+struct Component : Object {
+    Span span;
+    String* name;
+    Vector<Operand> value;
+    Vector<Attribute> attributes;
+
+    Component(Span span, String* name, Vector<Operand> value, Vector<Attribute> attributes);
+};
+
 struct Tuple : Object {
     Span span;
     Vector<Component> components;
@@ -327,13 +320,6 @@ struct While : Object {
     Action action;
 
     While(Span span, Binding condition, Action action);
-};
-
-struct Drop : Object {
-    Span span;
-    Action action;
-
-    Drop(Span span, Action action);
 };
 
 struct Try : Object {

@@ -1352,24 +1352,6 @@ function build_while(builder: ref[StringBuilder], while_: ref[While], returns_: 
     return Void()
 }
 
-function build_drop(builder: ref[StringBuilder], drop_: ref[Drop], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {
-    var r Region()
-    builder.append('\n')
-    builder.append(indent)
-    builder.append("default: {\n")
-    var indent_builder: ref[StringBuilder] *StringBuilder$(indent)
-    indent_builder.append("    ")
-    let indented indent_builder.to_string(r.get_page())
-    builder.append(indented)
-    build_action(ep, builder, drop_.action, returns_, throws_, re_throw, indented)
-    builder.append(";\n")
-    builder.append(indented)
-    builder.append("break;\n")
-    builder.append(indent)
-    builder.append("}\n")
-    return Void()
-}
-
 function build_try(builder: ref[StringBuilder], try_: ref[Try], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {
     var r Region()
     var name String(r.get_page(), "void")
