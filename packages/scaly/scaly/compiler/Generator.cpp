@@ -54,7 +54,11 @@ namespace compiler {
 namespace generator {
 
     llvm::Type* get_Type(LLVMContext& context, String& type) {
-        return llvm::Type::getDoubleTy(context);
+        if (type.equals("void"))
+            return llvm::Type::getVoidTy(context);
+        if (type.equals("double"))
+            return llvm::Type::getDoubleTy(context);
+        exit(1);
     }
 
     llvm::Value* get_value(String& value, HashMap<String, llvm::Value*>& argument_values_map, HashMapBuilder<String, llvm::Value*>& block_values_builder) {

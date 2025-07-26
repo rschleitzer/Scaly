@@ -23,6 +23,7 @@ struct Planner : Object {
     Result<Void, PlannerError> plan_symbols(Page* ep, Vector<Member> symbols);
     Result<Void, PlannerError> plan_concept(Page* ep, Concept& concept);
     Result<Void, PlannerError> plan_intrinsic(Page* ep, String name);
+    String resolve_type(Page* rp, Type type);
     Result<Void, PlannerError> plan_function(Page* ep, Function& func);
 };
 

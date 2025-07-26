@@ -101,6 +101,9 @@ function plan_intrinsic(this: Planner, name: String) throws PlannerError {
     return Void()
 }
 
+function resolve_type(this: Planner, type: Type) returns String {
+    return String(rp, *type.name.get(0))
+}
 
 function plan_function(this: Planner, func: ref[Function]) throws PlannerError {
     var r Region()
@@ -111,10 +114,12 @@ function plan_function(this: Planner, func: ref[Function]) throws PlannerError {
             if functions_builder.contains(func.name)
                 throw DuplicateFunction(String(ep, func.name))
 
-            var returnType String(get_page(), "double")
+            var returnType resolve_type(get_page(), *func.returns_)
             var input_list: ref[List[Plan.Argument]] *new_ List[Plan.Argument]$()
-            input_list.add(Plan->Argument(String(get_page(), "a"), String(get_page(), "double")))
-            input_list.add(Plan->Argument(String(get_page(), "b"), String(get_page(), "double")))
+            for item in func.input
+            {
+                input_list.add(Plan->Argument(*item.name, resolve_type(get_page(), *item.type)))
+            }
 
             var blocks: ref[List[Plan.Block]] *new_ List[Plan.Block]$()
 

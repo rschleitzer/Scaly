@@ -195,6 +195,10 @@ Result<Void, PlannerError> Planner::plan_intrinsic(Page* ep, String name) {
     return Result<Void, PlannerError>(Void());
 }
 
+String Planner::resolve_type(Page* rp, Type type) {
+    return String(rp, *type.name.get(0));
+}
+
 Result<Void, PlannerError> Planner::plan_function(Page* ep, Function& func) {
     auto r = Region();
     {
@@ -207,10 +211,15 @@ Result<Void, PlannerError> Planner::plan_function(Page* ep, Function& func) {
                 {
                     if (functions_builder.contains(func.name)) 
                         return Result<Void, PlannerError>(DuplicateFunction(String(ep, func.name)));
-                    auto returnType = String(get_page(), "double");
+                    auto returnType = resolve_type(get_page(), *func.returns_);
                     List<Plan::Argument>& input_list = *new (alignof(List<Plan::Argument>), r.get_page()) List<Plan::Argument>();
-                    input_list.add(Plan::Argument(String(get_page(), "a"), String(get_page(), "double")));
-                    input_list.add(Plan::Argument(String(get_page(), "b"), String(get_page(), "double")));
+                    
+                    auto _item_iterator = func.input.get_iterator();
+                    while (auto _item = _item_iterator.next()) {
+                        auto item = *_item;{
+                            input_list.add(Plan::Argument(*item.name, resolve_type(get_page(), *item.type)));
+                        }
+                    };
                     List<Plan::Block>& blocks = *new (alignof(List<Plan::Block>), r.get_page()) List<Plan::Block>();
                     List<Plan::Instruction>& instructions = *new (alignof(List<Plan::Instruction>), r.get_page()) List<Plan::Instruction>();
                     instructions.add(Plan::Instruction(Plan::FMul(String(get_page(), "a"), String(get_page(), "b"), String(get_page(), "_ret"))));
