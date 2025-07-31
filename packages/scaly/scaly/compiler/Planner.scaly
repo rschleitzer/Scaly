@@ -105,12 +105,22 @@ function resolve_type(this: Planner, type: Type) returns String {
     return String(rp, *type.name.get(0))
 }
 
+function plan_operand(this: Planner, operand: ref[Operand], result: String, blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
+    var r Region()
+    if operand.member_access
+        throw FeatureNotImplemented(String(ep, "member access"))
+
+    (*instructions).add(Plan->Instruction(Plan->FMul(String(get_page(), "a"), String(get_page(), "b"), result)))
+    return instructions
+}
+
 function plan_operation(this: Planner, operation: ref[Vector[Operand]], result: String, blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
     var r Region()
 
     for operand in operation
     {
-        (*instructions).add(Plan->Instruction(Plan->FMul(String(get_page(), "a"), String(get_page(), "b"), result)))
+        try let new_instructions plan_operand(get_page(), ep, operand, result, blocks, instructions)
+            else throw
     }
     return instructions
 }

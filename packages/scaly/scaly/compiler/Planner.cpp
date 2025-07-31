@@ -199,13 +199,30 @@ String Planner::resolve_type(Page* rp, Type type) {
     return String(rp, *type.name.get(0));
 }
 
+Result<List<Plan::Instruction>*, PlannerError> Planner::plan_operand(Page* rp, Page* ep, Operand& operand, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
+    auto r = Region();
+    if (operand.member_access) 
+        return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "member access")));
+    (*instructions).add(Plan::Instruction(Plan::FMul(String(get_page(), "a"), String(get_page(), "b"), result)));
+    return Result<List<Plan::Instruction>*, PlannerError>(instructions);
+}
+
 Result<List<Plan::Instruction>*, PlannerError> Planner::plan_operation(Page* rp, Page* ep, Vector<Operand>& operation, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
     auto r = Region();
     
     auto _operand_iterator = operation.get_iterator();
     while (auto _operand = _operand_iterator.next()) {
         auto operand = *_operand;{
-            (*instructions).add(Plan::Instruction(Plan::FMul(String(get_page(), "a"), String(get_page(), "b"), result)));
+            const auto _new_instructions_result = plan_operand(get_page(), ep, operand, result, blocks, instructions);
+            auto new_instructions = _new_instructions_result._Ok;
+            if (_new_instructions_result._tag == Success::Error) {
+                const auto _new_instructions_Error = _new_instructions_result._Error;
+                switch (_new_instructions_Error._tag) {
+                default:
+                    return Result<List<Plan::Instruction>*, PlannerError>(_new_instructions_result._Error);
+
+                }
+            };
         }
     };
     return Result<List<Plan::Instruction>*, PlannerError>(instructions);

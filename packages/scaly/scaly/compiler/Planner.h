@@ -24,6 +24,7 @@ struct Planner : Object {
     Result<Void, PlannerError> plan_concept(Page* ep, Concept& concept);
     Result<Void, PlannerError> plan_intrinsic(Page* ep, String name);
     String resolve_type(Page* rp, Type type);
+    Result<List<Plan::Instruction>*, PlannerError> plan_operand(Page* rp, Page* ep, Operand& operand, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions);
     Result<List<Plan::Instruction>*, PlannerError> plan_operation(Page* rp, Page* ep, Vector<Operand>& operation, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions);
     Result<List<Plan::Instruction>*, PlannerError> plan_action(Page* rp, Page* ep, Action& action, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions);
     Result<Void, PlannerError> plan_function(Page* ep, Function& func);
