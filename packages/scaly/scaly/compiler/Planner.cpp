@@ -199,6 +199,12 @@ String Planner::resolve_type(Page* rp, Type type) {
     return String(rp, *type.name.get(0));
 }
 
+Result<List<Plan::Instruction>*, PlannerError> Planner::plan_action(Page* rp, Page* ep, Action& action, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
+    auto r = Region();
+    (*instructions).add(Plan::Instruction(Plan::FMul(String(get_page(), "a"), String(get_page(), "b"), result)));
+    return Result<List<Plan::Instruction>*, PlannerError>(instructions);
+}
+
 Result<Void, PlannerError> Planner::plan_function(Page* ep, Function& func) {
     auto r = Region();
     if (functions_builder.contains(func.name)) 
@@ -213,6 +219,7 @@ Result<Void, PlannerError> Planner::plan_function(Page* ep, Function& func) {
         }
     };
     List<Plan::Block>& blocks = *new (alignof(List<Plan::Block>), r.get_page()) List<Plan::Block>();
+    List<Plan::Instruction>& instructions = *new (alignof(List<Plan::Instruction>), r.get_page()) List<Plan::Instruction>();
     {
         auto _result = func.implementation;
         switch (_result._tag)
@@ -221,9 +228,24 @@ Result<Void, PlannerError> Planner::plan_function(Page* ep, Function& func) {
             {
                 auto action = _result._Action;
                 {
-                    List<Plan::Instruction>& instructions = *new (alignof(List<Plan::Instruction>), r.get_page()) List<Plan::Instruction>();
-                    instructions.add(Plan::Instruction(Plan::FMul(String(get_page(), "a"), String(get_page(), "b"), String(get_page(), "_ret"))));
-                    instructions.add(Plan::Instruction(Plan::Ret(String(get_page(), "_ret"))));
+                    auto ret = String(get_page(), "_ret");
+                    const auto _new_instructions_result = plan_action(get_page(), ep, action, ret, blocks, &instructions);
+                    auto new_instructions = _new_instructions_result._Ok;
+                    if (_new_instructions_result._tag == Success::Error) {
+                        const auto _new_instructions_Error = _new_instructions_result._Error;
+                        switch (_new_instructions_Error._tag) {
+                        default:
+                            return Result<Void, PlannerError>(_new_instructions_result._Error);
+
+                        }
+                    };
+                    instructions = *new_instructions;
+                    if (func.returns_) {
+                        instructions.add(Plan::Instruction(Plan::Ret(ret)));
+                    }
+                    else {
+                        instructions.add(Plan::Instruction(Plan::RetVoid()));
+                    };
                     auto block = Plan::Block(String(get_page(), "entry"), Vector<Plan::Instruction>(get_page(), instructions));
                     blocks.add(block);
                 };

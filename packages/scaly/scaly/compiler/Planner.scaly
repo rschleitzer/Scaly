@@ -105,6 +105,12 @@ function resolve_type(this: Planner, type: Type) returns String {
     return String(rp, *type.name.get(0))
 }
 
+function plan_action(this: Planner, action: ref[Action], result: String, blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
+    var r Region()
+    (*instructions).add(Plan->Instruction(Plan->FMul(String(get_page(), "a"), String(get_page(), "b"), result)))
+    return instructions
+}
+
 function plan_function(this: Planner, func: ref[Function]) throws PlannerError {
     var r Region()
 
@@ -119,12 +125,21 @@ function plan_function(this: Planner, func: ref[Function]) throws PlannerError {
     }
 
     var blocks: ref[List[Plan.Block]] *new_ List[Plan.Block]$()
+    var instructions: ref[List[Plan.Instruction]] *new_ List[Plan.Instruction]$()
     choose func.implementation
         when action: Implementation.Action
         {
-            var instructions: ref[List[Plan.Instruction]] *new_ List[Plan.Instruction]$()
-            instructions.add(Plan->Instruction(Plan->FMul(String(get_page(), "a"), String(get_page(), "b"), String(get_page(), "_ret"))))
-            instructions.add(Plan->Instruction(Plan->Ret(String(get_page(), "_ret"))))
+            var ret String(get_page(), "_ret")
+            try let new_instructions plan_action(get_page(), ep, action, ret, blocks, &instructions)
+                else throw
+            set instructions: *new_instructions
+            if func.returns_
+            {
+                instructions.add(Plan->Instruction(Plan->Ret(ret)))
+            } else {
+                instructions.add(Plan->Instruction(Plan->RetVoid()))
+            }
+
             var block new_ Plan.Block(String(get_page(), "entry"), new_ Vector[Plan.Instruction](get_page(), instructions))
             blocks.add(block)
         }
