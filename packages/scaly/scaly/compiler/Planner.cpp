@@ -201,6 +201,18 @@ String Planner::resolve_type(Page* rp, Type type) {
 
 Result<Void, PlannerError> Planner::plan_function(Page* ep, Function& func) {
     auto r = Region();
+    if (functions_builder.contains(func.name)) 
+        return Result<Void, PlannerError>(DuplicateFunction(String(ep, func.name)));
+    auto returnType = resolve_type(get_page(), *func.returns_);
+    List<Plan::Argument>& input_list = *new (alignof(List<Plan::Argument>), r.get_page()) List<Plan::Argument>();
+    
+    auto _item_iterator = func.input.get_iterator();
+    while (auto _item = _item_iterator.next()) {
+        auto item = *_item;{
+            input_list.add(Plan::Argument(*item.name, resolve_type(get_page(), *item.type)));
+        }
+    };
+    List<Plan::Block>& blocks = *new (alignof(List<Plan::Block>), r.get_page()) List<Plan::Block>();
     {
         auto _result = func.implementation;
         switch (_result._tag)
@@ -209,33 +221,19 @@ Result<Void, PlannerError> Planner::plan_function(Page* ep, Function& func) {
             {
                 auto action = _result._Action;
                 {
-                    if (functions_builder.contains(func.name)) 
-                        return Result<Void, PlannerError>(DuplicateFunction(String(ep, func.name)));
-                    auto returnType = resolve_type(get_page(), *func.returns_);
-                    List<Plan::Argument>& input_list = *new (alignof(List<Plan::Argument>), r.get_page()) List<Plan::Argument>();
-                    
-                    auto _item_iterator = func.input.get_iterator();
-                    while (auto _item = _item_iterator.next()) {
-                        auto item = *_item;{
-                            input_list.add(Plan::Argument(*item.name, resolve_type(get_page(), *item.type)));
-                        }
-                    };
-                    List<Plan::Block>& blocks = *new (alignof(List<Plan::Block>), r.get_page()) List<Plan::Block>();
                     List<Plan::Instruction>& instructions = *new (alignof(List<Plan::Instruction>), r.get_page()) List<Plan::Instruction>();
                     instructions.add(Plan::Instruction(Plan::FMul(String(get_page(), "a"), String(get_page(), "b"), String(get_page(), "_ret"))));
                     instructions.add(Plan::Instruction(Plan::Ret(String(get_page(), "_ret"))));
                     auto block = Plan::Block(String(get_page(), "entry"), Vector<Plan::Instruction>(get_page(), instructions));
                     blocks.add(block);
-                    Plan::Function plan_function = Plan::Function(func.name, Vector<Plan::Argument>(get_page(), input_list), returnType, Vector<Plan::Block>(get_page(), blocks));
-                    functions_builder.add(func.name, plan_function);
-                    functions_list.add(plan_function);
                 };
                 break;
             }
             case Implementation::Extern:
             {
                 auto e = _result._Extern;
-                return Result<Void, PlannerError>(FeatureNotImplemented(String(ep, "Extern")));
+                {
+                };
                 break;
             }
             case Implementation::Instruction:
@@ -247,11 +245,14 @@ Result<Void, PlannerError> Planner::plan_function(Page* ep, Function& func) {
             case Implementation::Intrinsic:
             {
                 auto i = _result._Intrinsic;
-                return Result<Void, PlannerError>(FeatureNotImplemented(String(ep, "Intrinsic")));
+                return Result<Void, PlannerError>(Void());
                 break;
             }
         }
     };
+    Plan::Function plan_function = Plan::Function(func.name, Vector<Plan::Argument>(get_page(), input_list), returnType, Vector<Plan::Block>(get_page(), blocks));
+    functions_builder.add(func.name, plan_function);
+    functions_list.add(plan_function);
     return Result<Void, PlannerError>(Void());
 }
 

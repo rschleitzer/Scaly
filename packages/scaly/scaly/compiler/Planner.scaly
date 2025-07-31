@@ -108,38 +108,35 @@ function resolve_type(this: Planner, type: Type) returns String {
 function plan_function(this: Planner, func: ref[Function]) throws PlannerError {
     var r Region()
 
+    if functions_builder.contains(func.name)
+        throw DuplicateFunction(String(ep, func.name))
+
+    var returnType resolve_type(get_page(), *func.returns_)
+    var input_list: ref[List[Plan.Argument]] *new_ List[Plan.Argument]$()
+    for item in func.input
+    {
+        input_list.add(Plan->Argument(*item.name, resolve_type(get_page(), *item.type)))
+    }
+
+    var blocks: ref[List[Plan.Block]] *new_ List[Plan.Block]$()
     choose func.implementation
         when action: Implementation.Action
         {
-            if functions_builder.contains(func.name)
-                throw DuplicateFunction(String(ep, func.name))
-
-            var returnType resolve_type(get_page(), *func.returns_)
-            var input_list: ref[List[Plan.Argument]] *new_ List[Plan.Argument]$()
-            for item in func.input
-            {
-                input_list.add(Plan->Argument(*item.name, resolve_type(get_page(), *item.type)))
-            }
-
-            var blocks: ref[List[Plan.Block]] *new_ List[Plan.Block]$()
-
             var instructions: ref[List[Plan.Instruction]] *new_ List[Plan.Instruction]$()
             instructions.add(Plan->Instruction(Plan->FMul(String(get_page(), "a"), String(get_page(), "b"), String(get_page(), "_ret"))))
             instructions.add(Plan->Instruction(Plan->Ret(String(get_page(), "_ret"))))
             var block new_ Plan.Block(String(get_page(), "entry"), new_ Vector[Plan.Instruction](get_page(), instructions))
             blocks.add(block)
-            var plan_function: Plan.Function Plan->Function(func.name, new_ Vector[Plan.Argument](get_page(), input_list), returnType, new_ Vector[Plan.Block](get_page(), blocks))
-            functions_builder.add(func.name, plan_function)
-            functions_list.add(plan_function)
         }
-        when e: Implementation.Extern
-            throw FeatureNotImplemented(String(ep, "Extern"))
+        when e: Implementation.Extern {}
         when i: Implementation.Instruction
             return Void()
         when i: Implementation.Intrinsic
-            throw FeatureNotImplemented(String(ep, "Intrinsic"))
+            return Void()
 
-
+    var plan_function: Plan.Function Plan->Function(func.name, new_ Vector[Plan.Argument](get_page(), input_list), returnType, new_ Vector[Plan.Block](get_page(), blocks))
+    functions_builder.add(func.name, plan_function)
+    functions_list.add(plan_function)
     return Void()
 }
 
