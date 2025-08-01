@@ -20,17 +20,17 @@ struct Planner : Object {
     Planner(Program& program);
     Result<Plan::Module, PlannerError> plan_program(Page* rp, Page* ep);
     Result<Void, PlannerError> plan_module(Page* ep, Module& module_);
-    Result<Void, PlannerError> plan_symbols(Page* ep, Vector<Member> symbols);
-    Result<Void, PlannerError> plan_concept(Page* ep, Concept& concept);
+    Result<Void, PlannerError> plan_symbols(Page* ep, HashMap<String, Nameable>& symbols, Vector<Member> members);
+    Result<Void, PlannerError> plan_concept(Page* ep, HashMap<String, Nameable>& symbols, Concept& concept);
     Result<Void, PlannerError> plan_intrinsic(Page* ep, String name);
     String resolve_type(Page* rp, Type type);
-    Result<List<Plan::Instruction>*, PlannerError> plan_tuple(Page* rp, Page* ep, Tuple& type, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions);
-    Result<List<Plan::Instruction>*, PlannerError> plan_type(Page* rp, Page* ep, Type& type, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions);
-    Result<List<Plan::Instruction>*, PlannerError> plan_block(Page* rp, Page* ep, Block& block, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions);
-    Result<List<Plan::Instruction>*, PlannerError> plan_operand(Page* rp, Page* ep, Operand& operand, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions);
-    Result<List<Plan::Instruction>*, PlannerError> plan_operation(Page* rp, Page* ep, Vector<Operand>& operation, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions);
-    Result<List<Plan::Instruction>*, PlannerError> plan_action(Page* rp, Page* ep, Action& action, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions);
-    Result<Void, PlannerError> plan_function(Page* ep, Function& func);
+    Result<List<Plan::Instruction>*, PlannerError> plan_tuple(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, Tuple& type, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions);
+    Result<List<Plan::Instruction>*, PlannerError> plan_type(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, Type& type, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions);
+    Result<List<Plan::Instruction>*, PlannerError> plan_block(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, Block& block, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions);
+    Result<List<Plan::Instruction>*, PlannerError> plan_operand(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, Operand& operand, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions);
+    Result<List<Plan::Instruction>*, PlannerError> plan_operation(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, Vector<Operand>& operation, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions);
+    Result<List<Plan::Instruction>*, PlannerError> plan_action(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, Action& action, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions);
+    Result<Void, PlannerError> plan_function(Page* ep, HashMap<String, Nameable>& symbols, Function& func);
 };
 
 #endif

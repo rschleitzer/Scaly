@@ -49,23 +49,23 @@ define Planner
 function plan_module(this: Planner, module_: ref[Module]) throws PlannerError {
     var r Region()
 
-    try plan_symbols(ep, module_.members)
+    try plan_symbols(ep, module_.symbols, module_.members)
         else throw
 
     return Void()
 }
 
-function plan_symbols(this: Planner, symbols: Vector[Member]) throws PlannerError {
+function plan_symbols(this: Planner, symbols: ref[HashMap[String, Nameable]], members: Vector[Member]) throws PlannerError {
     var r Region()
 
-    for member in symbols
+    for member in members
     {
         choose member
             when func: Member.Function
-                try plan_function(ep, func)
+                try plan_function(ep, symbols, func)
                     else throw
             when concept: Member.Concept
-                try plan_concept(ep, concept)
+                try plan_concept(ep, symbols, concept)
                     else throw
             when op: Member.Operator
                 throw FeatureNotImplemented(String(ep, "operator symbol"))
@@ -76,7 +76,7 @@ function plan_symbols(this: Planner, symbols: Vector[Member]) throws PlannerErro
     return Void()
 }
 
-function plan_concept(this: Planner, concept: ref[Concept]) throws PlannerError { 
+function plan_concept(this: Planner, symbols: ref[HashMap[String, Nameable]], concept: ref[Concept]) throws PlannerError { 
     choose concept.definition
         when ns: Definition.Namespace
             throw FeatureNotImplemented(String(ep, "namespace"))
@@ -105,12 +105,11 @@ function resolve_type(this: Planner, type: Type) returns String {
     return String(rp, *type.name.get(0))
 }
 
-function plan_tuple(this: Planner, type: ref[Tuple], result: String, blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
-    (*instructions).add(Plan->Instruction(Plan->FMul(String(get_page(), "a"), String(get_page(), "b"), result)))
+function plan_tuple(this: Planner, symbols: ref[HashMap[String, Nameable]], type: ref[Tuple], result: String, blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
     return instructions
 }
 
-function plan_type(this: Planner, type: ref[Type], result: String, blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
+function plan_type(this: Planner, symbols: ref[HashMap[String, Nameable]], type: ref[Type], result: String, blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
     if type.name.length > 1
         throw FeatureNotImplemented(String(ep, "Qualified type name"))
     if type.generics
@@ -126,17 +125,49 @@ function plan_type(this: Planner, type: ref[Type], result: String, blocks: ref[L
             throw FeatureNotImplemented(String(ep, "Reference lifetime"))
         when thrown: Lifetime.Thrown
             throw FeatureNotImplemented(String(ep, "Thrown lifetime"))
+    
+    let name *type.name.get(0)
+    if symbols.contains(name)
+    {
+        choose *symbols.get(name)
+            when modules: Nameable.Package
+                throw FeatureNotImplemented(String(ep, "Package reference"))
+            when concept: Nameable.Concept
+                throw FeatureNotImplemented(String(ep, "Concept reference"))
+            when operator_: Nameable.Operator
+                throw FeatureNotImplemented(String(ep, "Operator reference"))
+            when functions: Nameable.Functions {
+                if functions.length > 1
+                    throw FeatureNotImplemented(String(ep, "Overloaded functions"))
+
+                let function_ *functions.get(0)
+                choose function_.implementation
+                    when action: Implementation.Action
+                        throw FeatureNotImplemented(String(ep, "Internal Function call"))
+                    when extern_: Implementation.Extern
+                        throw FeatureNotImplemented(String(ep, "External Function call"))
+                    when instruction_: Implementation.Instruction
+                        (*instructions).add(Plan->Instruction(Plan->FMul(String(get_page(), "a"), String(get_page(), "b"), result)))
+                    when intrinsic_: Implementation.Intrinsic
+                        throw FeatureNotImplemented(String(ep, "Intrinsic call"))
+            }
+            when property: Nameable.Property
+                throw FeatureNotImplemented(String(ep, "Property reference"))
+            when variant: Nameable.Variant
+                throw FeatureNotImplemented(String(ep, "Variant reference"))
+    } else {
+    }
 
     return instructions
 }
 
-function plan_block(this: Planner, block: ref[Block], result: String, blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
+function plan_block(this: Planner, symbols: ref[HashMap[String, Nameable]], block: ref[Block], result: String, blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
 
     for statement in block.statements
     {
         choose statement
             when action: Statement.Action
-                return plan_action(get_page(), ep, action, result, blocks, instructions)
+                return plan_action(get_page(), ep, symbols, action, result, blocks, instructions)
             when binding: Statement.Binding
                 throw FeatureNotImplemented(String(ep, "Binding statement"))
             when break_: Statement.Break
@@ -151,7 +182,7 @@ function plan_block(this: Planner, block: ref[Block], result: String, blocks: re
     return instructions
 }
 
-function plan_operand(this: Planner, operand: ref[Operand], result: String, blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
+function plan_operand(this: Planner, symbols: ref[HashMap[String, Nameable]], operand: ref[Operand], result: String, blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
     var r Region()
     if operand.member_access
         throw FeatureNotImplemented(String(ep, "member access"))
@@ -160,13 +191,13 @@ function plan_operand(this: Planner, operand: ref[Operand], result: String, bloc
         when constant: Expression.Constant
             throw FeatureNotImplemented(String(ep, "Constant expression"))
         when type: Expression.Type
-            return plan_type(get_page(), ep, type, result, blocks, instructions)
+            return plan_type(get_page(), ep, symbols, type, result, blocks, instructions)
         when tuple: Expression.Tuple
-            return plan_tuple(get_page(), ep, tuple, result, blocks, instructions)
+            return plan_tuple(get_page(), ep, symbols, tuple, result, blocks, instructions)
         when matrix: Expression.Matrix
             throw FeatureNotImplemented(String(ep, "Matrix expression"))
         when block: Expression.Block
-            return plan_block(get_page(), ep, block, result, blocks, instructions)
+            return plan_block(get_page(), ep, symbols, block, result, blocks, instructions)
         when if_: Expression.If
             throw FeatureNotImplemented(String(ep, "If expression"))
         when match_: Expression.Match
@@ -187,29 +218,29 @@ function plan_operand(this: Planner, operand: ref[Operand], result: String, bloc
             throw FeatureNotImplemented(String(ep, "New expression"))
 }
 
-function plan_operation(this: Planner, operation: ref[Vector[Operand]], result: String, blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
+function plan_operation(this: Planner, symbols: ref[HashMap[String, Nameable]], operation: ref[Vector[Operand]], result: String, blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
     var r Region()
 
     for operand in operation
     {
-        try let new_instructions plan_operand(get_page(), ep, operand, result, blocks, instructions)
+        try let new_instructions plan_operand(get_page(), ep, symbols, operand, result, blocks, instructions)
             else throw
     }
     return instructions
 }
 
-function plan_action(this: Planner, action: ref[Action], result: String, blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
+function plan_action(this: Planner, symbols: ref[HashMap[String, Nameable]], action: ref[Action], result: String, blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
     var r Region()
     if action.target.length > 0
         throw FeatureNotImplemented(String(ep, "set"))
 
-    try let new_instructions plan_operation(get_page(), ep, action.source, result, blocks, instructions)
+    try let new_instructions plan_operation(get_page(), ep, symbols, action.source, result, blocks, instructions)
         else throw
 
     return instructions
 }
 
-function plan_function(this: Planner, func: ref[Function]) throws PlannerError {
+function plan_function(this: Planner, symbols: ref[HashMap[String, Nameable]], func: ref[Function]) throws PlannerError {
     var r Region()
 
     if functions_builder.contains(func.name)
@@ -228,7 +259,7 @@ function plan_function(this: Planner, func: ref[Function]) throws PlannerError {
         when action: Implementation.Action
         {
             var ret String(get_page(), "_ret")
-            try let new_instructions plan_action(get_page(), ep, action, ret, blocks, &instructions)
+            try let new_instructions plan_action(get_page(), ep, symbols, action, ret, blocks, &instructions)
                 else throw
             set instructions: *new_instructions
             if func.returns_

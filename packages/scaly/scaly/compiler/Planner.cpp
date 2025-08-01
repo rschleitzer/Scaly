@@ -74,7 +74,7 @@ Result<Plan::Module, PlannerError> Planner::plan_program(Page* rp, Page* ep) {
 Result<Void, PlannerError> Planner::plan_module(Page* ep, Module& module_) {
     auto r = Region();
     {
-        const auto _void_result = plan_symbols(ep, module_.members);
+        const auto _void_result = plan_symbols(ep, module_.symbols, module_.members);
         if (_void_result._tag == Success::Error) {
             const auto _void_Error = _void_result._Error;
             switch (_void_Error._tag) {
@@ -87,10 +87,10 @@ Result<Void, PlannerError> Planner::plan_module(Page* ep, Module& module_) {
     return Result<Void, PlannerError>(Void());
 }
 
-Result<Void, PlannerError> Planner::plan_symbols(Page* ep, Vector<Member> symbols) {
+Result<Void, PlannerError> Planner::plan_symbols(Page* ep, HashMap<String, Nameable>& symbols, Vector<Member> members) {
     auto r = Region();
     
-    auto _member_iterator = symbols.get_iterator();
+    auto _member_iterator = members.get_iterator();
     while (auto _member = _member_iterator.next()) {
         auto member = *_member;{
             {
@@ -101,7 +101,7 @@ Result<Void, PlannerError> Planner::plan_symbols(Page* ep, Vector<Member> symbol
                     {
                         auto func = _result._Function;
                         {
-                            const auto _void_result = plan_function(ep, func);
+                            const auto _void_result = plan_function(ep, symbols, func);
                             if (_void_result._tag == Success::Error) {
                                 const auto _void_Error = _void_result._Error;
                                 switch (_void_Error._tag) {
@@ -117,7 +117,7 @@ Result<Void, PlannerError> Planner::plan_symbols(Page* ep, Vector<Member> symbol
                     {
                         auto concept = _result._Concept;
                         {
-                            const auto _void_result = plan_concept(ep, concept);
+                            const auto _void_result = plan_concept(ep, symbols, concept);
                             if (_void_result._tag == Success::Error) {
                                 const auto _void_Error = _void_result._Error;
                                 switch (_void_Error._tag) {
@@ -148,7 +148,7 @@ Result<Void, PlannerError> Planner::plan_symbols(Page* ep, Vector<Member> symbol
     return Result<Void, PlannerError>(Void());
 }
 
-Result<Void, PlannerError> Planner::plan_concept(Page* ep, Concept& concept) {
+Result<Void, PlannerError> Planner::plan_concept(Page* ep, HashMap<String, Nameable>& symbols, Concept& concept) {
     {
         auto _result = concept.definition;
         switch (_result._tag)
@@ -199,12 +199,11 @@ String Planner::resolve_type(Page* rp, Type type) {
     return String(rp, *type.name.get(0));
 }
 
-Result<List<Plan::Instruction>*, PlannerError> Planner::plan_tuple(Page* rp, Page* ep, Tuple& type, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
-    (*instructions).add(Plan::Instruction(Plan::FMul(String(get_page(), "a"), String(get_page(), "b"), result)));
+Result<List<Plan::Instruction>*, PlannerError> Planner::plan_tuple(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, Tuple& type, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
     return Result<List<Plan::Instruction>*, PlannerError>(instructions);
 }
 
-Result<List<Plan::Instruction>*, PlannerError> Planner::plan_type(Page* rp, Page* ep, Type& type, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
+Result<List<Plan::Instruction>*, PlannerError> Planner::plan_type(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, Type& type, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
     if (type.name.length>1) 
         return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Qualified type name")));
     if (type.generics) 
@@ -246,10 +245,91 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_type(Page* rp, Page
             }
         }
     };
+    const auto name = *type.name.get(0);
+    if (symbols.contains(name)) {
+        {
+            auto _result = *symbols.get(name);
+            switch (_result._tag)
+            {
+                case Nameable::Package:
+                {
+                    auto modules = _result._Package;
+                    return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Package reference")));
+                    break;
+                }
+                case Nameable::Concept:
+                {
+                    auto concept = _result._Concept;
+                    return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Concept reference")));
+                    break;
+                }
+                case Nameable::Operator:
+                {
+                    auto operator_ = _result._Operator;
+                    return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Operator reference")));
+                    break;
+                }
+                case Nameable::Functions:
+                {
+                    auto functions = _result._Functions;
+                    {
+                        if (functions.length>1) 
+                            return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Overloaded functions")));
+                        const auto function_ = *functions.get(0);
+                        {
+                            auto _result = function_.implementation;
+                            switch (_result._tag)
+                            {
+                                case Implementation::Action:
+                                {
+                                    auto action = _result._Action;
+                                    return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Internal Function call")));
+                                    break;
+                                }
+                                case Implementation::Extern:
+                                {
+                                    auto extern_ = _result._Extern;
+                                    return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "External Function call")));
+                                    break;
+                                }
+                                case Implementation::Instruction:
+                                {
+                                    auto instruction_ = _result._Instruction;
+                                    (*instructions).add(Plan::Instruction(Plan::FMul(String(get_page(), "a"), String(get_page(), "b"), result)));
+                                    break;
+                                }
+                                case Implementation::Intrinsic:
+                                {
+                                    auto intrinsic_ = _result._Intrinsic;
+                                    return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Intrinsic call")));
+                                    break;
+                                }
+                            }
+                        };
+                    };
+                    break;
+                }
+                case Nameable::Property:
+                {
+                    auto property = _result._Property;
+                    return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Property reference")));
+                    break;
+                }
+                case Nameable::Variant:
+                {
+                    auto variant = _result._Variant;
+                    return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Variant reference")));
+                    break;
+                }
+            }
+        };
+    }
+    else {
+    };
     return Result<List<Plan::Instruction>*, PlannerError>(instructions);
 }
 
-Result<List<Plan::Instruction>*, PlannerError> Planner::plan_block(Page* rp, Page* ep, Block& block, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
+Result<List<Plan::Instruction>*, PlannerError> Planner::plan_block(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, Block& block, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
     
     auto _statement_iterator = block.statements.get_iterator();
     while (auto _statement = _statement_iterator.next()) {
@@ -261,7 +341,7 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_block(Page* rp, Pag
                     case Statement::Action:
                     {
                         auto action = _result._Action;
-                        return Result<List<Plan::Instruction>*, PlannerError>(plan_action(get_page(), ep, action, result, blocks, instructions));
+                        return Result<List<Plan::Instruction>*, PlannerError>(plan_action(get_page(), ep, symbols, action, result, blocks, instructions));
                         break;
                     }
                     case Statement::Binding:
@@ -301,7 +381,7 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_block(Page* rp, Pag
     return Result<List<Plan::Instruction>*, PlannerError>(instructions);
 }
 
-Result<List<Plan::Instruction>*, PlannerError> Planner::plan_operand(Page* rp, Page* ep, Operand& operand, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
+Result<List<Plan::Instruction>*, PlannerError> Planner::plan_operand(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, Operand& operand, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
     auto r = Region();
     if (operand.member_access) 
         return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "member access")));
@@ -318,13 +398,13 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_operand(Page* rp, P
             case Expression::Type:
             {
                 auto type = _result._Type;
-                return Result<List<Plan::Instruction>*, PlannerError>(plan_type(get_page(), ep, type, result, blocks, instructions));
+                return Result<List<Plan::Instruction>*, PlannerError>(plan_type(get_page(), ep, symbols, type, result, blocks, instructions));
                 break;
             }
             case Expression::Tuple:
             {
                 auto tuple = _result._Tuple;
-                return Result<List<Plan::Instruction>*, PlannerError>(plan_tuple(get_page(), ep, tuple, result, blocks, instructions));
+                return Result<List<Plan::Instruction>*, PlannerError>(plan_tuple(get_page(), ep, symbols, tuple, result, blocks, instructions));
                 break;
             }
             case Expression::Matrix:
@@ -336,7 +416,7 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_operand(Page* rp, P
             case Expression::Block:
             {
                 auto block = _result._Block;
-                return Result<List<Plan::Instruction>*, PlannerError>(plan_block(get_page(), ep, block, result, blocks, instructions));
+                return Result<List<Plan::Instruction>*, PlannerError>(plan_block(get_page(), ep, symbols, block, result, blocks, instructions));
                 break;
             }
             case Expression::If:
@@ -397,13 +477,13 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_operand(Page* rp, P
     };
 }
 
-Result<List<Plan::Instruction>*, PlannerError> Planner::plan_operation(Page* rp, Page* ep, Vector<Operand>& operation, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
+Result<List<Plan::Instruction>*, PlannerError> Planner::plan_operation(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, Vector<Operand>& operation, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
     auto r = Region();
     
     auto _operand_iterator = operation.get_iterator();
     while (auto _operand = _operand_iterator.next()) {
         auto operand = *_operand;{
-            const auto _new_instructions_result = plan_operand(get_page(), ep, operand, result, blocks, instructions);
+            const auto _new_instructions_result = plan_operand(get_page(), ep, symbols, operand, result, blocks, instructions);
             auto new_instructions = _new_instructions_result._Ok;
             if (_new_instructions_result._tag == Success::Error) {
                 const auto _new_instructions_Error = _new_instructions_result._Error;
@@ -418,11 +498,11 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_operation(Page* rp,
     return Result<List<Plan::Instruction>*, PlannerError>(instructions);
 }
 
-Result<List<Plan::Instruction>*, PlannerError> Planner::plan_action(Page* rp, Page* ep, Action& action, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
+Result<List<Plan::Instruction>*, PlannerError> Planner::plan_action(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, Action& action, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
     auto r = Region();
     if (action.target.length>0) 
         return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "set")));
-    const auto _new_instructions_result = plan_operation(get_page(), ep, action.source, result, blocks, instructions);
+    const auto _new_instructions_result = plan_operation(get_page(), ep, symbols, action.source, result, blocks, instructions);
     auto new_instructions = _new_instructions_result._Ok;
     if (_new_instructions_result._tag == Success::Error) {
         const auto _new_instructions_Error = _new_instructions_result._Error;
@@ -435,7 +515,7 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_action(Page* rp, Pa
     return Result<List<Plan::Instruction>*, PlannerError>(instructions);
 }
 
-Result<Void, PlannerError> Planner::plan_function(Page* ep, Function& func) {
+Result<Void, PlannerError> Planner::plan_function(Page* ep, HashMap<String, Nameable>& symbols, Function& func) {
     auto r = Region();
     if (functions_builder.contains(func.name)) 
         return Result<Void, PlannerError>(DuplicateFunction(String(ep, func.name)));
@@ -459,7 +539,7 @@ Result<Void, PlannerError> Planner::plan_function(Page* ep, Function& func) {
                 auto action = _result._Action;
                 {
                     auto ret = String(get_page(), "_ret");
-                    const auto _new_instructions_result = plan_action(get_page(), ep, action, ret, blocks, &instructions);
+                    const auto _new_instructions_result = plan_action(get_page(), ep, symbols, action, ret, blocks, &instructions);
                     auto new_instructions = _new_instructions_result._Ok;
                     if (_new_instructions_result._tag == Success::Error) {
                         const auto _new_instructions_Error = _new_instructions_result._Error;

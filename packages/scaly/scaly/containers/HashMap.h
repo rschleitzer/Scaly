@@ -71,6 +71,10 @@ struct HashMap : Object {
     };
 
     V* operator [](K key){
+        return get(key);
+    }
+
+    V* get(K key) {
         if (slots == nullptr) 
             return nullptr;
         const auto hash = key.hash();
@@ -84,7 +88,7 @@ struct HashMap : Object {
             i = i+1;
         };
         return nullptr;
-    }
+    };
 };
 
 #endif

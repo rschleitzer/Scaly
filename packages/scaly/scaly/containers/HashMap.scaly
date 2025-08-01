@@ -72,6 +72,10 @@ define HashMap[K, V]
     }
 
     operator [](key: K) returns pointer[V]$ {
+        return get(key)
+    }
+
+    function get(this: HashMap[K, V], key: K) returns pointer[V]$ {
         if slots = null
             return null
 
