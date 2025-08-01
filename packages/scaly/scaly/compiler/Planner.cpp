@@ -205,6 +205,47 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_tuple(Page* rp, Pag
 }
 
 Result<List<Plan::Instruction>*, PlannerError> Planner::plan_type(Page* rp, Page* ep, Type& type, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
+    if (type.name.length>1) 
+        return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Qualified type name")));
+    if (type.generics) 
+        return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Generic type")));
+    {
+        auto _result = type.lifetime;
+        switch (_result._tag)
+        {
+            case Lifetime::Unspecified:
+            {
+                auto unspecified = _result._Unspecified;
+                {
+                };
+                break;
+            }
+            case Lifetime::Call:
+            {
+                auto call = _result._Call;
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Call lifetime")));
+                break;
+            }
+            case Lifetime::Local:
+            {
+                auto local = _result._Local;
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Local lifetime")));
+                break;
+            }
+            case Lifetime::Reference:
+            {
+                auto reference = _result._Reference;
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Reference lifetime")));
+                break;
+            }
+            case Lifetime::Thrown:
+            {
+                auto thrown = _result._Thrown;
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Thrown lifetime")));
+                break;
+            }
+        }
+    };
     return Result<List<Plan::Instruction>*, PlannerError>(instructions);
 }
 

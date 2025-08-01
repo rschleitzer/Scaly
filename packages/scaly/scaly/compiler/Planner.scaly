@@ -111,8 +111,25 @@ function plan_tuple(this: Planner, type: ref[Tuple], result: String, blocks: ref
 }
 
 function plan_type(this: Planner, type: ref[Type], result: String, blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
+    if type.name.length > 1
+        throw FeatureNotImplemented(String(ep, "Qualified type name"))
+    if type.generics
+        throw FeatureNotImplemented(String(ep, "Generic type"))
+
+    choose type.lifetime
+        when unspecified: Lifetime.Unspecified {}
+        when call: Lifetime.Call
+            throw FeatureNotImplemented(String(ep, "Call lifetime"))
+        when local: Lifetime.Local
+            throw FeatureNotImplemented(String(ep, "Local lifetime"))
+        when reference: Lifetime.Reference
+            throw FeatureNotImplemented(String(ep, "Reference lifetime"))
+        when thrown: Lifetime.Thrown
+            throw FeatureNotImplemented(String(ep, "Thrown lifetime"))
+
     return instructions
 }
+
 function plan_block(this: Planner, block: ref[Block], result: String, blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
 
     for statement in block.statements
