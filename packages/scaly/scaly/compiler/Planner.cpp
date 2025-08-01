@@ -199,8 +199,12 @@ String Planner::resolve_type(Page* rp, Type type) {
     return String(rp, *type.name.get(0));
 }
 
-Result<List<Plan::Instruction>*, PlannerError> Planner::plan_statement(Page* rp, Page* ep, Statement& statement, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
+Result<List<Plan::Instruction>*, PlannerError> Planner::plan_tuple(Page* rp, Page* ep, Tuple& type, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
     (*instructions).add(Plan::Instruction(Plan::FMul(String(get_page(), "a"), String(get_page(), "b"), result)));
+    return Result<List<Plan::Instruction>*, PlannerError>(instructions);
+}
+
+Result<List<Plan::Instruction>*, PlannerError> Planner::plan_type(Page* rp, Page* ep, Type& type, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
     return Result<List<Plan::Instruction>*, PlannerError>(instructions);
 }
 
@@ -209,14 +213,46 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_block(Page* rp, Pag
     auto _statement_iterator = block.statements.get_iterator();
     while (auto _statement = _statement_iterator.next()) {
         auto statement = *_statement;{
-            const auto _new_instructions_result = plan_statement(get_page(), ep, statement, result, blocks, instructions);
-            auto new_instructions = _new_instructions_result._Ok;
-            if (_new_instructions_result._tag == Success::Error) {
-                const auto _new_instructions_Error = _new_instructions_result._Error;
-                switch (_new_instructions_Error._tag) {
-                default:
-                    return Result<List<Plan::Instruction>*, PlannerError>(_new_instructions_result._Error);
-
+            {
+                auto _result = statement;
+                switch (_result._tag)
+                {
+                    case Statement::Action:
+                    {
+                        auto action = _result._Action;
+                        return Result<List<Plan::Instruction>*, PlannerError>(plan_action(get_page(), ep, action, result, blocks, instructions));
+                        break;
+                    }
+                    case Statement::Binding:
+                    {
+                        auto binding = _result._Binding;
+                        return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Binding statement")));
+                        break;
+                    }
+                    case Statement::Break:
+                    {
+                        auto break_ = _result._Break;
+                        return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Break statement")));
+                        break;
+                    }
+                    case Statement::Continue:
+                    {
+                        auto continue_ = _result._Continue;
+                        return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Continue statement")));
+                        break;
+                    }
+                    case Statement::Return:
+                    {
+                        auto return_ = _result._Return;
+                        return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Return statement")));
+                        break;
+                    }
+                    case Statement::Throw:
+                    {
+                        auto throw_ = _result._Throw;
+                        return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Throw statement")));
+                        break;
+                    }
                 }
             };
         }
@@ -241,13 +277,13 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_operand(Page* rp, P
             case Expression::Type:
             {
                 auto type = _result._Type;
-                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Type expression")));
+                return Result<List<Plan::Instruction>*, PlannerError>(plan_type(get_page(), ep, type, result, blocks, instructions));
                 break;
             }
             case Expression::Tuple:
             {
                 auto tuple = _result._Tuple;
-                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Tuple expression")));
+                return Result<List<Plan::Instruction>*, PlannerError>(plan_tuple(get_page(), ep, tuple, result, blocks, instructions));
                 break;
             }
             case Expression::Matrix:

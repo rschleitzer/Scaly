@@ -105,19 +105,32 @@ function resolve_type(this: Planner, type: Type) returns String {
     return String(rp, *type.name.get(0))
 }
 
-function plan_statement(this: Planner, statement: ref[Statement], result: String, blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
+function plan_tuple(this: Planner, type: ref[Tuple], result: String, blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
     (*instructions).add(Plan->Instruction(Plan->FMul(String(get_page(), "a"), String(get_page(), "b"), result)))
     return instructions
 }
 
+function plan_type(this: Planner, type: ref[Type], result: String, blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
+    return instructions
+}
 function plan_block(this: Planner, block: ref[Block], result: String, blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
 
     for statement in block.statements
     {
-        try let new_instructions plan_statement(get_page(), ep, statement, result, blocks, instructions)
-            else throw
+        choose statement
+            when action: Statement.Action
+                return plan_action(get_page(), ep, action, result, blocks, instructions)
+            when binding: Statement.Binding
+                throw FeatureNotImplemented(String(ep, "Binding statement"))
+            when break_: Statement.Break
+                throw FeatureNotImplemented(String(ep, "Break statement"))
+            when continue_: Statement.Continue
+                throw FeatureNotImplemented(String(ep, "Continue statement"))
+            when return_: Statement.Return
+                throw FeatureNotImplemented(String(ep, "Return statement"))
+            when throw_: Statement.Throw
+                throw FeatureNotImplemented(String(ep, "Throw statement"))
     }
-
     return instructions
 }
 
@@ -130,9 +143,9 @@ function plan_operand(this: Planner, operand: ref[Operand], result: String, bloc
         when constant: Expression.Constant
             throw FeatureNotImplemented(String(ep, "Constant expression"))
         when type: Expression.Type
-            throw FeatureNotImplemented(String(ep, "Type expression"))
+            return plan_type(get_page(), ep, type, result, blocks, instructions)
         when tuple: Expression.Tuple
-            throw FeatureNotImplemented(String(ep, "Tuple expression"))
+            return plan_tuple(get_page(), ep, tuple, result, blocks, instructions)
         when matrix: Expression.Matrix
             throw FeatureNotImplemented(String(ep, "Matrix expression"))
         when block: Expression.Block
