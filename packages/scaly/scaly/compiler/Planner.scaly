@@ -105,8 +105,19 @@ function resolve_type(this: Planner, type: Type) returns String {
     return String(rp, *type.name.get(0))
 }
 
-function plan_block(this: Planner, block: ref[Block], result: String, blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
+function plan_statement(this: Planner, statement: ref[Statement], result: String, blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
     (*instructions).add(Plan->Instruction(Plan->FMul(String(get_page(), "a"), String(get_page(), "b"), result)))
+    return instructions
+}
+
+function plan_block(this: Planner, block: ref[Block], result: String, blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
+
+    for statement in block.statements
+    {
+        try let new_instructions plan_statement(get_page(), ep, statement, result, blocks, instructions)
+            else throw
+    }
+
     return instructions
 }
 

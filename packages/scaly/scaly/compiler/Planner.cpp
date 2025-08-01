@@ -199,8 +199,28 @@ String Planner::resolve_type(Page* rp, Type type) {
     return String(rp, *type.name.get(0));
 }
 
-Result<List<Plan::Instruction>*, PlannerError> Planner::plan_block(Page* rp, Page* ep, Block& block, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
+Result<List<Plan::Instruction>*, PlannerError> Planner::plan_statement(Page* rp, Page* ep, Statement& statement, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
     (*instructions).add(Plan::Instruction(Plan::FMul(String(get_page(), "a"), String(get_page(), "b"), result)));
+    return Result<List<Plan::Instruction>*, PlannerError>(instructions);
+}
+
+Result<List<Plan::Instruction>*, PlannerError> Planner::plan_block(Page* rp, Page* ep, Block& block, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
+    
+    auto _statement_iterator = block.statements.get_iterator();
+    while (auto _statement = _statement_iterator.next()) {
+        auto statement = *_statement;{
+            const auto _new_instructions_result = plan_statement(get_page(), ep, statement, result, blocks, instructions);
+            auto new_instructions = _new_instructions_result._Ok;
+            if (_new_instructions_result._tag == Success::Error) {
+                const auto _new_instructions_Error = _new_instructions_result._Error;
+                switch (_new_instructions_Error._tag) {
+                default:
+                    return Result<List<Plan::Instruction>*, PlannerError>(_new_instructions_result._Error);
+
+                }
+            };
+        }
+    };
     return Result<List<Plan::Instruction>*, PlannerError>(instructions);
 }
 
