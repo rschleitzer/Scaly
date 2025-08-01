@@ -105,6 +105,11 @@ function resolve_type(this: Planner, type: Type) returns String {
     return String(rp, *type.name.get(0))
 }
 
+function plan_block(this: Planner, block: ref[Block], result: String, blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
+    (*instructions).add(Plan->Instruction(Plan->FMul(String(get_page(), "a"), String(get_page(), "b"), result)))
+    return instructions
+}
+
 function plan_operand(this: Planner, operand: ref[Operand], result: String, blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
     var r Region()
     if operand.member_access
@@ -120,7 +125,7 @@ function plan_operand(this: Planner, operand: ref[Operand], result: String, bloc
         when matrix: Expression.Matrix
             throw FeatureNotImplemented(String(ep, "Matrix expression"))
         when block: Expression.Block
-            (*instructions).add(Plan->Instruction(Plan->FMul(String(get_page(), "a"), String(get_page(), "b"), result)))
+            return plan_block(get_page(), ep, block, result, blocks, instructions)
         when if_: Expression.If
             throw FeatureNotImplemented(String(ep, "If expression"))
         when match_: Expression.Match
@@ -139,8 +144,6 @@ function plan_operand(this: Planner, operand: ref[Operand], result: String, bloc
             throw FeatureNotImplemented(String(ep, "Is expression"))
         when new__: Expression.New
             throw FeatureNotImplemented(String(ep, "New expression"))
-
-    return instructions
 }
 
 function plan_operation(this: Planner, operation: ref[Vector[Operand]], result: String, blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {

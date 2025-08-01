@@ -199,6 +199,11 @@ String Planner::resolve_type(Page* rp, Type type) {
     return String(rp, *type.name.get(0));
 }
 
+Result<List<Plan::Instruction>*, PlannerError> Planner::plan_block(Page* rp, Page* ep, Block& block, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
+    (*instructions).add(Plan::Instruction(Plan::FMul(String(get_page(), "a"), String(get_page(), "b"), result)));
+    return Result<List<Plan::Instruction>*, PlannerError>(instructions);
+}
+
 Result<List<Plan::Instruction>*, PlannerError> Planner::plan_operand(Page* rp, Page* ep, Operand& operand, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
     auto r = Region();
     if (operand.member_access) 
@@ -234,7 +239,7 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_operand(Page* rp, P
             case Expression::Block:
             {
                 auto block = _result._Block;
-                (*instructions).add(Plan::Instruction(Plan::FMul(String(get_page(), "a"), String(get_page(), "b"), result)));
+                return Result<List<Plan::Instruction>*, PlannerError>(plan_block(get_page(), ep, block, result, blocks, instructions));
                 break;
             }
             case Expression::If:
@@ -293,7 +298,6 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_operand(Page* rp, P
             }
         }
     };
-    return Result<List<Plan::Instruction>*, PlannerError>(instructions);
 }
 
 Result<List<Plan::Instruction>*, PlannerError> Planner::plan_operation(Page* rp, Page* ep, Vector<Operand>& operation, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
