@@ -110,7 +110,36 @@ function plan_operand(this: Planner, operand: ref[Operand], result: String, bloc
     if operand.member_access
         throw FeatureNotImplemented(String(ep, "member access"))
 
-    (*instructions).add(Plan->Instruction(Plan->FMul(String(get_page(), "a"), String(get_page(), "b"), result)))
+    choose operand.expression
+        when constant: Expression.Constant
+            throw FeatureNotImplemented(String(ep, "Constant expression"))
+        when type: Expression.Type
+            throw FeatureNotImplemented(String(ep, "Type expression"))
+        when tuple: Expression.Tuple
+            throw FeatureNotImplemented(String(ep, "Tuple expression"))
+        when matrix: Expression.Matrix
+            throw FeatureNotImplemented(String(ep, "Matrix expression"))
+        when block: Expression.Block
+            (*instructions).add(Plan->Instruction(Plan->FMul(String(get_page(), "a"), String(get_page(), "b"), result)))
+        when if_: Expression.If
+            throw FeatureNotImplemented(String(ep, "If expression"))
+        when match_: Expression.Match
+            throw FeatureNotImplemented(String(ep, "Match expression"))
+        when choose_: Expression.Choose
+            throw FeatureNotImplemented(String(ep, "Choose expression"))
+        when for_: Expression.For
+            throw FeatureNotImplemented(String(ep, "For expression"))
+        when while_: Expression.While
+            throw FeatureNotImplemented(String(ep, "While expression"))
+        when try_: Expression.Try
+            throw FeatureNotImplemented(String(ep, "Try expression"))
+        when sizeof_: Expression.SizeOf
+            throw FeatureNotImplemented(String(ep, "SizeOf expression"))
+        when is_: Expression.Is
+            throw FeatureNotImplemented(String(ep, "Is expression"))
+        when new__: Expression.New
+            throw FeatureNotImplemented(String(ep, "New expression"))
+
     return instructions
 }
 

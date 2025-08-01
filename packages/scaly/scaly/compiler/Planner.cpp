@@ -203,7 +203,96 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_operand(Page* rp, P
     auto r = Region();
     if (operand.member_access) 
         return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "member access")));
-    (*instructions).add(Plan::Instruction(Plan::FMul(String(get_page(), "a"), String(get_page(), "b"), result)));
+    {
+        auto _result = operand.expression;
+        switch (_result._tag)
+        {
+            case Expression::Constant:
+            {
+                auto constant = _result._Constant;
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Constant expression")));
+                break;
+            }
+            case Expression::Type:
+            {
+                auto type = _result._Type;
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Type expression")));
+                break;
+            }
+            case Expression::Tuple:
+            {
+                auto tuple = _result._Tuple;
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Tuple expression")));
+                break;
+            }
+            case Expression::Matrix:
+            {
+                auto matrix = _result._Matrix;
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Matrix expression")));
+                break;
+            }
+            case Expression::Block:
+            {
+                auto block = _result._Block;
+                (*instructions).add(Plan::Instruction(Plan::FMul(String(get_page(), "a"), String(get_page(), "b"), result)));
+                break;
+            }
+            case Expression::If:
+            {
+                auto if_ = _result._If;
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "If expression")));
+                break;
+            }
+            case Expression::Match:
+            {
+                auto match_ = _result._Match;
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Match expression")));
+                break;
+            }
+            case Expression::Choose:
+            {
+                auto choose_ = _result._Choose;
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Choose expression")));
+                break;
+            }
+            case Expression::For:
+            {
+                auto for_ = _result._For;
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "For expression")));
+                break;
+            }
+            case Expression::While:
+            {
+                auto while_ = _result._While;
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "While expression")));
+                break;
+            }
+            case Expression::Try:
+            {
+                auto try_ = _result._Try;
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Try expression")));
+                break;
+            }
+            case Expression::SizeOf:
+            {
+                auto sizeof_ = _result._SizeOf;
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "SizeOf expression")));
+                break;
+            }
+            case Expression::Is:
+            {
+                auto is_ = _result._Is;
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Is expression")));
+                break;
+            }
+            case Expression::New:
+            {
+                auto new__ = _result._New;
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "New expression")));
+                break;
+            }
+        }
+    };
     return Result<List<Plan::Instruction>*, PlannerError>(instructions);
 }
 
