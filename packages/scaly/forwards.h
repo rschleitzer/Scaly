@@ -328,6 +328,8 @@ struct FeatureNotImplemented;
 struct TranspilerError;
 struct DuplicateIntrinsic;
 struct DuplicateFunction;
+struct InstructionWithoutArguments;
+struct UnknownInstruction;
 struct PlannerError;
 struct MultipleMainFunctions;
 struct MainIsNotAFunction;

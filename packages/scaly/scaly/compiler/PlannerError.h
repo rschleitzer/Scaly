@@ -18,22 +18,40 @@ struct DuplicateFunction : Object {
     DuplicateFunction(String name);
 };
 
+struct InstructionWithoutArguments : Object {
+    String name;
+
+    InstructionWithoutArguments(String name);
+};
+
+struct UnknownInstruction : Object {
+    String name;
+
+    UnknownInstruction(String name);
+};
+
 struct PlannerError : Object {
     PlannerError(FeatureNotImplemented);
     PlannerError(FileError);
     PlannerError(DuplicateIntrinsic);
     PlannerError(DuplicateFunction);
+    PlannerError(InstructionWithoutArguments);
+    PlannerError(UnknownInstruction);
     enum {
         NotImplemented,
         FileError,
         DuplicateIntrinsic,
         DuplicateFunction,
+        InstructionWithoutArguments,
+        UnknownInstruction,
     } _tag;
     union {
         struct FeatureNotImplemented _NotImplemented;
         struct FileError _FileError;
         struct DuplicateIntrinsic _DuplicateIntrinsic;
         struct DuplicateFunction _DuplicateFunction;
+        struct InstructionWithoutArguments _InstructionWithoutArguments;
+        struct UnknownInstruction _UnknownInstruction;
     };
     String to_string(Page* rp);
 };

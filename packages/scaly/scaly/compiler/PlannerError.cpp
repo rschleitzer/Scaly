@@ -8,6 +8,10 @@ DuplicateIntrinsic::DuplicateIntrinsic(String name) : name(name) {}
 
 DuplicateFunction::DuplicateFunction(String name) : name(name) {}
 
+InstructionWithoutArguments::InstructionWithoutArguments(String name) : name(name) {}
+
+UnknownInstruction::UnknownInstruction(String name) : name(name) {}
+
 String PlannerError::to_string(Page* rp) {
     auto r = Region();
     StringBuilder& message_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder();
@@ -51,6 +55,26 @@ String PlannerError::to_string(Page* rp) {
                 };
                 break;
             }
+            case PlannerError::InstructionWithoutArguments:
+            {
+                auto iwa = _result._InstructionWithoutArguments;
+                {
+                    message_builder.append("The instruction \"");
+                    message_builder.append(iwa.name);
+                    message_builder.append("\" must be provided with arguments.");
+                };
+                break;
+            }
+            case PlannerError::UnknownInstruction:
+            {
+                auto ui = _result._UnknownInstruction;
+                {
+                    message_builder.append("The instruction \"");
+                    message_builder.append(ui.name);
+                    message_builder.append("\" is unknown.");
+                };
+                break;
+            }
         }
     }message_builder.append('\n');
     return message_builder.to_string(rp);
@@ -62,6 +86,10 @@ PlannerError::PlannerError(struct FileError _FileError) : _tag(FileError), _File
 PlannerError::PlannerError(struct DuplicateIntrinsic _DuplicateIntrinsic) : _tag(DuplicateIntrinsic), _DuplicateIntrinsic(_DuplicateIntrinsic) {}
 
 PlannerError::PlannerError(struct DuplicateFunction _DuplicateFunction) : _tag(DuplicateFunction), _DuplicateFunction(_DuplicateFunction) {}
+
+PlannerError::PlannerError(struct InstructionWithoutArguments _InstructionWithoutArguments) : _tag(InstructionWithoutArguments), _InstructionWithoutArguments(_InstructionWithoutArguments) {}
+
+PlannerError::PlannerError(struct UnknownInstruction _UnknownInstruction) : _tag(UnknownInstruction), _UnknownInstruction(_UnknownInstruction) {}
 
 
 }
