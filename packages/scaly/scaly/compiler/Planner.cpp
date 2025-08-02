@@ -200,6 +200,8 @@ String Planner::resolve_type(Page* rp, Type type) {
 }
 
 Result<List<Plan::Instruction>*, PlannerError> Planner::plan_fmul(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, String name, Tuple& tuple, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
+    if (tuple.components.length != 2) 
+        return Result<List<Plan::Instruction>*, PlannerError>(InstructionWithInvalidNumberOfArguments(String(ep, name)));
     (*instructions).add(Plan::Instruction(Plan::FMul(String(get_page(), "a"), String(get_page(), "b"), result)));
     return Result<List<Plan::Instruction>*, PlannerError>(instructions);
 }

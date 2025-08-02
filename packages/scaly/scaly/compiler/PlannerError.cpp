@@ -12,6 +12,8 @@ InstructionWithoutArguments::InstructionWithoutArguments(String name) : name(nam
 
 UnknownInstruction::UnknownInstruction(String name) : name(name) {}
 
+InstructionWithInvalidNumberOfArguments::InstructionWithInvalidNumberOfArguments(String name) : name(name) {}
+
 String PlannerError::to_string(Page* rp) {
     auto r = Region();
     StringBuilder& message_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder();
@@ -75,6 +77,16 @@ String PlannerError::to_string(Page* rp) {
                 };
                 break;
             }
+            case PlannerError::InstructionWithInvalidNumberOfArguments:
+            {
+                auto ina = _result._InstructionWithInvalidNumberOfArguments;
+                {
+                    message_builder.append("The instruction \"");
+                    message_builder.append(ina.name);
+                    message_builder.append("\" is called with an invalid number of arguments.");
+                };
+                break;
+            }
         }
     }message_builder.append('\n');
     return message_builder.to_string(rp);
@@ -90,6 +102,8 @@ PlannerError::PlannerError(struct DuplicateFunction _DuplicateFunction) : _tag(D
 PlannerError::PlannerError(struct InstructionWithoutArguments _InstructionWithoutArguments) : _tag(InstructionWithoutArguments), _InstructionWithoutArguments(_InstructionWithoutArguments) {}
 
 PlannerError::PlannerError(struct UnknownInstruction _UnknownInstruction) : _tag(UnknownInstruction), _UnknownInstruction(_UnknownInstruction) {}
+
+PlannerError::PlannerError(struct InstructionWithInvalidNumberOfArguments _InstructionWithInvalidNumberOfArguments) : _tag(InstructionWithInvalidNumberOfArguments), _InstructionWithInvalidNumberOfArguments(_InstructionWithInvalidNumberOfArguments) {}
 
 
 }

@@ -30,6 +30,12 @@ struct UnknownInstruction : Object {
     UnknownInstruction(String name);
 };
 
+struct InstructionWithInvalidNumberOfArguments : Object {
+    String name;
+
+    InstructionWithInvalidNumberOfArguments(String name);
+};
+
 struct PlannerError : Object {
     PlannerError(FeatureNotImplemented);
     PlannerError(FileError);
@@ -37,6 +43,7 @@ struct PlannerError : Object {
     PlannerError(DuplicateFunction);
     PlannerError(InstructionWithoutArguments);
     PlannerError(UnknownInstruction);
+    PlannerError(InstructionWithInvalidNumberOfArguments);
     enum {
         NotImplemented,
         FileError,
@@ -44,6 +51,7 @@ struct PlannerError : Object {
         DuplicateFunction,
         InstructionWithoutArguments,
         UnknownInstruction,
+        InstructionWithInvalidNumberOfArguments,
     } _tag;
     union {
         struct FeatureNotImplemented _NotImplemented;
@@ -52,6 +60,7 @@ struct PlannerError : Object {
         struct DuplicateFunction _DuplicateFunction;
         struct InstructionWithoutArguments _InstructionWithoutArguments;
         struct UnknownInstruction _UnknownInstruction;
+        struct InstructionWithInvalidNumberOfArguments _InstructionWithInvalidNumberOfArguments;
     };
     String to_string(Page* rp);
 };

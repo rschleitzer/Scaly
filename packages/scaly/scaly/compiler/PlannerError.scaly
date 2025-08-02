@@ -4,6 +4,7 @@ define DuplicateIntrinsic(name: String)
 define DuplicateFunction(name: String)
 define InstructionWithoutArguments(name: String)
 define UnknownInstruction(name: String)
+define InstructionWithInvalidNumberOfArguments(name: String)
 
 define PlannerError union
 (
@@ -13,6 +14,7 @@ define PlannerError union
     DuplicateFunction: DuplicateFunction
     InstructionWithoutArguments: InstructionWithoutArguments
     UnknownInstruction: UnknownInstruction
+    InstructionWithInvalidNumberOfArguments: InstructionWithInvalidNumberOfArguments
 )
 {
     function to_string(this: PlannerError) returns String {
@@ -50,6 +52,12 @@ define PlannerError union
                 message_builder.append("The instruction \"")
                 message_builder.append(ui.name)
                 message_builder.append("\" is unknown.")
+            }
+            when ina: PlannerError.InstructionWithInvalidNumberOfArguments
+            {
+                message_builder.append("The instruction \"")
+                message_builder.append(ina.name)
+                message_builder.append("\" is called with an invalid number of arguments.")
             }
 
         message_builder.append('\n')

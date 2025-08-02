@@ -330,6 +330,7 @@ struct DuplicateIntrinsic;
 struct DuplicateFunction;
 struct InstructionWithoutArguments;
 struct UnknownInstruction;
+struct InstructionWithInvalidNumberOfArguments;
 struct PlannerError;
 struct MultipleMainFunctions;
 struct MainIsNotAFunction;
