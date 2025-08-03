@@ -590,7 +590,6 @@ Result<Void, PlannerError> Planner::plan_function(Page* ep, HashMap<String, Name
             {
                 auto action = _result._Action;
                 {
-                    auto page = get_page();
                     const auto _new_instructions_result = plan_action(get_page(), ep, symbols, nullptr, action, blocks, &instructions);
                     auto new_instructions = _new_instructions_result._Ok;
                     if (_new_instructions_result._tag == Success::Error) {
@@ -604,10 +603,8 @@ Result<Void, PlannerError> Planner::plan_function(Page* ep, HashMap<String, Name
                     instructions = *new_instructions;
                     if (func.returns_) {
                         List<String>& args_list = *new (alignof(List<String>), r.get_page()) List<String>();
-                        auto retval = (*(instructions.get_head())).result;
-                        args_list.add(*retval);
-                        auto names = Vector<String>(get_page(), args_list);
-                        instructions.add(Plan::Instruction(retval, String(get_page(), "ret"), Vector<String>(get_page(), args_list)));
+                        args_list.add(*(*(instructions.get_head())).result);
+                        instructions.add(Plan::Instruction(nullptr, String(get_page(), "ret"), Vector<String>(get_page(), args_list)));
                     }
                     else {
                         instructions.add(Plan::Instruction(nullptr, String(get_page(), "ret"), Vector<String>()));

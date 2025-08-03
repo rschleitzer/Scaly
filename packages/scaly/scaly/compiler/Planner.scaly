@@ -303,17 +303,14 @@ function plan_function(this: Planner, symbols: ref[HashMap[String, Nameable]], f
     choose func.implementation
         when action: Implementation.Action
         {
-            var page get_page()
             try let new_instructions plan_action(get_page(), ep, symbols, null, action, blocks, &instructions)
                 else throw
             set instructions: *new_instructions
             if func.returns_
             {
                 var args_list: ref[List[String]] *List[String]$()
-                var retval (*(instructions.get_head())).result
-                args_list.add(*retval)
-                var names Vector[String](get_page(), args_list)
-                instructions.add(Plan->Instruction(retval, String(get_page(), "ret"), Vector[String](get_page(), args_list)))
+                args_list.add(*(*(instructions.get_head())).result)
+                instructions.add(Plan->Instruction(null, String(get_page(), "ret"), Vector[String](get_page(), args_list)))
             } else {
                 instructions.add(Plan->Instruction(null, String(get_page(), "ret"), Vector[String]()))
             }
