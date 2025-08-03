@@ -36,6 +36,10 @@ struct InstructionWithInvalidNumberOfArguments : Object {
     InstructionWithInvalidNumberOfArguments(String name);
 };
 
+struct TupleComponentNamesNotSupported : Object {
+
+};
+
 struct PlannerError : Object {
     PlannerError(FeatureNotImplemented);
     PlannerError(FileError);
@@ -44,6 +48,7 @@ struct PlannerError : Object {
     PlannerError(InstructionWithoutArguments);
     PlannerError(UnknownInstruction);
     PlannerError(InstructionWithInvalidNumberOfArguments);
+    PlannerError(TupleComponentNamesNotSupported);
     enum {
         NotImplemented,
         FileError,
@@ -52,6 +57,7 @@ struct PlannerError : Object {
         InstructionWithoutArguments,
         UnknownInstruction,
         InstructionWithInvalidNumberOfArguments,
+        TupleComponentNamesNotSupported,
     } _tag;
     union {
         struct FeatureNotImplemented _NotImplemented;
@@ -61,6 +67,7 @@ struct PlannerError : Object {
         struct InstructionWithoutArguments _InstructionWithoutArguments;
         struct UnknownInstruction _UnknownInstruction;
         struct InstructionWithInvalidNumberOfArguments _InstructionWithInvalidNumberOfArguments;
+        struct TupleComponentNamesNotSupported _TupleComponentNamesNotSupported;
     };
     String to_string(Page* rp);
 };

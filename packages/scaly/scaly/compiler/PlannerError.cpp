@@ -87,6 +87,14 @@ String PlannerError::to_string(Page* rp) {
                 };
                 break;
             }
+            case PlannerError::TupleComponentNamesNotSupported:
+            {
+                auto tcns = _result._TupleComponentNamesNotSupported;
+                {
+                    message_builder.append("Tuple component names are not supported.");
+                };
+                break;
+            }
         }
     }message_builder.append('\n');
     return message_builder.to_string(rp);
@@ -104,6 +112,8 @@ PlannerError::PlannerError(struct InstructionWithoutArguments _InstructionWithou
 PlannerError::PlannerError(struct UnknownInstruction _UnknownInstruction) : _tag(UnknownInstruction), _UnknownInstruction(_UnknownInstruction) {}
 
 PlannerError::PlannerError(struct InstructionWithInvalidNumberOfArguments _InstructionWithInvalidNumberOfArguments) : _tag(InstructionWithInvalidNumberOfArguments), _InstructionWithInvalidNumberOfArguments(_InstructionWithInvalidNumberOfArguments) {}
+
+PlannerError::PlannerError(struct TupleComponentNamesNotSupported _TupleComponentNamesNotSupported) : _tag(TupleComponentNamesNotSupported), _TupleComponentNamesNotSupported(_TupleComponentNamesNotSupported) {}
 
 
 }

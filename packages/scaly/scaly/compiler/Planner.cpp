@@ -200,6 +200,15 @@ String Planner::resolve_type(Page* rp, Type type) {
 }
 
 Result<List<Plan::Instruction>*, PlannerError> Planner::plan_tuple(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, List<String>& names, Tuple& tuple, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
+    
+    auto _component_iterator = tuple.components.get_iterator();
+    while (auto _component = _component_iterator.next()) {
+        auto component = *_component;{
+            if (component.name) 
+                return Result<List<Plan::Instruction>*, PlannerError>(TupleComponentNamesNotSupported());
+            plan_operation(get_page(), ep, symbols, component.value, result, blocks, instructions);
+        }
+    };
     names.add(String(get_page(), "a"));
     names.add(String(get_page(), "b"));
     return Result<List<Plan::Instruction>*, PlannerError>(instructions);

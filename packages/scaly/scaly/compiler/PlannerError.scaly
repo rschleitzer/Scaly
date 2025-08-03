@@ -5,6 +5,7 @@ define DuplicateFunction(name: String)
 define InstructionWithoutArguments(name: String)
 define UnknownInstruction(name: String)
 define InstructionWithInvalidNumberOfArguments(name: String)
+define TupleComponentNamesNotSupported()
 
 define PlannerError union
 (
@@ -15,6 +16,7 @@ define PlannerError union
     InstructionWithoutArguments: InstructionWithoutArguments
     UnknownInstruction: UnknownInstruction
     InstructionWithInvalidNumberOfArguments: InstructionWithInvalidNumberOfArguments
+    TupleComponentNamesNotSupported: TupleComponentNamesNotSupported
 )
 {
     function to_string(this: PlannerError) returns String {
@@ -58,6 +60,10 @@ define PlannerError union
                 message_builder.append("The instruction \"")
                 message_builder.append(ina.name)
                 message_builder.append("\" is called with an invalid number of arguments.")
+            }
+            when tcns: PlannerError.TupleComponentNamesNotSupported
+            {
+                message_builder.append("Tuple component names are not supported.")
             }
 
         message_builder.append('\n')

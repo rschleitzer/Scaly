@@ -106,6 +106,13 @@ function resolve_type(this: Planner, type: Type) returns String {
 }
 
 function plan_tuple(this: Planner, symbols: ref[HashMap[String, Nameable]], operation: pointer[VectorIterator[Operand]], names: ref[List[String]], tuple: ref[Tuple], result: String, blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
+    for component in tuple.components
+    {
+        if component.name
+            throw TupleComponentNamesNotSupported()
+        plan_operation(get_page(), ep, symbols, component.value, result, blocks, instructions)
+        ;to_string(get_page(), 1)
+    }
     names.add(String(get_page(), "a"))
     names.add(String(get_page(), "b"))
     return instructions
