@@ -199,10 +199,20 @@ String Planner::resolve_type(Page* rp, Type type) {
     return String(rp, *type.name.get(0));
 }
 
+Result<List<Plan::Instruction>*, PlannerError> Planner::plan_tuple(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, List<String>& names, Tuple& tuple, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
+    names.add(String(get_page(), "a"));
+    names.add(String(get_page(), "b"));
+    return Result<List<Plan::Instruction>*, PlannerError>(instructions);
+}
+
 Result<List<Plan::Instruction>*, PlannerError> Planner::plan_fmul(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, String name, Tuple& tuple, String result, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
-    if (tuple.components.length != 2) 
+    auto r = Region();
+    List<String>& names_list = *new (alignof(List<String>), r.get_page()) List<String>();
+    plan_tuple(get_page(), ep, symbols, operation, names_list, tuple, result, blocks, instructions);
+    auto names = Vector<String>(get_page(), names_list);
+    if (names.length != 2) 
         return Result<List<Plan::Instruction>*, PlannerError>(InstructionWithInvalidNumberOfArguments(String(ep, name)));
-    (*instructions).add(Plan::Instruction(Plan::FMul(String(get_page(), "a"), String(get_page(), "b"), result)));
+    (*instructions).add(Plan::Instruction(Plan::FMul(*(names.get(0)), *(names.get(1)), result)));
     return Result<List<Plan::Instruction>*, PlannerError>(instructions);
 }
 
