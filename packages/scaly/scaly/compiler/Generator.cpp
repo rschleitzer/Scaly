@@ -75,7 +75,7 @@ namespace generator {
         auto r = Region();
         if (instruction.name.equals("fmul")) {
             auto lValue = get_value(*(instruction.args[0]), argument_values_map, block_values_builder);
-            auto rValue = get_value(*(instruction.args[0]), argument_values_map, block_values_builder);
+            auto rValue = get_value(*(instruction.args[1]), argument_values_map, block_values_builder);
             auto result = builder.CreateFMul(lValue, rValue, instruction.result->to_c_string(r.get_page()));
             block_values_builder.add(*(instruction.result), result);
         }

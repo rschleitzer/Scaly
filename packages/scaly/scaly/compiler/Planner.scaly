@@ -111,11 +111,20 @@ function plan_tuple(this: Planner, symbols: ref[HashMap[String, Nameable]], oper
         if component.name
             throw TupleComponentNamesNotSupported()
         plan_operation(get_page(), ep, symbols, component.value, blocks, instructions)
-        ;to_string(get_page(), 1)
     }
     names.add(String(get_page(), "a"))
     names.add(String(get_page(), "b"))
     return instructions
+}
+
+function allocate_value_name(this: Planner, blocks: ref[List[Plan.Block]], instructions: ref[List[Plan.Instruction]]) returns String {
+    var r Region()
+    var value_name_builder: ref[StringBuilder] *StringBuilder$()
+    value_name_builder.append('v')
+    value_name_builder.append(to_string(r.get_page(), blocks.count()))
+    value_name_builder.append('_')
+    value_name_builder.append(to_string(r.get_page(), instructions.count()))
+    return String(value_name_builder.to_string(rp))
 }
 
 function plan_fmul(this: Planner, symbols: ref[HashMap[String, Nameable]], operation: pointer[VectorIterator[Operand]], name: String, tuple: ref[Tuple], blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
@@ -128,7 +137,8 @@ function plan_fmul(this: Planner, symbols: ref[HashMap[String, Nameable]], opera
         throw InstructionWithInvalidNumberOfArguments(String(ep, name))
 
     var page get_page()
-    (*instructions).add(Plan->Instruction(new_ String^page(get_page(), "_ret"), String(get_page(), "fmul"), names))
+    let value allocate_value_name(get_page(), blocks, *instructions)
+    (*instructions).add(Plan->Instruction(new_ String^page(get_page(), value), String(get_page(), "fmul"), names))
     return instructions
 }
 

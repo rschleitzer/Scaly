@@ -214,6 +214,16 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_tuple(Page* rp, Pag
     return Result<List<Plan::Instruction>*, PlannerError>(instructions);
 }
 
+String Planner::allocate_value_name(Page* rp, List<Plan::Block>& blocks, List<Plan::Instruction>& instructions) {
+    auto r = Region();
+    StringBuilder& value_name_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder();
+    value_name_builder.append('v');
+    value_name_builder.append(to_string(r.get_page(), blocks.count()));
+    value_name_builder.append('_');
+    value_name_builder.append(to_string(r.get_page(), instructions.count()));
+    return String(value_name_builder.to_string(rp));
+}
+
 Result<List<Plan::Instruction>*, PlannerError> Planner::plan_fmul(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, String name, Tuple& tuple, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
     auto r = Region();
     List<String>& names_list = *new (alignof(List<String>), r.get_page()) List<String>();
@@ -222,7 +232,8 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_fmul(Page* rp, Page
     if (names.length != 2) 
         return Result<List<Plan::Instruction>*, PlannerError>(InstructionWithInvalidNumberOfArguments(String(ep, name)));
     auto page = get_page();
-    (*instructions).add(Plan::Instruction(new (alignof(String), page) String(get_page(), "_ret"), String(get_page(), "fmul"), names));
+    const auto value = allocate_value_name(get_page(), blocks, *instructions);
+    (*instructions).add(Plan::Instruction(new (alignof(String), page) String(get_page(), value), String(get_page(), "fmul"), names));
     return Result<List<Plan::Instruction>*, PlannerError>(instructions);
 }
 
