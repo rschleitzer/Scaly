@@ -73,28 +73,17 @@ namespace generator {
 
     void add_instruction(IRBuilder<>& builder, HashMap<String, llvm::Value*>& argument_values_map, HashMapBuilder<String, llvm::Value*>& block_values_builder, Plan::Instruction instruction) {
         auto r = Region();
-        switch (instruction._tag) {
-            case Plan::Instruction::FMul:
-            {
-                auto fMul = instruction._FMul;
-                auto lValue = get_value(fMul.l, argument_values_map, block_values_builder);
-                auto rValue = get_value(fMul.r, argument_values_map, block_values_builder);
-                auto result = builder.CreateFMul(lValue, rValue, fMul.result.to_c_string(r.get_page()));
-                block_values_builder.add(fMul.result, result);
-                break;
-            }
-            case Plan::Instruction::Ret:
-            {
-                auto ret = instruction._Ret;
-                builder.CreateRet(get_value(ret.v, argument_values_map, block_values_builder));
-                break;
-            }
-            case Plan::Instruction::RetVoid:
-            {
-                auto retVoid = instruction._RetVoid;
+        if (instruction.name.equals("fmul")) {
+            auto lValue = get_value(*(instruction.args[0]), argument_values_map, block_values_builder);
+            auto rValue = get_value(*(instruction.args[0]), argument_values_map, block_values_builder);
+            auto result = builder.CreateFMul(lValue, rValue, instruction.result->to_c_string(r.get_page()));
+            block_values_builder.add(*(instruction.result), result);
+        }
+        else if (instruction.name.equals("ret")) {
+            if (instruction.args.length)
+                builder.CreateRet(get_value(*(instruction.args[0]), argument_values_map, block_values_builder));
+            else
                 builder.CreateRetVoid();
-                break;
-            }
         }
     }
 

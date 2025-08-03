@@ -14,15 +14,7 @@ Argument::Argument(String name, String type) : name(name), type(type) {}
 
 Block::Block(String name, Vector<Instruction> instructions) : name(name), instructions(instructions) {}
 
-FMul::FMul(String l, String r, String result) : l(l), r(r), result(result) {}
-
-Ret::Ret(String v) : v(v) {}
-Instruction::Instruction(struct FMul _FMul) : _tag(FMul), _FMul(_FMul) {}
-
-Instruction::Instruction(struct Ret _Ret) : _tag(Ret), _Ret(_Ret) {}
-
-Instruction::Instruction(struct RetVoid _RetVoid) : _tag(RetVoid), _RetVoid(_RetVoid) {}
-
+Instruction::Instruction(String* result, String name, Vector<String> args) : result(result), name(name), args(args) {}
 
 }
 

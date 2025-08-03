@@ -12,12 +12,12 @@ define List[T @summary "The element type of the list."]
         @remarks "The head of the list will always be the last element added."
 )
 {
-    function get_head(this: List[T]) returns T$
+    function get_head(this: List[T]) returns pointer[T]$
     {
         if head = null
             return null
 
-        return &((*head).element)
+        return &(*head).element
     }
 
     function count(this: List[T]) returns size_t

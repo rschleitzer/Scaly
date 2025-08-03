@@ -345,9 +345,6 @@ struct Type;
 struct Function;
 struct Argument;
 struct Block;
-struct FMul;
-struct Ret;
-struct RetVoid;
 struct Instruction;
 }
 struct Planner;

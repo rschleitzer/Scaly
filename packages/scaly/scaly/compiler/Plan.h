@@ -46,38 +46,13 @@ struct Block : Object {
     Block(String name, Vector<Instruction> instructions);
 };
 
-struct FMul : Object {
-    String l;
-    String r;
-    String result;
-
-    FMul(String l, String r, String result);
-};
-
-struct Ret : Object {
-    String v;
-
-    Ret(String v);
-};
-
-struct RetVoid : Object {
-
-};
-
 struct Instruction : Object {
-    Instruction(FMul);
-    Instruction(Ret);
-    Instruction(RetVoid);
-    enum {
-        FMul,
-        Ret,
-        RetVoid,
-    } _tag;
-    union {
-        struct FMul _FMul;
-        struct Ret _Ret;
-        struct RetVoid _RetVoid;
-    };
+    String* result;
+    String name;
+    Vector<String> args;
+
+    Instruction(String* result, String name, Vector<String> args);
 };
+
 }
 #endif

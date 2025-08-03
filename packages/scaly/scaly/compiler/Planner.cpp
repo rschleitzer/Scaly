@@ -221,7 +221,7 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_fmul(Page* rp, Page
     auto names = Vector<String>(get_page(), names_list);
     if (names.length != 2) 
         return Result<List<Plan::Instruction>*, PlannerError>(InstructionWithInvalidNumberOfArguments(String(ep, name)));
-    (*instructions).add(Plan::Instruction(Plan::FMul(*(names.get(0)), *(names.get(1)), result)));
+    (*instructions).add(Plan::Instruction(&result, String(get_page(), "fmul"), names));
     return Result<List<Plan::Instruction>*, PlannerError>(instructions);
 }
 
@@ -589,8 +589,9 @@ Result<Void, PlannerError> Planner::plan_function(Page* ep, HashMap<String, Name
             {
                 auto action = _result._Action;
                 {
-                    auto ret = String(get_page(), "_ret");
-                    const auto _new_instructions_result = plan_action(get_page(), ep, symbols, nullptr, action, ret, blocks, &instructions);
+                    auto page = get_page();
+                    auto ret = new (alignof(String), page) String(get_page(), "_ret");
+                    const auto _new_instructions_result = plan_action(get_page(), ep, symbols, nullptr, action, *ret, blocks, &instructions);
                     auto new_instructions = _new_instructions_result._Ok;
                     if (_new_instructions_result._tag == Success::Error) {
                         const auto _new_instructions_Error = _new_instructions_result._Error;
@@ -602,10 +603,14 @@ Result<Void, PlannerError> Planner::plan_function(Page* ep, HashMap<String, Name
                     };
                     instructions = *new_instructions;
                     if (func.returns_) {
-                        instructions.add(Plan::Instruction(Plan::Ret(ret)));
+                        List<String>& args_list = *new (alignof(List<String>), r.get_page()) List<String>();
+                        auto retval = (*(instructions.get_head())).result;
+                        args_list.add(*retval);
+                        auto names = Vector<String>(get_page(), args_list);
+                        instructions.add(Plan::Instruction(ret, String(get_page(), "ret"), Vector<String>(get_page(), args_list)));
                     }
                     else {
-                        instructions.add(Plan::Instruction(Plan::RetVoid()));
+                        instructions.add(Plan::Instruction(nullptr, String(get_page(), "ret"), Vector<String>()));
                     };
                     auto block = Plan::Block(String(get_page(), "entry"), Vector<Plan::Instruction>(get_page(), instructions));
                     blocks.add(block);

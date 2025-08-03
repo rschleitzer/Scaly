@@ -127,7 +127,7 @@ function plan_fmul(this: Planner, symbols: ref[HashMap[String, Nameable]], opera
     if names.length <> 2
         throw InstructionWithInvalidNumberOfArguments(String(ep, name))
 
-    (*instructions).add(Plan->Instruction(Plan->FMul(*(names.get(0)), *(names.get(1)), result)))
+    (*instructions).add(Plan->Instruction(&result, String(get_page(), "fmul"), names))
     return instructions
 }
 
@@ -302,15 +302,20 @@ function plan_function(this: Planner, symbols: ref[HashMap[String, Nameable]], f
     choose func.implementation
         when action: Implementation.Action
         {
-            var ret String(get_page(), "_ret")
-            try let new_instructions plan_action(get_page(), ep, symbols, null, action, ret, blocks, &instructions)
+            var page get_page()
+            var ret new_ String^page(get_page(), "_ret")
+            try let new_instructions plan_action(get_page(), ep, symbols, null, action, *ret, blocks, &instructions)
                 else throw
             set instructions: *new_instructions
             if func.returns_
             {
-                instructions.add(Plan->Instruction(Plan->Ret(ret)))
+                var args_list: ref[List[String]] *List[String]$()
+                var retval (*(instructions.get_head())).result
+                args_list.add(*retval)
+                var names Vector[String](get_page(), args_list)
+                instructions.add(Plan->Instruction(ret, String(get_page(), "ret"), Vector[String](get_page(), args_list)))
             } else {
-                instructions.add(Plan->Instruction(Plan->RetVoid()))
+                instructions.add(Plan->Instruction(null, String(get_page(), "ret"), Vector[String]()))
             }
 
             var block new_ Plan.Block(String(get_page(), "entry"), new_ Vector[Plan.Instruction](get_page(), instructions))

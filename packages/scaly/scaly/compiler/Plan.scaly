@@ -23,14 +23,10 @@ define Plan
     define Argument(name: String, type: String)
  
     define Block(name: String, instructions: Vector[Instruction])
-
-    define FMul(l: String, r: String, result: String)
-    define Ret(v: String)
-    define RetVoid()
  
-    define Instruction union (
-        FMul: FMul
-        Ret: Ret
-        RetVoid: RetVoid
+    define Instruction (
+        result: pointer[String]
+        name: String
+        args: Vector[String]
     )
 }

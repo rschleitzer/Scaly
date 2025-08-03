@@ -12,10 +12,10 @@ struct List : Object {
 
     List() : head(nullptr) {}
 
-    T get_head() {
+    T* get_head() {
         if (head == nullptr) 
             return nullptr;
-        return &((*head).element);
+        return &(*head).element;
     };
 
     size_t count() {
