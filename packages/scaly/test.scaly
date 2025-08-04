@@ -2,6 +2,8 @@ define double intrinsic
 
 function fmul(op1: double, op2: double) returns double instruction
 
-function foo(a: double, b: double) returns double {
+function multiply(a: double, b: double) returns double {
     fmul(a, b)
 }
+
+multiply(4, 5)
