@@ -199,18 +199,19 @@ String Planner::resolve_type(Page* rp, Type type) {
     return String(rp, *type.name.get(0));
 }
 
-Result<List<Plan::Instruction>*, PlannerError> Planner::plan_tuple(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, List<String>& names, Tuple& tuple, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
+Result<List<Plan::Instruction>*, PlannerError> Planner::plan_tuple(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, Tuple& tuple, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions, List<String>& values) {
     
     auto _component_iterator = tuple.components.get_iterator();
     while (auto _component = _component_iterator.next()) {
         auto component = *_component;{
             if (component.name) 
                 return Result<List<Plan::Instruction>*, PlannerError>(TupleComponentNamesNotSupported());
-            plan_operation(get_page(), ep, symbols, component.value, blocks, instructions);
+            plan_operation(get_page(), ep, symbols, component.value, blocks, instructions, values);
+            const auto last_instruction = (*instructions).get_head();
+            if (last_instruction) 
+                values.add(*(*last_instruction).result);
         }
     };
-    names.add(String(get_page(), "a"));
-    names.add(String(get_page(), "b"));
     return Result<List<Plan::Instruction>*, PlannerError>(instructions);
 }
 
@@ -224,22 +225,22 @@ String Planner::allocate_value_name(Page* rp, List<Plan::Block>& blocks, List<Pl
     return String(value_name_builder.to_string(rp));
 }
 
-Result<List<Plan::Instruction>*, PlannerError> Planner::plan_fmul(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, String name, Tuple& tuple, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
+Result<List<Plan::Instruction>*, PlannerError> Planner::plan_fmul(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, Tuple& tuple, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
     auto r = Region();
-    List<String>& names_list = *new (alignof(List<String>), r.get_page()) List<String>();
-    plan_tuple(get_page(), ep, symbols, operation, names_list, tuple, blocks, instructions);
-    auto names = Vector<String>(get_page(), names_list);
-    if (names.length != 2) 
-        return Result<List<Plan::Instruction>*, PlannerError>(InstructionWithInvalidNumberOfArguments(String(ep, name)));
+    List<String>& values_list = *new (alignof(List<String>), r.get_page()) List<String>();
+    plan_tuple(get_page(), ep, symbols, tuple, blocks, instructions, values_list);
+    auto values = Vector<String>(get_page(), values_list);
+    if (values.length != 2) 
+        return Result<List<Plan::Instruction>*, PlannerError>(InstructionWithInvalidNumberOfArguments(String(ep, "fmul")));
     auto page = get_page();
     const auto value = allocate_value_name(get_page(), blocks, *instructions);
-    (*instructions).add(Plan::Instruction(new (alignof(String), page) String(get_page(), value), String(get_page(), "fmul"), names));
+    (*instructions).add(Plan::Instruction(new (alignof(String), page) String(get_page(), value), String(get_page(), "fmul"), values));
     return Result<List<Plan::Instruction>*, PlannerError>(instructions);
 }
 
 Result<List<Plan::Instruction>*, PlannerError> Planner::plan_instruction_call(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, String name, Tuple& tuple, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
     if (name.equals("fmul")) {
-        return Result<List<Plan::Instruction>*, PlannerError>(plan_fmul(get_page(), ep, symbols, operation, name, tuple, blocks, instructions));
+        return Result<List<Plan::Instruction>*, PlannerError>(plan_fmul(get_page(), ep, symbols, tuple, blocks, instructions));
     }
     else {
         return Result<List<Plan::Instruction>*, PlannerError>(UnknownInstruction(String(ep, name)));
@@ -247,7 +248,7 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_instruction_call(Pa
     return Result<List<Plan::Instruction>*, PlannerError>(instructions);
 }
 
-Result<List<Plan::Instruction>*, PlannerError> Planner::plan_type(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, Type& type, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
+Result<List<Plan::Instruction>*, PlannerError> Planner::plan_type(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, Type& type, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions, List<String>& values) {
     if (type.name.length>1) 
         return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Qualified type name")));
     if (type.generics) 
@@ -391,6 +392,7 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_type(Page* rp, Page
         };
     }
     else {
+        values.add(name);
     };
     return Result<List<Plan::Instruction>*, PlannerError>(instructions);
 }
@@ -407,7 +409,11 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_block(Page* rp, Pag
                     case Statement::Action:
                     {
                         auto action = _result._Action;
-                        return Result<List<Plan::Instruction>*, PlannerError>(plan_action(get_page(), ep, symbols, operation, action, blocks, instructions));
+                        {
+                            auto r = Region();
+                            List<String>& values = *new (alignof(List<String>), r.get_page()) List<String>();
+                            return Result<List<Plan::Instruction>*, PlannerError>(plan_action(get_page(), ep, symbols, operation, action, blocks, instructions, values));
+                        };
                         break;
                     }
                     case Statement::Binding:
@@ -447,7 +453,7 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_block(Page* rp, Pag
     return Result<List<Plan::Instruction>*, PlannerError>(instructions);
 }
 
-Result<List<Plan::Instruction>*, PlannerError> Planner::plan_operand(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, Operand& operand, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
+Result<List<Plan::Instruction>*, PlannerError> Planner::plan_operand(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, Operand& operand, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions, List<String>& values) {
     auto r = Region();
     if (operand.member_access) 
         return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "member access")));
@@ -464,7 +470,7 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_operand(Page* rp, P
             case Expression::Type:
             {
                 auto type = _result._Type;
-                return Result<List<Plan::Instruction>*, PlannerError>(plan_type(get_page(), ep, symbols, operation, type, blocks, instructions));
+                return Result<List<Plan::Instruction>*, PlannerError>(plan_type(get_page(), ep, symbols, operation, type, blocks, instructions, values));
                 break;
             }
             case Expression::Tuple:
@@ -543,11 +549,11 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_operand(Page* rp, P
     };
 }
 
-Result<List<Plan::Instruction>*, PlannerError> Planner::plan_operation(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, Vector<Operand>& operation, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
+Result<List<Plan::Instruction>*, PlannerError> Planner::plan_operation(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, Vector<Operand>& operation, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions, List<String>& values) {
     auto r = Region();
     auto operand_iterator = operation.get_iterator();
     while (auto operand = operand_iterator.next()) {
-        const auto _new_instructions_result = plan_operand(get_page(), ep, symbols, &operand_iterator, *operand, blocks, instructions);
+        const auto _new_instructions_result = plan_operand(get_page(), ep, symbols, &operand_iterator, *operand, blocks, instructions, values);
         auto new_instructions = _new_instructions_result._Ok;
         if (_new_instructions_result._tag == Success::Error) {
             const auto _new_instructions_Error = _new_instructions_result._Error;
@@ -561,11 +567,11 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_operation(Page* rp,
     return Result<List<Plan::Instruction>*, PlannerError>(instructions);
 }
 
-Result<List<Plan::Instruction>*, PlannerError> Planner::plan_action(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, Action& action, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
+Result<List<Plan::Instruction>*, PlannerError> Planner::plan_action(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, Action& action, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions, List<String>& values) {
     auto r = Region();
     if (action.target.length>0) 
         return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "set")));
-    const auto _new_instructions_result = plan_operation(get_page(), ep, symbols, action.source, blocks, instructions);
+    const auto _new_instructions_result = plan_operation(get_page(), ep, symbols, action.source, blocks, instructions, values);
     auto new_instructions = _new_instructions_result._Ok;
     if (_new_instructions_result._tag == Success::Error) {
         const auto _new_instructions_Error = _new_instructions_result._Error;
@@ -601,7 +607,8 @@ Result<Void, PlannerError> Planner::plan_function(Page* ep, HashMap<String, Name
             {
                 auto action = _result._Action;
                 {
-                    const auto _new_instructions_result = plan_action(get_page(), ep, symbols, nullptr, action, blocks, &instructions);
+                    List<String>& values = *new (alignof(List<String>), r.get_page()) List<String>();
+                    const auto _new_instructions_result = plan_action(get_page(), ep, symbols, nullptr, action, blocks, &instructions, values);
                     auto new_instructions = _new_instructions_result._Ok;
                     if (_new_instructions_result._tag == Success::Error) {
                         const auto _new_instructions_Error = _new_instructions_result._Error;
