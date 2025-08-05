@@ -170,15 +170,15 @@ namespace generator {
             exit(1);
         }
 
-        auto multiply_sym = (*jitter)->lookup("multiply");
-        if (!multiply_sym) {
-            errs() << "Failed to lookup 'main': " << toString(multiply_sym.takeError()) << "\n";
+        auto main_sym = (*jitter)->lookup("main");
+        if (!main_sym) {
+            errs() << "Failed to lookup 'main'\n";
             exit(1);
         }
         
         // Cast to function pointer and execute
-        auto *multiply = multiply_sym->toPtr<double(double, double)>();
-        double Result = multiply(2, 3);      
+        auto *main = main_sym->toPtr<double(double, double)>();
+        double Result = main(2, 3);      
     }
 }
 }
