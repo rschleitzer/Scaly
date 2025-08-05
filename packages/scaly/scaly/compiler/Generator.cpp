@@ -22,6 +22,8 @@
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Verifier.h"
+#include "llvm/ExecutionEngine/Orc/LLJIT.h"
+#include "llvm/Support/TargetSelect.h"
 
 struct Void {};
 enum Success { Ok, Error };
@@ -137,22 +139,46 @@ namespace generator {
 
     void generate_module(Plan::Module& planModule) {
         Region _r;
-        LLVMContext context;
-        llvm::Module module(planModule.name.to_c_string(_r.get_page()), context);
-        IRBuilder<> Builder(context);
+        auto context = std::make_unique<LLVMContext>();
+        auto module = std::make_unique<llvm::Module>(planModule.name.to_c_string(_r.get_page()), *context);
+        IRBuilder<> Builder(*context);
 
         auto _function_iterator = planModule.functions.get_iterator();
         while (auto _function = _function_iterator.next()) {
             auto planFunction = *_function;
-            auto function = generate_function(module, planFunction);
+            auto function = generate_function(*module, planFunction);
         }        
 
-        if (llvm::verifyModule(module, &llvm::errs())) {
+        if (llvm::verifyModule(*module, &llvm::errs())) {
                 llvm::errs() << "Error: Invalid module!\n";
                 exit(1);
             }
 
-        module.print(llvm::outs(), nullptr);
+        module->print(llvm::outs(), nullptr);
+
+        InitializeNativeTarget();
+        InitializeNativeTargetAsmPrinter();
+
+        auto jitter = orc::LLJITBuilder().create();
+        if (!jitter) {
+            errs() << "Failed to create jitter: " << toString(jitter.takeError()) << "\n";
+            exit(1);
+        }
+
+        if (auto Err = (*jitter)->addIRModule(orc::ThreadSafeModule(std::move(module), std::move(context)))) {
+            errs() << "Failed to add IR module: " << Err << "\n";
+            exit(1);
+        }
+
+        auto multiply_sym = (*jitter)->lookup("multiply");
+        if (!multiply_sym) {
+            errs() << "Failed to lookup 'main': " << toString(multiply_sym.takeError()) << "\n";
+            exit(1);
+        }
+        
+        // Cast to function pointer and execute
+        auto *multiply = multiply_sym->toPtr<double(double, double)>();
+        double Result = multiply(2, 3);      
     }
 }
 }
