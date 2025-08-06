@@ -397,57 +397,62 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_type(Page* rp, Page
     return Result<List<Plan::Instruction>*, PlannerError>(instructions);
 }
 
+Result<List<Plan::Instruction>*, PlannerError> Planner::plan_statement(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, Statement& statement, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
+    {
+        auto _result = statement;
+        switch (_result._tag)
+        {
+            case Statement::Action:
+            {
+                auto action = _result._Action;
+                {
+                    auto r = Region();
+                    List<String>& values = *new (alignof(List<String>), r.get_page()) List<String>();
+                    return Result<List<Plan::Instruction>*, PlannerError>(plan_action(get_page(), ep, symbols, operation, action, blocks, instructions, values));
+                };
+                break;
+            }
+            case Statement::Binding:
+            {
+                auto binding = _result._Binding;
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Binding statement")));
+                break;
+            }
+            case Statement::Break:
+            {
+                auto break_ = _result._Break;
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Break statement")));
+                break;
+            }
+            case Statement::Continue:
+            {
+                auto continue_ = _result._Continue;
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Continue statement")));
+                break;
+            }
+            case Statement::Return:
+            {
+                auto return_ = _result._Return;
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Return statement")));
+                break;
+            }
+            case Statement::Throw:
+            {
+                auto throw_ = _result._Throw;
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Throw statement")));
+                break;
+            }
+        }
+    };
+    return Result<List<Plan::Instruction>*, PlannerError>(instructions);
+}
+
 Result<List<Plan::Instruction>*, PlannerError> Planner::plan_block(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, Block& block, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
     
     auto _statement_iterator = block.statements.get_iterator();
     while (auto _statement = _statement_iterator.next()) {
         auto statement = *_statement;{
-            {
-                auto _result = statement;
-                switch (_result._tag)
-                {
-                    case Statement::Action:
-                    {
-                        auto action = _result._Action;
-                        {
-                            auto r = Region();
-                            List<String>& values = *new (alignof(List<String>), r.get_page()) List<String>();
-                            return Result<List<Plan::Instruction>*, PlannerError>(plan_action(get_page(), ep, symbols, operation, action, blocks, instructions, values));
-                        };
-                        break;
-                    }
-                    case Statement::Binding:
-                    {
-                        auto binding = _result._Binding;
-                        return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Binding statement")));
-                        break;
-                    }
-                    case Statement::Break:
-                    {
-                        auto break_ = _result._Break;
-                        return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Break statement")));
-                        break;
-                    }
-                    case Statement::Continue:
-                    {
-                        auto continue_ = _result._Continue;
-                        return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Continue statement")));
-                        break;
-                    }
-                    case Statement::Return:
-                    {
-                        auto return_ = _result._Return;
-                        return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Return statement")));
-                        break;
-                    }
-                    case Statement::Throw:
-                    {
-                        auto throw_ = _result._Throw;
-                        return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Throw statement")));
-                        break;
-                    }
-                }
-            };
+            plan_statement(get_page(), ep, symbols, operation, statement, blocks, instructions);
         }
     };
     return Result<List<Plan::Instruction>*, PlannerError>(instructions);

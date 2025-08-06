@@ -216,26 +216,32 @@ function plan_type(this: Planner, symbols: ref[HashMap[String, Nameable]], opera
     return instructions
 }
 
+function plan_statement(this: Planner, symbols: ref[HashMap[String, Nameable]], operation: pointer[VectorIterator[Operand]], statement: ref[Statement], blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
+    choose statement
+        when action: Statement.Action
+        {
+            var r Region()
+            var values: ref[List[String]] *List[String]$()
+            return plan_action(get_page(), ep, symbols, operation, action, blocks, instructions, values)
+        }
+        when binding: Statement.Binding
+            throw FeatureNotImplemented(String(ep, "Binding statement"))
+        when break_: Statement.Break
+            throw FeatureNotImplemented(String(ep, "Break statement"))
+        when continue_: Statement.Continue
+            throw FeatureNotImplemented(String(ep, "Continue statement"))
+        when return_: Statement.Return
+            throw FeatureNotImplemented(String(ep, "Return statement"))
+        when throw_: Statement.Throw
+            throw FeatureNotImplemented(String(ep, "Throw statement"))
+
+    return instructions
+}
+
 function plan_block(this: Planner, symbols: ref[HashMap[String, Nameable]], operation: pointer[VectorIterator[Operand]], block: ref[Block], blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
     for statement in block.statements
     {
-        choose statement
-            when action: Statement.Action
-            {
-                var r Region()
-                var values: ref[List[String]] *List[String]$()
-                return plan_action(get_page(), ep, symbols, operation, action, blocks, instructions, values)
-            }
-            when binding: Statement.Binding
-                throw FeatureNotImplemented(String(ep, "Binding statement"))
-            when break_: Statement.Break
-                throw FeatureNotImplemented(String(ep, "Break statement"))
-            when continue_: Statement.Continue
-                throw FeatureNotImplemented(String(ep, "Continue statement"))
-            when return_: Statement.Return
-                throw FeatureNotImplemented(String(ep, "Return statement"))
-            when throw_: Statement.Throw
-                throw FeatureNotImplemented(String(ep, "Throw statement"))
+        plan_statement(get_page(), ep, symbols, operation, statement, blocks, instructions)
     }
     return instructions
 }
