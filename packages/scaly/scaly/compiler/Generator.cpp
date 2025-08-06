@@ -60,6 +60,10 @@ namespace generator {
             return llvm::Type::getVoidTy(context);
         if (type.equals("double"))
             return llvm::Type::getDoubleTy(context);
+        if (type.equals("int32"))
+            return llvm::Type::getInt32Ty(context);
+        if (type.equals("ptr"))
+            return llvm::PointerType::get(context, 0);
         exit(1);
     }
 
@@ -79,6 +83,12 @@ namespace generator {
             auto lValue = get_value(*(instruction.args[0]), argument_values_map, block_values_builder);
             auto rValue = get_value(*(instruction.args[1]), argument_values_map, block_values_builder);
             auto result = builder.CreateFMul(lValue, rValue, instruction.result->to_c_string(r.get_page()));
+            block_values_builder.add(*(instruction.result), result);
+        }
+        else if (instruction.name.equals("mul")) {
+            auto lValue = get_value(*(instruction.args[0]), argument_values_map, block_values_builder);
+            auto rValue = get_value(*(instruction.args[1]), argument_values_map, block_values_builder);
+            auto result = builder.CreateMul(lValue, rValue, instruction.result->to_c_string(r.get_page()));
             block_values_builder.add(*(instruction.result), result);
         }
         else if (instruction.name.equals("ret")) {
@@ -177,8 +187,8 @@ namespace generator {
         }
         
         // Cast to function pointer and execute
-        auto *main = main_sym->toPtr<double(double, double)>();
-        double Result = main(2, 3);      
+        auto *main = main_sym->toPtr<int(int, void*)>();
+        double Result = main(2, nullptr);
     }
 }
 }

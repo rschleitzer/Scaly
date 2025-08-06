@@ -11,40 +11,86 @@ define Planner
     functions_builder: HashMapBuilder[String, Plan.Function]
 )
 {
-    init(program: ref[Program]) (program(program)) (intrinsics_builder(new_ HashSetBuilder[String]())) (types_builder(new_ HashMapBuilder[String, Plan.Type]())) (functions_builder(new_ HashMapBuilder[String, Plan.Function]())) {}
 
-    function plan_program(this: Planner) returns Plan.Module throws PlannerError {
-        var r Region()
+init(program: ref[Program]) (program(program)) (intrinsics_builder(new_ HashSetBuilder[String]())) (types_builder(new_ HashMapBuilder[String, Plan.Type]())) (functions_builder(new_ HashMapBuilder[String, Plan.Function]())) {}
 
-        let file program.module_.file
-        var path Path->get_directory_name(r.get_page(), file)
-        if path.get_length() > 0
+function plan_program(this: Planner) returns Plan.Module throws PlannerError {
+    var r Region()
+
+    let file program.module_.file
+    var path Path->get_directory_name(r.get_page(), file)
+    if path.get_length() > 0
+    {
+        try let exists Directory->exists(ep, path)
+            else throw
+
+        if exists = false
         {
-            try let exists Directory->exists(ep, path)
-                else throw
-
-            if exists = false
-            {
-                try Directory->create(ep, path)
-                    else throw
-            }
-        }
-
-        try plan_module(ep, program.module_)
-        else throw
-
-        for module_ in program.module_.modules
-        {
-            try plan_module(ep, module_)
+            try Directory->create(ep, path)
                 else throw
         }
-
-        return Plan->Module(path, program.module_.name, 
-            new_ Vector[Plan.Type](rp, types_list),
-            new_ HashMap[String, Plan.Type](rp, types_builder),
-            new_ Vector[Plan.Function](rp, functions_list),
-            new_ HashMap[String, Plan.Function](rp, functions_builder))
     }
+
+    try plan_module(ep, program.module_)
+    else throw
+
+    for module_ in program.module_.modules
+    {
+        try plan_module(ep, module_)
+            else throw
+    }
+
+    if program.statements.length > 0
+    {
+        try plan_main_function(ep, program)
+            else throw
+    }
+
+    return Plan->Module(path, program.module_.name, 
+        new_ Vector[Plan.Type](rp, types_list),
+        new_ HashMap[String, Plan.Type](rp, types_builder),
+        new_ Vector[Plan.Function](rp, functions_list),
+        new_ HashMap[String, Plan.Function](rp, functions_builder))
+}
+
+function plan_main_function(this: Planner, program: ref[Program]) throws PlannerError {
+    var r Region()
+    let main_name String(get_page(), "main")
+    if functions_builder.contains(main_name)
+        throw DuplicateFunction(String(ep, main_name))
+
+    var input_list: ref[List[Plan.Argument]] *new_ List[Plan.Argument]$()
+    input_list.add(Plan->Argument(String(get_page(), "argc"), String(get_page(), "int32")))
+    input_list.add(Plan->Argument(String(get_page(), "argv"), String(get_page(), "ptr")))
+
+    var blocks: ref[List[Plan.Block]] *new_ List[Plan.Block]$()
+    var instructions: ref[List[Plan.Instruction]] *new_ List[Plan.Instruction]$()
+    var values: ref[List[String]] *List[String]$()
+    for statement in program.statements
+    {
+        try let new_instructions plan_statement(get_page(), ep, program.module_.symbols, null, statement, blocks, &instructions)
+            else throw
+        set instructions: *new_instructions
+    }
+
+    if (*(instructions.get_head())).result
+    {
+        var ret_list: ref[List[String]] *List[String]$()
+        ret_list.add(*(*(instructions.get_head())).result)
+        instructions.add(Plan->Instruction(null, String(get_page(), "ret"), Vector[String](get_page(), ret_list)))
+    } else {
+        instructions.add(Plan->Instruction(null, String(get_page(), "ret"), Vector[String]()))
+    }
+
+    var block new_ Plan.Block(String(get_page(), "entry"), new_ Vector[Plan.Instruction](get_page(), instructions))
+    blocks.add(block)
+
+    let int_name String(get_page(), "int32")
+    var plan_function: Plan.Function Plan->Function(main_name, new_ Vector[Plan.Argument](get_page(), input_list), int_name, new_ Vector[Plan.Block](get_page(), blocks))
+    functions_builder.add(main_name, plan_function)
+    functions_list.add(plan_function)
+    return Void()
+}
 
 function plan_module(this: Planner, module_: ref[Module]) throws PlannerError {
     var r Region()
@@ -128,28 +174,14 @@ function allocate_value_name(this: Planner, blocks: ref[List[Plan.Block]], instr
     return String(value_name_builder.to_string(rp))
 }
 
-function plan_fmul(this: Planner, symbols: ref[HashMap[String, Nameable]], tuple: ref[Tuple], blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
+function plan_instruction_call(this: Planner, symbols: ref[HashMap[String, Nameable]], operation: pointer[VectorIterator[Operand]], name: String, tuple: ref[Tuple], blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
     var r Region()
     var values_list: ref[List[String]] *List[String]$()
-    plan_tuple(get_page(), ep, symbols, tuple, blocks, instructions, values_list)
-    
+    plan_tuple(get_page(), ep, symbols, tuple, blocks, instructions, values_list)    
     var values Vector[String](get_page(), values_list)
-    if values.length <> 2
-        throw InstructionWithInvalidNumberOfArguments(String(ep, "fmul"))
-
     var page get_page()
     let value allocate_value_name(get_page(), blocks, *instructions)
-    (*instructions).add(Plan->Instruction(new_ String^page(get_page(), value), String(get_page(), "fmul"), values))
-    return instructions
-}
-
-function plan_instruction_call(this: Planner, symbols: ref[HashMap[String, Nameable]], operation: pointer[VectorIterator[Operand]], name: String, tuple: ref[Tuple], blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
-    if name.equals("fmul")
-    {
-        return plan_fmul(get_page(), ep, symbols, tuple, blocks, instructions)
-    } else {
-        throw UnknownInstruction(String(ep, name))
-    }
+    (*instructions).add(Plan->Instruction(new_ String^page(get_page(), value), name, values))
     return instructions
 }
 
@@ -241,7 +273,9 @@ function plan_statement(this: Planner, symbols: ref[HashMap[String, Nameable]], 
 function plan_block(this: Planner, symbols: ref[HashMap[String, Nameable]], operation: pointer[VectorIterator[Operand]], block: ref[Block], blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
     for statement in block.statements
     {
-        plan_statement(get_page(), ep, symbols, operation, statement, blocks, instructions)
+        try let new_instructions plan_statement(get_page(), ep, symbols, operation, statement, blocks, instructions)
+            else throw
+        set instructions: new_instructions
     }
     return instructions
 }
@@ -330,9 +364,9 @@ function plan_function(this: Planner, symbols: ref[HashMap[String, Nameable]], f
             set instructions: *new_instructions
             if func.returns_
             {
-                var args_list: ref[List[String]] *List[String]$()
-                args_list.add(*(*(instructions.get_head())).result)
-                instructions.add(Plan->Instruction(null, String(get_page(), "ret"), Vector[String](get_page(), args_list)))
+                var ret_list: ref[List[String]] *List[String]$()
+                ret_list.add(*(*(instructions.get_head())).result)
+                instructions.add(Plan->Instruction(null, String(get_page(), "ret"), Vector[String](get_page(), ret_list)))
             } else {
                 instructions.add(Plan->Instruction(null, String(get_page(), "ret"), Vector[String]()))
             }

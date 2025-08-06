@@ -1,9 +1,5 @@
 define double intrinsic
 
-function fmul(op1: double, op2: double) returns double instruction
+function mul(op1: int32, op2: int32) returns int32 instruction
 
-function main(a: double, b: double) returns double {
-    fmul(a, b)
-}
-
-main(4, 5)
+mul(argc, argc)
