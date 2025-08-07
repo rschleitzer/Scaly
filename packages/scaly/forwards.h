@@ -325,6 +325,7 @@ struct ModelError;
 namespace transpiler {
 }
 struct FeatureNotImplemented;
+struct CantThrowInNonThrowingFunction;
 struct TranspilerError;
 struct DuplicateIntrinsic;
 struct DuplicateFunction;

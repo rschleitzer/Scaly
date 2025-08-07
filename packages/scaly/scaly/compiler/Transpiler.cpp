@@ -66,7 +66,7 @@ Result<Void, TranspilerError> transpile_program(Page* ep, Program& program) {
         }
     };
     if (program.statements.length>0) 
-        main_file(ep, path, program);
+        main_file(ep, program.module_.file, path, program);
     main_include_file(ep, path, program.module_.name);
     forward_includes(ep, path, program);
     vscode_files(ep, path, program);
@@ -143,7 +143,7 @@ struct Result {\n\
     build_uses(cpp_builder, module_.uses);
     StringBuilder& namespace_open_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder(namespace_open);
     {
-        const auto _void_result = build_symbols(ep, path, module_.file, nullptr, header_builder, cpp_builder, main_header, namespace_open, namespace_close, module_.members);
+        const auto _void_result = build_symbols(ep, module_.file, path, nullptr, header_builder, cpp_builder, main_header, namespace_open, namespace_close, module_.members);
         if (_void_result._tag == Success::Error) {
             const auto _void_Error = _void_result._Error;
             switch (_void_Error._tag) {
@@ -218,7 +218,7 @@ Result<Void, FileError> create_directory(Page* ep, String path) {
     return Result<Void, FileError>(Void());
 }
 
-Result<Void, TranspilerError> build_concept(Page* ep, String path, String source, StringBuilder& header_builder, StringBuilder& cpp_builder, String main_header, String namespace_open, String namespace_close, Concept& concept) {
+Result<Void, TranspilerError> build_concept(Page* ep, String file, String path, StringBuilder& header_builder, StringBuilder& cpp_builder, String main_header, String namespace_open, String namespace_close, Concept& concept) {
     {
         auto _result = concept.definition;
         switch (_result._tag)
@@ -226,38 +226,38 @@ Result<Void, TranspilerError> build_concept(Page* ep, String path, String source
             case Definition::Namespace:
             {
                 auto ns = _result._Namespace;
-                return Result<Void, TranspilerError>(build_namespace(ep, path, source, concept.name, header_builder, cpp_builder, main_header, namespace_open, namespace_close, ns));
+                return Result<Void, TranspilerError>(build_namespace(ep, path, file, concept.name, header_builder, cpp_builder, main_header, namespace_open, namespace_close, ns));
                 break;
             }
             case Definition::Structure:
             {
                 auto structure = _result._Structure;
-                return Result<Void, TranspilerError>(build_structure(ep, header_builder, cpp_builder, concept.name, structure, concept.parameters));
+                return Result<Void, TranspilerError>(build_structure(ep, file, header_builder, cpp_builder, concept.name, structure, concept.parameters));
                 break;
             }
             case Definition::Intrinsic:
             {
                 auto i = _result._Intrinsic;
-                return Result<Void, TranspilerError>(build_intrinsic(ep, header_builder, concept.name));
+                return Result<Void, TranspilerError>(build_intrinsic(ep, file, header_builder, concept));
                 break;
             }
             case Definition::Global:
             {
                 auto g = _result._Global;
-                return Result<Void, TranspilerError>(build_global(ep, header_builder, concept.name, g));
+                return Result<Void, TranspilerError>(build_global(ep, file, header_builder, concept.name, g));
                 break;
             }
             case Definition::Union:
             {
                 auto u = _result._Union;
-                return Result<Void, TranspilerError>(build_union(ep, header_builder, cpp_builder, concept.name, u, concept.parameters));
+                return Result<Void, TranspilerError>(build_union(ep, file, header_builder, cpp_builder, concept.name, u, concept.parameters));
                 break;
             }
         }
     };
 }
 
-Result<Void, TranspilerError> build_union(Page* ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, Union& union_, Vector<GenericParameter> parameters) {
+Result<Void, TranspilerError> build_union(Page* ep, String file, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, Union& union_, Vector<GenericParameter> parameters) {
     header_builder.append('\n');
     full_struct_name(header_builder, name, parameters);
     header_builder.append(" : Object");
@@ -326,7 +326,7 @@ Result<Void, TranspilerError> build_union(Page* ep, StringBuilder& header_builde
                     {
                         auto func = _result._Function;
                         {
-                            const auto _void_result = build_function(ep, header_builder, cpp_builder, func, &name, parameters.length>0, true);
+                            const auto _void_result = build_function(ep, file, header_builder, cpp_builder, func, &name, parameters.length>0, true);
                             if (_void_result._tag == Success::Error) {
                                 const auto _void_Error = _void_result._Error;
                                 switch (_void_Error._tag) {
@@ -342,7 +342,7 @@ Result<Void, TranspilerError> build_union(Page* ep, StringBuilder& header_builde
                     {
                         auto op = _result._Operator;
                         {
-                            const auto _void_result = build_operator(ep, header_builder, cpp_builder, op, &name, parameters.length>0);
+                            const auto _void_result = build_operator(ep, file, header_builder, cpp_builder, op, &name, parameters.length>0);
                             if (_void_result._tag == Success::Error) {
                                 const auto _void_Error = _void_result._Error;
                                 switch (_void_Error._tag) {
@@ -357,13 +357,13 @@ Result<Void, TranspilerError> build_union(Page* ep, StringBuilder& header_builde
                     case Member::Package:
                     {
                         auto p = _result._Package;
-                        return Result<Void, TranspilerError>(FeatureNotImplemented(String(ep, "structure local package")));
+                        return Result<Void, TranspilerError>(FeatureNotImplemented(file, union_.span, String(ep, "structure local package")));
                         break;
                     }
                     case Member::Concept:
                     {
                         auto concept = _result._Concept;
-                        return Result<Void, TranspilerError>(FeatureNotImplemented(String(ep, "structure local concept")));
+                        return Result<Void, TranspilerError>(FeatureNotImplemented(file, concept.span, String(ep, "structure local concept")));
                         break;
                     }
                 }
@@ -496,7 +496,7 @@ Result<Void, TranspilerError> build_namespace(Page* ep, String path, String sour
         }}
         ;
     {
-        const auto _void_result = build_symbols(ep, path, source, nullptr, header_builder, cpp_builder, main_header_builder.to_string(r.get_page()), namespace_open, namespace_close, namespace_.members);
+        const auto _void_result = build_symbols(ep, source, path, nullptr, header_builder, cpp_builder, main_header_builder.to_string(r.get_page()), namespace_open, namespace_close, namespace_.members);
         if (_void_result._tag == Success::Error) {
             const auto _void_Error = _void_result._Error;
             switch (_void_Error._tag) {
@@ -538,7 +538,7 @@ Result<Void, TranspilerError> build_modules(Page* ep, String path, String name, 
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> build_symbols(Page* ep, String path, String source, String* name, StringBuilder& header_builder, StringBuilder& cpp_builder, String main_header, String namespace_open, String namespace_close, Vector<Member> symbols) {
+Result<Void, TranspilerError> build_symbols(Page* ep, String file, String path, String* name, StringBuilder& header_builder, StringBuilder& cpp_builder, String main_header, String namespace_open, String namespace_close, Vector<Member> symbols) {
     auto r = Region();
     
     auto _member_iterator = symbols.get_iterator();
@@ -552,7 +552,7 @@ Result<Void, TranspilerError> build_symbols(Page* ep, String path, String source
                     {
                         auto func = _result._Function;
                         {
-                            const auto _void_result = build_function(ep, header_builder, cpp_builder, func, name, false, false);
+                            const auto _void_result = build_function(ep, file, header_builder, cpp_builder, func, name, false, false);
                             if (_void_result._tag == Success::Error) {
                                 const auto _void_Error = _void_result._Error;
                                 switch (_void_Error._tag) {
@@ -568,7 +568,7 @@ Result<Void, TranspilerError> build_symbols(Page* ep, String path, String source
                     {
                         auto concept = _result._Concept;
                         {
-                            const auto _void_result = build_concept(ep, path, source, header_builder, cpp_builder, main_header, namespace_open, namespace_close, concept);
+                            const auto _void_result = build_concept(ep, file, path, header_builder, cpp_builder, main_header, namespace_open, namespace_close, concept);
                             if (_void_result._tag == Success::Error) {
                                 const auto _void_Error = _void_result._Error;
                                 switch (_void_Error._tag) {
@@ -583,13 +583,13 @@ Result<Void, TranspilerError> build_symbols(Page* ep, String path, String source
                     case Member::Operator:
                     {
                         auto op = _result._Operator;
-                        return Result<Void, TranspilerError>(FeatureNotImplemented(String(ep, "namespace local operator")));
+                        return Result<Void, TranspilerError>(FeatureNotImplemented(file, op.span, String(ep, "namespace local operator")));
                         break;
                     }
                     case Member::Package:
                     {
                         auto p = _result._Package;
-                        return Result<Void, TranspilerError>(FeatureNotImplemented(String(ep, "namespace local package")));
+                        return Result<Void, TranspilerError>(FeatureNotImplemented(file, Span(0, 0), String(ep, "namespace local package")));
                         break;
                     }
                 }
@@ -599,7 +599,7 @@ Result<Void, TranspilerError> build_symbols(Page* ep, String path, String source
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> build_structure(Page* ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, Structure& structure, Vector<GenericParameter> parameters) {
+Result<Void, TranspilerError> build_structure(Page* ep, String file, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, Structure& structure, Vector<GenericParameter> parameters) {
     auto r = Region();
     header_builder.append('\n');
     full_struct_name(header_builder, name, parameters);
@@ -629,7 +629,7 @@ Result<Void, TranspilerError> build_structure(Page* ep, StringBuilder& header_bu
         build_default_initializer(ep, header_builder, cpp_builder, name, parameters.length>0, structure.properties);
     if (must_build_properties_initializer) 
         {
-        const auto _void_result = build_properties_initializer(ep, header_builder, cpp_builder, name, parameters.length>0, structure.properties);
+        const auto _void_result = build_properties_initializer(ep, file, header_builder, cpp_builder, name, parameters.length>0, structure.properties);
         if (_void_result._tag == Success::Error) {
             const auto _void_Error = _void_result._Error;
             switch (_void_Error._tag) {
@@ -644,7 +644,7 @@ Result<Void, TranspilerError> build_structure(Page* ep, StringBuilder& header_bu
     while (auto _initializer = _initializer_iterator.next()) {
         auto initializer = *_initializer;{
             {
-                const auto _void_result = build_initializer(ep, header_builder, cpp_builder, name, parameters.length>0, &initializer);
+                const auto _void_result = build_initializer(ep, file, header_builder, cpp_builder, name, parameters.length>0, &initializer);
                 if (_void_result._tag == Success::Error) {
                     const auto _void_Error = _void_result._Error;
                     switch (_void_Error._tag) {
@@ -658,7 +658,7 @@ Result<Void, TranspilerError> build_structure(Page* ep, StringBuilder& header_bu
     };
     if (structure.deinitializer != nullptr) 
         {
-        const auto _void_result = build_deinitializer(ep, header_builder, cpp_builder, name, parameters.length>0, structure.deinitializer);
+        const auto _void_result = build_deinitializer(ep, file, header_builder, cpp_builder, name, parameters.length>0, structure.deinitializer);
         if (_void_result._tag == Success::Error) {
             const auto _void_Error = _void_result._Error;
             switch (_void_Error._tag) {
@@ -680,7 +680,7 @@ Result<Void, TranspilerError> build_structure(Page* ep, StringBuilder& header_bu
                     {
                         auto func = _result._Function;
                         {
-                            const auto _void_result = build_function(ep, header_builder, cpp_builder, func, &name, parameters.length>0, true);
+                            const auto _void_result = build_function(ep, file, header_builder, cpp_builder, func, &name, parameters.length>0, true);
                             if (_void_result._tag == Success::Error) {
                                 const auto _void_Error = _void_result._Error;
                                 switch (_void_Error._tag) {
@@ -696,7 +696,7 @@ Result<Void, TranspilerError> build_structure(Page* ep, StringBuilder& header_bu
                     {
                         auto op = _result._Operator;
                         {
-                            const auto _void_result = build_operator(ep, header_builder, cpp_builder, op, &name, parameters.length>0);
+                            const auto _void_result = build_operator(ep, file, header_builder, cpp_builder, op, &name, parameters.length>0);
                             if (_void_result._tag == Success::Error) {
                                 const auto _void_Error = _void_result._Error;
                                 switch (_void_Error._tag) {
@@ -711,13 +711,13 @@ Result<Void, TranspilerError> build_structure(Page* ep, StringBuilder& header_bu
                     case Member::Package:
                     {
                         auto p = _result._Package;
-                        return Result<Void, TranspilerError>(FeatureNotImplemented(String(ep, "structure local package")));
+                        return Result<Void, TranspilerError>(FeatureNotImplemented(file, Span(0, 0), String(ep, "structure local package")));
                         break;
                     }
                     case Member::Concept:
                     {
                         auto c = _result._Concept;
-                        return Result<Void, TranspilerError>(FeatureNotImplemented(String(ep, "structure local concept")));
+                        return Result<Void, TranspilerError>(FeatureNotImplemented(file, c.span, String(ep, "structure local concept")));
                         break;
                     }
                 }
@@ -803,22 +803,22 @@ Result<Void, TranspilerError> build_default_initializer_list(Page* ep, StringBui
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> build_properties_initializer(Page* ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, bool is_generic, Vector<Property>& properties) {
+Result<Void, TranspilerError> build_properties_initializer(Page* ep, String file, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, bool is_generic, Vector<Property>& properties) {
     auto r = Region();
     build_initializer_header(header_builder, cpp_builder, name, is_generic);
     if ((is_generic)) {
-        build_properties_initializer_list(ep, header_builder, is_generic, properties, String(r.get_page(), "        "));
+        build_properties_initializer_list(ep, file, header_builder, is_generic, properties, String(r.get_page(), "        "));
         header_builder.append(" {}");
     }
     else {
-        build_properties_initializer_list(ep, cpp_builder, is_generic, properties, String(r.get_page(), "    "));
+        build_properties_initializer_list(ep, file, cpp_builder, is_generic, properties, String(r.get_page(), "    "));
         cpp_builder.append(" {}");
         header_builder.append(" ();");
     };
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> build_properties_initializer_list(Page* ep, StringBuilder& builder, bool is_generic, Vector<Property>& properties, String indent) {
+Result<Void, TranspilerError> build_properties_initializer_list(Page* ep, String file, StringBuilder& builder, bool is_generic, Vector<Property>& properties, String indent) {
     builder.append("() : ");
     auto first = true;
     
@@ -835,7 +835,7 @@ Result<Void, TranspilerError> build_properties_initializer_list(Page* ep, String
             builder.append(property.name);
             builder.append('(');
             {
-                const auto _void_result = build_operation(ep, builder, *property.initializer, nullptr, nullptr, nullptr, indent);
+                const auto _void_result = build_operation(ep, file, builder, *property.initializer, nullptr, nullptr, nullptr, indent);
                 if (_void_result._tag == Success::Error) {
                     const auto _void_Error = _void_result._Error;
                     switch (_void_Error._tag) {
@@ -851,14 +851,14 @@ Result<Void, TranspilerError> build_properties_initializer_list(Page* ep, String
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> build_initializer(Page* ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, bool is_generic, Initializer* initializer) {
+Result<Void, TranspilerError> build_initializer(Page* ep, String file, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, bool is_generic, Initializer* initializer) {
     auto r = Region();
     build_initializer_header(header_builder, cpp_builder, name, is_generic);
     if (is_generic == false) {
         build_input(cpp_builder, (*initializer).input, nullptr, nullptr, nullptr, Lifetime(Unspecified()));
         cpp_builder.append(' ');
         {
-            const auto _void_result = build_implementation(ep, cpp_builder, (*initializer).implementation, nullptr, nullptr, String(), true);
+            const auto _void_result = build_implementation(ep, file, cpp_builder, (*initializer).implementation, nullptr, nullptr, String(), true);
             if (_void_result._tag == Success::Error) {
                 const auto _void_Error = _void_result._Error;
                 switch (_void_Error._tag) {
@@ -873,7 +873,7 @@ Result<Void, TranspilerError> build_initializer(Page* ep, StringBuilder& header_
     if (is_generic) {
         header_builder.append(' ');
         {
-            const auto _void_result = build_implementation(ep, header_builder, (*initializer).implementation, nullptr, nullptr, String(r.get_page(), "    "), true);
+            const auto _void_result = build_implementation(ep, file, header_builder, (*initializer).implementation, nullptr, nullptr, String(r.get_page(), "    "), true);
             if (_void_result._tag == Success::Error) {
                 const auto _void_Error = _void_result._Error;
                 switch (_void_Error._tag) {
@@ -903,7 +903,7 @@ void build_initializer_header(StringBuilder& header_builder, StringBuilder& cpp_
     };
 }
 
-Result<Void, TranspilerError> build_deinitializer(Page* ep, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, bool is_generic, DeInitializer* de_initializer) {
+Result<Void, TranspilerError> build_deinitializer(Page* ep, String file, StringBuilder& header_builder, StringBuilder& cpp_builder, String name, bool is_generic, DeInitializer* de_initializer) {
     auto r = Region();
     header_builder.append("\n    ");
     header_builder.append('~');
@@ -915,7 +915,7 @@ Result<Void, TranspilerError> build_deinitializer(Page* ep, StringBuilder& heade
         cpp_builder.append(name);
         cpp_builder.append("() ");
         {
-            const auto _void_result = build_implementation(ep, cpp_builder, (*de_initializer).implementation, nullptr, nullptr, String(r.get_page(), String()), true);
+            const auto _void_result = build_implementation(ep, file, cpp_builder, (*de_initializer).implementation, nullptr, nullptr, String(), true);
             if (_void_result._tag == Success::Error) {
                 const auto _void_Error = _void_result._Error;
                 switch (_void_Error._tag) {
@@ -930,7 +930,7 @@ Result<Void, TranspilerError> build_deinitializer(Page* ep, StringBuilder& heade
     if (is_generic) {
         header_builder.append("() ");
         {
-            const auto _void_result = build_implementation(ep, header_builder, (*de_initializer).implementation, nullptr, nullptr, String(r.get_page(), "    "), true);
+            const auto _void_result = build_implementation(ep, file, header_builder, (*de_initializer).implementation, nullptr, nullptr, String(r.get_page(), "    "), true);
             if (_void_result._tag == Success::Error) {
                 const auto _void_Error = _void_result._Error;
                 switch (_void_Error._tag) {
@@ -974,18 +974,18 @@ void build_uses(StringBuilder& builder, Vector<Use>& uses) {
     };
 }
 
-Result<Void, TranspilerError> build_intrinsic(Page* ep, StringBuilder& header_builder, String name) {
+Result<Void, TranspilerError> build_intrinsic(Page* ep, String file, StringBuilder& header_builder, Concept& concept) {
     auto r = Region();
-    if (name.equals("size_t")) {
+    if (concept.name.equals("size_t")) {
         header_builder.append("typedef __SIZE_TYPE__ size_t\n");
     }
     else {
-        return Result<Void, TranspilerError>(FeatureNotImplemented(String(ep, name)));
+        return Result<Void, TranspilerError>(FeatureNotImplemented(file, concept.span, String(ep, concept.name)));
     };
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> build_global(Page* ep, StringBuilder& header_builder, String name, Global& global) {
+Result<Void, TranspilerError> build_global(Page* ep, String file, StringBuilder& header_builder, String name, Global& global) {
     auto r = Region();
     if (global.type.generics != nullptr&&(*global.type.generics).length == 0&&global.value.length == 1&&(*global.value.get(0)).expression._tag == Expression::Matrix) {
         {
@@ -1006,7 +1006,7 @@ Result<Void, TranspilerError> build_global(Page* ep, StringBuilder& header_build
                         auto _operation_iterator = matrix.operations.get_iterator();
                         while (auto _operation = _operation_iterator.next()) {
                             auto operation = *_operation;{
-                                build_operation(ep, header_builder, operation, nullptr, nullptr, nullptr, String());
+                                build_operation(ep, file, header_builder, operation, nullptr, nullptr, nullptr, String());
                                 header_builder.append(", ");
                             }
                         };
@@ -1026,13 +1026,13 @@ Result<Void, TranspilerError> build_global(Page* ep, StringBuilder& header_build
         header_builder.append(' ');
         header_builder.append(name);
         header_builder.append(" = ");
-        build_operation(ep, header_builder, global.value, nullptr, nullptr, nullptr, String());
+        build_operation(ep, file, header_builder, global.value, nullptr, nullptr, nullptr, String());
     };
     header_builder.append(";\n");
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> build_function(Page* ep, StringBuilder& header_builder, StringBuilder& cpp_builder, Function& func, String* name, bool is_template, bool in_class) {
+Result<Void, TranspilerError> build_function(Page* ep, String file, StringBuilder& header_builder, StringBuilder& cpp_builder, Function& func, String* name, bool is_template, bool in_class) {
     auto r = Region();
     String* location = nullptr;
     {
@@ -1110,7 +1110,7 @@ Result<Void, TranspilerError> build_function(Page* ep, StringBuilder& header_bui
         build_input(cpp_builder, func.input, location, func.returns_, func.throws_, func.lifetime);
         cpp_builder.append(' ');
         {
-            const auto _void_result = build_implementation(ep, cpp_builder, func.implementation, func.returns_, func.throws_, String(), false);
+            const auto _void_result = build_implementation(ep, file, cpp_builder, func.implementation, func.returns_, func.throws_, String(), false);
             if (_void_result._tag == Success::Error) {
                 const auto _void_Error = _void_result._Error;
                 switch (_void_Error._tag) {
@@ -1126,7 +1126,7 @@ Result<Void, TranspilerError> build_function(Page* ep, StringBuilder& header_bui
     if (is_template) {
         header_builder.append(' ');
         {
-            const auto _void_result = build_implementation(ep, header_builder, func.implementation, func.returns_, func.throws_, String(r.get_page(), "    "), false);
+            const auto _void_result = build_implementation(ep, file, header_builder, func.implementation, func.returns_, func.throws_, String(r.get_page(), "    "), false);
             if (_void_result._tag == Success::Error) {
                 const auto _void_Error = _void_result._Error;
                 switch (_void_Error._tag) {
@@ -1164,7 +1164,7 @@ void build_output_type(StringBuilder& builder, Type* returns_, Type* throws_) {
     };
 }
 
-Result<Void, TranspilerError> build_implementation(Page* ep, StringBuilder& builder, Implementation& implementation, Type* returns_, Type* throws_, String indent, bool is_initializer) {
+Result<Void, TranspilerError> build_implementation(Page* ep, String file, StringBuilder& builder, Implementation& implementation, Type* returns_, Type* throws_, String indent, bool is_initializer) {
     {
         auto _result = implementation;
         switch (_result._tag)
@@ -1175,7 +1175,7 @@ Result<Void, TranspilerError> build_implementation(Page* ep, StringBuilder& buil
                 {
                     if (action.target.length==0&&action.source.length==1&&(*action.source.get(0)).expression._tag == Expression::Block) {
                         {
-                            const auto _void_result = build_action(ep, builder, action, returns_, throws_, nullptr, indent);
+                            const auto _void_result = build_action(ep, file, builder, action, returns_, throws_, nullptr, indent);
                             if (_void_result._tag == Success::Error) {
                                 const auto _void_Error = _void_result._Error;
                                 switch (_void_Error._tag) {
@@ -1213,7 +1213,7 @@ Result<Void, TranspilerError> build_implementation(Page* ep, StringBuilder& buil
                                                                 builder.append(", ");
                                                             };
                                                             {
-                                                                const auto _void_result = build_operation(ep, builder, component.value, returns_, throws_, nullptr, indent);
+                                                                const auto _void_result = build_operation(ep, file, builder, component.value, returns_, throws_, nullptr, indent);
                                                                 if (_void_result._tag == Success::Error) {
                                                                     const auto _void_Error = _void_result._Error;
                                                                     switch (_void_Error._tag) {
@@ -1233,7 +1233,7 @@ Result<Void, TranspilerError> build_implementation(Page* ep, StringBuilder& buil
                                                 auto block = _result._Block;
                                                 {
                                                     {
-                                                        const auto _void_result = build_block(ep, builder, block, returns_, throws_, nullptr, indent);
+                                                        const auto _void_result = build_block(ep, file, builder, block, returns_, throws_, nullptr, indent);
                                                         if (_void_result._tag == Success::Error) {
                                                             const auto _void_Error = _void_result._Error;
                                                             switch (_void_Error._tag) {
@@ -1247,7 +1247,7 @@ Result<Void, TranspilerError> build_implementation(Page* ep, StringBuilder& buil
                                                 break;
                                             }
                                             default:
-                                                return Result<Void, TranspilerError>(FeatureNotImplemented(String(ep, "Other than Tuple or Block in initializer implementation")));
+                                                return Result<Void, TranspilerError>(FeatureNotImplemented(file, operand.span, String(ep, "Other than Tuple or Block in initializer implementation")));
                                         }
                                     };
                                 }
@@ -1258,7 +1258,7 @@ Result<Void, TranspilerError> build_implementation(Page* ep, StringBuilder& buil
                             builder.append(indent);
                             builder.append("    return ");
                             {
-                                const auto _void_result = build_action(ep, builder, action, returns_, throws_, nullptr, indent);
+                                const auto _void_result = build_action(ep, file, builder, action, returns_, throws_, nullptr, indent);
                                 if (_void_result._tag == Success::Error) {
                                     const auto _void_Error = _void_result._Error;
                                     switch (_void_Error._tag) {
@@ -1277,19 +1277,19 @@ Result<Void, TranspilerError> build_implementation(Page* ep, StringBuilder& buil
             case Implementation::Extern:
             {
                 auto e = _result._Extern;
-                return Result<Void, TranspilerError>(FeatureNotImplemented(String(ep, "Extern")));
+                return Result<Void, TranspilerError>(FeatureNotImplemented(file, e.span, String(ep, "Extern")));
                 break;
             }
             case Implementation::Instruction:
             {
                 auto i = _result._Instruction;
-                return Result<Void, TranspilerError>(FeatureNotImplemented(String(ep, "Instruction")));
+                return Result<Void, TranspilerError>(FeatureNotImplemented(file, i.span, String(ep, "Instruction")));
                 break;
             }
             case Implementation::Intrinsic:
             {
                 auto i = _result._Intrinsic;
-                return Result<Void, TranspilerError>(FeatureNotImplemented(String(ep, "Intrinsic")));
+                return Result<Void, TranspilerError>(FeatureNotImplemented(file, i.span, String(ep, "Intrinsic")));
                 break;
             }
         }
@@ -1297,7 +1297,7 @@ Result<Void, TranspilerError> build_implementation(Page* ep, StringBuilder& buil
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> build_binding(Page* ep, StringBuilder& builder, Binding& binding, Type* returns_, Type* throws_, String* re_throw, String indent) {
+Result<Void, TranspilerError> build_binding(Page* ep, String file, StringBuilder& builder, Binding& binding, Type* returns_, Type* throws_, String* re_throw, String indent) {
     if (binding.binding_type.equals("const")) 
         builder.append("const ");
     auto simple_array = false;
@@ -1314,7 +1314,7 @@ Result<Void, TranspilerError> build_binding(Page* ep, StringBuilder& builder, Bi
     if (simple_array) {
         builder.append('[');
         {
-            const auto _void_result = build_operation(ep, builder, binding.operation, returns_, throws_, re_throw, indent);
+            const auto _void_result = build_operation(ep, file, builder, binding.operation, returns_, throws_, re_throw, indent);
             if (_void_result._tag == Success::Error) {
                 const auto _void_Error = _void_result._Error;
                 switch (_void_Error._tag) {
@@ -1329,7 +1329,7 @@ Result<Void, TranspilerError> build_binding(Page* ep, StringBuilder& builder, Bi
     else {
         builder.append(" = ");
         {
-            const auto _void_result = build_operation(ep, builder, binding.operation, returns_, throws_, re_throw, indent);
+            const auto _void_result = build_operation(ep, file, builder, binding.operation, returns_, throws_, re_throw, indent);
             if (_void_result._tag == Success::Error) {
                 const auto _void_Error = _void_result._Error;
                 switch (_void_Error._tag) {
@@ -1343,10 +1343,10 @@ Result<Void, TranspilerError> build_binding(Page* ep, StringBuilder& builder, Bi
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> build_action(Page* ep, StringBuilder& builder, Action& action, Type* returns_, Type* throws_, String* re_throw, String indent) {
+Result<Void, TranspilerError> build_action(Page* ep, String file, StringBuilder& builder, Action& action, Type* returns_, Type* throws_, String* re_throw, String indent) {
     if (action.target.length>0) {
         {
-            const auto _void_result = build_operation(ep, builder, action.target, returns_, throws_, re_throw, indent);
+            const auto _void_result = build_operation(ep, file, builder, action.target, returns_, throws_, re_throw, indent);
             if (_void_result._tag == Success::Error) {
                 const auto _void_Error = _void_result._Error;
                 switch (_void_Error._tag) {
@@ -1359,7 +1359,7 @@ Result<Void, TranspilerError> build_action(Page* ep, StringBuilder& builder, Act
         builder.append(" = ");
     };
     {
-        const auto _void_result = build_operation(ep, builder, action.source, returns_, throws_, re_throw, indent);
+        const auto _void_result = build_operation(ep, file, builder, action.source, returns_, throws_, re_throw, indent);
         if (_void_result._tag == Success::Error) {
             const auto _void_Error = _void_result._Error;
             switch (_void_Error._tag) {
@@ -1372,7 +1372,7 @@ Result<Void, TranspilerError> build_action(Page* ep, StringBuilder& builder, Act
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> build_operation(Page* ep, StringBuilder& builder, Vector<Operand>& operation, Type* returns_, Type* throws_, String* re_throw, String indent) {
+Result<Void, TranspilerError> build_operation(Page* ep, String file, StringBuilder& builder, Vector<Operand>& operation, Type* returns_, Type* throws_, String* re_throw, String indent) {
     
     auto _operand_iterator = operation.get_iterator();
     while (auto _operand = _operand_iterator.next()) {
@@ -1385,7 +1385,7 @@ Result<Void, TranspilerError> build_operation(Page* ep, StringBuilder& builder, 
                     {
                         auto constant = _result._Constant;
                         {
-                            const auto _void_result = build_constant(ep, builder, constant);
+                            const auto _void_result = build_constant(ep, file, builder, constant);
                             if (_void_result._tag == Success::Error) {
                                 const auto _void_Error = _void_result._Error;
                                 switch (_void_Error._tag) {
@@ -1401,7 +1401,7 @@ Result<Void, TranspilerError> build_operation(Page* ep, StringBuilder& builder, 
                     {
                         auto type = _result._Type;
                         {
-                            const auto _void_result = build_variable(ep, builder, type, operand.member_access);
+                            const auto _void_result = build_variable(ep, file, builder, type, operand.member_access);
                             if (_void_result._tag == Success::Error) {
                                 const auto _void_Error = _void_result._Error;
                                 switch (_void_Error._tag) {
@@ -1417,7 +1417,7 @@ Result<Void, TranspilerError> build_operation(Page* ep, StringBuilder& builder, 
                     {
                         auto tuple = _result._Tuple;
                         {
-                            const auto _void_result = build_tuple(ep, builder, tuple, operand.member_access, returns_, throws_, re_throw, indent);
+                            const auto _void_result = build_tuple(ep, file, builder, tuple, operand.member_access, returns_, throws_, re_throw, indent);
                             if (_void_result._tag == Success::Error) {
                                 const auto _void_Error = _void_result._Error;
                                 switch (_void_Error._tag) {
@@ -1433,7 +1433,7 @@ Result<Void, TranspilerError> build_operation(Page* ep, StringBuilder& builder, 
                     {
                         auto matrix = _result._Matrix;
                         {
-                            const auto _void_result = build_matrix(ep, builder, matrix, returns_, throws_, re_throw, indent);
+                            const auto _void_result = build_matrix(ep, file, builder, matrix, returns_, throws_, re_throw, indent);
                             if (_void_result._tag == Success::Error) {
                                 const auto _void_Error = _void_result._Error;
                                 switch (_void_Error._tag) {
@@ -1449,7 +1449,7 @@ Result<Void, TranspilerError> build_operation(Page* ep, StringBuilder& builder, 
                     {
                         auto block = _result._Block;
                         {
-                            const auto _void_result = build_block(ep, builder, block, returns_, throws_, re_throw, indent);
+                            const auto _void_result = build_block(ep, file, builder, block, returns_, throws_, re_throw, indent);
                             if (_void_result._tag == Success::Error) {
                                 const auto _void_Error = _void_result._Error;
                                 switch (_void_Error._tag) {
@@ -1465,7 +1465,7 @@ Result<Void, TranspilerError> build_operation(Page* ep, StringBuilder& builder, 
                     {
                         auto if_ = _result._If;
                         {
-                            const auto _void_result = build_if(ep, builder, if_, returns_, throws_, re_throw, indent);
+                            const auto _void_result = build_if(ep, file, builder, if_, returns_, throws_, re_throw, indent);
                             if (_void_result._tag == Success::Error) {
                                 const auto _void_Error = _void_result._Error;
                                 switch (_void_Error._tag) {
@@ -1481,7 +1481,7 @@ Result<Void, TranspilerError> build_operation(Page* ep, StringBuilder& builder, 
                     {
                         auto match_ = _result._Match;
                         {
-                            const auto _void_result = build_match(ep, builder, match_, returns_, throws_, re_throw, indent);
+                            const auto _void_result = build_match(ep, file, builder, match_, returns_, throws_, re_throw, indent);
                             if (_void_result._tag == Success::Error) {
                                 const auto _void_Error = _void_result._Error;
                                 switch (_void_Error._tag) {
@@ -1497,7 +1497,7 @@ Result<Void, TranspilerError> build_operation(Page* ep, StringBuilder& builder, 
                     {
                         auto choose_ = _result._Choose;
                         {
-                            const auto _void_result = build_choose(ep, builder, choose_, returns_, throws_, re_throw, indent);
+                            const auto _void_result = build_choose(ep, file, builder, choose_, returns_, throws_, re_throw, indent);
                             if (_void_result._tag == Success::Error) {
                                 const auto _void_Error = _void_result._Error;
                                 switch (_void_Error._tag) {
@@ -1513,7 +1513,7 @@ Result<Void, TranspilerError> build_operation(Page* ep, StringBuilder& builder, 
                     {
                         auto for_ = _result._For;
                         {
-                            const auto _void_result = build_for(ep, builder, for_, returns_, throws_, re_throw, indent);
+                            const auto _void_result = build_for(ep, file, builder, for_, returns_, throws_, re_throw, indent);
                             if (_void_result._tag == Success::Error) {
                                 const auto _void_Error = _void_result._Error;
                                 switch (_void_Error._tag) {
@@ -1529,7 +1529,7 @@ Result<Void, TranspilerError> build_operation(Page* ep, StringBuilder& builder, 
                     {
                         auto while_ = _result._While;
                         {
-                            const auto _void_result = build_while(ep, builder, while_, returns_, throws_, re_throw, indent);
+                            const auto _void_result = build_while(ep, file, builder, while_, returns_, throws_, re_throw, indent);
                             if (_void_result._tag == Success::Error) {
                                 const auto _void_Error = _void_result._Error;
                                 switch (_void_Error._tag) {
@@ -1545,7 +1545,7 @@ Result<Void, TranspilerError> build_operation(Page* ep, StringBuilder& builder, 
                     {
                         auto try_ = _result._Try;
                         {
-                            const auto _void_result = build_try(ep, builder, try_, returns_, throws_, nullptr, indent);
+                            const auto _void_result = build_try(ep, file, builder, try_, returns_, throws_, nullptr, indent);
                             if (_void_result._tag == Success::Error) {
                                 const auto _void_Error = _void_result._Error;
                                 switch (_void_Error._tag) {
@@ -1560,19 +1560,19 @@ Result<Void, TranspilerError> build_operation(Page* ep, StringBuilder& builder, 
                     case Expression::SizeOf:
                     {
                         auto sizeof_ = _result._SizeOf;
-                        build_sizeof(builder, sizeof_, indent);
+                        build_sizeof(file, builder, sizeof_, indent);
                         break;
                     }
                     case Expression::Is:
                     {
                         auto is_ = _result._Is;
-                        build_is(builder, is_, indent);
+                        build_is(file, builder, is_, indent);
                         break;
                     }
                     case Expression::New:
                     {
                         auto new__ = _result._New;
-                        build_new(ep, builder, new__, returns_, throws_, re_throw, indent);
+                        build_new(ep, file, builder, new__, returns_, throws_, re_throw, indent);
                         break;
                     }
                 }
@@ -1596,7 +1596,7 @@ void build_string(StringBuilder& builder, String string) {
     builder.append('\"');
 }
 
-Result<Void, TranspilerError> build_constant(Page* ep, StringBuilder& builder, Constant& constant) {
+Result<Void, TranspilerError> build_constant(Page* ep, String file, StringBuilder& builder, Constant& constant) {
     auto r = Region();
     {
         auto _result = constant;
@@ -1667,7 +1667,7 @@ Result<Void, TranspilerError> build_constant(Page* ep, StringBuilder& builder, C
             {
                 auto fragment = _result._Fragment;
                 {
-                    return Result<Void, TranspilerError>(FeatureNotImplemented(String(ep, "Bool")));
+                    return Result<Void, TranspilerError>(FeatureNotImplemented(file, fragment.span, String(ep, "Bool")));
                 };
                 break;
             }
@@ -1676,7 +1676,7 @@ Result<Void, TranspilerError> build_constant(Page* ep, StringBuilder& builder, C
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> build_variable(Page* ep, StringBuilder& builder, Type& type, Vector<String>* member_access) {
+Result<Void, TranspilerError> build_variable(Page* ep, String file, StringBuilder& builder, Type& type, Vector<String>* member_access) {
     auto name_iterator = type.name.get_iterator();
     const auto first_name_part = name_iterator.next();
     if ((*first_name_part).equals("=")) {
@@ -1702,7 +1702,7 @@ Result<Void, TranspilerError> build_variable(Page* ep, StringBuilder& builder, T
     if ((*first_name_part).equals("pointer")) {
         if (type.generics != nullptr) {
             auto generics = *(type.generics);
-            build_variable(ep, builder, *generics.get(0), member_access);
+            build_variable(ep, file, builder, *generics.get(0), member_access);
         };
         builder.append('*');
         return Result<Void, TranspilerError>(Void());
@@ -1753,7 +1753,7 @@ Result<Void, TranspilerError> build_variable(Page* ep, StringBuilder& builder, T
             case Lifetime::Thrown:
             {
                 auto t = _result._Thrown;
-                return Result<Void, TranspilerError>(FeatureNotImplemented(String(ep, "Thrown")));
+                return Result<Void, TranspilerError>(FeatureNotImplemented(file, t.span, String(ep, "Thrown")));
                 break;
             }
         }
@@ -1776,7 +1776,7 @@ Result<Void, TranspilerError> build_variable(Page* ep, StringBuilder& builder, T
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> build_tuple(Page* ep, StringBuilder& builder, Tuple& tuple, Vector<String>* member_access, Type* returns_, Type* throws_, String* re_throw, String indent) {
+Result<Void, TranspilerError> build_tuple(Page* ep, String file, StringBuilder& builder, Tuple& tuple, Vector<String>* member_access, Type* returns_, Type* throws_, String* re_throw, String indent) {
     builder.append('(');
     auto first = true;
     
@@ -1789,7 +1789,7 @@ Result<Void, TranspilerError> build_tuple(Page* ep, StringBuilder& builder, Tupl
             else {
                 builder.append(", ");
             };
-            build_operation(ep, builder, property.value, returns_, throws_, re_throw, indent);
+            build_operation(ep, file, builder, property.value, returns_, throws_, re_throw, indent);
         }
     };
     builder.append(')');
@@ -1806,7 +1806,7 @@ Result<Void, TranspilerError> build_tuple(Page* ep, StringBuilder& builder, Tupl
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> build_matrix(Page* ep, StringBuilder& builder, Matrix& matrix, Type* returns_, Type* throws_, String* re_throw, String indent) {
+Result<Void, TranspilerError> build_matrix(Page* ep, String file, StringBuilder& builder, Matrix& matrix, Type* returns_, Type* throws_, String* re_throw, String indent) {
     builder.append('[');
     auto first = true;
     
@@ -1820,7 +1820,7 @@ Result<Void, TranspilerError> build_matrix(Page* ep, StringBuilder& builder, Mat
                 builder.append(", ");
             };
             {
-                const auto _void_result = build_operation(ep, builder, operation, returns_, throws_, re_throw, indent);
+                const auto _void_result = build_operation(ep, file, builder, operation, returns_, throws_, re_throw, indent);
                 if (_void_result._tag == Success::Error) {
                     const auto _void_Error = _void_result._Error;
                     switch (_void_Error._tag) {
@@ -1836,13 +1836,13 @@ Result<Void, TranspilerError> build_matrix(Page* ep, StringBuilder& builder, Mat
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> build_block(Page* ep, StringBuilder& builder, Block& block, Type* returns_, Type* throws_, String* re_throw, String indent) {
+Result<Void, TranspilerError> build_block(Page* ep, String file, StringBuilder& builder, Block& block, Type* returns_, Type* throws_, String* re_throw, String indent) {
     auto r = Region();
     StringBuilder& indent_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder(indent);
     indent_builder.append("    ");
     builder.append('{');
     {
-        const auto _void_result = build_statements(ep, builder, block.statements, returns_, throws_, re_throw, indent_builder.to_string(r.get_page()));
+        const auto _void_result = build_statements(ep, file, builder, block.statements, returns_, throws_, re_throw, indent_builder.to_string(r.get_page()));
         if (_void_result._tag == Success::Error) {
             const auto _void_Error = _void_result._Error;
             switch (_void_Error._tag) {
@@ -1858,11 +1858,11 @@ Result<Void, TranspilerError> build_block(Page* ep, StringBuilder& builder, Bloc
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> build_if(Page* ep, StringBuilder& builder, If& if_, Type* returns_, Type* throws_, String* re_throw, String indent) {
+Result<Void, TranspilerError> build_if(Page* ep, String file, StringBuilder& builder, If& if_, Type* returns_, Type* throws_, String* re_throw, String indent) {
     auto r = Region();
     builder.append("if (");
     {
-        const auto _void_result = build_operation(ep, builder, if_.condition, returns_, throws_, re_throw, indent);
+        const auto _void_result = build_operation(ep, file, builder, if_.condition, returns_, throws_, re_throw, indent);
         if (_void_result._tag == Success::Error) {
             const auto _void_Error = _void_result._Error;
             switch (_void_Error._tag) {
@@ -1898,7 +1898,7 @@ Result<Void, TranspilerError> build_if(Page* ep, StringBuilder& builder, If& if_
         builder.append("    ");
     };
     {
-        const auto _void_result = build_statement(ep, builder, if_.consequent, returns_, throws_, re_throw, indent);
+        const auto _void_result = build_statement(ep, file, builder, if_.consequent, returns_, throws_, re_throw, indent);
         if (_void_result._tag == Success::Error) {
             const auto _void_Error = _void_result._Error;
             switch (_void_Error._tag) {
@@ -1913,7 +1913,7 @@ Result<Void, TranspilerError> build_if(Page* ep, StringBuilder& builder, If& if_
         builder.append(indent);
         builder.append("else ");
         {
-            const auto _void_result = build_statement(ep, builder, *if_.alternative, returns_, throws_, re_throw, indent);
+            const auto _void_result = build_statement(ep, file, builder, *if_.alternative, returns_, throws_, re_throw, indent);
             if (_void_result._tag == Success::Error) {
                 const auto _void_Error = _void_result._Error;
                 switch (_void_Error._tag) {
@@ -1927,11 +1927,11 @@ Result<Void, TranspilerError> build_if(Page* ep, StringBuilder& builder, If& if_
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> build_match(Page* ep, StringBuilder& builder, Match& match_, Type* returns_, Type* throws_, String* re_throw, String indent) {
+Result<Void, TranspilerError> build_match(Page* ep, String file, StringBuilder& builder, Match& match_, Type* returns_, Type* throws_, String* re_throw, String indent) {
     auto r = Region();
     builder.append("switch (");
     {
-        const auto _void_result = build_operation(ep, builder, match_.condition, returns_, throws_, re_throw, indent);
+        const auto _void_result = build_operation(ep, file, builder, match_.condition, returns_, throws_, re_throw, indent);
         if (_void_result._tag == Success::Error) {
             const auto _void_Error = _void_result._Error;
             switch (_void_Error._tag) {
@@ -1961,7 +1961,7 @@ Result<Void, TranspilerError> build_match(Page* ep, StringBuilder& builder, Matc
                     builder.append("case ");
                     {
                         {
-                            const auto _void_result = build_operation(ep, builder, case_.condition, returns_, throws_, re_throw, indented);
+                            const auto _void_result = build_operation(ep, file, builder, case_.condition, returns_, throws_, re_throw, indented);
                             if (_void_result._tag == Success::Error) {
                                 const auto _void_Error = _void_result._Error;
                                 switch (_void_Error._tag) {
@@ -1978,7 +1978,7 @@ Result<Void, TranspilerError> build_match(Page* ep, StringBuilder& builder, Matc
             builder.append('\n');
             builder.append(indented);
             {
-                const auto _void_result = build_statement(ep, builder, branch.consequent, returns_, throws_, re_throw, indented);
+                const auto _void_result = build_statement(ep, file, builder, branch.consequent, returns_, throws_, re_throw, indented);
                 if (_void_result._tag == Success::Error) {
                     const auto _void_Error = _void_result._Error;
                     switch (_void_Error._tag) {
@@ -1999,7 +1999,7 @@ Result<Void, TranspilerError> build_match(Page* ep, StringBuilder& builder, Matc
         builder.append("    default:\n");
         builder.append(indented);
         {
-            const auto _void_result = build_statement(ep, builder, *match_.alternative, returns_, throws_, re_throw, indented);
+            const auto _void_result = build_statement(ep, file, builder, *match_.alternative, returns_, throws_, re_throw, indented);
             if (_void_result._tag == Success::Error) {
                 const auto _void_Error = _void_result._Error;
                 switch (_void_Error._tag) {
@@ -2017,7 +2017,7 @@ Result<Void, TranspilerError> build_match(Page* ep, StringBuilder& builder, Matc
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> build_choose(Page* ep, StringBuilder& builder, Choose& choose_, Type* returns_, Type* throws_, String* re_throw, String indent) {
+Result<Void, TranspilerError> build_choose(Page* ep, String file, StringBuilder& builder, Choose& choose_, Type* returns_, Type* throws_, String* re_throw, String indent) {
     auto r = Region();
     builder.append("{\n");
     StringBuilder& indent_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder(indent);
@@ -2026,7 +2026,7 @@ Result<Void, TranspilerError> build_choose(Page* ep, StringBuilder& builder, Cho
     builder.append(indent1);
     builder.append("auto _result = ");
     {
-        const auto _void_result = build_operation(ep, builder, choose_.condition, returns_, throws_, re_throw, indent);
+        const auto _void_result = build_operation(ep, file, builder, choose_.condition, returns_, throws_, re_throw, indent);
         if (_void_result._tag == Success::Error) {
             const auto _void_Error = _void_result._Error;
             switch (_void_Error._tag) {
@@ -2093,7 +2093,7 @@ Result<Void, TranspilerError> build_choose(Page* ep, StringBuilder& builder, Cho
             builder.append(";\n");
             builder.append(indented2);
             {
-                const auto _void_result = build_statement(ep, builder, case_.consequent, returns_, throws_, re_throw, indented2);
+                const auto _void_result = build_statement(ep, file, builder, case_.consequent, returns_, throws_, re_throw, indented2);
                 if (_void_result._tag == Success::Error) {
                     const auto _void_Error = _void_result._Error;
                     switch (_void_Error._tag) {
@@ -2117,7 +2117,7 @@ Result<Void, TranspilerError> build_choose(Page* ep, StringBuilder& builder, Cho
         builder.append("    default:\n");
         builder.append(indented2);
         {
-            const auto _void_result = build_statement(ep, builder, *choose_.alternative, returns_, throws_, re_throw, indented);
+            const auto _void_result = build_statement(ep, file, builder, *choose_.alternative, returns_, throws_, re_throw, indented);
             if (_void_result._tag == Success::Error) {
                 const auto _void_Error = _void_result._Error;
                 switch (_void_Error._tag) {
@@ -2137,14 +2137,14 @@ Result<Void, TranspilerError> build_choose(Page* ep, StringBuilder& builder, Cho
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> build_for(Page* ep, StringBuilder& builder, For& for_, Type* returns_, Type* throws_, String* re_throw, String indent) {
+Result<Void, TranspilerError> build_for(Page* ep, String file, StringBuilder& builder, For& for_, Type* returns_, Type* throws_, String* re_throw, String indent) {
     auto r = Region();
     builder.append('\n');
     builder.append(indent);
     builder.append("auto _");
     builder.append(for_.identifier);
     builder.append("_iterator = ");
-    build_operation(ep, builder, for_.expression, returns_, throws_, re_throw, indent);
+    build_operation(ep, file, builder, for_.expression, returns_, throws_, re_throw, indent);
     builder.append(".get_iterator();\n");
     builder.append(indent);
     builder.append("while (auto _");
@@ -2162,7 +2162,7 @@ Result<Void, TranspilerError> build_for(Page* ep, StringBuilder& builder, For& f
     builder.append(for_.identifier);
     builder.append(';');
     {
-        const auto _void_result = build_action(ep, builder, for_.action, returns_, throws_, re_throw, indented);
+        const auto _void_result = build_action(ep, file, builder, for_.action, returns_, throws_, re_throw, indented);
         if (_void_result._tag == Success::Error) {
             const auto _void_Error = _void_result._Error;
             switch (_void_Error._tag) {
@@ -2178,7 +2178,7 @@ Result<Void, TranspilerError> build_for(Page* ep, StringBuilder& builder, For& f
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> build_condition(Page* ep, StringBuilder& builder, Binding& binding, Type* returns_, Type* throws_, String* re_throw, String indent) {
+Result<Void, TranspilerError> build_condition(Page* ep, String file, StringBuilder& builder, Binding& binding, Type* returns_, Type* throws_, String* re_throw, String indent) {
     if (binding.item.name != nullptr) {
         if (binding.item.type != nullptr) {
             build_type(builder, binding.item.type, false);
@@ -2191,7 +2191,7 @@ Result<Void, TranspilerError> build_condition(Page* ep, StringBuilder& builder, 
         builder.append(" = ");
     };
     {
-        const auto _void_result = build_operation(ep, builder, binding.operation, returns_, throws_, re_throw, indent);
+        const auto _void_result = build_operation(ep, file, builder, binding.operation, returns_, throws_, re_throw, indent);
         if (_void_result._tag == Success::Error) {
             const auto _void_Error = _void_result._Error;
             switch (_void_Error._tag) {
@@ -2204,11 +2204,11 @@ Result<Void, TranspilerError> build_condition(Page* ep, StringBuilder& builder, 
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> build_while(Page* ep, StringBuilder& builder, While& while_, Type* returns_, Type* throws_, String* re_throw, String indent) {
+Result<Void, TranspilerError> build_while(Page* ep, String file, StringBuilder& builder, While& while_, Type* returns_, Type* throws_, String* re_throw, String indent) {
     auto r = Region();
     builder.append("while (");
     {
-        const auto _void_result = build_condition(ep, builder, while_.condition, returns_, throws_, re_throw, indent);
+        const auto _void_result = build_condition(ep, file, builder, while_.condition, returns_, throws_, re_throw, indent);
         if (_void_result._tag == Success::Error) {
             const auto _void_Error = _void_result._Error;
             switch (_void_Error._tag) {
@@ -2220,7 +2220,7 @@ Result<Void, TranspilerError> build_while(Page* ep, StringBuilder& builder, Whil
         ;
     builder.append(") ");
     {
-        const auto _void_result = build_action(ep, builder, while_.action, returns_, throws_, re_throw, indent);
+        const auto _void_result = build_action(ep, file, builder, while_.action, returns_, throws_, re_throw, indent);
         if (_void_result._tag == Success::Error) {
             const auto _void_Error = _void_result._Error;
             switch (_void_Error._tag) {
@@ -2233,7 +2233,7 @@ Result<Void, TranspilerError> build_while(Page* ep, StringBuilder& builder, Whil
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> build_try(Page* ep, StringBuilder& builder, Try& try_, Type* returns_, Type* throws_, String* re_throw, String indent) {
+Result<Void, TranspilerError> build_try(Page* ep, String file, StringBuilder& builder, Try& try_, Type* returns_, Type* throws_, String* re_throw, String indent) {
     auto r = Region();
     auto name = String(r.get_page(), "void");
     StringBuilder& indent_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder(indent);
@@ -2250,7 +2250,7 @@ Result<Void, TranspilerError> build_try(Page* ep, StringBuilder& builder, Try& t
     builder.append(name);
     builder.append("_result = ");
     {
-        const auto _void_result = build_operation(ep, builder, try_.binding.operation, returns_, throws_, re_throw, indent);
+        const auto _void_result = build_operation(ep, file, builder, try_.binding.operation, returns_, throws_, re_throw, indent);
         if (_void_result._tag == Success::Error) {
             const auto _void_Error = _void_result._Error;
             switch (_void_Error._tag) {
@@ -2321,7 +2321,7 @@ Result<Void, TranspilerError> build_try(Page* ep, StringBuilder& builder, Try& t
             builder.append(";\n");
             builder.append(indented3);
             {
-                const auto _void_result = build_statement(ep, builder, catch_.consequent, returns_, throws_, nullptr, indented3);
+                const auto _void_result = build_statement(ep, file, builder, catch_.consequent, returns_, throws_, nullptr, indented3);
                 if (_void_result._tag == Success::Error) {
                     const auto _void_Error = _void_result._Error;
                     switch (_void_Error._tag) {
@@ -2349,7 +2349,7 @@ Result<Void, TranspilerError> build_try(Page* ep, StringBuilder& builder, Try& t
             re_throw_builder.append("_result._Error");
             auto re_throw = re_throw_builder.to_string(r.get_page());
             {
-                const auto _void_result = build_statement(ep, builder, *try_.alternative, returns_, throws_, &re_throw, indented2);
+                const auto _void_result = build_statement(ep, file, builder, *try_.alternative, returns_, throws_, &re_throw, indented2);
                 if (_void_result._tag == Success::Error) {
                     const auto _void_Error = _void_result._Error;
                     switch (_void_Error._tag) {
@@ -2374,14 +2374,14 @@ Result<Void, TranspilerError> build_try(Page* ep, StringBuilder& builder, Try& t
     return Result<Void, TranspilerError>(Void());
 }
 
-void build_sizeof(StringBuilder& builder, SizeOf& sizeof_, String indent) {
+void build_sizeof(String file, StringBuilder& builder, SizeOf& sizeof_, String indent) {
     auto r = Region();
     builder.append("sizeof(");
     build_type(builder, &sizeof_.type, true);
     builder.append(")");
 }
 
-void build_is(StringBuilder& builder, Is& is_, String indent) {
+void build_is(String file, StringBuilder& builder, Is& is_, String indent) {
     auto r = Region();
     builder.append("._tag == ");
     auto first = true;
@@ -2400,7 +2400,7 @@ void build_is(StringBuilder& builder, Is& is_, String indent) {
     };
 }
 
-Result<Void, TranspilerError> build_new(Page* ep, StringBuilder& builder, New& new__, Type* returns_, Type* throws_, String* re_throw, String indent) {
+Result<Void, TranspilerError> build_new(Page* ep, String file, StringBuilder& builder, New& new__, Type* returns_, Type* throws_, String* re_throw, String indent) {
     auto r = Region();
     {
         auto _result = new__.type.lifetime;
@@ -2448,7 +2448,7 @@ Result<Void, TranspilerError> build_new(Page* ep, StringBuilder& builder, New& n
             case Lifetime::Thrown:
             {
                 auto t = _result._Thrown;
-                return Result<Void, TranspilerError>(FeatureNotImplemented(String(ep, "Thrown")));
+                return Result<Void, TranspilerError>(FeatureNotImplemented(file, t.span, String(ep, "Thrown")));
                 break;
             }
         }
@@ -2465,20 +2465,20 @@ Result<Void, TranspilerError> build_new(Page* ep, StringBuilder& builder, New& n
             else {
                 builder.append(", ");
             };
-            build_operation(ep, builder, property.value, returns_, throws_, re_throw, indent);
+            build_operation(ep, file, builder, property.value, returns_, throws_, re_throw, indent);
         }
     };
     builder.append(')');
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> build_break(Page* ep, StringBuilder& builder, Break& break_, Type* returns_, Type* throws_, String* re_throw, String indent) {
+Result<Void, TranspilerError> build_break(Page* ep, String file, StringBuilder& builder, Break& break_, Type* returns_, Type* throws_, String* re_throw, String indent) {
     auto r = Region();
     builder.append("break");
     if ((break_.result.length>0)) 
         builder.append(' ');
     {
-        const auto _void_result = build_operation(ep, builder, break_.result, returns_, throws_, re_throw, indent);
+        const auto _void_result = build_operation(ep, file, builder, break_.result, returns_, throws_, re_throw, indent);
         if (_void_result._tag == Success::Error) {
             const auto _void_Error = _void_result._Error;
             switch (_void_Error._tag) {
@@ -2491,11 +2491,11 @@ Result<Void, TranspilerError> build_break(Page* ep, StringBuilder& builder, Brea
     return Result<Void, TranspilerError>(Void());
 }
 
-void build_continue(StringBuilder& builder, Continue& continue_, Type* returns_, Type* throws_, String* re_throw, String indent) {
+void build_continue(String file, StringBuilder& builder, Continue& continue_, Type* returns_, Type* throws_, String* re_throw, String indent) {
     builder.append("continue;");
 }
 
-Result<Void, TranspilerError> build_return(Page* ep, StringBuilder& builder, Return& return_, Type* returns_, Type* throws_, String* re_throw, String indent) {
+Result<Void, TranspilerError> build_return(Page* ep, String file, StringBuilder& builder, Return& return_, Type* returns_, Type* throws_, String* re_throw, String indent) {
     auto r = Region();
     builder.append("return");
     if ((return_.result.length>0)||(throws_ != nullptr)) 
@@ -2515,7 +2515,7 @@ Result<Void, TranspilerError> build_return(Page* ep, StringBuilder& builder, Ret
             builder.append("Void()");
     };
     {
-        const auto _void_result = build_operation(ep, builder, return_.result, returns_, throws_, re_throw, indent);
+        const auto _void_result = build_operation(ep, file, builder, return_.result, returns_, throws_, re_throw, indent);
         if (_void_result._tag == Success::Error) {
             const auto _void_Error = _void_result._Error;
             switch (_void_Error._tag) {
@@ -2530,7 +2530,7 @@ Result<Void, TranspilerError> build_return(Page* ep, StringBuilder& builder, Ret
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> build_throw(Page* ep, StringBuilder& builder, Throw& throw_, Type* returns_, Type* throws_, String* re_throw, String indent) {
+Result<Void, TranspilerError> build_throw(Page* ep, String file, StringBuilder& builder, Throw& throw_, Type* returns_, Type* throws_, String* re_throw, String indent) {
     auto r = Region();
     builder.append("return Result<");
     if (returns_ == nullptr) {
@@ -2547,7 +2547,7 @@ Result<Void, TranspilerError> build_throw(Page* ep, StringBuilder& builder, Thro
     }
     else {
         {
-            const auto _void_result = build_operation(ep, builder, throw_.result, returns_, throws_, nullptr, indent);
+            const auto _void_result = build_operation(ep, file, builder, throw_.result, returns_, throws_, nullptr, indent);
             if (_void_result._tag == Success::Error) {
                 const auto _void_Error = _void_result._Error;
                 switch (_void_Error._tag) {
@@ -2562,7 +2562,7 @@ Result<Void, TranspilerError> build_throw(Page* ep, StringBuilder& builder, Thro
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> build_statements(Page* ep, StringBuilder& builder, Vector<Statement>& statements, Type* returns_, Type* throws_, String* re_throw, String indent) {
+Result<Void, TranspilerError> build_statements(Page* ep, String file, StringBuilder& builder, Vector<Statement>& statements, Type* returns_, Type* throws_, String* re_throw, String indent) {
     
     auto _statement_iterator = statements.get_iterator();
     while (auto _statement = _statement_iterator.next()) {
@@ -2570,7 +2570,7 @@ Result<Void, TranspilerError> build_statements(Page* ep, StringBuilder& builder,
             builder.append('\n');
             builder.append(indent);
             {
-                const auto _void_result = build_statement(ep, builder, statement, returns_, throws_, re_throw, indent);
+                const auto _void_result = build_statement(ep, file, builder, statement, returns_, throws_, re_throw, indent);
                 if (_void_result._tag == Success::Error) {
                     const auto _void_Error = _void_result._Error;
                     switch (_void_Error._tag) {
@@ -2586,7 +2586,7 @@ Result<Void, TranspilerError> build_statements(Page* ep, StringBuilder& builder,
     return Result<Void, TranspilerError>(Void());
 }
 
-Result<Void, TranspilerError> build_statement(Page* ep, StringBuilder& builder, Statement& statement, Type* returns_, Type* throws_, String* re_throw, String indent) {
+Result<Void, TranspilerError> build_statement(Page* ep, String file, StringBuilder& builder, Statement& statement, Type* returns_, Type* throws_, String* re_throw, String indent) {
     {
         auto _result = statement;
         switch (_result._tag)
@@ -2595,7 +2595,7 @@ Result<Void, TranspilerError> build_statement(Page* ep, StringBuilder& builder, 
             {
                 auto action = _result._Action;
                 {
-                    const auto _void_result = build_action(ep, builder, action, returns_, throws_, re_throw, indent);
+                    const auto _void_result = build_action(ep, file, builder, action, returns_, throws_, re_throw, indent);
                     if (_void_result._tag == Success::Error) {
                         const auto _void_Error = _void_result._Error;
                         switch (_void_Error._tag) {
@@ -2611,7 +2611,7 @@ Result<Void, TranspilerError> build_statement(Page* ep, StringBuilder& builder, 
             {
                 auto binding = _result._Binding;
                 {
-                    const auto _void_result = build_binding(ep, builder, binding, returns_, throws_, re_throw, indent);
+                    const auto _void_result = build_binding(ep, file, builder, binding, returns_, throws_, re_throw, indent);
                     if (_void_result._tag == Success::Error) {
                         const auto _void_Error = _void_result._Error;
                         switch (_void_Error._tag) {
@@ -2627,7 +2627,7 @@ Result<Void, TranspilerError> build_statement(Page* ep, StringBuilder& builder, 
             {
                 auto break_ = _result._Break;
                 {
-                    const auto _void_result = build_break(ep, builder, break_, returns_, throws_, re_throw, indent);
+                    const auto _void_result = build_break(ep, file, builder, break_, returns_, throws_, re_throw, indent);
                     if (_void_result._tag == Success::Error) {
                         const auto _void_Error = _void_result._Error;
                         switch (_void_Error._tag) {
@@ -2642,14 +2642,14 @@ Result<Void, TranspilerError> build_statement(Page* ep, StringBuilder& builder, 
             case Statement::Continue:
             {
                 auto continue_ = _result._Continue;
-                build_continue(builder, continue_, returns_, throws_, re_throw, indent);
+                build_continue(file, builder, continue_, returns_, throws_, re_throw, indent);
                 break;
             }
             case Statement::Return:
             {
                 auto return_ = _result._Return;
                 {
-                    const auto _void_result = build_return(ep, builder, return_, returns_, throws_, re_throw, indent);
+                    const auto _void_result = build_return(ep, file, builder, return_, returns_, throws_, re_throw, indent);
                     if (_void_result._tag == Success::Error) {
                         const auto _void_Error = _void_result._Error;
                         switch (_void_Error._tag) {
@@ -2665,16 +2665,20 @@ Result<Void, TranspilerError> build_statement(Page* ep, StringBuilder& builder, 
             {
                 auto throw_ = _result._Throw;
                 {
-                    const auto _void_result = build_throw(ep, builder, throw_, returns_, throws_, re_throw, indent);
-                    if (_void_result._tag == Success::Error) {
-                        const auto _void_Error = _void_result._Error;
-                        switch (_void_Error._tag) {
-                        default:
-                            return Result<Void, TranspilerError>(_void_result._Error);
+                    if (throws_ == nullptr) 
+                        return Result<Void, TranspilerError>(CantThrowInNonThrowingFunction(file, throw_.span));
+                    {
+                        const auto _void_result = build_throw(ep, file, builder, throw_, returns_, throws_, re_throw, indent);
+                        if (_void_result._tag == Success::Error) {
+                            const auto _void_Error = _void_result._Error;
+                            switch (_void_Error._tag) {
+                            default:
+                                return Result<Void, TranspilerError>(_void_result._Error);
 
-                        }
-                    }}
-                    ;
+                            }
+                        }}
+                        ;
+                };
                 break;
             }
         }
@@ -2693,7 +2697,7 @@ void function_prefix(StringBuilder& builder, Function& func, bool indent, bool s
     builder.append(' ');
 }
 
-Result<Void, TranspilerError> build_operator(Page* ep, StringBuilder& header_builder, StringBuilder& cpp_builder, Operator& operator_, String* name, bool is_template) {
+Result<Void, TranspilerError> build_operator(Page* ep, String file, StringBuilder& header_builder, StringBuilder& cpp_builder, Operator& operator_, String* name, bool is_template) {
     auto r = Region();
     if (is_template) 
         header_builder.append('\n');
@@ -2704,7 +2708,7 @@ Result<Void, TranspilerError> build_operator(Page* ep, StringBuilder& header_bui
     build_input(header_builder, operator_.input, nullptr, operator_.returns_, operator_.throws_, Lifetime(Unspecified()));
     if (is_template) {
         {
-            const auto _void_result = build_implementation(ep, header_builder, operator_.implementation, operator_.returns_, operator_.throws_, String(r.get_page(), "    "), false);
+            const auto _void_result = build_implementation(ep, file, header_builder, operator_.implementation, operator_.returns_, operator_.throws_, String(r.get_page(), "    "), false);
             if (_void_result._tag == Success::Error) {
                 const auto _void_Error = _void_result._Error;
                 switch (_void_Error._tag) {
@@ -2726,7 +2730,7 @@ Result<Void, TranspilerError> build_operator(Page* ep, StringBuilder& header_bui
         const auto is_static = build_input(cpp_builder, operator_.input, nullptr, operator_.returns_, operator_.throws_, Lifetime(Unspecified()));
         cpp_builder.append(' ');
         {
-            const auto _void_result = build_implementation(ep, cpp_builder, operator_.implementation, operator_.returns_, operator_.throws_, String(), false);
+            const auto _void_result = build_implementation(ep, file, cpp_builder, operator_.implementation, operator_.returns_, operator_.throws_, String(), false);
             if (_void_result._tag == Success::Error) {
                 const auto _void_Error = _void_result._Error;
                 switch (_void_Error._tag) {
@@ -3211,7 +3215,7 @@ void build_script_files_list(StringBuilder& builder, String path, Vector<Module>
     };
 }
 
-Result<Void, TranspilerError> main_file(Page* ep, String path, Program& program) {
+Result<Void, TranspilerError> main_file(Page* ep, String file, String path, Program& program) {
     auto r = Region();
     StringBuilder& builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder("#include \"main.h\"\n\
 \n\
@@ -3221,7 +3225,7 @@ int main(int argc, char** argv) {");
     while (auto _statement = _statement_iterator.next()) {
         auto statement = *_statement;{
             builder.append("\n    ");
-            build_statement(ep, builder, statement, nullptr, nullptr, nullptr, String());
+            build_statement(ep, file, builder, statement, nullptr, nullptr, nullptr, String());
             builder.append(';');
         }
     };

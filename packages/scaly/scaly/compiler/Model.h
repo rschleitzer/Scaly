@@ -16,45 +16,52 @@ struct Span : Object {
 };
 
 struct BooleanConstant : Object {
+    Span span;
     bool value;
 
-    BooleanConstant(bool value);
+    BooleanConstant(Span span, bool value);
 };
 
 struct IntegerConstant : Object {
+    Span span;
     size_t value;
 
-    IntegerConstant(size_t value);
+    IntegerConstant(Span span, size_t value);
 };
 
 struct HexConstant : Object {
+    Span span;
     size_t value;
 
-    HexConstant(size_t value);
+    HexConstant(Span span, size_t value);
 };
 
 struct FloatingPointConstant : Object {
+    Span span;
     double value;
 
-    FloatingPointConstant(double value);
+    FloatingPointConstant(Span span, double value);
 };
 
 struct StringConstant : Object {
+    Span span;
     String value;
 
-    StringConstant(String value);
+    StringConstant(Span span, String value);
 };
 
 struct CharacterConstant : Object {
+    Span span;
     String value;
 
-    CharacterConstant(String value);
+    CharacterConstant(Span span, String value);
 };
 
 struct FragmentConstant : Object {
+    Span span;
     String value;
 
-    FragmentConstant(String value);
+    FragmentConstant(Span span, String value);
 };
 
 struct Constant : Object {
@@ -119,21 +126,28 @@ struct Unspecified : Object {
 };
 
 struct Call : Object {
+    Span span;
 
+    Call(Span span);
 };
 
 struct Local : Object {
+    Span span;
 
+    Local(Span span);
 };
 
 struct Reference : Object {
+    Span span;
     String location;
 
-    Reference(String location);
+    Reference(Span span, String location);
 };
 
 struct Thrown : Object {
+    Span span;
 
+    Thrown(Span span);
 };
 
 struct Lifetime : Object {
@@ -175,11 +189,12 @@ struct Item : Object {
 };
 
 struct Binding : Object {
+    Span span;
     String binding_type;
     Item item;
     Vector<Operand> operation;
 
-    Binding(String binding_type, Item item, Vector<Operand> operation);
+    Binding(Span span, String binding_type, Item item, Vector<Operand> operation);
 };
 
 struct Break : Object {
@@ -410,15 +425,21 @@ struct Operand : Object {
 };
 
 struct Extern : Object {
+    Span span;
 
+    Extern(Span span);
 };
 
 struct Instruction : Object {
+    Span span;
 
+    Instruction(Span span);
 };
 
 struct Intrinsic : Object {
+    Span span;
 
+    Intrinsic(Span span);
 };
 
 struct Implementation : Object {

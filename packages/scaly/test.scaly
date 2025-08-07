@@ -1,4 +1,4 @@
-define double intrinsic
+define int32 intrinsic
 
 function mul(op1: int32, op2: int32) returns int32 instruction
 

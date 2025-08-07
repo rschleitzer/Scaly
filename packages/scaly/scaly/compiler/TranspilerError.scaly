@@ -1,11 +1,36 @@
 use scaly.io
 
-define FeatureNotImplemented(expected: String)
+define FeatureNotImplemented(file: String, span: Span, feature: String)
+{
+    function to_string(this: FeatureNotImplemented) returns String {
+        var r Region()
+        var message_builder: ref[StringBuilder] *StringBuilder$()
+        append_error_message_header(message_builder, file, span.start)
+        message_builder.append("The transpiler feature \"")
+        message_builder.append(feature)
+        message_builder.append("\" is not implemented.")
+        append_hint_lines(message_builder, file, span.start, span.end)
+        return message_builder.to_string(rp)
+    }
+}
+
+define CantThrowInNonThrowingFunction(file: String, span: Span)
+{
+    function to_string(this: CantThrowInNonThrowingFunction) returns String {
+        var r Region()
+        var message_builder: ref[StringBuilder] *StringBuilder$()
+        append_error_message_header(message_builder, file, span.start)
+        message_builder.append("Impossible to throw in a non-throwing function.")
+        append_hint_lines(message_builder, file, span.start, span.end)
+        return message_builder.to_string(rp)
+    }
+}
 
 define TranspilerError union
 (
     NotImplemented: FeatureNotImplemented
     FileError: FileError
+    CantThrowInNonThrowingFunction: CantThrowInNonThrowingFunction
 )
 {
     function to_string(this: TranspilerError) returns String {
@@ -14,12 +39,14 @@ define TranspilerError union
         choose *this
             when ni: TranspilerError.NotImplemented
             {
-                message_builder.append("The transpiler feature \"")
-                message_builder.append(ni.expected)
-                message_builder.append("\" is not implemented.")
+                return ni.to_string(rp)
             }
             when fe: TranspilerError.FileError
                 message_builder.append(fe.to_string(r.get_page()))
+            when ct: TranspilerError.CantThrowInNonThrowingFunction
+            {
+                return ct.to_string(rp)
+            }
 
         message_builder.append('\n')
         return message_builder.to_string(rp)

@@ -3,13 +3,13 @@ use scaly.io
 
 define Span(start: size_t, end: size_t)
 
-define BooleanConstant(value: bool)
-define IntegerConstant(value: size_t)
-define HexConstant(value: size_t)
-define FloatingPointConstant(value: double)
-define StringConstant(value: String)
-define CharacterConstant(value: String)
-define FragmentConstant(value: String)
+define BooleanConstant(span: Span, value: bool)
+define IntegerConstant(span: Span, value: size_t)
+define HexConstant(span: Span, value: size_t)
+define FloatingPointConstant(span: Span, value: double)
+define StringConstant(span: Span, value: String)
+define CharacterConstant(span: Span, value: String)
+define FragmentConstant(span: Span, value: String)
 
 define Constant union (
     Boolean: BooleanConstant
@@ -34,10 +34,10 @@ define Matrix(span: Span, operations: Vector[Vector[Operand]])
 define Block(span: Span, statements: Vector[Statement])
 
 define Unspecified()
-define Call()
-define Local()
-define Reference(location: String)
-define Thrown()
+define Call(span: Span)
+define Local(span: Span)
+define Reference(span: Span, location: String)
+define Thrown(span: Span)
 
 define Lifetime union (
     Unspecified: Unspecified
@@ -64,6 +64,7 @@ define Item
 
 define Binding
 (
+    span: Span,
     binding_type: String,
     item: Item,
     operation: Vector[Operand]
@@ -204,9 +205,9 @@ define Operand
     member_access: pointer[Vector[String]]
 )
 
-define Extern()
-define Instruction()
-define Intrinsic()
+define Extern(span: Span)
+define Instruction(span: Span)
+define Intrinsic(span: Span)
 
 define Implementation union (
     Action: Action

@@ -68,7 +68,7 @@ function plan_main_function(this: Planner, program: ref[Program]) throws Planner
     var values: ref[List[String]] *List[String]$()
     for statement in program.statements
     {
-        try let new_instructions plan_statement(get_page(), ep, program.module_.symbols, null, statement, blocks, &instructions)
+        try let new_instructions plan_statement(get_page(), ep, program.module_.file, program.module_.symbols, null, statement, blocks, &instructions)
             else throw
         set instructions: *new_instructions
     }
@@ -111,29 +111,29 @@ function plan_symbols(this: Planner, file: String, symbols: ref[HashMap[String, 
                 try plan_function(ep, file, symbols, func)
                     else throw
             when concept: Member.Concept
-                try plan_concept(ep, symbols, concept)
+                try plan_concept(ep, file, symbols, concept)
                     else throw
             when op: Member.Operator
-                throw FeatureNotImplemented(String(ep, "operator symbol"))
+                throw FeatureNotImplemented(file, op.span, String(ep, "operator symbol"))
             when p: Member.Package
-                throw FeatureNotImplemented(String(ep, "package"))
+                throw FeatureNotImplemented(file, Span(0, 0), String(ep, "package"))
     }
 
     return Void()
 }
 
-function plan_concept(this: Planner, symbols: ref[HashMap[String, Nameable]], concept: ref[Concept]) throws PlannerError { 
+function plan_concept(this: Planner, file: String, symbols: ref[HashMap[String, Nameable]], concept: ref[Concept]) throws PlannerError { 
     choose concept.definition
         when ns: Definition.Namespace
-            throw FeatureNotImplemented(String(ep, "namespace"))
+            throw FeatureNotImplemented(file, ns.span, String(ep, "namespace"))
         when structure: Definition.Structure
-            throw FeatureNotImplemented(String(ep, "structure"))
+            throw FeatureNotImplemented(file, structure.span, String(ep, "structure"))
         when i: Definition.Intrinsic
             return plan_intrinsic(ep, concept.name)
         when g: Definition.Global
-            throw FeatureNotImplemented(String(ep, "global"))
+            throw FeatureNotImplemented(file, g.span, String(ep, "global"))
         when u: Definition.Union
-            throw FeatureNotImplemented(String(ep, "union"))
+            throw FeatureNotImplemented(file, u.span, String(ep, "union"))
 }
 
 function plan_intrinsic(this: Planner, name: String) throws PlannerError {
@@ -155,12 +155,12 @@ function resolve_type(this: Planner, file: String, type: Type) returns String th
     throw UndefinedType(file, String(ep, name), type.span)
 }
 
-function plan_tuple(this: Planner, symbols: ref[HashMap[String, Nameable]], tuple: ref[Tuple], blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]], values: ref[List[String]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
+function plan_tuple(this: Planner, file: String, symbols: ref[HashMap[String, Nameable]], tuple: ref[Tuple], blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]], values: ref[List[String]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
     for component in tuple.components
     {
         if component.name
             throw TupleComponentNamesNotSupported()
-        plan_operation(get_page(), ep, symbols, component.value, blocks, instructions, values)
+        plan_operation(get_page(), ep, file, symbols, component.value, blocks, instructions, values)
         let last_instruction (*instructions).get_head()
         if last_instruction
             values.add(*(*last_instruction).result)
@@ -178,10 +178,10 @@ function allocate_value_name(this: Planner, blocks: ref[List[Plan.Block]], instr
     return String(value_name_builder.to_string(rp))
 }
 
-function plan_instruction_call(this: Planner, symbols: ref[HashMap[String, Nameable]], operation: pointer[VectorIterator[Operand]], name: String, tuple: ref[Tuple], blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
+function plan_instruction_call(this: Planner, file: String, symbols: ref[HashMap[String, Nameable]], operation: pointer[VectorIterator[Operand]], name: String, tuple: ref[Tuple], blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
     var r Region()
     var values_list: ref[List[String]] *List[String]$()
-    plan_tuple(get_page(), ep, symbols, tuple, blocks, instructions, values_list)    
+    plan_tuple(get_page(), ep, file, symbols, tuple, blocks, instructions, values_list)    
     var values Vector[String](get_page(), values_list)
     var page get_page()
     let value allocate_value_name(get_page(), blocks, *instructions)
@@ -189,42 +189,42 @@ function plan_instruction_call(this: Planner, symbols: ref[HashMap[String, Namea
     return instructions
 }
 
-function plan_type(this: Planner, symbols: ref[HashMap[String, Nameable]], operation: pointer[VectorIterator[Operand]], type: ref[Type], blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]], values: ref[List[String]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
+function plan_type(this: Planner, file: String, symbols: ref[HashMap[String, Nameable]], operation: pointer[VectorIterator[Operand]], type: ref[Type], blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]], values: ref[List[String]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
     if type.name.length > 1
-        throw FeatureNotImplemented(String(ep, "Qualified type name"))
+        throw FeatureNotImplemented(file, type.span, String(ep, "Qualified type name"))
     if type.generics
-        throw FeatureNotImplemented(String(ep, "Generic type"))
+        throw FeatureNotImplemented(file, type.span, String(ep, "Generic type"))
 
     choose type.lifetime
         when unspecified: Lifetime.Unspecified {}
         when call: Lifetime.Call
-            throw FeatureNotImplemented(String(ep, "Call lifetime"))
+            throw FeatureNotImplemented(file, call.span, String(ep, "Call lifetime"))
         when local: Lifetime.Local
-            throw FeatureNotImplemented(String(ep, "Local lifetime"))
+            throw FeatureNotImplemented(file, local.span, String(ep, "Local lifetime"))
         when reference: Lifetime.Reference
-            throw FeatureNotImplemented(String(ep, "Reference lifetime"))
+            throw FeatureNotImplemented(file, reference.span, String(ep, "Reference lifetime"))
         when thrown: Lifetime.Thrown
-            throw FeatureNotImplemented(String(ep, "Thrown lifetime"))
+            throw FeatureNotImplemented(file, thrown.span, String(ep, "Thrown lifetime"))
     
     let name *type.name.get(0)
     if symbols.contains(name)
     {
         choose *symbols.get(name)
             when modules: Nameable.Package
-                throw FeatureNotImplemented(String(ep, "Package reference"))
+                throw FeatureNotImplemented(file, Span(0, 0), String(ep, "Package reference"))
             when concept: Nameable.Concept
-                throw FeatureNotImplemented(String(ep, "Concept reference"))
+                throw FeatureNotImplemented(file, concept.span, String(ep, "Concept reference"))
             when operator_: Nameable.Operator
-                throw FeatureNotImplemented(String(ep, "Operator reference"))
+                throw FeatureNotImplemented(file, operator_.span, String(ep, "Operator reference"))
             when functions: Nameable.Functions {
                 if functions.length > 1
-                    throw FeatureNotImplemented(String(ep, "Overloaded functions"))
+                    throw FeatureNotImplemented(file, (*(functions.get(0))).span, String(ep, "Overloaded functions"))
                 let function_ *functions.get(0)
                 choose function_.implementation
                     when action: Implementation.Action
-                        throw FeatureNotImplemented(String(ep, "Internal Function call"))
+                        throw FeatureNotImplemented(file, function_.span, String(ep, "Internal Function call"))
                     when extern_: Implementation.Extern
-                        throw FeatureNotImplemented(String(ep, "External Function call"))
+                        throw FeatureNotImplemented(file, extern_.span, String(ep, "External Function call"))
                     when instruction_: Implementation.Instruction {
                         if operation = null
                             throw InstructionWithoutArguments(String(ep, name))
@@ -233,18 +233,18 @@ function plan_type(this: Planner, symbols: ref[HashMap[String, Nameable]], opera
                             throw InstructionWithoutArguments(String(ep, name))
                         choose (*next_operand).expression
                             when tuple: Expression.Tuple {
-                                return plan_instruction_call(get_page(), ep, symbols, operation, name, tuple, blocks, instructions)
+                                return plan_instruction_call(get_page(), ep, file, symbols, operation, name, tuple, blocks, instructions)
                             }
                             else throw InstructionWithoutArguments(String(ep, name))
 
                     }
                     when intrinsic_: Implementation.Intrinsic
-                        throw FeatureNotImplemented(String(ep, "Intrinsic call"))
+                        throw FeatureNotImplemented(file, intrinsic_.span, String(ep, "Intrinsic call"))
             }
             when property: Nameable.Property
-                throw FeatureNotImplemented(String(ep, "Property reference"))
+                throw FeatureNotImplemented(file, property.span, String(ep, "Property reference"))
             when variant: Nameable.Variant
-                throw FeatureNotImplemented(String(ep, "Variant reference"))
+                throw FeatureNotImplemented(file, variant.span, String(ep, "Variant reference"))
     } else {
         values.add(name)
     }
@@ -252,93 +252,109 @@ function plan_type(this: Planner, symbols: ref[HashMap[String, Nameable]], opera
     return instructions
 }
 
-function plan_statement(this: Planner, symbols: ref[HashMap[String, Nameable]], operation: pointer[VectorIterator[Operand]], statement: ref[Statement], blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
+function plan_statement(this: Planner, file: String, symbols: ref[HashMap[String, Nameable]], operation: pointer[VectorIterator[Operand]], statement: ref[Statement], blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
     choose statement
         when action: Statement.Action
         {
             var r Region()
             var values: ref[List[String]] *List[String]$()
-            return plan_action(get_page(), ep, symbols, operation, action, blocks, instructions, values)
+            return plan_action(get_page(), ep, file, symbols, operation, action, blocks, instructions, values)
         }
         when binding: Statement.Binding
-            throw FeatureNotImplemented(String(ep, "Binding statement"))
+            throw FeatureNotImplemented(file, binding.span, String(ep, "Binding statement"))
         when break_: Statement.Break
-            throw FeatureNotImplemented(String(ep, "Break statement"))
+            throw FeatureNotImplemented(file, break_.span, String(ep, "Break statement"))
         when continue_: Statement.Continue
-            throw FeatureNotImplemented(String(ep, "Continue statement"))
+            throw FeatureNotImplemented(file, continue_.span, String(ep, "Continue statement"))
         when return_: Statement.Return
-            throw FeatureNotImplemented(String(ep, "Return statement"))
+            throw FeatureNotImplemented(file, return_.span, String(ep, "Return statement"))
         when throw_: Statement.Throw
-            throw FeatureNotImplemented(String(ep, "Throw statement"))
+            throw FeatureNotImplemented(file, throw_.span, String(ep, "Throw statement"))
 
     return instructions
 }
 
-function plan_block(this: Planner, symbols: ref[HashMap[String, Nameable]], operation: pointer[VectorIterator[Operand]], block: ref[Block], blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
+function plan_block(this: Planner, file: String, symbols: ref[HashMap[String, Nameable]], operation: pointer[VectorIterator[Operand]], block: ref[Block], blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
     for statement in block.statements
     {
-        try let new_instructions plan_statement(get_page(), ep, symbols, operation, statement, blocks, instructions)
+        try let new_instructions plan_statement(get_page(), ep, file, symbols, operation, statement, blocks, instructions)
             else throw
         set instructions: new_instructions
     }
     return instructions
 }
 
-function plan_operand(this: Planner, symbols: ref[HashMap[String, Nameable]], operation: pointer[VectorIterator[Operand]], operand: ref[Operand], blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]], values: ref[List[String]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
+function plan_operand(this: Planner, file: String, symbols: ref[HashMap[String, Nameable]], operation: pointer[VectorIterator[Operand]], operand: ref[Operand], blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]], values: ref[List[String]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
     var r Region()
     if operand.member_access
-        throw FeatureNotImplemented(String(ep, "member access"))
+        throw FeatureNotImplemented(file, operand.span, String(ep, "member access"))
 
     choose operand.expression
         when constant: Expression.Constant
-            throw FeatureNotImplemented(String(ep, "Constant expression"))
+        {
+            choose constant
+                when boolean: Constant.Boolean
+                    throw FeatureNotImplemented(file, boolean.span, String(ep, "Boolean expression"))
+                when integer: Constant.Integer
+                    throw FeatureNotImplemented(file, integer.span, String(ep, "Integer expression"))
+                when hex: Constant.Hex
+                    throw FeatureNotImplemented(file, hex.span, String(ep, "Hex expression"))
+                when floating_point: Constant.FloatingPoint
+                    throw FeatureNotImplemented(file, floating_point.span, String(ep, "Floating point expression"))
+                when string: Constant.String
+                    throw FeatureNotImplemented(file, string.span, String(ep, "String expression"))
+                when string: Constant.Character
+                    throw FeatureNotImplemented(file, string.span, String(ep, "Character expression"))
+                when fragment: Constant.Fragment
+                    throw FeatureNotImplemented(file, fragment.span, String(ep, "Fragment expression"))
+        }
         when type: Expression.Type
-            return plan_type(get_page(), ep, symbols, operation, type, blocks, instructions, values)
+            return plan_type(get_page(), ep, file, symbols, operation, type, blocks, instructions, values)
         when tuple: Expression.Tuple
-            throw FeatureNotImplemented(String(ep, "Tuple expression"))
+            throw FeatureNotImplemented(file, tuple.span, String(ep, "Tuple expression"))
         when matrix: Expression.Matrix
-            throw FeatureNotImplemented(String(ep, "Matrix expression"))
+            throw FeatureNotImplemented(file, matrix.span, String(ep, "Matrix expression"))
         when block: Expression.Block
-            return plan_block(get_page(), ep, symbols, operation, block, blocks, instructions)
+            return plan_block(get_page(), ep, file, symbols, operation, block, blocks, instructions)
         when if_: Expression.If
-            throw FeatureNotImplemented(String(ep, "If expression"))
+            throw FeatureNotImplemented(file, if_.span, String(ep, "If expression"))
         when match_: Expression.Match
-            throw FeatureNotImplemented(String(ep, "Match expression"))
+            throw FeatureNotImplemented(file, match_.span, String(ep, "Match expression"))
         when choose_: Expression.Choose
-            throw FeatureNotImplemented(String(ep, "Choose expression"))
+            throw FeatureNotImplemented(file, choose_.span, String(ep, "Choose expression"))
         when for_: Expression.For
-            throw FeatureNotImplemented(String(ep, "For expression"))
+            throw FeatureNotImplemented(file, for_.span, String(ep, "For expression"))
         when while_: Expression.While
-            throw FeatureNotImplemented(String(ep, "While expression"))
+            throw FeatureNotImplemented(file, while_.span, String(ep, "While expression"))
         when try_: Expression.Try
-            throw FeatureNotImplemented(String(ep, "Try expression"))
+            throw FeatureNotImplemented(file, try_.span, String(ep, "Try expression"))
         when sizeof_: Expression.SizeOf
-            throw FeatureNotImplemented(String(ep, "SizeOf expression"))
+            throw FeatureNotImplemented(file, sizeof_.span, String(ep, "SizeOf expression"))
         when is_: Expression.Is
-            throw FeatureNotImplemented(String(ep, "Is expression"))
+            throw FeatureNotImplemented(file, is_.span, String(ep, "Is expression"))
         when new__: Expression.New
-            throw FeatureNotImplemented(String(ep, "New expression"))
+            throw FeatureNotImplemented(file, new__.span, String(ep, "New expression"))
 }
 
-function plan_operation(this: Planner, symbols: ref[HashMap[String, Nameable]], operation: ref[Vector[Operand]], blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]], values: ref[List[String]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
+function plan_operation(this: Planner, file: String, symbols: ref[HashMap[String, Nameable]], operation: ref[Vector[Operand]], blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]], values: ref[List[String]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
     var r Region()
 
     var operand_iterator operation.get_iterator()
     while let operand operand_iterator.next()
     {
-        try let new_instructions plan_operand(get_page(), ep, symbols, &operand_iterator, *operand, blocks, instructions, values)
+        try let new_instructions plan_operand(get_page(), ep, file, symbols, &operand_iterator, *operand, blocks, instructions, values)
             else throw
     }
 
     return instructions
 }
 
-function plan_action(this: Planner, symbols: ref[HashMap[String, Nameable]], operation: pointer[VectorIterator[Operand]], action: ref[Action], blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]], values: ref[List[String]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
+function plan_action(this: Planner, file: String, symbols: ref[HashMap[String, Nameable]], operation: pointer[VectorIterator[Operand]], action: ref[Action], blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]], values: ref[List[String]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
     var r Region()
     if action.target.length > 0
-        throw FeatureNotImplemented(String(ep, "set"))
+        throw FeatureNotImplemented(file, (*(action.target.get(0))).span, String(ep, "set"))
 
-    try let new_instructions plan_operation(get_page(), ep, symbols, action.source, blocks, instructions, values)
+    try let new_instructions plan_operation(get_page(), ep, file, symbols, action.source, blocks, instructions, values)
         else throw
 
     return instructions
@@ -368,7 +384,7 @@ function plan_function(this: Planner, file: String, symbols: ref[HashMap[String,
         when action: Implementation.Action
         {
             var values: ref[List[String]] *List[String]$()
-            try let new_instructions plan_action(get_page(), ep, symbols, null, action, blocks, &instructions, values)
+            try let new_instructions plan_action(get_page(), ep, file, symbols, null, action, blocks, &instructions, values)
                 else throw
             set instructions: *new_instructions
             if func.returns_

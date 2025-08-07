@@ -430,14 +430,14 @@ function handle_literal(literal: ref[LiteralSyntax], file: String) returns Const
     var r Region()
     choose literal.literal
         when boolean: Literal.Boolean
-            return Constant(BooleanConstant(boolean.value))
+            return Constant(BooleanConstant(Span(literal.start, literal.end), boolean.value))
         when integer: Literal.Integer
         {
             let value (size_t)strtol(integer.value.to_c_string(r.get_page()), null, 10)
             if errno = ERANGE
                 throw ModelError(ModelBuilderError(InvalidConstant(file, Span(literal.start, literal.end))))
 
-            return Constant(IntegerConstant(value))
+            return Constant(IntegerConstant(Span(literal.start, literal.end), value))
         }
         when hex: Literal.Hex
         {
@@ -445,7 +445,7 @@ function handle_literal(literal: ref[LiteralSyntax], file: String) returns Const
             if errno = ERANGE
                 throw ModelError(ModelBuilderError(InvalidConstant(file, Span(literal.start, literal.end))))
 
-            return Constant(HexConstant(value))
+            return Constant(HexConstant(Span(literal.start, literal.end), value))
         }
         when floating_point: Literal.FloatingPoint
         {
@@ -453,14 +453,14 @@ function handle_literal(literal: ref[LiteralSyntax], file: String) returns Const
             if errno = ERANGE
                 throw ModelError(ModelBuilderError(InvalidConstant(file, Span(literal.start, literal.end))))
 
-            return Constant(FloatingPointConstant(value))
+            return Constant(FloatingPointConstant(Span(literal.start, literal.end), value))
         }
         when string: Literal.String
-            return Constant(StringConstant(string.value))
+            return Constant(StringConstant(Span(literal.start, literal.end), string.value))
         when character: Literal.Character
-            return Constant(CharacterConstant(character.value))
+            return Constant(CharacterConstant(Span(literal.start, literal.end), character.value))
         when fragment: Literal.Fragment
-            return Constant(FragmentConstant(fragment.value))
+            return Constant(FragmentConstant(Span(literal.start, literal.end), fragment.value))
 
     throw ModelError(ModelBuilderError(InvalidConstant(file, Span(literal.start, literal.end))))
 }
@@ -505,13 +505,13 @@ function handle_type(type_syntax: ref[TypeSyntax], file: String) returns pointer
         let lifetime_syntax *type_syntax.lifetime
         choose lifetime_syntax
             when c: LifetimeSyntax.Call
-                set lifetime: Lifetime(Call())
+                set lifetime: Lifetime(Call(Span(c.start, c.end)))
             when l: LifetimeSyntax.Local
-                set lifetime: Lifetime(Local())
+                set lifetime: Lifetime(Local(Span(l.start, l.end)))
             when r: LifetimeSyntax.Reference
-                set lifetime: Lifetime(Reference(String(rp, r.location)))
+                set lifetime: Lifetime(Reference(Span(r.start, r.end), String(rp, r.location)))
             when t: LifetimeSyntax.Thrown
-                set lifetime: Lifetime(Thrown())
+                set lifetime: Lifetime(Thrown(Span(t.start, t.end)))
     }
 
     return Type#(Span(type_syntax.start, type_syntax.end), Vector[String](rp, path), generics, lifetime)
@@ -591,7 +591,7 @@ function handle_command(command_syntax: ref[CommandSyntax], file: String) return
 
             try let operation handle_operands(rp, ep, let_syntax.binding.operation, file)
                 else throw
-            return Statement(Binding(String(rp, "const"), Item(Span(let_syntax.start, let_syntax.end), false, String#(rp, let_syntax.binding.name), type, Vector[Attribute]()), operation))
+            return Statement(Binding(Span(let_syntax.start, let_syntax.end), String(rp, "const"), Item(Span(let_syntax.start, let_syntax.end), false, String#(rp, let_syntax.binding.name), type, Vector[Attribute]()), operation))
         }
         when var_syntax: CommandSyntax.Var
         {
@@ -604,7 +604,7 @@ function handle_command(command_syntax: ref[CommandSyntax], file: String) return
             }
             try let operation handle_operands(rp, ep, var_syntax.binding.operation, file)
                 else throw
-            return Statement(Binding(String(rp, "var"), Item(Span(var_syntax.start, var_syntax.end), false, String#(rp, var_syntax.binding.name), type, Vector[Attribute]()), operation))
+            return Statement(Binding(Span(var_syntax.start, var_syntax.end), String(rp, "var"), Item(Span(var_syntax.start, var_syntax.end), false, String#(rp, var_syntax.binding.name), type, Vector[Attribute]()), operation))
         }
         when mutable_syntax: CommandSyntax.Mutable
         {
@@ -617,7 +617,7 @@ function handle_command(command_syntax: ref[CommandSyntax], file: String) return
             }
             try let operation handle_operands(rp, ep, mutable_syntax.binding.operation, file)
                 else throw
-            return Statement(Binding(String(rp, "mutable"), Item(Span(mutable_syntax.start, mutable_syntax.end), false, String#(rp, mutable_syntax.binding.name), type, Vector[Attribute]()), operation))
+            return Statement(Binding(Span(mutable_syntax.start, mutable_syntax.end), String(rp, "mutable"), Item(Span(mutable_syntax.start, mutable_syntax.end), false, String#(rp, mutable_syntax.binding.name), type, Vector[Attribute]()), operation))
         }
         when set_syntax: CommandSyntax.Set
         {
@@ -933,7 +933,7 @@ function handle_condition(condition: ref[ConditionSyntax], file: String) returns
             try let operation_result handle_operation(rp, ep, operation_syntax, file)
                 else throw
 
-            return Binding(String(rp, "const"), Item(Span(operation_syntax.start, operation_syntax.end), false, null, null, Vector[Attribute]()), operation_result)
+            return Binding(Span(operation_syntax.start, operation_syntax.end), String(rp, "const"), Item(Span(operation_syntax.start, operation_syntax.end), false, null, null, Vector[Attribute]()), operation_result)
         }
         when let_syntax: ConditionSyntax.Let
         {
@@ -949,7 +949,7 @@ function handle_condition(condition: ref[ConditionSyntax], file: String) returns
             try let operation_result handle_operands(rp, ep, let_syntax.binding.operation, file)
                 else throw
 
-            return Binding(String(rp, "const"), Item(Span(let_syntax.start, let_syntax.end), false, String#(rp, let_syntax.binding.name), null, Vector[Attribute]()), operation_result)
+            return Binding(Span(let_syntax.start, let_syntax.end), String(rp, "const"), Item(Span(let_syntax.start, let_syntax.end), false, String#(rp, let_syntax.binding.name), null, Vector[Attribute]()), operation_result)
         }
 }
 
@@ -1275,7 +1275,7 @@ function handle_definition(path: String, definition: ref[DefinitionSyntax], priv
         when delegate_syntax: ConceptSyntax.Delegate
             throw ModelError(ModelBuilderError(NotImplemented(file, String(ep, "Delegate"), Span(delegate_syntax.start, delegate_syntax.end))))
         when intrinsic_syntax: ConceptSyntax.Intrinsic
-            return Concept(span, String(rp, definition.name), Vector[GenericParameter](rp, parameters), Vector[Attribute](rp, attributes), Definition(Intrinsic()))
+            return Concept(span, String(rp, definition.name), Vector[GenericParameter](rp, parameters), Vector[Attribute](rp, attributes), Definition(Intrinsic(Span(intrinsic_syntax.start, intrinsic_syntax.end))))
 }
 
 function handle_action(action: ref[ActionSyntax], file: String) returns Action throws ModelError {
@@ -1336,13 +1336,13 @@ function build_function(start: size_t, end: size_t, target_syntax: ref[TargetSyn
             {
                 choose (*named_syntax.routine.lifetime)
                     when call: LifetimeSyntax.Call
-                        set lifetime: Lifetime(Call())
+                        set lifetime: Lifetime(Call(Span(call.start, call.end)))
                     when local: LifetimeSyntax.Local
-                        set lifetime: Lifetime(Local())
+                        set lifetime: Lifetime(Local(Span(local.start, local.end)))
                     when reference: LifetimeSyntax.Reference
-                        set lifetime: Lifetime(Reference(String(rp, reference.location)))
+                        set lifetime: Lifetime(Reference(Span(reference.start, reference.end), String(rp, reference.location)))
                     when thrown: LifetimeSyntax.Thrown
-                        set lifetime: Lifetime(Thrown())
+                        set lifetime: Lifetime(Thrown(Span(thrown.start, thrown.end)))
             }
 
             choose named_syntax.routine.implementation
@@ -1353,11 +1353,11 @@ function build_function(start: size_t, end: size_t, target_syntax: ref[TargetSyn
                     return Function(Span(start, end), private_, pure, String(rp, named_syntax.name), input, returns_, throws_, lifetime, Implementation(action))
                 }
                 when extern_syntax: ImplementationSyntax.Extern
-                    return Function(Span(start, end), private_, pure, String(rp, named_syntax.name), input, returns_, null, lifetime, Implementation(Extern()))
+                    return Function(Span(start, end), private_, pure, String(rp, named_syntax.name), input, returns_, null, lifetime, Implementation(Extern(Span(extern_syntax.start, extern_syntax.end))))
                 when instruction_syntax: ImplementationSyntax.Instruction
-                    return Function(Span(start, end), private_, pure, String(rp, named_syntax.name), input, returns_, null, lifetime, Implementation(Instruction()))
+                    return Function(Span(start, end), private_, pure, String(rp, named_syntax.name), input, returns_, null, lifetime, Implementation(Instruction(Span(instruction_syntax.start, instruction_syntax.end))))
                 when intrinsic_syntax: ImplementationSyntax.Intrinsic
-                    return Function(Span(start, end), private_, pure, String(rp, named_syntax.end), input, returns_, null, lifetime, Implementation(Intrinsic()))
+                    return Function(Span(start, end), private_, pure, String(rp, named_syntax.end), input, returns_, null, lifetime, Implementation(Intrinsic(Span(intrinsic_syntax.start, intrinsic_syntax.end))))
         }
 }
 
@@ -1430,11 +1430,11 @@ function handle_operator(operator_syntax: ref[OperatorSyntax], private_: bool, f
                         return Operator(Span(start, end), private_, String(rp, "[]"), input, returns_, throws_, Implementation(action))
                     }
                     when extern_syntax: ImplementationSyntax.Extern
-                        return Operator(Span(start, end), private_, String(rp, "[]"), input, returns_, throws_, Implementation(Extern()))
-                    when instructio_syntax: ImplementationSyntax.Instruction
-                        return Operator(Span(start, end), private_, String(rp, "[]"), input, returns_, throws_, Implementation(Instruction()))
+                        return Operator(Span(start, end), private_, String(rp, "[]"), input, returns_, throws_, Implementation(Extern(Span(extern_syntax.start, extern_syntax.end))))
+                    when instruction_syntax: ImplementationSyntax.Instruction
+                        return Operator(Span(start, end), private_, String(rp, "[]"), input, returns_, throws_, Implementation(Instruction(Span(instruction_syntax.start, instruction_syntax.end))))
                     when intrinsic_syntax: ImplementationSyntax.Intrinsic
-                        return Operator(Span(start, end), private_, String(rp, "[]"), input, returns_, throws_, Implementation(Intrinsic()))
+                        return Operator(Span(start, end), private_, String(rp, "[]"), input, returns_, throws_, Implementation(Intrinsic(Span(intrinsic_syntax.start, intrinsic_syntax.end))))
             }
             throw ModelError(ModelBuilderError(NotImplemented(file, String(ep, "Non-Symbol Operator"), Span(operator_syntax.start, operator_syntax.end))))
         }
@@ -1471,11 +1471,11 @@ function handle_operator(operator_syntax: ref[OperatorSyntax], private_: bool, f
                     return Operator(Span(start, end), private_, String(rp, named.name), input, returns_, throws_, Implementation(action))
                 }
                 when extern_syntax: ImplementationSyntax.Extern
-                    return Operator(Span(start, end), private_, String(rp, named.name), input, returns_, throws_, Implementation(Extern()))
+                    return Operator(Span(start, end), private_, String(rp, named.name), input, returns_, throws_, Implementation(Extern(Span(extern_syntax.start, extern_syntax.end))))
                 when instruction_syntax: ImplementationSyntax.Instruction
-                    return Operator(Span(start, end), private_, String(rp, named.name), input, returns_, throws_, Implementation(Instruction()))
+                    return Operator(Span(start, end), private_, String(rp, named.name), input, returns_, throws_, Implementation(Instruction(Span(instruction_syntax.start, instruction_syntax.end))))
                 when intrinsic_syntax: ImplementationSyntax.Intrinsic
-                    return Operator(Span(start, end), private_, String(rp, named.name), input, returns_, throws_, Implementation(Intrinsic()))
+                    return Operator(Span(start, end), private_, String(rp, named.name), input, returns_, throws_, Implementation(Intrinsic(Span(intrinsic_syntax.start, intrinsic_syntax.end))))
         }
 }
 

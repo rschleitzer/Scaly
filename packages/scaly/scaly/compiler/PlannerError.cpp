@@ -39,7 +39,7 @@ String PlannerError::to_string(Page* rp) {
                 auto ni = _result._NotImplemented;
                 {
                     message_builder.append("The planner feature \"");
-                    message_builder.append(ni.expected);
+                    message_builder.append(ni.feature);
                     message_builder.append("\" is not implemented.");
                 };
                 break;

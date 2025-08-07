@@ -99,7 +99,7 @@ Result<Void, PlannerError> Planner::plan_main_function(Page* ep, Program& progra
     auto _statement_iterator = program.statements.get_iterator();
     while (auto _statement = _statement_iterator.next()) {
         auto statement = *_statement;{
-            const auto _new_instructions_result = plan_statement(get_page(), ep, program.module_.symbols, nullptr, statement, blocks, &instructions);
+            const auto _new_instructions_result = plan_statement(get_page(), ep, program.module_.file, program.module_.symbols, nullptr, statement, blocks, &instructions);
             auto new_instructions = _new_instructions_result._Ok;
             if (_new_instructions_result._tag == Success::Error) {
                 const auto _new_instructions_Error = _new_instructions_result._Error;
@@ -175,7 +175,7 @@ Result<Void, PlannerError> Planner::plan_symbols(Page* ep, String file, HashMap<
                     {
                         auto concept = _result._Concept;
                         {
-                            const auto _void_result = plan_concept(ep, symbols, concept);
+                            const auto _void_result = plan_concept(ep, file, symbols, concept);
                             if (_void_result._tag == Success::Error) {
                                 const auto _void_Error = _void_result._Error;
                                 switch (_void_Error._tag) {
@@ -190,13 +190,13 @@ Result<Void, PlannerError> Planner::plan_symbols(Page* ep, String file, HashMap<
                     case Member::Operator:
                     {
                         auto op = _result._Operator;
-                        return Result<Void, PlannerError>(FeatureNotImplemented(String(ep, "operator symbol")));
+                        return Result<Void, PlannerError>(FeatureNotImplemented(file, op.span, String(ep, "operator symbol")));
                         break;
                     }
                     case Member::Package:
                     {
                         auto p = _result._Package;
-                        return Result<Void, PlannerError>(FeatureNotImplemented(String(ep, "package")));
+                        return Result<Void, PlannerError>(FeatureNotImplemented(file, Span(0, 0), String(ep, "package")));
                         break;
                     }
                 }
@@ -206,7 +206,7 @@ Result<Void, PlannerError> Planner::plan_symbols(Page* ep, String file, HashMap<
     return Result<Void, PlannerError>(Void());
 }
 
-Result<Void, PlannerError> Planner::plan_concept(Page* ep, HashMap<String, Nameable>& symbols, Concept& concept) {
+Result<Void, PlannerError> Planner::plan_concept(Page* ep, String file, HashMap<String, Nameable>& symbols, Concept& concept) {
     {
         auto _result = concept.definition;
         switch (_result._tag)
@@ -214,13 +214,13 @@ Result<Void, PlannerError> Planner::plan_concept(Page* ep, HashMap<String, Namea
             case Definition::Namespace:
             {
                 auto ns = _result._Namespace;
-                return Result<Void, PlannerError>(FeatureNotImplemented(String(ep, "namespace")));
+                return Result<Void, PlannerError>(FeatureNotImplemented(file, ns.span, String(ep, "namespace")));
                 break;
             }
             case Definition::Structure:
             {
                 auto structure = _result._Structure;
-                return Result<Void, PlannerError>(FeatureNotImplemented(String(ep, "structure")));
+                return Result<Void, PlannerError>(FeatureNotImplemented(file, structure.span, String(ep, "structure")));
                 break;
             }
             case Definition::Intrinsic:
@@ -232,13 +232,13 @@ Result<Void, PlannerError> Planner::plan_concept(Page* ep, HashMap<String, Namea
             case Definition::Global:
             {
                 auto g = _result._Global;
-                return Result<Void, PlannerError>(FeatureNotImplemented(String(ep, "global")));
+                return Result<Void, PlannerError>(FeatureNotImplemented(file, g.span, String(ep, "global")));
                 break;
             }
             case Definition::Union:
             {
                 auto u = _result._Union;
-                return Result<Void, PlannerError>(FeatureNotImplemented(String(ep, "union")));
+                return Result<Void, PlannerError>(FeatureNotImplemented(file, u.span, String(ep, "union")));
                 break;
             }
         }
@@ -260,14 +260,14 @@ Result<String, PlannerError> Planner::resolve_type(Page* rp, Page* ep, String fi
     return Result<String, PlannerError>(UndefinedType(file, String(ep, name), type.span));
 }
 
-Result<List<Plan::Instruction>*, PlannerError> Planner::plan_tuple(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, Tuple& tuple, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions, List<String>& values) {
+Result<List<Plan::Instruction>*, PlannerError> Planner::plan_tuple(Page* rp, Page* ep, String file, HashMap<String, Nameable>& symbols, Tuple& tuple, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions, List<String>& values) {
     
     auto _component_iterator = tuple.components.get_iterator();
     while (auto _component = _component_iterator.next()) {
         auto component = *_component;{
             if (component.name) 
                 return Result<List<Plan::Instruction>*, PlannerError>(TupleComponentNamesNotSupported());
-            plan_operation(get_page(), ep, symbols, component.value, blocks, instructions, values);
+            plan_operation(get_page(), ep, file, symbols, component.value, blocks, instructions, values);
             const auto last_instruction = (*instructions).get_head();
             if (last_instruction) 
                 values.add(*(*last_instruction).result);
@@ -286,10 +286,10 @@ String Planner::allocate_value_name(Page* rp, List<Plan::Block>& blocks, List<Pl
     return String(value_name_builder.to_string(rp));
 }
 
-Result<List<Plan::Instruction>*, PlannerError> Planner::plan_instruction_call(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, String name, Tuple& tuple, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
+Result<List<Plan::Instruction>*, PlannerError> Planner::plan_instruction_call(Page* rp, Page* ep, String file, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, String name, Tuple& tuple, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
     auto r = Region();
     List<String>& values_list = *new (alignof(List<String>), r.get_page()) List<String>();
-    plan_tuple(get_page(), ep, symbols, tuple, blocks, instructions, values_list);
+    plan_tuple(get_page(), ep, file, symbols, tuple, blocks, instructions, values_list);
     auto values = Vector<String>(get_page(), values_list);
     auto page = get_page();
     const auto value = allocate_value_name(get_page(), blocks, *instructions);
@@ -297,11 +297,11 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_instruction_call(Pa
     return Result<List<Plan::Instruction>*, PlannerError>(instructions);
 }
 
-Result<List<Plan::Instruction>*, PlannerError> Planner::plan_type(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, Type& type, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions, List<String>& values) {
+Result<List<Plan::Instruction>*, PlannerError> Planner::plan_type(Page* rp, Page* ep, String file, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, Type& type, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions, List<String>& values) {
     if (type.name.length>1) 
-        return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Qualified type name")));
+        return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, type.span, String(ep, "Qualified type name")));
     if (type.generics) 
-        return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Generic type")));
+        return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, type.span, String(ep, "Generic type")));
     {
         auto _result = type.lifetime;
         switch (_result._tag)
@@ -316,25 +316,25 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_type(Page* rp, Page
             case Lifetime::Call:
             {
                 auto call = _result._Call;
-                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Call lifetime")));
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, call.span, String(ep, "Call lifetime")));
                 break;
             }
             case Lifetime::Local:
             {
                 auto local = _result._Local;
-                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Local lifetime")));
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, local.span, String(ep, "Local lifetime")));
                 break;
             }
             case Lifetime::Reference:
             {
                 auto reference = _result._Reference;
-                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Reference lifetime")));
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, reference.span, String(ep, "Reference lifetime")));
                 break;
             }
             case Lifetime::Thrown:
             {
                 auto thrown = _result._Thrown;
-                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Thrown lifetime")));
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, thrown.span, String(ep, "Thrown lifetime")));
                 break;
             }
         }
@@ -348,19 +348,19 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_type(Page* rp, Page
                 case Nameable::Package:
                 {
                     auto modules = _result._Package;
-                    return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Package reference")));
+                    return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, Span(0, 0), String(ep, "Package reference")));
                     break;
                 }
                 case Nameable::Concept:
                 {
                     auto concept = _result._Concept;
-                    return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Concept reference")));
+                    return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, concept.span, String(ep, "Concept reference")));
                     break;
                 }
                 case Nameable::Operator:
                 {
                     auto operator_ = _result._Operator;
-                    return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Operator reference")));
+                    return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, operator_.span, String(ep, "Operator reference")));
                     break;
                 }
                 case Nameable::Functions:
@@ -368,7 +368,7 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_type(Page* rp, Page
                     auto functions = _result._Functions;
                     {
                         if (functions.length>1) 
-                            return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Overloaded functions")));
+                            return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, (*(functions.get(0))).span, String(ep, "Overloaded functions")));
                         const auto function_ = *functions.get(0);
                         {
                             auto _result = function_.implementation;
@@ -377,13 +377,13 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_type(Page* rp, Page
                                 case Implementation::Action:
                                 {
                                     auto action = _result._Action;
-                                    return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Internal Function call")));
+                                    return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, function_.span, String(ep, "Internal Function call")));
                                     break;
                                 }
                                 case Implementation::Extern:
                                 {
                                     auto extern_ = _result._Extern;
-                                    return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "External Function call")));
+                                    return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, extern_.span, String(ep, "External Function call")));
                                     break;
                                 }
                                 case Implementation::Instruction:
@@ -403,7 +403,7 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_type(Page* rp, Page
                                                 {
                                                     auto tuple = _result._Tuple;
                                                     {
-                                                        return Result<List<Plan::Instruction>*, PlannerError>(plan_instruction_call(get_page(), ep, symbols, operation, name, tuple, blocks, instructions));
+                                                        return Result<List<Plan::Instruction>*, PlannerError>(plan_instruction_call(get_page(), ep, file, symbols, operation, name, tuple, blocks, instructions));
                                                     };
                                                     break;
                                                 }
@@ -417,7 +417,7 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_type(Page* rp, Page
                                 case Implementation::Intrinsic:
                                 {
                                     auto intrinsic_ = _result._Intrinsic;
-                                    return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Intrinsic call")));
+                                    return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, intrinsic_.span, String(ep, "Intrinsic call")));
                                     break;
                                 }
                             }
@@ -428,13 +428,13 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_type(Page* rp, Page
                 case Nameable::Property:
                 {
                     auto property = _result._Property;
-                    return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Property reference")));
+                    return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, property.span, String(ep, "Property reference")));
                     break;
                 }
                 case Nameable::Variant:
                 {
                     auto variant = _result._Variant;
-                    return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Variant reference")));
+                    return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, variant.span, String(ep, "Variant reference")));
                     break;
                 }
             }
@@ -446,7 +446,7 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_type(Page* rp, Page
     return Result<List<Plan::Instruction>*, PlannerError>(instructions);
 }
 
-Result<List<Plan::Instruction>*, PlannerError> Planner::plan_statement(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, Statement& statement, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
+Result<List<Plan::Instruction>*, PlannerError> Planner::plan_statement(Page* rp, Page* ep, String file, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, Statement& statement, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
     {
         auto _result = statement;
         switch (_result._tag)
@@ -457,38 +457,38 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_statement(Page* rp,
                 {
                     auto r = Region();
                     List<String>& values = *new (alignof(List<String>), r.get_page()) List<String>();
-                    return Result<List<Plan::Instruction>*, PlannerError>(plan_action(get_page(), ep, symbols, operation, action, blocks, instructions, values));
+                    return Result<List<Plan::Instruction>*, PlannerError>(plan_action(get_page(), ep, file, symbols, operation, action, blocks, instructions, values));
                 };
                 break;
             }
             case Statement::Binding:
             {
                 auto binding = _result._Binding;
-                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Binding statement")));
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, binding.span, String(ep, "Binding statement")));
                 break;
             }
             case Statement::Break:
             {
                 auto break_ = _result._Break;
-                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Break statement")));
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, break_.span, String(ep, "Break statement")));
                 break;
             }
             case Statement::Continue:
             {
                 auto continue_ = _result._Continue;
-                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Continue statement")));
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, continue_.span, String(ep, "Continue statement")));
                 break;
             }
             case Statement::Return:
             {
                 auto return_ = _result._Return;
-                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Return statement")));
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, return_.span, String(ep, "Return statement")));
                 break;
             }
             case Statement::Throw:
             {
                 auto throw_ = _result._Throw;
-                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Throw statement")));
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, throw_.span, String(ep, "Throw statement")));
                 break;
             }
         }
@@ -496,12 +496,12 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_statement(Page* rp,
     return Result<List<Plan::Instruction>*, PlannerError>(instructions);
 }
 
-Result<List<Plan::Instruction>*, PlannerError> Planner::plan_block(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, Block& block, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
+Result<List<Plan::Instruction>*, PlannerError> Planner::plan_block(Page* rp, Page* ep, String file, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, Block& block, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
     
     auto _statement_iterator = block.statements.get_iterator();
     while (auto _statement = _statement_iterator.next()) {
         auto statement = *_statement;{
-            const auto _new_instructions_result = plan_statement(get_page(), ep, symbols, operation, statement, blocks, instructions);
+            const auto _new_instructions_result = plan_statement(get_page(), ep, file, symbols, operation, statement, blocks, instructions);
             auto new_instructions = _new_instructions_result._Ok;
             if (_new_instructions_result._tag == Success::Error) {
                 const auto _new_instructions_Error = _new_instructions_result._Error;
@@ -517,10 +517,10 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_block(Page* rp, Pag
     return Result<List<Plan::Instruction>*, PlannerError>(instructions);
 }
 
-Result<List<Plan::Instruction>*, PlannerError> Planner::plan_operand(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, Operand& operand, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions, List<String>& values) {
+Result<List<Plan::Instruction>*, PlannerError> Planner::plan_operand(Page* rp, Page* ep, String file, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, Operand& operand, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions, List<String>& values) {
     auto r = Region();
     if (operand.member_access) 
-        return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "member access")));
+        return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, operand.span, String(ep, "member access")));
     {
         auto _result = operand.expression;
         switch (_result._tag)
@@ -528,96 +528,145 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_operand(Page* rp, P
             case Expression::Constant:
             {
                 auto constant = _result._Constant;
-                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Constant expression")));
+                {
+                    {
+                        auto _result = constant;
+                        switch (_result._tag)
+                        {
+                            case Constant::Boolean:
+                            {
+                                auto boolean = _result._Boolean;
+                                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, boolean.span, String(ep, "Boolean expression")));
+                                break;
+                            }
+                            case Constant::Integer:
+                            {
+                                auto integer = _result._Integer;
+                                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, integer.span, String(ep, "Integer expression")));
+                                break;
+                            }
+                            case Constant::Hex:
+                            {
+                                auto hex = _result._Hex;
+                                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, hex.span, String(ep, "Hex expression")));
+                                break;
+                            }
+                            case Constant::FloatingPoint:
+                            {
+                                auto floating_point = _result._FloatingPoint;
+                                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, floating_point.span, String(ep, "Floating point expression")));
+                                break;
+                            }
+                            case Constant::String:
+                            {
+                                auto string = _result._String;
+                                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, string.span, String(ep, "String expression")));
+                                break;
+                            }
+                            case Constant::Character:
+                            {
+                                auto string = _result._Character;
+                                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, string.span, String(ep, "Character expression")));
+                                break;
+                            }
+                            case Constant::Fragment:
+                            {
+                                auto fragment = _result._Fragment;
+                                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, fragment.span, String(ep, "Fragment expression")));
+                                break;
+                            }
+                        }
+                    };
+                };
                 break;
             }
             case Expression::Type:
             {
                 auto type = _result._Type;
-                return Result<List<Plan::Instruction>*, PlannerError>(plan_type(get_page(), ep, symbols, operation, type, blocks, instructions, values));
+                return Result<List<Plan::Instruction>*, PlannerError>(plan_type(get_page(), ep, file, symbols, operation, type, blocks, instructions, values));
                 break;
             }
             case Expression::Tuple:
             {
                 auto tuple = _result._Tuple;
-                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Tuple expression")));
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, tuple.span, String(ep, "Tuple expression")));
                 break;
             }
             case Expression::Matrix:
             {
                 auto matrix = _result._Matrix;
-                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Matrix expression")));
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, matrix.span, String(ep, "Matrix expression")));
                 break;
             }
             case Expression::Block:
             {
                 auto block = _result._Block;
-                return Result<List<Plan::Instruction>*, PlannerError>(plan_block(get_page(), ep, symbols, operation, block, blocks, instructions));
+                return Result<List<Plan::Instruction>*, PlannerError>(plan_block(get_page(), ep, file, symbols, operation, block, blocks, instructions));
                 break;
             }
             case Expression::If:
             {
                 auto if_ = _result._If;
-                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "If expression")));
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, if_.span, String(ep, "If expression")));
                 break;
             }
             case Expression::Match:
             {
                 auto match_ = _result._Match;
-                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Match expression")));
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, match_.span, String(ep, "Match expression")));
                 break;
             }
             case Expression::Choose:
             {
                 auto choose_ = _result._Choose;
-                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Choose expression")));
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, choose_.span, String(ep, "Choose expression")));
                 break;
             }
             case Expression::For:
             {
                 auto for_ = _result._For;
-                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "For expression")));
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, for_.span, String(ep, "For expression")));
                 break;
             }
             case Expression::While:
             {
                 auto while_ = _result._While;
-                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "While expression")));
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, while_.span, String(ep, "While expression")));
                 break;
             }
             case Expression::Try:
             {
                 auto try_ = _result._Try;
-                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Try expression")));
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, try_.span, String(ep, "Try expression")));
                 break;
             }
             case Expression::SizeOf:
             {
                 auto sizeof_ = _result._SizeOf;
-                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "SizeOf expression")));
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, sizeof_.span, String(ep, "SizeOf expression")));
                 break;
             }
             case Expression::Is:
             {
                 auto is_ = _result._Is;
-                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "Is expression")));
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, is_.span, String(ep, "Is expression")));
                 break;
             }
             case Expression::New:
             {
                 auto new__ = _result._New;
-                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "New expression")));
+                return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, new__.span, String(ep, "New expression")));
                 break;
             }
         }
     };
 }
 
-Result<List<Plan::Instruction>*, PlannerError> Planner::plan_operation(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, Vector<Operand>& operation, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions, List<String>& values) {
+Result<List<Plan::Instruction>*, PlannerError> Planner::plan_operation(Page* rp, Page* ep, String file, HashMap<String, Nameable>& symbols, Vector<Operand>& operation, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions, List<String>& values) {
     auto r = Region();
     auto operand_iterator = operation.get_iterator();
     while (auto operand = operand_iterator.next()) {
-        const auto _new_instructions_result = plan_operand(get_page(), ep, symbols, &operand_iterator, *operand, blocks, instructions, values);
+        const auto _new_instructions_result = plan_operand(get_page(), ep, file, symbols, &operand_iterator, *operand, blocks, instructions, values);
         auto new_instructions = _new_instructions_result._Ok;
         if (_new_instructions_result._tag == Success::Error) {
             const auto _new_instructions_Error = _new_instructions_result._Error;
@@ -631,11 +680,11 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_operation(Page* rp,
     return Result<List<Plan::Instruction>*, PlannerError>(instructions);
 }
 
-Result<List<Plan::Instruction>*, PlannerError> Planner::plan_action(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, Action& action, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions, List<String>& values) {
+Result<List<Plan::Instruction>*, PlannerError> Planner::plan_action(Page* rp, Page* ep, String file, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, Action& action, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions, List<String>& values) {
     auto r = Region();
     if (action.target.length>0) 
-        return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(String(ep, "set")));
-    const auto _new_instructions_result = plan_operation(get_page(), ep, symbols, action.source, blocks, instructions, values);
+        return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, (*(action.target.get(0))).span, String(ep, "set")));
+    const auto _new_instructions_result = plan_operation(get_page(), ep, file, symbols, action.source, blocks, instructions, values);
     auto new_instructions = _new_instructions_result._Ok;
     if (_new_instructions_result._tag == Success::Error) {
         const auto _new_instructions_Error = _new_instructions_result._Error;
@@ -691,7 +740,7 @@ Result<Void, PlannerError> Planner::plan_function(Page* ep, String file, HashMap
                 auto action = _result._Action;
                 {
                     List<String>& values = *new (alignof(List<String>), r.get_page()) List<String>();
-                    const auto _new_instructions_result = plan_action(get_page(), ep, symbols, nullptr, action, blocks, &instructions, values);
+                    const auto _new_instructions_result = plan_action(get_page(), ep, file, symbols, nullptr, action, blocks, &instructions, values);
                     auto new_instructions = _new_instructions_result._Ok;
                     if (_new_instructions_result._tag == Success::Error) {
                         const auto _new_instructions_Error = _new_instructions_result._Error;

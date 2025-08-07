@@ -8,7 +8,7 @@ define InstructionWithInvalidNumberOfArguments(name: String)
 define TupleComponentNamesNotSupported()
 define UndefinedType(file: String, name: String, span: Span)
 {
-    function to_string(this: NotImplemented) returns String {
+    function to_string(this: UndefinedType) returns String {
         var r Region()
         var message_builder: ref[StringBuilder] *StringBuilder$()
         append_error_message_header(message_builder, file, span.start)
@@ -41,7 +41,7 @@ define PlannerError union
             when ni: PlannerError.NotImplemented
             {
                 message_builder.append("The planner feature \"")
-                message_builder.append(ni.expected)
+                message_builder.append(ni.feature)
                 message_builder.append("\" is not implemented.")
             }
             when fe: PlannerError.FileError

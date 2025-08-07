@@ -8,19 +8,19 @@ using namespace scaly::io;
 
 Span::Span(size_t start, size_t end) : start(start), end(end) {}
 
-BooleanConstant::BooleanConstant(bool value) : value(value) {}
+BooleanConstant::BooleanConstant(Span span, bool value) : span(span), value(value) {}
 
-IntegerConstant::IntegerConstant(size_t value) : value(value) {}
+IntegerConstant::IntegerConstant(Span span, size_t value) : span(span), value(value) {}
 
-HexConstant::HexConstant(size_t value) : value(value) {}
+HexConstant::HexConstant(Span span, size_t value) : span(span), value(value) {}
 
-FloatingPointConstant::FloatingPointConstant(double value) : value(value) {}
+FloatingPointConstant::FloatingPointConstant(Span span, double value) : span(span), value(value) {}
 
-StringConstant::StringConstant(String value) : value(value) {}
+StringConstant::StringConstant(Span span, String value) : span(span), value(value) {}
 
-CharacterConstant::CharacterConstant(String value) : value(value) {}
+CharacterConstant::CharacterConstant(Span span, String value) : span(span), value(value) {}
 
-FragmentConstant::FragmentConstant(String value) : value(value) {}
+FragmentConstant::FragmentConstant(Span span, String value) : span(span), value(value) {}
 Constant::Constant(struct BooleanConstant _Boolean) : _tag(Boolean), _Boolean(_Boolean) {}
 
 Constant::Constant(struct IntegerConstant _Integer) : _tag(Integer), _Integer(_Integer) {}
@@ -44,7 +44,13 @@ Matrix::Matrix(Span span, Vector<Vector<Operand>> operations) : span(span), oper
 
 Block::Block(Span span, Vector<Statement> statements) : span(span), statements(statements) {}
 
-Reference::Reference(String location) : location(location) {}
+Call::Call(Span span) : span(span) {}
+
+Local::Local(Span span) : span(span) {}
+
+Reference::Reference(Span span, String location) : span(span), location(location) {}
+
+Thrown::Thrown(Span span) : span(span) {}
 Lifetime::Lifetime(struct Unspecified _Unspecified) : _tag(Unspecified), _Unspecified(_Unspecified) {}
 
 Lifetime::Lifetime(struct Call _Call) : _tag(Call), _Call(_Call) {}
@@ -60,7 +66,7 @@ Action::Action(Vector<Operand> source, Vector<Operand> target) : source(source),
 
 Item::Item(Span span, bool private_, String* name, Type* type, Vector<Attribute> attributes) : span(span), private_(private_), name(name), type(type), attributes(attributes) {}
 
-Binding::Binding(String binding_type, Item item, Vector<Operand> operation) : binding_type(binding_type), item(item), operation(operation) {}
+Binding::Binding(Span span, String binding_type, Item item, Vector<Operand> operation) : span(span), binding_type(binding_type), item(item), operation(operation) {}
 
 Break::Break(Span span, Vector<Operand> result) : span(span), result(result) {}
 
@@ -139,6 +145,12 @@ Expression::Expression(struct New _New) : _tag(New), _New(_New) {}
 
 
 Operand::Operand(Span span, Expression expression, Vector<String>* member_access) : span(span), expression(expression), member_access(member_access) {}
+
+Extern::Extern(Span span) : span(span) {}
+
+Instruction::Instruction(Span span) : span(span) {}
+
+Intrinsic::Intrinsic(Span span) : span(span) {}
 Implementation::Implementation(struct Action _Action) : _tag(Action), _Action(_Action) {}
 
 Implementation::Implementation(struct Extern _Extern) : _tag(Extern), _Extern(_Extern) {}

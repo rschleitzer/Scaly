@@ -759,7 +759,7 @@ Result<Constant, ModelError> handle_literal(Page* rp, Page* ep, LiteralSyntax& l
             case Literal::Boolean:
             {
                 auto boolean = _result._Boolean;
-                return Result<Constant, ModelError>(Constant(BooleanConstant(boolean.value)));
+                return Result<Constant, ModelError>(Constant(BooleanConstant(Span(literal.start, literal.end), boolean.value)));
                 break;
             }
             case Literal::Integer:
@@ -769,7 +769,7 @@ Result<Constant, ModelError> handle_literal(Page* rp, Page* ep, LiteralSyntax& l
                     const auto value = (size_t)strtol(integer.value.to_c_string(r.get_page()), nullptr, 10);
                     if (errno == ERANGE) 
                         return Result<Constant, ModelError>(ModelError(ModelBuilderError(InvalidConstant(file, Span(literal.start, literal.end)))));
-                    return Result<Constant, ModelError>(Constant(IntegerConstant(value)));
+                    return Result<Constant, ModelError>(Constant(IntegerConstant(Span(literal.start, literal.end), value)));
                 };
                 break;
             }
@@ -780,7 +780,7 @@ Result<Constant, ModelError> handle_literal(Page* rp, Page* ep, LiteralSyntax& l
                     const auto value = (size_t)strtoul(hex.value.to_c_string(r.get_page()), nullptr, 16);
                     if (errno == ERANGE) 
                         return Result<Constant, ModelError>(ModelError(ModelBuilderError(InvalidConstant(file, Span(literal.start, literal.end)))));
-                    return Result<Constant, ModelError>(Constant(HexConstant(value)));
+                    return Result<Constant, ModelError>(Constant(HexConstant(Span(literal.start, literal.end), value)));
                 };
                 break;
             }
@@ -791,26 +791,26 @@ Result<Constant, ModelError> handle_literal(Page* rp, Page* ep, LiteralSyntax& l
                     const auto value = strtod(floating_point.value.to_c_string(r.get_page()), nullptr);
                     if (errno == ERANGE) 
                         return Result<Constant, ModelError>(ModelError(ModelBuilderError(InvalidConstant(file, Span(literal.start, literal.end)))));
-                    return Result<Constant, ModelError>(Constant(FloatingPointConstant(value)));
+                    return Result<Constant, ModelError>(Constant(FloatingPointConstant(Span(literal.start, literal.end), value)));
                 };
                 break;
             }
             case Literal::String:
             {
                 auto string = _result._String;
-                return Result<Constant, ModelError>(Constant(StringConstant(string.value)));
+                return Result<Constant, ModelError>(Constant(StringConstant(Span(literal.start, literal.end), string.value)));
                 break;
             }
             case Literal::Character:
             {
                 auto character = _result._Character;
-                return Result<Constant, ModelError>(Constant(CharacterConstant(character.value)));
+                return Result<Constant, ModelError>(Constant(CharacterConstant(Span(literal.start, literal.end), character.value)));
                 break;
             }
             case Literal::Fragment:
             {
                 auto fragment = _result._Fragment;
-                return Result<Constant, ModelError>(Constant(FragmentConstant(fragment.value)));
+                return Result<Constant, ModelError>(Constant(FragmentConstant(Span(literal.start, literal.end), fragment.value)));
                 break;
             }
         }
@@ -869,25 +869,25 @@ Result<Type*, ModelError> handle_type(Page* rp, Page* ep, TypeSyntax& type_synta
                 case LifetimeSyntax::Call:
                 {
                     auto c = _result._Call;
-                    lifetime = Lifetime(Call());
+                    lifetime = Lifetime(Call(Span(c.start, c.end)));
                     break;
                 }
                 case LifetimeSyntax::Local:
                 {
                     auto l = _result._Local;
-                    lifetime = Lifetime(Local());
+                    lifetime = Lifetime(Local(Span(l.start, l.end)));
                     break;
                 }
                 case LifetimeSyntax::Reference:
                 {
                     auto r = _result._Reference;
-                    lifetime = Lifetime(Reference(String(rp, r.location)));
+                    lifetime = Lifetime(Reference(Span(r.start, r.end), String(rp, r.location)));
                     break;
                 }
                 case LifetimeSyntax::Thrown:
                 {
                     auto t = _result._Thrown;
-                    lifetime = Lifetime(Thrown());
+                    lifetime = Lifetime(Thrown(Span(t.start, t.end)));
                     break;
                 }
             }
@@ -1045,7 +1045,7 @@ Result<Statement, ModelError> handle_command(Page* rp, Page* ep, CommandSyntax& 
 
                         }
                     };
-                    return Result<Statement, ModelError>(Statement(Binding(String(rp, "const"), Item(Span(let_syntax.start, let_syntax.end), false, new (alignof(String), rp) String(rp, let_syntax.binding.name), type, Vector<Attribute>()), operation)));
+                    return Result<Statement, ModelError>(Statement(Binding(Span(let_syntax.start, let_syntax.end), String(rp, "const"), Item(Span(let_syntax.start, let_syntax.end), false, new (alignof(String), rp) String(rp, let_syntax.binding.name), type, Vector<Attribute>()), operation)));
                 };
                 break;
             }
@@ -1077,7 +1077,7 @@ Result<Statement, ModelError> handle_command(Page* rp, Page* ep, CommandSyntax& 
 
                         }
                     };
-                    return Result<Statement, ModelError>(Statement(Binding(String(rp, "var"), Item(Span(var_syntax.start, var_syntax.end), false, new (alignof(String), rp) String(rp, var_syntax.binding.name), type, Vector<Attribute>()), operation)));
+                    return Result<Statement, ModelError>(Statement(Binding(Span(var_syntax.start, var_syntax.end), String(rp, "var"), Item(Span(var_syntax.start, var_syntax.end), false, new (alignof(String), rp) String(rp, var_syntax.binding.name), type, Vector<Attribute>()), operation)));
                 };
                 break;
             }
@@ -1109,7 +1109,7 @@ Result<Statement, ModelError> handle_command(Page* rp, Page* ep, CommandSyntax& 
 
                         }
                     };
-                    return Result<Statement, ModelError>(Statement(Binding(String(rp, "mutable"), Item(Span(mutable_syntax.start, mutable_syntax.end), false, new (alignof(String), rp) String(rp, mutable_syntax.binding.name), type, Vector<Attribute>()), operation)));
+                    return Result<Statement, ModelError>(Statement(Binding(Span(mutable_syntax.start, mutable_syntax.end), String(rp, "mutable"), Item(Span(mutable_syntax.start, mutable_syntax.end), false, new (alignof(String), rp) String(rp, mutable_syntax.binding.name), type, Vector<Attribute>()), operation)));
                 };
                 break;
             }
@@ -1721,7 +1721,7 @@ Result<Binding, ModelError> handle_condition(Page* rp, Page* ep, ConditionSyntax
 
                         }
                     };
-                    return Result<Binding, ModelError>(Binding(String(rp, "const"), Item(Span(operation_syntax.start, operation_syntax.end), false, nullptr, nullptr, Vector<Attribute>()), operation_result));
+                    return Result<Binding, ModelError>(Binding(Span(operation_syntax.start, operation_syntax.end), String(rp, "const"), Item(Span(operation_syntax.start, operation_syntax.end), false, nullptr, nullptr, Vector<Attribute>()), operation_result));
                 };
                 break;
             }
@@ -1753,7 +1753,7 @@ Result<Binding, ModelError> handle_condition(Page* rp, Page* ep, ConditionSyntax
 
                         }
                     };
-                    return Result<Binding, ModelError>(Binding(String(rp, "const"), Item(Span(let_syntax.start, let_syntax.end), false, new (alignof(String), rp) String(rp, let_syntax.binding.name), nullptr, Vector<Attribute>()), operation_result));
+                    return Result<Binding, ModelError>(Binding(Span(let_syntax.start, let_syntax.end), String(rp, "const"), Item(Span(let_syntax.start, let_syntax.end), false, new (alignof(String), rp) String(rp, let_syntax.binding.name), nullptr, Vector<Attribute>()), operation_result));
                 };
                 break;
             }
@@ -2429,7 +2429,7 @@ Result<Concept, ModelError> handle_definition(Page* rp, Page* ep, String path, D
             case ConceptSyntax::Intrinsic:
             {
                 auto intrinsic_syntax = _result._Intrinsic;
-                return Result<Concept, ModelError>(Concept(span, String(rp, definition.name), Vector<GenericParameter>(rp, parameters), Vector<Attribute>(rp, attributes), Definition(Intrinsic())));
+                return Result<Concept, ModelError>(Concept(span, String(rp, definition.name), Vector<GenericParameter>(rp, parameters), Vector<Attribute>(rp, attributes), Definition(Intrinsic(Span(intrinsic_syntax.start, intrinsic_syntax.end)))));
                 break;
             }
         }
@@ -2558,25 +2558,25 @@ Result<Function, ModelError> build_function(Page* rp, Page* ep, size_t start, si
                                 case LifetimeSyntax::Call:
                                 {
                                     auto call = _result._Call;
-                                    lifetime = Lifetime(Call());
+                                    lifetime = Lifetime(Call(Span(call.start, call.end)));
                                     break;
                                 }
                                 case LifetimeSyntax::Local:
                                 {
                                     auto local = _result._Local;
-                                    lifetime = Lifetime(Local());
+                                    lifetime = Lifetime(Local(Span(local.start, local.end)));
                                     break;
                                 }
                                 case LifetimeSyntax::Reference:
                                 {
                                     auto reference = _result._Reference;
-                                    lifetime = Lifetime(Reference(String(rp, reference.location)));
+                                    lifetime = Lifetime(Reference(Span(reference.start, reference.end), String(rp, reference.location)));
                                     break;
                                 }
                                 case LifetimeSyntax::Thrown:
                                 {
                                     auto thrown = _result._Thrown;
-                                    lifetime = Lifetime(Thrown());
+                                    lifetime = Lifetime(Thrown(Span(thrown.start, thrown.end)));
                                     break;
                                 }
                             }
@@ -2607,19 +2607,19 @@ Result<Function, ModelError> build_function(Page* rp, Page* ep, size_t start, si
                             case ImplementationSyntax::Extern:
                             {
                                 auto extern_syntax = _result._Extern;
-                                return Result<Function, ModelError>(Function(Span(start, end), private_, pure, String(rp, named_syntax.name), input, returns_, nullptr, lifetime, Implementation(Extern())));
+                                return Result<Function, ModelError>(Function(Span(start, end), private_, pure, String(rp, named_syntax.name), input, returns_, nullptr, lifetime, Implementation(Extern(Span(extern_syntax.start, extern_syntax.end)))));
                                 break;
                             }
                             case ImplementationSyntax::Instruction:
                             {
                                 auto instruction_syntax = _result._Instruction;
-                                return Result<Function, ModelError>(Function(Span(start, end), private_, pure, String(rp, named_syntax.name), input, returns_, nullptr, lifetime, Implementation(Instruction())));
+                                return Result<Function, ModelError>(Function(Span(start, end), private_, pure, String(rp, named_syntax.name), input, returns_, nullptr, lifetime, Implementation(Instruction(Span(instruction_syntax.start, instruction_syntax.end)))));
                                 break;
                             }
                             case ImplementationSyntax::Intrinsic:
                             {
                                 auto intrinsic_syntax = _result._Intrinsic;
-                                return Result<Function, ModelError>(Function(Span(start, end), private_, pure, String(rp, named_syntax.end), input, returns_, nullptr, lifetime, Implementation(Intrinsic())));
+                                return Result<Function, ModelError>(Function(Span(start, end), private_, pure, String(rp, named_syntax.end), input, returns_, nullptr, lifetime, Implementation(Intrinsic(Span(intrinsic_syntax.start, intrinsic_syntax.end)))));
                                 break;
                             }
                         }
@@ -2753,19 +2753,19 @@ Result<Operator, ModelError> handle_operator(Page* rp, Page* ep, OperatorSyntax&
                                 case ImplementationSyntax::Extern:
                                 {
                                     auto extern_syntax = _result._Extern;
-                                    return Result<Operator, ModelError>(Operator(Span(start, end), private_, String(rp, "[]"), input, returns_, throws_, Implementation(Extern())));
+                                    return Result<Operator, ModelError>(Operator(Span(start, end), private_, String(rp, "[]"), input, returns_, throws_, Implementation(Extern(Span(extern_syntax.start, extern_syntax.end)))));
                                     break;
                                 }
                                 case ImplementationSyntax::Instruction:
                                 {
-                                    auto instructio_syntax = _result._Instruction;
-                                    return Result<Operator, ModelError>(Operator(Span(start, end), private_, String(rp, "[]"), input, returns_, throws_, Implementation(Instruction())));
+                                    auto instruction_syntax = _result._Instruction;
+                                    return Result<Operator, ModelError>(Operator(Span(start, end), private_, String(rp, "[]"), input, returns_, throws_, Implementation(Instruction(Span(instruction_syntax.start, instruction_syntax.end)))));
                                     break;
                                 }
                                 case ImplementationSyntax::Intrinsic:
                                 {
                                     auto intrinsic_syntax = _result._Intrinsic;
-                                    return Result<Operator, ModelError>(Operator(Span(start, end), private_, String(rp, "[]"), input, returns_, throws_, Implementation(Intrinsic())));
+                                    return Result<Operator, ModelError>(Operator(Span(start, end), private_, String(rp, "[]"), input, returns_, throws_, Implementation(Intrinsic(Span(intrinsic_syntax.start, intrinsic_syntax.end)))));
                                     break;
                                 }
                             }
@@ -2845,19 +2845,19 @@ Result<Operator, ModelError> handle_operator(Page* rp, Page* ep, OperatorSyntax&
                             case ImplementationSyntax::Extern:
                             {
                                 auto extern_syntax = _result._Extern;
-                                return Result<Operator, ModelError>(Operator(Span(start, end), private_, String(rp, named.name), input, returns_, throws_, Implementation(Extern())));
+                                return Result<Operator, ModelError>(Operator(Span(start, end), private_, String(rp, named.name), input, returns_, throws_, Implementation(Extern(Span(extern_syntax.start, extern_syntax.end)))));
                                 break;
                             }
                             case ImplementationSyntax::Instruction:
                             {
                                 auto instruction_syntax = _result._Instruction;
-                                return Result<Operator, ModelError>(Operator(Span(start, end), private_, String(rp, named.name), input, returns_, throws_, Implementation(Instruction())));
+                                return Result<Operator, ModelError>(Operator(Span(start, end), private_, String(rp, named.name), input, returns_, throws_, Implementation(Instruction(Span(instruction_syntax.start, instruction_syntax.end)))));
                                 break;
                             }
                             case ImplementationSyntax::Intrinsic:
                             {
                                 auto intrinsic_syntax = _result._Intrinsic;
-                                return Result<Operator, ModelError>(Operator(Span(start, end), private_, String(rp, named.name), input, returns_, throws_, Implementation(Intrinsic())));
+                                return Result<Operator, ModelError>(Operator(Span(start, end), private_, String(rp, named.name), input, returns_, throws_, Implementation(Intrinsic(Span(intrinsic_syntax.start, intrinsic_syntax.end)))));
                                 break;
                             }
                         }

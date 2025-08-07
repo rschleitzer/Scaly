@@ -29,7 +29,7 @@ function transpile_program(program: ref[Program]) throws TranspilerError {
     }
 
     if program.statements.length > 0
-        main_file(ep, path, program)
+        main_file(ep, program.module_.file, path, program)
     main_include_file(ep, path, program.module_.name)
     forward_includes(ep, path, program)
     vscode_files(ep, path, program)
@@ -105,7 +105,7 @@ struct Result {
 
     var namespace_open_builder: ref[StringBuilder] *StringBuilder$(namespace_open)
 
-    try build_symbols(ep, path, module_.file, null, header_builder, cpp_builder, main_header, namespace_open, namespace_close, module_.members)
+    try build_symbols(ep, module_.file, path, null, header_builder, cpp_builder, main_header, namespace_open, namespace_close, module_.members)
         else throw
 
     cpp_builder.append('\n')
@@ -145,21 +145,21 @@ function create_directory(path: String) throws FileError {
     return Void()
 }
 
-function build_concept(path: String, source: String, header_builder: ref[StringBuilder], cpp_builder: ref[StringBuilder], main_header: String, namespace_open: String, namespace_close: String, concept: ref[Concept]) throws TranspilerError { 
+function build_concept(file: String, path: String, header_builder: ref[StringBuilder], cpp_builder: ref[StringBuilder], main_header: String, namespace_open: String, namespace_close: String, concept: ref[Concept]) throws TranspilerError { 
     choose concept.definition
         when ns: Definition.Namespace
-            return build_namespace(ep, path, source, concept.name, header_builder, cpp_builder, main_header, namespace_open, namespace_close, ns)
+            return build_namespace(ep, path, file, concept.name, header_builder, cpp_builder, main_header, namespace_open, namespace_close, ns)
         when structure: Definition.Structure
-            return build_structure(ep, header_builder, cpp_builder, concept.name, structure, concept.parameters)
+            return build_structure(ep, file, header_builder, cpp_builder, concept.name, structure, concept.parameters)
         when i: Definition.Intrinsic
-            return build_intrinsic(ep, header_builder, concept.name)
+            return build_intrinsic(ep, file, header_builder, concept)
         when g: Definition.Global
-            return build_global(ep, header_builder, concept.name, g)
+            return build_global(ep, file, header_builder, concept.name, g)
         when u: Definition.Union
-            return build_union(ep, header_builder, cpp_builder, concept.name, u, concept.parameters)
+            return build_union(ep, file, header_builder, cpp_builder, concept.name, u, concept.parameters)
 }
 
-function build_union(header_builder: ref[StringBuilder], cpp_builder: ref[StringBuilder], name: String, union_: ref[Union], parameters: Vector[GenericParameter]) throws TranspilerError {
+function build_union(file: String, header_builder: ref[StringBuilder], cpp_builder: ref[StringBuilder], name: String, union_: ref[Union], parameters: Vector[GenericParameter]) throws TranspilerError {
     header_builder.append('\n')
     full_struct_name(header_builder, name, parameters)
     header_builder.append(" : Object")
@@ -213,15 +213,15 @@ function build_union(header_builder: ref[StringBuilder], cpp_builder: ref[String
     {
         choose member
             when func: Member.Function
-                try build_function(ep, header_builder, cpp_builder, func, &name, parameters.length > 0, true)
+                try build_function(ep, file, header_builder, cpp_builder, func, &name, parameters.length > 0, true)
                     else throw
             when op: Member.Operator
-                try build_operator(ep, header_builder, cpp_builder, op, &name, parameters.length > 0)
+                try build_operator(ep, file, header_builder, cpp_builder, op, &name, parameters.length > 0)
                     else throw
             when p: Member.Package
-                throw FeatureNotImplemented(String(ep, "structure local package"))
+                throw FeatureNotImplemented(file, union_.span, String(ep, "structure local package"))
             when concept: Member.Concept
-                throw FeatureNotImplemented(String(ep, "structure local concept"))
+                throw FeatureNotImplemented(file, concept.span, String(ep, "structure local concept"))
     }
 
     header_builder.append("\n};")
@@ -334,7 +334,7 @@ function build_namespace(path: String, source: String, name: String, header_buil
     main_header_builder.append(main_header)
     try build_modules(ep, path, name, header_builder, namespace_.modules, main_header_builder.to_string(r.get_page()), namespace_open, namespace_close)
         else throw
-    try build_symbols(ep, path, source, null, header_builder, cpp_builder, main_header_builder.to_string(r.get_page()), namespace_open, namespace_close, namespace_.members)
+    try build_symbols(ep, source, path, null, header_builder, cpp_builder, main_header_builder.to_string(r.get_page()), namespace_open, namespace_close, namespace_.members)
         else throw
     header_builder.append("\n}")
     cpp_builder.append("\n\n}")
@@ -357,27 +357,27 @@ function build_modules(path: String, name: String, header_builder: ref[StringBui
     return Void()
 }
 
-function build_symbols(path: String, source: String, name: pointer[String], header_builder: ref[StringBuilder], cpp_builder: ref[StringBuilder], main_header: String, namespace_open: String, namespace_close: String, symbols: Vector[Member]) throws TranspilerError {
+function build_symbols(file: String, path: String, name: pointer[String], header_builder: ref[StringBuilder], cpp_builder: ref[StringBuilder], main_header: String, namespace_open: String, namespace_close: String, symbols: Vector[Member]) throws TranspilerError {
     var r Region()
     for member in symbols
     {
         choose member
             when func: Member.Function
-                try build_function(ep, header_builder, cpp_builder, func, name, false, false)
+                try build_function(ep, file, header_builder, cpp_builder, func, name, false, false)
                     else throw
             when concept: Member.Concept
-                try build_concept(ep, path, source, header_builder, cpp_builder, main_header, namespace_open, namespace_close, concept)
+                try build_concept(ep, file, path, header_builder, cpp_builder, main_header, namespace_open, namespace_close, concept)
                     else throw
             when op: Member.Operator
-                throw FeatureNotImplemented(String(ep, "namespace local operator"))
+                throw FeatureNotImplemented(file, op.span, String(ep, "namespace local operator"))
             when p: Member.Package
-                throw FeatureNotImplemented(String(ep, "namespace local package"))
+                throw FeatureNotImplemented(file, Span(0, 0), String(ep, "namespace local package"))
     }
 
     return Void()
 }
 
-function build_structure(header_builder: ref[StringBuilder], cpp_builder: ref[StringBuilder], name: String, structure: ref[Structure], parameters: Vector[GenericParameter]) throws TranspilerError {
+function build_structure(file: String, header_builder: ref[StringBuilder], cpp_builder: ref[StringBuilder], name: String, structure: ref[Structure], parameters: Vector[GenericParameter]) throws TranspilerError {
     var r Region()
     header_builder.append('\n')
     full_struct_name(header_builder, name, parameters)
@@ -410,32 +410,32 @@ function build_structure(header_builder: ref[StringBuilder], cpp_builder: ref[St
         build_default_initializer(ep, header_builder, cpp_builder, name, parameters.length > 0, structure.properties)
 
     if must_build_properties_initializer
-        try build_properties_initializer(ep, header_builder, cpp_builder, name, parameters.length > 0, structure.properties)
+        try build_properties_initializer(ep, file, header_builder, cpp_builder, name, parameters.length > 0, structure.properties)
             else throw
 
     for initializer in structure.initializers
     {
-        try build_initializer(ep, header_builder, cpp_builder, name, parameters.length > 0, &initializer)
+        try build_initializer(ep, file, header_builder, cpp_builder, name, parameters.length > 0, &initializer)
             else throw
     }
 
     if structure.deinitializer <> null
-        try build_deinitializer(ep, header_builder, cpp_builder, name, parameters.length > 0, structure.deinitializer)
+        try build_deinitializer(ep, file, header_builder, cpp_builder, name, parameters.length > 0, structure.deinitializer)
             else throw
 
     for member in structure.members
     {
         choose member
             when func: Member.Function
-                try build_function(ep, header_builder, cpp_builder, func, &name, parameters.length > 0, true)
+                try build_function(ep, file, header_builder, cpp_builder, func, &name, parameters.length > 0, true)
                     else throw
             when op: Member.Operator
-                try build_operator(ep, header_builder, cpp_builder, op, &name, parameters.length > 0)
+                try build_operator(ep, file, header_builder, cpp_builder, op, &name, parameters.length > 0)
                     else throw
             when p: Member.Package
-                throw FeatureNotImplemented(String(ep, "structure local package"))
+                throw FeatureNotImplemented(file, Span(0, 0), String(ep, "structure local package"))
             when c: Member.Concept
-                throw FeatureNotImplemented(String(ep, "structure local concept"))
+                throw FeatureNotImplemented(file, c.span, String(ep, "structure local concept"))
     }
 
     header_builder.append("\n};\n")
@@ -508,22 +508,22 @@ function build_default_initializer_list(builder: ref[StringBuilder], is_generic:
     return Void()
 }
 
-function build_properties_initializer(header_builder: ref[StringBuilder], cpp_builder: ref[StringBuilder], name: String, is_generic: bool, properties: ref[Vector[Property]]) throws TranspilerError {
+function build_properties_initializer(file: String, header_builder: ref[StringBuilder], cpp_builder: ref[StringBuilder], name: String, is_generic: bool, properties: ref[Vector[Property]]) throws TranspilerError {
     var r Region()
     build_initializer_header(header_builder, cpp_builder, name, is_generic)
     if (is_generic)
     {
-        build_properties_initializer_list(ep, header_builder, is_generic, properties, String(r.get_page(), "        "))
+        build_properties_initializer_list(ep, file, header_builder, is_generic, properties, String(r.get_page(), "        "))
         header_builder.append(" {}")
     } else {
-        build_properties_initializer_list(ep, cpp_builder, is_generic, properties, String(r.get_page(), "    "))
+        build_properties_initializer_list(ep, file, cpp_builder, is_generic, properties, String(r.get_page(), "    "))
         cpp_builder.append(" {}")
         header_builder.append(" ();")
     }
     return Void()
 }
 
-function build_properties_initializer_list(builder: ref[StringBuilder], is_generic: bool, properties: ref[Vector[Property]], indent: String) throws TranspilerError {
+function build_properties_initializer_list(file: String, builder: ref[StringBuilder], is_generic: bool, properties: ref[Vector[Property]], indent: String) throws TranspilerError {
     builder.append("() : ")
     var first true
     for property in properties
@@ -538,28 +538,28 @@ function build_properties_initializer_list(builder: ref[StringBuilder], is_gener
         }
         builder.append(property.name)
         builder.append('(')
-        try build_operation(ep, builder, *property.initializer, null, null, null, indent)
+        try build_operation(ep, file, builder, *property.initializer, null, null, null, indent)
             else throw
         builder.append(')')
     }
     return Void()
 }
 
-function build_initializer(header_builder: ref[StringBuilder], cpp_builder: ref[StringBuilder], name: String, is_generic: bool, initializer: pointer[Initializer]) throws TranspilerError {
+function build_initializer(file: String, header_builder: ref[StringBuilder], cpp_builder: ref[StringBuilder], name: String, is_generic: bool, initializer: pointer[Initializer]) throws TranspilerError {
     var r Region()
     build_initializer_header(header_builder, cpp_builder, name, is_generic)
     if is_generic = false
     {
         build_input(cpp_builder, (*initializer).input, null, null, null, Lifetime(Unspecified()))
         cpp_builder.append(' ')
-        try build_implementation(ep, cpp_builder, (*initializer).implementation, null, null, String(), true)
+        try build_implementation(ep, file, cpp_builder, (*initializer).implementation, null, null, String(), true)
             else throw
     }
     build_input(header_builder, (*initializer).input, null, null, null, Lifetime(Unspecified()))
     if is_generic
     {
         header_builder.append(' ')
-        try build_implementation(ep, header_builder, (*initializer).implementation, null, null, String(r.get_page(), "    "), true)
+        try build_implementation(ep, file, header_builder, (*initializer).implementation, null, null, String(r.get_page(), "    "), true)
             else throw
     } else {
         header_builder.append(';')
@@ -582,7 +582,7 @@ function build_initializer_header(header_builder: ref[StringBuilder], cpp_builde
     }        
 }
 
-function build_deinitializer(header_builder: ref[StringBuilder], cpp_builder: ref[StringBuilder], name: String, is_generic: bool, de_initializer: pointer[DeInitializer]) throws TranspilerError {
+function build_deinitializer(file: String, header_builder: ref[StringBuilder], cpp_builder: ref[StringBuilder], name: String, is_generic: bool, de_initializer: pointer[DeInitializer]) throws TranspilerError {
     var r Region()
     header_builder.append("\n    ")
     header_builder.append('~')
@@ -594,14 +594,14 @@ function build_deinitializer(header_builder: ref[StringBuilder], cpp_builder: re
         cpp_builder.append("::~")
         cpp_builder.append(name)
         cpp_builder.append("() ")
-        try build_implementation(ep, cpp_builder, (*de_initializer).implementation, null, null, String(r.get_page(), String()), true)
+        try build_implementation(ep, file, cpp_builder, (*de_initializer).implementation, null, null, String(), true)
             else throw
         cpp_builder.append(';')
     }
     if is_generic
     {
         header_builder.append("() ")
-        try build_implementation(ep, header_builder, (*de_initializer).implementation, null, null, String(r.get_page(), "    "), true)
+        try build_implementation(ep, file, header_builder, (*de_initializer).implementation, null, null, String(r.get_page(), "    "), true)
             else throw
         header_builder.append(';')
     } else {
@@ -631,19 +631,19 @@ function build_uses(builder: ref[StringBuilder], uses: ref[Vector[Use]]) {
     }
 }
 
-function build_intrinsic(header_builder: ref[StringBuilder], name: String) throws TranspilerError {
+function build_intrinsic(file: String, header_builder: ref[StringBuilder], concept: ref[Concept]) throws TranspilerError {
     var r Region()
-    if name.equals("size_t")
+    if concept.name.equals("size_t")
     {
         header_builder.append("typedef __SIZE_TYPE__ size_t\n")
     } else {
-        throw FeatureNotImplemented(String(ep, name))
+        throw FeatureNotImplemented(file, concept.span, String(ep, concept.name))
     }        
 
     return Void()
 }
 
-function build_global(header_builder: ref[StringBuilder], name: String, global: ref[Global]) throws TranspilerError {
+function build_global(file: String, header_builder: ref[StringBuilder], name: String, global: ref[Global]) throws TranspilerError {
     var r Region()
 
     if global.type.generics <> null && (*global.type.generics).length = 0 && global.value.length = 1 && (*global.value.get(0)).expression is Expression.Matrix
@@ -659,7 +659,7 @@ function build_global(header_builder: ref[StringBuilder], name: String, global: 
                 header_builder.append(" = { ")
                 for operation in matrix.operations
                 {
-                    build_operation(ep, header_builder, operation, null, null, null, String())
+                    build_operation(ep, file, header_builder, operation, null, null, null, String())
                     header_builder.append(", ")
                 }
                 header_builder.append('}')
@@ -671,13 +671,13 @@ function build_global(header_builder: ref[StringBuilder], name: String, global: 
         header_builder.append(' ')
         header_builder.append(name)
         header_builder.append(" = ")
-        build_operation(ep, header_builder, global.value, null, null, null, String())
+        build_operation(ep, file, header_builder, global.value, null, null, null, String())
     }
     header_builder.append(";\n")
     return Void()
 }
 
-function build_function(header_builder: ref[StringBuilder], cpp_builder: ref[StringBuilder], func: ref[Function], name: pointer[String], is_template: bool, in_class: bool) throws TranspilerError {
+function build_function(file: String, header_builder: ref[StringBuilder], cpp_builder: ref[StringBuilder], func: ref[Function], name: pointer[String], is_template: bool, in_class: bool) throws TranspilerError {
     var r Region()
 
     var location: pointer[String] null
@@ -722,7 +722,7 @@ function build_function(header_builder: ref[StringBuilder], cpp_builder: ref[Str
         cpp_builder.append(func.name)
         build_input(cpp_builder, func.input, location, func.returns_, func.throws_, func.lifetime)
         cpp_builder.append(' ')
-        try build_implementation(ep, cpp_builder, func.implementation, func.returns_, func.throws_, String(), false)
+        try build_implementation(ep, file, cpp_builder, func.implementation, func.returns_, func.throws_, String(), false)
             else throw
     }
     header_builder.append(func.name)
@@ -730,7 +730,7 @@ function build_function(header_builder: ref[StringBuilder], cpp_builder: ref[Str
     if is_template
     {
         header_builder.append(' ')
-        try build_implementation(ep, header_builder, func.implementation, func.returns_, func.throws_, String(r.get_page(), "    "), false)
+        try build_implementation(ep, file, header_builder, func.implementation, func.returns_, func.throws_, String(r.get_page(), "    "), false)
             else throw
     }
     header_builder.append(';')
@@ -762,13 +762,13 @@ function build_output_type(builder: ref[StringBuilder], returns_: pointer[Type] 
     }
 }
 
-function build_implementation(builder: ref[StringBuilder], implementation: ref[Implementation], returns_: pointer[Type], throws_: pointer[Type], indent: String, is_initializer: bool) throws TranspilerError {
+function build_implementation(file: String, builder: ref[StringBuilder], implementation: ref[Implementation], returns_: pointer[Type], throws_: pointer[Type], indent: String, is_initializer: bool) throws TranspilerError {
     choose implementation
         when action: Implementation.Action
         {
             if action.target.length == 0 && action.source.length == 1 && (*action.source.get(0)).expression is Expression.Block
             {
-                try build_action(ep, builder, action, returns_, throws_, null, indent)
+                try build_action(ep, file, builder, action, returns_, throws_, null, indent)
                     else throw
             } else {
                 if is_initializer
@@ -789,22 +789,22 @@ function build_implementation(builder: ref[StringBuilder], implementation: ref[I
                                         builder.append(", ")
                                     }
 
-                                    try build_operation(ep, builder, component.value, returns_, throws_, null, indent)
+                                    try build_operation(ep, file, builder, component.value, returns_, throws_, null, indent)
                                         else throw
                                 }
                             }
                             when block: Expression.Block
                             {
-                                try build_block(ep, builder, block, returns_, throws_, null, indent)
+                                try build_block(ep, file, builder, block, returns_, throws_, null, indent)
                                     else throw
                             }
-                            else throw FeatureNotImplemented(String(ep, "Other than Tuple or Block in initializer implementation"))
+                            else throw FeatureNotImplemented(file, operand.span, String(ep, "Other than Tuple or Block in initializer implementation"))
                     }
                 } else {
                     builder.append("{\n")
                     builder.append(indent)
                     builder.append("    return ")
-                    try build_action(ep, builder, action, returns_, throws_, null, indent)
+                    try build_action(ep, file, builder, action, returns_, throws_, null, indent)
                         else throw
                     builder.append("; }")
                 }
@@ -812,16 +812,16 @@ function build_implementation(builder: ref[StringBuilder], implementation: ref[I
             }
         }
         when e: Implementation.Extern
-            throw FeatureNotImplemented(String(ep, "Extern"))
+            throw FeatureNotImplemented(file, e.span, String(ep, "Extern"))
         when i: Implementation.Instruction
-            throw FeatureNotImplemented(String(ep, "Instruction"))
+            throw FeatureNotImplemented(file, i.span, String(ep, "Instruction"))
         when i: Implementation.Intrinsic
-            throw FeatureNotImplemented(String(ep, "Intrinsic"))
+            throw FeatureNotImplemented(file, i.span, String(ep, "Intrinsic"))
 
     return Void()
 }
 
-function build_binding(builder: ref[StringBuilder], binding: ref[Binding], returns_: pointer[Type] , throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {
+function build_binding(file: String, builder: ref[StringBuilder], binding: ref[Binding], returns_: pointer[Type] , throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {
     if binding.binding_type.equals("const")
         builder.append("const ")
     var simple_array false
@@ -840,75 +840,75 @@ function build_binding(builder: ref[StringBuilder], binding: ref[Binding], retur
     if simple_array
     {
         builder.append('[')
-        try build_operation(ep, builder, binding.operation, returns_, throws_, re_throw, indent)
+        try build_operation(ep, file, builder, binding.operation, returns_, throws_, re_throw, indent)
             else throw
         builder.append(']')
     } else {
         builder.append(" = ")
 
-        try build_operation(ep, builder, binding.operation, returns_, throws_, re_throw, indent)
+        try build_operation(ep, file, builder, binding.operation, returns_, throws_, re_throw, indent)
             else throw
     }
     return Void()
 }
 
-function build_action(builder: ref[StringBuilder], action: ref[Action], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {
+function build_action(file: String, builder: ref[StringBuilder], action: ref[Action], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {
     if action.target.length > 0
     {
-        try build_operation(ep, builder, action.target, returns_, throws_, re_throw, indent)
+        try build_operation(ep, file, builder, action.target, returns_, throws_, re_throw, indent)
             else throw
         builder.append(" = ")
     }
 
-    try build_operation(ep, builder, action.source, returns_, throws_, re_throw, indent)
+    try build_operation(ep, file, builder, action.source, returns_, throws_, re_throw, indent)
         else throw
 
     return Void()
 }
 
-function build_operation(builder: ref[StringBuilder], operation: ref[Vector[Operand]], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {
+function build_operation(file: String, builder: ref[StringBuilder], operation: ref[Vector[Operand]], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {
     for operand in operation
     {
         choose operand.expression
             when constant: Expression.Constant
-                try build_constant(ep, builder, constant)
+                try build_constant(ep, file, builder, constant)
                     else throw
             when type: Expression.Type
-                try build_variable(ep, builder, type, operand.member_access)
+                try build_variable(ep, file, builder, type, operand.member_access)
                     else throw
             when tuple: Expression.Tuple
-                try build_tuple(ep, builder, tuple, operand.member_access, returns_, throws_, re_throw, indent)
+                try build_tuple(ep, file, builder, tuple, operand.member_access, returns_, throws_, re_throw, indent)
                     else throw
             when matrix: Expression.Matrix
-                try build_matrix(ep, builder, matrix, returns_, throws_, re_throw, indent)
+                try build_matrix(ep, file, builder, matrix, returns_, throws_, re_throw, indent)
                     else throw
             when block: Expression.Block
-                try build_block(ep, builder, block, returns_, throws_, re_throw, indent)
+                try build_block(ep, file, builder, block, returns_, throws_, re_throw, indent)
                     else throw
             when if_: Expression.If
-                try build_if(ep, builder, if_, returns_, throws_, re_throw, indent)
+                try build_if(ep, file, builder, if_, returns_, throws_, re_throw, indent)
                     else throw
             when match_: Expression.Match
-                try build_match(ep, builder, match_, returns_, throws_, re_throw, indent)
+                try build_match(ep, file, builder, match_, returns_, throws_, re_throw, indent)
                     else throw
             when choose_: Expression.Choose
-                try build_choose(ep, builder, choose_, returns_, throws_, re_throw, indent)
+                try build_choose(ep, file, builder, choose_, returns_, throws_, re_throw, indent)
                     else throw
             when for_: Expression.For
-                try build_for(ep, builder, for_, returns_, throws_, re_throw, indent)
+                try build_for(ep, file, builder, for_, returns_, throws_, re_throw, indent)
                     else throw
             when while_: Expression.While
-                try build_while(ep, builder, while_, returns_, throws_, re_throw, indent)
+                try build_while(ep, file, builder, while_, returns_, throws_, re_throw, indent)
                     else throw
             when try_: Expression.Try
-                try build_try(ep, builder, try_, returns_, throws_, null, indent)
+                try build_try(ep, file, builder, try_, returns_, throws_, null, indent)
                     else throw
             when sizeof_: Expression.SizeOf
-                build_sizeof(builder, sizeof_, indent)
+                build_sizeof(file, builder, sizeof_, indent)
             when is_: Expression.Is
-                build_is(builder, is_, indent)
+                build_is(file, builder, is_, indent)
             when new__: Expression.New
-                build_new(ep, builder, new__, returns_, throws_, re_throw, indent)
+                build_new(ep, file, builder, new__, returns_, throws_, re_throw, indent)
     }
     return Void()
 }
@@ -924,7 +924,7 @@ function build_string(builder: ref[StringBuilder], string: String) {
     builder.append('\"')
 }
 
-function build_constant(builder: ref[StringBuilder], constant: ref[Constant]) throws TranspilerError {
+function build_constant(file: String, builder: ref[StringBuilder], constant: ref[Constant]) throws TranspilerError {
     var r Region()
     choose constant
         when boolean: Constant.Boolean
@@ -966,13 +966,13 @@ function build_constant(builder: ref[StringBuilder], constant: ref[Constant]) th
         }
         when fragment: Constant.Fragment
         {
-            throw FeatureNotImplemented(String(ep, "Bool"))
+            throw FeatureNotImplemented(file, fragment.span, String(ep, "Bool"))
         }
 
     return Void()
 }
 
-function build_variable(builder: ref[StringBuilder], type: ref[Type], member_access: pointer[Vector[String]]) throws TranspilerError {
+function build_variable(file: String, builder: ref[StringBuilder], type: ref[Type], member_access: pointer[Vector[String]]) throws TranspilerError {
     var name_iterator type.name.get_iterator()
     let first_name_part name_iterator.next()
     if (*first_name_part).equals("=")
@@ -1005,7 +1005,7 @@ function build_variable(builder: ref[StringBuilder], type: ref[Type], member_acc
         if type.generics <> null
         {
             var generics *(type.generics)
-            build_variable(ep, builder, *generics.get(0), member_access)
+            build_variable(ep, file, builder, *generics.get(0), member_access)
         }
         builder.append('*')
         return Void()
@@ -1035,7 +1035,7 @@ function build_variable(builder: ref[StringBuilder], type: ref[Type], member_acc
             builder.append(") ")
         }
         when t: Lifetime.Thrown
-            throw FeatureNotImplemented(String(ep, "Thrown"))
+            throw FeatureNotImplemented(file, t.span, String(ep, "Thrown"))
 
     build_type(builder, &type, false)
 
@@ -1056,7 +1056,7 @@ function build_variable(builder: ref[StringBuilder], type: ref[Type], member_acc
     return Void()
 }
 
-function build_tuple(builder: ref[StringBuilder], tuple: ref[Tuple], member_access: pointer[Vector[String]], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {
+function build_tuple(file: String, builder: ref[StringBuilder], tuple: ref[Tuple], member_access: pointer[Vector[String]], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {
     builder.append('(')
     var first true
     for property in tuple.components
@@ -1067,7 +1067,7 @@ function build_tuple(builder: ref[StringBuilder], tuple: ref[Tuple], member_acce
         } else {
             builder.append(", ")
         }
-        build_operation(ep, builder, property.value, returns_, throws_, re_throw, indent)
+        build_operation(ep, file, builder, property.value, returns_, throws_, re_throw, indent)
     }
     builder.append(')')
 
@@ -1083,7 +1083,7 @@ function build_tuple(builder: ref[StringBuilder], tuple: ref[Tuple], member_acce
     return Void()
 }
 
-function build_matrix(builder: ref[StringBuilder], matrix: ref[Matrix], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {
+function build_matrix(file: String, builder: ref[StringBuilder], matrix: ref[Matrix], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {
     builder.append('[')
     var first true
     for operation in matrix.operations
@@ -1094,19 +1094,19 @@ function build_matrix(builder: ref[StringBuilder], matrix: ref[Matrix], returns_
         } else {
             builder.append(", ")
         }
-        try build_operation(ep, builder, operation, returns_, throws_, re_throw, indent)
+        try build_operation(ep, file, builder, operation, returns_, throws_, re_throw, indent)
             else throw
     }
     builder.append(']')
     return Void()
 }
 
-function build_block(builder: ref[StringBuilder], block: ref[Block], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError{
+function build_block(file: String, builder: ref[StringBuilder], block: ref[Block], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError{
     var r Region()
     var indent_builder: ref[StringBuilder] *StringBuilder$(indent)
     indent_builder.append("    ")
     builder.append('{')
-    try build_statements(ep, builder, block.statements, returns_, throws_, re_throw, indent_builder.to_string(r.get_page()))
+    try build_statements(ep, file, builder, block.statements, returns_, throws_, re_throw, indent_builder.to_string(r.get_page()))
         else throw
     builder.append('\n')
     builder.append(indent)
@@ -1114,10 +1114,10 @@ function build_block(builder: ref[StringBuilder], block: ref[Block], returns_: p
     return Void()
 }
 
-function build_if(builder: ref[StringBuilder], if_: ref[If], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {
+function build_if(file: String, builder: ref[StringBuilder], if_: ref[If], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {
     var r Region()
     builder.append("if (")
-    try build_operation(ep, builder, if_.condition, returns_, throws_, re_throw, indent)
+    try build_operation(ep, file, builder, if_.condition, returns_, throws_, re_throw, indent)
         else throw
     builder.append(") ")
     var is_block false
@@ -1136,7 +1136,7 @@ function build_if(builder: ref[StringBuilder], if_: ref[If], returns_: pointer[T
         builder.append("    ")
     }
 
-    try build_statement(ep, builder, if_.consequent, returns_, throws_, re_throw, indent)
+    try build_statement(ep, file, builder, if_.consequent, returns_, throws_, re_throw, indent)
         else throw
 
     if if_.alternative <> null
@@ -1144,17 +1144,17 @@ function build_if(builder: ref[StringBuilder], if_: ref[If], returns_: pointer[T
         builder.append('\n')
         builder.append(indent)
         builder.append("else ")
-        try build_statement(ep, builder, *if_.alternative, returns_, throws_, re_throw, indent)
+        try build_statement(ep, file, builder, *if_.alternative, returns_, throws_, re_throw, indent)
             else throw
     }
 
     return Void()
 }
 
-function build_match(builder: ref[StringBuilder], match_: ref[Match], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {
+function build_match(file: String, builder: ref[StringBuilder], match_: ref[Match], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {
     var r Region()
     builder.append("switch (")
-    try build_operation(ep, builder, match_.condition, returns_, throws_, re_throw, indent)
+    try build_operation(ep, file, builder, match_.condition, returns_, throws_, re_throw, indent)
         else throw
     builder.append(")\n")
     builder.append(indent)
@@ -1172,14 +1172,14 @@ function build_match(builder: ref[StringBuilder], match_: ref[Match], returns_: 
         {
             builder.append("case ")
             {
-                try build_operation(ep, builder, case_.condition, returns_, throws_, re_throw, indented)
+                try build_operation(ep, file, builder, case_.condition, returns_, throws_, re_throw, indented)
                     else throw
             }
             builder.append(": ")
         }
         builder.append('\n')
         builder.append(indented)
-        try build_statement(ep, builder, branch.consequent, returns_, throws_, re_throw, indented)
+        try build_statement(ep, file, builder, branch.consequent, returns_, throws_, re_throw, indented)
             else throw
         builder.append(";\n")
         builder.append(indented)
@@ -1192,7 +1192,7 @@ function build_match(builder: ref[StringBuilder], match_: ref[Match], returns_: 
         builder.append(indent)
         builder.append("    default:\n")
         builder.append(indented)
-        try build_statement(ep, builder, *match_.alternative, returns_, throws_, re_throw, indented)
+        try build_statement(ep, file, builder, *match_.alternative, returns_, throws_, re_throw, indented)
             else throw
         builder.append(';')
     }
@@ -1203,7 +1203,7 @@ function build_match(builder: ref[StringBuilder], match_: ref[Match], returns_: 
     return Void()
 }
 
-function build_choose(builder: ref[StringBuilder], choose_: ref[Choose], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {
+function build_choose(file: String, builder: ref[StringBuilder], choose_: ref[Choose], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {
     var r Region()
     builder.append("{\n")
     var indent_builder: ref[StringBuilder] *StringBuilder$(indent)
@@ -1211,7 +1211,7 @@ function build_choose(builder: ref[StringBuilder], choose_: ref[Choose], returns
     let indent1 indent_builder.to_string(r.get_page())
     builder.append(indent1)
     builder.append("auto _result = ")
-    try build_operation(ep, builder, choose_.condition, returns_, throws_, re_throw, indent)
+    try build_operation(ep, file, builder, choose_.condition, returns_, throws_, re_throw, indent)
         else throw
     builder.append(";\n")
     builder.append(indent1)
@@ -1261,7 +1261,7 @@ function build_choose(builder: ref[StringBuilder], choose_: ref[Choose], returns
         }
         builder.append(";\n")
         builder.append(indented2)
-        try build_statement(ep, builder, case_.consequent, returns_, throws_, re_throw, indented2)
+        try build_statement(ep, file, builder, case_.consequent, returns_, throws_, re_throw, indented2)
             else throw
         builder.append(";\n")
         builder.append(indented2)
@@ -1276,7 +1276,7 @@ function build_choose(builder: ref[StringBuilder], choose_: ref[Choose], returns
         builder.append(indent1)
         builder.append("    default:\n")
         builder.append(indented2)
-        try build_statement(ep, builder, *choose_.alternative, returns_, throws_, re_throw, indented)
+        try build_statement(ep, file, builder, *choose_.alternative, returns_, throws_, re_throw, indented)
             else throw
         builder.append(';')
     }
@@ -1289,14 +1289,14 @@ function build_choose(builder: ref[StringBuilder], choose_: ref[Choose], returns
     return Void()
 }
 
-function build_for(builder: ref[StringBuilder], for_: ref[For], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {
+function build_for(file: String, builder: ref[StringBuilder], for_: ref[For], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {
     var r Region()
     builder.append('\n')
     builder.append(indent)
     builder.append("auto _")
     builder.append(for_.identifier)
     builder.append("_iterator = ")
-    build_operation(ep, builder, for_.expression, returns_, throws_, re_throw, indent)
+    build_operation(ep, file, builder, for_.expression, returns_, throws_, re_throw, indent)
     builder.append(".get_iterator();\n")
     builder.append(indent)
     builder.append("while (auto _")
@@ -1313,7 +1313,7 @@ function build_for(builder: ref[StringBuilder], for_: ref[For], returns_: pointe
     builder.append(" = *_")
     builder.append(for_.identifier)
     builder.append(';')
-    try build_action(ep, builder, for_.action, returns_, throws_, re_throw, indented)
+    try build_action(ep, file, builder, for_.action, returns_, throws_, re_throw, indented)
         else throw
     builder.append('\n')
     builder.append(indent)
@@ -1322,7 +1322,7 @@ function build_for(builder: ref[StringBuilder], for_: ref[For], returns_: pointe
     return Void()
 }
 
-function build_condition(builder: ref[StringBuilder], binding: ref[Binding], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {
+function build_condition(file: String, builder: ref[StringBuilder], binding: ref[Binding], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {
     if binding.item.name <> null
     {
         if binding.item.type <> null
@@ -1336,23 +1336,23 @@ function build_condition(builder: ref[StringBuilder], binding: ref[Binding], ret
         builder.append(" = ")
     }
 
-    try build_operation(ep, builder, binding.operation, returns_, throws_, re_throw, indent)
+    try build_operation(ep, file, builder, binding.operation, returns_, throws_, re_throw, indent)
         else throw
     return Void()
 }
 
-function build_while(builder: ref[StringBuilder], while_: ref[While], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {
+function build_while(file: String, builder: ref[StringBuilder], while_: ref[While], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {
     var r Region()
     builder.append("while (")
-    try build_condition(ep, builder, while_.condition, returns_, throws_, re_throw, indent)
+    try build_condition(ep, file, builder, while_.condition, returns_, throws_, re_throw, indent)
         else throw
     builder.append(") ")
-    try build_action(ep, builder, while_.action, returns_, throws_, re_throw, indent)
+    try build_action(ep, file, builder, while_.action, returns_, throws_, re_throw, indent)
         else throw
     return Void()
 }
 
-function build_try(builder: ref[StringBuilder], try_: ref[Try], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {
+function build_try(file: String, builder: ref[StringBuilder], try_: ref[Try], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {
     var r Region()
     var name String(r.get_page(), "void")
     var indent_builder: ref[StringBuilder] *StringBuilder$(indent)
@@ -1368,7 +1368,7 @@ function build_try(builder: ref[StringBuilder], try_: ref[Try], returns_: pointe
     builder.append("const auto _")
     builder.append(name)
     builder.append("_result = ")
-    try build_operation(ep, builder, try_.binding.operation, returns_, throws_, re_throw, indent)
+    try build_operation(ep, file, builder, try_.binding.operation, returns_, throws_, re_throw, indent)
         else throw
     builder.append(";\n")
     builder.append(indent)
@@ -1426,7 +1426,7 @@ function build_try(builder: ref[StringBuilder], try_: ref[Try], returns_: pointe
         builder.append(*catch_.variant.get(1))
         builder.append(";\n")
         builder.append(indented3)
-        try build_statement(ep, builder, catch_.consequent, returns_, throws_, null, indented3)
+        try build_statement(ep, file, builder, catch_.consequent, returns_, throws_, null, indented3)
             else throw
         builder.append(";\n")
         builder.append(indented3)
@@ -1445,7 +1445,7 @@ function build_try(builder: ref[StringBuilder], try_: ref[Try], returns_: pointe
             re_throw_builder.append(name)
             re_throw_builder.append("_result._Error")
             var re_throw re_throw_builder.to_string(r.get_page())
-            try build_statement(ep, builder, *try_.alternative, returns_, throws_, &re_throw, indented2)
+            try build_statement(ep, file, builder, *try_.alternative, returns_, throws_, &re_throw, indented2)
                 else throw
             builder.append(";\n")
         }
@@ -1463,14 +1463,14 @@ function build_try(builder: ref[StringBuilder], try_: ref[Try], returns_: pointe
     return Void()
 }
 
-function build_sizeof(builder: ref[StringBuilder], sizeof_: ref[SizeOf], indent: String) {
+function build_sizeof(file: String, builder: ref[StringBuilder], sizeof_: ref[SizeOf], indent: String) {
     var r Region()
     builder.append("sizeof(")
     build_type(builder, &sizeof_.type, true)
     builder.append(")")
 }
 
-function build_is(builder: ref[StringBuilder], is_: ref[Is], indent: String) {
+function build_is(file: String, builder: ref[StringBuilder], is_: ref[Is], indent: String) {
     var r Region()
     builder.append("._tag == ")
     var first true
@@ -1486,7 +1486,7 @@ function build_is(builder: ref[StringBuilder], is_: ref[Is], indent: String) {
     }
 }
 
-function build_new(builder: ref[StringBuilder], new__: ref[New], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {
+function build_new(file: String, builder: ref[StringBuilder], new__: ref[New], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {
     var r Region()
 
     choose new__.type.lifetime
@@ -1513,7 +1513,7 @@ function build_new(builder: ref[StringBuilder], new__: ref[New], returns_: point
             builder.append(") ")
         }
         when t: Lifetime.Thrown
-            throw FeatureNotImplemented(String(ep, "Thrown"))
+            throw FeatureNotImplemented(file, t.span, String(ep, "Thrown"))
 
     build_type(builder, &new__.type, true)
 
@@ -1527,27 +1527,27 @@ function build_new(builder: ref[StringBuilder], new__: ref[New], returns_: point
         } else {
             builder.append(", ")
         }
-        build_operation(ep, builder, property.value, returns_, throws_, re_throw, indent)
+        build_operation(ep, file, builder, property.value, returns_, throws_, re_throw, indent)
     }
     builder.append(')')
     return Void()
 }
 
-function build_break(builder: ref[StringBuilder], break_: ref[Break], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {
+function build_break(file: String, builder: ref[StringBuilder], break_: ref[Break], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {
     var r Region()
     builder.append("break")
     if (break_.result.length > 0)
         builder.append(' ')
-    try build_operation(ep, builder, break_.result, returns_, throws_, re_throw, indent)
+    try build_operation(ep, file, builder, break_.result, returns_, throws_, re_throw, indent)
         else throw
     return Void()
 }
 
-function build_continue(builder: ref[StringBuilder], continue_: ref[Continue], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) {
+function build_continue(file: String, builder: ref[StringBuilder], continue_: ref[Continue], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) {
     builder.append("continue;")
 }
 
-function build_return(builder: ref[StringBuilder], return_: ref[Return], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {
+function build_return(file: String, builder: ref[StringBuilder], return_: ref[Return], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {
     var r Region()
     builder.append("return")
     if (return_.result.length > 0) || (throws_ <> null)
@@ -1567,7 +1567,7 @@ function build_return(builder: ref[StringBuilder], return_: ref[Return], returns
         if return_.result.length = 0
             builder.append("Void()")
     }
-    try build_operation(ep, builder, return_.result, returns_, throws_, re_throw, indent)
+    try build_operation(ep, file, builder, return_.result, returns_, throws_, re_throw, indent)
         else throw
 
     if throws_ <> null
@@ -1576,7 +1576,7 @@ function build_return(builder: ref[StringBuilder], return_: ref[Return], returns
     return Void()
 }
 
-function build_throw(builder: ref[StringBuilder], throw_: ref[Throw], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {
+function build_throw(file: String, builder: ref[StringBuilder], throw_: ref[Throw], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {
     var r Region()
     builder.append("return Result<")
     if returns_ = null
@@ -1592,44 +1592,49 @@ function build_throw(builder: ref[StringBuilder], throw_: ref[Throw], returns_: 
     {
         builder.append(*re_throw)
     } else {
-        try build_operation(ep, builder, throw_.result, returns_, throws_, null, indent)
+        try build_operation(ep, file, builder, throw_.result, returns_, throws_, null, indent)
             else throw
     }
     builder.append(")")
     return Void()
 }
 
-function build_statements(builder: ref[StringBuilder], statements: ref[Vector[Statement]], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {
+function build_statements(file: String, builder: ref[StringBuilder], statements: ref[Vector[Statement]], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {
     for statement in statements
     {
         builder.append('\n')
         builder.append(indent)
-        try build_statement(ep, builder, statement, returns_, throws_, re_throw, indent)
+        try build_statement(ep, file, builder, statement, returns_, throws_, re_throw, indent)
             else throw
         builder.append(';')
     }
     return Void()
 }
 
-function build_statement(builder: ref[StringBuilder], statement: ref[Statement], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {
+function build_statement(file: String, builder: ref[StringBuilder], statement: ref[Statement], returns_: pointer[Type], throws_: pointer[Type], re_throw: pointer[String], indent: String) throws TranspilerError {
     choose statement
         when action: Statement.Action
-            try build_action(ep, builder, action, returns_, throws_, re_throw, indent)
+            try build_action(ep, file, builder, action, returns_, throws_, re_throw, indent)
                 else throw
         when binding: Statement.Binding
-            try build_binding(ep, builder, binding, returns_, throws_, re_throw, indent)
+            try build_binding(ep, file, builder, binding, returns_, throws_, re_throw, indent)
                 else throw
         when break_: Statement.Break
-            try build_break(ep, builder, break_, returns_, throws_, re_throw, indent)
+            try build_break(ep, file, builder, break_, returns_, throws_, re_throw, indent)
                 else throw
         when continue_: Statement.Continue
-            build_continue(builder, continue_, returns_, throws_, re_throw, indent)
+            build_continue(file, builder, continue_, returns_, throws_, re_throw, indent)
         when return_: Statement.Return
-            try build_return(ep, builder, return_, returns_, throws_, re_throw, indent)
+            try build_return(ep, file, builder, return_, returns_, throws_, re_throw, indent)
                 else throw
         when throw_: Statement.Throw
-            try build_throw(ep, builder, throw_, returns_, throws_, re_throw, indent)
+        {
+            if throws_ = nullptr
+                throw CantThrowInNonThrowingFunction(file, throw_.span)
+
+            try build_throw(ep, file, builder, throw_, returns_, throws_, re_throw, indent)
                 else throw
+        }
     return Void()
 }
 
@@ -1644,7 +1649,7 @@ function function_prefix(builder: ref[StringBuilder], func: ref[Function], inden
     builder.append(' ')
 }
 
-function build_operator(header_builder: ref[StringBuilder], cpp_builder: ref[StringBuilder], operator_: ref[Operator], name: pointer[String], is_template: bool) throws TranspilerError {
+function build_operator(file: String, header_builder: ref[StringBuilder], cpp_builder: ref[StringBuilder], operator_: ref[Operator], name: pointer[String], is_template: bool) throws TranspilerError {
     var r Region()
     if is_template
         header_builder.append('\n')
@@ -1655,7 +1660,7 @@ function build_operator(header_builder: ref[StringBuilder], cpp_builder: ref[Str
     build_input(header_builder, operator_.input, null, operator_.returns_, operator_.throws_, Lifetime(Unspecified()))
     if is_template
     {
-        try build_implementation(ep, header_builder, operator_.implementation, operator_.returns_, operator_.throws_, String(r.get_page(), "    "), false)
+        try build_implementation(ep, file, header_builder, operator_.implementation, operator_.returns_, operator_.throws_, String(r.get_page(), "    "), false)
             else throw
     } else {
         header_builder.append(';')
@@ -1667,7 +1672,7 @@ function build_operator(header_builder: ref[StringBuilder], cpp_builder: ref[Str
         cpp_builder.append(operator_.name)
         let is_static build_input(cpp_builder, operator_.input, null, operator_.returns_, operator_.throws_, Lifetime(Unspecified()))
         cpp_builder.append(' ')
-        try build_implementation(ep, cpp_builder, operator_.implementation, operator_.returns_, operator_.throws_, String(), false)
+        try build_implementation(ep, file, cpp_builder, operator_.implementation, operator_.returns_, operator_.throws_, String(), false)
             else throw
     }
     return Void() 
@@ -2017,7 +2022,7 @@ function build_script_files_list(builder: ref[StringBuilder], path: String, modu
     }
 }
 
-function main_file(path: String, program: ref[Program]) throws TranspilerError {
+function main_file(file: String, path: String, program: ref[Program]) throws TranspilerError {
     var r Region()
     var builder: ref[StringBuilder] *StringBuilder$("#include \"main.h\"
 
@@ -2025,7 +2030,7 @@ int main(int argc, char** argv) {")
     for statement in program.statements
     {
         builder.append("\n    ")
-        build_statement(ep, builder, statement, null, null, null, String())
+        build_statement(ep, file, builder, statement, null, null, null, String())
         builder.append(';')
     }
     builder.append("\n    return 0;\n}\n")
