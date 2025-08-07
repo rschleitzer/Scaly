@@ -48,8 +48,10 @@ String::String(Page* rp, const_char* c_string) : String(rp, c_string, strlen(c_s
 }
 
 String::String(Page* rp, String other) {
-    if (other.data == nullptr) 
+    if (other.data == nullptr) {
+        data = nullptr;
         return;
+    };
     size_t length = 0;
     auto bit_count = 0;
     auto index = 0;

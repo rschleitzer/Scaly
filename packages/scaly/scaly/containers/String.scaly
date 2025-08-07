@@ -52,7 +52,11 @@ define String (data: pointer[char](nullptr)) {
 
     init (rp: pointer[Page], other: String) {
         if other.data = null
+        {
+            set data: null
             return
+        }
+
         var length: size_t 0
         var bit_count 0
         var index 0
