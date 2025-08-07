@@ -95,20 +95,20 @@ function plan_main_function(this: Planner, program: ref[Program]) throws Planner
 function plan_module(this: Planner, module_: ref[Module]) throws PlannerError {
     var r Region()
 
-    try plan_symbols(ep, module_.symbols, module_.members)
+    try plan_symbols(ep, module_.file, module_.symbols, module_.members)
         else throw
 
     return Void()
 }
 
-function plan_symbols(this: Planner, symbols: ref[HashMap[String, Nameable]], members: Vector[Member]) throws PlannerError {
+function plan_symbols(this: Planner, file: String, symbols: ref[HashMap[String, Nameable]], members: Vector[Member]) throws PlannerError {
     var r Region()
 
     for member in members
     {
         choose member
             when func: Member.Function
-                try plan_function(ep, symbols, func)
+                try plan_function(ep, file, symbols, func)
                     else throw
             when concept: Member.Concept
                 try plan_concept(ep, symbols, concept)
@@ -147,8 +147,12 @@ function plan_intrinsic(this: Planner, name: String) throws PlannerError {
     return Void()
 }
 
-function resolve_type(this: Planner, type: Type) returns String {
-    return String(rp, *type.name.get(0))
+function resolve_type(this: Planner, file: String, type: Type) returns String throws PlannerError {
+    let name *type.name.get(0)
+    if intrinsics_builder.contains(name)
+        return name
+
+    throw UndefinedType(file, String(ep, name), type.span)
 }
 
 function plan_tuple(this: Planner, symbols: ref[HashMap[String, Nameable]], tuple: ref[Tuple], blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]], values: ref[List[String]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
@@ -340,17 +344,22 @@ function plan_action(this: Planner, symbols: ref[HashMap[String, Nameable]], ope
     return instructions
 }
 
-function plan_function(this: Planner, symbols: ref[HashMap[String, Nameable]], func: ref[Function]) throws PlannerError {
+function plan_function(this: Planner, file: String, symbols: ref[HashMap[String, Nameable]], func: ref[Function]) throws PlannerError {
     var r Region()
 
     if functions_builder.contains(func.name)
         throw DuplicateFunction(String(ep, func.name))
 
-    var returnType resolve_type(get_page(), *func.returns_)
+    try let returnType resolve_type(get_page(), ep, file, *func.returns_)
+        else throw
+
     var input_list: ref[List[Plan.Argument]] *new_ List[Plan.Argument]$()
     for item in func.input
     {
-        input_list.add(Plan->Argument(*item.name, resolve_type(get_page(), *item.type)))
+        try let type resolve_type(get_page(), ep, file, *item.type)
+            else throw
+
+        input_list.add(Plan->Argument(*item.name, type))
     }
 
     var blocks: ref[List[Plan.Block]] *new_ List[Plan.Block]$()

@@ -14,6 +14,19 @@ UnknownInstruction::UnknownInstruction(String name) : name(name) {}
 
 InstructionWithInvalidNumberOfArguments::InstructionWithInvalidNumberOfArguments(String name) : name(name) {}
 
+UndefinedType::UndefinedType(String file, String name, Span span) : file(file), name(name), span(span) {}
+
+String UndefinedType::to_string(Page* rp) {
+    auto r = Region();
+    StringBuilder& message_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder();
+    append_error_message_header(message_builder, file, span.start);
+    message_builder.append("The ");
+    message_builder.append(name);
+    message_builder.append(" type is not defined.");
+    append_hint_lines(message_builder, file, span.start, span.end);
+    return message_builder.to_string(rp);
+}
+
 String PlannerError::to_string(Page* rp) {
     auto r = Region();
     StringBuilder& message_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder();
@@ -95,6 +108,14 @@ String PlannerError::to_string(Page* rp) {
                 };
                 break;
             }
+            case PlannerError::UndefinedType:
+            {
+                auto ut = _result._UndefinedType;
+                {
+                    return ut.to_string(rp);
+                };
+                break;
+            }
         }
     }message_builder.append('\n');
     return message_builder.to_string(rp);
@@ -114,6 +135,8 @@ PlannerError::PlannerError(struct UnknownInstruction _UnknownInstruction) : _tag
 PlannerError::PlannerError(struct InstructionWithInvalidNumberOfArguments _InstructionWithInvalidNumberOfArguments) : _tag(InstructionWithInvalidNumberOfArguments), _InstructionWithInvalidNumberOfArguments(_InstructionWithInvalidNumberOfArguments) {}
 
 PlannerError::PlannerError(struct TupleComponentNamesNotSupported _TupleComponentNamesNotSupported) : _tag(TupleComponentNamesNotSupported), _TupleComponentNamesNotSupported(_TupleComponentNamesNotSupported) {}
+
+PlannerError::PlannerError(struct UndefinedType _UndefinedType) : _tag(UndefinedType), _UndefinedType(_UndefinedType) {}
 
 
 }

@@ -132,7 +132,7 @@ Result<Void, PlannerError> Planner::plan_main_function(Page* ep, Program& progra
 Result<Void, PlannerError> Planner::plan_module(Page* ep, Module& module_) {
     auto r = Region();
     {
-        const auto _void_result = plan_symbols(ep, module_.symbols, module_.members);
+        const auto _void_result = plan_symbols(ep, module_.file, module_.symbols, module_.members);
         if (_void_result._tag == Success::Error) {
             const auto _void_Error = _void_result._Error;
             switch (_void_Error._tag) {
@@ -145,7 +145,7 @@ Result<Void, PlannerError> Planner::plan_module(Page* ep, Module& module_) {
     return Result<Void, PlannerError>(Void());
 }
 
-Result<Void, PlannerError> Planner::plan_symbols(Page* ep, HashMap<String, Nameable>& symbols, Vector<Member> members) {
+Result<Void, PlannerError> Planner::plan_symbols(Page* ep, String file, HashMap<String, Nameable>& symbols, Vector<Member> members) {
     auto r = Region();
     
     auto _member_iterator = members.get_iterator();
@@ -159,7 +159,7 @@ Result<Void, PlannerError> Planner::plan_symbols(Page* ep, HashMap<String, Namea
                     {
                         auto func = _result._Function;
                         {
-                            const auto _void_result = plan_function(ep, symbols, func);
+                            const auto _void_result = plan_function(ep, file, symbols, func);
                             if (_void_result._tag == Success::Error) {
                                 const auto _void_Error = _void_result._Error;
                                 switch (_void_Error._tag) {
@@ -253,8 +253,11 @@ Result<Void, PlannerError> Planner::plan_intrinsic(Page* ep, String name) {
     return Result<Void, PlannerError>(Void());
 }
 
-String Planner::resolve_type(Page* rp, Type type) {
-    return String(rp, *type.name.get(0));
+Result<String, PlannerError> Planner::resolve_type(Page* rp, Page* ep, String file, Type type) {
+    const auto name = *type.name.get(0);
+    if (intrinsics_builder.contains(name)) 
+        return Result<String, PlannerError>(name);
+    return Result<String, PlannerError>(UndefinedType(file, String(ep, name), type.span));
 }
 
 Result<List<Plan::Instruction>*, PlannerError> Planner::plan_tuple(Page* rp, Page* ep, HashMap<String, Nameable>& symbols, Tuple& tuple, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions, List<String>& values) {
@@ -645,17 +648,36 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_action(Page* rp, Pa
     return Result<List<Plan::Instruction>*, PlannerError>(instructions);
 }
 
-Result<Void, PlannerError> Planner::plan_function(Page* ep, HashMap<String, Nameable>& symbols, Function& func) {
+Result<Void, PlannerError> Planner::plan_function(Page* ep, String file, HashMap<String, Nameable>& symbols, Function& func) {
     auto r = Region();
     if (functions_builder.contains(func.name)) 
         return Result<Void, PlannerError>(DuplicateFunction(String(ep, func.name)));
-    auto returnType = resolve_type(get_page(), *func.returns_);
+    const auto _returnType_result = resolve_type(get_page(), ep, file, *func.returns_);
+    auto returnType = _returnType_result._Ok;
+    if (_returnType_result._tag == Success::Error) {
+        const auto _returnType_Error = _returnType_result._Error;
+        switch (_returnType_Error._tag) {
+        default:
+            return Result<Void, PlannerError>(_returnType_result._Error);
+
+        }
+    };
     List<Plan::Argument>& input_list = *new (alignof(List<Plan::Argument>), r.get_page()) List<Plan::Argument>();
     
     auto _item_iterator = func.input.get_iterator();
     while (auto _item = _item_iterator.next()) {
         auto item = *_item;{
-            input_list.add(Plan::Argument(*item.name, resolve_type(get_page(), *item.type)));
+            const auto _type_result = resolve_type(get_page(), ep, file, *item.type);
+            auto type = _type_result._Ok;
+            if (_type_result._tag == Success::Error) {
+                const auto _type_Error = _type_result._Error;
+                switch (_type_Error._tag) {
+                default:
+                    return Result<Void, PlannerError>(_type_result._Error);
+
+                }
+            };
+            input_list.add(Plan::Argument(*item.name, type));
         }
     };
     List<Plan::Block>& blocks = *new (alignof(List<Plan::Block>), r.get_page()) List<Plan::Block>();

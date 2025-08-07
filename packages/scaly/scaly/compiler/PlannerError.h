@@ -40,6 +40,15 @@ struct TupleComponentNamesNotSupported : Object {
 
 };
 
+struct UndefinedType : Object {
+    String file;
+    String name;
+    Span span;
+
+    UndefinedType(String file, String name, Span span);
+    String to_string(Page* rp);
+};
+
 struct PlannerError : Object {
     PlannerError(FeatureNotImplemented);
     PlannerError(FileError);
@@ -49,6 +58,7 @@ struct PlannerError : Object {
     PlannerError(UnknownInstruction);
     PlannerError(InstructionWithInvalidNumberOfArguments);
     PlannerError(TupleComponentNamesNotSupported);
+    PlannerError(UndefinedType);
     enum {
         NotImplemented,
         FileError,
@@ -58,6 +68,7 @@ struct PlannerError : Object {
         UnknownInstruction,
         InstructionWithInvalidNumberOfArguments,
         TupleComponentNamesNotSupported,
+        UndefinedType,
     } _tag;
     union {
         struct FeatureNotImplemented _NotImplemented;
@@ -68,6 +79,7 @@ struct PlannerError : Object {
         struct UnknownInstruction _UnknownInstruction;
         struct InstructionWithInvalidNumberOfArguments _InstructionWithInvalidNumberOfArguments;
         struct TupleComponentNamesNotSupported _TupleComponentNamesNotSupported;
+        struct UndefinedType _UndefinedType;
     };
     String to_string(Page* rp);
 };

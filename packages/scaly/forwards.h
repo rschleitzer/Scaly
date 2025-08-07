@@ -332,6 +332,7 @@ struct InstructionWithoutArguments;
 struct UnknownInstruction;
 struct InstructionWithInvalidNumberOfArguments;
 struct TupleComponentNamesNotSupported;
+struct UndefinedType;
 struct PlannerError;
 struct MultipleMainFunctions;
 struct MainIsNotAFunction;
