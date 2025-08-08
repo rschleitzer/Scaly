@@ -147,12 +147,29 @@ function plan_intrinsic(this: Planner, name: String) throws PlannerError {
     return Void()
 }
 
-function resolve_type(this: Planner, file: String, type: Type) returns String throws PlannerError {
+function resolve_type(this: Planner, file: String, symbols: ref[HashMap[String, Nameable]], type: Type) returns String throws PlannerError {
     let name *type.name.get(0)
     if intrinsics_builder.contains(name)
         return name
 
-    throw UndefinedType(file, String(ep, name), type.span)
+    if symbols.contains(name)
+    {
+        choose *symbols.get(name)
+            when concept: Nameable.Concept
+            {
+                choose concept.definition
+                    when i: Definition.Intrinsic
+                    {
+                        return name
+                    }
+                    else
+                        throw FeatureNotImplemented(file, concept.span, String(ep, "Concept type other than intrinsic"))
+            }
+            else
+                throw ConceptExpected(file, type.span, name)
+    }
+
+    throw UndefinedType(file, type.span, String(ep, name))
 }
 
 function plan_tuple(this: Planner, file: String, symbols: ref[HashMap[String, Nameable]], tuple: ref[Tuple], blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]], values: ref[List[String]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
@@ -366,13 +383,13 @@ function plan_function(this: Planner, file: String, symbols: ref[HashMap[String,
     if functions_builder.contains(func.name)
         throw DuplicateFunction(String(ep, func.name))
 
-    try let returnType resolve_type(get_page(), ep, file, *func.returns_)
+    try let returnType resolve_type(get_page(), ep, file, symbols, *func.returns_, )
         else throw
 
     var input_list: ref[List[Plan.Argument]] *new_ List[Plan.Argument]$()
     for item in func.input
     {
-        try let type resolve_type(get_page(), ep, file, *item.type)
+        try let type resolve_type(get_page(), ep, file, symbols, *item.type)
             else throw
 
         input_list.add(Plan->Argument(*item.name, type))

@@ -253,11 +253,44 @@ Result<Void, PlannerError> Planner::plan_intrinsic(Page* ep, String name) {
     return Result<Void, PlannerError>(Void());
 }
 
-Result<String, PlannerError> Planner::resolve_type(Page* rp, Page* ep, String file, Type type) {
+Result<String, PlannerError> Planner::resolve_type(Page* rp, Page* ep, String file, HashMap<String, Nameable>& symbols, Type type) {
     const auto name = *type.name.get(0);
     if (intrinsics_builder.contains(name)) 
         return Result<String, PlannerError>(name);
-    return Result<String, PlannerError>(UndefinedType(file, String(ep, name), type.span));
+    if (symbols.contains(name)) {
+        {
+            auto _result = *symbols.get(name);
+            switch (_result._tag)
+            {
+                case Nameable::Concept:
+                {
+                    auto concept = _result._Concept;
+                    {
+                        {
+                            auto _result = concept.definition;
+                            switch (_result._tag)
+                            {
+                                case Definition::Intrinsic:
+                                {
+                                    auto i = _result._Intrinsic;
+                                    {
+                                        return Result<String, PlannerError>(name);
+                                    };
+                                    break;
+                                }
+                                default:
+                                    return Result<String, PlannerError>(FeatureNotImplemented(file, concept.span, String(ep, "Concept type other than intrinsic")));
+                            }
+                        };
+                    };
+                    break;
+                }
+                default:
+                    return Result<String, PlannerError>(ConceptExpected(file, type.span, name));
+            }
+        };
+    };
+    return Result<String, PlannerError>(UndefinedType(file, type.span, String(ep, name)));
 }
 
 Result<List<Plan::Instruction>*, PlannerError> Planner::plan_tuple(Page* rp, Page* ep, String file, HashMap<String, Nameable>& symbols, Tuple& tuple, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions, List<String>& values) {
@@ -701,7 +734,7 @@ Result<Void, PlannerError> Planner::plan_function(Page* ep, String file, HashMap
     auto r = Region();
     if (functions_builder.contains(func.name)) 
         return Result<Void, PlannerError>(DuplicateFunction(String(ep, func.name)));
-    const auto _returnType_result = resolve_type(get_page(), ep, file, *func.returns_);
+    const auto _returnType_result = resolve_type(get_page(), ep, file, symbols, *func.returns_);
     auto returnType = _returnType_result._Ok;
     if (_returnType_result._tag == Success::Error) {
         const auto _returnType_Error = _returnType_result._Error;
@@ -716,7 +749,7 @@ Result<Void, PlannerError> Planner::plan_function(Page* ep, String file, HashMap
     auto _item_iterator = func.input.get_iterator();
     while (auto _item = _item_iterator.next()) {
         auto item = *_item;{
-            const auto _type_result = resolve_type(get_page(), ep, file, *item.type);
+            const auto _type_result = resolve_type(get_page(), ep, file, symbols, *item.type);
             auto type = _type_result._Ok;
             if (_type_result._tag == Success::Error) {
                 const auto _type_Error = _type_result._Error;

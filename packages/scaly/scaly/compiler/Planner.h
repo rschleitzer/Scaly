@@ -24,7 +24,7 @@ struct Planner : Object {
     Result<Void, PlannerError> plan_symbols(Page* ep, String file, HashMap<String, Nameable>& symbols, Vector<Member> members);
     Result<Void, PlannerError> plan_concept(Page* ep, String file, HashMap<String, Nameable>& symbols, Concept& concept);
     Result<Void, PlannerError> plan_intrinsic(Page* ep, String name);
-    Result<String, PlannerError> resolve_type(Page* rp, Page* ep, String file, Type type);
+    Result<String, PlannerError> resolve_type(Page* rp, Page* ep, String file, HashMap<String, Nameable>& symbols, Type type);
     Result<List<Plan::Instruction>*, PlannerError> plan_tuple(Page* rp, Page* ep, String file, HashMap<String, Nameable>& symbols, Tuple& tuple, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions, List<String>& values);
     String allocate_value_name(Page* rp, List<Plan::Block>& blocks, List<Plan::Instruction>& instructions);
     Result<List<Plan::Instruction>*, PlannerError> plan_instruction_call(Page* rp, Page* ep, String file, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, String name, Tuple& tuple, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions);

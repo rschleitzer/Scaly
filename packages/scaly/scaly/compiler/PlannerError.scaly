@@ -6,7 +6,7 @@ define InstructionWithoutArguments(name: String)
 define UnknownInstruction(name: String)
 define InstructionWithInvalidNumberOfArguments(name: String)
 define TupleComponentNamesNotSupported()
-define UndefinedType(file: String, name: String, span: Span)
+define UndefinedType(file: String, span: Span, name: String)
 {
     function to_string(this: UndefinedType) returns String {
         var r Region()
@@ -15,6 +15,19 @@ define UndefinedType(file: String, name: String, span: Span)
         message_builder.append("The ")
         message_builder.append(name)
         message_builder.append(" type is not defined.")
+        append_hint_lines(message_builder, file, span.start, span.end)
+
+        return message_builder.to_string(rp)
+    }
+}
+
+define ConceptExpected(file: String, span: Span, name: String)
+{
+    function to_string(this: UndefinedType) returns String {
+        var r Region()
+        var message_builder: ref[StringBuilder] *StringBuilder$()
+        append_error_message_header(message_builder, file, span.start)
+        message_builder.append("A type is not expected here.")
         append_hint_lines(message_builder, file, span.start, span.end)
 
         return message_builder.to_string(rp)
@@ -32,6 +45,7 @@ define PlannerError union
     InstructionWithInvalidNumberOfArguments: InstructionWithInvalidNumberOfArguments
     TupleComponentNamesNotSupported: TupleComponentNamesNotSupported
     UndefinedType: UndefinedType
+    ConceptExpected: ConceptExpected
 )
 {
     function to_string(this: PlannerError) returns String {
@@ -40,9 +54,7 @@ define PlannerError union
         choose *this
             when ni: PlannerError.NotImplemented
             {
-                message_builder.append("The planner feature \"")
-                message_builder.append(ni.feature)
-                message_builder.append("\" is not implemented.")
+                return ni.to_string(rp)
             }
             when fe: PlannerError.FileError
                 message_builder.append(fe.to_string(r.get_page()))
@@ -83,6 +95,10 @@ define PlannerError union
             when ut: PlannerError.UndefinedType
             {
                 return ut.to_string(rp)
+            }
+            when ce: PlannerError.ConceptExpected
+            {
+                return ce.to_string(rp)
             }
 
         message_builder.append('\n')

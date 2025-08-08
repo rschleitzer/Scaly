@@ -10,7 +10,7 @@ String FeatureNotImplemented::to_string(Page* rp) {
     auto r = Region();
     StringBuilder& message_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder();
     append_error_message_header(message_builder, file, span.start);
-    message_builder.append("The transpiler feature \"");
+    message_builder.append("The feature \"");
     message_builder.append(feature);
     message_builder.append("\" is not implemented.");
     append_hint_lines(message_builder, file, span.start, span.end);
