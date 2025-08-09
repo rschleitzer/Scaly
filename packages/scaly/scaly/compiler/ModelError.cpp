@@ -115,7 +115,7 @@ Result<Position, FileError> calculate_position(Page* rp, Page* ep, String file, 
     return Result<Position, FileError>(calculate_position_from_string(text, offset));
 }
 
-String to_string(Page* rp, size_t number) {
+String number_to_string(Page* rp, size_t number) {
     auto r = Region();
     auto str = (char*)(*r.get_page()).allocate(32, 1);
     snprintf(str, 22, "%zd", number);
@@ -134,9 +134,9 @@ void append_error_message_header(StringBuilder& builder, String file, size_t off
             {
                 auto position_start = _result._Ok;
                 {
-                    builder.append(to_string(r.get_page(), position_start.line));
+                    builder.append(number_to_string(r.get_page(), position_start.line));
                     builder.append(':');
-                    builder.append(to_string(r.get_page(), position_start.column));
+                    builder.append(number_to_string(r.get_page(), position_start.column));
                     builder.append(": error: ");
                 };
                 break;

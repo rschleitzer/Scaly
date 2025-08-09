@@ -95,7 +95,7 @@ function calculate_position(file: String, offset: size_t) returns Position throw
     return calculate_position_from_string(text, offset)
 }
 
-function to_string(number: size_t) returns String {
+function number_to_string(number: size_t) returns String {
     var r Region()
     var str (char*)(*r.get_page()).allocate(32, 1)
     snprintf(str, 22, "%zd", number)
@@ -109,9 +109,9 @@ function append_error_message_header(builder: ref[StringBuilder], file: String, 
     choose calculate_position(r.get_page(), r.get_page(), file, offset)
         when position_start: Success.Ok
         {
-            builder.append(to_string(r.get_page(), position_start.line))
+            builder.append(number_to_string(r.get_page(), position_start.line))
             builder.append(':')
-            builder.append(to_string(r.get_page(), position_start.column))
+            builder.append(number_to_string(r.get_page(), position_start.column))
             builder.append(": error: ")
         }
         else {}

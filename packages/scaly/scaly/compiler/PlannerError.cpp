@@ -38,6 +38,23 @@ String ConceptExpected::to_string(Page* rp) {
     return message_builder.to_string(rp);
 }
 
+InvalidNumberOfArguments::InvalidNumberOfArguments(String file, Span span, String name, int expected, int provided) : file(file), span(span), name(name), expected(expected), provided(provided) {}
+
+String InvalidNumberOfArguments::to_string(Page* rp) {
+    auto r = Region();
+    StringBuilder& message_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder();
+    append_error_message_header(message_builder, file, span.start);
+    message_builder.append("The function ");
+    message_builder.append(name);
+    message_builder.append(" expects ");
+    message_builder.append(number_to_string(r.get_page(), expected));
+    message_builder.append(" arguments, provided were ");
+    message_builder.append(number_to_string(r.get_page(), provided));
+    message_builder.append(".");
+    append_hint_lines(message_builder, file, span.start, span.end);
+    return message_builder.to_string(rp);
+}
+
 String PlannerError::to_string(Page* rp) {
     auto r = Region();
     StringBuilder& message_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder();
@@ -133,6 +150,14 @@ String PlannerError::to_string(Page* rp) {
                 };
                 break;
             }
+            case PlannerError::InvalidNumberOfArguments:
+            {
+                auto ina = _result._InvalidNumberOfArguments;
+                {
+                    return ina.to_string(rp);
+                };
+                break;
+            }
         }
     }message_builder.append('\n');
     return message_builder.to_string(rp);
@@ -156,6 +181,8 @@ PlannerError::PlannerError(struct TupleComponentNamesNotSupported _TupleComponen
 PlannerError::PlannerError(struct UndefinedType _UndefinedType) : _tag(UndefinedType), _UndefinedType(_UndefinedType) {}
 
 PlannerError::PlannerError(struct ConceptExpected _ConceptExpected) : _tag(ConceptExpected), _ConceptExpected(_ConceptExpected) {}
+
+PlannerError::PlannerError(struct InvalidNumberOfArguments _InvalidNumberOfArguments) : _tag(InvalidNumberOfArguments), _InvalidNumberOfArguments(_InvalidNumberOfArguments) {}
 
 
 }

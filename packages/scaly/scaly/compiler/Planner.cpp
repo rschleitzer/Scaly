@@ -313,9 +313,9 @@ String Planner::allocate_value_name(Page* rp, List<Plan::Block>& blocks, List<Pl
     auto r = Region();
     StringBuilder& value_name_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder();
     value_name_builder.append('v');
-    value_name_builder.append(to_string(r.get_page(), blocks.count()));
+    value_name_builder.append(number_to_string(r.get_page(), blocks.count()));
     value_name_builder.append('_');
-    value_name_builder.append(to_string(r.get_page(), instructions.count()));
+    value_name_builder.append(number_to_string(r.get_page(), instructions.count()));
     return String(value_name_builder.to_string(rp));
 }
 
@@ -436,6 +436,8 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_type(Page* rp, Page
                                                 {
                                                     auto tuple = _result._Tuple;
                                                     {
+                                                        if (function_.input.length != tuple.components.length) 
+                                                            return Result<List<Plan::Instruction>*, PlannerError>(InvalidNumberOfArguments(file, tuple.span, String(ep, name), function_.input.length, tuple.components.length));
                                                         return Result<List<Plan::Instruction>*, PlannerError>(plan_instruction_call(get_page(), ep, file, symbols, operation, name, tuple, blocks, instructions));
                                                     };
                                                     break;

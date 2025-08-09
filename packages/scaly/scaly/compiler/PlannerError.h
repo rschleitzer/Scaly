@@ -58,6 +58,17 @@ struct ConceptExpected : Object {
     String to_string(Page* rp);
 };
 
+struct InvalidNumberOfArguments : Object {
+    String file;
+    Span span;
+    String name;
+    int expected;
+    int provided;
+
+    InvalidNumberOfArguments(String file, Span span, String name, int expected, int provided);
+    String to_string(Page* rp);
+};
+
 struct PlannerError : Object {
     PlannerError(FeatureNotImplemented);
     PlannerError(FileError);
@@ -69,6 +80,7 @@ struct PlannerError : Object {
     PlannerError(TupleComponentNamesNotSupported);
     PlannerError(UndefinedType);
     PlannerError(ConceptExpected);
+    PlannerError(InvalidNumberOfArguments);
     enum {
         NotImplemented,
         FileError,
@@ -80,6 +92,7 @@ struct PlannerError : Object {
         TupleComponentNamesNotSupported,
         UndefinedType,
         ConceptExpected,
+        InvalidNumberOfArguments,
     } _tag;
     union {
         struct FeatureNotImplemented _NotImplemented;
@@ -92,6 +105,7 @@ struct PlannerError : Object {
         struct TupleComponentNamesNotSupported _TupleComponentNamesNotSupported;
         struct UndefinedType _UndefinedType;
         struct ConceptExpected _ConceptExpected;
+        struct InvalidNumberOfArguments _InvalidNumberOfArguments;
     };
     String to_string(Page* rp);
 };
