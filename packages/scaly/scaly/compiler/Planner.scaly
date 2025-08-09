@@ -172,7 +172,9 @@ function resolve_type(this: Planner, file: String, symbols: ref[HashMap[String, 
     throw UndefinedType(file, type.span, String(ep, name))
 }
 
-function plan_tuple(this: Planner, file: String, symbols: ref[HashMap[String, Nameable]], tuple: ref[Tuple], blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]], values: ref[List[String]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
+function plan_function_arguments(this: Planner, file: String, symbols: ref[HashMap[String, Nameable]], function_: ref[Function], tuple: ref[Tuple], blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]], values: ref[List[String]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
+    if function_.input.length <> tuple.components.length
+        throw InvalidNumberOfArguments(file, tuple.span, String(ep, function_.name), function_.input.length, tuple.components.length)
     for component in tuple.components
     {
         if component.name
@@ -195,14 +197,15 @@ function allocate_value_name(this: Planner, blocks: ref[List[Plan.Block]], instr
     return String(value_name_builder.to_string(rp))
 }
 
-function plan_instruction_call(this: Planner, file: String, symbols: ref[HashMap[String, Nameable]], operation: pointer[VectorIterator[Operand]], name: String, tuple: ref[Tuple], blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
+function plan_instruction_call(this: Planner, file: String, symbols: ref[HashMap[String, Nameable]], operation: pointer[VectorIterator[Operand]], function_: ref[Function], tuple: ref[Tuple], blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
     var r Region()
     var values_list: ref[List[String]] *List[String]$()
-    plan_tuple(get_page(), ep, file, symbols, tuple, blocks, instructions, values_list)    
+    try plan_function_arguments(get_page(), ep, file, symbols, function_, tuple, blocks, instructions, values_list)
+        else throw
     var values Vector[String](get_page(), values_list)
     var page get_page()
     let value allocate_value_name(get_page(), blocks, *instructions)
-    (*instructions).add(Plan->Instruction(new_ String^page(get_page(), value), name, values))
+    (*instructions).add(Plan->Instruction(new_ String^page(get_page(), value), function_.name, values))
     return instructions
 }
 
@@ -236,7 +239,7 @@ function plan_type(this: Planner, file: String, symbols: ref[HashMap[String, Nam
             when functions: Nameable.Functions {
                 if functions.length > 1
                     throw FeatureNotImplemented(file, (*(functions.get(0))).span, String(ep, "Overloaded functions"))
-                let function_ *functions.get(0)
+                var function_ *functions.get(0)
                 choose function_.implementation
                     when action: Implementation.Action
                         throw FeatureNotImplemented(file, function_.span, String(ep, "Internal Function call"))
@@ -250,9 +253,7 @@ function plan_type(this: Planner, file: String, symbols: ref[HashMap[String, Nam
                             throw InstructionWithoutArguments(String(ep, name))
                         choose (*next_operand).expression
                             when tuple: Expression.Tuple {
-                                if function_.input.length <> tuple.components.length
-                                    throw InvalidNumberOfArguments(file, tuple.span, String(ep, name), function_.input.length, tuple.components.length)
-                                return plan_instruction_call(get_page(), ep, file, symbols, operation, name, tuple, blocks, instructions)
+                                return plan_instruction_call(get_page(), ep, file, symbols, operation, function_, tuple, blocks, instructions)
                             }
                             else throw InstructionWithoutArguments(String(ep, name))
 

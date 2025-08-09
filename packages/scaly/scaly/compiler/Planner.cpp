@@ -293,7 +293,9 @@ Result<String, PlannerError> Planner::resolve_type(Page* rp, Page* ep, String fi
     return Result<String, PlannerError>(UndefinedType(file, type.span, String(ep, name)));
 }
 
-Result<List<Plan::Instruction>*, PlannerError> Planner::plan_tuple(Page* rp, Page* ep, String file, HashMap<String, Nameable>& symbols, Tuple& tuple, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions, List<String>& values) {
+Result<List<Plan::Instruction>*, PlannerError> Planner::plan_function_arguments(Page* rp, Page* ep, String file, HashMap<String, Nameable>& symbols, Function& function_, Tuple& tuple, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions, List<String>& values) {
+    if (function_.input.length != tuple.components.length) 
+        return Result<List<Plan::Instruction>*, PlannerError>(InvalidNumberOfArguments(file, tuple.span, String(ep, function_.name), function_.input.length, tuple.components.length));
     
     auto _component_iterator = tuple.components.get_iterator();
     while (auto _component = _component_iterator.next()) {
@@ -319,14 +321,24 @@ String Planner::allocate_value_name(Page* rp, List<Plan::Block>& blocks, List<Pl
     return String(value_name_builder.to_string(rp));
 }
 
-Result<List<Plan::Instruction>*, PlannerError> Planner::plan_instruction_call(Page* rp, Page* ep, String file, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, String name, Tuple& tuple, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
+Result<List<Plan::Instruction>*, PlannerError> Planner::plan_instruction_call(Page* rp, Page* ep, String file, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, Function& function_, Tuple& tuple, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions) {
     auto r = Region();
     List<String>& values_list = *new (alignof(List<String>), r.get_page()) List<String>();
-    plan_tuple(get_page(), ep, file, symbols, tuple, blocks, instructions, values_list);
+    {
+        const auto _void_result = plan_function_arguments(get_page(), ep, file, symbols, function_, tuple, blocks, instructions, values_list);
+        if (_void_result._tag == Success::Error) {
+            const auto _void_Error = _void_result._Error;
+            switch (_void_Error._tag) {
+            default:
+                return Result<List<Plan::Instruction>*, PlannerError>(_void_result._Error);
+
+            }
+        }}
+        ;
     auto values = Vector<String>(get_page(), values_list);
     auto page = get_page();
     const auto value = allocate_value_name(get_page(), blocks, *instructions);
-    (*instructions).add(Plan::Instruction(new (alignof(String), page) String(get_page(), value), name, values));
+    (*instructions).add(Plan::Instruction(new (alignof(String), page) String(get_page(), value), function_.name, values));
     return Result<List<Plan::Instruction>*, PlannerError>(instructions);
 }
 
@@ -402,7 +414,7 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_type(Page* rp, Page
                     {
                         if (functions.length>1) 
                             return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, (*(functions.get(0))).span, String(ep, "Overloaded functions")));
-                        const auto function_ = *functions.get(0);
+                        auto function_ = *functions.get(0);
                         {
                             auto _result = function_.implementation;
                             switch (_result._tag)
@@ -436,9 +448,7 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_type(Page* rp, Page
                                                 {
                                                     auto tuple = _result._Tuple;
                                                     {
-                                                        if (function_.input.length != tuple.components.length) 
-                                                            return Result<List<Plan::Instruction>*, PlannerError>(InvalidNumberOfArguments(file, tuple.span, String(ep, name), function_.input.length, tuple.components.length));
-                                                        return Result<List<Plan::Instruction>*, PlannerError>(plan_instruction_call(get_page(), ep, file, symbols, operation, name, tuple, blocks, instructions));
+                                                        return Result<List<Plan::Instruction>*, PlannerError>(plan_instruction_call(get_page(), ep, file, symbols, operation, function_, tuple, blocks, instructions));
                                                     };
                                                     break;
                                                 }
