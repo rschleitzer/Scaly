@@ -32,8 +32,8 @@ struct Planner : Object {
     Result<List<Plan::Instruction>*, PlannerError> plan_statement(Page* rp, Page* ep, String file, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, Statement& statement, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions);
     Result<List<Plan::Instruction>*, PlannerError> plan_block(Page* rp, Page* ep, String file, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, Block& block, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions);
     Result<List<Plan::Instruction>*, PlannerError> plan_operand(Page* rp, Page* ep, String file, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, Operand& operand, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions, List<String>& values);
-    Result<List<Plan::Instruction>*, PlannerError> plan_operation(Page* rp, Page* ep, String file, HashMap<String, Nameable>& symbols, Vector<Operand>& operation, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions, List<String>& values);
-    Result<List<Plan::Instruction>*, PlannerError> plan_action(Page* rp, Page* ep, String file, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, Action& action, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions, List<String>& values);
+    Result<List<Plan::Instruction>*, PlannerError> plan_operation(Page* rp, Page* ep, String file, HashMap<String, Nameable>& symbols, Vector<Operand>& operation, String* required_type, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions, List<String>& values);
+    Result<List<Plan::Instruction>*, PlannerError> plan_action(Page* rp, Page* ep, String file, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, String* required_type, Action& action, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions, List<String>& values);
     Result<Void, PlannerError> plan_function(Page* ep, String file, HashMap<String, Nameable>& symbols, Function& func);
 };
 

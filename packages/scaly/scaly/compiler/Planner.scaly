@@ -175,11 +175,19 @@ function resolve_type(this: Planner, file: String, symbols: ref[HashMap[String, 
 function plan_function_arguments(this: Planner, file: String, symbols: ref[HashMap[String, Nameable]], function_: ref[Function], tuple: ref[Tuple], blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]], values: ref[List[String]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
     if function_.input.length <> tuple.components.length
         throw InvalidNumberOfArguments(file, tuple.span, String(ep, function_.name), function_.input.length, tuple.components.length)
-    for component in tuple.components
+
+    var item_iterator function_.input.get_iterator()
+    for actual_argument in tuple.components
     {
-        if component.name
+        var item *item_iterator.next()
+        var formal_argument_type item.type
+        if formal_argument_type = null
+            FeatureNotImplemented(file, item.span, String(ep, "Type inference"))
+        try let required_argument_type resolve_type(get_page(), ep, file, symbols, *formal_argument_type)
+            else throw
+        if actual_argument.name
             throw TupleComponentNamesNotSupported()
-        plan_operation(get_page(), ep, file, symbols, component.value, blocks, instructions, values)
+        plan_operation(get_page(), ep, file, symbols, actual_argument.value, &required_argument_type, blocks, instructions, values)
         let last_instruction (*instructions).get_head()
         if last_instruction
             values.add(*(*last_instruction).result)
@@ -278,7 +286,7 @@ function plan_statement(this: Planner, file: String, symbols: ref[HashMap[String
         {
             var r Region()
             var values: ref[List[String]] *List[String]$()
-            return plan_action(get_page(), ep, file, symbols, operation, action, blocks, instructions, values)
+            return plan_action(get_page(), ep, file, symbols, operation, null, action, blocks, instructions, values)
         }
         when binding: Statement.Binding
             throw FeatureNotImplemented(file, binding.span, String(ep, "Binding statement"))
@@ -356,7 +364,7 @@ function plan_operand(this: Planner, file: String, symbols: ref[HashMap[String, 
             throw FeatureNotImplemented(file, new__.span, String(ep, "New expression"))
 }
 
-function plan_operation(this: Planner, file: String, symbols: ref[HashMap[String, Nameable]], operation: ref[Vector[Operand]], blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]], values: ref[List[String]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
+function plan_operation(this: Planner, file: String, symbols: ref[HashMap[String, Nameable]], operation: ref[Vector[Operand]], required_type: pointer[String], blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]], values: ref[List[String]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
     var r Region()
 
     var operand_iterator operation.get_iterator()
@@ -369,12 +377,12 @@ function plan_operation(this: Planner, file: String, symbols: ref[HashMap[String
     return instructions
 }
 
-function plan_action(this: Planner, file: String, symbols: ref[HashMap[String, Nameable]], operation: pointer[VectorIterator[Operand]], action: ref[Action], blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]], values: ref[List[String]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
+function plan_action(this: Planner, file: String, symbols: ref[HashMap[String, Nameable]], operation: pointer[VectorIterator[Operand]], required_type: pointer[String], action: ref[Action], blocks: ref[List[Plan.Block]], instructions: pointer[List[Plan.Instruction]], values: ref[List[String]]) returns pointer[List[Plan.Instruction]] throws PlannerError {
     var r Region()
     if action.target.length > 0
         throw FeatureNotImplemented(file, (*(action.target.get(0))).span, String(ep, "set"))
 
-    try let new_instructions plan_operation(get_page(), ep, file, symbols, action.source, blocks, instructions, values)
+    try let new_instructions plan_operation(get_page(), ep, file, symbols, action.source, required_type,  blocks, instructions, values)
         else throw
 
     return instructions
@@ -392,6 +400,8 @@ function plan_function(this: Planner, file: String, symbols: ref[HashMap[String,
     var input_list: ref[List[Plan.Argument]] *new_ List[Plan.Argument]$()
     for item in func.input
     {
+        if item.type = null
+            throw FeatureNotImplemented(file, item.span, String(ep, "Type inference"))
         try let type resolve_type(get_page(), ep, file, symbols, *item.type)
             else throw
 
@@ -404,7 +414,12 @@ function plan_function(this: Planner, file: String, symbols: ref[HashMap[String,
         when action: Implementation.Action
         {
             var values: ref[List[String]] *List[String]$()
-            try let new_instructions plan_action(get_page(), ep, file, symbols, null, action, blocks, &instructions, values)
+            var required_argument_type: pointer[String] null
+            if func.returns_
+            {
+
+            }
+            try let new_instructions plan_action(get_page(), ep, file, symbols, null, required_argument_type, action, blocks, &instructions, values)
                 else throw
             set instructions: *new_instructions
             if func.returns_

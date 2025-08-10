@@ -296,13 +296,28 @@ Result<String, PlannerError> Planner::resolve_type(Page* rp, Page* ep, String fi
 Result<List<Plan::Instruction>*, PlannerError> Planner::plan_function_arguments(Page* rp, Page* ep, String file, HashMap<String, Nameable>& symbols, Function& function_, Tuple& tuple, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions, List<String>& values) {
     if (function_.input.length != tuple.components.length) 
         return Result<List<Plan::Instruction>*, PlannerError>(InvalidNumberOfArguments(file, tuple.span, String(ep, function_.name), function_.input.length, tuple.components.length));
+    auto item_iterator = function_.input.get_iterator();
     
-    auto _component_iterator = tuple.components.get_iterator();
-    while (auto _component = _component_iterator.next()) {
-        auto component = *_component;{
-            if (component.name) 
+    auto _actual_argument_iterator = tuple.components.get_iterator();
+    while (auto _actual_argument = _actual_argument_iterator.next()) {
+        auto actual_argument = *_actual_argument;{
+            auto item = *item_iterator.next();
+            auto formal_argument_type = item.type;
+            if (formal_argument_type == nullptr) 
+                FeatureNotImplemented(file, item.span, String(ep, "Type inference"));
+            const auto _required_argument_type_result = resolve_type(get_page(), ep, file, symbols, *formal_argument_type);
+            auto required_argument_type = _required_argument_type_result._Ok;
+            if (_required_argument_type_result._tag == Success::Error) {
+                const auto _required_argument_type_Error = _required_argument_type_result._Error;
+                switch (_required_argument_type_Error._tag) {
+                default:
+                    return Result<List<Plan::Instruction>*, PlannerError>(_required_argument_type_result._Error);
+
+                }
+            };
+            if (actual_argument.name) 
                 return Result<List<Plan::Instruction>*, PlannerError>(TupleComponentNamesNotSupported());
-            plan_operation(get_page(), ep, file, symbols, component.value, blocks, instructions, values);
+            plan_operation(get_page(), ep, file, symbols, actual_argument.value, &required_argument_type, blocks, instructions, values);
             const auto last_instruction = (*instructions).get_head();
             if (last_instruction) 
                 values.add(*(*last_instruction).result);
@@ -502,7 +517,7 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_statement(Page* rp,
                 {
                     auto r = Region();
                     List<String>& values = *new (alignof(List<String>), r.get_page()) List<String>();
-                    return Result<List<Plan::Instruction>*, PlannerError>(plan_action(get_page(), ep, file, symbols, operation, action, blocks, instructions, values));
+                    return Result<List<Plan::Instruction>*, PlannerError>(plan_action(get_page(), ep, file, symbols, operation, nullptr, action, blocks, instructions, values));
                 };
                 break;
             }
@@ -707,7 +722,7 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_operand(Page* rp, P
     };
 }
 
-Result<List<Plan::Instruction>*, PlannerError> Planner::plan_operation(Page* rp, Page* ep, String file, HashMap<String, Nameable>& symbols, Vector<Operand>& operation, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions, List<String>& values) {
+Result<List<Plan::Instruction>*, PlannerError> Planner::plan_operation(Page* rp, Page* ep, String file, HashMap<String, Nameable>& symbols, Vector<Operand>& operation, String* required_type, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions, List<String>& values) {
     auto r = Region();
     auto operand_iterator = operation.get_iterator();
     while (auto operand = operand_iterator.next()) {
@@ -725,11 +740,11 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_operation(Page* rp,
     return Result<List<Plan::Instruction>*, PlannerError>(instructions);
 }
 
-Result<List<Plan::Instruction>*, PlannerError> Planner::plan_action(Page* rp, Page* ep, String file, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, Action& action, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions, List<String>& values) {
+Result<List<Plan::Instruction>*, PlannerError> Planner::plan_action(Page* rp, Page* ep, String file, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, String* required_type, Action& action, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions, List<String>& values) {
     auto r = Region();
     if (action.target.length>0) 
         return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, (*(action.target.get(0))).span, String(ep, "set")));
-    const auto _new_instructions_result = plan_operation(get_page(), ep, file, symbols, action.source, blocks, instructions, values);
+    const auto _new_instructions_result = plan_operation(get_page(), ep, file, symbols, action.source, required_type, blocks, instructions, values);
     auto new_instructions = _new_instructions_result._Ok;
     if (_new_instructions_result._tag == Success::Error) {
         const auto _new_instructions_Error = _new_instructions_result._Error;
@@ -761,6 +776,8 @@ Result<Void, PlannerError> Planner::plan_function(Page* ep, String file, HashMap
     auto _item_iterator = func.input.get_iterator();
     while (auto _item = _item_iterator.next()) {
         auto item = *_item;{
+            if (item.type == nullptr) 
+                return Result<Void, PlannerError>(FeatureNotImplemented(file, item.span, String(ep, "Type inference")));
             const auto _type_result = resolve_type(get_page(), ep, file, symbols, *item.type);
             auto type = _type_result._Ok;
             if (_type_result._tag == Success::Error) {
@@ -785,7 +802,10 @@ Result<Void, PlannerError> Planner::plan_function(Page* ep, String file, HashMap
                 auto action = _result._Action;
                 {
                     List<String>& values = *new (alignof(List<String>), r.get_page()) List<String>();
-                    const auto _new_instructions_result = plan_action(get_page(), ep, file, symbols, nullptr, action, blocks, &instructions, values);
+                    String* required_argument_type = nullptr;
+                    if (func.returns_) {
+                    };
+                    const auto _new_instructions_result = plan_action(get_page(), ep, file, symbols, nullptr, required_argument_type, action, blocks, &instructions, values);
                     auto new_instructions = _new_instructions_result._Ok;
                     if (_new_instructions_result._tag == Success::Error) {
                         const auto _new_instructions_Error = _new_instructions_result._Error;
