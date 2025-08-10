@@ -336,6 +336,7 @@ struct TupleComponentNamesNotSupported;
 struct UndefinedType;
 struct ConceptExpected;
 struct InvalidNumberOfArguments;
+struct TypeMismatch;
 struct PlannerError;
 struct MultipleMainFunctions;
 struct MainIsNotAFunction;

@@ -362,7 +362,7 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_instruction_call(Pa
     return Result<List<Plan::Instruction>*, PlannerError>(instructions);
 }
 
-Result<List<Plan::Instruction>*, PlannerError> Planner::plan_type(Page* rp, Page* ep, String file, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, Type& type, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions, List<String>& values) {
+Result<List<Plan::Instruction>*, PlannerError> Planner::plan_type(Page* rp, Page* ep, String file, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, Type& type, String* required_type, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions, List<String>& values) {
     if (type.name.length>1) 
         return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, type.span, String(ep, "Qualified type name")));
     if (type.generics) 
@@ -435,6 +435,23 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_type(Page* rp, Page
                         if (functions.length>1) 
                             return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, (*(functions.get(0))).span, String(ep, "Overloaded functions")));
                         auto function_ = *functions.get(0);
+                        if (required_type) {
+                            if (function_.returns_ == nullptr) 
+                                return Result<List<Plan::Instruction>*, PlannerError>(TypeMismatch(file, function_.span, *required_type, String(ep, "void")));
+                            const auto function_return_type = *function_.returns_;
+                            const auto _resolved_function_return_type_result = resolve_type(get_page(), ep, file, symbols, function_return_type);
+                            auto resolved_function_return_type = _resolved_function_return_type_result._Ok;
+                            if (_resolved_function_return_type_result._tag == Success::Error) {
+                                const auto _resolved_function_return_type_Error = _resolved_function_return_type_result._Error;
+                                switch (_resolved_function_return_type_Error._tag) {
+                                default:
+                                    return Result<List<Plan::Instruction>*, PlannerError>(_resolved_function_return_type_result._Error);
+
+                                }
+                            };
+                            if (resolved_function_return_type.equals(*required_type) == false) 
+                                return Result<List<Plan::Instruction>*, PlannerError>(TypeMismatch(file, function_return_type.span, *required_type, resolved_function_return_type));
+                        };
                         {
                             auto _result = function_.implementation;
                             switch (_result._tag)
@@ -522,7 +539,7 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_statement(Page* rp,
                 {
                     auto r = Region();
                     List<String>& values = *new (alignof(List<String>), r.get_page()) List<String>();
-                    return Result<List<Plan::Instruction>*, PlannerError>(plan_action(get_page(), ep, file, symbols, operation, nullptr, action, blocks, instructions, values));
+                    return Result<List<Plan::Instruction>*, PlannerError>(plan_action(get_page(), ep, file, symbols, operation, action, required_type, blocks, instructions, values));
                 };
                 break;
             }
@@ -648,7 +665,7 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_operand(Page* rp, P
             case Expression::Type:
             {
                 auto type = _result._Type;
-                return Result<List<Plan::Instruction>*, PlannerError>(plan_type(get_page(), ep, file, symbols, operation, type, blocks, instructions, values));
+                return Result<List<Plan::Instruction>*, PlannerError>(plan_type(get_page(), ep, file, symbols, operation, type, required_type, blocks, instructions, values));
                 break;
             }
             case Expression::Tuple:
@@ -745,7 +762,7 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_operation(Page* rp,
     return Result<List<Plan::Instruction>*, PlannerError>(instructions);
 }
 
-Result<List<Plan::Instruction>*, PlannerError> Planner::plan_action(Page* rp, Page* ep, String file, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, String* required_type, Action& action, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions, List<String>& values) {
+Result<List<Plan::Instruction>*, PlannerError> Planner::plan_action(Page* rp, Page* ep, String file, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, Action& action, String* required_type, List<Plan::Block>& blocks, List<Plan::Instruction>* instructions, List<String>& values) {
     auto r = Region();
     if (action.target.length>0) 
         return Result<List<Plan::Instruction>*, PlannerError>(FeatureNotImplemented(file, (*(action.target.get(0))).span, String(ep, "set")));
@@ -810,7 +827,7 @@ Result<Void, PlannerError> Planner::plan_function(Page* ep, String file, HashMap
                     String* required_argument_type = nullptr;
                     if (func.returns_) {
                     };
-                    const auto _new_instructions_result = plan_action(get_page(), ep, file, symbols, nullptr, required_argument_type, action, blocks, &instructions, values);
+                    const auto _new_instructions_result = plan_action(get_page(), ep, file, symbols, nullptr, action, required_argument_type, blocks, &instructions, values);
                     auto new_instructions = _new_instructions_result._Ok;
                     if (_new_instructions_result._tag == Success::Error) {
                         const auto _new_instructions_Error = _new_instructions_result._Error;

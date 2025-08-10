@@ -55,6 +55,21 @@ String InvalidNumberOfArguments::to_string(Page* rp) {
     return message_builder.to_string(rp);
 }
 
+TypeMismatch::TypeMismatch(String file, Span span, String expected, String provided) : file(file), span(span), expected(expected), provided(provided) {}
+
+String TypeMismatch::to_string(Page* rp) {
+    auto r = Region();
+    StringBuilder& message_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder();
+    append_error_message_header(message_builder, file, span.start);
+    message_builder.append("The type ");
+    message_builder.append(expected);
+    message_builder.append(" is expected here, provided was ");
+    message_builder.append(provided);
+    message_builder.append(".");
+    append_hint_lines(message_builder, file, span.start, span.end);
+    return message_builder.to_string(rp);
+}
+
 String PlannerError::to_string(Page* rp) {
     auto r = Region();
     StringBuilder& message_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder();
@@ -158,6 +173,14 @@ String PlannerError::to_string(Page* rp) {
                 };
                 break;
             }
+            case PlannerError::TypeMismatch:
+            {
+                auto tm = _result._TypeMismatch;
+                {
+                    return tm.to_string(rp);
+                };
+                break;
+            }
         }
     }message_builder.append('\n');
     return message_builder.to_string(rp);
@@ -183,6 +206,8 @@ PlannerError::PlannerError(struct UndefinedType _UndefinedType) : _tag(Undefined
 PlannerError::PlannerError(struct ConceptExpected _ConceptExpected) : _tag(ConceptExpected), _ConceptExpected(_ConceptExpected) {}
 
 PlannerError::PlannerError(struct InvalidNumberOfArguments _InvalidNumberOfArguments) : _tag(InvalidNumberOfArguments), _InvalidNumberOfArguments(_InvalidNumberOfArguments) {}
+
+PlannerError::PlannerError(struct TypeMismatch _TypeMismatch) : _tag(TypeMismatch), _TypeMismatch(_TypeMismatch) {}
 
 
 }

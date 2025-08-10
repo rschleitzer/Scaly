@@ -69,6 +69,16 @@ struct InvalidNumberOfArguments : Object {
     String to_string(Page* rp);
 };
 
+struct TypeMismatch : Object {
+    String file;
+    Span span;
+    String expected;
+    String provided;
+
+    TypeMismatch(String file, Span span, String expected, String provided);
+    String to_string(Page* rp);
+};
+
 struct PlannerError : Object {
     PlannerError(FeatureNotImplemented);
     PlannerError(FileError);
@@ -81,6 +91,7 @@ struct PlannerError : Object {
     PlannerError(UndefinedType);
     PlannerError(ConceptExpected);
     PlannerError(InvalidNumberOfArguments);
+    PlannerError(TypeMismatch);
     enum {
         NotImplemented,
         FileError,
@@ -93,6 +104,7 @@ struct PlannerError : Object {
         UndefinedType,
         ConceptExpected,
         InvalidNumberOfArguments,
+        TypeMismatch,
     } _tag;
     union {
         struct FeatureNotImplemented _NotImplemented;
@@ -106,6 +118,7 @@ struct PlannerError : Object {
         struct UndefinedType _UndefinedType;
         struct ConceptExpected _ConceptExpected;
         struct InvalidNumberOfArguments _InvalidNumberOfArguments;
+        struct TypeMismatch _TypeMismatch;
     };
     String to_string(Page* rp);
 };

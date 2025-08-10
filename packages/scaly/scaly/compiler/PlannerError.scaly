@@ -53,6 +53,23 @@ define InvalidNumberOfArguments(file: String, span: Span, name: String, expected
     }
 }
 
+define TypeMismatch(file: String, span: Span, expected: String, provided: String)
+{
+    function to_string(this: UndefinedType) returns String {
+        var r Region()
+        var message_builder: ref[StringBuilder] *StringBuilder$()
+        append_error_message_header(message_builder, file, span.start)
+        message_builder.append("The type ")
+        message_builder.append(expected)
+        message_builder.append(" is expected here, provided was ")
+        message_builder.append(provided)
+        message_builder.append(".")
+        append_hint_lines(message_builder, file, span.start, span.end)
+
+        return message_builder.to_string(rp)
+    }
+}
+
 define PlannerError union
 (
     NotImplemented: FeatureNotImplemented
@@ -66,6 +83,7 @@ define PlannerError union
     UndefinedType: UndefinedType
     ConceptExpected: ConceptExpected
     InvalidNumberOfArguments: InvalidNumberOfArguments
+    TypeMismatch: TypeMismatch
 )
 {
     function to_string(this: PlannerError) returns String {
@@ -123,6 +141,10 @@ define PlannerError union
             when ina: PlannerError.InvalidNumberOfArguments
             {
                 return ina.to_string(rp)
+            }
+            when tm: PlannerError.TypeMismatch
+            {
+                return tm.to_string(rp)
             }
 
         message_builder.append('\n')
