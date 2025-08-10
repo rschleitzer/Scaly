@@ -334,6 +334,7 @@ struct UnknownInstruction;
 struct InstructionWithInvalidNumberOfArguments;
 struct TupleComponentNamesNotSupported;
 struct UndefinedType;
+struct UndefinedTypeOrValue;
 struct ConceptExpected;
 struct InvalidNumberOfArguments;
 struct TypeMismatch;

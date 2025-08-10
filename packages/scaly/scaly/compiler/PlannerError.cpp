@@ -27,6 +27,19 @@ String UndefinedType::to_string(Page* rp) {
     return message_builder.to_string(rp);
 }
 
+UndefinedTypeOrValue::UndefinedTypeOrValue(String file, Span span, String name) : file(file), span(span), name(name) {}
+
+String UndefinedTypeOrValue::to_string(Page* rp) {
+    auto r = Region();
+    StringBuilder& message_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder();
+    append_error_message_header(message_builder, file, span.start);
+    message_builder.append("The ");
+    message_builder.append(name);
+    message_builder.append(" type or value is not defined.");
+    append_hint_lines(message_builder, file, span.start, span.end);
+    return message_builder.to_string(rp);
+}
+
 ConceptExpected::ConceptExpected(String file, Span span, String name) : file(file), span(span), name(name) {}
 
 String ConceptExpected::to_string(Page* rp) {
@@ -157,6 +170,14 @@ String PlannerError::to_string(Page* rp) {
                 };
                 break;
             }
+            case PlannerError::UndefinedTypeOrValue:
+            {
+                auto utv = _result._UndefinedTypeOrValue;
+                {
+                    return utv.to_string(rp);
+                };
+                break;
+            }
             case PlannerError::ConceptExpected:
             {
                 auto ce = _result._ConceptExpected;
@@ -202,6 +223,8 @@ PlannerError::PlannerError(struct InstructionWithInvalidNumberOfArguments _Instr
 PlannerError::PlannerError(struct TupleComponentNamesNotSupported _TupleComponentNamesNotSupported) : _tag(TupleComponentNamesNotSupported), _TupleComponentNamesNotSupported(_TupleComponentNamesNotSupported) {}
 
 PlannerError::PlannerError(struct UndefinedType _UndefinedType) : _tag(UndefinedType), _UndefinedType(_UndefinedType) {}
+
+PlannerError::PlannerError(struct UndefinedTypeOrValue _UndefinedTypeOrValue) : _tag(UndefinedTypeOrValue), _UndefinedTypeOrValue(_UndefinedTypeOrValue) {}
 
 PlannerError::PlannerError(struct ConceptExpected _ConceptExpected) : _tag(ConceptExpected), _ConceptExpected(_ConceptExpected) {}
 

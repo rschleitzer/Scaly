@@ -49,6 +49,15 @@ struct UndefinedType : Object {
     String to_string(Page* rp);
 };
 
+struct UndefinedTypeOrValue : Object {
+    String file;
+    Span span;
+    String name;
+
+    UndefinedTypeOrValue(String file, Span span, String name);
+    String to_string(Page* rp);
+};
+
 struct ConceptExpected : Object {
     String file;
     Span span;
@@ -89,6 +98,7 @@ struct PlannerError : Object {
     PlannerError(InstructionWithInvalidNumberOfArguments);
     PlannerError(TupleComponentNamesNotSupported);
     PlannerError(UndefinedType);
+    PlannerError(UndefinedTypeOrValue);
     PlannerError(ConceptExpected);
     PlannerError(InvalidNumberOfArguments);
     PlannerError(TypeMismatch);
@@ -102,6 +112,7 @@ struct PlannerError : Object {
         InstructionWithInvalidNumberOfArguments,
         TupleComponentNamesNotSupported,
         UndefinedType,
+        UndefinedTypeOrValue,
         ConceptExpected,
         InvalidNumberOfArguments,
         TypeMismatch,
@@ -116,6 +127,7 @@ struct PlannerError : Object {
         struct InstructionWithInvalidNumberOfArguments _InstructionWithInvalidNumberOfArguments;
         struct TupleComponentNamesNotSupported _TupleComponentNamesNotSupported;
         struct UndefinedType _UndefinedType;
+        struct UndefinedTypeOrValue _UndefinedTypeOrValue;
         struct ConceptExpected _ConceptExpected;
         struct InvalidNumberOfArguments _InvalidNumberOfArguments;
         struct TypeMismatch _TypeMismatch;

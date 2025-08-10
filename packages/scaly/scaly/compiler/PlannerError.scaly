@@ -21,6 +21,21 @@ define UndefinedType(file: String, span: Span, name: String)
     }
 }
 
+define UndefinedTypeOrValue(file: String, span: Span, name: String)
+{
+    function to_string(this: UndefinedTypeOrValue) returns String {
+        var r Region()
+        var message_builder: ref[StringBuilder] *StringBuilder$()
+        append_error_message_header(message_builder, file, span.start)
+        message_builder.append("The ")
+        message_builder.append(name)
+        message_builder.append(" type or value is not defined.")
+        append_hint_lines(message_builder, file, span.start, span.end)
+
+        return message_builder.to_string(rp)
+    }
+}
+
 define ConceptExpected(file: String, span: Span, name: String)
 {
     function to_string(this: UndefinedType) returns String {
@@ -81,6 +96,7 @@ define PlannerError union
     InstructionWithInvalidNumberOfArguments: InstructionWithInvalidNumberOfArguments
     TupleComponentNamesNotSupported: TupleComponentNamesNotSupported
     UndefinedType: UndefinedType
+    UndefinedTypeOrValue: UndefinedTypeOrValue
     ConceptExpected: ConceptExpected
     InvalidNumberOfArguments: InvalidNumberOfArguments
     TypeMismatch: TypeMismatch
@@ -133,6 +149,10 @@ define PlannerError union
             when ut: PlannerError.UndefinedType
             {
                 return ut.to_string(rp)
+            }
+            when utv: PlannerError.UndefinedTypeOrValue
+            {
+                return utv.to_string(rp)
             }
             when ce: PlannerError.ConceptExpected
             {
