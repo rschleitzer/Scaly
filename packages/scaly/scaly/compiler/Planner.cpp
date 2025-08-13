@@ -81,7 +81,13 @@ Result<Plan::Module, PlannerError> Planner::plan_program(Page* rp, Page* ep) {
             }}
             ;
     };
-    return Result<Plan::Module, PlannerError>(Plan::Module(path, program.module_.name, Vector<Plan::Type>(rp, types_list), HashMap<String, Plan::Type>(rp, types_builder), Vector<Plan::Function>(rp, functions_list), HashMap<String, Plan::Function>(rp, functions_builder)));
+    StringBuilder& path_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder(".");
+    if (path.get_length()>0) 
+        path_builder.append('/');
+    path_builder.append(path);
+    StringBuilder& file_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder(program.module_.name);
+    file_builder.append(".scaly");
+    return Result<Plan::Module, PlannerError>(Plan::Module(path_builder.to_string(get_page()), file_builder.to_string(get_page()), Vector<Plan::Type>(rp, types_list), HashMap<String, Plan::Type>(rp, types_builder), Vector<Plan::Function>(rp, functions_list), HashMap<String, Plan::Function>(rp, functions_builder)));
 }
 
 Result<Void, PlannerError> Planner::plan_main_function(Page* ep, Program& program) {

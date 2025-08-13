@@ -46,7 +46,15 @@ function plan_program(this: Planner) returns Plan.Module throws PlannerError {
             else throw
     }
 
-    return Plan->Module(path, program.module_.name, 
+    var path_builder: ref[StringBuilder] *StringBuilder$(".")
+    if path.get_length() > 0
+        path_builder.append('/')
+    path_builder.append(path)
+    var file_builder: ref[StringBuilder] *StringBuilder$(program.module_.name)
+    file_builder.append(".scaly")
+    return Plan->Module(
+        path_builder.to_string(get_page()),
+        file_builder.to_string(get_page()), 
         new_ Vector[Plan.Type](rp, types_list),
         new_ HashMap[String, Plan.Type](rp, types_builder),
         new_ Vector[Plan.Function](rp, functions_list),
