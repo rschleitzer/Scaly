@@ -159,18 +159,18 @@ llvm::Function* generate_function(llvm::Module& module, DIFile* di_file, DIBuild
     return llvm_function;
 }
 
-void generate_module(Plan::Compilation& plan_module) {
+void generate_module(Plan::Compilation& compilation) {
     Region _r;
     auto context = std::make_unique<LLVMContext>();
-    auto module = std::make_unique<llvm::Module>(plan_module.name.to_c_string(_r.get_page()), *context);
+    auto module = std::make_unique<llvm::Module>(compilation.name.to_c_string(_r.get_page()), *context);
     module->addModuleFlag(llvm::Module::Warning, "Debug Info Version", DEBUG_METADATA_VERSION);
     module->addModuleFlag(llvm::Module::Warning, "Dwarf Version", 5);
 
     DIBuilder di_builder(*module);
-    DIFile* debug_file = di_builder.createFile(plan_module.name.to_c_string(_r.get_page()), plan_module.path.to_c_string(_r.get_page()));
+    DIFile* debug_file = di_builder.createFile(compilation.name.to_c_string(_r.get_page()), compilation.path.to_c_string(_r.get_page()));
     auto cu = di_builder.createCompileUnit(dwarf::DW_LANG_C, debug_file, "scaly", false, "", 0);
 
-    auto _function_iterator = HashMapIterator<String, Plan::Function>(plan_module.functions);
+    auto _function_iterator = HashMapIterator<String, Plan::Function>(compilation.functions);
     while (auto _function = _function_iterator.next()) {
         auto planFunction = *_function;
         auto function = generate_function(*module, debug_file, di_builder, planFunction);

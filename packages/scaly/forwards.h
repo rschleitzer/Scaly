@@ -347,6 +347,7 @@ namespace compiler {
 }
 namespace Plan {
 struct Compilation;
+struct Module;
 struct Type;
 struct Function;
 struct Argument;

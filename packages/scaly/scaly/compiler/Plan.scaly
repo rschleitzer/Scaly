@@ -8,6 +8,12 @@ define Plan
         functions: HashMap[String, Function]
     )
 
+    define Module
+    (
+        path: String,
+        name: String,
+    )
+
     define Type(name: String, fields: Vector[String])
     
     define Function

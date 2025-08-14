@@ -6,7 +6,7 @@ using namespace scaly::containers;
 using namespace scaly::io;
 
 
-Planner::Planner(Program& program, HashSetBuilder<String> intrinsics_builder, HashMapBuilder<String, Plan::Type> types_builder, HashMapBuilder<String, Plan::Function> functions_builder) : program(program), intrinsics_builder(intrinsics_builder), types_builder(types_builder), functions_builder(functions_builder) {}
+Planner::Planner(Program& program, HashSetBuilder<String> intrinsics_builder, HashMapBuilder<String, Plan::Type> types_builder, HashMapBuilder<String, Plan::Function> functions_builder, List<Plan::Module> module_list) : program(program), intrinsics_builder(intrinsics_builder), types_builder(types_builder), functions_builder(functions_builder), module_list(module_list) {}
 
 Planner::Planner(Program& program) : program(program), intrinsics_builder(HashSetBuilder<String>()), types_builder(HashMapBuilder<String, Plan::Type>()), functions_builder(HashMapBuilder<String, Plan::Function>()){
 }

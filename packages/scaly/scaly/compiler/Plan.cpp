@@ -6,6 +6,8 @@ namespace Plan {
 
 Compilation::Compilation(String path, String name, HashMap<String, Type> types, HashMap<String, Function> functions) : path(path), name(name), types(types), functions(functions) {}
 
+Module::Module(String path, String name) : path(path), name(name) {}
+
 Type::Type(String name, Vector<String> fields) : name(name), fields(fields) {}
 
 Function::Function(String name, Vector<Argument> input, String output, Vector<Block> blocks) : name(name), input(input), output(output), blocks(blocks) {}

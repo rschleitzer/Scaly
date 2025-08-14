@@ -14,6 +14,13 @@ struct Compilation : Object {
     Compilation(String path, String name, HashMap<String, Type> types, HashMap<String, Function> functions);
 };
 
+struct Module : Object {
+    String path;
+    String name;
+
+    Module(String path, String name);
+};
+
 struct Type : Object {
     String name;
     Vector<String> fields;

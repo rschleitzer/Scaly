@@ -13,8 +13,9 @@ struct Planner : Object {
     HashSetBuilder<String> intrinsics_builder;
     HashMapBuilder<String, Plan::Type> types_builder;
     HashMapBuilder<String, Plan::Function> functions_builder;
+    List<Plan::Module> module_list;
 
-    Planner(Program& program, HashSetBuilder<String> intrinsics_builder, HashMapBuilder<String, Plan::Type> types_builder, HashMapBuilder<String, Plan::Function> functions_builder);
+    Planner(Program& program, HashSetBuilder<String> intrinsics_builder, HashMapBuilder<String, Plan::Type> types_builder, HashMapBuilder<String, Plan::Function> functions_builder, List<Plan::Module> module_list);
     Planner(Program& program);
     Result<Plan::Compilation, PlannerError> plan_program(Page* rp, Page* ep);
     Result<Void, PlannerError> plan_main_function(Page* ep, Program& program);

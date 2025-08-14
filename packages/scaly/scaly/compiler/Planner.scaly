@@ -7,6 +7,7 @@ define Planner
     intrinsics_builder: HashSetBuilder[String]
     types_builder: HashMapBuilder[String, Plan.Type]
     functions_builder: HashMapBuilder[String, Plan.Function]
+    module_list: List[Plan.Module]
 )
 {
 
