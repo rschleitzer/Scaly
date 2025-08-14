@@ -346,7 +346,7 @@ struct CompilerError;
 namespace compiler {
 }
 namespace Plan {
-struct Module;
+struct Compilation;
 struct Type;
 struct Function;
 struct Argument;

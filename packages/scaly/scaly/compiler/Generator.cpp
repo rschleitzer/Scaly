@@ -159,7 +159,7 @@ llvm::Function* generate_function(llvm::Module& module, DIFile* di_file, DIBuild
     return llvm_function;
 }
 
-void generate_module(Plan::Module& plan_module) {
+void generate_module(Plan::Compilation& plan_module) {
     Region _r;
     auto context = std::make_unique<LLVMContext>();
     auto module = std::make_unique<llvm::Module>(plan_module.name.to_c_string(_r.get_page()), *context);

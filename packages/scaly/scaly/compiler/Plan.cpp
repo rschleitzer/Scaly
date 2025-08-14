@@ -4,7 +4,7 @@ namespace compiler {
 namespace Plan {
 
 
-Module::Module(String path, String name, HashMap<String, Type> types, HashMap<String, Function> functions) : path(path), name(name), types(types), functions(functions) {}
+Compilation::Compilation(String path, String name, HashMap<String, Type> types, HashMap<String, Function> functions) : path(path), name(name), types(types), functions(functions) {}
 
 Type::Type(String name, Vector<String> fields) : name(name), fields(fields) {}
 

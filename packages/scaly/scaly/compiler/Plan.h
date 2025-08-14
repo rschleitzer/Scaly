@@ -5,13 +5,13 @@ using namespace scaly;
 using namespace scaly::memory;
 namespace Plan {
 
-struct Module : Object {
+struct Compilation : Object {
     String path;
     String name;
     HashMap<String, Type> types;
     HashMap<String, Function> functions;
 
-    Module(String path, String name, HashMap<String, Type> types, HashMap<String, Function> functions);
+    Compilation(String path, String name, HashMap<String, Type> types, HashMap<String, Function> functions);
 };
 
 struct Type : Object {

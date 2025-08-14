@@ -1,6 +1,6 @@
 define Plan
 {
-    define Module
+    define Compilation
     (
         path: String,
         name: String,

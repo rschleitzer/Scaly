@@ -12,7 +12,7 @@ define Planner
 
 init(program: ref[Program]) (program(program)) (intrinsics_builder(new_ HashSetBuilder[String]())) (types_builder(new_ HashMapBuilder[String, Plan.Type]())) (functions_builder(new_ HashMapBuilder[String, Plan.Function]())) {}
 
-function plan_program(this: Planner) returns Plan.Module throws PlannerError {
+function plan_program(this: Planner) returns Plan.Compilation throws PlannerError {
     var r Region()
 
     let file program.module_.file
@@ -50,7 +50,7 @@ function plan_program(this: Planner) returns Plan.Module throws PlannerError {
     path_builder.append(path)
     var file_builder: ref[StringBuilder] *StringBuilder$(program.module_.name)
     file_builder.append(".scaly")
-    return Plan->Module(
+    return Plan->Compilation(
         path_builder.to_string(get_page()),
         file_builder.to_string(get_page()), 
         new_ HashMap[String, Plan.Type](rp, types_builder),
