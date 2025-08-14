@@ -4,10 +4,8 @@ define Plan
     (
         path: String,
         name: String,
-        types: Vector[Type],
-        type_map: HashMap[String, Type],
-        functions: Vector[Function]
-        function_map: HashMap[String, Function]
+        types: HashMap[String, Type],
+        functions: HashMap[String, Function]
     )
 
     define Type(name: String, fields: Vector[String])

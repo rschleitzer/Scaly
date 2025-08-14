@@ -170,7 +170,7 @@ void generate_module(Plan::Module& plan_module) {
     DIFile* debug_file = di_builder.createFile(plan_module.name.to_c_string(_r.get_page()), plan_module.path.to_c_string(_r.get_page()));
     auto cu = di_builder.createCompileUnit(dwarf::DW_LANG_C, debug_file, "scaly", false, "", 0);
 
-    auto _function_iterator = plan_module.functions.get_iterator();
+    auto _function_iterator = HashMapIterator<String, Plan::Function>(plan_module.functions);
     while (auto _function = _function_iterator.next()) {
         auto planFunction = *_function;
         auto function = generate_function(*module, debug_file, di_builder, planFunction);

@@ -8,12 +8,10 @@ namespace Plan {
 struct Module : Object {
     String path;
     String name;
-    Vector<Type> types;
-    HashMap<String, Type> type_map;
-    Vector<Function> functions;
-    HashMap<String, Function> function_map;
+    HashMap<String, Type> types;
+    HashMap<String, Function> functions;
 
-    Module(String path, String name, Vector<Type> types, HashMap<String, Type> type_map, Vector<Function> functions, HashMap<String, Function> function_map);
+    Module(String path, String name, HashMap<String, Type> types, HashMap<String, Function> functions);
 };
 
 struct Type : Object {

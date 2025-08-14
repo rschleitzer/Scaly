@@ -6,7 +6,7 @@ using namespace scaly::containers;
 using namespace scaly::io;
 
 
-Planner::Planner(Program& program, HashSetBuilder<String> intrinsics_builder, List<Plan::Type> types_list, HashMapBuilder<String, Plan::Type> types_builder, List<Plan::Function> functions_list, HashMapBuilder<String, Plan::Function> functions_builder) : program(program), intrinsics_builder(intrinsics_builder), types_list(types_list), types_builder(types_builder), functions_list(functions_list), functions_builder(functions_builder) {}
+Planner::Planner(Program& program, HashSetBuilder<String> intrinsics_builder, HashMapBuilder<String, Plan::Type> types_builder, HashMapBuilder<String, Plan::Function> functions_builder) : program(program), intrinsics_builder(intrinsics_builder), types_builder(types_builder), functions_builder(functions_builder) {}
 
 Planner::Planner(Program& program) : program(program), intrinsics_builder(HashSetBuilder<String>()), types_builder(HashMapBuilder<String, Plan::Type>()), functions_builder(HashMapBuilder<String, Plan::Function>()){
 }
@@ -87,7 +87,7 @@ Result<Plan::Module, PlannerError> Planner::plan_program(Page* rp, Page* ep) {
     path_builder.append(path);
     StringBuilder& file_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder(program.module_.name);
     file_builder.append(".scaly");
-    return Result<Plan::Module, PlannerError>(Plan::Module(path_builder.to_string(get_page()), file_builder.to_string(get_page()), Vector<Plan::Type>(rp, types_list), HashMap<String, Plan::Type>(rp, types_builder), Vector<Plan::Function>(rp, functions_list), HashMap<String, Plan::Function>(rp, functions_builder)));
+    return Result<Plan::Module, PlannerError>(Plan::Module(path_builder.to_string(get_page()), file_builder.to_string(get_page()), HashMap<String, Plan::Type>(rp, types_builder), HashMap<String, Plan::Function>(rp, functions_builder)));
 }
 
 Result<Void, PlannerError> Planner::plan_main_function(Page* ep, Program& program) {
@@ -142,7 +142,6 @@ Result<Void, PlannerError> Planner::plan_main_function(Page* ep, Program& progra
     const auto int_name = String(get_page(), "int32");
     Plan::Function plan_function = Plan::Function(main_name, Vector<Plan::Argument>(get_page(), input_list), int_name, Vector<Plan::Block>(get_page(), blocks));
     functions_builder.add(main_name, plan_function);
-    functions_list.add(plan_function);
     return Result<Void, PlannerError>(Void());
 }
 
@@ -920,7 +919,6 @@ Result<Void, PlannerError> Planner::plan_function(Page* ep, String file, HashMap
     };
     Plan::Function plan_function = Plan::Function(func.name, Vector<Plan::Argument>(get_page(), input_list), returnType, Vector<Plan::Block>(get_page(), blocks));
     functions_builder.add(func.name, plan_function);
-    functions_list.add(plan_function);
     return Result<Void, PlannerError>(Void());
 }
 

@@ -5,9 +5,7 @@ define Planner
 (
     program: ref[Program]
     intrinsics_builder: HashSetBuilder[String]
-    types_list: List[Plan.Type]
     types_builder: HashMapBuilder[String, Plan.Type]
-    functions_list: List[Plan.Function]
     functions_builder: HashMapBuilder[String, Plan.Function]
 )
 {
@@ -55,9 +53,7 @@ function plan_program(this: Planner) returns Plan.Module throws PlannerError {
     return Plan->Module(
         path_builder.to_string(get_page()),
         file_builder.to_string(get_page()), 
-        new_ Vector[Plan.Type](rp, types_list),
         new_ HashMap[String, Plan.Type](rp, types_builder),
-        new_ Vector[Plan.Function](rp, functions_list),
         new_ HashMap[String, Plan.Function](rp, functions_builder))
 }
 
@@ -112,7 +108,6 @@ function plan_main_function(this: Planner, program: ref[Program]) throws Planner
     let int_name String(get_page(), "int32")
     var plan_function: Plan.Function Plan->Function(main_name, new_ Vector[Plan.Argument](get_page(), input_list), int_name, new_ Vector[Plan.Block](get_page(), blocks))
     functions_builder.add(main_name, plan_function)
-    functions_list.add(plan_function)
     return Void()
 }
 
@@ -501,7 +496,6 @@ function plan_function(this: Planner, file: String, symbols: ref[HashMap[String,
 
     var plan_function: Plan.Function Plan->Function(func.name, new_ Vector[Plan.Argument](get_page(), input_list), returnType, new_ Vector[Plan.Block](get_page(), blocks))
     functions_builder.add(func.name, plan_function)
-    functions_list.add(plan_function)
     return Void()
 }
 
