@@ -4,13 +4,13 @@ namespace compiler {
 namespace Plan {
 
 
-Compilation::Compilation(String path, String name, HashMap<String, Type> types, HashMap<String, Function> functions) : path(path), name(name), types(types), functions(functions) {}
+Source::Source(String path, String name) : path(path), name(name) {}
 
-Module::Module(String path, String name) : path(path), name(name) {}
+Compilation::Compilation(Source* source, HashMap<String, Type> types, HashMap<String, Function> functions) : source(source), types(types), functions(functions) {}
 
 Type::Type(String name, Vector<String> fields) : name(name), fields(fields) {}
 
-Function::Function(String name, Vector<Argument> input, String output, Vector<Block> blocks) : name(name), input(input), output(output), blocks(blocks) {}
+Function::Function(Source* source, String name, Vector<Argument> input, String output, Vector<Block> blocks) : source(source), name(name), input(input), output(output), blocks(blocks) {}
 
 Argument::Argument(String name, String type) : name(name), type(type) {}
 

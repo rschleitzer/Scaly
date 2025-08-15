@@ -6,7 +6,7 @@ using namespace scaly::containers;
 using namespace scaly::io;
 
 
-Planner::Planner(Program& program, HashSetBuilder<String> intrinsics_builder, HashMapBuilder<String, Plan::Type> types_builder, HashMapBuilder<String, Plan::Function> functions_builder, List<Plan::Module> module_list) : program(program), intrinsics_builder(intrinsics_builder), types_builder(types_builder), functions_builder(functions_builder), module_list(module_list) {}
+Planner::Planner(Program& program, HashSetBuilder<String> intrinsics_builder, HashMapBuilder<String, Plan::Type> types_builder, HashMapBuilder<String, Plan::Function> functions_builder, List<Plan::Source> module_list) : program(program), intrinsics_builder(intrinsics_builder), types_builder(types_builder), functions_builder(functions_builder), module_list(module_list) {}
 
 Planner::Planner(Program& program) : program(program), intrinsics_builder(HashSetBuilder<String>()), types_builder(HashMapBuilder<String, Plan::Type>()), functions_builder(HashMapBuilder<String, Plan::Function>()){
 }
@@ -40,37 +40,35 @@ Result<Plan::Compilation, PlannerError> Planner::plan_program(Page* rp, Page* ep
                 ;
         };
     };
-    {
-        const auto _void_result = plan_module(ep, program.module_);
-        if (_void_result._tag == Success::Error) {
-            const auto _void_Error = _void_result._Error;
-            switch (_void_Error._tag) {
-            default:
-                return Result<Plan::Compilation, PlannerError>(_void_result._Error);
+    const auto _source_result = plan_module(rp, ep, program.module_);
+    auto source = _source_result._Ok;
+    if (_source_result._tag == Success::Error) {
+        const auto _source_Error = _source_result._Error;
+        switch (_source_Error._tag) {
+        default:
+            return Result<Plan::Compilation, PlannerError>(_source_result._Error);
 
-            }
-        }}
-        ;
+        }
+    };
     
     auto _module__iterator = program.module_.modules.get_iterator();
     while (auto _module_ = _module__iterator.next()) {
         auto module_ = *_module_;{
-            {
-                const auto _void_result = plan_module(ep, module_);
-                if (_void_result._tag == Success::Error) {
-                    const auto _void_Error = _void_result._Error;
-                    switch (_void_Error._tag) {
-                    default:
-                        return Result<Plan::Compilation, PlannerError>(_void_result._Error);
+            const auto _source_result = plan_module(rp, ep, module_);
+            auto source = _source_result._Ok;
+            if (_source_result._tag == Success::Error) {
+                const auto _source_Error = _source_result._Error;
+                switch (_source_Error._tag) {
+                default:
+                    return Result<Plan::Compilation, PlannerError>(_source_result._Error);
 
-                    }
-                }}
-                ;
+                }
+            };
         }
     };
     if (program.statements.length>0) {
         {
-            const auto _void_result = plan_main_function(ep, program);
+            const auto _void_result = plan_main_function(ep, source, program);
             if (_void_result._tag == Success::Error) {
                 const auto _void_Error = _void_result._Error;
                 switch (_void_Error._tag) {
@@ -81,16 +79,10 @@ Result<Plan::Compilation, PlannerError> Planner::plan_program(Page* rp, Page* ep
             }}
             ;
     };
-    StringBuilder& path_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder(".");
-    if (path.get_length()>0) 
-        path_builder.append('/');
-    path_builder.append(path);
-    StringBuilder& file_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder(program.module_.name);
-    file_builder.append(".scaly");
-    return Result<Plan::Compilation, PlannerError>(Plan::Compilation(path_builder.to_string(get_page()), file_builder.to_string(get_page()), HashMap<String, Plan::Type>(rp, types_builder), HashMap<String, Plan::Function>(rp, functions_builder)));
+    return Result<Plan::Compilation, PlannerError>(Plan::Compilation(source, HashMap<String, Plan::Type>(rp, types_builder), HashMap<String, Plan::Function>(rp, functions_builder)));
 }
 
-Result<Void, PlannerError> Planner::plan_main_function(Page* ep, Program& program) {
+Result<Void, PlannerError> Planner::plan_main_function(Page* ep, Plan::Source* source, Program& program) {
     auto r = Region();
     const auto main_name = String(get_page(), "main");
     if (functions_builder.contains(main_name)) 
@@ -140,28 +132,38 @@ Result<Void, PlannerError> Planner::plan_main_function(Page* ep, Program& progra
     auto block = Plan::Block(String(get_page(), "entry"), Vector<Plan::Instruction>(get_page(), instructions));
     blocks.add(block);
     const auto int_name = String(get_page(), "int32");
-    Plan::Function plan_function = Plan::Function(main_name, Vector<Plan::Argument>(get_page(), input_list), int_name, Vector<Plan::Block>(get_page(), blocks));
+    Plan::Function plan_function = Plan::Function(source, main_name, Vector<Plan::Argument>(get_page(), input_list), int_name, Vector<Plan::Block>(get_page(), blocks));
     functions_builder.add(main_name, plan_function);
     return Result<Void, PlannerError>(Void());
 }
 
-Result<Void, PlannerError> Planner::plan_module(Page* ep, Module& module_) {
+Result<Plan::Source*, PlannerError> Planner::plan_module(Page* rp, Page* ep, Module& module_) {
     auto r = Region();
+    const auto file = module_.file;
+    auto path = Path::get_directory_name(r.get_page(), file);
+    StringBuilder& path_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder(".");
+    if (path.get_length()>0) 
+        path_builder.append('/');
+    path_builder.append(path);
+    StringBuilder& file_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder(module_.name);
+    file_builder.append(".scaly");
+    auto page = get_page();
+    auto source = new (alignof(Plan::Source), page) Plan::Source(path_builder.to_string(page), file_builder.to_string(page));
     {
-        const auto _void_result = plan_symbols(ep, module_.file, module_.symbols, module_.members);
+        const auto _void_result = plan_symbols(ep, source, module_.file, module_.symbols, module_.members);
         if (_void_result._tag == Success::Error) {
             const auto _void_Error = _void_result._Error;
             switch (_void_Error._tag) {
             default:
-                return Result<Void, PlannerError>(_void_result._Error);
+                return Result<Plan::Source*, PlannerError>(_void_result._Error);
 
             }
         }}
         ;
-    return Result<Void, PlannerError>(Void());
+    return Result<Plan::Source*, PlannerError>(source);
 }
 
-Result<Void, PlannerError> Planner::plan_symbols(Page* ep, String file, HashMap<String, Nameable>& symbols, Vector<Member> members) {
+Result<Void, PlannerError> Planner::plan_symbols(Page* ep, Plan::Source* source, String file, HashMap<String, Nameable>& symbols, Vector<Member> members) {
     auto r = Region();
     
     auto _member_iterator = members.get_iterator();
@@ -175,7 +177,7 @@ Result<Void, PlannerError> Planner::plan_symbols(Page* ep, String file, HashMap<
                     {
                         auto func = _result._Function;
                         {
-                            const auto _void_result = plan_function(ep, file, symbols, func);
+                            const auto _void_result = plan_function(ep, source, file, symbols, func);
                             if (_void_result._tag == Success::Error) {
                                 const auto _void_Error = _void_result._Error;
                                 switch (_void_Error._tag) {
@@ -819,7 +821,7 @@ Result<List<Plan::Instruction>*, PlannerError> Planner::plan_action(Page* rp, Pa
     return Result<List<Plan::Instruction>*, PlannerError>(instructions);
 }
 
-Result<Void, PlannerError> Planner::plan_function(Page* ep, String file, HashMap<String, Nameable>& symbols, Function& func) {
+Result<Void, PlannerError> Planner::plan_function(Page* ep, Plan::Source* source, String file, HashMap<String, Nameable>& symbols, Function& func) {
     auto r = Region();
     if (functions_builder.contains(func.name)) 
         return Result<Void, PlannerError>(DuplicateFunction(String(ep, func.name)));
@@ -917,7 +919,7 @@ Result<Void, PlannerError> Planner::plan_function(Page* ep, String file, HashMap
             }
         }
     };
-    Plan::Function plan_function = Plan::Function(func.name, Vector<Plan::Argument>(get_page(), input_list), returnType, Vector<Plan::Block>(get_page(), blocks));
+    Plan::Function plan_function = Plan::Function(source, func.name, Vector<Plan::Argument>(get_page(), input_list), returnType, Vector<Plan::Block>(get_page(), blocks));
     functions_builder.add(func.name, plan_function);
     return Result<Void, PlannerError>(Void());
 }

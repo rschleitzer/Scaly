@@ -5,20 +5,19 @@ using namespace scaly;
 using namespace scaly::memory;
 namespace Plan {
 
-struct Compilation : Object {
+struct Source : Object {
     String path;
     String name;
+
+    Source(String path, String name);
+};
+
+struct Compilation : Object {
+    Source* source;
     HashMap<String, Type> types;
     HashMap<String, Function> functions;
 
-    Compilation(String path, String name, HashMap<String, Type> types, HashMap<String, Function> functions);
-};
-
-struct Module : Object {
-    String path;
-    String name;
-
-    Module(String path, String name);
+    Compilation(Source* source, HashMap<String, Type> types, HashMap<String, Function> functions);
 };
 
 struct Type : Object {
@@ -29,12 +28,13 @@ struct Type : Object {
 };
 
 struct Function : Object {
+    Source* source;
     String name;
     Vector<Argument> input;
     String output;
     Vector<Block> blocks;
 
-    Function(String name, Vector<Argument> input, String output, Vector<Block> blocks);
+    Function(Source* source, String name, Vector<Argument> input, String output, Vector<Block> blocks);
 };
 
 struct Argument : Object {

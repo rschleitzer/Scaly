@@ -1,23 +1,23 @@
 define Plan
 {
-    define Compilation
+    define Source
     (
         path: String,
-        name: String,
-        types: HashMap[String, Type],
-        functions: HashMap[String, Function]
+        name: String
     )
 
-    define Module
+    define Compilation
     (
-        path: String,
-        name: String,
+        source: pointer[Source],
+        types: HashMap[String, Type],
+        functions: HashMap[String, Function]
     )
 
     define Type(name: String, fields: Vector[String])
     
     define Function
     (
+        source: pointer[Source],
         name: String,
         input: Vector[Argument],
         output: String,

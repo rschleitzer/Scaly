@@ -7,7 +7,7 @@ define Planner
     intrinsics_builder: HashSetBuilder[String]
     types_builder: HashMapBuilder[String, Plan.Type]
     functions_builder: HashMapBuilder[String, Plan.Function]
-    module_list: List[Plan.Module]
+    module_list: List[Plan.Source]
 )
 {
 
@@ -30,35 +30,28 @@ function plan_program(this: Planner) returns Plan.Compilation throws PlannerErro
         }
     }
 
-    try plan_module(ep, program.module_)
-    else throw
+    try let source plan_module(rp, ep, program.module_)
+        else throw
 
     for module_ in program.module_.modules
     {
-        try plan_module(ep, module_)
+        try let source plan_module(rp, ep, module_)
             else throw
     }
 
     if program.statements.length > 0
     {
-        try plan_main_function(ep, program)
+        try plan_main_function(ep, source, program)
             else throw
     }
 
-    var path_builder: ref[StringBuilder] *StringBuilder$(".")
-    if path.get_length() > 0
-        path_builder.append('/')
-    path_builder.append(path)
-    var file_builder: ref[StringBuilder] *StringBuilder$(program.module_.name)
-    file_builder.append(".scaly")
     return Plan->Compilation(
-        path_builder.to_string(get_page()),
-        file_builder.to_string(get_page()), 
+        source,
         new_ HashMap[String, Plan.Type](rp, types_builder),
         new_ HashMap[String, Plan.Function](rp, functions_builder))
 }
 
-function plan_main_function(this: Planner, program: ref[Program]) throws PlannerError {
+function plan_main_function(this: Planner, source: pointer[Plan.Source], program: ref[Program]) throws PlannerError {
     var r Region()
     let main_name String(get_page(), "main")
     if functions_builder.contains(main_name)
@@ -107,28 +100,42 @@ function plan_main_function(this: Planner, program: ref[Program]) throws Planner
     blocks.add(block)
 
     let int_name String(get_page(), "int32")
-    var plan_function: Plan.Function Plan->Function(main_name, new_ Vector[Plan.Argument](get_page(), input_list), int_name, new_ Vector[Plan.Block](get_page(), blocks))
+    var plan_function: Plan.Function Plan->Function(source, main_name, new_ Vector[Plan.Argument](get_page(), input_list), int_name, new_ Vector[Plan.Block](get_page(), blocks))
     functions_builder.add(main_name, plan_function)
     return Void()
 }
 
-function plan_module(this: Planner, module_: ref[Module]) throws PlannerError {
+function plan_module(this: Planner, module_: ref[Module]) returns pointer[Plan.Source] throws PlannerError {
     var r Region()
 
-    try plan_symbols(ep, module_.file, module_.symbols, module_.members)
+    let file module_.file
+    var path Path->get_directory_name(r.get_page(), file)
+    var path_builder: ref[StringBuilder] *StringBuilder$(".")
+    if path.get_length() > 0
+        path_builder.append('/')
+    path_builder.append(path)
+    var file_builder: ref[StringBuilder] *StringBuilder$(module_.name)
+    file_builder.append(".scaly")
+
+    var page get_page()
+    var source new_ Plan.Source^page(
+        path_builder.to_string(page),
+        file_builder.to_string(page))
+
+    try plan_symbols(ep, source, module_.file, module_.symbols, module_.members)
         else throw
 
-    return Void()
+    return source
 }
 
-function plan_symbols(this: Planner, file: String, symbols: ref[HashMap[String, Nameable]], members: Vector[Member]) throws PlannerError {
+function plan_symbols(this: Planner, source: pointer[Plan.Source], file: String, symbols: ref[HashMap[String, Nameable]], members: Vector[Member]) throws PlannerError {
     var r Region()
 
     for member in members
     {
         choose member
             when func: Member.Function
-                try plan_function(ep, file, symbols, func)
+                try plan_function(ep, source, file, symbols, func)
                     else throw
             when concept: Member.Concept
                 try plan_concept(ep, file, symbols, concept)
@@ -437,7 +444,7 @@ function plan_action(this: Planner, file: String, environment: ref[List[HashMap[
     return instructions
 }
 
-function plan_function(this: Planner, file: String, symbols: ref[HashMap[String, Nameable]], func: ref[Function]) throws PlannerError {
+function plan_function(this: Planner, source: pointer[Plan.Source], file: String, symbols: ref[HashMap[String, Nameable]], func: ref[Function]) throws PlannerError {
     var r Region()
 
     if functions_builder.contains(func.name)
@@ -495,7 +502,7 @@ function plan_function(this: Planner, file: String, symbols: ref[HashMap[String,
         when i: Implementation.Intrinsic
             return Void()
 
-    var plan_function: Plan.Function Plan->Function(func.name, new_ Vector[Plan.Argument](get_page(), input_list), returnType, new_ Vector[Plan.Block](get_page(), blocks))
+    var plan_function: Plan.Function Plan->Function(source, func.name, new_ Vector[Plan.Argument](get_page(), input_list), returnType, new_ Vector[Plan.Block](get_page(), blocks))
     functions_builder.add(func.name, plan_function)
     return Void()
 }

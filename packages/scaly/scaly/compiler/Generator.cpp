@@ -103,7 +103,7 @@ void add_instruction(IRBuilder<>& builder, HashMap<String, llvm::Value*>& argume
     }
 }
 
-llvm::Function* generate_function(llvm::Module& module, DIFile* di_file, DIBuilder& di_builder, Plan::Function& plan_function) {
+llvm::Function* generate_function(llvm::Module& module, DIBuilder& di_builder, Plan::Function& plan_function) {
     auto r = Region();
     LLVMContext& context = module.getContext();
     llvm::Type* return_type = get_Type(context, plan_function.output);
@@ -134,6 +134,7 @@ llvm::Function* generate_function(llvm::Module& module, DIFile* di_file, DIBuild
     }
 
     IRBuilder<> builder(context);
+    DIFile* di_file = di_builder.createFile(plan_function.source->name.to_c_string(r.get_page()), plan_function.source->path.to_c_string(r.get_page()));
     auto subprogram = di_builder.createFunction(di_file, function_name, StringRef(), di_file, 1,
     di_builder.createSubroutineType(di_builder.getOrCreateTypeArray({})),
     1, DINode::FlagPrototyped, DISubprogram::SPFlagDefinition);
@@ -162,18 +163,18 @@ llvm::Function* generate_function(llvm::Module& module, DIFile* di_file, DIBuild
 void generate_module(Plan::Compilation& compilation) {
     Region _r;
     auto context = std::make_unique<LLVMContext>();
-    auto module = std::make_unique<llvm::Module>(compilation.name.to_c_string(_r.get_page()), *context);
+    auto module = std::make_unique<llvm::Module>(compilation.source->name.to_c_string(_r.get_page()), *context);
     module->addModuleFlag(llvm::Module::Warning, "Debug Info Version", DEBUG_METADATA_VERSION);
     module->addModuleFlag(llvm::Module::Warning, "Dwarf Version", 5);
 
     DIBuilder di_builder(*module);
-    DIFile* debug_file = di_builder.createFile(compilation.name.to_c_string(_r.get_page()), compilation.path.to_c_string(_r.get_page()));
+    DIFile* debug_file = di_builder.createFile(compilation.source->name.to_c_string(_r.get_page()), compilation.source->path.to_c_string(_r.get_page()));
     auto cu = di_builder.createCompileUnit(dwarf::DW_LANG_C, debug_file, "scaly", false, "", 0);
 
     auto _function_iterator = HashMapIterator<String, Plan::Function>(compilation.functions);
     while (auto _function = _function_iterator.next()) {
         auto planFunction = *_function;
-        auto function = generate_function(*module, debug_file, di_builder, planFunction);
+        auto function = generate_function(*module, di_builder, planFunction);
     }
 
     di_builder.finalize();
