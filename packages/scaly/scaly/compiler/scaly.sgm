@@ -74,6 +74,7 @@
     <content link = Constant
     <content link = Delegate
     <content link = Intrinsic
+    <content link = Type
 
 <syntax id = Class
     <content link = Structure                               property = structure
@@ -116,7 +117,7 @@
 
 <syntax id = Constant
     <content link = Type                                    property = type
-    <content link = Operand               multiple          property = operation
+    <content link = Operand               multiple optional property = operation
     <content colon                                 optional
 
 <syntax id = Delegate

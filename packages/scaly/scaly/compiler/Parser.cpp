@@ -319,6 +319,8 @@ ConceptSyntax::ConceptSyntax(struct DelegateSyntax _Delegate) : _tag(Delegate), 
 
 ConceptSyntax::ConceptSyntax(struct IntrinsicSyntax _Intrinsic) : _tag(Intrinsic), _Intrinsic(_Intrinsic) {}
 
+ConceptSyntax::ConceptSyntax(struct TypeSyntax _Type) : _tag(Type), _Type(_Type) {}
+
 
 GenericParameterSyntax::GenericParameterSyntax(size_t start, size_t end, String name, Vector<AttributeSyntax>* attributes) : start(start), end(end), name(name), attributes(attributes) {}
 
@@ -2169,6 +2171,46 @@ Result<ConceptSyntax, ParserError> Parser::parse_concept(Page* rp, Page* ep) {
             }
         };
     };
+    {
+        {
+            auto _result = parse_type(rp, ep);
+            switch (_result._tag)
+            {
+                case Success::Error:
+                {
+                    auto error = _result._Error;
+                    {
+                        {
+                            auto _result = error;
+                            switch (_result._tag)
+                            {
+                                case ParserError::Invalid:
+                                {
+                                    auto i = _result._Invalid;
+                                    return Result<ConceptSyntax, ParserError>(i);
+                                    break;
+                                }
+                                case ParserError::Different:
+                                {
+                                    auto d = _result._Different;
+                                    {
+                                    };
+                                    break;
+                                }
+                            }
+                        };
+                    };
+                    break;
+                }
+                case Success::Ok:
+                {
+                    auto node = _result._Ok;
+                    return Result<ConceptSyntax, ParserError>(ConceptSyntax(TypeSyntax(node)));
+                    break;
+                }
+            }
+        };
+    };
     return Result<ConceptSyntax, ParserError>(ParserError(DifferentSyntax()));
 }
 
@@ -2748,19 +2790,41 @@ Result<ConstantSyntax, ParserError> Parser::parse_constant(Page* rp, Page* ep) {
         }
     };
     const auto operation_start = lexer.position;
-    const auto _operation_result = parse_operand_list(rp, ep);
-    auto operation = _operation_result._Ok;
-    if (_operation_result._tag == Success::Error) {
-        const auto _operation_Error = _operation_result._Error;
-        switch (_operation_Error._tag) {
-            case ParserError::Different: {
-                const auto d = _operation_Error._Different;
-                return Result<ConstantSyntax, ParserError>(InvalidSyntax(operation_start, lexer.position, String(ep, "a valid Operand syntax")));
+    Vector<OperandSyntax>* operation = nullptr;
+    {
+        auto _result = parse_operand_list(rp, ep);
+        switch (_result._tag)
+        {
+            case Success::Error:
+            {
+                auto error = _result._Error;
+                {
+                    {
+                        auto _result = error;
+                        switch (_result._tag)
+                        {
+                            case ParserError::Different:
+                            {
+                                auto d = _result._Different;
+                                {
+                                };
+                                break;
+                            }
+                            case ParserError::Invalid:
+                            {
+                                auto i = _result._Invalid;
+                                return Result<ConstantSyntax, ParserError>(i);
+                                break;
+                            }
+                        }
+                    };
+                };
                 break;
             }
-            case ParserError::Invalid: {
-                const auto i = _operation_Error._Invalid;
-                return Result<ConstantSyntax, ParserError>(i);
+            case Success::Ok:
+            {
+                auto success = _result._Ok;
+                operation = success;
                 break;
             }
         }

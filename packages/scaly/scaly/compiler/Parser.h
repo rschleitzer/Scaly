@@ -1056,6 +1056,7 @@ struct ConceptSyntax : Object {
     ConceptSyntax(ConstantSyntax);
     ConceptSyntax(DelegateSyntax);
     ConceptSyntax(IntrinsicSyntax);
+    ConceptSyntax(TypeSyntax);
     enum {
         Class,
         Namespace,
@@ -1063,6 +1064,7 @@ struct ConceptSyntax : Object {
         Constant,
         Delegate,
         Intrinsic,
+        Type,
     } _tag;
     union {
         struct ClassSyntax _Class;
@@ -1071,6 +1073,7 @@ struct ConceptSyntax : Object {
         struct ConstantSyntax _Constant;
         struct DelegateSyntax _Delegate;
         struct IntrinsicSyntax _Intrinsic;
+        struct TypeSyntax _Type;
     };
 };
 struct GenericParameterSyntax : Object {

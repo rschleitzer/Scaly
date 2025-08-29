@@ -767,6 +767,7 @@ define ConceptSyntax union (
     Constant: ConstantSyntax
     Delegate: DelegateSyntax
     Intrinsic: IntrinsicSyntax
+    Type: TypeSyntax
 )
 
 define GenericParameterSyntax
@@ -1591,6 +1592,17 @@ define Parser
                 when node: Success.Ok
                     return ConceptSyntax(IntrinsicSyntax(node))
         }
+        {
+            choose parse_type(rp, ep)
+                when error: Success.Error
+                {
+                    choose error
+                        when i: ParserError.Invalid throw i
+                        when d: ParserError.Different {}
+                }
+                when node: Success.Ok
+                    return ConceptSyntax(TypeSyntax(node))
+        }
         throw ParserError(DifferentSyntax())
     }
 
@@ -1886,10 +1898,17 @@ define Parser
             when i: ParserError.Invalid throw i
 
         let operation_start lexer.position
-        try let operation parse_operand_list(rp, ep)
-            when d: ParserError.Different
-                throw InvalidSyntax(operation_start, lexer.position, String(ep, "a valid Operand syntax"))
-            when i: ParserError.Invalid throw i
+        var operation: pointer[Vector[OperandSyntax]] null 
+        choose parse_operand_list(rp, ep)
+            when error: Success.Error
+            {
+                choose error
+                    when d: ParserError.Different {}
+                    when i: ParserError.Invalid
+                        throw i
+            }
+            when success: Success.Ok
+                set operation: success
 
         let start_colon_3 lexer.previous_position
         let success_colon_3 lexer.parse_colon()
