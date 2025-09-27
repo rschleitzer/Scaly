@@ -348,10 +348,32 @@ namespace compiler {
 namespace Plan {
 struct Source;
 struct Type;
-struct Function;
-struct Argument;
 struct Block;
+struct DebugInfo;
+struct LLVMType;
+struct Variable;
+struct PhiIncoming;
+struct SwitchCase;
+struct CallData;
+struct LoadData;
+struct StoreData;
+struct AllocaData;
+struct GetElementPtrData;
+struct PhiData;
+struct BranchData;
+struct SwitchData;
+struct ReturnData;
+struct IntrinsicData;
+struct CompareData;
+struct CastData;
+struct BinaryData;
+struct InstructionData;
 struct Instruction;
+struct Argument;
+struct Function;
+struct GlobalVariable;
+struct Metadata;
+struct Module;
 struct Program;
 }
 struct Planner;
