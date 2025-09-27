@@ -8,13 +8,13 @@ define Plan
         name: String
     )
 
-    define Type(name: String, fields: Vector[String])
+    define PlanType(name: String, fields: Vector[String])
 
 
-    define Block
+    define BasicBlock
     (
         name: String
-        instructions: Vector[Instruction]
+        instructions: Vector[PlanInstruction]
         predecessors: Vector[String]
         successors: Vector[String]
         is_entry: bool
@@ -171,7 +171,7 @@ define Plan
         Binary: BinaryData
     )
 
-    define Instruction
+    define PlanInstruction
     (
         result: pointer[String]
         name: String
@@ -187,7 +187,7 @@ define Plan
         data: pointer[InstructionData]
     )
 
-    define Argument
+    define PlanArgument
     (
         name: String
         type: String
@@ -195,13 +195,13 @@ define Plan
         debug_info: pointer[DebugInfo]
     )
 
-    define Function
+    define PlanFunction
     (
         source: pointer[Source]
         name: String
-        input: Vector[Argument]
+        input: Vector[PlanArgument]
         output: String
-        blocks: Vector[Block]
+        blocks: Vector[BasicBlock]
         debug_info: pointer[DebugInfo]
         linkage: String
         calling_convention: String
@@ -233,7 +233,7 @@ define Plan
         operands: Vector[String]
     )
 
-    define Module
+    define PlanModule
     (
         name: String
         source_filename: String
@@ -244,13 +244,13 @@ define Plan
         named_metadata: HashMap[String, Vector[Metadata]]
     )
 
-    define Program
+    define PlanProgram
     (
         source: pointer[Source]
-        module_info: Module
-        types: HashMap[String, Type]
+        module_info: PlanModule
+        types: HashMap[String, PlanType]
         llvm_types: HashMap[String, LLVMType]
-        functions: HashMap[String, Function]
+        functions: HashMap[String, PlanFunction]
         global_variables: HashMap[String, GlobalVariable]
         metadata: HashMap[String, Metadata]
         debug_info_nodes: Vector[DebugInfo]

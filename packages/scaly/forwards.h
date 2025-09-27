@@ -347,8 +347,8 @@ namespace compiler {
 }
 namespace Plan {
 struct Source;
-struct Type;
-struct Block;
+struct PlanType;
+struct BasicBlock;
 struct DebugInfo;
 struct LLVMType;
 struct Variable;
@@ -368,13 +368,13 @@ struct CompareData;
 struct CastData;
 struct BinaryData;
 struct InstructionData;
-struct Instruction;
-struct Argument;
-struct Function;
+struct PlanInstruction;
+struct PlanArgument;
+struct PlanFunction;
 struct GlobalVariable;
 struct Metadata;
-struct Module;
-struct Program;
+struct PlanModule;
+struct PlanProgram;
 }
 struct Planner;
 }

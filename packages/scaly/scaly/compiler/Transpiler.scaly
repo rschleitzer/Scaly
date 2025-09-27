@@ -1037,7 +1037,7 @@ function build_variable(file: String, builder: ref[StringBuilder], type: ref[Typ
         when t: Lifetime.Thrown
             throw FeatureNotImplemented(file, t.span, String(ep, "Thrown"))
 
-    build_type(builder, &type, false)
+    build_type(builder, &type, true)
 
     if member_access <> null
     {
@@ -1327,7 +1327,7 @@ function build_condition(file: String, builder: ref[StringBuilder], binding: ref
     {
         if binding.item.type <> null
         {
-            build_type(builder, binding.item.type, false)
+            build_type(builder, binding.item.type, true)
         } else {
             builder.append("auto")
         }
