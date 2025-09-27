@@ -1,36 +1,259 @@
+use scaly.containers
+
 define Plan
 {
     define Source
     (
-        path: String,
+        path: String
         name: String
     )
 
     define Type(name: String, fields: Vector[String])
-    
-    define Function
+
+
+    define Block
     (
-        source: pointer[Source],
-        name: String,
-        input: Vector[Argument],
-        output: String,
-        blocks: Vector[Block]
+        name: String
+        instructions: Vector[Instruction]
+        predecessors: Vector[String]
+        successors: Vector[String]
+        is_entry: bool
+        debug_info: pointer[DebugInfo]
     )
 
-    define Argument(name: String, type: String)
- 
-    define Block(name: String, instructions: Vector[Instruction])
- 
-    define Instruction (
+
+    define DebugInfo
+    (
+        file_name: String
+        directory: String
+        producer: String
+        version: int
+        language: int
+        line: int
+        column: int
+    )
+
+    define LLVMType
+    (
+        name: String
+        llvm_name: String
+        size_bits: int
+        alignment: int
+        is_pointer: bool
+        is_array: bool
+        element_type: pointer[LLVMType]
+        array_size: int
+    )
+
+    define Variable
+    (
+        name: String
+        type: String
+        debug_info: pointer[DebugInfo]
+        is_parameter: bool
+        is_local: bool
+        scope_line: int
+    )
+
+    define PhiIncoming
+    (
+        value: String
+        block: String
+    )
+
+    define SwitchCase
+    (
+        value: String
+        block: String
+    )
+
+    define CallData
+    (
+        calling_convention: String
+        tail_call: bool
+        function_attributes: Vector[String]
+    )
+
+    define LoadData
+    (
+        is_atomic: bool
+        ordering: String
+        alignment: int
+    )
+
+    define StoreData
+    (
+        is_atomic: bool
+        ordering: String
+        alignment: int
+    )
+
+    define AllocaData
+    (
+        allocated_type: String
+        array_size: pointer[String]
+        alignment: int
+    )
+
+    define GetElementPtrData
+    (
+        is_inbounds: bool
+        indices: Vector[String]
+    )
+
+    define PhiData
+    (
+        incoming_values: Vector[PhiIncoming]
+    )
+
+    define BranchData
+    (
+        is_conditional: bool
+        condition: pointer[String]
+        true_block: String
+        false_block: pointer[String]
+    )
+
+    define SwitchData
+    (
+        condition: String
+        default_block: String
+        cases: Vector[SwitchCase]
+    )
+
+    define ReturnData
+    (
+        value: pointer[String]
+    )
+
+    define IntrinsicData
+    (
+        intrinsic_id: String
+        intrinsic_args: Vector[String]
+    )
+
+    define CompareData
+    (
+        predicate: String
+        operand_type: String
+    )
+
+    define CastData
+    (
+        source_type: String
+        dest_type: String
+        cast_op: String
+    )
+
+    define BinaryData
+    (
+        operation: String
+        operand_type: String
+        has_nsw: bool
+        has_nuw: bool
+        has_exact: bool
+    )
+
+    define InstructionData union
+    (
+        Call: CallData
+        Load: LoadData
+        Store: StoreData
+        Alloca: AllocaData
+        GetElementPtr: GetElementPtrData
+        Phi: PhiData
+        Branch: BranchData
+        Switch: SwitchData
+        Return: ReturnData
+        Intrinsic: IntrinsicData
+        Compare: CompareData
+        Cast: CastData
+        Binary: BinaryData
+    )
+
+    define Instruction
+    (
         result: pointer[String]
         name: String
         args: Vector[String]
+        type: String
+        debug_info: pointer[DebugInfo]
+        opcode: String
+        metadata: HashMap[String, String]
+        is_volatile: bool
+        is_atomic: bool
+        ordering: String
+        alignment: int
+        data: pointer[InstructionData]
+    )
+
+    define Argument
+    (
+        name: String
+        type: String
+        attributes: Vector[String]
+        debug_info: pointer[DebugInfo]
+    )
+
+    define Function
+    (
+        source: pointer[Source]
+        name: String
+        input: Vector[Argument]
+        output: String
+        blocks: Vector[Block]
+        debug_info: pointer[DebugInfo]
+        linkage: String
+        calling_convention: String
+        function_attributes: Vector[String]
+        variable_list: Vector[Variable]
+        is_declaration: bool
+        is_definition: bool
+        visibility: String
+        gc_name: String
+    )
+
+    define GlobalVariable
+    (
+        name: String
+        type: String
+        linkage: String
+        visibility: String
+        is_constant: bool
+        initializer: pointer[String]
+        section: String
+        alignment: int
+        debug_info: pointer[DebugInfo]
+    )
+
+    define Metadata
+    (
+        kind: String
+        value: String
+        operands: Vector[String]
+    )
+
+    define Module
+    (
+        name: String
+        source_filename: String
+        target_triple: String
+        data_layout: String
+        module_flags: HashMap[String, String]
+        debug_compile_unit: pointer[DebugInfo]
+        named_metadata: HashMap[String, Vector[Metadata]]
     )
 
     define Program
     (
-        source: pointer[Source],
-        types: HashMap[String, Type],
+        source: pointer[Source]
+        module_info: Module
+        types: HashMap[String, Type]
+        llvm_types: HashMap[String, LLVMType]
         functions: HashMap[String, Function]
+        global_variables: HashMap[String, GlobalVariable]
+        metadata: HashMap[String, Metadata]
+        debug_info_nodes: Vector[DebugInfo]
     )
+
 }

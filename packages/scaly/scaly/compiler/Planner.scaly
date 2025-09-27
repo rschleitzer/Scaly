@@ -47,8 +47,13 @@ function plan_program(this: Planner) returns Plan.Program throws PlannerError {
 
     return Plan->Program(
         source,
+        Plan->Module("", "", "", "", new_ HashMap[String, String](rp, HashMapBuilder[String, String]()), null, new_ HashMap[String, Vector[Plan.Metadata]](rp, HashMapBuilder[String, Vector[Plan.Metadata]]())),
         new_ HashMap[String, Plan.Type](rp, types_builder),
-        new_ HashMap[String, Plan.Function](rp, functions_builder))
+        new_ HashMap[String, Plan.LLVMType](rp, HashMapBuilder[String, Plan.LLVMType]()),
+        new_ HashMap[String, Plan.Function](rp, functions_builder),
+        new_ HashMap[String, Plan.GlobalVariable](rp, HashMapBuilder[String, Plan.GlobalVariable]()),
+        new_ HashMap[String, Plan.Metadata](rp, HashMapBuilder[String, Plan.Metadata]()),
+        Vector[Plan.DebugInfo](rp, List[Plan.DebugInfo]()))
 }
 
 function plan_main_function(this: Planner, source: pointer[Plan.Source], program: ref[Program]) throws PlannerError {
@@ -58,8 +63,8 @@ function plan_main_function(this: Planner, source: pointer[Plan.Source], program
         throw DuplicateFunction(String(ep, main_name))
 
     var input_list: ref[List[Plan.Argument]] *new_ List[Plan.Argument]$()
-    input_list.add(Plan->Argument(String(get_page(), "argc"), String(get_page(), "int32")))
-    input_list.add(Plan->Argument(String(get_page(), "argv"), String(get_page(), "ptr")))
+    input_list.add(Plan->Argument(String(get_page(), "argc"), String(get_page(), "int32"), Vector[String](get_page(), List[String]()), null))
+    input_list.add(Plan->Argument(String(get_page(), "argv"), String(get_page(), "ptr"), Vector[String](get_page(), List[String]()), null))
 
     var blocks: ref[List[Plan.Block]] *new_ List[Plan.Block]$()
     var instructions: ref[List[Plan.Instruction]] *new_ List[Plan.Instruction]$()
@@ -91,16 +96,16 @@ function plan_main_function(this: Planner, source: pointer[Plan.Source], program
     {
         var ret_list: ref[List[String]] *List[String]$()
         ret_list.add(*(*(instructions.get_head())).result)
-        instructions.add(Plan->Instruction(null, String(get_page(), "ret"), Vector[String](get_page(), ret_list)))
+        instructions.add(Plan->Instruction(null, String(get_page(), "ret"), Vector[String](get_page(), ret_list), "void", null, "ret", HashMap[String, String](get_page(), HashMapBuilder[String, String]()), false, false, "", 0, null))
     } else {
-        instructions.add(Plan->Instruction(null, String(get_page(), "ret"), Vector[String]()))
+        instructions.add(Plan->Instruction(null, String(get_page(), "ret"), Vector[String](), "void", null, "ret", HashMap[String, String](get_page(), HashMapBuilder[String, String]()), false, false, "", 0, null))
     }
 
-    var block new_ Plan.Block(String(get_page(), "entry"), new_ Vector[Plan.Instruction](get_page(), instructions))
+    var block new_ Plan.Block(String(get_page(), "entry"), new_ Vector[Plan.Instruction](get_page(), instructions), Vector[String](get_page(), List[String]()), Vector[String](get_page(), List[String]()), true, null)
     blocks.add(block)
 
     let int_name String(get_page(), "int32")
-    var plan_function: Plan.Function Plan->Function(source, main_name, new_ Vector[Plan.Argument](get_page(), input_list), int_name, new_ Vector[Plan.Block](get_page(), blocks))
+    var plan_function: Plan.Function Plan->Function(source, main_name, new_ Vector[Plan.Argument](get_page(), input_list), int_name, new_ Vector[Plan.Block](get_page(), blocks), null, "external", "", Vector[String](get_page(), List[String]()), Vector[Plan.Variable](get_page(), List[Plan.Variable]()), false, true, "default", "")
     functions_builder.add(main_name, plan_function)
     return Void()
 }

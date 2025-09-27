@@ -79,7 +79,7 @@ Result<Plan::Program, PlannerError> Planner::plan_program(Page* rp, Page* ep) {
             }}
             ;
     };
-    return Result<Plan::Program, PlannerError>(Plan::Program(source, HashMap<String, Plan::Type>(rp, types_builder), HashMap<String, Plan::Function>(rp, functions_builder)));
+    return Result<Plan::Program, PlannerError>(Plan::Program(source, Plan::Module("", "", "", "", HashMap<String, String>(rp, HashMapBuilder<String, String>()), nullptr, HashMap<String, Vector<Plan::Metadata>>(rp, HashMapBuilder<String, Vector<Plan.Metadata>>())), HashMap<String, Plan::Type>(rp, types_builder), HashMap<String, Plan::LLVMType>(rp, HashMapBuilder<String, Plan.LLVMType>()), HashMap<String, Plan::Function>(rp, functions_builder), HashMap<String, Plan::GlobalVariable>(rp, HashMapBuilder<String, Plan.GlobalVariable>()), HashMap<String, Plan::Metadata>(rp, HashMapBuilder<String, Plan.Metadata>()), Vector<Plan.DebugInfo>(rp, List<Plan.DebugInfo>())));
 }
 
 Result<Void, PlannerError> Planner::plan_main_function(Page* ep, Plan::Source* source, Program& program) {
@@ -88,8 +88,8 @@ Result<Void, PlannerError> Planner::plan_main_function(Page* ep, Plan::Source* s
     if (functions_builder.contains(main_name)) 
         return Result<Void, PlannerError>(DuplicateFunction(String(ep, main_name)));
     List<Plan::Argument>& input_list = *new (alignof(List<Plan::Argument>), r.get_page()) List<Plan::Argument>();
-    input_list.add(Plan::Argument(String(get_page(), "argc"), String(get_page(), "int32")));
-    input_list.add(Plan::Argument(String(get_page(), "argv"), String(get_page(), "ptr")));
+    input_list.add(Plan::Argument(String(get_page(), "argc"), String(get_page(), "int32"), Vector<String>(get_page(), List<String>()), nullptr));
+    input_list.add(Plan::Argument(String(get_page(), "argv"), String(get_page(), "ptr"), Vector<String>(get_page(), List<String>()), nullptr));
     List<Plan::Block>& blocks = *new (alignof(List<Plan::Block>), r.get_page()) List<Plan::Block>();
     List<Plan::Instruction>& instructions = *new (alignof(List<Plan::Instruction>), r.get_page()) List<Plan::Instruction>();
     List<String>& values = *new (alignof(List<String>), r.get_page()) List<String>();
@@ -124,15 +124,15 @@ Result<Void, PlannerError> Planner::plan_main_function(Page* ep, Plan::Source* s
     if ((*(instructions.get_head())).result) {
         List<String>& ret_list = *new (alignof(List<String>), r.get_page()) List<String>();
         ret_list.add(*(*(instructions.get_head())).result);
-        instructions.add(Plan::Instruction(nullptr, String(get_page(), "ret"), Vector<String>(get_page(), ret_list)));
+        instructions.add(Plan::Instruction(nullptr, String(get_page(), "ret"), Vector<String>(get_page(), ret_list), "void", nullptr, "ret", HashMap<String, String>(get_page(), HashMapBuilder<String, String>()), false, false, "", 0, nullptr));
     }
     else {
-        instructions.add(Plan::Instruction(nullptr, String(get_page(), "ret"), Vector<String>()));
+        instructions.add(Plan::Instruction(nullptr, String(get_page(), "ret"), Vector<String>(), "void", nullptr, "ret", HashMap<String, String>(get_page(), HashMapBuilder<String, String>()), false, false, "", 0, nullptr));
     };
-    auto block = Plan::Block(String(get_page(), "entry"), Vector<Plan::Instruction>(get_page(), instructions));
+    auto block = Plan::Block(String(get_page(), "entry"), Vector<Plan::Instruction>(get_page(), instructions), Vector<String>(get_page(), List<String>()), Vector<String>(get_page(), List<String>()), true, nullptr);
     blocks.add(block);
     const auto int_name = String(get_page(), "int32");
-    Plan::Function plan_function = Plan::Function(source, main_name, Vector<Plan::Argument>(get_page(), input_list), int_name, Vector<Plan::Block>(get_page(), blocks));
+    Plan::Function plan_function = Plan::Function(source, main_name, Vector<Plan::Argument>(get_page(), input_list), int_name, Vector<Plan::Block>(get_page(), blocks), nullptr, "external", "", Vector<String>(get_page(), List<String>()), Vector<Plan.Variable>(get_page(), List<Plan.Variable>()), false, true, "default", "");
     functions_builder.add(main_name, plan_function);
     return Result<Void, PlannerError>(Void());
 }
