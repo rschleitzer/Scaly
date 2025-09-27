@@ -48,7 +48,7 @@ function plan_program(this: Planner) returns Plan.PlanProgram throws PlannerErro
 
     return Plan->PlanProgram(
         source,
-        Plan->PlanModule("", "", "", "", new_ HashMap[String, String](rp, HashMapBuilder[String, String]()), null, new_ HashMap[String, Vector[Metadata]](rp, HashMapBuilder[String, Vector[Metadata]]())),
+        Plan->PlanModule(String(), String(), String(), String(), new_ HashMap[String, String](rp, HashMapBuilder[String, String]()), null, new_ HashMap[String, Vector[Metadata]](rp, HashMapBuilder[String, Vector[Metadata]]())),
         new_ HashMap[String, PlanType](rp, types_builder),
         new_ HashMap[String, LLVMType](rp, HashMapBuilder[String, LLVMType]()),
         new_ HashMap[String, PlanFunction](rp, functions_builder),
@@ -97,16 +97,16 @@ function plan_main_function(this: Planner, source: pointer[Plan.Source], program
     {
         var ret_list: ref[List[String]] *List[String]$()
         ret_list.add(*(*(instructions.get_head())).result)
-        instructions.add(Plan->PlanInstruction(null, String(get_page(), "ret"), Vector[String](get_page(), ret_list), "void", null, "ret", HashMap[String, String](get_page(), HashMapBuilder[String, String]()), false, false, "", 0, null))
+        instructions.add(Plan->PlanInstruction(null, String(get_page(), "ret"), Vector[String](get_page(), ret_list), String(get_page(), "void"), null, String(get_page(), "ret"), HashMap[String, String](get_page(), HashMapBuilder[String, String]()), false, false, String(), 0, null))
     } else {
-        instructions.add(Plan->PlanInstruction(null, String(get_page(), "ret"), Vector[String](get_page(), List[String]()), "void", null, "ret", HashMap[String, String](get_page(), HashMapBuilder[String, String]()), false, false, "", 0, null))
+        instructions.add(Plan->PlanInstruction(null, String(get_page(), "ret"), Vector[String](get_page(), List[String]()), String(get_page(), "void"), null, String(get_page(), "ret"), HashMap[String, String](get_page(), HashMapBuilder[String, String]()), false, false, String(), 0, null))
     }
 
     var block Plan->BasicBlock(String(get_page(), "entry"), Vector[PlanInstruction](get_page(), instructions), Vector[String](get_page(), List[String]()), Vector[String](get_page(), List[String]()), true, null)
     blocks.add(block)
 
     let int_name String(get_page(), "int32")
-    var plan_function Plan->PlanFunction(source, main_name, Vector[PlanArgument](get_page(), input_list), int_name, Vector[BasicBlock](get_page(), blocks), null, "external", "", Vector[String](get_page(), List[String]()), Vector[Variable](get_page(), List[Variable]()), false, true, "default", "")
+    var plan_function Plan->PlanFunction(source, main_name, Vector[PlanArgument](get_page(), input_list), int_name, Vector[BasicBlock](get_page(), blocks), null, String(get_page(), "external"), String(), Vector[String](get_page(), List[String]()), Vector[Variable](get_page(), List[Variable]()), false, true, String(get_page(), "default"), String())
     functions_builder.add(main_name, plan_function)
     return Void()
 }
@@ -257,7 +257,7 @@ function plan_instruction_call(this: Planner, file: String, environment: ref[Lis
     var values Vector[String](get_page(), values_list)
     var page get_page()
     let value allocate_value_name(get_page(), blocks, *instructions)
-    (*instructions).add(Plan->PlanInstruction(new_ String^page(get_page(), value), function_.name, values, "void", null, "call", HashMap[String, String](get_page(), HashMapBuilder[String, String]()), false, false, "", 0, null))
+    (*instructions).add(Plan->PlanInstruction(new_ String^page(get_page(), value), function_.name, values, String(get_page(), "void"), null, String(get_page(), "call"), HashMap[String, String](get_page(), HashMapBuilder[String, String]()), false, false, String(), 0, null))
     return instructions
 }
 
@@ -494,9 +494,9 @@ function plan_function(this: Planner, source: pointer[Plan.Source], file: String
             {
                 var ret_list: ref[List[String]] *List[String]$()
                 ret_list.add(*(*(instructions.get_head())).result)
-                instructions.add(Plan->PlanInstruction(null, String(get_page(), "ret"), Vector[String](get_page(), ret_list), "void", null, "ret", HashMap[String, String](get_page(), HashMapBuilder[String, String]()), false, false, "", 0, null))
+                instructions.add(Plan->PlanInstruction(null, String(get_page(), "ret"), Vector[String](get_page(), ret_list), String(get_page(), "void"), null, String(get_page(), "ret"), HashMap[String, String](get_page(), HashMapBuilder[String, String]()), false, false, String(), 0, null))
             } else {
-                instructions.add(Plan->PlanInstruction(null, String(get_page(), "ret"), Vector[String](get_page(), List[String]()), "void", null, "ret", HashMap[String, String](get_page(), HashMapBuilder[String, String]()), false, false, "", 0, null))
+                instructions.add(Plan->PlanInstruction(null, String(get_page(), "ret"), Vector[String](get_page(), List[String]()), String(get_page(), "void"), null, String(get_page(), "ret"), HashMap[String, String](get_page(), HashMapBuilder[String, String]()), false, false, String(), 0, null))
             }
 
             var block Plan->BasicBlock(String(get_page(), "entry"), Vector[PlanInstruction](get_page(), instructions), Vector[String](get_page(), List[String]()), Vector[String](get_page(), List[String]()), true, null)
@@ -508,7 +508,7 @@ function plan_function(this: Planner, source: pointer[Plan.Source], file: String
         when i: Implementation.Intrinsic
             return Void()
 
-    var plan_function Plan->PlanFunction(source, func.name, Vector[PlanArgument](get_page(), input_list), returnType, Vector[BasicBlock](get_page(), blocks), null, "external", "", Vector[String](get_page(), List[String]()), Vector[Variable](get_page(), List[Variable]()), false, true, "default", "")
+    var plan_function Plan->PlanFunction(source, func.name, Vector[PlanArgument](get_page(), input_list), returnType, Vector[BasicBlock](get_page(), blocks), null, String(get_page(), "external"), String(), Vector[String](get_page(), List[String]()), Vector[Variable](get_page(), List[Variable]()), false, true, String(get_page(), "default"), String())
     functions_builder.add(func.name, plan_function)
     return Void()
 }
