@@ -13,7 +13,7 @@ define Planner
 
 init(program: ref[Program]) (program(program)) (intrinsics_builder(new_ HashSetBuilder[String]())) (types_builder(new_ HashMapBuilder[String, Plan.Type]())) (functions_builder(new_ HashMapBuilder[String, Plan.Function]())) {}
 
-function plan_program(this: Planner) returns Plan.Compilation throws PlannerError {
+function plan_program(this: Planner) returns Plan.Program throws PlannerError {
     var r Region()
 
     let file program.module_.file
@@ -45,7 +45,7 @@ function plan_program(this: Planner) returns Plan.Compilation throws PlannerErro
             else throw
     }
 
-    return Plan->Compilation(
+    return Plan->Program(
         source,
         new_ HashMap[String, Plan.Type](rp, types_builder),
         new_ HashMap[String, Plan.Function](rp, functions_builder))

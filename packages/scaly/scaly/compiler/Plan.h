@@ -12,14 +12,6 @@ struct Source : Object {
     Source(String path, String name);
 };
 
-struct Compilation : Object {
-    Source* source;
-    HashMap<String, Type> types;
-    HashMap<String, Function> functions;
-
-    Compilation(Source* source, HashMap<String, Type> types, HashMap<String, Function> functions);
-};
-
 struct Type : Object {
     String name;
     Vector<String> fields;
@@ -57,6 +49,14 @@ struct Instruction : Object {
     Vector<String> args;
 
     Instruction(String* result, String name, Vector<String> args);
+};
+
+struct Program : Object {
+    Source* source;
+    HashMap<String, Type> types;
+    HashMap<String, Function> functions;
+
+    Program(Source* source, HashMap<String, Type> types, HashMap<String, Function> functions);
 };
 
 }

@@ -6,13 +6,6 @@ define Plan
         name: String
     )
 
-    define Compilation
-    (
-        source: pointer[Source],
-        types: HashMap[String, Type],
-        functions: HashMap[String, Function]
-    )
-
     define Type(name: String, fields: Vector[String])
     
     define Function
@@ -32,5 +25,12 @@ define Plan
         result: pointer[String]
         name: String
         args: Vector[String]
+    )
+
+    define Program
+    (
+        source: pointer[Source],
+        types: HashMap[String, Type],
+        functions: HashMap[String, Function]
     )
 }

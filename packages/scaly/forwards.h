@@ -347,12 +347,12 @@ namespace compiler {
 }
 namespace Plan {
 struct Source;
-struct Compilation;
 struct Type;
 struct Function;
 struct Argument;
 struct Block;
 struct Instruction;
+struct Program;
 }
 struct Planner;
 }
