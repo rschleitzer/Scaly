@@ -48,6 +48,20 @@ Scaly syntax includes:
 - Package imports and namespace resolution
 - C++ transpilation target with LLVM backend
 
+### Some Lexical Structure Details
+- Single line comments start with a semicolon (;)
+- Multiline comments start with a semicolon followed by an asterisk and end with an asterisk followed by a semicolon
+- A line feed is no white space but separates many language constructs. One or more line feeds can be replaced by a colon and vice versa.
+- An operator identifier starts with an arithmetic character like + or - and is followed by zero or more arithmetic characters.
+- A normal identifier starts with an alphanumeric character followed by zero or more alphanumeric characters or whitespaces.
+- A string identifier starts with a single quote and ends with a single quote with almost everything in between.
+- For details see Lexer.scaly
+
+### Some Grammar Details
+- Operators are neither hardcoded into the language, nor is an operator precedence defined by the language.
+- A function is applied as a prefix on anything that follows, an operator works as a postfix on the preceding operation. Both functions and operators can use either alphanumeric, operator-style, and string identifiers.
+- For details see scaly.sgm
+
 ## Development Workflow
 
 ### Code Generation Process
