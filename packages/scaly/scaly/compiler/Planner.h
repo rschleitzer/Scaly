@@ -17,7 +17,7 @@ struct Planner : Object {
 
     Planner(Program& program, HashSetBuilder<String> intrinsics_builder, HashMapBuilder<String, Plan::Type> types_builder, HashMapBuilder<String, Plan::Function> functions_builder, List<Plan::Source> module_list);
     Planner(Program& program);
-    Result<Plan::Compilation, PlannerError> plan_program(Page* rp, Page* ep);
+    Result<Plan::Program, PlannerError> plan_program(Page* rp, Page* ep);
     Result<Void, PlannerError> plan_main_function(Page* ep, Plan::Source* source, Program& program);
     Result<Plan::Source*, PlannerError> plan_module(Page* rp, Page* ep, Module& module_);
     Result<Void, PlannerError> plan_symbols(Page* ep, Plan::Source* source, String file, HashMap<String, Nameable>& symbols, Vector<Member> members);

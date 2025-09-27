@@ -11,7 +11,7 @@ Planner::Planner(Program& program, HashSetBuilder<String> intrinsics_builder, Ha
 Planner::Planner(Program& program) : program(program), intrinsics_builder(HashSetBuilder<String>()), types_builder(HashMapBuilder<String, Plan::Type>()), functions_builder(HashMapBuilder<String, Plan::Function>()){
 }
 
-Result<Plan::Compilation, PlannerError> Planner::plan_program(Page* rp, Page* ep) {
+Result<Plan::Program, PlannerError> Planner::plan_program(Page* rp, Page* ep) {
     auto r = Region();
     const auto file = program.module_.file;
     auto path = Path::get_directory_name(r.get_page(), file);
@@ -22,7 +22,7 @@ Result<Plan::Compilation, PlannerError> Planner::plan_program(Page* rp, Page* ep
             const auto _exists_Error = _exists_result._Error;
             switch (_exists_Error._tag) {
             default:
-                return Result<Plan::Compilation, PlannerError>(_exists_result._Error);
+                return Result<Plan::Program, PlannerError>(_exists_result._Error);
 
             }
         };
@@ -33,7 +33,7 @@ Result<Plan::Compilation, PlannerError> Planner::plan_program(Page* rp, Page* ep
                     const auto _void_Error = _void_result._Error;
                     switch (_void_Error._tag) {
                     default:
-                        return Result<Plan::Compilation, PlannerError>(_void_result._Error);
+                        return Result<Plan::Program, PlannerError>(_void_result._Error);
 
                     }
                 }}
@@ -46,7 +46,7 @@ Result<Plan::Compilation, PlannerError> Planner::plan_program(Page* rp, Page* ep
         const auto _source_Error = _source_result._Error;
         switch (_source_Error._tag) {
         default:
-            return Result<Plan::Compilation, PlannerError>(_source_result._Error);
+            return Result<Plan::Program, PlannerError>(_source_result._Error);
 
         }
     };
@@ -60,7 +60,7 @@ Result<Plan::Compilation, PlannerError> Planner::plan_program(Page* rp, Page* ep
                 const auto _source_Error = _source_result._Error;
                 switch (_source_Error._tag) {
                 default:
-                    return Result<Plan::Compilation, PlannerError>(_source_result._Error);
+                    return Result<Plan::Program, PlannerError>(_source_result._Error);
 
                 }
             };
@@ -73,13 +73,13 @@ Result<Plan::Compilation, PlannerError> Planner::plan_program(Page* rp, Page* ep
                 const auto _void_Error = _void_result._Error;
                 switch (_void_Error._tag) {
                 default:
-                    return Result<Plan::Compilation, PlannerError>(_void_result._Error);
+                    return Result<Plan::Program, PlannerError>(_void_result._Error);
 
                 }
             }}
             ;
     };
-    return Result<Plan::Compilation, PlannerError>(Plan::Compilation(source, HashMap<String, Plan::Type>(rp, types_builder), HashMap<String, Plan::Function>(rp, functions_builder)));
+    return Result<Plan::Program, PlannerError>(Plan::Program(source, HashMap<String, Plan::Type>(rp, types_builder), HashMap<String, Plan::Function>(rp, functions_builder)));
 }
 
 Result<Void, PlannerError> Planner::plan_main_function(Page* ep, Plan::Source* source, Program& program) {
