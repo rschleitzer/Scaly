@@ -48,6 +48,22 @@ Scaly syntax includes:
 - Package imports and namespace resolution
 - C++ transpilation target with LLVM backend
 
+## Development Workflow
+
+### Code Generation Process
+The development workflow uses the Transpiler to automatically convert Scaly source code into C++ implementations:
+
+1. **Scaly source files** (`.scaly`) contain the primary implementation
+2. **Transpiler** converts `.scaly` files to corresponding `.cpp` and `.h` files
+3. **Exception**: `Generator.h` and `Generator.cpp` are manually edited (not generated)
+4. **Build process** compiles the generated C++ code with LLVM
+
+### Important Notes
+- **Always edit `.scaly` files** for most changes, not the generated `.cpp/.h` files
+- Only `Generator.h` and `Generator.cpp` should be edited directly
+- The transpiler will overwrite generated C++ files on each build
+- Changes to `.scaly` files require rebuilding to regenerate C++ code
+
 ## Development Commands
 
 ### Building
@@ -68,7 +84,8 @@ cd packages/scaly && scalyc test.scaly test
 
 ## File Structure
 
-- `.scaly` files: Scaly source code
-- `.cpp/.h` files: Generated C++ code and manual implementations
+- `.scaly` files: Scaly source code (primary implementation)
+- `.cpp/.h` files: Generated C++ code (except Generator.cpp/h)
+- `Generator.cpp/.h`: Manually edited LLVM code generation
 - `build.sh`: Build scripts for each component
 - `main.cpp`: Entry points for executables
