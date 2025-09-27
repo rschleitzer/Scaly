@@ -2432,8 +2432,15 @@ Result<Concept, ModelError> handle_definition(Page* rp, Page* ep, String path, D
                 return Result<Concept, ModelError>(Concept(span, String(rp, definition.name), Vector<GenericParameter>(rp, parameters), Vector<Attribute>(rp, attributes), Definition(Intrinsic(Span(intrinsic_syntax.start, intrinsic_syntax.end)))));
                 break;
             }
+            case ConceptSyntax::Type:
+            {
+                auto type_syntax = _result._Type;
+                return Result<Concept, ModelError>(ModelError(ModelBuilderError(NotImplemented(file, String(ep, "Type"), Span(type_syntax.start, type_syntax.end)))));
+                break;
+            }
         }
     };
+    return Result<Concept, ModelError>(ModelError(ModelBuilderError(NotImplemented(file, String(ep, "Unknown concept type"), span))));
 }
 
 Result<Action, ModelError> handle_action(Page* rp, Page* ep, ActionSyntax& action, String file) {

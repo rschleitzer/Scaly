@@ -1276,6 +1276,10 @@ function handle_definition(path: String, definition: ref[DefinitionSyntax], priv
             throw ModelError(ModelBuilderError(NotImplemented(file, String(ep, "Delegate"), Span(delegate_syntax.start, delegate_syntax.end))))
         when intrinsic_syntax: ConceptSyntax.Intrinsic
             return Concept(span, String(rp, definition.name), Vector[GenericParameter](rp, parameters), Vector[Attribute](rp, attributes), Definition(Intrinsic(Span(intrinsic_syntax.start, intrinsic_syntax.end))))
+        when type_syntax: ConceptSyntax.Type
+            throw ModelError(ModelBuilderError(NotImplemented(file, String(ep, "Type"), Span(type_syntax.start, type_syntax.end))))
+
+    throw ModelError(ModelBuilderError(NotImplemented(file, String(ep, "Unknown concept type"), span)))
 }
 
 function handle_action(action: ref[ActionSyntax], file: String) returns Action throws ModelError {
