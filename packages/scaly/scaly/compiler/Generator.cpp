@@ -81,7 +81,7 @@ llvm::Value* get_value(String& value, HashMap<String, llvm::Value*>& argument_va
     return nullptr;
 }
 
-void add_instruction(IRBuilder<>& builder, HashMap<String, llvm::Value*>& argument_values_map, HashMapBuilder<String, llvm::Value*>& block_values_builder, Plan::Instruction instruction) {
+void add_instruction(IRBuilder<>& builder, HashMap<String, llvm::Value*>& argument_values_map, HashMapBuilder<String, llvm::Value*>& block_values_builder, Plan::PlanInstruction instruction) {
     auto r = Region();
     if (instruction.name.equals("fmul")) {
         auto lValue = get_value(*(instruction.args[0]), argument_values_map, block_values_builder);
@@ -103,7 +103,7 @@ void add_instruction(IRBuilder<>& builder, HashMap<String, llvm::Value*>& argume
     }
 }
 
-llvm::Function* generate_function(llvm::Module& module, DIBuilder& di_builder, Plan::Function& plan_function) {
+llvm::Function* generate_function(llvm::Module& module, DIBuilder& di_builder, Plan::PlanFunction& plan_function) {
     auto r = Region();
     LLVMContext& context = module.getContext();
     llvm::Type* return_type = get_Type(context, plan_function.output);
@@ -160,7 +160,7 @@ llvm::Function* generate_function(llvm::Module& module, DIBuilder& di_builder, P
     return llvm_function;
 }
 
-void generate_module(Plan::Program& compilation) {
+void generate_module(Plan::PlanProgram& compilation) {
     Region _r;
     auto context = std::make_unique<LLVMContext>();
     auto module = std::make_unique<llvm::Module>(compilation.source->name.to_c_string(_r.get_page()), *context);
@@ -171,7 +171,7 @@ void generate_module(Plan::Program& compilation) {
     DIFile* debug_file = di_builder.createFile(compilation.source->name.to_c_string(_r.get_page()), compilation.source->path.to_c_string(_r.get_page()));
     auto cu = di_builder.createCompileUnit(dwarf::DW_LANG_C, debug_file, "scaly", false, "", 0);
 
-    auto _function_iterator = HashMapIterator<String, Plan::Function>(compilation.functions);
+    auto _function_iterator = HashMapIterator<String, Plan::PlanFunction>(compilation.functions);
     while (auto _function = _function_iterator.next()) {
         auto planFunction = *_function;
         auto function = generate_function(*module, di_builder, planFunction);

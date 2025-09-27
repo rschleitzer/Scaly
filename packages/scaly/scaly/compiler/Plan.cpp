@@ -8,9 +8,9 @@ namespace Plan {
 
 Source::Source(String path, String name) : path(path), name(name) {}
 
-Type::Type(String name, Vector<String> fields) : name(name), fields(fields) {}
+PlanType::PlanType(String name, Vector<String> fields) : name(name), fields(fields) {}
 
-Block::Block(String name, Vector<Instruction> instructions, Vector<String> predecessors, Vector<String> successors, bool is_entry, DebugInfo* debug_info) : name(name), instructions(instructions), predecessors(predecessors), successors(successors), is_entry(is_entry), debug_info(debug_info) {}
+BasicBlock::BasicBlock(String name, Vector<PlanInstruction> instructions, Vector<String> predecessors, Vector<String> successors, bool is_entry, DebugInfo* debug_info) : name(name), instructions(instructions), predecessors(predecessors), successors(successors), is_entry(is_entry), debug_info(debug_info) {}
 
 DebugInfo::DebugInfo(String file_name, String directory, String producer, int version, int language, int line, int column) : file_name(file_name), directory(directory), producer(producer), version(version), language(language), line(line), column(column) {}
 
@@ -74,19 +74,19 @@ InstructionData::InstructionData(struct CastData _Cast) : _tag(Cast), _Cast(_Cas
 InstructionData::InstructionData(struct BinaryData _Binary) : _tag(Binary), _Binary(_Binary) {}
 
 
-Instruction::Instruction(String* result, String name, Vector<String> args, String type, DebugInfo* debug_info, String opcode, HashMap<String, String> metadata, bool is_volatile, bool is_atomic, String ordering, int alignment, InstructionData* data) : result(result), name(name), args(args), type(type), debug_info(debug_info), opcode(opcode), metadata(metadata), is_volatile(is_volatile), is_atomic(is_atomic), ordering(ordering), alignment(alignment), data(data) {}
+PlanInstruction::PlanInstruction(String* result, String name, Vector<String> args, String type, DebugInfo* debug_info, String opcode, HashMap<String, String> metadata, bool is_volatile, bool is_atomic, String ordering, int alignment, InstructionData* data) : result(result), name(name), args(args), type(type), debug_info(debug_info), opcode(opcode), metadata(metadata), is_volatile(is_volatile), is_atomic(is_atomic), ordering(ordering), alignment(alignment), data(data) {}
 
-Argument::Argument(String name, String type, Vector<String> attributes, DebugInfo* debug_info) : name(name), type(type), attributes(attributes), debug_info(debug_info) {}
+PlanArgument::PlanArgument(String name, String type, Vector<String> attributes, DebugInfo* debug_info) : name(name), type(type), attributes(attributes), debug_info(debug_info) {}
 
-Function::Function(Source* source, String name, Vector<Argument> input, String output, Vector<Block> blocks, DebugInfo* debug_info, String linkage, String calling_convention, Vector<String> function_attributes, Vector<Variable> variable_list, bool is_declaration, bool is_definition, String visibility, String gc_name) : source(source), name(name), input(input), output(output), blocks(blocks), debug_info(debug_info), linkage(linkage), calling_convention(calling_convention), function_attributes(function_attributes), variable_list(variable_list), is_declaration(is_declaration), is_definition(is_definition), visibility(visibility), gc_name(gc_name) {}
+PlanFunction::PlanFunction(Source* source, String name, Vector<PlanArgument> input, String output, Vector<BasicBlock> blocks, DebugInfo* debug_info, String linkage, String calling_convention, Vector<String> function_attributes, Vector<Variable> variable_list, bool is_declaration, bool is_definition, String visibility, String gc_name) : source(source), name(name), input(input), output(output), blocks(blocks), debug_info(debug_info), linkage(linkage), calling_convention(calling_convention), function_attributes(function_attributes), variable_list(variable_list), is_declaration(is_declaration), is_definition(is_definition), visibility(visibility), gc_name(gc_name) {}
 
 GlobalVariable::GlobalVariable(String name, String type, String linkage, String visibility, bool is_constant, String* initializer, String section, int alignment, DebugInfo* debug_info) : name(name), type(type), linkage(linkage), visibility(visibility), is_constant(is_constant), initializer(initializer), section(section), alignment(alignment), debug_info(debug_info) {}
 
 Metadata::Metadata(String kind, String value, Vector<String> operands) : kind(kind), value(value), operands(operands) {}
 
-Module::Module(String name, String source_filename, String target_triple, String data_layout, HashMap<String, String> module_flags, DebugInfo* debug_compile_unit, HashMap<String, Vector<Metadata>> named_metadata) : name(name), source_filename(source_filename), target_triple(target_triple), data_layout(data_layout), module_flags(module_flags), debug_compile_unit(debug_compile_unit), named_metadata(named_metadata) {}
+PlanModule::PlanModule(String name, String source_filename, String target_triple, String data_layout, HashMap<String, String> module_flags, DebugInfo* debug_compile_unit, HashMap<String, Vector<Metadata>> named_metadata) : name(name), source_filename(source_filename), target_triple(target_triple), data_layout(data_layout), module_flags(module_flags), debug_compile_unit(debug_compile_unit), named_metadata(named_metadata) {}
 
-Program::Program(Source* source, Module module_info, HashMap<String, Type> types, HashMap<String, LLVMType> llvm_types, HashMap<String, Function> functions, HashMap<String, GlobalVariable> global_variables, HashMap<String, Metadata> metadata, Vector<DebugInfo> debug_info_nodes) : source(source), module_info(module_info), types(types), llvm_types(llvm_types), functions(functions), global_variables(global_variables), metadata(metadata), debug_info_nodes(debug_info_nodes) {}
+PlanProgram::PlanProgram(Source* source, PlanModule module_info, HashMap<String, PlanType> types, HashMap<String, LLVMType> llvm_types, HashMap<String, PlanFunction> functions, HashMap<String, GlobalVariable> global_variables, HashMap<String, Metadata> metadata, Vector<DebugInfo> debug_info_nodes) : source(source), module_info(module_info), types(types), llvm_types(llvm_types), functions(functions), global_variables(global_variables), metadata(metadata), debug_info_nodes(debug_info_nodes) {}
 
 }
 

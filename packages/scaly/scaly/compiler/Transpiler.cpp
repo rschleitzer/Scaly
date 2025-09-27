@@ -1757,7 +1757,7 @@ Result<Void, TranspilerError> build_variable(Page* ep, String file, StringBuilde
                 break;
             }
         }
-    }build_type(builder, &type, false);
+    }build_type(builder, &type, true);
     if (member_access != nullptr) {
         
         auto _member_iterator = (*member_access).get_iterator();
@@ -2181,7 +2181,7 @@ Result<Void, TranspilerError> build_for(Page* ep, String file, StringBuilder& bu
 Result<Void, TranspilerError> build_condition(Page* ep, String file, StringBuilder& builder, Binding& binding, Type* returns_, Type* throws_, String* re_throw, String indent) {
     if (binding.item.name != nullptr) {
         if (binding.item.type != nullptr) {
-            build_type(builder, binding.item.type, false);
+            build_type(builder, binding.item.type, true);
         }
         else {
             builder.append("auto");

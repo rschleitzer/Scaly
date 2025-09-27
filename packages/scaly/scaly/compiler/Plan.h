@@ -14,22 +14,22 @@ struct Source : Object {
     Source(String path, String name);
 };
 
-struct Type : Object {
+struct PlanType : Object {
     String name;
     Vector<String> fields;
 
-    Type(String name, Vector<String> fields);
+    PlanType(String name, Vector<String> fields);
 };
 
-struct Block : Object {
+struct BasicBlock : Object {
     String name;
-    Vector<Instruction> instructions;
+    Vector<PlanInstruction> instructions;
     Vector<String> predecessors;
     Vector<String> successors;
     bool is_entry;
     DebugInfo* debug_info;
 
-    Block(String name, Vector<Instruction> instructions, Vector<String> predecessors, Vector<String> successors, bool is_entry, DebugInfo* debug_info);
+    BasicBlock(String name, Vector<PlanInstruction> instructions, Vector<String> predecessors, Vector<String> successors, bool is_entry, DebugInfo* debug_info);
 };
 
 struct DebugInfo : Object {
@@ -227,7 +227,7 @@ struct InstructionData : Object {
         struct BinaryData _Binary;
     };
 };
-struct Instruction : Object {
+struct PlanInstruction : Object {
     String* result;
     String name;
     Vector<String> args;
@@ -241,24 +241,24 @@ struct Instruction : Object {
     int alignment;
     InstructionData* data;
 
-    Instruction(String* result, String name, Vector<String> args, String type, DebugInfo* debug_info, String opcode, HashMap<String, String> metadata, bool is_volatile, bool is_atomic, String ordering, int alignment, InstructionData* data);
+    PlanInstruction(String* result, String name, Vector<String> args, String type, DebugInfo* debug_info, String opcode, HashMap<String, String> metadata, bool is_volatile, bool is_atomic, String ordering, int alignment, InstructionData* data);
 };
 
-struct Argument : Object {
+struct PlanArgument : Object {
     String name;
     String type;
     Vector<String> attributes;
     DebugInfo* debug_info;
 
-    Argument(String name, String type, Vector<String> attributes, DebugInfo* debug_info);
+    PlanArgument(String name, String type, Vector<String> attributes, DebugInfo* debug_info);
 };
 
-struct Function : Object {
+struct PlanFunction : Object {
     Source* source;
     String name;
-    Vector<Argument> input;
+    Vector<PlanArgument> input;
     String output;
-    Vector<Block> blocks;
+    Vector<BasicBlock> blocks;
     DebugInfo* debug_info;
     String linkage;
     String calling_convention;
@@ -269,7 +269,7 @@ struct Function : Object {
     String visibility;
     String gc_name;
 
-    Function(Source* source, String name, Vector<Argument> input, String output, Vector<Block> blocks, DebugInfo* debug_info, String linkage, String calling_convention, Vector<String> function_attributes, Vector<Variable> variable_list, bool is_declaration, bool is_definition, String visibility, String gc_name);
+    PlanFunction(Source* source, String name, Vector<PlanArgument> input, String output, Vector<BasicBlock> blocks, DebugInfo* debug_info, String linkage, String calling_convention, Vector<String> function_attributes, Vector<Variable> variable_list, bool is_declaration, bool is_definition, String visibility, String gc_name);
 };
 
 struct GlobalVariable : Object {
@@ -294,7 +294,7 @@ struct Metadata : Object {
     Metadata(String kind, String value, Vector<String> operands);
 };
 
-struct Module : Object {
+struct PlanModule : Object {
     String name;
     String source_filename;
     String target_triple;
@@ -303,20 +303,20 @@ struct Module : Object {
     DebugInfo* debug_compile_unit;
     HashMap<String, Vector<Metadata>> named_metadata;
 
-    Module(String name, String source_filename, String target_triple, String data_layout, HashMap<String, String> module_flags, DebugInfo* debug_compile_unit, HashMap<String, Vector<Metadata>> named_metadata);
+    PlanModule(String name, String source_filename, String target_triple, String data_layout, HashMap<String, String> module_flags, DebugInfo* debug_compile_unit, HashMap<String, Vector<Metadata>> named_metadata);
 };
 
-struct Program : Object {
+struct PlanProgram : Object {
     Source* source;
-    Module module_info;
-    HashMap<String, Type> types;
+    PlanModule module_info;
+    HashMap<String, PlanType> types;
     HashMap<String, LLVMType> llvm_types;
-    HashMap<String, Function> functions;
+    HashMap<String, PlanFunction> functions;
     HashMap<String, GlobalVariable> global_variables;
     HashMap<String, Metadata> metadata;
     Vector<DebugInfo> debug_info_nodes;
 
-    Program(Source* source, Module module_info, HashMap<String, Type> types, HashMap<String, LLVMType> llvm_types, HashMap<String, Function> functions, HashMap<String, GlobalVariable> global_variables, HashMap<String, Metadata> metadata, Vector<DebugInfo> debug_info_nodes);
+    PlanProgram(Source* source, PlanModule module_info, HashMap<String, PlanType> types, HashMap<String, LLVMType> llvm_types, HashMap<String, PlanFunction> functions, HashMap<String, GlobalVariable> global_variables, HashMap<String, Metadata> metadata, Vector<DebugInfo> debug_info_nodes);
 };
 
 }
