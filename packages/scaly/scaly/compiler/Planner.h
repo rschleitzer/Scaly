@@ -25,6 +25,7 @@ struct Planner : Object {
     Result<Void, PlannerError> plan_symbols(Page* ep, Plan::Source* source, String file, HashMap<String, Nameable>& symbols, Vector<Member> members);
     Result<Void, PlannerError> plan_concept(Page* ep, String file, HashMap<String, Nameable>& symbols, Concept& concept);
     Result<Void, PlannerError> plan_intrinsic(Page* ep, String name);
+    Result<Void, PlannerError> plan_type_definition(Page* ep, String name, Type& type_def);
     Result<String, PlannerError> resolve_type(Page* rp, Page* ep, String file, HashMap<String, Nameable>& symbols, Type type);
     static String* get_type_from_environment(String name, List<HashMap<String, String>>& environment);
     Result<List<PlanInstruction>*, PlannerError> plan_function_arguments(Page* rp, Page* ep, String file, List<HashMap<String, String>>& environment, HashMap<String, Nameable>& symbols, Function& function_, Tuple& tuple, List<BasicBlock>& blocks, List<PlanInstruction>* instructions, List<String>& values);

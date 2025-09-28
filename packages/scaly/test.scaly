@@ -1,5 +1,6 @@
 define int32 intrinsic
+define int int32
 
-function mul(op1: int32, op2: int32) returns int32 instruction
+function mul(op1: int, op2: int) returns int instruction
 
 mul(argc, argc)
