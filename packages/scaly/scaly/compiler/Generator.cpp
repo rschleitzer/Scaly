@@ -468,26 +468,16 @@ void add_instruction(IRBuilder<>& builder, HashMap<String, llvm::Value*>& argume
     }
 }
 
-llvm::Function* generate_function(llvm::Module& module, DIBuilder& di_builder, Plan::PlanFunction& plan_function) {
+llvm::Function* generate_function(llvm::Module& module, DIBuilder& di_builder, Plan::PlanFunction& plan_function, HashMap<String, llvm::Function*>& function_map) {
     auto r = Region();
     LLVMContext& context = module.getContext();
-    llvm::Type* return_type = get_Type(context, plan_function.output);
 
-    std::vector<llvm::Type*> llvm_argument_types;
-    auto _argument_iterator = plan_function.input.get_iterator();
-    while (auto _argument = _argument_iterator.next()) {
-        auto argument = *_argument;
-        llvm::Type* argument_type = get_Type(context, argument.type);
-        llvm_argument_types.push_back(argument_type);
-    }
-
-    FunctionType* llvm_function_type = FunctionType::get(return_type, llvm_argument_types, false);
-    auto function_name = plan_function.name.to_c_string(r.get_page());
-    llvm::Function* llvm_function = llvm::Function::Create(llvm_function_type, llvm::Function::ExternalLinkage, function_name, module);
+    // Use the existing function declaration instead of creating a new one
+    llvm::Function* llvm_function = *function_map[plan_function.name];
 
     // Set up function arguments
     HashMapBuilder<String, llvm::Value*>& argument_values_builder = *new (alignof(HashMapBuilder<String, llvm::Value>*), r.get_page()) HashMapBuilder<String, llvm::Value*>();
-    _argument_iterator = plan_function.input.get_iterator();
+    auto _argument_iterator = plan_function.input.get_iterator();
     {
         int i = 0;
         while (auto _argument = _argument_iterator.next()) {
@@ -501,6 +491,7 @@ llvm::Function* generate_function(llvm::Module& module, DIBuilder& di_builder, P
     auto argument_values_map = HashMap<String, llvm::Value*>(r.get_page(), argument_values_builder);
 
     // Create debug info
+    auto function_name = plan_function.name.to_c_string(r.get_page());
     DIFile* di_file = di_builder.createFile(plan_function.source->name.to_c_string(r.get_page()), plan_function.source->path.to_c_string(r.get_page()));
     auto subprogram = di_builder.createFunction(di_file, function_name, StringRef(), di_file, 1,
         di_builder.createSubroutineType(di_builder.getOrCreateTypeArray({})),
@@ -658,7 +649,7 @@ void generate_module(Plan::PlanProgram& compilation) {
     _function_iterator = HashMapIterator<String, Plan::PlanFunction>(compilation.functions);
     while (auto _function = _function_iterator.next()) {
         auto planFunction = *_function;
-        auto function = generate_function(*module, di_builder, planFunction);
+        auto function = generate_function(*module, di_builder, planFunction, function_map);
     }
 
     // Finalize debug info
