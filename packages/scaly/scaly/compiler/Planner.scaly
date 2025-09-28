@@ -261,7 +261,7 @@ function plan_instruction_call(this: Planner, file: String, environment: ref[Lis
     return instructions
 }
 
-function plan_type(this: Planner, file: String, environment: ref[List[HashMap[String, String]]], symbols: ref[HashMap[String, Nameable]], operation: pointer[VectorIterator[Operand]], type: ref[Type], required_type: pointer[String], blocks: ref[List[BasicBlock]], instructions: pointer[List[PlanInstruction]], values: ref[List[String]]) returns pointer[List[PlanInstruction]] throws PlannerError {
+function plan_type_expression(this: Planner, file: String, environment: ref[List[HashMap[String, String]]], symbols: ref[HashMap[String, Nameable]], operation: pointer[VectorIterator[Operand]], type: ref[Type], required_type: pointer[String], blocks: ref[List[BasicBlock]], instructions: pointer[List[PlanInstruction]], values: ref[List[String]]) returns pointer[List[PlanInstruction]] throws PlannerError {
     if type.name.length > 1
         throw FeatureNotImplemented(file, type.span, String(ep, "Qualified type name"))
     if type.generics
@@ -277,7 +277,7 @@ function plan_type(this: Planner, file: String, environment: ref[List[HashMap[St
             throw FeatureNotImplemented(file, reference.span, String(ep, "Reference lifetime"))
         when thrown: Lifetime.Thrown
             throw FeatureNotImplemented(file, thrown.span, String(ep, "Thrown lifetime"))
-    
+
     let name *type.name.get(0)
     if symbols.contains(name)
     {
@@ -285,7 +285,14 @@ function plan_type(this: Planner, file: String, environment: ref[List[HashMap[St
             when modules: Nameable.Package
                 throw FeatureNotImplemented(file, Span(0, 0), String(ep, "Package reference"))
             when concept: Nameable.Concept
-                throw FeatureNotImplemented(file, concept.span, String(ep, "Concept reference"))
+            {
+                ; Intrinsics are type names, not expressions that generate values
+                choose concept.definition
+                    when i: Definition.Intrinsic
+                        throw UndefinedTypeOrValue(file, type.span, String(ep, name))
+                    else
+                        throw FeatureNotImplemented(file, concept.span, String(ep, "Non-intrinsic concept reference"))
+            }
             when operator_: Nameable.Operator
                 throw FeatureNotImplemented(file, operator_.span, String(ep, "Operator reference"))
             when functions: Nameable.Functions {
@@ -328,6 +335,7 @@ function plan_type(this: Planner, file: String, environment: ref[List[HashMap[St
             when variant: Nameable.Variant
                 throw FeatureNotImplemented(file, variant.span, String(ep, "Variant reference"))
     } else {
+        ; Check if this is a variable reference from the environment
         var actual_type get_type_from_environment(name, environment)
         if actual_type = null
             throw UndefinedTypeOrValue(file, type.span, String(ep, name))
@@ -399,7 +407,7 @@ function plan_operand(this: Planner, file: String, environment: ref[List[HashMap
                     throw FeatureNotImplemented(file, fragment.span, String(ep, "Fragment expression"))
         }
         when type: Expression.Type
-            return plan_type(get_page(), ep, file, environment, symbols, operation, type, required_type, blocks, instructions, values)
+            return plan_type_expression(get_page(), ep, file, environment, symbols, operation, type, required_type, blocks, instructions, values)
         when tuple: Expression.Tuple
             throw FeatureNotImplemented(file, tuple.span, String(ep, "Tuple expression"))
         when matrix: Expression.Matrix
