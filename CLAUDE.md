@@ -62,6 +62,9 @@ Scaly syntax includes:
 - A function is applied as a prefix on anything that follows, an operator works as a postfix on the preceding operation. Both functions and operators can use either alphanumeric, operator-style, and string identifiers.
 - For details see scaly.sgm
 
+### Changing the grammar
+- Adjust scaly.sgm and run the mkp shell script which will use openjade to re-generate Parser.scaly.
+
 ## Development Workflow
 
 ### Code Generation Process
