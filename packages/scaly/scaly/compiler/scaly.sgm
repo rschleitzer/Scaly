@@ -74,7 +74,6 @@
     <content link = Constant
     <content link = Delegate
     <content link = Intrinsic
-    <content link = Type
 
 <syntax id = Class
     <content link = Structure                               property = structure

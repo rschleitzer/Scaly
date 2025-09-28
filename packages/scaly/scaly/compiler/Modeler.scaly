@@ -1264,6 +1264,17 @@ function handle_definition(path: String, definition: ref[DefinitionSyntax], priv
         }
         when constant_syntax: ConceptSyntax.Constant
         {
+            if constant_syntax.operation = null
+            {
+                ; This is a type definition (no operands)
+                ; The type field contains the target type reference
+                try let type_ref handle_type(rp, ep, constant_syntax.type, file)
+                    else throw
+
+                return Concept(span, String(rp, definition.name), Vector[GenericParameter](rp, parameters), Vector[Attribute](rp, attributes), Definition(*type_ref))
+            }
+
+            ; This is a global constant definition (has operands)
             try let operation handle_operands(rp, ep, constant_syntax.operation, file)
                 else throw
 
@@ -1276,8 +1287,6 @@ function handle_definition(path: String, definition: ref[DefinitionSyntax], priv
             throw ModelError(ModelBuilderError(NotImplemented(file, String(ep, "Delegate"), Span(delegate_syntax.start, delegate_syntax.end))))
         when intrinsic_syntax: ConceptSyntax.Intrinsic
             return Concept(span, String(rp, definition.name), Vector[GenericParameter](rp, parameters), Vector[Attribute](rp, attributes), Definition(Intrinsic(Span(intrinsic_syntax.start, intrinsic_syntax.end))))
-        when type_syntax: ConceptSyntax.Type
-            throw ModelError(ModelBuilderError(NotImplemented(file, String(ep, "Type"), Span(type_syntax.start, type_syntax.end))))
 
     throw ModelError(ModelBuilderError(NotImplemented(file, String(ep, "Unknown concept type"), span)))
 }

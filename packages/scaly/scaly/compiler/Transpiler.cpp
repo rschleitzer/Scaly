@@ -253,6 +253,14 @@ Result<Void, TranspilerError> build_concept(Page* ep, String file, String path, 
                 return Result<Void, TranspilerError>(build_union(ep, file, header_builder, cpp_builder, concept.name, u, concept.parameters));
                 break;
             }
+            case Definition::Type:
+            {
+                auto t = _result._Type;
+                {
+                    return Result<Void, TranspilerError>(Void());
+                };
+                break;
+            }
         }
     };
 }

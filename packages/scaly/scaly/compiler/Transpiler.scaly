@@ -145,7 +145,7 @@ function create_directory(path: String) throws FileError {
     return Void()
 }
 
-function build_concept(file: String, path: String, header_builder: ref[StringBuilder], cpp_builder: ref[StringBuilder], main_header: String, namespace_open: String, namespace_close: String, concept: ref[Concept]) throws TranspilerError { 
+function build_concept(file: String, path: String, header_builder: ref[StringBuilder], cpp_builder: ref[StringBuilder], main_header: String, namespace_open: String, namespace_close: String, concept: ref[Concept]) throws TranspilerError {
     choose concept.definition
         when ns: Definition.Namespace
             return build_namespace(ep, path, file, concept.name, header_builder, cpp_builder, main_header, namespace_open, namespace_close, ns)
@@ -157,6 +157,12 @@ function build_concept(file: String, path: String, header_builder: ref[StringBui
             return build_global(ep, file, header_builder, concept.name, g)
         when u: Definition.Union
             return build_union(ep, file, header_builder, cpp_builder, concept.name, u, concept.parameters)
+        when t: Definition.Type
+        {
+            ; Type definitions are handled by the Planner as type aliases
+            ; No C++ code generation needed
+            return Void()
+        }
 }
 
 function build_union(file: String, header_builder: ref[StringBuilder], cpp_builder: ref[StringBuilder], name: String, union_: ref[Union], parameters: Vector[GenericParameter]) throws TranspilerError {

@@ -767,7 +767,6 @@ define ConceptSyntax union (
     Constant: ConstantSyntax
     Delegate: DelegateSyntax
     Intrinsic: IntrinsicSyntax
-    Type: TypeSyntax
 )
 
 define GenericParameterSyntax
@@ -1591,17 +1590,6 @@ define Parser
                 }
                 when node: Success.Ok
                     return ConceptSyntax(IntrinsicSyntax(node))
-        }
-        {
-            choose parse_type(rp, ep)
-                when error: Success.Error
-                {
-                    choose error
-                        when i: ParserError.Invalid throw i
-                        when d: ParserError.Different {}
-                }
-                when node: Success.Ok
-                    return ConceptSyntax(TypeSyntax(node))
         }
         throw ParserError(DifferentSyntax())
     }

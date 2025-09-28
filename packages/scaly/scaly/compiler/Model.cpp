@@ -197,6 +197,8 @@ Definition::Definition(struct Structure _Structure) : _tag(Structure), _Structur
 
 Definition::Definition(struct Union _Union) : _tag(Union), _Union(_Union) {}
 
+Definition::Definition(struct Type _Type) : _tag(Type), _Type(_Type) {}
+
 
 Use::Use(Span span, Vector<String> path) : span(span), path(path) {}
 

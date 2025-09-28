@@ -2396,6 +2396,19 @@ Result<Concept, ModelError> handle_definition(Page* rp, Page* ep, String path, D
             {
                 auto constant_syntax = _result._Constant;
                 {
+                    if (constant_syntax.operation == nullptr) {
+                        const auto _type_ref_result = handle_type(rp, ep, constant_syntax.type, file);
+                        auto type_ref = _type_ref_result._Ok;
+                        if (_type_ref_result._tag == Success::Error) {
+                            const auto _type_ref_Error = _type_ref_result._Error;
+                            switch (_type_ref_Error._tag) {
+                            default:
+                                return Result<Concept, ModelError>(_type_ref_result._Error);
+
+                            }
+                        };
+                        return Result<Concept, ModelError>(Concept(span, String(rp, definition.name), Vector<GenericParameter>(rp, parameters), Vector<Attribute>(rp, attributes), Definition(*type_ref)));
+                    };
                     const auto _operation_result = handle_operands(rp, ep, constant_syntax.operation, file);
                     auto operation = _operation_result._Ok;
                     if (_operation_result._tag == Success::Error) {
@@ -2430,12 +2443,6 @@ Result<Concept, ModelError> handle_definition(Page* rp, Page* ep, String path, D
             {
                 auto intrinsic_syntax = _result._Intrinsic;
                 return Result<Concept, ModelError>(Concept(span, String(rp, definition.name), Vector<GenericParameter>(rp, parameters), Vector<Attribute>(rp, attributes), Definition(Intrinsic(Span(intrinsic_syntax.start, intrinsic_syntax.end)))));
-                break;
-            }
-            case ConceptSyntax::Type:
-            {
-                auto type_syntax = _result._Type;
-                return Result<Concept, ModelError>(ModelError(ModelBuilderError(NotImplemented(file, String(ep, "Type"), Span(type_syntax.start, type_syntax.end)))));
                 break;
             }
         }

@@ -584,12 +584,14 @@ struct Definition : Object {
     Definition(Namespace);
     Definition(Structure);
     Definition(Union);
+    Definition(Type);
     enum {
         Intrinsic,
         Global,
         Namespace,
         Structure,
         Union,
+        Type,
     } _tag;
     union {
         struct Intrinsic _Intrinsic;
@@ -597,6 +599,7 @@ struct Definition : Object {
         struct Namespace _Namespace;
         struct Structure _Structure;
         struct Union _Union;
+        struct Type _Type;
     };
 };
 struct Use : Object {

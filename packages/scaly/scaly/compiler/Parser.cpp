@@ -319,8 +319,6 @@ ConceptSyntax::ConceptSyntax(struct DelegateSyntax _Delegate) : _tag(Delegate), 
 
 ConceptSyntax::ConceptSyntax(struct IntrinsicSyntax _Intrinsic) : _tag(Intrinsic), _Intrinsic(_Intrinsic) {}
 
-ConceptSyntax::ConceptSyntax(struct TypeSyntax _Type) : _tag(Type), _Type(_Type) {}
-
 
 GenericParameterSyntax::GenericParameterSyntax(size_t start, size_t end, String name, Vector<AttributeSyntax>* attributes) : start(start), end(end), name(name), attributes(attributes) {}
 
@@ -2166,46 +2164,6 @@ Result<ConceptSyntax, ParserError> Parser::parse_concept(Page* rp, Page* ep) {
                 {
                     auto node = _result._Ok;
                     return Result<ConceptSyntax, ParserError>(ConceptSyntax(IntrinsicSyntax(node)));
-                    break;
-                }
-            }
-        };
-    };
-    {
-        {
-            auto _result = parse_type(rp, ep);
-            switch (_result._tag)
-            {
-                case Success::Error:
-                {
-                    auto error = _result._Error;
-                    {
-                        {
-                            auto _result = error;
-                            switch (_result._tag)
-                            {
-                                case ParserError::Invalid:
-                                {
-                                    auto i = _result._Invalid;
-                                    return Result<ConceptSyntax, ParserError>(i);
-                                    break;
-                                }
-                                case ParserError::Different:
-                                {
-                                    auto d = _result._Different;
-                                    {
-                                    };
-                                    break;
-                                }
-                            }
-                        };
-                    };
-                    break;
-                }
-                case Success::Ok:
-                {
-                    auto node = _result._Ok;
-                    return Result<ConceptSyntax, ParserError>(ConceptSyntax(TypeSyntax(node)));
                     break;
                 }
             }

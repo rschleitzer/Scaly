@@ -315,6 +315,7 @@ define Definition union (
     Namespace: Namespace
     Structure: Structure
     Union: Union
+    Type: Type
 )
 
 define Use(span: Span, path: Vector[String])

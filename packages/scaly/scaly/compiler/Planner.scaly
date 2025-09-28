@@ -155,7 +155,7 @@ function plan_symbols(this: Planner, source: pointer[Plan.Source], file: String,
     return Void()
 }
 
-function plan_concept(this: Planner, file: String, symbols: ref[HashMap[String, Nameable]], concept: ref[Concept]) throws PlannerError { 
+function plan_concept(this: Planner, file: String, symbols: ref[HashMap[String, Nameable]], concept: ref[Concept]) throws PlannerError {
     choose concept.definition
         when ns: Definition.Namespace
             throw FeatureNotImplemented(file, ns.span, String(ep, "namespace"))
@@ -167,6 +167,8 @@ function plan_concept(this: Planner, file: String, symbols: ref[HashMap[String, 
             throw FeatureNotImplemented(file, g.span, String(ep, "global"))
         when u: Definition.Union
             throw FeatureNotImplemented(file, u.span, String(ep, "union"))
+        when t: Definition.Type
+            return plan_type_definition(ep, concept.name, t)
 }
 
 function plan_intrinsic(this: Planner, name: String) throws PlannerError {
@@ -174,8 +176,23 @@ function plan_intrinsic(this: Planner, name: String) throws PlannerError {
 
     if intrinsics_builder.contains(name)
         throw DuplicateIntrinsic(String(ep, name))
-    
+
     intrinsics_builder.add(name)
+
+    return Void()
+}
+
+function plan_type_definition(this: Planner, name: String, type_def: ref[Type]) throws PlannerError {
+    var r Region()
+
+    ; Create a type alias that maps the new type name to the target type
+    ; For now, we just resolve the target type to its string representation
+    let target_type_name *type_def.name.get(0)
+
+    ; Add the type alias to the types builder
+    ; This allows resolve_type to later map "int" to "int32"
+    let plan_type Plan->PlanType(name, Vector[String](get_page(), List[String]()))
+    types_builder.add(name, plan_type)
 
     return Void()
 }
@@ -184,6 +201,34 @@ function resolve_type(this: Planner, file: String, symbols: ref[HashMap[String, 
     let name *type.name.get(0)
     if intrinsics_builder.contains(name)
         return name
+
+    ; Check if this is a type alias first
+    if types_builder.contains(name)
+    {
+        ; This is a type alias, but we need to resolve it to the actual target type
+        ; For now, we need to look up the symbol and get the target type from the Definition.Type
+        if symbols.contains(name)
+        {
+            choose *symbols.get(name)
+                when concept: Nameable.Concept
+                {
+                    choose concept.definition
+                        when t: Definition.Type
+                        {
+                            ; Recursively resolve the target type
+                            return resolve_type(get_page(), ep, file, symbols, t)
+                        }
+                        when i: Definition.Intrinsic
+                        {
+                            return name
+                        }
+                        else
+                            throw FeatureNotImplemented(file, concept.span, String(ep, "Concept type other than intrinsic or type"))
+                }
+                else
+                    throw ConceptExpected(file, type.span, name)
+        }
+    }
 
     if symbols.contains(name)
     {
