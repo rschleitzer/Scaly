@@ -399,7 +399,7 @@ Result<List<PlanInstruction>*, PlannerError> Planner::plan_instruction_call(Page
     return Result<List<PlanInstruction>*, PlannerError>(instructions);
 }
 
-Result<List<PlanInstruction>*, PlannerError> Planner::plan_type(Page* rp, Page* ep, String file, List<HashMap<String, String>>& environment, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, Type& type, String* required_type, List<BasicBlock>& blocks, List<PlanInstruction>* instructions, List<String>& values) {
+Result<List<PlanInstruction>*, PlannerError> Planner::plan_type_expression(Page* rp, Page* ep, String file, List<HashMap<String, String>>& environment, HashMap<String, Nameable>& symbols, VectorIterator<Operand>* operation, Type& type, String* required_type, List<BasicBlock>& blocks, List<PlanInstruction>* instructions, List<String>& values) {
     if (type.name.length>1) 
         return Result<List<PlanInstruction>*, PlannerError>(FeatureNotImplemented(file, type.span, String(ep, "Qualified type name")));
     if (type.generics) 
@@ -456,7 +456,22 @@ Result<List<PlanInstruction>*, PlannerError> Planner::plan_type(Page* rp, Page* 
                 case Nameable::Concept:
                 {
                     auto concept = _result._Concept;
-                    return Result<List<PlanInstruction>*, PlannerError>(FeatureNotImplemented(file, concept.span, String(ep, "Concept reference")));
+                    {
+                        {
+                            auto _result = concept.definition;
+                            switch (_result._tag)
+                            {
+                                case Definition::Intrinsic:
+                                {
+                                    auto i = _result._Intrinsic;
+                                    return Result<List<PlanInstruction>*, PlannerError>(UndefinedTypeOrValue(file, type.span, String(ep, name)));
+                                    break;
+                                }
+                                default:
+                                    return Result<List<PlanInstruction>*, PlannerError>(FeatureNotImplemented(file, concept.span, String(ep, "Non-intrinsic concept reference")));
+                            }
+                        };
+                    };
                     break;
                 }
                 case Nameable::Operator:
@@ -709,7 +724,7 @@ Result<List<PlanInstruction>*, PlannerError> Planner::plan_operand(Page* rp, Pag
             case Expression::Type:
             {
                 auto type = _result._Type;
-                return Result<List<PlanInstruction>*, PlannerError>(plan_type(get_page(), ep, file, environment, symbols, operation, type, required_type, blocks, instructions, values));
+                return Result<List<PlanInstruction>*, PlannerError>(plan_type_expression(get_page(), ep, file, environment, symbols, operation, type, required_type, blocks, instructions, values));
                 break;
             }
             case Expression::Tuple:
