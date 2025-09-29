@@ -308,7 +308,11 @@ function resolve_qualified_type(this: Planner, file: String, symbols: ref[HashMa
 
     ; Check if the qualified name is a registered intrinsic
     if intrinsics_builder.contains(qualified_name)
-        return qualified_name
+    {
+        let last_index name_path.length - 1
+        let intrinsic_name *name_path.get(last_index)
+        return String(r.get_page(), intrinsic_name)
+    }
 
     ; Navigate through namespace hierarchy
     let namespace_name *name_path.get(0)
@@ -334,7 +338,7 @@ function resolve_qualified_type(this: Planner, file: String, symbols: ref[HashMa
                                         when i: Definition.Intrinsic
                                         {
                                             ; Return the qualified name for the intrinsic
-                                            return qualified_name
+                                            return String(r.get_page(), *name_path.get(name_path.length - 1))
                                         }
                                         else
                                             throw FeatureNotImplemented(file, span, String(ep, "Non-intrinsic namespace member"))

@@ -81,18 +81,18 @@ The development workflow uses the Transpiler to automatically convert Scaly sour
 - Only `Generator.h` and `Generator.cpp` should be edited directly
 - The transpiler will overwrite generated C++ files on each build
 - Changes to `.scaly` files require rebuilding to regenerate C++ code
+- **Memory Management**: Functions use `rp` (return page) and `ep` (exception page) parameters for memory management - these are required for proper page allocation
 
 ## Development Commands
 
 ### Building
+- See .vscode/launch.json and .vscode/tasks.json how to build and run.
 ```bash
 # Build individual components
 cd packages/scaly && ./build.sh    # Build runtime library
-cd packages/scalyc && ./build.sh   # Build compiler
-cd packages/scals && ./build.sh    # Build language server
 
-# Test with simple program
-cd packages/scaly && scalyc test.scaly test
+# Run the compiled code
+cd packages/scaly && bin/scaly
 ```
 
 ### Dependencies

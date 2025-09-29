@@ -437,8 +437,11 @@ Result<String, PlannerError> Planner::resolve_qualified_type(Page* rp, Page* ep,
         i = i+1;
     };
     const auto qualified_name = qualified_name_builder.to_string(r.get_page());
-    if (intrinsics_builder.contains(qualified_name)) 
-        return Result<String, PlannerError>(qualified_name);
+    if (intrinsics_builder.contains(qualified_name)) {
+        const auto last_index = name_path.length-1;
+        const auto intrinsic_name = *name_path.get(last_index);
+        return Result<String, PlannerError>(String(r.get_page(), intrinsic_name));
+    };
     const auto namespace_name = *name_path.get(0);
     if (symbols.contains(namespace_name) == false) 
         return Result<String, PlannerError>(UndefinedType(file, span, String(ep, namespace_name)));
@@ -477,7 +480,7 @@ Result<String, PlannerError> Planner::resolve_qualified_type(Page* rp, Page* ep,
                                                                     {
                                                                         auto i = _result._Intrinsic;
                                                                         {
-                                                                            return Result<String, PlannerError>(qualified_name);
+                                                                            return Result<String, PlannerError>(String(r.get_page(), *name_path.get(name_path.length-1)));
                                                                         };
                                                                         break;
                                                                     }
