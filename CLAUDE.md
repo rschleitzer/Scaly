@@ -60,6 +60,7 @@ Scaly syntax includes:
 ### Some Grammar Details
 - Operators are neither hardcoded into the language, nor is an operator precedence defined by the language.
 - A function is applied as a prefix on anything that follows, an operator works as a postfix on the preceding operation. Both functions and operators can use either alphanumeric, operator-style, and string identifiers.
+- **IMPORTANT**: In if/choose statements, the `else` keyword must be on the same line as the closing curly brace of the consequent block. This is a common syntax pitfall.
 - For details see scaly.sgm
 
 ### Changing the grammar

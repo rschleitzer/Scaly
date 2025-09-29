@@ -234,7 +234,7 @@ Result<Void, PlannerError> Planner::plan_concept(Page* ep, String file, HashMap<
             case Definition::Namespace:
             {
                 auto ns = _result._Namespace;
-                return Result<Void, PlannerError>(FeatureNotImplemented(file, ns.span, String(ep, "namespace")));
+                return Result<Void, PlannerError>(plan_namespace(ep, concept.name, file, ns));
                 break;
             }
             case Definition::Structure:
@@ -279,6 +279,55 @@ Result<Void, PlannerError> Planner::plan_intrinsic(Page* ep, String name) {
     return Result<Void, PlannerError>(Void());
 }
 
+Result<Void, PlannerError> Planner::plan_namespace(Page* ep, String namespace_name, String file, Namespace& ns) {
+    auto r = Region();
+    
+    auto _member_iterator = ns.members.get_iterator();
+    while (auto _member = _member_iterator.next()) {
+        auto member = *_member;{
+            {
+                auto _result = member;
+                switch (_result._tag)
+                {
+                    case Member::Concept:
+                    {
+                        auto concept = _result._Concept;
+                        {
+                            {
+                                auto _result = concept.definition;
+                                switch (_result._tag)
+                                {
+                                    case Definition::Intrinsic:
+                                    {
+                                        auto i = _result._Intrinsic;
+                                        {
+                                            StringBuilder& qualified_name_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder();
+                                            qualified_name_builder.append(namespace_name);
+                                            qualified_name_builder.append('.');
+                                            qualified_name_builder.append(concept.name);
+                                            const auto qualified_name = qualified_name_builder.to_string(r.get_page());
+                                            if (intrinsics_builder.contains(qualified_name)) 
+                                                return Result<Void, PlannerError>(DuplicateIntrinsic(String(ep, qualified_name)));
+                                            intrinsics_builder.add(qualified_name);
+                                        };
+                                        break;
+                                    }
+                                    default:
+                                        return Result<Void, PlannerError>(FeatureNotImplemented(file, concept.span, String(ep, "Non-intrinsic namespace member")));
+                                }
+                            };
+                        };
+                        break;
+                    }
+                    default:
+                        return Result<Void, PlannerError>(FeatureNotImplemented(file, Span(0, 0), String(ep, "Non-concept namespace member")));
+                }
+            };
+        }
+    };
+    return Result<Void, PlannerError>(Void());
+}
+
 Result<Void, PlannerError> Planner::plan_type_definition(Page* ep, String name, Type& type_def) {
     auto r = Region();
     const auto target_type_name = *type_def.name.get(0);
@@ -288,10 +337,55 @@ Result<Void, PlannerError> Planner::plan_type_definition(Page* ep, String name, 
 }
 
 Result<String, PlannerError> Planner::resolve_type(Page* rp, Page* ep, String file, HashMap<String, Nameable>& symbols, Type type) {
-    const auto name = *type.name.get(0);
-    if (intrinsics_builder.contains(name)) 
-        return Result<String, PlannerError>(name);
-    if (types_builder.contains(name)) {
+    if (type.name.length == 1) {
+        const auto name = *type.name.get(0);
+        if (intrinsics_builder.contains(name)) 
+            return Result<String, PlannerError>(name);
+        if (types_builder.contains(name)) {
+            if (symbols.contains(name)) {
+                {
+                    auto _result = *symbols.get(name);
+                    switch (_result._tag)
+                    {
+                        case Nameable::Concept:
+                        {
+                            auto concept = _result._Concept;
+                            {
+                                {
+                                    auto _result = concept.definition;
+                                    switch (_result._tag)
+                                    {
+                                        case Definition::Type:
+                                        {
+                                            auto t = _result._Type;
+                                            {
+                                                return Result<String, PlannerError>(resolve_type(rp, ep, file, symbols, t));
+                                            };
+                                            break;
+                                        }
+                                        case Definition::Intrinsic:
+                                        {
+                                            auto i = _result._Intrinsic;
+                                            {
+                                                return Result<String, PlannerError>(name);
+                                            };
+                                            break;
+                                        }
+                                        default:
+                                            return Result<String, PlannerError>(FeatureNotImplemented(file, concept.span, String(ep, "Concept type other than intrinsic or type")));
+                                    }
+                                };
+                            };
+                            break;
+                        }
+                        default:
+                            {
+                            return Result<String, PlannerError>(ConceptExpected(file, type.span, name));
+                        };
+                    }
+                };
+            };
+        };
         if (symbols.contains(name)) {
             {
                 auto _result = *symbols.get(name);
@@ -305,14 +399,6 @@ Result<String, PlannerError> Planner::resolve_type(Page* rp, Page* ep, String fi
                                 auto _result = concept.definition;
                                 switch (_result._tag)
                                 {
-                                    case Definition::Type:
-                                    {
-                                        auto t = _result._Type;
-                                        {
-                                            return Result<String, PlannerError>(resolve_type(get_page(), ep, file, symbols, t));
-                                        };
-                                        break;
-                                    }
                                     case Definition::Intrinsic:
                                     {
                                         auto i = _result._Intrinsic;
@@ -322,7 +408,7 @@ Result<String, PlannerError> Planner::resolve_type(Page* rp, Page* ep, String fi
                                         break;
                                     }
                                     default:
-                                        return Result<String, PlannerError>(FeatureNotImplemented(file, concept.span, String(ep, "Concept type other than intrinsic or type")));
+                                        return Result<String, PlannerError>(FeatureNotImplemented(file, concept.span, String(ep, "Concept type other than intrinsic")));
                                 }
                             };
                         };
@@ -333,41 +419,101 @@ Result<String, PlannerError> Planner::resolve_type(Page* rp, Page* ep, String fi
                 }
             };
         };
+        return Result<String, PlannerError>(UndefinedType(file, type.span, String(ep, name)));
+    }
+    else {
+        return Result<String, PlannerError>(resolve_qualified_type(rp, ep, file, symbols, type.name, type.span));
     };
-    if (symbols.contains(name)) {
+}
+
+Result<String, PlannerError> Planner::resolve_qualified_type(Page* rp, Page* ep, String file, HashMap<String, Nameable>& symbols, Vector<String> name_path, Span span) {
+    auto r = Region();
+    StringBuilder& qualified_name_builder = *new (alignof(StringBuilder), r.get_page()) StringBuilder();
+    auto i = 0;
+    while (i<name_path.length) {
+        if (i>0) 
+            qualified_name_builder.append('.');
+        qualified_name_builder.append(*name_path.get(i));
+        i = i+1;
+    };
+    const auto qualified_name = qualified_name_builder.to_string(r.get_page());
+    if (intrinsics_builder.contains(qualified_name)) 
+        return Result<String, PlannerError>(qualified_name);
+    const auto namespace_name = *name_path.get(0);
+    if (symbols.contains(namespace_name) == false) 
+        return Result<String, PlannerError>(UndefinedType(file, span, String(ep, namespace_name)));
+    {
+        auto _result = *symbols.get(namespace_name);
+        switch (_result._tag)
         {
-            auto _result = *symbols.get(name);
-            switch (_result._tag)
+            case Nameable::Concept:
             {
-                case Nameable::Concept:
+                auto concept = _result._Concept;
                 {
-                    auto concept = _result._Concept;
                     {
+                        auto _result = concept.definition;
+                        switch (_result._tag)
                         {
-                            auto _result = concept.definition;
-                            switch (_result._tag)
+                            case Definition::Namespace:
                             {
-                                case Definition::Intrinsic:
+                                auto ns = _result._Namespace;
                                 {
-                                    auto i = _result._Intrinsic;
-                                    {
-                                        return Result<String, PlannerError>(name);
+                                    if (name_path.length == 2) {
+                                        const auto member_name = *name_path.get(1);
+                                        if (ns.symbols.contains(member_name)) {
+                                            {
+                                                auto _result = *ns.symbols.get(member_name);
+                                                switch (_result._tag)
+                                                {
+                                                    case Nameable::Concept:
+                                                    {
+                                                        auto member_concept = _result._Concept;
+                                                        {
+                                                            {
+                                                                auto _result = member_concept.definition;
+                                                                switch (_result._tag)
+                                                                {
+                                                                    case Definition::Intrinsic:
+                                                                    {
+                                                                        auto i = _result._Intrinsic;
+                                                                        {
+                                                                            return Result<String, PlannerError>(qualified_name);
+                                                                        };
+                                                                        break;
+                                                                    }
+                                                                    default:
+                                                                        return Result<String, PlannerError>(FeatureNotImplemented(file, span, String(ep, "Non-intrinsic namespace member")));
+                                                                }
+                                                            };
+                                                        };
+                                                        break;
+                                                    }
+                                                    default:
+                                                        return Result<String, PlannerError>(FeatureNotImplemented(file, span, String(ep, "Non-concept namespace member")));
+                                                }
+                                            };
+                                        }
+                                        else {
+                                            return Result<String, PlannerError>(UndefinedType(file, span, String(ep, member_name)));
+                                        };
+                                    }
+                                    else {
+                                        return Result<String, PlannerError>(FeatureNotImplemented(file, span, String(ep, "Nested namespace paths")));
                                     };
-                                    break;
-                                }
-                                default:
-                                    return Result<String, PlannerError>(FeatureNotImplemented(file, concept.span, String(ep, "Concept type other than intrinsic")));
+                                };
+                                break;
                             }
-                        };
+                            default:
+                                return Result<String, PlannerError>(FeatureNotImplemented(file, span, String(ep, "Non-namespace qualified reference")));
+                        }
                     };
-                    break;
-                }
-                default:
-                    return Result<String, PlannerError>(ConceptExpected(file, type.span, name));
+                };
+                break;
             }
-        };
+            default:
+                return Result<String, PlannerError>(ConceptExpected(file, span, namespace_name));
+        }
     };
-    return Result<String, PlannerError>(UndefinedType(file, type.span, String(ep, name)));
 }
 
 String* Planner::get_type_from_environment(String name, List<HashMap<String, String>>& environment) {
