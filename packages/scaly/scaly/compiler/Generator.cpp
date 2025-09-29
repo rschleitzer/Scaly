@@ -416,25 +416,25 @@ void add_instruction(IRBuilder<>& builder, HashMap<String, llvm::Value*>& argume
                 // Handle common LLVM intrinsics
                 llvm::Value* result = nullptr;
                 if (intrinsic_data.intrinsic_id.equals("llvm.memcpy")) {
-                    auto intrinsic_func = llvm::Intrinsic::getDeclaration(module, llvm::Intrinsic::memcpy, arg_types);
+                    auto intrinsic_func = llvm::Intrinsic::getOrInsertDeclaration(module, llvm::Intrinsic::memcpy, arg_types);
                     result = builder.CreateCall(intrinsic_func, args);
                 } else if (intrinsic_data.intrinsic_id.equals("llvm.memset")) {
-                    auto intrinsic_func = llvm::Intrinsic::getDeclaration(module, llvm::Intrinsic::memset, arg_types);
+                    auto intrinsic_func = llvm::Intrinsic::getOrInsertDeclaration(module, llvm::Intrinsic::memset, arg_types);
                     result = builder.CreateCall(intrinsic_func, args);
                 } else if (intrinsic_data.intrinsic_id.equals("llvm.sqrt")) {
-                    auto intrinsic_func = llvm::Intrinsic::getDeclaration(module, llvm::Intrinsic::sqrt, arg_types);
+                    auto intrinsic_func = llvm::Intrinsic::getOrInsertDeclaration(module, llvm::Intrinsic::sqrt, arg_types);
                     result = builder.CreateCall(intrinsic_func, args,
                         instruction.result ? instruction.result->to_c_string(r.get_page()) : "");
                 } else if (intrinsic_data.intrinsic_id.equals("llvm.sin")) {
-                    auto intrinsic_func = llvm::Intrinsic::getDeclaration(module, llvm::Intrinsic::sin, arg_types);
+                    auto intrinsic_func = llvm::Intrinsic::getOrInsertDeclaration(module, llvm::Intrinsic::sin, arg_types);
                     result = builder.CreateCall(intrinsic_func, args,
                         instruction.result ? instruction.result->to_c_string(r.get_page()) : "");
                 } else if (intrinsic_data.intrinsic_id.equals("llvm.cos")) {
-                    auto intrinsic_func = llvm::Intrinsic::getDeclaration(module, llvm::Intrinsic::cos, arg_types);
+                    auto intrinsic_func = llvm::Intrinsic::getOrInsertDeclaration(module, llvm::Intrinsic::cos, arg_types);
                     result = builder.CreateCall(intrinsic_func, args,
                         instruction.result ? instruction.result->to_c_string(r.get_page()) : "");
                 } else if (intrinsic_data.intrinsic_id.equals("llvm.pow")) {
-                    auto intrinsic_func = llvm::Intrinsic::getDeclaration(module, llvm::Intrinsic::pow, arg_types);
+                    auto intrinsic_func = llvm::Intrinsic::getOrInsertDeclaration(module, llvm::Intrinsic::pow, arg_types);
                     result = builder.CreateCall(intrinsic_func, args,
                         instruction.result ? instruction.result->to_c_string(r.get_page()) : "");
                 }
