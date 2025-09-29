@@ -4,12 +4,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Scaly is a self-scaling programming language with a self-hosted compiler. The repository contains:
+Scaly is envisioned to be a self-scaling programming language. Scaly is compiled a self-hosted compiler. 
+
+Currently, Scaly works by transpiling to C++. The transpiler performs a mechanical transformation of the Scaly source files with a number of shortcomings:
+- Regions must be established explicitly in the code. The final compiler to be developed in this project will hide them.
+- Function calls must be formulated by explicitliy passing a return page if it returns an allocated value, and an exception page if it throws an allocated value.
+- The life time of references are not checked.
+- Namespace qualifiers in expressions must be written with an arrow (->) operator.
+
+This current infrastructure is contained in the packages directory:
 
 - **packages/scaly**: Runtime support and standard library (memory management, containers, I/O, JSON, compiler modules)
-- **packages/scalyc**: Self-hosted Scaly compiler
+- **packages/scalyc**: Command-line program using the transpiler. Stable versions are copied
 - **packages/scals**: Scaly Language Server for IDE integration
 - **extension**: VSCode extension for Scaly language support
+
+Current development takes place in packages/scalyc. A Planner and Generator are developed and tested which will eventually
+implement the final Scaly language implementation.
 
 ## Architecture
 
@@ -24,7 +35,7 @@ Scaly is a self-scaling programming language with a self-hosted compiler. The re
 
 2. **Self-hosted Compiler** (`packages/scalyc/`): Scaly compiler written in Scaly itself, transpiles Scaly to C++ and compiles with LLVM
 
-3. **Language Server** (`packages/scals/`): LSP implementation for IDE features
+3. **Language Server** (`packages/scals/`): LSP implementation for IDE features, still a stub.
 
 ### Build System
 
@@ -60,7 +71,7 @@ Scaly syntax includes:
 ### Some Grammar Details
 - Operators are neither hardcoded into the language, nor is an operator precedence defined by the language.
 - A function is applied as a prefix on anything that follows, an operator works as a postfix on the preceding operation. Both functions and operators can use either alphanumeric, operator-style, and string identifiers.
-- **IMPORTANT**: In if/choose statements, the `else` keyword must be on the same line as the closing curly brace of the consequent block. This is a common syntax pitfall.
+- **IMPORTANT**: In if statements, the `else` keyword must be on the same line as the closing curly brace of the consequent block. This is a common syntax pitfall.
 - For details see scaly.sgm
 
 ### Changing the grammar
