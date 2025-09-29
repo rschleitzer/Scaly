@@ -311,7 +311,7 @@ function resolve_qualified_type(this: Planner, file: String, symbols: ref[HashMa
     {
         let last_index name_path.length - 1
         let intrinsic_name *name_path.get(last_index)
-        return String(r.get_page(), intrinsic_name)
+        return String(rp, intrinsic_name)
     }
 
     ; Navigate through namespace hierarchy
