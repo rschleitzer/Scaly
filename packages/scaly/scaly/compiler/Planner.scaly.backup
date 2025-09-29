@@ -182,7 +182,7 @@ function plan_intrinsic(this: Planner, name: String) throws PlannerError {
     return Void()
 }
 
-function plan_namespace(this: Planner, namespace_name: String, file: String, ns: ref[Namespace]) throws PlannerError {
+function plan_namespace(this: Planner, namespace_name: String, file: String, ns: ref[Definition.Namespace]) throws PlannerError {
     var r Region()
 
     ; Process all members in the namespace and register qualified intrinsics
@@ -253,7 +253,7 @@ function resolve_type(this: Planner, file: String, symbols: ref[HashMap[String, 
                             when t: Definition.Type
                             {
                                 ; Recursively resolve the target type
-                                return resolve_type(rp, ep, file, symbols, t)
+                                return resolve_type(file, symbols, t)
                             }
                             when i: Definition.Intrinsic
                             {
@@ -261,9 +261,9 @@ function resolve_type(this: Planner, file: String, symbols: ref[HashMap[String, 
                             }
                             else
                                 throw FeatureNotImplemented(file, concept.span, String(ep, "Concept type other than intrinsic or type"))
-                    } else {
-                        throw ConceptExpected(file, type.span, name)
                     }
+                    else
+                        throw ConceptExpected(file, type.span, name)
             }
         }
 
@@ -285,9 +285,11 @@ function resolve_type(this: Planner, file: String, symbols: ref[HashMap[String, 
         }
 
         throw UndefinedType(file, type.span, String(ep, name))
-    } else {
+    }
+    else
+    {
         ; Qualified name resolution (e.g., LLVM.int32)
-        return resolve_qualified_type(rp, ep, file, symbols, type.name, type.span)
+        return resolve_qualified_type(file, symbols, type.name, type.span)
     }
 }
 
@@ -296,13 +298,11 @@ function resolve_qualified_type(this: Planner, file: String, symbols: ref[HashMa
 
     ; Build qualified name for intrinsic lookup (e.g., "LLVM.int32")
     var qualified_name_builder: ref[StringBuilder] *StringBuilder$()
-    var i 0
-    while i < name_path.length
+    for i = 0; i < name_path.length; i = i + 1
     {
         if i > 0
             qualified_name_builder.append('.')
         qualified_name_builder.append(*name_path.get(i))
-        set i: i + 1
     }
     let qualified_name qualified_name_builder.to_string(r.get_page())
 
@@ -341,10 +341,14 @@ function resolve_qualified_type(this: Planner, file: String, symbols: ref[HashMa
                                 }
                                 else
                                     throw FeatureNotImplemented(file, span, String(ep, "Non-concept namespace member"))
-                        } else {
+                        }
+                        else
+                        {
                             throw UndefinedType(file, span, String(ep, member_name))
                         }
-                    } else {
+                    }
+                    else
+                    {
                         throw FeatureNotImplemented(file, span, String(ep, "Nested namespace paths"))
                     }
                 }

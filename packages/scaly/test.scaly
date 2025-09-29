@@ -1,6 +1,8 @@
-define int32 intrinsic
-define int int32
+define LLVM {
+    define int32 intrinsic
+}
 
+define int LLVM.int32
 function mul(op1: int, op2: int) returns int instruction
 
 mul(argc, argc)
