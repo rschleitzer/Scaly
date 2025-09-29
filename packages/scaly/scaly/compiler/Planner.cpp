@@ -440,7 +440,7 @@ Result<String, PlannerError> Planner::resolve_qualified_type(Page* rp, Page* ep,
     if (intrinsics_builder.contains(qualified_name)) {
         const auto last_index = name_path.length-1;
         const auto intrinsic_name = *name_path.get(last_index);
-        return Result<String, PlannerError>(String(r.get_page(), intrinsic_name));
+        return Result<String, PlannerError>(String(rp, intrinsic_name));
     };
     const auto namespace_name = *name_path.get(0);
     if (symbols.contains(namespace_name) == false) 
