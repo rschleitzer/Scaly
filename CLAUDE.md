@@ -74,6 +74,12 @@ Scaly syntax includes:
 - **IMPORTANT**: In if statements, the `else` keyword must be on the same line as the closing curly brace of the consequent block. This is a common syntax pitfall.
 - For details see scaly.sgm
 
+### Programs and Libraries
+- A full program contains top-level statements. These top-level statements have access to argc and argv parameters. 
+The compiler compiles the statements into a main function which accepts the usual argc and argv parameters. 
+All of the code of the program is linked together to a program.
+- A library does not contain top-level statements. All of the code of the program is linked to an archive library.
+
 ### Changing the grammar
 - Adjust scaly.sgm and run the mkp shell script which will use openjade to re-generate Parser.scaly.
 
@@ -86,6 +92,9 @@ The development workflow uses the Transpiler to automatically convert Scaly sour
 2. **Transpiler** converts `.scaly` files to corresponding `.cpp` and `.h` files
 3. **Exception**: `Generator.h` and `Generator.cpp` are manually edited (not generated)
 4. **Build process** compiles the generated C++ code with LLVM
+
+This transpilation step is done by calling scalyc in build.sh. This program contains a stable version of the Transpiler
+which is used to transpile all of the .scaly files of the current package.
 
 ### Important Notes
 - **Always edit `.scaly` files** for most changes, not the generated `.cpp/.h` files
