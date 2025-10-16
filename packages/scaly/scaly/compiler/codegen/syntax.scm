@@ -1,4 +1,4 @@
-(define (syntax) ($
+(define (generate-syntax) ($
 "use scaly.containers
 "
    (apply $ (map
