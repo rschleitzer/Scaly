@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<!DOCTYPE style-sheet PUBLIC "-//James Clark//DTD DSSSL Style Sheet//EN" [
+<!ENTITY fodeclare  SYSTEM "fodeclare.scm"  >
+<!ENTITY helpers    SYSTEM "helpers.scm"    >
+<!ENTITY syntax     SYSTEM "syntax.scm"     >
+<!ENTITY parser     SYSTEM "parser.scm"     >
+<!ENTITY rules      SYSTEM "rules.scm"      >
+]>
+<style-sheet>
+<style-specification>
+&fodeclare;
+&helpers;
+&syntax;
+&parser;
+&rules;
+</style-specification>
+</style-sheet>
