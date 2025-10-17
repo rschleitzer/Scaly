@@ -7,7 +7,7 @@
   <!ATTLIST syntax
     id          ID                                  #REQUIRED
     abstract    (abstract|concrete)                 concrete
-    multiple    (multiple|single)                   single
+    multiple    (yes|no)                            no
   >
 
   <!ELEMENT content - O EMPTY>
@@ -17,8 +17,8 @@
                   attribute|literal|eof)            syntax
     link        IDREF                               #IMPLIED
     property    CDATA                               #IMPLIED
-    multiple    (multiple|single)                   single
-    optional    (optional|required)                 required
+    multiple    (yes|no)                            no
+    optional    (yes|no)                            no
   >
 
   <!ELEMENT keyword - O EMPTY>
