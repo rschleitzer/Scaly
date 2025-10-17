@@ -1,25 +1,20 @@
 <?xml version="1.0"?>
 <!DOCTYPE grammar SYSTEM "grammar.dtd">
-
 <grammar>
-
-<syntax      id="Program">
-    <content link="File"                                                             property="file"            />
-    <content link="Statement"                multiple="multiple" optional="optional"                                                 property="statements"/>
-</syntax>
-
-<syntax      id="File">
-    <content link="Package"                  multiple="multiple" optional="optional" property="packages"        />
-    <content link="Use"                      multiple="multiple" optional="optional" property="uses"            />
-    <content link="Declaration"              multiple="multiple" optional="optional" property="declarations"    />
-</syntax>
-
-<syntax      id="Declaration"                multiple="multiple">
-    <content link="Symbol"                                                           property="symbol"          />
-    <content type="colon"                                        optional="optional"                            />
-</syntax>
-
-<syntax id="Symbol"                                              abstract="abstract"                            >
+  <syntax id="Program">
+    <content link="File" property="file"/>
+    <content link="Statement" property="statements" multiple="multiple" optional="optional"/>
+  </syntax>
+  <syntax id="File">
+    <content link="Package" property="packages" multiple="multiple" optional="optional"/>
+    <content link="Use" property="uses" multiple="multiple" optional="optional"/>
+    <content link="Declaration" property="declarations" multiple="multiple" optional="optional"/>
+  </syntax>
+  <syntax id="Declaration" multiple="multiple">
+    <content link="Symbol" property="symbol"/>
+    <content type="colon" optional="optional"/>
+  </syntax>
+  <syntax id="Symbol" abstract="abstract">
     <content link="Private"/>
     <content link="Definition"/>
     <content link="Function"/>
@@ -27,2369 +22,642 @@
     <content link="Trait"/>
     <content link="Macro"/>
     <content link="Module"/>
-</syntax>
-
-<syntax id="Private">
-    <content link="private"                                                                                     />
-    <content link="Export"                                                           property="export_"         />
-</syntax>
-
-<syntax id="Export"                                             abstract="abstract"                             >
+  </syntax>
+  <syntax id="Private">
+    <content link="private"/>
+    <content link="Export" property="export_"/>
+  </syntax>
+  <syntax id="Export" abstract="abstract">
     <content link="Definition"/>
     <content link="Function"/>
     <content link="Operator"/>
     <content link="Trait"/>
     <content link="Module"/>
-</syntax>
-
-<syntax id="Member"                         multiple="multiple">
-    <content link="Constituent"                                                      property="constituent"     />
-    <content type="colon"                                       optional="optional"                             />
-</syntax>
-
-<syntax id="Constituent"                                        abstract="abstract">
+  </syntax>
+  <syntax id="Member" multiple="multiple">
+    <content link="Constituent" property="constituent"/>
+    <content type="colon" optional="optional"/>
+  </syntax>
+  <syntax id="Constituent" abstract="abstract">
     <content link="Definition"/>
     <content link="Function"/>
     <content link="Procedure"/>
     <content link="Operator"/>
     <content link="Implement"/>
     <content link="Trait"/>
-    <content link="Macro" >
+    <content link="Macro"/>
     <content link="Module"/>
-</syntax>
-
-<syntax id="Definition"                                                                                         >
+  </syntax>
+  <syntax id="Definition">
     <content link="define"/>
-    <content type="identifier"                                                           property="name"        />
-    <content link="GenericParameters"                           optional="optional"      property="parameters"  />
-    <content type="colon"                                       optional="optional"                             />
-    <content link="Attribute"               multiple="multiple" optional="optional"      property="attributes"  />
-    <content link="Concept"                                                              property="concept_"    />
-</syntax>
-
-<syntax id="GenericParameters"                                                                                  >
+    <content type="identifier" property="name"/>
+    <content link="GenericParameters" property="parameters" optional="optional"/>
+    <content type="colon" optional="optional"/>
+    <content link="Attribute" property="attributes" multiple="multiple" optional="optional"/>
+    <content link="Concept" property="concept_"/>
+  </syntax>
+  <syntax id="GenericParameters">
     <content link="left_bracket"/>
-    <content link="GenericParameter"        multiple="multiple"                          property="parameters"  />
+    <content link="GenericParameter" property="parameters" multiple="multiple"/>
     <content link="right_bracket"/>
-</syntax>
-
-<syntax id="GenericParameter"               multiple="multiple"                                                 >
-    <content type="identifier"                                                           property="name"        />
-    <content link="Attribute"               multiple="multiple" property="attributes"
-
-optional="optional"
-></content><content
-
-link="comma"
-
-optional="optional"
-></content></syntax><syntax
-id="Concept"
-abstract="abstract"
-
-><content
-
-link="Class"
-
-
-></content><content
-
-link="Namespace"
-
-
-></content><content
-
-link="Union"
-
-
-></content><content
-
-link="Constant"
-
-
-></content><content
-
-link="Delegate"
-
-
-></content><content
-
-link="Intrinsic"
-
-
-></content></syntax><syntax
-id="Class"
-
-
-><content
-
-link="Structure"
-property="structure"
-
-
-></content><content
-type="colon"
-
-optional="optional"
-></content><content
-
-link="Body"
-property="body"
-
-optional="optional"
-></content><content
-type="colon"
-
-optional="optional"
-></content></syntax><syntax
-id="Body"
-
-
-><content
-
-link="left_curly"
-
-
-></content><content
-
-link="Use"
-property="uses"
-multiple="multiple"
-optional="optional"
-></content><content
-
-link="Init"
-property="inits"
-multiple="multiple"
-optional="optional"
-></content><content
-
-link="DeInit"
-property="deInit"
-
-optional="optional"
-></content><content
-
-link="Member"
-property="members"
-multiple="multiple"
-optional="optional"
-></content><content
-
-link="right_curly"
-
-
-></content><content
-type="colon"
-
-optional="optional"
-></content></syntax><syntax
-id="Namespace"
-
-
-><content
-
-link="left_curly"
-
-
-></content><content
-
-link="Use"
-property="uses"
-multiple="multiple"
-optional="optional"
-></content><content
-
-link="Declaration"
-property="declarations"
-multiple="multiple"
-optional="optional"
-></content><content
-
-link="right_curly"
-
-
-></content><content
-type="colon"
-
-optional="optional"
-></content></syntax><syntax
-id="Union"
-
-
-><content
-
-link="union"
-
-
-></content><content
-type="colon"
-
-optional="optional"
-></content><content
-
-link="left_paren"
-
-
-></content><content
-
-link="Variant"
-property="variants"
-multiple="multiple"
-
-></content><content
-
-link="right_paren"
-
-
-></content><content
-type="colon"
-
-optional="optional"
-></content><content
-
-link="Body"
-property="body"
-
-optional="optional"
-></content><content
-type="colon"
-
-optional="optional"
-></content></syntax><syntax
-id="Variant"
-
-multiple="multiple"
-><content
-type="identifier"
-property="name"
-
-
-></content><content
-
-link="Attribute"
-property="attributes"
-multiple="multiple"
-optional="optional"
-></content><content
-
-link="TypeAnnotation"
-property="annotation"
-
-optional="optional"
-></content><content
-
-link="comma"
-
-optional="optional"
-></content><content
-type="colon"
-
-optional="optional"
-></content></syntax><syntax
-id="Constant"
-
-
-><content
-
-link="Type"
-property="type"
-
-
-></content><content
-
-link="Operand"
-property="operation"
-multiple="multiple"
-optional="optional"
-></content><content
-type="colon"
-
-optional="optional"
-></content></syntax><syntax
-id="Delegate"
-
-
-><content
-
-link="delegate"
-
-
-></content><content
-
-link="ParameterSet"
-property="parameters"
-
-optional="optional"
-></content><content
-
-link="Attribute"
-property="attributes"
-multiple="multiple"
-optional="optional"
-></content><content
-
-link="Returns"
-property="result"
-
-optional="optional"
-></content><content
-
-link="Throws"
-property="error"
-
-optional="optional"
-></content></syntax><syntax
-id="GenericArguments"
-
-
-><content
-
-link="left_bracket"
-
-
-></content><content
-
-link="GenericArgument"
-property="generics"
-multiple="multiple"
-optional="optional"
-></content><content
-
-link="right_bracket"
-
-
-></content></syntax><syntax
-id="GenericArgument"
-
-multiple="multiple"
-><content
-
-link="Type"
-property="type"
-
-
-></content><content
-
-link="comma"
-
-optional="optional"
-></content></syntax><syntax
-id="Optional"
-
-
-><content
-
-link="question"
-
-
-></content></syntax><syntax
-id="ParameterSet"
-abstract="abstract"
-
-><content
-
-link="Parameters"
-
-
-></content><content
-
-link="Type"
-
-
-></content></syntax><syntax
-id="Parameters"
-
-
-><content
-
-link="left_paren"
-
-
-></content><content
-
-link="Item"
-property="items"
-multiple="multiple"
-optional="optional"
-></content><content
-
-link="right_paren"
-
-
-></content></syntax><syntax
-id="Item"
-
-multiple="multiple"
-><content
-type="identifier"
-property="name"
-
-
-></content><content
-
-link="TypeAnnotation"
-property="annotation"
-
-optional="optional"
-></content><content
-
-link="comma"
-
-optional="optional"
-></content><content
-type="colon"
-
-optional="optional"
-></content><content
-
-link="Attribute"
-property="attributes"
-multiple="multiple"
-optional="optional"
-></content><content
-type="colon"
-
-optional="optional"
-></content></syntax><syntax
-id="Returns"
-
-
-><content
-
-link="returns"
-
-
-></content><content
-
-link="Type"
-property="type"
-
-
-></content><content
-
-link="Attribute"
-property="attributes"
-multiple="multiple"
-optional="optional"
-></content></syntax><syntax
-id="Throws"
-
-
-><content
-
-link="throws"
-
-
-></content><content
-
-link="Type"
-property="type"
-
-
-></content><content
-
-link="Attribute"
-property="attributes"
-multiple="multiple"
-optional="optional"
-></content></syntax><syntax
-id="Use"
-
-multiple="multiple"
-><content
-
-link="use"
-
-
-></content><content
-
-link="Name"
-property="name"
-
-
-></content><content
-type="colon"
-
-optional="optional"
-></content></syntax><syntax
-id="Implement"
-
-
-><content
-
-link="implement"
-
-
-></content><content
-
-link="Type"
-property="type"
-
-
-></content><content
-
-link="Attribute"
-property="attributes"
-multiple="multiple"
-optional="optional"
-></content><content
-type="colon"
-
-optional="optional"
-></content><content
-
-link="left_curly"
-
-
-></content><content
-
-link="Use"
-property="uses"
-multiple="multiple"
-optional="optional"
-></content><content
-
-link="Method"
-property="methods"
-multiple="multiple"
-optional="optional"
-></content><content
-
-link="right_curly"
-
-
-></content><content
-type="colon"
-
-optional="optional"
-></content></syntax><syntax
-id="Trait"
-
-
-><content
-
-link="trait"
-
-
-></content><content
-
-link="Name"
-property="name"
-
-
-></content><content
-
-link="Extends"
-property="extension"
-
-optional="optional"
-></content><content
-
-link="Attribute"
-property="attributes"
-multiple="multiple"
-optional="optional"
-></content><content
-
-link="left_curly"
-
-
-></content><content
-
-link="Use"
-property="uses"
-multiple="multiple"
-optional="optional"
-></content><content
-
-link="Method"
-property="functions"
-multiple="multiple"
-optional="optional"
-></content><content
-
-link="right_curly"
-
-
-></content><content
-type="colon"
-
-optional="optional"
-></content></syntax><syntax
-id="Method"
-abstract="abstract"
-multiple="multiple"
-><content
-
-link="Function"
-
-
-></content><content
-
-link="Procedure"
-
-
-></content><content
-
-link="Operator"
-
-
-></content></syntax><syntax
-id="Init"
-
-multiple="multiple"
-><content
-
-link="init"
-
-
-></content><content
-
-link="ParameterSet"
-property="parameters"
-
-optional="optional"
-></content><content
-type="colon"
-
-optional="optional"
-></content><content
-
-link="Action"
-property="action"
-
-
-></content><content
-type="colon"
-
-optional="optional"
-></content></syntax><syntax
-id="DeInit"
-
-
-><content
-
-link="deinit"
-
-
-></content><content
-type="colon"
-
-optional="optional"
-></content><content
-
-link="Action"
-property="action"
-
-
-></content><content
-type="colon"
-
-optional="optional"
-></content></syntax><syntax
-id="Function"
-
-
-><content
-
-link="function"
-
-
-></content><content
-
-link="Target"
-property="target"
-
-
-></content></syntax><syntax
-id="Procedure"
-
-
-><content
-
-link="procedure"
-
-
-></content><content
-
-link="Target"
-property="target"
-
-
-></content></syntax><syntax
-id="Operator"
-
-
-><content
-
-link="operator"
-
-
-></content><content
-
-link="Target"
-property="target"
-
-
-></content></syntax><syntax
-id="Target"
-abstract="abstract"
-
-><content
-
-link="Named"
-
-
-></content><content
-
-link="Routine"
-
-
-></content></syntax><syntax
-id="Named"
-
-
-><content
-type="identifier"
-property="name"
-
-
-></content><content
-
-link="Routine"
-property="routine"
-
-
-></content></syntax><syntax
-id="Routine"
-
-
-><content
-
-link="GenericArguments"
-property="generics"
-
-optional="optional"
-></content><content
-
-link="Lifetime"
-property="lifetime"
-
-optional="optional"
-></content><content
-
-link="ParameterSet"
-property="parameters"
-
-optional="optional"
-></content><content
-
-link="Attribute"
-property="attributes"
-multiple="multiple"
-optional="optional"
-></content><content
-
-link="Returns"
-property="returns_"
-
-optional="optional"
-></content><content
-type="colon"
-
-optional="optional"
-></content><content
-
-link="Throws"
-property="throws_"
-
-optional="optional"
-></content><content
-type="colon"
-
-optional="optional"
-></content><content
-
-link="Implementation"
-property="implementation"
-
-
-></content></syntax><syntax
-id="Implementation"
-abstract="abstract"
-
-><content
-
-link="Action"
-
-
-></content><content
-
-link="Extern"
-
-
-></content><content
-
-link="Instruction"
-
-
-></content><content
-
-link="Intrinsic"
-
-
-></content></syntax><syntax
-id="Extern"
-
-
-><content
-
-link="extern"
-
-
-></content></syntax><syntax
-id="Instruction"
-
-
-><content
-
-link="instruction"
-
-
-></content><content
-type="colon"
-
-optional="optional"
-></content></syntax><syntax
-id="Intrinsic"
-
-
-><content
-
-link="intrinsic"
-
-
-></content><content
-type="colon"
-
-optional="optional"
-></content></syntax><syntax
-id="Extends"
-
-
-><content
-
-link="extends"
-
-
-></content><content
-
-link="Extend"
-property="extensions"
-multiple="multiple"
-optional="optional"
-></content></syntax><syntax
-id="Extend"
-
-multiple="multiple"
-><content
-
-link="Type"
-property="type"
-
-
-></content><content
-
-link="comma"
-
-optional="optional"
-></content></syntax><syntax
-id="Macro"
-
-
-><content
-
-link="macro"
-
-
-></content><content
-type="identifier"
-property="name"
-
-
-></content><content
-
-link="Model"
-property="model"
-
-
-></content><content
-
-link="Operand"
-property="rule"
-multiple="multiple"
-
-></content></syntax><syntax
-id="Attribute"
-
-multiple="multiple"
-><content
-type="attribute"
-property="name"
-
-
-></content><content
-
-link="Model"
-property="model"
-
-
-></content><content
-type="colon"
-
-optional="optional"
-></content></syntax><syntax
-id="Model"
-abstract="abstract"
-
-><content
-
-link="Literal"
-
-
-></content><content
-
-link="Name"
-
-
-></content><content
-
-link="Object"
-
-
-></content><content
-
-link="Vector"
-
-
-></content></syntax><syntax
-id="Module"
-
-
-><content
-
-link="module"
-
-
-></content><content
-type="identifier"
-property="name"
-
-
-></content><content
-type="colon"
-
-optional="optional"
-></content></syntax><syntax
-id="Package"
-
-multiple="multiple"
-><content
-
-link="package"
-
-
-></content><content
-
-link="Name"
-property="name"
-
-
-></content><content
-type="colon"
-
-optional="optional"
-></content></syntax><syntax
-id="Initializer"
-
-
-><content
-
-link="left_paren"
-
-
-></content><content
-
-link="Operand"
-property="operands"
-multiple="multiple"
-
-></content><content
-
-link="right_paren"
-
-
-></content></syntax><syntax
-id="Operand"
-
-multiple="multiple"
-><content
-
-link="Expression"
-property="expression"
-
-
-></content><content
-
-link="MemberAccess"
-property="members"
-multiple="multiple"
-optional="optional"
-></content></syntax><syntax
-id="MemberAccess"
-
-multiple="multiple"
-><content
-
-link="dot"
-
-
-></content><content
-
-link="Name"
-property="name"
-
-
-></content></syntax><syntax
-id="Expression"
-abstract="abstract"
-
-><content
-
-link="Literal"
-
-
-></content><content
-
-link="Type"
-
-
-></content><content
-
-link="Object"
-
-
-></content><content
-
-link="Vector"
-
-
-></content><content
-
-link="Block"
-
-
-></content><content
-
-link="If"
-
-
-></content><content
-
-link="Match"
-
-
-></content><content
-
-link="Lambda"
-
-
-></content><content
-
-link="For"
-
-
-></content><content
-
-link="While"
-
-
-></content><content
-
-link="Choose"
-
-
-></content><content
-
-link="Try"
-
-
-></content><content
-
-link="Repeat"
-
-
-></content><content
-
-link="SizeOf"
-
-
-></content><content
-
-link="Is"
-
-
-></content><content
-
-link="New"
-
-
-></content></syntax><syntax
-id="Literal"
-
-
-><content
-type="literal"
-property="literal"
-
-
-></content></syntax><syntax
-id="New"
-
-
-><content
-
-link="new_"
-
-
-></content><content
-
-link="Type"
-property="type"
-
-
-></content><content
-
-link="Object"
-property="arguments"
-
-
-></content></syntax><syntax
-id="Object"
-
-
-><content
-
-link="left_paren"
-
-
-></content><content
-
-link="Component"
-property="components"
-multiple="multiple"
-optional="optional"
-></content><content
-
-link="right_paren"
-
-
-></content></syntax><syntax
-id="Component"
-
-multiple="multiple"
-><content
-
-link="Operand"
-property="operands"
-multiple="multiple"
-
-></content><content
-
-link="Attribute"
-property="attributes"
-multiple="multiple"
-optional="optional"
-></content><content
-
-link="Value"
-property="value"
-
-optional="optional"
-></content><content
-
-link="comma"
-
-optional="optional"
-></content></syntax><syntax
-id="Value"
-
-
-><content
-type="colon"
-
-
-></content><content
-
-link="Operand"
-property="value"
-multiple="multiple"
-
-></content><content
-
-link="Attribute"
-property="attributes"
-multiple="multiple"
-optional="optional"
-></content></syntax><syntax
-id="Vector"
-
-
-><content
-
-link="left_bracket"
-
-
-></content><content
-
-link="Element"
-property="elements"
-multiple="multiple"
-
-></content><content
-
-link="right_bracket"
-
-
-></content><content
-
-link="Lifetime"
-property="lifetime"
-
-optional="optional"
-></content></syntax><syntax
-id="Element"
-
-multiple="multiple"
-><content
-
-link="Operand"
-property="operation"
-multiple="multiple"
-
-></content><content
-
-link="Attribute"
-property="attributes"
-multiple="multiple"
-optional="optional"
-></content><content
-
-link="comma"
-
-optional="optional"
-></content></syntax><syntax
-id="Block"
-
-
-><content
-
-link="left_curly"
-
-
-></content><content
-
-link="Use"
-property="uses"
-multiple="multiple"
-optional="optional"
-></content><content
-
-link="Statement"
-property="statements"
-multiple="multiple"
-optional="optional"
-></content><content
-
-link="right_curly"
-
-
-></content></syntax><syntax
-id="If"
-
-
-><content
-
-link="if"
-
-
-></content><content
-
-link="Operand"
-property="condition"
-multiple="multiple"
-
-></content><content
-type="colon"
-
-
-></content><content
-
-link="Command"
-property="consequent"
-
-
-></content><content
-
-link="Else"
-property="alternative"
-
-optional="optional"
-></content></syntax><syntax
-id="Else"
-
-
-><content
-
-link="else"
-
-
-></content><content
-type="colon"
-
-optional="optional"
-></content><content
-
-link="Command"
-property="alternative"
-
-
-></content></syntax><syntax
-id="Match"
-
-
-><content
-
-link="match"
-
-
-></content><content
-
-link="Operand"
-property="scrutinee"
-multiple="multiple"
-
-></content><content
-type="colon"
-
-
-></content><content
-
-link="Branch"
-property="branches"
-multiple="multiple"
-
-></content><content
-
-link="Else"
-property="alternative"
-
-optional="optional"
-></content></syntax><syntax
-id="Branch"
-
-multiple="multiple"
-><content
-
-link="Case"
-property="cases"
-multiple="multiple"
-
-></content><content
-type="colon"
-
-
-></content><content
-
-link="Statement"
-property="consequent"
-
-
-></content></syntax><syntax
-id="Case"
-
-multiple="multiple"
-><content
-
-link="case"
-
-
-></content><content
-
-link="Operand"
-property="condition"
-multiple="multiple"
-
-></content></syntax><syntax
-id="Statement"
-
-multiple="multiple"
-><content
-
-link="Command"
-property="command"
-
-
-></content><content
-type="colon"
-
-optional="optional"
-></content></syntax><syntax
-id="While"
-
-
-><content
-
-link="while"
-
-
-></content><content
-
-link="Condition"
-property="condition"
-
-
-></content><content
-type="colon"
-
-
-></content><content
-
-link="Label"
-property="name"
-
-optional="optional"
-></content><content
-
-link="Action"
-property="action"
-
-
-></content></syntax><syntax
-id="Choose"
-
-
-><content
-
-link="choose"
-
-
-></content><content
-
-link="Operand"
-property="condition"
-multiple="multiple"
-
-></content><content
-type="colon"
-
-
-></content><content
-
-link="When"
-property="cases"
-multiple="multiple"
-optional="optional"
-></content><content
-
-link="Else"
-property="alternative"
-
-optional="optional"
-></content></syntax><syntax
-id="Try"
-
-
-><content
-
-link="try"
-
-
-></content><content
-
-link="Condition"
-property="condition"
-
-
-></content><content
-type="colon"
-
-
-></content><content
-
-link="When"
-property="cases"
-multiple="multiple"
-optional="optional"
-></content><content
-
-link="Else"
-property="dropper"
-
-optional="optional"
-></content></syntax><syntax
-id="Condition"
-abstract="abstract"
-
-><content
-
-link="Operation"
-
-
-></content><content
-
-link="Let"
-
-
-></content></syntax><syntax
-id="When"
-
-multiple="multiple"
-><content
-
-link="when"
-
-
-></content><content
-type="identifier"
-property="name"
-
-
-></content><content
-type="colon"
-
-
-></content><content
-
-link="Name"
-property="variant"
-
-
-></content><content
-type="colon"
-
-optional="optional"
-></content><content
-
-link="Command"
-property="command"
-
-
-></content><content
-type="colon"
-
-optional="optional"
-></content></syntax><syntax
-id="Command"
-abstract="abstract"
-
-><content
-
-link="Operation"
-
-
-></content><content
-
-link="Let"
-
-
-></content><content
-
-link="Var"
-
-
-></content><content
-
-link="Mutable"
-
-
-></content><content
-
-link="Set"
-
-
-></content><content
-
-link="Continue"
-
-
-></content><content
-
-link="Break"
-
-
-></content><content
-
-link="Return"
-
-
-></content><content
-
-link="Throw"
-
-
-></content></syntax><syntax
-id="Let"
-
-
-><content
-
-link="let"
-
-
-></content><content
-
-link="Binding"
-property="binding"
-
-
-></content></syntax><syntax
-id="Var"
-
-
-><content
-
-link="var"
-
-
-></content><content
-
-link="Binding"
-property="binding"
-
-
-></content></syntax><syntax
-id="Mutable"
-
-
-><content
-
-link="mutable"
-
-
-></content><content
-
-link="Binding"
-property="binding"
-
-
-></content></syntax><syntax
-id="Binding"
-
-
-><content
-type="identifier"
-property="name"
-
-
-></content><content
-
-link="BindingAnnotation"
-property="annotation"
-
-optional="optional"
-></content><content
-
-link="Operand"
-property="operation"
-multiple="multiple"
-
-></content></syntax><syntax
-id="BindingAnnotation"
-
-
-><content
-type="colon"
-
-
-></content><content
-
-link="BindingSpec"
-property="spec"
-
-
-></content></syntax><syntax
-id="BindingSpec"
-abstract="abstract"
-multiple="multiple"
-><content
-
-link="Structure"
-
-
-></content><content
-
-link="Type"
-
-
-></content><content
-
-link="Array"
-
-
-></content></syntax><syntax
-id="Array"
-
-
-><content
-
-link="left_bracket"
-
-
-></content><content
-
-link="Type"
-property="members"
-multiple="multiple"
-optional="optional"
-></content><content
-
-link="right_bracket"
-
-
-></content></syntax><syntax
-id="Structure"
-
-
-><content
-
-link="left_paren"
-
-
-></content><content
-
-link="Part"
-property="parts"
-multiple="multiple"
-optional="optional"
-></content><content
-
-link="right_paren"
-
-
-></content></syntax><syntax
-id="Part"
-abstract="abstract"
-multiple="multiple"
-><content
-
-link="Field"
-
-
-></content><content
-
-link="Property"
-
-
-></content></syntax><syntax
-id="Field"
-
-
-><content
-
-link="private"
-
-
-></content><content
-
-link="Property"
-property="property"
-
-
-></content></syntax><syntax
-id="Property"
-
-multiple="multiple"
-><content
-type="identifier"
-property="name"
-
-
-></content><content
-
-link="TypeAnnotation"
-property="annotation"
-
-
-></content><content
-
-link="Initializer"
-property="initializer"
-
-optional="optional"
-></content><content
-
-link="comma"
-
-optional="optional"
-></content><content
-type="colon"
-
-optional="optional"
-></content><content
-
-link="Attribute"
-property="attributes"
-multiple="multiple"
-optional="optional"
-></content><content
-type="colon"
-
-optional="optional"
-></content></syntax><syntax
-id="TypeAnnotation"
-
-
-><content
-type="colon"
-
-
-></content><content
-
-link="Type"
-property="type"
-
-
-></content></syntax><syntax
-id="Continue"
-
-
-><content
-
-link="continue"
-
-
-></content><content
-
-link="Loop"
-property="name"
-
-optional="optional"
-></content><content
-type="colon"
-
-optional="optional"
-></content></syntax><syntax
-id="Break"
-
-
-><content
-
-link="break"
-
-
-></content><content
-
-link="Loop"
-property="name"
-
-optional="optional"
-></content><content
-
-link="Operand"
-property="result"
-multiple="multiple"
-optional="optional"
-></content><content
-type="colon"
-
-optional="optional"
-></content></syntax><syntax
-id="Loop"
-
-
-><content
-
-link="loop"
-
-
-></content><content
-type="identifier"
-property="name"
-
-
-></content></syntax><syntax
-id="Return"
-
-
-><content
-
-link="return"
-
-
-></content><content
-
-link="Operand"
-property="result"
-multiple="multiple"
-optional="optional"
-></content></syntax><syntax
-id="Throw"
-
-
-><content
-
-link="throw"
-
-
-></content><content
-
-link="Operand"
-property="result"
-multiple="multiple"
-optional="optional"
-></content></syntax><syntax
-id="Lambda"
-
-
-><content
-
-link="lambda"
-
-
-></content><content
-
-link="Operand"
-property="input"
-multiple="multiple"
-
-></content><content
-type="colon"
-
-
-></content><content
-
-link="Action"
-property="block"
-
-
-></content></syntax><syntax
-id="For"
-
-
-><content
-
-link="for"
-
-
-></content><content
-type="identifier"
-property="variable"
-
-
-></content><content
-
-link="TypeAnnotation"
-property="annotation"
-
-optional="optional"
-></content><content
-
-link="in"
-
-
-></content><content
-
-link="Operand"
-property="operation"
-multiple="multiple"
-
-></content><content
-type="colon"
-
-
-></content><content
-
-link="Label"
-property="name"
-
-optional="optional"
-></content><content
-
-link="Action"
-property="action"
-
-
-></content></syntax><syntax
-id="Label"
-
-
-><content
-
-link="label"
-
-
-></content><content
-type="identifier"
-property="name"
-
-
-></content><content
-type="colon"
-
-optional="optional"
-></content></syntax><syntax
-id="Repeat"
-
-
-><content
-
-link="repeat"
-
-
-></content><content
-
-link="Label"
-property="name"
-
-optional="optional"
-></content><content
-
-link="Action"
-property="action"
-
-
-></content></syntax><syntax
-id="Action"
-abstract="abstract"
-multiple="multiple"
-><content
-
-link="Operation"
-
-
-></content><content
-
-link="Set"
-
-
-></content></syntax><syntax
-id="Operation"
-
-
-><content
-
-link="Operand"
-property="operands"
-multiple="multiple"
-
-></content></syntax><syntax
-id="Set"
-
-
-><content
-
-link="set"
-
-
-></content><content
-
-link="Operand"
-property="target"
-multiple="multiple"
-
-></content><content
-type="colon"
-
-
-></content><content
-
-link="Operand"
-property="source"
-multiple="multiple"
-
-></content></syntax><syntax
-id="SizeOf"
-
-
-><content
-
-link="sizeof"
-
-
-></content><content
-
-link="Type"
-property="type"
-
-
-></content></syntax><syntax
-id="Is"
-
-
-><content
-
-link="is"
-
-
-></content><content
-
-link="Name"
-property="name"
-
-
-></content></syntax><syntax
-id="Type"
-
-multiple="multiple"
-><content
-
-link="Name"
-property="name"
-
-
-></content><content
-
-link="GenericArguments"
-property="generics"
-
-optional="optional"
-></content><content
-
-link="Optional"
-property="optional"
-
-optional="optional"
-></content><content
-
-link="Lifetime"
-property="lifetime"
-
-optional="optional"
-></content></syntax><syntax
-id="Name"
-
-
-><content
-type="identifier"
-property="name"
-
-
-></content><content
-
-link="Extension"
-property="extensions"
-multiple="multiple"
-optional="optional"
-></content></syntax><syntax
-id="Extension"
-
-multiple="multiple"
-><content
-
-link="dot"
-
-
-></content><content
-type="identifier"
-property="name"
-
-
-></content></syntax><syntax
-id="Lifetime"
-abstract="abstract"
-
-><content
-
-link="Call"
-
-
-></content><content
-
-link="Local"
-
-
-></content><content
-
-link="Reference"
-
-
-></content><content
-
-link="Thrown"
-
-
-></content></syntax><syntax
-id="Call"
-
-
-><content
-
-link="hash"
-
-
-></content></syntax><syntax
-id="Local"
-
-
-><content
-
-link="dollar"
-
-
-></content></syntax><syntax
-id="Reference"
-
-
-><content
-
-link="caret"
-
-
-></content><content
-type="identifier"
-property="location"
-
-
-></content></syntax><syntax
-id="Thrown"
-
-
-><content
-
-link="exclamation"
-
-
-></content></syntax><keyword
-id="break"
-></keyword><keyword
-id="case"
-></keyword><keyword
-id="choose"
-></keyword><keyword
-id="continue"
-></keyword><keyword
-id="define"
-></keyword><keyword
-id="deinit"
-></keyword><keyword
-id="delegate"
-></keyword><keyword
-id="else"
-></keyword><keyword
-id="extends"
-></keyword><keyword
-id="extern"
-></keyword><keyword
-id="for"
-></keyword><keyword
-id="function"
-></keyword><keyword
-id="if"
-></keyword><keyword
-id="is"
-></keyword><keyword
-id="init"
-></keyword><keyword
-id="implement"
-></keyword><keyword
-id="in"
-></keyword><keyword
-id="instruction"
-></keyword><keyword
-id="intrinsic"
-></keyword><keyword
-id="label"
-></keyword><keyword
-id="lambda"
-></keyword><keyword
-id="let"
-></keyword><keyword
-id="loop"
-></keyword><keyword
-id="macro"
-></keyword><keyword
-id="match"
-></keyword><keyword
-id="module"
-></keyword><keyword
-id="mutable"
-></keyword><keyword
-id="new_"
-></keyword><keyword
-id="operator"
-></keyword><keyword
-id="procedure"
-></keyword><keyword
-id="private"
-></keyword><keyword
-id="return"
-></keyword><keyword
-id="returns"
-></keyword><keyword
-id="repeat"
-></keyword><keyword
-id="set"
-></keyword><keyword
-id="sizeof"
-></keyword><keyword
-id="throw"
-></keyword><keyword
-id="throws"
-></keyword><keyword
-id="trait"
-></keyword><keyword
-id="try"
-></keyword><keyword
-id="union"
-></keyword><keyword
-id="use"
-></keyword><keyword
-id="var"
-></keyword><keyword
-id="when"
-></keyword><keyword
-id="while"
-></keyword><keyword
-id="package"
-></keyword><punctuation
-id="dot"
-value="."
-></punctuation><punctuation
-id="comma"
-value=","
-></punctuation><punctuation
-id="question"
-value="?"
-></punctuation><punctuation
-id="exclamation"
-value="!"
-></punctuation><punctuation
-id="left_paren"
-value="("
-></punctuation><punctuation
-id="right_paren"
-value=")"
-></punctuation><punctuation
-id="left_curly"
-value="{"
-></punctuation><punctuation
-id="right_curly"
-value="}"
-></punctuation><punctuation
-id="left_bracket"
-value="["
-></punctuation><punctuation
-id="right_bracket"
-value="]"
-></punctuation><punctuation
-id="dollar"
-value="$"
-></punctuation><punctuation
-id="hash"
-value="#"
-></punctuation><punctuation
-id="caret"
-value="^"
-></punctuation></grammar>
+  </syntax>
+  <syntax id="GenericParameter" multiple="multiple">
+    <content type="identifier" property="name"/>
+    <content link="Attribute" property="attributes" multiple="multiple" optional="optional"/>
+    <content link="comma" optional="optional"/>
+  </syntax>
+  <syntax id="Concept" abstract="abstract">
+    <content link="Class"/>
+    <content link="Namespace"/>
+    <content link="Union"/>
+    <content link="Constant"/>
+    <content link="Delegate"/>
+    <content link="Intrinsic"/>
+  </syntax>
+  <syntax id="Class">
+    <content link="Structure" property="structure"/>
+    <content type="colon" optional="optional"/>
+    <content link="Body" property="body" optional="optional"/>
+    <content type="colon" optional="optional"/>
+  </syntax>
+  <syntax id="Body">
+    <content link="left_curly"/>
+    <content link="Use" property="uses" multiple="multiple" optional="optional"/>
+    <content link="Init" property="inits" multiple="multiple" optional="optional"/>
+    <content link="DeInit" property="deInit" optional="optional"/>
+    <content link="Member" property="members" multiple="multiple" optional="optional"/>
+    <content link="right_curly"/>
+    <content type="colon" optional="optional"/>
+  </syntax>
+  <syntax id="Namespace">
+    <content link="left_curly"/>
+    <content link="Use" property="uses" multiple="multiple" optional="optional"/>
+    <content link="Declaration" property="declarations" multiple="multiple" optional="optional"/>
+    <content link="right_curly"/>
+    <content type="colon" optional="optional"/>
+  </syntax>
+  <syntax id="Union">
+    <content link="union"/>
+    <content type="colon" optional="optional"/>
+    <content link="left_paren"/>
+    <content link="Variant" property="variants" multiple="multiple"/>
+    <content link="right_paren"/>
+    <content type="colon" optional="optional"/>
+    <content link="Body" property="body" optional="optional"/>
+    <content type="colon" optional="optional"/>
+  </syntax>
+  <syntax id="Variant" multiple="multiple">
+    <content type="identifier" property="name"/>
+    <content link="Attribute" property="attributes" multiple="multiple" optional="optional"/>
+    <content link="TypeAnnotation" property="annotation" optional="optional"/>
+    <content link="comma" optional="optional"/>
+    <content type="colon" optional="optional"/>
+  </syntax>
+  <syntax id="Constant">
+    <content link="Type" property="type"/>
+    <content link="Operand" property="operation" multiple="multiple" optional="optional"/>
+    <content type="colon" optional="optional"/>
+  </syntax>
+  <syntax id="Delegate">
+    <content link="delegate"/>
+    <content link="ParameterSet" property="parameters" optional="optional"/>
+    <content link="Attribute" property="attributes" multiple="multiple" optional="optional"/>
+    <content link="Returns" property="result" optional="optional"/>
+    <content link="Throws" property="error" optional="optional"/>
+  </syntax>
+  <syntax id="GenericArguments">
+    <content link="left_bracket"/>
+    <content link="GenericArgument" property="generics" multiple="multiple" optional="optional"/>
+    <content link="right_bracket"/>
+  </syntax>
+  <syntax id="GenericArgument" multiple="multiple">
+    <content link="Type" property="type"/>
+    <content link="comma" optional="optional"/>
+  </syntax>
+  <syntax id="Optional">
+    <content link="question"/>
+  </syntax>
+  <syntax id="ParameterSet" abstract="abstract">
+    <content link="Parameters"/>
+    <content link="Type"/>
+  </syntax>
+  <syntax id="Parameters">
+    <content link="left_paren"/>
+    <content link="Item" property="items" multiple="multiple" optional="optional"/>
+    <content link="right_paren"/>
+  </syntax>
+  <syntax id="Item" multiple="multiple">
+    <content type="identifier" property="name"/>
+    <content link="TypeAnnotation" property="annotation" optional="optional"/>
+    <content link="comma" optional="optional"/>
+    <content type="colon" optional="optional"/>
+    <content link="Attribute" property="attributes" multiple="multiple" optional="optional"/>
+    <content type="colon" optional="optional"/>
+  </syntax>
+  <syntax id="Returns">
+    <content link="returns"/>
+    <content link="Type" property="type"/>
+    <content link="Attribute" property="attributes" multiple="multiple" optional="optional"/>
+  </syntax>
+  <syntax id="Throws">
+    <content link="throws"/>
+    <content link="Type" property="type"/>
+    <content link="Attribute" property="attributes" multiple="multiple" optional="optional"/>
+  </syntax>
+  <syntax id="Use" multiple="multiple">
+    <content link="use"/>
+    <content link="Name" property="name"/>
+    <content type="colon" optional="optional"/>
+  </syntax>
+  <syntax id="Implement">
+    <content link="implement"/>
+    <content link="Type" property="type"/>
+    <content link="Attribute" property="attributes" multiple="multiple" optional="optional"/>
+    <content type="colon" optional="optional"/>
+    <content link="left_curly"/>
+    <content link="Use" property="uses" multiple="multiple" optional="optional"/>
+    <content link="Method" property="methods" multiple="multiple" optional="optional"/>
+    <content link="right_curly"/>
+    <content type="colon" optional="optional"/>
+  </syntax>
+  <syntax id="Trait">
+    <content link="trait"/>
+    <content link="Name" property="name"/>
+    <content link="Extends" property="extension" optional="optional"/>
+    <content link="Attribute" property="attributes" multiple="multiple" optional="optional"/>
+    <content link="left_curly"/>
+    <content link="Use" property="uses" multiple="multiple" optional="optional"/>
+    <content link="Method" property="functions" multiple="multiple" optional="optional"/>
+    <content link="right_curly"/>
+    <content type="colon" optional="optional"/>
+  </syntax>
+  <syntax id="Method" abstract="abstract" multiple="multiple">
+    <content link="Function"/>
+    <content link="Procedure"/>
+    <content link="Operator"/>
+  </syntax>
+  <syntax id="Init" multiple="multiple">
+    <content link="init"/>
+    <content link="ParameterSet" property="parameters" optional="optional"/>
+    <content type="colon" optional="optional"/>
+    <content link="Action" property="action"/>
+    <content type="colon" optional="optional"/>
+  </syntax>
+  <syntax id="DeInit">
+    <content link="deinit"/>
+    <content type="colon" optional="optional"/>
+    <content link="Action" property="action"/>
+    <content type="colon" optional="optional"/>
+  </syntax>
+  <syntax id="Function">
+    <content link="function"/>
+    <content link="Target" property="target"/>
+  </syntax>
+  <syntax id="Procedure">
+    <content link="procedure"/>
+    <content link="Target" property="target"/>
+  </syntax>
+  <syntax id="Operator">
+    <content link="operator"/>
+    <content link="Target" property="target"/>
+  </syntax>
+  <syntax id="Target" abstract="abstract">
+    <content link="Named"/>
+    <content link="Routine"/>
+  </syntax>
+  <syntax id="Named">
+    <content type="identifier" property="name"/>
+    <content link="Routine" property="routine"/>
+  </syntax>
+  <syntax id="Routine">
+    <content link="GenericArguments" property="generics" optional="optional"/>
+    <content link="Lifetime" property="lifetime" optional="optional"/>
+    <content link="ParameterSet" property="parameters" optional="optional"/>
+    <content link="Attribute" property="attributes" multiple="multiple" optional="optional"/>
+    <content link="Returns" property="returns_" optional="optional"/>
+    <content type="colon" optional="optional"/>
+    <content link="Throws" property="throws_" optional="optional"/>
+    <content type="colon" optional="optional"/>
+    <content link="Implementation" property="implementation"/>
+  </syntax>
+  <syntax id="Implementation" abstract="abstract">
+    <content link="Action"/>
+    <content link="Extern"/>
+    <content link="Instruction"/>
+    <content link="Intrinsic"/>
+  </syntax>
+  <syntax id="Extern">
+    <content link="extern"/>
+  </syntax>
+  <syntax id="Instruction">
+    <content link="instruction"/>
+    <content type="colon" optional="optional"/>
+  </syntax>
+  <syntax id="Intrinsic">
+    <content link="intrinsic"/>
+    <content type="colon" optional="optional"/>
+  </syntax>
+  <syntax id="Extends">
+    <content link="extends"/>
+    <content link="Extend" property="extensions" multiple="multiple" optional="optional"/>
+  </syntax>
+  <syntax id="Extend" multiple="multiple">
+    <content link="Type" property="type"/>
+    <content link="comma" optional="optional"/>
+  </syntax>
+  <syntax id="Macro">
+    <content link="macro"/>
+    <content type="identifier" property="name"/>
+    <content link="Model" property="model"/>
+    <content link="Operand" property="rule" multiple="multiple"/>
+  </syntax>
+  <syntax id="Attribute" multiple="multiple">
+    <content type="attribute" property="name"/>
+    <content link="Model" property="model"/>
+    <content type="colon" optional="optional"/>
+  </syntax>
+  <syntax id="Model" abstract="abstract">
+    <content link="Literal"/>
+    <content link="Name"/>
+    <content link="Object"/>
+    <content link="Vector"/>
+  </syntax>
+  <syntax id="Module">
+    <content link="module"/>
+    <content type="identifier" property="name"/>
+    <content type="colon" optional="optional"/>
+  </syntax>
+  <syntax id="Package" multiple="multiple">
+    <content link="package"/>
+    <content link="Name" property="name"/>
+    <content type="colon" optional="optional"/>
+  </syntax>
+  <syntax id="Initializer">
+    <content link="left_paren"/>
+    <content link="Operand" property="operands" multiple="multiple"/>
+    <content link="right_paren"/>
+  </syntax>
+  <syntax id="Operand" multiple="multiple">
+    <content link="Expression" property="expression"/>
+    <content link="MemberAccess" property="members" multiple="multiple" optional="optional"/>
+  </syntax>
+  <syntax id="MemberAccess" multiple="multiple">
+    <content link="dot"/>
+    <content link="Name" property="name"/>
+  </syntax>
+  <syntax id="Expression" abstract="abstract">
+    <content link="Literal"/>
+    <content link="Type"/>
+    <content link="Object"/>
+    <content link="Vector"/>
+    <content link="Block"/>
+    <content link="If"/>
+    <content link="Match"/>
+    <content link="Lambda"/>
+    <content link="For"/>
+    <content link="While"/>
+    <content link="Choose"/>
+    <content link="Try"/>
+    <content link="Repeat"/>
+    <content link="SizeOf"/>
+    <content link="Is"/>
+    <content link="New"/>
+  </syntax>
+  <syntax id="Literal">
+    <content type="literal" property="literal"/>
+  </syntax>
+  <syntax id="New">
+    <content link="new_"/>
+    <content link="Type" property="type"/>
+    <content link="Object" property="arguments"/>
+  </syntax>
+  <syntax id="Object">
+    <content link="left_paren"/>
+    <content link="Component" property="components" multiple="multiple" optional="optional"/>
+    <content link="right_paren"/>
+  </syntax>
+  <syntax id="Component" multiple="multiple">
+    <content link="Operand" property="operands" multiple="multiple"/>
+    <content link="Attribute" property="attributes" multiple="multiple" optional="optional"/>
+    <content link="Value" property="value" optional="optional"/>
+    <content link="comma" optional="optional"/>
+  </syntax>
+  <syntax id="Value">
+    <content type="colon"/>
+    <content link="Operand" property="value" multiple="multiple"/>
+    <content link="Attribute" property="attributes" multiple="multiple" optional="optional"/>
+  </syntax>
+  <syntax id="Vector">
+    <content link="left_bracket"/>
+    <content link="Element" property="elements" multiple="multiple"/>
+    <content link="right_bracket"/>
+    <content link="Lifetime" property="lifetime" optional="optional"/>
+  </syntax>
+  <syntax id="Element" multiple="multiple">
+    <content link="Operand" property="operation" multiple="multiple"/>
+    <content link="Attribute" property="attributes" multiple="multiple" optional="optional"/>
+    <content link="comma" optional="optional"/>
+  </syntax>
+  <syntax id="Block">
+    <content link="left_curly"/>
+    <content link="Use" property="uses" multiple="multiple" optional="optional"/>
+    <content link="Statement" property="statements" multiple="multiple" optional="optional"/>
+    <content link="right_curly"/>
+  </syntax>
+  <syntax id="If">
+    <content link="if"/>
+    <content link="Operand" property="condition" multiple="multiple"/>
+    <content type="colon"/>
+    <content link="Command" property="consequent"/>
+    <content link="Else" property="alternative" optional="optional"/>
+  </syntax>
+  <syntax id="Else">
+    <content link="else"/>
+    <content type="colon" optional="optional"/>
+    <content link="Command" property="alternative"/>
+  </syntax>
+  <syntax id="Match">
+    <content link="match"/>
+    <content link="Operand" property="scrutinee" multiple="multiple"/>
+    <content type="colon"/>
+    <content link="Branch" property="branches" multiple="multiple"/>
+    <content link="Else" property="alternative" optional="optional"/>
+  </syntax>
+  <syntax id="Branch" multiple="multiple">
+    <content link="Case" property="cases" multiple="multiple"/>
+    <content type="colon"/>
+    <content link="Statement" property="consequent"/>
+  </syntax>
+  <syntax id="Case" multiple="multiple">
+    <content link="case"/>
+    <content link="Operand" property="condition" multiple="multiple"/>
+  </syntax>
+  <syntax id="Statement" multiple="multiple">
+    <content link="Command" property="command"/>
+    <content type="colon" optional="optional"/>
+  </syntax>
+  <syntax id="While">
+    <content link="while"/>
+    <content link="Condition" property="condition"/>
+    <content type="colon"/>
+    <content link="Label" property="name" optional="optional"/>
+    <content link="Action" property="action"/>
+  </syntax>
+  <syntax id="Choose">
+    <content link="choose"/>
+    <content link="Operand" property="condition" multiple="multiple"/>
+    <content type="colon"/>
+    <content link="When" property="cases" multiple="multiple" optional="optional"/>
+    <content link="Else" property="alternative" optional="optional"/>
+  </syntax>
+  <syntax id="Try">
+    <content link="try"/>
+    <content link="Condition" property="condition"/>
+    <content type="colon"/>
+    <content link="When" property="cases" multiple="multiple" optional="optional"/>
+    <content link="Else" property="dropper" optional="optional"/>
+  </syntax>
+  <syntax id="Condition" abstract="abstract">
+    <content link="Operation"/>
+    <content link="Let"/>
+  </syntax>
+  <syntax id="When" multiple="multiple">
+    <content link="when"/>
+    <content type="identifier" property="name"/>
+    <content type="colon"/>
+    <content link="Name" property="variant"/>
+    <content type="colon" optional="optional"/>
+    <content link="Command" property="command"/>
+    <content type="colon" optional="optional"/>
+  </syntax>
+  <syntax id="Command" abstract="abstract">
+    <content link="Operation"/>
+    <content link="Let"/>
+    <content link="Var"/>
+    <content link="Mutable"/>
+    <content link="Set"/>
+    <content link="Continue"/>
+    <content link="Break"/>
+    <content link="Return"/>
+    <content link="Throw"/>
+  </syntax>
+  <syntax id="Let">
+    <content link="let"/>
+    <content link="Binding" property="binding"/>
+  </syntax>
+  <syntax id="Var">
+    <content link="var"/>
+    <content link="Binding" property="binding"/>
+  </syntax>
+  <syntax id="Mutable">
+    <content link="mutable"/>
+    <content link="Binding" property="binding"/>
+  </syntax>
+  <syntax id="Binding">
+    <content type="identifier" property="name"/>
+    <content link="BindingAnnotation" property="annotation" optional="optional"/>
+    <content link="Operand" property="operation" multiple="multiple"/>
+  </syntax>
+  <syntax id="BindingAnnotation">
+    <content type="colon"/>
+    <content link="BindingSpec" property="spec"/>
+  </syntax>
+  <syntax id="BindingSpec" abstract="abstract" multiple="multiple">
+    <content link="Structure"/>
+    <content link="Type"/>
+    <content link="Array"/>
+  </syntax>
+  <syntax id="Array">
+    <content link="left_bracket"/>
+    <content link="Type" property="members" multiple="multiple" optional="optional"/>
+    <content link="right_bracket"/>
+  </syntax>
+  <syntax id="Structure">
+    <content link="left_paren"/>
+    <content link="Part" property="parts" multiple="multiple" optional="optional"/>
+    <content link="right_paren"/>
+  </syntax>
+  <syntax id="Part" abstract="abstract" multiple="multiple">
+    <content link="Field"/>
+    <content link="Property"/>
+  </syntax>
+  <syntax id="Field">
+    <content link="private"/>
+    <content link="Property" property="property"/>
+  </syntax>
+  <syntax id="Property" multiple="multiple">
+    <content type="identifier" property="name"/>
+    <content link="TypeAnnotation" property="annotation"/>
+    <content link="Initializer" property="initializer" optional="optional"/>
+    <content link="comma" optional="optional"/>
+    <content type="colon" optional="optional"/>
+    <content link="Attribute" property="attributes" multiple="multiple" optional="optional"/>
+    <content type="colon" optional="optional"/>
+  </syntax>
+  <syntax id="TypeAnnotation">
+    <content type="colon"/>
+    <content link="Type" property="type"/>
+  </syntax>
+  <syntax id="Continue">
+    <content link="continue"/>
+    <content link="Loop" property="name" optional="optional"/>
+    <content type="colon" optional="optional"/>
+  </syntax>
+  <syntax id="Break">
+    <content link="break"/>
+    <content link="Loop" property="name" optional="optional"/>
+    <content link="Operand" property="result" multiple="multiple" optional="optional"/>
+    <content type="colon" optional="optional"/>
+  </syntax>
+  <syntax id="Loop">
+    <content link="loop"/>
+    <content type="identifier" property="name"/>
+  </syntax>
+  <syntax id="Return">
+    <content link="return"/>
+    <content link="Operand" property="result" multiple="multiple" optional="optional"/>
+  </syntax>
+  <syntax id="Throw">
+    <content link="throw"/>
+    <content link="Operand" property="result" multiple="multiple" optional="optional"/>
+  </syntax>
+  <syntax id="Lambda">
+    <content link="lambda"/>
+    <content link="Operand" property="input" multiple="multiple"/>
+    <content type="colon"/>
+    <content link="Action" property="block"/>
+  </syntax>
+  <syntax id="For">
+    <content link="for"/>
+    <content type="identifier" property="variable"/>
+    <content link="TypeAnnotation" property="annotation" optional="optional"/>
+    <content link="in"/>
+    <content link="Operand" property="operation" multiple="multiple"/>
+    <content type="colon"/>
+    <content link="Label" property="name" optional="optional"/>
+    <content link="Action" property="action"/>
+  </syntax>
+  <syntax id="Label">
+    <content link="label"/>
+    <content type="identifier" property="name"/>
+    <content type="colon" optional="optional"/>
+  </syntax>
+  <syntax id="Repeat">
+    <content link="repeat"/>
+    <content link="Label" property="name" optional="optional"/>
+    <content link="Action" property="action"/>
+  </syntax>
+  <syntax id="Action" abstract="abstract" multiple="multiple">
+    <content link="Operation"/>
+    <content link="Set"/>
+  </syntax>
+  <syntax id="Operation">
+    <content link="Operand" property="operands" multiple="multiple"/>
+  </syntax>
+  <syntax id="Set">
+    <content link="set"/>
+    <content link="Operand" property="target" multiple="multiple"/>
+    <content type="colon"/>
+    <content link="Operand" property="source" multiple="multiple"/>
+  </syntax>
+  <syntax id="SizeOf">
+    <content link="sizeof"/>
+    <content link="Type" property="type"/>
+  </syntax>
+  <syntax id="Is">
+    <content link="is"/>
+    <content link="Name" property="name"/>
+  </syntax>
+  <syntax id="Type" multiple="multiple">
+    <content link="Name" property="name"/>
+    <content link="GenericArguments" property="generics" optional="optional"/>
+    <content link="Optional" property="optional" optional="optional"/>
+    <content link="Lifetime" property="lifetime" optional="optional"/>
+  </syntax>
+  <syntax id="Name">
+    <content type="identifier" property="name"/>
+    <content link="Extension" property="extensions" multiple="multiple" optional="optional"/>
+  </syntax>
+  <syntax id="Extension" multiple="multiple">
+    <content link="dot"/>
+    <content type="identifier" property="name"/>
+  </syntax>
+  <syntax id="Lifetime" abstract="abstract">
+    <content link="Call"/>
+    <content link="Local"/>
+    <content link="Reference"/>
+    <content link="Thrown"/>
+  </syntax>
+  <syntax id="Call">
+    <content link="hash"/>
+  </syntax>
+  <syntax id="Local">
+    <content link="dollar"/>
+  </syntax>
+  <syntax id="Reference">
+    <content link="caret"/>
+    <content type="identifier" property="location"/>
+  </syntax>
+  <syntax id="Thrown">
+    <content link="exclamation"/>
+  </syntax>
+  <keyword id="break"/>
+  <keyword id="case"/>
+  <keyword id="choose"/>
+  <keyword id="continue"/>
+  <keyword id="define"/>
+  <keyword id="deinit"/>
+  <keyword id="delegate"/>
+  <keyword id="else"/>
+  <keyword id="extends"/>
+  <keyword id="extern"/>
+  <keyword id="for"/>
+  <keyword id="function"/>
+  <keyword id="if"/>
+  <keyword id="is"/>
+  <keyword id="init"/>
+  <keyword id="implement"/>
+  <keyword id="in"/>
+  <keyword id="instruction"/>
+  <keyword id="intrinsic"/>
+  <keyword id="label"/>
+  <keyword id="lambda"/>
+  <keyword id="let"/>
+  <keyword id="loop"/>
+  <keyword id="macro"/>
+  <keyword id="match"/>
+  <keyword id="module"/>
+  <keyword id="mutable"/>
+  <keyword id="new_"/>
+  <keyword id="operator"/>
+  <keyword id="procedure"/>
+  <keyword id="private"/>
+  <keyword id="return"/>
+  <keyword id="returns"/>
+  <keyword id="repeat"/>
+  <keyword id="set"/>
+  <keyword id="sizeof"/>
+  <keyword id="throw"/>
+  <keyword id="throws"/>
+  <keyword id="trait"/>
+  <keyword id="try"/>
+  <keyword id="union"/>
+  <keyword id="use"/>
+  <keyword id="var"/>
+  <keyword id="when"/>
+  <keyword id="while"/>
+  <keyword id="package"/>
+  <punctuation id="dot" value="."/>
+  <punctuation id="comma" value=","/>
+  <punctuation id="question" value="?"/>
+  <punctuation id="exclamation" value="!"/>
+  <punctuation id="left_paren" value="("/>
+  <punctuation id="right_paren" value=")"/>
+  <punctuation id="left_curly" value="{"/>
+  <punctuation id="right_curly" value="}"/>
+  <punctuation id="left_bracket" value="["/>
+  <punctuation id="right_bracket" value="]"/>
+  <punctuation id="dollar" value="$"/>
+  <punctuation id="hash" value="#"/>
+  <punctuation id="caret" value="^"/>
+</grammar>
