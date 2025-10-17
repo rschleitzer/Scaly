@@ -91,10 +91,10 @@
     (string=? "abstract" (attribute-string "abstract" node)))
 
 (define (multiple? node)
-    (string=? "multiple" (attribute-string "multiple" node)))
+    (string=? "yes" (attribute-string "multiple" node)))
 
 (define (optional? node)
-    (string=? "optional" (attribute-string "optional" node)))
+    (string=? "yes" (attribute-string "optional" node)))
 
 (define (syntax? node)
     (string=? "syntax" (type node)))

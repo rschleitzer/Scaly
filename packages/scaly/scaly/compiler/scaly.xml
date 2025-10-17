@@ -3,16 +3,16 @@
 <grammar>
   <syntax id="Program">
     <content link="File" property="file"/>
-    <content link="Statement" property="statements" multiple="multiple" optional="optional"/>
+    <content link="Statement" property="statements" multiple="yes" optional="yes"/>
   </syntax>
   <syntax id="File">
-    <content link="Package" property="packages" multiple="multiple" optional="optional"/>
-    <content link="Use" property="uses" multiple="multiple" optional="optional"/>
-    <content link="Declaration" property="declarations" multiple="multiple" optional="optional"/>
+    <content link="Package" property="packages" multiple="yes" optional="yes"/>
+    <content link="Use" property="uses" multiple="yes" optional="yes"/>
+    <content link="Declaration" property="declarations" multiple="yes" optional="yes"/>
   </syntax>
-  <syntax id="Declaration" multiple="multiple">
+  <syntax id="Declaration" multiple="yes">
     <content link="Symbol" property="symbol"/>
-    <content type="colon" optional="optional"/>
+    <content type="colon" optional="yes"/>
   </syntax>
   <syntax id="Symbol" abstract="abstract">
     <content link="Private"/>
@@ -34,9 +34,9 @@
     <content link="Trait"/>
     <content link="Module"/>
   </syntax>
-  <syntax id="Member" multiple="multiple">
+  <syntax id="Member" multiple="yes">
     <content link="Constituent" property="constituent"/>
-    <content type="colon" optional="optional"/>
+    <content type="colon" optional="yes"/>
   </syntax>
   <syntax id="Constituent" abstract="abstract">
     <content link="Definition"/>
@@ -51,20 +51,20 @@
   <syntax id="Definition">
     <content link="define"/>
     <content type="identifier" property="name"/>
-    <content link="GenericParameters" property="parameters" optional="optional"/>
-    <content type="colon" optional="optional"/>
-    <content link="Attribute" property="attributes" multiple="multiple" optional="optional"/>
+    <content link="GenericParameters" property="parameters" optional="yes"/>
+    <content type="colon" optional="yes"/>
+    <content link="Attribute" property="attributes" multiple="yes" optional="yes"/>
     <content link="Concept" property="concept_"/>
   </syntax>
   <syntax id="GenericParameters">
     <content link="left_bracket"/>
-    <content link="GenericParameter" property="parameters" multiple="multiple"/>
+    <content link="GenericParameter" property="parameters" multiple="yes"/>
     <content link="right_bracket"/>
   </syntax>
-  <syntax id="GenericParameter" multiple="multiple">
+  <syntax id="GenericParameter" multiple="yes">
     <content type="identifier" property="name"/>
-    <content link="Attribute" property="attributes" multiple="multiple" optional="optional"/>
-    <content link="comma" optional="optional"/>
+    <content link="Attribute" property="attributes" multiple="yes" optional="yes"/>
+    <content link="comma" optional="yes"/>
   </syntax>
   <syntax id="Concept" abstract="abstract">
     <content link="Class"/>
@@ -76,63 +76,63 @@
   </syntax>
   <syntax id="Class">
     <content link="Structure" property="structure"/>
-    <content type="colon" optional="optional"/>
-    <content link="Body" property="body" optional="optional"/>
-    <content type="colon" optional="optional"/>
+    <content type="colon" optional="yes"/>
+    <content link="Body" property="body" optional="yes"/>
+    <content type="colon" optional="yes"/>
   </syntax>
   <syntax id="Body">
     <content link="left_curly"/>
-    <content link="Use" property="uses" multiple="multiple" optional="optional"/>
-    <content link="Init" property="inits" multiple="multiple" optional="optional"/>
-    <content link="DeInit" property="deInit" optional="optional"/>
-    <content link="Member" property="members" multiple="multiple" optional="optional"/>
+    <content link="Use" property="uses" multiple="yes" optional="yes"/>
+    <content link="Init" property="inits" multiple="yes" optional="yes"/>
+    <content link="DeInit" property="deInit" optional="yes"/>
+    <content link="Member" property="members" multiple="yes" optional="yes"/>
     <content link="right_curly"/>
-    <content type="colon" optional="optional"/>
+    <content type="colon" optional="yes"/>
   </syntax>
   <syntax id="Namespace">
     <content link="left_curly"/>
-    <content link="Use" property="uses" multiple="multiple" optional="optional"/>
-    <content link="Declaration" property="declarations" multiple="multiple" optional="optional"/>
+    <content link="Use" property="uses" multiple="yes" optional="yes"/>
+    <content link="Declaration" property="declarations" multiple="yes" optional="yes"/>
     <content link="right_curly"/>
-    <content type="colon" optional="optional"/>
+    <content type="colon" optional="yes"/>
   </syntax>
   <syntax id="Union">
     <content link="union"/>
-    <content type="colon" optional="optional"/>
+    <content type="colon" optional="yes"/>
     <content link="left_paren"/>
-    <content link="Variant" property="variants" multiple="multiple"/>
+    <content link="Variant" property="variants" multiple="yes"/>
     <content link="right_paren"/>
-    <content type="colon" optional="optional"/>
-    <content link="Body" property="body" optional="optional"/>
-    <content type="colon" optional="optional"/>
+    <content type="colon" optional="yes"/>
+    <content link="Body" property="body" optional="yes"/>
+    <content type="colon" optional="yes"/>
   </syntax>
-  <syntax id="Variant" multiple="multiple">
+  <syntax id="Variant" multiple="yes">
     <content type="identifier" property="name"/>
-    <content link="Attribute" property="attributes" multiple="multiple" optional="optional"/>
-    <content link="TypeAnnotation" property="annotation" optional="optional"/>
-    <content link="comma" optional="optional"/>
-    <content type="colon" optional="optional"/>
+    <content link="Attribute" property="attributes" multiple="yes" optional="yes"/>
+    <content link="TypeAnnotation" property="annotation" optional="yes"/>
+    <content link="comma" optional="yes"/>
+    <content type="colon" optional="yes"/>
   </syntax>
   <syntax id="Constant">
     <content link="Type" property="type"/>
-    <content link="Operand" property="operation" multiple="multiple" optional="optional"/>
-    <content type="colon" optional="optional"/>
+    <content link="Operand" property="operation" multiple="yes" optional="yes"/>
+    <content type="colon" optional="yes"/>
   </syntax>
   <syntax id="Delegate">
     <content link="delegate"/>
-    <content link="ParameterSet" property="parameters" optional="optional"/>
-    <content link="Attribute" property="attributes" multiple="multiple" optional="optional"/>
-    <content link="Returns" property="result" optional="optional"/>
-    <content link="Throws" property="error" optional="optional"/>
+    <content link="ParameterSet" property="parameters" optional="yes"/>
+    <content link="Attribute" property="attributes" multiple="yes" optional="yes"/>
+    <content link="Returns" property="result" optional="yes"/>
+    <content link="Throws" property="error" optional="yes"/>
   </syntax>
   <syntax id="GenericArguments">
     <content link="left_bracket"/>
-    <content link="GenericArgument" property="generics" multiple="multiple" optional="optional"/>
+    <content link="GenericArgument" property="generics" multiple="yes" optional="yes"/>
     <content link="right_bracket"/>
   </syntax>
-  <syntax id="GenericArgument" multiple="multiple">
+  <syntax id="GenericArgument" multiple="yes">
     <content link="Type" property="type"/>
-    <content link="comma" optional="optional"/>
+    <content link="comma" optional="yes"/>
   </syntax>
   <syntax id="Optional">
     <content link="question"/>
@@ -143,71 +143,71 @@
   </syntax>
   <syntax id="Parameters">
     <content link="left_paren"/>
-    <content link="Item" property="items" multiple="multiple" optional="optional"/>
+    <content link="Item" property="items" multiple="yes" optional="yes"/>
     <content link="right_paren"/>
   </syntax>
-  <syntax id="Item" multiple="multiple">
+  <syntax id="Item" multiple="yes">
     <content type="identifier" property="name"/>
-    <content link="TypeAnnotation" property="annotation" optional="optional"/>
-    <content link="comma" optional="optional"/>
-    <content type="colon" optional="optional"/>
-    <content link="Attribute" property="attributes" multiple="multiple" optional="optional"/>
-    <content type="colon" optional="optional"/>
+    <content link="TypeAnnotation" property="annotation" optional="yes"/>
+    <content link="comma" optional="yes"/>
+    <content type="colon" optional="yes"/>
+    <content link="Attribute" property="attributes" multiple="yes" optional="yes"/>
+    <content type="colon" optional="yes"/>
   </syntax>
   <syntax id="Returns">
     <content link="returns"/>
     <content link="Type" property="type"/>
-    <content link="Attribute" property="attributes" multiple="multiple" optional="optional"/>
+    <content link="Attribute" property="attributes" multiple="yes" optional="yes"/>
   </syntax>
   <syntax id="Throws">
     <content link="throws"/>
     <content link="Type" property="type"/>
-    <content link="Attribute" property="attributes" multiple="multiple" optional="optional"/>
+    <content link="Attribute" property="attributes" multiple="yes" optional="yes"/>
   </syntax>
-  <syntax id="Use" multiple="multiple">
+  <syntax id="Use" multiple="yes">
     <content link="use"/>
     <content link="Name" property="name"/>
-    <content type="colon" optional="optional"/>
+    <content type="colon" optional="yes"/>
   </syntax>
   <syntax id="Implement">
     <content link="implement"/>
     <content link="Type" property="type"/>
-    <content link="Attribute" property="attributes" multiple="multiple" optional="optional"/>
-    <content type="colon" optional="optional"/>
+    <content link="Attribute" property="attributes" multiple="yes" optional="yes"/>
+    <content type="colon" optional="yes"/>
     <content link="left_curly"/>
-    <content link="Use" property="uses" multiple="multiple" optional="optional"/>
-    <content link="Method" property="methods" multiple="multiple" optional="optional"/>
+    <content link="Use" property="uses" multiple="yes" optional="yes"/>
+    <content link="Method" property="methods" multiple="yes" optional="yes"/>
     <content link="right_curly"/>
-    <content type="colon" optional="optional"/>
+    <content type="colon" optional="yes"/>
   </syntax>
   <syntax id="Trait">
     <content link="trait"/>
     <content link="Name" property="name"/>
-    <content link="Extends" property="extension" optional="optional"/>
-    <content link="Attribute" property="attributes" multiple="multiple" optional="optional"/>
+    <content link="Extends" property="extension" optional="yes"/>
+    <content link="Attribute" property="attributes" multiple="yes" optional="yes"/>
     <content link="left_curly"/>
-    <content link="Use" property="uses" multiple="multiple" optional="optional"/>
-    <content link="Method" property="functions" multiple="multiple" optional="optional"/>
+    <content link="Use" property="uses" multiple="yes" optional="yes"/>
+    <content link="Method" property="functions" multiple="yes" optional="yes"/>
     <content link="right_curly"/>
-    <content type="colon" optional="optional"/>
+    <content type="colon" optional="yes"/>
   </syntax>
-  <syntax id="Method" abstract="abstract" multiple="multiple">
+  <syntax id="Method" abstract="abstract" multiple="yes">
     <content link="Function"/>
     <content link="Procedure"/>
     <content link="Operator"/>
   </syntax>
-  <syntax id="Init" multiple="multiple">
+  <syntax id="Init" multiple="yes">
     <content link="init"/>
-    <content link="ParameterSet" property="parameters" optional="optional"/>
-    <content type="colon" optional="optional"/>
+    <content link="ParameterSet" property="parameters" optional="yes"/>
+    <content type="colon" optional="yes"/>
     <content link="Action" property="action"/>
-    <content type="colon" optional="optional"/>
+    <content type="colon" optional="yes"/>
   </syntax>
   <syntax id="DeInit">
     <content link="deinit"/>
-    <content type="colon" optional="optional"/>
+    <content type="colon" optional="yes"/>
     <content link="Action" property="action"/>
-    <content type="colon" optional="optional"/>
+    <content type="colon" optional="yes"/>
   </syntax>
   <syntax id="Function">
     <content link="function"/>
@@ -230,14 +230,14 @@
     <content link="Routine" property="routine"/>
   </syntax>
   <syntax id="Routine">
-    <content link="GenericArguments" property="generics" optional="optional"/>
-    <content link="Lifetime" property="lifetime" optional="optional"/>
-    <content link="ParameterSet" property="parameters" optional="optional"/>
-    <content link="Attribute" property="attributes" multiple="multiple" optional="optional"/>
-    <content link="Returns" property="returns_" optional="optional"/>
-    <content type="colon" optional="optional"/>
-    <content link="Throws" property="throws_" optional="optional"/>
-    <content type="colon" optional="optional"/>
+    <content link="GenericArguments" property="generics" optional="yes"/>
+    <content link="Lifetime" property="lifetime" optional="yes"/>
+    <content link="ParameterSet" property="parameters" optional="yes"/>
+    <content link="Attribute" property="attributes" multiple="yes" optional="yes"/>
+    <content link="Returns" property="returns_" optional="yes"/>
+    <content type="colon" optional="yes"/>
+    <content link="Throws" property="throws_" optional="yes"/>
+    <content type="colon" optional="yes"/>
     <content link="Implementation" property="implementation"/>
   </syntax>
   <syntax id="Implementation" abstract="abstract">
@@ -251,30 +251,30 @@
   </syntax>
   <syntax id="Instruction">
     <content link="instruction"/>
-    <content type="colon" optional="optional"/>
+    <content type="colon" optional="yes"/>
   </syntax>
   <syntax id="Intrinsic">
     <content link="intrinsic"/>
-    <content type="colon" optional="optional"/>
+    <content type="colon" optional="yes"/>
   </syntax>
   <syntax id="Extends">
     <content link="extends"/>
-    <content link="Extend" property="extensions" multiple="multiple" optional="optional"/>
+    <content link="Extend" property="extensions" multiple="yes" optional="yes"/>
   </syntax>
-  <syntax id="Extend" multiple="multiple">
+  <syntax id="Extend" multiple="yes">
     <content link="Type" property="type"/>
-    <content link="comma" optional="optional"/>
+    <content link="comma" optional="yes"/>
   </syntax>
   <syntax id="Macro">
     <content link="macro"/>
     <content type="identifier" property="name"/>
     <content link="Model" property="model"/>
-    <content link="Operand" property="rule" multiple="multiple"/>
+    <content link="Operand" property="rule" multiple="yes"/>
   </syntax>
-  <syntax id="Attribute" multiple="multiple">
+  <syntax id="Attribute" multiple="yes">
     <content type="attribute" property="name"/>
     <content link="Model" property="model"/>
-    <content type="colon" optional="optional"/>
+    <content type="colon" optional="yes"/>
   </syntax>
   <syntax id="Model" abstract="abstract">
     <content link="Literal"/>
@@ -285,23 +285,23 @@
   <syntax id="Module">
     <content link="module"/>
     <content type="identifier" property="name"/>
-    <content type="colon" optional="optional"/>
+    <content type="colon" optional="yes"/>
   </syntax>
-  <syntax id="Package" multiple="multiple">
+  <syntax id="Package" multiple="yes">
     <content link="package"/>
     <content link="Name" property="name"/>
-    <content type="colon" optional="optional"/>
+    <content type="colon" optional="yes"/>
   </syntax>
   <syntax id="Initializer">
     <content link="left_paren"/>
-    <content link="Operand" property="operands" multiple="multiple"/>
+    <content link="Operand" property="operands" multiple="yes"/>
     <content link="right_paren"/>
   </syntax>
-  <syntax id="Operand" multiple="multiple">
+  <syntax id="Operand" multiple="yes">
     <content link="Expression" property="expression"/>
-    <content link="MemberAccess" property="members" multiple="multiple" optional="optional"/>
+    <content link="MemberAccess" property="members" multiple="yes" optional="yes"/>
   </syntax>
-  <syntax id="MemberAccess" multiple="multiple">
+  <syntax id="MemberAccess" multiple="yes">
     <content link="dot"/>
     <content link="Name" property="name"/>
   </syntax>
@@ -333,102 +333,102 @@
   </syntax>
   <syntax id="Object">
     <content link="left_paren"/>
-    <content link="Component" property="components" multiple="multiple" optional="optional"/>
+    <content link="Component" property="components" multiple="yes" optional="yes"/>
     <content link="right_paren"/>
   </syntax>
-  <syntax id="Component" multiple="multiple">
-    <content link="Operand" property="operands" multiple="multiple"/>
-    <content link="Attribute" property="attributes" multiple="multiple" optional="optional"/>
-    <content link="Value" property="value" optional="optional"/>
-    <content link="comma" optional="optional"/>
+  <syntax id="Component" multiple="yes">
+    <content link="Operand" property="operands" multiple="yes"/>
+    <content link="Attribute" property="attributes" multiple="yes" optional="yes"/>
+    <content link="Value" property="value" optional="yes"/>
+    <content link="comma" optional="yes"/>
   </syntax>
   <syntax id="Value">
     <content type="colon"/>
-    <content link="Operand" property="value" multiple="multiple"/>
-    <content link="Attribute" property="attributes" multiple="multiple" optional="optional"/>
+    <content link="Operand" property="value" multiple="yes"/>
+    <content link="Attribute" property="attributes" multiple="yes" optional="yes"/>
   </syntax>
   <syntax id="Vector">
     <content link="left_bracket"/>
-    <content link="Element" property="elements" multiple="multiple"/>
+    <content link="Element" property="elements" multiple="yes"/>
     <content link="right_bracket"/>
-    <content link="Lifetime" property="lifetime" optional="optional"/>
+    <content link="Lifetime" property="lifetime" optional="yes"/>
   </syntax>
-  <syntax id="Element" multiple="multiple">
-    <content link="Operand" property="operation" multiple="multiple"/>
-    <content link="Attribute" property="attributes" multiple="multiple" optional="optional"/>
-    <content link="comma" optional="optional"/>
+  <syntax id="Element" multiple="yes">
+    <content link="Operand" property="operation" multiple="yes"/>
+    <content link="Attribute" property="attributes" multiple="yes" optional="yes"/>
+    <content link="comma" optional="yes"/>
   </syntax>
   <syntax id="Block">
     <content link="left_curly"/>
-    <content link="Use" property="uses" multiple="multiple" optional="optional"/>
-    <content link="Statement" property="statements" multiple="multiple" optional="optional"/>
+    <content link="Use" property="uses" multiple="yes" optional="yes"/>
+    <content link="Statement" property="statements" multiple="yes" optional="yes"/>
     <content link="right_curly"/>
   </syntax>
   <syntax id="If">
     <content link="if"/>
-    <content link="Operand" property="condition" multiple="multiple"/>
+    <content link="Operand" property="condition" multiple="yes"/>
     <content type="colon"/>
     <content link="Command" property="consequent"/>
-    <content link="Else" property="alternative" optional="optional"/>
+    <content link="Else" property="alternative" optional="yes"/>
   </syntax>
   <syntax id="Else">
     <content link="else"/>
-    <content type="colon" optional="optional"/>
+    <content type="colon" optional="yes"/>
     <content link="Command" property="alternative"/>
   </syntax>
   <syntax id="Match">
     <content link="match"/>
-    <content link="Operand" property="scrutinee" multiple="multiple"/>
+    <content link="Operand" property="scrutinee" multiple="yes"/>
     <content type="colon"/>
-    <content link="Branch" property="branches" multiple="multiple"/>
-    <content link="Else" property="alternative" optional="optional"/>
+    <content link="Branch" property="branches" multiple="yes"/>
+    <content link="Else" property="alternative" optional="yes"/>
   </syntax>
-  <syntax id="Branch" multiple="multiple">
-    <content link="Case" property="cases" multiple="multiple"/>
+  <syntax id="Branch" multiple="yes">
+    <content link="Case" property="cases" multiple="yes"/>
     <content type="colon"/>
     <content link="Statement" property="consequent"/>
   </syntax>
-  <syntax id="Case" multiple="multiple">
+  <syntax id="Case" multiple="yes">
     <content link="case"/>
-    <content link="Operand" property="condition" multiple="multiple"/>
+    <content link="Operand" property="condition" multiple="yes"/>
   </syntax>
-  <syntax id="Statement" multiple="multiple">
+  <syntax id="Statement" multiple="yes">
     <content link="Command" property="command"/>
-    <content type="colon" optional="optional"/>
+    <content type="colon" optional="yes"/>
   </syntax>
   <syntax id="While">
     <content link="while"/>
     <content link="Condition" property="condition"/>
     <content type="colon"/>
-    <content link="Label" property="name" optional="optional"/>
+    <content link="Label" property="name" optional="yes"/>
     <content link="Action" property="action"/>
   </syntax>
   <syntax id="Choose">
     <content link="choose"/>
-    <content link="Operand" property="condition" multiple="multiple"/>
+    <content link="Operand" property="condition" multiple="yes"/>
     <content type="colon"/>
-    <content link="When" property="cases" multiple="multiple" optional="optional"/>
-    <content link="Else" property="alternative" optional="optional"/>
+    <content link="When" property="cases" multiple="yes" optional="yes"/>
+    <content link="Else" property="alternative" optional="yes"/>
   </syntax>
   <syntax id="Try">
     <content link="try"/>
     <content link="Condition" property="condition"/>
     <content type="colon"/>
-    <content link="When" property="cases" multiple="multiple" optional="optional"/>
-    <content link="Else" property="dropper" optional="optional"/>
+    <content link="When" property="cases" multiple="yes" optional="yes"/>
+    <content link="Else" property="dropper" optional="yes"/>
   </syntax>
   <syntax id="Condition" abstract="abstract">
     <content link="Operation"/>
     <content link="Let"/>
   </syntax>
-  <syntax id="When" multiple="multiple">
+  <syntax id="When" multiple="yes">
     <content link="when"/>
     <content type="identifier" property="name"/>
     <content type="colon"/>
     <content link="Name" property="variant"/>
-    <content type="colon" optional="optional"/>
+    <content type="colon" optional="yes"/>
     <content link="Command" property="command"/>
-    <content type="colon" optional="optional"/>
+    <content type="colon" optional="yes"/>
   </syntax>
   <syntax id="Command" abstract="abstract">
     <content link="Operation"/>
@@ -455,29 +455,29 @@
   </syntax>
   <syntax id="Binding">
     <content type="identifier" property="name"/>
-    <content link="BindingAnnotation" property="annotation" optional="optional"/>
-    <content link="Operand" property="operation" multiple="multiple"/>
+    <content link="BindingAnnotation" property="annotation" optional="yes"/>
+    <content link="Operand" property="operation" multiple="yes"/>
   </syntax>
   <syntax id="BindingAnnotation">
     <content type="colon"/>
     <content link="BindingSpec" property="spec"/>
   </syntax>
-  <syntax id="BindingSpec" abstract="abstract" multiple="multiple">
+  <syntax id="BindingSpec" abstract="abstract" multiple="yes">
     <content link="Structure"/>
     <content link="Type"/>
     <content link="Array"/>
   </syntax>
   <syntax id="Array">
     <content link="left_bracket"/>
-    <content link="Type" property="members" multiple="multiple" optional="optional"/>
+    <content link="Type" property="members" multiple="yes" optional="yes"/>
     <content link="right_bracket"/>
   </syntax>
   <syntax id="Structure">
     <content link="left_paren"/>
-    <content link="Part" property="parts" multiple="multiple" optional="optional"/>
+    <content link="Part" property="parts" multiple="yes" optional="yes"/>
     <content link="right_paren"/>
   </syntax>
-  <syntax id="Part" abstract="abstract" multiple="multiple">
+  <syntax id="Part" abstract="abstract" multiple="yes">
     <content link="Field"/>
     <content link="Property"/>
   </syntax>
@@ -485,14 +485,14 @@
     <content link="private"/>
     <content link="Property" property="property"/>
   </syntax>
-  <syntax id="Property" multiple="multiple">
+  <syntax id="Property" multiple="yes">
     <content type="identifier" property="name"/>
     <content link="TypeAnnotation" property="annotation"/>
-    <content link="Initializer" property="initializer" optional="optional"/>
-    <content link="comma" optional="optional"/>
-    <content type="colon" optional="optional"/>
-    <content link="Attribute" property="attributes" multiple="multiple" optional="optional"/>
-    <content type="colon" optional="optional"/>
+    <content link="Initializer" property="initializer" optional="yes"/>
+    <content link="comma" optional="yes"/>
+    <content type="colon" optional="yes"/>
+    <content link="Attribute" property="attributes" multiple="yes" optional="yes"/>
+    <content type="colon" optional="yes"/>
   </syntax>
   <syntax id="TypeAnnotation">
     <content type="colon"/>
@@ -500,14 +500,14 @@
   </syntax>
   <syntax id="Continue">
     <content link="continue"/>
-    <content link="Loop" property="name" optional="optional"/>
-    <content type="colon" optional="optional"/>
+    <content link="Loop" property="name" optional="yes"/>
+    <content type="colon" optional="yes"/>
   </syntax>
   <syntax id="Break">
     <content link="break"/>
-    <content link="Loop" property="name" optional="optional"/>
-    <content link="Operand" property="result" multiple="multiple" optional="optional"/>
-    <content type="colon" optional="optional"/>
+    <content link="Loop" property="name" optional="yes"/>
+    <content link="Operand" property="result" multiple="yes" optional="yes"/>
+    <content type="colon" optional="yes"/>
   </syntax>
   <syntax id="Loop">
     <content link="loop"/>
@@ -515,50 +515,50 @@
   </syntax>
   <syntax id="Return">
     <content link="return"/>
-    <content link="Operand" property="result" multiple="multiple" optional="optional"/>
+    <content link="Operand" property="result" multiple="yes" optional="yes"/>
   </syntax>
   <syntax id="Throw">
     <content link="throw"/>
-    <content link="Operand" property="result" multiple="multiple" optional="optional"/>
+    <content link="Operand" property="result" multiple="yes" optional="yes"/>
   </syntax>
   <syntax id="Lambda">
     <content link="lambda"/>
-    <content link="Operand" property="input" multiple="multiple"/>
+    <content link="Operand" property="input" multiple="yes"/>
     <content type="colon"/>
     <content link="Action" property="block"/>
   </syntax>
   <syntax id="For">
     <content link="for"/>
     <content type="identifier" property="variable"/>
-    <content link="TypeAnnotation" property="annotation" optional="optional"/>
+    <content link="TypeAnnotation" property="annotation" optional="yes"/>
     <content link="in"/>
-    <content link="Operand" property="operation" multiple="multiple"/>
+    <content link="Operand" property="operation" multiple="yes"/>
     <content type="colon"/>
-    <content link="Label" property="name" optional="optional"/>
+    <content link="Label" property="name" optional="yes"/>
     <content link="Action" property="action"/>
   </syntax>
   <syntax id="Label">
     <content link="label"/>
     <content type="identifier" property="name"/>
-    <content type="colon" optional="optional"/>
+    <content type="colon" optional="yes"/>
   </syntax>
   <syntax id="Repeat">
     <content link="repeat"/>
-    <content link="Label" property="name" optional="optional"/>
+    <content link="Label" property="name" optional="yes"/>
     <content link="Action" property="action"/>
   </syntax>
-  <syntax id="Action" abstract="abstract" multiple="multiple">
+  <syntax id="Action" abstract="abstract" multiple="yes">
     <content link="Operation"/>
     <content link="Set"/>
   </syntax>
   <syntax id="Operation">
-    <content link="Operand" property="operands" multiple="multiple"/>
+    <content link="Operand" property="operands" multiple="yes"/>
   </syntax>
   <syntax id="Set">
     <content link="set"/>
-    <content link="Operand" property="target" multiple="multiple"/>
+    <content link="Operand" property="target" multiple="yes"/>
     <content type="colon"/>
-    <content link="Operand" property="source" multiple="multiple"/>
+    <content link="Operand" property="source" multiple="yes"/>
   </syntax>
   <syntax id="SizeOf">
     <content link="sizeof"/>
@@ -568,17 +568,17 @@
     <content link="is"/>
     <content link="Name" property="name"/>
   </syntax>
-  <syntax id="Type" multiple="multiple">
+  <syntax id="Type" multiple="yes">
     <content link="Name" property="name"/>
-    <content link="GenericArguments" property="generics" optional="optional"/>
-    <content link="Optional" property="optional" optional="optional"/>
-    <content link="Lifetime" property="lifetime" optional="optional"/>
+    <content link="GenericArguments" property="generics" optional="yes"/>
+    <content link="Optional" property="optional" optional="yes"/>
+    <content link="Lifetime" property="lifetime" optional="yes"/>
   </syntax>
   <syntax id="Name">
     <content type="identifier" property="name"/>
-    <content link="Extension" property="extensions" multiple="multiple" optional="optional"/>
+    <content link="Extension" property="extensions" multiple="yes" optional="yes"/>
   </syntax>
-  <syntax id="Extension" multiple="multiple">
+  <syntax id="Extension" multiple="yes">
     <content link="dot"/>
     <content type="identifier" property="name"/>
   </syntax>
