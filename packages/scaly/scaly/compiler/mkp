@@ -1,2 +1,2 @@
 #!/bin/bash
-openjade -G -t sgml -d codegen/grammar.xml scaly.sgm
+openjade -G -t sgml -d codegen/grammar.xml scaly.xml
