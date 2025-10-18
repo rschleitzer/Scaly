@@ -1,2 +1,2 @@
 #!/bin/bash
-dazzle -d codegen/grammar.xml scaly.xml
+dazzle -d codegen/scaly.dsl scaly.xml
