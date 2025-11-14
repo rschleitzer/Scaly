@@ -1,0 +1,9 @@
+#!/bin/bash
+# Dazzle replacement for ./mkp
+# Usage: ./dazzle-mkp
+
+# Path to dazzle CLI (adjust as needed)
+DAZZLE="node $HOME/repos/dazzle/packages/dazzle-cli/dist/cli.js"
+
+# Run dazzle with the same arguments as OpenJade
+$DAZZLE -d codegen/scaly.dsl -t sgml scaly.xml
