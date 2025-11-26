@@ -1,0 +1,2493 @@
+(language
+Aid TOKEN Program
+Aabstract TOKEN concrete
+Abase IMPLIED
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN program
+(syntax
+Atype TOKEN identifier
+Alink IMPLIED
+Aproperty CDATA name
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN Module
+Aproperty CDATA modules
+Amultiple TOKEN multiple
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN Module
+Aabstract TOKEN concrete
+Abase IMPLIED
+Amultiple TOKEN single
+Atop TOKEN top
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN Statement
+Aproperty CDATA statements
+Amultiple TOKEN multiple
+Aoptional TOKEN optional
+(content
+)content
+)syntax
+Aid TOKEN Statement
+Aabstract TOKEN abstract
+Abase IMPLIED
+Amultiple TOKEN multiple
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN Declaration
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN Expression
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN Declaration
+Aabstract TOKEN abstract
+Abase TOKEN Statement
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN ConstantDeclaration
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN MutableDeclaration
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN FunctionDeclaration
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN EnumDeclaration
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN ClassDeclaration
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN ConstructorDeclaration
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN ConstantDeclaration
+Aabstract TOKEN concrete
+Abase TOKEN Declaration
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN let
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN BindingInitializer
+Aproperty CDATA initializer
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN MutableDeclaration
+Aabstract TOKEN concrete
+Abase TOKEN Declaration
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN mutable
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN BindingInitializer
+Aproperty CDATA initializer
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN BindingInitializer
+Aabstract TOKEN concrete
+Abase IMPLIED
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN IdentifierInitializer
+Aproperty CDATA initializer
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN AdditionalInitializer
+Aproperty CDATA additionalInitializers
+Amultiple TOKEN multiple
+Aoptional TOKEN optional
+(content
+)content
+)syntax
+Aid TOKEN IdentifierInitializer
+Aabstract TOKEN concrete
+Abase IMPLIED
+Amultiple TOKEN multiple
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN IdentifierPattern
+Aproperty CDATA pattern
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN Initializer
+Aproperty CDATA initializer
+Amultiple TOKEN single
+Aoptional TOKEN optional
+(content
+)content
+)syntax
+Aid TOKEN Initializer
+Aabstract TOKEN concrete
+Abase IMPLIED
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN equal
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN Expression
+Aproperty CDATA expression
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN AdditionalInitializer
+Aabstract TOKEN concrete
+Abase IMPLIED
+Amultiple TOKEN multiple
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN comma
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN IdentifierInitializer
+Aproperty CDATA pattern
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN Pattern
+Aabstract TOKEN abstract
+Abase IMPLIED
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN WildcardPattern
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN IdentifierPattern
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN TuplePattern
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN ExpressionPattern
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN IdentifierPattern
+Aabstract TOKEN concrete
+Abase TOKEN Pattern
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN identifier
+Alink IMPLIED
+Aproperty CDATA identifier
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN TypeAnnotation
+Aproperty CDATA annotationForType
+Amultiple TOKEN single
+Aoptional TOKEN optional
+(content
+)content
+)syntax
+Aid TOKEN TypeAnnotation
+Aabstract TOKEN concrete
+Abase IMPLIED
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN colon
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN Type
+Aproperty CDATA annotationForType
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN Type
+Aabstract TOKEN concrete
+Abase IMPLIED
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN identifier
+Alink IMPLIED
+Aproperty CDATA name
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN TypePostfix
+Aproperty CDATA postfixes
+Amultiple TOKEN multiple
+Aoptional TOKEN optional
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN LifeTime
+Aproperty CDATA lifeTime
+Amultiple TOKEN single
+Aoptional TOKEN optional
+(content
+)content
+)syntax
+Aid TOKEN TypePostfix
+Aabstract TOKEN abstract
+Abase IMPLIED
+Amultiple TOKEN multiple
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN IndexedType
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN Pointer
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN IndexedType
+Aabstract TOKEN concrete
+Abase TOKEN TypePostfix
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN leftBracket
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN Type
+Aproperty CDATA key
+Amultiple TOKEN single
+Aoptional TOKEN optional
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN rightBracket
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN Pointer
+Aabstract TOKEN concrete
+Abase TOKEN TypePostfix
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN circumflex
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN LifeTime
+Aabstract TOKEN abstract
+Abase IMPLIED
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN Root
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN Local
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN Reference
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN Thrown
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN Root
+Aabstract TOKEN concrete
+Abase TOKEN LifeTime
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN dollar
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN Local
+Aabstract TOKEN concrete
+Abase TOKEN LifeTime
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN at
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN identifier
+Alink IMPLIED
+Aproperty CDATA location
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN Reference
+Aabstract TOKEN concrete
+Abase TOKEN LifeTime
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN ampersand
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN literal
+Alink IMPLIED
+Aproperty CDATA age
+Amultiple TOKEN single
+Aoptional TOKEN optional
+(content
+)content
+)syntax
+Aid TOKEN Thrown
+Aabstract TOKEN concrete
+Abase TOKEN LifeTime
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN hash
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN FunctionDeclaration
+Aabstract TOKEN concrete
+Abase TOKEN Declaration
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN Modifier
+Aproperty CDATA modifiers
+Amultiple TOKEN multiple
+Aoptional TOKEN optional
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN function
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN identifier
+Alink IMPLIED
+Aproperty CDATA name
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN FunctionSignature
+Aproperty CDATA signature
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN Expression
+Aproperty CDATA body
+Amultiple TOKEN single
+Aoptional TOKEN optional
+(content
+)content
+)syntax
+Aid TOKEN Modifier
+Aabstract TOKEN abstract
+Abase IMPLIED
+Amultiple TOKEN multiple
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN StaticWord
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN StaticWord
+Aabstract TOKEN concrete
+Abase TOKEN Modifier
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN static
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN FunctionSignature
+Aabstract TOKEN concrete
+Abase IMPLIED
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN ParameterClause
+Aproperty CDATA parameterClause
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN FunctionResult
+Aproperty CDATA result
+Amultiple TOKEN single
+Aoptional TOKEN optional
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN ThrowsClause
+Aproperty CDATA throwsClause
+Amultiple TOKEN single
+Aoptional TOKEN optional
+(content
+)content
+)syntax
+Aid TOKEN ParameterClause
+Aabstract TOKEN concrete
+Abase IMPLIED
+Amultiple TOKEN multiple
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN leftParen
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN Parameter
+Aproperty CDATA parameters
+Amultiple TOKEN multiple
+Aoptional TOKEN optional
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN rightParen
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN Parameter
+Aabstract TOKEN abstract
+Abase IMPLIED
+Amultiple TOKEN multiple
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN ConstParameter
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN VarParameter
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN ConstParameter
+Aabstract TOKEN concrete
+Abase TOKEN Parameter
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN let
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN optional
+(content
+)content
+Atype TOKEN identifier
+Alink IMPLIED
+Aproperty CDATA name
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN colon
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN Type
+Aproperty CDATA parameterType
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN comma
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN optional
+(content
+)content
+)syntax
+Aid TOKEN VarParameter
+Aabstract TOKEN concrete
+Abase TOKEN Parameter
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN mutable
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN identifier
+Alink IMPLIED
+Aproperty CDATA name
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN colon
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN Type
+Aproperty CDATA parameterType
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN comma
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN optional
+(content
+)content
+)syntax
+Aid TOKEN FunctionResult
+Aabstract TOKEN concrete
+Abase IMPLIED
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN colon
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN Type
+Aproperty CDATA resultType
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN ThrowsClause
+Aabstract TOKEN concrete
+Abase IMPLIED
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN throws
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN Type
+Aproperty CDATA throwsType
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN EnumDeclaration
+Aabstract TOKEN concrete
+Abase TOKEN Declaration
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN enum
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN identifier
+Alink IMPLIED
+Aproperty CDATA name
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN leftCurly
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN EnumMember
+Aproperty CDATA members
+Amultiple TOKEN multiple
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN rightCurly
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN EnumMember
+Aabstract TOKEN concrete
+Abase IMPLIED
+Amultiple TOKEN multiple
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN case
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN EnumCase
+Aproperty CDATA enumCase
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN AdditionalCase
+Aproperty CDATA additionalCases
+Amultiple TOKEN multiple
+Aoptional TOKEN optional
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN ParameterClause
+Aproperty CDATA parameterClause
+Amultiple TOKEN single
+Aoptional TOKEN optional
+(content
+)content
+)syntax
+Aid TOKEN EnumCase
+Aabstract TOKEN concrete
+Abase IMPLIED
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN identifier
+Alink IMPLIED
+Aproperty CDATA name
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN AdditionalCase
+Aabstract TOKEN concrete
+Abase IMPLIED
+Amultiple TOKEN multiple
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN comma
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN EnumCase
+Aproperty CDATA enumCase
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN ClassDeclaration
+Aabstract TOKEN concrete
+Abase TOKEN Declaration
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN class
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN identifier
+Alink IMPLIED
+Aproperty CDATA name
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN TypeInheritanceClause
+Aproperty CDATA typeInheritanceClause
+Amultiple TOKEN single
+Aoptional TOKEN optional
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN ClassBody
+Aproperty CDATA body
+Amultiple TOKEN single
+Aoptional TOKEN optional
+(content
+)content
+)syntax
+Aid TOKEN TypeInheritanceClause
+Aabstract TOKEN concrete
+Abase IMPLIED
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN extends
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN Inheritance
+Aproperty CDATA inheritances
+Amultiple TOKEN multiple
+Aoptional TOKEN optional
+(content
+)content
+)syntax
+Aid TOKEN Inheritance
+Aabstract TOKEN concrete
+Abase IMPLIED
+Amultiple TOKEN multiple
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN Type
+Aproperty CDATA type
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN comma
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN optional
+(content
+)content
+)syntax
+Aid TOKEN ClassBody
+Aabstract TOKEN concrete
+Abase IMPLIED
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN leftCurly
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN ClassMember
+Aproperty CDATA members
+Amultiple TOKEN multiple
+Aoptional TOKEN optional
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN rightCurly
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN ClassMember
+Aabstract TOKEN concrete
+Abase IMPLIED
+Amultiple TOKEN multiple
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN Declaration
+Aproperty CDATA declaration
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN ConstructorDeclaration
+Aabstract TOKEN concrete
+Abase TOKEN Declaration
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN constructor
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN ParameterClause
+Aproperty CDATA parameterClause
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN Expression
+Aproperty CDATA body
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN Expression
+Aabstract TOKEN abstract
+Abase TOKEN Statement
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN CodeBlock
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN SimpleExpression
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN CodeBlock
+Aabstract TOKEN concrete
+Abase TOKEN Expression
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN leftCurly
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN Statement
+Aproperty CDATA statements
+Amultiple TOKEN multiple
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN rightCurly
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN SimpleExpression
+Aabstract TOKEN concrete
+Abase TOKEN Expression
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN PrefixExpression
+Aproperty CDATA prefixExpression
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN BinaryExpression
+Aproperty CDATA binaryExpressions
+Amultiple TOKEN multiple
+Aoptional TOKEN optional
+(content
+)content
+)syntax
+Aid TOKEN PrefixExpression
+Aabstract TOKEN concrete
+Abase IMPLIED
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN prefixoperator
+Alink IMPLIED
+Aproperty CDATA prefixOperator
+Amultiple TOKEN single
+Aoptional TOKEN optional
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN PostfixExpression
+Aproperty CDATA expression
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN PostfixExpression
+Aabstract TOKEN concrete
+Abase IMPLIED
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN PrimaryExpression
+Aproperty CDATA primaryExpression
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN Postfix
+Aproperty CDATA postfixes
+Amultiple TOKEN multiple
+Aoptional TOKEN optional
+(content
+)content
+)syntax
+Aid TOKEN PrimaryExpression
+Aabstract TOKEN abstract
+Abase IMPLIED
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN IdentifierExpression
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN LiteralExpression
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN IfExpression
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN SwitchExpression
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN ForExpression
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN WhileExpression
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN DoExpression
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN ParenthesizedExpression
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN ReturnExpression
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN ThrowExpression
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN BreakExpression
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN ConstructorCall
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN ThisExpression
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN NullExpression
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN IdentifierExpression
+Aabstract TOKEN concrete
+Abase TOKEN PrimaryExpression
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN identifier
+Alink IMPLIED
+Aproperty CDATA name
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN LiteralExpression
+Aabstract TOKEN concrete
+Abase TOKEN PrimaryExpression
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN literal
+Alink IMPLIED
+Aproperty CDATA literal
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN IfExpression
+Aabstract TOKEN concrete
+Abase TOKEN PrimaryExpression
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN if
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN Expression
+Aproperty CDATA condition
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN Expression
+Aproperty CDATA consequent
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN ElseClause
+Aproperty CDATA elseClause
+Amultiple TOKEN single
+Aoptional TOKEN optional
+(content
+)content
+)syntax
+Aid TOKEN ElseClause
+Aabstract TOKEN concrete
+Abase IMPLIED
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN else
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN Expression
+Aproperty CDATA alternative
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN SwitchExpression
+Aabstract TOKEN concrete
+Abase TOKEN PrimaryExpression
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN switch
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN Expression
+Aproperty CDATA expression
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN SwitchBody
+Aproperty CDATA body
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN SwitchBody
+Aabstract TOKEN abstract
+Abase IMPLIED
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN CurliedSwitchBody
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN NakedSwitchBody
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN CurliedSwitchBody
+Aabstract TOKEN concrete
+Abase TOKEN SwitchBody
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN leftCurly
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN SwitchCase
+Aproperty CDATA cases
+Amultiple TOKEN multiple
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN rightCurly
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN NakedSwitchBody
+Aabstract TOKEN concrete
+Abase TOKEN SwitchBody
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN SwitchCase
+Aproperty CDATA cases
+Amultiple TOKEN multiple
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN SwitchCase
+Aabstract TOKEN concrete
+Abase IMPLIED
+Amultiple TOKEN multiple
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN CaseLabel
+Aproperty CDATA label
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN CaseContent
+Aproperty CDATA content
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN CaseLabel
+Aabstract TOKEN abstract
+Abase IMPLIED
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN ItemCaseLabel
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN DefaultCaseLabel
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN ItemCaseLabel
+Aabstract TOKEN concrete
+Abase TOKEN CaseLabel
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN case
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN Pattern
+Aproperty CDATA pattern
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN CaseItem
+Aproperty CDATA additionalPatterns
+Amultiple TOKEN multiple
+Aoptional TOKEN optional
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN colon
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN DefaultCaseLabel
+Aabstract TOKEN concrete
+Abase TOKEN CaseLabel
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN default
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN colon
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN CaseItem
+Aabstract TOKEN concrete
+Abase IMPLIED
+Amultiple TOKEN multiple
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN comma
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN Pattern
+Aproperty CDATA pattern
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN CaseContent
+Aabstract TOKEN concrete
+Abase IMPLIED
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN Statement
+Aproperty CDATA statements
+Amultiple TOKEN multiple
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN ForExpression
+Aabstract TOKEN concrete
+Abase TOKEN PrimaryExpression
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN for
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN IdentifierPattern
+Aproperty CDATA pattern
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN in
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN Expression
+Aproperty CDATA expression
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN Expression
+Aproperty CDATA code
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN WhileExpression
+Aabstract TOKEN concrete
+Abase TOKEN PrimaryExpression
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN while
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN Expression
+Aproperty CDATA condition
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN Expression
+Aproperty CDATA code
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN DoExpression
+Aabstract TOKEN concrete
+Abase TOKEN PrimaryExpression
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN do
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN Expression
+Aproperty CDATA code
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN while
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN Expression
+Aproperty CDATA condition
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN ParenthesizedExpression
+Aabstract TOKEN concrete
+Abase TOKEN PrimaryExpression
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN leftParen
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN ExpressionElement
+Aproperty CDATA expressionElements
+Amultiple TOKEN multiple
+Aoptional TOKEN optional
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN rightParen
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN ExpressionElement
+Aabstract TOKEN concrete
+Abase IMPLIED
+Amultiple TOKEN multiple
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN Expression
+Aproperty CDATA expression
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN comma
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN optional
+(content
+)content
+)syntax
+Aid TOKEN ReturnExpression
+Aabstract TOKEN concrete
+Abase TOKEN PrimaryExpression
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN return
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN ParenthesizedExpression
+Aproperty CDATA expression
+Amultiple TOKEN single
+Aoptional TOKEN optional
+(content
+)content
+)syntax
+Aid TOKEN ThrowExpression
+Aabstract TOKEN concrete
+Abase TOKEN PrimaryExpression
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN throw
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN IdentifierExpression
+Aproperty CDATA error
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN ParenthesizedExpression
+Aproperty CDATA arguments
+Amultiple TOKEN single
+Aoptional TOKEN optional
+(content
+)content
+)syntax
+Aid TOKEN BreakExpression
+Aabstract TOKEN concrete
+Abase TOKEN PrimaryExpression
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN break
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN ParenthesizedExpression
+Aproperty CDATA expression
+Amultiple TOKEN single
+Aoptional TOKEN optional
+(content
+)content
+)syntax
+Aid TOKEN ConstructorCall
+Aabstract TOKEN concrete
+Abase TOKEN PrimaryExpression
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN new
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN Type
+Aproperty CDATA typeToConstruct
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN ParenthesizedExpression
+Aproperty CDATA arguments
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN CatchClause
+Aproperty CDATA catchClauses
+Amultiple TOKEN multiple
+Aoptional TOKEN optional
+(content
+)content
+)syntax
+Aid TOKEN ThisExpression
+Aabstract TOKEN concrete
+Abase TOKEN PrimaryExpression
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN this
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN NullExpression
+Aabstract TOKEN concrete
+Abase TOKEN PrimaryExpression
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN null
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN Postfix
+Aabstract TOKEN abstract
+Abase IMPLIED
+Amultiple TOKEN multiple
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN OperatorPostfix
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN FunctionCall
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN MemberExpression
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN Subscript
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN OperatorPostfix
+Aabstract TOKEN concrete
+Abase TOKEN Postfix
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN postfixoperator
+Alink IMPLIED
+Aproperty CDATA postfixOperator
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN FunctionCall
+Aabstract TOKEN concrete
+Abase TOKEN Postfix
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN ParenthesizedExpression
+Aproperty CDATA arguments
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN CatchClause
+Aproperty CDATA catchClauses
+Amultiple TOKEN multiple
+Aoptional TOKEN optional
+(content
+)content
+)syntax
+Aid TOKEN CatchClause
+Aabstract TOKEN concrete
+Abase IMPLIED
+Amultiple TOKEN multiple
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN catch
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN CatchPattern
+Aproperty CDATA catchPattern
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN TuplePattern
+Aproperty CDATA bindingPattern
+Amultiple TOKEN single
+Aoptional TOKEN optional
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN Expression
+Aproperty CDATA expression
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN CatchPattern
+Aabstract TOKEN abstract
+Abase IMPLIED
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN WildCardCatchPattern
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN IdentifierCatchPattern
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN WildCardCatchPattern
+Aabstract TOKEN concrete
+Abase TOKEN CatchPattern
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN WildcardPattern
+Aproperty CDATA pattern
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN IdentifierCatchPattern
+Aabstract TOKEN concrete
+Abase TOKEN CatchPattern
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN identifier
+Alink IMPLIED
+Aproperty CDATA name
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN MemberExpression
+Aproperty CDATA member
+Amultiple TOKEN single
+Aoptional TOKEN optional
+(content
+)content
+)syntax
+Aid TOKEN WildcardPattern
+Aabstract TOKEN concrete
+Abase TOKEN Pattern
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN underscore
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN TuplePattern
+Aabstract TOKEN concrete
+Abase TOKEN Pattern
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN leftParen
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN TuplePatternElement
+Aproperty CDATA elements
+Amultiple TOKEN multiple
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN rightParen
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN TuplePatternElement
+Aabstract TOKEN concrete
+Abase IMPLIED
+Amultiple TOKEN multiple
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN Pattern
+Aproperty CDATA pattern
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN comma
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN optional
+(content
+)content
+)syntax
+Aid TOKEN ExpressionPattern
+Aabstract TOKEN concrete
+Abase TOKEN Pattern
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN Expression
+Aproperty CDATA expression
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN MemberExpression
+Aabstract TOKEN concrete
+Abase TOKEN Postfix
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN dot
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN identifier
+Alink IMPLIED
+Aproperty CDATA member
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN Subscript
+Aabstract TOKEN concrete
+Abase TOKEN Postfix
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN leftBracket
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN ExpressionElement
+Aproperty CDATA expressions
+Amultiple TOKEN multiple
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN rightBracket
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN BinaryExpression
+Aabstract TOKEN abstract
+Abase IMPLIED
+Amultiple TOKEN multiple
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN BinaryOperation
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN Assignment
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN TypeQuery
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN TypeCast
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN BinaryOperation
+Aabstract TOKEN concrete
+Abase TOKEN BinaryExpression
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN binaryoperator
+Alink IMPLIED
+Aproperty CDATA binaryOperator
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN PrefixExpression
+Aproperty CDATA expression
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN Assignment
+Aabstract TOKEN concrete
+Abase TOKEN BinaryExpression
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN equal
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN Expression
+Aproperty CDATA expression
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN TypeQuery
+Aabstract TOKEN concrete
+Abase TOKEN BinaryExpression
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN is
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN Type
+Aproperty CDATA objectType
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN TypeCast
+Aabstract TOKEN concrete
+Abase TOKEN BinaryExpression
+Amultiple TOKEN single
+Atop TOKEN nontop
+Aprogram TOKEN nonprogram
+(syntax
+Atype TOKEN syntax
+Alink TOKEN as
+Aproperty IMPLIED
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+Atype TOKEN syntax
+Alink TOKEN Type
+Aproperty CDATA objectType
+Amultiple TOKEN single
+Aoptional TOKEN required
+(content
+)content
+)syntax
+Aid TOKEN class
+(keyword
+)keyword
+Aid TOKEN function
+(keyword
+)keyword
+Aid TOKEN if
+(keyword
+)keyword
+Aid TOKEN else
+(keyword
+)keyword
+Aid TOKEN switch
+(keyword
+)keyword
+Aid TOKEN case
+(keyword
+)keyword
+Aid TOKEN default
+(keyword
+)keyword
+Aid TOKEN catch
+(keyword
+)keyword
+Aid TOKEN for
+(keyword
+)keyword
+Aid TOKEN in
+(keyword
+)keyword
+Aid TOKEN while
+(keyword
+)keyword
+Aid TOKEN do
+(keyword
+)keyword
+Aid TOKEN return
+(keyword
+)keyword
+Aid TOKEN throw
+(keyword
+)keyword
+Aid TOKEN break
+(keyword
+)keyword
+Aid TOKEN throws
+(keyword
+)keyword
+Aid TOKEN static
+(keyword
+)keyword
+Aid TOKEN let
+(keyword
+)keyword
+Aid TOKEN mutable
+(keyword
+)keyword
+Aid TOKEN is
+(keyword
+)keyword
+Aid TOKEN as
+(keyword
+)keyword
+Aid TOKEN constructor
+(keyword
+)keyword
+Aid TOKEN enum
+(keyword
+)keyword
+Aid TOKEN this
+(keyword
+)keyword
+Aid TOKEN null
+(keyword
+)keyword
+Aid TOKEN new
+(keyword
+)keyword
+Aid TOKEN extends
+(keyword
+)keyword
+Aid TOKEN equal
+Avalue CDATA =
+(punctuation
+)punctuation
+Aid TOKEN comma
+Avalue CDATA ,
+(punctuation
+)punctuation
+Aid TOKEN leftParen
+Avalue CDATA (
+(punctuation
+)punctuation
+Aid TOKEN rightParen
+Avalue CDATA )
+(punctuation
+)punctuation
+Aid TOKEN leftCurly
+Avalue CDATA {
+(punctuation
+)punctuation
+Aid TOKEN rightCurly
+Avalue CDATA }
+(punctuation
+)punctuation
+Aid TOKEN leftBracket
+Avalue CDATA [
+(punctuation
+)punctuation
+Aid TOKEN rightBracket
+Avalue CDATA ]
+(punctuation
+)punctuation
+Aid TOKEN colon
+Avalue CDATA :
+(punctuation
+)punctuation
+Aid TOKEN dot
+Avalue CDATA .
+(punctuation
+)punctuation
+Aid TOKEN underscore
+Avalue CDATA _
+(punctuation
+)punctuation
+Aid TOKEN circumflex
+Avalue CDATA ^
+(punctuation
+)punctuation
+Aid TOKEN dollar
+Avalue CDATA $
+(punctuation
+)punctuation
+Aid TOKEN at
+Avalue CDATA @
+(punctuation
+)punctuation
+Aid TOKEN hash
+Avalue CDATA #
+(punctuation
+)punctuation
+Aid TOKEN ampersand
+Avalue CDATA &
+(punctuation
+)punctuation
+)language
+C
