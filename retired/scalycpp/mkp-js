@@ -1,0 +1,2 @@
+#!/bin/bash
+node ~/repos/openjade-js/packages/openjade/dist/jade/jade.js -G -t sgml -d codegen/scaly.dsl scaly.sgm
