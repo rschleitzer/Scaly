@@ -1,0 +1,21 @@
+{
+  "name": "@scaly/lang",
+  "version": "0.1.0",
+  "description": "Scaly language core - lexer, parser, codegen",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@scaly/containers": "*"
+  }
+}

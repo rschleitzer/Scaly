@@ -1,0 +1,33 @@
+<!ELEMENT grammar (syntax+, keyword*, punctuation*)>
+<!ATTLIST grammar
+  name        CDATA                               #IMPLIED
+>
+
+<!ELEMENT syntax (content)*>
+<!ATTLIST syntax
+  id          ID                                  #REQUIRED
+  abstract    (abstract|concrete)                 "concrete"
+  multiple    (yes|no)                            "no"
+>
+
+<!ELEMENT content EMPTY>
+<!ATTLIST content
+  type        (syntax|keyword|punctuation|
+                colon|semicolon|identifier|
+                attribute|literal|eof)            "syntax"
+  link        IDREF                               #IMPLIED
+  property    CDATA                               #IMPLIED
+  multiple    (yes|no)                            "no"
+  optional    (yes|no)                            "no"
+>
+
+<!ELEMENT keyword EMPTY>
+<!ATTLIST keyword
+  id          ID                                  #REQUIRED
+>
+
+<!ELEMENT punctuation EMPTY>
+<!ATTLIST punctuation
+  id          ID                                  #REQUIRED
+  value       CDATA                               #REQUIRED
+>

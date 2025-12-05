@@ -1,0 +1,21 @@
+{
+  "name": "@scaly/io",
+  "version": "0.1.0",
+  "description": "Scaly I/O - File, Console, Path, Directory",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@scaly/containers": "*"
+  }
+}

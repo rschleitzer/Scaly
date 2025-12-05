@@ -1,0 +1,2 @@
+#!/bin/bash
+openjade -G -t sgml -d codegen/scaly.dsl scaly.sgm
