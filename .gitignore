@@ -42,6 +42,7 @@ bin/
 *.a
 out
 node_modules
+dist/
 client/server
 .vscode-test
 tsconfig.tsbuildinfo
