@@ -1,0 +1,2 @@
+#!/bin/bash
+dotnet run --project /Users/r.schleitzer/repos/openjade-net/src/Jade -- -G -t sgml -d codegen/scaly.dsl scaly.sgm
