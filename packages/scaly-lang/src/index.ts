@@ -1,8 +1,11 @@
 // Scaly Language Core
 
 export * from './lexer.js'
-// export * from './syntax.js'  // TODO: generate from codegen
-// export * from './parser.js'  // TODO: generate from codegen
+export * as Syntax from './syntax.js'
+export * as Model from './model.js'
+export { Parser, ParseResult, ParserError } from './parser.js'
+export { Modeler, ModelResult, parseAndModel } from './modeler.js'
+export { ModelError, formatModelError } from './model-error.js'
 export { JsTranspiler } from './transpiler/js.js'
 export { TsTranspiler } from './transpiler/ts.js'
 export { evaluate } from './evaluator.js'

@@ -322,15 +322,9 @@
     <content link = Repeat
     <content link = SizeOf
     <content link = Is
-    <content link = New
 
 <syntax id = Literal
     <content literal                                        property = literal
-
-<syntax id = New
-    <content link = new_
-    <content link = Type                                    property = type
-    <content link = Object                                  property = arguments
 
 <syntax id = Object
     <content link = left_paren
@@ -629,7 +623,6 @@
 <keyword id = match
 <keyword id = module
 <keyword id = mutable
-<keyword id = new_
 <keyword id = operator
 <keyword id = procedure
 <keyword id = private
