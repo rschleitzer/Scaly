@@ -1,33 +1,31 @@
-<!ELEMENT grammar (syntax+, keyword*, punctuation*)>
-<!ATTLIST grammar
-  name        CDATA                               #IMPLIED
->
+<!ELEMENT grammar - - (syntax+, keyword*, punctuation*)>
 
-<!ELEMENT syntax (content)*>
+<!ELEMENT syntax - O (content)*>
 <!ATTLIST syntax
-  id          ID                                  #REQUIRED
-  abstract    (abstract|concrete)                 "concrete"
-  multiple    (yes|no)                            "no"
+    id          ID                                  #REQUIRED
+    abstract    (abstract|concrete)                 concrete
+    multiple    (multiple|single)                   single
 >
 
-<!ELEMENT content EMPTY>
+<!ELEMENT content - O EMPTY>
 <!ATTLIST content
-  type        (syntax|keyword|punctuation|
-                colon|semicolon|identifier|
-                attribute|literal|eof)            "syntax"
-  link        IDREF                               #IMPLIED
-  property    CDATA                               #IMPLIED
-  multiple    (yes|no)                            "no"
-  optional    (yes|no)                            "no"
+    type        (syntax|keyword|punctuation|
+                colon|identifier|
+                attribute|literal)                  syntax
+
+    link        IDREF                               #IMPLIED
+    property    CDATA                               #IMPLIED
+    multiple    (multiple|single)                   single
+    optional    (optional|required)                 required
 >
 
-<!ELEMENT keyword EMPTY>
+<!ELEMENT keyword - O EMPTY>
 <!ATTLIST keyword
-  id          ID                                  #REQUIRED
+    id          ID                                  #REQUIRED
 >
 
-<!ELEMENT punctuation EMPTY>
+<!ELEMENT punctuation - O EMPTY>
 <!ATTLIST punctuation
-  id          ID                                  #REQUIRED
-  value       CDATA                               #REQUIRED
+    id          ID                                  #REQUIRED
+    value       CDATA                               #REQUIRED
 >

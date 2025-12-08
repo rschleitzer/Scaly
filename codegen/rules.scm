@@ -1,7 +1,9 @@
 (element grammar
-    (file ($ (let ((grammar-name (name (current-node)))) ($ (if grammar-name grammar-name "") "Parser.scaly")))
-        ($
+    (sosofo-append
+        (file "packages/scaly-lang/src/syntax.ts"
             (generate-syntax)
+        )
+        (file "packages/scaly-lang/src/parser.ts"
             (parser)
         )
     )

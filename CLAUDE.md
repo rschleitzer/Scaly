@@ -163,6 +163,13 @@ Scaly syntax includes:
 
 The **scaly-doc** repository contains the growing documentation for the Scaly language and the REPL implementation. This documentation must be kept in sync with the current state of the compiler/transpiler as features are added or changed.
 
+## Commit Policy
+
+- Use short, one-line commit messages (50 chars or less ideal)
+- No marketing blurbs or promotional text
+- No emojis unless explicitly requested
+- Format: `<what changed>` - be concise and descriptive
+
 ## Development Commands
 
 ### Building and Testing
