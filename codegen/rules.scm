@@ -6,5 +6,8 @@
         (file "packages/scaly-lang/src/parser.ts"
             (parser)
         )
+        (file "grammar.xml"
+            (generate-grammar-doc)
+        )
     )
 )
