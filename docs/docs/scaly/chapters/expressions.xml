@@ -1,0 +1,88 @@
+<chapter xml:id="expressions">
+  <title>Expressions</title>
+
+  <section xml:id="expr-overview">
+    <title>Overview</title>
+    <para>
+      Expressions are the core computational units of Scaly. Every expression
+      evaluates to a value. Unlike many languages, Scaly uses postfix operators
+      and does not define operator precedence — evaluation order is always
+      explicit.
+    </para>
+    <note>
+      <para>
+        This chapter will be expanded as expression support is implemented.
+        Currently, only literal expressions are fully supported.
+      </para>
+    </note>
+  </section>
+
+  <section xml:id="expr-literals">
+    <title>Literal Expressions</title>
+    <para>
+      The simplest expressions are literals. A literal evaluates to itself.
+    </para>
+    <programlisting>
+42              ; evaluates to 42
+"hello"         ; evaluates to "hello"
+true            ; evaluates to true
+    </programlisting>
+  </section>
+
+  <section xml:id="expr-operators">
+    <title>Operator Expressions</title>
+    <para>
+      <emphasis>Status: planned</emphasis>
+    </para>
+    <para>
+      Operators in Scaly are postfix: they follow their operands. This
+      eliminates precedence ambiguity entirely.
+    </para>
+    <programlisting>
+; Planned syntax:
+3 4 +           ; addition: 7
+3 4 + 2 *       ; (3 + 4) * 2 = 14
+    </programlisting>
+    <para>
+      Because operators are postfix, the evaluation order is always
+      left-to-right. No parentheses are needed to override precedence
+      because there is no precedence.
+    </para>
+  </section>
+
+  <section xml:id="expr-grouping">
+    <title>Grouping</title>
+    <para>
+      <emphasis>Status: planned</emphasis>
+    </para>
+    <para>
+      Parentheses can be used for grouping to change evaluation order
+      when needed.
+    </para>
+    <programlisting>
+; Planned syntax:
+3 (4 2 *) +     ; 3 + (4 * 2) = 11
+    </programlisting>
+  </section>
+
+  <section xml:id="expr-function-application">
+    <title>Function Application</title>
+    <para>
+      <emphasis>Status: planned</emphasis>
+    </para>
+    <para>
+      Functions are applied prefix-style: the function name precedes its
+      arguments.
+    </para>
+    <programlisting>
+; Planned syntax:
+sqrt 16         ; function application: 4
+max 3 7         ; two-argument function: 7
+    </programlisting>
+    <para>
+      The combination of prefix functions and postfix operators creates
+      a natural flow: data flows left-to-right through transformations.
+    </para>
+  </section>
+
+</chapter>

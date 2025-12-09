@@ -1,0 +1,538 @@
+<productionset xmlns="http://docbook.org/ns/docbook">
+
+  <production xml:id="prod.Program">
+    <lhs>Program</lhs>
+    <rhs><nonterminal def="prod.File">File</nonterminal> <nonterminal def="prod.Statement">Statement</nonterminal>* </rhs>
+  </production>
+
+  <production xml:id="prod.File">
+    <lhs>File</lhs>
+    <rhs><nonterminal def="prod.Package">Package</nonterminal>* <nonterminal def="prod.Use">Use</nonterminal>* <nonterminal def="prod.Declaration">Declaration</nonterminal>* </rhs>
+  </production>
+
+  <production xml:id="prod.Declaration">
+    <lhs>Declaration</lhs>
+    <rhs><nonterminal def="prod.Symbol">Symbol</nonterminal> ':'? </rhs>
+  </production>
+
+  <production xml:id="prod.Symbol">
+    <lhs>Symbol</lhs>
+    <rhs><nonterminal def="prod.Private">Private</nonterminal> | <nonterminal def="prod.Definition">Definition</nonterminal> | <nonterminal def="prod.Function">Function</nonterminal> | <nonterminal def="prod.Operator">Operator</nonterminal> | <nonterminal def="prod.Trait">Trait</nonterminal> | <nonterminal def="prod.Macro">Macro</nonterminal> | <nonterminal def="prod.Module">Module</nonterminal></rhs>
+  </production>
+
+  <production xml:id="prod.Private">
+    <lhs>Private</lhs>
+    <rhs>'private' <nonterminal def="prod.Export">Export</nonterminal> </rhs>
+  </production>
+
+  <production xml:id="prod.Export">
+    <lhs>Export</lhs>
+    <rhs><nonterminal def="prod.Definition">Definition</nonterminal> | <nonterminal def="prod.Function">Function</nonterminal> | <nonterminal def="prod.Operator">Operator</nonterminal> | <nonterminal def="prod.Trait">Trait</nonterminal> | <nonterminal def="prod.Module">Module</nonterminal></rhs>
+  </production>
+
+  <production xml:id="prod.Member">
+    <lhs>Member</lhs>
+    <rhs><nonterminal def="prod.Constituent">Constituent</nonterminal> ':'? </rhs>
+  </production>
+
+  <production xml:id="prod.Constituent">
+    <lhs>Constituent</lhs>
+    <rhs><nonterminal def="prod.Definition">Definition</nonterminal> | <nonterminal def="prod.Function">Function</nonterminal> | <nonterminal def="prod.Procedure">Procedure</nonterminal> | <nonterminal def="prod.Operator">Operator</nonterminal> | <nonterminal def="prod.Implement">Implement</nonterminal> | <nonterminal def="prod.Trait">Trait</nonterminal> | <nonterminal def="prod.Macro">Macro</nonterminal> | <nonterminal def="prod.Module">Module</nonterminal></rhs>
+  </production>
+
+  <production xml:id="prod.Definition">
+    <lhs>Definition</lhs>
+    <rhs>'define' IDENTIFIER <nonterminal def="prod.GenericParameters">GenericParameters</nonterminal>? ':'? <nonterminal def="prod.Attribute">Attribute</nonterminal>* <nonterminal def="prod.Concept">Concept</nonterminal> </rhs>
+  </production>
+
+  <production xml:id="prod.GenericParameters">
+    <lhs>GenericParameters</lhs>
+    <rhs>'[' <nonterminal def="prod.GenericParameter">GenericParameter</nonterminal>+ ']' </rhs>
+  </production>
+
+  <production xml:id="prod.GenericParameter">
+    <lhs>GenericParameter</lhs>
+    <rhs>IDENTIFIER <nonterminal def="prod.Attribute">Attribute</nonterminal>* ',' </rhs>
+  </production>
+
+  <production xml:id="prod.Concept">
+    <lhs>Concept</lhs>
+    <rhs><nonterminal def="prod.Class">Class</nonterminal> | <nonterminal def="prod.Namespace">Namespace</nonterminal> | <nonterminal def="prod.Union">Union</nonterminal> | <nonterminal def="prod.Constant">Constant</nonterminal> | <nonterminal def="prod.Delegate">Delegate</nonterminal> | <nonterminal def="prod.Intrinsic">Intrinsic</nonterminal></rhs>
+  </production>
+
+  <production xml:id="prod.Class">
+    <lhs>Class</lhs>
+    <rhs><nonterminal def="prod.Structure">Structure</nonterminal> ':'? <nonterminal def="prod.Body">Body</nonterminal>? ':'? </rhs>
+  </production>
+
+  <production xml:id="prod.Body">
+    <lhs>Body</lhs>
+    <rhs>'{' <nonterminal def="prod.Use">Use</nonterminal>* <nonterminal def="prod.Init">Init</nonterminal>* <nonterminal def="prod.DeInit">DeInit</nonterminal>? <nonterminal def="prod.Member">Member</nonterminal>* '}' ':'? </rhs>
+  </production>
+
+  <production xml:id="prod.Namespace">
+    <lhs>Namespace</lhs>
+    <rhs>'{' <nonterminal def="prod.Use">Use</nonterminal>* <nonterminal def="prod.Declaration">Declaration</nonterminal>* '}' ':'? </rhs>
+  </production>
+
+  <production xml:id="prod.Union">
+    <lhs>Union</lhs>
+    <rhs>'union' ':'? '(' <nonterminal def="prod.Variant">Variant</nonterminal>+ ')' ':'? <nonterminal def="prod.Body">Body</nonterminal>? ':'? </rhs>
+  </production>
+
+  <production xml:id="prod.Variant">
+    <lhs>Variant</lhs>
+    <rhs>IDENTIFIER <nonterminal def="prod.Attribute">Attribute</nonterminal>* <nonterminal def="prod.TypeAnnotation">TypeAnnotation</nonterminal>? ',' ':'? </rhs>
+  </production>
+
+  <production xml:id="prod.Constant">
+    <lhs>Constant</lhs>
+    <rhs><nonterminal def="prod.Type">Type</nonterminal> <nonterminal def="prod.Operand">Operand</nonterminal>* ':'? </rhs>
+  </production>
+
+  <production xml:id="prod.Delegate">
+    <lhs>Delegate</lhs>
+    <rhs>'delegate' <nonterminal def="prod.ParameterSet">ParameterSet</nonterminal>? <nonterminal def="prod.Attribute">Attribute</nonterminal>* <nonterminal def="prod.Returns">Returns</nonterminal>? <nonterminal def="prod.Throws">Throws</nonterminal>? </rhs>
+  </production>
+
+  <production xml:id="prod.GenericArguments">
+    <lhs>GenericArguments</lhs>
+    <rhs>'[' <nonterminal def="prod.GenericArgument">GenericArgument</nonterminal>* ']' </rhs>
+  </production>
+
+  <production xml:id="prod.GenericArgument">
+    <lhs>GenericArgument</lhs>
+    <rhs><nonterminal def="prod.Type">Type</nonterminal> ',' </rhs>
+  </production>
+
+  <production xml:id="prod.Optional">
+    <lhs>Optional</lhs>
+    <rhs>'?' </rhs>
+  </production>
+
+  <production xml:id="prod.ParameterSet">
+    <lhs>ParameterSet</lhs>
+    <rhs><nonterminal def="prod.Parameters">Parameters</nonterminal> | <nonterminal def="prod.Type">Type</nonterminal></rhs>
+  </production>
+
+  <production xml:id="prod.Parameters">
+    <lhs>Parameters</lhs>
+    <rhs>'(' <nonterminal def="prod.Item">Item</nonterminal>* ')' </rhs>
+  </production>
+
+  <production xml:id="prod.Item">
+    <lhs>Item</lhs>
+    <rhs>IDENTIFIER <nonterminal def="prod.TypeAnnotation">TypeAnnotation</nonterminal>? ',' ':'? <nonterminal def="prod.Attribute">Attribute</nonterminal>* ':'? </rhs>
+  </production>
+
+  <production xml:id="prod.Returns">
+    <lhs>Returns</lhs>
+    <rhs>'returns' <nonterminal def="prod.Type">Type</nonterminal> <nonterminal def="prod.Attribute">Attribute</nonterminal>* </rhs>
+  </production>
+
+  <production xml:id="prod.Throws">
+    <lhs>Throws</lhs>
+    <rhs>'throws' <nonterminal def="prod.Type">Type</nonterminal> <nonterminal def="prod.Attribute">Attribute</nonterminal>* </rhs>
+  </production>
+
+  <production xml:id="prod.Use">
+    <lhs>Use</lhs>
+    <rhs>'use' <nonterminal def="prod.Name">Name</nonterminal> ':'? </rhs>
+  </production>
+
+  <production xml:id="prod.Implement">
+    <lhs>Implement</lhs>
+    <rhs>'implement' <nonterminal def="prod.Type">Type</nonterminal> <nonterminal def="prod.Attribute">Attribute</nonterminal>* ':'? '{' <nonterminal def="prod.Use">Use</nonterminal>* <nonterminal def="prod.Method">Method</nonterminal>* '}' ':'? </rhs>
+  </production>
+
+  <production xml:id="prod.Trait">
+    <lhs>Trait</lhs>
+    <rhs>'trait' <nonterminal def="prod.Name">Name</nonterminal> <nonterminal def="prod.Extends">Extends</nonterminal>? <nonterminal def="prod.Attribute">Attribute</nonterminal>* '{' <nonterminal def="prod.Use">Use</nonterminal>* <nonterminal def="prod.Method">Method</nonterminal>* '}' ':'? </rhs>
+  </production>
+
+  <production xml:id="prod.Method">
+    <lhs>Method</lhs>
+    <rhs><nonterminal def="prod.Function">Function</nonterminal> | <nonterminal def="prod.Procedure">Procedure</nonterminal> | <nonterminal def="prod.Operator">Operator</nonterminal></rhs>
+  </production>
+
+  <production xml:id="prod.Init">
+    <lhs>Init</lhs>
+    <rhs>'init' <nonterminal def="prod.ParameterSet">ParameterSet</nonterminal>? ':'? <nonterminal def="prod.Action">Action</nonterminal> ':'? </rhs>
+  </production>
+
+  <production xml:id="prod.DeInit">
+    <lhs>DeInit</lhs>
+    <rhs>'deinit' ':'? <nonterminal def="prod.Action">Action</nonterminal> ':'? </rhs>
+  </production>
+
+  <production xml:id="prod.Function">
+    <lhs>Function</lhs>
+    <rhs>'function' <nonterminal def="prod.Target">Target</nonterminal> </rhs>
+  </production>
+
+  <production xml:id="prod.Procedure">
+    <lhs>Procedure</lhs>
+    <rhs>'procedure' <nonterminal def="prod.Target">Target</nonterminal> </rhs>
+  </production>
+
+  <production xml:id="prod.Operator">
+    <lhs>Operator</lhs>
+    <rhs>'operator' <nonterminal def="prod.Target">Target</nonterminal> </rhs>
+  </production>
+
+  <production xml:id="prod.Target">
+    <lhs>Target</lhs>
+    <rhs><nonterminal def="prod.Named">Named</nonterminal> | <nonterminal def="prod.Routine">Routine</nonterminal></rhs>
+  </production>
+
+  <production xml:id="prod.Named">
+    <lhs>Named</lhs>
+    <rhs>IDENTIFIER <nonterminal def="prod.Routine">Routine</nonterminal> </rhs>
+  </production>
+
+  <production xml:id="prod.Routine">
+    <lhs>Routine</lhs>
+    <rhs><nonterminal def="prod.GenericArguments">GenericArguments</nonterminal>? <nonterminal def="prod.Lifetime">Lifetime</nonterminal>? <nonterminal def="prod.ParameterSet">ParameterSet</nonterminal>? <nonterminal def="prod.Attribute">Attribute</nonterminal>* <nonterminal def="prod.Returns">Returns</nonterminal>? ':'? <nonterminal def="prod.Throws">Throws</nonterminal>? ':'? <nonterminal def="prod.Implementation">Implementation</nonterminal> </rhs>
+  </production>
+
+  <production xml:id="prod.Implementation">
+    <lhs>Implementation</lhs>
+    <rhs><nonterminal def="prod.Action">Action</nonterminal> | <nonterminal def="prod.Extern">Extern</nonterminal> | <nonterminal def="prod.Instruction">Instruction</nonterminal> | <nonterminal def="prod.Intrinsic">Intrinsic</nonterminal></rhs>
+  </production>
+
+  <production xml:id="prod.Extern">
+    <lhs>Extern</lhs>
+    <rhs>'extern' </rhs>
+  </production>
+
+  <production xml:id="prod.Instruction">
+    <lhs>Instruction</lhs>
+    <rhs>'instruction' ':'? </rhs>
+  </production>
+
+  <production xml:id="prod.Intrinsic">
+    <lhs>Intrinsic</lhs>
+    <rhs>'intrinsic' ':'? </rhs>
+  </production>
+
+  <production xml:id="prod.Extends">
+    <lhs>Extends</lhs>
+    <rhs>'extends' <nonterminal def="prod.Extend">Extend</nonterminal>* </rhs>
+  </production>
+
+  <production xml:id="prod.Extend">
+    <lhs>Extend</lhs>
+    <rhs><nonterminal def="prod.Type">Type</nonterminal> ',' </rhs>
+  </production>
+
+  <production xml:id="prod.Macro">
+    <lhs>Macro</lhs>
+    <rhs>'macro' IDENTIFIER <nonterminal def="prod.Model">Model</nonterminal> <nonterminal def="prod.Operand">Operand</nonterminal>+ </rhs>
+  </production>
+
+  <production xml:id="prod.Attribute">
+    <lhs>Attribute</lhs>
+    <rhs>ATTRIBUTE <nonterminal def="prod.Model">Model</nonterminal> ':'? </rhs>
+  </production>
+
+  <production xml:id="prod.Model">
+    <lhs>Model</lhs>
+    <rhs><nonterminal def="prod.Literal">Literal</nonterminal> | <nonterminal def="prod.Name">Name</nonterminal> | <nonterminal def="prod.Object">Object</nonterminal> | <nonterminal def="prod.Vector">Vector</nonterminal></rhs>
+  </production>
+
+  <production xml:id="prod.Module">
+    <lhs>Module</lhs>
+    <rhs>'module' IDENTIFIER ':'? </rhs>
+  </production>
+
+  <production xml:id="prod.Package">
+    <lhs>Package</lhs>
+    <rhs>'package' <nonterminal def="prod.Name">Name</nonterminal> ':'? </rhs>
+  </production>
+
+  <production xml:id="prod.Initializer">
+    <lhs>Initializer</lhs>
+    <rhs>'(' <nonterminal def="prod.Operand">Operand</nonterminal>+ ')' </rhs>
+  </production>
+
+  <production xml:id="prod.Operand">
+    <lhs>Operand</lhs>
+    <rhs><nonterminal def="prod.Expression">Expression</nonterminal> <nonterminal def="prod.MemberAccess">MemberAccess</nonterminal>* </rhs>
+  </production>
+
+  <production xml:id="prod.MemberAccess">
+    <lhs>MemberAccess</lhs>
+    <rhs>'.' <nonterminal def="prod.Name">Name</nonterminal> </rhs>
+  </production>
+
+  <production xml:id="prod.Expression">
+    <lhs>Expression</lhs>
+    <rhs><nonterminal def="prod.Literal">Literal</nonterminal> | <nonterminal def="prod.Type">Type</nonterminal> | <nonterminal def="prod.Object">Object</nonterminal> | <nonterminal def="prod.Vector">Vector</nonterminal> | <nonterminal def="prod.Block">Block</nonterminal> | <nonterminal def="prod.If">If</nonterminal> | <nonterminal def="prod.Match">Match</nonterminal> | <nonterminal def="prod.Lambda">Lambda</nonterminal> | <nonterminal def="prod.For">For</nonterminal> | <nonterminal def="prod.While">While</nonterminal> | <nonterminal def="prod.Choose">Choose</nonterminal> | <nonterminal def="prod.Try">Try</nonterminal> | <nonterminal def="prod.Repeat">Repeat</nonterminal> | <nonterminal def="prod.SizeOf">SizeOf</nonterminal> | <nonterminal def="prod.Is">Is</nonterminal></rhs>
+  </production>
+
+  <production xml:id="prod.Literal">
+    <lhs>Literal</lhs>
+    <rhs>LITERAL </rhs>
+  </production>
+
+  <production xml:id="prod.Object">
+    <lhs>Object</lhs>
+    <rhs>'(' <nonterminal def="prod.Component">Component</nonterminal>* ')' </rhs>
+  </production>
+
+  <production xml:id="prod.Component">
+    <lhs>Component</lhs>
+    <rhs><nonterminal def="prod.Operand">Operand</nonterminal>+ <nonterminal def="prod.Attribute">Attribute</nonterminal>* <nonterminal def="prod.Value">Value</nonterminal>? ',' </rhs>
+  </production>
+
+  <production xml:id="prod.Value">
+    <lhs>Value</lhs>
+    <rhs>':' <nonterminal def="prod.Operand">Operand</nonterminal>+ <nonterminal def="prod.Attribute">Attribute</nonterminal>* </rhs>
+  </production>
+
+  <production xml:id="prod.Vector">
+    <lhs>Vector</lhs>
+    <rhs>'[' <nonterminal def="prod.Element">Element</nonterminal>+ ']' <nonterminal def="prod.Lifetime">Lifetime</nonterminal>? </rhs>
+  </production>
+
+  <production xml:id="prod.Element">
+    <lhs>Element</lhs>
+    <rhs><nonterminal def="prod.Operand">Operand</nonterminal>+ <nonterminal def="prod.Attribute">Attribute</nonterminal>* ',' </rhs>
+  </production>
+
+  <production xml:id="prod.Block">
+    <lhs>Block</lhs>
+    <rhs>'{' <nonterminal def="prod.Use">Use</nonterminal>* <nonterminal def="prod.Statement">Statement</nonterminal>* '}' </rhs>
+  </production>
+
+  <production xml:id="prod.If">
+    <lhs>If</lhs>
+    <rhs>'if' <nonterminal def="prod.Operand">Operand</nonterminal>+ ':' <nonterminal def="prod.Command">Command</nonterminal> <nonterminal def="prod.Else">Else</nonterminal>? </rhs>
+  </production>
+
+  <production xml:id="prod.Else">
+    <lhs>Else</lhs>
+    <rhs>'else' ':'? <nonterminal def="prod.Command">Command</nonterminal> </rhs>
+  </production>
+
+  <production xml:id="prod.Match">
+    <lhs>Match</lhs>
+    <rhs>'match' <nonterminal def="prod.Operand">Operand</nonterminal>+ ':' <nonterminal def="prod.Branch">Branch</nonterminal>+ <nonterminal def="prod.Else">Else</nonterminal>? </rhs>
+  </production>
+
+  <production xml:id="prod.Branch">
+    <lhs>Branch</lhs>
+    <rhs><nonterminal def="prod.Case">Case</nonterminal>+ ':' <nonterminal def="prod.Statement">Statement</nonterminal> </rhs>
+  </production>
+
+  <production xml:id="prod.Case">
+    <lhs>Case</lhs>
+    <rhs>'case' <nonterminal def="prod.Operand">Operand</nonterminal>+ </rhs>
+  </production>
+
+  <production xml:id="prod.Statement">
+    <lhs>Statement</lhs>
+    <rhs><nonterminal def="prod.Command">Command</nonterminal> ':'? </rhs>
+  </production>
+
+  <production xml:id="prod.While">
+    <lhs>While</lhs>
+    <rhs>'while' <nonterminal def="prod.Condition">Condition</nonterminal> ':' <nonterminal def="prod.Label">Label</nonterminal>? <nonterminal def="prod.Action">Action</nonterminal> </rhs>
+  </production>
+
+  <production xml:id="prod.Choose">
+    <lhs>Choose</lhs>
+    <rhs>'choose' <nonterminal def="prod.Operand">Operand</nonterminal>+ ':' <nonterminal def="prod.When">When</nonterminal>* <nonterminal def="prod.Else">Else</nonterminal>? </rhs>
+  </production>
+
+  <production xml:id="prod.Try">
+    <lhs>Try</lhs>
+    <rhs>'try' <nonterminal def="prod.Condition">Condition</nonterminal> ':' <nonterminal def="prod.When">When</nonterminal>* <nonterminal def="prod.Else">Else</nonterminal>? </rhs>
+  </production>
+
+  <production xml:id="prod.Condition">
+    <lhs>Condition</lhs>
+    <rhs><nonterminal def="prod.Operation">Operation</nonterminal> | <nonterminal def="prod.Let">Let</nonterminal></rhs>
+  </production>
+
+  <production xml:id="prod.When">
+    <lhs>When</lhs>
+    <rhs>'when' IDENTIFIER ':' <nonterminal def="prod.Name">Name</nonterminal> ':'? <nonterminal def="prod.Command">Command</nonterminal> ':'? </rhs>
+  </production>
+
+  <production xml:id="prod.Command">
+    <lhs>Command</lhs>
+    <rhs><nonterminal def="prod.Operation">Operation</nonterminal> | <nonterminal def="prod.Let">Let</nonterminal> | <nonterminal def="prod.Var">Var</nonterminal> | <nonterminal def="prod.Mutable">Mutable</nonterminal> | <nonterminal def="prod.Set">Set</nonterminal> | <nonterminal def="prod.Continue">Continue</nonterminal> | <nonterminal def="prod.Break">Break</nonterminal> | <nonterminal def="prod.Return">Return</nonterminal> | <nonterminal def="prod.Throw">Throw</nonterminal></rhs>
+  </production>
+
+  <production xml:id="prod.Let">
+    <lhs>Let</lhs>
+    <rhs>'let' <nonterminal def="prod.Binding">Binding</nonterminal> </rhs>
+  </production>
+
+  <production xml:id="prod.Var">
+    <lhs>Var</lhs>
+    <rhs>'var' <nonterminal def="prod.Binding">Binding</nonterminal> </rhs>
+  </production>
+
+  <production xml:id="prod.Mutable">
+    <lhs>Mutable</lhs>
+    <rhs>'mutable' <nonterminal def="prod.Binding">Binding</nonterminal> </rhs>
+  </production>
+
+  <production xml:id="prod.Binding">
+    <lhs>Binding</lhs>
+    <rhs>IDENTIFIER <nonterminal def="prod.BindingAnnotation">BindingAnnotation</nonterminal>? <nonterminal def="prod.Operand">Operand</nonterminal>+ </rhs>
+  </production>
+
+  <production xml:id="prod.BindingAnnotation">
+    <lhs>BindingAnnotation</lhs>
+    <rhs>':' <nonterminal def="prod.BindingSpec">BindingSpec</nonterminal> </rhs>
+  </production>
+
+  <production xml:id="prod.BindingSpec">
+    <lhs>BindingSpec</lhs>
+    <rhs><nonterminal def="prod.Structure">Structure</nonterminal> | <nonterminal def="prod.Type">Type</nonterminal> | <nonterminal def="prod.Array">Array</nonterminal></rhs>
+  </production>
+
+  <production xml:id="prod.Array">
+    <lhs>Array</lhs>
+    <rhs>'[' <nonterminal def="prod.Type">Type</nonterminal>* ']' </rhs>
+  </production>
+
+  <production xml:id="prod.Structure">
+    <lhs>Structure</lhs>
+    <rhs>'(' <nonterminal def="prod.Part">Part</nonterminal>* ')' </rhs>
+  </production>
+
+  <production xml:id="prod.Part">
+    <lhs>Part</lhs>
+    <rhs><nonterminal def="prod.Field">Field</nonterminal> | <nonterminal def="prod.Property">Property</nonterminal></rhs>
+  </production>
+
+  <production xml:id="prod.Field">
+    <lhs>Field</lhs>
+    <rhs>'private' <nonterminal def="prod.Property">Property</nonterminal> </rhs>
+  </production>
+
+  <production xml:id="prod.Property">
+    <lhs>Property</lhs>
+    <rhs>IDENTIFIER <nonterminal def="prod.TypeAnnotation">TypeAnnotation</nonterminal> <nonterminal def="prod.Initializer">Initializer</nonterminal>? ',' ':'? <nonterminal def="prod.Attribute">Attribute</nonterminal>* ':'? </rhs>
+  </production>
+
+  <production xml:id="prod.TypeAnnotation">
+    <lhs>TypeAnnotation</lhs>
+    <rhs>':' <nonterminal def="prod.Type">Type</nonterminal> </rhs>
+  </production>
+
+  <production xml:id="prod.Continue">
+    <lhs>Continue</lhs>
+    <rhs>'continue' <nonterminal def="prod.Loop">Loop</nonterminal>? ':'? </rhs>
+  </production>
+
+  <production xml:id="prod.Break">
+    <lhs>Break</lhs>
+    <rhs>'break' <nonterminal def="prod.Loop">Loop</nonterminal>? <nonterminal def="prod.Operand">Operand</nonterminal>* ':'? </rhs>
+  </production>
+
+  <production xml:id="prod.Loop">
+    <lhs>Loop</lhs>
+    <rhs>'loop' IDENTIFIER </rhs>
+  </production>
+
+  <production xml:id="prod.Return">
+    <lhs>Return</lhs>
+    <rhs>'return' <nonterminal def="prod.Operand">Operand</nonterminal>* </rhs>
+  </production>
+
+  <production xml:id="prod.Throw">
+    <lhs>Throw</lhs>
+    <rhs>'throw' <nonterminal def="prod.Operand">Operand</nonterminal>* </rhs>
+  </production>
+
+  <production xml:id="prod.Lambda">
+    <lhs>Lambda</lhs>
+    <rhs>'lambda' <nonterminal def="prod.Operand">Operand</nonterminal>+ ':' <nonterminal def="prod.Action">Action</nonterminal> </rhs>
+  </production>
+
+  <production xml:id="prod.For">
+    <lhs>For</lhs>
+    <rhs>'for' IDENTIFIER <nonterminal def="prod.TypeAnnotation">TypeAnnotation</nonterminal>? 'in' <nonterminal def="prod.Operand">Operand</nonterminal>+ ':' <nonterminal def="prod.Label">Label</nonterminal>? <nonterminal def="prod.Action">Action</nonterminal> </rhs>
+  </production>
+
+  <production xml:id="prod.Label">
+    <lhs>Label</lhs>
+    <rhs>'label' IDENTIFIER ':'? </rhs>
+  </production>
+
+  <production xml:id="prod.Repeat">
+    <lhs>Repeat</lhs>
+    <rhs>'repeat' <nonterminal def="prod.Label">Label</nonterminal>? <nonterminal def="prod.Action">Action</nonterminal> </rhs>
+  </production>
+
+  <production xml:id="prod.Action">
+    <lhs>Action</lhs>
+    <rhs><nonterminal def="prod.Operation">Operation</nonterminal> | <nonterminal def="prod.Set">Set</nonterminal></rhs>
+  </production>
+
+  <production xml:id="prod.Operation">
+    <lhs>Operation</lhs>
+    <rhs><nonterminal def="prod.Operand">Operand</nonterminal>+ </rhs>
+  </production>
+
+  <production xml:id="prod.Set">
+    <lhs>Set</lhs>
+    <rhs>'set' <nonterminal def="prod.Operand">Operand</nonterminal>+ ':' <nonterminal def="prod.Operand">Operand</nonterminal>+ </rhs>
+  </production>
+
+  <production xml:id="prod.SizeOf">
+    <lhs>SizeOf</lhs>
+    <rhs>'sizeof' <nonterminal def="prod.Type">Type</nonterminal> </rhs>
+  </production>
+
+  <production xml:id="prod.Is">
+    <lhs>Is</lhs>
+    <rhs>'is' <nonterminal def="prod.Name">Name</nonterminal> </rhs>
+  </production>
+
+  <production xml:id="prod.Type">
+    <lhs>Type</lhs>
+    <rhs><nonterminal def="prod.Name">Name</nonterminal> <nonterminal def="prod.GenericArguments">GenericArguments</nonterminal>? <nonterminal def="prod.Optional">Optional</nonterminal>? <nonterminal def="prod.Lifetime">Lifetime</nonterminal>? </rhs>
+  </production>
+
+  <production xml:id="prod.Name">
+    <lhs>Name</lhs>
+    <rhs>IDENTIFIER <nonterminal def="prod.Extension">Extension</nonterminal>* </rhs>
+  </production>
+
+  <production xml:id="prod.Extension">
+    <lhs>Extension</lhs>
+    <rhs>'.' IDENTIFIER </rhs>
+  </production>
+
+  <production xml:id="prod.Lifetime">
+    <lhs>Lifetime</lhs>
+    <rhs><nonterminal def="prod.Call">Call</nonterminal> | <nonterminal def="prod.Local">Local</nonterminal> | <nonterminal def="prod.Reference">Reference</nonterminal> | <nonterminal def="prod.Thrown">Thrown</nonterminal></rhs>
+  </production>
+
+  <production xml:id="prod.Call">
+    <lhs>Call</lhs>
+    <rhs>'#' </rhs>
+  </production>
+
+  <production xml:id="prod.Local">
+    <lhs>Local</lhs>
+    <rhs>'$' </rhs>
+  </production>
+
+  <production xml:id="prod.Reference">
+    <lhs>Reference</lhs>
+    <rhs>'^' IDENTIFIER </rhs>
+  </production>
+
+  <production xml:id="prod.Thrown">
+    <lhs>Thrown</lhs>
+    <rhs>'!' </rhs>
+  </production>
+
+</productionset>

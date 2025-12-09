@@ -1,0 +1,53 @@
+<chapter xml:id="introduction">
+  <title>Introduction</title>
+
+  <section xml:id="intro-overview">
+    <title>Overview</title>
+    <para>
+      Scaly is a programming language designed to be self-scaling: it adapts
+      to the needs of the developer, from simple scripts to complex systems.
+      The language emphasizes clarity through postfix operators, eliminating
+      precedence rules, and optional region-based memory management.
+    </para>
+  </section>
+
+  <section xml:id="intro-philosophy">
+    <title>Design Philosophy</title>
+    <para>
+      Scaly follows these core principles:
+    </para>
+    <itemizedlist>
+      <listitem>
+        <para><emphasis>Clarity over cleverness</emphasis> — Code should be
+        readable without mental parsing of operator precedence.</para>
+      </listitem>
+      <listitem>
+        <para><emphasis>Explicit over implicit</emphasis> — Memory management
+        and control flow are visible in the code structure.</para>
+      </listitem>
+      <listitem>
+        <para><emphasis>Incremental complexity</emphasis> — Simple programs
+        stay simple; advanced features are available when needed.</para>
+      </listitem>
+    </itemizedlist>
+  </section>
+
+  <section xml:id="intro-status">
+    <title>Implementation Status</title>
+    <para>
+      This specification documents the language as it is implemented.
+      Features are added incrementally, with each addition reflected
+      immediately in this document.
+    </para>
+    <para>
+      Current implementation status:
+    </para>
+    <itemizedlist>
+      <listitem><para>Literals — <emphasis>implemented</emphasis></para></listitem>
+      <listitem><para>Operators — <emphasis>planned</emphasis></para></listitem>
+      <listitem><para>Bindings — <emphasis>planned</emphasis></para></listitem>
+      <listitem><para>Functions — <emphasis>planned</emphasis></para></listitem>
+    </itemizedlist>
+  </section>
+
+</chapter>

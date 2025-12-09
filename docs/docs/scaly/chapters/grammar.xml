@@ -1,0 +1,24 @@
+<chapter xml:id="grammar">
+  <title>Grammar</title>
+
+  <para>
+    This chapter presents the complete grammar of the Scaly programming language
+    in a formal notation. Each production defines a syntactic construct, with
+    nonterminals linking to their definitions.
+  </para>
+
+  <para>
+    Notation:
+  </para>
+  <itemizedlist>
+    <listitem><para><emphasis>identifier</emphasis>, <emphasis>literal</emphasis> — terminal symbols from the lexer</para></listitem>
+    <listitem><para><literal>'keyword'</literal> — keyword terminals</para></listitem>
+    <listitem><para><literal>X | Y</literal> — alternatives</para></listitem>
+    <listitem><para><literal>X?</literal> — optional</para></listitem>
+    <listitem><para><literal>X+</literal> — one or more</para></listitem>
+    <listitem><para><literal>X*</literal> — zero or more</para></listitem>
+  </itemizedlist>
+
+  &grammar-productions;
+
+</chapter>

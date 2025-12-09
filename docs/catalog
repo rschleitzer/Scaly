@@ -1,0 +1,4 @@
+SGMLDECL xml.dcl
+
+-- ISO 8879 character entity sets --
+CATALOG "iso8879/catalog"

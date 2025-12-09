@@ -1,0 +1,16 @@
+{
+  "name": "scaly-doc",
+  "version": "0.1.0",
+  "description": "Documentation for scaly.io projects",
+  "type": "module",
+  "scripts": {
+    "build": "./build.sh",
+    "clean": "rm -rf output/*.html",
+    "watch": "nodemon --watch docs --watch build/templates -e xml,dsl,scm --exec './build.sh'"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0"
+  },
+  "author": "Ralf Schleitzer",
+  "license": "MIT"
+}
