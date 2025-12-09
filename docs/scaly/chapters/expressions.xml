@@ -70,12 +70,25 @@ false           ; evaluates to false
     <section xml:id="expr-literals-string">
       <title>String Literals</title>
       <para>
-        String literals are enclosed in double quotes.
+        String literals are enclosed in double quotes. They may span multiple
+        lines, with line breaks preserved in the resulting string.
       </para>
       <programlisting>
 "hello"         ; evaluates to "hello"
 "Hello, World!" ; evaluates to "Hello, World!"
 ""              ; evaluates to "" (empty string)
+      </programlisting>
+      <para>
+        Escape sequences are supported: <literal>\\</literal> (backslash),
+        <literal>\"</literal> (double quote), <literal>\'</literal> (single quote),
+        <literal>\n</literal> (newline), <literal>\r</literal> (carriage return),
+        <literal>\t</literal> (tab), and <literal>\0</literal> (null).
+      </para>
+      <programlisting>
+"line one
+line two"       ; multiline string with embedded newline
+"tab\there"     ; string with tab character
+"say \"hi\""    ; string with escaped quotes
       </programlisting>
     </section>
 
