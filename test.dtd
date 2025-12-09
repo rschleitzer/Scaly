@@ -1,33 +1,24 @@
-<!-- Scaly Test DTD -->
+<!-- Scaly Test DTD (SGML) -->
 <!-- Literate testing elements for Scaly documentation -->
-<!-- These elements are converted to DocBook during build -->
 
-<!-- Test case: input code and expected result -->
-<!ELEMENT test (input, expect, description?)>
-<!ATTLIST test
-    xml:id ID #IMPLIED
-    skip (true|false) "false"
->
-
-<!-- Scaly code to evaluate -->
-<!ELEMENT input (#PCDATA)>
-
-<!-- Expected result (compared as string) -->
-<!ELEMENT expect (#PCDATA)>
-
-<!-- Optional description of what is being tested -->
-<!ELEMENT description (#PCDATA)>
-
-<!-- Test group: related tests -->
-<!ELEMENT tests (test+)>
-<!ATTLIST tests
-    xml:id ID #IMPLIED
-    title CDATA #IMPLIED
->
-
-<!-- Test category: top-level grouping of test groups -->
-<!ELEMENT category (tests+)>
+<!ELEMENT category - O (tests+)>
 <!ATTLIST category
-    xml:id ID #IMPLIED
-    title CDATA #IMPLIED
+    xml:id      ID          #IMPLIED
+    title       CDATA       #IMPLIED
 >
+
+<!ELEMENT tests - O (test+)>
+<!ATTLIST tests
+    xml:id      ID          #IMPLIED
+    title       CDATA       #IMPLIED
+>
+
+<!ELEMENT test - O (input, expect, description?)>
+<!ATTLIST test
+    xml:id      ID          #IMPLIED
+    skip        (true|false) false
+>
+
+<!ELEMENT input - O (#PCDATA)>
+<!ELEMENT expect - O (#PCDATA)>
+<!ELEMENT description - O (#PCDATA)>

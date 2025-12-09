@@ -3,11 +3,13 @@
 <!ENTITY testdoc   SYSTEM "testdoc.scm">
 <!ENTITY testrules SYSTEM "testrules.scm">
 <!ENTITY helpers   SYSTEM "helpers.scm">
+<!ENTITY fodeclare SYSTEM "fodeclare.scm">
 ]>
 
 <STYLE-SHEET>
 <STYLE-SPECIFICATION>
 
+&fodeclare;
 &helpers;
 &testjs;
 &testdoc;
