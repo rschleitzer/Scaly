@@ -98,17 +98,17 @@ describe('Character Literals', () => {
 })
 
 describe('Prefix Functions', () => {
-  it.skip('negate-positive', () => {
+  it('negate-positive', () => {
     const result = evaluate(`-7`)
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe(-7)
   })
-  it.skip('negate-negative', () => {
+  it('negate-negative', () => {
     const result = evaluate(`-(-3)`)
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe(3)
   })
-  it.skip('prefix-add', () => {
+  it('prefix-add', () => {
     const result = evaluate(`+ 3`)
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe(3)
@@ -116,27 +116,27 @@ describe('Prefix Functions', () => {
 })
 
 describe('Operator Chains', () => {
-  it.skip('simple-add', () => {
+  it('simple-add', () => {
     const result = evaluate(`3 + 4`)
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe(7)
   })
-  it.skip('simple-subtract', () => {
+  it('simple-subtract', () => {
     const result = evaluate(`10 - 3`)
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe(7)
   })
-  it.skip('simple-multiply', () => {
+  it('simple-multiply', () => {
     const result = evaluate(`6 * 7`)
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe(42)
   })
-  it.skip('chain-no-precedence', () => {
+  it('chain-with-precedence', () => {
     const result = evaluate(`3 + 4 * 2`)
     expect(result._tag).toBe('Ok')
-    expect(result.value).toBe(12)
+    expect(result.value).toBe(11)
   })
-  it.skip('chain-left-to-right', () => {
+  it('chain-left-to-right', () => {
     const result = evaluate(`20 - 5 - 3`)
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe(12)
@@ -144,17 +144,17 @@ describe('Operator Chains', () => {
 })
 
 describe('Parentheses and Grouping', () => {
-  it.skip('parens-negate', () => {
+  it('parens-negate', () => {
     const result = evaluate(`5 * (- 2)`)
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe(-10)
   })
-  it.skip('parens-grouping', () => {
+  it('parens-grouping', () => {
     const result = evaluate(`2 * (3 + 4)`)
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe(14)
   })
-  it.skip('nested-parens', () => {
+  it('nested-parens', () => {
     const result = evaluate(`(2 + 3) * (4 + 1)`)
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe(25)
@@ -162,12 +162,12 @@ describe('Parentheses and Grouping', () => {
 })
 
 describe('Identifier Shapes', () => {
-  it.skip('name-as-operator', () => {
+  it('name-as-operator', () => {
     const result = evaluate(`10 div 3`)
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe(3)
   })
-  it.skip('name-as-function', () => {
+  it('name-as-function', () => {
     const result = evaluate(`abs (- 5)`)
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe(5)

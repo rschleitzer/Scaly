@@ -189,9 +189,9 @@
 
     <section xml:id='tests-prefix-functions'>
       <title>Prefix Functions</title>
-      <para>An operation is a sequence of operands that evaluates to a single value. 
-        Each operand is an expression optionally followed by member access. An operation ends with a colon, a line break, 
-        or anything which is not an expression. Evaluation uses a context which is empty at the start of an operation. 
+      <para>An operation is a sequence of operands that evaluates to a single value.
+        Each operand is an expression optionally followed by member access. An operation ends with a colon, a line break,
+        or anything which is not an expression. Evaluation uses a context which is empty at the start of an operation.
         When the context is empty, operator-shaped identifiers act as prefix functions, taking the next operand as their argument.</para>
       <informaltable frame='none'>
         <tgroup cols='2'>
@@ -223,7 +223,7 @@
 
     <section xml:id='tests-operator-chains'>
       <title>Operator Chains</title>
-      <para>When the context holds a value, operators chain left-to-right. Each operator takes the current value and the next operand, 
+      <para>When the context holds a value, operators chain left-to-right. Each operator takes the current value and the next operand,
         producing a new value. There is no operator precedence built into the language itself. Operator precedence is built into the implementation
         of the individual operators. The common arithmetic operators are built into the standard library.</para>
       <informaltable frame='none'>
@@ -251,7 +251,7 @@
             </row>
             <row>
               <entry><literal>3 + 4 * 2</literal></entry>
-              <entry><literal>12</literal></entry>
+              <entry><literal>11</literal></entry>
             </row>
             <row>
               <entry><literal>20 - 5 - 3</literal></entry>
@@ -264,7 +264,7 @@
 
     <section xml:id='tests-parentheses-grouping'>
       <title>Parentheses and Grouping</title>
-      <para>Parentheses create a empty context. This allows prefix forms inside an otherwise operator chain, 
+      <para>Parentheses create a empty context. This allows prefix forms inside an otherwise operator chain,
         and explicit grouping when needed.</para>
       <informaltable frame='none'>
         <tgroup cols='2'>
