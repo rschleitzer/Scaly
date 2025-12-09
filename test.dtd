@@ -1,13 +1,13 @@
 <!-- Scaly Test DTD (SGML) -->
 <!-- Literate testing elements for Scaly documentation -->
 
-<!ELEMENT category - O (tests+)>
+<!ELEMENT category - O (prose?, tests+)>
 <!ATTLIST category
     xml:id      ID          #IMPLIED
     title       CDATA       #IMPLIED
 >
 
-<!ELEMENT tests - O (test+)>
+<!ELEMENT tests - O (prose?, test+)>
 <!ATTLIST tests
     xml:id      ID          #IMPLIED
     title       CDATA       #IMPLIED
@@ -19,6 +19,7 @@
     skip        (true|false) false
 >
 
+<!ELEMENT prose - O (#PCDATA)>
 <!ELEMENT input - O (#PCDATA)>
 <!ELEMENT expect - O (#PCDATA)>
 <!ELEMENT description - O (#PCDATA)>
