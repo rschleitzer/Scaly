@@ -5,29 +5,25 @@
 ; Precedence Wrapper Types
 ; -----------------------------------------------------------------------------
 
-define Sum \
-    @doc "Deferred sum. Enables operator precedence by delaying evaluation." \
+define Sum                                                  @doc "Deferred sum. Enables operator precedence by delaying evaluation."
     (left: int, right: int)
 {
     function value(this) returns int intrinsic
 }
 
-define Difference \
-    @doc "Deferred difference. Enables operator precedence by delaying evaluation." \
+define Difference                                           @doc "Deferred difference. Enables operator precedence by delaying evaluation."
     (left: int, right: int)
 {
     function value(this) returns int intrinsic
 }
 
-define Product \
-    @doc "Deferred product. Enables operator precedence by delaying evaluation." \
+define Product                                              @doc "Deferred product. Enables operator precedence by delaying evaluation."
     (left: int, right: int)
 {
     function value(this) returns int intrinsic
 }
 
-define Quotient \
-    @doc "Deferred quotient. Enables operator precedence by delaying evaluation." \
+define Quotient                                             @doc "Deferred quotient. Enables operator precedence by delaying evaluation."
     (left: int, right: int)
 {
     function value(this) returns int intrinsic
@@ -37,8 +33,7 @@ define Quotient \
 ; Addition Operators
 ; -----------------------------------------------------------------------------
 
-operator +(left: int, right: int) \
-    @doc "Addition. Lower precedence than multiplication and division." \
+operator +(left: int, right: int)                           @doc "Addition. Lower precedence than multiplication and division."
     returns Sum intrinsic
 
 operator +(left: Sum, right: int) returns Sum {
@@ -61,8 +56,7 @@ operator +(left: Quotient, right: int) returns Sum {
 ; Subtraction Operators
 ; -----------------------------------------------------------------------------
 
-operator -(left: int, right: int) \
-    @doc "Subtraction. Lower precedence than multiplication and division." \
+operator -(left: int, right: int)                           @doc "Subtraction. Lower precedence than multiplication and division."
     returns Difference intrinsic
 
 operator -(left: Sum, right: int) returns Difference {
@@ -85,8 +79,7 @@ operator -(left: Quotient, right: int) returns Difference {
 ; Multiplication Operators
 ; -----------------------------------------------------------------------------
 
-operator *(left: int, right: int) \
-    @doc "Multiplication. Higher precedence than addition and subtraction." \
+operator *(left: int, right: int)                           @doc "Multiplication. Higher precedence than addition and subtraction."
     returns Product intrinsic
 
 operator *(left: Sum, right: int) returns Sum {
@@ -109,8 +102,7 @@ operator *(left: Quotient, right: int) returns Product {
 ; Division Operators
 ; -----------------------------------------------------------------------------
 
-operator /(left: int, right: int) \
-    @doc "Division. Higher precedence than addition and subtraction." \
+operator /(left: int, right: int)                           @doc "Division. Higher precedence than addition and subtraction."
     returns Quotient intrinsic
 
 operator /(left: Sum, right: int) returns Sum {
@@ -133,58 +125,47 @@ operator /(left: Quotient, right: int) returns Quotient {
 ; Integer Division and Modulo
 ; -----------------------------------------------------------------------------
 
-operator div(left: int, right: int) \
-    @doc "Integer division, truncating toward zero." \
+operator div(left: int, right: int)                         @doc "Integer division, truncating toward zero."
     returns int intrinsic
 
-operator mod(left: int, right: int) \
-    @doc "Modulo (remainder after integer division)." \
+operator mod(left: int, right: int)                         @doc "Modulo (remainder after integer division)."
     returns int intrinsic
 
 ; -----------------------------------------------------------------------------
 ; Comparison Operators
 ; -----------------------------------------------------------------------------
 
-operator =(left: int, right: int) \
-    @doc "Equality comparison." \
+operator =(left: int, right: int)                           @doc "Equality comparison."
     returns bool intrinsic
 
-operator <>(left: int, right: int) \
-    @doc "Inequality comparison." \
+operator <>(left: int, right: int)                          @doc "Inequality comparison."
     returns bool intrinsic
 
-operator <(left: int, right: int) \
-    @doc "Less than comparison." \
+operator <(left: int, right: int)                           @doc "Less than comparison."
     returns bool intrinsic
 
-operator >(left: int, right: int) \
-    @doc "Greater than comparison." \
+operator >(left: int, right: int)                           @doc "Greater than comparison."
     returns bool intrinsic
 
-operator <=(left: int, right: int) \
-    @doc "Less than or equal comparison." \
+operator <=(left: int, right: int)                          @doc "Less than or equal comparison."
     returns bool intrinsic
 
-operator >=(left: int, right: int) \
-    @doc "Greater than or equal comparison." \
+operator >=(left: int, right: int)                          @doc "Greater than or equal comparison."
     returns bool intrinsic
 
 ; -----------------------------------------------------------------------------
 ; Unary Functions
 ; -----------------------------------------------------------------------------
 
-function -(right: int) \
-    @doc "Unary negation." \
+function -(right: int)                                      @doc "Unary negation."
     returns int intrinsic
 
-function +(right: int) \
-    @doc "Unary plus (identity)." \
+function +(right: int)                                      @doc "Unary plus (identity)."
     returns int intrinsic
 
 ; -----------------------------------------------------------------------------
 ; Math Functions
 ; -----------------------------------------------------------------------------
 
-function abs(x: int) \
-    @doc "Absolute value." \
+function abs(x: int)                                        @doc "Absolute value."
     returns int intrinsic
