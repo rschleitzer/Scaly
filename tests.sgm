@@ -1,38 +1,38 @@
 <!DOCTYPE category SYSTEM "test.dtd">
 <category xml:id = literals title = "Literal Expressions">
-<prose>The simplest expressions are literals. A literal evaluates to itself.
+    <prose>The simplest expressions are literals. A literal evaluates to itself.
 
-<tests xml:id = boolean-literals title = "Boolean Literals">
-<prose>The boolean literals are true and false.
-<test xml:id = bool-true><input>true<expect>true
-<test xml:id = bool-false><input>false<expect>false
+    <tests xml:id = boolean-literals title = "Boolean Literals">
+        <prose>The boolean literals are true and false.
+        <test xml:id = bool-true><input>true<expect>true
+        <test xml:id = bool-false><input>false<expect>false
 
-<tests xml:id = integer-literals title = "Integer Literals">
-<prose>Integer literals are sequences of decimal digits, optionally preceded by a minus sign for negative numbers.
-<test xml:id = int-positive><input>42<expect>42
-<test xml:id = int-zero><input>0<expect>0
-<test xml:id = int-negative><input>-7<expect>-7
+    <tests xml:id = integer-literals title = "Integer Literals">
+        <prose>Integer literals are sequences of decimal digits, optionally preceded by a minus sign for negative numbers.
+        <test xml:id = int-positive><input>42<expect>42
+        <test xml:id = int-zero><input>0<expect>0
+        <test xml:id = int-negative><input>-7<expect>-7
 
-<tests xml:id = hex-literals title = "Hexadecimal Literals">
-<prose>Hexadecimal literals start with 0x or 0X followed by hexadecimal digits (0-9, a-f, A-F).
-<test xml:id = hex-ff><input>0xFF<expect>255
-<test xml:id = hex-1a><input>0x1A<expect>26
-<test xml:id = hex-zero><input>0x0<expect>0
+    <tests xml:id = hex-literals title = "Hexadecimal Literals">
+        <prose>Hexadecimal literals start with 0x or 0X followed by hexadecimal digits (0-9, a-f, A-F).
+        <test xml:id = hex-ff><input>0xFF<expect>255
+        <test xml:id = hex-1a><input>0x1A<expect>26
+        <test xml:id = hex-zero><input>0x0<expect>0
 
-<tests xml:id = float-literals title = "Floating-Point Literals">
-<prose>Floating-point literals contain a decimal point separating the integer and fractional parts.
-<test xml:id = float-pi><input>3.14<expect>3.14
-<test xml:id = float-two><input>2.0<expect>2
-<test xml:id = float-half><input>0.5<expect>0.5
+    <tests xml:id = float-literals title = "Floating-Point Literals">
+        <prose>Floating-point literals contain a decimal point separating the integer and fractional parts.
+        <test xml:id = float-pi><input>3.14<expect>3.14
+        <test xml:id = float-two><input>2.0<expect>2
+        <test xml:id = float-half><input>0.5<expect>0.5
 
-<tests xml:id = string-literals title = "String Literals">
-<prose>String literals are enclosed in double quotes. They may span multiple lines, with line breaks preserved in the resulting string.
-<test xml:id = string-hello><input>"hello"<expect>hello
-<test xml:id = string-empty><input>""<expect>
+    <tests xml:id = string-literals title = "String Literals">
+        <prose>String literals are enclosed in double quotes. They may span multiple lines, with line breaks preserved in the resulting string.
+        <test xml:id = string-hello><input>"hello"<expect>hello
+        <test xml:id = string-empty><input>""<expect>
 
-<tests xml:id = character-literals title = "Character Literals">
-<prose>Character literals represent a single character, enclosed in backticks.
-<test xml:id = char-a><input>`a`<expect>a
-<test xml:id = char-z><input>`Z`<expect>Z
+    <tests xml:id = character-literals title = "Character Literals">
+        <prose>Character literals represent a single character, enclosed in backticks.
+        <test xml:id = char-a><input>`a`<expect>a
+        <test xml:id = char-z><input>`Z`<expect>Z
 
 </category>
