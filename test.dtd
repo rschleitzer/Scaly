@@ -1,6 +1,12 @@
 <!-- Scaly Test DTD (SGML) -->
 <!-- Literate testing elements for Scaly documentation -->
 
+<!ELEMENT suite - O (category+)>
+<!ATTLIST suite
+    xml:id      ID          #IMPLIED
+    title       CDATA       #IMPLIED
+>
+
 <!ELEMENT category - O (prose?, tests+)>
 <!ATTLIST category
     xml:id      ID          #IMPLIED
