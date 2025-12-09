@@ -5,6 +5,7 @@
   <!ENTITY grammar SYSTEM "scaly/chapters/grammar.xml">
   <!ENTITY grammar-productions SYSTEM "scaly/grammar.xml">
   <!ENTITY expressions SYSTEM "scaly/chapters/expressions.xml">
+  <!ENTITY generated-tests SYSTEM "scaly/generated-tests.xml">
 ]>
 <book xmlns="http://docbook.org/ns/docbook" version="5.0">
   <title>The Scaly Programming Language</title>

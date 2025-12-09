@@ -113,4 +113,6 @@ line two"       ; multiline string with embedded newline
 
   </section>
 
+  &generated-tests;
+
 </chapter>
