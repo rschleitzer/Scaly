@@ -41,7 +41,7 @@ Scaly distinguishes between **functions** and **procedures** with distinct seman
 
 ```scaly
 ; Pure function - inputs immutable, result returned
-function formatName(first: String, last: String) -> String {
+function formatName(first: String, last: String) returns String {
   StringBuilder.build(b => {
     b.append(first)
     b.append(" ")
@@ -102,8 +102,11 @@ The project uses npm workspaces with these packages:
 
 - **packages/scaly-lang** (`@scaly/lang`): Core language implementation
   - Lexer (`src/lexer.ts`)
-  - Evaluator (`src/evaluator.ts`)
-  - Transpiler (`src/transpiler/`)
+  - Parser (`src/parser.ts`) - generated from grammar
+  - Modeler (`src/modeler.ts`) - builds semantic model from syntax
+  - Runtime (`src/runtime.ts`) - evaluates operations using stdlib
+  - Evaluator (`src/evaluator.ts`) - main entry point for evaluation
+  - Transpiler (`src/transpiler/`) - JS code generation
 
 - **packages/scaly-containers** (`@scaly/containers`): Container library (String, Vector, HashMap)
 
@@ -150,10 +153,50 @@ Scaly syntax includes:
 - String identifiers: enclosed in single quotes
 
 ### Grammar Details
-- Operators are not hardcoded; no built-in operator precedence
-- Functions apply as prefix, operators as postfix
+- Operators are not hardcoded; no built-in operator precedence in the grammar
+- Functions apply as prefix, operators as postfix (binary)
 - **IMPORTANT**: In if statements, `else` must be on the same line as the closing brace
 - See scaly.sgm for full grammar specification
+
+### Standard Library and Operator Precedence
+
+The standard library (`stdlib.scaly`) defines arithmetic operators with precedence encoded in **wrapper types**:
+
+```scaly
+; Wrapper types encode precedence level
+define Sum(left: int, right: int) {
+    function value(this) returns int intrinsic
+}
+define Product(left: int, right: int) {
+    function value(this) returns int intrinsic
+}
+
+; Primitive operators return wrappers (intrinsic = TypeScript-implemented)
+operator +(left: int, right: int) returns Sum intrinsic
+operator *(left: int, right: int) returns Product intrinsic
+
+; Higher precedence operators "reach into" lower precedence wrappers
+operator *(left: Sum, right: int) returns Sum {
+    Sum(left.left, left.right * right)  ; Multiply only the right component
+}
+
+; Lower precedence operators evaluate higher precedence wrappers first
+operator +(left: Product, right: int) returns Sum {
+    Sum(left.value, right)  ; .value collapses Product to int
+}
+```
+
+**How it works:**
+- `3 + 4` → `Sum(3, 4)` (wrapper, not yet computed)
+- `3 + 4 * 5` → `Sum(3, 4) * 5` → `Sum(3, 20)` (multiplication reaches into Sum)
+- Parentheses collapse wrappers: `(3 + 4) * 5` → `7 * 5` → `Product(7, 5)`
+- Final result collapsed at expression boundary
+
+**Key design principles:**
+- No hardcoded operators in runtime - all defined in stdlib
+- Precedence emerges from type-based operator dispatch
+- Unary functions (`-`, `+`, `abs`) are prefix when context is empty
+- Binary operators are postfix, taking left from context and right as argument
 
 ### Programs and Libraries
 - A program contains top-level statements with access to argc/argv
@@ -205,13 +248,16 @@ This runs `openjade -G -t sgml -d codegen/scaly.dsl scaly.sgm`
 ```
 .
 ├── packages/              # TypeScript packages (npm workspaces)
-│   ├── scaly-lang/       # Core: lexer, parser, evaluator
+│   ├── scaly-lang/       # Core: lexer, parser, modeler, runtime, evaluator
 │   ├── scaly-containers/ # Container types
 │   ├── scaly-io/         # I/O operations
 │   └── scaly-repl/       # REPL scaffold (see scaly-doc)
 ├── codegen/              # DSSSL parser generation scripts
 ├── scaly.sgm             # Grammar definition
+├── stdlib.scaly          # Standard library (operators, functions)
+├── tests.sgm             # Test definitions (generates test code)
 ├── mkp                   # Parser generation script
+├── mkt                   # Test generation script
 ├── retired/              # Previous Scaly-based implementation (reference)
 └── package.json          # Root workspace configuration
 ```
