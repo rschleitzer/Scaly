@@ -97,3 +97,80 @@ describe('Character Literals', () => {
   })
 })
 
+describe('Prefix Functions', () => {
+  it.skip('negate-positive', () => {
+    const result = evaluate(`-7`)
+    expect(result._tag).toBe('Ok')
+    expect(result.value).toBe(-7)
+  })
+  it.skip('negate-negative', () => {
+    const result = evaluate(`-(-3)`)
+    expect(result._tag).toBe('Ok')
+    expect(result.value).toBe(3)
+  })
+  it.skip('prefix-add', () => {
+    const result = evaluate(`+ 3`)
+    expect(result._tag).toBe('Ok')
+    expect(result.value).toBe(3)
+  })
+})
+
+describe('Operator Chains', () => {
+  it.skip('simple-add', () => {
+    const result = evaluate(`3 + 4`)
+    expect(result._tag).toBe('Ok')
+    expect(result.value).toBe(7)
+  })
+  it.skip('simple-subtract', () => {
+    const result = evaluate(`10 - 3`)
+    expect(result._tag).toBe('Ok')
+    expect(result.value).toBe(7)
+  })
+  it.skip('simple-multiply', () => {
+    const result = evaluate(`6 * 7`)
+    expect(result._tag).toBe('Ok')
+    expect(result.value).toBe(42)
+  })
+  it.skip('chain-no-precedence', () => {
+    const result = evaluate(`3 + 4 * 2`)
+    expect(result._tag).toBe('Ok')
+    expect(result.value).toBe(12)
+  })
+  it.skip('chain-left-to-right', () => {
+    const result = evaluate(`20 - 5 - 3`)
+    expect(result._tag).toBe('Ok')
+    expect(result.value).toBe(12)
+  })
+})
+
+describe('Parentheses and Grouping', () => {
+  it.skip('parens-negate', () => {
+    const result = evaluate(`5 * (- 2)`)
+    expect(result._tag).toBe('Ok')
+    expect(result.value).toBe(-10)
+  })
+  it.skip('parens-grouping', () => {
+    const result = evaluate(`2 * (3 + 4)`)
+    expect(result._tag).toBe('Ok')
+    expect(result.value).toBe(14)
+  })
+  it.skip('nested-parens', () => {
+    const result = evaluate(`(2 + 3) * (4 + 1)`)
+    expect(result._tag).toBe('Ok')
+    expect(result.value).toBe(25)
+  })
+})
+
+describe('Identifier Shapes', () => {
+  it.skip('name-as-operator', () => {
+    const result = evaluate(`10 div 3`)
+    expect(result._tag).toBe('Ok')
+    expect(result.value).toBe(3)
+  })
+  it.skip('name-as-function', () => {
+    const result = evaluate(`abs (- 5)`)
+    expect(result._tag).toBe('Ok')
+    expect(result.value).toBe(5)
+  })
+})
+

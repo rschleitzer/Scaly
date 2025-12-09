@@ -8,22 +8,29 @@ import { describe, it, expect } from 'vitest'
 import { evaluate } from '../src/index.js'
 
 "
-    (apply-to-selected-children "tests" (lambda (tests) ($
+    (apply-to-selected-children "category" (lambda (category)
+        (apply-to-selected-children-of category "tests" (lambda (tests) ($
 "describe('"(attribute-string "title" tests)"', () => {
 "
-        (apply-to-selected-children-of tests "test" (lambda (test) ($
-"  it('"(test-description test)"', () => {
+            (apply-to-selected-children-of tests "test" (lambda (test) ($
+"  "(test-it test)"('"(test-description test)"', () => {
     const result = evaluate("(test-input-quoted test)")
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe("(test-expect-value test)")
   })
 "
-        )))
+            )))
 "})
 
 "
-    )))
+        )))))
 ))
+
+; Get "it" or "it.skip" based on skip attribute
+(define (test-it test)
+    (if (string=? (attribute-string "skip" test) "true")
+        "it.skip"
+        "it"))
 
 ; Get the input element's text content
 (define (test-input test)

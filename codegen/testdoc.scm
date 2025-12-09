@@ -6,40 +6,44 @@
 
 <section xmlns='http://docbook.org/ns/docbook' xml:id='generated-"(attribute-string "xml:id" (current-node))"'>
   <title>"(attribute-string "title" (current-node))"</title>
-  <para>
-    "(category-prose)"
-  </para>
 "
-    (apply-to-selected-children "tests" (lambda (tests) ($
+    (apply-to-selected-children "category" (lambda (category) ($
 "
-  <section xml:id='tests-"(attribute-string "xml:id" tests)"'>
-    <title>"(attribute-string "title" tests)"</title>
-    <para>
-      "(tests-prose tests)"
-    </para>
-    <informaltable frame='none'>
-      <tgroup cols='2'>
-        <colspec colwidth='1*'/>
-        <colspec colwidth='1*'/>
-        <thead>
-          <row>
-            <entry>Input</entry>
-            <entry>Result</entry>
-          </row>
-        </thead>
-        <tbody>
+  <section xml:id='category-"(attribute-string "xml:id" category)"'>
+    <title>"(attribute-string "title" category)"</title>
+    <para>"(category-prose category)"</para>
 "
-        (apply-to-selected-children-of tests "test" (lambda (test) ($
-"          <row>
-            <entry><literal>"(test-input-doc test)"</literal></entry>
-            <entry><literal>"(test-expect-doc test)"</literal></entry>
-          </row>
+        (apply-to-selected-children-of category "tests" (lambda (tests) ($
+"
+    <section xml:id='tests-"(attribute-string "xml:id" tests)"'>
+      <title>"(attribute-string "title" tests)"</title>
+      <para>"(tests-prose tests)"</para>
+      <informaltable frame='none'>
+        <tgroup cols='2'>
+          <colspec colwidth='1*'/>
+          <colspec colwidth='1*'/>
+          <thead>
+            <row>
+              <entry>Input</entry>
+              <entry>Result</entry>
+            </row>
+          </thead>
+          <tbody>
+"
+            (apply-to-selected-children-of tests "test" (lambda (test) ($
+"            <row>
+              <entry><literal>"(test-input-doc test)"</literal></entry>
+              <entry><literal>"(test-expect-doc test)"</literal></entry>
+            </row>
+"
+            )))
+"          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
 "
         )))
-"        </tbody>
-      </tgroup>
-    </informaltable>
-  </section>
+"  </section>
 "
     )))
 "
@@ -48,8 +52,8 @@
 ))
 
 ; Get prose from category
-(define (category-prose)
-    (let ((prose-node (node-list-first (select-elements (children (current-node)) "prose"))))
+(define (category-prose category)
+    (let ((prose-node (node-list-first (select-elements (children category) "prose"))))
         (if (node-list-empty? prose-node)
             ""
             (trim (data prose-node)))))

@@ -1,6 +1,10 @@
-<!DOCTYPE category SYSTEM "test.dtd">
-<category xml:id = literals title = "Literal Expressions">
-    <prose>The simplest expressions are literals. A literal evaluates to itself.
+<!DOCTYPE suite SYSTEM "test.dtd">
+
+<suite xml:id = scaly-tests title = "Scaly Tests">
+
+<category xml:id = literals title = "Literals">
+
+    <prose>Expressions are the core computational units of Scaly. Every expression evaluates to a value.
 
     <tests xml:id = boolean-literals title = "Boolean Literals">
         <prose>The boolean literals are true and false.
@@ -35,4 +39,41 @@
         <test xml:id = char-a><input>`a`<expect>a
         <test xml:id = char-z><input>`Z`<expect>Z
 
+<category xml:id = operations title = "Operations">
+
+    <prose>Oparations allow combining expressions.
+
+    <tests xml:id = prefix-functions title = "Prefix Functions">
+        <prose>An operation is a sequence of operands that evaluates to a single value. 
+        Each operand is an expression optionally followed by member access. An operation ends with a colon, a line break, 
+        or anything which is not an expression. Evaluation uses a context which is empty at the start of an operation. 
+        When the context is empty, operator-shaped identifiers act as prefix functions, taking the next operand as their argument.
+        <test xml:id = negate-positive skip = true><input>-7<expect>-7
+        <test xml:id = negate-negative skip = true><input>-(-3)<expect>3
+        <test xml:id = prefix-add skip = true><input>+ 3<expect>3
+
+    <tests xml:id = operator-chains title = "Operator Chains">
+        <prose>When the context holds a value, operators chain left-to-right. Each operator takes the current value and the next operand, 
+        producing a new value. There is no operator precedence built into the language itself. Operator precedence is built into the implementation
+        of the individual operators. The common arithmetic operators are built into the standard library.
+        <test xml:id = simple-add skip = true><input>3 + 4<expect>7
+        <test xml:id = simple-subtract skip = true><input>10 - 3<expect>7
+        <test xml:id = simple-multiply skip = true><input>6 * 7<expect>42
+        <test xml:id = chain-no-precedence skip = true><input>3 + 4 * 2<expect>12
+        <test xml:id = chain-left-to-right skip = true><input>20 - 5 - 3<expect>12
+
+    <tests xml:id = parentheses-grouping title = "Parentheses and Grouping">
+        <prose>Parentheses create a empty context. This allows prefix forms inside an otherwise operator chain, 
+        and explicit grouping when needed.
+        <test xml:id = parens-negate skip = true><input>5 * (- 2)<expect>-10
+        <test xml:id = parens-grouping skip = true><input>2 * (3 + 4)<expect>14
+        <test xml:id = nested-parens skip = true><input>(2 + 3) * (4 + 1)<expect>25
+
+    <tests xml:id = identifier-shapes title = "Identifier Shapes">
+        <prose>Identifiers can have name shape (alphanumeric) or operator shape (symbols). The shape is purely lexical and does not determine behavior. Whether an identifier acts as a prefix function or chain operator depends on its declaration and the register state.
+        <test xml:id = name-as-operator skip = true><input>10 div 3<expect>3
+        <test xml:id = name-as-function skip = true><input>abs (- 5)<expect>5
+
 </category>
+
+</suite>
