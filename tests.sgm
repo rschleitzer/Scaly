@@ -1,0 +1,31 @@
+<!DOCTYPE category SYSTEM "test.dtd">
+<category xml:id = literals title = "Literal Expressions">
+
+<tests xml:id = boolean-literals title = "Boolean Literals">
+<test xml:id = bool-true><input>true<expect>true
+<test xml:id = bool-false><input>false<expect>false
+
+<tests xml:id = integer-literals title = "Integer Literals">
+<test xml:id = int-positive><input>42<expect>42
+<test xml:id = int-zero><input>0<expect>0
+<test xml:id = int-negative><input>-7<expect>-7
+
+<tests xml:id = hex-literals title = "Hexadecimal Literals">
+<test xml:id = hex-ff><input>0xFF<expect>255
+<test xml:id = hex-1a><input>0x1A<expect>26
+<test xml:id = hex-zero><input>0x0<expect>0
+
+<tests xml:id = float-literals title = "Floating-Point Literals">
+<test xml:id = float-pi><input>3.14<expect>3.14
+<test xml:id = float-two><input>2.0<expect>2
+<test xml:id = float-half><input>0.5<expect>0.5
+
+<tests xml:id = string-literals title = "String Literals">
+<test xml:id = string-hello><input>"hello"<expect>hello
+<test xml:id = string-empty><input>""<expect>
+
+<tests xml:id = character-literals title = "Character Literals">
+<test xml:id = char-a><input>`a`<expect>a
+<test xml:id = char-z><input>`Z`<expect>Z
+
+</category>
