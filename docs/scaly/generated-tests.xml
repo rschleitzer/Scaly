@@ -12,10 +12,28 @@
     <para>
       The boolean literals are true and false.
     </para>
-    <programlisting>
-true           ; evaluates to true
-false           ; evaluates to false
-    </programlisting>
+    <informaltable>
+      <tgroup cols='2'>
+        <colspec colwidth='1*'/>
+        <colspec colwidth='1*'/>
+        <thead>
+          <row>
+            <entry>Input</entry>
+            <entry>Result</entry>
+          </row>
+        </thead>
+        <tbody>
+          <row>
+            <entry><literal>true</literal></entry>
+            <entry><literal>true</literal></entry>
+          </row>
+          <row>
+            <entry><literal>false</literal></entry>
+            <entry><literal>false</literal></entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </informaltable>
   </section>
 
   <section xml:id='tests-integer-literals'>
@@ -23,11 +41,32 @@ false           ; evaluates to false
     <para>
       Integer literals are sequences of decimal digits, optionally preceded by a minus sign for negative numbers.
     </para>
-    <programlisting>
-42           ; evaluates to 42
-0           ; evaluates to 0
--7           ; evaluates to -7
-    </programlisting>
+    <informaltable>
+      <tgroup cols='2'>
+        <colspec colwidth='1*'/>
+        <colspec colwidth='1*'/>
+        <thead>
+          <row>
+            <entry>Input</entry>
+            <entry>Result</entry>
+          </row>
+        </thead>
+        <tbody>
+          <row>
+            <entry><literal>42</literal></entry>
+            <entry><literal>42</literal></entry>
+          </row>
+          <row>
+            <entry><literal>0</literal></entry>
+            <entry><literal>0</literal></entry>
+          </row>
+          <row>
+            <entry><literal>-7</literal></entry>
+            <entry><literal>-7</literal></entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </informaltable>
   </section>
 
   <section xml:id='tests-hex-literals'>
@@ -35,11 +74,32 @@ false           ; evaluates to false
     <para>
       Hexadecimal literals start with 0x or 0X followed by hexadecimal digits (0-9, a-f, A-F).
     </para>
-    <programlisting>
-0xFF           ; evaluates to 255
-0x1A           ; evaluates to 26
-0x0           ; evaluates to 0
-    </programlisting>
+    <informaltable>
+      <tgroup cols='2'>
+        <colspec colwidth='1*'/>
+        <colspec colwidth='1*'/>
+        <thead>
+          <row>
+            <entry>Input</entry>
+            <entry>Result</entry>
+          </row>
+        </thead>
+        <tbody>
+          <row>
+            <entry><literal>0xFF</literal></entry>
+            <entry><literal>255</literal></entry>
+          </row>
+          <row>
+            <entry><literal>0x1A</literal></entry>
+            <entry><literal>26</literal></entry>
+          </row>
+          <row>
+            <entry><literal>0x0</literal></entry>
+            <entry><literal>0</literal></entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </informaltable>
   </section>
 
   <section xml:id='tests-float-literals'>
@@ -47,11 +107,32 @@ false           ; evaluates to false
     <para>
       Floating-point literals contain a decimal point separating the integer and fractional parts.
     </para>
-    <programlisting>
-3.14           ; evaluates to 3.14
-2.0           ; evaluates to 2
-0.5           ; evaluates to 0.5
-    </programlisting>
+    <informaltable>
+      <tgroup cols='2'>
+        <colspec colwidth='1*'/>
+        <colspec colwidth='1*'/>
+        <thead>
+          <row>
+            <entry>Input</entry>
+            <entry>Result</entry>
+          </row>
+        </thead>
+        <tbody>
+          <row>
+            <entry><literal>3.14</literal></entry>
+            <entry><literal>3.14</literal></entry>
+          </row>
+          <row>
+            <entry><literal>2.0</literal></entry>
+            <entry><literal>2</literal></entry>
+          </row>
+          <row>
+            <entry><literal>0.5</literal></entry>
+            <entry><literal>0.5</literal></entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </informaltable>
   </section>
 
   <section xml:id='tests-string-literals'>
@@ -59,10 +140,28 @@ false           ; evaluates to false
     <para>
       String literals are enclosed in double quotes. They may span multiple lines, with line breaks preserved in the resulting string.
     </para>
-    <programlisting>
-"hello"           ; evaluates to hello
-""           ; evaluates to 
-    </programlisting>
+    <informaltable>
+      <tgroup cols='2'>
+        <colspec colwidth='1*'/>
+        <colspec colwidth='1*'/>
+        <thead>
+          <row>
+            <entry>Input</entry>
+            <entry>Result</entry>
+          </row>
+        </thead>
+        <tbody>
+          <row>
+            <entry><literal>"hello"</literal></entry>
+            <entry><literal>hello</literal></entry>
+          </row>
+          <row>
+            <entry><literal>""</literal></entry>
+            <entry><literal></literal></entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </informaltable>
   </section>
 
   <section xml:id='tests-character-literals'>
@@ -70,10 +169,28 @@ false           ; evaluates to false
     <para>
       Character literals represent a single character, enclosed in backticks.
     </para>
-    <programlisting>
-`a`           ; evaluates to a
-`Z`           ; evaluates to Z
-    </programlisting>
+    <informaltable>
+      <tgroup cols='2'>
+        <colspec colwidth='1*'/>
+        <colspec colwidth='1*'/>
+        <thead>
+          <row>
+            <entry>Input</entry>
+            <entry>Result</entry>
+          </row>
+        </thead>
+        <tbody>
+          <row>
+            <entry><literal>`a`</literal></entry>
+            <entry><literal>a</literal></entry>
+          </row>
+          <row>
+            <entry><literal>`Z`</literal></entry>
+            <entry><literal>Z</literal></entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </informaltable>
   </section>
 
 </section>
