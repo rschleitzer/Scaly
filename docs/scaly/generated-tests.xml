@@ -12,7 +12,7 @@
     <para>
       The boolean literals are true and false.
     </para>
-    <informaltable>
+    <informaltable frame='none'>
       <tgroup cols='2'>
         <colspec colwidth='1*'/>
         <colspec colwidth='1*'/>
@@ -41,7 +41,7 @@
     <para>
       Integer literals are sequences of decimal digits, optionally preceded by a minus sign for negative numbers.
     </para>
-    <informaltable>
+    <informaltable frame='none'>
       <tgroup cols='2'>
         <colspec colwidth='1*'/>
         <colspec colwidth='1*'/>
@@ -74,7 +74,7 @@
     <para>
       Hexadecimal literals start with 0x or 0X followed by hexadecimal digits (0-9, a-f, A-F).
     </para>
-    <informaltable>
+    <informaltable frame='none'>
       <tgroup cols='2'>
         <colspec colwidth='1*'/>
         <colspec colwidth='1*'/>
@@ -107,7 +107,7 @@
     <para>
       Floating-point literals contain a decimal point separating the integer and fractional parts.
     </para>
-    <informaltable>
+    <informaltable frame='none'>
       <tgroup cols='2'>
         <colspec colwidth='1*'/>
         <colspec colwidth='1*'/>
@@ -140,7 +140,7 @@
     <para>
       String literals are enclosed in double quotes. They may span multiple lines, with line breaks preserved in the resulting string.
     </para>
-    <informaltable>
+    <informaltable frame='none'>
       <tgroup cols='2'>
         <colspec colwidth='1*'/>
         <colspec colwidth='1*'/>
@@ -169,7 +169,7 @@
     <para>
       Character literals represent a single character, enclosed in backticks.
     </para>
-    <informaltable>
+    <informaltable frame='none'>
       <tgroup cols='2'>
         <colspec colwidth='1*'/>
         <colspec colwidth='1*'/>
