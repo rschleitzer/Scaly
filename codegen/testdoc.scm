@@ -17,7 +17,7 @@
     <para>
       "(tests-prose tests)"
     </para>
-    <informaltable>
+    <informaltable frame='none'>
       <tgroup cols='2'>
         <colspec colwidth='1*'/>
         <colspec colwidth='1*'/>
