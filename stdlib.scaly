@@ -1,0 +1,148 @@
+; Scaly Standard Library
+; Arithmetic operators with precedence via wrapper types
+
+; -----------------------------------------------------------------------------
+; Precedence Wrapper Types
+; -----------------------------------------------------------------------------
+
+define Sum(left: int, right: int) {
+    function value(this) returns int intrinsic
+}
+
+define Difference(left: int, right: int) {
+    function value(this) returns int intrinsic
+}
+
+define Product(left: int, right: int) {
+    function value(this) returns int intrinsic
+}
+
+define Quotient(left: int, right: int) {
+    function value(this) returns int intrinsic
+}
+
+; -----------------------------------------------------------------------------
+; Addition Operators
+; -----------------------------------------------------------------------------
+
+; Primitive: creates Sum wrapper
+operator +(left: int, right: int) returns Sum intrinsic
+
+; These evaluate the left wrapper first
+operator +(left: Sum, right: int) returns Sum {
+    Sum(left.value, right)
+}
+
+operator +(left: Difference, right: int) returns Sum {
+    Sum(left.value, right)
+}
+
+operator +(left: Product, right: int) returns Sum {
+    Sum(left.value, right)
+}
+
+operator +(left: Quotient, right: int) returns Sum {
+    Sum(left.value, right)
+}
+
+; -----------------------------------------------------------------------------
+; Subtraction Operators
+; -----------------------------------------------------------------------------
+
+; Primitive: creates Difference wrapper
+operator -(left: int, right: int) returns Difference intrinsic
+
+operator -(left: Sum, right: int) returns Difference {
+    Difference(left.value, right)
+}
+
+operator -(left: Difference, right: int) returns Difference {
+    Difference(left.value, right)
+}
+
+operator -(left: Product, right: int) returns Difference {
+    Difference(left.value, right)
+}
+
+operator -(left: Quotient, right: int) returns Difference {
+    Difference(left.value, right)
+}
+
+; -----------------------------------------------------------------------------
+; Multiplication Operators
+; -----------------------------------------------------------------------------
+
+; Primitive: creates Product wrapper
+operator *(left: int, right: int) returns Product intrinsic
+
+; Higher precedence: reaches into Sum/Difference
+operator *(left: Sum, right: int) returns Sum {
+    Sum(left.left, left.right * right)
+}
+
+operator *(left: Difference, right: int) returns Difference {
+    Difference(left.left, left.right * right)
+}
+
+operator *(left: Product, right: int) returns Product {
+    Product(left.value, right)
+}
+
+operator *(left: Quotient, right: int) returns Product {
+    Product(left.value, right)
+}
+
+; -----------------------------------------------------------------------------
+; Division Operators
+; -----------------------------------------------------------------------------
+
+; Primitive: creates Quotient wrapper
+operator /(left: int, right: int) returns Quotient intrinsic
+
+; Higher precedence: reaches into Sum/Difference
+operator /(left: Sum, right: int) returns Sum {
+    Sum(left.left, left.right / right)
+}
+
+operator /(left: Difference, right: int) returns Difference {
+    Difference(left.left, left.right / right)
+}
+
+operator /(left: Product, right: int) returns Quotient {
+    Quotient(left.value, right)
+}
+
+operator /(left: Quotient, right: int) returns Quotient {
+    Quotient(left.value, right)
+}
+
+; -----------------------------------------------------------------------------
+; Integer Division and Modulo
+; -----------------------------------------------------------------------------
+
+operator div(left: int, right: int) returns int intrinsic
+operator mod(left: int, right: int) returns int intrinsic
+
+; -----------------------------------------------------------------------------
+; Comparison Operators
+; -----------------------------------------------------------------------------
+
+operator =(left: int, right: int) returns bool intrinsic
+operator <>(left: int, right: int) returns bool intrinsic
+operator <(left: int, right: int) returns bool intrinsic
+operator >(left: int, right: int) returns bool intrinsic
+operator <=(left: int, right: int) returns bool intrinsic
+operator >=(left: int, right: int) returns bool intrinsic
+
+; -----------------------------------------------------------------------------
+; Unary Operators
+; -----------------------------------------------------------------------------
+
+function -(right: int) returns int intrinsic
+function +(right: int) returns int intrinsic
+
+; -----------------------------------------------------------------------------
+; Math Functions
+; -----------------------------------------------------------------------------
+
+function abs(x: int) returns int intrinsic
