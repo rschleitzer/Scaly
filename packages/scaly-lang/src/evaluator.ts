@@ -1,58 +1,37 @@
-// Scaly Evaluator - evaluates generated JavaScript
-// TODO: full implementation when parser is generated
+// Scaly Evaluator - evaluates Scaly code by generating and running JavaScript
 
-import { Lexer } from './lexer.js'
+import { parseAndModel } from './modeler.js'
+import { generate } from './transpiler/js.js'
+import { formatModelError } from './model-error.js'
 
 export type EvalResult =
   | { _tag: 'Ok'; value: unknown; code: string }
   | { _tag: 'ParseError'; message: string }
+  | { _tag: 'ModelError'; message: string }
+  | { _tag: 'GenerateError'; message: string }
   | { _tag: 'EvalError'; message: string; code: string }
 
 export function evaluate(input: string): EvalResult {
-  // For now, just tokenize and return a simple result
-  // Full implementation will come when parser is generated
-  const lexer = new Lexer(input)
-  lexer.advance()
-
-  // Simple literal evaluation for bootstrapping
-  if (lexer.token._tag === 'Integer') {
-    const code = lexer.token.value
-    return { _tag: 'Ok', value: Number(code), code }
+  // Parse and build semantic model
+  const modelResult = parseAndModel(input)
+  if (!modelResult.ok) {
+    return { _tag: 'ModelError', message: formatModelError(modelResult.error, input) }
   }
 
-  if (lexer.token._tag === 'FloatingPoint') {
-    const code = lexer.token.value
-    return { _tag: 'Ok', value: Number(code), code }
+  // Generate JavaScript
+  const genResult = generate(modelResult.value)
+  if (!genResult.ok) {
+    return { _tag: 'GenerateError', message: genResult.error }
   }
 
-  if (lexer.token._tag === 'String') {
-    const value = lexer.token.value
-    const code = JSON.stringify(value)
+  const code = genResult.code
+
+  // Evaluate the generated JavaScript
+  try {
+    const value = eval(code)
     return { _tag: 'Ok', value, code }
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e)
+    return { _tag: 'EvalError', message, code }
   }
-
-  if (lexer.token._tag === 'Boolean') {
-    const value = lexer.token.value
-    const code = String(value)
-    return { _tag: 'Ok', value, code }
-  }
-
-  if (lexer.token._tag === 'Character') {
-    const value = lexer.token.value
-    const code = JSON.stringify(value)
-    return { _tag: 'Ok', value, code }
-  }
-
-  if (lexer.token._tag === 'Fragment') {
-    const value = lexer.token.value
-    const code = '`' + value + '`'
-    return { _tag: 'Ok', value, code }
-  }
-
-  if (lexer.token._tag === 'Hex') {
-    const code = lexer.token.value
-    return { _tag: 'Ok', value: parseInt(code, 16), code }
-  }
-
-  return { _tag: 'ParseError', message: 'Only literals supported until parser is generated' }
 }

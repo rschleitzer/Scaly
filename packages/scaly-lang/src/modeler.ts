@@ -48,7 +48,7 @@ export class Modeler {
     switch (literal._syntax) {
       case 'BooleanLiteral':
         return ok({
-          _model: 'BooleanConstant',
+          _tag: 'BooleanConstant',
           span,
           value: literal.value
         })
@@ -59,7 +59,7 @@ export class Modeler {
           return fail(invalidConstant(this.file, span))
         }
         return ok({
-          _model: 'IntegerConstant',
+          _tag: 'IntegerConstant',
           span,
           value
         })
@@ -71,7 +71,7 @@ export class Modeler {
           return fail(invalidConstant(this.file, span))
         }
         return ok({
-          _model: 'HexConstant',
+          _tag: 'HexConstant',
           span,
           value
         })
@@ -83,7 +83,7 @@ export class Modeler {
           return fail(invalidConstant(this.file, span))
         }
         return ok({
-          _model: 'FloatingPointConstant',
+          _tag: 'FloatingPointConstant',
           span,
           value
         })
@@ -91,21 +91,21 @@ export class Modeler {
 
       case 'StringLiteral':
         return ok({
-          _model: 'StringConstant',
+          _tag: 'StringConstant',
           span,
           value: literal.value
         })
 
       case 'CharacterLiteral':
         return ok({
-          _model: 'CharacterConstant',
+          _tag: 'CharacterConstant',
           span,
           value: literal.value
         })
 
       case 'FragmentLiteral':
         return ok({
-          _model: 'FragmentConstant',
+          _tag: 'FragmentConstant',
           span,
           value: literal.value
         })
@@ -139,27 +139,27 @@ export class Modeler {
     }
 
     // Handle lifetime
-    let lifetime: Model.Lifetime = { _model: 'Unspecified' }
+    let lifetime: Model.Lifetime = { _tag: 'Unspecified' }
     if (syntax.lifetime) {
       const lt = syntax.lifetime
       switch (lt._syntax) {
         case 'CallSyntax':
-          lifetime = { _model: 'Call', span: { start: lt.start, end: lt.end } }
+          lifetime = { _tag: 'Call', span: { start: lt.start, end: lt.end } }
           break
         case 'LocalSyntax':
-          lifetime = { _model: 'Local', span: { start: lt.start, end: lt.end } }
+          lifetime = { _tag: 'Local', span: { start: lt.start, end: lt.end } }
           break
         case 'ReferenceSyntax':
-          lifetime = { _model: 'Reference', span: { start: lt.start, end: lt.end }, location: lt.location }
+          lifetime = { _tag: 'Reference', span: { start: lt.start, end: lt.end }, location: lt.location }
           break
         case 'ThrownSyntax':
-          lifetime = { _model: 'Thrown', span: { start: lt.start, end: lt.end } }
+          lifetime = { _tag: 'Thrown', span: { start: lt.start, end: lt.end } }
           break
       }
     }
 
     return ok({
-      _model: 'Type',
+      _tag: 'Type',
       span,
       name: path,
       generics,
@@ -233,7 +233,7 @@ export class Modeler {
     }
 
     return ok({
-      _model: 'Tuple',
+      _tag: 'Tuple',
       span,
       components
     })
@@ -281,7 +281,7 @@ export class Modeler {
     }
 
     return ok({
-      _model: 'Matrix',
+      _tag: 'Matrix',
       span,
       operations
     })
@@ -302,7 +302,7 @@ export class Modeler {
     }
 
     return ok({
-      _model: 'Block',
+      _tag: 'Block',
       span,
       statements
     })
@@ -320,7 +320,7 @@ export class Modeler {
         const operands = this.handleOperation(command)
         if (!operands.ok) return operands
         return ok({
-          _model: 'Action',
+          _tag: 'Action',
           source: operands.value,
           target: []
         })
@@ -332,7 +332,7 @@ export class Modeler {
         const target = this.handleOperands(command.target)
         if (!target.ok) return target
         return ok({
-          _model: 'Action',
+          _tag: 'Action',
           source: source.value,
           target: target.value
         })
@@ -346,7 +346,7 @@ export class Modeler {
           : ok([])
         if (!operation.ok) return operation
         return ok({
-          _model: 'Binding',
+          _tag: 'Binding',
           span: { start: command.start, end: command.end },
           bindingType: 'let',
           item: itemResult.value,
@@ -362,7 +362,7 @@ export class Modeler {
           : ok([])
         if (!operation.ok) return operation
         return ok({
-          _model: 'Binding',
+          _tag: 'Binding',
           span: { start: command.start, end: command.end },
           bindingType: 'var',
           item: itemResult.value,
@@ -378,7 +378,7 @@ export class Modeler {
           : ok([])
         if (!operation.ok) return operation
         return ok({
-          _model: 'Binding',
+          _tag: 'Binding',
           span: { start: command.start, end: command.end },
           bindingType: 'mutable',
           item: itemResult.value,
@@ -391,7 +391,7 @@ export class Modeler {
 
       case 'ContinueSyntax':
         return ok({
-          _model: 'Continue',
+          _tag: 'Continue',
           span: { start: command.start, end: command.end }
         })
 
@@ -410,7 +410,7 @@ export class Modeler {
       : ok([])
     if (!result.ok) return result
     return ok({
-      _model: 'Break',
+      _tag: 'Break',
       span,
       result: result.value
     })
@@ -423,7 +423,7 @@ export class Modeler {
       : ok([])
     if (!result.ok) return result
     return ok({
-      _model: 'Return',
+      _tag: 'Return',
       span,
       result: result.value
     })
@@ -436,7 +436,7 @@ export class Modeler {
       : ok([])
     if (!result.ok) return result
     return ok({
-      _model: 'Throw',
+      _tag: 'Throw',
       span,
       result: result.value
     })
@@ -461,7 +461,7 @@ export class Modeler {
     }
 
     return ok({
-      _model: 'If',
+      _tag: 'If',
       span,
       condition: condition.value,
       property: null,
@@ -504,7 +504,7 @@ export class Modeler {
     }
 
     return ok({
-      _model: 'Match',
+      _tag: 'Match',
       span,
       condition: condition.value,
       branches,
@@ -535,7 +535,7 @@ export class Modeler {
     }
 
     return ok({
-      _model: 'Choose',
+      _tag: 'Choose',
       span,
       condition: condition.value,
       cases,
@@ -574,7 +574,7 @@ export class Modeler {
     if (!actionResult.ok) return actionResult
 
     return ok({
-      _model: 'For',
+      _tag: 'For',
       span,
       identifier: syntax.variable,
       expression: expression.value,
@@ -592,7 +592,7 @@ export class Modeler {
     if (!actionResult.ok) return actionResult
 
     return ok({
-      _model: 'While',
+      _tag: 'While',
       span,
       condition: conditionResult.value,
       action: actionResult.value
@@ -605,7 +605,7 @@ export class Modeler {
         const source = this.handleOperation(syntax)
         if (!source.ok) return source
         return ok({
-          _model: 'Action',
+          _tag: 'Action',
           source: source.value,
           target: []
         })
@@ -616,7 +616,7 @@ export class Modeler {
         const target = this.handleOperands(syntax.target)
         if (!target.ok) return target
         return ok({
-          _model: 'Action',
+          _tag: 'Action',
           source: source.value,
           target: target.value
         })
@@ -632,7 +632,7 @@ export class Modeler {
         const operands = this.handleOperation(syntax)
         if (!operands.ok) return operands
         return ok({
-          _model: 'Binding',
+          _tag: 'Binding',
           span,
           bindingType: '',
           item: {
@@ -654,7 +654,7 @@ export class Modeler {
           : ok([])
         if (!operation.ok) return operation
         return ok({
-          _model: 'Binding',
+          _tag: 'Binding',
           span,
           bindingType: 'let',
           item: itemResult.value,
@@ -687,7 +687,7 @@ export class Modeler {
     }
 
     return ok({
-      _model: 'Try',
+      _tag: 'Try',
       span,
       binding: conditionResult.value,
       catches,
@@ -702,7 +702,7 @@ export class Modeler {
     const type = this.handleType(syntax.type)
     if (!type.ok) return type
     return ok({
-      _model: 'SizeOf',
+      _tag: 'SizeOf',
       span,
       type: type.value
     })
@@ -717,7 +717,7 @@ export class Modeler {
       }
     }
     return ok({
-      _model: 'Is',
+      _tag: 'Is',
       span,
       name
     })
@@ -770,7 +770,7 @@ export class Modeler {
         return this.handleLiteral(syntax)
       case 'NameSyntax':
         return ok({
-          _model: 'Variable',
+          _tag: 'Variable',
           name: syntax.name
         })
       case 'ObjectSyntax':
