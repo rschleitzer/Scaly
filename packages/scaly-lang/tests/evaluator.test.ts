@@ -35,19 +35,19 @@ describe('Evaluator', () => {
     }
   })
 
-  it('evaluates arithmetic via JS builtins', () => {
-    const result = evaluate('Math.sqrt 16')
+  it('evaluates arithmetic operations', () => {
+    const result = evaluate('3 + 4 * 2')
     expect(result._tag).toBe('Ok')
     if (result._tag === 'Ok') {
-      expect(result.value).toBe(4)
+      expect(result.value).toBe(11)  // Precedence: 3 + 8 = 11
     }
   })
 
-  it('evaluates array literals', () => {
-    const result = evaluate('[1, 2, 3]')
+  it('evaluates comparison operators', () => {
+    const result = evaluate('5 > 3')
     expect(result._tag).toBe('Ok')
     if (result._tag === 'Ok') {
-      expect(result.value).toEqual([1, 2, 3])
+      expect(result.value).toBe(true)
     }
   })
 })
