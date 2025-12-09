@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE book SYSTEM "docbook.dtd" [
-  <!ENTITY introduction SYSTEM "docs/scaly/chapters/introduction.xml">
-  <!ENTITY lexical SYSTEM "docs/scaly/chapters/lexical.xml">
-  <!ENTITY grammar SYSTEM "docs/scaly/chapters/grammar.xml">
-  <!ENTITY grammar-productions SYSTEM "docs/scaly/grammar.xml">
-  <!ENTITY expressions SYSTEM "docs/scaly/chapters/expressions.xml">
+  <!ENTITY introduction SYSTEM "scaly/chapters/introduction.xml">
+  <!ENTITY lexical SYSTEM "scaly/chapters/lexical.xml">
+  <!ENTITY grammar SYSTEM "scaly/chapters/grammar.xml">
+  <!ENTITY grammar-productions SYSTEM "scaly/grammar.xml">
+  <!ENTITY expressions SYSTEM "scaly/chapters/expressions.xml">
 ]>
 <book xmlns="http://docbook.org/ns/docbook" version="5.0">
   <title>The Scaly Programming Language</title>
