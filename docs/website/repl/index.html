@@ -88,41 +88,6 @@
             padding: 12px 16px;
             font-family: 'JetBrains Mono', monospace;
             font-size: 0.875rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .repl-status {
-            color: var(--accent);
-        }
-
-        .mode-buttons {
-            display: flex;
-            gap: 8px;
-        }
-
-        .mode-btn {
-            background: transparent;
-            border: 1px solid #374151;
-            color: #9ca3af;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.75rem;
-            padding: 4px 8px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .mode-btn:hover {
-            border-color: var(--accent);
-            color: var(--accent);
-        }
-
-        .mode-btn.active {
-            background: var(--accent);
-            border-color: var(--accent);
-            color: white;
         }
 
         .repl-output {
@@ -161,18 +126,6 @@
 
         .output-line.info {
             color: #93c5fd;
-        }
-
-        .output-line.tokens {
-            color: #c4b5fd;
-        }
-
-        .output-line.ast {
-            color: #86efac;
-        }
-
-        .output-line.model {
-            color: #fcd34d;
         }
 
         .repl-input-container {
@@ -270,17 +223,10 @@
 
         <div class="repl-container">
             <div class="repl-header">
-                <span>Scaly REPL v0.2</span>
-                <div class="mode-buttons">
-                    <button class="mode-btn" data-mode="lex">Lex</button>
-                    <button class="mode-btn" data-mode="parse">Parse</button>
-                    <button class="mode-btn" data-mode="model">Model</button>
-                    <button class="mode-btn active" data-mode="eval">Eval</button>
-                </div>
+                <span>Scaly REPL</span>
             </div>
             <div class="repl-output" id="output">
                 <div class="output-line info">Welcome to the Scaly REPL!</div>
-                <div class="output-line info">Modes: Lex (tokens), Parse (AST), Model (semantic), Eval (evaluate)</div>
                 <div class="output-line info">Try typing an expression below.</div>
             </div>
             <div class="repl-input-container">
@@ -296,9 +242,8 @@
                 <span class="help-example" data-code="3.14159">3.14159</span>
                 <span class="help-example" data-code="0xFF">0xFF</span>
                 <span class="help-example" data-code='"Hello, World!"'>"Hello"</span>
-                <span class="help-example" data-code="1 + 2">1 + 2</span>
-                <span class="help-example" data-code="foo bar">foo bar</span>
-                <span class="help-example" data-code="0B1">0B1</span>
+                <span class="help-example" data-code="true">true</span>
+                <span class="help-example" data-code="[1, 2, 3]">[1, 2, 3]</span>
             </div>
         </div>
 
@@ -309,125 +254,15 @@
 
     <script src="scaly.browser.js"></script>
     <script>
-    // REPL State
-    let mode = 'eval';
     const output = document.getElementById('output');
     const input = document.getElementById('input');
 
-    // Format helpers
-    function formatTokens(input) {
-        const lexer = new Scaly.Lexer(input);
-        const tokens = [];
-        while (!lexer.isAtEnd()) {
-            lexer.advance();
-            const t = lexer.token;
-            if (t._tag === 'Empty') break;
-            switch (t._tag) {
-                case 'Identifier': tokens.push(`Identifier(${t.name})`); break;
-                case 'Attribute': tokens.push(`Attribute(${t.name})`); break;
-                case 'Punctuation': tokens.push(`Punctuation(${t.sign})`); break;
-                case 'String': tokens.push(`String("${t.value}")`); break;
-                case 'Character': tokens.push(`Character('${t.value}')`); break;
-                case 'Fragment': tokens.push(`Fragment(\`${t.value}\`)`); break;
-                case 'Integer': tokens.push(`Integer(${t.value})`); break;
-                case 'FloatingPoint': tokens.push(`Float(${t.value})`); break;
-                case 'Hex': tokens.push(`Hex(${t.value})`); break;
-                case 'Boolean': tokens.push(`Boolean(${t.value})`); break;
-                case 'Colon': tokens.push('Colon'); break;
-                case 'Invalid': tokens.push('Invalid'); break;
-            }
-        }
-        return tokens.join(' ');
-    }
-
-    function formatSyntax(obj, indent = 0) {
-        const pad = '  '.repeat(indent);
-        if (obj === null || obj === undefined) return `${pad}null`;
-        if (typeof obj !== 'object') return `${pad}${JSON.stringify(obj)}`;
-        if (Array.isArray(obj)) {
-            if (obj.length === 0) return `${pad}[]`;
-            return `${pad}[\n${obj.map(item => formatSyntax(item, indent + 1)).join(',\n')}\n${pad}]`;
-        }
-        const syntaxTag = obj._syntax;
-        const entries = Object.entries(obj).filter(([k]) => k !== '_syntax' && k !== 'start' && k !== 'end');
-        if (syntaxTag) {
-            if (entries.length === 0) return `${pad}${syntaxTag}`;
-            if (entries.length === 1 && typeof entries[0][1] !== 'object') {
-                return `${pad}${syntaxTag} ${JSON.stringify(entries[0][1])}`;
-            }
-            return `${pad}${syntaxTag}\n${entries.map(([k, v]) => `${pad}  ${k}: ${formatSyntax(v, indent + 2).trimStart()}`).join('\n')}`;
-        }
-        return `${pad}{\n${entries.map(([k, v]) => `${pad}  ${k}: ${formatSyntax(v, indent + 2).trimStart()}`).join(',\n')}\n${pad}}`;
-    }
-
-    function formatModel(obj, indent = 0) {
-        const pad = '  '.repeat(indent);
-        if (obj === null || obj === undefined) return `${pad}null`;
-        if (typeof obj !== 'object') return `${pad}${JSON.stringify(obj)}`;
-        if (Array.isArray(obj)) {
-            if (obj.length === 0) return `${pad}[]`;
-            return `${pad}[\n${obj.map(item => formatModel(item, indent + 1)).join(',\n')}\n${pad}]`;
-        }
-        const modelTag = obj._model;
-        const entries = Object.entries(obj).filter(([k]) => k !== '_model' && k !== 'span');
-        if (modelTag) {
-            if (entries.length === 0) return `${pad}${modelTag}`;
-            if (entries.length === 1 && typeof entries[0][1] !== 'object') {
-                return `${pad}${modelTag} ${JSON.stringify(entries[0][1])}`;
-            }
-            return `${pad}${modelTag}\n${entries.map(([k, v]) => `${pad}  ${k}: ${formatModel(v, indent + 2).trimStart()}`).join('\n')}`;
-        }
-        return `${pad}{\n${entries.map(([k, v]) => `${pad}  ${k}: ${formatModel(v, indent + 2).trimStart()}`).join(',\n')}\n${pad}}`;
-    }
-
-    // Output helpers
     function addOutput(text, className) {
         const line = document.createElement('div');
         line.className = 'output-line ' + className;
         line.textContent = text;
         output.appendChild(line);
         output.scrollTop = output.scrollHeight;
-    }
-
-    // Handlers
-    function handleLex(code) {
-        try {
-            const tokens = formatTokens(code);
-            addOutput(tokens, 'tokens');
-        } catch (e) {
-            addOutput(`Error: ${e.message}`, 'error');
-        }
-    }
-
-    function handleParse(code) {
-        try {
-            const parser = new Scaly.Parser(code);
-            const result = parser.parseOperation();
-            if (result.ok) {
-                addOutput(formatSyntax(result.value), 'ast');
-            } else {
-                if (result.error._tag === 'InvalidSyntax') {
-                    addOutput(`Parse error at ${result.error.start}-${result.error.end}: ${result.error.message}`, 'error');
-                } else {
-                    addOutput('Parse error: unexpected syntax', 'error');
-                }
-            }
-        } catch (e) {
-            addOutput(`Error: ${e.message}`, 'error');
-        }
-    }
-
-    function handleModel(code) {
-        try {
-            const result = Scaly.parseAndModel(code);
-            if (result.ok) {
-                addOutput(formatModel(result.value), 'model');
-            } else {
-                addOutput(Scaly.formatModelError(result.error, code), 'error');
-            }
-        } catch (e) {
-            addOutput(`Error: ${e.message}`, 'error');
-        }
     }
 
     function handleEval(code) {
@@ -440,8 +275,11 @@
                         : String(result.value);
                     addOutput(display, 'result');
                     break;
-                case 'ParseError':
-                    addOutput(`Parse error: ${result.message}`, 'error');
+                case 'ModelError':
+                    addOutput(result.message, 'error');
+                    break;
+                case 'GenerateError':
+                    addOutput(`Generate error: ${result.message}`, 'error');
                     break;
                 case 'EvalError':
                     addOutput(`Eval error: ${result.message}`, 'error');
@@ -455,16 +293,9 @@
     function handleInput(code) {
         if (!code.trim()) return;
         addOutput(code, 'input');
-
-        switch (mode) {
-            case 'lex': handleLex(code); break;
-            case 'parse': handleParse(code); break;
-            case 'model': handleModel(code); break;
-            case 'eval': handleEval(code); break;
-        }
+        handleEval(code);
     }
 
-    // Event listeners
     input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             const code = input.value;
@@ -473,17 +304,6 @@
         }
     });
 
-    // Mode buttons
-    document.querySelectorAll('.mode-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            mode = btn.dataset.mode;
-            addOutput(`Switched to ${mode} mode`, 'info');
-        });
-    });
-
-    // Example click handlers
     document.querySelectorAll('.help-example').forEach(el => {
         el.addEventListener('click', () => {
             input.value = el.dataset.code;
