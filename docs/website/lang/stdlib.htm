@@ -1,0 +1,444 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Standard Library Reference</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="The Scaly Programming Language"
+HREF="index.html"><LINK
+REL="PREVIOUS"
+TITLE="Expressions"
+HREF="expressions.htm"><META
+HTTP-EQUIV="Content-Type"
+CONTENT="text/html; charset=UTF-8"></HEAD
+><BODY
+CLASS="appendix"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>The Scaly Programming Language</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="expressions.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+>&nbsp;</TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="appendix"
+><H1
+><A
+NAME="AEN945"
+></A
+>Appendix A. Standard Library Reference</H1
+><DIV
+CLASS="TOC"
+><DL
+><DT
+><B
+>Table of Contents</B
+></DT
+><DT
+><A
+HREF="stdlib.htm#AEN947"
+>Types</A
+></DT
+><DT
+><A
+HREF="stdlib.htm#AEN965"
+>Operators</A
+></DT
+><DT
+><A
+HREF="stdlib.htm#AEN1015"
+>Functions</A
+></DT
+></DL
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN947"
+>Types</A
+></H1
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN949"
+><TT
+CLASS="code"
+>define Sum(left: int, right: int)</TT
+></A
+></H2
+><P
+>Deferred sum. Enables operator precedence by delaying evaluation.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN953"
+><TT
+CLASS="code"
+>define Difference(left: int, right: int)</TT
+></A
+></H2
+><P
+>Deferred difference. Enables operator precedence by delaying evaluation.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN957"
+><TT
+CLASS="code"
+>define Product(left: int, right: int)</TT
+></A
+></H2
+><P
+>Deferred product. Enables operator precedence by delaying evaluation.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN961"
+><TT
+CLASS="code"
+>define Quotient(left: int, right: int)</TT
+></A
+></H2
+><P
+>Deferred quotient. Enables operator precedence by delaying evaluation.</P
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN965"
+>Operators</A
+></H1
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN967"
+><TT
+CLASS="code"
+>operator +(left: int, right: int) returns Sum</TT
+></A
+></H2
+><P
+>Addition. Lower precedence than multiplication and division.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN971"
+><TT
+CLASS="code"
+>operator -(left: int, right: int) returns Difference</TT
+></A
+></H2
+><P
+>Subtraction. Lower precedence than multiplication and division.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN975"
+><TT
+CLASS="code"
+>operator *(left: int, right: int) returns Product</TT
+></A
+></H2
+><P
+>Multiplication. Higher precedence than addition and subtraction.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN979"
+><TT
+CLASS="code"
+>operator /(left: int, right: int) returns Quotient</TT
+></A
+></H2
+><P
+>Division. Higher precedence than addition and subtraction.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN983"
+><TT
+CLASS="code"
+>operator div(left: int, right: int) returns int</TT
+></A
+></H2
+><P
+>Integer division, truncating toward zero.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN987"
+><TT
+CLASS="code"
+>operator mod(left: int, right: int) returns int</TT
+></A
+></H2
+><P
+>Modulo (remainder after integer division).</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN991"
+><TT
+CLASS="code"
+>operator =(left: int, right: int) returns bool</TT
+></A
+></H2
+><P
+>Equality comparison.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN995"
+><TT
+CLASS="code"
+>operator &#60;&#62;(left: int, right: int) returns bool</TT
+></A
+></H2
+><P
+>Inequality comparison.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN999"
+><TT
+CLASS="code"
+>operator &#60;(left: int, right: int) returns bool</TT
+></A
+></H2
+><P
+>Less than comparison.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN1003"
+><TT
+CLASS="code"
+>operator &#62;(left: int, right: int) returns bool</TT
+></A
+></H2
+><P
+>Greater than comparison.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN1007"
+><TT
+CLASS="code"
+>operator &#60;=(left: int, right: int) returns bool</TT
+></A
+></H2
+><P
+>Less than or equal comparison.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN1011"
+><TT
+CLASS="code"
+>operator &#62;=(left: int, right: int) returns bool</TT
+></A
+></H2
+><P
+>Greater than or equal comparison.</P
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN1015"
+>Functions</A
+></H1
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN1017"
+><TT
+CLASS="code"
+>function -(right: int) returns int</TT
+></A
+></H2
+><P
+>Unary negation.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN1021"
+><TT
+CLASS="code"
+>function +(right: int) returns int</TT
+></A
+></H2
+><P
+>Unary plus (identity).</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN1025"
+><TT
+CLASS="code"
+>function abs(x: int) returns int</TT
+></A
+></H2
+><P
+>Absolute value.</P
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="expressions.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>&nbsp;</TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Expressions</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>&nbsp;</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>
