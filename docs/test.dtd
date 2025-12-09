@@ -1,0 +1,25 @@
+<!-- Scaly Test DTD -->
+<!-- Literate testing elements for Scaly documentation -->
+<!-- These elements are converted to DocBook during build -->
+
+<!-- Test case: input code and expected result -->
+<!ELEMENT test (input, expect, description?)>
+<!ATTLIST test
+    xml:id ID #IMPLIED
+    skip (true|false) "false"
+>
+
+<!-- Scaly code to evaluate -->
+<!ELEMENT input (#PCDATA)>
+
+<!-- Expected result (compared as string) -->
+<!ELEMENT expect (#PCDATA)>
+
+<!-- Optional description of what is being tested -->
+<!ELEMENT description (#PCDATA)>
+
+<!-- Test suite: group of related tests -->
+<!ELEMENT tests (test+)>
+<!ATTLIST tests
+    xml:id ID #IMPLIED
+>
