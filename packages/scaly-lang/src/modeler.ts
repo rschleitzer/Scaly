@@ -825,6 +825,756 @@ export class Modeler {
     }
     return ok([])
   }
+
+  // === Item Handling (for parameters) ===
+
+  private handleItem(syntax: Syntax.ItemSyntax, isPrivate: boolean = false): ModelResult<Model.Item> {
+    const span: Model.Span = { start: syntax.start, end: syntax.end }
+
+    let type: Model.Type | null = null
+    if (syntax.annotation) {
+      const typeResult = this.handleType(syntax.annotation.type)
+      if (!typeResult.ok) return typeResult
+      type = typeResult.value
+    }
+
+    const attributes: Model.Attribute[] = []
+    if (syntax.attributes) {
+      for (const attrSyntax of syntax.attributes) {
+        const attrResult = this.handleAttribute(attrSyntax)
+        if (!attrResult.ok) return attrResult
+        attributes.push(attrResult.value)
+      }
+    }
+
+    return ok({
+      span,
+      private: isPrivate,
+      name: syntax.name,
+      type,
+      attributes
+    })
+  }
+
+  private handleParameterSet(syntax: Syntax.ParameterSetSyntax): ModelResult<Model.Item[]> {
+    const items: Model.Item[] = []
+
+    if (syntax._syntax === 'ParametersSyntax') {
+      if (syntax.items) {
+        for (const itemSyntax of syntax.items) {
+          const itemResult = this.handleItem(itemSyntax)
+          if (!itemResult.ok) return itemResult
+          items.push(itemResult.value)
+        }
+      }
+    } else if (syntax._syntax === 'TypeSyntax') {
+      // Single type parameter (no name)
+      const typeResult = this.handleType(syntax)
+      if (!typeResult.ok) return typeResult
+      items.push({
+        span: { start: syntax.start, end: syntax.end },
+        private: false,
+        name: null,
+        type: typeResult.value,
+        attributes: []
+      })
+    }
+
+    return ok(items)
+  }
+
+  // === Implementation Handling ===
+
+  private handleImplementation(syntax: Syntax.ImplementationSyntax): ModelResult<Model.Implementation> {
+    switch (syntax._syntax) {
+      case 'OperationSyntax': {
+        const operands = this.handleOperation(syntax)
+        if (!operands.ok) return operands
+        return ok({
+          _tag: 'Action',
+          source: operands.value,
+          target: []
+        })
+      }
+      case 'SetSyntax': {
+        const source = this.handleOperands(syntax.source)
+        if (!source.ok) return source
+        const target = this.handleOperands(syntax.target)
+        if (!target.ok) return target
+        return ok({
+          _tag: 'Action',
+          source: source.value,
+          target: target.value
+        })
+      }
+      case 'ExternSyntax':
+        return ok({
+          _tag: 'Extern',
+          span: { start: syntax.start, end: syntax.end }
+        })
+      case 'InstructionSyntax':
+        return ok({
+          _tag: 'Instruction',
+          span: { start: syntax.start, end: syntax.end }
+        })
+      case 'IntrinsicSyntax':
+        return ok({
+          _tag: 'Intrinsic',
+          span: { start: syntax.start, end: syntax.end }
+        })
+    }
+  }
+
+  // === Function Building ===
+
+  buildFunction(syntax: Syntax.FunctionSyntax, isPrivate: boolean = false): ModelResult<Model.Function> {
+    const span: Model.Span = { start: syntax.start, end: syntax.end }
+    const target = syntax.target
+
+    if (target._syntax === 'RoutineSyntax') {
+      return fail(notImplemented(this.file, 'Non-Symbol Function', span))
+    }
+
+    // Named function
+    const named = target as Syntax.NamedSyntax
+    const routine = named.routine
+
+    // Handle parameters
+    let input: Model.Item[] = []
+    if (routine.parameters) {
+      const paramsResult = this.handleParameterSet(routine.parameters)
+      if (!paramsResult.ok) return paramsResult
+      input = paramsResult.value
+    }
+
+    // Handle return type
+    let returns_: Model.Type | null = null
+    if (routine.returns_) {
+      const typeResult = this.handleType(routine.returns_.type)
+      if (!typeResult.ok) return typeResult
+      returns_ = typeResult.value
+    }
+
+    // Handle throws type
+    let throws_: Model.Type | null = null
+    if (routine.throws_) {
+      const typeResult = this.handleType(routine.throws_.type)
+      if (!typeResult.ok) return typeResult
+      throws_ = typeResult.value
+    }
+
+    // Handle lifetime
+    let lifetime: Model.Lifetime = { _tag: 'Unspecified' }
+    if (routine.lifetime) {
+      const lt = routine.lifetime
+      switch (lt._syntax) {
+        case 'CallSyntax':
+          lifetime = { _tag: 'Call', span: { start: lt.start, end: lt.end } }
+          break
+        case 'LocalSyntax':
+          lifetime = { _tag: 'Local', span: { start: lt.start, end: lt.end } }
+          break
+        case 'ReferenceSyntax':
+          lifetime = { _tag: 'Reference', span: { start: lt.start, end: lt.end }, location: lt.location }
+          break
+        case 'ThrownSyntax':
+          lifetime = { _tag: 'Thrown', span: { start: lt.start, end: lt.end } }
+          break
+      }
+    }
+
+    // Handle implementation
+    const implResult = this.handleImplementation(routine.implementation)
+    if (!implResult.ok) return implResult
+
+    return ok({
+      _tag: 'Function',
+      span,
+      private: isPrivate,
+      pure: true, // function keyword means pure
+      name: named.name,
+      input,
+      returns: returns_,
+      throws: throws_,
+      lifetime,
+      implementation: implResult.value
+    })
+  }
+
+  // === Procedure Building ===
+
+  buildProcedure(syntax: Syntax.ProcedureSyntax, isPrivate: boolean = false): ModelResult<Model.Function> {
+    const span: Model.Span = { start: syntax.start, end: syntax.end }
+    const target = syntax.target
+
+    if (target._syntax === 'RoutineSyntax') {
+      return fail(notImplemented(this.file, 'Non-Symbol Procedure', span))
+    }
+
+    // Named procedure
+    const named = target as Syntax.NamedSyntax
+    const routine = named.routine
+
+    // Handle parameters
+    let input: Model.Item[] = []
+    if (routine.parameters) {
+      const paramsResult = this.handleParameterSet(routine.parameters)
+      if (!paramsResult.ok) return paramsResult
+      input = paramsResult.value
+    }
+
+    // Handle return type
+    let returns_: Model.Type | null = null
+    if (routine.returns_) {
+      const typeResult = this.handleType(routine.returns_.type)
+      if (!typeResult.ok) return typeResult
+      returns_ = typeResult.value
+    }
+
+    // Handle throws type
+    let throws_: Model.Type | null = null
+    if (routine.throws_) {
+      const typeResult = this.handleType(routine.throws_.type)
+      if (!typeResult.ok) return typeResult
+      throws_ = typeResult.value
+    }
+
+    // Handle lifetime
+    let lifetime: Model.Lifetime = { _tag: 'Unspecified' }
+    if (routine.lifetime) {
+      const lt = routine.lifetime
+      switch (lt._syntax) {
+        case 'CallSyntax':
+          lifetime = { _tag: 'Call', span: { start: lt.start, end: lt.end } }
+          break
+        case 'LocalSyntax':
+          lifetime = { _tag: 'Local', span: { start: lt.start, end: lt.end } }
+          break
+        case 'ReferenceSyntax':
+          lifetime = { _tag: 'Reference', span: { start: lt.start, end: lt.end }, location: lt.location }
+          break
+        case 'ThrownSyntax':
+          lifetime = { _tag: 'Thrown', span: { start: lt.start, end: lt.end } }
+          break
+      }
+    }
+
+    // Handle implementation
+    const implResult = this.handleImplementation(routine.implementation)
+    if (!implResult.ok) return implResult
+
+    return ok({
+      _tag: 'Function',
+      span,
+      private: isPrivate,
+      pure: false, // procedure keyword means impure
+      name: named.name,
+      input,
+      returns: returns_,
+      throws: throws_,
+      lifetime,
+      implementation: implResult.value
+    })
+  }
+
+  // === Operator Building ===
+
+  buildOperator(syntax: Syntax.OperatorSyntax, isPrivate: boolean = false): ModelResult<Model.Operator> {
+    const span: Model.Span = { start: syntax.start, end: syntax.end }
+    const target = syntax.target
+
+    // Handle parameters
+    let input: Model.Item[] = []
+    let name: string
+
+    if (target._syntax === 'RoutineSyntax') {
+      // Anonymous operator like operator []
+      const routine = target
+      if (routine.parameters) {
+        const paramsResult = this.handleParameterSet(routine.parameters)
+        if (!paramsResult.ok) return paramsResult
+        input = paramsResult.value
+      }
+      name = '[]' // Default name for anonymous operators
+
+      // Handle return type
+      let returns_: Model.Type | null = null
+      if (routine.returns_) {
+        const typeResult = this.handleType(routine.returns_.type)
+        if (!typeResult.ok) return typeResult
+        returns_ = typeResult.value
+      }
+
+      // Handle throws type
+      let throws_: Model.Type | null = null
+      if (routine.throws_) {
+        const typeResult = this.handleType(routine.throws_.type)
+        if (!typeResult.ok) return typeResult
+        throws_ = typeResult.value
+      }
+
+      // Handle implementation
+      const implResult = this.handleImplementation(routine.implementation)
+      if (!implResult.ok) return implResult
+
+      return ok({
+        _tag: 'Operator',
+        span,
+        private: isPrivate,
+        name,
+        input,
+        returns: returns_,
+        throws: throws_,
+        implementation: implResult.value
+      })
+    }
+
+    // Named operator
+    const named = target as Syntax.NamedSyntax
+    const routine = named.routine
+    name = named.name
+
+    if (routine.parameters) {
+      const paramsResult = this.handleParameterSet(routine.parameters)
+      if (!paramsResult.ok) return paramsResult
+      input = paramsResult.value
+    }
+
+    // Handle return type
+    let returns_: Model.Type | null = null
+    if (routine.returns_) {
+      const typeResult = this.handleType(routine.returns_.type)
+      if (!typeResult.ok) return typeResult
+      returns_ = typeResult.value
+    }
+
+    // Handle throws type
+    let throws_: Model.Type | null = null
+    if (routine.throws_) {
+      const typeResult = this.handleType(routine.throws_.type)
+      if (!typeResult.ok) return typeResult
+      throws_ = typeResult.value
+    }
+
+    // Handle implementation
+    const implResult = this.handleImplementation(routine.implementation)
+    if (!implResult.ok) return implResult
+
+    return ok({
+      _tag: 'Operator',
+      span,
+      private: isPrivate,
+      name,
+      input,
+      returns: returns_,
+      throws: throws_,
+      implementation: implResult.value
+    })
+  }
+
+  // === Definition Handling ===
+
+  handleDefinition(syntax: Syntax.DefinitionSyntax, _isPrivate: boolean = false): ModelResult<Model.Concept> {
+    const span: Model.Span = { start: syntax.start, end: syntax.end }
+
+    // Handle generic parameters
+    const parameters: Model.GenericParameter[] = []
+    if (syntax.parameters) {
+      for (const param of syntax.parameters.parameters) {
+        const attributes: Model.Attribute[] = []
+        if (param.attributes) {
+          for (const attr of param.attributes) {
+            const attrResult = this.handleAttribute(attr)
+            if (!attrResult.ok) return attrResult
+            attributes.push(attrResult.value)
+          }
+        }
+        parameters.push({
+          span: { start: param.start, end: param.end },
+          name: param.name,
+          attributes
+        })
+      }
+    }
+
+    // Handle attributes
+    const attributes: Model.Attribute[] = []
+    if (syntax.attributes) {
+      for (const attr of syntax.attributes) {
+        const attrResult = this.handleAttribute(attr)
+        if (!attrResult.ok) return attrResult
+        attributes.push(attrResult.value)
+      }
+    }
+
+    // Handle concept (the definition body)
+    const definitionResult = this.handleConcept(syntax.concept_)
+    if (!definitionResult.ok) return definitionResult
+
+    return ok({
+      _tag: 'Concept',
+      span,
+      name: syntax.name,
+      parameters,
+      attributes,
+      definition: definitionResult.value
+    })
+  }
+
+  private handleConcept(syntax: Syntax.ConceptSyntax): ModelResult<Model.Definition> {
+    switch (syntax._syntax) {
+      case 'IntrinsicSyntax':
+        return ok({
+          _tag: 'Intrinsic',
+          span: { start: syntax.start, end: syntax.end }
+        })
+
+      case 'ClassSyntax':
+        return this.handleClass(syntax)
+
+      case 'NamespaceSyntax':
+        return this.handleNamespace(syntax)
+
+      case 'UnionSyntax':
+        return this.handleUnion(syntax)
+
+      case 'ConstantSyntax':
+        return fail(notImplemented(this.file, 'ConstantSyntax', { start: syntax.start, end: syntax.end }))
+
+      case 'DelegateSyntax':
+        return fail(notImplemented(this.file, 'DelegateSyntax', { start: syntax.start, end: syntax.end }))
+    }
+  }
+
+  private handleClass(syntax: Syntax.ClassSyntax): ModelResult<Model.Structure> {
+    const span: Model.Span = { start: syntax.start, end: syntax.end }
+
+    // Handle properties from structure.parts
+    const properties: Model.Property[] = []
+    if (syntax.structure.parts) {
+      for (const part of syntax.structure.parts) {
+        // parts can be FieldSyntax or PropertySyntax
+        const prop = part._syntax === 'FieldSyntax' ? part.property : part
+        const propResult = this.handleProperty(prop, false)
+        if (!propResult.ok) return propResult
+        properties.push(propResult.value)
+      }
+    }
+
+    // Handle body (members)
+    const members: Model.Member[] = []
+    const symbols = new Map<string, Model.Nameable>()
+
+    if (syntax.body) {
+      const bodyResult = this.handleBody(syntax.body, members, symbols)
+      if (!bodyResult.ok) return bodyResult
+    }
+
+    return ok({
+      _tag: 'Structure',
+      span,
+      private: false,
+      properties,
+      modules: [],
+      uses: [],
+      initializers: [],
+      deinitializer: null,
+      members,
+      symbols
+    })
+  }
+
+  private handleProperty(syntax: Syntax.PropertySyntax, isPrivate: boolean): ModelResult<Model.Property> {
+    const span: Model.Span = { start: syntax.start, end: syntax.end }
+
+    let type: Model.Type | null = null
+    if (syntax.annotation) {
+      const typeResult = this.handleType(syntax.annotation.type)
+      if (!typeResult.ok) return typeResult
+      type = typeResult.value
+    }
+
+    let initializer: Model.Operand[] | null = null
+    if (syntax.initializer) {
+      const initResult = this.handleOperands(syntax.initializer.operands)
+      if (!initResult.ok) return initResult
+      initializer = initResult.value
+    }
+
+    const attributes: Model.Attribute[] = []
+    if (syntax.attributes) {
+      for (const attr of syntax.attributes) {
+        const attrResult = this.handleAttribute(attr)
+        if (!attrResult.ok) return attrResult
+        attributes.push(attrResult.value)
+      }
+    }
+
+    return ok({
+      span,
+      private: isPrivate,
+      name: syntax.name,
+      type,
+      initializer,
+      attributes
+    })
+  }
+
+  private handleNamespace(syntax: Syntax.NamespaceSyntax): ModelResult<Model.Namespace> {
+    const span: Model.Span = { start: syntax.start, end: syntax.end }
+
+    const members: Model.Member[] = []
+    const symbols = new Map<string, Model.Nameable>()
+
+    // Namespaces have declarations, not a body
+    if (syntax.declarations) {
+      for (const decl of syntax.declarations) {
+        const memberResult = this.handleDeclaration(decl)
+        if (!memberResult.ok) return memberResult
+        members.push(memberResult.value)
+        // Add to symbol table (only members with names)
+        const member = memberResult.value
+        if (member._tag !== 'Package' && 'name' in member) {
+          symbols.set(member.name, member as Model.Nameable)
+        }
+      }
+    }
+
+    return ok({
+      _tag: 'Namespace',
+      span,
+      modules: [],
+      members,
+      symbols
+    })
+  }
+
+  private handleUnion(syntax: Syntax.UnionSyntax): ModelResult<Model.Union> {
+    const span: Model.Span = { start: syntax.start, end: syntax.end }
+
+    const variants: Model.Variant[] = []
+    if (syntax.variants) {
+      for (const v of syntax.variants) {
+        const variantResult = this.handleVariant(v)
+        if (!variantResult.ok) return variantResult
+        variants.push(variantResult.value)
+      }
+    }
+
+    const members: Model.Member[] = []
+    const symbols = new Map<string, Model.Nameable>()
+
+    if (syntax.body) {
+      const bodyResult = this.handleBody(syntax.body, members, symbols)
+      if (!bodyResult.ok) return bodyResult
+    }
+
+    return ok({
+      _tag: 'Union',
+      span,
+      private: false,
+      variants,
+      members,
+      symbols
+    })
+  }
+
+  private handleVariant(syntax: Syntax.VariantSyntax): ModelResult<Model.Variant> {
+    const span: Model.Span = { start: syntax.start, end: syntax.end }
+
+    let type: Model.Type | null = null
+    if (syntax.annotation) {
+      const typeResult = this.handleType(syntax.annotation.type)
+      if (!typeResult.ok) return typeResult
+      type = typeResult.value
+    }
+
+    const attributes: Model.Attribute[] = []
+    if (syntax.attributes) {
+      for (const attr of syntax.attributes) {
+        const attrResult = this.handleAttribute(attr)
+        if (!attrResult.ok) return attrResult
+        attributes.push(attrResult.value)
+      }
+    }
+
+    return ok({
+      span,
+      name: syntax.name,
+      type,
+      attributes
+    })
+  }
+
+  private handleDeclaration(decl: Syntax.DeclarationSyntax): ModelResult<Model.Member> {
+    const symbol = decl.symbol
+    const isPrivate = symbol._syntax === 'PrivateSyntax'
+    // Extract the actual exportable symbol, removing the Private wrapper if present
+    const actual: Syntax.ExportSyntax = isPrivate
+      ? (symbol as Syntax.PrivateSyntax).export_
+      : symbol as Syntax.ExportSyntax
+
+    switch (actual._syntax) {
+      case 'DefinitionSyntax':
+        return this.handleDefinition(actual, isPrivate)
+
+      case 'FunctionSyntax':
+        return this.buildFunction(actual, isPrivate)
+
+      case 'OperatorSyntax':
+        return this.buildOperator(actual, isPrivate)
+
+      case 'ModuleSyntax':
+      case 'TraitSyntax':
+        return fail(notImplemented(this.file, actual._syntax, { start: actual.start, end: actual.end }))
+    }
+  }
+
+  private handleBody(
+    syntax: Syntax.BodySyntax,
+    members: Model.Member[],
+    symbols: Map<string, Model.Nameable>
+  ): ModelResult<void> {
+    if (syntax.members) {
+      for (const member of syntax.members) {
+        const constituent = member.constituent
+
+        switch (constituent._syntax) {
+          case 'DefinitionSyntax': {
+            const conceptResult = this.handleDefinition(constituent, false)
+            if (!conceptResult.ok) return conceptResult
+            members.push(conceptResult.value)
+            symbols.set(conceptResult.value.name, conceptResult.value)
+            break
+          }
+
+          case 'FunctionSyntax': {
+            const funcResult = this.buildFunction(constituent, false)
+            if (!funcResult.ok) return funcResult
+            members.push(funcResult.value)
+            // Add to symbols as FunctionsNameable
+            const existing = symbols.get(funcResult.value.name)
+            if (existing && existing._tag === 'Functions') {
+              existing.functions.push(funcResult.value)
+            } else {
+              symbols.set(funcResult.value.name, { _tag: 'Functions', functions: [funcResult.value] })
+            }
+            break
+          }
+
+          case 'ProcedureSyntax': {
+            const procResult = this.buildProcedure(constituent, false)
+            if (!procResult.ok) return procResult
+            members.push(procResult.value)
+            const existing = symbols.get(procResult.value.name)
+            if (existing && existing._tag === 'Functions') {
+              existing.functions.push(procResult.value)
+            } else {
+              symbols.set(procResult.value.name, { _tag: 'Functions', functions: [procResult.value] })
+            }
+            break
+          }
+
+          case 'OperatorSyntax': {
+            const opResult = this.buildOperator(constituent, false)
+            if (!opResult.ok) return opResult
+            members.push(opResult.value)
+            symbols.set(opResult.value.name, opResult.value)
+            break
+          }
+
+          case 'ModuleSyntax': {
+            // Skip modules for now
+            break
+          }
+
+          default:
+            return fail(notImplemented(this.file, (constituent as any)._syntax, { start: constituent.start, end: constituent.end }))
+        }
+      }
+    }
+
+    return ok(undefined)
+  }
+
+  // === File Handling ===
+
+  handleFile(syntax: Syntax.FileSyntax): ModelResult<Model.Module> {
+    const members: Model.Member[] = []
+    const symbols = new Map<string, Model.Nameable>()
+    const uses: Model.Use[] = []
+
+    // Handle uses
+    if (syntax.uses) {
+      for (const useSyntax of syntax.uses) {
+        const path: string[] = [useSyntax.name.name]
+        if (useSyntax.name.extensions) {
+          for (const ext of useSyntax.name.extensions) {
+            path.push(ext.name)
+          }
+        }
+        uses.push({ span: { start: useSyntax.start, end: useSyntax.end }, path })
+      }
+    }
+
+    // Handle declarations
+    if (syntax.declarations) {
+      for (const decl of syntax.declarations) {
+        const symbol = decl.symbol
+        const isPrivate = symbol._syntax === 'PrivateSyntax'
+        const actual = isPrivate ? (symbol as Syntax.PrivateSyntax).export_ : symbol
+
+        switch (actual._syntax) {
+          case 'DefinitionSyntax': {
+            const conceptResult = this.handleDefinition(actual, isPrivate)
+            if (!conceptResult.ok) return conceptResult
+            members.push(conceptResult.value)
+            symbols.set(conceptResult.value.name, conceptResult.value)
+            break
+          }
+
+          case 'FunctionSyntax': {
+            const funcResult = this.buildFunction(actual, isPrivate)
+            if (!funcResult.ok) return funcResult
+            members.push(funcResult.value)
+            const existing = symbols.get(funcResult.value.name)
+            if (existing && existing._tag === 'Functions') {
+              existing.functions.push(funcResult.value)
+            } else {
+              symbols.set(funcResult.value.name, { _tag: 'Functions', functions: [funcResult.value] })
+            }
+            break
+          }
+
+          case 'OperatorSyntax': {
+            const opResult = this.buildOperator(actual, isPrivate)
+            if (!opResult.ok) return opResult
+            members.push(opResult.value)
+            symbols.set(opResult.value.name, opResult.value)
+            break
+          }
+
+          case 'ModuleSyntax':
+          case 'TraitSyntax':
+            // Skip for now
+            break
+
+          default:
+            return fail(notImplemented(this.file, (actual as any)._syntax, { start: actual.start, end: actual.end }))
+        }
+      }
+    }
+
+    return ok({
+      private: false,
+      file: this.file,
+      name: '',
+      modules: [],
+      uses,
+      members,
+      symbols
+    })
+  }
 }
 
 // === Convenience Functions ===
@@ -839,4 +1589,16 @@ export function parseAndModel(input: string, file: string = '<input>'): ModelRes
 
   const modeler = new Modeler(file)
   return modeler.modelOperation(parseResult.value)
+}
+
+export function parseAndModelFile(input: string, file: string = '<input>'): ModelResult<Model.Module> {
+  const parser = new Parser(input)
+  const parseResult = parser.parseFile()
+
+  if (!parseResult.ok) {
+    return fail(parserError(file, parseResult.error))
+  }
+
+  const modeler = new Modeler(file)
+  return modeler.handleFile(parseResult.value)
 }
