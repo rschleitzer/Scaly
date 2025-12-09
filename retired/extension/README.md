@@ -1,1 +1,0 @@
-# Scaly Language Server Extension
