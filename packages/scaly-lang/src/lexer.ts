@@ -202,7 +202,6 @@ export class Lexer {
       length++
 
       if (this.character === null) {
-        if (length === 1) return { _tag: 'Invalid' }
         return { _tag: 'Identifier', name: this.chars.slice(start, start + length) }
       }
 

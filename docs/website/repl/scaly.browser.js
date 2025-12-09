@@ -265,7 +265,6 @@ var Scaly = (() => {
         this.readCharacter();
         length++;
         if (this.character === null) {
-          if (length === 1) return { _tag: "Invalid" };
           return { _tag: "Identifier", name: this.chars.slice(start, start + length) };
         }
         if ("+-*/=%&|^~<>".includes(this.character)) {
@@ -5533,6 +5532,10 @@ function abs(x: int) returns int intrinsic
               i++;
             }
           } else {
+            const contextType = this.valueType(context.value);
+            if (this.hasBinarySignature(name, contextType)) {
+              return { ok: false, error: `Operator '${name}' requires a right operand` };
+            }
             const result = this.applyFunction(name, context.value, scope);
             if (!result.ok) return result;
             context = result;
@@ -5566,6 +5569,10 @@ function abs(x: int) returns int intrinsic
               i++;
             }
           } else {
+            const contextType = this.valueType(current.value);
+            if (this.hasBinarySignature(name, contextType)) {
+              return { ok: false, error: `Operator '${name}' requires a right operand` };
+            }
             const result = this.applyFunction(name, current.value, scope);
             if (!result.ok) return result;
             current = result;
@@ -5743,6 +5750,12 @@ function abs(x: int) returns int intrinsic
         case "Unit":
           return "void";
       }
+    }
+    // Check if operator has a binary signature for the given left type
+    hasBinarySignature(name, leftType) {
+      const signatures = this.operators.get(name);
+      if (!signatures) return false;
+      return signatures.some((s) => s.leftType === leftType);
     }
     // === Intrinsic Implementations ===
     applyIntrinsicOperator(name, left, right, _returnType) {
