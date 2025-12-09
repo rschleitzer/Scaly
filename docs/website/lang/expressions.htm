@@ -84,11 +84,6 @@ HREF="expressions.htm#AEN676"
 HREF="expressions.htm#AEN679"
 >Literal Expressions</A
 ></DT
-><DT
-><A
-HREF="expressions.htm#AEN722"
->Test Cases</A
-></DT
 ></DL
 ></DIV
 ><DIV
@@ -115,8 +110,8 @@ NAME="AEN679"
 >Literal Expressions</A
 ></H1
 ><P
->&#13;      The simplest expressions are literals. A literal evaluates to itself.
-    </P
+>&#13;    The simplest expressions are literals. A literal evaluates to itself.
+  </P
 ><DIV
 CLASS="section"
 ><H2
@@ -126,63 +121,67 @@ NAME="AEN682"
 >Boolean Literals</A
 ></H2
 ><P
->&#13;        The boolean literals are <TT
-CLASS="literal"
->true</TT
-> and <TT
-CLASS="literal"
->false</TT
->.
-      </P
+>&#13;      The boolean literals are true and false.
+    </P
 ><PRE
 CLASS="programlisting"
->&#13;true            ; evaluates to true
+>&#13;true           ; evaluates to true
 false           ; evaluates to false
-      </PRE
+    </PRE
 ></DIV
 ><DIV
 CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN688"
+NAME="AEN686"
 >Integer Literals</A
 ></H2
 ><P
->&#13;        Integer literals are sequences of decimal digits, optionally preceded
-        by a minus sign for negative numbers.
-      </P
+>&#13;      Integer literals are sequences of decimal digits, optionally preceded by a minus sign for negative numbers.
+    </P
 ><PRE
 CLASS="programlisting"
->&#13;42              ; evaluates to 42
-0               ; evaluates to 0
--7              ; evaluates to -7
-      </PRE
+>&#13;42           ; evaluates to 42
+0           ; evaluates to 0
+-7           ; evaluates to -7
+    </PRE
 ></DIV
 ><DIV
 CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN692"
+NAME="AEN690"
 >Hexadecimal Literals</A
 ></H2
 ><P
->&#13;        Hexadecimal literals start with <TT
-CLASS="literal"
->0x</TT
-> or <TT
-CLASS="literal"
->0X</TT
->
-        followed by hexadecimal digits (0-9, a-f, A-F).
-      </P
+>&#13;      Hexadecimal literals start with 0x or 0X followed by hexadecimal digits (0-9, a-f, A-F).
+    </P
 ><PRE
 CLASS="programlisting"
->&#13;0xFF            ; evaluates to 255
-0x1A            ; evaluates to 26
-0x0             ; evaluates to 0
-      </PRE
+>&#13;0xFF           ; evaluates to 255
+0x1A           ; evaluates to 26
+0x0           ; evaluates to 0
+    </PRE
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN694"
+>Floating-Point Literals</A
+></H2
+><P
+>&#13;      Floating-point literals contain a decimal point separating the integer and fractional parts.
+    </P
+><PRE
+CLASS="programlisting"
+>&#13;3.14           ; evaluates to 3.14
+2.0           ; evaluates to 2
+0.5           ; evaluates to 0.5
+    </PRE
 ></DIV
 ><DIV
 CLASS="section"
@@ -190,18 +189,16 @@ CLASS="section"
 CLASS="section"
 ><A
 NAME="AEN698"
->Floating-Point Literals</A
+>String Literals</A
 ></H2
 ><P
->&#13;        Floating-point literals contain a decimal point separating the integer
-        and fractional parts.
-      </P
+>&#13;      String literals are enclosed in double quotes. They may span multiple lines, with line breaks preserved in the resulting string.
+    </P
 ><PRE
 CLASS="programlisting"
->&#13;3.14            ; evaluates to 3.14
-2.0             ; evaluates to 2
-0.5             ; evaluates to 0.5
-      </PRE
+>&#13;"hello"           ; evaluates to hello
+""           ; evaluates to 
+    </PRE
 ></DIV
 ><DIV
 CLASS="section"
@@ -209,481 +206,16 @@ CLASS="section"
 CLASS="section"
 ><A
 NAME="AEN702"
->String Literals</A
-></H2
-><P
->&#13;        String literals are enclosed in double quotes. They may span multiple
-        lines, with line breaks preserved in the resulting string.
-      </P
-><PRE
-CLASS="programlisting"
->&#13;"hello"         ; evaluates to "hello"
-"Hello, World!" ; evaluates to "Hello, World!"
-""              ; evaluates to "" (empty string)
-      </PRE
-><P
->&#13;        Escape sequences are supported: <TT
-CLASS="literal"
->\\</TT
-> (backslash),
-        <TT
-CLASS="literal"
->\"</TT
-> (double quote), <TT
-CLASS="literal"
->\'</TT
-> (single quote),
-        <TT
-CLASS="literal"
->\n</TT
-> (newline), <TT
-CLASS="literal"
->\r</TT
-> (carriage return),
-        <TT
-CLASS="literal"
->\t</TT
-> (tab), and <TT
-CLASS="literal"
->\0</TT
-> (null).
-      </P
-><PRE
-CLASS="programlisting"
->&#13;"line one
-line two"       ; multiline string with embedded newline
-"tab\there"     ; string with tab character
-"say \"hi\""    ; string with escaped quotes
-      </PRE
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="AEN715"
 >Character Literals</A
 ></H2
 ><P
->&#13;        Character literals represent a single character, enclosed in backticks.
-      </P
+>&#13;      Character literals represent a single character, enclosed in backticks.
+    </P
 ><PRE
 CLASS="programlisting"
->&#13;`a`             ; evaluates to "a"
-`Z`             ; evaluates to "Z"
-      </PRE
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="AEN719"
->Fragment Literals</A
-></H2
-><P
->&#13;        Fragment literals are used within string interpolation to represent
-        literal text segments between interpolated expressions.
-      </P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="AEN722"
->Test Cases</A
-></H1
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="AEN724"
->Boolean Literals</A
-></H2
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN726"
-></A
-><TABLE
-BORDER="1"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><TT
-CLASS="literal"
->true</TT
-></TD
-><TD
-><TT
-CLASS="literal"
->true</TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->false</TT
-></TD
-><TD
-><TT
-CLASS="literal"
->false</TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="AEN745"
->Integer Literals</A
-></H2
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN747"
-></A
-><TABLE
-BORDER="1"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><TT
-CLASS="literal"
->42</TT
-></TD
-><TD
-><TT
-CLASS="literal"
->42</TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->0</TT
-></TD
-><TD
-><TT
-CLASS="literal"
->0</TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->-7</TT
-></TD
-><TD
-><TT
-CLASS="literal"
->-7</TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="AEN771"
->Hexadecimal Literals</A
-></H2
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN773"
-></A
-><TABLE
-BORDER="1"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><TT
-CLASS="literal"
->0xFF</TT
-></TD
-><TD
-><TT
-CLASS="literal"
->255</TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->0x1A</TT
-></TD
-><TD
-><TT
-CLASS="literal"
->26</TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->0x0</TT
-></TD
-><TD
-><TT
-CLASS="literal"
->0</TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="AEN797"
->Floating-Point Literals</A
-></H2
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN799"
-></A
-><TABLE
-BORDER="1"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><TT
-CLASS="literal"
->3.14</TT
-></TD
-><TD
-><TT
-CLASS="literal"
->3.14</TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->2.0</TT
-></TD
-><TD
-><TT
-CLASS="literal"
->2</TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->0.5</TT
-></TD
-><TD
-><TT
-CLASS="literal"
->0.5</TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="AEN823"
->String Literals</A
-></H2
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN825"
-></A
-><TABLE
-BORDER="1"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><TT
-CLASS="literal"
->"hello"</TT
-></TD
-><TD
-><TT
-CLASS="literal"
->hello</TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->""</TT
-></TD
-><TD
-><TT
-CLASS="literal"
-></TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="AEN844"
->Character Literals</A
-></H2
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN846"
-></A
-><TABLE
-BORDER="1"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><TT
-CLASS="literal"
->`a`</TT
-></TD
-><TD
-><TT
-CLASS="literal"
->a</TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->`Z`</TT
-></TD
-><TD
-><TT
-CLASS="literal"
->Z</TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
+>&#13;`a`           ; evaluates to a
+`Z`           ; evaluates to Z
+    </PRE
 ></DIV
 ></DIV
 ></DIV
