@@ -13,7 +13,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "build:browser": "esbuild src/index.ts --bundle --format=iife --global-name=Scaly --outfile=dist/scaly.browser.js",
+    "build:browser": "esbuild src/browser.ts --bundle --format=iife --global-name=Scaly --outfile=dist/scaly.browser.js",
     "build:all": "npm run build && npm run build:browser",
     "test": "vitest run"
   },
