@@ -17,13 +17,28 @@
     <para>
       "(tests-prose tests)"
     </para>
-    <programlisting>
+    <informaltable>
+      <tgroup cols='2'>
+        <colspec colwidth='1*'/>
+        <colspec colwidth='1*'/>
+        <thead>
+          <row>
+            <entry>Input</entry>
+            <entry>Result</entry>
+          </row>
+        </thead>
+        <tbody>
 "
         (apply-to-selected-children-of tests "test" (lambda (test) ($
-(test-input test)"           ; evaluates to "(test-expect test)"
+"          <row>
+            <entry><literal>"(test-input-doc test)"</literal></entry>
+            <entry><literal>"(test-expect-doc test)"</literal></entry>
+          </row>
 "
         )))
-"    </programlisting>
+"        </tbody>
+      </tgroup>
+    </informaltable>
   </section>
 "
     )))

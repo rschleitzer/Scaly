@@ -1,2 +1,2 @@
 #!/bin/bash
-openjade -G -t sgml -d codegen/test.dsl "$@"
+openjade -G -t sgml -d codegen/test.dsl tests.sgm
