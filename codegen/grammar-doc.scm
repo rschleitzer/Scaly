@@ -1,18 +1,20 @@
+<![CDATA[; grammar-doc.scm - Generate DocBook productionset from grammar
+
 (define (generate-grammar-doc) ($
-"&#60;productionset xmlns=\"http://docbook.org/ns/docbook\"&#62;
+"<productionset xmlns=\"http://docbook.org/ns/docbook\">
 "
     (apply-to-selected-children "syntax" (lambda (syntax-node) ($
 "
-  &#60;production xml:id=\"prod."(id syntax-node)"\"&#62;
-    &#60;lhs&#62;"(id syntax-node)"&#60;/lhs&#62;
-    &#60;rhs&#62;"
+  <production xml:id=\"prod."(id syntax-node)"\">
+    <lhs>"(id syntax-node)"</lhs>
+    <rhs>"
         (if (abstract? syntax-node)
             ; Abstract syntax - alternatives separated by |
             (let ((children-list (node-list->list (children syntax-node))))
                 (apply $ (map-with-index
                     (lambda (content idx) ($
                         (if (> idx 0) " | " "")
-                        "&#60;nonterminal def=\"prod."(link content)"\"&#62;"(link content)"&#60;/nonterminal&#62;"
+                        "<nonterminal def=\"prod."(link content)"\">"(link content)"</nonterminal>"
                     ))
                     children-list
                 ))
@@ -21,7 +23,7 @@
             (apply-to-children-of syntax-node (lambda (content) ($
                 (case (type content)
                     (("syntax") ($
-                        "&#60;nonterminal def=\"prod."(link content)"\"&#62;"(link content)"&#60;/nonterminal&#62;"
+                        "<nonterminal def=\"prod."(link content)"\">"(link content)"</nonterminal>"
                         (cond
                             ((and (multiple? content) (optional? content)) "*")
                             ((multiple? content) "+")
@@ -56,11 +58,11 @@
                 )
             )))
         )
-"&#60;/rhs&#62;
-  &#60;/production&#62;
+"</rhs>
+  </production>
 "   )))
 "
-&#60;/productionset&#62;
+</productionset>
 "
 ))
 
@@ -70,3 +72,4 @@
         (if (null? lst)
             (reverse result)
             (loop (cdr lst) (+ idx 1) (cons (proc (car lst) idx) result)))))
+]]>
