@@ -11,43 +11,43 @@ export interface Span {
 // === Constants ===
 
 export interface BooleanConstant {
-  _model: 'BooleanConstant'
+  _tag: 'BooleanConstant'
   span: Span
   value: boolean
 }
 
 export interface IntegerConstant {
-  _model: 'IntegerConstant'
+  _tag: 'IntegerConstant'
   span: Span
   value: number
 }
 
 export interface HexConstant {
-  _model: 'HexConstant'
+  _tag: 'HexConstant'
   span: Span
   value: number
 }
 
 export interface FloatingPointConstant {
-  _model: 'FloatingPointConstant'
+  _tag: 'FloatingPointConstant'
   span: Span
   value: number
 }
 
 export interface StringConstant {
-  _model: 'StringConstant'
+  _tag: 'StringConstant'
   span: Span
   value: string
 }
 
 export interface CharacterConstant {
-  _model: 'CharacterConstant'
+  _tag: 'CharacterConstant'
   span: Span
   value: string
 }
 
 export interface FragmentConstant {
-  _model: 'FragmentConstant'
+  _tag: 'FragmentConstant'
   span: Span
   value: string
 }
@@ -71,19 +71,19 @@ export interface Component {
 }
 
 export interface Tuple {
-  _model: 'Tuple'
+  _tag: 'Tuple'
   span: Span
   components: Component[]
 }
 
 export interface Matrix {
-  _model: 'Matrix'
+  _tag: 'Matrix'
   span: Span
   operations: Operand[][]
 }
 
 export interface Block {
-  _model: 'Block'
+  _tag: 'Block'
   span: Span
   statements: Statement[]
 }
@@ -91,27 +91,27 @@ export interface Block {
 // === Lifetime ===
 
 export interface UnspecifiedLifetime {
-  _model: 'Unspecified'
+  _tag: 'Unspecified'
 }
 
 export interface CallLifetime {
-  _model: 'Call'
+  _tag: 'Call'
   span: Span
 }
 
 export interface LocalLifetime {
-  _model: 'Local'
+  _tag: 'Local'
   span: Span
 }
 
 export interface ReferenceLifetime {
-  _model: 'Reference'
+  _tag: 'Reference'
   span: Span
   location: string
 }
 
 export interface ThrownLifetime {
-  _model: 'Thrown'
+  _tag: 'Thrown'
   span: Span
 }
 
@@ -125,7 +125,7 @@ export type Lifetime =
 // === Statements ===
 
 export interface Action {
-  _model: 'Action'
+  _tag: 'Action'
   source: Operand[]
   target: Operand[]
 }
@@ -139,7 +139,7 @@ export interface Item {
 }
 
 export interface Binding {
-  _model: 'Binding'
+  _tag: 'Binding'
   span: Span
   bindingType: string
   item: Item
@@ -147,24 +147,24 @@ export interface Binding {
 }
 
 export interface Break {
-  _model: 'Break'
+  _tag: 'Break'
   span: Span
   result: Operand[]
 }
 
 export interface Continue {
-  _model: 'Continue'
+  _tag: 'Continue'
   span: Span
 }
 
 export interface Return {
-  _model: 'Return'
+  _tag: 'Return'
   span: Span
   result: Operand[]
 }
 
 export interface Throw {
-  _model: 'Throw'
+  _tag: 'Throw'
   span: Span
   result: Operand[]
 }
@@ -180,7 +180,7 @@ export type Statement =
 // === Types ===
 
 export interface Type {
-  _model: 'Type'
+  _tag: 'Type'
   span: Span
   name: string[]
   generics: Type[] | null
@@ -201,7 +201,7 @@ export interface Property {
 // === Control Flow ===
 
 export interface If {
-  _model: 'If'
+  _tag: 'If'
   span: Span
   condition: Operand[]
   property: Property | null
@@ -221,7 +221,7 @@ export interface Branch {
 }
 
 export interface Match {
-  _model: 'Match'
+  _tag: 'Match'
   span: Span
   condition: Operand[]
   branches: Branch[]
@@ -236,7 +236,7 @@ export interface When {
 }
 
 export interface Choose {
-  _model: 'Choose'
+  _tag: 'Choose'
   span: Span
   condition: Operand[]
   cases: When[]
@@ -244,7 +244,7 @@ export interface Choose {
 }
 
 export interface For {
-  _model: 'For'
+  _tag: 'For'
   span: Span
   identifier: string
   expression: Operand[]
@@ -252,14 +252,14 @@ export interface For {
 }
 
 export interface While {
-  _model: 'While'
+  _tag: 'While'
   span: Span
   condition: Binding
   action: Action
 }
 
 export interface Try {
-  _model: 'Try'
+  _tag: 'Try'
   span: Span
   binding: Binding
   catches: When[]
@@ -269,13 +269,13 @@ export interface Try {
 // === Other Expressions ===
 
 export interface SizeOf {
-  _model: 'SizeOf'
+  _tag: 'SizeOf'
   span: Span
   type: Type
 }
 
 export interface Is {
-  _model: 'Is'
+  _tag: 'Is'
   span: Span
   name: string[]
 }
@@ -308,17 +308,17 @@ export interface Operand {
 // === Implementation ===
 
 export interface ExternImpl {
-  _model: 'Extern'
+  _tag: 'Extern'
   span: Span
 }
 
 export interface InstructionImpl {
-  _model: 'Instruction'
+  _tag: 'Instruction'
   span: Span
 }
 
 export interface IntrinsicImpl {
-  _model: 'Intrinsic'
+  _tag: 'Intrinsic'
   span: Span
 }
 
@@ -331,7 +331,7 @@ export type Implementation =
 // === Functions and Operators ===
 
 export interface Function {
-  _model: 'Function'
+  _tag: 'Function'
   span: Span
   private: boolean
   pure: boolean
@@ -344,7 +344,7 @@ export interface Function {
 }
 
 export interface Operator {
-  _model: 'Operator'
+  _tag: 'Operator'
   span: Span
   private: boolean
   name: string
@@ -357,7 +357,7 @@ export interface Operator {
 // === Attributes ===
 
 export interface VariableModel {
-  _model: 'Variable'
+  _tag: 'Variable'
   name: string
 }
 
@@ -403,7 +403,7 @@ export interface GenericParameter {
 }
 
 export interface Structure {
-  _model: 'Structure'
+  _tag: 'Structure'
   span: Span
   private: boolean
   properties: Property[]
@@ -416,7 +416,7 @@ export interface Structure {
 }
 
 export interface Union {
-  _model: 'Union'
+  _tag: 'Union'
   span: Span
   private: boolean
   variants: Variant[]
@@ -425,7 +425,7 @@ export interface Union {
 }
 
 export interface Namespace {
-  _model: 'Namespace'
+  _tag: 'Namespace'
   span: Span
   modules: Module[]
   members: Member[]
@@ -433,7 +433,7 @@ export interface Namespace {
 }
 
 export interface Global {
-  _model: 'Global'
+  _tag: 'Global'
   span: Span
   type: Type
   value: Operand[]
@@ -457,7 +457,7 @@ export interface Use {
 // === Concept ===
 
 export interface Concept {
-  _model: 'Concept'
+  _tag: 'Concept'
   span: Span
   name: string
   parameters: GenericParameter[]
@@ -488,7 +488,7 @@ export interface Program {
 // === Member Union ===
 
 export interface PackageMember {
-  _model: 'Package'
+  _tag: 'Package'
   modules: Module[]
 }
 
@@ -501,22 +501,22 @@ export type Member =
 // === Nameable Union ===
 
 export interface PackageNameable {
-  _model: 'Package'
+  _tag: 'Package'
   modules: Module[]
 }
 
 export interface FunctionsNameable {
-  _model: 'Functions'
+  _tag: 'Functions'
   functions: Function[]
 }
 
 export interface PropertyNameable {
-  _model: 'Property'
+  _tag: 'Property'
   property: Property
 }
 
 export interface VariantNameable {
-  _model: 'Variant'
+  _tag: 'Variant'
   variant: Variant
 }
 
