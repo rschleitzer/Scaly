@@ -1,0 +1,299 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Expressions</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="The Scaly Programming Language"
+HREF="index.html"><LINK
+REL="PREVIOUS"
+TITLE="Grammar"
+HREF="grammar.htm"><META
+HTTP-EQUIV="Content-Type"
+CONTENT="text/html; charset=UTF-8"></HEAD
+><BODY
+CLASS="chapter"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>The Scaly Programming Language</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="grammar.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+>&nbsp;</TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="chapter"
+><H1
+><A
+NAME="AEN674"
+></A
+>Chapter 4 Expressions</H1
+><DIV
+CLASS="TOC"
+><DL
+><DT
+><B
+>Table of Contents</B
+></DT
+><DT
+><A
+HREF="expressions.htm#AEN676"
+>Overview</A
+></DT
+><DT
+><A
+HREF="expressions.htm#AEN681"
+>Literal Expressions</A
+></DT
+><DT
+><A
+HREF="expressions.htm#AEN685"
+>Operator Expressions</A
+></DT
+><DT
+><A
+HREF="expressions.htm#AEN692"
+>Grouping</A
+></DT
+><DT
+><A
+HREF="expressions.htm#AEN698"
+>Function Application</A
+></DT
+></DL
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN676"
+>Overview</A
+></H1
+><P
+>&#13;      Expressions are the core computational units of Scaly. Every expression
+      evaluates to a value. Unlike many languages, Scaly uses postfix operators
+      and does not define operator precedence — evaluation order is always
+      explicit.
+    </P
+><DIV
+CLASS="note"
+><BLOCKQUOTE
+CLASS="note"
+><P
+><B
+>Note: </B
+>
+        This chapter will be expanded as expression support is implemented.
+        Currently, only literal expressions are fully supported.
+      </P
+></BLOCKQUOTE
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN681"
+>Literal Expressions</A
+></H1
+><P
+>&#13;      The simplest expressions are literals. A literal evaluates to itself.
+    </P
+><PRE
+CLASS="programlisting"
+>&#13;42              ; evaluates to 42
+"hello"         ; evaluates to "hello"
+true            ; evaluates to true
+    </PRE
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN685"
+>Operator Expressions</A
+></H1
+><P
+>&#13;      <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>Status: planned</I
+></SPAN
+>
+    </P
+><P
+>&#13;      Operators in Scaly are postfix: they follow their operands. This
+      eliminates precedence ambiguity entirely.
+    </P
+><PRE
+CLASS="programlisting"
+>&#13;; Planned syntax:
+3 4 +           ; addition: 7
+3 4 + 2 *       ; (3 + 4) * 2 = 14
+    </PRE
+><P
+>&#13;      Because operators are postfix, the evaluation order is always
+      left-to-right. No parentheses are needed to override precedence
+      because there is no precedence.
+    </P
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN692"
+>Grouping</A
+></H1
+><P
+>&#13;      <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>Status: planned</I
+></SPAN
+>
+    </P
+><P
+>&#13;      Parentheses can be used for grouping to change evaluation order
+      when needed.
+    </P
+><PRE
+CLASS="programlisting"
+>&#13;; Planned syntax:
+3 (4 2 *) +     ; 3 + (4 * 2) = 11
+    </PRE
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN698"
+>Function Application</A
+></H1
+><P
+>&#13;      <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>Status: planned</I
+></SPAN
+>
+    </P
+><P
+>&#13;      Functions are applied prefix-style: the function name precedes its
+      arguments.
+    </P
+><PRE
+CLASS="programlisting"
+>&#13;; Planned syntax:
+sqrt 16         ; function application: 4
+max 3 7         ; two-argument function: 7
+    </PRE
+><P
+>&#13;      The combination of prefix functions and postfix operators creates
+      a natural flow: data flows left-to-right through transformations.
+    </P
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="grammar.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>&nbsp;</TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Grammar</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>&nbsp;</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

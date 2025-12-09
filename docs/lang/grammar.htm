@@ -1,0 +1,3136 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Grammar</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="The Scaly Programming Language"
+HREF="index.html"><LINK
+REL="PREVIOUS"
+TITLE="Lexical Structure"
+HREF="lexical.htm"><LINK
+REL="NEXT"
+TITLE="Expressions"
+HREF="expressions.htm"><META
+HTTP-EQUIV="Content-Type"
+CONTENT="text/html; charset=UTF-8"></HEAD
+><BODY
+CLASS="chapter"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>The Scaly Programming Language</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="lexical.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="expressions.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="chapter"
+><H1
+><A
+NAME="AEN106"
+></A
+>Chapter 3 Grammar</H1
+><P
+>&#13;    This chapter presents the complete grammar of the Scaly programming language
+    in a formal notation. Each production defines a syntactic construct, with
+    nonterminals linking to their definitions.
+  </P
+><P
+>&#13;    Notation:
+  </P
+><P
+></P
+><UL
+><LI
+><P
+><SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>identifier</I
+></SPAN
+>, <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>literal</I
+></SPAN
+> — terminal symbols from the lexer</P
+></LI
+><LI
+><P
+><TT
+CLASS="literal"
+>'keyword'</TT
+> — keyword terminals</P
+></LI
+><LI
+><P
+><TT
+CLASS="literal"
+>X | Y</TT
+> — alternatives</P
+></LI
+><LI
+><P
+><TT
+CLASS="literal"
+>X?</TT
+> — optional</P
+></LI
+><LI
+><P
+><TT
+CLASS="literal"
+>X+</TT
+> — one or more</P
+></LI
+><LI
+><P
+><TT
+CLASS="literal"
+>X*</TT
+> — zero or more</P
+></LI
+></UL
+><TABLE
+CLASS="productionset"
+BORDER="0"
+CELLSPACING="0"
+CELLPADDING="4"
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Program"
+></A
+><B
+>Program</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+><A
+HREF="#prod.File"
+><I
+>File</I
+></A
+> <A
+HREF="#prod.Statement"
+><I
+>Statement</I
+></A
+>* </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.File"
+></A
+><B
+>File</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+><A
+HREF="#prod.Package"
+><I
+>Package</I
+></A
+>* <A
+HREF="#prod.Use"
+><I
+>Use</I
+></A
+>* <A
+HREF="#prod.Declaration"
+><I
+>Declaration</I
+></A
+>* </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Declaration"
+></A
+><B
+>Declaration</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+><A
+HREF="#prod.Symbol"
+><I
+>Symbol</I
+></A
+> ':'? </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Symbol"
+></A
+><B
+>Symbol</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+><A
+HREF="#prod.Private"
+><I
+>Private</I
+></A
+> | <A
+HREF="#prod.Definition"
+><I
+>Definition</I
+></A
+> | <A
+HREF="#prod.Function"
+><I
+>Function</I
+></A
+> | <A
+HREF="#prod.Operator"
+><I
+>Operator</I
+></A
+> | <A
+HREF="#prod.Trait"
+><I
+>Trait</I
+></A
+> | <A
+HREF="#prod.Macro"
+><I
+>Macro</I
+></A
+> | <A
+HREF="#prod.Module"
+><I
+>Module</I
+></A
+></TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Private"
+></A
+><B
+>Private</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'private' <A
+HREF="#prod.Export"
+><I
+>Export</I
+></A
+> </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Export"
+></A
+><B
+>Export</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+><A
+HREF="#prod.Definition"
+><I
+>Definition</I
+></A
+> | <A
+HREF="#prod.Function"
+><I
+>Function</I
+></A
+> | <A
+HREF="#prod.Operator"
+><I
+>Operator</I
+></A
+> | <A
+HREF="#prod.Trait"
+><I
+>Trait</I
+></A
+> | <A
+HREF="#prod.Module"
+><I
+>Module</I
+></A
+></TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Member"
+></A
+><B
+>Member</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+><A
+HREF="#prod.Constituent"
+><I
+>Constituent</I
+></A
+> ':'? </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Constituent"
+></A
+><B
+>Constituent</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+><A
+HREF="#prod.Definition"
+><I
+>Definition</I
+></A
+> | <A
+HREF="#prod.Function"
+><I
+>Function</I
+></A
+> | <A
+HREF="#prod.Procedure"
+><I
+>Procedure</I
+></A
+> | <A
+HREF="#prod.Operator"
+><I
+>Operator</I
+></A
+> | <A
+HREF="#prod.Implement"
+><I
+>Implement</I
+></A
+> | <A
+HREF="#prod.Trait"
+><I
+>Trait</I
+></A
+> | <A
+HREF="#prod.Macro"
+><I
+>Macro</I
+></A
+> | <A
+HREF="#prod.Module"
+><I
+>Module</I
+></A
+></TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Definition"
+></A
+><B
+>Definition</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'define' IDENTIFIER <A
+HREF="#prod.GenericParameters"
+><I
+>GenericParameters</I
+></A
+>? ':'? <A
+HREF="#prod.Attribute"
+><I
+>Attribute</I
+></A
+>* <A
+HREF="#prod.Concept"
+><I
+>Concept</I
+></A
+> </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.GenericParameters"
+></A
+><B
+>GenericParameters</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'[' <A
+HREF="#prod.GenericParameter"
+><I
+>GenericParameter</I
+></A
+>+ ']' </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.GenericParameter"
+></A
+><B
+>GenericParameter</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>IDENTIFIER <A
+HREF="#prod.Attribute"
+><I
+>Attribute</I
+></A
+>* ',' </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Concept"
+></A
+><B
+>Concept</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+><A
+HREF="#prod.Class"
+><I
+>Class</I
+></A
+> | <A
+HREF="#prod.Namespace"
+><I
+>Namespace</I
+></A
+> | <A
+HREF="#prod.Union"
+><I
+>Union</I
+></A
+> | <A
+HREF="#prod.Constant"
+><I
+>Constant</I
+></A
+> | <A
+HREF="#prod.Delegate"
+><I
+>Delegate</I
+></A
+> | <A
+HREF="#prod.Intrinsic"
+><I
+>Intrinsic</I
+></A
+></TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Class"
+></A
+><B
+>Class</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+><A
+HREF="#prod.Structure"
+><I
+>Structure</I
+></A
+> ':'? <A
+HREF="#prod.Body"
+><I
+>Body</I
+></A
+>? ':'? </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Body"
+></A
+><B
+>Body</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'{' <A
+HREF="#prod.Use"
+><I
+>Use</I
+></A
+>* <A
+HREF="#prod.Init"
+><I
+>Init</I
+></A
+>* <A
+HREF="#prod.DeInit"
+><I
+>DeInit</I
+></A
+>? <A
+HREF="#prod.Member"
+><I
+>Member</I
+></A
+>* '}' ':'? </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Namespace"
+></A
+><B
+>Namespace</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'{' <A
+HREF="#prod.Use"
+><I
+>Use</I
+></A
+>* <A
+HREF="#prod.Declaration"
+><I
+>Declaration</I
+></A
+>* '}' ':'? </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Union"
+></A
+><B
+>Union</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'union' ':'? '(' <A
+HREF="#prod.Variant"
+><I
+>Variant</I
+></A
+>+ ')' ':'? <A
+HREF="#prod.Body"
+><I
+>Body</I
+></A
+>? ':'? </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Variant"
+></A
+><B
+>Variant</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>IDENTIFIER <A
+HREF="#prod.Attribute"
+><I
+>Attribute</I
+></A
+>* <A
+HREF="#prod.TypeAnnotation"
+><I
+>TypeAnnotation</I
+></A
+>? ',' ':'? </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Constant"
+></A
+><B
+>Constant</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+><A
+HREF="#prod.Type"
+><I
+>Type</I
+></A
+> <A
+HREF="#prod.Operand"
+><I
+>Operand</I
+></A
+>* ':'? </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Delegate"
+></A
+><B
+>Delegate</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'delegate' <A
+HREF="#prod.ParameterSet"
+><I
+>ParameterSet</I
+></A
+>? <A
+HREF="#prod.Attribute"
+><I
+>Attribute</I
+></A
+>* <A
+HREF="#prod.Returns"
+><I
+>Returns</I
+></A
+>? <A
+HREF="#prod.Throws"
+><I
+>Throws</I
+></A
+>? </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.GenericArguments"
+></A
+><B
+>GenericArguments</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'[' <A
+HREF="#prod.GenericArgument"
+><I
+>GenericArgument</I
+></A
+>* ']' </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.GenericArgument"
+></A
+><B
+>GenericArgument</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+><A
+HREF="#prod.Type"
+><I
+>Type</I
+></A
+> ',' </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Optional"
+></A
+><B
+>Optional</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'?' </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.ParameterSet"
+></A
+><B
+>ParameterSet</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+><A
+HREF="#prod.Parameters"
+><I
+>Parameters</I
+></A
+> | <A
+HREF="#prod.Type"
+><I
+>Type</I
+></A
+></TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Parameters"
+></A
+><B
+>Parameters</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'(' <A
+HREF="#prod.Item"
+><I
+>Item</I
+></A
+>* ')' </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Item"
+></A
+><B
+>Item</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>IDENTIFIER <A
+HREF="#prod.TypeAnnotation"
+><I
+>TypeAnnotation</I
+></A
+>? ',' ':'? <A
+HREF="#prod.Attribute"
+><I
+>Attribute</I
+></A
+>* ':'? </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Returns"
+></A
+><B
+>Returns</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'returns' <A
+HREF="#prod.Type"
+><I
+>Type</I
+></A
+> <A
+HREF="#prod.Attribute"
+><I
+>Attribute</I
+></A
+>* </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Throws"
+></A
+><B
+>Throws</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'throws' <A
+HREF="#prod.Type"
+><I
+>Type</I
+></A
+> <A
+HREF="#prod.Attribute"
+><I
+>Attribute</I
+></A
+>* </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Use"
+></A
+><B
+>Use</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'use' <A
+HREF="#prod.Name"
+><I
+>Name</I
+></A
+> ':'? </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Implement"
+></A
+><B
+>Implement</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'implement' <A
+HREF="#prod.Type"
+><I
+>Type</I
+></A
+> <A
+HREF="#prod.Attribute"
+><I
+>Attribute</I
+></A
+>* ':'? '{' <A
+HREF="#prod.Use"
+><I
+>Use</I
+></A
+>* <A
+HREF="#prod.Method"
+><I
+>Method</I
+></A
+>* '}' ':'? </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Trait"
+></A
+><B
+>Trait</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'trait' <A
+HREF="#prod.Name"
+><I
+>Name</I
+></A
+> <A
+HREF="#prod.Extends"
+><I
+>Extends</I
+></A
+>? <A
+HREF="#prod.Attribute"
+><I
+>Attribute</I
+></A
+>* '{' <A
+HREF="#prod.Use"
+><I
+>Use</I
+></A
+>* <A
+HREF="#prod.Method"
+><I
+>Method</I
+></A
+>* '}' ':'? </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Method"
+></A
+><B
+>Method</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+><A
+HREF="#prod.Function"
+><I
+>Function</I
+></A
+> | <A
+HREF="#prod.Procedure"
+><I
+>Procedure</I
+></A
+> | <A
+HREF="#prod.Operator"
+><I
+>Operator</I
+></A
+></TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Init"
+></A
+><B
+>Init</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'init' <A
+HREF="#prod.ParameterSet"
+><I
+>ParameterSet</I
+></A
+>? ':'? <A
+HREF="#prod.Action"
+><I
+>Action</I
+></A
+> ':'? </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.DeInit"
+></A
+><B
+>DeInit</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'deinit' ':'? <A
+HREF="#prod.Action"
+><I
+>Action</I
+></A
+> ':'? </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Function"
+></A
+><B
+>Function</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'function' <A
+HREF="#prod.Target"
+><I
+>Target</I
+></A
+> </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Procedure"
+></A
+><B
+>Procedure</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'procedure' <A
+HREF="#prod.Target"
+><I
+>Target</I
+></A
+> </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Operator"
+></A
+><B
+>Operator</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'operator' <A
+HREF="#prod.Target"
+><I
+>Target</I
+></A
+> </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Target"
+></A
+><B
+>Target</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+><A
+HREF="#prod.Named"
+><I
+>Named</I
+></A
+> | <A
+HREF="#prod.Routine"
+><I
+>Routine</I
+></A
+></TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Named"
+></A
+><B
+>Named</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>IDENTIFIER <A
+HREF="#prod.Routine"
+><I
+>Routine</I
+></A
+> </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Routine"
+></A
+><B
+>Routine</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+><A
+HREF="#prod.GenericArguments"
+><I
+>GenericArguments</I
+></A
+>? <A
+HREF="#prod.Lifetime"
+><I
+>Lifetime</I
+></A
+>? <A
+HREF="#prod.ParameterSet"
+><I
+>ParameterSet</I
+></A
+>? <A
+HREF="#prod.Attribute"
+><I
+>Attribute</I
+></A
+>* <A
+HREF="#prod.Returns"
+><I
+>Returns</I
+></A
+>? ':'? <A
+HREF="#prod.Throws"
+><I
+>Throws</I
+></A
+>? ':'? <A
+HREF="#prod.Implementation"
+><I
+>Implementation</I
+></A
+> </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Implementation"
+></A
+><B
+>Implementation</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+><A
+HREF="#prod.Action"
+><I
+>Action</I
+></A
+> | <A
+HREF="#prod.Extern"
+><I
+>Extern</I
+></A
+> | <A
+HREF="#prod.Instruction"
+><I
+>Instruction</I
+></A
+> | <A
+HREF="#prod.Intrinsic"
+><I
+>Intrinsic</I
+></A
+></TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Extern"
+></A
+><B
+>Extern</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'extern' </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Instruction"
+></A
+><B
+>Instruction</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'instruction' ':'? </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Intrinsic"
+></A
+><B
+>Intrinsic</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'intrinsic' ':'? </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Extends"
+></A
+><B
+>Extends</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'extends' <A
+HREF="#prod.Extend"
+><I
+>Extend</I
+></A
+>* </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Extend"
+></A
+><B
+>Extend</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+><A
+HREF="#prod.Type"
+><I
+>Type</I
+></A
+> ',' </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Macro"
+></A
+><B
+>Macro</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'macro' IDENTIFIER <A
+HREF="#prod.Model"
+><I
+>Model</I
+></A
+> <A
+HREF="#prod.Operand"
+><I
+>Operand</I
+></A
+>+ </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Attribute"
+></A
+><B
+>Attribute</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>ATTRIBUTE <A
+HREF="#prod.Model"
+><I
+>Model</I
+></A
+> ':'? </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Model"
+></A
+><B
+>Model</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+><A
+HREF="#prod.Literal"
+><I
+>Literal</I
+></A
+> | <A
+HREF="#prod.Name"
+><I
+>Name</I
+></A
+> | <A
+HREF="#prod.Object"
+><I
+>Object</I
+></A
+> | <A
+HREF="#prod.Vector"
+><I
+>Vector</I
+></A
+></TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Module"
+></A
+><B
+>Module</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'module' IDENTIFIER ':'? </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Package"
+></A
+><B
+>Package</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'package' <A
+HREF="#prod.Name"
+><I
+>Name</I
+></A
+> ':'? </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Initializer"
+></A
+><B
+>Initializer</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'(' <A
+HREF="#prod.Operand"
+><I
+>Operand</I
+></A
+>+ ')' </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Operand"
+></A
+><B
+>Operand</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+><A
+HREF="#prod.Expression"
+><I
+>Expression</I
+></A
+> <A
+HREF="#prod.MemberAccess"
+><I
+>MemberAccess</I
+></A
+>* </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.MemberAccess"
+></A
+><B
+>MemberAccess</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'.' <A
+HREF="#prod.Name"
+><I
+>Name</I
+></A
+> </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Expression"
+></A
+><B
+>Expression</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+><A
+HREF="#prod.Literal"
+><I
+>Literal</I
+></A
+> | <A
+HREF="#prod.Type"
+><I
+>Type</I
+></A
+> | <A
+HREF="#prod.Object"
+><I
+>Object</I
+></A
+> | <A
+HREF="#prod.Vector"
+><I
+>Vector</I
+></A
+> | <A
+HREF="#prod.Block"
+><I
+>Block</I
+></A
+> | <A
+HREF="#prod.If"
+><I
+>If</I
+></A
+> | <A
+HREF="#prod.Match"
+><I
+>Match</I
+></A
+> | <A
+HREF="#prod.Lambda"
+><I
+>Lambda</I
+></A
+> | <A
+HREF="#prod.For"
+><I
+>For</I
+></A
+> | <A
+HREF="#prod.While"
+><I
+>While</I
+></A
+> | <A
+HREF="#prod.Choose"
+><I
+>Choose</I
+></A
+> | <A
+HREF="#prod.Try"
+><I
+>Try</I
+></A
+> | <A
+HREF="#prod.Repeat"
+><I
+>Repeat</I
+></A
+> | <A
+HREF="#prod.SizeOf"
+><I
+>SizeOf</I
+></A
+> | <A
+HREF="#prod.Is"
+><I
+>Is</I
+></A
+></TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Literal"
+></A
+><B
+>Literal</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>LITERAL </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Object"
+></A
+><B
+>Object</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'(' <A
+HREF="#prod.Component"
+><I
+>Component</I
+></A
+>* ')' </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Component"
+></A
+><B
+>Component</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+><A
+HREF="#prod.Operand"
+><I
+>Operand</I
+></A
+>+ <A
+HREF="#prod.Attribute"
+><I
+>Attribute</I
+></A
+>* <A
+HREF="#prod.Value"
+><I
+>Value</I
+></A
+>? ',' </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Value"
+></A
+><B
+>Value</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>':' <A
+HREF="#prod.Operand"
+><I
+>Operand</I
+></A
+>+ <A
+HREF="#prod.Attribute"
+><I
+>Attribute</I
+></A
+>* </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Vector"
+></A
+><B
+>Vector</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'[' <A
+HREF="#prod.Element"
+><I
+>Element</I
+></A
+>+ ']' <A
+HREF="#prod.Lifetime"
+><I
+>Lifetime</I
+></A
+>? </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Element"
+></A
+><B
+>Element</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+><A
+HREF="#prod.Operand"
+><I
+>Operand</I
+></A
+>+ <A
+HREF="#prod.Attribute"
+><I
+>Attribute</I
+></A
+>* ',' </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Block"
+></A
+><B
+>Block</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'{' <A
+HREF="#prod.Use"
+><I
+>Use</I
+></A
+>* <A
+HREF="#prod.Statement"
+><I
+>Statement</I
+></A
+>* '}' </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.If"
+></A
+><B
+>If</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'if' <A
+HREF="#prod.Operand"
+><I
+>Operand</I
+></A
+>+ ':' <A
+HREF="#prod.Command"
+><I
+>Command</I
+></A
+> <A
+HREF="#prod.Else"
+><I
+>Else</I
+></A
+>? </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Else"
+></A
+><B
+>Else</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'else' ':'? <A
+HREF="#prod.Command"
+><I
+>Command</I
+></A
+> </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Match"
+></A
+><B
+>Match</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'match' <A
+HREF="#prod.Operand"
+><I
+>Operand</I
+></A
+>+ ':' <A
+HREF="#prod.Branch"
+><I
+>Branch</I
+></A
+>+ <A
+HREF="#prod.Else"
+><I
+>Else</I
+></A
+>? </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Branch"
+></A
+><B
+>Branch</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+><A
+HREF="#prod.Case"
+><I
+>Case</I
+></A
+>+ ':' <A
+HREF="#prod.Statement"
+><I
+>Statement</I
+></A
+> </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Case"
+></A
+><B
+>Case</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'case' <A
+HREF="#prod.Operand"
+><I
+>Operand</I
+></A
+>+ </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Statement"
+></A
+><B
+>Statement</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+><A
+HREF="#prod.Command"
+><I
+>Command</I
+></A
+> ':'? </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.While"
+></A
+><B
+>While</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'while' <A
+HREF="#prod.Condition"
+><I
+>Condition</I
+></A
+> ':' <A
+HREF="#prod.Label"
+><I
+>Label</I
+></A
+>? <A
+HREF="#prod.Action"
+><I
+>Action</I
+></A
+> </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Choose"
+></A
+><B
+>Choose</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'choose' <A
+HREF="#prod.Operand"
+><I
+>Operand</I
+></A
+>+ ':' <A
+HREF="#prod.When"
+><I
+>When</I
+></A
+>* <A
+HREF="#prod.Else"
+><I
+>Else</I
+></A
+>? </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Try"
+></A
+><B
+>Try</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'try' <A
+HREF="#prod.Condition"
+><I
+>Condition</I
+></A
+> ':' <A
+HREF="#prod.When"
+><I
+>When</I
+></A
+>* <A
+HREF="#prod.Else"
+><I
+>Else</I
+></A
+>? </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Condition"
+></A
+><B
+>Condition</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+><A
+HREF="#prod.Operation"
+><I
+>Operation</I
+></A
+> | <A
+HREF="#prod.Let"
+><I
+>Let</I
+></A
+></TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.When"
+></A
+><B
+>When</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'when' IDENTIFIER ':' <A
+HREF="#prod.Name"
+><I
+>Name</I
+></A
+> ':'? <A
+HREF="#prod.Command"
+><I
+>Command</I
+></A
+> ':'? </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Command"
+></A
+><B
+>Command</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+><A
+HREF="#prod.Operation"
+><I
+>Operation</I
+></A
+> | <A
+HREF="#prod.Let"
+><I
+>Let</I
+></A
+> | <A
+HREF="#prod.Var"
+><I
+>Var</I
+></A
+> | <A
+HREF="#prod.Mutable"
+><I
+>Mutable</I
+></A
+> | <A
+HREF="#prod.Set"
+><I
+>Set</I
+></A
+> | <A
+HREF="#prod.Continue"
+><I
+>Continue</I
+></A
+> | <A
+HREF="#prod.Break"
+><I
+>Break</I
+></A
+> | <A
+HREF="#prod.Return"
+><I
+>Return</I
+></A
+> | <A
+HREF="#prod.Throw"
+><I
+>Throw</I
+></A
+></TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Let"
+></A
+><B
+>Let</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'let' <A
+HREF="#prod.Binding"
+><I
+>Binding</I
+></A
+> </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Var"
+></A
+><B
+>Var</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'var' <A
+HREF="#prod.Binding"
+><I
+>Binding</I
+></A
+> </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Mutable"
+></A
+><B
+>Mutable</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'mutable' <A
+HREF="#prod.Binding"
+><I
+>Binding</I
+></A
+> </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Binding"
+></A
+><B
+>Binding</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>IDENTIFIER <A
+HREF="#prod.BindingAnnotation"
+><I
+>BindingAnnotation</I
+></A
+>? <A
+HREF="#prod.Operand"
+><I
+>Operand</I
+></A
+>+ </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.BindingAnnotation"
+></A
+><B
+>BindingAnnotation</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>':' <A
+HREF="#prod.BindingSpec"
+><I
+>BindingSpec</I
+></A
+> </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.BindingSpec"
+></A
+><B
+>BindingSpec</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+><A
+HREF="#prod.Structure"
+><I
+>Structure</I
+></A
+> | <A
+HREF="#prod.Type"
+><I
+>Type</I
+></A
+> | <A
+HREF="#prod.Array"
+><I
+>Array</I
+></A
+></TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Array"
+></A
+><B
+>Array</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'[' <A
+HREF="#prod.Type"
+><I
+>Type</I
+></A
+>* ']' </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Structure"
+></A
+><B
+>Structure</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'(' <A
+HREF="#prod.Part"
+><I
+>Part</I
+></A
+>* ')' </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Part"
+></A
+><B
+>Part</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+><A
+HREF="#prod.Field"
+><I
+>Field</I
+></A
+> | <A
+HREF="#prod.Property"
+><I
+>Property</I
+></A
+></TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Field"
+></A
+><B
+>Field</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'private' <A
+HREF="#prod.Property"
+><I
+>Property</I
+></A
+> </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Property"
+></A
+><B
+>Property</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>IDENTIFIER <A
+HREF="#prod.TypeAnnotation"
+><I
+>TypeAnnotation</I
+></A
+> <A
+HREF="#prod.Initializer"
+><I
+>Initializer</I
+></A
+>? ',' ':'? <A
+HREF="#prod.Attribute"
+><I
+>Attribute</I
+></A
+>* ':'? </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.TypeAnnotation"
+></A
+><B
+>TypeAnnotation</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>':' <A
+HREF="#prod.Type"
+><I
+>Type</I
+></A
+> </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Continue"
+></A
+><B
+>Continue</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'continue' <A
+HREF="#prod.Loop"
+><I
+>Loop</I
+></A
+>? ':'? </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Break"
+></A
+><B
+>Break</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'break' <A
+HREF="#prod.Loop"
+><I
+>Loop</I
+></A
+>? <A
+HREF="#prod.Operand"
+><I
+>Operand</I
+></A
+>* ':'? </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Loop"
+></A
+><B
+>Loop</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'loop' IDENTIFIER </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Return"
+></A
+><B
+>Return</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'return' <A
+HREF="#prod.Operand"
+><I
+>Operand</I
+></A
+>* </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Throw"
+></A
+><B
+>Throw</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'throw' <A
+HREF="#prod.Operand"
+><I
+>Operand</I
+></A
+>* </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Lambda"
+></A
+><B
+>Lambda</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'lambda' <A
+HREF="#prod.Operand"
+><I
+>Operand</I
+></A
+>+ ':' <A
+HREF="#prod.Action"
+><I
+>Action</I
+></A
+> </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.For"
+></A
+><B
+>For</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'for' IDENTIFIER <A
+HREF="#prod.TypeAnnotation"
+><I
+>TypeAnnotation</I
+></A
+>? 'in' <A
+HREF="#prod.Operand"
+><I
+>Operand</I
+></A
+>+ ':' <A
+HREF="#prod.Label"
+><I
+>Label</I
+></A
+>? <A
+HREF="#prod.Action"
+><I
+>Action</I
+></A
+> </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Label"
+></A
+><B
+>Label</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'label' IDENTIFIER ':'? </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Repeat"
+></A
+><B
+>Repeat</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'repeat' <A
+HREF="#prod.Label"
+><I
+>Label</I
+></A
+>? <A
+HREF="#prod.Action"
+><I
+>Action</I
+></A
+> </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Action"
+></A
+><B
+>Action</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+><A
+HREF="#prod.Operation"
+><I
+>Operation</I
+></A
+> | <A
+HREF="#prod.Set"
+><I
+>Set</I
+></A
+></TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Operation"
+></A
+><B
+>Operation</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+><A
+HREF="#prod.Operand"
+><I
+>Operand</I
+></A
+>+ </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Set"
+></A
+><B
+>Set</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'set' <A
+HREF="#prod.Operand"
+><I
+>Operand</I
+></A
+>+ ':' <A
+HREF="#prod.Operand"
+><I
+>Operand</I
+></A
+>+ </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.SizeOf"
+></A
+><B
+>SizeOf</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'sizeof' <A
+HREF="#prod.Type"
+><I
+>Type</I
+></A
+> </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Is"
+></A
+><B
+>Is</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'is' <A
+HREF="#prod.Name"
+><I
+>Name</I
+></A
+> </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Type"
+></A
+><B
+>Type</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+><A
+HREF="#prod.Name"
+><I
+>Name</I
+></A
+> <A
+HREF="#prod.GenericArguments"
+><I
+>GenericArguments</I
+></A
+>? <A
+HREF="#prod.Optional"
+><I
+>Optional</I
+></A
+>? <A
+HREF="#prod.Lifetime"
+><I
+>Lifetime</I
+></A
+>? </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Name"
+></A
+><B
+>Name</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>IDENTIFIER <A
+HREF="#prod.Extension"
+><I
+>Extension</I
+></A
+>* </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Extension"
+></A
+><B
+>Extension</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'.' IDENTIFIER </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Lifetime"
+></A
+><B
+>Lifetime</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+><A
+HREF="#prod.Call"
+><I
+>Call</I
+></A
+> | <A
+HREF="#prod.Local"
+><I
+>Local</I
+></A
+> | <A
+HREF="#prod.Reference"
+><I
+>Reference</I
+></A
+> | <A
+HREF="#prod.Thrown"
+><I
+>Thrown</I
+></A
+></TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Call"
+></A
+><B
+>Call</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'#' </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Local"
+></A
+><B
+>Local</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'$' </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Reference"
+></A
+><B
+>Reference</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'^' IDENTIFIER </TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+ALIGN="RIGHT"
+><A
+NAME="prod.Thrown"
+></A
+><B
+>Thrown</B
+></TD
+><TD
+VALIGN="TOP"
+> ::= </TD
+><TD
+VALIGN="TOP"
+>'!' </TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="lexical.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="expressions.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Lexical Structure</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Expressions</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

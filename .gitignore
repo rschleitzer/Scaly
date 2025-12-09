@@ -46,3 +46,7 @@ dist/
 client/server
 .vscode-test
 tsconfig.tsbuildinfo
+
+# Documentation build artifacts
+*.fot
+output/

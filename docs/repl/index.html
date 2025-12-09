@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scaly REPL</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #fafaf9;
+            --text: #1c1917;
+            --text-muted: #78716c;
+            --accent: #059669;
+            --accent-soft: #d1fae5;
+            --border: #e7e5e4;
+            --card-bg: #ffffff;
+            --code-bg: #1c1917;
+            --code-text: #e7e5e4;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 48px 24px;
+        }
+
+        .header {
+            margin-bottom: 32px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .logo-icon {
+            font-size: 28px;
+            line-height: 1;
+        }
+
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 500;
+            letter-spacing: -0.02em;
+        }
+
+        .logo-tld {
+            color: var(--text-muted);
+            font-weight: 300;
+        }
+
+        .tagline {
+            font-size: 1rem;
+            color: var(--text-muted);
+            font-weight: 300;
+        }
+
+        .repl-container {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .repl-header {
+            background: var(--code-bg);
+            color: var(--code-text);
+            padding: 12px 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .repl-status {
+            color: var(--accent);
+        }
+
+        .mode-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .mode-btn {
+            background: transparent;
+            border: 1px solid #374151;
+            color: #9ca3af;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .mode-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .mode-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .repl-output {
+            background: var(--code-bg);
+            color: var(--code-text);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            padding: 16px;
+            min-height: 300px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .output-line {
+            margin-bottom: 8px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .output-line.input {
+            color: #a8a29e;
+        }
+
+        .output-line.input::before {
+            content: "> ";
+            color: var(--accent);
+        }
+
+        .output-line.result {
+            color: #fef3c7;
+        }
+
+        .output-line.error {
+            color: #fca5a5;
+        }
+
+        .output-line.info {
+            color: #93c5fd;
+        }
+
+        .output-line.tokens {
+            color: #c4b5fd;
+        }
+
+        .output-line.ast {
+            color: #86efac;
+        }
+
+        .output-line.model {
+            color: #fcd34d;
+        }
+
+        .repl-input-container {
+            display: flex;
+            border-top: 1px solid #374151;
+            background: var(--code-bg);
+        }
+
+        .repl-prompt {
+            color: var(--accent);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            padding: 12px;
+            padding-right: 0;
+        }
+
+        .repl-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--code-text);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            padding: 12px;
+            outline: none;
+        }
+
+        .repl-input::placeholder {
+            color: #57534e;
+        }
+
+        .help-section {
+            margin-top: 24px;
+            padding: 16px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+
+        .help-section h3 {
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 12px;
+            color: var(--text-muted);
+        }
+
+        .help-examples {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .help-example {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            background: var(--accent-soft);
+            color: var(--accent);
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .help-example:hover {
+            background: var(--accent);
+            color: white;
+        }
+
+        .footer {
+            margin-top: 32px;
+            text-align: center;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .footer a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <main class="container">
+        <header class="header">
+            <a href="/" class="logo">
+                <div class="logo-icon">🦎</div>
+                <span class="logo-text">scaly<span class="logo-tld">.io</span></span>
+            </a>
+            <p class="tagline">Interactive REPL — try Scaly in your browser</p>
+        </header>
+
+        <div class="repl-container">
+            <div class="repl-header">
+                <span>Scaly REPL v0.2</span>
+                <div class="mode-buttons">
+                    <button class="mode-btn" data-mode="lex">Lex</button>
+                    <button class="mode-btn" data-mode="parse">Parse</button>
+                    <button class="mode-btn" data-mode="model">Model</button>
+                    <button class="mode-btn active" data-mode="eval">Eval</button>
+                </div>
+            </div>
+            <div class="repl-output" id="output">
+                <div class="output-line info">Welcome to the Scaly REPL!</div>
+                <div class="output-line info">Modes: Lex (tokens), Parse (AST), Model (semantic), Eval (evaluate)</div>
+                <div class="output-line info">Try typing an expression below.</div>
+            </div>
+            <div class="repl-input-container">
+                <span class="repl-prompt">&gt;</span>
+                <input type="text" class="repl-input" id="input" placeholder="Enter a Scaly expression..." autofocus>
+            </div>
+        </div>
+
+        <div class="help-section">
+            <h3>Try these examples:</h3>
+            <div class="help-examples">
+                <span class="help-example" data-code="42">42</span>
+                <span class="help-example" data-code="3.14159">3.14159</span>
+                <span class="help-example" data-code="0xFF">0xFF</span>
+                <span class="help-example" data-code='"Hello, World!"'>"Hello"</span>
+                <span class="help-example" data-code="1 + 2">1 + 2</span>
+                <span class="help-example" data-code="foo bar">foo bar</span>
+                <span class="help-example" data-code="0B1">0B1</span>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <a href="/lang/">Language Specification</a> · <a href="/">Home</a>
+        </footer>
+    </main>
+
+    <script src="scaly.browser.js"></script>
+    <script>
+    // REPL State
+    let mode = 'eval';
+    const output = document.getElementById('output');
+    const input = document.getElementById('input');
+
+    // Format helpers
+    function formatTokens(input) {
+        const lexer = new Scaly.Lexer(input);
+        const tokens = [];
+        while (!lexer.isAtEnd()) {
+            lexer.advance();
+            const t = lexer.token;
+            if (t._tag === 'Empty') break;
+            switch (t._tag) {
+                case 'Identifier': tokens.push(`Identifier(${t.name})`); break;
+                case 'Attribute': tokens.push(`Attribute(${t.name})`); break;
+                case 'Punctuation': tokens.push(`Punctuation(${t.sign})`); break;
+                case 'String': tokens.push(`String("${t.value}")`); break;
+                case 'Character': tokens.push(`Character('${t.value}')`); break;
+                case 'Fragment': tokens.push(`Fragment(\`${t.value}\`)`); break;
+                case 'Integer': tokens.push(`Integer(${t.value})`); break;
+                case 'FloatingPoint': tokens.push(`Float(${t.value})`); break;
+                case 'Hex': tokens.push(`Hex(${t.value})`); break;
+                case 'Boolean': tokens.push(`Boolean(${t.value})`); break;
+                case 'Colon': tokens.push('Colon'); break;
+                case 'Invalid': tokens.push('Invalid'); break;
+            }
+        }
+        return tokens.join(' ');
+    }
+
+    function formatSyntax(obj, indent = 0) {
+        const pad = '  '.repeat(indent);
+        if (obj === null || obj === undefined) return `${pad}null`;
+        if (typeof obj !== 'object') return `${pad}${JSON.stringify(obj)}`;
+        if (Array.isArray(obj)) {
+            if (obj.length === 0) return `${pad}[]`;
+            return `${pad}[\n${obj.map(item => formatSyntax(item, indent + 1)).join(',\n')}\n${pad}]`;
+        }
+        const syntaxTag = obj._syntax;
+        const entries = Object.entries(obj).filter(([k]) => k !== '_syntax' && k !== 'start' && k !== 'end');
+        if (syntaxTag) {
+            if (entries.length === 0) return `${pad}${syntaxTag}`;
+            if (entries.length === 1 && typeof entries[0][1] !== 'object') {
+                return `${pad}${syntaxTag} ${JSON.stringify(entries[0][1])}`;
+            }
+            return `${pad}${syntaxTag}\n${entries.map(([k, v]) => `${pad}  ${k}: ${formatSyntax(v, indent + 2).trimStart()}`).join('\n')}`;
+        }
+        return `${pad}{\n${entries.map(([k, v]) => `${pad}  ${k}: ${formatSyntax(v, indent + 2).trimStart()}`).join(',\n')}\n${pad}}`;
+    }
+
+    function formatModel(obj, indent = 0) {
+        const pad = '  '.repeat(indent);
+        if (obj === null || obj === undefined) return `${pad}null`;
+        if (typeof obj !== 'object') return `${pad}${JSON.stringify(obj)}`;
+        if (Array.isArray(obj)) {
+            if (obj.length === 0) return `${pad}[]`;
+            return `${pad}[\n${obj.map(item => formatModel(item, indent + 1)).join(',\n')}\n${pad}]`;
+        }
+        const modelTag = obj._model;
+        const entries = Object.entries(obj).filter(([k]) => k !== '_model' && k !== 'span');
+        if (modelTag) {
+            if (entries.length === 0) return `${pad}${modelTag}`;
+            if (entries.length === 1 && typeof entries[0][1] !== 'object') {
+                return `${pad}${modelTag} ${JSON.stringify(entries[0][1])}`;
+            }
+            return `${pad}${modelTag}\n${entries.map(([k, v]) => `${pad}  ${k}: ${formatModel(v, indent + 2).trimStart()}`).join('\n')}`;
+        }
+        return `${pad}{\n${entries.map(([k, v]) => `${pad}  ${k}: ${formatModel(v, indent + 2).trimStart()}`).join(',\n')}\n${pad}}`;
+    }
+
+    // Output helpers
+    function addOutput(text, className) {
+        const line = document.createElement('div');
+        line.className = 'output-line ' + className;
+        line.textContent = text;
+        output.appendChild(line);
+        output.scrollTop = output.scrollHeight;
+    }
+
+    // Handlers
+    function handleLex(code) {
+        try {
+            const tokens = formatTokens(code);
+            addOutput(tokens, 'tokens');
+        } catch (e) {
+            addOutput(`Error: ${e.message}`, 'error');
+        }
+    }
+
+    function handleParse(code) {
+        try {
+            const parser = new Scaly.Parser(code);
+            const result = parser.parseOperation();
+            if (result.ok) {
+                addOutput(formatSyntax(result.value), 'ast');
+            } else {
+                if (result.error._tag === 'InvalidSyntax') {
+                    addOutput(`Parse error at ${result.error.start}-${result.error.end}: ${result.error.message}`, 'error');
+                } else {
+                    addOutput('Parse error: unexpected syntax', 'error');
+                }
+            }
+        } catch (e) {
+            addOutput(`Error: ${e.message}`, 'error');
+        }
+    }
+
+    function handleModel(code) {
+        try {
+            const result = Scaly.parseAndModel(code);
+            if (result.ok) {
+                addOutput(formatModel(result.value), 'model');
+            } else {
+                addOutput(Scaly.formatModelError(result.error, code), 'error');
+            }
+        } catch (e) {
+            addOutput(`Error: ${e.message}`, 'error');
+        }
+    }
+
+    function handleEval(code) {
+        try {
+            const result = Scaly.evaluate(code);
+            switch (result._tag) {
+                case 'Ok':
+                    const display = typeof result.value === 'string'
+                        ? JSON.stringify(result.value)
+                        : String(result.value);
+                    addOutput(display, 'result');
+                    break;
+                case 'ParseError':
+                    addOutput(`Parse error: ${result.message}`, 'error');
+                    break;
+                case 'EvalError':
+                    addOutput(`Eval error: ${result.message}`, 'error');
+                    break;
+            }
+        } catch (e) {
+            addOutput(`Error: ${e.message}`, 'error');
+        }
+    }
+
+    function handleInput(code) {
+        if (!code.trim()) return;
+        addOutput(code, 'input');
+
+        switch (mode) {
+            case 'lex': handleLex(code); break;
+            case 'parse': handleParse(code); break;
+            case 'model': handleModel(code); break;
+            case 'eval': handleEval(code); break;
+        }
+    }
+
+    // Event listeners
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            const code = input.value;
+            input.value = '';
+            handleInput(code);
+        }
+    });
+
+    // Mode buttons
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            mode = btn.dataset.mode;
+            addOutput(`Switched to ${mode} mode`, 'info');
+        });
+    });
+
+    // Example click handlers
+    document.querySelectorAll('.help-example').forEach(el => {
+        el.addEventListener('click', () => {
+            input.value = el.dataset.code;
+            input.focus();
+        });
+    });
+    </script>
+</body>
+</html>

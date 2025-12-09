@@ -1,0 +1,449 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Lexical Structure</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="The Scaly Programming Language"
+HREF="index.html"><LINK
+REL="PREVIOUS"
+TITLE="Introduction"
+HREF="introduction.htm"><LINK
+REL="NEXT"
+TITLE="Grammar"
+HREF="grammar.htm"><META
+HTTP-EQUIV="Content-Type"
+CONTENT="text/html; charset=UTF-8"></HEAD
+><BODY
+CLASS="chapter"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>The Scaly Programming Language</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="introduction.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="grammar.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="chapter"
+><H1
+><A
+NAME="AEN38"
+></A
+>Chapter 2 Lexical Structure</H1
+><DIV
+CLASS="TOC"
+><DL
+><DT
+><B
+>Table of Contents</B
+></DT
+><DT
+><A
+HREF="lexical.htm#AEN40"
+>Overview</A
+></DT
+><DT
+><A
+HREF="lexical.htm#AEN43"
+>Whitespace and Line Breaks</A
+></DT
+><DT
+><A
+HREF="lexical.htm#AEN48"
+>Comments</A
+></DT
+><DT
+><A
+HREF="lexical.htm#AEN62"
+>Literals</A
+></DT
+><DT
+><A
+HREF="lexical.htm#AEN88"
+>Identifiers</A
+></DT
+></DL
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN40"
+>Overview</A
+></H1
+><P
+>&#13;      This chapter describes the lexical structure of Scaly: how source text
+      is divided into tokens. The lexer transforms a sequence of characters
+      into a sequence of tokens that the parser then processes.
+    </P
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN43"
+>Whitespace and Line Breaks</A
+></H1
+><P
+>&#13;      Whitespace characters (space, tab) separate tokens but are otherwise
+      insignificant. Line breaks, however, are syntactically meaningful in
+      Scaly — they can terminate statements and declarations.
+    </P
+><P
+>&#13;      A colon (<TT
+CLASS="literal"
+>:</TT
+>) can be used in place of a line break
+      when multiple statements should appear on a single line.
+    </P
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN48"
+>Comments</A
+></H1
+><P
+>&#13;      Scaly supports two forms of comments:
+    </P
+><P
+></P
+><UL
+><LI
+><P
+><SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>Single-line comments</I
+></SPAN
+> start with a semicolon
+        (<TT
+CLASS="literal"
+>;</TT
+>) and extend to the end of the line.</P
+></LI
+><LI
+><P
+><SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>Multi-line comments</I
+></SPAN
+> start with
+        <TT
+CLASS="literal"
+>;*</TT
+> and end with <TT
+CLASS="literal"
+>*;</TT
+>.</P
+></LI
+></UL
+><PRE
+CLASS="programlisting"
+>&#13;; This is a single-line comment
+
+;* This is a
+   multi-line comment *;
+    </PRE
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN62"
+>Literals</A
+></H1
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN64"
+>Integer Literals</A
+></H2
+><P
+>&#13;        Integer literals represent whole numbers. They can be written in
+        decimal or hexadecimal notation.
+      </P
+><PRE
+CLASS="programlisting"
+>&#13;42        ; decimal
+0x2A      ; hexadecimal (same value)
+      </PRE
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN68"
+>Floating-Point Literals</A
+></H2
+><P
+>&#13;        Floating-point literals represent decimal numbers with a fractional
+        part or an exponent.
+      </P
+><PRE
+CLASS="programlisting"
+>&#13;3.14159       ; pi
+2.5e10        ; scientific notation
+1.0e-5        ; small number
+      </PRE
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN72"
+>String Literals</A
+></H2
+><P
+>&#13;        String literals are enclosed in double quotes. They support standard
+        escape sequences.
+      </P
+><PRE
+CLASS="programlisting"
+>&#13;"Hello, World!"
+"Line 1\nLine 2"      ; with newline escape
+"Tab:\tValue"         ; with tab
+"Quote: \"nested\""   ; escaped quotes
+      </PRE
+><P
+>&#13;        Strings can span multiple lines without any special syntax — newlines
+        are simply included as part of the string content:
+      </P
+><PRE
+CLASS="programlisting"
+>&#13;"This is a string
+that spans multiple
+lines."
+      </PRE
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN78"
+>Character Literals</A
+></H2
+><P
+>&#13;        Character literals represent single Unicode code points, enclosed
+        in backticks.
+      </P
+><PRE
+CLASS="programlisting"
+>&#13;`a`           ; lowercase a
+`\n`          ; newline character
+`\u{1F600}`   ; emoji (grinning face)
+      </PRE
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN82"
+>Boolean Literals</A
+></H2
+><P
+>&#13;        Boolean literals are <TT
+CLASS="literal"
+>true</TT
+> and <TT
+CLASS="literal"
+>false</TT
+>.
+      </P
+><PRE
+CLASS="programlisting"
+>&#13;true
+false
+      </PRE
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN88"
+>Identifiers</A
+></H1
+><P
+>&#13;      Identifiers name variables, functions, types, and other entities.
+      Scaly supports three forms of identifiers:
+    </P
+><P
+></P
+><UL
+><LI
+><P
+><SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>Alphanumeric identifiers</I
+></SPAN
+> start with a letter
+        and continue with letters, digits, or underscores.</P
+></LI
+><LI
+><P
+><SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>Operator identifiers</I
+></SPAN
+> consist of operator
+        characters such as <TT
+CLASS="literal"
+>+</TT
+>, <TT
+CLASS="literal"
+>-</TT
+>,
+        <TT
+CLASS="literal"
+>*</TT
+>, <TT
+CLASS="literal"
+>/</TT
+>.</P
+></LI
+><LI
+><P
+><SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>String identifiers</I
+></SPAN
+> are enclosed in single
+        quotes and can contain any characters.</P
+></LI
+></UL
+><PRE
+CLASS="programlisting"
+>&#13;myVariable        ; alphanumeric
+calculate_total   ; with underscore
+++                ; operator identifier
+'my identifier'   ; string identifier (with spaces)
+    </PRE
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="introduction.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="grammar.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Introduction</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Grammar</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>
