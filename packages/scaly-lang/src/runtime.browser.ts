@@ -374,7 +374,12 @@ export class Runtime {
             i++ // Skip the right operand
           }
         } else {
-          // No more operands, apply as unary function
+          // No more operands - check if this operator expects a right operand
+          const contextType = this.valueType(context.value)
+          if (this.hasBinarySignature(name, contextType)) {
+            return { ok: false, error: `Operator '${name}' requires a right operand` }
+          }
+          // Apply as unary function
           const result = this.applyFunction(name, context.value, scope)
           if (!result.ok) return result
           context = result
@@ -416,6 +421,11 @@ export class Runtime {
             i++
           }
         } else {
+          // No more operands - check if this operator expects a right operand
+          const contextType = this.valueType(current.value)
+          if (this.hasBinarySignature(name, contextType)) {
+            return { ok: false, error: `Operator '${name}' requires a right operand` }
+          }
           const result = this.applyFunction(name, current.value, scope)
           if (!result.ok) return result
           current = result
@@ -648,6 +658,13 @@ export class Runtime {
       case 'Wrapper': return value.type
       case 'Unit': return 'void'
     }
+  }
+
+  // Check if operator has a binary signature for the given left type
+  private hasBinarySignature(name: string, leftType: string): boolean {
+    const signatures = this.operators.get(name)
+    if (!signatures) return false
+    return signatures.some(s => s.leftType === leftType)
   }
 
   // === Intrinsic Implementations ===
