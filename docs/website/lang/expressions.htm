@@ -82,7 +82,12 @@ HREF="expressions.htm#AEN676"
 ><DT
 ><A
 HREF="expressions.htm#AEN679"
->Scaly Tests</A
+>Literals</A
+></DT
+><DT
+><A
+HREF="expressions.htm#AEN829"
+>Operations</A
 ></DT
 ></DL
 ></DIV
@@ -107,26 +112,18 @@ CLASS="section"
 CLASS="section"
 ><A
 NAME="AEN679"
->Scaly Tests</A
+>Literals</A
 ></H1
+><P
+>Expressions are the core computational units of Scaly. Every expression evaluates to a value.</P
 ><DIV
 CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN681"
->Literals</A
-></H2
-><P
->Expressions are the core computational units of Scaly. Every expression evaluates to a value.</P
-><DIV
-CLASS="section"
-><H3
-CLASS="section"
-><A
-NAME="AEN684"
+NAME="AEN682"
 >Boolean Literals</A
-></H3
+></H2
 ><P
 >The boolean literals are true and false.</P
 ><DIV
@@ -134,7 +131,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN687"
+NAME="AEN685"
 ></A
 ><TABLE
 BORDER="0"
@@ -183,12 +180,12 @@ CLASS="literal"
 ></DIV
 ><DIV
 CLASS="section"
-><H3
+><H2
 CLASS="section"
 ><A
-NAME="AEN706"
+NAME="AEN704"
 >Integer Literals</A
-></H3
+></H2
 ><P
 >Integer literals are sequences of decimal digits, optionally preceded by a minus sign for negative numbers.</P
 ><DIV
@@ -196,7 +193,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN709"
+NAME="AEN707"
 ></A
 ><TABLE
 BORDER="0"
@@ -257,12 +254,12 @@ CLASS="literal"
 ></DIV
 ><DIV
 CLASS="section"
-><H3
+><H2
 CLASS="section"
 ><A
-NAME="AEN733"
+NAME="AEN731"
 >Hexadecimal Literals</A
-></H3
+></H2
 ><P
 >Hexadecimal literals start with 0x or 0X followed by hexadecimal digits (0-9, a-f, A-F).</P
 ><DIV
@@ -270,7 +267,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN736"
+NAME="AEN734"
 ></A
 ><TABLE
 BORDER="0"
@@ -331,12 +328,12 @@ CLASS="literal"
 ></DIV
 ><DIV
 CLASS="section"
-><H3
+><H2
 CLASS="section"
 ><A
-NAME="AEN760"
+NAME="AEN758"
 >Floating-Point Literals</A
-></H3
+></H2
 ><P
 >Floating-point literals contain a decimal point separating the integer and fractional parts.</P
 ><DIV
@@ -344,7 +341,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN763"
+NAME="AEN761"
 ></A
 ><TABLE
 BORDER="0"
@@ -405,12 +402,12 @@ CLASS="literal"
 ></DIV
 ><DIV
 CLASS="section"
-><H3
+><H2
 CLASS="section"
 ><A
-NAME="AEN787"
+NAME="AEN785"
 >String Literals</A
-></H3
+></H2
 ><P
 >String literals are enclosed in double quotes. They may span multiple lines, with line breaks preserved in the resulting string.</P
 ><DIV
@@ -418,7 +415,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN790"
+NAME="AEN788"
 ></A
 ><TABLE
 BORDER="0"
@@ -467,12 +464,12 @@ CLASS="literal"
 ></DIV
 ><DIV
 CLASS="section"
-><H3
+><H2
 CLASS="section"
 ><A
-NAME="AEN809"
+NAME="AEN807"
 >Character Literals</A
-></H3
+></H2
 ><P
 >Character literals represent a single character, enclosed in backticks.</P
 ><DIV
@@ -480,7 +477,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN812"
+NAME="AEN810"
 ></A
 ><TABLE
 BORDER="0"
@@ -530,33 +527,33 @@ CLASS="literal"
 ></DIV
 ><DIV
 CLASS="section"
-><H2
+><H1
 CLASS="section"
 ><A
-NAME="AEN831"
+NAME="AEN829"
 >Operations</A
-></H2
+></H1
 ><P
 >Oparations allow combining expressions.</P
 ><DIV
 CLASS="section"
-><H3
+><H2
 CLASS="section"
 ><A
-NAME="AEN834"
+NAME="AEN832"
 >Prefix Functions</A
-></H3
+></H2
 ><P
->An operation is a sequence of operands that evaluates to a single value. 
-        Each operand is an expression optionally followed by member access. An operation ends with a colon, a line break, 
-        or anything which is not an expression. Evaluation uses a context which is empty at the start of an operation. 
+>An operation is a sequence of operands that evaluates to a single value.
+        Each operand is an expression optionally followed by member access. An operation ends with a colon, a line break,
+        or anything which is not an expression. Evaluation uses a context which is empty at the start of an operation.
         When the context is empty, operator-shaped identifiers act as prefix functions, taking the next operand as their argument.</P
 ><DIV
 CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN837"
+NAME="AEN835"
 ></A
 ><TABLE
 BORDER="0"
@@ -617,14 +614,14 @@ CLASS="literal"
 ></DIV
 ><DIV
 CLASS="section"
-><H3
+><H2
 CLASS="section"
 ><A
-NAME="AEN861"
+NAME="AEN859"
 >Operator Chains</A
-></H3
+></H2
 ><P
->When the context holds a value, operators chain left-to-right. Each operator takes the current value and the next operand, 
+>When the context holds a value, operators chain left-to-right. Each operator takes the current value and the next operand,
         producing a new value. There is no operator precedence built into the language itself. Operator precedence is built into the implementation
         of the individual operators. The common arithmetic operators are built into the standard library.</P
 ><DIV
@@ -632,7 +629,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN864"
+NAME="AEN862"
 ></A
 ><TABLE
 BORDER="0"
@@ -694,7 +691,7 @@ CLASS="literal"
 ><TD
 ><TT
 CLASS="literal"
->12</TT
+>11</TT
 ></TD
 ></TR
 ><TR
@@ -717,21 +714,21 @@ CLASS="literal"
 ></DIV
 ><DIV
 CLASS="section"
-><H3
+><H2
 CLASS="section"
 ><A
-NAME="AEN898"
+NAME="AEN896"
 >Parentheses and Grouping</A
-></H3
+></H2
 ><P
->Parentheses create a empty context. This allows prefix forms inside an otherwise operator chain, 
+>Parentheses create a empty context. This allows prefix forms inside an otherwise operator chain,
         and explicit grouping when needed.</P
 ><DIV
 CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN901"
+NAME="AEN899"
 ></A
 ><TABLE
 BORDER="0"
@@ -792,12 +789,12 @@ CLASS="literal"
 ></DIV
 ><DIV
 CLASS="section"
-><H3
+><H2
 CLASS="section"
 ><A
-NAME="AEN925"
+NAME="AEN923"
 >Identifier Shapes</A
-></H3
+></H2
 ><P
 >Identifiers can have name shape (alphanumeric) or operator shape (symbols). The shape is purely lexical and does not determine behavior. Whether an identifier acts as a prefix function or chain operator depends on its declaration and the register state.</P
 ><DIV
@@ -805,7 +802,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN928"
+NAME="AEN926"
 ></A
 ><TABLE
 BORDER="0"
@@ -850,7 +847,6 @@ CLASS="literal"
 ></TABLE
 ><P
 ></P
-></DIV
 ></DIV
 ></DIV
 ></DIV

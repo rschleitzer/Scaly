@@ -18,20 +18,118 @@ var Scaly = (() => {
   };
   var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
-  // src/index.ts
-  var index_exports = {};
-  __export(index_exports, {
-    JsTranspiler: () => JsTranspiler,
-    Lexer: () => Lexer,
-    Model: () => model_exports,
-    Modeler: () => Modeler,
-    Parser: () => Parser,
-    Syntax: () => syntax_exports,
-    TsTranspiler: () => TsTranspiler,
+  // src/browser.ts
+  var browser_exports = {};
+  __export(browser_exports, {
     evaluate: () => evaluate,
-    formatModelError: () => formatModelError,
-    parseAndModel: () => parseAndModel
+    resetEvaluator: () => resetEvaluator
   });
+
+  // src/model-error.ts
+  function calculatePosition(text, offset) {
+    let line = 1;
+    let column = 1;
+    for (let i = 0; i < offset && i < text.length; i++) {
+      if (text[i] === "\n") {
+        line++;
+        column = 1;
+      } else {
+        column++;
+      }
+    }
+    return { line, column };
+  }
+  function buildHintLines(text, startOffset, endOffset, startPosition, endPosition) {
+    const lines = [];
+    let currentLine = 1;
+    let lineStart = 0;
+    for (let i = 0; i <= text.length; i++) {
+      if (i === text.length || text[i] === "\n") {
+        if (currentLine >= startPosition.line && currentLine <= endPosition.line) {
+          const lineContent = text.slice(lineStart, i);
+          lines.push(lineContent);
+          let indicator = "";
+          for (let col = 0; col < lineContent.length; col++) {
+            const pos = lineStart + col;
+            if (pos >= startOffset && pos < endOffset) {
+              indicator += "^";
+            } else {
+              indicator += " ";
+            }
+          }
+          lines.push(indicator);
+        }
+        currentLine++;
+        lineStart = i + 1;
+        if (currentLine > endPosition.line) break;
+      }
+    }
+    return lines.join("\n");
+  }
+  function formatModelError(error, sourceText) {
+    switch (error._tag) {
+      case "Parser": {
+        const { file, error: parserError2 } = error;
+        if (parserError2._tag === "DifferentSyntax") {
+          return `${file}: A different syntax was expected here.`;
+        }
+        const pos = sourceText ? calculatePosition(sourceText, parserError2.start) : { line: 0, column: 0 };
+        let msg = `${file}:${pos.line}:${pos.column}: error: Expected ${parserError2.message}.`;
+        if (sourceText) {
+          const endPos = calculatePosition(sourceText, parserError2.end);
+          msg += "\n" + buildHintLines(sourceText, parserError2.start, parserError2.end, pos, endPos);
+        }
+        return msg;
+      }
+      case "Builder": {
+        const builderError = error.error;
+        const pos = sourceText ? calculatePosition(sourceText, builderError.span.start) : { line: 0, column: 0 };
+        const file = builderError.file;
+        let message;
+        switch (builderError._tag) {
+          case "NotImplemented":
+            message = `The ${builderError.name} syntax cannot be processed by the modeler yet.`;
+            break;
+          case "DuplicateName":
+            message = "This declaration already exists.";
+            break;
+          case "NonFunctionSymbolExists":
+            message = "This declaration already exists, but not as a function.";
+            break;
+          case "FunctionSymbolExists":
+            message = "This declaration already exists, but as a function.";
+            break;
+          case "DeInitializerExists":
+            message = "A deinitializer has already been defined.";
+            break;
+          case "InvalidConstant":
+            message = "This is an invalid constant.";
+            break;
+          case "InvalidComponentName":
+            message = "The component does not have an identifier as name.";
+            break;
+          case "ModuleRootMustBeConcept":
+            message = "The root definition of a module must be a concept.";
+            break;
+        }
+        let msg = `${file}:${pos.line}:${pos.column}: error: ${message}`;
+        if (sourceText) {
+          const endPos = calculatePosition(sourceText, builderError.span.end);
+          msg += "\n" + buildHintLines(sourceText, builderError.span.start, builderError.span.end, pos, endPos);
+        }
+        return msg;
+      }
+    }
+  }
+  function notImplemented(file, name, span) {
+    return { _tag: "Builder", error: { _tag: "NotImplemented", file, name, span } };
+  }
+  function invalidConstant(file, span) {
+    return { _tag: "Builder", error: { _tag: "InvalidConstant", file, span } };
+  }
+  function parserError(file, error) {
+    return { _tag: "Parser", file, error };
+  }
 
   // src/lexer.ts
   var Lexer = class {
@@ -479,12 +577,6 @@ var Scaly = (() => {
       return this.character === null;
     }
   };
-
-  // src/syntax.ts
-  var syntax_exports = {};
-
-  // src/model.ts
-  var model_exports = {};
 
   // src/parser.ts
   function different() {
@@ -3858,112 +3950,6 @@ var Scaly = (() => {
     }
   };
 
-  // src/model-error.ts
-  function calculatePosition(text, offset) {
-    let line = 1;
-    let column = 1;
-    for (let i = 0; i < offset && i < text.length; i++) {
-      if (text[i] === "\n") {
-        line++;
-        column = 1;
-      } else {
-        column++;
-      }
-    }
-    return { line, column };
-  }
-  function buildHintLines(text, startOffset, endOffset, startPosition, endPosition) {
-    const lines = [];
-    let currentLine = 1;
-    let lineStart = 0;
-    for (let i = 0; i <= text.length; i++) {
-      if (i === text.length || text[i] === "\n") {
-        if (currentLine >= startPosition.line && currentLine <= endPosition.line) {
-          const lineContent = text.slice(lineStart, i);
-          lines.push(lineContent);
-          let indicator = "";
-          for (let col = 0; col < lineContent.length; col++) {
-            const pos = lineStart + col;
-            if (pos >= startOffset && pos < endOffset) {
-              indicator += "^";
-            } else {
-              indicator += " ";
-            }
-          }
-          lines.push(indicator);
-        }
-        currentLine++;
-        lineStart = i + 1;
-        if (currentLine > endPosition.line) break;
-      }
-    }
-    return lines.join("\n");
-  }
-  function formatModelError(error, sourceText) {
-    switch (error._tag) {
-      case "Parser": {
-        const { file, error: parserError2 } = error;
-        if (parserError2._tag === "DifferentSyntax") {
-          return `${file}: A different syntax was expected here.`;
-        }
-        const pos = sourceText ? calculatePosition(sourceText, parserError2.start) : { line: 0, column: 0 };
-        let msg = `${file}:${pos.line}:${pos.column}: error: Expected ${parserError2.message}.`;
-        if (sourceText) {
-          const endPos = calculatePosition(sourceText, parserError2.end);
-          msg += "\n" + buildHintLines(sourceText, parserError2.start, parserError2.end, pos, endPos);
-        }
-        return msg;
-      }
-      case "Builder": {
-        const builderError = error.error;
-        const pos = sourceText ? calculatePosition(sourceText, builderError.span.start) : { line: 0, column: 0 };
-        const file = builderError.file;
-        let message;
-        switch (builderError._tag) {
-          case "NotImplemented":
-            message = `The ${builderError.name} syntax cannot be processed by the modeler yet.`;
-            break;
-          case "DuplicateName":
-            message = "This declaration already exists.";
-            break;
-          case "NonFunctionSymbolExists":
-            message = "This declaration already exists, but not as a function.";
-            break;
-          case "FunctionSymbolExists":
-            message = "This declaration already exists, but as a function.";
-            break;
-          case "DeInitializerExists":
-            message = "A deinitializer has already been defined.";
-            break;
-          case "InvalidConstant":
-            message = "This is an invalid constant.";
-            break;
-          case "InvalidComponentName":
-            message = "The component does not have an identifier as name.";
-            break;
-          case "ModuleRootMustBeConcept":
-            message = "The root definition of a module must be a concept.";
-            break;
-        }
-        let msg = `${file}:${pos.line}:${pos.column}: error: ${message}`;
-        if (sourceText) {
-          const endPos = calculatePosition(sourceText, builderError.span.end);
-          msg += "\n" + buildHintLines(sourceText, builderError.span.start, builderError.span.end, pos, endPos);
-        }
-        return msg;
-      }
-    }
-  }
-  function notImplemented(file, name, span) {
-    return { _tag: "Builder", error: { _tag: "NotImplemented", file, name, span } };
-  }
-  function invalidConstant(file, span) {
-    return { _tag: "Builder", error: { _tag: "InvalidConstant", file, span } };
-  }
-  function parserError(file, error) {
-    return { _tag: "Parser", file, error };
-  }
-
   // src/modeler.ts
   function ok2(value) {
     return { ok: true, value };
@@ -3990,7 +3976,7 @@ var Scaly = (() => {
       switch (literal._syntax) {
         case "BooleanLiteral":
           return ok2({
-            _model: "BooleanConstant",
+            _tag: "BooleanConstant",
             span,
             value: literal.value
           });
@@ -4000,7 +3986,7 @@ var Scaly = (() => {
             return fail(invalidConstant(this.file, span));
           }
           return ok2({
-            _model: "IntegerConstant",
+            _tag: "IntegerConstant",
             span,
             value
           });
@@ -4011,7 +3997,7 @@ var Scaly = (() => {
             return fail(invalidConstant(this.file, span));
           }
           return ok2({
-            _model: "HexConstant",
+            _tag: "HexConstant",
             span,
             value
           });
@@ -4022,26 +4008,26 @@ var Scaly = (() => {
             return fail(invalidConstant(this.file, span));
           }
           return ok2({
-            _model: "FloatingPointConstant",
+            _tag: "FloatingPointConstant",
             span,
             value
           });
         }
         case "StringLiteral":
           return ok2({
-            _model: "StringConstant",
+            _tag: "StringConstant",
             span,
             value: literal.value
           });
         case "CharacterLiteral":
           return ok2({
-            _model: "CharacterConstant",
+            _tag: "CharacterConstant",
             span,
             value: literal.value
           });
         case "FragmentLiteral":
           return ok2({
-            _model: "FragmentConstant",
+            _tag: "FragmentConstant",
             span,
             value: literal.value
           });
@@ -4067,26 +4053,26 @@ var Scaly = (() => {
           }
         }
       }
-      let lifetime = { _model: "Unspecified" };
+      let lifetime = { _tag: "Unspecified" };
       if (syntax.lifetime) {
         const lt = syntax.lifetime;
         switch (lt._syntax) {
           case "CallSyntax":
-            lifetime = { _model: "Call", span: { start: lt.start, end: lt.end } };
+            lifetime = { _tag: "Call", span: { start: lt.start, end: lt.end } };
             break;
           case "LocalSyntax":
-            lifetime = { _model: "Local", span: { start: lt.start, end: lt.end } };
+            lifetime = { _tag: "Local", span: { start: lt.start, end: lt.end } };
             break;
           case "ReferenceSyntax":
-            lifetime = { _model: "Reference", span: { start: lt.start, end: lt.end }, location: lt.location };
+            lifetime = { _tag: "Reference", span: { start: lt.start, end: lt.end }, location: lt.location };
             break;
           case "ThrownSyntax":
-            lifetime = { _model: "Thrown", span: { start: lt.start, end: lt.end } };
+            lifetime = { _tag: "Thrown", span: { start: lt.start, end: lt.end } };
             break;
         }
       }
       return ok2({
-        _model: "Type",
+        _tag: "Type",
         span,
         name: path,
         generics,
@@ -4140,7 +4126,7 @@ var Scaly = (() => {
         }
       }
       return ok2({
-        _model: "Tuple",
+        _tag: "Tuple",
         span,
         components
       });
@@ -4175,7 +4161,7 @@ var Scaly = (() => {
         operations.push(elemResult.value);
       }
       return ok2({
-        _model: "Matrix",
+        _tag: "Matrix",
         span,
         operations
       });
@@ -4192,7 +4178,7 @@ var Scaly = (() => {
         }
       }
       return ok2({
-        _model: "Block",
+        _tag: "Block",
         span,
         statements
       });
@@ -4207,7 +4193,7 @@ var Scaly = (() => {
           const operands = this.handleOperation(command);
           if (!operands.ok) return operands;
           return ok2({
-            _model: "Action",
+            _tag: "Action",
             source: operands.value,
             target: []
           });
@@ -4218,7 +4204,7 @@ var Scaly = (() => {
           const target = this.handleOperands(command.target);
           if (!target.ok) return target;
           return ok2({
-            _model: "Action",
+            _tag: "Action",
             source: source.value,
             target: target.value
           });
@@ -4229,7 +4215,7 @@ var Scaly = (() => {
           const operation = command.binding.operation ? this.handleOperands(command.binding.operation) : ok2([]);
           if (!operation.ok) return operation;
           return ok2({
-            _model: "Binding",
+            _tag: "Binding",
             span: { start: command.start, end: command.end },
             bindingType: "let",
             item: itemResult.value,
@@ -4242,7 +4228,7 @@ var Scaly = (() => {
           const operation = command.binding.operation ? this.handleOperands(command.binding.operation) : ok2([]);
           if (!operation.ok) return operation;
           return ok2({
-            _model: "Binding",
+            _tag: "Binding",
             span: { start: command.start, end: command.end },
             bindingType: "var",
             item: itemResult.value,
@@ -4255,7 +4241,7 @@ var Scaly = (() => {
           const operation = command.binding.operation ? this.handleOperands(command.binding.operation) : ok2([]);
           if (!operation.ok) return operation;
           return ok2({
-            _model: "Binding",
+            _tag: "Binding",
             span: { start: command.start, end: command.end },
             bindingType: "mutable",
             item: itemResult.value,
@@ -4266,7 +4252,7 @@ var Scaly = (() => {
           return this.handleBreak(command);
         case "ContinueSyntax":
           return ok2({
-            _model: "Continue",
+            _tag: "Continue",
             span: { start: command.start, end: command.end }
           });
         case "ReturnSyntax":
@@ -4280,7 +4266,7 @@ var Scaly = (() => {
       const result = syntax.result ? this.handleOperands(syntax.result) : ok2([]);
       if (!result.ok) return result;
       return ok2({
-        _model: "Break",
+        _tag: "Break",
         span,
         result: result.value
       });
@@ -4290,7 +4276,7 @@ var Scaly = (() => {
       const result = syntax.result ? this.handleOperands(syntax.result) : ok2([]);
       if (!result.ok) return result;
       return ok2({
-        _model: "Return",
+        _tag: "Return",
         span,
         result: result.value
       });
@@ -4300,7 +4286,7 @@ var Scaly = (() => {
       const result = syntax.result ? this.handleOperands(syntax.result) : ok2([]);
       if (!result.ok) return result;
       return ok2({
-        _model: "Throw",
+        _tag: "Throw",
         span,
         result: result.value
       });
@@ -4319,7 +4305,7 @@ var Scaly = (() => {
         alternative = altResult.value;
       }
       return ok2({
-        _model: "If",
+        _tag: "If",
         span,
         condition: condition.value,
         property: null,
@@ -4357,7 +4343,7 @@ var Scaly = (() => {
         alternative = altResult.value;
       }
       return ok2({
-        _model: "Match",
+        _tag: "Match",
         span,
         condition: condition.value,
         branches,
@@ -4383,7 +4369,7 @@ var Scaly = (() => {
         alternative = altResult.value;
       }
       return ok2({
-        _model: "Choose",
+        _tag: "Choose",
         span,
         condition: condition.value,
         cases,
@@ -4414,7 +4400,7 @@ var Scaly = (() => {
       const actionResult = this.handleAction(syntax.action);
       if (!actionResult.ok) return actionResult;
       return ok2({
-        _model: "For",
+        _tag: "For",
         span,
         identifier: syntax.variable,
         expression: expression.value,
@@ -4428,7 +4414,7 @@ var Scaly = (() => {
       const actionResult = this.handleAction(syntax.action);
       if (!actionResult.ok) return actionResult;
       return ok2({
-        _model: "While",
+        _tag: "While",
         span,
         condition: conditionResult.value,
         action: actionResult.value
@@ -4440,7 +4426,7 @@ var Scaly = (() => {
           const source = this.handleOperation(syntax);
           if (!source.ok) return source;
           return ok2({
-            _model: "Action",
+            _tag: "Action",
             source: source.value,
             target: []
           });
@@ -4451,7 +4437,7 @@ var Scaly = (() => {
           const target = this.handleOperands(syntax.target);
           if (!target.ok) return target;
           return ok2({
-            _model: "Action",
+            _tag: "Action",
             source: source.value,
             target: target.value
           });
@@ -4465,7 +4451,7 @@ var Scaly = (() => {
           const operands = this.handleOperation(syntax);
           if (!operands.ok) return operands;
           return ok2({
-            _model: "Binding",
+            _tag: "Binding",
             span,
             bindingType: "",
             item: {
@@ -4484,7 +4470,7 @@ var Scaly = (() => {
           const operation = syntax.binding.operation ? this.handleOperands(syntax.binding.operation) : ok2([]);
           if (!operation.ok) return operation;
           return ok2({
-            _model: "Binding",
+            _tag: "Binding",
             span,
             bindingType: "let",
             item: itemResult.value,
@@ -4512,7 +4498,7 @@ var Scaly = (() => {
         alternative = altResult.value;
       }
       return ok2({
-        _model: "Try",
+        _tag: "Try",
         span,
         binding: conditionResult.value,
         catches,
@@ -4525,7 +4511,7 @@ var Scaly = (() => {
       const type = this.handleType(syntax.type);
       if (!type.ok) return type;
       return ok2({
-        _model: "SizeOf",
+        _tag: "SizeOf",
         span,
         type: type.value
       });
@@ -4539,7 +4525,7 @@ var Scaly = (() => {
         }
       }
       return ok2({
-        _model: "Is",
+        _tag: "Is",
         span,
         name
       });
@@ -4583,7 +4569,7 @@ var Scaly = (() => {
           return this.handleLiteral(syntax);
         case "NameSyntax":
           return ok2({
-            _model: "Variable",
+            _tag: "Variable",
             name: syntax.name
           });
         case "ObjectSyntax":
@@ -4630,6 +4616,614 @@ var Scaly = (() => {
       }
       return ok2([]);
     }
+    // === Item Handling (for parameters) ===
+    handleItem(syntax, isPrivate = false) {
+      const span = { start: syntax.start, end: syntax.end };
+      let type = null;
+      if (syntax.annotation) {
+        const typeResult = this.handleType(syntax.annotation.type);
+        if (!typeResult.ok) return typeResult;
+        type = typeResult.value;
+      }
+      const attributes = [];
+      if (syntax.attributes) {
+        for (const attrSyntax of syntax.attributes) {
+          const attrResult = this.handleAttribute(attrSyntax);
+          if (!attrResult.ok) return attrResult;
+          attributes.push(attrResult.value);
+        }
+      }
+      return ok2({
+        span,
+        private: isPrivate,
+        name: syntax.name,
+        type,
+        attributes
+      });
+    }
+    handleParameterSet(syntax) {
+      const items = [];
+      if (syntax._syntax === "ParametersSyntax") {
+        if (syntax.items) {
+          for (const itemSyntax of syntax.items) {
+            const itemResult = this.handleItem(itemSyntax);
+            if (!itemResult.ok) return itemResult;
+            items.push(itemResult.value);
+          }
+        }
+      } else if (syntax._syntax === "TypeSyntax") {
+        const typeResult = this.handleType(syntax);
+        if (!typeResult.ok) return typeResult;
+        items.push({
+          span: { start: syntax.start, end: syntax.end },
+          private: false,
+          name: null,
+          type: typeResult.value,
+          attributes: []
+        });
+      }
+      return ok2(items);
+    }
+    // === Implementation Handling ===
+    handleImplementation(syntax) {
+      switch (syntax._syntax) {
+        case "OperationSyntax": {
+          const operands = this.handleOperation(syntax);
+          if (!operands.ok) return operands;
+          return ok2({
+            _tag: "Action",
+            source: operands.value,
+            target: []
+          });
+        }
+        case "SetSyntax": {
+          const source = this.handleOperands(syntax.source);
+          if (!source.ok) return source;
+          const target = this.handleOperands(syntax.target);
+          if (!target.ok) return target;
+          return ok2({
+            _tag: "Action",
+            source: source.value,
+            target: target.value
+          });
+        }
+        case "ExternSyntax":
+          return ok2({
+            _tag: "Extern",
+            span: { start: syntax.start, end: syntax.end }
+          });
+        case "InstructionSyntax":
+          return ok2({
+            _tag: "Instruction",
+            span: { start: syntax.start, end: syntax.end }
+          });
+        case "IntrinsicSyntax":
+          return ok2({
+            _tag: "Intrinsic",
+            span: { start: syntax.start, end: syntax.end }
+          });
+      }
+    }
+    // === Function Building ===
+    buildFunction(syntax, isPrivate = false) {
+      const span = { start: syntax.start, end: syntax.end };
+      const target = syntax.target;
+      if (target._syntax === "RoutineSyntax") {
+        return fail(notImplemented(this.file, "Non-Symbol Function", span));
+      }
+      const named = target;
+      const routine = named.routine;
+      let input = [];
+      if (routine.parameters) {
+        const paramsResult = this.handleParameterSet(routine.parameters);
+        if (!paramsResult.ok) return paramsResult;
+        input = paramsResult.value;
+      }
+      let returns_ = null;
+      if (routine.returns_) {
+        const typeResult = this.handleType(routine.returns_.type);
+        if (!typeResult.ok) return typeResult;
+        returns_ = typeResult.value;
+      }
+      let throws_ = null;
+      if (routine.throws_) {
+        const typeResult = this.handleType(routine.throws_.type);
+        if (!typeResult.ok) return typeResult;
+        throws_ = typeResult.value;
+      }
+      let lifetime = { _tag: "Unspecified" };
+      if (routine.lifetime) {
+        const lt = routine.lifetime;
+        switch (lt._syntax) {
+          case "CallSyntax":
+            lifetime = { _tag: "Call", span: { start: lt.start, end: lt.end } };
+            break;
+          case "LocalSyntax":
+            lifetime = { _tag: "Local", span: { start: lt.start, end: lt.end } };
+            break;
+          case "ReferenceSyntax":
+            lifetime = { _tag: "Reference", span: { start: lt.start, end: lt.end }, location: lt.location };
+            break;
+          case "ThrownSyntax":
+            lifetime = { _tag: "Thrown", span: { start: lt.start, end: lt.end } };
+            break;
+        }
+      }
+      const implResult = this.handleImplementation(routine.implementation);
+      if (!implResult.ok) return implResult;
+      return ok2({
+        _tag: "Function",
+        span,
+        private: isPrivate,
+        pure: true,
+        // function keyword means pure
+        name: named.name,
+        input,
+        returns: returns_,
+        throws: throws_,
+        lifetime,
+        implementation: implResult.value
+      });
+    }
+    // === Procedure Building ===
+    buildProcedure(syntax, isPrivate = false) {
+      const span = { start: syntax.start, end: syntax.end };
+      const target = syntax.target;
+      if (target._syntax === "RoutineSyntax") {
+        return fail(notImplemented(this.file, "Non-Symbol Procedure", span));
+      }
+      const named = target;
+      const routine = named.routine;
+      let input = [];
+      if (routine.parameters) {
+        const paramsResult = this.handleParameterSet(routine.parameters);
+        if (!paramsResult.ok) return paramsResult;
+        input = paramsResult.value;
+      }
+      let returns_ = null;
+      if (routine.returns_) {
+        const typeResult = this.handleType(routine.returns_.type);
+        if (!typeResult.ok) return typeResult;
+        returns_ = typeResult.value;
+      }
+      let throws_ = null;
+      if (routine.throws_) {
+        const typeResult = this.handleType(routine.throws_.type);
+        if (!typeResult.ok) return typeResult;
+        throws_ = typeResult.value;
+      }
+      let lifetime = { _tag: "Unspecified" };
+      if (routine.lifetime) {
+        const lt = routine.lifetime;
+        switch (lt._syntax) {
+          case "CallSyntax":
+            lifetime = { _tag: "Call", span: { start: lt.start, end: lt.end } };
+            break;
+          case "LocalSyntax":
+            lifetime = { _tag: "Local", span: { start: lt.start, end: lt.end } };
+            break;
+          case "ReferenceSyntax":
+            lifetime = { _tag: "Reference", span: { start: lt.start, end: lt.end }, location: lt.location };
+            break;
+          case "ThrownSyntax":
+            lifetime = { _tag: "Thrown", span: { start: lt.start, end: lt.end } };
+            break;
+        }
+      }
+      const implResult = this.handleImplementation(routine.implementation);
+      if (!implResult.ok) return implResult;
+      return ok2({
+        _tag: "Function",
+        span,
+        private: isPrivate,
+        pure: false,
+        // procedure keyword means impure
+        name: named.name,
+        input,
+        returns: returns_,
+        throws: throws_,
+        lifetime,
+        implementation: implResult.value
+      });
+    }
+    // === Operator Building ===
+    buildOperator(syntax, isPrivate = false) {
+      const span = { start: syntax.start, end: syntax.end };
+      const target = syntax.target;
+      let input = [];
+      let name;
+      if (target._syntax === "RoutineSyntax") {
+        const routine2 = target;
+        if (routine2.parameters) {
+          const paramsResult = this.handleParameterSet(routine2.parameters);
+          if (!paramsResult.ok) return paramsResult;
+          input = paramsResult.value;
+        }
+        name = "[]";
+        let returns_2 = null;
+        if (routine2.returns_) {
+          const typeResult = this.handleType(routine2.returns_.type);
+          if (!typeResult.ok) return typeResult;
+          returns_2 = typeResult.value;
+        }
+        let throws_2 = null;
+        if (routine2.throws_) {
+          const typeResult = this.handleType(routine2.throws_.type);
+          if (!typeResult.ok) return typeResult;
+          throws_2 = typeResult.value;
+        }
+        const implResult2 = this.handleImplementation(routine2.implementation);
+        if (!implResult2.ok) return implResult2;
+        return ok2({
+          _tag: "Operator",
+          span,
+          private: isPrivate,
+          name,
+          input,
+          returns: returns_2,
+          throws: throws_2,
+          implementation: implResult2.value
+        });
+      }
+      const named = target;
+      const routine = named.routine;
+      name = named.name;
+      if (routine.parameters) {
+        const paramsResult = this.handleParameterSet(routine.parameters);
+        if (!paramsResult.ok) return paramsResult;
+        input = paramsResult.value;
+      }
+      let returns_ = null;
+      if (routine.returns_) {
+        const typeResult = this.handleType(routine.returns_.type);
+        if (!typeResult.ok) return typeResult;
+        returns_ = typeResult.value;
+      }
+      let throws_ = null;
+      if (routine.throws_) {
+        const typeResult = this.handleType(routine.throws_.type);
+        if (!typeResult.ok) return typeResult;
+        throws_ = typeResult.value;
+      }
+      const implResult = this.handleImplementation(routine.implementation);
+      if (!implResult.ok) return implResult;
+      return ok2({
+        _tag: "Operator",
+        span,
+        private: isPrivate,
+        name,
+        input,
+        returns: returns_,
+        throws: throws_,
+        implementation: implResult.value
+      });
+    }
+    // === Definition Handling ===
+    handleDefinition(syntax, _isPrivate = false) {
+      const span = { start: syntax.start, end: syntax.end };
+      const parameters = [];
+      if (syntax.parameters) {
+        for (const param of syntax.parameters.parameters) {
+          const attributes2 = [];
+          if (param.attributes) {
+            for (const attr of param.attributes) {
+              const attrResult = this.handleAttribute(attr);
+              if (!attrResult.ok) return attrResult;
+              attributes2.push(attrResult.value);
+            }
+          }
+          parameters.push({
+            span: { start: param.start, end: param.end },
+            name: param.name,
+            attributes: attributes2
+          });
+        }
+      }
+      const attributes = [];
+      if (syntax.attributes) {
+        for (const attr of syntax.attributes) {
+          const attrResult = this.handleAttribute(attr);
+          if (!attrResult.ok) return attrResult;
+          attributes.push(attrResult.value);
+        }
+      }
+      const definitionResult = this.handleConcept(syntax.concept_);
+      if (!definitionResult.ok) return definitionResult;
+      return ok2({
+        _tag: "Concept",
+        span,
+        name: syntax.name,
+        parameters,
+        attributes,
+        definition: definitionResult.value
+      });
+    }
+    handleConcept(syntax) {
+      switch (syntax._syntax) {
+        case "IntrinsicSyntax":
+          return ok2({
+            _tag: "Intrinsic",
+            span: { start: syntax.start, end: syntax.end }
+          });
+        case "ClassSyntax":
+          return this.handleClass(syntax);
+        case "NamespaceSyntax":
+          return this.handleNamespace(syntax);
+        case "UnionSyntax":
+          return this.handleUnion(syntax);
+        case "ConstantSyntax":
+          return fail(notImplemented(this.file, "ConstantSyntax", { start: syntax.start, end: syntax.end }));
+        case "DelegateSyntax":
+          return fail(notImplemented(this.file, "DelegateSyntax", { start: syntax.start, end: syntax.end }));
+      }
+    }
+    handleClass(syntax) {
+      const span = { start: syntax.start, end: syntax.end };
+      const properties = [];
+      if (syntax.structure.parts) {
+        for (const part of syntax.structure.parts) {
+          const prop = part._syntax === "FieldSyntax" ? part.property : part;
+          const propResult = this.handleProperty(prop, false);
+          if (!propResult.ok) return propResult;
+          properties.push(propResult.value);
+        }
+      }
+      const members = [];
+      const symbols = /* @__PURE__ */ new Map();
+      if (syntax.body) {
+        const bodyResult = this.handleBody(syntax.body, members, symbols);
+        if (!bodyResult.ok) return bodyResult;
+      }
+      return ok2({
+        _tag: "Structure",
+        span,
+        private: false,
+        properties,
+        modules: [],
+        uses: [],
+        initializers: [],
+        deinitializer: null,
+        members,
+        symbols
+      });
+    }
+    handleProperty(syntax, isPrivate) {
+      const span = { start: syntax.start, end: syntax.end };
+      let type = null;
+      if (syntax.annotation) {
+        const typeResult = this.handleType(syntax.annotation.type);
+        if (!typeResult.ok) return typeResult;
+        type = typeResult.value;
+      }
+      let initializer = null;
+      if (syntax.initializer) {
+        const initResult = this.handleOperands(syntax.initializer.operands);
+        if (!initResult.ok) return initResult;
+        initializer = initResult.value;
+      }
+      const attributes = [];
+      if (syntax.attributes) {
+        for (const attr of syntax.attributes) {
+          const attrResult = this.handleAttribute(attr);
+          if (!attrResult.ok) return attrResult;
+          attributes.push(attrResult.value);
+        }
+      }
+      return ok2({
+        span,
+        private: isPrivate,
+        name: syntax.name,
+        type,
+        initializer,
+        attributes
+      });
+    }
+    handleNamespace(syntax) {
+      const span = { start: syntax.start, end: syntax.end };
+      const members = [];
+      const symbols = /* @__PURE__ */ new Map();
+      if (syntax.declarations) {
+        for (const decl of syntax.declarations) {
+          const memberResult = this.handleDeclaration(decl);
+          if (!memberResult.ok) return memberResult;
+          members.push(memberResult.value);
+          const member = memberResult.value;
+          if (member._tag !== "Package" && "name" in member) {
+            symbols.set(member.name, member);
+          }
+        }
+      }
+      return ok2({
+        _tag: "Namespace",
+        span,
+        modules: [],
+        members,
+        symbols
+      });
+    }
+    handleUnion(syntax) {
+      const span = { start: syntax.start, end: syntax.end };
+      const variants = [];
+      if (syntax.variants) {
+        for (const v of syntax.variants) {
+          const variantResult = this.handleVariant(v);
+          if (!variantResult.ok) return variantResult;
+          variants.push(variantResult.value);
+        }
+      }
+      const members = [];
+      const symbols = /* @__PURE__ */ new Map();
+      if (syntax.body) {
+        const bodyResult = this.handleBody(syntax.body, members, symbols);
+        if (!bodyResult.ok) return bodyResult;
+      }
+      return ok2({
+        _tag: "Union",
+        span,
+        private: false,
+        variants,
+        members,
+        symbols
+      });
+    }
+    handleVariant(syntax) {
+      const span = { start: syntax.start, end: syntax.end };
+      let type = null;
+      if (syntax.annotation) {
+        const typeResult = this.handleType(syntax.annotation.type);
+        if (!typeResult.ok) return typeResult;
+        type = typeResult.value;
+      }
+      const attributes = [];
+      if (syntax.attributes) {
+        for (const attr of syntax.attributes) {
+          const attrResult = this.handleAttribute(attr);
+          if (!attrResult.ok) return attrResult;
+          attributes.push(attrResult.value);
+        }
+      }
+      return ok2({
+        span,
+        name: syntax.name,
+        type,
+        attributes
+      });
+    }
+    handleDeclaration(decl) {
+      const symbol = decl.symbol;
+      const isPrivate = symbol._syntax === "PrivateSyntax";
+      const actual = isPrivate ? symbol.export_ : symbol;
+      switch (actual._syntax) {
+        case "DefinitionSyntax":
+          return this.handleDefinition(actual, isPrivate);
+        case "FunctionSyntax":
+          return this.buildFunction(actual, isPrivate);
+        case "OperatorSyntax":
+          return this.buildOperator(actual, isPrivate);
+        case "ModuleSyntax":
+        case "TraitSyntax":
+          return fail(notImplemented(this.file, actual._syntax, { start: actual.start, end: actual.end }));
+      }
+    }
+    handleBody(syntax, members, symbols) {
+      if (syntax.members) {
+        for (const member of syntax.members) {
+          const constituent = member.constituent;
+          switch (constituent._syntax) {
+            case "DefinitionSyntax": {
+              const conceptResult = this.handleDefinition(constituent, false);
+              if (!conceptResult.ok) return conceptResult;
+              members.push(conceptResult.value);
+              symbols.set(conceptResult.value.name, conceptResult.value);
+              break;
+            }
+            case "FunctionSyntax": {
+              const funcResult = this.buildFunction(constituent, false);
+              if (!funcResult.ok) return funcResult;
+              members.push(funcResult.value);
+              const existing = symbols.get(funcResult.value.name);
+              if (existing && existing._tag === "Functions") {
+                existing.functions.push(funcResult.value);
+              } else {
+                symbols.set(funcResult.value.name, { _tag: "Functions", functions: [funcResult.value] });
+              }
+              break;
+            }
+            case "ProcedureSyntax": {
+              const procResult = this.buildProcedure(constituent, false);
+              if (!procResult.ok) return procResult;
+              members.push(procResult.value);
+              const existing = symbols.get(procResult.value.name);
+              if (existing && existing._tag === "Functions") {
+                existing.functions.push(procResult.value);
+              } else {
+                symbols.set(procResult.value.name, { _tag: "Functions", functions: [procResult.value] });
+              }
+              break;
+            }
+            case "OperatorSyntax": {
+              const opResult = this.buildOperator(constituent, false);
+              if (!opResult.ok) return opResult;
+              members.push(opResult.value);
+              symbols.set(opResult.value.name, opResult.value);
+              break;
+            }
+            case "ModuleSyntax": {
+              break;
+            }
+            default:
+              return fail(notImplemented(this.file, constituent._syntax, { start: constituent.start, end: constituent.end }));
+          }
+        }
+      }
+      return ok2(void 0);
+    }
+    // === File Handling ===
+    handleFile(syntax) {
+      const members = [];
+      const symbols = /* @__PURE__ */ new Map();
+      const uses = [];
+      if (syntax.uses) {
+        for (const useSyntax of syntax.uses) {
+          const path = [useSyntax.name.name];
+          if (useSyntax.name.extensions) {
+            for (const ext of useSyntax.name.extensions) {
+              path.push(ext.name);
+            }
+          }
+          uses.push({ span: { start: useSyntax.start, end: useSyntax.end }, path });
+        }
+      }
+      if (syntax.declarations) {
+        for (const decl of syntax.declarations) {
+          const symbol = decl.symbol;
+          const isPrivate = symbol._syntax === "PrivateSyntax";
+          const actual = isPrivate ? symbol.export_ : symbol;
+          switch (actual._syntax) {
+            case "DefinitionSyntax": {
+              const conceptResult = this.handleDefinition(actual, isPrivate);
+              if (!conceptResult.ok) return conceptResult;
+              members.push(conceptResult.value);
+              symbols.set(conceptResult.value.name, conceptResult.value);
+              break;
+            }
+            case "FunctionSyntax": {
+              const funcResult = this.buildFunction(actual, isPrivate);
+              if (!funcResult.ok) return funcResult;
+              members.push(funcResult.value);
+              const existing = symbols.get(funcResult.value.name);
+              if (existing && existing._tag === "Functions") {
+                existing.functions.push(funcResult.value);
+              } else {
+                symbols.set(funcResult.value.name, { _tag: "Functions", functions: [funcResult.value] });
+              }
+              break;
+            }
+            case "OperatorSyntax": {
+              const opResult = this.buildOperator(actual, isPrivate);
+              if (!opResult.ok) return opResult;
+              members.push(opResult.value);
+              symbols.set(opResult.value.name, opResult.value);
+              break;
+            }
+            case "ModuleSyntax":
+            case "TraitSyntax":
+              break;
+            default:
+              return fail(notImplemented(this.file, actual._syntax, { start: actual.start, end: actual.end }));
+          }
+        }
+      }
+      return ok2({
+        private: false,
+        file: this.file,
+        name: "",
+        modules: [],
+        uses,
+        members,
+        symbols
+      });
+    }
   };
   function parseAndModel(input, file = "<input>") {
     const parser = new Parser(input);
@@ -4640,58 +5234,665 @@ var Scaly = (() => {
     const modeler = new Modeler(file);
     return modeler.modelOperation(parseResult.value);
   }
-
-  // src/transpiler/js.ts
-  var JsTranspiler = class {
-    transpile(program) {
-      return String(program);
+  function parseAndModelFile(input, file = "<input>") {
+    const parser = new Parser(input);
+    const parseResult = parser.parseFile();
+    if (!parseResult.ok) {
+      return fail(parserError(file, parseResult.error));
     }
-  };
-
-  // src/transpiler/ts.ts
-  var TsTranspiler = class {
-    transpile(program) {
-      return String(program);
-    }
-  };
-
-  // src/evaluator.ts
-  function evaluate(input) {
-    const lexer = new Lexer(input);
-    lexer.advance();
-    if (lexer.token._tag === "Integer") {
-      const code = lexer.token.value;
-      return { _tag: "Ok", value: Number(code), code };
-    }
-    if (lexer.token._tag === "FloatingPoint") {
-      const code = lexer.token.value;
-      return { _tag: "Ok", value: Number(code), code };
-    }
-    if (lexer.token._tag === "String") {
-      const value = lexer.token.value;
-      const code = JSON.stringify(value);
-      return { _tag: "Ok", value, code };
-    }
-    if (lexer.token._tag === "Boolean") {
-      const value = lexer.token.value;
-      const code = String(value);
-      return { _tag: "Ok", value, code };
-    }
-    if (lexer.token._tag === "Character") {
-      const value = lexer.token.value;
-      const code = JSON.stringify(value);
-      return { _tag: "Ok", value, code };
-    }
-    if (lexer.token._tag === "Fragment") {
-      const value = lexer.token.value;
-      const code = "`" + value + "`";
-      return { _tag: "Ok", value, code };
-    }
-    if (lexer.token._tag === "Hex") {
-      const code = lexer.token.value;
-      return { _tag: "Ok", value: parseInt(code, 16), code };
-    }
-    return { _tag: "ParseError", message: "Only literals supported until parser is generated" };
+    const modeler = new Modeler(file);
+    return modeler.handleFile(parseResult.value);
   }
-  return __toCommonJS(index_exports);
+
+  // src/runtime.browser.ts
+  var STDLIB_CONTENT = `; Scaly Standard Library
+; Arithmetic operators with precedence via wrapper types
+
+; -----------------------------------------------------------------------------
+; Precedence Wrapper Types
+; -----------------------------------------------------------------------------
+
+define Sum(left: int, right: int) {
+    function value(this) returns int intrinsic
+}
+
+define Difference(left: int, right: int) {
+    function value(this) returns int intrinsic
+}
+
+define Product(left: int, right: int) {
+    function value(this) returns int intrinsic
+}
+
+define Quotient(left: int, right: int) {
+    function value(this) returns int intrinsic
+}
+
+; -----------------------------------------------------------------------------
+; Addition Operators
+; -----------------------------------------------------------------------------
+
+; Primitive: creates Sum wrapper
+operator +(left: int, right: int) returns Sum intrinsic
+
+; These evaluate the left wrapper first
+operator +(left: Sum, right: int) returns Sum {
+    Sum(left.value, right)
+}
+
+operator +(left: Difference, right: int) returns Sum {
+    Sum(left.value, right)
+}
+
+operator +(left: Product, right: int) returns Sum {
+    Sum(left.value, right)
+}
+
+operator +(left: Quotient, right: int) returns Sum {
+    Sum(left.value, right)
+}
+
+; -----------------------------------------------------------------------------
+; Subtraction Operators
+; -----------------------------------------------------------------------------
+
+; Primitive: creates Difference wrapper
+operator -(left: int, right: int) returns Difference intrinsic
+
+operator -(left: Sum, right: int) returns Difference {
+    Difference(left.value, right)
+}
+
+operator -(left: Difference, right: int) returns Difference {
+    Difference(left.value, right)
+}
+
+operator -(left: Product, right: int) returns Difference {
+    Difference(left.value, right)
+}
+
+operator -(left: Quotient, right: int) returns Difference {
+    Difference(left.value, right)
+}
+
+; -----------------------------------------------------------------------------
+; Multiplication Operators
+; -----------------------------------------------------------------------------
+
+; Primitive: creates Product wrapper
+operator *(left: int, right: int) returns Product intrinsic
+
+; Higher precedence: reaches into Sum/Difference
+operator *(left: Sum, right: int) returns Sum {
+    Sum(left.left, left.right * right)
+}
+
+operator *(left: Difference, right: int) returns Difference {
+    Difference(left.left, left.right * right)
+}
+
+operator *(left: Product, right: int) returns Product {
+    Product(left.value, right)
+}
+
+operator *(left: Quotient, right: int) returns Product {
+    Product(left.value, right)
+}
+
+; -----------------------------------------------------------------------------
+; Division Operators
+; -----------------------------------------------------------------------------
+
+; Primitive: creates Quotient wrapper
+operator /(left: int, right: int) returns Quotient intrinsic
+
+; Higher precedence: reaches into Sum/Difference
+operator /(left: Sum, right: int) returns Sum {
+    Sum(left.left, left.right / right)
+}
+
+operator /(left: Difference, right: int) returns Difference {
+    Difference(left.left, left.right / right)
+}
+
+operator /(left: Product, right: int) returns Quotient {
+    Quotient(left.value, right)
+}
+
+operator /(left: Quotient, right: int) returns Quotient {
+    Quotient(left.value, right)
+}
+
+; -----------------------------------------------------------------------------
+; Integer Division and Modulo
+; -----------------------------------------------------------------------------
+
+operator div(left: int, right: int) returns int intrinsic
+operator mod(left: int, right: int) returns int intrinsic
+
+; -----------------------------------------------------------------------------
+; Comparison Operators
+; -----------------------------------------------------------------------------
+
+operator =(left: int, right: int) returns bool intrinsic
+operator <>(left: int, right: int) returns bool intrinsic
+operator <(left: int, right: int) returns bool intrinsic
+operator >(left: int, right: int) returns bool intrinsic
+operator <=(left: int, right: int) returns bool intrinsic
+operator >=(left: int, right: int) returns bool intrinsic
+
+; -----------------------------------------------------------------------------
+; Unary Operators
+; -----------------------------------------------------------------------------
+
+function -(right: int) returns int intrinsic
+function +(right: int) returns int intrinsic
+
+; -----------------------------------------------------------------------------
+; Math Functions
+; -----------------------------------------------------------------------------
+
+function abs(x: int) returns int intrinsic
+`;
+  var Runtime = class {
+    operators = /* @__PURE__ */ new Map();
+    functions = /* @__PURE__ */ new Map();
+    types = /* @__PURE__ */ new Map();
+    // Load stdlib from embedded content
+    loadStdlib() {
+      const result = parseAndModelFile(STDLIB_CONTENT, "stdlib.scaly");
+      if (!result.ok) {
+        return { ok: false, error: `Failed to parse stdlib: ${formatModelError(result.error, STDLIB_CONTENT)}` };
+      }
+      for (const member of result.value.members) {
+        if (member._tag === "Concept") {
+          this.types.set(member.name, member);
+        } else if (member._tag === "Operator") {
+          this.registerOperator(member);
+        } else if (member._tag === "Function") {
+          this.registerFunction(member);
+        }
+      }
+      return { ok: true };
+    }
+    registerOperator(op) {
+      const name = op.name;
+      const signatures = this.operators.get(name) || [];
+      const leftParam = op.input[0];
+      const rightParam = op.input[1];
+      const leftType = leftParam?.type ? this.typeToString(leftParam.type) : "int";
+      const rightType = rightParam?.type ? this.typeToString(rightParam.type) : "int";
+      const returnType = op.returns ? this.typeToString(op.returns) : "void";
+      const intrinsic = op.implementation?._tag === "Intrinsic";
+      signatures.push({
+        leftType,
+        rightType,
+        returnType,
+        intrinsic,
+        implementation: op.implementation
+      });
+      this.operators.set(name, signatures);
+    }
+    registerFunction(fn) {
+      const name = fn.name;
+      const signatures = this.functions.get(name) || [];
+      const param = fn.input[0];
+      const paramType = param?.type ? this.typeToString(param.type) : "int";
+      const returnType = fn.returns ? this.typeToString(fn.returns) : "void";
+      const intrinsic = fn.implementation?._tag === "Intrinsic";
+      signatures.push({
+        paramType,
+        returnType,
+        intrinsic,
+        implementation: fn.implementation
+      });
+      this.functions.set(name, signatures);
+    }
+    typeToString(type) {
+      return type.name.join(".");
+    }
+    // === Evaluation ===
+    evaluate(operands, scope = /* @__PURE__ */ new Map()) {
+      if (operands.length === 0) {
+        return { ok: true, value: { _tag: "Unit" } };
+      }
+      const firstExpr = operands[0].expression;
+      if (firstExpr._tag === "Type" && operands.length >= 2) {
+        const name = firstExpr.name[0];
+        if (this.types.has(name)) {
+          const secondExpr = operands[1].expression;
+          if (secondExpr._tag === "Tuple") {
+            const result = this.constructWrapper(name, secondExpr, scope);
+            if (!result.ok) return result;
+            if (operands.length > 2) {
+              return this.evaluateWithContext(result.value, operands.slice(2), scope);
+            }
+            return result;
+          }
+        }
+        if (this.functions.has(name)) {
+          const secondExpr = operands[1].expression;
+          if (secondExpr._tag === "Tuple") {
+            if (secondExpr.components.length === 1 && !secondExpr.components[0].name) {
+              const argResult = this.evaluate(secondExpr.components[0].value, scope);
+              if (!argResult.ok) return argResult;
+              const collapsed = this.collapseWrapper(argResult.value);
+              if (!collapsed.ok) return collapsed;
+              const funcResult = this.applyFunction(name, collapsed.value, scope);
+              if (!funcResult.ok) return funcResult;
+              if (operands.length > 2) {
+                return this.evaluateWithContext(funcResult.value, operands.slice(2), scope);
+              }
+              return funcResult;
+            }
+          }
+        }
+        if (this.functions.has(name)) {
+          const argResult = this.evaluateOperand(operands[1], scope);
+          if (!argResult.ok) return argResult;
+          const collapsed = this.collapseWrapper(argResult.value);
+          if (!collapsed.ok) return collapsed;
+          const funcResult = this.applyFunction(name, collapsed.value, scope);
+          if (!funcResult.ok) return funcResult;
+          if (operands.length > 2) {
+            return this.evaluateWithContext(funcResult.value, operands.slice(2), scope);
+          }
+          return funcResult;
+        }
+      }
+      let context = this.evaluateOperand(operands[0], scope);
+      if (!context.ok) return context;
+      for (let i = 1; i < operands.length; i++) {
+        const operand = operands[i];
+        const expr = operand.expression;
+        if (expr._tag === "Type") {
+          const name = expr.name[0];
+          if (this.types.has(name) && i + 1 < operands.length) {
+            const nextExpr = operands[i + 1].expression;
+            if (nextExpr._tag === "Tuple") {
+              const result = this.constructWrapper(name, nextExpr, scope);
+              if (!result.ok) return result;
+              context = result;
+              i++;
+              continue;
+            }
+          }
+          if (i + 1 < operands.length) {
+            const rightOperand = operands[i + 1];
+            const rightExpr = rightOperand.expression;
+            if (rightExpr._tag === "Type" && this.operators.has(rightExpr.name[0])) {
+              const result = this.applyFunction(name, context.value, scope);
+              if (!result.ok) return result;
+              context = result;
+            } else {
+              const rightValue = this.evaluateOperand(rightOperand, scope);
+              if (!rightValue.ok) return rightValue;
+              const result = this.applyOperator(name, context.value, rightValue.value, scope);
+              if (!result.ok) return result;
+              context = result;
+              i++;
+            }
+          } else {
+            const result = this.applyFunction(name, context.value, scope);
+            if (!result.ok) return result;
+            context = result;
+          }
+        } else {
+          return { ok: false, error: `Unexpected operand: ${expr._tag}` };
+        }
+      }
+      return context;
+    }
+    evaluateWithContext(context, operands, scope) {
+      let current = { ok: true, value: context };
+      for (let i = 0; i < operands.length; i++) {
+        const operand = operands[i];
+        const expr = operand.expression;
+        if (expr._tag === "Type") {
+          const name = expr.name[0];
+          if (i + 1 < operands.length) {
+            const rightOperand = operands[i + 1];
+            const rightExpr = rightOperand.expression;
+            if (rightExpr._tag === "Type" && this.operators.has(rightExpr.name[0])) {
+              const result = this.applyFunction(name, current.value, scope);
+              if (!result.ok) return result;
+              current = result;
+            } else {
+              const rightValue = this.evaluateOperand(rightOperand, scope);
+              if (!rightValue.ok) return rightValue;
+              const result = this.applyOperator(name, current.value, rightValue.value, scope);
+              if (!result.ok) return result;
+              current = result;
+              i++;
+            }
+          } else {
+            const result = this.applyFunction(name, current.value, scope);
+            if (!result.ok) return result;
+            current = result;
+          }
+        }
+      }
+      return current;
+    }
+    constructWrapper(typeName, tuple, scope) {
+      const fields = /* @__PURE__ */ new Map();
+      const fieldNames = ["left", "right"];
+      for (let i = 0; i < tuple.components.length && i < fieldNames.length; i++) {
+        const component = tuple.components[i];
+        const fieldResult = this.evaluate(component.value, scope);
+        if (!fieldResult.ok) return fieldResult;
+        const collapsed = this.collapseWrapper(fieldResult.value);
+        if (!collapsed.ok) return collapsed;
+        fields.set(fieldNames[i], collapsed.value);
+      }
+      return { ok: true, value: { _tag: "Wrapper", type: typeName, fields } };
+    }
+    evaluateOperand(operand, scope) {
+      let value = this.evaluateExpression(operand.expression, scope);
+      if (!value.ok) return value;
+      if (operand.memberAccess && operand.memberAccess.length > 0) {
+        for (const member of operand.memberAccess) {
+          if (value.value._tag !== "Wrapper") {
+            return { ok: false, error: `Cannot access member '${member}' on ${value.value._tag}` };
+          }
+          const field = value.value.fields.get(member);
+          if (!field) {
+            return { ok: false, error: `Unknown field '${member}' on ${value.value.type}` };
+          }
+          value = { ok: true, value: field };
+        }
+      }
+      return value;
+    }
+    evaluateExpression(expr, scope) {
+      switch (expr._tag) {
+        case "IntegerConstant":
+        case "HexConstant":
+          return { ok: true, value: { _tag: "Int", value: expr.value } };
+        case "FloatingPointConstant":
+          return { ok: true, value: { _tag: "Float", value: expr.value } };
+        case "BooleanConstant":
+          return { ok: true, value: { _tag: "Bool", value: expr.value } };
+        case "StringConstant":
+          return { ok: true, value: { _tag: "String", value: expr.value } };
+        case "CharacterConstant":
+          return { ok: true, value: { _tag: "Char", value: expr.value } };
+        case "FragmentConstant":
+          return { ok: true, value: { _tag: "Char", value: expr.value } };
+        case "Tuple":
+          if (expr.components.length === 1 && !expr.components[0].name) {
+            const innerResult = this.evaluate(expr.components[0].value, scope);
+            if (!innerResult.ok) return innerResult;
+            return this.collapseWrapper(innerResult.value);
+          }
+          return { ok: false, error: "Complex tuples not yet implemented" };
+        case "Block":
+          return this.evaluateBlock(expr, scope);
+        case "Type":
+          const name = expr.name[0];
+          if (name === "true" && expr.name.length === 1) {
+            return { ok: true, value: { _tag: "Bool", value: true } };
+          }
+          if (name === "false" && expr.name.length === 1) {
+            return { ok: true, value: { _tag: "Bool", value: false } };
+          }
+          const scopeValue = scope.get(name);
+          if (scopeValue) {
+            if (expr.name.length > 1) {
+              let value = scopeValue;
+              for (let i = 1; i < expr.name.length; i++) {
+                const memberName = expr.name[i];
+                if (value._tag !== "Wrapper") {
+                  return { ok: false, error: `Cannot access member '${memberName}' on ${value._tag}` };
+                }
+                if (memberName === "value") {
+                  const collapsed = this.collapseWrapper(value);
+                  if (!collapsed.ok) return collapsed;
+                  value = collapsed.value;
+                  continue;
+                }
+                const field = value.fields.get(memberName);
+                if (!field) {
+                  return { ok: false, error: `Unknown field '${memberName}' on ${value.type}` };
+                }
+                value = field;
+              }
+              return { ok: true, value };
+            }
+            return { ok: true, value: scopeValue };
+          }
+          if (this.types.has(name)) {
+            return { ok: false, error: `Constructor ${name} needs arguments` };
+          }
+          return { ok: false, error: `Unresolved reference: ${expr.name.join(".")}` };
+        default:
+          return { ok: false, error: `Expression type not implemented: ${expr._tag}` };
+      }
+    }
+    evaluateBlock(block, scope) {
+      let lastValue = { _tag: "Unit" };
+      for (const stmt of block.statements) {
+        if (stmt._tag === "Action") {
+          const result = this.evaluate(stmt.source, scope);
+          if (!result.ok) return result;
+          lastValue = result.value;
+        } else if (stmt._tag === "Return") {
+          const result = this.evaluate(stmt.result, scope);
+          if (!result.ok) return result;
+          return result;
+        }
+      }
+      return { ok: true, value: lastValue };
+    }
+    applyOperator(name, left, right, scope) {
+      const signatures = this.operators.get(name);
+      if (!signatures) {
+        return { ok: false, error: `Unknown operator: ${name}` };
+      }
+      const leftType = this.valueType(left);
+      const rightType = this.valueType(right);
+      const sig = signatures.find((s) => s.leftType === leftType && s.rightType === rightType);
+      if (!sig) {
+        return { ok: false, error: `No matching operator ${name}(${leftType}, ${rightType})` };
+      }
+      if (sig.intrinsic) {
+        return this.applyIntrinsicOperator(name, left, right, sig.returnType);
+      }
+      if (sig.implementation && sig.implementation._tag === "Action") {
+        const innerScope = new Map(scope);
+        innerScope.set("left", left);
+        innerScope.set("right", right);
+        return this.evaluate(sig.implementation.source, innerScope);
+      }
+      return { ok: false, error: `No implementation for operator ${name}(${leftType}, ${rightType})` };
+    }
+    applyFunction(name, arg, scope) {
+      const signatures = this.functions.get(name);
+      if (!signatures) {
+        return { ok: false, error: `Unknown function: ${name}` };
+      }
+      const argType = this.valueType(arg);
+      const sig = signatures.find((s) => s.paramType === argType);
+      if (!sig) {
+        return { ok: false, error: `No matching function ${name}(${argType})` };
+      }
+      if (sig.intrinsic) {
+        return this.applyIntrinsicFunction(name, arg, sig.returnType);
+      }
+      if (sig.implementation && sig.implementation._tag === "Action") {
+        const innerScope = new Map(scope);
+        innerScope.set("arg", arg);
+        return this.evaluate(sig.implementation.source, innerScope);
+      }
+      return { ok: false, error: `Non-intrinsic functions not yet implemented` };
+    }
+    valueType(value) {
+      switch (value._tag) {
+        case "Int":
+          return "int";
+        case "Bool":
+          return "bool";
+        case "Float":
+          return "float";
+        case "String":
+          return "string";
+        case "Char":
+          return "char";
+        case "Wrapper":
+          return value.type;
+        case "Unit":
+          return "void";
+      }
+    }
+    // === Intrinsic Implementations ===
+    applyIntrinsicOperator(name, left, right, _returnType) {
+      if (left._tag !== "Int" || right._tag !== "Int") {
+        return { ok: false, error: `Intrinsic ${name} only implemented for int` };
+      }
+      const l = left.value;
+      const r = right.value;
+      switch (name) {
+        case "+":
+          return { ok: true, value: this.makeWrapper("Sum", l, r) };
+        case "-":
+          return { ok: true, value: this.makeWrapper("Difference", l, r) };
+        case "*":
+          return { ok: true, value: this.makeWrapper("Product", l, r) };
+        case "/":
+          return { ok: true, value: this.makeWrapper("Quotient", l, r) };
+        case "div":
+          return { ok: true, value: { _tag: "Int", value: Math.trunc(l / r) } };
+        case "mod":
+          return { ok: true, value: { _tag: "Int", value: l % r } };
+        case "=":
+          return { ok: true, value: { _tag: "Bool", value: l === r } };
+        case "<>":
+          return { ok: true, value: { _tag: "Bool", value: l !== r } };
+        case "<":
+          return { ok: true, value: { _tag: "Bool", value: l < r } };
+        case ">":
+          return { ok: true, value: { _tag: "Bool", value: l > r } };
+        case "<=":
+          return { ok: true, value: { _tag: "Bool", value: l <= r } };
+        case ">=":
+          return { ok: true, value: { _tag: "Bool", value: l >= r } };
+        default:
+          return { ok: false, error: `Unknown intrinsic operator: ${name}` };
+      }
+    }
+    applyIntrinsicFunction(name, arg, _returnType) {
+      if (arg._tag !== "Int") {
+        return { ok: false, error: `Intrinsic ${name} only implemented for int` };
+      }
+      const v = arg.value;
+      switch (name) {
+        case "-":
+          return { ok: true, value: { _tag: "Int", value: -v } };
+        case "+":
+          return { ok: true, value: { _tag: "Int", value: v } };
+        case "abs":
+          return { ok: true, value: { _tag: "Int", value: Math.abs(v) } };
+        default:
+          return { ok: false, error: `Unknown intrinsic function: ${name}` };
+      }
+    }
+    makeWrapper(type, left, right) {
+      const fields = /* @__PURE__ */ new Map();
+      fields.set("left", { _tag: "Int", value: left });
+      fields.set("right", { _tag: "Int", value: right });
+      return { _tag: "Wrapper", type, fields };
+    }
+    // Collapse a wrapper to its value (for expression boundaries like parentheses)
+    collapseWrapper(value) {
+      if (value._tag !== "Wrapper") {
+        return { ok: true, value };
+      }
+      const left = value.fields.get("left");
+      const right = value.fields.get("right");
+      if (!left || !right || left._tag !== "Int" || right._tag !== "Int") {
+        return { ok: false, error: `Invalid wrapper structure` };
+      }
+      switch (value.type) {
+        case "Sum":
+          return { ok: true, value: { _tag: "Int", value: left.value + right.value } };
+        case "Difference":
+          return { ok: true, value: { _tag: "Int", value: left.value - right.value } };
+        case "Product":
+          return { ok: true, value: { _tag: "Int", value: left.value * right.value } };
+        case "Quotient":
+          return { ok: true, value: { _tag: "Int", value: left.value / right.value } };
+        default:
+          return { ok: false, error: `Unknown wrapper type: ${value.type}` };
+      }
+    }
+    // Format a value for display
+    formatValue(value) {
+      switch (value._tag) {
+        case "Int":
+          return String(value.value);
+        case "Bool":
+          return String(value.value);
+        case "Float":
+          return String(value.value);
+        case "String":
+          return JSON.stringify(value.value);
+        case "Char":
+          return `'${value.value}'`;
+        case "Wrapper":
+          return `${value.type}(${this.formatValue(value.fields.get("left"))}, ${this.formatValue(value.fields.get("right"))})`;
+        case "Unit":
+          return "()";
+      }
+    }
+  };
+
+  // src/browser.ts
+  var runtime = null;
+  function getRuntime() {
+    if (!runtime) {
+      runtime = new Runtime();
+      const result = runtime.loadStdlib();
+      if (!result.ok) {
+        throw new Error(result.error);
+      }
+    }
+    return runtime;
+  }
+  function evaluate(input) {
+    const modelResult = parseAndModel(input);
+    if (!modelResult.ok) {
+      return { _tag: "ModelError", message: formatModelError(modelResult.error, input) };
+    }
+    const rt = getRuntime();
+    const evalResult = rt.evaluate(modelResult.value);
+    if (!evalResult.ok) {
+      return { _tag: "EvalError", message: evalResult.error, code: input };
+    }
+    const collapsed = rt.collapseWrapper(evalResult.value);
+    if (!collapsed.ok) {
+      return { _tag: "EvalError", message: collapsed.error, code: input };
+    }
+    const value = valueToJs(collapsed.value);
+    return { _tag: "Ok", value, code: input };
+  }
+  function valueToJs(value) {
+    switch (value._tag) {
+      case "Int":
+      case "Float":
+        return value.value;
+      case "Bool":
+        return value.value;
+      case "String":
+      case "Char":
+        return value.value;
+      case "Wrapper":
+        return `${value.type}(...)`;
+      case "Unit":
+        return void 0;
+    }
+  }
+  function resetEvaluator() {
+    runtime = null;
+  }
+  return __toCommonJS(browser_exports);
 })();
