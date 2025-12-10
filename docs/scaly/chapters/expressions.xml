@@ -12,6 +12,21 @@
 
   &generated-tests;
 
+  <section xml:id="expr-if">
+    <title>If Expressions</title>
+    <para>If expressions evaluate one of two branches based on a boolean condition.
+      The syntax is <code>if</code> followed by the condition, a colon, the consequent,
+      and optionally <code>else</code> with an alternative.
+    </para>
+    <programlisting>if true: 1 else 0        ; evaluates to 1
+if false: 1 else 0       ; evaluates to 0
+if 5 > 3: 10 else 20     ; evaluates to 10</programlisting>
+    <para>
+      If expressions can be nested:
+    </para>
+    <programlisting>if false: 1 else if true: 2 else 3  ; evaluates to 2</programlisting>
+  </section>
+
   <section xml:id="expr-let">
     <title>Let Bindings</title>
     <para>Let bindings introduce local variables. The syntax is

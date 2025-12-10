@@ -99,6 +99,11 @@ HREF="expressions.htm#AEN829"
 ><DT
 ><A
 HREF="expressions.htm#AEN945"
+>If Expressions</A
+></DT
+><DT
+><A
+HREF="expressions.htm#AEN953"
 >Let Bindings</A
 ></DT
 ></DL
@@ -112,7 +117,7 @@ NAME="AEN676"
 >Overview</A
 ></H1
 ><P
->&#13;      Expressions are the core computational units of Scaly. Every expression
+>Expressions are the core computational units of Scaly. Every expression
       evaluates to a value. Unlike many languages, Scaly uses postfix operators
       and does not define operator precedence — evaluation order is always
       explicit.
@@ -868,10 +873,41 @@ CLASS="section"
 CLASS="section"
 ><A
 NAME="AEN945"
+>If Expressions</A
+></H1
+><P
+>If expressions evaluate one of two branches based on a boolean condition.
+      The syntax is <TT
+CLASS="code"
+>if</TT
+> followed by the condition, a colon, the consequent,
+      and optionally <TT
+CLASS="code"
+>else</TT
+> with an alternative.
+    </P
+><PRE
+CLASS="programlisting"
+>if true: 1 else 0        ; evaluates to 1
+if false: 1 else 0       ; evaluates to 0
+if 5 &#62; 3: 10 else 20     ; evaluates to 10</PRE
+><P
+>&#13;      If expressions can be nested:
+    </P
+><PRE
+CLASS="programlisting"
+>if false: 1 else if true: 2 else 3  ; evaluates to 2</PRE
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN953"
 >Let Bindings</A
 ></H1
 ><P
->&#13;      Let bindings introduce local variables. The syntax is
+>Let bindings introduce local variables. The syntax is
       <TT
 CLASS="code"
 >let</TT
