@@ -18,7 +18,7 @@
     <programlisting>define Point(x: int, y: int)
 Point(3, 4)</programlisting>
     <para>evaluates to</para>
-    <code>{"_type":"Point","x":3,"y":4}</code>
+    <para><code>{"_type":"Point","x":3,"y":4}</code></para>
 
     <para>
       Structures are constructed by calling the type name as a function with
@@ -28,7 +28,7 @@ Point(3, 4)</programlisting>
     <programlisting>define Point(x: int, y: int)
 Point(3, 4).x</programlisting>
     <para>evaluates to</para>
-    <code>3</code>
+    <para><code>3</code></para>
 
     <para>
       Properties can be accessed using dot notation:
@@ -37,7 +37,7 @@ Point(3, 4).x</programlisting>
     <programlisting>define Point(x: int, y: int)
 let p Point(3, 4): p.x + p.y</programlisting>
     <para>evaluates to</para>
-    <code>7</code>
+    <para><code>7</code></para>
 
     <para>
       Structures can contain other structures as properties:
@@ -47,7 +47,7 @@ let p Point(3, 4): p.x + p.y</programlisting>
 define Rectangle(origin: Point, width: int, height: int)
 Rectangle(Point(0, 0), 10, 5).width</programlisting>
     <para>evaluates to</para>
-    <code>10</code>
+    <para><code>10</code></para>
   </section>
 
 </chapter>

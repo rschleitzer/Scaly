@@ -290,7 +290,8 @@ export function extractTestCases(docbookContent: string, source: string = '<unkn
 
   // Simple regex-based extraction
   // Match: <programlisting>...</programlisting> followed by "evaluates to" followed by <code>...</code>
-  const pattern = /<programlisting>([\s\S]*?)<\/programlisting>\s*<para>\s*evaluates to\s*<\/para>\s*<code>([\s\S]*?)<\/code>/gi
+  // The <code> may be wrapped in <para> for DocBook validity
+  const pattern = /<programlisting>([\s\S]*?)<\/programlisting>\s*<para>\s*evaluates to\s*<\/para>\s*(?:<para>)?<code>([\s\S]*?)<\/code>(?:<\/para>)?/gi
 
   let match
   while ((match = pattern.exec(docbookContent)) !== null) {
