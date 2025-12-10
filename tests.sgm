@@ -76,4 +76,22 @@
 
 </category>
 
+<category xml:id = definitions title = "Definitions">
+
+    <prose>Definitions declare new types that can be used throughout a program.
+
+    <tests xml:id = structure-definitions title = "Structure Definitions">
+        <prose>The define keyword creates a new structure type with named properties.
+        <test xml:id = define-point program = true><input>define Point(x: int, y: int)
+Point(3, 4)<expect>{"_type":"Point","x":3,"y":4}
+        <test xml:id = define-field-access program = true><input>define Point(x: int, y: int)
+Point(3, 4).x<expect>3
+        <test xml:id = define-with-let program = true><input>define Point(x: int, y: int)
+let p Point(3, 4): p.x + p.y<expect>7
+        <test xml:id = define-nested program = true><input>define Point(x: int, y: int)
+define Rectangle(origin: Point, width: int, height: int)
+Rectangle(Point(0, 0), 10, 5).width<expect>10
+
+</category>
+
 </suite>

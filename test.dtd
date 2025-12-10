@@ -23,6 +23,7 @@
 <!ATTLIST test
     xml:id      ID          #IMPLIED
     skip        (true|false) false
+    program     (true|false) false
 >
 
 <!ELEMENT prose - O (#PCDATA)>

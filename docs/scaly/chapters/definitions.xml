@@ -16,28 +16,17 @@
     </para>
 
     <programlisting>define Point(x: int, y: int)
-Point(3, 4)</programlisting>
-    <para>evaluates to</para>
-    <para><code>{"_type":"Point","x":3,"y":4}</code></para>
+Point(3, 4)          ; creates Point with x=3, y=4</programlisting>
 
     <para>
       Structures are constructed by calling the type name as a function with
-      arguments for each property:
+      arguments for each property. Properties can be accessed using dot notation:
     </para>
 
     <programlisting>define Point(x: int, y: int)
-Point(3, 4).x</programlisting>
-    <para>evaluates to</para>
-    <para><code>3</code></para>
+Point(3, 4).x        ; evaluates to 3
 
-    <para>
-      Properties can be accessed using dot notation:
-    </para>
-
-    <programlisting>define Point(x: int, y: int)
-let p Point(3, 4): p.x + p.y</programlisting>
-    <para>evaluates to</para>
-    <para><code>7</code></para>
+let p Point(3, 4): p.x + p.y  ; evaluates to 7</programlisting>
 
     <para>
       Structures can contain other structures as properties:
@@ -45,9 +34,7 @@ let p Point(3, 4): p.x + p.y</programlisting>
 
     <programlisting>define Point(x: int, y: int)
 define Rectangle(origin: Point, width: int, height: int)
-Rectangle(Point(0, 0), 10, 5).width</programlisting>
-    <para>evaluates to</para>
-    <para><code>10</code></para>
+Rectangle(Point(0, 0), 10, 5).width  ; evaluates to 10</programlisting>
   </section>
 
 </chapter>

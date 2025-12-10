@@ -10,8 +10,8 @@ REL="HOME"
 TITLE="The Scaly Programming Language"
 HREF="index.html"><LINK
 REL="PREVIOUS"
-TITLE="Grammar"
-HREF="grammar.htm"><LINK
+TITLE="Definitions"
+HREF="definitions.htm"><LINK
 REL="NEXT"
 TITLE="Standard Library Reference"
 HREF="stdlib.htm"><META
@@ -44,7 +44,7 @@ WIDTH="10%"
 ALIGN="left"
 VALIGN="bottom"
 ><A
-HREF="grammar.htm"
+HREF="definitions.htm"
 ACCESSKEY="P"
 >Prev</A
 ></TD
@@ -71,9 +71,9 @@ WIDTH="100%"></DIV
 CLASS="chapter"
 ><H1
 ><A
-NAME="AEN674"
+NAME="AEN688"
 ></A
->Chapter 4 Expressions</H1
+>Chapter 5 Expressions</H1
 ><DIV
 CLASS="TOC"
 ><DL
@@ -83,32 +83,37 @@ CLASS="TOC"
 ></DT
 ><DT
 ><A
-HREF="expressions.htm#AEN676"
+HREF="expressions.htm#AEN690"
 >Overview</A
 ></DT
 ><DT
 ><A
-HREF="expressions.htm#AEN679"
+HREF="expressions.htm#AEN693"
 >Literals</A
 ></DT
 ><DT
 ><A
-HREF="expressions.htm#AEN829"
+HREF="expressions.htm#AEN843"
 >Operations</A
 ></DT
 ><DT
 ><A
-HREF="expressions.htm#AEN945"
+HREF="expressions.htm#AEN959"
+>Definitions</A
+></DT
+><DT
+><A
+HREF="expressions.htm#AEN994"
 >If Expressions</A
 ></DT
 ><DT
 ><A
-HREF="expressions.htm#AEN953"
+HREF="expressions.htm#AEN1002"
 >Match Expressions</A
 ></DT
 ><DT
 ><A
-HREF="expressions.htm#AEN962"
+HREF="expressions.htm#AEN1011"
 >Let Bindings</A
 ></DT
 ></DL
@@ -118,7 +123,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN676"
+NAME="AEN690"
 >Overview</A
 ></H1
 ><P
@@ -133,7 +138,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN679"
+NAME="AEN693"
 >Literals</A
 ></H1
 ><P
@@ -143,7 +148,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN682"
+NAME="AEN696"
 >Boolean Literals</A
 ></H2
 ><P
@@ -153,7 +158,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN685"
+NAME="AEN699"
 ></A
 ><TABLE
 BORDER="0"
@@ -205,7 +210,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN704"
+NAME="AEN718"
 >Integer Literals</A
 ></H2
 ><P
@@ -215,7 +220,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN707"
+NAME="AEN721"
 ></A
 ><TABLE
 BORDER="0"
@@ -279,7 +284,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN731"
+NAME="AEN745"
 >Hexadecimal Literals</A
 ></H2
 ><P
@@ -289,7 +294,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN734"
+NAME="AEN748"
 ></A
 ><TABLE
 BORDER="0"
@@ -353,7 +358,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN758"
+NAME="AEN772"
 >Floating-Point Literals</A
 ></H2
 ><P
@@ -363,7 +368,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN761"
+NAME="AEN775"
 ></A
 ><TABLE
 BORDER="0"
@@ -427,7 +432,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN785"
+NAME="AEN799"
 >String Literals</A
 ></H2
 ><P
@@ -437,7 +442,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN788"
+NAME="AEN802"
 ></A
 ><TABLE
 BORDER="0"
@@ -489,7 +494,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN807"
+NAME="AEN821"
 >Character Literals</A
 ></H2
 ><P
@@ -499,7 +504,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN810"
+NAME="AEN824"
 ></A
 ><TABLE
 BORDER="0"
@@ -552,7 +557,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN829"
+NAME="AEN843"
 >Operations</A
 ></H1
 ><P
@@ -562,7 +567,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN832"
+NAME="AEN846"
 >Prefix Functions</A
 ></H2
 ><P
@@ -575,7 +580,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN835"
+NAME="AEN849"
 ></A
 ><TABLE
 BORDER="0"
@@ -639,7 +644,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN859"
+NAME="AEN873"
 >Operator Chains</A
 ></H2
 ><P
@@ -651,7 +656,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN862"
+NAME="AEN876"
 ></A
 ><TABLE
 BORDER="0"
@@ -739,7 +744,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN896"
+NAME="AEN910"
 >Parentheses and Grouping</A
 ></H2
 ><P
@@ -750,7 +755,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN899"
+NAME="AEN913"
 ></A
 ><TABLE
 BORDER="0"
@@ -814,7 +819,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN923"
+NAME="AEN937"
 >Identifier Shapes</A
 ></H2
 ><P
@@ -824,7 +829,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN926"
+NAME="AEN940"
 ></A
 ><TABLE
 BORDER="0"
@@ -877,7 +882,109 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN945"
+NAME="AEN959"
+>Definitions</A
+></H1
+><P
+>Definitions declare new types that can be used throughout a program.</P
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN962"
+>Structure Definitions</A
+></H2
+><P
+>The define keyword creates a new structure type with named properties.</P
+><DIV
+CLASS="informaltable"
+><P
+></P
+><A
+NAME="AEN965"
+></A
+><TABLE
+BORDER="0"
+FRAME="void"
+CLASS="CALSTABLE"
+><COL
+WIDTH="1*"><COL
+WIDTH="1*"><THEAD
+><TR
+><TH
+>Input</TH
+><TH
+>Result</TH
+></TR
+></THEAD
+><TBODY
+><TR
+><TD
+><TT
+CLASS="literal"
+>define Point(x: int, y: int)
+Point(3, 4)</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>{"_type":"Point","x":3,"y":4}</TT
+></TD
+></TR
+><TR
+><TD
+><TT
+CLASS="literal"
+>define Point(x: int, y: int)
+Point(3, 4).x</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>3</TT
+></TD
+></TR
+><TR
+><TD
+><TT
+CLASS="literal"
+>define Point(x: int, y: int)
+let p Point(3, 4): p.x + p.y</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>7</TT
+></TD
+></TR
+><TR
+><TD
+><TT
+CLASS="literal"
+>define Point(x: int, y: int)
+define Rectangle(origin: Point, width: int, height: int)
+Rectangle(Point(0, 0), 10, 5).width</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>10</TT
+></TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN994"
 >If Expressions</A
 ></H1
 ><P
@@ -908,7 +1015,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN953"
+NAME="AEN1002"
 >Match Expressions</A
 ></H1
 ><P
@@ -941,7 +1048,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN962"
+NAME="AEN1011"
 >Let Bindings</A
 ></H1
 ><P
@@ -981,7 +1088,7 @@ WIDTH="33%"
 ALIGN="left"
 VALIGN="top"
 ><A
-HREF="grammar.htm"
+HREF="definitions.htm"
 ACCESSKEY="P"
 >Prev</A
 ></TD
@@ -1009,7 +1116,7 @@ ACCESSKEY="N"
 WIDTH="33%"
 ALIGN="left"
 VALIGN="top"
->Grammar</TD
+>Definitions</TD
 ><TD
 WIDTH="34%"
 ALIGN="center"
