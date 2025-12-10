@@ -3968,6 +3968,16 @@ var Scaly = (() => {
     modelExpression(syntax) {
       return this.handleExpression(syntax);
     }
+    modelStatements(stmts) {
+      const statements = [];
+      for (const stmt of stmts) {
+        const result = this.handleStatement(stmt);
+        if (!result.ok) return result;
+        statements.push(result.value);
+      }
+      const span = stmts.length > 0 ? { start: stmts[0].start, end: stmts[stmts.length - 1].end } : { start: 0, end: 0 };
+      return ok2({ _tag: "Block", span, statements });
+    }
     // === Literal Handling ===
     handleLiteral(syntax) {
       const span = { start: syntax.start, end: syntax.end };
@@ -5224,14 +5234,14 @@ var Scaly = (() => {
       });
     }
   };
-  function parseAndModel(input, file = "<input>") {
+  function parseAndModelStatements(input, file = "<input>") {
     const parser = new Parser(input);
-    const parseResult = parser.parseOperation();
+    const parseResult = parser.parseStatementList();
     if (!parseResult.ok) {
       return fail(parserError(file, parseResult.error));
     }
     const modeler = new Modeler(file);
-    return modeler.modelOperation(parseResult.value);
+    return modeler.modelStatements(parseResult.value);
   }
   function parseAndModelFile(input, file = "<input>") {
     const parser = new Parser(input);
@@ -5676,15 +5686,24 @@ function abs(x: int) returns int intrinsic
           return { ok: false, error: `Expression type not implemented: ${expr._tag}` };
       }
     }
-    evaluateBlock(block, scope) {
+    evaluateBlock(block, scope = /* @__PURE__ */ new Map()) {
       let lastValue = { _tag: "Unit" };
+      const blockScope = new Map(scope);
       for (const stmt of block.statements) {
         if (stmt._tag === "Action") {
-          const result = this.evaluate(stmt.source, scope);
+          const result = this.evaluate(stmt.source, blockScope);
           if (!result.ok) return result;
           lastValue = result.value;
+        } else if (stmt._tag === "Binding") {
+          const name = stmt.item.name;
+          if (!name) {
+            return { ok: false, error: "Binding must have a name" };
+          }
+          const result = this.evaluate(stmt.operation, blockScope);
+          if (!result.ok) return result;
+          blockScope.set(name, result.value);
         } else if (stmt._tag === "Return") {
-          const result = this.evaluate(stmt.result, scope);
+          const result = this.evaluate(stmt.result, blockScope);
           if (!result.ok) return result;
           return result;
         }
@@ -5872,12 +5891,12 @@ function abs(x: int) returns int intrinsic
     return runtime;
   }
   function evaluate(input) {
-    const modelResult = parseAndModel(input);
+    const modelResult = parseAndModelStatements(input);
     if (!modelResult.ok) {
       return { _tag: "ModelError", message: formatModelError(modelResult.error, input) };
     }
     const rt = getRuntime();
-    const evalResult = rt.evaluate(modelResult.value);
+    const evalResult = rt.evaluateBlock(modelResult.value);
     if (!evalResult.ok) {
       return { _tag: "EvalError", message: evalResult.error, code: input };
     }

@@ -39,6 +39,19 @@ export class Modeler {
     return this.handleExpression(syntax)
   }
 
+  modelStatements(stmts: Syntax.StatementSyntax[]): ModelResult<Model.Block> {
+    const statements: Model.Statement[] = []
+    for (const stmt of stmts) {
+      const result = this.handleStatement(stmt)
+      if (!result.ok) return result
+      statements.push(result.value)
+    }
+    const span = stmts.length > 0
+      ? { start: stmts[0].start, end: stmts[stmts.length - 1].end }
+      : { start: 0, end: 0 }
+    return ok({ _tag: 'Block', span, statements })
+  }
+
   // === Literal Handling ===
 
   private handleLiteral(syntax: Syntax.LiteralSyntax): ModelResult<Model.Constant> {
@@ -1589,6 +1602,18 @@ export function parseAndModel(input: string, file: string = '<input>'): ModelRes
 
   const modeler = new Modeler(file)
   return modeler.modelOperation(parseResult.value)
+}
+
+export function parseAndModelStatements(input: string, file: string = '<input>'): ModelResult<Model.Block> {
+  const parser = new Parser(input)
+  const parseResult = parser.parseStatementList()
+
+  if (!parseResult.ok) {
+    return fail(parserError(file, parseResult.error))
+  }
+
+  const modeler = new Modeler(file)
+  return modeler.modelStatements(parseResult.value)
 }
 
 export function parseAndModelFile(input: string, file: string = '<input>'): ModelResult<Model.Module> {

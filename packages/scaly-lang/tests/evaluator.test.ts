@@ -50,4 +50,28 @@ describe('Evaluator', () => {
       expect(result.value).toBe(true)
     }
   })
+
+  it('evaluates let bindings', () => {
+    const result = evaluate('let x 5: x')
+    expect(result._tag).toBe('Ok')
+    if (result._tag === 'Ok') {
+      expect(result.value).toBe(5)
+    }
+  })
+
+  it('evaluates let bindings with arithmetic', () => {
+    const result = evaluate('let x 5: x + 3')
+    expect(result._tag).toBe('Ok')
+    if (result._tag === 'Ok') {
+      expect(result.value).toBe(8)
+    }
+  })
+
+  it('evaluates multiple let bindings', () => {
+    const result = evaluate('let x 5: let y 3: x + y')
+    expect(result._tag).toBe('Ok')
+    if (result._tag === 'Ok') {
+      expect(result.value).toBe(8)
+    }
+  })
 })

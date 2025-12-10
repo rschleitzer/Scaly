@@ -3,8 +3,7 @@
 
   <section xml:id="expr-overview">
     <title>Overview</title>
-    <para>
-      Expressions are the core computational units of Scaly. Every expression
+    <para>Expressions are the core computational units of Scaly. Every expression
       evaluates to a value. Unlike many languages, Scaly uses postfix operators
       and does not define operator precedence — evaluation order is always
       explicit.
@@ -12,5 +11,20 @@
   </section>
 
   &generated-tests;
+
+  <section xml:id="expr-let">
+    <title>Let Bindings</title>
+    <para>Let bindings introduce local variables. The syntax is
+      <code>let</code> followed by a name and a value expression (no equals sign).
+      Multiple statements are separated by colons.
+    </para>
+    <programlisting>let x 5: x               ; evaluates to 5
+let x 5: x + 3           ; evaluates to 8
+let x 5: let y 3: x + y  ; evaluates to 8</programlisting>
+    <para>
+      The value can be any expression, including arithmetic:
+    </para>
+    <programlisting>let x 2 + 3: x * 2       ; x is 5, result is 10</programlisting>
+  </section>
 
 </chapter>

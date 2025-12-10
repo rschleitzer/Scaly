@@ -429,16 +429,26 @@ export class Runtime {
     }
   }
 
-  private evaluateBlock(block: Model.Block, scope: Scope): { ok: true; value: Value } | { ok: false; error: string } {
+  evaluateBlock(block: Model.Block, scope: Scope = new Map()): { ok: true; value: Value } | { ok: false; error: string } {
     let lastValue: Value = { _tag: 'Unit' }
+    // Create a new scope for the block to hold let bindings
+    const blockScope = new Map(scope)
 
     for (const stmt of block.statements) {
       if (stmt._tag === 'Action') {
-        const result = this.evaluate(stmt.source, scope)
+        const result = this.evaluate(stmt.source, blockScope)
         if (!result.ok) return result
         lastValue = result.value
+      } else if (stmt._tag === 'Binding') {
+        const name = stmt.item.name
+        if (!name) {
+          return { ok: false, error: 'Binding must have a name' }
+        }
+        const result = this.evaluate(stmt.operation, blockScope)
+        if (!result.ok) return result
+        blockScope.set(name, result.value)
       } else if (stmt._tag === 'Return') {
-        const result = this.evaluate(stmt.result, scope)
+        const result = this.evaluate(stmt.result, blockScope)
         if (!result.ok) return result
         return result
       }
