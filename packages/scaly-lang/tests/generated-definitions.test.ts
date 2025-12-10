@@ -37,3 +37,41 @@ Rectangle(Point(0, 0), 10, 5).width`)
   })
 })
 
+describe('Union Definitions', () => {
+  it('OPTION-SOME', () => {
+    resetEvaluator()
+    const result = evaluateProgram(`define Option union(Some: int, None)
+Some(5)`)
+    expect(result._tag).toBe('Ok')
+    expect(JSON.stringify(result.value)).toBe('{"_type":"Option","_variant":"Some","value":5}')
+  })
+  it('OPTION-NONE', () => {
+    resetEvaluator()
+    const result = evaluateProgram(`define Option union(Some: int, None)
+None`)
+    expect(result._tag).toBe('Ok')
+    expect(JSON.stringify(result.value)).toBe('{"_type":"Option","_variant":"None"}')
+  })
+  it('RESULT-OK', () => {
+    resetEvaluator()
+    const result = evaluateProgram(`define Result union(Ok: int, Err: String)
+Ok(42)`)
+    expect(result._tag).toBe('Ok')
+    expect(JSON.stringify(result.value)).toBe('{"_type":"Result","_variant":"Ok","value":42}')
+  })
+  it('RESULT-ERR', () => {
+    resetEvaluator()
+    const result = evaluateProgram(`define Result union(Ok: int, Err: String)
+Err("error")`)
+    expect(result._tag).toBe('Ok')
+    expect(JSON.stringify(result.value)).toBe('{"_type":"Result","_variant":"Err","value":"error"}')
+  })
+  it('OPTION-SOME-VALUE', () => {
+    resetEvaluator()
+    const result = evaluateProgram(`define Option union(Some: int, None)
+Some(5).value`)
+    expect(result._tag).toBe('Ok')
+    expect(result.value).toBe(5)
+  })
+})
+
