@@ -206,3 +206,55 @@ x * 2`)
   })
 })
 
+describe('Basic Choose', () => {
+  it('CHOOSE-SOME', () => {
+    resetEvaluator()
+    const result = evaluateProgram(`define Option union(Some: int, None)
+choose Some(5): when v: Some: v + 1 else 0`)
+    expect(result._tag).toBe('Ok')
+    expect(result.value).toBe(6)
+  })
+  it('CHOOSE-NONE', () => {
+    resetEvaluator()
+    const result = evaluateProgram(`define Option union(Some: int, None)
+choose None: when v: Some: v else -1`)
+    expect(result._tag).toBe('Ok')
+    expect(result.value).toBe(-1)
+  })
+  it('CHOOSE-WITH-LET', () => {
+    resetEvaluator()
+    const result = evaluateProgram(`define Option union(Some: int, None)
+let x Some(10)
+choose x: when v: Some: v * 2 else 0`)
+    expect(result._tag).toBe('Ok')
+    expect(result.value).toBe(20)
+  })
+})
+
+describe('Choose with Result', () => {
+  it('CHOOSE-OK', () => {
+    resetEvaluator()
+    const result = evaluateProgram(`define Result union(Ok: int, Err: String)
+choose Ok(42): when v: Ok: v when e: Err: 0 else -1`)
+    expect(result._tag).toBe('Ok')
+    expect(result.value).toBe(42)
+  })
+  it('CHOOSE-ERR', () => {
+    resetEvaluator()
+    const result = evaluateProgram(`define Result union(Ok: int, Err: String)
+choose Err("error"): when v: Ok: v when e: Err: 0 else -1`)
+    expect(result._tag).toBe('Ok')
+    expect(result.value).toBe(0)
+  })
+})
+
+describe('Choose Else Branch', () => {
+  it('CHOOSE-ELSE-FALLBACK', () => {
+    resetEvaluator()
+    const result = evaluateProgram(`define Option union(Some: int, None)
+choose None: when v: Some: v else 99`)
+    expect(result._tag).toBe('Ok')
+    expect(result.value).toBe(99)
+  })
+})
+
