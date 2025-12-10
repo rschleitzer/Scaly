@@ -1,7 +1,7 @@
 // Scaly Language - Browser Entry Point
 // Exports evaluate function for browser REPL
 
-import { parseAndModelStatements } from './modeler.js'
+import { parseAndModelStatements, parseAndModelProgram } from './modeler.js'
 import { Runtime, Value } from './runtime.browser.js'
 import { formatModelError } from './model-error.js'
 
@@ -63,12 +63,45 @@ function valueToJs(value: Value): unknown {
     case 'String':
     case 'Char':
       return value.value
-    case 'Wrapper':
-      // This shouldn't happen after collapse, but just in case
-      return `${value.type}(...)`
+    case 'Wrapper': {
+      // Convert wrapper to JS object with _type and fields
+      const obj: Record<string, unknown> = { _type: value.type }
+      for (const [name, val] of value.fields) {
+        obj[name] = valueToJs(val)
+      }
+      return obj
+    }
     case 'Unit':
       return undefined
   }
+}
+
+// Evaluate a full program (declarations + statements)
+export function evaluateProgram(input: string): EvalResult {
+  // Parse and build semantic model
+  const modelResult = parseAndModelProgram(input)
+  if (!modelResult.ok) {
+    return { _tag: 'ModelError', message: formatModelError(modelResult.error, input) }
+  }
+
+  // Evaluate using runtime (declarations are registered, statements evaluated)
+  const rt = getRuntime()
+  const evalResult = rt.evaluateProgram(modelResult.value)
+
+  if (!evalResult.ok) {
+    return { _tag: 'EvalError', message: evalResult.error, code: input }
+  }
+
+  // Collapse wrappers to get final value
+  const collapsed = rt.collapseWrapper(evalResult.value)
+  if (!collapsed.ok) {
+    return { _tag: 'EvalError', message: collapsed.error, code: input }
+  }
+
+  // Convert to JavaScript value
+  const value = valueToJs(collapsed.value)
+
+  return { _tag: 'Ok', value, code: input }
 }
 
 // Reset runtime (useful for testing)
