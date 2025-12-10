@@ -1,0 +1,209 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Definitions</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="The Scaly Programming Language"
+HREF="index.html"><LINK
+REL="PREVIOUS"
+TITLE="Grammar"
+HREF="grammar.htm"><LINK
+REL="NEXT"
+TITLE="Expressions"
+HREF="expressions.htm"><META
+HTTP-EQUIV="Content-Type"
+CONTENT="text/html; charset=UTF-8"></HEAD
+><BODY
+CLASS="chapter"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>The Scaly Programming Language</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="grammar.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="expressions.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="chapter"
+><H1
+><A
+NAME="AEN674"
+></A
+>Chapter 4 Definitions</H1
+><DIV
+CLASS="TOC"
+><DL
+><DT
+><B
+>Table of Contents</B
+></DT
+><DT
+><A
+HREF="definitions.htm#AEN676"
+>Overview</A
+></DT
+><DT
+><A
+HREF="definitions.htm#AEN679"
+>Structures</A
+></DT
+></DL
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN676"
+>Overview</A
+></H1
+><P
+>Definitions declare new types that can be used throughout a program.
+      Types can have properties, methods, and nested definitions.
+    </P
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN679"
+>Structures</A
+></H1
+><P
+>The <TT
+CLASS="code"
+>define</TT
+> keyword creates a new structure type with
+      named properties. Properties are specified as a comma-separated list
+      of name-type pairs.
+    </P
+><PRE
+CLASS="programlisting"
+>define Point(x: int, y: int)
+Point(3, 4)          ; creates Point with x=3, y=4</PRE
+><P
+>&#13;      Structures are constructed by calling the type name as a function with
+      arguments for each property. Properties can be accessed using dot notation:
+    </P
+><PRE
+CLASS="programlisting"
+>define Point(x: int, y: int)
+Point(3, 4).x        ; evaluates to 3
+
+let p Point(3, 4): p.x + p.y  ; evaluates to 7</PRE
+><P
+>&#13;      Structures can contain other structures as properties:
+    </P
+><PRE
+CLASS="programlisting"
+>define Point(x: int, y: int)
+define Rectangle(origin: Point, width: int, height: int)
+Rectangle(Point(0, 0), 10, 5).width  ; evaluates to 10</PRE
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="grammar.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="expressions.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Grammar</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Expressions</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

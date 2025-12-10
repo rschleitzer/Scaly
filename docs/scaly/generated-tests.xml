@@ -318,3 +318,48 @@
       </informaltable>
     </section>
   </section>
+
+  <section xmlns='http://docbook.org/ns/docbook' xml:id='category-definitions'>
+    <title>Definitions</title>
+    <para>Definitions declare new types that can be used throughout a program.</para>
+
+    <section xml:id='tests-structure-definitions'>
+      <title>Structure Definitions</title>
+      <para>The define keyword creates a new structure type with named properties.</para>
+      <informaltable frame='none'>
+        <tgroup cols='2'>
+          <colspec colwidth='1*'/>
+          <colspec colwidth='1*'/>
+          <thead>
+            <row>
+              <entry>Input</entry>
+              <entry>Result</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry><literal>define Point(x: int, y: int)
+Point(3, 4)</literal></entry>
+              <entry><literal>{"_type":"Point","x":3,"y":4}</literal></entry>
+            </row>
+            <row>
+              <entry><literal>define Point(x: int, y: int)
+Point(3, 4).x</literal></entry>
+              <entry><literal>3</literal></entry>
+            </row>
+            <row>
+              <entry><literal>define Point(x: int, y: int)
+let p Point(3, 4): p.x + p.y</literal></entry>
+              <entry><literal>7</literal></entry>
+            </row>
+            <row>
+              <entry><literal>define Point(x: int, y: int)
+define Rectangle(origin: Point, width: int, height: int)
+Rectangle(Point(0, 0), 10, 5).width</literal></entry>
+              <entry><literal>10</literal></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+  </section>
