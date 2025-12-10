@@ -81,7 +81,7 @@ This prepares for Scaly's region-based memory management while keeping the TypeS
 
 ### Incremental REPL Development
 
-The REPL (in scaly-doc repo) drives development with incremental functionality:
+The REPL (in `docs/`) drives development with incremental functionality:
 
 1. **Literals**: numbers, strings, booleans
 2. **Operators**: arithmetic, comparison
@@ -112,7 +112,7 @@ The project uses npm workspaces with these packages:
 
 - **packages/scaly-io** (`@scaly/io`): I/O operations (File, Console, Path, Directory)
 
-- **packages/scaly-repl** (`@scaly/repl`): REPL scaffold (main implementation in scaly-doc repo)
+- **packages/scaly-repl** (`@scaly/repl`): REPL scaffold (main implementation in `docs/`)
 
 ### Grammar and Code Generation
 
@@ -204,7 +204,21 @@ operator +(left: Product, right: int) returns Sum {
 
 ## Documentation
 
-The **scaly-doc** repository contains the growing documentation for the Scaly language and the REPL implementation. This documentation must be kept in sync with the current state of the compiler/transpiler as features are added or changed.
+The `docs/` subdirectory contains the documentation for the Scaly language and the REPL implementation. Documentation is built using DocBook and deployed to scaly.io.
+
+### Building Documentation
+
+```bash
+# Generate stdlib documentation from @doc attributes
+node -e "import { extractDocs, generateDocBook } from './packages/scaly-lang/dist/docgen.js'; import { readFileSync, writeFileSync } from 'fs'; writeFileSync('docs/stdlib.xml', generateDocBook(extractDocs(readFileSync('stdlib.scaly', 'utf-8'))));"
+```
+
+### Deploying to scaly.io
+
+```bash
+# Deploy documentation to S3 bucket
+aws s3 sync docs/ s3://scaly.io --delete
+```
 
 ## Commit Policy
 
@@ -248,10 +262,11 @@ This runs `openjade -G -t sgml -d codegen/scaly.dsl scaly.sgm`
 ```
 .
 ├── packages/              # TypeScript packages (npm workspaces)
-│   ├── scaly-lang/       # Core: lexer, parser, modeler, runtime, evaluator
+│   ├── scaly-lang/       # Core: lexer, parser, modeler, runtime, evaluator, docgen
 │   ├── scaly-containers/ # Container types
 │   ├── scaly-io/         # I/O operations
-│   └── scaly-repl/       # REPL scaffold (see scaly-doc)
+│   └── scaly-repl/       # REPL scaffold
+├── docs/                 # Documentation (deployed to scaly.io)
 ├── codegen/              # DSSSL parser generation scripts
 ├── scaly.sgm             # Grammar definition
 ├── stdlib.scaly          # Standard library (operators, functions)

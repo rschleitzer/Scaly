@@ -7,7 +7,7 @@ export interface DocEntry {
   kind: 'define' | 'operator' | 'function'
   name: string
   doc: string
-  parameters: { name: string; type: string }[]
+  parameters: { name: string; type: string; doc?: string }[]
   returnType: string | null
 }
 
@@ -56,10 +56,15 @@ function extractFromDefinition(def: any): DocEntry | null {
 
   // For definitions, parameters are in concept_.structure.parts as PropertySyntax
   const parts = def.concept_?.structure?.parts || []
-  const parameters = parts.map((p: any) => ({
-    name: p.name,
-    type: p.annotation?.type?.name?.name || 'unknown',
-  }))
+  const parameters = parts.map((p: any) => {
+    // Handle both PropertySyntax directly and FieldSyntax (which wraps PropertySyntax)
+    const prop = p._syntax === 'FieldSyntax' ? p.property : p
+    return {
+      name: prop.name,
+      type: prop.annotation?.type?.name?.name || 'unknown',
+      doc: extractDocAttribute(prop.attributes) || undefined,
+    }
+  })
 
   return {
     kind: 'define',
@@ -137,12 +142,13 @@ function extractDocAttribute(attributes: any[] | null): string | null {
   return null
 }
 
-function extractParameters(params: any): { name: string; type: string }[] {
+function extractParameters(params: any): { name: string; type: string; doc?: string }[] {
   if (!params.items) return []
 
   return params.items.map((item: any) => ({
     name: item.name,
     type: item.annotation?.type?.name?.name || 'unknown',
+    doc: extractDocAttribute(item.attributes) || undefined,
   }))
 }
 
@@ -205,6 +211,19 @@ function generateEntryDocBook(entry: DocEntry, indent: string): string {
 
   // Description
   lines.push(`${indent}  <para>${escapeXml(entry.doc)}</para>`)
+
+  // Parameters with documentation
+  const paramsWithDoc = entry.parameters.filter(p => p.doc)
+  if (paramsWithDoc.length > 0) {
+    lines.push(`${indent}  <variablelist>`)
+    for (const param of paramsWithDoc) {
+      lines.push(`${indent}    <varlistentry>`)
+      lines.push(`${indent}      <term><parameter>${escapeXml(param.name)}</parameter>: <type>${escapeXml(param.type)}</type></term>`)
+      lines.push(`${indent}      <listitem><para>${escapeXml(param.doc!)}</para></listitem>`)
+      lines.push(`${indent}    </varlistentry>`)
+    }
+    lines.push(`${indent}  </variablelist>`)
+  }
 
   lines.push(`${indent}</section>`)
 
