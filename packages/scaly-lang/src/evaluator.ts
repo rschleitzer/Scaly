@@ -1,6 +1,6 @@
 // Scaly Evaluator - evaluates Scaly code using the runtime
 
-import { parseAndModel } from './modeler.js'
+import { parseAndModelStatements } from './modeler.js'
 import { Runtime, Value } from './runtime.js'
 import { formatModelError } from './model-error.js'
 import * as path from 'path'
@@ -38,14 +38,14 @@ function getRuntime(): Runtime {
 
 export function evaluate(input: string): EvalResult {
   // Parse and build semantic model
-  const modelResult = parseAndModel(input)
+  const modelResult = parseAndModelStatements(input)
   if (!modelResult.ok) {
     return { _tag: 'ModelError', message: formatModelError(modelResult.error, input) }
   }
 
   // Evaluate using runtime
   const rt = getRuntime()
-  const evalResult = rt.evaluate(modelResult.value)
+  const evalResult = rt.evaluateBlock(modelResult.value)
 
   if (!evalResult.ok) {
     return { _tag: 'EvalError', message: evalResult.error, code: input }

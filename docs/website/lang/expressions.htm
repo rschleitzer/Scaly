@@ -96,6 +96,11 @@ HREF="expressions.htm#AEN679"
 HREF="expressions.htm#AEN829"
 >Operations</A
 ></DT
+><DT
+><A
+HREF="expressions.htm#AEN945"
+>Let Bindings</A
+></DT
 ></DL
 ></DIV
 ><DIV
@@ -856,6 +861,34 @@ CLASS="literal"
 ></P
 ></DIV
 ></DIV
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN945"
+>Let Bindings</A
+></H1
+><P
+>&#13;      Let bindings introduce local variables. The syntax is
+      <TT
+CLASS="code"
+>let</TT
+> followed by a name and a value expression (no equals sign).
+      Multiple statements are separated by colons.
+    </P
+><PRE
+CLASS="programlisting"
+>let x 5: x               ; evaluates to 5
+let x 5: x + 3           ; evaluates to 8
+let x 5: let y 3: x + y  ; evaluates to 8</PRE
+><P
+>&#13;      The value can be any expression, including arithmetic:
+    </P
+><PRE
+CLASS="programlisting"
+>let x 2 + 3: x * 2       ; x is 5, result is 10</PRE
 ></DIV
 ></DIV
 ><DIV
