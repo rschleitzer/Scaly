@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { evaluate } from '../src/index.js'
+import { describe, it, expect, beforeEach } from 'vitest'
+import { evaluate, evaluateProgram, resetEvaluator } from '../src/index.js'
 
 describe('Evaluator', () => {
   it('evaluates integer literals', () => {
@@ -120,6 +120,39 @@ describe('Evaluator', () => {
     expect(result._tag).toBe('Ok')
     if (result._tag === 'Ok') {
       expect(result.value).toBe(8)
+    }
+  })
+})
+
+describe('Programs with define', () => {
+  beforeEach(() => {
+    resetEvaluator()
+  })
+
+  it('evaluates program with define and constructor', () => {
+    const result = evaluateProgram(`define Point(x: int, y: int)
+Point(3, 4)`)
+    expect(result._tag).toBe('Ok')
+    if (result._tag === 'Ok') {
+      expect(result.value).toEqual({ _type: 'Point', x: 3, y: 4 })
+    }
+  })
+
+  it('evaluates program with define and field access', () => {
+    const result = evaluateProgram(`define Point(x: int, y: int)
+Point(3, 4).x`)
+    expect(result._tag).toBe('Ok')
+    if (result._tag === 'Ok') {
+      expect(result.value).toBe(3)
+    }
+  })
+
+  it('evaluates program with define, let binding and field access', () => {
+    const result = evaluateProgram(`define Point(x: int, y: int)
+let p Point(3, 4): p.x + p.y`)
+    expect(result._tag).toBe('Ok')
+    if (result._tag === 'Ok') {
+      expect(result.value).toBe(7)
     }
   })
 })

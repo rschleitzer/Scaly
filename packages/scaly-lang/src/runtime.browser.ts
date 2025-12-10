@@ -278,10 +278,26 @@ export class Runtime {
 
       // Constructor call: Type followed by Tuple (e.g., Sum(1, 2))
       if (this.types.has(name)) {
-        const secondExpr = operands[1].expression
+        const tupleOperand = operands[1]
+        const secondExpr = tupleOperand.expression
         if (secondExpr._tag === 'Tuple') {
-          const result = this.constructWrapper(name, secondExpr, scope)
+          let result = this.constructWrapper(name, secondExpr, scope)
           if (!result.ok) return result
+
+          // Apply memberAccess from the tuple operand (e.g., Point(3, 4).x)
+          if (tupleOperand.memberAccess && tupleOperand.memberAccess.length > 0) {
+            for (const member of tupleOperand.memberAccess) {
+              if (result.value._tag !== 'Wrapper') {
+                return { ok: false, error: `Cannot access member '${member}' on ${result.value._tag}` }
+              }
+              const field = result.value.fields.get(member)
+              if (!field) {
+                return { ok: false, error: `Unknown field '${member}' on ${result.value.type}` }
+              }
+              result = { ok: true, value: field }
+            }
+          }
+
           if (operands.length > 2) {
             return this.evaluateWithContext(result.value, operands.slice(2), scope)
           }
@@ -439,8 +455,20 @@ export class Runtime {
   private constructWrapper(typeName: string, tuple: Model.Tuple, scope: Scope): { ok: true; value: Value } | { ok: false; error: string } {
     const fields = new Map<string, Value>()
 
-    // For now, assume positional parameters map to 'left' and 'right'
-    const fieldNames = ['left', 'right']
+    // Get field names from type definition
+    const typeDef = this.types.get(typeName)
+    if (!typeDef) {
+      return { ok: false, error: `Unknown type: ${typeName}` }
+    }
+
+    // Extract field names from the definition
+    let fieldNames: string[] = []
+    if (typeDef.definition._tag === 'Structure') {
+      fieldNames = typeDef.definition.properties.map(p => p.name)
+    } else {
+      // Fallback for intrinsic types
+      fieldNames = ['left', 'right']
+    }
 
     for (let i = 0; i < tuple.components.length && i < fieldNames.length; i++) {
       const component = tuple.components[i]
@@ -640,6 +668,30 @@ export class Runtime {
     return { ok: true, value: lastValue }
   }
 
+  evaluateProgram(program: Model.Program): { ok: true; value: Value } | { ok: false; error: string } {
+    // Register declarations from the module
+    for (const member of program.module.members) {
+      if (member._tag === 'Concept') {
+        this.types.set(member.name, member)
+      } else if (member._tag === 'Operator') {
+        this.registerOperator(member)
+      } else if (member._tag === 'Function') {
+        this.registerFunction(member)
+      }
+    }
+
+    // Evaluate statements and return last value
+    let lastValue: Value = { _tag: 'Unit' }
+    const scope: Scope = new Map() // Shared scope across all statements
+    for (const stmt of program.statements) {
+      const result = this.evaluateStatement(stmt, scope)
+      if (!result.ok) return result
+      lastValue = result.value
+    }
+
+    return { ok: true, value: lastValue }
+  }
+
   private evaluateStatement(stmt: Model.Statement, scope: Scope): { ok: true; value: Value } | { ok: false; error: string } {
     switch (stmt._tag) {
       case 'Action':
@@ -832,8 +884,16 @@ export class Runtime {
   }
 
   // Collapse a wrapper to its value (for expression boundaries like parentheses)
+  // Only collapses intrinsic arithmetic wrappers; user-defined types pass through as-is
   collapseWrapper(value: Value): { ok: true; value: Value } | { ok: false; error: string } {
     if (value._tag !== 'Wrapper') {
+      return { ok: true, value }
+    }
+
+    // Check if this is an intrinsic arithmetic wrapper
+    const intrinsicTypes = ['Sum', 'Difference', 'Product', 'Quotient']
+    if (!intrinsicTypes.includes(value.type)) {
+      // User-defined type - return as-is
       return { ok: true, value }
     }
 
@@ -854,7 +914,7 @@ export class Runtime {
       case 'Quotient':
         return { ok: true, value: { _tag: 'Int', value: left.value / right.value } }
       default:
-        return { ok: false, error: `Unknown wrapper type: ${value.type}` }
+        return { ok: true, value } // Should not reach here, but return as-is
     }
   }
 
@@ -866,7 +926,13 @@ export class Runtime {
       case 'Float': return String(value.value)
       case 'String': return JSON.stringify(value.value)
       case 'Char': return `'${value.value}'`
-      case 'Wrapper': return `${value.type}(${this.formatValue(value.fields.get('left')!)}, ${this.formatValue(value.fields.get('right')!)})`
+      case 'Wrapper': {
+        const fieldParts: string[] = []
+        for (const [name, val] of value.fields) {
+          fieldParts.push(`${name}: ${this.formatValue(val)}`)
+        }
+        return `${value.type} { ${fieldParts.join(', ')} }`
+      }
       case 'Unit': return '()'
     }
   }
