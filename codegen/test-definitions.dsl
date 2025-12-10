@@ -1,7 +1,6 @@
 <!DOCTYPE STYLE-SHEET PUBLIC "-//James Clark//DTD DSSSL Style Sheet//EN" [
 <!ENTITY testjs    SYSTEM "testjs.scm">
 <!ENTITY testdoc   SYSTEM "testdoc.scm">
-<!ENTITY testrules SYSTEM "testrules.scm">
 <!ENTITY helpers   SYSTEM "helpers.scm">
 <!ENTITY fodeclare SYSTEM "fodeclare.scm">
 ]>
@@ -13,7 +12,19 @@
 &helpers;
 &testjs;
 &testdoc;
-&testrules;
+
+<![CDATA[
+(element suite
+    (sosofo-append
+        (file "packages/scaly-lang/tests/generated-definitions.test.ts"
+            (generate-testjs)
+        )
+        (file "docs/scaly/generated-definitions.xml"
+            (generate-testdoc)
+        )
+    )
+)
+]]>
 
 </STYLE-SPECIFICATION>
 </STYLE-SHEET>

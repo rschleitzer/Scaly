@@ -6,7 +6,8 @@
   <!ENTITY grammar-productions SYSTEM "scaly/grammar.xml">
   <!ENTITY definitions SYSTEM "scaly/chapters/definitions.xml">
   <!ENTITY expressions SYSTEM "scaly/chapters/expressions.xml">
-  <!ENTITY generated-tests SYSTEM "scaly/generated-tests.xml">
+  <!ENTITY generated-expressions SYSTEM "scaly/generated-expressions.xml">
+  <!ENTITY generated-definitions SYSTEM "scaly/generated-definitions.xml">
   <!ENTITY stdlib SYSTEM "scaly/stdlib.xml">
 ]>
 <book xmlns="http://docbook.org/ns/docbook" version="5.0">

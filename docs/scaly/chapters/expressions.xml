@@ -10,7 +10,7 @@
     </para>
   </section>
 
-  &generated-tests;
+  &generated-expressions;
 
   <section xml:id="expr-if">
     <title>If Expressions</title>
@@ -39,21 +39,6 @@ match 5: case 1: 10 else 0              ; evaluates to 0</programlisting>
       Multiple cases can share the same branch:
     </para>
     <programlisting>match 2: case 1 case 2: "one or two" else "other"</programlisting>
-  </section>
-
-  <section xml:id="expr-let">
-    <title>Let Bindings</title>
-    <para>Let bindings introduce local variables. The syntax is
-      <code>let</code> followed by a name and a value expression (no equals sign).
-      Multiple statements are separated by colons.
-    </para>
-    <programlisting>let x 5: x               ; evaluates to 5
-let x 5: x + 3           ; evaluates to 8
-let x 5: let y 3: x + y  ; evaluates to 8</programlisting>
-    <para>
-      The value can be any expression, including arithmetic:
-    </para>
-    <programlisting>let x 2 + 3: x * 2       ; x is 5, result is 10</programlisting>
   </section>
 
 </chapter>

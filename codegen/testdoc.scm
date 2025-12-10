@@ -6,13 +6,13 @@
 "
     (apply-to-selected-children "category" (lambda (category) ($
 "
-  <section xmlns='http://docbook.org/ns/docbook' xml:id='category-"(attribute-string "xml:id" category)"'>
+  <section xmlns='http://docbook.org/ns/docbook' xml:id='category-"(id category)"'>
     <title>"(attribute-string "title" category)"</title>
     <para>"(category-prose category)"</para>
 "
         (apply-to-selected-children-of category "tests" (lambda (tests) ($
 "
-    <section xml:id='tests-"(attribute-string "xml:id" tests)"'>
+    <section xml:id='tests-"(id tests)"'>
       <title>"(attribute-string "title" tests)"</title>
       <para>"(tests-prose tests)"</para>
       <informaltable frame='none'>

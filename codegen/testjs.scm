@@ -43,9 +43,9 @@ import { evaluate, evaluateProgram, resetEvaluator } from '../src/index.js'
 "
 ))
 
-; Check if test has program="true"
+; Check if test has program attribute
 (define (test-is-program? test)
-    (string=? (attribute-string "program" test) "true"))
+    (attribute-string "program" test))
 
 ; Get comparison expression based on test type
 (define (test-expect-comparison test)
@@ -56,7 +56,7 @@ import { evaluate, evaluateProgram, resetEvaluator } from '../src/index.js'
 
 ; Get "it" or "it.skip" based on skip attribute
 (define (test-it test)
-    (if (string=? (attribute-string "skip" test) "true")
+    (if (attribute-string "skip" test)
         "it.skip"
         "it"))
 
@@ -89,7 +89,7 @@ import { evaluate, evaluateProgram, resetEvaluator } from '../src/index.js'
 (define (test-description test)
     (let ((desc (node-list-first (select-elements (children test) "description"))))
         (if (node-list-empty? desc)
-            (attribute-string "xml:id" test)
+            (id test)
             (data desc))))
 
 ; Quote input for JS - use single quotes and escape as needed
