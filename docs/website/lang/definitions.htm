@@ -89,7 +89,7 @@ HREF="definitions.htm#AEN676"
 ><DT
 ><A
 HREF="definitions.htm#AEN679"
->Structures</A
+>Definitions</A
 ></DT
 ></DL
 ></DIV
@@ -112,38 +112,102 @@ CLASS="section"
 CLASS="section"
 ><A
 NAME="AEN679"
->Structures</A
+>Definitions</A
 ></H1
 ><P
->The <TT
-CLASS="code"
->define</TT
-> keyword creates a new structure type with
-      named properties. Properties are specified as a comma-separated list
-      of name-type pairs.
-    </P
-><PRE
-CLASS="programlisting"
->define Point(x: int, y: int)
-Point(3, 4)          ; creates Point with x=3, y=4</PRE
+>Definitions declare new types that can be used throughout a program.</P
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN682"
+>Structure Definitions</A
+></H2
 ><P
->&#13;      Structures are constructed by calling the type name as a function with
-      arguments for each property. Properties can be accessed using dot notation:
-    </P
-><PRE
-CLASS="programlisting"
->define Point(x: int, y: int)
-Point(3, 4).x        ; evaluates to 3
-
-let p Point(3, 4): p.x + p.y  ; evaluates to 7</PRE
+>The define keyword creates a new structure type with named properties.</P
+><DIV
+CLASS="informaltable"
 ><P
->&#13;      Structures can contain other structures as properties:
-    </P
-><PRE
-CLASS="programlisting"
+></P
+><A
+NAME="AEN685"
+></A
+><TABLE
+BORDER="0"
+FRAME="void"
+CLASS="CALSTABLE"
+><COL
+WIDTH="1*"><COL
+WIDTH="1*"><THEAD
+><TR
+><TH
+>Input</TH
+><TH
+>Result</TH
+></TR
+></THEAD
+><TBODY
+><TR
+><TD
+><TT
+CLASS="literal"
+>define Point(x: int, y: int)
+Point(3, 4)</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>{"_type":"Point","x":3,"y":4}</TT
+></TD
+></TR
+><TR
+><TD
+><TT
+CLASS="literal"
+>define Point(x: int, y: int)
+Point(3, 4).x</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>3</TT
+></TD
+></TR
+><TR
+><TD
+><TT
+CLASS="literal"
+>define Point(x: int, y: int)
+let p Point(3, 4)
+p.x + p.y</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>7</TT
+></TD
+></TR
+><TR
+><TD
+><TT
+CLASS="literal"
 >define Point(x: int, y: int)
 define Rectangle(origin: Point, width: int, height: int)
-Rectangle(Point(0, 0), 10, 5).width  ; evaluates to 10</PRE
+Rectangle(Point(0, 0), 10, 5).width</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>10</TT
+></TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+></DIV
 ></DIV
 ></DIV
 ><DIV

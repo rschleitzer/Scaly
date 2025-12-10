@@ -8,33 +8,6 @@
     </para>
   </section>
 
-  <section xml:id="def-structures">
-    <title>Structures</title>
-    <para>The <code>define</code> keyword creates a new structure type with
-      named properties. Properties are specified as a comma-separated list
-      of name-type pairs.
-    </para>
-
-    <programlisting>define Point(x: int, y: int)
-Point(3, 4)          ; creates Point with x=3, y=4</programlisting>
-
-    <para>
-      Structures are constructed by calling the type name as a function with
-      arguments for each property. Properties can be accessed using dot notation:
-    </para>
-
-    <programlisting>define Point(x: int, y: int)
-Point(3, 4).x        ; evaluates to 3
-
-let p Point(3, 4): p.x + p.y  ; evaluates to 7</programlisting>
-
-    <para>
-      Structures can contain other structures as properties:
-    </para>
-
-    <programlisting>define Point(x: int, y: int)
-define Rectangle(origin: Point, width: int, height: int)
-Rectangle(Point(0, 0), 10, 5).width  ; evaluates to 10</programlisting>
-  </section>
+  &generated-definitions;
 
 </chapter>

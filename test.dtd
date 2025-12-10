@@ -3,27 +3,27 @@
 
 <!ELEMENT suite - O (category+)>
 <!ATTLIST suite
-    xml:id      ID          #IMPLIED
+    id          ID          #IMPLIED
     title       CDATA       #IMPLIED
 >
 
 <!ELEMENT category - O (prose?, tests+)>
 <!ATTLIST category
-    xml:id      ID          #IMPLIED
+    id          ID          #IMPLIED
     title       CDATA       #IMPLIED
 >
 
 <!ELEMENT tests - O (prose?, test+)>
 <!ATTLIST tests
-    xml:id      ID          #IMPLIED
+    id          ID          #IMPLIED
     title       CDATA       #IMPLIED
 >
 
 <!ELEMENT test - O (input, expect, description?)>
 <!ATTLIST test
-    xml:id      ID          #IMPLIED
-    skip        (true|false) false
-    program     (true|false) false
+    id          ID          #IMPLIED
+    skip        (skip)      #IMPLIED
+    program     (program)   #IMPLIED
 >
 
 <!ELEMENT prose - O (#PCDATA)>

@@ -5,12 +5,12 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { evaluate, evaluateProgram, resetEvaluator } from '../src/index.js'
 
 describe('Boolean Literals', () => {
-  it('bool-true', () => {
+  it('BOOL-TRUE', () => {
     const result = evaluate(`true`)
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe(true)
   })
-  it('bool-false', () => {
+  it('BOOL-FALSE', () => {
     const result = evaluate(`false`)
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe(false)
@@ -18,17 +18,17 @@ describe('Boolean Literals', () => {
 })
 
 describe('Integer Literals', () => {
-  it('int-positive', () => {
+  it('INT-POSITIVE', () => {
     const result = evaluate(`42`)
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe(42)
   })
-  it('int-zero', () => {
+  it('INT-ZERO', () => {
     const result = evaluate(`0`)
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe(0)
   })
-  it('int-negative', () => {
+  it('INT-NEGATIVE', () => {
     const result = evaluate(`-7`)
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe(-7)
@@ -36,17 +36,17 @@ describe('Integer Literals', () => {
 })
 
 describe('Hexadecimal Literals', () => {
-  it('hex-ff', () => {
+  it('HEX-FF', () => {
     const result = evaluate(`0xFF`)
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe(255)
   })
-  it('hex-1a', () => {
+  it('HEX-1A', () => {
     const result = evaluate(`0x1A`)
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe(26)
   })
-  it('hex-zero', () => {
+  it('HEX-ZERO', () => {
     const result = evaluate(`0x0`)
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe(0)
@@ -54,17 +54,17 @@ describe('Hexadecimal Literals', () => {
 })
 
 describe('Floating-Point Literals', () => {
-  it('float-pi', () => {
+  it('FLOAT-PI', () => {
     const result = evaluate(`3.14`)
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe(3.14)
   })
-  it('float-two', () => {
+  it('FLOAT-TWO', () => {
     const result = evaluate(`2.0`)
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe(2)
   })
-  it('float-half', () => {
+  it('FLOAT-HALF', () => {
     const result = evaluate(`0.5`)
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe(0.5)
@@ -72,12 +72,12 @@ describe('Floating-Point Literals', () => {
 })
 
 describe('String Literals', () => {
-  it('string-hello', () => {
+  it('STRING-HELLO', () => {
     const result = evaluate(`"hello"`)
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe('hello')
   })
-  it('string-empty', () => {
+  it('STRING-EMPTY', () => {
     const result = evaluate(`""`)
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe('')
@@ -85,12 +85,12 @@ describe('String Literals', () => {
 })
 
 describe('Character Literals', () => {
-  it('char-a', () => {
+  it('CHAR-A', () => {
     const result = evaluate('`a`')
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe('a')
   })
-  it('char-z', () => {
+  it('CHAR-Z', () => {
     const result = evaluate('`Z`')
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe('Z')
@@ -98,17 +98,17 @@ describe('Character Literals', () => {
 })
 
 describe('Prefix Functions', () => {
-  it('negate-positive', () => {
+  it('NEGATE-POSITIVE', () => {
     const result = evaluate(`-7`)
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe(-7)
   })
-  it('negate-negative', () => {
+  it('NEGATE-NEGATIVE', () => {
     const result = evaluate(`-(-3)`)
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe(3)
   })
-  it('prefix-add', () => {
+  it('PREFIX-ADD', () => {
     const result = evaluate(`+ 3`)
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe(3)
@@ -116,27 +116,27 @@ describe('Prefix Functions', () => {
 })
 
 describe('Operator Chains', () => {
-  it('simple-add', () => {
+  it('SIMPLE-ADD', () => {
     const result = evaluate(`3 + 4`)
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe(7)
   })
-  it('simple-subtract', () => {
+  it('SIMPLE-SUBTRACT', () => {
     const result = evaluate(`10 - 3`)
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe(7)
   })
-  it('simple-multiply', () => {
+  it('SIMPLE-MULTIPLY', () => {
     const result = evaluate(`6 * 7`)
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe(42)
   })
-  it('chain-with-precedence', () => {
+  it('CHAIN-WITH-PRECEDENCE', () => {
     const result = evaluate(`3 + 4 * 2`)
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe(11)
   })
-  it('chain-left-to-right', () => {
+  it('CHAIN-LEFT-TO-RIGHT', () => {
     const result = evaluate(`20 - 5 - 3`)
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe(12)
@@ -144,17 +144,17 @@ describe('Operator Chains', () => {
 })
 
 describe('Parentheses and Grouping', () => {
-  it('parens-negate', () => {
+  it('PARENS-NEGATE', () => {
     const result = evaluate(`5 * (- 2)`)
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe(-10)
   })
-  it('parens-grouping', () => {
+  it('PARENS-GROUPING', () => {
     const result = evaluate(`2 * (3 + 4)`)
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe(14)
   })
-  it('nested-parens', () => {
+  it('NESTED-PARENS', () => {
     const result = evaluate(`(2 + 3) * (4 + 1)`)
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe(25)
@@ -162,45 +162,45 @@ describe('Parentheses and Grouping', () => {
 })
 
 describe('Identifier Shapes', () => {
-  it('name-as-operator', () => {
+  it('NAME-AS-OPERATOR', () => {
     const result = evaluate(`10 div 3`)
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe(3)
   })
-  it('name-as-function', () => {
+  it('NAME-AS-FUNCTION', () => {
     const result = evaluate(`abs (- 5)`)
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe(5)
   })
 })
 
-describe('Structure Definitions', () => {
-  it('define-point', () => {
+describe('Let Bindings', () => {
+  it('LET-SIMPLE', () => {
     resetEvaluator()
-    const result = evaluateProgram(`define Point(x: int, y: int)
-Point(3, 4)`)
+    const result = evaluateProgram(`let x 5
+x`)
     expect(result._tag).toBe('Ok')
-    expect(JSON.stringify(result.value)).toBe('{"_type":"Point","x":3,"y":4}')
+    expect(result.value).toBe(5)
   })
-  it('define-field-access', () => {
+  it('LET-USE-BINDING', () => {
     resetEvaluator()
-    const result = evaluateProgram(`define Point(x: int, y: int)
-Point(3, 4).x`)
+    const result = evaluateProgram(`let x 5
+x + 3`)
     expect(result._tag).toBe('Ok')
-    expect(result.value).toBe(3)
+    expect(result.value).toBe(8)
   })
-  it('define-with-let', () => {
+  it('LET-NESTED', () => {
     resetEvaluator()
-    const result = evaluateProgram(`define Point(x: int, y: int)
-let p Point(3, 4): p.x + p.y`)
+    const result = evaluateProgram(`let x 5
+let y 3
+x + y`)
     expect(result._tag).toBe('Ok')
-    expect(result.value).toBe(7)
+    expect(result.value).toBe(8)
   })
-  it('define-nested', () => {
+  it('LET-EXPR-VALUE', () => {
     resetEvaluator()
-    const result = evaluateProgram(`define Point(x: int, y: int)
-define Rectangle(origin: Point, width: int, height: int)
-Rectangle(Point(0, 0), 10, 5).width`)
+    const result = evaluateProgram(`let x 2 + 3
+x * 2`)
     expect(result._tag).toBe('Ok')
     expect(result.value).toBe(10)
   })

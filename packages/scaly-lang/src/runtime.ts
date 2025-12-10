@@ -560,7 +560,11 @@ export class Runtime {
         }
         const result = this.evaluate(stmt.operation, scope)
         if (!result.ok) return result
-        scope.set(name, result.value)
+        // Collapse wrappers when storing - so `let x 2 + 3` stores 5, not Sum(2,3)
+        const collapseResult = this.collapseWrapper(result.value)
+        if (!collapseResult.ok) return collapseResult
+        const collapsed = collapseResult.value
+        scope.set(name, collapsed)
         return { ok: true, value: { _tag: 'Unit' } }
       }
       case 'Return':

@@ -1,0 +1,91 @@
+<!DOCTYPE suite SYSTEM "../test.dtd">
+
+<suite id = expressions-tests title = "Expression Tests">
+
+<category id = literals title = "Literals">
+
+    <prose>Expressions are the core computational units of Scaly. Every expression evaluates to a value.
+
+    <tests id = boolean-literals title = "Boolean Literals">
+        <prose>The boolean literals are true and false.
+        <test id = bool-true><input>true<expect>true
+        <test id = bool-false><input>false<expect>false
+
+    <tests id = integer-literals title = "Integer Literals">
+        <prose>Integer literals are sequences of decimal digits, optionally preceded by a minus sign for negative numbers.
+        <test id = int-positive><input>42<expect>42
+        <test id = int-zero><input>0<expect>0
+        <test id = int-negative><input>-7<expect>-7
+
+    <tests id = hex-literals title = "Hexadecimal Literals">
+        <prose>Hexadecimal literals start with 0x or 0X followed by hexadecimal digits (0-9, a-f, A-F).
+        <test id = hex-ff><input>0xFF<expect>255
+        <test id = hex-1a><input>0x1A<expect>26
+        <test id = hex-zero><input>0x0<expect>0
+
+    <tests id = float-literals title = "Floating-Point Literals">
+        <prose>Floating-point literals contain a decimal point separating the integer and fractional parts.
+        <test id = float-pi><input>3.14<expect>3.14
+        <test id = float-two><input>2.0<expect>2
+        <test id = float-half><input>0.5<expect>0.5
+
+    <tests id = string-literals title = "String Literals">
+        <prose>String literals are enclosed in double quotes. They may span multiple lines, with line breaks preserved in the resulting string.
+        <test id = string-hello><input>"hello"<expect>hello
+        <test id = string-empty><input>""<expect>
+
+    <tests id = character-literals title = "Character Literals">
+        <prose>Character literals represent a single character, enclosed in backticks.
+        <test id = char-a><input>`a`<expect>a
+        <test id = char-z><input>`Z`<expect>Z
+
+<category id = operations title = "Operations">
+
+    <prose>Operations allow combining expressions.
+
+    <tests id = prefix-functions title = "Prefix Functions">
+        <prose>An operation is a sequence of operands that evaluates to a single value.
+        Each operand is an expression optionally followed by member access. An operation ends with a colon, a line break,
+        or anything which is not an expression. Evaluation uses a context which is empty at the start of an operation.
+        When the context is empty, operator-shaped identifiers act as prefix functions, taking the next operand as their argument.
+        <test id = negate-positive><input>-7<expect>-7
+        <test id = negate-negative><input>-(-3)<expect>3
+        <test id = prefix-add><input>+ 3<expect>3
+
+    <tests id = operator-chains title = "Operator Chains">
+        <prose>When the context holds a value, operators chain left-to-right. Each operator takes the current value and the next operand,
+        producing a new value. There is no operator precedence built into the language itself. Operator precedence is built into the implementation
+        of the individual operators. The common arithmetic operators are built into the standard library.
+        <test id = simple-add><input>3 + 4<expect>7
+        <test id = simple-subtract><input>10 - 3<expect>7
+        <test id = simple-multiply><input>6 * 7<expect>42
+        <test id = chain-with-precedence><input>3 + 4 * 2<expect>11
+        <test id = chain-left-to-right><input>20 - 5 - 3<expect>12
+
+    <tests id = parentheses-grouping title = "Parentheses and Grouping">
+        <prose>Parentheses create a empty context. This allows prefix forms inside an otherwise operator chain,
+        and explicit grouping when needed.
+        <test id = parens-negate><input>5 * (- 2)<expect>-10
+        <test id = parens-grouping><input>2 * (3 + 4)<expect>14
+        <test id = nested-parens><input>(2 + 3) * (4 + 1)<expect>25
+
+    <tests id = identifier-shapes title = "Identifier Shapes">
+        <prose>Identifiers can have name shape (alphanumeric) or operator shape (symbols). The shape is purely lexical and does not determine behavior. Whether an identifier acts as a prefix function or chain operator depends on its declaration and the register state.
+        <test id = name-as-operator><input>10 div 3<expect>3
+        <test id = name-as-function><input>abs (- 5)<expect>5
+
+    <tests id = let-bindings title = "Let Bindings">
+        <prose>Let bindings introduce local variables. The syntax is let followed by a name and a value expression (no equals sign). Multiple statements are separated by colons or newlines.
+        <test id = let-simple program = program><input>let x 5
+x<expect>5
+        <test id = let-use-binding program = program><input>let x 5
+x + 3<expect>8
+        <test id = let-nested program = program><input>let x 5
+let y 3
+x + y<expect>8
+        <test id = let-expr-value program = program><input>let x 2 + 3
+x * 2<expect>10
+
+</category>
+
+</suite>
