@@ -27,13 +27,18 @@
           </thead>
           <tbody>
 "
-            (apply-to-selected-children-of tests "test" (lambda (test) ($
-"            <row>
+            (apply-to-selected-children-of tests "test" (lambda (test)
+                (if (attribute-string "program" test)
+                    ($ "            <row>
+              <entry><programlisting>"(test-input-doc test)"</programlisting></entry>
+              <entry><literal>"(test-expect-doc test)"</literal></entry>
+            </row>
+")
+                    ($ "            <row>
               <entry><literal>"(test-input-doc test)"</literal></entry>
               <entry><literal>"(test-expect-doc test)"</literal></entry>
             </row>
-"
-            )))
+"))))
 "          </tbody>
         </tgroup>
       </informaltable>

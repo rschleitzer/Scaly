@@ -333,24 +333,24 @@
           </thead>
           <tbody>
             <row>
-              <entry><literal>let x 5
-x</literal></entry>
+              <entry><programlisting>let x 5
+x</programlisting></entry>
               <entry><literal>5</literal></entry>
             </row>
             <row>
-              <entry><literal>let x 5
-x + 3</literal></entry>
+              <entry><programlisting>let x 5
+x + 3</programlisting></entry>
               <entry><literal>8</literal></entry>
             </row>
             <row>
-              <entry><literal>let x 5
+              <entry><programlisting>let x 5
 let y 3
-x + y</literal></entry>
+x + y</programlisting></entry>
               <entry><literal>8</literal></entry>
             </row>
             <row>
-              <entry><literal>let x 2 + 3
-x * 2</literal></entry>
+              <entry><programlisting>let x 2 + 3
+x * 2</programlisting></entry>
               <entry><literal>10</literal></entry>
             </row>
           </tbody>

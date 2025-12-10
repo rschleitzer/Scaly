@@ -20,25 +20,25 @@
           </thead>
           <tbody>
             <row>
-              <entry><literal>define Point(x: int, y: int)
-Point(3, 4)</literal></entry>
+              <entry><programlisting>define Point(x: int, y: int)
+Point(3, 4)</programlisting></entry>
               <entry><literal>{"_type":"Point","x":3,"y":4}</literal></entry>
             </row>
             <row>
-              <entry><literal>define Point(x: int, y: int)
-Point(3, 4).x</literal></entry>
+              <entry><programlisting>define Point(x: int, y: int)
+Point(3, 4).x</programlisting></entry>
               <entry><literal>3</literal></entry>
             </row>
             <row>
-              <entry><literal>define Point(x: int, y: int)
+              <entry><programlisting>define Point(x: int, y: int)
 let p Point(3, 4)
-p.x + p.y</literal></entry>
+p.x + p.y</programlisting></entry>
               <entry><literal>7</literal></entry>
             </row>
             <row>
-              <entry><literal>define Point(x: int, y: int)
+              <entry><programlisting>define Point(x: int, y: int)
 define Rectangle(origin: Point, width: int, height: int)
-Rectangle(Point(0, 0), 10, 5).width</literal></entry>
+Rectangle(Point(0, 0), 10, 5).width</programlisting></entry>
               <entry><literal>10</literal></entry>
             </row>
           </tbody>
