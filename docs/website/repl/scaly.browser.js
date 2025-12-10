@@ -5659,6 +5659,24 @@ function abs(x: int) returns int intrinsic
           }
           return { ok: true, value: { _tag: "Unit" } };
         }
+        case "Match": {
+          const scrutineeResult = this.evaluate(expr.condition, scope);
+          if (!scrutineeResult.ok) return scrutineeResult;
+          const scrutineeValue = scrutineeResult.value;
+          for (const branch of expr.branches) {
+            for (const c of branch.cases) {
+              const caseResult = this.evaluate(c.condition, scope);
+              if (!caseResult.ok) return caseResult;
+              if (this.valuesEqual(scrutineeValue, caseResult.value)) {
+                return this.evaluateStatement(branch.consequent, scope);
+              }
+            }
+          }
+          if (expr.alternative) {
+            return this.evaluateStatement(expr.alternative, scope);
+          }
+          return { ok: true, value: { _tag: "Unit" } };
+        }
         case "Type":
           const name = expr.name[0];
           if (name === "true" && expr.name.length === 1) {
@@ -5742,6 +5760,21 @@ function abs(x: int) returns int intrinsic
           return this.evaluate(stmt.result, scope);
         default:
           return { ok: false, error: `Statement type not implemented: ${stmt._tag}` };
+      }
+    }
+    valuesEqual(a, b) {
+      if (a._tag !== b._tag) return false;
+      switch (a._tag) {
+        case "Int":
+        case "Float":
+        case "Bool":
+        case "String":
+        case "Char":
+          return a.value === b.value;
+        case "Unit":
+          return true;
+        case "Wrapper":
+          return false;
       }
     }
     applyOperator(name, left, right, scope) {

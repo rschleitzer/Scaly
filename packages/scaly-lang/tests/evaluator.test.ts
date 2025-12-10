@@ -75,6 +75,30 @@ describe('Evaluator', () => {
     }
   })
 
+  it('evaluates match expressions', () => {
+    const result = evaluate('match 2: case 1: 10 case 2: 20 else 0')
+    expect(result._tag).toBe('Ok')
+    if (result._tag === 'Ok') {
+      expect(result.value).toBe(20)
+    }
+  })
+
+  it('evaluates match with multiple cases per branch', () => {
+    const result = evaluate('match 2: case 1 case 2: "one or two" else "other"')
+    expect(result._tag).toBe('Ok')
+    if (result._tag === 'Ok') {
+      expect(result.value).toBe('one or two')
+    }
+  })
+
+  it('evaluates match else branch', () => {
+    const result = evaluate('match 99: case 1: 10 else 0')
+    expect(result._tag).toBe('Ok')
+    if (result._tag === 'Ok') {
+      expect(result.value).toBe(0)
+    }
+  })
+
   it('evaluates let bindings', () => {
     const result = evaluate('let x 5: x')
     expect(result._tag).toBe('Ok')

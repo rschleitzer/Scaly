@@ -104,6 +104,11 @@ HREF="expressions.htm#AEN945"
 ><DT
 ><A
 HREF="expressions.htm#AEN953"
+>Match Expressions</A
+></DT
+><DT
+><A
+HREF="expressions.htm#AEN962"
 >Let Bindings</A
 ></DT
 ></DL
@@ -904,6 +909,39 @@ CLASS="section"
 CLASS="section"
 ><A
 NAME="AEN953"
+>Match Expressions</A
+></H1
+><P
+>Match expressions compare a value against multiple cases.
+      The syntax is <TT
+CLASS="code"
+>match</TT
+> followed by the scrutinee, a colon,
+      one or more <TT
+CLASS="code"
+>case</TT
+> branches, and optionally <TT
+CLASS="code"
+>else</TT
+>.
+    </P
+><PRE
+CLASS="programlisting"
+>match 2: case 1: 10 case 2: 20 else 0  ; evaluates to 20
+match 5: case 1: 10 else 0              ; evaluates to 0</PRE
+><P
+>&#13;      Multiple cases can share the same branch:
+    </P
+><PRE
+CLASS="programlisting"
+>match 2: case 1 case 2: "one or two" else "other"</PRE
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN962"
 >Let Bindings</A
 ></H1
 ><P
