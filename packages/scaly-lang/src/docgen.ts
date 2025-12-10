@@ -269,3 +269,43 @@ function escapeXml(text: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
 }
+
+// === Test Extraction from DocBook ===
+
+export interface TestCase {
+  program: string
+  expected: string
+  source: string // File or section reference
+}
+
+/**
+ * Extract test cases from DocBook XML content.
+ * Looks for patterns like:
+ *   <programlisting>code here</programlisting>
+ *   <para>evaluates to</para>
+ *   <code>expected result</code>
+ */
+export function extractTestCases(docbookContent: string, source: string = '<unknown>'): TestCase[] {
+  const testCases: TestCase[] = []
+
+  // Simple regex-based extraction
+  // Match: <programlisting>...</programlisting> followed by "evaluates to" followed by <code>...</code>
+  const pattern = /<programlisting>([\s\S]*?)<\/programlisting>\s*<para>\s*evaluates to\s*<\/para>\s*<code>([\s\S]*?)<\/code>/gi
+
+  let match
+  while ((match = pattern.exec(docbookContent)) !== null) {
+    const program = unescapeXml(match[1].trim())
+    const expected = unescapeXml(match[2].trim())
+    testCases.push({ program, expected, source })
+  }
+
+  return testCases
+}
+
+function unescapeXml(text: string): string {
+  return text
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&')
+}

@@ -22,6 +22,7 @@ var Scaly = (() => {
   var browser_exports = {};
   __export(browser_exports, {
     evaluate: () => evaluate,
+    evaluateProgram: () => evaluateProgram,
     resetEvaluator: () => resetEvaluator
   });
 
@@ -3978,6 +3979,9 @@ var Scaly = (() => {
       const span = stmts.length > 0 ? { start: stmts[0].start, end: stmts[stmts.length - 1].end } : { start: 0, end: 0 };
       return ok2({ _tag: "Block", span, statements });
     }
+    modelStatement(stmt) {
+      return this.handleStatement(stmt);
+    }
     // === Literal Handling ===
     handleLiteral(syntax) {
       const span = { start: syntax.start, end: syntax.end };
@@ -5252,6 +5256,29 @@ var Scaly = (() => {
     const modeler = new Modeler(file);
     return modeler.handleFile(parseResult.value);
   }
+  function parseAndModelProgram(input, file = "<input>") {
+    const parser = new Parser(input);
+    const parseResult = parser.parseProgram();
+    if (!parseResult.ok) {
+      return fail(parserError(file, parseResult.error));
+    }
+    const modeler = new Modeler(file);
+    const moduleResult = modeler.handleFile(parseResult.value.file);
+    if (!moduleResult.ok) return moduleResult;
+    const statements = [];
+    if (parseResult.value.statements) {
+      for (const stmt of parseResult.value.statements) {
+        const stmtResult = modeler.modelStatement(stmt);
+        if (!stmtResult.ok) return stmtResult;
+        statements.push(stmtResult.value);
+      }
+    }
+    return ok2({
+      packages: [],
+      module: moduleResult.value,
+      statements
+    });
+  }
 
   // src/runtime.browser.ts
   var STDLIB_CONTENT = `; Scaly Standard Library
@@ -5469,10 +5496,23 @@ function abs(x: int) returns int intrinsic
       if (firstExpr._tag === "Type" && operands.length >= 2) {
         const name = firstExpr.name[0];
         if (this.types.has(name)) {
-          const secondExpr = operands[1].expression;
+          const tupleOperand = operands[1];
+          const secondExpr = tupleOperand.expression;
           if (secondExpr._tag === "Tuple") {
-            const result = this.constructWrapper(name, secondExpr, scope);
+            let result = this.constructWrapper(name, secondExpr, scope);
             if (!result.ok) return result;
+            if (tupleOperand.memberAccess && tupleOperand.memberAccess.length > 0) {
+              for (const member of tupleOperand.memberAccess) {
+                if (result.value._tag !== "Wrapper") {
+                  return { ok: false, error: `Cannot access member '${member}' on ${result.value._tag}` };
+                }
+                const field = result.value.fields.get(member);
+                if (!field) {
+                  return { ok: false, error: `Unknown field '${member}' on ${result.value.type}` };
+                }
+                result = { ok: true, value: field };
+              }
+            }
             if (operands.length > 2) {
               return this.evaluateWithContext(result.value, operands.slice(2), scope);
             }
@@ -5593,7 +5633,16 @@ function abs(x: int) returns int intrinsic
     }
     constructWrapper(typeName, tuple, scope) {
       const fields = /* @__PURE__ */ new Map();
-      const fieldNames = ["left", "right"];
+      const typeDef = this.types.get(typeName);
+      if (!typeDef) {
+        return { ok: false, error: `Unknown type: ${typeName}` };
+      }
+      let fieldNames = [];
+      if (typeDef.definition._tag === "Structure") {
+        fieldNames = typeDef.definition.properties.map((p) => p.name);
+      } else {
+        fieldNames = ["left", "right"];
+      }
       for (let i = 0; i < tuple.components.length && i < fieldNames.length; i++) {
         const component = tuple.components[i];
         const fieldResult = this.evaluate(component.value, scope);
@@ -5739,6 +5788,25 @@ function abs(x: int) returns int intrinsic
           if (!result.ok) return result;
           return result;
         }
+      }
+      return { ok: true, value: lastValue };
+    }
+    evaluateProgram(program) {
+      for (const member of program.module.members) {
+        if (member._tag === "Concept") {
+          this.types.set(member.name, member);
+        } else if (member._tag === "Operator") {
+          this.registerOperator(member);
+        } else if (member._tag === "Function") {
+          this.registerFunction(member);
+        }
+      }
+      let lastValue = { _tag: "Unit" };
+      const scope = /* @__PURE__ */ new Map();
+      for (const stmt of program.statements) {
+        const result = this.evaluateStatement(stmt, scope);
+        if (!result.ok) return result;
+        lastValue = result.value;
       }
       return { ok: true, value: lastValue };
     }
@@ -5902,8 +5970,13 @@ function abs(x: int) returns int intrinsic
       return { _tag: "Wrapper", type, fields };
     }
     // Collapse a wrapper to its value (for expression boundaries like parentheses)
+    // Only collapses intrinsic arithmetic wrappers; user-defined types pass through as-is
     collapseWrapper(value) {
       if (value._tag !== "Wrapper") {
+        return { ok: true, value };
+      }
+      const intrinsicTypes = ["Sum", "Difference", "Product", "Quotient"];
+      if (!intrinsicTypes.includes(value.type)) {
         return { ok: true, value };
       }
       const left = value.fields.get("left");
@@ -5921,7 +5994,7 @@ function abs(x: int) returns int intrinsic
         case "Quotient":
           return { ok: true, value: { _tag: "Int", value: left.value / right.value } };
         default:
-          return { ok: false, error: `Unknown wrapper type: ${value.type}` };
+          return { ok: true, value };
       }
     }
     // Format a value for display
@@ -5937,8 +6010,13 @@ function abs(x: int) returns int intrinsic
           return JSON.stringify(value.value);
         case "Char":
           return `'${value.value}'`;
-        case "Wrapper":
-          return `${value.type}(${this.formatValue(value.fields.get("left"))}, ${this.formatValue(value.fields.get("right"))})`;
+        case "Wrapper": {
+          const fieldParts = [];
+          for (const [name, val] of value.fields) {
+            fieldParts.push(`${name}: ${this.formatValue(val)}`);
+          }
+          return `${value.type} { ${fieldParts.join(", ")} }`;
+        }
         case "Unit":
           return "()";
       }
@@ -5984,11 +6062,33 @@ function abs(x: int) returns int intrinsic
       case "String":
       case "Char":
         return value.value;
-      case "Wrapper":
-        return `${value.type}(...)`;
+      case "Wrapper": {
+        const obj = { _type: value.type };
+        for (const [name, val] of value.fields) {
+          obj[name] = valueToJs(val);
+        }
+        return obj;
+      }
       case "Unit":
         return void 0;
     }
+  }
+  function evaluateProgram(input) {
+    const modelResult = parseAndModelProgram(input);
+    if (!modelResult.ok) {
+      return { _tag: "ModelError", message: formatModelError(modelResult.error, input) };
+    }
+    const rt = getRuntime();
+    const evalResult = rt.evaluateProgram(modelResult.value);
+    if (!evalResult.ok) {
+      return { _tag: "EvalError", message: evalResult.error, code: input };
+    }
+    const collapsed = rt.collapseWrapper(evalResult.value);
+    if (!collapsed.ok) {
+      return { _tag: "EvalError", message: collapsed.error, code: input };
+    }
+    const value = valueToJs(collapsed.value);
+    return { _tag: "Ok", value, code: input };
   }
   function resetEvaluator() {
     runtime = null;
