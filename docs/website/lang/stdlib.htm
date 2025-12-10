@@ -81,12 +81,12 @@ HREF="stdlib.htm#AEN947"
 ></DT
 ><DT
 ><A
-HREF="stdlib.htm#AEN965"
+HREF="stdlib.htm#AEN1017"
 >Operators</A
 ></DT
 ><DT
 ><A
-HREF="stdlib.htm#AEN1015"
+HREF="stdlib.htm#AEN1223"
 >Functions</A
 ></DT
 ></DL
@@ -112,13 +112,44 @@ CLASS="code"
 ></H2
 ><P
 >Deferred sum. Enables operator precedence by delaying evaluation.</P
+><P
+></P
+><DIV
+CLASS="variablelist"
+><DL
+><DT
+><CODE
+CLASS="parameter"
+>left</CODE
+>: <SPAN
+CLASS="type"
+>int</SPAN
+></DT
+><DD
+><P
+>Left operand</P
+></DD
+><DT
+><CODE
+CLASS="parameter"
+>right</CODE
+>: <SPAN
+CLASS="type"
+>int</SPAN
+></DT
+><DD
+><P
+>Right operand</P
+></DD
+></DL
+></DIV
 ></DIV
 ><DIV
 CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN953"
+NAME="AEN966"
 ><TT
 CLASS="code"
 >define Difference(left: int, right: int)</TT
@@ -126,99 +157,37 @@ CLASS="code"
 ></H2
 ><P
 >Deferred difference. Enables operator precedence by delaying evaluation.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="AEN957"
-><TT
-CLASS="code"
->define Product(left: int, right: int)</TT
-></A
-></H2
 ><P
->Deferred product. Enables operator precedence by delaying evaluation.</P
-></DIV
+></P
 ><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="AEN961"
-><TT
-CLASS="code"
->define Quotient(left: int, right: int)</TT
-></A
-></H2
+CLASS="variablelist"
+><DL
+><DT
+><CODE
+CLASS="parameter"
+>left</CODE
+>: <SPAN
+CLASS="type"
+>int</SPAN
+></DT
+><DD
 ><P
->Deferred quotient. Enables operator precedence by delaying evaluation.</P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="AEN965"
->Operators</A
-></H1
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="AEN967"
-><TT
-CLASS="code"
->operator +(left: int, right: int) returns Sum</TT
-></A
-></H2
+>Left operand</P
+></DD
+><DT
+><CODE
+CLASS="parameter"
+>right</CODE
+>: <SPAN
+CLASS="type"
+>int</SPAN
+></DT
+><DD
 ><P
->Addition. Lower precedence than multiplication and division.</P
+>Right operand</P
+></DD
+></DL
 ></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="AEN971"
-><TT
-CLASS="code"
->operator -(left: int, right: int) returns Difference</TT
-></A
-></H2
-><P
->Subtraction. Lower precedence than multiplication and division.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="AEN975"
-><TT
-CLASS="code"
->operator *(left: int, right: int) returns Product</TT
-></A
-></H2
-><P
->Multiplication. Higher precedence than addition and subtraction.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="AEN979"
-><TT
-CLASS="code"
->operator /(left: int, right: int) returns Quotient</TT
-></A
-></H2
-><P
->Division. Higher precedence than addition and subtraction.</P
 ></DIV
 ><DIV
 CLASS="section"
@@ -228,109 +197,87 @@ CLASS="section"
 NAME="AEN983"
 ><TT
 CLASS="code"
->operator div(left: int, right: int) returns int</TT
+>define Product(left: int, right: int)</TT
 ></A
 ></H2
 ><P
->Integer division, truncating toward zero.</P
+>Deferred product. Enables operator precedence by delaying evaluation.</P
+><P
+></P
+><DIV
+CLASS="variablelist"
+><DL
+><DT
+><CODE
+CLASS="parameter"
+>left</CODE
+>: <SPAN
+CLASS="type"
+>int</SPAN
+></DT
+><DD
+><P
+>Left operand</P
+></DD
+><DT
+><CODE
+CLASS="parameter"
+>right</CODE
+>: <SPAN
+CLASS="type"
+>int</SPAN
+></DT
+><DD
+><P
+>Right operand</P
+></DD
+></DL
+></DIV
 ></DIV
 ><DIV
 CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN987"
+NAME="AEN1000"
 ><TT
 CLASS="code"
->operator mod(left: int, right: int) returns int</TT
+>define Quotient(left: int, right: int)</TT
 ></A
 ></H2
 ><P
->Modulo (remainder after integer division).</P
-></DIV
+>Deferred quotient. Enables operator precedence by delaying evaluation.</P
+><P
+></P
 ><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="AEN991"
-><TT
-CLASS="code"
->operator =(left: int, right: int) returns bool</TT
-></A
-></H2
+CLASS="variablelist"
+><DL
+><DT
+><CODE
+CLASS="parameter"
+>left</CODE
+>: <SPAN
+CLASS="type"
+>int</SPAN
+></DT
+><DD
 ><P
->Equality comparison.</P
+>Left operand</P
+></DD
+><DT
+><CODE
+CLASS="parameter"
+>right</CODE
+>: <SPAN
+CLASS="type"
+>int</SPAN
+></DT
+><DD
+><P
+>Right operand</P
+></DD
+></DL
 ></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="AEN995"
-><TT
-CLASS="code"
->operator &#60;&#62;(left: int, right: int) returns bool</TT
-></A
-></H2
-><P
->Inequality comparison.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="AEN999"
-><TT
-CLASS="code"
->operator &#60;(left: int, right: int) returns bool</TT
-></A
-></H2
-><P
->Less than comparison.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="AEN1003"
-><TT
-CLASS="code"
->operator &#62;(left: int, right: int) returns bool</TT
-></A
-></H2
-><P
->Greater than comparison.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="AEN1007"
-><TT
-CLASS="code"
->operator &#60;=(left: int, right: int) returns bool</TT
-></A
-></H2
-><P
->Less than or equal comparison.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="AEN1011"
-><TT
-CLASS="code"
->operator &#62;=(left: int, right: int) returns bool</TT
-></A
-></H2
-><P
->Greater than or equal comparison.</P
 ></DIV
 ></DIV
 ><DIV
@@ -338,7 +285,556 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN1015"
+NAME="AEN1017"
+>Operators</A
+></H1
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN1019"
+><TT
+CLASS="code"
+>operator +(left: int, right: int) returns Sum</TT
+></A
+></H2
+><P
+>Addition. Lower precedence than multiplication and division.</P
+><P
+></P
+><DIV
+CLASS="variablelist"
+><DL
+><DT
+><CODE
+CLASS="parameter"
+>left</CODE
+>: <SPAN
+CLASS="type"
+>int</SPAN
+></DT
+><DD
+><P
+>Left addend</P
+></DD
+><DT
+><CODE
+CLASS="parameter"
+>right</CODE
+>: <SPAN
+CLASS="type"
+>int</SPAN
+></DT
+><DD
+><P
+>Right addend</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN1036"
+><TT
+CLASS="code"
+>operator -(left: int, right: int) returns Difference</TT
+></A
+></H2
+><P
+>Subtraction. Lower precedence than multiplication and division.</P
+><P
+></P
+><DIV
+CLASS="variablelist"
+><DL
+><DT
+><CODE
+CLASS="parameter"
+>left</CODE
+>: <SPAN
+CLASS="type"
+>int</SPAN
+></DT
+><DD
+><P
+>Minuend</P
+></DD
+><DT
+><CODE
+CLASS="parameter"
+>right</CODE
+>: <SPAN
+CLASS="type"
+>int</SPAN
+></DT
+><DD
+><P
+>Subtrahend</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN1053"
+><TT
+CLASS="code"
+>operator *(left: int, right: int) returns Product</TT
+></A
+></H2
+><P
+>Multiplication. Higher precedence than addition and subtraction.</P
+><P
+></P
+><DIV
+CLASS="variablelist"
+><DL
+><DT
+><CODE
+CLASS="parameter"
+>left</CODE
+>: <SPAN
+CLASS="type"
+>int</SPAN
+></DT
+><DD
+><P
+>Left factor</P
+></DD
+><DT
+><CODE
+CLASS="parameter"
+>right</CODE
+>: <SPAN
+CLASS="type"
+>int</SPAN
+></DT
+><DD
+><P
+>Right factor</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN1070"
+><TT
+CLASS="code"
+>operator /(left: int, right: int) returns Quotient</TT
+></A
+></H2
+><P
+>Division. Higher precedence than addition and subtraction.</P
+><P
+></P
+><DIV
+CLASS="variablelist"
+><DL
+><DT
+><CODE
+CLASS="parameter"
+>left</CODE
+>: <SPAN
+CLASS="type"
+>int</SPAN
+></DT
+><DD
+><P
+>Dividend</P
+></DD
+><DT
+><CODE
+CLASS="parameter"
+>right</CODE
+>: <SPAN
+CLASS="type"
+>int</SPAN
+></DT
+><DD
+><P
+>Divisor</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN1087"
+><TT
+CLASS="code"
+>operator div(left: int, right: int) returns int</TT
+></A
+></H2
+><P
+>Integer division, truncating toward zero.</P
+><P
+></P
+><DIV
+CLASS="variablelist"
+><DL
+><DT
+><CODE
+CLASS="parameter"
+>left</CODE
+>: <SPAN
+CLASS="type"
+>int</SPAN
+></DT
+><DD
+><P
+>Dividend</P
+></DD
+><DT
+><CODE
+CLASS="parameter"
+>right</CODE
+>: <SPAN
+CLASS="type"
+>int</SPAN
+></DT
+><DD
+><P
+>Divisor</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN1104"
+><TT
+CLASS="code"
+>operator mod(left: int, right: int) returns int</TT
+></A
+></H2
+><P
+>Modulo (remainder after integer division).</P
+><P
+></P
+><DIV
+CLASS="variablelist"
+><DL
+><DT
+><CODE
+CLASS="parameter"
+>left</CODE
+>: <SPAN
+CLASS="type"
+>int</SPAN
+></DT
+><DD
+><P
+>Dividend</P
+></DD
+><DT
+><CODE
+CLASS="parameter"
+>right</CODE
+>: <SPAN
+CLASS="type"
+>int</SPAN
+></DT
+><DD
+><P
+>Divisor</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN1121"
+><TT
+CLASS="code"
+>operator =(left: int, right: int) returns bool</TT
+></A
+></H2
+><P
+>Equality comparison.</P
+><P
+></P
+><DIV
+CLASS="variablelist"
+><DL
+><DT
+><CODE
+CLASS="parameter"
+>left</CODE
+>: <SPAN
+CLASS="type"
+>int</SPAN
+></DT
+><DD
+><P
+>Left operand</P
+></DD
+><DT
+><CODE
+CLASS="parameter"
+>right</CODE
+>: <SPAN
+CLASS="type"
+>int</SPAN
+></DT
+><DD
+><P
+>Right operand</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN1138"
+><TT
+CLASS="code"
+>operator &#60;&#62;(left: int, right: int) returns bool</TT
+></A
+></H2
+><P
+>Inequality comparison.</P
+><P
+></P
+><DIV
+CLASS="variablelist"
+><DL
+><DT
+><CODE
+CLASS="parameter"
+>left</CODE
+>: <SPAN
+CLASS="type"
+>int</SPAN
+></DT
+><DD
+><P
+>Left operand</P
+></DD
+><DT
+><CODE
+CLASS="parameter"
+>right</CODE
+>: <SPAN
+CLASS="type"
+>int</SPAN
+></DT
+><DD
+><P
+>Right operand</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN1155"
+><TT
+CLASS="code"
+>operator &#60;(left: int, right: int) returns bool</TT
+></A
+></H2
+><P
+>Less than comparison.</P
+><P
+></P
+><DIV
+CLASS="variablelist"
+><DL
+><DT
+><CODE
+CLASS="parameter"
+>left</CODE
+>: <SPAN
+CLASS="type"
+>int</SPAN
+></DT
+><DD
+><P
+>Left operand</P
+></DD
+><DT
+><CODE
+CLASS="parameter"
+>right</CODE
+>: <SPAN
+CLASS="type"
+>int</SPAN
+></DT
+><DD
+><P
+>Right operand</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN1172"
+><TT
+CLASS="code"
+>operator &#62;(left: int, right: int) returns bool</TT
+></A
+></H2
+><P
+>Greater than comparison.</P
+><P
+></P
+><DIV
+CLASS="variablelist"
+><DL
+><DT
+><CODE
+CLASS="parameter"
+>left</CODE
+>: <SPAN
+CLASS="type"
+>int</SPAN
+></DT
+><DD
+><P
+>Left operand</P
+></DD
+><DT
+><CODE
+CLASS="parameter"
+>right</CODE
+>: <SPAN
+CLASS="type"
+>int</SPAN
+></DT
+><DD
+><P
+>Right operand</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN1189"
+><TT
+CLASS="code"
+>operator &#60;=(left: int, right: int) returns bool</TT
+></A
+></H2
+><P
+>Less than or equal comparison.</P
+><P
+></P
+><DIV
+CLASS="variablelist"
+><DL
+><DT
+><CODE
+CLASS="parameter"
+>left</CODE
+>: <SPAN
+CLASS="type"
+>int</SPAN
+></DT
+><DD
+><P
+>Left operand</P
+></DD
+><DT
+><CODE
+CLASS="parameter"
+>right</CODE
+>: <SPAN
+CLASS="type"
+>int</SPAN
+></DT
+><DD
+><P
+>Right operand</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN1206"
+><TT
+CLASS="code"
+>operator &#62;=(left: int, right: int) returns bool</TT
+></A
+></H2
+><P
+>Greater than or equal comparison.</P
+><P
+></P
+><DIV
+CLASS="variablelist"
+><DL
+><DT
+><CODE
+CLASS="parameter"
+>left</CODE
+>: <SPAN
+CLASS="type"
+>int</SPAN
+></DT
+><DD
+><P
+>Left operand</P
+></DD
+><DT
+><CODE
+CLASS="parameter"
+>right</CODE
+>: <SPAN
+CLASS="type"
+>int</SPAN
+></DT
+><DD
+><P
+>Right operand</P
+></DD
+></DL
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN1223"
 >Functions</A
 ></H1
 ><DIV
@@ -346,7 +842,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1017"
+NAME="AEN1225"
 ><TT
 CLASS="code"
 >function -(right: int) returns int</TT
@@ -354,13 +850,32 @@ CLASS="code"
 ></H2
 ><P
 >Unary negation.</P
+><P
+></P
+><DIV
+CLASS="variablelist"
+><DL
+><DT
+><CODE
+CLASS="parameter"
+>right</CODE
+>: <SPAN
+CLASS="type"
+>int</SPAN
+></DT
+><DD
+><P
+>Value to negate</P
+></DD
+></DL
+></DIV
 ></DIV
 ><DIV
 CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1021"
+NAME="AEN1236"
 ><TT
 CLASS="code"
 >function +(right: int) returns int</TT
@@ -368,13 +883,32 @@ CLASS="code"
 ></H2
 ><P
 >Unary plus (identity).</P
+><P
+></P
+><DIV
+CLASS="variablelist"
+><DL
+><DT
+><CODE
+CLASS="parameter"
+>right</CODE
+>: <SPAN
+CLASS="type"
+>int</SPAN
+></DT
+><DD
+><P
+>Value to return unchanged</P
+></DD
+></DL
+></DIV
 ></DIV
 ><DIV
 CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1025"
+NAME="AEN1247"
 ><TT
 CLASS="code"
 >function abs(x: int) returns int</TT
@@ -382,6 +916,25 @@ CLASS="code"
 ></H2
 ><P
 >Absolute value.</P
+><P
+></P
+><DIV
+CLASS="variablelist"
+><DL
+><DT
+><CODE
+CLASS="parameter"
+>x</CODE
+>: <SPAN
+CLASS="type"
+>int</SPAN
+></DT
+><DD
+><P
+>Value whose absolute value to compute</P
+></DD
+></DL
+></DIV
 ></DIV
 ></DIV
 ></DIV

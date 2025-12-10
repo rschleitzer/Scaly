@@ -6,25 +6,33 @@
 ; -----------------------------------------------------------------------------
 
 define Sum                                                  @doc "Deferred sum. Enables operator precedence by delaying evaluation."
-    (left: int, right: int)
+    ( left:  int, @doc "Left operand"
+      right: int, @doc "Right operand"
+    )
 {
     function value(this) returns int intrinsic
 }
 
 define Difference                                           @doc "Deferred difference. Enables operator precedence by delaying evaluation."
-    (left: int, right: int)
+    ( left:  int, @doc "Left operand"
+      right: int, @doc "Right operand"
+    )
 {
     function value(this) returns int intrinsic
 }
 
 define Product                                              @doc "Deferred product. Enables operator precedence by delaying evaluation."
-    (left: int, right: int)
+    ( left:  int, @doc "Left operand"
+      right: int, @doc "Right operand"
+    )
 {
     function value(this) returns int intrinsic
 }
 
 define Quotient                                             @doc "Deferred quotient. Enables operator precedence by delaying evaluation."
-    (left: int, right: int)
+    ( left:  int, @doc "Left operand"
+      right: int, @doc "Right operand"
+    )
 {
     function value(this) returns int intrinsic
 }
@@ -33,22 +41,32 @@ define Quotient                                             @doc "Deferred quoti
 ; Addition Operators
 ; -----------------------------------------------------------------------------
 
-operator +(left: int, right: int)                           @doc "Addition. Lower precedence than multiplication and division."
+operator +( left:  int, @doc "Left addend"
+            right: int, @doc "Right addend"
+          )                                                 @doc "Addition. Lower precedence than multiplication and division."
     returns Sum intrinsic
 
-operator +(left: Sum, right: int) returns Sum {
+operator +( left:  Sum,  @doc "Deferred sum to extend"
+            right: int,  @doc "Value to add"
+          ) returns Sum {
     Sum(left.value, right)
 }
 
-operator +(left: Difference, right: int) returns Sum {
+operator +( left:  Difference, @doc "Deferred difference to extend"
+            right: int,        @doc "Value to add"
+          ) returns Sum {
     Sum(left.value, right)
 }
 
-operator +(left: Product, right: int) returns Sum {
+operator +( left:  Product, @doc "Deferred product to evaluate"
+            right: int,     @doc "Value to add"
+          ) returns Sum {
     Sum(left.value, right)
 }
 
-operator +(left: Quotient, right: int) returns Sum {
+operator +( left:  Quotient, @doc "Deferred quotient to evaluate"
+            right: int,      @doc "Value to add"
+          ) returns Sum {
     Sum(left.value, right)
 }
 
@@ -56,22 +74,32 @@ operator +(left: Quotient, right: int) returns Sum {
 ; Subtraction Operators
 ; -----------------------------------------------------------------------------
 
-operator -(left: int, right: int)                           @doc "Subtraction. Lower precedence than multiplication and division."
+operator -( left:  int, @doc "Minuend"
+            right: int, @doc "Subtrahend"
+          )                                                 @doc "Subtraction. Lower precedence than multiplication and division."
     returns Difference intrinsic
 
-operator -(left: Sum, right: int) returns Difference {
+operator -( left:  Sum,  @doc "Deferred sum to extend"
+            right: int,  @doc "Value to subtract"
+          ) returns Difference {
     Difference(left.value, right)
 }
 
-operator -(left: Difference, right: int) returns Difference {
+operator -( left:  Difference, @doc "Deferred difference to extend"
+            right: int,        @doc "Value to subtract"
+          ) returns Difference {
     Difference(left.value, right)
 }
 
-operator -(left: Product, right: int) returns Difference {
+operator -( left:  Product, @doc "Deferred product to evaluate"
+            right: int,     @doc "Value to subtract"
+          ) returns Difference {
     Difference(left.value, right)
 }
 
-operator -(left: Quotient, right: int) returns Difference {
+operator -( left:  Quotient, @doc "Deferred quotient to evaluate"
+            right: int,      @doc "Value to subtract"
+          ) returns Difference {
     Difference(left.value, right)
 }
 
@@ -79,22 +107,32 @@ operator -(left: Quotient, right: int) returns Difference {
 ; Multiplication Operators
 ; -----------------------------------------------------------------------------
 
-operator *(left: int, right: int)                           @doc "Multiplication. Higher precedence than addition and subtraction."
+operator *( left:  int, @doc "Left factor"
+            right: int, @doc "Right factor"
+          )                                                 @doc "Multiplication. Higher precedence than addition and subtraction."
     returns Product intrinsic
 
-operator *(left: Sum, right: int) returns Sum {
+operator *( left:  Sum,  @doc "Sum whose right operand will be multiplied"
+            right: int,  @doc "Factor"
+          ) returns Sum {
     Sum(left.left, left.right * right)
 }
 
-operator *(left: Difference, right: int) returns Difference {
+operator *( left:  Difference, @doc "Difference whose right operand will be multiplied"
+            right: int,        @doc "Factor"
+          ) returns Difference {
     Difference(left.left, left.right * right)
 }
 
-operator *(left: Product, right: int) returns Product {
+operator *( left:  Product, @doc "Deferred product to extend"
+            right: int,     @doc "Factor"
+          ) returns Product {
     Product(left.value, right)
 }
 
-operator *(left: Quotient, right: int) returns Product {
+operator *( left:  Quotient, @doc "Deferred quotient to evaluate"
+            right: int,      @doc "Factor"
+          ) returns Product {
     Product(left.value, right)
 }
 
@@ -102,22 +140,32 @@ operator *(left: Quotient, right: int) returns Product {
 ; Division Operators
 ; -----------------------------------------------------------------------------
 
-operator /(left: int, right: int)                           @doc "Division. Higher precedence than addition and subtraction."
+operator /( left:  int, @doc "Dividend"
+            right: int, @doc "Divisor"
+          )                                                 @doc "Division. Higher precedence than addition and subtraction."
     returns Quotient intrinsic
 
-operator /(left: Sum, right: int) returns Sum {
+operator /( left:  Sum,  @doc "Sum whose right operand will be divided"
+            right: int,  @doc "Divisor"
+          ) returns Sum {
     Sum(left.left, left.right / right)
 }
 
-operator /(left: Difference, right: int) returns Difference {
+operator /( left:  Difference, @doc "Difference whose right operand will be divided"
+            right: int,        @doc "Divisor"
+          ) returns Difference {
     Difference(left.left, left.right / right)
 }
 
-operator /(left: Product, right: int) returns Quotient {
+operator /( left:  Product, @doc "Deferred product to evaluate"
+            right: int,     @doc "Divisor"
+          ) returns Quotient {
     Quotient(left.value, right)
 }
 
-operator /(left: Quotient, right: int) returns Quotient {
+operator /( left:  Quotient, @doc "Deferred quotient to extend"
+            right: int,      @doc "Divisor"
+          ) returns Quotient {
     Quotient(left.value, right)
 }
 
@@ -125,47 +173,63 @@ operator /(left: Quotient, right: int) returns Quotient {
 ; Integer Division and Modulo
 ; -----------------------------------------------------------------------------
 
-operator div(left: int, right: int)                         @doc "Integer division, truncating toward zero."
+operator div( left:  int, @doc "Dividend"
+              right: int, @doc "Divisor"
+            )                                               @doc "Integer division, truncating toward zero."
     returns int intrinsic
 
-operator mod(left: int, right: int)                         @doc "Modulo (remainder after integer division)."
+operator mod( left:  int, @doc "Dividend"
+              right: int, @doc "Divisor"
+            )                                               @doc "Modulo (remainder after integer division)."
     returns int intrinsic
 
 ; -----------------------------------------------------------------------------
 ; Comparison Operators
 ; -----------------------------------------------------------------------------
 
-operator =(left: int, right: int)                           @doc "Equality comparison."
+operator =( left:  int, @doc "Left operand"
+            right: int, @doc "Right operand"
+          )                                                 @doc "Equality comparison."
     returns bool intrinsic
 
-operator <>(left: int, right: int)                          @doc "Inequality comparison."
+operator <>( left:  int, @doc "Left operand"
+             right: int, @doc "Right operand"
+           )                                                @doc "Inequality comparison."
     returns bool intrinsic
 
-operator <(left: int, right: int)                           @doc "Less than comparison."
+operator <( left:  int, @doc "Left operand"
+            right: int, @doc "Right operand"
+          )                                                 @doc "Less than comparison."
     returns bool intrinsic
 
-operator >(left: int, right: int)                           @doc "Greater than comparison."
+operator >( left:  int, @doc "Left operand"
+            right: int, @doc "Right operand"
+          )                                                 @doc "Greater than comparison."
     returns bool intrinsic
 
-operator <=(left: int, right: int)                          @doc "Less than or equal comparison."
+operator <=( left:  int, @doc "Left operand"
+             right: int, @doc "Right operand"
+           )                                                @doc "Less than or equal comparison."
     returns bool intrinsic
 
-operator >=(left: int, right: int)                          @doc "Greater than or equal comparison."
+operator >=( left:  int, @doc "Left operand"
+             right: int, @doc "Right operand"
+           )                                                @doc "Greater than or equal comparison."
     returns bool intrinsic
 
 ; -----------------------------------------------------------------------------
 ; Unary Functions
 ; -----------------------------------------------------------------------------
 
-function -(right: int)                                      @doc "Unary negation."
+function -(right: int, @doc "Value to negate")              @doc "Unary negation."
     returns int intrinsic
 
-function +(right: int)                                      @doc "Unary plus (identity)."
+function +(right: int, @doc "Value to return unchanged")    @doc "Unary plus (identity)."
     returns int intrinsic
 
 ; -----------------------------------------------------------------------------
 ; Math Functions
 ; -----------------------------------------------------------------------------
 
-function abs(x: int)                                        @doc "Absolute value."
+function abs(x: int, @doc "Value whose absolute value to compute") @doc "Absolute value."
     returns int intrinsic

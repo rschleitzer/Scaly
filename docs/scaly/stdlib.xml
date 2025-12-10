@@ -7,18 +7,58 @@
     <section xml:id="stdlib-define-Sum">
       <title><code>define Sum(left: int, right: int)</code></title>
       <para>Deferred sum. Enables operator precedence by delaying evaluation.</para>
+      <variablelist>
+        <varlistentry>
+          <term><parameter>left</parameter>: <type>int</type></term>
+          <listitem><para>Left operand</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><parameter>right</parameter>: <type>int</type></term>
+          <listitem><para>Right operand</para></listitem>
+        </varlistentry>
+      </variablelist>
     </section>
     <section xml:id="stdlib-define-Difference">
       <title><code>define Difference(left: int, right: int)</code></title>
       <para>Deferred difference. Enables operator precedence by delaying evaluation.</para>
+      <variablelist>
+        <varlistentry>
+          <term><parameter>left</parameter>: <type>int</type></term>
+          <listitem><para>Left operand</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><parameter>right</parameter>: <type>int</type></term>
+          <listitem><para>Right operand</para></listitem>
+        </varlistentry>
+      </variablelist>
     </section>
     <section xml:id="stdlib-define-Product">
       <title><code>define Product(left: int, right: int)</code></title>
       <para>Deferred product. Enables operator precedence by delaying evaluation.</para>
+      <variablelist>
+        <varlistentry>
+          <term><parameter>left</parameter>: <type>int</type></term>
+          <listitem><para>Left operand</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><parameter>right</parameter>: <type>int</type></term>
+          <listitem><para>Right operand</para></listitem>
+        </varlistentry>
+      </variablelist>
     </section>
     <section xml:id="stdlib-define-Quotient">
       <title><code>define Quotient(left: int, right: int)</code></title>
       <para>Deferred quotient. Enables operator precedence by delaying evaluation.</para>
+      <variablelist>
+        <varlistentry>
+          <term><parameter>left</parameter>: <type>int</type></term>
+          <listitem><para>Left operand</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><parameter>right</parameter>: <type>int</type></term>
+          <listitem><para>Right operand</para></listitem>
+        </varlistentry>
+      </variablelist>
     </section>
   </section>
 
@@ -27,50 +67,170 @@
     <section xml:id="stdlib-operator-plus">
       <title><code>operator +(left: int, right: int) returns Sum</code></title>
       <para>Addition. Lower precedence than multiplication and division.</para>
+      <variablelist>
+        <varlistentry>
+          <term><parameter>left</parameter>: <type>int</type></term>
+          <listitem><para>Left addend</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><parameter>right</parameter>: <type>int</type></term>
+          <listitem><para>Right addend</para></listitem>
+        </varlistentry>
+      </variablelist>
     </section>
     <section xml:id="stdlib-operator-minus">
       <title><code>operator -(left: int, right: int) returns Difference</code></title>
       <para>Subtraction. Lower precedence than multiplication and division.</para>
+      <variablelist>
+        <varlistentry>
+          <term><parameter>left</parameter>: <type>int</type></term>
+          <listitem><para>Minuend</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><parameter>right</parameter>: <type>int</type></term>
+          <listitem><para>Subtrahend</para></listitem>
+        </varlistentry>
+      </variablelist>
     </section>
     <section xml:id="stdlib-operator-times">
       <title><code>operator *(left: int, right: int) returns Product</code></title>
       <para>Multiplication. Higher precedence than addition and subtraction.</para>
+      <variablelist>
+        <varlistentry>
+          <term><parameter>left</parameter>: <type>int</type></term>
+          <listitem><para>Left factor</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><parameter>right</parameter>: <type>int</type></term>
+          <listitem><para>Right factor</para></listitem>
+        </varlistentry>
+      </variablelist>
     </section>
     <section xml:id="stdlib-operator-divide">
       <title><code>operator /(left: int, right: int) returns Quotient</code></title>
       <para>Division. Higher precedence than addition and subtraction.</para>
+      <variablelist>
+        <varlistentry>
+          <term><parameter>left</parameter>: <type>int</type></term>
+          <listitem><para>Dividend</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><parameter>right</parameter>: <type>int</type></term>
+          <listitem><para>Divisor</para></listitem>
+        </varlistentry>
+      </variablelist>
     </section>
     <section xml:id="stdlib-operator-div">
       <title><code>operator div(left: int, right: int) returns int</code></title>
       <para>Integer division, truncating toward zero.</para>
+      <variablelist>
+        <varlistentry>
+          <term><parameter>left</parameter>: <type>int</type></term>
+          <listitem><para>Dividend</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><parameter>right</parameter>: <type>int</type></term>
+          <listitem><para>Divisor</para></listitem>
+        </varlistentry>
+      </variablelist>
     </section>
     <section xml:id="stdlib-operator-mod">
       <title><code>operator mod(left: int, right: int) returns int</code></title>
       <para>Modulo (remainder after integer division).</para>
+      <variablelist>
+        <varlistentry>
+          <term><parameter>left</parameter>: <type>int</type></term>
+          <listitem><para>Dividend</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><parameter>right</parameter>: <type>int</type></term>
+          <listitem><para>Divisor</para></listitem>
+        </varlistentry>
+      </variablelist>
     </section>
     <section xml:id="stdlib-operator-equals">
       <title><code>operator =(left: int, right: int) returns bool</code></title>
       <para>Equality comparison.</para>
+      <variablelist>
+        <varlistentry>
+          <term><parameter>left</parameter>: <type>int</type></term>
+          <listitem><para>Left operand</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><parameter>right</parameter>: <type>int</type></term>
+          <listitem><para>Right operand</para></listitem>
+        </varlistentry>
+      </variablelist>
     </section>
     <section xml:id="stdlib-operator-notequals">
       <title><code>operator &lt;&gt;(left: int, right: int) returns bool</code></title>
       <para>Inequality comparison.</para>
+      <variablelist>
+        <varlistentry>
+          <term><parameter>left</parameter>: <type>int</type></term>
+          <listitem><para>Left operand</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><parameter>right</parameter>: <type>int</type></term>
+          <listitem><para>Right operand</para></listitem>
+        </varlistentry>
+      </variablelist>
     </section>
     <section xml:id="stdlib-operator-lt">
       <title><code>operator &lt;(left: int, right: int) returns bool</code></title>
       <para>Less than comparison.</para>
+      <variablelist>
+        <varlistentry>
+          <term><parameter>left</parameter>: <type>int</type></term>
+          <listitem><para>Left operand</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><parameter>right</parameter>: <type>int</type></term>
+          <listitem><para>Right operand</para></listitem>
+        </varlistentry>
+      </variablelist>
     </section>
     <section xml:id="stdlib-operator-gt">
       <title><code>operator &gt;(left: int, right: int) returns bool</code></title>
       <para>Greater than comparison.</para>
+      <variablelist>
+        <varlistentry>
+          <term><parameter>left</parameter>: <type>int</type></term>
+          <listitem><para>Left operand</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><parameter>right</parameter>: <type>int</type></term>
+          <listitem><para>Right operand</para></listitem>
+        </varlistentry>
+      </variablelist>
     </section>
     <section xml:id="stdlib-operator-lte">
       <title><code>operator &lt;=(left: int, right: int) returns bool</code></title>
       <para>Less than or equal comparison.</para>
+      <variablelist>
+        <varlistentry>
+          <term><parameter>left</parameter>: <type>int</type></term>
+          <listitem><para>Left operand</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><parameter>right</parameter>: <type>int</type></term>
+          <listitem><para>Right operand</para></listitem>
+        </varlistentry>
+      </variablelist>
     </section>
     <section xml:id="stdlib-operator-gte">
       <title><code>operator &gt;=(left: int, right: int) returns bool</code></title>
       <para>Greater than or equal comparison.</para>
+      <variablelist>
+        <varlistentry>
+          <term><parameter>left</parameter>: <type>int</type></term>
+          <listitem><para>Left operand</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><parameter>right</parameter>: <type>int</type></term>
+          <listitem><para>Right operand</para></listitem>
+        </varlistentry>
+      </variablelist>
     </section>
   </section>
 
@@ -79,14 +239,32 @@
     <section xml:id="stdlib-function-minus">
       <title><code>function -(right: int) returns int</code></title>
       <para>Unary negation.</para>
+      <variablelist>
+        <varlistentry>
+          <term><parameter>right</parameter>: <type>int</type></term>
+          <listitem><para>Value to negate</para></listitem>
+        </varlistentry>
+      </variablelist>
     </section>
     <section xml:id="stdlib-function-plus">
       <title><code>function +(right: int) returns int</code></title>
       <para>Unary plus (identity).</para>
+      <variablelist>
+        <varlistentry>
+          <term><parameter>right</parameter>: <type>int</type></term>
+          <listitem><para>Value to return unchanged</para></listitem>
+        </varlistentry>
+      </variablelist>
     </section>
     <section xml:id="stdlib-function-abs">
       <title><code>function abs(x: int) returns int</code></title>
       <para>Absolute value.</para>
+      <variablelist>
+        <varlistentry>
+          <term><parameter>x</parameter>: <type>int</type></term>
+          <listitem><para>Value whose absolute value to compute</para></listitem>
+        </varlistentry>
+      </variablelist>
     </section>
   </section>
 </appendix>
