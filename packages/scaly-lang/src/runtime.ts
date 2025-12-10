@@ -37,10 +37,17 @@ type FunctionSignature = {
 // Scope for variable bindings
 type Scope = Map<string, Value>
 
+// Variant info for union types
+type VariantInfo = {
+  unionName: string
+  variant: Model.Variant
+}
+
 export class Runtime {
   private operators: Map<string, OperatorSignature[]> = new Map()
   private functions: Map<string, FunctionSignature[]> = new Map()
   private types: Map<string, Model.Concept> = new Map()
+  private variants: Map<string, VariantInfo> = new Map()
 
   // Load stdlib and build registries
   loadStdlib(stdlibPath: string): { ok: true } | { ok: false; error: string } {
@@ -59,7 +66,7 @@ export class Runtime {
     // Register all members
     for (const member of result.value.members) {
       if (member._tag === 'Concept') {
-        this.types.set(member.name, member)
+        this.registerType(member)
       } else if (member._tag === 'Operator') {
         this.registerOperator(member)
       } else if (member._tag === 'Function') {
@@ -68,6 +75,16 @@ export class Runtime {
     }
 
     return { ok: true }
+  }
+
+  private registerType(concept: Model.Concept): void {
+    this.types.set(concept.name, concept)
+    // Register variants for union types
+    if (concept.definition._tag === 'Union') {
+      for (const variant of concept.definition.variants) {
+        this.variants.set(variant.name, { unionName: concept.name, variant })
+      }
+    }
   }
 
   private registerOperator(op: Model.Operator): void {
@@ -162,6 +179,36 @@ export class Runtime {
         }
       }
 
+      // Variant constructor call: Variant followed by Tuple (e.g., Some(5))
+      const variantInfo = this.variants.get(name)
+      if (variantInfo) {
+        const tupleOperand = operands[1]
+        const secondExpr = tupleOperand.expression
+        if (secondExpr._tag === 'Tuple') {
+          let result = this.constructVariant(variantInfo, secondExpr, scope)
+          if (!result.ok) return result
+
+          // Apply memberAccess from the tuple operand
+          if (tupleOperand.memberAccess && tupleOperand.memberAccess.length > 0) {
+            for (const member of tupleOperand.memberAccess) {
+              if (result.value._tag !== 'Wrapper') {
+                return { ok: false, error: `Cannot access member '${member}' on ${result.value._tag}` }
+              }
+              const field = result.value.fields.get(member)
+              if (!field) {
+                return { ok: false, error: `Unknown field '${member}' on ${result.value.type}` }
+              }
+              result = { ok: true, value: field }
+            }
+          }
+
+          if (operands.length > 2) {
+            return this.evaluateWithContext(result.value, operands.slice(2), scope)
+          }
+          return result
+        }
+      }
+
       // Function call: function followed by Tuple (e.g., abs(5))
       if (this.functions.has(name)) {
         const secondExpr = operands[1].expression
@@ -218,6 +265,19 @@ export class Runtime {
           const nextExpr = operands[i + 1].expression
           if (nextExpr._tag === 'Tuple') {
             const result = this.constructWrapper(name, nextExpr, scope)
+            if (!result.ok) return result
+            context = result
+            i++ // Skip the tuple
+            continue
+          }
+        }
+
+        // Check if this is a variant constructor call (e.g., Some(5))
+        const variantInfo = this.variants.get(name)
+        if (variantInfo && i + 1 < operands.length) {
+          const nextExpr = operands[i + 1].expression
+          if (nextExpr._tag === 'Tuple') {
+            const result = this.constructVariant(variantInfo, nextExpr, scope)
             if (!result.ok) return result
             context = result
             i++ // Skip the tuple
@@ -340,6 +400,30 @@ export class Runtime {
     }
 
     return { ok: true, value: { _tag: 'Wrapper', type: typeName, fields } }
+  }
+
+  private constructVariant(variantInfo: VariantInfo, tuple: Model.Tuple, scope: Scope): { ok: true; value: Value } | { ok: false; error: string } {
+    const fields = new Map<string, Value>()
+
+    // Set the variant tag
+    fields.set('_variant', { _tag: 'String', value: variantInfo.variant.name })
+
+    // Variant constructor expects exactly one argument (the wrapped value)
+    if (tuple.components.length !== 1) {
+      return { ok: false, error: `Variant ${variantInfo.variant.name} expects exactly one argument` }
+    }
+
+    const component = tuple.components[0]
+    const valueResult = this.evaluate(component.value, scope)
+    if (!valueResult.ok) return valueResult
+
+    // Collapse wrappers when passing as constructor args
+    const collapsed = this.collapseWrapper(valueResult.value)
+    if (!collapsed.ok) return collapsed
+
+    fields.set('value', collapsed.value)
+
+    return { ok: true, value: { _tag: 'Wrapper', type: variantInfo.unionName, fields } }
   }
 
   private evaluateOperand(operand: Model.Operand, scope: Scope): { ok: true; value: Value } | { ok: false; error: string } {
@@ -490,6 +574,17 @@ export class Runtime {
           return { ok: false, error: `Constructor ${name} needs arguments` }
         }
 
+        // Check if this is a variant (e.g., None from Option)
+        const variantInfo = this.variants.get(name)
+        if (variantInfo) {
+          if (variantInfo.variant.type) {
+            // Variant with a type needs arguments (e.g., Some(5))
+            return { ok: false, error: `Variant ${name} needs an argument` }
+          }
+          // Parameterless variant (e.g., None) - return as a wrapper
+          return { ok: true, value: { _tag: 'Wrapper', type: variantInfo.unionName, fields: new Map([['_variant', { _tag: 'String', value: name } as Value]]) } }
+        }
+
         return { ok: false, error: `Unresolved reference: ${expr.name.join('.')}` }
 
       default:
@@ -529,7 +624,7 @@ export class Runtime {
     // Register declarations from the module
     for (const member of program.module.members) {
       if (member._tag === 'Concept') {
-        this.types.set(member.name, member)
+        this.registerType(member)
       } else if (member._tag === 'Operator') {
         this.registerOperator(member)
       } else if (member._tag === 'Function') {

@@ -19,6 +19,19 @@ p.x + p.y<expect>7
 define Rectangle(origin: Point, width: int, height: int)
 Rectangle(Point(0, 0), 10, 5).width<expect>10
 
+    <tests id = union-definitions title = "Union Definitions">
+        <prose>Unions define types with multiple variants. Each variant can optionally carry a value.
+        <test id = option-some program = program><input>define Option union(Some: int, None)
+Some(5)<expect>{"_type":"Option","_variant":"Some","value":5}
+        <test id = option-none program = program><input>define Option union(Some: int, None)
+None<expect>{"_type":"Option","_variant":"None"}
+        <test id = result-ok program = program><input>define Result union(Ok: int, Err: String)
+Ok(42)<expect>{"_type":"Result","_variant":"Ok","value":42}
+        <test id = result-err program = program><input>define Result union(Ok: int, Err: String)
+Err("error")<expect>{"_type":"Result","_variant":"Err","value":"error"}
+        <test id = option-some-value program = program><input>define Option union(Some: int, None)
+Some(5).value<expect>5
+
 </category>
 
 </suite>
