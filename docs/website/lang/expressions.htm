@@ -99,11 +99,16 @@ HREF="expressions.htm#AEN906"
 ><DT
 ><A
 HREF="expressions.htm#AEN1054"
+>Choose Expressions</A
+></DT
+><DT
+><A
+HREF="expressions.htm#AEN1123"
 >If Expressions</A
 ></DT
 ><DT
 ><A
-HREF="expressions.htm#AEN1062"
+HREF="expressions.htm#AEN1131"
 >Match Expressions</A
 ></DT
 ></DL
@@ -964,6 +969,210 @@ CLASS="section"
 CLASS="section"
 ><A
 NAME="AEN1054"
+>Choose Expressions</A
+></H1
+><P
+>Choose expressions pattern match on union types, binding the inner value to a variable.</P
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN1057"
+>Basic Choose</A
+></H2
+><P
+>Choose expressions match on the variant of a union value and bind the inner value.</P
+><DIV
+CLASS="informaltable"
+><P
+></P
+><A
+NAME="AEN1060"
+></A
+><TABLE
+BORDER="0"
+FRAME="void"
+CLASS="CALSTABLE"
+><COL
+WIDTH="1*"><COL
+WIDTH="1*"><THEAD
+><TR
+><TH
+>Input</TH
+><TH
+>Result</TH
+></TR
+></THEAD
+><TBODY
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>define Option union(Some: int, None)
+choose Some(5): when v: Some: v + 1 else 0</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>6</TT
+></TD
+></TR
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>define Option union(Some: int, None)
+choose None: when v: Some: v else -1</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>-1</TT
+></TD
+></TR
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>define Option union(Some: int, None)
+let x Some(10)
+choose x: when v: Some: v * 2 else 0</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>20</TT
+></TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN1084"
+>Choose with Result</A
+></H2
+><P
+>Choose works with any union type, including Result.</P
+><DIV
+CLASS="informaltable"
+><P
+></P
+><A
+NAME="AEN1087"
+></A
+><TABLE
+BORDER="0"
+FRAME="void"
+CLASS="CALSTABLE"
+><COL
+WIDTH="1*"><COL
+WIDTH="1*"><THEAD
+><TR
+><TH
+>Input</TH
+><TH
+>Result</TH
+></TR
+></THEAD
+><TBODY
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>define Result union(Ok: int, Err: String)
+choose Ok(42): when v: Ok: v when e: Err: 0 else -1</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>42</TT
+></TD
+></TR
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>define Result union(Ok: int, Err: String)
+choose Err("error"): when v: Ok: v when e: Err: 0 else -1</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>0</TT
+></TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN1106"
+>Choose Else Branch</A
+></H2
+><P
+>The else branch is evaluated when no when clause matches.</P
+><DIV
+CLASS="informaltable"
+><P
+></P
+><A
+NAME="AEN1109"
+></A
+><TABLE
+BORDER="0"
+FRAME="void"
+CLASS="CALSTABLE"
+><COL
+WIDTH="1*"><COL
+WIDTH="1*"><THEAD
+><TR
+><TH
+>Input</TH
+><TH
+>Result</TH
+></TR
+></THEAD
+><TBODY
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>define Option union(Some: int, None)
+choose None: when v: Some: v else 99</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>99</TT
+></TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN1123"
 >If Expressions</A
 ></H1
 ><P
@@ -994,7 +1203,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN1062"
+NAME="AEN1131"
 >Match Expressions</A
 ></H1
 ><P

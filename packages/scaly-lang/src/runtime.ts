@@ -523,6 +523,50 @@ export class Runtime {
         return { ok: true, value: { _tag: 'Unit' } }
       }
 
+      case 'Choose': {
+        // Evaluate the condition (union value to match on)
+        const condResult = this.evaluate(expr.condition, scope)
+        if (!condResult.ok) return condResult
+        const condValue = condResult.value
+
+        // Must be a wrapper (union value)
+        if (condValue._tag !== 'Wrapper') {
+          return { ok: false, error: `Choose expression requires a union value, got ${condValue._tag}` }
+        }
+
+        // Get the variant tag
+        const variantField = condValue.fields.get('_variant')
+        if (!variantField || variantField._tag !== 'String') {
+          return { ok: false, error: `Value is not a union variant` }
+        }
+        const variantName = variantField.value
+
+        // Check each when case
+        for (const whenCase of expr.cases) {
+          // Compare variant name (whenCase.variant is an array for dotted names)
+          const caseVariant = whenCase.variant.join('.')
+          if (variantName === caseVariant) {
+            // Create new scope with binding
+            const whenScope = new Map(scope)
+            // Bind the inner value (if any) to the binding name
+            const innerValue = condValue.fields.get('value')
+            if (innerValue) {
+              whenScope.set(whenCase.name, innerValue)
+            } else {
+              // Parameterless variant - bind the whole wrapper
+              whenScope.set(whenCase.name, condValue)
+            }
+            return this.evaluateStatement(whenCase.consequent, whenScope)
+          }
+        }
+
+        // No match - use alternative if present
+        if (expr.alternative) {
+          return this.evaluateStatement(expr.alternative, scope)
+        }
+        return { ok: true, value: { _tag: 'Unit' } }
+      }
+
       case 'Type':
         // Variable lookup or type constructor
         const name = expr.name[0]
