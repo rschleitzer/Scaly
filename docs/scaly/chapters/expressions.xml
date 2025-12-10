@@ -27,6 +27,20 @@ if 5 > 3: 10 else 20     ; evaluates to 10</programlisting>
     <programlisting>if false: 1 else if true: 2 else 3  ; evaluates to 2</programlisting>
   </section>
 
+  <section xml:id="expr-match">
+    <title>Match Expressions</title>
+    <para>Match expressions compare a value against multiple cases.
+      The syntax is <code>match</code> followed by the scrutinee, a colon,
+      one or more <code>case</code> branches, and optionally <code>else</code>.
+    </para>
+    <programlisting>match 2: case 1: 10 case 2: 20 else 0  ; evaluates to 20
+match 5: case 1: 10 else 0              ; evaluates to 0</programlisting>
+    <para>
+      Multiple cases can share the same branch:
+    </para>
+    <programlisting>match 2: case 1 case 2: "one or two" else "other"</programlisting>
+  </section>
+
   <section xml:id="expr-let">
     <title>Let Bindings</title>
     <para>Let bindings introduce local variables. The syntax is

@@ -530,6 +530,30 @@ export class Runtime {
         return { ok: true, value: { _tag: 'Unit' } }
       }
 
+      case 'Match': {
+        // Evaluate the scrutinee
+        const scrutineeResult = this.evaluate(expr.condition, scope)
+        if (!scrutineeResult.ok) return scrutineeResult
+        const scrutineeValue = scrutineeResult.value
+
+        // Check each branch
+        for (const branch of expr.branches) {
+          for (const c of branch.cases) {
+            const caseResult = this.evaluate(c.condition, scope)
+            if (!caseResult.ok) return caseResult
+            if (this.valuesEqual(scrutineeValue, caseResult.value)) {
+              return this.evaluateStatement(branch.consequent, scope)
+            }
+          }
+        }
+
+        // No match - use alternative if present
+        if (expr.alternative) {
+          return this.evaluateStatement(expr.alternative, scope)
+        }
+        return { ok: true, value: { _tag: 'Unit' } }
+      }
+
       case 'Type':
         // Variable lookup or type constructor
         const name = expr.name[0]
@@ -634,6 +658,22 @@ export class Runtime {
         return this.evaluate(stmt.result, scope)
       default:
         return { ok: false, error: `Statement type not implemented: ${stmt._tag}` }
+    }
+  }
+
+  private valuesEqual(a: Value, b: Value): boolean {
+    if (a._tag !== b._tag) return false
+    switch (a._tag) {
+      case 'Int':
+      case 'Float':
+      case 'Bool':
+      case 'String':
+      case 'Char':
+        return a.value === (b as typeof a).value
+      case 'Unit':
+        return true
+      case 'Wrapper':
+        return false // Wrappers not compared by value
     }
   }
 
