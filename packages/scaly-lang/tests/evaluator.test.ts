@@ -51,6 +51,30 @@ describe('Evaluator', () => {
     }
   })
 
+  it('evaluates if expressions with true condition', () => {
+    const result = evaluate('if true: 1 else 0')
+    expect(result._tag).toBe('Ok')
+    if (result._tag === 'Ok') {
+      expect(result.value).toBe(1)
+    }
+  })
+
+  it('evaluates if expressions with false condition', () => {
+    const result = evaluate('if false: 1 else 0')
+    expect(result._tag).toBe('Ok')
+    if (result._tag === 'Ok') {
+      expect(result.value).toBe(0)
+    }
+  })
+
+  it('evaluates if expressions with comparison', () => {
+    const result = evaluate('if 5 > 3: 10 else 20')
+    expect(result._tag).toBe('Ok')
+    if (result._tag === 'Ok') {
+      expect(result.value).toBe(10)
+    }
+  })
+
   it('evaluates let bindings', () => {
     const result = evaluate('let x 5: x')
     expect(result._tag).toBe('Ok')

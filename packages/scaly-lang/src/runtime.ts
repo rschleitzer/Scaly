@@ -371,6 +371,23 @@ export class Runtime {
       case 'Block':
         return this.evaluateBlock(expr, scope)
 
+      case 'If': {
+        // Evaluate condition
+        const condResult = this.evaluate(expr.condition, scope)
+        if (!condResult.ok) return condResult
+        const condValue = condResult.value
+        if (condValue._tag !== 'Bool') {
+          return { ok: false, error: `If condition must be boolean, got ${condValue._tag}` }
+        }
+        // Evaluate appropriate branch
+        if (condValue.value) {
+          return this.evaluateStatement(expr.consequent, scope)
+        } else if (expr.alternative) {
+          return this.evaluateStatement(expr.alternative, scope)
+        }
+        return { ok: true, value: { _tag: 'Unit' } }
+      }
+
       case 'Type':
         // Variable lookup or type constructor
         const name = expr.name[0]
@@ -455,6 +472,27 @@ export class Runtime {
     }
 
     return { ok: true, value: lastValue }
+  }
+
+  private evaluateStatement(stmt: Model.Statement, scope: Scope): { ok: true; value: Value } | { ok: false; error: string } {
+    switch (stmt._tag) {
+      case 'Action':
+        return this.evaluate(stmt.source, scope)
+      case 'Binding': {
+        const name = stmt.item.name
+        if (!name) {
+          return { ok: false, error: 'Binding must have a name' }
+        }
+        const result = this.evaluate(stmt.operation, scope)
+        if (!result.ok) return result
+        scope.set(name, result.value)
+        return { ok: true, value: { _tag: 'Unit' } }
+      }
+      case 'Return':
+        return this.evaluate(stmt.result, scope)
+      default:
+        return { ok: false, error: `Statement type not implemented: ${stmt._tag}` }
+    }
   }
 
   private applyOperator(name: string, left: Value, right: Value, scope: Scope): { ok: true; value: Value } | { ok: false; error: string } {

@@ -5645,6 +5645,20 @@ function abs(x: int) returns int intrinsic
           return { ok: false, error: "Complex tuples not yet implemented" };
         case "Block":
           return this.evaluateBlock(expr, scope);
+        case "If": {
+          const condResult = this.evaluate(expr.condition, scope);
+          if (!condResult.ok) return condResult;
+          const condValue = condResult.value;
+          if (condValue._tag !== "Bool") {
+            return { ok: false, error: `If condition must be boolean, got ${condValue._tag}` };
+          }
+          if (condValue.value) {
+            return this.evaluateStatement(expr.consequent, scope);
+          } else if (expr.alternative) {
+            return this.evaluateStatement(expr.alternative, scope);
+          }
+          return { ok: true, value: { _tag: "Unit" } };
+        }
         case "Type":
           const name = expr.name[0];
           if (name === "true" && expr.name.length === 1) {
@@ -5709,6 +5723,26 @@ function abs(x: int) returns int intrinsic
         }
       }
       return { ok: true, value: lastValue };
+    }
+    evaluateStatement(stmt, scope) {
+      switch (stmt._tag) {
+        case "Action":
+          return this.evaluate(stmt.source, scope);
+        case "Binding": {
+          const name = stmt.item.name;
+          if (!name) {
+            return { ok: false, error: "Binding must have a name" };
+          }
+          const result = this.evaluate(stmt.operation, scope);
+          if (!result.ok) return result;
+          scope.set(name, result.value);
+          return { ok: true, value: { _tag: "Unit" } };
+        }
+        case "Return":
+          return this.evaluate(stmt.result, scope);
+        default:
+          return { ok: false, error: `Statement type not implemented: ${stmt._tag}` };
+      }
     }
     applyOperator(name, left, right, scope) {
       const signatures = this.operators.get(name);
