@@ -1,0 +1,53 @@
+<chapter xml:id="definitions">
+  <title>Definitions</title>
+
+  <section xml:id="def-overview">
+    <title>Overview</title>
+    <para>Definitions declare new types that can be used throughout a program.
+      Types can have properties, methods, and nested definitions.
+    </para>
+  </section>
+
+  <section xml:id="def-structures">
+    <title>Structures</title>
+    <para>The <code>define</code> keyword creates a new structure type with
+      named properties. Properties are specified as a comma-separated list
+      of name-type pairs.
+    </para>
+
+    <programlisting>define Point(x: int, y: int)
+Point(3, 4)</programlisting>
+    <para>evaluates to</para>
+    <code>{"_type":"Point","x":3,"y":4}</code>
+
+    <para>
+      Structures are constructed by calling the type name as a function with
+      arguments for each property:
+    </para>
+
+    <programlisting>define Point(x: int, y: int)
+Point(3, 4).x</programlisting>
+    <para>evaluates to</para>
+    <code>3</code>
+
+    <para>
+      Properties can be accessed using dot notation:
+    </para>
+
+    <programlisting>define Point(x: int, y: int)
+let p Point(3, 4): p.x + p.y</programlisting>
+    <para>evaluates to</para>
+    <code>7</code>
+
+    <para>
+      Structures can contain other structures as properties:
+    </para>
+
+    <programlisting>define Point(x: int, y: int)
+define Rectangle(origin: Point, width: int, height: int)
+Rectangle(Point(0, 0), 10, 5).width</programlisting>
+    <para>evaluates to</para>
+    <code>10</code>
+  </section>
+
+</chapter>
