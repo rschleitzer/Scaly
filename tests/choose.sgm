@@ -1,0 +1,33 @@
+<!DOCTYPE suite SYSTEM "../test.dtd">
+
+<suite id = choose-tests title = "Choose Expression Tests">
+
+<category id = choose-expressions title = "Choose Expressions">
+
+    <prose>Choose expressions pattern match on union types, binding the inner value to a variable.
+
+    <tests id = choose-basic title = "Basic Choose">
+        <prose>Choose expressions match on the variant of a union value and bind the inner value.
+        <test id = choose-some program = program><input>define Option union(Some: int, None)
+choose Some(5): when v: Some: v + 1 else 0<expect>6
+        <test id = choose-none program = program><input>define Option union(Some: int, None)
+choose None: when v: Some: v else -1<expect>-1
+        <test id = choose-with-let program = program><input>define Option union(Some: int, None)
+let x Some(10)
+choose x: when v: Some: v * 2 else 0<expect>20
+
+    <tests id = choose-result title = "Choose with Result">
+        <prose>Choose works with any union type, including Result.
+        <test id = choose-ok program = program><input>define Result union(Ok: int, Err: String)
+choose Ok(42): when v: Ok: v when e: Err: 0 else -1<expect>42
+        <test id = choose-err program = program><input>define Result union(Ok: int, Err: String)
+choose Err("error"): when v: Ok: v when e: Err: 0 else -1<expect>0
+
+    <tests id = choose-else title = "Choose Else Branch">
+        <prose>The else branch is evaluated when no when clause matches.
+        <test id = choose-else-fallback program = program><input>define Option union(Some: int, None)
+choose None: when v: Some: v else 99<expect>99
+
+</category>
+
+</suite>
