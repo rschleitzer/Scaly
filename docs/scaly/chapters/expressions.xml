@@ -41,4 +41,6 @@ match 5: case 1: 10 else 0              ; evaluates to 0</programlisting>
     <programlisting>match 2: case 1 case 2: "one or two" else "other"</programlisting>
   </section>
 
+  &generated-choose;
+
 </chapter>

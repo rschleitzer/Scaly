@@ -1,3 +1,4 @@
 #!/bin/bash
 openjade -G -t sgml -d codegen/test-expressions.dsl tests/expressions.sgm
 openjade -G -t sgml -d codegen/test-definitions.dsl tests/definitions.sgm
+openjade -G -t sgml -d codegen/test-choose.dsl tests/choose.sgm
