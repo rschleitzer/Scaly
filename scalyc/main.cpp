@@ -1,4 +1,5 @@
 #include "Lexer.h"
+#include "LexerTests.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/raw_ostream.h"
@@ -116,9 +117,9 @@ int main(int argc, char **argv) {
     cl::ParseCommandLineOptions(argc, argv, "Scaly Compiler\n");
 
     if (RunTests) {
-        outs() << "Running tests...\n";
-        // TODO: Run compiled-in tests via JIT
-        return 0;
+        bool AllPassed = true;
+        AllPassed &= scaly::runLexerTests();
+        return AllPassed ? 0 : 1;
     }
 
     if (LexOnly) {
