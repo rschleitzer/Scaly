@@ -24,6 +24,30 @@ The current approach builds the compiler in **idiomatic C++** with **LLVM code g
 - **JIT testing**: Test cases defined in XML are compiled and executed via JIT during development
 - **Long-term bootstrapping**: Self-hosting is a goal but not a near-term constraint on implementation choices
 
+### LLVM Coding Guidelines
+
+Follow the [LLVM Programmer's Manual](https://llvm.org/docs/ProgrammersManual.html) conventions. These idioms align well with Scaly's design and will ease eventual self-hosting:
+
+| LLVM C++ Idiom | Scaly Equivalent | Rationale |
+|----------------|------------------|-----------|
+| `Expected<T>` | `Result[T, Error]` | Explicit error handling, no exceptions |
+| `StringRef` | Borrowed `String` | Non-owning references, no hidden copies |
+| `SmallVector<T, N>` | `Vector[T]` | Stack-first allocation, region-friendly |
+| `isa<>/cast<>/dyn_cast<>` | `choose`/`when` | Pattern matching on type hierarchies |
+| No exceptions | Explicit returns | No hidden control flow |
+| Value semantics | Immutable params | Functions receive immutable inputs |
+
+**Key practices:**
+- Use LLVM's ADT library: `SmallVector`, `StringRef`, `ArrayRef`, `SmallPtrSet`
+- Return `Expected<T>` for operations that can fail (parsing, file I/O)
+- Pass `StringRef` and `ArrayRef` by value (they're lightweight views)
+- Use `isa<>`/`dyn_cast<>` for AST node dispatch instead of `dynamic_cast`
+- Avoid `std::string` where `StringRef` suffices
+- Avoid exceptions entirely - use explicit error propagation
+
+**Why this matters for bootstrapping:**
+The C++ code will have a similar "shape" to eventual Scaly code. When we port the compiler to Scaly, `Expected<T>` becomes `Result[T, Error]` with pattern matching, `StringRef` becomes a borrowed reference, and `dyn_cast<>` dispatch becomes `choose`/`when` expressions. No fundamental restructuring required.
+
 ### Parser Generator
 
 The parser is generated from the SGML grammar:
