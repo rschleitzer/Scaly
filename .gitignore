@@ -1,52 +1,26 @@
-Debug
-Release
-scaly/main.o
-scaly/scalyc
-scaly/scaly.mk
-scaly/scaly.txt
-scalypp/scalypp.mk
-scalypp/scalypp.txt
-scalycpp/scalycpp.mk
-scalycpp/scalycpp.txt
-shortest/shortest.mk
-shortest/shortest.txt
-hello/hello.mk
-hell/hello.txt
-.build-debug
-.codelite
-scaly.io/index.html
-scaly.io/book
-retired/scalyc/obj
-scalyc/.vs
-scalyc/scalyc.csproj.user
-scalyc/scalyc.userprefs
-scalyc/Properties/launchSettings.json
-retired/runtime/obj
-retired/tests/obj
-tests/obj
-.vs
-docs/build
-docs/source/_build
-rusty/scalyc/target
-rusty/scalyc/.vscode
-rusty/scaly/target
-rusty/scaly/.vscode
-scalyc/target
-scalyc/.vscode
-scaly/target
-scaly/.vscode
-.DS_Store
-*.bc
-bin/
+# Build artifacts
 *.o
 *.a
-out
-node_modules
-dist/
-client/server
-.vscode-test
-tsconfig.tsbuildinfo
+*.bc
 
-# Documentation build artifacts
+# CMake
+scalyc/build/
+compile_commands.json
+CMakeCache.txt
+CMakeFiles/
+
+# macOS
+.DS_Store
+
+# Documentation build
+docs/build/
 *.fot
 output/
+
+# IDE
+.vscode-test/
+.vs/
+
+# Retired code build artifacts
+retired/*/obj/
+retired/*/target/
