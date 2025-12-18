@@ -4,25 +4,32 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Scaly is envisioned to be a self-scaling programming language. The goal is a self-hosted compiler that manages memory through regions automatically.
+Scaly is envisioned to be a self-scaling programming language. The goal is a self-hosted compiler that manages memory through regions automatically (Region-Based Memory Management / RBMM).
 
-The current approach uses a **TypeScript bootstrapper** to develop and test the language implementation before eventually achieving self-hosting. This replaces the previous C++ transpilation approach.
+The current approach builds the compiler in **idiomatic C++** with **LLVM code generation** from the start. This replaces the previous TypeScript bootstrapper approach, which was abandoned because it could never achieve the core goals of LLVM backend and RBMM.
 
 ## Development Strategy
 
 ### Overall Approach
 
-1. **Stay with TypeScript** as the implementation language for the bootstrapper
-2. **Port parser and modeler** from `retired/packages` (Scaly code) to TypeScript
-3. **Build a transpiler targeting TypeScript** (instead of C++)
-4. **Switch back to Scaly** once the TS transpiler works - the Scaly code should closely resemble the retired implementation by then
+1. **Build the compiler in idiomatic C++** - write clean, modern C++ code (not generated or transpiled)
+2. **Target LLVM from the start** - no intermediate targets; go directly to LLVM IR
+3. **JIT testing from the start** - use LLVM's JIT capabilities to dynamically test XML test cases
+4. **No early bootstrapping pressure** - focus on correctness and completeness before self-hosting
+
+### Key Differences from Previous C++ Attempts
+
+- **Idiomatic C++**: Write natural C++ code, not code designed to look like Scaly or be easily transpiled
+- **LLVM-first**: Previous attempts used C++ as an intermediate target; now we generate LLVM IR directly
+- **JIT testing**: Test cases defined in XML are compiled and executed via JIT during development
+- **Long-term bootstrapping**: Self-hosting is a goal but not a near-term constraint on implementation choices
 
 ### Parser Generator
 
-The parser will be generated, not hand-written:
-- Copy the parser generator infrastructure from `retired/packages`
-- Modify the DSSSL/Scheme code in `codegen/` to emit TypeScript instead of Scaly
-- The grammar (`scaly.sgm`) stays the same; only the output format changes
+The parser is generated from the SGML grammar:
+- **scaly.sgm**: Grammar definition for the Scaly language
+- **codegen/**: DSSSL/Scheme scripts that generate parser code
+- **mkp**: Shell script to regenerate parser using openjade
 
 ### Memory Model: Function vs Procedure
 
@@ -59,13 +66,6 @@ procedure appendItems(builder: StringBuilder, items: List[String]) {
 
 **Operators** are always pure (like functions):
 - No side effects, always return a result
-- Operator identifiers need mangling in TypeScript output (and any traditional-language backend):
-  - Arithmetic: `+` → `op$plus`, `>=` → `op$gte`
-  - String identifiers: `'divided by'` → requires robust encoding
-- String identifiers can contain arbitrary content (escapes, Unicode, quotes), so mangling must be:
-  - Deterministic (same input → same output)
-  - Reversible (for error messages/debugging)
-  - Valid in target language
 
 **Benefits of this distinction:**
 - Explicit at call site - you know if something can mutate
@@ -73,46 +73,16 @@ procedure appendItems(builder: StringBuilder, items: List[String]) {
 - Parallelism-friendly - functions and operators are automatically safe to parallelize
 - Builders fit naturally - procedures work with mutable state
 
-**In the TypeScript bootstrapper**, this is modeled as:
-- Functions: all params treated as `readonly`, return results
-- Procedures: can take mutable references
-
-This prepares for Scaly's region-based memory management while keeping the TypeScript implementation pragmatic.
-
-### Incremental REPL Development
-
-The REPL (in `docs/`) drives development with incremental functionality:
-
-1. **Literals**: numbers, strings, booleans
-2. **Operators**: arithmetic, comparison
-3. **Variables/bindings**: let expressions
-4. **Function calls**: built-in and user-defined
-5. **Function definitions**: lambdas and named functions
-6. **Control flow**: if/else, pattern matching
-7. **Data structures**: tuples, records, lists
-8. **Modules**: imports and namespaces
-
-Each stage: parse → evaluate → print result, growing the language incrementally.
-
 ## Project Structure
 
-### Active Development (TypeScript Bootstrapper)
+### Active Development (C++ Compiler)
 
-The project uses npm workspaces with these packages:
-
-- **packages/scaly-lang** (`@scaly/lang`): Core language implementation
-  - Lexer (`src/lexer.ts`)
-  - Parser (`src/parser.ts`) - generated from grammar
-  - Modeler (`src/modeler.ts`) - builds semantic model from syntax
-  - Runtime (`src/runtime.ts`) - evaluates operations using stdlib
-  - Evaluator (`src/evaluator.ts`) - main entry point for evaluation
-  - Transpiler (`src/transpiler/`) - JS code generation
-
-- **packages/scaly-containers** (`@scaly/containers`): Container library (String, Vector, HashMap)
-
-- **packages/scaly-io** (`@scaly/io`): I/O operations (File, Console, Path, Directory)
-
-- **packages/scaly-repl** (`@scaly/repl`): REPL scaffold (main implementation in `docs/`)
+- **scalyc/**: C++ compiler implementation
+  - Lexer
+  - Parser (generated from grammar)
+  - Semantic analysis / modeler
+  - LLVM code generation
+  - JIT test runner
 
 ### Grammar and Code Generation
 
@@ -124,9 +94,15 @@ The project uses npm workspaces with these packages:
   - `scaly.dsl` - DSSSL stylesheet
 - **mkp**: Shell script to regenerate parser from grammar using openjade
 
+### Test Infrastructure
+
+- **tests.sgm**: Test definitions in XML format
+- Tests are compiled and executed via LLVM JIT during development
+- Enables rapid iteration: change code, run tests, see results immediately
+
 ### Reference Implementation (Retired)
 
-The `retired/` directory contains the previous Scaly-based infrastructure for reference:
+The `retired/` directory contains previous implementation attempts for reference:
 
 - **retired/packages/**: Original Scaly runtime, compiler (scalyc), and language server (scals)
 - **retired/extension/**: VSCode extension for Scaly language support
@@ -134,13 +110,12 @@ The `retired/` directory contains the previous Scaly-based infrastructure for re
 This retired code demonstrates:
 - Memory management with regions and pages (`rp`/`ep` parameters)
 - The transpiler converting `.scaly` to C++
-- LLVM code generation
 
 ## Language Features
 
 Scaly syntax includes:
 - Module system with `define` and `module` declarations
-- Memory regions for automatic memory management
+- Memory regions for automatic memory management (RBMM)
 - Pattern matching with `choose`/`when`/`else`
 - Package imports and namespace resolution
 
@@ -171,7 +146,7 @@ define Product(left: int, right: int) {
     function value(this) returns int intrinsic
 }
 
-; Primitive operators return wrappers (intrinsic = TypeScript-implemented)
+; Primitive operators return wrappers (intrinsic = compiler-implemented)
 operator +(left: int, right: int) returns Sum intrinsic
 operator *(left: int, right: int) returns Product intrinsic
 
@@ -204,14 +179,7 @@ operator +(left: Product, right: int) returns Sum {
 
 ## Documentation
 
-The `docs/` subdirectory contains the documentation for the Scaly language and the REPL implementation. Documentation is built using DocBook and deployed to scaly.io.
-
-### Building Documentation
-
-```bash
-# Generate stdlib documentation from @doc attributes
-node -e "import { extractDocs, generateDocBook } from './packages/scaly-lang/dist/docgen.js'; import { readFileSync, writeFileSync } from 'fs'; writeFileSync('docs/stdlib.xml', generateDocBook(extractDocs(readFileSync('stdlib.scaly', 'utf-8'))));"
-```
+The `docs/` subdirectory contains the documentation for the Scaly language. Documentation is built using DocBook and deployed to scaly.io.
 
 ### Deploying to scaly.io
 
@@ -232,14 +200,11 @@ aws s3 sync docs/ s3://scaly.io --delete
 ### Building and Testing
 
 ```bash
-# Install dependencies
-npm install
+# Build the compiler
+./build.sh
 
-# Build all packages
-npm run build
-
-# Run tests
-npm test
+# Run tests (JIT execution of test cases)
+./test.sh
 ```
 
 ### Changing the Grammar
@@ -253,26 +218,22 @@ This runs `openjade -G -t sgml -d codegen/scaly.dsl scaly.sgm`
 
 ### Dependencies
 
-- Node.js >= 20.0.0
-- npm (for workspace management)
+- C++ compiler with C++17 or later support
+- LLVM development libraries
 - openjade (for grammar processing)
 
 ## File Structure
 
 ```
 .
-├── packages/              # TypeScript packages (npm workspaces)
-│   ├── scaly-lang/       # Core: lexer, parser, modeler, runtime, evaluator, docgen
-│   ├── scaly-containers/ # Container types
-│   ├── scaly-io/         # I/O operations
-│   └── scaly-repl/       # REPL scaffold
+├── scalyc/               # C++ compiler implementation
 ├── docs/                 # Documentation (deployed to scaly.io)
 ├── codegen/              # DSSSL parser generation scripts
 ├── scaly.sgm             # Grammar definition
 ├── stdlib.scaly          # Standard library (operators, functions)
-├── tests.sgm             # Test definitions (generates test code)
+├── tests.sgm             # Test definitions (XML format, JIT-executed)
 ├── mkp                   # Parser generation script
-├── mkt                   # Test generation script
-├── retired/              # Previous Scaly-based implementation (reference)
-└── package.json          # Root workspace configuration
+├── build.sh              # Build script
+├── test.sh               # Test runner script
+└── retired/              # Previous implementations (reference)
 ```
