@@ -1,10 +1,10 @@
 #!/bin/bash
 set -e
 
-# Regenerate from spec (skip for now - codegen needs updating)
-# if [ -f ./mkp ]; then
-#     ./mkp
-# fi
+# Regenerate from spec
+if [ -f ./mkp ]; then
+    ./mkp
+fi
 
 # Build compiler
 cd scalyc
