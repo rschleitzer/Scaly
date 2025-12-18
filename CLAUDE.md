@@ -379,9 +379,30 @@ Runs `openjade -G -t sgml -d codegen/scaly.dsl scaly.sgm` to generate:
 ### Dependencies
 
 - `clang++` (C++17 support)
-- LLVM development libraries (`llvm-dev` on Debian/Ubuntu, `llvm` on macOS via Homebrew)
+- **LLVM 18** (target version, matches Ubuntu 24.04 LTS)
 - CMake >= 3.16
 - openjade (for SGML/DSSSL processing)
+
+**LLVM Installation:**
+
+```bash
+# Ubuntu 24.04 LTS
+apt install llvm-18-dev clang-18
+
+# Ubuntu 22.04 LTS (add LLVM repository first)
+wget https://apt.llvm.org/llvm.sh
+chmod +x llvm.sh
+sudo ./llvm.sh 18
+
+# macOS (Homebrew)
+brew install llvm@18
+```
+
+**Why LLVM 18:**
+- Ships with Ubuntu 24.04 LTS (supported until 2029)
+- Mature ORC JIT for test infrastructure
+- Available via Homebrew on macOS
+- No bleeding edge instability
 
 ## File Structure
 
