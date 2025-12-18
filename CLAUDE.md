@@ -113,12 +113,39 @@ cmake ..
 make
 ```
 
-### Parser Generator
+### Unified Language Specification
 
-The parser is generated from the SGML grammar:
-- **scaly.sgm**: Grammar definition for the Scaly language
-- **codegen/**: DSSSL/Scheme scripts that generate parser code
-- **mkp**: Shell script to regenerate parser using openjade
+The entire language is defined in a single SGML document that serves as the source of truth for grammar, tests, and documentation:
+
+```
+scaly.sgm  →  ./mkl.sh (openjade + DSSSL)  →  scalyc/Parser.cpp
+                                            →  scalyc/Tests.cpp
+                                            →  docs/*.xml (DocBook)
+```
+
+**Source files:**
+- **scaly.sgm**: Unified language specification (grammar + tests + documentation)
+- **language.dtd**: DTD governing the SGML structure
+- **codegen/scaly.dsl**: DSSSL stylesheet that generates all outputs
+
+**Generated outputs:**
+- **scalyc/Parser.cpp**: Generated parser code
+- **scalyc/Tests.cpp**: Generated test code (compiled into scalyc)
+- **docs/*.xml**: DocBook chapters for the language reference
+
+**Benefits of unification:**
+- Single source of truth - grammar, tests, and docs are co-located
+- Tests serve as executable specification examples
+- Documentation always matches implementation
+- One codegen step generates everything
+- DTD enforces structural consistency
+
+**Codegen script:**
+```bash
+./mkl.sh   # Regenerates Parser.cpp, Tests.cpp, and docs/*.xml
+```
+
+This runs `openjade -G -t sgml -d codegen/scaly.dsl scaly.sgm`
 
 ### Memory Model: Function vs Procedure
 
@@ -164,30 +191,39 @@ procedure appendItems(builder: StringBuilder, items: List[String]) {
 
 ## Project Structure
 
-### Active Development (C++ Compiler)
+### Compiler (scalyc/)
 
-- **scalyc/**: C++ compiler implementation
-  - Lexer
-  - Parser (generated from grammar)
-  - Semantic analysis / modeler
-  - LLVM code generation
-  - JIT test runner
+Single monolithic executable with GCC-style command line:
 
-### Grammar and Code Generation
+```
+scalyc [options] <input-files>
 
-- **scaly.sgm**: SGML grammar definition for the Scaly language
-- **codegen/**: DSSSL/Scheme scripts for parser generation
-  - `parser.scm` - Parser generation logic
-  - `helpers.scm` - Helper functions
-  - `syntax.scm` - Syntax definitions
-  - `scaly.dsl` - DSSSL stylesheet
-- **mkp**: Shell script to regenerate parser from grammar using openjade
+Options:
+  -o <file>      Output file
+  -c             Compile only (no link)
+  -S             Emit LLVM IR
+  --test         Run compiled-in test suite
+  --test=<name>  Run specific test
+  -v             Verbose output
+```
 
-### Test Infrastructure
+**Source files:**
+- `main.cpp` - Entry point, command line parsing
+- `Lexer.h/cpp` - Lexical analysis
+- `Parser.h/cpp` - Generated from scaly.sgm
+- `AST.h/cpp` - Abstract syntax tree nodes
+- `Modeler.h/cpp` - Semantic analysis
+- `Codegen.h/cpp` - LLVM IR generation
+- `Tests.h/cpp` - Generated from scaly.sgm
 
-- **tests.sgm**: Test definitions in XML format
-- Tests are compiled and executed via LLVM JIT during development
-- Enables rapid iteration: change code, run tests, see results immediately
+### Language Specification (codegen/)
+
+DSSSL/Scheme scripts that process scaly.sgm:
+- `scaly.dsl` - Main DSSSL stylesheet
+- `parser.scm` - Parser generation logic
+- `tests.scm` - Test code generation logic
+- `docbook.scm` - Documentation generation logic
+- `helpers.scm` - Shared helper functions
 
 ### Reference Implementation (Retired)
 
@@ -220,7 +256,7 @@ Scaly syntax includes:
 - Operators are not hardcoded; no built-in operator precedence in the grammar
 - Functions apply as prefix, operators as postfix (binary)
 - **IMPORTANT**: In if statements, `else` must be on the same line as the closing brace
-- See scaly.sgm for full grammar specification
+- See scaly.sgm for full language specification (grammar, tests, and documentation)
 
 ### Standard Library and Operator Precedence
 
@@ -286,6 +322,30 @@ aws s3 sync docs/ s3://scaly.io --delete
 
 ## Development Commands
 
+### Full Build Workflow
+
+```bash
+# 1. Edit language specification
+vim scaly.sgm
+
+# 2. Regenerate parser, tests, and docs
+./mkl.sh
+
+# 3. Build compiler
+cd scalyc/build && make
+
+# 4. Run tests
+./scalyc --test
+```
+
+### Regenerating Code from Specification
+
+```bash
+./mkl.sh   # Generates Parser.cpp, Tests.cpp, docs/*.xml
+```
+
+This runs `openjade -G -t sgml -d codegen/scaly.dsl scaly.sgm`
+
 ### Building the Compiler
 
 ```bash
@@ -298,41 +358,44 @@ make
 ### Running Tests
 
 ```bash
-# From build directory - runs JIT test execution
+# Run all tests
 ./scalyc --test
+
+# Run specific test
+./scalyc --test=arithmetic
 ```
-
-### Changing the Grammar
-
-```bash
-# Edit scaly.sgm, then regenerate parser:
-./mkp
-```
-
-This runs `openjade -G -t sgml -d codegen/scaly.dsl scaly.sgm`
 
 ### Dependencies
 
 - `clang++` (C++17 support)
 - LLVM development libraries (`llvm-dev` on Debian/Ubuntu, `llvm` on macOS via Homebrew)
 - CMake >= 3.16
-- openjade (for grammar processing)
+- openjade (for SGML/DSSSL processing)
 
 ## File Structure
 
 ```
 .
+├── scaly.sgm             # Unified language specification (grammar + tests + docs)
+├── language.dtd          # DTD governing SGML structure
+├── mkl.sh                # Codegen script (generates everything)
+├── stdlib.scaly          # Standard library (operators, functions)
 ├── scalyc/               # C++ compiler (CMake project)
 │   ├── CMakeLists.txt
 │   ├── main.cpp
 │   ├── Lexer.h / Lexer.cpp
-│   ├── Parser.h / Parser.cpp
-│   └── ...
-├── docs/                 # Documentation (deployed to scaly.io)
-├── codegen/              # DSSSL parser generation scripts
-├── scaly.sgm             # Grammar definition
-├── stdlib.scaly          # Standard library (operators, functions)
-├── tests.sgm             # Test definitions (XML format, JIT-executed)
-├── mkp                   # Parser generation script
+│   ├── Parser.h / Parser.cpp   # Generated
+│   ├── Tests.h / Tests.cpp     # Generated
+│   ├── AST.h / AST.cpp
+│   ├── Modeler.h / Modeler.cpp
+│   ├── Codegen.h / Codegen.cpp
+│   └── build/            # CMake build directory
+├── codegen/              # DSSSL code generation scripts
+│   ├── scaly.dsl         # Main stylesheet
+│   ├── parser.scm        # Parser generation
+│   ├── tests.scm         # Test generation
+│   ├── docbook.scm       # Documentation generation
+│   └── helpers.scm       # Shared utilities
+├── docs/                 # Generated DocBook (deployed to scaly.io)
 └── retired/              # Previous implementations (reference)
 ```
