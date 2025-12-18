@@ -322,48 +322,59 @@ aws s3 sync docs/ s3://scaly.io --delete
 
 ## Development Commands
 
-### Full Build Workflow
+### Quick Start
 
 ```bash
-# 1. Edit language specification
-vim scaly.sgm
+./build.sh        # Regenerate code + build compiler
+./build.sh test   # Regenerate + build + run tests
+```
 
-# 2. Regenerate parser, tests, and docs
+### build.sh
+
+Main build script that orchestrates the full workflow:
+
+```bash
+#!/bin/bash
+set -e
+
+# Regenerate from spec
 ./mkl.sh
 
-# 3. Build compiler
-cd scalyc/build && make
-
-# 4. Run tests
-./scalyc --test
-```
-
-### Regenerating Code from Specification
-
-```bash
-./mkl.sh   # Generates Parser.cpp, Tests.cpp, docs/*.xml
-```
-
-This runs `openjade -G -t sgml -d codegen/scaly.dsl scaly.sgm`
-
-### Building the Compiler
-
-```bash
+# Build compiler
 cd scalyc
-mkdir -p build && cd build
+mkdir -p build
+cd build
 cmake ..
 make
+
+# Optionally run tests
+if [ "$1" = "test" ]; then
+    ./scalyc --test
+fi
 ```
 
-### Running Tests
+### Individual Steps
 
 ```bash
-# Run all tests
-./scalyc --test
+# Regenerate code from specification only
+./mkl.sh   # Generates Parser.cpp, Tests.cpp, docs/*.xml
+
+# Build only (after code generation)
+cd scalyc/build && make
+
+# Run tests only
+./scalyc/build/scalyc --test
 
 # Run specific test
-./scalyc --test=arithmetic
+./scalyc/build/scalyc --test=arithmetic
 ```
+
+### mkl.sh
+
+Runs `openjade -G -t sgml -d codegen/scaly.dsl scaly.sgm` to generate:
+- `scalyc/Parser.cpp` - Generated parser
+- `scalyc/Tests.cpp` - Generated test code
+- `docs/*.xml` - DocBook chapters
 
 ### Dependencies
 
@@ -378,7 +389,8 @@ make
 .
 ├── scaly.sgm             # Unified language specification (grammar + tests + docs)
 ├── language.dtd          # DTD governing SGML structure
-├── mkl.sh                # Codegen script (generates everything)
+├── build.sh              # Main build script (codegen + compile)
+├── mkl.sh                # Codegen only (generates Parser.cpp, Tests.cpp, docs/)
 ├── stdlib.scaly          # Standard library (operators, functions)
 ├── scalyc/               # C++ compiler (CMake project)
 │   ├── CMakeLists.txt
