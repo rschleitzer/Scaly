@@ -68,7 +68,7 @@ struct "(id syntax-node)"Syntax {
                             (("keyword" "punctuation" "colon") "bool")
                             (else "/* unknown */")
                         )
-                        " "(string-firstchar-upcase (property content))";"
+                        " "(property content)";"
                     )"")
                 )))
 "

@@ -140,7 +140,7 @@ struct ThrownSyntax {
 struct ReferenceSyntax {
     size_t Start;
     size_t End;
-    llvm::StringRef Location;
+    llvm::StringRef location;
 };
 
 struct LocalSyntax {
@@ -160,48 +160,48 @@ struct LifetimeSyntax {
 struct ExtensionSyntax {
     size_t Start;
     size_t End;
-    llvm::StringRef Name;
+    llvm::StringRef name;
 };
 
 struct NameSyntax {
     size_t Start;
     size_t End;
-    llvm::StringRef Name;
-    std::vector<ExtensionSyntax>* Extensions;
+    llvm::StringRef name;
+    std::vector<ExtensionSyntax>* extensions;
 };
 
 struct TypeSyntax {
     size_t Start;
     size_t End;
-    NameSyntax Name;
-    GenericArgumentsSyntax* Generics;
-    OptionalSyntax* Optional;
-    LifetimeSyntax* Lifetime;
+    NameSyntax name;
+    GenericArgumentsSyntax* generics;
+    OptionalSyntax* optional;
+    LifetimeSyntax* lifetime;
 };
 
 struct IsSyntax {
     size_t Start;
     size_t End;
-    NameSyntax Name;
+    NameSyntax name;
 };
 
 struct SizeOfSyntax {
     size_t Start;
     size_t End;
-    TypeSyntax Type;
+    TypeSyntax type;
 };
 
 struct SetSyntax {
     size_t Start;
     size_t End;
-    std::vector<OperandSyntax>* Target;
-    std::vector<OperandSyntax>* Source;
+    std::vector<OperandSyntax>* target;
+    std::vector<OperandSyntax>* source;
 };
 
 struct OperationSyntax {
     size_t Start;
     size_t End;
-    std::vector<OperandSyntax>* Operands;
+    std::vector<OperandSyntax>* operands;
 };
 
 struct ActionSyntax {
@@ -211,83 +211,83 @@ struct ActionSyntax {
 struct RepeatSyntax {
     size_t Start;
     size_t End;
-    LabelSyntax* Name;
-    ActionSyntax Action;
+    LabelSyntax* name;
+    ActionSyntax action;
 };
 
 struct LabelSyntax {
     size_t Start;
     size_t End;
-    llvm::StringRef Name;
+    llvm::StringRef name;
 };
 
 struct ForSyntax {
     size_t Start;
     size_t End;
-    llvm::StringRef Variable;
-    TypeAnnotationSyntax* Annotation;
-    std::vector<OperandSyntax>* Operation;
-    LabelSyntax* Name;
-    ActionSyntax Action;
+    llvm::StringRef variable;
+    TypeAnnotationSyntax* annotation;
+    std::vector<OperandSyntax>* operation;
+    LabelSyntax* name;
+    ActionSyntax action;
 };
 
 struct LambdaSyntax {
     size_t Start;
     size_t End;
-    std::vector<OperandSyntax>* Input;
-    ActionSyntax Block;
+    std::vector<OperandSyntax>* input;
+    ActionSyntax block;
 };
 
 struct ThrowSyntax {
     size_t Start;
     size_t End;
-    std::vector<OperandSyntax>* Result;
+    std::vector<OperandSyntax>* result;
 };
 
 struct ReturnSyntax {
     size_t Start;
     size_t End;
-    std::vector<OperandSyntax>* Result;
+    std::vector<OperandSyntax>* result;
 };
 
 struct LoopSyntax {
     size_t Start;
     size_t End;
-    llvm::StringRef Name;
+    llvm::StringRef name;
 };
 
 struct BreakSyntax {
     size_t Start;
     size_t End;
-    LoopSyntax* Name;
-    std::vector<OperandSyntax>* Result;
+    LoopSyntax* name;
+    std::vector<OperandSyntax>* result;
 };
 
 struct ContinueSyntax {
     size_t Start;
     size_t End;
-    LoopSyntax* Name;
+    LoopSyntax* name;
 };
 
 struct TypeAnnotationSyntax {
     size_t Start;
     size_t End;
-    TypeSyntax Type;
+    TypeSyntax type;
 };
 
 struct PropertySyntax {
     size_t Start;
     size_t End;
-    llvm::StringRef Name;
-    TypeAnnotationSyntax Annotation;
-    InitializerSyntax* Initializer;
-    std::vector<AttributeSyntax>* Attributes;
+    llvm::StringRef name;
+    TypeAnnotationSyntax annotation;
+    InitializerSyntax* initializer;
+    std::vector<AttributeSyntax>* attributes;
 };
 
 struct FieldSyntax {
     size_t Start;
     size_t End;
-    PropertySyntax Property;
+    PropertySyntax property;
 };
 
 struct PartSyntax {
@@ -297,13 +297,13 @@ struct PartSyntax {
 struct StructureSyntax {
     size_t Start;
     size_t End;
-    std::vector<PartSyntax>* Parts;
+    std::vector<PartSyntax>* parts;
 };
 
 struct ArraySyntax {
     size_t Start;
     size_t End;
-    std::vector<TypeSyntax>* Members;
+    std::vector<TypeSyntax>* members;
 };
 
 struct BindingSpecSyntax {
@@ -313,33 +313,33 @@ struct BindingSpecSyntax {
 struct BindingAnnotationSyntax {
     size_t Start;
     size_t End;
-    BindingSpecSyntax Spec;
+    BindingSpecSyntax spec;
 };
 
 struct BindingSyntax {
     size_t Start;
     size_t End;
-    llvm::StringRef Name;
-    BindingAnnotationSyntax* Annotation;
-    std::vector<OperandSyntax>* Operation;
+    llvm::StringRef name;
+    BindingAnnotationSyntax* annotation;
+    std::vector<OperandSyntax>* operation;
 };
 
 struct MutableSyntax {
     size_t Start;
     size_t End;
-    BindingSyntax Binding;
+    BindingSyntax binding;
 };
 
 struct VarSyntax {
     size_t Start;
     size_t End;
-    BindingSyntax Binding;
+    BindingSyntax binding;
 };
 
 struct LetSyntax {
     size_t Start;
     size_t End;
-    BindingSyntax Binding;
+    BindingSyntax binding;
 };
 
 struct CommandSyntax {
@@ -349,9 +349,9 @@ struct CommandSyntax {
 struct WhenSyntax {
     size_t Start;
     size_t End;
-    llvm::StringRef Name;
-    NameSyntax Variant;
-    CommandSyntax Command;
+    llvm::StringRef name;
+    NameSyntax variant;
+    CommandSyntax command;
 };
 
 struct ConditionSyntax {
@@ -361,114 +361,114 @@ struct ConditionSyntax {
 struct TrySyntax {
     size_t Start;
     size_t End;
-    ConditionSyntax Condition;
-    std::vector<WhenSyntax>* Cases;
-    ElseSyntax* Dropper;
+    ConditionSyntax condition;
+    std::vector<WhenSyntax>* cases;
+    ElseSyntax* dropper;
 };
 
 struct ChooseSyntax {
     size_t Start;
     size_t End;
-    std::vector<OperandSyntax>* Condition;
-    std::vector<WhenSyntax>* Cases;
-    ElseSyntax* Alternative;
+    std::vector<OperandSyntax>* condition;
+    std::vector<WhenSyntax>* cases;
+    ElseSyntax* alternative;
 };
 
 struct WhileSyntax {
     size_t Start;
     size_t End;
-    ConditionSyntax Condition;
-    LabelSyntax* Name;
-    ActionSyntax Action;
+    ConditionSyntax condition;
+    LabelSyntax* name;
+    ActionSyntax action;
 };
 
 struct StatementSyntax {
     size_t Start;
     size_t End;
-    CommandSyntax Command;
+    CommandSyntax command;
 };
 
 struct CaseSyntax {
     size_t Start;
     size_t End;
-    std::vector<OperandSyntax>* Condition;
+    std::vector<OperandSyntax>* condition;
 };
 
 struct BranchSyntax {
     size_t Start;
     size_t End;
-    std::vector<CaseSyntax>* Cases;
-    StatementSyntax Consequent;
+    std::vector<CaseSyntax>* cases;
+    StatementSyntax consequent;
 };
 
 struct MatchSyntax {
     size_t Start;
     size_t End;
-    std::vector<OperandSyntax>* Scrutinee;
-    std::vector<BranchSyntax>* Branches;
-    ElseSyntax* Alternative;
+    std::vector<OperandSyntax>* scrutinee;
+    std::vector<BranchSyntax>* branches;
+    ElseSyntax* alternative;
 };
 
 struct ElseSyntax {
     size_t Start;
     size_t End;
-    CommandSyntax Alternative;
+    CommandSyntax alternative;
 };
 
 struct IfSyntax {
     size_t Start;
     size_t End;
-    std::vector<OperandSyntax>* Condition;
-    CommandSyntax Consequent;
-    ElseSyntax* Alternative;
+    std::vector<OperandSyntax>* condition;
+    CommandSyntax consequent;
+    ElseSyntax* alternative;
 };
 
 struct BlockSyntax {
     size_t Start;
     size_t End;
-    std::vector<UseSyntax>* Uses;
-    std::vector<StatementSyntax>* Statements;
+    std::vector<UseSyntax>* uses;
+    std::vector<StatementSyntax>* statements;
 };
 
 struct ElementSyntax {
     size_t Start;
     size_t End;
-    std::vector<OperandSyntax>* Operation;
-    std::vector<AttributeSyntax>* Attributes;
+    std::vector<OperandSyntax>* operation;
+    std::vector<AttributeSyntax>* attributes;
 };
 
 struct VectorSyntax {
     size_t Start;
     size_t End;
-    std::vector<ElementSyntax>* Elements;
-    LifetimeSyntax* Lifetime;
+    std::vector<ElementSyntax>* elements;
+    LifetimeSyntax* lifetime;
 };
 
 struct ValueSyntax {
     size_t Start;
     size_t End;
-    std::vector<OperandSyntax>* Value;
-    std::vector<AttributeSyntax>* Attributes;
+    std::vector<OperandSyntax>* value;
+    std::vector<AttributeSyntax>* attributes;
 };
 
 struct ComponentSyntax {
     size_t Start;
     size_t End;
-    std::vector<OperandSyntax>* Operands;
-    std::vector<AttributeSyntax>* Attributes;
-    ValueSyntax* Value;
+    std::vector<OperandSyntax>* operands;
+    std::vector<AttributeSyntax>* attributes;
+    ValueSyntax* value;
 };
 
 struct ObjectSyntax {
     size_t Start;
     size_t End;
-    std::vector<ComponentSyntax>* Components;
+    std::vector<ComponentSyntax>* components;
 };
 
 struct LiteralSyntax {
     size_t Start;
     size_t End;
-    Literal Literal;
+    Literal literal;
 };
 
 struct ExpressionSyntax {
@@ -478,32 +478,32 @@ struct ExpressionSyntax {
 struct MemberAccessSyntax {
     size_t Start;
     size_t End;
-    NameSyntax Name;
+    NameSyntax name;
 };
 
 struct OperandSyntax {
     size_t Start;
     size_t End;
-    ExpressionSyntax Expression;
-    std::vector<MemberAccessSyntax>* Members;
+    ExpressionSyntax expression;
+    std::vector<MemberAccessSyntax>* members;
 };
 
 struct InitializerSyntax {
     size_t Start;
     size_t End;
-    std::vector<OperandSyntax>* Operands;
+    std::vector<OperandSyntax>* operands;
 };
 
 struct PackageSyntax {
     size_t Start;
     size_t End;
-    NameSyntax Name;
+    NameSyntax name;
 };
 
 struct ModuleSyntax {
     size_t Start;
     size_t End;
-    llvm::StringRef Name;
+    llvm::StringRef name;
 };
 
 struct ModelSyntax {
@@ -513,28 +513,28 @@ struct ModelSyntax {
 struct AttributeSyntax {
     size_t Start;
     size_t End;
-    llvm::StringRef Name;
-    ModelSyntax Model;
+    llvm::StringRef name;
+    ModelSyntax model;
 };
 
 struct MacroSyntax {
     size_t Start;
     size_t End;
-    llvm::StringRef Name;
-    ModelSyntax Model;
-    std::vector<OperandSyntax>* Rule;
+    llvm::StringRef name;
+    ModelSyntax model;
+    std::vector<OperandSyntax>* rule;
 };
 
 struct ExtendSyntax {
     size_t Start;
     size_t End;
-    TypeSyntax Type;
+    TypeSyntax type;
 };
 
 struct ExtendsSyntax {
     size_t Start;
     size_t End;
-    std::vector<ExtendSyntax>* Extensions;
+    std::vector<ExtendSyntax>* extensions;
 };
 
 struct IntrinsicSyntax {
@@ -559,20 +559,20 @@ struct ImplementationSyntax {
 struct RoutineSyntax {
     size_t Start;
     size_t End;
-    GenericArgumentsSyntax* Generics;
-    LifetimeSyntax* Lifetime;
-    ParameterSetSyntax* Parameters;
-    std::vector<AttributeSyntax>* Attributes;
-    ReturnsSyntax* Returns_;
-    ThrowsSyntax* Throws_;
-    ImplementationSyntax Implementation;
+    GenericArgumentsSyntax* generics;
+    LifetimeSyntax* lifetime;
+    ParameterSetSyntax* parameters;
+    std::vector<AttributeSyntax>* attributes;
+    ReturnsSyntax* returns_;
+    ThrowsSyntax* throws_;
+    ImplementationSyntax implementation;
 };
 
 struct NamedSyntax {
     size_t Start;
     size_t End;
-    llvm::StringRef Name;
-    RoutineSyntax Routine;
+    llvm::StringRef name;
+    RoutineSyntax routine;
 };
 
 struct TargetSyntax {
@@ -582,32 +582,32 @@ struct TargetSyntax {
 struct OperatorSyntax {
     size_t Start;
     size_t End;
-    TargetSyntax Target;
+    TargetSyntax target;
 };
 
 struct ProcedureSyntax {
     size_t Start;
     size_t End;
-    TargetSyntax Target;
+    TargetSyntax target;
 };
 
 struct FunctionSyntax {
     size_t Start;
     size_t End;
-    TargetSyntax Target;
+    TargetSyntax target;
 };
 
 struct DeInitSyntax {
     size_t Start;
     size_t End;
-    ActionSyntax Action;
+    ActionSyntax action;
 };
 
 struct InitSyntax {
     size_t Start;
     size_t End;
-    ParameterSetSyntax* Parameters;
-    ActionSyntax Action;
+    ParameterSetSyntax* parameters;
+    ActionSyntax action;
 };
 
 struct MethodSyntax {
@@ -617,54 +617,54 @@ struct MethodSyntax {
 struct TraitSyntax {
     size_t Start;
     size_t End;
-    NameSyntax Name;
-    ExtendsSyntax* Extension;
-    std::vector<AttributeSyntax>* Attributes;
-    std::vector<UseSyntax>* Uses;
-    std::vector<MethodSyntax>* Functions;
+    NameSyntax name;
+    ExtendsSyntax* extension;
+    std::vector<AttributeSyntax>* attributes;
+    std::vector<UseSyntax>* uses;
+    std::vector<MethodSyntax>* functions;
 };
 
 struct ImplementSyntax {
     size_t Start;
     size_t End;
-    TypeSyntax Type;
-    std::vector<AttributeSyntax>* Attributes;
-    std::vector<UseSyntax>* Uses;
-    std::vector<MethodSyntax>* Methods;
+    TypeSyntax type;
+    std::vector<AttributeSyntax>* attributes;
+    std::vector<UseSyntax>* uses;
+    std::vector<MethodSyntax>* methods;
 };
 
 struct UseSyntax {
     size_t Start;
     size_t End;
-    NameSyntax Name;
+    NameSyntax name;
 };
 
 struct ThrowsSyntax {
     size_t Start;
     size_t End;
-    TypeSyntax Type;
-    std::vector<AttributeSyntax>* Attributes;
+    TypeSyntax type;
+    std::vector<AttributeSyntax>* attributes;
 };
 
 struct ReturnsSyntax {
     size_t Start;
     size_t End;
-    TypeSyntax Type;
-    std::vector<AttributeSyntax>* Attributes;
+    TypeSyntax type;
+    std::vector<AttributeSyntax>* attributes;
 };
 
 struct ItemSyntax {
     size_t Start;
     size_t End;
-    llvm::StringRef Name;
-    TypeAnnotationSyntax* Annotation;
-    std::vector<AttributeSyntax>* Attributes;
+    llvm::StringRef name;
+    TypeAnnotationSyntax* annotation;
+    std::vector<AttributeSyntax>* attributes;
 };
 
 struct ParametersSyntax {
     size_t Start;
     size_t End;
-    std::vector<ItemSyntax>* Items;
+    std::vector<ItemSyntax>* items;
 };
 
 struct ParameterSetSyntax {
@@ -679,67 +679,67 @@ struct OptionalSyntax {
 struct GenericArgumentSyntax {
     size_t Start;
     size_t End;
-    TypeSyntax Type;
+    TypeSyntax type;
 };
 
 struct GenericArgumentsSyntax {
     size_t Start;
     size_t End;
-    std::vector<GenericArgumentSyntax>* Generics;
+    std::vector<GenericArgumentSyntax>* generics;
 };
 
 struct DelegateSyntax {
     size_t Start;
     size_t End;
-    ParameterSetSyntax* Parameters;
-    std::vector<AttributeSyntax>* Attributes;
-    ReturnsSyntax* Result;
-    ThrowsSyntax* Error;
+    ParameterSetSyntax* parameters;
+    std::vector<AttributeSyntax>* attributes;
+    ReturnsSyntax* result;
+    ThrowsSyntax* error;
 };
 
 struct ConstantSyntax {
     size_t Start;
     size_t End;
-    TypeSyntax Type;
-    std::vector<OperandSyntax>* Operation;
+    TypeSyntax type;
+    std::vector<OperandSyntax>* operation;
 };
 
 struct VariantSyntax {
     size_t Start;
     size_t End;
-    llvm::StringRef Name;
-    std::vector<AttributeSyntax>* Attributes;
-    TypeAnnotationSyntax* Annotation;
+    llvm::StringRef name;
+    std::vector<AttributeSyntax>* attributes;
+    TypeAnnotationSyntax* annotation;
 };
 
 struct UnionSyntax {
     size_t Start;
     size_t End;
-    std::vector<VariantSyntax>* Variants;
-    BodySyntax* Body;
+    std::vector<VariantSyntax>* variants;
+    BodySyntax* body;
 };
 
 struct NamespaceSyntax {
     size_t Start;
     size_t End;
-    std::vector<UseSyntax>* Uses;
-    std::vector<DeclarationSyntax>* Declarations;
+    std::vector<UseSyntax>* uses;
+    std::vector<DeclarationSyntax>* declarations;
 };
 
 struct BodySyntax {
     size_t Start;
     size_t End;
-    std::vector<UseSyntax>* Uses;
-    std::vector<InitSyntax>* Inits;
-    DeInitSyntax* DeInit;
-    std::vector<MemberSyntax>* Members;
+    std::vector<UseSyntax>* uses;
+    std::vector<InitSyntax>* inits;
+    DeInitSyntax* deInit;
+    std::vector<MemberSyntax>* members;
 };
 
 struct ClassSyntax {
     size_t Start;
     size_t End;
-    StructureSyntax Structure;
-    BodySyntax* Body;
+    StructureSyntax structure;
+    BodySyntax* body;
 };
 
 struct ConceptSyntax {
@@ -749,23 +749,23 @@ struct ConceptSyntax {
 struct GenericParameterSyntax {
     size_t Start;
     size_t End;
-    llvm::StringRef Name;
-    std::vector<AttributeSyntax>* Attributes;
+    llvm::StringRef name;
+    std::vector<AttributeSyntax>* attributes;
 };
 
 struct GenericParametersSyntax {
     size_t Start;
     size_t End;
-    std::vector<GenericParameterSyntax>* Parameters;
+    std::vector<GenericParameterSyntax>* parameters;
 };
 
 struct DefinitionSyntax {
     size_t Start;
     size_t End;
-    llvm::StringRef Name;
-    GenericParametersSyntax* Parameters;
-    std::vector<AttributeSyntax>* Attributes;
-    ConceptSyntax Concept_;
+    llvm::StringRef name;
+    GenericParametersSyntax* parameters;
+    std::vector<AttributeSyntax>* attributes;
+    ConceptSyntax concept_;
 };
 
 struct ConstituentSyntax {
@@ -775,7 +775,7 @@ struct ConstituentSyntax {
 struct MemberSyntax {
     size_t Start;
     size_t End;
-    ConstituentSyntax Constituent;
+    ConstituentSyntax constituent;
 };
 
 struct ExportSyntax {
@@ -785,7 +785,7 @@ struct ExportSyntax {
 struct PrivateSyntax {
     size_t Start;
     size_t End;
-    ExportSyntax Export_;
+    ExportSyntax export_;
 };
 
 struct SymbolSyntax {
@@ -795,22 +795,22 @@ struct SymbolSyntax {
 struct DeclarationSyntax {
     size_t Start;
     size_t End;
-    SymbolSyntax Symbol;
+    SymbolSyntax symbol;
 };
 
 struct FileSyntax {
     size_t Start;
     size_t End;
-    std::vector<PackageSyntax>* Packages;
-    std::vector<UseSyntax>* Uses;
-    std::vector<DeclarationSyntax>* Declarations;
+    std::vector<PackageSyntax>* packages;
+    std::vector<UseSyntax>* uses;
+    std::vector<DeclarationSyntax>* declarations;
 };
 
 struct ProgramSyntax {
     size_t Start;
     size_t End;
-    FileSyntax File;
-    std::vector<StatementSyntax>* Statements;
+    FileSyntax file;
+    std::vector<StatementSyntax>* statements;
 };
 
 } // namespace scaly
