@@ -1,13 +1,17 @@
+<![CDATA[
+;; Rules for generating idiomatic C++ from scaly.sgm
+
 (element grammar
     (sosofo-append
-        (file "packages/scaly-lang/src/syntax.ts"
-            (generate-syntax)
+        (file "scalyc/Syntax.h"
+            (generate-syntax-cpp)
         )
-        (file "packages/scaly-lang/src/parser.ts"
-            (parser)
+        (file "scalyc/Parser.h"
+            (generate-parser-h)
         )
-        (file "grammar.xml"
-            (generate-grammar-doc)
+        (file "scalyc/Parser.cpp"
+            (generate-parser-cpp)
         )
     )
 )
+]]>

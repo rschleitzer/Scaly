@@ -19,6 +19,8 @@ set(SOURCES
     main.cpp
     Lexer.cpp
     LexerTests.cpp
+    Parser.cpp
+    ParserTests.cpp
 )
 
 add_executable(scalyc ${SOURCES})
