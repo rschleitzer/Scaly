@@ -48,6 +48,71 @@ Follow the [LLVM Programmer's Manual](https://llvm.org/docs/ProgrammersManual.ht
 **Why this matters for bootstrapping:**
 The C++ code will have a similar "shape" to eventual Scaly code. When we port the compiler to Scaly, `Expected<T>` becomes `Result[T, Error]` with pattern matching, `StringRef` becomes a borrowed reference, and `dyn_cast<>` dispatch becomes `choose`/`when` expressions. No fundamental restructuring required.
 
+### Build System and C++ Conventions
+
+**Platform Support:**
+- Linux: Required (must work)
+- macOS: Supported (development platform)
+- Windows: Not supported during C++ bootstrapping phase
+
+**Compiler and Standard:**
+- Use `clang++` (stay in LLVM ecosystem)
+- C++17 standard (`-std=c++17`)
+
+**Build System: CMake (minimal)**
+- Single `CMakeLists.txt` - keep it simple
+- Use `find_package(LLVM)` for LLVM integration
+- Export compile commands for IDE support
+
+```cmake
+cmake_minimum_required(VERSION 3.16)
+project(scalyc)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_COMPILER clang++)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+find_package(LLVM REQUIRED CONFIG)
+include_directories(${LLVM_INCLUDE_DIRS})
+link_directories(${LLVM_LIBRARY_DIRS})
+
+add_executable(scalyc
+  main.cpp
+  Lexer.cpp
+  Parser.cpp
+)
+
+target_link_libraries(scalyc LLVM)
+```
+
+**File Conventions:**
+- `.h` for headers, `.cpp` for implementation
+- `#pragma once` for include guards (simpler, universally supported)
+- One logical unit per file (class or related functions)
+- Namespace: `scaly::`
+
+**Directory Structure:**
+```
+scalyc/
+├── CMakeLists.txt
+├── main.cpp
+├── Lexer.h
+├── Lexer.cpp
+├── Parser.h
+├── Parser.cpp
+├── AST.h
+├── AST.cpp
+└── ...
+```
+
+**Build Workflow:**
+```bash
+cd scalyc
+mkdir -p build && cd build
+cmake ..
+make
+```
+
 ### Parser Generator
 
 The parser is generated from the SGML grammar:
@@ -221,14 +286,20 @@ aws s3 sync docs/ s3://scaly.io --delete
 
 ## Development Commands
 
-### Building and Testing
+### Building the Compiler
 
 ```bash
-# Build the compiler
-./build.sh
+cd scalyc
+mkdir -p build && cd build
+cmake ..
+make
+```
 
-# Run tests (JIT execution of test cases)
-./test.sh
+### Running Tests
+
+```bash
+# From build directory - runs JIT test execution
+./scalyc --test
 ```
 
 ### Changing the Grammar
@@ -242,22 +313,26 @@ This runs `openjade -G -t sgml -d codegen/scaly.dsl scaly.sgm`
 
 ### Dependencies
 
-- C++ compiler with C++17 or later support
-- LLVM development libraries
+- `clang++` (C++17 support)
+- LLVM development libraries (`llvm-dev` on Debian/Ubuntu, `llvm` on macOS via Homebrew)
+- CMake >= 3.16
 - openjade (for grammar processing)
 
 ## File Structure
 
 ```
 .
-├── scalyc/               # C++ compiler implementation
+├── scalyc/               # C++ compiler (CMake project)
+│   ├── CMakeLists.txt
+│   ├── main.cpp
+│   ├── Lexer.h / Lexer.cpp
+│   ├── Parser.h / Parser.cpp
+│   └── ...
 ├── docs/                 # Documentation (deployed to scaly.io)
 ├── codegen/              # DSSSL parser generation scripts
 ├── scaly.sgm             # Grammar definition
 ├── stdlib.scaly          # Standard library (operators, functions)
 ├── tests.sgm             # Test definitions (XML format, JIT-executed)
 ├── mkp                   # Parser generation script
-├── build.sh              # Build script
-├── test.sh               # Test runner script
 └── retired/              # Previous implementations (reference)
 ```
