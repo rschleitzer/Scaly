@@ -383,19 +383,37 @@ Runs `openjade -G -t sgml -d codegen/scaly.dsl scaly.sgm` to generate:
 - CMake >= 3.16
 - openjade (for SGML/DSSSL processing)
 
-**LLVM Installation:**
+**Ubuntu 24.04 LTS:**
 
 ```bash
-# Ubuntu 24.04 LTS
-apt install llvm-18-dev clang-18
+# Install all dependencies
+sudo apt install llvm-18-dev clang-18 cmake openjade zlib1g-dev libzstd-dev
 
-# Ubuntu 22.04 LTS (add LLVM repository first)
+# Set up clang++ to use clang-18
+sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-18 100
+sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-18 100
+```
+
+**Ubuntu 22.04 LTS:**
+
+```bash
+# Add LLVM repository first
 wget https://apt.llvm.org/llvm.sh
 chmod +x llvm.sh
 sudo ./llvm.sh 18
 
-# macOS (Homebrew)
-brew install llvm@18
+# Install dependencies
+sudo apt install llvm-18-dev clang-18 cmake openjade zlib1g-dev libzstd-dev
+
+# Set up alternatives
+sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-18 100
+sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-18 100
+```
+
+**macOS (Homebrew):**
+
+```bash
+brew install llvm@18 cmake openjade
 ```
 
 **Why LLVM 18:**
