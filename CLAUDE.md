@@ -210,11 +210,87 @@ Options:
 **Source files:**
 - `main.cpp` - Entry point, command line parsing
 - `Lexer.h/cpp` - Lexical analysis
-- `Parser.h/cpp` - Generated from scaly.sgm
-- `AST.h/cpp` - Abstract syntax tree nodes
-- `Modeler.h/cpp` - Semantic analysis
-- `Codegen.h/cpp` - LLVM IR generation
+- `Syntax.h` - Generated AST types from scaly.sgm
+- `Parser.h/cpp` - Generated parser from scaly.sgm
+- `Model.h` - Semantic model types (with generics, unresolved)
+- `ModelError.h/cpp` - Errors for semantic analysis
+- `Modeler.h/cpp` - Syntax → Model transformation
+- `Plan.h` - Resolved model (concrete types, mangled names)
+- `PlannerError.h/cpp` - Errors for planning phase
+- `Planner.h/cpp` - Model → Plan (inference, monomorphization, mangling)
+- `Emitter.h/cpp` - Plan → LLVM IR generation (future)
 - `Tests.h/cpp` - Generated from scaly.sgm
+
+### Compiler Pipeline Architecture
+
+```
+Source (.scaly)
+    ↓
+Lexer → Tokens
+    ↓
+Parser → Syntax (AST, generated from scaly.sgm)
+    ↓
+Modeler → Model (semantic model, generics unresolved)
+    ↓
+Planner → Plan (concrete types, mangled names, fully typed)
+    ↓
+Emitter → LLVM IR + DWARF debug info
+    ↓
+LLVM → Object code / JIT execution
+```
+
+### Planner Architecture (Model → Plan)
+
+The Planner transforms the abstract semantic Model into a concrete execution Plan. It has three conceptual phases:
+
+**Phase 1: Type Inference (Hindley-Milner)**
+- Generate type variables for unknowns
+- Collect constraints from expressions
+- Unify/solve constraints
+- Support let-polymorphism for generic functions
+- Designed for full inference (needed for future DSSSL→Scaly transpiler)
+
+**Phase 2: Monomorphization**
+- Instantiate generic types with inferred/specified concrete types
+- Create specialized versions of generic functions
+- Track instantiation provenance (where generic was defined, where instantiated)
+- Cache instantiations to avoid duplicates
+
+**Phase 3: Name Mangling (Itanium ABI inspired)**
+- Generate unique symbol names for LLVM
+- Format: `_Z` prefix + length-prefixed names + encoded types
+- Example: `List[int].get(index: int)` → `_ZN4ListIiE3getEi`
+- Compatible with `c++filt` for debugging
+- Both readable name (for debug info) and mangled name (for LLVM) stored in Plan
+
+**Key data structures:**
+
+```cpp
+// Type variable for inference
+struct TypeVariable {
+    uint64_t Id;
+};
+
+// Instantiation tracking for debug info backtracking
+struct InstantiationInfo {
+    Span DefinitionLoc;      // Where List[T] was defined
+    Span InstantiationLoc;   // Where List[int] was requested
+    std::vector<std::string> TypeArgs;
+};
+
+// Resolved type with both names
+struct PlannedType {
+    std::string Name;        // "List.int" - for debug info
+    std::string MangledName; // "_Z4ListIiE" - for LLVM
+    std::unique_ptr<InstantiationInfo> Origin;
+};
+```
+
+**Debug info support:**
+- All Span information preserved through pipeline
+- InstantiationInfo enables backtracking from monomorphized code to source
+- Supports CodeLLDB debugging in VS Code
+- DWARF generation in Emitter uses readable names + source locations
 
 ### Language Specification (codegen/)
 
@@ -435,11 +511,17 @@ brew install llvm@18 cmake openjade
 │   ├── CMakeLists.txt
 │   ├── main.cpp
 │   ├── Lexer.h / Lexer.cpp
-│   ├── Parser.h / Parser.cpp   # Generated
-│   ├── Tests.h / Tests.cpp     # Generated
-│   ├── AST.h / AST.cpp
+│   ├── Syntax.h              # Generated AST types
+│   ├── Parser.h / Parser.cpp # Generated parser
+│   ├── Model.h               # Semantic model (generics unresolved)
+│   ├── ModelError.h / ModelError.cpp
 │   ├── Modeler.h / Modeler.cpp
-│   ├── Codegen.h / Codegen.cpp
+│   ├── Plan.h                # Resolved model (concrete, mangled)
+│   ├── PlannerError.h / PlannerError.cpp
+│   ├── Planner.h / Planner.cpp
+│   ├── Emitter.h / Emitter.cpp  # Future: LLVM IR generation
+│   ├── LexerTests.cpp
+│   ├── ParserTests.cpp
 │   └── build/            # CMake build directory
 ├── codegen/              # DSSSL code generation scripts
 │   ├── scaly.dsl         # Main stylesheet
