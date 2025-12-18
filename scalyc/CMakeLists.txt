@@ -18,6 +18,7 @@ add_definitions(${LLVM_DEFINITIONS_LIST})
 set(SOURCES
     main.cpp
     Lexer.cpp
+    LexerTests.cpp
 )
 
 add_executable(scalyc ${SOURCES})
