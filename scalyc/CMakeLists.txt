@@ -21,6 +21,11 @@ set(SOURCES
     LexerTests.cpp
     Parser.cpp
     ParserTests.cpp
+    Model.h
+    ModelError.h
+    ModelError.cpp
+    Modeler.h
+    Modeler.cpp
 )
 
 add_executable(scalyc ${SOURCES})
