@@ -1,8 +1,10 @@
 #include "Lexer.h"
 #include "LexerTests.h"
+#include "ParserTests.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/raw_ostream.h"
+#include <iostream>
 
 using namespace llvm;
 
@@ -119,6 +121,8 @@ int main(int argc, char **argv) {
     if (RunTests) {
         bool AllPassed = true;
         AllPassed &= scaly::runLexerTests();
+        std::cout << std::endl;
+        AllPassed &= scaly::runParserTests();
         return AllPassed ? 0 : 1;
     }
 
