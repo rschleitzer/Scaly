@@ -162,7 +162,6 @@ llvm::Expected<DeclarationSyntax> Parser::parseDeclaration() {
         return SymbolOrErr.takeError();
     auto Symbol = std::move(*SymbolOrErr);
 
-    // Colon is optional
     Lex.parseColon();
 
     size_t End = Lex.position();
@@ -294,8 +293,7 @@ llvm::Expected<MemberSyntax> Parser::parseMember() {
         return ConstituentOrErr.takeError();
     auto Constituent = std::move(*ConstituentOrErr);
 
-    if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+    Lex.parseColon();
 
     size_t End = Lex.position();
 
@@ -359,9 +357,8 @@ llvm::Expected<ConstituentSyntax> Parser::parseConstituent() {
 llvm::Expected<DefinitionSyntax> Parser::parseDefinition() {
     size_t Start = Lex.previousPosition();
 
-    if (!Lex.parseKeyword("define")) {
+    if (!Lex.parseKeyword("define"))
         return different();
-    }
 
     llvm::StringRef Name = Lex.parseIdentifier();
     if (Name.empty() || Keywords.count(Name))
@@ -370,16 +367,13 @@ llvm::Expected<DefinitionSyntax> Parser::parseDefinition() {
     GenericParametersSyntax* Parameters = nullptr;
     {
         auto ParseResult = parseGenericParameters();
-        if (ParseResult) {
+        if (ParseResult)
             Parameters = new GenericParametersSyntax(std::move(*ParseResult));
-        } else {
+        else
             llvm::consumeError(ParseResult.takeError());
-        }
     }
 
-    if (!Lex.parseColon()) {
-        return invalid(Start, Lex.position(), "expected colon or newline");
-    }
+    Lex.parseColon();
 
     std::vector<AttributeSyntax>* Attributes = nullptr;
     {
@@ -389,9 +383,8 @@ llvm::Expected<DefinitionSyntax> Parser::parseDefinition() {
     }
 
     auto Concept_OrErr = parseConcept();
-    if (!Concept_OrErr) {
+    if (!Concept_OrErr)
         return invalid(Start, Lex.position(), "expected Concept");
-    }
     auto Concept_ = std::move(*Concept_OrErr);
 
     size_t End = Lex.position();
@@ -450,7 +443,6 @@ llvm::Expected<GenericParameterSyntax> Parser::parseGenericParameter() {
             Attributes = *ParseResult;
     }
 
-    // Comma is optional (separator between parameters)
     Lex.parsePunctuation(',');
 
     size_t End = Lex.position();
@@ -462,44 +454,38 @@ llvm::Expected<GenericParameterSyntax> Parser::parseGenericParameter() {
 llvm::Expected<ConceptSyntax> Parser::parseConcept() {
     {
         auto Result = parseClass();
-        if (Result) {
+        if (Result)
             return ConceptSyntax{std::move(*Result)};
-        }
         llvm::consumeError(Result.takeError());
     }
     {
         auto Result = parseNamespace();
-        if (Result) {
+        if (Result)
             return ConceptSyntax{std::move(*Result)};
-        }
         llvm::consumeError(Result.takeError());
     }
     {
         auto Result = parseUnion();
-        if (Result) {
+        if (Result)
             return ConceptSyntax{std::move(*Result)};
-        }
         llvm::consumeError(Result.takeError());
     }
     {
         auto Result = parseConstant();
-        if (Result) {
+        if (Result)
             return ConceptSyntax{std::move(*Result)};
-        }
         llvm::consumeError(Result.takeError());
     }
     {
         auto Result = parseDelegate();
-        if (Result) {
+        if (Result)
             return ConceptSyntax{std::move(*Result)};
-        }
         llvm::consumeError(Result.takeError());
     }
     {
         auto Result = parseIntrinsic();
-        if (Result) {
+        if (Result)
             return ConceptSyntax{std::move(*Result)};
-        }
         llvm::consumeError(Result.takeError());
     }
     return different();
@@ -510,25 +496,21 @@ llvm::Expected<ClassSyntax> Parser::parseClass() {
     size_t Start = Lex.previousPosition();
 
     auto StructureOrErr = parseStructure();
-    if (!StructureOrErr) {
+    if (!StructureOrErr)
         return StructureOrErr.takeError();
-    }
     auto Structure = std::move(*StructureOrErr);
 
-    // Colon is optional
     Lex.parseColon();
 
     BodySyntax* Body = nullptr;
     {
         auto ParseResult = parseBody();
-        if (ParseResult) {
+        if (ParseResult)
             Body = new BodySyntax(std::move(*ParseResult));
-        } else {
+        else
             llvm::consumeError(ParseResult.takeError());
-        }
     }
 
-    // Colon is optional
     Lex.parseColon();
 
     size_t End = Lex.position();
@@ -576,8 +558,7 @@ llvm::Expected<BodySyntax> Parser::parseBody() {
     if (!Lex.parsePunctuation('}'))
         return invalid(Start, Lex.position(), "expected '}'");
 
-    if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+    Lex.parseColon();
 
     size_t End = Lex.position();
 
@@ -608,8 +589,7 @@ llvm::Expected<NamespaceSyntax> Parser::parseNamespace() {
     if (!Lex.parsePunctuation('}'))
         return invalid(Start, Lex.position(), "expected '}'");
 
-    if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+    Lex.parseColon();
 
     size_t End = Lex.position();
 
@@ -623,8 +603,7 @@ llvm::Expected<UnionSyntax> Parser::parseUnion() {
     if (!Lex.parseKeyword("union"))
         return different();
 
-    if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+    Lex.parseColon();
 
     if (!Lex.parsePunctuation('('))
         return invalid(Start, Lex.position(), "expected '('");
@@ -637,8 +616,7 @@ llvm::Expected<UnionSyntax> Parser::parseUnion() {
     if (!Lex.parsePunctuation(')'))
         return invalid(Start, Lex.position(), "expected ')'");
 
-    if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+    Lex.parseColon();
 
     BodySyntax* Body = nullptr;
     {
@@ -649,8 +627,7 @@ llvm::Expected<UnionSyntax> Parser::parseUnion() {
             llvm::consumeError(ParseResult.takeError());
     }
 
-    if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+    Lex.parseColon();
 
     size_t End = Lex.position();
 
@@ -697,11 +674,9 @@ llvm::Expected<VariantSyntax> Parser::parseVariant() {
             llvm::consumeError(ParseResult.takeError());
     }
 
-    if (!Lex.parsePunctuation(','))
-        return invalid(Start, Lex.position(), "expected ','");
+    Lex.parsePunctuation(',');
 
-    if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+    Lex.parseColon();
 
     size_t End = Lex.position();
 
@@ -724,8 +699,7 @@ llvm::Expected<ConstantSyntax> Parser::parseConstant() {
             Operation = *ParseResult;
     }
 
-    if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+    Lex.parseColon();
 
     size_t End = Lex.position();
 
@@ -825,7 +799,6 @@ llvm::Expected<GenericArgumentSyntax> Parser::parseGenericArgument() {
         return TypeOrErr.takeError();
     auto Type = std::move(*TypeOrErr);
 
-    // Comma is optional (separator between arguments)
     Lex.parsePunctuation(',');
 
     size_t End = Lex.position();
@@ -917,11 +890,9 @@ llvm::Expected<ItemSyntax> Parser::parseItem() {
             llvm::consumeError(ParseResult.takeError());
     }
 
-    if (!Lex.parsePunctuation(','))
-        return invalid(Start, Lex.position(), "expected ','");
+    Lex.parsePunctuation(',');
 
-    if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+    Lex.parseColon();
 
     std::vector<AttributeSyntax>* Attributes = nullptr;
     {
@@ -930,8 +901,7 @@ llvm::Expected<ItemSyntax> Parser::parseItem() {
             Attributes = *ParseResult;
     }
 
-    if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+    Lex.parseColon();
 
     size_t End = Lex.position();
 
@@ -1014,8 +984,7 @@ llvm::Expected<UseSyntax> Parser::parseUse() {
         return invalid(Start, Lex.position(), "expected Name");
     auto Name = std::move(*NameOrErr);
 
-    if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+    Lex.parseColon();
 
     size_t End = Lex.position();
 
@@ -1041,8 +1010,7 @@ llvm::Expected<ImplementSyntax> Parser::parseImplement() {
             Attributes = *ParseResult;
     }
 
-    if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+    Lex.parseColon();
 
     if (!Lex.parsePunctuation('{'))
         return invalid(Start, Lex.position(), "expected '{'");
@@ -1064,8 +1032,7 @@ llvm::Expected<ImplementSyntax> Parser::parseImplement() {
     if (!Lex.parsePunctuation('}'))
         return invalid(Start, Lex.position(), "expected '}'");
 
-    if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+    Lex.parseColon();
 
     size_t End = Lex.position();
 
@@ -1120,8 +1087,7 @@ llvm::Expected<TraitSyntax> Parser::parseTrait() {
     if (!Lex.parsePunctuation('}'))
         return invalid(Start, Lex.position(), "expected '}'");
 
-    if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+    Lex.parseColon();
 
     size_t End = Lex.position();
 
@@ -1199,16 +1165,14 @@ llvm::Expected<InitSyntax> Parser::parseInit() {
             llvm::consumeError(ParseResult.takeError());
     }
 
-    if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+    Lex.parseColon();
 
     auto ActionOrErr = parseAction();
     if (!ActionOrErr)
         return invalid(Start, Lex.position(), "expected Action");
     auto Action = std::move(*ActionOrErr);
 
-    if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+    Lex.parseColon();
 
     size_t End = Lex.position();
 
@@ -1222,16 +1186,14 @@ llvm::Expected<DeInitSyntax> Parser::parseDeInit() {
     if (!Lex.parseKeyword("deinit"))
         return different();
 
-    if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+    Lex.parseColon();
 
     auto ActionOrErr = parseAction();
     if (!ActionOrErr)
         return invalid(Start, Lex.position(), "expected Action");
     auto Action = std::move(*ActionOrErr);
 
-    if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+    Lex.parseColon();
 
     size_t End = Lex.position();
 
@@ -1371,8 +1333,7 @@ llvm::Expected<RoutineSyntax> Parser::parseRoutine() {
             llvm::consumeError(ParseResult.takeError());
     }
 
-    if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+    Lex.parseColon();
 
     ThrowsSyntax* Throws_ = nullptr;
     {
@@ -1383,8 +1344,7 @@ llvm::Expected<RoutineSyntax> Parser::parseRoutine() {
             llvm::consumeError(ParseResult.takeError());
     }
 
-    if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+    Lex.parseColon();
 
     auto ImplementationOrErr = parseImplementation();
     if (!ImplementationOrErr)
@@ -1444,8 +1404,7 @@ llvm::Expected<InstructionSyntax> Parser::parseInstruction() {
     if (!Lex.parseKeyword("instruction"))
         return different();
 
-    if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+    Lex.parseColon();
 
     size_t End = Lex.position();
 
@@ -1459,8 +1418,7 @@ llvm::Expected<IntrinsicSyntax> Parser::parseIntrinsic() {
     if (!Lex.parseKeyword("intrinsic"))
         return different();
 
-    if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+    Lex.parseColon();
 
     size_t End = Lex.position();
 
@@ -1511,8 +1469,7 @@ llvm::Expected<ExtendSyntax> Parser::parseExtend() {
         return TypeOrErr.takeError();
     auto Type = std::move(*TypeOrErr);
 
-    if (!Lex.parsePunctuation(','))
-        return invalid(Start, Lex.position(), "expected ','");
+    Lex.parsePunctuation(',');
 
     size_t End = Lex.position();
 
@@ -1574,8 +1531,7 @@ llvm::Expected<AttributeSyntax> Parser::parseAttribute() {
         return invalid(Start, Lex.position(), "expected Model");
     auto Model = std::move(*ModelOrErr);
 
-    if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+    Lex.parseColon();
 
     size_t End = Lex.position();
 
@@ -1622,8 +1578,7 @@ llvm::Expected<ModuleSyntax> Parser::parseModule() {
     if (Name.empty() || Keywords.count(Name))
         return invalid(Start, Lex.position(), "expected identifier");
 
-    if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+    Lex.parseColon();
 
     size_t End = Lex.position();
 
@@ -1658,8 +1613,7 @@ llvm::Expected<PackageSyntax> Parser::parsePackage() {
         return invalid(Start, Lex.position(), "expected Name");
     auto Name = std::move(*NameOrErr);
 
-    if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+    Lex.parseColon();
 
     size_t End = Lex.position();
 
@@ -1928,8 +1882,7 @@ llvm::Expected<ComponentSyntax> Parser::parseComponent() {
             llvm::consumeError(ParseResult.takeError());
     }
 
-    if (!Lex.parsePunctuation(','))
-        return invalid(Start, Lex.position(), "expected ','");
+    Lex.parsePunctuation(',');
 
     size_t End = Lex.position();
 
@@ -2021,8 +1974,7 @@ llvm::Expected<ElementSyntax> Parser::parseElement() {
             Attributes = *ParseResult;
     }
 
-    if (!Lex.parsePunctuation(','))
-        return invalid(Start, Lex.position(), "expected ','");
+    Lex.parsePunctuation(',');
 
     size_t End = Lex.position();
 
@@ -2099,8 +2051,7 @@ llvm::Expected<ElseSyntax> Parser::parseElse() {
     if (!Lex.parseKeyword("else"))
         return different();
 
-    if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+    Lex.parseColon();
 
     auto AlternativeOrErr = parseCommand();
     if (!AlternativeOrErr)
@@ -2242,8 +2193,7 @@ llvm::Expected<StatementSyntax> Parser::parseStatement() {
         return CommandOrErr.takeError();
     auto Command = std::move(*CommandOrErr);
 
-    if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+    Lex.parseColon();
 
     size_t End = Lex.position();
 
@@ -2408,16 +2358,14 @@ llvm::Expected<WhenSyntax> Parser::parseWhen() {
         return invalid(Start, Lex.position(), "expected Name");
     auto Variant = std::move(*VariantOrErr);
 
-    if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+    Lex.parseColon();
 
     auto CommandOrErr = parseCommand();
     if (!CommandOrErr)
         return invalid(Start, Lex.position(), "expected Command");
     auto Command = std::move(*CommandOrErr);
 
-    if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+    Lex.parseColon();
 
     size_t End = Lex.position();
 
@@ -2643,22 +2591,18 @@ llvm::Expected<ArraySyntax> Parser::parseArray() {
 llvm::Expected<StructureSyntax> Parser::parseStructure() {
     size_t Start = Lex.previousPosition();
 
-    if (!Lex.parsePunctuation('(')) {
+    if (!Lex.parsePunctuation('('))
         return different();
-    }
 
     std::vector<PartSyntax>* Parts = nullptr;
     {
         auto ParseResult = parsePartList();
-        if (ParseResult) {
+        if (ParseResult)
             Parts = *ParseResult;
-        } else {
-        }
     }
 
-    if (!Lex.parsePunctuation(')')) {
+    if (!Lex.parsePunctuation(')'))
         return invalid(Start, Lex.position(), "expected ')'");
-    }
 
     size_t End = Lex.position();
 
@@ -2753,10 +2697,8 @@ llvm::Expected<PropertySyntax> Parser::parseProperty() {
             llvm::consumeError(ParseResult.takeError());
     }
 
-    // Comma is optional (separator between properties)
     Lex.parsePunctuation(',');
 
-    // Colon is optional
     Lex.parseColon();
 
     std::vector<AttributeSyntax>* Attributes = nullptr;
@@ -2766,7 +2708,6 @@ llvm::Expected<PropertySyntax> Parser::parseProperty() {
             Attributes = *ParseResult;
     }
 
-    // Colon is optional
     Lex.parseColon();
 
     size_t End = Lex.position();
@@ -2807,8 +2748,7 @@ llvm::Expected<ContinueSyntax> Parser::parseContinue() {
             llvm::consumeError(ParseResult.takeError());
     }
 
-    if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+    Lex.parseColon();
 
     size_t End = Lex.position();
 
@@ -2838,8 +2778,7 @@ llvm::Expected<BreakSyntax> Parser::parseBreak() {
             Result = *ParseResult;
     }
 
-    if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+    Lex.parseColon();
 
     size_t End = Lex.position();
 
@@ -2986,8 +2925,7 @@ llvm::Expected<LabelSyntax> Parser::parseLabel() {
     if (Name.empty() || Keywords.count(Name))
         return invalid(Start, Lex.position(), "expected identifier");
 
-    if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+    Lex.parseColon();
 
     size_t End = Lex.position();
 

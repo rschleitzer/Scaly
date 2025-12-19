@@ -193,29 +193,45 @@ llvm::Expected<"(id syntax)"Syntax> Parser::parse"(id syntax)"() {
 "                           )
                         )
                         (("punctuation")
-                            ($
+                            (if (optional? content)
+                                ;; Optional punctuation - just try it
+                                ($
+"
+    Lex.parsePunctuation('"(value (element-with-id (link content)))"');
+"                               )
+                                ;; Required punctuation
+                                ($
 "
     if (!Lex.parsePunctuation('"(value (element-with-id (link content)))"'))"
-                                (if (equal? 1 (child-number content))
-                                    "
+                                    (if (equal? 1 (child-number content))
+                                        "
         return different();"
-                                    ($ "
+                                        ($ "
         return invalid(Start, Lex.position(), \"expected '"(value (element-with-id (link content)))"'\");")
-                                )
+                                    )
 "
-"                           )
+"                               )
+                            )
                         )
                         (("colon")
-                            ($
+                            (if (optional? content)
+                                ;; Optional colon - just try it
+                                ($
+"
+    Lex.parseColon();
+"                               )
+                                ;; Required colon
+                                ($
 "
     if (!Lex.parseColon())"
-                                (if (equal? 1 (child-number content))
-                                    "
+                                    (if (equal? 1 (child-number content))
+                                        "
         return different();"
-                                    "
+                                        "
         return invalid(Start, Lex.position(), \"expected colon or newline\");")
 "
-"                           )
+"                               )
+                            )
                         )
                         (("identifier")
                             ($
