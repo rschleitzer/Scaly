@@ -121,7 +121,7 @@ private:
                                              bool Private);
     llvm::Expected<Initializer> handleInitializer(const InitSyntax &Syntax,
                                                    bool Private);
-    llvm::Expected<std::unique_ptr<DeInitializer>> handleDeInitializer(
+    llvm::Expected<std::shared_ptr<DeInitializer>> handleDeInitializer(
         const DeInitSyntax &Syntax);
 
     // Use handling
@@ -132,9 +132,9 @@ private:
         std::vector<Use> Uses;
         std::vector<Module> Modules;
         std::vector<Initializer> Initializers;
-        std::unique_ptr<DeInitializer> Deinitializer;
+        std::shared_ptr<DeInitializer> Deinitializer;
         std::vector<StructMember> Members;
-        std::map<std::string, std::unique_ptr<Nameable>> Symbols;
+        std::map<std::string, std::shared_ptr<Nameable>> Symbols;
     };
 
     llvm::Expected<BodyResult> handleBody(llvm::StringRef Name,

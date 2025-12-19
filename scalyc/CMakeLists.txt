@@ -26,6 +26,11 @@ set(SOURCES
     ModelError.cpp
     Modeler.h
     Modeler.cpp
+    Plan.h
+    PlannerError.h
+    PlannerError.cpp
+    Planner.h
+    Planner.cpp
 )
 
 add_executable(scalyc ${SOURCES})

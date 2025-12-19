@@ -96,7 +96,7 @@ using Lifetime = std::variant<
 struct Type {
     Span Loc;
     std::vector<std::string> Name;
-    std::unique_ptr<std::vector<Type>> Generics;
+    std::shared_ptr<std::vector<Type>> Generics;
     Lifetime Life;
 };
 
@@ -115,8 +115,8 @@ struct ModelVariable {
 using Model = std::variant<
     Constant,
     ModelVariable,
-    std::unique_ptr<Tuple>,
-    std::unique_ptr<Matrix>
+    std::shared_ptr<Tuple>,
+    std::shared_ptr<Matrix>
 >;
 
 struct Attribute {
@@ -129,8 +129,8 @@ struct Attribute {
 struct Item {
     Span Loc;
     bool Private;
-    std::unique_ptr<std::string> Name;
-    std::unique_ptr<Type> ItemType;
+    std::shared_ptr<std::string> Name;
+    std::shared_ptr<Type> ItemType;
     std::vector<Attribute> Attributes;
 };
 
@@ -189,8 +189,8 @@ struct Property {
     Span Loc;
     bool Private;
     std::string Name;
-    std::unique_ptr<Type> PropType;
-    std::unique_ptr<std::vector<Operand>> Initializer;
+    std::shared_ptr<Type> PropType;
+    std::shared_ptr<std::vector<Operand>> Initializer;
     std::vector<Attribute> Attributes;
 };
 
@@ -198,9 +198,9 @@ struct Property {
 struct If {
     Span Loc;
     std::vector<Operand> Condition;
-    std::unique_ptr<Property> Prop;
-    std::unique_ptr<Statement> Consequent;
-    std::unique_ptr<Statement> Alternative;
+    std::shared_ptr<Property> Prop;
+    std::shared_ptr<Statement> Consequent;
+    std::shared_ptr<Statement> Alternative;
 };
 
 struct Case {
@@ -211,28 +211,28 @@ struct Case {
 struct Branch {
     Span Loc;
     std::vector<Case> Cases;
-    std::unique_ptr<Statement> Consequent;
+    std::shared_ptr<Statement> Consequent;
 };
 
 struct Match {
     Span Loc;
     std::vector<Operand> Condition;
     std::vector<Branch> Branches;
-    std::unique_ptr<Statement> Alternative;
+    std::shared_ptr<Statement> Alternative;
 };
 
 struct When {
     Span Loc;
     std::string Name;
     std::vector<std::string> VariantPath;
-    std::unique_ptr<Statement> Consequent;
+    std::shared_ptr<Statement> Consequent;
 };
 
 struct Choose {
     Span Loc;
     std::vector<Operand> Condition;
     std::vector<When> Cases;
-    std::unique_ptr<Statement> Alternative;
+    std::shared_ptr<Statement> Alternative;
 };
 
 struct For {
@@ -252,7 +252,7 @@ struct Try {
     Span Loc;
     Binding Cond;
     std::vector<When> Catches;
-    std::unique_ptr<Statement> Alternative;
+    std::shared_ptr<Statement> Alternative;
 };
 
 struct SizeOf {
@@ -268,7 +268,7 @@ struct Is {
 // Component of a tuple
 struct Component {
     Span Loc;
-    std::unique_ptr<std::string> Name;
+    std::shared_ptr<std::string> Name;
     std::vector<Operand> Value;
     std::vector<Attribute> Attributes;
 };
@@ -313,7 +313,7 @@ using Expression = std::variant<
 struct Operand {
     Span Loc;
     Expression Expr;
-    std::unique_ptr<std::vector<std::string>> MemberAccess;
+    std::shared_ptr<std::vector<std::string>> MemberAccess;
 };
 
 // Implementation variants
@@ -343,8 +343,8 @@ struct Function {
     bool Pure;
     std::string Name;
     std::vector<Item> Input;
-    std::unique_ptr<Type> Returns;
-    std::unique_ptr<Type> Throws;
+    std::shared_ptr<Type> Returns;
+    std::shared_ptr<Type> Throws;
     Lifetime Life;
     Implementation Impl;
 };
@@ -369,8 +369,8 @@ struct Operator {
     bool Private;
     std::string Name;
     std::vector<Item> Input;
-    std::unique_ptr<Type> Returns;
-    std::unique_ptr<Type> Throws;
+    std::shared_ptr<Type> Returns;
+    std::shared_ptr<Type> Throws;
     Implementation Impl;
 };
 
@@ -378,7 +378,7 @@ struct Operator {
 struct Variant {
     Span Loc;
     std::string Name;
-    std::unique_ptr<Type> VarType;
+    std::shared_ptr<Type> VarType;
     std::vector<Attribute> Attributes;
 };
 
@@ -418,9 +418,9 @@ struct Structure {
     std::vector<Module> Modules;
     std::vector<std::vector<std::string>> Uses;
     std::vector<Initializer> Initializers;
-    std::unique_ptr<DeInitializer> Deinitializer;
+    std::shared_ptr<DeInitializer> Deinitializer;
     std::vector<StructMember> Members;
-    std::map<std::string, std::unique_ptr<Nameable>> Symbols;
+    std::map<std::string, std::shared_ptr<Nameable>> Symbols;
 };
 
 // Union definition
@@ -429,7 +429,7 @@ struct Union {
     bool Private;
     std::vector<Variant> Variants;
     std::vector<StructMember> Members;
-    std::map<std::string, std::unique_ptr<Nameable>> Symbols;
+    std::map<std::string, std::shared_ptr<Nameable>> Symbols;
 };
 
 // Namespace definition
@@ -437,7 +437,7 @@ struct Namespace {
     Span Loc;
     std::vector<Module> Modules;
     std::vector<StructMember> Members;
-    std::map<std::string, std::unique_ptr<Nameable>> Symbols;
+    std::map<std::string, std::shared_ptr<Nameable>> Symbols;
 };
 
 // Definition represents a type definition
@@ -487,7 +487,7 @@ struct Module {
     std::vector<Module> Modules;
     std::vector<Use> Uses;
     std::vector<Member> Members;
-    std::map<std::string, std::unique_ptr<Nameable>> Symbols;
+    std::map<std::string, std::shared_ptr<Nameable>> Symbols;
 };
 
 // Program represents a complete program

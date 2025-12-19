@@ -979,13 +979,13 @@ llvm::Expected<Initializer> Modeler::handleInitializer(
     };
 }
 
-llvm::Expected<std::unique_ptr<DeInitializer>> Modeler::handleDeInitializer(
+llvm::Expected<std::shared_ptr<DeInitializer>> Modeler::handleDeInitializer(
     const DeInitSyntax &Syntax) {
     auto Act = handleAction(Syntax.action);
     if (!Act)
         return Act.takeError();
 
-    return std::make_unique<DeInitializer>(DeInitializer{
+    return std::make_shared<DeInitializer>(DeInitializer{
         Span{Syntax.Start, Syntax.End},
         std::move(*Act)
     });
@@ -1266,7 +1266,7 @@ llvm::Expected<Structure> Modeler::handleClass(llvm::StringRef Name,
                                                 const ClassSyntax &Syntax,
                                                 bool Private) {
     std::vector<Property> Props;
-    std::map<std::string, std::unique_ptr<Nameable>> Symbols;
+    std::map<std::string, std::shared_ptr<Nameable>> Symbols;
 
     if (Syntax.structure.parts) {
         for (const auto &P : *Syntax.structure.parts) {
@@ -1290,7 +1290,7 @@ llvm::Expected<Structure> Modeler::handleClass(llvm::StringRef Name,
     std::vector<Module> Modules;
     std::vector<std::vector<std::string>> Uses;
     std::vector<Initializer> Initializers;
-    std::unique_ptr<DeInitializer> Deinitializer;
+    std::shared_ptr<DeInitializer> Deinitializer;
     std::vector<std::variant<Concept, Operator, Function>> Members;
 
     if (Syntax.body) {
@@ -1328,7 +1328,7 @@ llvm::Expected<Union> Modeler::handleUnion(llvm::StringRef Name,
                                             const UnionSyntax &Syntax,
                                             bool Private) {
     std::vector<Variant> Variants;
-    std::map<std::string, std::unique_ptr<Nameable>> Symbols;
+    std::map<std::string, std::shared_ptr<Nameable>> Symbols;
 
     if (Syntax.variants) {
         for (const auto &V : *Syntax.variants) {
@@ -1386,7 +1386,7 @@ llvm::Expected<Namespace> Modeler::handleNamespace(llvm::StringRef Name,
                                                     bool Private) {
     std::vector<Module> Modules;
     std::vector<std::variant<Concept, Operator, Function>> Members;
-    std::map<std::string, std::unique_ptr<Nameable>> Symbols;
+    std::map<std::string, std::shared_ptr<Nameable>> Symbols;
 
     if (Syntax.declarations) {
         for (const auto &D : *Syntax.declarations) {
@@ -1523,7 +1523,7 @@ llvm::Expected<Module> Modeler::buildModule(llvm::StringRef Path,
 
     std::vector<Module> Modules;
     std::vector<Member> Members;
-    std::map<std::string, std::unique_ptr<Nameable>> Symbols;
+    std::map<std::string, std::shared_ptr<Nameable>> Symbols;
 
     if (Syntax.declarations) {
         for (const auto &D : *Syntax.declarations) {

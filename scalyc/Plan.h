@@ -1,94 +1,162 @@
 // Plan.h - Resolved/monomorphized model for code generation
 // The Plan is the "execution plan" - concrete types with generics resolved,
 // mangled names ready for LLVM emission, and provenance tracking for debug info.
+//
+// Designed to support full Hindley-Milner type inference from the start.
 
 #pragma once
 
 #include "Model.h"
+#include "llvm/Support/Error.h"
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <variant>
 #include <vector>
 
 namespace scaly {
 
-// Tracks where a generic instantiation came from (for debug info)
+// ============================================================================
+// Type Inference Support - Part 1: Basic types
+// ============================================================================
+
+// Type variable - represents an unknown type during inference
+struct TypeVariable {
+    uint64_t Id;
+    std::string DebugName;  // Optional: "T", "?1", etc. for error messages
+
+    bool operator==(const TypeVariable &Other) const { return Id == Other.Id; }
+    bool operator<(const TypeVariable &Other) const { return Id < Other.Id; }
+};
+
+// ============================================================================
+// Provenance Tracking (for debug info)
+// ============================================================================
+
+// Tracks where a generic instantiation came from
 struct InstantiationInfo {
     Span DefinitionLoc;                  // Where the generic was defined
     Span InstantiationLoc;               // Where it was instantiated
-    std::vector<std::string> TypeArgs;   // The concrete type arguments
+    std::vector<std::string> TypeArgs;   // The concrete type arguments (readable)
 };
 
-// A resolved type - concrete, with optional provenance if from generic
+// ============================================================================
+// Planned Types (resolved, concrete)
+// ============================================================================
+
+// A fully resolved type
 struct PlannedType {
     Span Loc;
     std::string Name;                    // Readable: "List.int"
     std::string MangledName;             // Itanium: "_Z4ListIiE"
     std::vector<PlannedType> Generics;   // Resolved generic args (if any)
     Lifetime Life;
-    std::unique_ptr<InstantiationInfo> Origin;  // null if not from generic
+    std::shared_ptr<InstantiationInfo> Origin;  // null if not from generic
+
+    // For inference: may contain unresolved type variables
+    std::shared_ptr<TypeVariable> Variable;  // non-null if this is a type variable
+
+    // Helper: is this type fully resolved (no variables)?
+    bool isResolved() const { return Variable == nullptr; }
 };
 
-// Forward declarations
+// ============================================================================
+// Type Inference Support - Part 2: Constraints and schemes
+// ============================================================================
+
+// A type can be concrete or a variable during inference
+using TypeOrVariable = std::variant<PlannedType, TypeVariable>;
+
+// Substitution: TypeVariable → Type mapping from unification
+using Substitution = std::map<uint64_t, PlannedType>;
+
+// Type constraint kinds for inference
+struct EqualityConstraint {
+    TypeOrVariable Left;
+    TypeOrVariable Right;
+    Span Loc;  // Where the constraint originated (for error messages)
+};
+
+struct InstanceConstraint {
+    TypeVariable Var;
+    std::string TraitName;  // e.g., "Hashable", "Comparable"
+    Span Loc;
+};
+
+using TypeConstraint = std::variant<EqualityConstraint, InstanceConstraint>;
+
+// Type scheme for let-polymorphism: ∀T1,T2,...Tn. Type
+// e.g., identity function: ∀T. T → T
+struct TypeScheme {
+    std::vector<TypeVariable> Quantified;  // Bound type variables
+    std::shared_ptr<PlannedType> Type;
+};
+
+// ============================================================================
+// Forward declarations for Plan types
+// ============================================================================
+
 struct PlannedFunction;
 struct PlannedOperator;
 struct PlannedConcept;
 struct PlannedModule;
+struct PlannedOperand;
+struct PlannedAction;
 
-// Resolved constant (same as Model, but with resolved types)
+// ============================================================================
+// Planned Attributes and Items
+// ============================================================================
+
 using PlannedConstant = Constant;
 
-// Resolved attribute
 struct PlannedAttribute {
     Span Loc;
     std::string Name;
     Model Value;
 };
 
-// Resolved item (parameter/binding target)
 struct PlannedItem {
     Span Loc;
     bool Private;
-    std::unique_ptr<std::string> Name;
-    std::unique_ptr<PlannedType> ItemType;
+    std::shared_ptr<std::string> Name;
+    std::shared_ptr<PlannedType> ItemType;
     std::vector<PlannedAttribute> Attributes;
 };
 
-// Resolved property (struct field)
+// ============================================================================
+// Planned Properties and Variants
+// ============================================================================
+
 struct PlannedProperty {
     Span Loc;
     bool Private;
     std::string Name;
     std::string MangledName;
     PlannedType PropType;
-    std::unique_ptr<std::vector<PlannedOperand>> Initializer;
+    std::shared_ptr<std::vector<PlannedOperand>> Initializer;
     std::vector<PlannedAttribute> Attributes;
     size_t Offset;  // Byte offset in struct layout
 };
 
-// Resolved variant (union case)
 struct PlannedVariant {
     Span Loc;
     std::string Name;
     std::string MangledName;
-    std::unique_ptr<PlannedType> VarType;
+    std::shared_ptr<PlannedType> VarType;
     std::vector<PlannedAttribute> Attributes;
     int Tag;  // Discriminator value
 };
 
-// Forward declare for recursive types
-struct PlannedOperand;
-struct PlannedStatement;
-struct PlannedAction;
+// ============================================================================
+// Planned Statements
+// ============================================================================
 
-// Resolved action
 struct PlannedAction {
     std::vector<PlannedOperand> Source;
     std::vector<PlannedOperand> Target;
 };
 
-// Resolved binding
 struct PlannedBinding {
     Span Loc;
     std::string BindingType;  // "const", "var", "mutable"
@@ -96,7 +164,6 @@ struct PlannedBinding {
     std::vector<PlannedOperand> Operation;
 };
 
-// Resolved control flow
 struct PlannedBreak {
     Span Loc;
     std::vector<PlannedOperand> Result;
@@ -125,19 +192,21 @@ using PlannedStatement = std::variant<
     PlannedThrow
 >;
 
-// Resolved block
+// ============================================================================
+// Planned Control Flow
+// ============================================================================
+
 struct PlannedBlock {
     Span Loc;
     std::vector<PlannedStatement> Statements;
 };
 
-// Resolved control flow expressions
 struct PlannedIf {
     Span Loc;
     std::vector<PlannedOperand> Condition;
-    std::unique_ptr<PlannedProperty> Prop;
-    std::unique_ptr<PlannedStatement> Consequent;
-    std::unique_ptr<PlannedStatement> Alternative;
+    std::shared_ptr<PlannedProperty> Prop;
+    std::shared_ptr<PlannedStatement> Consequent;
+    std::shared_ptr<PlannedStatement> Alternative;
 };
 
 struct PlannedCase {
@@ -148,28 +217,28 @@ struct PlannedCase {
 struct PlannedBranch {
     Span Loc;
     std::vector<PlannedCase> Cases;
-    std::unique_ptr<PlannedStatement> Consequent;
+    std::shared_ptr<PlannedStatement> Consequent;
 };
 
 struct PlannedMatch {
     Span Loc;
     std::vector<PlannedOperand> Condition;
     std::vector<PlannedBranch> Branches;
-    std::unique_ptr<PlannedStatement> Alternative;
+    std::shared_ptr<PlannedStatement> Alternative;
 };
 
 struct PlannedWhen {
     Span Loc;
     std::string Name;
     PlannedType VariantType;
-    std::unique_ptr<PlannedStatement> Consequent;
+    std::shared_ptr<PlannedStatement> Consequent;
 };
 
 struct PlannedChoose {
     Span Loc;
     std::vector<PlannedOperand> Condition;
     std::vector<PlannedWhen> Cases;
-    std::unique_ptr<PlannedStatement> Alternative;
+    std::shared_ptr<PlannedStatement> Alternative;
 };
 
 struct PlannedFor {
@@ -189,7 +258,7 @@ struct PlannedTry {
     Span Loc;
     PlannedBinding Cond;
     std::vector<PlannedWhen> Catches;
-    std::unique_ptr<PlannedStatement> Alternative;
+    std::shared_ptr<PlannedStatement> Alternative;
 };
 
 struct PlannedSizeOf {
@@ -203,29 +272,33 @@ struct PlannedIs {
     PlannedType TestType;
 };
 
-// Resolved tuple component
+// ============================================================================
+// Planned Tuples and Matrices
+// ============================================================================
+
 struct PlannedComponent {
     Span Loc;
-    std::unique_ptr<std::string> Name;
+    std::shared_ptr<std::string> Name;
     std::vector<PlannedOperand> Value;
     std::vector<PlannedAttribute> Attributes;
 };
 
-// Resolved tuple
 struct PlannedTuple {
     Span Loc;
     std::vector<PlannedComponent> Components;
-    PlannedType TupleType;  // The resolved constructor type
+    PlannedType TupleType;
 };
 
-// Resolved matrix
 struct PlannedMatrix {
     Span Loc;
     std::vector<std::vector<PlannedOperand>> Operations;
     PlannedType ElementType;
 };
 
-// Resolved expression
+// ============================================================================
+// Planned Expressions and Operands
+// ============================================================================
+
 using PlannedExpression = std::variant<
     PlannedConstant,
     PlannedType,
@@ -242,18 +315,19 @@ using PlannedExpression = std::variant<
     PlannedIs
 >;
 
-// Resolved operand
 struct PlannedOperand {
     Span Loc;
     PlannedExpression Expr;
-    std::unique_ptr<std::vector<std::string>> MemberAccess;
-    PlannedType ResultType;  // The computed result type
+    std::shared_ptr<std::vector<std::string>> MemberAccess;
+    PlannedType ResultType;  // The computed/inferred result type
 };
 
-// Implementation variants (same as Model)
+// ============================================================================
+// Planned Functions and Operators
+// ============================================================================
+
 using PlannedImplementation = Implementation;
 
-// Resolved function
 struct PlannedFunction {
     Span Loc;
     bool Private;
@@ -261,14 +335,16 @@ struct PlannedFunction {
     std::string Name;           // Readable: "List.get"
     std::string MangledName;    // Itanium: "_ZN4ListIiE3getEi"
     std::vector<PlannedItem> Input;
-    std::unique_ptr<PlannedType> Returns;
-    std::unique_ptr<PlannedType> Throws;
+    std::shared_ptr<PlannedType> Returns;
+    std::shared_ptr<PlannedType> Throws;
     Lifetime Life;
     PlannedImplementation Impl;
-    std::unique_ptr<InstantiationInfo> Origin;
+    std::shared_ptr<InstantiationInfo> Origin;
+
+    // For polymorphic functions: the type scheme before instantiation
+    std::shared_ptr<TypeScheme> Scheme;
 };
 
-// Resolved initializer
 struct PlannedInitializer {
     Span Loc;
     bool Private;
@@ -277,27 +353,29 @@ struct PlannedInitializer {
     PlannedImplementation Impl;
 };
 
-// Resolved deinitializer
 struct PlannedDeInitializer {
     Span Loc;
     std::string MangledName;
     PlannedImplementation Impl;
 };
 
-// Resolved operator
 struct PlannedOperator {
     Span Loc;
     bool Private;
     std::string Name;
     std::string MangledName;
     std::vector<PlannedItem> Input;
-    std::unique_ptr<PlannedType> Returns;
-    std::unique_ptr<PlannedType> Throws;
+    std::shared_ptr<PlannedType> Returns;
+    std::shared_ptr<PlannedType> Throws;
     PlannedImplementation Impl;
-    std::unique_ptr<InstantiationInfo> Origin;
+    std::shared_ptr<InstantiationInfo> Origin;
+    std::shared_ptr<TypeScheme> Scheme;
 };
 
-// Resolved global constant
+// ============================================================================
+// Planned Globals and Definitions
+// ============================================================================
+
 struct PlannedGlobal {
     Span Loc;
     std::string Name;
@@ -306,7 +384,6 @@ struct PlannedGlobal {
     std::vector<PlannedOperand> Value;
 };
 
-// Resolved structure
 struct PlannedStructure {
     Span Loc;
     bool Private;
@@ -314,15 +391,14 @@ struct PlannedStructure {
     std::string MangledName;
     std::vector<PlannedProperty> Properties;
     std::vector<PlannedInitializer> Initializers;
-    std::unique_ptr<PlannedDeInitializer> Deinitializer;
+    std::shared_ptr<PlannedDeInitializer> Deinitializer;
     std::vector<PlannedFunction> Methods;
     std::vector<PlannedOperator> Operators;
     size_t Size;       // Total size in bytes
     size_t Alignment;  // Required alignment
-    std::unique_ptr<InstantiationInfo> Origin;
+    std::shared_ptr<InstantiationInfo> Origin;
 };
 
-// Resolved union
 struct PlannedUnion {
     Span Loc;
     bool Private;
@@ -333,10 +409,9 @@ struct PlannedUnion {
     std::vector<PlannedOperator> Operators;
     size_t Size;       // Max variant size + tag
     size_t Alignment;
-    std::unique_ptr<InstantiationInfo> Origin;
+    std::shared_ptr<InstantiationInfo> Origin;
 };
 
-// Resolved namespace (no mangling needed - just a container)
 struct PlannedNamespace {
     Span Loc;
     std::string Name;
@@ -345,7 +420,6 @@ struct PlannedNamespace {
     std::vector<PlannedConcept> Concepts;
 };
 
-// Resolved concept (type definition)
 struct PlannedConcept {
     Span Loc;
     std::string Name;
@@ -358,10 +432,13 @@ struct PlannedConcept {
         PlannedGlobal,
         PlannedType  // Type alias
     > Definition;
-    std::unique_ptr<InstantiationInfo> Origin;
+    std::shared_ptr<InstantiationInfo> Origin;
 };
 
-// Resolved module
+// ============================================================================
+// Planned Module and Program
+// ============================================================================
+
 struct PlannedModule {
     std::string File;
     std::string Name;
@@ -371,7 +448,10 @@ struct PlannedModule {
     std::vector<PlannedOperator> Operators;
 };
 
-// The complete execution plan
+// ============================================================================
+// The Complete Plan
+// ============================================================================
+
 struct Plan {
     PlannedModule MainModule;
     std::vector<PlannedStatement> Statements;  // Top-level program statements
@@ -380,6 +460,56 @@ struct Plan {
     std::map<std::string, PlannedStructure*> Structures;
     std::map<std::string, PlannedUnion*> Unions;
     std::map<std::string, PlannedFunction*> Functions;
+
+    // Type inference state (used during planning, cleared after)
+    uint64_t NextTypeVarId = 0;
+    std::vector<TypeConstraint> Constraints;
+    Substitution Solution;
+
+    // Generate a fresh type variable
+    TypeVariable freshTypeVar(const std::string &DebugName = "") {
+        return TypeVariable{NextTypeVarId++, DebugName};
+    }
+
+    // Add a constraint
+    void addConstraint(TypeConstraint C) {
+        Constraints.push_back(std::move(C));
+    }
+
+    // Add equality constraint (convenience)
+    void constrain(const TypeOrVariable &Left, const TypeOrVariable &Right, Span Loc) {
+        Constraints.push_back(EqualityConstraint{Left, Right, Loc});
+    }
 };
+
+// ============================================================================
+// Type Inference Utilities
+// ============================================================================
+
+// Apply a substitution to a type, resolving type variables
+PlannedType applySubstitution(const PlannedType &Type, const Substitution &Subst);
+
+// Unify two types, producing a substitution or error
+llvm::Expected<Substitution> unify(const TypeOrVariable &Left,
+                                    const TypeOrVariable &Right,
+                                    Span Loc,
+                                    llvm::StringRef File);
+
+// Solve a set of constraints
+llvm::Expected<Substitution> solveConstraints(const std::vector<TypeConstraint> &Constraints,
+                                               llvm::StringRef File);
+
+// Generalize a type to a type scheme (for let-polymorphism)
+TypeScheme generalize(const PlannedType &Type,
+                      const std::set<uint64_t> &FreeInEnvironment);
+
+// Instantiate a type scheme with fresh type variables
+PlannedType instantiate(const TypeScheme &Scheme, Plan &P);
+
+// Get free type variables in a type
+std::set<uint64_t> freeTypeVars(const PlannedType &Type);
+
+// Check if a type contains a specific type variable (occurs check)
+bool occursIn(uint64_t VarId, const PlannedType &Type);
 
 } // namespace scaly
