@@ -464,9 +464,15 @@ llvm::Expected<PlannedType> Planner::resolveType(const Type &T, Span Instantiati
         }
     }
 
+    // Handle intrinsic generic types
+    if (Name == "pointer" && Result.Generics.size() == 1) {
+        // pointer[T] - Itanium ABI uses P prefix
+        Result.MangledName = "P" + Result.Generics[0].MangledName;
+        return Result;
+    }
+
     // Check if this type refers to a generic Concept that needs instantiation
     auto ConceptIt = Concepts.find(Name);
-    // DEBUG
     if (ConceptIt != Concepts.end()) {
         const Concept *Conc = ConceptIt->second;
 
