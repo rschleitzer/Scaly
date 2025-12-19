@@ -585,24 +585,39 @@ llvm::Expected<PlannedType> Planner::instantiateGeneric(
     // Plan based on definition type
     bool Success = false;
     if (auto *Struct = std::get_if<Structure>(&Generic.Def)) {
+        // Insert placeholder BEFORE planning to handle self-referencing types
+        // like Node[T] containing pointer[Node[T]]
+        PlannedStructure Placeholder;
+        Placeholder.Name = CacheKey;
+        Placeholder.MangledName = mangleStructure(Generic.Name, Args);
+        Result.MangledName = Placeholder.MangledName;
+        InstantiatedStructures[CacheKey] = std::move(Placeholder);
+
         auto Planned = planStructure(*Struct, Generic.Name, Args);
         if (!Planned) {
+            InstantiatedStructures.erase(CacheKey);  // Remove placeholder on error
             TypeSubstitutions = OldSubst;
             return Planned.takeError();
         }
         Planned->Origin = Origin;
-        Result.MangledName = Planned->MangledName;
         InstantiatedStructures[CacheKey] = std::move(*Planned);
         Success = true;
     }
     else if (auto *Un = std::get_if<Union>(&Generic.Def)) {
+        // Insert placeholder BEFORE planning for self-referencing unions
+        PlannedUnion Placeholder;
+        Placeholder.Name = CacheKey;
+        Placeholder.MangledName = mangleStructure(Generic.Name, Args);
+        Result.MangledName = Placeholder.MangledName;
+        InstantiatedUnions[CacheKey] = std::move(Placeholder);
+
         auto Planned = planUnion(*Un, Generic.Name, Args);
         if (!Planned) {
+            InstantiatedUnions.erase(CacheKey);  // Remove placeholder on error
             TypeSubstitutions = OldSubst;
             return Planned.takeError();
         }
         Planned->Origin = Origin;
-        Result.MangledName = Planned->MangledName;
         InstantiatedUnions[CacheKey] = std::move(*Planned);
         Success = true;
     }
