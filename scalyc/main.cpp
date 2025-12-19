@@ -1,6 +1,9 @@
 #include "Lexer.h"
 #include "LexerTests.h"
+#include "Parser.h"
 #include "ParserTests.h"
+#include "Modeler.h"
+#include "Planner.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/raw_ostream.h"
@@ -51,6 +54,21 @@ static cl::opt<bool> Verbose(
 static cl::opt<bool> LexOnly(
     "lex",
     cl::desc("Lex input and print tokens"),
+    cl::cat(ScalyCategory));
+
+static cl::opt<bool> ParseOnly(
+    "parse",
+    cl::desc("Parse input and validate syntax"),
+    cl::cat(ScalyCategory));
+
+static cl::opt<bool> ModelOnly(
+    "model",
+    cl::desc("Build semantic model"),
+    cl::cat(ScalyCategory));
+
+static cl::opt<bool> PlanOnly(
+    "plan",
+    cl::desc("Run planner (type resolution, name mangling)"),
     cl::cat(ScalyCategory));
 
 // Print a token in readable format
@@ -114,6 +132,107 @@ static int lexFile(StringRef Filename) {
     return 0;
 }
 
+// Parse a file and validate syntax
+static int parseFile(StringRef Filename) {
+    auto BufOrErr = MemoryBuffer::getFileOrSTDIN(Filename);
+    if (!BufOrErr) {
+        errs() << "scalyc: error: " << BufOrErr.getError().message() << ": " << Filename << "\n";
+        return 1;
+    }
+
+    scaly::Parser Parser((*BufOrErr)->getBuffer());
+    auto Result = Parser.parseProgram();
+    if (!Result) {
+        handleAllErrors(Result.takeError(), [&](const llvm::ErrorInfoBase &E) {
+            errs() << "scalyc: " << Filename << ": " << E.message() << "\n";
+        });
+        return 1;
+    }
+
+    if (Verbose) {
+        outs() << "Parse successful: " << Filename << "\n";
+    }
+    return 0;
+}
+
+// Build semantic model from a file
+static int modelFile(StringRef Filename) {
+    auto BufOrErr = MemoryBuffer::getFileOrSTDIN(Filename);
+    if (!BufOrErr) {
+        errs() << "scalyc: error: " << BufOrErr.getError().message() << ": " << Filename << "\n";
+        return 1;
+    }
+
+    scaly::Parser Parser((*BufOrErr)->getBuffer());
+    auto ParseResult = Parser.parseProgram();
+    if (!ParseResult) {
+        handleAllErrors(ParseResult.takeError(), [&](const llvm::ErrorInfoBase &E) {
+            errs() << "scalyc: " << Filename << ": " << E.message() << "\n";
+        });
+        return 1;
+    }
+
+    scaly::Modeler Modeler(Filename);
+    auto ModelResult = Modeler.buildProgram(*ParseResult);
+    if (!ModelResult) {
+        handleAllErrors(ModelResult.takeError(), [&](const llvm::ErrorInfoBase &E) {
+            errs() << "scalyc: " << Filename << ": " << E.message() << "\n";
+        });
+        return 1;
+    }
+
+    if (Verbose) {
+        outs() << "Model built: " << Filename << "\n";
+        outs() << "  Main module: " << ModelResult->MainModule.Name << "\n";
+        outs() << "  Statements: " << ModelResult->Statements.size() << "\n";
+    }
+    return 0;
+}
+
+// Run planner on a file
+static int planFile(StringRef Filename) {
+    auto BufOrErr = MemoryBuffer::getFileOrSTDIN(Filename);
+    if (!BufOrErr) {
+        errs() << "scalyc: error: " << BufOrErr.getError().message() << ": " << Filename << "\n";
+        return 1;
+    }
+
+    scaly::Parser Parser((*BufOrErr)->getBuffer());
+    auto ParseResult = Parser.parseProgram();
+    if (!ParseResult) {
+        handleAllErrors(ParseResult.takeError(), [&](const llvm::ErrorInfoBase &E) {
+            errs() << "scalyc: " << Filename << ": " << E.message() << "\n";
+        });
+        return 1;
+    }
+
+    scaly::Modeler Modeler(Filename);
+    auto ModelResult = Modeler.buildProgram(*ParseResult);
+    if (!ModelResult) {
+        handleAllErrors(ModelResult.takeError(), [&](const llvm::ErrorInfoBase &E) {
+            errs() << "scalyc: " << Filename << ": " << E.message() << "\n";
+        });
+        return 1;
+    }
+
+    scaly::Planner Planner(Filename);
+    auto PlanResult = Planner.plan(*ModelResult);
+    if (!PlanResult) {
+        handleAllErrors(PlanResult.takeError(), [&](const llvm::ErrorInfoBase &E) {
+            errs() << "scalyc: " << Filename << ": " << E.message() << "\n";
+        });
+        return 1;
+    }
+
+    if (Verbose) {
+        outs() << "Plan created: " << Filename << "\n";
+        outs() << "  Main module: " << PlanResult->MainModule.Name << "\n";
+        outs() << "  Structures: " << PlanResult->Structures.size() << "\n";
+        outs() << "  Functions: " << PlanResult->Functions.size() << "\n";
+    }
+    return 0;
+}
+
 int main(int argc, char **argv) {
     cl::HideUnrelatedOptions(ScalyCategory);
     cl::ParseCommandLineOptions(argc, argv, "Scaly Compiler\n");
@@ -126,29 +245,38 @@ int main(int argc, char **argv) {
         return AllPassed ? 0 : 1;
     }
 
-    if (LexOnly) {
-        if (InputFiles.empty()) {
-            // Read from stdin
-            return lexFile("-");
-        }
-        int Result = 0;
-        for (const auto &File : InputFiles) {
-            Result |= lexFile(File);
-        }
-        return Result;
-    }
-
-    if (InputFiles.empty()) {
+    if (InputFiles.empty() && !LexOnly && !ParseOnly && !ModelOnly && !PlanOnly) {
         errs() << "scalyc: error: no input files\n";
         return 1;
     }
 
+    // Handle stdin for single-file modes
+    if (InputFiles.empty()) {
+        if (LexOnly) return lexFile("-");
+        if (ParseOnly) return parseFile("-");
+        if (ModelOnly) return modelFile("-");
+        if (PlanOnly) return planFile("-");
+    }
+
+    int Result = 0;
     for (const auto &File : InputFiles) {
         if (Verbose) {
             outs() << "Processing: " << File << "\n";
         }
-        // TODO: Compile file
+
+        if (LexOnly) {
+            Result |= lexFile(File);
+        } else if (ParseOnly) {
+            Result |= parseFile(File);
+        } else if (ModelOnly) {
+            Result |= modelFile(File);
+        } else if (PlanOnly) {
+            Result |= planFile(File);
+        } else {
+            // Full compilation - run planner as final step for now
+            Result |= planFile(File);
+        }
     }
 
-    return 0;
+    return Result;
 }
