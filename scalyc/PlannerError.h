@@ -79,7 +79,7 @@ struct InfiniteTypeError {
 };
 
 // Feature not yet implemented
-struct NotImplementedError {
+struct PlannerNotImplementedError {
     std::string File;
     Span Loc;
     std::string Feature;
@@ -116,7 +116,7 @@ using PlannerErrorVariant = std::variant<
     ArgumentArityError,
     DuplicateDefinitionError,
     InfiniteTypeError,
-    NotImplementedError,
+    PlannerNotImplementedError,
     AmbiguousOverloadError,
     NoMatchingOverloadError
 >;
@@ -186,7 +186,7 @@ inline llvm::Error makeInfiniteTypeError(llvm::StringRef File, Span Loc,
 
 inline llvm::Error makePlannerNotImplementedError(llvm::StringRef File, Span Loc,
                                                    llvm::StringRef Feature) {
-    return makePlannerError(NotImplementedError{File.str(), Loc, Feature.str()});
+    return makePlannerError(PlannerNotImplementedError{File.str(), Loc, Feature.str()});
 }
 
 inline llvm::Error makeAmbiguousOverloadError(llvm::StringRef File, Span Loc,
