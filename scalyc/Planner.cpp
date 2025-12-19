@@ -464,7 +464,26 @@ llvm::Expected<PlannedType> Planner::resolveType(const Type &T, Span Instantiati
         }
     }
 
-    // Generate mangled name
+    // Check if this type refers to a generic Concept that needs instantiation
+    auto ConceptIt = Concepts.find(Name);
+    // DEBUG
+    if (ConceptIt != Concepts.end()) {
+        const Concept *Conc = ConceptIt->second;
+
+        // If concept has generic parameters, we need to instantiate
+        if (!Conc->Parameters.empty()) {
+            if (Result.Generics.empty()) {
+                // Generic type used without type arguments
+                return makeGenericArityError(File, T.Loc, Name,
+                    Conc->Parameters.size(), 0);
+            }
+
+            // Instantiate the generic
+            return instantiateGeneric(*Conc, Result.Generics, InstantiationLoc);
+        }
+    }
+
+    // Generate mangled name for non-generic types
     if (Result.Generics.empty()) {
         Result.MangledName = mangleType(Result);
     } else {
@@ -501,15 +520,105 @@ llvm::Expected<PlannedType> Planner::instantiateGeneric(
     const std::vector<PlannedType> &Args,
     Span InstantiationLoc) {
 
-    // TODO: Implement generic instantiation
-    // This will:
     // 1. Check arity matches
-    // 2. Set up TypeSubstitutions
-    // 3. Plan the specialized version
-    // 4. Cache the result
+    if (Args.size() != Generic.Parameters.size()) {
+        return makeGenericArityError(File, InstantiationLoc, Generic.Name,
+                                      Generic.Parameters.size(), Args.size());
+    }
 
-    return makePlannerNotImplementedError(File, InstantiationLoc,
-                                           "generic instantiation");
+    // 2. Generate cache key (e.g., "List.int" or "Map.string.int")
+    std::string CacheKey = Generic.Name;
+    for (const auto &Arg : Args) {
+        CacheKey += ".";
+        CacheKey += Arg.Name;
+    }
+
+    // 3. Check cache for structures
+    auto StructCacheIt = InstantiatedStructures.find(CacheKey);
+    if (StructCacheIt != InstantiatedStructures.end()) {
+        PlannedType Result;
+        Result.Loc = InstantiationLoc;
+        Result.Name = CacheKey;
+        Result.MangledName = StructCacheIt->second.MangledName;
+        Result.Generics = Args;
+        return Result;
+    }
+
+    // Check cache for unions
+    auto UnionCacheIt = InstantiatedUnions.find(CacheKey);
+    if (UnionCacheIt != InstantiatedUnions.end()) {
+        PlannedType Result;
+        Result.Loc = InstantiationLoc;
+        Result.Name = CacheKey;
+        Result.MangledName = UnionCacheIt->second.MangledName;
+        Result.Generics = Args;
+        return Result;
+    }
+
+    // 4. Set up TypeSubstitutions
+    std::map<std::string, PlannedType> OldSubst = TypeSubstitutions;
+    for (size_t I = 0; I < Args.size(); ++I) {
+        TypeSubstitutions[Generic.Parameters[I].Name] = Args[I];
+    }
+
+    // 5. Plan the specialized version based on definition kind
+    PlannedType Result;
+    Result.Loc = InstantiationLoc;
+    Result.Name = CacheKey;
+    Result.Generics = Args;
+
+    // Create provenance info for debug tracking
+    auto Origin = std::make_shared<InstantiationInfo>();
+    Origin->DefinitionLoc = Generic.Loc;
+    Origin->InstantiationLoc = InstantiationLoc;
+    for (const auto &Arg : Args) {
+        Origin->TypeArgs.push_back(Arg.Name);
+    }
+    Result.Origin = Origin;
+
+    // Plan based on definition type
+    bool Success = false;
+    if (auto *Struct = std::get_if<Structure>(&Generic.Def)) {
+        auto Planned = planStructure(*Struct, Generic.Name, Args);
+        if (!Planned) {
+            TypeSubstitutions = OldSubst;
+            return Planned.takeError();
+        }
+        Planned->Origin = Origin;
+        Result.MangledName = Planned->MangledName;
+        InstantiatedStructures[CacheKey] = std::move(*Planned);
+        Success = true;
+    }
+    else if (auto *Un = std::get_if<Union>(&Generic.Def)) {
+        auto Planned = planUnion(*Un, Generic.Name, Args);
+        if (!Planned) {
+            TypeSubstitutions = OldSubst;
+            return Planned.takeError();
+        }
+        Planned->Origin = Origin;
+        Result.MangledName = Planned->MangledName;
+        InstantiatedUnions[CacheKey] = std::move(*Planned);
+        Success = true;
+    }
+    else if (auto *T = std::get_if<Type>(&Generic.Def)) {
+        // Type alias - resolve with substitutions active
+        auto Resolved = resolveType(*T, InstantiationLoc);
+        TypeSubstitutions = OldSubst;
+        if (!Resolved) {
+            return Resolved.takeError();
+        }
+        return *Resolved;
+    }
+
+    // Restore old substitutions
+    TypeSubstitutions = OldSubst;
+
+    if (!Success) {
+        return makePlannerNotImplementedError(File, InstantiationLoc,
+            "generic instantiation for this definition kind");
+    }
+
+    return Result;
 }
 
 // ============================================================================
@@ -1745,9 +1854,16 @@ llvm::Expected<Plan> Planner::plan(const Program &Prog) {
     }
     Result.Statements = std::move(*PlannedStmts);
 
-    // Build quick-lookup maps
-    // (These point into the structures inside MainModule)
-    // TODO: Build these maps after planning
+    // Copy instantiated types to Plan's lookup maps
+    for (auto &Pair : InstantiatedStructures) {
+        Result.Structures[Pair.first] = &Pair.second;
+    }
+    for (auto &Pair : InstantiatedUnions) {
+        Result.Unions[Pair.first] = &Pair.second;
+    }
+    for (auto &Pair : InstantiatedFunctions) {
+        Result.Functions[Pair.first] = &Pair.second;
+    }
 
     return Result;
 }
