@@ -312,6 +312,57 @@ This retired code demonstrates:
 - Memory management with regions and pages (`rp`/`ep` parameters)
 - The transpiler converting `.scaly` to C++
 
+### Planner Testbed: retired/packages/scaly
+
+The `retired/packages/scaly/` package serves as the primary testbed for the Planner. It's a comprehensive, real-world Scaly codebase that exercises the full compiler pipeline.
+
+**Package structure:**
+```
+retired/packages/scaly/
+├── scaly.scaly              # Root: defines scaly { module memory, containers, io, json, compiler }
+├── scaly/
+│   ├── memory.scaly         # Region-based memory: Page, Region, Object
+│   ├── containers.scaly     # Collections: Vector, List, Array, HashMap, HashSet + tests
+│   ├── io.scaly             # File, Directory, Console, Path
+│   ├── json/                # JSON lexer/parser
+│   └── compiler/            # Self-hosted compiler components
+│       ├── Model.scaly      # Semantic model types (unions, records)
+│       ├── Planner.scaly    # Planning logic (reference, not our C++ Planner)
+│       ├── Lexer.scaly      # Tokenization
+│       └── Parser.scaly     # Parsing (5500+ lines)
+```
+
+**What it tests:**
+- Generic types: `Node[T]`, `Vector[T]`, `List[T]`, `HashMap[K,V]`
+- Self-referencing types: `pointer[Node[T]]` within `Node[T]`
+- Module system: `module` declarations, `use` statements
+- All syntax: `init`, `procedure`, `function`, `operator`, `choose`/`when`
+- Attributes: `@summary`, `@remarks` on types and parameters
+- Lifetime annotations: `$` (call), `^name` (reference)
+
+**Current status:**
+| Component | Status |
+|-----------|--------|
+| Parser | ✅ All files parse successfully |
+| Modeler | ✅ Builds module tree with concepts, functions |
+| Module loading | ✅ Resolves `module` declarations to .scaly files |
+| Planner (concepts) | ✅ Plans structures, unions, namespaces |
+| Planner (instantiation) | ⚠️ Works when types used in declarations |
+
+**Testing commands:**
+```bash
+# Test individual files
+./scalyc/build/scalyc -v --plan retired/packages/scaly/scaly/containers/Node.scaly
+
+# Test full package (from package directory)
+cd retired/packages/scaly && ../../../scalyc/build/scalyc -v --plan scaly.scaly
+```
+
+**Next steps for full package support:**
+1. Expression type resolution - resolve `Vector[int]$()` in function bodies
+2. Function body planning - plan expressions to trigger type instantiation
+3. Cross-module symbol lookup - resolve types from `use` statements
+
 ## Language Features
 
 Scaly syntax includes:
