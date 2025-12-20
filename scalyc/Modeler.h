@@ -127,6 +127,14 @@ private:
     // Use handling
     llvm::Expected<Use> handleUse(const UseSyntax &Syntax);
 
+    // Module resolution
+    llvm::Expected<Module> buildReferencedModule(llvm::StringRef Path,
+                                                  llvm::StringRef Name,
+                                                  bool Private);
+    llvm::Expected<Module> handleModule(llvm::StringRef Path,
+                                         const ModuleSyntax &Syntax,
+                                         bool Private);
+
     // Body handling (for classes and unions)
     struct BodyResult {
         std::vector<Use> Uses;

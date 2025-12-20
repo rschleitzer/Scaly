@@ -22,6 +22,7 @@ public:
     explicit Parser(llvm::StringRef Source);
 
     llvm::Expected<ProgramSyntax> parseProgram();
+    llvm::Expected<FileSyntax> parseFile();
     bool isAtEnd() const;
 
 private:
@@ -36,7 +37,8 @@ private:
     // Generated parse methods
 "
     (apply-to-selected-children "syntax" (lambda (syntax)
-        (if (not (string=? (id syntax) "Program"))
+        (if (and (not (string=? (id syntax) "Program"))
+                 (not (string=? (id syntax) "File")))
             ($
                 (if (multiple? syntax) ($
 "    llvm::Expected<std::vector<"(id syntax)"Syntax>*> parse"(id syntax)"List();
