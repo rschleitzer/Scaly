@@ -1339,6 +1339,38 @@ llvm::Expected<PlannedTry> Planner::planTry(const Try &TryExpr) {
 }
 
 // ============================================================================
+// Implementation Planning
+// ============================================================================
+
+llvm::Expected<PlannedImplementation> Planner::planImplementation(
+    const Implementation &Impl) {
+    return std::visit([this](const auto &I) -> llvm::Expected<PlannedImplementation> {
+        using T = std::decay_t<decltype(I)>;
+
+        if constexpr (std::is_same_v<T, Action>) {
+            auto Planned = planAction(I);
+            if (!Planned) {
+                return Planned.takeError();
+            }
+            return PlannedImplementation(std::move(*Planned));
+        }
+        else if constexpr (std::is_same_v<T, ExternImpl>) {
+            return PlannedImplementation(PlannedExternImpl{I.Loc});
+        }
+        else if constexpr (std::is_same_v<T, InstructionImpl>) {
+            return PlannedImplementation(PlannedInstructionImpl{I.Loc});
+        }
+        else if constexpr (std::is_same_v<T, IntrinsicImpl>) {
+            return PlannedImplementation(PlannedIntrinsicImpl{I.Loc});
+        }
+        else {
+            // Should never reach here
+            return PlannedImplementation(PlannedIntrinsicImpl{Span{0, 0}});
+        }
+    }, Impl);
+}
+
+// ============================================================================
 // Function Planning
 // ============================================================================
 
@@ -1350,7 +1382,6 @@ llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
     Result.Pure = Func.Pure;
     Result.Name = Func.Name;
     Result.Life = Func.Life;
-    Result.Impl = Func.Impl;
 
     pushScope();
 
@@ -1389,6 +1420,14 @@ llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
         Result.Throws = std::make_shared<PlannedType>(std::move(*ResolvedThrows));
     }
 
+    // Plan implementation (function body)
+    auto PlannedImpl = planImplementation(Func.Impl);
+    if (!PlannedImpl) {
+        popScope();
+        return PlannedImpl.takeError();
+    }
+    Result.Impl = std::move(*PlannedImpl);
+
     popScope();
 
     // Generate mangled name
@@ -1407,7 +1446,6 @@ llvm::Expected<PlannedOperator> Planner::planOperator(const Operator &Op,
     Result.Loc = Op.Loc;
     Result.Private = Op.Private;
     Result.Name = Op.Name;
-    Result.Impl = Op.Impl;
 
     pushScope();
 
@@ -1446,6 +1484,14 @@ llvm::Expected<PlannedOperator> Planner::planOperator(const Operator &Op,
         Result.Throws = std::make_shared<PlannedType>(std::move(*ResolvedThrows));
     }
 
+    // Plan implementation (operator body)
+    auto PlannedImpl = planImplementation(Op.Impl);
+    if (!PlannedImpl) {
+        popScope();
+        return PlannedImpl.takeError();
+    }
+    Result.Impl = std::move(*PlannedImpl);
+
     popScope();
 
     // Generate mangled name
@@ -1463,7 +1509,6 @@ llvm::Expected<PlannedInitializer> Planner::planInitializer(const Initializer &I
     PlannedInitializer Result;
     Result.Loc = Init.Loc;
     Result.Private = Init.Private;
-    Result.Impl = Init.Impl;
 
     pushScope();
 
@@ -1482,6 +1527,14 @@ llvm::Expected<PlannedInitializer> Planner::planInitializer(const Initializer &I
         }
     }
     Result.Input = std::move(Params);
+
+    // Plan implementation (initializer body)
+    auto PlannedImpl = planImplementation(Init.Impl);
+    if (!PlannedImpl) {
+        popScope();
+        return PlannedImpl.takeError();
+    }
+    Result.Impl = std::move(*PlannedImpl);
 
     popScope();
 
@@ -1508,7 +1561,13 @@ llvm::Expected<PlannedDeInitializer> Planner::planDeInitializer(
 
     PlannedDeInitializer Result;
     Result.Loc = DeInit.Loc;
-    Result.Impl = DeInit.Impl;
+
+    // Plan implementation (deinitializer body)
+    auto PlannedImpl = planImplementation(DeInit.Impl);
+    if (!PlannedImpl) {
+        return PlannedImpl.takeError();
+    }
+    Result.Impl = std::move(*PlannedImpl);
 
     // Mangle as destructor: _ZN<type>D1Ev
     std::string Mangled = "_ZN";

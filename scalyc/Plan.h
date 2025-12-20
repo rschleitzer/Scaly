@@ -326,7 +326,25 @@ struct PlannedOperand {
 // Planned Functions and Operators
 // ============================================================================
 
-using PlannedImplementation = Implementation;
+// Planned implementation variants (Action is already defined above as PlannedAction)
+struct PlannedExternImpl {
+    Span Loc;
+};
+
+struct PlannedInstructionImpl {
+    Span Loc;
+};
+
+struct PlannedIntrinsicImpl {
+    Span Loc;
+};
+
+using PlannedImplementation = std::variant<
+    PlannedAction,
+    PlannedExternImpl,
+    PlannedInstructionImpl,
+    PlannedIntrinsicImpl
+>;
 
 struct PlannedFunction {
     Span Loc;
