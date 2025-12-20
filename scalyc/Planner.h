@@ -109,6 +109,8 @@ private:
 
     // ========== Definition Planning ==========
 
+    llvm::Expected<PlannedImplementation> planImplementation(const Implementation &Impl);
+
     llvm::Expected<PlannedFunction> planFunction(const Function &Func,
                                                   const PlannedType *Parent = nullptr);
     llvm::Expected<PlannedOperator> planOperator(const Operator &Op,
