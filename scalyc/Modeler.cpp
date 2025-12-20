@@ -1,5 +1,9 @@
 // Modeler.cpp - Syntax to semantic model transformation
 #include "Modeler.h"
+#include "Parser.h"
+#include "llvm/ADT/SmallString.h"
+#include "llvm/Support/MemoryBuffer.h"
+#include "llvm/Support/Path.h"
 #include "llvm/Support/raw_ostream.h"
 #include <cerrno>
 #include <cstdlib>
@@ -1504,6 +1508,54 @@ llvm::Expected<Modeler::BodyResult> Modeler::handleBody(
     return Result;
 }
 
+// Module resolution
+
+llvm::Expected<Module> Modeler::buildReferencedModule(llvm::StringRef Path,
+                                                       llvm::StringRef Name,
+                                                       bool Private) {
+    // Build filename: path/name.scaly
+    llvm::SmallString<256> FilePath;
+    if (!Path.empty()) {
+        FilePath = Path;
+        llvm::sys::path::append(FilePath, Name);
+    } else {
+        FilePath = Name;
+    }
+    FilePath += ".scaly";
+
+    // Read the file
+    auto BufOrErr = llvm::MemoryBuffer::getFile(FilePath);
+    if (!BufOrErr) {
+        return llvm::make_error<llvm::StringError>(
+            "cannot open module file: " + FilePath.str().str(),
+            BufOrErr.getError());
+    }
+
+    // Parse the file
+    Parser ModuleParser((*BufOrErr)->getBuffer());
+    auto FileResult = ModuleParser.parseFile();
+    if (!FileResult) {
+        return llvm::make_error<llvm::StringError>(
+            FilePath.str().str() + ": " + llvm::toString(FileResult.takeError()),
+            llvm::inconvertibleErrorCode());
+    }
+
+    if (!ModuleParser.isAtEnd()) {
+        return llvm::make_error<llvm::StringError>(
+            FilePath.str().str() + ": unexpected content after file",
+            llvm::inconvertibleErrorCode());
+    }
+
+    // Build the module
+    return buildModule(Path.str(), FilePath.str().str(), Name.str(), *FileResult, Private);
+}
+
+llvm::Expected<Module> Modeler::handleModule(llvm::StringRef Path,
+                                              const ModuleSyntax &Syntax,
+                                              bool Private) {
+    return buildReferencedModule(Path, Syntax.name, Private);
+}
+
 // Module building
 
 llvm::Expected<Module> Modeler::buildModule(llvm::StringRef Path,
@@ -1524,9 +1576,13 @@ llvm::Expected<Module> Modeler::buildModule(llvm::StringRef Path,
     std::vector<Module> Modules;
     std::vector<Member> Members;
     std::map<std::string, std::shared_ptr<Nameable>> Symbols;
+    llvm::Error Err = llvm::Error::success();
 
     if (Syntax.declarations) {
         for (const auto &D : *Syntax.declarations) {
+            if (Err)
+                break;
+
             std::visit([&](const auto &S) {
                 using ST = std::decay_t<decltype(S)>;
                 if constexpr (std::is_same_v<ST, PrivateSyntax>) {
@@ -1536,16 +1592,29 @@ llvm::Expected<Module> Modeler::buildModule(llvm::StringRef Path,
                             auto Def = handleDefinition(Path.str(), E, true);
                             if (Def) {
                                 Members.push_back(std::move(*Def));
+                            } else {
+                                Err = Def.takeError();
                             }
                         } else if constexpr (std::is_same_v<ET, FunctionSyntax>) {
                             auto Func = buildFunction(E.Start, E.End, E.target, true, true);
                             if (Func) {
                                 Members.push_back(std::move(*Func));
+                            } else {
+                                Err = Func.takeError();
                             }
                         } else if constexpr (std::is_same_v<ET, OperatorSyntax>) {
                             auto Op = handleOperator(E, true);
                             if (Op) {
                                 Members.push_back(std::move(*Op));
+                            } else {
+                                Err = Op.takeError();
+                            }
+                        } else if constexpr (std::is_same_v<ET, ModuleSyntax>) {
+                            auto Mod = handleModule(Path, E, true);
+                            if (Mod) {
+                                Modules.push_back(std::move(*Mod));
+                            } else {
+                                Err = Mod.takeError();
                             }
                         }
                     }, S.export_.Value);
@@ -1553,21 +1622,37 @@ llvm::Expected<Module> Modeler::buildModule(llvm::StringRef Path,
                     auto Def = handleDefinition(Path.str(), S, false);
                     if (Def) {
                         Members.push_back(std::move(*Def));
+                    } else {
+                        Err = Def.takeError();
                     }
                 } else if constexpr (std::is_same_v<ST, FunctionSyntax>) {
                     auto Func = buildFunction(S.Start, S.End, S.target, false, true);
                     if (Func) {
                         Members.push_back(std::move(*Func));
+                    } else {
+                        Err = Func.takeError();
                     }
                 } else if constexpr (std::is_same_v<ST, OperatorSyntax>) {
                     auto Op = handleOperator(S, false);
                     if (Op) {
                         Members.push_back(std::move(*Op));
+                    } else {
+                        Err = Op.takeError();
+                    }
+                } else if constexpr (std::is_same_v<ST, ModuleSyntax>) {
+                    auto Mod = handleModule(Path, S, false);
+                    if (Mod) {
+                        Modules.push_back(std::move(*Mod));
+                    } else {
+                        Err = Mod.takeError();
                     }
                 }
             }, D.symbol.Value);
         }
     }
+
+    if (Err)
+        return std::move(Err);
 
     return Module{
         Private,
@@ -1583,9 +1668,31 @@ llvm::Expected<Module> Modeler::buildModule(llvm::StringRef Path,
 // Program building
 
 llvm::Expected<Program> Modeler::buildProgram(const ProgramSyntax &Syntax) {
-    std::vector<Module> Packages;
+    // Get the directory containing the source file
+    llvm::SmallString<256> BasePath(File);
+    llvm::sys::path::remove_filename(BasePath);
 
-    auto MainModule = buildModule("", File, "", Syntax.file, false);
+    // Load packages
+    std::vector<Module> Packages;
+    if (Syntax.file.packages) {
+        for (const auto &Pkg : *Syntax.file.packages) {
+            // Package path: ../packagename
+            llvm::SmallString<256> PkgPath(BasePath);
+            llvm::sys::path::append(PkgPath, "..");
+
+            // Get package name from NameSyntax
+            std::string PkgName(Pkg.name.name);
+            llvm::sys::path::append(PkgPath, PkgName);
+
+            auto PkgResult = buildReferencedModule(PkgPath.str(), PkgName, false);
+            if (!PkgResult)
+                return PkgResult.takeError();
+            Packages.push_back(std::move(*PkgResult));
+        }
+    }
+
+    // Build main module
+    auto MainModule = buildModule(BasePath.str(), File, "", Syntax.file, false);
     if (!MainModule)
         return MainModule.takeError();
 

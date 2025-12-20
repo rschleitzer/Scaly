@@ -17,6 +17,7 @@ public:
     explicit Parser(llvm::StringRef Source);
 
     llvm::Expected<ProgramSyntax> parseProgram();
+    llvm::Expected<FileSyntax> parseFile();
     bool isAtEnd() const;
 
 private:
@@ -29,7 +30,6 @@ private:
     llvm::Expected<Literal> parseLiteralToken();
 
     // Generated parse methods
-    llvm::Expected<FileSyntax> parseFile();
     llvm::Expected<std::vector<DeclarationSyntax>*> parseDeclarationList();
     llvm::Expected<DeclarationSyntax> parseDeclaration();
     llvm::Expected<SymbolSyntax> parseSymbol();
