@@ -428,6 +428,64 @@ void Planner::computeUnionLayout(PlannedUnion &Union) {
 }
 
 // ============================================================================
+// Cross-Module Concept Lookup
+// ============================================================================
+
+const Concept* Planner::lookupConcept(llvm::StringRef Name) {
+    // 1. Check flat cache first (most efficient)
+    auto CacheIt = Concepts.find(Name.str());
+    if (CacheIt != Concepts.end()) {
+        return CacheIt->second;
+    }
+
+    // 2. Search current module stack (innermost to outermost)
+    for (auto It = ModuleStack.rbegin(); It != ModuleStack.rend(); ++It) {
+        const Module* Mod = *It;
+
+        // Check this module's members for a matching concept
+        for (const auto& Member : Mod->Members) {
+            if (auto* Conc = std::get_if<Concept>(&Member)) {
+                if (Conc->Name == Name) {
+                    // Cache it for future lookups
+                    Concepts[Name.str()] = Conc;
+                    return Conc;
+                }
+            }
+        }
+
+        // Check sub-modules for exported concepts
+        for (const auto& SubMod : Mod->Modules) {
+            // Sub-module name matches the concept name we're looking for
+            if (SubMod.Name == Name) {
+                // Look for a concept with same name as module (common pattern)
+                for (const auto& Member : SubMod.Members) {
+                    if (auto* Conc = std::get_if<Concept>(&Member)) {
+                        if (Conc->Name == Name) {
+                            Concepts[Name.str()] = Conc;
+                            return Conc;
+                        }
+                    }
+                }
+            }
+
+            // Also check if the sub-module exports a concept we're looking for
+            if (!SubMod.Private) {
+                for (const auto& Member : SubMod.Members) {
+                    if (auto* Conc = std::get_if<Concept>(&Member)) {
+                        if (Conc->Name == Name) {
+                            Concepts[Name.str()] = Conc;
+                            return Conc;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return nullptr;
+}
+
+// ============================================================================
 // Type Resolution
 // ============================================================================
 
@@ -472,10 +530,9 @@ llvm::Expected<PlannedType> Planner::resolveType(const Type &T, Span Instantiati
     }
 
     // Check if this type refers to a generic Concept that needs instantiation
-    auto ConceptIt = Concepts.find(Name);
-    if (ConceptIt != Concepts.end()) {
-        const Concept *Conc = ConceptIt->second;
-
+    // Use lookupConcept for cross-module resolution
+    const Concept *Conc = lookupConcept(Name);
+    if (Conc) {
         // If concept has generic parameters, we need to instantiate
         if (!Conc->Parameters.empty()) {
             if (Result.Generics.empty()) {
@@ -1753,17 +1810,44 @@ llvm::Expected<PlannedNamespace> Planner::planNamespace(const Namespace &NS,
     Result.Loc = NS.Loc;
     Result.Name = Name.str();
 
+    // Create a pseudo-module wrapper for the namespace to enable cross-module lookup
+    // This allows functions in the namespace to find concepts from sub-modules
+    Module PseudoModule;
+    PseudoModule.Name = Name.str();
+    PseudoModule.Modules = NS.Modules;
+    // Copy member concepts into a format compatible with Module.Members
+    for (const auto &Member : NS.Members) {
+        if (auto *Conc = std::get_if<Concept>(&Member)) {
+            PseudoModule.Members.push_back(*Conc);
+        }
+    }
+
+    // Push pseudo-module for cross-module resolution
+    ModuleStack.push_back(&PseudoModule);
+
+    // Plan sub-modules first (so their concepts are available)
+    for (const auto &SubMod : NS.Modules) {
+        auto PlannedSubMod = planModule(SubMod);
+        if (!PlannedSubMod) {
+            ModuleStack.pop_back();
+            return PlannedSubMod.takeError();
+        }
+        Result.Modules.push_back(std::move(*PlannedSubMod));
+    }
+
     // Plan members (Functions and Operators come from Members variant)
     for (const auto &Member : NS.Members) {
         if (auto *Func = std::get_if<Function>(&Member)) {
             auto PlannedFunc = planFunction(*Func, nullptr);
             if (!PlannedFunc) {
+                ModuleStack.pop_back();
                 return PlannedFunc.takeError();
             }
             Result.Functions.push_back(std::move(*PlannedFunc));
         } else if (auto *Op = std::get_if<Operator>(&Member)) {
             auto PlannedOp = planOperator(*Op, nullptr);
             if (!PlannedOp) {
+                ModuleStack.pop_back();
                 return PlannedOp.takeError();
             }
             Result.Operators.push_back(std::move(*PlannedOp));
@@ -1771,6 +1855,7 @@ llvm::Expected<PlannedNamespace> Planner::planNamespace(const Namespace &NS,
         // Skip Concept members for now
     }
 
+    ModuleStack.pop_back();
     return Result;
 }
 
@@ -1859,10 +1944,14 @@ llvm::Expected<PlannedModule> Planner::planModule(const Module &Mod) {
     Result.File = Mod.File;
     Result.Name = Mod.Name;
 
-    // Plan sub-modules
+    // Push module onto stack for cross-module resolution
+    ModuleStack.push_back(&Mod);
+
+    // Plan sub-modules first (so their concepts are available)
     for (const auto &SubMod : Mod.Modules) {
         auto PlannedSubMod = planModule(SubMod);
         if (!PlannedSubMod) {
+            ModuleStack.pop_back();
             return PlannedSubMod.takeError();
         }
         Result.Modules.push_back(std::move(*PlannedSubMod));
@@ -1875,6 +1964,7 @@ llvm::Expected<PlannedModule> Planner::planModule(const Module &Mod) {
             for (const auto &SubMod : *Packages) {
                 auto PlannedSubMod = planModule(SubMod);
                 if (!PlannedSubMod) {
+                    ModuleStack.pop_back();
                     return PlannedSubMod.takeError();
                 }
                 Result.Modules.push_back(std::move(*PlannedSubMod));
@@ -1886,12 +1976,14 @@ llvm::Expected<PlannedModule> Planner::planModule(const Module &Mod) {
             // Plan concept
             auto PlannedConc = planConcept(*Conc);
             if (!PlannedConc) {
+                ModuleStack.pop_back();
                 return PlannedConc.takeError();
             }
             Result.Concepts.push_back(std::move(*PlannedConc));
         } else if (auto *Func = std::get_if<Function>(&Member)) {
             auto PlannedFunc = planFunction(*Func, nullptr);
             if (!PlannedFunc) {
+                ModuleStack.pop_back();
                 return PlannedFunc.takeError();
             }
             Result.Functions.push_back(std::move(*PlannedFunc));
@@ -1901,6 +1993,7 @@ llvm::Expected<PlannedModule> Planner::planModule(const Module &Mod) {
         } else if (auto *Op = std::get_if<Operator>(&Member)) {
             auto PlannedOp = planOperator(*Op, nullptr);
             if (!PlannedOp) {
+                ModuleStack.pop_back();
                 return PlannedOp.takeError();
             }
             Result.Operators.push_back(std::move(*PlannedOp));
@@ -1910,6 +2003,7 @@ llvm::Expected<PlannedModule> Planner::planModule(const Module &Mod) {
         }
     }
 
+    ModuleStack.pop_back();
     return Result;
 }
 

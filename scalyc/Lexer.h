@@ -70,6 +70,7 @@ public:
     // Parser helpers
     bool parseKeyword(llvm::StringRef Keyword);
     llvm::StringRef parseIdentifier();
+    llvm::StringRef peekIdentifier();  // Returns identifier name without consuming
     llvm::StringRef parseAttribute();
     bool parsePunctuation(char C);
     bool parseColon();

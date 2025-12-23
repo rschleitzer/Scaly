@@ -569,6 +569,17 @@ llvm::StringRef Lexer::parseIdentifier() {
     return llvm::StringRef();
 }
 
+llvm::StringRef Lexer::peekIdentifier() {
+    if (is<EmptyToken>(Token_)) {
+        advance();
+    }
+
+    if (auto* Ident = get_if<IdentifierToken>(Token_)) {
+        return Ident->Name;  // Don't consume - just return the name
+    }
+    return llvm::StringRef();
+}
+
 llvm::StringRef Lexer::parseAttribute() {
     if (is<EmptyToken>(Token_)) {
         advance();

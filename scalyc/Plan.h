@@ -433,6 +433,7 @@ struct PlannedUnion {
 struct PlannedNamespace {
     Span Loc;
     std::string Name;
+    std::vector<PlannedModule> Modules;
     std::vector<PlannedFunction> Functions;
     std::vector<PlannedOperator> Operators;
     std::vector<PlannedConcept> Concepts;
