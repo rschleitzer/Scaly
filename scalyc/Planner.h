@@ -25,10 +25,16 @@ public:
 private:
     std::string File;
 
-    // Symbol tables for resolution
+    // Symbol tables for resolution (flat cache, populated during planning)
     std::map<std::string, const Concept*> Concepts;
     std::map<std::string, std::vector<const Function*>> Functions;
     std::map<std::string, const Operator*> Operators;
+
+    // Module context for cross-module resolution
+    std::vector<const Module*> ModuleStack;
+
+    // Lookup a concept by name, searching module hierarchy
+    const Concept* lookupConcept(llvm::StringRef Name);
 
     // Instantiation cache - avoid duplicate monomorphization
     std::map<std::string, PlannedStructure> InstantiatedStructures;
