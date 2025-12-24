@@ -189,6 +189,227 @@ procedure appendItems(builder: StringBuilder, items: List[String]) {
 - Parallelism-friendly - functions and operators are automatically safe to parallelize
 - Builders fit naturally - procedures work with mutable state
 
+### Package System
+
+Scaly has a built-in package system with no external tooling or configuration files.
+
+**Core principles:**
+- **Package = source distribution**: A package is a collection of `.scaly` source files, versioned and distributed together
+- **No external files**: No `package.json`, `Cargo.toml`, or similar - everything is in the language
+- **No external tools**: No `cargo`, `npm`, `nvm` - the compiler handles building, versioning, and dependency resolution
+- **Multiple versions coexist**: Different versions of the same package can exist in one binary, solving the diamond dependency problem
+
+**Why source-only distribution:**
+- **Simplicity**: A package is just a directory of `.scaly` files - copy to distribute
+- **Transparency**: Fits open source culture; consumers can read, learn from, and contribute to packages
+- **Generics require source**: Monomorphization happens at consumer compile time - generic types need full source anyway
+- **Community building**: No barriers to understanding how packages work
+- **Future optimization**: Compiled artifact caching (like Rust's `.rlib`) can be added later without changing the distribution model
+
+**Version in directory structure:**
+
+Package versions are encoded in the filesystem, not in metadata files:
+
+```
+packages/
+└── scaly-json/
+    ├── 2.0.1/
+    │   ├── scaly-json.scaly
+    │   └── scaly-json/
+    │       ├── lexer.scaly
+    │       └── parser.scaly
+    └── 3.0.0/
+        ├── scaly-json.scaly
+        └── scaly-json/
+            └── ...
+```
+
+This enables simple distribution - just copy directories.
+
+**Package version declaration:**
+
+Packages declare their version in the root file using `define`:
+
+```scaly
+; scaly-json.scaly
+define scaly-json 2.0.1 {
+    module lexer
+    module parser
+}
+```
+
+The compiler verifies the declared version matches the directory structure. If `packages/scaly-json/2.0.1/` contains a package declaring version `3.0.0`, that's an error. This catches copy/paste mistakes when setting up dependencies.
+
+**Publishing packages:**
+
+Publishing is simple - just host your package directory somewhere:
+
+```bash
+# Create a release on GitHub, or host a tarball
+# Consumers download and extract:
+curl -L https://github.com/user/scaly-json/archive/2.0.1.tar.gz | tar xz
+mv scaly-json-2.0.1 packages/scaly-json/2.0.1/
+```
+
+No special tooling required. A central registry on scaly.io may be added later for discovery as the ecosystem grows.
+
+**Three distinct statements:**
+
+Scaly has three statements for organizing code, each with a distinct purpose:
+
+**`module`** - Load more source files within the same package:
+```scaly
+module parser      ; loads ./parser.scaly or ./parser/parser.scaly
+module lexer       ; loads ./lexer.scaly
+```
+
+**`package`** - Declare dependency on external package:
+```scaly
+package scaly-json 2.0.1   ; loads from package search path
+```
+
+**`use`** - Shorthand for fully qualified paths (naming convenience only):
+```scaly
+use scaly-json.JsonValue   ; now can write JsonValue instead of scaly-json.JsonValue
+use containers.Vector      ; now can write Vector instead of containers.Vector
+```
+
+All three can appear in any source file. The compiler collects `package` declarations during source tree traversal. If multiple files declare the same package with the same version, they're deduplicated. Conflicting versions of the same package within one package are an error.
+
+**Example usage:**
+```scaly
+; my-package/parser.scaly
+package scaly-json 2.0.1
+
+use scaly-json.JsonValue
+use scaly-json.parse
+
+function transform(input: String) returns JsonValue {
+    parse(input)
+}
+```
+
+**Package resolution:**
+
+The compiler searches for packages in this order:
+
+1. `./packages/` - Project-local (vendored dependencies, checked into repo)
+2. `/usr/share/scaly/packages/` - System-wide (stdlib, OS-installed packages)
+3. Paths from `-I` flags (in order given)
+
+For `package scaly-json 2.0.1`, the compiler looks for:
+- `./packages/scaly-json/2.0.1/scaly-json.scaly`
+- `/usr/share/scaly/packages/scaly-json/2.0.1/scaly-json.scaly`
+- `<-I path>/scaly-json/2.0.1/scaly-json.scaly`
+
+Additional paths (organization shared, personal convenience) are added via `-I`:
+
+```bash
+scalyc -I/org/shared/packages -I~/my-packages main.scaly
+```
+
+**Transitive dependencies:**
+
+Dependencies are **not transitively visible**. Each package must explicitly declare what it uses:
+
+```
+my-app
+└── lib-a 1.0
+    └── scaly-json 2.0.1
+```
+
+In this example, my-app can only see lib-a's API. Even though lib-a uses scaly-json internally, my-app cannot access `scaly-json.JsonValue` unless it explicitly declares `package scaly-json 2.0.1`.
+
+The compiler still compiles all transitive dependencies (required for monomorphization), but namespace visibility is explicit. This ensures:
+- Clean encapsulation - dependencies are implementation details
+- No accidental coupling to transitive dependencies
+- Explicit, reproducible dependency graphs
+
+If lib-a exposes scaly-json types in its public API, it should document that consumers need to also declare the dependency.
+
+**Circular dependencies:**
+
+Circular package dependencies are **forbidden** (compiler error):
+
+```
+package-a → package-b → package-a   ; ERROR: cycle detected
+```
+
+If you have a cycle, extract shared concepts into a separate package:
+
+```
+Before:  package-a ←→ package-b
+After:   package-a → package-common ← package-b
+```
+
+This forces clean architecture and avoids complex initialization ordering issues. Cycles are almost always a sign that some shared concepts should be extracted.
+
+Note: This applies to *packages*. Module cycles within the same package are also discouraged but may be allowed since they compile together.
+
+**Standard library (stdlib):**
+
+The stdlib is implicitly available without declaration:
+
+- **Primitives** (`int`, `bool`, `float`, etc.) are built into the compiler
+- **stdlib** (operators, `Vector`, `String` methods, etc.) is automatically available
+- stdlib version is tied to compiler version - deterministic and reproducible
+- Lives in `/usr/share/scaly/packages/stdlib/<compiler-version>/`
+
+No boilerplate needed for common operations:
+
+```scaly
+; Just works - no package declaration needed
+function example() returns int {
+    3 + 4 * 5   ; operators from stdlib
+}
+```
+
+**Opting out of stdlib:**
+
+Use `--no-stdlib` for bare-metal/embedded scenarios:
+
+```bash
+scalyc --no-stdlib kernel.scaly
+```
+
+When opted out, only primitives are available. Use cases:
+- OS kernels
+- Embedded systems
+- Custom runtime implementations
+- Freestanding environments
+
+**Diamond dependency solution:**
+
+When dependencies require different versions of the same package:
+
+```
+your-app
+├── lib-a 1.0 → uses scaly-json 2.0.1
+└── lib-b 1.0 → uses scaly-json 3.0.0
+```
+
+Both versions are compiled into the final binary. Each dependent sees only its expected version. Types from different versions are distinct (`scaly_json_2_0_1::Value` ≠ `scaly_json_3_0_0::Value`).
+
+**Version in mangled names (Itanium compatible):**
+
+Package version is encoded into the namespace name using underscores:
+
+```
+Package: scaly-json version 2.0.1
+Function: parse(input: String)
+
+Namespace: scaly_json_2_0_1
+Mangled:   _ZN15scaly_json_2_0_15parseE...
+```
+
+This is 100% Itanium ABI compatible - `c++filt` sees a namespace named `scaly_json_2_0_1`. No ABI extensions required.
+
+**Why exact versions:**
+- Reproducible builds by default
+- No resolver algorithm needed - compiler loads exactly what you specify
+- Simple mental model - if it works, it works forever
+- Trade-off: more potential duplication, but correctness is prioritized
+
 ## Project Structure
 
 ### Compiler (scalyc/)
@@ -199,12 +420,14 @@ Single monolithic executable with GCC-style command line:
 scalyc [options] <input-files>
 
 Options:
-  -o <file>      Output file
-  -c             Compile only (no link)
-  -S             Emit LLVM IR
-  --test         Run compiled-in test suite
-  --test=<name>  Run specific test
-  -v             Verbose output
+  -o <file>       Output file
+  -c              Compile only (no link)
+  -S              Emit LLVM IR
+  -I<path>        Add package search path
+  --no-stdlib     Disable implicit stdlib (for bare-metal/embedded)
+  --test          Run compiled-in test suite
+  --test=<name>   Run specific test
+  -v              Verbose output
 ```
 
 **Source files:**
