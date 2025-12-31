@@ -1091,8 +1091,15 @@ llvm::Expected<PlannedType> Planner::resolveMemberAccess(
     PlannedType Current = BaseType;
 
     for (const auto& MemberName : Members) {
+        // Extract base name from instantiated type (e.g., "Node.int" -> "Node")
+        std::string BaseName = Current.Name;
+        size_t DotPos = BaseName.find('.');
+        if (DotPos != std::string::npos) {
+            BaseName = BaseName.substr(0, DotPos);
+        }
+
         // Look up the base type as a concept
-        const Concept* Conc = lookupConcept(Current.Name);
+        const Concept* Conc = lookupConcept(BaseName);
         if (!Conc) {
             return makePlannerNotImplementedError(File, Loc,
                 "cannot access member '" + MemberName + "' on type " +
@@ -1221,16 +1228,35 @@ PlannedType Planner::inferConstantType(const Constant &C) {
 llvm::Expected<PlannedType> Planner::resolveNameOrVariable(const Type &T) {
     // If it's a simple name (single element, no generics), check if it's a variable
     if (T.Name.size() == 1 && (!T.Generics || T.Generics->empty())) {
-        auto LocalType = lookupLocal(T.Name[0]);
+        const std::string &Name = T.Name[0];
+
+        // First check local variables
+        auto LocalType = lookupLocal(Name);
         if (LocalType) {
             // It's a local variable - return its type
             PlannedType Result = *LocalType;
             Result.Loc = T.Loc;  // Use the reference location
             return Result;
         }
+
+        // Check if it's a structure property (when inside a method via 'this')
+        if (CurrentStructureProperties) {
+            // Check if 'this' is in scope
+            auto ThisType = lookupLocal("this");
+            if (ThisType && ThisType->Name == CurrentStructureName) {
+                // Look for property with this name
+                for (const auto &Prop : *CurrentStructureProperties) {
+                    if (Prop.Name == Name) {
+                        PlannedType Result = Prop.PropType;
+                        Result.Loc = T.Loc;
+                        return Result;
+                    }
+                }
+            }
+        }
     }
 
-    // Not a variable, resolve as a type
+    // Not a variable or property, resolve as a type
     return resolveType(T, T.Loc);
 }
 
@@ -2889,11 +2915,29 @@ llvm::Expected<PlannedStructure> Planner::planStructure(
     ParentType.Generics = GenericArgs;
     ParentType.MangledName = Result.MangledName;
 
+    // Build full structure name including generic args for property lookup
+    std::string FullStructureName = Name.str();
+    if (!GenericArgs.empty()) {
+        FullStructureName += ".";
+        for (size_t i = 0; i < GenericArgs.size(); ++i) {
+            if (i > 0) FullStructureName += ".";
+            FullStructureName += GenericArgs[i].Name;
+        }
+    }
+
+    // Set current structure context for property access in methods
+    std::string OldStructureName = CurrentStructureName;
+    std::vector<PlannedProperty>* OldStructureProperties = CurrentStructureProperties;
+    CurrentStructureName = FullStructureName;
+    CurrentStructureProperties = &Result.Properties;
+
     // Plan initializers
     for (const auto &Init : Struct.Initializers) {
         auto PlannedInit = planInitializer(Init, ParentType);
         if (!PlannedInit) {
             TypeSubstitutions = OldSubst;
+            CurrentStructureName = OldStructureName;
+            CurrentStructureProperties = OldStructureProperties;
             return PlannedInit.takeError();
         }
         Result.Initializers.push_back(std::move(*PlannedInit));
@@ -2904,6 +2948,8 @@ llvm::Expected<PlannedStructure> Planner::planStructure(
         auto PlannedDeInit = planDeInitializer(*Struct.Deinitializer, ParentType);
         if (!PlannedDeInit) {
             TypeSubstitutions = OldSubst;
+            CurrentStructureName = OldStructureName;
+            CurrentStructureProperties = OldStructureProperties;
             return PlannedDeInit.takeError();
         }
         Result.Deinitializer = std::make_unique<PlannedDeInitializer>(
@@ -2916,6 +2962,8 @@ llvm::Expected<PlannedStructure> Planner::planStructure(
             auto PlannedMethod = planFunction(*Func, &ParentType);
             if (!PlannedMethod) {
                 TypeSubstitutions = OldSubst;
+                CurrentStructureName = OldStructureName;
+                CurrentStructureProperties = OldStructureProperties;
                 return PlannedMethod.takeError();
             }
             Result.Methods.push_back(std::move(*PlannedMethod));
@@ -2923,6 +2971,8 @@ llvm::Expected<PlannedStructure> Planner::planStructure(
             auto PlannedOp = planOperator(*Op, &ParentType);
             if (!PlannedOp) {
                 TypeSubstitutions = OldSubst;
+                CurrentStructureName = OldStructureName;
+                CurrentStructureProperties = OldStructureProperties;
                 return PlannedOp.takeError();
             }
             Result.Operators.push_back(std::move(*PlannedOp));
@@ -2930,8 +2980,10 @@ llvm::Expected<PlannedStructure> Planner::planStructure(
         // Skip Concept members for now - would need recursive planning
     }
 
-    // Restore substitutions
+    // Restore substitutions and structure context
     TypeSubstitutions = OldSubst;
+    CurrentStructureName = OldStructureName;
+    CurrentStructureProperties = OldStructureProperties;
 
     // Add provenance if this is an instantiation
     if (!GenericArgs.empty()) {
@@ -3085,6 +3137,23 @@ llvm::Expected<PlannedConcept> Planner::planConcept(const Concept &Conc) {
     Result.Loc = Conc.Loc;
     Result.Name = Conc.Name;
 
+    // Register in symbol table first (needed for recursive types)
+    Concepts[Conc.Name] = &Conc;
+
+    // For generic concepts, create a placeholder - don't fully plan
+    // Generic concepts will be planned when instantiated with concrete types
+    if (!Conc.Parameters.empty()) {
+        // Create a minimal placeholder structure
+        PlannedStructure Placeholder;
+        Placeholder.Loc = Conc.Loc;
+        Placeholder.Name = Conc.Name;
+        Placeholder.MangledName = encodeName(Conc.Name);
+        Placeholder.IsGenericPlaceholder = true;
+        Result.Definition = std::move(Placeholder);
+        Result.MangledName = Placeholder.MangledName;
+        return Result;
+    }
+
     // Plan attributes
     for (const auto &Attr : Conc.Attributes) {
         PlannedAttribute PA;
@@ -3145,9 +3214,6 @@ llvm::Expected<PlannedConcept> Planner::planConcept(const Concept &Conc) {
 
     Result.Definition = std::move(*DefinitionResult);
     Result.MangledName = mangleStructure(Conc.Name, {});
-
-    // Register in symbol table
-    Concepts[Conc.Name] = &Conc;
 
     return Result;
 }
