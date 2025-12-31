@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> **⚠️ COMMIT MESSAGES: One line, 50 chars max, no fluff. See [Commit Policy](#commit-policy).**
+
 ## Overview
 
 Scaly is envisioned to be a self-scaling programming language. The goal is a self-hosted compiler that manages memory through regions automatically (Region-Based Memory Management / RBMM).
@@ -685,10 +687,34 @@ aws s3 sync docs/ s3://scaly.io --delete
 
 ## Commit Policy
 
-- Use short, one-line commit messages (50 chars or less ideal)
-- No marketing blurbs or promotional text
-- No emojis unless explicitly requested
-- Format: `<what changed>` - be concise and descriptive
+**IMPORTANT: READ THIS BEFORE EVERY COMMIT**
+
+Commit messages MUST be:
+- **ONE LINE ONLY** - no multi-line messages, no body, no bullet points
+- **50 characters or less** - this is a hard limit, not a suggestion
+- **No co-author lines** - do not add "Co-Authored-By" footers
+- **No emoji** - unless explicitly requested by the user
+- **No marketing** - no "Generated with Claude Code" or similar
+
+**Good examples:**
+```
+Add type inference to Planner
+Fix binding scope in planFor
+Document packages directory
+```
+
+**Bad examples:**
+```
+Add expression type inference to Planner
+
+- inferConstantType: maps constants to their types    <- NO! Multi-line
+- resolveNameOrVariable: distinguishes variables      <- NO! Bullet points
+
+🤖 Generated with [Claude Code]                       <- NO! Marketing
+Co-Authored-By: Claude <noreply@anthropic.com>        <- NO! Co-author
+```
+
+**Format:** `<what changed>` - be concise and descriptive
 
 ## Development Commands
 
