@@ -28,7 +28,7 @@ private:
     // Symbol tables for resolution (flat cache, populated during planning)
     std::map<std::string, const Concept*> Concepts;
     std::map<std::string, std::vector<const Function*>> Functions;
-    std::map<std::string, const Operator*> Operators;
+    std::map<std::string, std::vector<const Operator*>> Operators;
 
     // Module context for cross-module resolution
     std::vector<const Module*> ModuleStack;
@@ -165,8 +165,8 @@ private:
     // Look up a function by name, returning candidates for overload resolution
     std::vector<const Function*> lookupFunction(llvm::StringRef Name);
 
-    // Look up an operator by name
-    const Operator* lookupOperator(llvm::StringRef Name);
+    // Look up operators by name (returns all overloads for resolution)
+    std::vector<const Operator*> lookupOperator(llvm::StringRef Name);
 
     // Check if a name refers to a function (vs variable/type)
     bool isFunction(llvm::StringRef Name);
