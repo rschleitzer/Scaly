@@ -238,7 +238,7 @@ llvm::Expected<"(id syntax)"Syntax> Parser::parse"(id syntax)"() {
                         (("identifier")
                             ($
 "
-    llvm::StringRef "(string-firstchar-upcase (property content))" = Lex.parseIdentifier();
+    llvm::StringRef "(string-firstchar-upcase (property content))" = Lex.peekIdentifier();
     if ("(string-firstchar-upcase (property content))".empty() || Keywords.count("(string-firstchar-upcase (property content))"))"
                                 (if (equal? 1 (child-number content))
                                     "
@@ -246,6 +246,7 @@ llvm::Expected<"(id syntax)"Syntax> Parser::parse"(id syntax)"() {
                                     "
         return invalid(Start, Lex.position(), \"expected identifier\");")
 "
+    Lex.parseIdentifier();  // Consume the identifier
 "                           )
                         )
                         (("attribute")
