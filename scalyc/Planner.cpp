@@ -985,15 +985,19 @@ llvm::Expected<PlannedType> Planner::resolveOperationSequence(
     if (auto* TypeExpr = std::get_if<PlannedType>(&Ops[0].Expr)) {
         if (isOperatorName(TypeExpr->Name) && Ops.size() > 1) {
             // First operand is a prefix operator
+            // Resolve the rest of the sequence first, then apply prefix operator
+            std::vector<PlannedOperand> RestOps(Ops.begin() + 1, Ops.end());
+            auto RestResult = resolveOperationSequence(RestOps);
+            if (!RestResult) {
+                return RestResult.takeError();
+            }
             auto Result = resolvePrefixOperatorCall(TypeExpr->Name,
                                                      Ops[0].Loc,
-                                                     Ops[1].ResultType);
+                                                     *RestResult);
             if (!Result) {
                 return Result.takeError();
             }
-            Context = std::move(*Result);
-            HasContext = true;
-            I = 2;  // Skip prefix operator and its operand
+            return *Result;  // Entire sequence is resolved
         }
     }
 
