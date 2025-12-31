@@ -356,12 +356,20 @@ using Implementation = std::variant<
     IntrinsicImpl
 >;
 
+// Generic parameter (for generic functions/operators)
+struct GenericParameter {
+    Span Loc;
+    std::string Name;
+    std::vector<Attribute> Attributes;
+};
+
 // Function represents a function or procedure
 struct Function {
     Span Loc;
     bool Private;
     bool Pure;
     std::string Name;
+    std::vector<GenericParameter> Parameters;  // Generic type parameters (if any)
     std::vector<Item> Input;
     std::shared_ptr<Type> Returns;
     std::shared_ptr<Type> Throws;
@@ -388,6 +396,7 @@ struct Operator {
     Span Loc;
     bool Private;
     std::string Name;
+    std::vector<GenericParameter> Parameters;  // Generic type parameters (if any)
     std::vector<Item> Input;
     std::shared_ptr<Type> Returns;
     std::shared_ptr<Type> Throws;
@@ -412,13 +421,6 @@ struct Nameable;
 struct Use {
     Span Loc;
     std::vector<std::string> Path;
-};
-
-// Generic parameter
-struct GenericParameter {
-    Span Loc;
-    std::string Name;
-    std::vector<Attribute> Attributes;
 };
 
 // Global constant

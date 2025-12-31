@@ -15,6 +15,60 @@ namespace scaly {
 Planner::Planner(llvm::StringRef FileName) : File(FileName.str()) {}
 
 // ============================================================================
+// Type Inference Helpers
+// ============================================================================
+
+PlannedType Planner::freshTypeVar(const std::string &DebugName) {
+    if (!CurrentPlan) {
+        // Fallback if no plan context - shouldn't happen in normal use
+        PlannedType Result;
+        Result.Name = "?";
+        return Result;
+    }
+
+    TypeVariable Var = CurrentPlan->freshTypeVar(DebugName);
+    PlannedType Result;
+    Result.Variable = std::make_shared<TypeVariable>(Var);
+    Result.Name = DebugName.empty() ? ("?" + std::to_string(Var.Id)) : DebugName;
+    return Result;
+}
+
+void Planner::addConstraint(const PlannedType &Left, const PlannedType &Right, Span Loc) {
+    if (!CurrentPlan) {
+        return;
+    }
+
+    EqualityConstraint Eq;
+    Eq.Left = Left;
+    Eq.Right = Right;
+    Eq.Loc = Loc;
+    CurrentPlan->addConstraint(Eq);
+}
+
+llvm::Expected<Substitution> Planner::solveAndApply() {
+    if (!CurrentPlan || CurrentPlan->Constraints.empty()) {
+        return Substitution{};
+    }
+
+    auto Solution = solveConstraints(CurrentPlan->Constraints, File);
+    if (!Solution) {
+        return Solution.takeError();
+    }
+
+    CurrentPlan->Solution = *Solution;
+    CurrentPlan->Constraints.clear();  // Constraints are consumed
+
+    return *Solution;
+}
+
+PlannedType Planner::applyCurrentSubstitution(const PlannedType &Type) {
+    if (!CurrentPlan || CurrentPlan->Solution.empty()) {
+        return Type;
+    }
+    return applySubstitution(Type, CurrentPlan->Solution);
+}
+
+// ============================================================================
 // Helper: Clone Model (deep copy, since Model contains unique_ptr)
 // ============================================================================
 
@@ -538,26 +592,106 @@ llvm::Expected<PlannedType> Planner::resolveFunctionCall(
             ("function not found: " + Name).str());
     }
 
-    // Simple overload resolution: find a function with matching arity
-    // TODO: Full type-based overload resolution
+    // Overload resolution: find function with matching arity and parameter types
+    // First, try non-generic functions
+    const Function* BestMatch = nullptr;
     for (const Function* Func : Candidates) {
-        if (Func->Input.size() == ArgTypes.size()) {
-            // Match found - return the return type
-            if (Func->Returns) {
-                return resolveType(*Func->Returns, Loc);
+        // Skip generic functions in first pass
+        if (!Func->Parameters.empty()) {
+            continue;
+        }
+
+        if (Func->Input.size() != ArgTypes.size()) {
+            continue;
+        }
+
+        // Check parameter types match
+        bool AllMatch = true;
+        for (size_t I = 0; I < ArgTypes.size(); ++I) {
+            if (!Func->Input[I].ItemType) {
+                // Parameter has no type annotation - match any type
+                continue;
             }
-            // No return type = void
-            PlannedType VoidType;
-            VoidType.Loc = Loc;
-            VoidType.Name = "void";
-            VoidType.MangledName = "v";
-            return VoidType;
+
+            auto ParamTypeResult = resolveType(*Func->Input[I].ItemType, Loc);
+            if (!ParamTypeResult) {
+                // Skip if we can't resolve the parameter type
+                llvm::consumeError(ParamTypeResult.takeError());
+                AllMatch = false;
+                break;
+            }
+
+            if (!typesEqual(*ParamTypeResult, ArgTypes[I])) {
+                AllMatch = false;
+                break;
+            }
+        }
+
+        if (AllMatch) {
+            BestMatch = Func;
+            break;  // Take first matching overload
         }
     }
 
-    // No matching overload
+    if (BestMatch) {
+        if (BestMatch->Returns) {
+            return resolveType(*BestMatch->Returns, Loc);
+        }
+        // No return type = void
+        PlannedType VoidType;
+        VoidType.Loc = Loc;
+        VoidType.Name = "void";
+        VoidType.MangledName = "v";
+        return VoidType;
+    }
+
+    // Second pass: try generic functions with type inference
+    for (const Function* Func : Candidates) {
+        // Only consider generic functions
+        if (Func->Parameters.empty()) {
+            continue;
+        }
+
+        if (Func->Input.size() != ArgTypes.size()) {
+            continue;
+        }
+
+        // Try to infer type arguments from the call arguments
+        auto InferredArgs = inferTypeArguments(*Func, ArgTypes, Loc);
+        if (!InferredArgs) {
+            // Inference failed - try next candidate
+            llvm::consumeError(InferredArgs.takeError());
+            continue;
+        }
+
+        // Instantiate the generic function
+        auto Instantiated = instantiateGenericFunction(*Func, *InferredArgs, Loc);
+        if (!Instantiated) {
+            // Instantiation failed - try next candidate
+            llvm::consumeError(Instantiated.takeError());
+            continue;
+        }
+
+        // Return the instantiated function's return type
+        if (Instantiated->Returns) {
+            return *Instantiated->Returns;
+        }
+        // No return type = void
+        PlannedType VoidType;
+        VoidType.Loc = Loc;
+        VoidType.Name = "void";
+        VoidType.MangledName = "v";
+        return VoidType;
+    }
+
+    // No matching overload - build helpful error message
+    std::string ArgTypesStr;
+    for (size_t I = 0; I < ArgTypes.size(); ++I) {
+        if (I > 0) ArgTypesStr += ", ";
+        ArgTypesStr += ArgTypes[I].Name;
+    }
     return makePlannerNotImplementedError(File, Loc,
-        ("no matching overload for function: " + Name).str());
+        ("no matching overload for function: " + Name + "(" + ArgTypesStr + ")").str());
 }
 
 llvm::Expected<PlannedType> Planner::resolveOperatorCall(
@@ -569,7 +703,14 @@ llvm::Expected<PlannedType> Planner::resolveOperatorCall(
     if (StructIt != InstantiatedStructures.end()) {
         for (const auto &Op : StructIt->second.Operators) {
             if (Op.Name == Name) {
-                // TODO: Check parameter type matching
+                // Check parameter type matching
+                // Instance operators have: first param is receiver (this), second is the operand
+                // For binary operators, we check if the second parameter matches Right
+                if (Op.Input.size() >= 2 && Op.Input[1].ItemType) {
+                    if (!typesEqual(*Op.Input[1].ItemType, Right)) {
+                        continue;  // Try next operator overload
+                    }
+                }
                 if (Op.Returns) {
                     return *Op.Returns;
                 }
@@ -587,6 +728,12 @@ llvm::Expected<PlannedType> Planner::resolveOperatorCall(
     if (UnionIt != InstantiatedUnions.end()) {
         for (const auto &Op : UnionIt->second.Operators) {
             if (Op.Name == Name) {
+                // Check parameter type matching for union operators
+                if (Op.Input.size() >= 2 && Op.Input[1].ItemType) {
+                    if (!typesEqual(*Op.Input[1].ItemType, Right)) {
+                        continue;  // Try next operator overload
+                    }
+                }
                 if (Op.Returns) {
                     return *Op.Returns;
                 }
@@ -1547,6 +1694,126 @@ llvm::Expected<PlannedType> Planner::instantiateGeneric(
 }
 
 // ============================================================================
+// Generic Function Instantiation
+// ============================================================================
+
+llvm::Expected<PlannedFunction> Planner::instantiateGenericFunction(
+    const Function &Func,
+    const std::vector<PlannedType> &TypeArgs,
+    Span InstantiationLoc) {
+
+    // 1. Check arity matches
+    if (TypeArgs.size() != Func.Parameters.size()) {
+        return makeGenericArityError(File, InstantiationLoc, Func.Name,
+                                      Func.Parameters.size(), TypeArgs.size());
+    }
+
+    // 2. Generate cache key (e.g., "identity.int" or "map.string.int")
+    std::string CacheKey = Func.Name;
+    for (const auto &Arg : TypeArgs) {
+        CacheKey += ".";
+        CacheKey += Arg.Name;
+    }
+
+    // 3. Check cache
+    auto CacheIt = InstantiatedFunctions.find(CacheKey);
+    if (CacheIt != InstantiatedFunctions.end()) {
+        return CacheIt->second;
+    }
+
+    // 4. Set up TypeSubstitutions
+    std::map<std::string, PlannedType> OldSubst = TypeSubstitutions;
+    for (size_t I = 0; I < TypeArgs.size(); ++I) {
+        TypeSubstitutions[Func.Parameters[I].Name] = TypeArgs[I];
+    }
+
+    // 5. Plan the specialized version
+    auto Planned = planFunction(Func, nullptr);
+    if (!Planned) {
+        TypeSubstitutions = OldSubst;
+        return Planned.takeError();
+    }
+
+    // 6. Update name and mangled name with type arguments
+    Planned->Name = CacheKey;
+    // Regenerate mangled name with the specialized types
+    Planned->MangledName = mangleFunction(CacheKey, Planned->Input, nullptr);
+
+    // 7. Create provenance info
+    auto Origin = std::make_shared<InstantiationInfo>();
+    Origin->DefinitionLoc = Func.Loc;
+    Origin->InstantiationLoc = InstantiationLoc;
+    for (const auto &Arg : TypeArgs) {
+        Origin->TypeArgs.push_back(Arg.Name);
+    }
+    Planned->Origin = Origin;
+
+    // 8. Restore old substitutions and cache the result
+    TypeSubstitutions = OldSubst;
+    InstantiatedFunctions[CacheKey] = *Planned;
+
+    return *Planned;
+}
+
+llvm::Expected<std::vector<PlannedType>> Planner::inferTypeArguments(
+    const Function &Func,
+    const std::vector<PlannedType> &ArgTypes,
+    Span Loc) {
+
+    // Simple inference: match parameter types to argument types
+    // For each type parameter, find where it appears in parameter types
+    // and extract the corresponding type from arguments
+
+    std::map<std::string, PlannedType> Inferred;
+
+    // For each parameter position
+    for (size_t I = 0; I < Func.Input.size() && I < ArgTypes.size(); ++I) {
+        if (!Func.Input[I].ItemType) {
+            continue;
+        }
+
+        const Type &ParamType = *Func.Input[I].ItemType;
+        const PlannedType &ArgType = ArgTypes[I];
+
+        // Check if the parameter type is a simple type variable
+        if (ParamType.Name.size() == 1) {
+            const std::string &TypeName = ParamType.Name[0];
+
+            // Check if this is one of the generic parameters
+            for (const auto &GP : Func.Parameters) {
+                if (GP.Name == TypeName) {
+                    // Found a match - infer this type parameter
+                    auto It = Inferred.find(TypeName);
+                    if (It == Inferred.end()) {
+                        Inferred[TypeName] = ArgType;
+                    } else if (!typesEqual(It->second, ArgType)) {
+                        // Conflicting inference
+                        return makePlannerNotImplementedError(File, Loc,
+                            ("conflicting type inference for " + TypeName +
+                             ": " + It->second.Name + " vs " + ArgType.Name).c_str());
+                    }
+                    break;
+                }
+            }
+        }
+        // TODO: Handle more complex cases like List[T] matching List[int]
+    }
+
+    // Build result vector in parameter order
+    std::vector<PlannedType> Result;
+    for (const auto &GP : Func.Parameters) {
+        auto It = Inferred.find(GP.Name);
+        if (It == Inferred.end()) {
+            return makePlannerNotImplementedError(File, Loc,
+                ("could not infer type for parameter " + GP.Name).c_str());
+        }
+        Result.push_back(It->second);
+    }
+
+    return Result;
+}
+
+// ============================================================================
 // Item Planning
 // ============================================================================
 
@@ -2033,15 +2300,41 @@ llvm::Expected<PlannedBinding> Planner::planBinding(const Binding &Bind) {
     }
     Result.BindingItem = std::move(*PlannedItemResult);
 
-    // If no explicit type annotation, infer from the initializer
+    // Type inference for bindings without explicit type annotation
     if (!Result.BindingItem.ItemType && !Result.Operation.empty()) {
-        // Resolve the operation sequence to get the result type
+        // Try to infer the type from the initializer expression
         auto SeqType = resolveOperationSequence(Result.Operation);
-        if (!SeqType) {
-            return SeqType.takeError();
+        if (SeqType) {
+            // Successful inference - use the inferred type
+            Result.BindingItem.ItemType = std::make_shared<PlannedType>(
+                std::move(*SeqType));
+        } else {
+            // Inference failed - create a type variable for H-M inference
+            llvm::consumeError(SeqType.takeError());
+
+            std::string VarName = Result.BindingItem.Name
+                ? ("T_" + *Result.BindingItem.Name)
+                : "";
+            PlannedType TypeVar = freshTypeVar(VarName);
+            Result.BindingItem.ItemType = std::make_shared<PlannedType>(TypeVar);
+
+            // If we have operation result types, add constraint
+            if (!Result.Operation.empty()) {
+                const PlannedType &ExprType = Result.Operation.back().ResultType;
+                if (!ExprType.Name.empty()) {
+                    addConstraint(TypeVar, ExprType, Bind.Loc);
+                }
+            }
         }
-        Result.BindingItem.ItemType = std::make_shared<PlannedType>(
-            std::move(*SeqType));
+    } else if (Result.BindingItem.ItemType && !Result.Operation.empty()) {
+        // Explicit type annotation - add constraint for checking
+        const PlannedType &DeclaredType = *Result.BindingItem.ItemType;
+        const PlannedType &ExprType = Result.Operation.back().ResultType;
+
+        // Only add constraint if both types are present
+        if (!DeclaredType.Name.empty() && !ExprType.Name.empty()) {
+            addConstraint(DeclaredType, ExprType, Bind.Loc);
+        }
     }
 
     // Add to scope
@@ -2938,9 +3231,13 @@ llvm::Expected<PlannedModule> Planner::planModule(const Module &Mod) {
 llvm::Expected<Plan> Planner::plan(const Program &Prog) {
     Plan Result;
 
+    // Set up type inference context
+    CurrentPlan = &Result;
+
     // Plan the main module
     auto PlannedMod = planModule(Prog.MainModule);
     if (!PlannedMod) {
+        CurrentPlan = nullptr;
         return PlannedMod.takeError();
     }
     Result.MainModule = std::move(*PlannedMod);
@@ -2948,9 +3245,17 @@ llvm::Expected<Plan> Planner::plan(const Program &Prog) {
     // Plan top-level statements
     auto PlannedStmts = planStatements(Prog.Statements);
     if (!PlannedStmts) {
+        CurrentPlan = nullptr;
         return PlannedStmts.takeError();
     }
     Result.Statements = std::move(*PlannedStmts);
+
+    // Solve any accumulated type constraints
+    auto SolveResult = solveAndApply();
+    if (!SolveResult) {
+        CurrentPlan = nullptr;
+        return SolveResult.takeError();
+    }
 
     // Copy instantiated types to Plan's lookup maps
     for (auto &Pair : InstantiatedStructures) {
@@ -2963,6 +3268,7 @@ llvm::Expected<Plan> Planner::plan(const Program &Prog) {
         Result.Functions[Pair.first] = &Pair.second;
     }
 
+    CurrentPlan = nullptr;
     return Result;
 }
 

@@ -98,6 +98,8 @@ private:
                                               bool Private);
     llvm::Expected<GenericParameter> handleGenericParameter(
         const GenericParameterSyntax &Syntax);
+    std::vector<GenericParameter> extractGenericParams(
+        const GenericArgumentsSyntax &Syntax);
 
     // Structure, union, namespace handling
     llvm::Expected<Structure> handleClass(llvm::StringRef Name,
