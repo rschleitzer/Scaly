@@ -3348,6 +3348,21 @@ llvm::Expected<Substitution> unify(const TypeOrVariable &Left,
     const TypeVariable *LeftVar = std::get_if<TypeVariable>(&Left);
     const TypeVariable *RightVar = std::get_if<TypeVariable>(&Right);
 
+    // Check if PlannedTypes contain type variables (embedded variable)
+    // This handles the case where a type variable is wrapped in PlannedType
+    const TypeVariable *LeftEmbeddedVar = nullptr;
+    const TypeVariable *RightEmbeddedVar = nullptr;
+    if (LeftType && LeftType->Variable) {
+        LeftEmbeddedVar = LeftType->Variable.get();
+    }
+    if (RightType && RightType->Variable) {
+        RightEmbeddedVar = RightType->Variable.get();
+    }
+
+    // Use embedded variables if present
+    if (LeftEmbeddedVar) LeftVar = LeftEmbeddedVar;
+    if (RightEmbeddedVar) RightVar = RightEmbeddedVar;
+
     // Case 1: Both are the same variable
     if (LeftVar && RightVar && LeftVar->Id == RightVar->Id) {
         return Substitution{};
@@ -3355,11 +3370,12 @@ llvm::Expected<Substitution> unify(const TypeOrVariable &Left,
 
     // Case 2: Left is a variable
     if (LeftVar) {
-        if (RightType && occursIn(LeftVar->Id, *RightType)) {
+        // For occurs check, use RightType only if it's not just a variable wrapper
+        if (RightType && !RightEmbeddedVar && occursIn(LeftVar->Id, *RightType)) {
             return makeInfiniteTypeError(File, Loc, LeftVar->DebugName);
         }
         Substitution S;
-        if (RightType) {
+        if (RightType && !RightEmbeddedVar) {
             S[LeftVar->Id] = *RightType;
         } else if (RightVar) {
             PlannedType VarType;
@@ -3371,11 +3387,11 @@ llvm::Expected<Substitution> unify(const TypeOrVariable &Left,
 
     // Case 3: Right is a variable
     if (RightVar) {
-        if (LeftType && occursIn(RightVar->Id, *LeftType)) {
+        if (LeftType && !LeftEmbeddedVar && occursIn(RightVar->Id, *LeftType)) {
             return makeInfiniteTypeError(File, Loc, RightVar->DebugName);
         }
         Substitution S;
-        if (LeftType) {
+        if (LeftType && !LeftEmbeddedVar) {
             S[RightVar->Id] = *LeftType;
         }
         return S;
