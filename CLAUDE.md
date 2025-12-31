@@ -117,34 +117,68 @@ make
 
 ### Unified Language Specification
 
-The entire language is defined in a single SGML document that serves as the source of truth for grammar, tests, and documentation:
+The language grammar is defined in SGML and processed with DSSSL to generate parser code:
 
 ```
 scaly.sgm  →  ./mkl.sh (openjade + DSSSL)  →  scalyc/Parser.cpp
-                                            →  scalyc/Tests.cpp
-                                            →  docs/*.xml (DocBook)
+                                            →  scalyc/Syntax.h
 ```
 
 **Source files:**
-- **scaly.sgm**: Unified language specification (grammar + tests + documentation)
-- **language.dtd**: DTD governing the SGML structure
-- **codegen/scaly.dsl**: DSSSL stylesheet that generates all outputs
+- **scaly.sgm**: Grammar specification (syntax rules, keywords, punctuation)
+- **grammar.dtd**: DTD governing the grammar structure
+- **codegen/scaly.dsl**: DSSSL stylesheet that generates parser code
 
-**Generated outputs:**
-- **scalyc/Parser.cpp**: Generated parser code
-- **scalyc/Tests.cpp**: Generated test code (compiled into scalyc)
-- **docs/*.xml**: DocBook chapters for the language reference
+### Literate Testing and Documentation
 
-**Benefits of unification:**
-- Single source of truth - grammar, tests, and docs are co-located
-- Tests serve as executable specification examples
-- Documentation always matches implementation
-- One codegen step generates everything
-- DTD enforces structural consistency
+Tests are written as **literate documentation** - prose explanations with embedded executable tests. The same source generates both test code and user documentation:
+
+```
+tests/*.sgm  →  codegen  →  scalyc/Tests.cpp (executable tests)
+                         →  docs/*.xml (DocBook documentation)
+```
+
+**Test file structure** (defined in `test.dtd`):
+```sgml
+<suite id="expressions-tests" title="Expression Tests">
+
+<category id="literals" title="Literals">
+    <prose>Expressions are the core computational units of Scaly.
+
+    <tests id="boolean-literals" title="Boolean Literals">
+        <prose>The boolean literals are true and false.
+        <test id="bool-true"><input>true<expect>true
+        <test id="bool-false"><input>false<expect>false
+
+    <tests id="integer-literals" title="Integer Literals">
+        <prose>Integer literals are sequences of decimal digits.
+        <test id="int-positive"><input>42<expect>42
+        <test id="int-negative"><input>-7<expect>-7
+</category>
+</suite>
+```
+
+**Key elements:**
+- `<suite>`: Top-level test collection
+- `<category>`: Major section (becomes documentation chapter)
+- `<tests>`: Group of related tests with shared prose
+- `<prose>`: Documentation text explaining the feature
+- `<test>`: Individual test with `<input>` and `<expect>`
+
+**Current test files:**
+- `tests/expressions.sgm` - Literals, operations, bindings
+- `tests/definitions.sgm` - Structures, unions, namespaces
+- `tests/choose.sgm` - Pattern matching
+
+**Benefits of literate testing:**
+- Documentation IS the specification - no drift between docs and behavior
+- Tests serve as executable examples in documentation
+- Prose explains the "why", tests prove the "what"
+- Adding a test automatically updates documentation
 
 **Codegen script:**
 ```bash
-./mkl.sh   # Regenerates Parser.cpp, Tests.cpp, and docs/*.xml
+./mkl.sh   # Regenerates Parser.cpp, Syntax.h, Tests.cpp, docs/*.xml
 ```
 
 This runs `openjade -G -t sgml -d codegen/scaly.dsl scaly.sgm`
@@ -822,8 +856,13 @@ brew install llvm@18 cmake openjade
 
 ```
 .
-├── scaly.sgm             # Unified language specification (grammar + tests + docs)
-├── language.dtd          # DTD governing SGML structure
+├── scaly.sgm             # Grammar specification (generates Parser.cpp, Syntax.h)
+├── grammar.dtd           # DTD for grammar structure
+├── test.dtd              # DTD for literate test structure
+├── tests/                # Literate tests (documentation + executable tests)
+│   ├── expressions.sgm   # Literals, operations, bindings
+│   ├── definitions.sgm   # Structures, unions, namespaces
+│   └── choose.sgm        # Pattern matching
 ├── build.sh              # Main build script (codegen + compile)
 ├── mkl.sh                # Codegen only (generates Parser.cpp, Tests.cpp, docs/)
 ├── stdlib.scaly          # Standard library (operators, functions)
