@@ -208,37 +208,36 @@ Scaly has a built-in package system with no external tooling or configuration fi
 
 **Version in directory structure:**
 
-Package versions are encoded in the filesystem, not in metadata files:
+Package versions are encoded in the filesystem - the directory path is the single source of truth:
 
 ```
 packages/
-└── scaly-json/
-    ├── 2.0.1/
-    │   ├── scaly-json.scaly
-    │   └── scaly-json/
-    │       ├── lexer.scaly
-    │       └── parser.scaly
-    └── 3.0.0/
-        ├── scaly-json.scaly
-        └── scaly-json/
-            └── ...
+└── scaly/
+    └── 0.1.0/
+        ├── scaly.scaly           ; entry file, just contains definitions
+        └── scaly/
+            ├── memory.scaly      ; define memory { module Page ... }
+            └── memory/
+                ├── Page.scaly
+                ├── PageNode.scaly
+                ├── PageList.scaly
+                └── PageListIterator.scaly
 ```
 
 This enables simple distribution - just copy directories.
 
-**Package version declaration:**
+**No version in code:**
 
-Packages declare their version in the root file using `define`:
+The package version comes entirely from the filesystem path. The entry file contains only definitions:
 
 ```scaly
-; scaly-json.scaly
-define scaly-json 2.0.1 {
-    module lexer
-    module parser
+; packages/scaly/0.1.0/scaly.scaly
+define scaly {
+    module memory
 }
 ```
 
-The compiler verifies the declared version matches the directory structure. If `packages/scaly-json/2.0.1/` contains a package declaring version `3.0.0`, that's an error. This catches copy/paste mistakes when setting up dependencies.
+No `define packagename version` syntax - the version is the directory name. One source of truth.
 
 **Publishing packages:**
 
@@ -247,8 +246,8 @@ Publishing is simple - just host your package directory somewhere:
 ```bash
 # Create a release on GitHub, or host a tarball
 # Consumers download and extract:
-curl -L https://github.com/user/scaly-json/archive/2.0.1.tar.gz | tar xz
-mv scaly-json-2.0.1 packages/scaly-json/2.0.1/
+curl -L https://github.com/user/scaly/archive/0.1.0.tar.gz | tar xz
+mv scaly-0.1.0 packages/scaly/0.1.0/
 ```
 
 No special tooling required. A central registry on scaly.io may be added later for discovery as the ecosystem grows.
@@ -265,27 +264,27 @@ module lexer       ; loads ./lexer.scaly
 
 **`package`** - Declare dependency on external package:
 ```scaly
-package scaly-json 2.0.1   ; loads from package search path
+package scaly 0.1.0   ; loads from package search path
 ```
 
 **`use`** - Shorthand for fully qualified paths (naming convenience only):
 ```scaly
-use scaly-json.JsonValue   ; now can write JsonValue instead of scaly-json.JsonValue
-use containers.Vector      ; now can write Vector instead of containers.Vector
+use scaly.memory.Page   ; now can write Page instead of scaly.memory.Page
+use scaly.memory.PageList
 ```
 
 All three can appear in any source file. The compiler collects `package` declarations during source tree traversal. If multiple files declare the same package with the same version, they're deduplicated. Conflicting versions of the same package within one package are an error.
 
 **Example usage:**
 ```scaly
-; my-package/parser.scaly
-package scaly-json 2.0.1
+; my-app/main.scaly
+package scaly 0.1.0
 
-use scaly-json.JsonValue
-use scaly-json.parse
+use scaly.memory.Page
 
-function transform(input: String) returns JsonValue {
-    parse(input)
+function main() {
+    let page Page.allocate_page()
+    ; ...
 }
 ```
 
@@ -297,10 +296,10 @@ The compiler searches for packages in this order:
 2. `/usr/share/scaly/packages/` - System-wide (stdlib, OS-installed packages)
 3. Paths from `-I` flags (in order given)
 
-For `package scaly-json 2.0.1`, the compiler looks for:
-- `./packages/scaly-json/2.0.1/scaly-json.scaly`
-- `/usr/share/scaly/packages/scaly-json/2.0.1/scaly-json.scaly`
-- `<-I path>/scaly-json/2.0.1/scaly-json.scaly`
+For `package scaly 0.1.0`, the compiler looks for:
+- `./packages/scaly/0.1.0/scaly.scaly`
+- `/usr/share/scaly/packages/scaly/0.1.0/scaly.scaly`
+- `<-I path>/scaly/0.1.0/scaly.scaly`
 
 Additional paths (organization shared, personal convenience) are added via `-I`:
 
@@ -315,17 +314,17 @@ Dependencies are **not transitively visible**. Each package must explicitly decl
 ```
 my-app
 └── lib-a 1.0
-    └── scaly-json 2.0.1
+    └── scaly 0.1.0
 ```
 
-In this example, my-app can only see lib-a's API. Even though lib-a uses scaly-json internally, my-app cannot access `scaly-json.JsonValue` unless it explicitly declares `package scaly-json 2.0.1`.
+In this example, my-app can only see lib-a's API. Even though lib-a uses scaly internally, my-app cannot access `scaly.memory.Page` unless it explicitly declares `package scaly 0.1.0`.
 
 The compiler still compiles all transitive dependencies (required for monomorphization), but namespace visibility is explicit. This ensures:
 - Clean encapsulation - dependencies are implementation details
 - No accidental coupling to transitive dependencies
 - Explicit, reproducible dependency graphs
 
-If lib-a exposes scaly-json types in its public API, it should document that consumers need to also declare the dependency.
+If lib-a exposes scaly types in its public API, it should document that consumers need to also declare the dependency.
 
 **Circular dependencies:**
 
@@ -384,25 +383,25 @@ When dependencies require different versions of the same package:
 
 ```
 your-app
-├── lib-a 1.0 → uses scaly-json 2.0.1
-└── lib-b 1.0 → uses scaly-json 3.0.0
+├── lib-a 1.0 → uses json 2.0.1
+└── lib-b 1.0 → uses json 3.0.0
 ```
 
-Both versions are compiled into the final binary. Each dependent sees only its expected version. Types from different versions are distinct (`scaly_json_2_0_1::Value` ≠ `scaly_json_3_0_0::Value`).
+Both versions are compiled into the final binary. Each dependent sees only its expected version. Types from different versions are distinct (`json_2_0_1::Value` ≠ `json_3_0_0::Value`).
 
 **Version in mangled names (Itanium compatible):**
 
 Package version is encoded into the namespace name using underscores:
 
 ```
-Package: scaly-json version 2.0.1
+Package: json version 2.0.1
 Function: parse(input: String)
 
-Namespace: scaly_json_2_0_1
-Mangled:   _ZN15scaly_json_2_0_15parseE...
+Namespace: json_2_0_1
+Mangled:   _ZN10json_2_0_15parseE...
 ```
 
-This is 100% Itanium ABI compatible - `c++filt` sees a namespace named `scaly_json_2_0_1`. No ABI extensions required.
+This is 100% Itanium ABI compatible - `c++filt` sees a namespace named `json_2_0_1`. No ABI extensions required.
 
 **Why exact versions:**
 - Reproducible builds by default
