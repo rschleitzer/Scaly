@@ -47,6 +47,10 @@ private:
     // Scope stack for local variables
     std::vector<std::map<std::string, PlannedType>> Scopes;
 
+    // Current structure being planned (for property access in methods)
+    std::string CurrentStructureName;
+    std::vector<PlannedProperty>* CurrentStructureProperties = nullptr;
+
     // ========== Type Inference State ==========
 
     // Current plan being built (for constraint collection)

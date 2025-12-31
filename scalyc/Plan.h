@@ -405,7 +405,8 @@ struct PlannedGlobal {
 
 struct PlannedStructure {
     Span Loc;
-    bool Private;
+    bool Private = false;
+    bool IsGenericPlaceholder = false;  // True for uninstantiated generic types
     std::string Name;
     std::string MangledName;
     std::vector<PlannedProperty> Properties;
@@ -413,8 +414,8 @@ struct PlannedStructure {
     std::shared_ptr<PlannedDeInitializer> Deinitializer;
     std::vector<PlannedFunction> Methods;
     std::vector<PlannedOperator> Operators;
-    size_t Size;       // Total size in bytes
-    size_t Alignment;  // Required alignment
+    size_t Size = 0;       // Total size in bytes
+    size_t Alignment = 0;  // Required alignment
     std::shared_ptr<InstantiationInfo> Origin;
 };
 
