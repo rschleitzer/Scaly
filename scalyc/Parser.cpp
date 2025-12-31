@@ -360,9 +360,10 @@ llvm::Expected<DefinitionSyntax> Parser::parseDefinition() {
     if (!Lex.parseKeyword("define"))
         return different();
 
-    llvm::StringRef Name = Lex.parseIdentifier();
+    llvm::StringRef Name = Lex.peekIdentifier();
     if (Name.empty() || Keywords.count(Name))
         return invalid(Start, Lex.position(), "expected identifier");
+    Lex.parseIdentifier();  // Consume the identifier
 
     GenericParametersSyntax* Parameters = nullptr;
     {
@@ -432,9 +433,10 @@ llvm::Expected<std::vector<GenericParameterSyntax>*> Parser::parseGenericParamet
 llvm::Expected<GenericParameterSyntax> Parser::parseGenericParameter() {
     size_t Start = Lex.previousPosition();
 
-    llvm::StringRef Name = Lex.parseIdentifier();
+    llvm::StringRef Name = Lex.peekIdentifier();
     if (Name.empty() || Keywords.count(Name))
         return different();
+    Lex.parseIdentifier();  // Consume the identifier
 
     std::vector<AttributeSyntax>* Attributes = nullptr;
     {
@@ -654,9 +656,10 @@ llvm::Expected<std::vector<VariantSyntax>*> Parser::parseVariantList() {
 llvm::Expected<VariantSyntax> Parser::parseVariant() {
     size_t Start = Lex.previousPosition();
 
-    llvm::StringRef Name = Lex.parseIdentifier();
+    llvm::StringRef Name = Lex.peekIdentifier();
     if (Name.empty() || Keywords.count(Name))
         return different();
+    Lex.parseIdentifier();  // Consume the identifier
 
     std::vector<AttributeSyntax>* Attributes = nullptr;
     {
@@ -877,9 +880,10 @@ llvm::Expected<std::vector<ItemSyntax>*> Parser::parseItemList() {
 llvm::Expected<ItemSyntax> Parser::parseItem() {
     size_t Start = Lex.previousPosition();
 
-    llvm::StringRef Name = Lex.parseIdentifier();
+    llvm::StringRef Name = Lex.peekIdentifier();
     if (Name.empty() || Keywords.count(Name))
         return different();
+    Lex.parseIdentifier();  // Consume the identifier
 
     TypeAnnotationSyntax* Annotation = nullptr;
     {
@@ -1272,9 +1276,10 @@ llvm::Expected<TargetSyntax> Parser::parseTarget() {
 llvm::Expected<NamedSyntax> Parser::parseNamed() {
     size_t Start = Lex.previousPosition();
 
-    llvm::StringRef Name = Lex.parseIdentifier();
+    llvm::StringRef Name = Lex.peekIdentifier();
     if (Name.empty() || Keywords.count(Name))
         return different();
+    Lex.parseIdentifier();  // Consume the identifier
 
     auto RoutineOrErr = parseRoutine();
     if (!RoutineOrErr)
@@ -1483,9 +1488,10 @@ llvm::Expected<MacroSyntax> Parser::parseMacro() {
     if (!Lex.parseKeyword("macro"))
         return different();
 
-    llvm::StringRef Name = Lex.parseIdentifier();
+    llvm::StringRef Name = Lex.peekIdentifier();
     if (Name.empty() || Keywords.count(Name))
         return invalid(Start, Lex.position(), "expected identifier");
+    Lex.parseIdentifier();  // Consume the identifier
 
     auto ModelOrErr = parseModel();
     if (!ModelOrErr)
@@ -1574,9 +1580,10 @@ llvm::Expected<ModuleSyntax> Parser::parseModule() {
     if (!Lex.parseKeyword("module"))
         return different();
 
-    llvm::StringRef Name = Lex.parseIdentifier();
+    llvm::StringRef Name = Lex.peekIdentifier();
     if (Name.empty() || Keywords.count(Name))
         return invalid(Start, Lex.position(), "expected identifier");
+    Lex.parseIdentifier();  // Consume the identifier
 
     Lex.parseColon();
 
@@ -2377,9 +2384,10 @@ llvm::Expected<WhenSyntax> Parser::parseWhen() {
     if (!Lex.parseKeyword("when"))
         return different();
 
-    llvm::StringRef Name = Lex.parseIdentifier();
+    llvm::StringRef Name = Lex.peekIdentifier();
     if (Name.empty() || Keywords.count(Name))
         return invalid(Start, Lex.position(), "expected identifier");
+    Lex.parseIdentifier();  // Consume the identifier
 
     if (!Lex.parseColon())
         return invalid(Start, Lex.position(), "expected colon or newline");
@@ -2517,9 +2525,10 @@ llvm::Expected<MutableSyntax> Parser::parseMutable() {
 llvm::Expected<BindingSyntax> Parser::parseBinding() {
     size_t Start = Lex.previousPosition();
 
-    llvm::StringRef Name = Lex.parseIdentifier();
+    llvm::StringRef Name = Lex.peekIdentifier();
     if (Name.empty() || Keywords.count(Name))
         return different();
+    Lex.parseIdentifier();  // Consume the identifier
 
     BindingAnnotationSyntax* Annotation = nullptr;
     {
@@ -2710,9 +2719,10 @@ llvm::Expected<std::vector<PropertySyntax>*> Parser::parsePropertyList() {
 llvm::Expected<PropertySyntax> Parser::parseProperty() {
     size_t Start = Lex.previousPosition();
 
-    llvm::StringRef Name = Lex.parseIdentifier();
+    llvm::StringRef Name = Lex.peekIdentifier();
     if (Name.empty() || Keywords.count(Name))
         return different();
+    Lex.parseIdentifier();  // Consume the identifier
 
     auto AnnotationOrErr = parseTypeAnnotation();
     if (!AnnotationOrErr)
@@ -2823,9 +2833,10 @@ llvm::Expected<LoopSyntax> Parser::parseLoop() {
     if (!Lex.parseKeyword("loop"))
         return different();
 
-    llvm::StringRef Name = Lex.parseIdentifier();
+    llvm::StringRef Name = Lex.peekIdentifier();
     if (Name.empty() || Keywords.count(Name))
         return invalid(Start, Lex.position(), "expected identifier");
+    Lex.parseIdentifier();  // Consume the identifier
 
     size_t End = Lex.position();
 
@@ -2902,9 +2913,10 @@ llvm::Expected<ForSyntax> Parser::parseFor() {
     if (!Lex.parseKeyword("for"))
         return different();
 
-    llvm::StringRef Variable = Lex.parseIdentifier();
+    llvm::StringRef Variable = Lex.peekIdentifier();
     if (Variable.empty() || Keywords.count(Variable))
         return invalid(Start, Lex.position(), "expected identifier");
+    Lex.parseIdentifier();  // Consume the identifier
 
     TypeAnnotationSyntax* Annotation = nullptr;
     {
@@ -2952,9 +2964,10 @@ llvm::Expected<LabelSyntax> Parser::parseLabel() {
     if (!Lex.parseKeyword("label"))
         return different();
 
-    llvm::StringRef Name = Lex.parseIdentifier();
+    llvm::StringRef Name = Lex.peekIdentifier();
     if (Name.empty() || Keywords.count(Name))
         return invalid(Start, Lex.position(), "expected identifier");
+    Lex.parseIdentifier();  // Consume the identifier
 
     Lex.parseColon();
 
@@ -3156,9 +3169,10 @@ llvm::Expected<TypeSyntax> Parser::parseType() {
 llvm::Expected<NameSyntax> Parser::parseName() {
     size_t Start = Lex.previousPosition();
 
-    llvm::StringRef Name = Lex.parseIdentifier();
+    llvm::StringRef Name = Lex.peekIdentifier();
     if (Name.empty() || Keywords.count(Name))
         return different();
+    Lex.parseIdentifier();  // Consume the identifier
 
     std::vector<ExtensionSyntax>* Extensions = nullptr;
     {
@@ -3195,9 +3209,10 @@ llvm::Expected<ExtensionSyntax> Parser::parseExtension() {
     if (!Lex.parsePunctuation('.'))
         return different();
 
-    llvm::StringRef Name = Lex.parseIdentifier();
+    llvm::StringRef Name = Lex.peekIdentifier();
     if (Name.empty() || Keywords.count(Name))
         return invalid(Start, Lex.position(), "expected identifier");
+    Lex.parseIdentifier();  // Consume the identifier
 
     size_t End = Lex.position();
 
@@ -3264,9 +3279,10 @@ llvm::Expected<ReferenceSyntax> Parser::parseReference() {
     if (!Lex.parsePunctuation('^'))
         return different();
 
-    llvm::StringRef Location = Lex.parseIdentifier();
+    llvm::StringRef Location = Lex.peekIdentifier();
     if (Location.empty() || Keywords.count(Location))
         return invalid(Start, Lex.position(), "expected identifier");
+    Lex.parseIdentifier();  // Consume the identifier
 
     size_t End = Lex.position();
 
