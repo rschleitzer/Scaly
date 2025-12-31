@@ -459,21 +459,22 @@ std::vector<const Function*> Planner::lookupFunction(llvm::StringRef Name) {
     return Result;
 }
 
-const Operator* Planner::lookupOperator(llvm::StringRef Name) {
-    // Check operator cache
+std::vector<const Operator*> Planner::lookupOperator(llvm::StringRef Name) {
+    // Check operator cache first
     auto It = Operators.find(Name.str());
     if (It != Operators.end()) {
         return It->second;
     }
 
-    // Search module stack for operators
+    // Collect all operators with this name from module stack
+    std::vector<const Operator*> Result;
+
     for (auto ModIt = ModuleStack.rbegin(); ModIt != ModuleStack.rend(); ++ModIt) {
         const Module* Mod = *ModIt;
         for (const auto& Member : Mod->Members) {
             if (auto* Op = std::get_if<Operator>(&Member)) {
                 if (Op->Name == Name) {
-                    Operators[Name.str()] = Op;
-                    return Op;
+                    Result.push_back(Op);
                 }
             }
         }
@@ -483,15 +484,16 @@ const Operator* Planner::lookupOperator(llvm::StringRef Name) {
             for (const auto& Member : SubMod.Members) {
                 if (auto* Op = std::get_if<Operator>(&Member)) {
                     if (Op->Name == Name) {
-                        Operators[Name.str()] = Op;
-                        return Op;
+                        Result.push_back(Op);
                     }
                 }
             }
         }
     }
 
-    return nullptr;
+    // Cache the result
+    Operators[Name.str()] = Result;
+    return Result;
 }
 
 bool Planner::isFunction(llvm::StringRef Name) {
@@ -562,10 +564,85 @@ llvm::Expected<PlannedType> Planner::resolveOperatorCall(
     llvm::StringRef Name, Span Loc,
     const PlannedType &Left, const PlannedType &Right) {
 
-    // Look up the operator
-    const Operator* Op = lookupOperator(Name);
-    if (!Op) {
-        // Built-in operators for primitive types
+    // First, check if the left type is a structure with this operator
+    auto StructIt = InstantiatedStructures.find(Left.Name);
+    if (StructIt != InstantiatedStructures.end()) {
+        for (const auto &Op : StructIt->second.Operators) {
+            if (Op.Name == Name) {
+                // TODO: Check parameter type matching
+                if (Op.Returns) {
+                    return *Op.Returns;
+                }
+                PlannedType VoidType;
+                VoidType.Loc = Loc;
+                VoidType.Name = "void";
+                VoidType.MangledName = "v";
+                return VoidType;
+            }
+        }
+    }
+
+    // Check unions as well
+    auto UnionIt = InstantiatedUnions.find(Left.Name);
+    if (UnionIt != InstantiatedUnions.end()) {
+        for (const auto &Op : UnionIt->second.Operators) {
+            if (Op.Name == Name) {
+                if (Op.Returns) {
+                    return *Op.Returns;
+                }
+                PlannedType VoidType;
+                VoidType.Loc = Loc;
+                VoidType.Name = "void";
+                VoidType.MangledName = "v";
+                return VoidType;
+            }
+        }
+    }
+
+    // Look up module-level operators (all overloads)
+    std::vector<const Operator*> OpCandidates = lookupOperator(Name);
+    for (const Operator* Op : OpCandidates) {
+        // Check parameter type matching
+        if (Op->Input.size() >= 2 && Op->Input[0].ItemType && Op->Input[1].ItemType) {
+            // Resolve the operator's parameter types
+            auto LeftParamResult = resolveType(*Op->Input[0].ItemType, Loc);
+            if (!LeftParamResult) {
+                // Skip if we can't resolve the type
+                llvm::consumeError(LeftParamResult.takeError());
+                continue;
+            }
+            auto RightParamResult = resolveType(*Op->Input[1].ItemType, Loc);
+            if (!RightParamResult) {
+                llvm::consumeError(RightParamResult.takeError());
+                continue;
+            }
+
+            // Check if parameter types match
+            if (typesEqual(*LeftParamResult, Left) &&
+                typesEqual(*RightParamResult, Right)) {
+                if (Op->Returns) {
+                    return resolveType(*Op->Returns, Loc);
+                }
+                // No return type = void (unusual for operators)
+                PlannedType VoidType;
+                VoidType.Loc = Loc;
+                VoidType.Name = "void";
+                VoidType.MangledName = "v";
+                return VoidType;
+            }
+        }
+    }
+
+    // Built-in operators for primitive types
+    // Note: The full Scaly stdlib uses wrapper types (Sum, Product, etc.)
+    // for operator precedence. This is a simplified built-in fallback.
+
+    // Arithmetic operators on numeric types
+    bool IsArithmetic = (Name == "+" || Name == "-" || Name == "*" ||
+                         Name == "/" || Name == "div" || Name == "mod");
+
+    if (IsArithmetic) {
+        // int op int -> int
         if (Left.Name == "int" && Right.Name == "int") {
             PlannedType Result;
             Result.Loc = Loc;
@@ -573,6 +650,7 @@ llvm::Expected<PlannedType> Planner::resolveOperatorCall(
             Result.MangledName = "i";
             return Result;
         }
+        // float op float -> float
         if (Left.Name == "float" && Right.Name == "float") {
             PlannedType Result;
             Result.Loc = Loc;
@@ -580,6 +658,7 @@ llvm::Expected<PlannedType> Planner::resolveOperatorCall(
             Result.MangledName = "f";
             return Result;
         }
+        // double op double -> double
         if (Left.Name == "double" && Right.Name == "double") {
             PlannedType Result;
             Result.Loc = Loc;
@@ -587,6 +666,7 @@ llvm::Expected<PlannedType> Planner::resolveOperatorCall(
             Result.MangledName = "d";
             return Result;
         }
+        // Mixed int/float -> float
         if ((Left.Name == "int" && Right.Name == "float") ||
             (Left.Name == "float" && Right.Name == "int")) {
             PlannedType Result;
@@ -595,34 +675,68 @@ llvm::Expected<PlannedType> Planner::resolveOperatorCall(
             Result.MangledName = "f";
             return Result;
         }
+        // Mixed with double -> double
+        if (Left.Name == "double" || Right.Name == "double") {
+            PlannedType Result;
+            Result.Loc = Loc;
+            Result.Name = "double";
+            Result.MangledName = "d";
+            return Result;
+        }
+    }
 
-        // Comparison operators return bool
-        if (Name == "==" || Name == "!=" || Name == "<" ||
-            Name == ">" || Name == "<=" || Name == ">=") {
+    // Comparison operators return bool
+    bool IsComparison = (Name == "=" || Name == "==" || Name == "<>" ||
+                         Name == "!=" || Name == "<" || Name == ">" ||
+                         Name == "<=" || Name == ">=");
+    if (IsComparison) {
+        // Allow comparison of same numeric types
+        if ((Left.Name == "int" || Left.Name == "float" || Left.Name == "double" ||
+             Left.Name == "bool" || Left.Name == "char") &&
+            (Right.Name == "int" || Right.Name == "float" || Right.Name == "double" ||
+             Right.Name == "bool" || Right.Name == "char")) {
             PlannedType Result;
             Result.Loc = Loc;
             Result.Name = "bool";
             Result.MangledName = "b";
             return Result;
         }
-
-        // Unknown operator
-        return makePlannerNotImplementedError(File, Loc,
-            ("operator not found: " + Name + " for types " +
-             Left.Name + " and " + Right.Name).str());
     }
 
-    // Return the operator's return type
-    if (Op->Returns) {
-        return resolveType(*Op->Returns, Loc);
+    // Boolean operators
+    bool IsBoolean = (Name == "and" || Name == "or" || Name == "&&" || Name == "||");
+    if (IsBoolean && Left.Name == "bool" && Right.Name == "bool") {
+        PlannedType Result;
+        Result.Loc = Loc;
+        Result.Name = "bool";
+        Result.MangledName = "b";
+        return Result;
     }
 
-    // No return type = void (unusual for operators)
-    PlannedType VoidType;
-    VoidType.Loc = Loc;
-    VoidType.Name = "void";
-    VoidType.MangledName = "v";
-    return VoidType;
+    // Bitwise operators on integers
+    bool IsBitwise = (Name == "&" || Name == "|" || Name == "^" ||
+                      Name == "<<" || Name == ">>");
+    if (IsBitwise && Left.Name == "int" && Right.Name == "int") {
+        PlannedType Result;
+        Result.Loc = Loc;
+        Result.Name = "int";
+        Result.MangledName = "i";
+        return Result;
+    }
+
+    // String concatenation
+    if (Name == "+" && Left.Name == "String" && Right.Name == "String") {
+        PlannedType Result;
+        Result.Loc = Loc;
+        Result.Name = "String";
+        Result.MangledName = "6String";
+        return Result;
+    }
+
+    // Unknown operator
+    return makePlannerNotImplementedError(File, Loc,
+        ("operator not found: " + Name + " for types " +
+         Left.Name + " and " + Right.Name).str());
 }
 
 std::optional<PlannedType> Planner::getPointerElementType(const PlannedType &PtrType) {
@@ -2808,8 +2922,8 @@ llvm::Expected<PlannedModule> Planner::planModule(const Module &Mod) {
             }
             Result.Operators.push_back(std::move(*PlannedOp));
 
-            // Register in symbol table
-            Operators[Op->Name] = Op;
+            // Register in symbol table (supports overloading)
+            Operators[Op->Name].push_back(Op);
         }
     }
 
