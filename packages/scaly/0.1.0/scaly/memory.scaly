@@ -1,0 +1,6 @@
+define memory {
+    module PageNode
+    module PageList
+    module PageListIterator
+    module Page
+}

@@ -1,0 +1,5 @@
+define PageNode
+(
+    page: pointer[Page]
+    next: pointer[PageNode]
+)

@@ -1814,7 +1814,7 @@ llvm::Expected<PlannedNamespace> Planner::planNamespace(const Namespace &NS,
     // This allows functions in the namespace to find concepts from sub-modules
     Module PseudoModule;
     PseudoModule.Name = Name.str();
-    PseudoModule.Modules = NS.Modules;
+    // Note: Don't copy NS.Modules - sub-modules push themselves onto stack during planning
     // Copy member concepts into a format compatible with Module.Members
     for (const auto &Member : NS.Members) {
         if (auto *Conc = std::get_if<Concept>(&Member)) {
@@ -1959,15 +1959,15 @@ llvm::Expected<PlannedModule> Planner::planModule(const Module &Mod) {
 
     // Plan members (Module.Members is vector<Member> where Member is variant)
     for (const auto &Member : Mod.Members) {
-        if (auto *Packages = std::get_if<std::vector<Module>>(&Member)) {
-            // Package - plan sub-modules
-            for (const auto &SubMod : *Packages) {
-                auto PlannedSubMod = planModule(SubMod);
-                if (!PlannedSubMod) {
+        if (auto *Pkg = std::get_if<Package>(&Member)) {
+            // Package - plan the package's root module if loaded
+            if (Pkg->Root) {
+                auto PlannedPkgMod = planModule(*Pkg->Root);
+                if (!PlannedPkgMod) {
                     ModuleStack.pop_back();
-                    return PlannedSubMod.takeError();
+                    return PlannedPkgMod.takeError();
                 }
-                Result.Modules.push_back(std::move(*PlannedSubMod));
+                Result.Modules.push_back(std::move(*PlannedPkgMod));
             }
         } else if (auto *Conc = std::get_if<Concept>(&Member)) {
             // Register in symbol table first
