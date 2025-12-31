@@ -959,6 +959,27 @@ llvm::Expected<GenericParameter> Modeler::handleGenericParameter(
     };
 }
 
+// Extract generic parameters from GenericArgumentsSyntax (for routines)
+// In routines, generic params are written as types: function foo[T](x: T)
+// We extract the type name as the parameter name
+std::vector<GenericParameter> Modeler::extractGenericParams(
+    const GenericArgumentsSyntax &Syntax) {
+    std::vector<GenericParameter> Params;
+    if (Syntax.generics) {
+        for (const auto &GA : *Syntax.generics) {
+            // Extract the type name as the parameter name
+            // For simple generic params like [T], name.name is a single identifier
+            if (!GA.type.name.name.empty()) {
+                GenericParameter Param;
+                Param.Loc = Span{GA.Start, GA.End};
+                Param.Name = std::string(GA.type.name.name);
+                Params.push_back(std::move(Param));
+            }
+        }
+    }
+    return Params;
+}
+
 // Initializer handling
 
 llvm::Expected<Initializer> Modeler::handleInitializer(
@@ -1007,6 +1028,12 @@ llvm::Expected<Function> Modeler::buildFunction(size_t Start, size_t End,
             return makeNotImplementedError(File, "Non-Symbol Function",
                                            Span{Start, End});
         } else if constexpr (std::is_same_v<TT, NamedSyntax>) {
+            // Extract generic parameters if present
+            std::vector<GenericParameter> GenericParams;
+            if (T.routine.generics) {
+                GenericParams = extractGenericParams(*T.routine.generics);
+            }
+
             std::vector<Item> Input;
             if (T.routine.parameters) {
                 auto Params = handleParameterSet(*T.routine.parameters);
@@ -1055,6 +1082,7 @@ llvm::Expected<Function> Modeler::buildFunction(size_t Start, size_t End,
                 Private,
                 Pure,
                 std::string(T.name),
+                std::move(GenericParams),
                 std::move(Input),
                 std::move(Returns),
                 std::move(Throws),
@@ -1075,6 +1103,12 @@ llvm::Expected<Operator> Modeler::handleOperator(const OperatorSyntax &Syntax,
 
         if constexpr (std::is_same_v<TT, RoutineSyntax>) {
             // Index operator []
+            // Extract generic parameters if present
+            std::vector<GenericParameter> GenericParams;
+            if (T.generics) {
+                GenericParams = extractGenericParams(*T.generics);
+            }
+
             std::vector<Item> Input;
             if (T.parameters) {
                 auto Params = handleParameterSet(*T.parameters);
@@ -1120,12 +1154,19 @@ llvm::Expected<Operator> Modeler::handleOperator(const OperatorSyntax &Syntax,
                 Span{Syntax.Start, Syntax.End},
                 Private,
                 "[]",
+                std::move(GenericParams),
                 std::move(Input),
                 std::move(Returns),
                 std::move(Throws),
                 std::move(Impl)
             };
         } else if constexpr (std::is_same_v<TT, NamedSyntax>) {
+            // Extract generic parameters if present
+            std::vector<GenericParameter> GenericParams;
+            if (T.routine.generics) {
+                GenericParams = extractGenericParams(*T.routine.generics);
+            }
+
             std::vector<Item> Input;
             if (T.routine.parameters) {
                 auto Params = handleParameterSet(*T.routine.parameters);
@@ -1171,6 +1212,7 @@ llvm::Expected<Operator> Modeler::handleOperator(const OperatorSyntax &Syntax,
                 Span{Syntax.Start, Syntax.End},
                 Private,
                 std::string(T.name),
+                std::move(GenericParams),
                 std::move(Input),
                 std::move(Returns),
                 std::move(Throws),

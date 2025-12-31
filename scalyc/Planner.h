@@ -47,6 +47,23 @@ private:
     // Scope stack for local variables
     std::vector<std::map<std::string, PlannedType>> Scopes;
 
+    // ========== Type Inference State ==========
+
+    // Current plan being built (for constraint collection)
+    Plan* CurrentPlan = nullptr;
+
+    // Create a fresh type variable
+    PlannedType freshTypeVar(const std::string &DebugName = "");
+
+    // Add an equality constraint
+    void addConstraint(const PlannedType &Left, const PlannedType &Right, Span Loc);
+
+    // Solve collected constraints and apply solution
+    llvm::Expected<Substitution> solveAndApply();
+
+    // Apply substitution to a planned type (resolving type variables)
+    PlannedType applyCurrentSubstitution(const PlannedType &Type);
+
     // ========== Name Mangling (Itanium ABI inspired) ==========
 
     // Mangle a type name
@@ -85,6 +102,18 @@ private:
     llvm::Expected<PlannedType> instantiateGeneric(const Concept &Generic,
                                                     const std::vector<PlannedType> &Args,
                                                     Span InstantiationLoc);
+
+    // Instantiate a generic function with concrete type arguments
+    llvm::Expected<PlannedFunction> instantiateGenericFunction(
+        const Function &Func,
+        const std::vector<PlannedType> &TypeArgs,
+        Span InstantiationLoc);
+
+    // Infer type arguments for a generic function call from argument types
+    llvm::Expected<std::vector<PlannedType>> inferTypeArguments(
+        const Function &Func,
+        const std::vector<PlannedType> &ArgTypes,
+        Span Loc);
 
     // ========== Expression/Statement Planning ==========
 
