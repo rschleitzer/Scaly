@@ -90,6 +90,7 @@ private:
     llvm::Expected<ModuleSyntax> parseModule();
     llvm::Expected<std::vector<PackageSyntax>*> parsePackageList();
     llvm::Expected<PackageSyntax> parsePackage();
+    llvm::Expected<VersionSyntax> parseVersion();
     llvm::Expected<InitializerSyntax> parseInitializer();
     llvm::Expected<std::vector<OperandSyntax>*> parseOperandList();
     llvm::Expected<OperandSyntax> parseOperand();

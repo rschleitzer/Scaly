@@ -1673,21 +1673,57 @@ llvm::Expected<Program> Modeler::buildProgram(const ProgramSyntax &Syntax) {
     llvm::sys::path::remove_filename(BasePath);
 
     // Load packages
-    std::vector<Module> Packages;
+    std::vector<Package> Packages;
     if (Syntax.file.packages) {
         for (const auto &Pkg : *Syntax.file.packages) {
-            // Package path: ../packagename
-            llvm::SmallString<256> PkgPath(BasePath);
-            llvm::sys::path::append(PkgPath, "..");
-
             // Get package name from NameSyntax
             std::string PkgName(Pkg.name.name);
-            llvm::sys::path::append(PkgPath, PkgName);
+
+            // Parse version if present
+            Version Ver{0, 0, 0};
+            if (Pkg.version) {
+                // majorMinor is "X.Y" (FloatingPointLiteral), patch is "Z" (IntegerLiteral)
+                std::visit([&Ver](const auto &Lit) {
+                    using T = std::decay_t<decltype(Lit)>;
+                    if constexpr (std::is_same_v<T, FloatingPointLiteral>) {
+                        llvm::StringRef MajorMinor(Lit.Value);
+                        auto DotPos = MajorMinor.find('.');
+                        if (DotPos != llvm::StringRef::npos) {
+                            MajorMinor.substr(0, DotPos).getAsInteger(10, Ver.Major);
+                            MajorMinor.substr(DotPos + 1).getAsInteger(10, Ver.Minor);
+                        }
+                    } else if constexpr (std::is_same_v<T, IntegerLiteral>) {
+                        // Handle case where majorMinor might be just an integer
+                        Lit.Value.getAsInteger(10, Ver.Major);
+                    }
+                }, Pkg.version->majorMinor);
+
+                std::visit([&Ver](const auto &Lit) {
+                    using T = std::decay_t<decltype(Lit)>;
+                    if constexpr (std::is_same_v<T, IntegerLiteral>) {
+                        Lit.Value.getAsInteger(10, Ver.Patch);
+                    }
+                }, Pkg.version->patch);
+            }
+
+            // Package path: packages/<name>/<version>/<name>.scaly (if versioned)
+            // Or fallback: ../<name> (legacy unversioned)
+            llvm::SmallString<256> PkgPath(BasePath);
+            if (Pkg.version) {
+                llvm::sys::path::append(PkgPath, "packages", PkgName, Ver.toString());
+            } else {
+                llvm::sys::path::append(PkgPath, "..", PkgName);
+            }
 
             auto PkgResult = buildReferencedModule(PkgPath.str(), PkgName, false);
             if (!PkgResult)
                 return PkgResult.takeError();
-            Packages.push_back(std::move(*PkgResult));
+
+            Packages.push_back(Package{
+                PkgName,
+                Ver,
+                std::make_unique<Module>(std::move(*PkgResult))
+            });
         }
     }
 

@@ -62,6 +62,7 @@ struct AttributeSyntax;
 struct ModelSyntax;
 struct ModuleSyntax;
 struct PackageSyntax;
+struct VersionSyntax;
 struct InitializerSyntax;
 struct OperandSyntax;
 struct MemberAccessSyntax;
@@ -494,10 +495,18 @@ struct InitializerSyntax {
     std::vector<OperandSyntax>* operands;
 };
 
+struct VersionSyntax {
+    size_t Start;
+    size_t End;
+    Literal majorMinor;
+    Literal patch;
+};
+
 struct PackageSyntax {
     size_t Start;
     size_t End;
     NameSyntax name;
+    VersionSyntax* version;
 };
 
 struct ModuleSyntax {

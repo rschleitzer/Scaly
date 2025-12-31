@@ -1613,11 +1613,42 @@ llvm::Expected<PackageSyntax> Parser::parsePackage() {
         return invalid(Start, Lex.position(), "expected Name");
     auto Name = std::move(*NameOrErr);
 
+    VersionSyntax* Version = nullptr;
+    {
+        auto ParseResult = parseVersion();
+        if (ParseResult)
+            Version = new VersionSyntax(std::move(*ParseResult));
+        else
+            llvm::consumeError(ParseResult.takeError());
+    }
+
     Lex.parseColon();
 
     size_t End = Lex.position();
 
-    return PackageSyntax{Start, End, Name};
+    return PackageSyntax{Start, End, Name, Version};
+
+}
+
+llvm::Expected<VersionSyntax> Parser::parseVersion() {
+    size_t Start = Lex.previousPosition();
+
+    auto MajorMinorOrErr = parseLiteralToken();
+    if (!MajorMinorOrErr)
+        return MajorMinorOrErr.takeError();
+    auto MajorMinor = std::move(*MajorMinorOrErr);
+
+    if (!Lex.parsePunctuation('.'))
+        return invalid(Start, Lex.position(), "expected '.'");
+
+    auto PatchOrErr = parseLiteralToken();
+    if (!PatchOrErr)
+        return PatchOrErr.takeError();
+    auto Patch = std::move(*PatchOrErr);
+
+    size_t End = Lex.position();
+
+    return VersionSyntax{Start, End, MajorMinor, Patch};
 
 }
 
