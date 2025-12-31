@@ -523,67 +523,88 @@ DSSSL/Scheme scripts that process scaly.sgm:
 - `docbook.scm` - Documentation generation logic
 - `helpers.scm` - Shared helper functions
 
+### Standard Library and Runtime (packages/)
+
+The `packages/` directory contains the **active development** of Scaly's standard library and runtime. This is where new Scaly code is written for the "real" compiler (LLVM-based).
+
+**Current structure:**
+```
+packages/
+└── scaly/
+    └── 0.1.0/
+        ├── scaly.scaly           # Package entry: define scaly { module memory }
+        └── scaly/
+            ├── memory.scaly      # Memory module definition
+            └── memory/
+                ├── Page.scaly
+                ├── PageNode.scaly
+                ├── PageList.scaly
+                └── PageListIterator.scaly
+```
+
+**Development approach:**
+- Build stdlib incrementally, testing each component with the LLVM-based compiler
+- Start with low-level memory primitives (Page-based allocation)
+- Add containers (Vector, List, HashMap) as the compiler supports them
+- Reference `retired/packages/scaly/` for design patterns and API shapes
+- Adapt retired code to work with the new compiler (no transpiler, direct LLVM)
+
+**Testing the active packages:**
+```bash
+# Test package planning
+./scalyc/build/scalyc -v --plan packages/scaly/0.1.0/scaly.scaly
+
+# Test individual modules
+./scalyc/build/scalyc -v --plan packages/scaly/0.1.0/scaly/memory/Page.scaly
+```
+
 ### Reference Implementation (Retired)
 
-The `retired/` directory contains previous implementation attempts for reference:
+The `retired/` directory contains the previous transpiler-based implementation. It is **not actively developed** but serves as a rich reference for:
 
-- **retired/packages/**: Original Scaly runtime, compiler (scalyc), and language server (scals)
+- **Structure and API design**: How modules, types, and functions should be organized
+- **Algorithm implementations**: Memory management, containers, JSON parsing, etc.
+- **Syntax patterns**: Real-world usage of Scaly language features
+
+**Contents:**
+- **retired/packages/scaly/**: Complete Scaly runtime with memory, containers, io, json, compiler
 - **retired/extension/**: VSCode extension for Scaly language support
 
-This retired code demonstrates:
-- Memory management with regions and pages (`rp`/`ep` parameters)
-- The transpiler converting `.scaly` to C++
+**Key differences from active development:**
+| Aspect | Retired (Transpiler) | Active (LLVM) |
+|--------|---------------------|---------------|
+| Target | C++ source code | LLVM IR directly |
+| Runtime | C++ stdlib | Native Scaly runtime |
+| Memory | `rp`/`ep` parameters | Automatic RBMM |
+| Testing | External C++ compiler | JIT execution |
 
-### Planner Testbed: retired/packages/scaly
+**Using retired code as reference:**
+When implementing new stdlib features, consult the retired code for:
+1. Type definitions and API signatures
+2. Algorithm logic (adapt, don't copy verbatim)
+3. Test case ideas and edge cases
+4. Module organization patterns
 
-The `retired/packages/scaly/` package serves as the primary testbed for the Planner. It's a comprehensive, real-world Scaly codebase that exercises the full compiler pipeline.
+### Compiler Testing with Retired Code
 
-**Package structure:**
+The `retired/packages/scaly/` package remains useful for testing the compiler's ability to parse and plan complex Scaly code.
+
+**Testing commands:**
+```bash
+# Test parser/modeler with complex retired code
+./scalyc/build/scalyc -v --plan retired/packages/scaly/scaly/containers/Node.scaly
+
+# Test full package parsing
+cd retired/packages/scaly && ../../../scalyc/build/scalyc -v --plan scaly.scaly
 ```
-retired/packages/scaly/
-├── scaly.scaly              # Root: defines scaly { module memory, containers, io, json, compiler }
-├── scaly/
-│   ├── memory.scaly         # Region-based memory: Page, Region, Object
-│   ├── containers.scaly     # Collections: Vector, List, Array, HashMap, HashSet + tests
-│   ├── io.scaly             # File, Directory, Console, Path
-│   ├── json/                # JSON lexer/parser
-│   └── compiler/            # Self-hosted compiler components
-│       ├── Model.scaly      # Semantic model types (unions, records)
-│       ├── Planner.scaly    # Planning logic (reference, not our C++ Planner)
-│       ├── Lexer.scaly      # Tokenization
-│       └── Parser.scaly     # Parsing (5500+ lines)
-```
 
-**What it tests:**
+**What the retired code exercises:**
 - Generic types: `Node[T]`, `Vector[T]`, `List[T]`, `HashMap[K,V]`
 - Self-referencing types: `pointer[Node[T]]` within `Node[T]`
 - Module system: `module` declarations, `use` statements
 - All syntax: `init`, `procedure`, `function`, `operator`, `choose`/`when`
 - Attributes: `@summary`, `@remarks` on types and parameters
 - Lifetime annotations: `$` (call), `^name` (reference)
-
-**Current status:**
-| Component | Status |
-|-----------|--------|
-| Parser | ✅ All files parse successfully |
-| Modeler | ✅ Builds module tree with concepts, functions |
-| Module loading | ✅ Resolves `module` declarations to .scaly files |
-| Planner (concepts) | ✅ Plans structures, unions, namespaces |
-| Planner (instantiation) | ⚠️ Works when types used in declarations |
-
-**Testing commands:**
-```bash
-# Test individual files
-./scalyc/build/scalyc -v --plan retired/packages/scaly/scaly/containers/Node.scaly
-
-# Test full package (from package directory)
-cd retired/packages/scaly && ../../../scalyc/build/scalyc -v --plan scaly.scaly
-```
-
-**Next steps for full package support:**
-1. Expression type resolution - resolve `Vector[int]$()` in function bodies
-2. Function body planning - plan expressions to trigger type instantiation
-3. Cross-module symbol lookup - resolve types from `use` statements
 
 ## Language Features
 
@@ -796,6 +817,12 @@ brew install llvm@18 cmake openjade
 │   ├── LexerTests.cpp
 │   ├── ParserTests.cpp
 │   └── build/            # CMake build directory
+├── packages/             # Active stdlib and runtime development
+│   └── scaly/
+│       └── 0.1.0/        # Scaly core package (memory, containers, etc.)
+│           ├── scaly.scaly
+│           └── scaly/
+│               └── memory/
 ├── codegen/              # DSSSL code generation scripts
 │   ├── scaly.dsl         # Main stylesheet
 │   ├── parser.scm        # Parser generation
@@ -803,5 +830,5 @@ brew install llvm@18 cmake openjade
 │   ├── docbook.scm       # Documentation generation
 │   └── helpers.scm       # Shared utilities
 ├── docs/                 # Generated DocBook (deployed to scaly.io)
-└── retired/              # Previous implementations (reference)
+└── retired/              # Previous implementations (reference only)
 ```

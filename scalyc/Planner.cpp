@@ -428,6 +428,171 @@ void Planner::computeUnionLayout(PlannedUnion &Union) {
 }
 
 // ============================================================================
+// Type Inference
+// ============================================================================
+
+PlannedType Planner::inferConstantType(const Constant &C) {
+    PlannedType Result;
+    Result.Life = UnspecifiedLifetime{};
+
+    std::visit([&Result](const auto &Val) {
+        using T = std::decay_t<decltype(Val)>;
+
+        if constexpr (std::is_same_v<T, BooleanConstant>) {
+            Result.Loc = Val.Loc;
+            Result.Name = "bool";
+            Result.MangledName = "b";
+        }
+        else if constexpr (std::is_same_v<T, IntegerConstant>) {
+            Result.Loc = Val.Loc;
+            Result.Name = "int";
+            Result.MangledName = "i";
+        }
+        else if constexpr (std::is_same_v<T, HexConstant>) {
+            Result.Loc = Val.Loc;
+            Result.Name = "uint";
+            Result.MangledName = "j";
+        }
+        else if constexpr (std::is_same_v<T, FloatingPointConstant>) {
+            Result.Loc = Val.Loc;
+            Result.Name = "float";
+            Result.MangledName = "f";
+        }
+        else if constexpr (std::is_same_v<T, StringConstant>) {
+            Result.Loc = Val.Loc;
+            Result.Name = "String";
+            Result.MangledName = "6String";
+        }
+        else if constexpr (std::is_same_v<T, CharacterConstant>) {
+            Result.Loc = Val.Loc;
+            Result.Name = "char";
+            Result.MangledName = "c";
+        }
+        else if constexpr (std::is_same_v<T, FragmentConstant>) {
+            Result.Loc = Val.Loc;
+            Result.Name = "String";  // Fragments are strings
+            Result.MangledName = "6String";
+        }
+    }, C);
+
+    return Result;
+}
+
+llvm::Expected<PlannedType> Planner::resolveNameOrVariable(const Type &T) {
+    // If it's a simple name (single element, no generics), check if it's a variable
+    if (T.Name.size() == 1 && (!T.Generics || T.Generics->empty())) {
+        auto LocalType = lookupLocal(T.Name[0]);
+        if (LocalType) {
+            // It's a local variable - return its type
+            PlannedType Result = *LocalType;
+            Result.Loc = T.Loc;  // Use the reference location
+            return Result;
+        }
+    }
+
+    // Not a variable, resolve as a type
+    return resolveType(T, T.Loc);
+}
+
+llvm::Expected<PlannedType> Planner::inferExpressionType(const PlannedExpression &Expr) {
+    return std::visit([this](const auto &E) -> llvm::Expected<PlannedType> {
+        using T = std::decay_t<decltype(E)>;
+
+        if constexpr (std::is_same_v<T, PlannedConstant>) {
+            return inferConstantType(E);
+        }
+        else if constexpr (std::is_same_v<T, PlannedType>) {
+            // Expression is a type - the "value" is the type itself
+            // This happens for type references or constructor calls
+            return E;
+        }
+        else if constexpr (std::is_same_v<T, PlannedTuple>) {
+            // TODO: Construct tuple type from components
+            PlannedType TupleType;
+            TupleType.Loc = E.Loc;
+            TupleType.Name = "Tuple";
+            TupleType.MangledName = "5Tuple";
+            return TupleType;
+        }
+        else if constexpr (std::is_same_v<T, PlannedMatrix>) {
+            // TODO: Infer element type from matrix contents
+            PlannedType ArrayType;
+            ArrayType.Loc = E.Loc;
+            ArrayType.Name = "Array";
+            ArrayType.MangledName = "5Array";
+            return ArrayType;
+        }
+        else if constexpr (std::is_same_v<T, PlannedBlock>) {
+            // Block type is the type of its last expression (if any)
+            // For now, return void
+            PlannedType VoidType;
+            VoidType.Loc = E.Loc;
+            VoidType.Name = "void";
+            VoidType.MangledName = "v";
+            return VoidType;
+        }
+        else if constexpr (std::is_same_v<T, PlannedIf>) {
+            // If type is the type of consequent/alternative
+            // For now, use a type variable for proper inference later
+            PlannedType IfType;
+            IfType.Loc = E.Loc;
+            IfType.Name = "void";  // TODO: Infer from branches
+            IfType.MangledName = "v";
+            return IfType;
+        }
+        else if constexpr (std::is_same_v<T, PlannedMatch> ||
+                          std::is_same_v<T, PlannedChoose>) {
+            // Match/Choose type from branches
+            PlannedType MatchType;
+            MatchType.Loc = E.Loc;
+            MatchType.Name = "void";  // TODO: Infer from branches
+            MatchType.MangledName = "v";
+            return MatchType;
+        }
+        else if constexpr (std::is_same_v<T, PlannedFor> ||
+                          std::is_same_v<T, PlannedWhile>) {
+            // Loops are void
+            PlannedType VoidType;
+            VoidType.Loc = E.Loc;
+            VoidType.Name = "void";
+            VoidType.MangledName = "v";
+            return VoidType;
+        }
+        else if constexpr (std::is_same_v<T, PlannedTry>) {
+            // Try type is the type of the bound value
+            PlannedType TryType;
+            TryType.Loc = E.Loc;
+            TryType.Name = "void";  // TODO: Infer from binding
+            TryType.MangledName = "v";
+            return TryType;
+        }
+        else if constexpr (std::is_same_v<T, PlannedSizeOf>) {
+            // sizeof always returns size (usize/uint)
+            PlannedType SizeType;
+            SizeType.Loc = E.Loc;
+            SizeType.Name = "size";
+            SizeType.MangledName = "m";  // size_t
+            return SizeType;
+        }
+        else if constexpr (std::is_same_v<T, PlannedIs>) {
+            // 'is' always returns bool
+            PlannedType BoolType;
+            BoolType.Loc = E.Loc;
+            BoolType.Name = "bool";
+            BoolType.MangledName = "b";
+            return BoolType;
+        }
+        else {
+            // Fallback
+            PlannedType UnknownType;
+            UnknownType.Name = "void";
+            UnknownType.MangledName = "v";
+            return UnknownType;
+        }
+    }, Expr);
+}
+
+// ============================================================================
 // Cross-Module Concept Lookup
 // ============================================================================
 
@@ -832,7 +997,15 @@ llvm::Expected<PlannedOperand> Planner::planOperand(const Operand &Op) {
             *Op.MemberAccess);
     }
 
-    // TODO: Compute ResultType via type inference
+    // Compute ResultType via type inference
+    auto InferredType = inferExpressionType(Result.Expr);
+    if (!InferredType) {
+        return InferredType.takeError();
+    }
+    Result.ResultType = std::move(*InferredType);
+
+    // TODO: Apply member access to refine the result type
+    // For now, member access doesn't affect the type (will be needed for field access)
 
     return Result;
 }
@@ -862,7 +1035,8 @@ llvm::Expected<PlannedExpression> Planner::planExpression(const Expression &Expr
             return PlannedConstant(E);
         }
         else if constexpr (std::is_same_v<T, Type>) {
-            auto Resolved = resolveType(E, E.Loc);
+            // This could be a variable reference or a type reference
+            auto Resolved = resolveNameOrVariable(E);
             if (!Resolved) {
                 return Resolved.takeError();
             }
@@ -1120,17 +1294,26 @@ llvm::Expected<PlannedBinding> Planner::planBinding(const Binding &Bind) {
     Result.Loc = Bind.Loc;
     Result.BindingType = Bind.BindingType;
 
-    auto PlannedItem = planItem(Bind.BindingItem);
-    if (!PlannedItem) {
-        return PlannedItem.takeError();
-    }
-    Result.BindingItem = std::move(*PlannedItem);
-
+    // Plan the initializer operands first (needed for type inference)
     auto PlannedOp = planOperands(Bind.Operation);
     if (!PlannedOp) {
         return PlannedOp.takeError();
     }
     Result.Operation = std::move(*PlannedOp);
+
+    // Plan the binding item
+    auto PlannedItemResult = planItem(Bind.BindingItem);
+    if (!PlannedItemResult) {
+        return PlannedItemResult.takeError();
+    }
+    Result.BindingItem = std::move(*PlannedItemResult);
+
+    // If no explicit type annotation, infer from the initializer
+    if (!Result.BindingItem.ItemType && !Result.Operation.empty()) {
+        // Use the result type of the first operand as the inferred type
+        Result.BindingItem.ItemType = std::make_shared<PlannedType>(
+            Result.Operation[0].ResultType);
+    }
 
     // Add to scope
     if (Result.BindingItem.Name && Result.BindingItem.ItemType) {
@@ -1304,7 +1487,19 @@ llvm::Expected<PlannedFor> Planner::planFor(const For &ForExpr) {
     Result.Expr = std::move(*PlannedExpr);
 
     pushScope();
-    // TODO: Define loop variable in scope with inferred type
+
+    // Define loop variable in scope with inferred type
+    // For now, use the result type of the iterator expression
+    // In a full implementation, we'd look up the iterator's element type
+    if (!Result.Expr.empty()) {
+        const auto &IterType = Result.Expr[0].ResultType;
+        // If the iterator returns a generic type like pointer[T], use the element type
+        if (!IterType.Generics.empty()) {
+            defineLocal(ForExpr.Identifier, IterType.Generics[0]);
+        } else {
+            defineLocal(ForExpr.Identifier, IterType);
+        }
+    }
 
     auto PlannedBody = planAction(ForExpr.Body);
     if (!PlannedBody) {

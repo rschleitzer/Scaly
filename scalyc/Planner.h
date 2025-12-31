@@ -160,6 +160,17 @@ private:
     // Check if two types are equal
     bool typesEqual(const PlannedType &A, const PlannedType &B);
 
+    // ========== Type Inference ==========
+
+    // Infer the type of a constant
+    PlannedType inferConstantType(const Constant &C);
+
+    // Infer the type of an expression
+    llvm::Expected<PlannedType> inferExpressionType(const PlannedExpression &Expr);
+
+    // Resolve a name that could be a variable or type
+    llvm::Expected<PlannedType> resolveNameOrVariable(const Type &T);
+
     // Compute struct layout (size, alignment, field offsets)
     void computeStructLayout(PlannedStructure &Struct);
 
