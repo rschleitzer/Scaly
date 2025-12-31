@@ -2406,6 +2406,12 @@ llvm::Expected<WhenSyntax> Parser::parseWhen() {
 
 llvm::Expected<CommandSyntax> Parser::parseCommand() {
     {
+        auto Result = parseOperation();
+        if (Result)
+            return CommandSyntax{std::move(*Result)};
+        llvm::consumeError(Result.takeError());
+    }
+    {
         auto Result = parseLet();
         if (Result)
             return CommandSyntax{std::move(*Result)};
@@ -2449,12 +2455,6 @@ llvm::Expected<CommandSyntax> Parser::parseCommand() {
     }
     {
         auto Result = parseThrow();
-        if (Result)
-            return CommandSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
-    }
-    {
-        auto Result = parseOperation();
         if (Result)
             return CommandSyntax{std::move(*Result)};
         llvm::consumeError(Result.takeError());

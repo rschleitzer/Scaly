@@ -344,7 +344,7 @@ struct LetSyntax {
 };
 
 struct CommandSyntax {
-    std::variant<LetSyntax, VarSyntax, MutableSyntax, SetSyntax, ContinueSyntax, BreakSyntax, ReturnSyntax, ThrowSyntax, OperationSyntax> Value;
+    std::variant<OperationSyntax, LetSyntax, VarSyntax, MutableSyntax, SetSyntax, ContinueSyntax, BreakSyntax, ReturnSyntax, ThrowSyntax> Value;
 };
 
 struct WhenSyntax {
