@@ -428,6 +428,485 @@ void Planner::computeUnionLayout(PlannedUnion &Union) {
 }
 
 // ============================================================================
+// Symbol Lookup
+// ============================================================================
+
+std::vector<const Function*> Planner::lookupFunction(llvm::StringRef Name) {
+    // Check function cache
+    auto It = Functions.find(Name.str());
+    if (It != Functions.end()) {
+        return It->second;
+    }
+
+    // Search module stack for functions
+    std::vector<const Function*> Result;
+    for (auto ModIt = ModuleStack.rbegin(); ModIt != ModuleStack.rend(); ++ModIt) {
+        const Module* Mod = *ModIt;
+        for (const auto& Member : Mod->Members) {
+            if (auto* Func = std::get_if<Function>(&Member)) {
+                if (Func->Name == Name) {
+                    Result.push_back(Func);
+                }
+            }
+        }
+    }
+
+    // Cache the result
+    if (!Result.empty()) {
+        Functions[Name.str()] = Result;
+    }
+
+    return Result;
+}
+
+const Operator* Planner::lookupOperator(llvm::StringRef Name) {
+    // Check operator cache
+    auto It = Operators.find(Name.str());
+    if (It != Operators.end()) {
+        return It->second;
+    }
+
+    // Search module stack for operators
+    for (auto ModIt = ModuleStack.rbegin(); ModIt != ModuleStack.rend(); ++ModIt) {
+        const Module* Mod = *ModIt;
+        for (const auto& Member : Mod->Members) {
+            if (auto* Op = std::get_if<Operator>(&Member)) {
+                if (Op->Name == Name) {
+                    Operators[Name.str()] = Op;
+                    return Op;
+                }
+            }
+        }
+
+        // Also check sub-modules
+        for (const auto& SubMod : Mod->Modules) {
+            for (const auto& Member : SubMod.Members) {
+                if (auto* Op = std::get_if<Operator>(&Member)) {
+                    if (Op->Name == Name) {
+                        Operators[Name.str()] = Op;
+                        return Op;
+                    }
+                }
+            }
+        }
+    }
+
+    return nullptr;
+}
+
+bool Planner::isFunction(llvm::StringRef Name) {
+    return !lookupFunction(Name).empty();
+}
+
+bool Planner::isOperatorName(llvm::StringRef Name) {
+    if (Name.empty()) return false;
+
+    // Operator names start with operator characters
+    char First = Name[0];
+    return First == '+' || First == '-' || First == '*' || First == '/' ||
+           First == '%' || First == '=' || First == '<' || First == '>' ||
+           First == '!' || First == '&' || First == '|' || First == '^' ||
+           First == '~' || First == '[' || First == '(';
+}
+
+// ============================================================================
+// Operation Resolution
+// ============================================================================
+
+llvm::Expected<PlannedType> Planner::resolveFunctionCall(
+    llvm::StringRef Name, Span Loc,
+    const std::vector<PlannedType> &ArgTypes) {
+
+    // Look up function candidates
+    auto Candidates = lookupFunction(Name);
+    if (Candidates.empty()) {
+        // Not a known function - might be a type constructor
+        const Concept* Conc = lookupConcept(Name);
+        if (Conc) {
+            // Type constructor - return the type
+            PlannedType Result;
+            Result.Loc = Loc;
+            Result.Name = Name.str();
+            Result.MangledName = mangleType(Result);
+            return Result;
+        }
+
+        // Unknown function
+        return makePlannerNotImplementedError(File, Loc,
+            ("function not found: " + Name).str());
+    }
+
+    // Simple overload resolution: find a function with matching arity
+    // TODO: Full type-based overload resolution
+    for (const Function* Func : Candidates) {
+        if (Func->Input.size() == ArgTypes.size()) {
+            // Match found - return the return type
+            if (Func->Returns) {
+                return resolveType(*Func->Returns, Loc);
+            }
+            // No return type = void
+            PlannedType VoidType;
+            VoidType.Loc = Loc;
+            VoidType.Name = "void";
+            VoidType.MangledName = "v";
+            return VoidType;
+        }
+    }
+
+    // No matching overload
+    return makePlannerNotImplementedError(File, Loc,
+        ("no matching overload for function: " + Name).str());
+}
+
+llvm::Expected<PlannedType> Planner::resolveOperatorCall(
+    llvm::StringRef Name, Span Loc,
+    const PlannedType &Left, const PlannedType &Right) {
+
+    // Look up the operator
+    const Operator* Op = lookupOperator(Name);
+    if (!Op) {
+        // Built-in operators for primitive types
+        if (Left.Name == "int" && Right.Name == "int") {
+            PlannedType Result;
+            Result.Loc = Loc;
+            Result.Name = "int";
+            Result.MangledName = "i";
+            return Result;
+        }
+        if (Left.Name == "float" && Right.Name == "float") {
+            PlannedType Result;
+            Result.Loc = Loc;
+            Result.Name = "float";
+            Result.MangledName = "f";
+            return Result;
+        }
+        if (Left.Name == "double" && Right.Name == "double") {
+            PlannedType Result;
+            Result.Loc = Loc;
+            Result.Name = "double";
+            Result.MangledName = "d";
+            return Result;
+        }
+        if ((Left.Name == "int" && Right.Name == "float") ||
+            (Left.Name == "float" && Right.Name == "int")) {
+            PlannedType Result;
+            Result.Loc = Loc;
+            Result.Name = "float";
+            Result.MangledName = "f";
+            return Result;
+        }
+
+        // Comparison operators return bool
+        if (Name == "==" || Name == "!=" || Name == "<" ||
+            Name == ">" || Name == "<=" || Name == ">=") {
+            PlannedType Result;
+            Result.Loc = Loc;
+            Result.Name = "bool";
+            Result.MangledName = "b";
+            return Result;
+        }
+
+        // Unknown operator
+        return makePlannerNotImplementedError(File, Loc,
+            ("operator not found: " + Name + " for types " +
+             Left.Name + " and " + Right.Name).str());
+    }
+
+    // Return the operator's return type
+    if (Op->Returns) {
+        return resolveType(*Op->Returns, Loc);
+    }
+
+    // No return type = void (unusual for operators)
+    PlannedType VoidType;
+    VoidType.Loc = Loc;
+    VoidType.Name = "void";
+    VoidType.MangledName = "v";
+    return VoidType;
+}
+
+std::optional<PlannedType> Planner::getPointerElementType(const PlannedType &PtrType) {
+    // Check if this is a pointer type with a generic argument
+    if (PtrType.Name == "pointer" && !PtrType.Generics.empty()) {
+        return PtrType.Generics[0];
+    }
+
+    // Check for pointer[T] in name form (e.g., from unresolved types)
+    if (PtrType.Name.substr(0, 8) == "pointer[") {
+        // This shouldn't happen after resolution, but handle it gracefully
+        return std::nullopt;
+    }
+
+    return std::nullopt;
+}
+
+llvm::Expected<PlannedType> Planner::resolvePrefixOperatorCall(
+    llvm::StringRef Name, Span Loc,
+    const PlannedType &Operand) {
+
+    // Dereference operator: *ptr -> element type
+    if (Name == "*") {
+        auto ElementType = getPointerElementType(Operand);
+        if (ElementType) {
+            return *ElementType;
+        }
+        // If not a pointer, this is an error
+        return makePlannerNotImplementedError(File, Loc,
+            "cannot dereference non-pointer type: " + Operand.Name);
+    }
+
+    // Address-of operator: &val -> pointer[typeof(val)]
+    if (Name == "&") {
+        PlannedType PtrType;
+        PtrType.Loc = Loc;
+        PtrType.Name = "pointer";
+        PtrType.Generics.push_back(Operand);
+        PtrType.MangledName = "P" + Operand.MangledName;
+        return PtrType;
+    }
+
+    // Negation: -x for numeric types
+    if (Name == "-") {
+        if (Operand.Name == "int" || Operand.Name == "float" ||
+            Operand.Name == "double") {
+            return Operand;  // Same type
+        }
+    }
+
+    // Logical not: !x for bool
+    if (Name == "!") {
+        if (Operand.Name == "bool") {
+            return Operand;
+        }
+    }
+
+    // Bitwise not: ~x for integers
+    if (Name == "~") {
+        if (Operand.Name == "int" || Operand.Name == "uint" ||
+            Operand.Name == "size_t") {
+            return Operand;
+        }
+    }
+
+    // Unary plus: +x
+    if (Name == "+") {
+        if (Operand.Name == "int" || Operand.Name == "float" ||
+            Operand.Name == "double") {
+            return Operand;
+        }
+    }
+
+    // Unknown prefix operator
+    return makePlannerNotImplementedError(File, Loc,
+        ("unknown prefix operator: " + Name + " for type " + Operand.Name).str());
+}
+
+llvm::Expected<PlannedType> Planner::resolveOperationSequence(
+    const std::vector<PlannedOperand> &Ops) {
+
+    if (Ops.empty()) {
+        PlannedType VoidType;
+        VoidType.Name = "void";
+        VoidType.MangledName = "v";
+        return VoidType;
+    }
+
+    if (Ops.size() == 1) {
+        return Ops[0].ResultType;
+    }
+
+    // Check if first operand is a prefix operator (context is empty)
+    size_t I = 0;
+    PlannedType Context;
+    bool HasContext = false;
+
+    // Check for prefix operator at the start
+    if (auto* TypeExpr = std::get_if<PlannedType>(&Ops[0].Expr)) {
+        if (isOperatorName(TypeExpr->Name) && Ops.size() > 1) {
+            // First operand is a prefix operator
+            auto Result = resolvePrefixOperatorCall(TypeExpr->Name,
+                                                     Ops[0].Loc,
+                                                     Ops[1].ResultType);
+            if (!Result) {
+                return Result.takeError();
+            }
+            Context = std::move(*Result);
+            HasContext = true;
+            I = 2;  // Skip prefix operator and its operand
+        }
+    }
+
+    // Check for cast expression: (Type)value
+    // A cast is when the first operand is a tuple containing a single type
+    if (!HasContext) {
+        if (auto* TupleExpr = std::get_if<PlannedTuple>(&Ops[0].Expr)) {
+            // Single-component tuple with a type expression is a cast
+            if (TupleExpr->Components.size() == 1 &&
+                !TupleExpr->Components[0].Name &&
+                TupleExpr->Components[0].Value.size() == 1) {
+                const auto& Inner = TupleExpr->Components[0].Value[0];
+                if (std::holds_alternative<PlannedType>(Inner.Expr)) {
+                    // This is a cast: (Type)value - result type is Type
+                    Context = TupleExpr->TupleType;
+                    HasContext = true;
+                    I = 1;  // Skip the cast type, rest is the value being cast
+
+                    // The cast result IS the type, regardless of what follows
+                    // So just return the cast type
+                    return Context;
+                }
+            }
+        }
+    }
+
+    // If no prefix operator, first operand becomes context
+    if (!HasContext) {
+        Context = Ops[0].ResultType;
+        I = 1;
+    }
+
+    // Process remaining operation sequence left-to-right
+    while (I < Ops.size()) {
+        const PlannedOperand& Current = Ops[I];
+
+        // Check if current operand is an operator/function
+        if (auto* TypeExpr = std::get_if<PlannedType>(&Current.Expr)) {
+            if (isOperatorName(TypeExpr->Name)) {
+                // Operator - needs right operand
+                if (I + 1 < Ops.size()) {
+                    const PlannedType& Right = Ops[I + 1].ResultType;
+                    auto Result = resolveOperatorCall(TypeExpr->Name,
+                                                       Current.Loc, Context, Right);
+                    if (!Result) {
+                        return Result.takeError();
+                    }
+                    Context = std::move(*Result);
+                    I += 2;  // Skip operator and right operand
+                    continue;
+                } else {
+                    // Trailing operator with no right operand - treat as unary postfix
+                    // (rare case, but handle gracefully)
+                    I++;
+                    continue;
+                }
+            } else if (isFunction(TypeExpr->Name)) {
+                // Function call - collect arguments
+                // For now, just use the next operand as the argument
+                if (I + 1 < Ops.size()) {
+                    std::vector<PlannedType> ArgTypes = {Ops[I + 1].ResultType};
+                    auto Result = resolveFunctionCall(TypeExpr->Name,
+                                                       Current.Loc, ArgTypes);
+                    if (!Result) {
+                        return Result.takeError();
+                    }
+                    Context = std::move(*Result);
+                    I += 2;
+                    continue;
+                }
+            }
+        }
+
+        // Default: use the operand's type directly
+        Context = Current.ResultType;
+        I++;
+    }
+
+    return Context;
+}
+
+// ============================================================================
+// Member Access Resolution
+// ============================================================================
+
+llvm::Expected<PlannedType> Planner::resolveMemberAccess(
+    const PlannedType &BaseType,
+    const std::vector<std::string> &Members,
+    Span Loc) {
+
+    if (Members.empty()) {
+        return BaseType;
+    }
+
+    PlannedType Current = BaseType;
+
+    for (const auto& MemberName : Members) {
+        // Look up the base type as a concept
+        const Concept* Conc = lookupConcept(Current.Name);
+        if (!Conc) {
+            return makePlannerNotImplementedError(File, Loc,
+                "cannot access member '" + MemberName + "' on type " +
+                 Current.Name);
+        }
+
+        // Check if it's a structure with properties
+        if (auto* Struct = std::get_if<Structure>(&Conc->Def)) {
+            bool Found = false;
+            for (const auto& Prop : Struct->Properties) {
+                if (Prop.Name == MemberName) {
+                    if (!Prop.PropType) {
+                        return makePlannerNotImplementedError(File, Loc,
+                            "property without type");
+                    }
+                    auto Resolved = resolveType(*Prop.PropType, Loc);
+                    if (!Resolved) {
+                        return Resolved.takeError();
+                    }
+                    Current = std::move(*Resolved);
+                    Found = true;
+                    break;
+                }
+            }
+            if (Found) continue;
+
+            // Check methods
+            for (const auto& Member : Struct->Members) {
+                if (auto* Func = std::get_if<Function>(&Member)) {
+                    if (Func->Name == MemberName) {
+                        // Method reference - for now, return void
+                        // (proper handling would return a function type)
+                        PlannedType MethodType;
+                        MethodType.Loc = Loc;
+                        MethodType.Name = "function";
+                        MethodType.MangledName = "Pv";  // pointer to void
+                        Current = MethodType;
+                        Found = true;
+                        break;
+                    }
+                }
+            }
+            if (Found) continue;
+        }
+
+        // Check if it's a union with variants
+        if (auto* Un = std::get_if<Union>(&Conc->Def)) {
+            for (const auto& Var : Un->Variants) {
+                if (Var.Name == MemberName) {
+                    if (Var.VarType) {
+                        auto Resolved = resolveType(*Var.VarType, Loc);
+                        if (!Resolved) {
+                            return Resolved.takeError();
+                        }
+                        Current = std::move(*Resolved);
+                    } else {
+                        // Unit variant - return the union type itself
+                        Current = BaseType;
+                    }
+                    break;
+                }
+            }
+            continue;
+        }
+
+        // Member not found
+        return makePlannerNotImplementedError(File, Loc,
+            "member '" + MemberName + "' not found in type " +
+             Current.Name);
+    }
+
+    return Current;
+}
+
+// ============================================================================
 // Type Inference
 // ============================================================================
 
@@ -507,12 +986,10 @@ llvm::Expected<PlannedType> Planner::inferExpressionType(const PlannedExpression
             return E;
         }
         else if constexpr (std::is_same_v<T, PlannedTuple>) {
-            // TODO: Construct tuple type from components
-            PlannedType TupleType;
-            TupleType.Loc = E.Loc;
-            TupleType.Name = "Tuple";
-            TupleType.MangledName = "5Tuple";
-            return TupleType;
+            // Return the pre-computed tuple type
+            // For single anonymous components (grouping parens), this is the operation type
+            // For multi-component tuples, this is a Tuple<T1, T2, ...> type
+            return E.TupleType;
         }
         else if constexpr (std::is_same_v<T, PlannedMatrix>) {
             // TODO: Infer element type from matrix contents
@@ -523,31 +1000,119 @@ llvm::Expected<PlannedType> Planner::inferExpressionType(const PlannedExpression
             return ArrayType;
         }
         else if constexpr (std::is_same_v<T, PlannedBlock>) {
-            // Block type is the type of its last expression (if any)
-            // For now, return void
+            // Block type is the type of its last statement
+            if (E.Statements.empty()) {
+                PlannedType VoidType;
+                VoidType.Loc = E.Loc;
+                VoidType.Name = "void";
+                VoidType.MangledName = "v";
+                return VoidType;
+            }
+
+            // Get the last statement's type
+            const auto& Last = E.Statements.back();
+            return std::visit([this, &E](const auto& Stmt) -> llvm::Expected<PlannedType> {
+                using S = std::decay_t<decltype(Stmt)>;
+
+                if constexpr (std::is_same_v<S, PlannedAction>) {
+                    // Action type is the computed result type of the operation
+                    return Stmt.ResultType;
+                }
+                else if constexpr (std::is_same_v<S, PlannedReturn>) {
+                    if (!Stmt.Result.empty()) {
+                        return Stmt.Result.back().ResultType;
+                    }
+                    PlannedType VoidType;
+                    VoidType.Loc = Stmt.Loc;
+                    VoidType.Name = "void";
+                    VoidType.MangledName = "v";
+                    return VoidType;
+                }
+                else if constexpr (std::is_same_v<S, PlannedBreak>) {
+                    if (!Stmt.Result.empty()) {
+                        return Stmt.Result.back().ResultType;
+                    }
+                    PlannedType VoidType;
+                    VoidType.Loc = Stmt.Loc;
+                    VoidType.Name = "void";
+                    VoidType.MangledName = "v";
+                    return VoidType;
+                }
+                else {
+                    // Binding, Continue, Throw - block evaluates to void
+                    PlannedType VoidType;
+                    VoidType.Loc = E.Loc;
+                    VoidType.Name = "void";
+                    VoidType.MangledName = "v";
+                    return VoidType;
+                }
+            }, Last);
+        }
+        else if constexpr (std::is_same_v<T, PlannedIf>) {
+            // If type is the type of consequent (assumes both branches same type)
+            if (E.Consequent) {
+                return std::visit([&E](const auto& Stmt) -> llvm::Expected<PlannedType> {
+                    using S = std::decay_t<decltype(Stmt)>;
+
+                    if constexpr (std::is_same_v<S, PlannedAction>) {
+                        return Stmt.ResultType;
+                    }
+                    PlannedType VoidType;
+                    VoidType.Loc = E.Loc;
+                    VoidType.Name = "void";
+                    VoidType.MangledName = "v";
+                    return VoidType;
+                }, *E.Consequent);
+            }
             PlannedType VoidType;
             VoidType.Loc = E.Loc;
             VoidType.Name = "void";
             VoidType.MangledName = "v";
             return VoidType;
         }
-        else if constexpr (std::is_same_v<T, PlannedIf>) {
-            // If type is the type of consequent/alternative
-            // For now, use a type variable for proper inference later
-            PlannedType IfType;
-            IfType.Loc = E.Loc;
-            IfType.Name = "void";  // TODO: Infer from branches
-            IfType.MangledName = "v";
-            return IfType;
+        else if constexpr (std::is_same_v<T, PlannedMatch>) {
+            // Match type from first branch
+            if (!E.Branches.empty() && E.Branches[0].Consequent) {
+                return std::visit([&E](const auto& Stmt) -> llvm::Expected<PlannedType> {
+                    using S = std::decay_t<decltype(Stmt)>;
+
+                    if constexpr (std::is_same_v<S, PlannedAction>) {
+                        return Stmt.ResultType;
+                    }
+                    PlannedType VoidType;
+                    VoidType.Loc = E.Loc;
+                    VoidType.Name = "void";
+                    VoidType.MangledName = "v";
+                    return VoidType;
+                }, *E.Branches[0].Consequent);
+            }
+            PlannedType VoidType;
+            VoidType.Loc = E.Loc;
+            VoidType.Name = "void";
+            VoidType.MangledName = "v";
+            return VoidType;
         }
-        else if constexpr (std::is_same_v<T, PlannedMatch> ||
-                          std::is_same_v<T, PlannedChoose>) {
-            // Match/Choose type from branches
-            PlannedType MatchType;
-            MatchType.Loc = E.Loc;
-            MatchType.Name = "void";  // TODO: Infer from branches
-            MatchType.MangledName = "v";
-            return MatchType;
+        else if constexpr (std::is_same_v<T, PlannedChoose>) {
+            // Choose type from first case
+            if (!E.Cases.empty() && E.Cases[0].Consequent) {
+                return std::visit([&E](const auto& Stmt) -> llvm::Expected<PlannedType> {
+                    using S = std::decay_t<decltype(Stmt)>;
+
+                    if constexpr (std::is_same_v<S, PlannedAction>) {
+                        return Stmt.ResultType;
+                    }
+                    PlannedType VoidType;
+                    VoidType.Loc = E.Loc;
+                    VoidType.Name = "void";
+                    VoidType.MangledName = "v";
+                    return VoidType;
+                }, *E.Cases[0].Consequent);
+            }
+            PlannedType VoidType;
+            VoidType.Loc = E.Loc;
+            VoidType.Name = "void";
+            VoidType.MangledName = "v";
+            return VoidType;
         }
         else if constexpr (std::is_same_v<T, PlannedFor> ||
                           std::is_same_v<T, PlannedWhile>) {
@@ -559,12 +1124,15 @@ llvm::Expected<PlannedType> Planner::inferExpressionType(const PlannedExpression
             return VoidType;
         }
         else if constexpr (std::is_same_v<T, PlannedTry>) {
-            // Try type is the type of the bound value
-            PlannedType TryType;
-            TryType.Loc = E.Loc;
-            TryType.Name = "void";  // TODO: Infer from binding
-            TryType.MangledName = "v";
-            return TryType;
+            // Try type is the type of the binding value
+            if (E.Cond.BindingItem.ItemType) {
+                return *E.Cond.BindingItem.ItemType;
+            }
+            PlannedType VoidType;
+            VoidType.Loc = E.Loc;
+            VoidType.Name = "void";
+            VoidType.MangledName = "v";
+            return VoidType;
         }
         else if constexpr (std::is_same_v<T, PlannedSizeOf>) {
             // sizeof always returns size (usize/uint)
@@ -1004,8 +1572,15 @@ llvm::Expected<PlannedOperand> Planner::planOperand(const Operand &Op) {
     }
     Result.ResultType = std::move(*InferredType);
 
-    // TODO: Apply member access to refine the result type
-    // For now, member access doesn't affect the type (will be needed for field access)
+    // Apply member access to refine the result type
+    if (Result.MemberAccess && !Result.MemberAccess->empty()) {
+        auto MemberType = resolveMemberAccess(Result.ResultType,
+                                               *Result.MemberAccess, Op.Loc);
+        if (!MemberType) {
+            return MemberType.takeError();
+        }
+        Result.ResultType = std::move(*MemberType);
+    }
 
     return Result;
 }
@@ -1167,7 +1742,36 @@ llvm::Expected<PlannedTuple> Planner::planTuple(const Tuple &Tup) {
         Result.Components.push_back(std::move(PC));
     }
 
-    // TODO: Compute TupleType
+    // Compute TupleType
+    // Single anonymous component = grouping parentheses, use the operation sequence type
+    if (Result.Components.size() == 1 && !Result.Components[0].Name) {
+        auto SeqType = resolveOperationSequence(Result.Components[0].Value);
+        if (!SeqType) {
+            return SeqType.takeError();
+        }
+        Result.TupleType = std::move(*SeqType);
+    } else {
+        // Multi-component or named component tuple
+        // Build a proper tuple type with generics for each component
+        Result.TupleType.Loc = Tup.Loc;
+        Result.TupleType.Name = "Tuple";
+
+        std::string MangledName = std::to_string(Result.Components.size()) + "Tuple";
+        if (!Result.Components.empty()) {
+            MangledName += "I";  // Start template args
+            for (const auto &Comp : Result.Components) {
+                if (!Comp.Value.empty()) {
+                    auto CompType = resolveOperationSequence(Comp.Value);
+                    if (CompType) {
+                        Result.TupleType.Generics.push_back(*CompType);
+                        MangledName += CompType->MangledName;
+                    }
+                }
+            }
+            MangledName += "E";  // End template args
+        }
+        Result.TupleType.MangledName = MangledName;
+    }
 
     return Result;
 }
@@ -1286,6 +1890,13 @@ llvm::Expected<PlannedAction> Planner::planAction(const Action &Act) {
     }
     Result.Target = std::move(*PlannedTarget);
 
+    // Compute the result type of the source operation sequence
+    auto SeqType = resolveOperationSequence(Result.Source);
+    if (!SeqType) {
+        return SeqType.takeError();
+    }
+    Result.ResultType = std::move(*SeqType);
+
     return Result;
 }
 
@@ -1310,9 +1921,13 @@ llvm::Expected<PlannedBinding> Planner::planBinding(const Binding &Bind) {
 
     // If no explicit type annotation, infer from the initializer
     if (!Result.BindingItem.ItemType && !Result.Operation.empty()) {
-        // Use the result type of the first operand as the inferred type
+        // Resolve the operation sequence to get the result type
+        auto SeqType = resolveOperationSequence(Result.Operation);
+        if (!SeqType) {
+            return SeqType.takeError();
+        }
         Result.BindingItem.ItemType = std::make_shared<PlannedType>(
-            Result.Operation[0].ResultType);
+            std::move(*SeqType));
     }
 
     // Add to scope

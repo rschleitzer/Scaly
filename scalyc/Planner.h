@@ -160,6 +160,53 @@ private:
     // Check if two types are equal
     bool typesEqual(const PlannedType &A, const PlannedType &B);
 
+    // ========== Symbol Lookup ==========
+
+    // Look up a function by name, returning candidates for overload resolution
+    std::vector<const Function*> lookupFunction(llvm::StringRef Name);
+
+    // Look up an operator by name
+    const Operator* lookupOperator(llvm::StringRef Name);
+
+    // Check if a name refers to a function (vs variable/type)
+    bool isFunction(llvm::StringRef Name);
+
+    // Check if a name refers to an operator
+    bool isOperatorName(llvm::StringRef Name);
+
+    // ========== Operation Resolution ==========
+
+    // Resolve an operation sequence (function calls and operators)
+    // Returns the result type of the entire operation
+    llvm::Expected<PlannedType> resolveOperationSequence(
+        const std::vector<PlannedOperand> &Ops);
+
+    // Resolve a function call with given arguments
+    llvm::Expected<PlannedType> resolveFunctionCall(
+        llvm::StringRef Name, Span Loc,
+        const std::vector<PlannedType> &ArgTypes);
+
+    // Resolve an operator application
+    llvm::Expected<PlannedType> resolveOperatorCall(
+        llvm::StringRef Name, Span Loc,
+        const PlannedType &Left, const PlannedType &Right);
+
+    // Resolve a prefix (unary) operator application
+    llvm::Expected<PlannedType> resolvePrefixOperatorCall(
+        llvm::StringRef Name, Span Loc,
+        const PlannedType &Operand);
+
+    // Extract the element type from pointer[T], returning T
+    std::optional<PlannedType> getPointerElementType(const PlannedType &PtrType);
+
+    // ========== Member Access Resolution ==========
+
+    // Resolve member access on a type, returning the member's type
+    llvm::Expected<PlannedType> resolveMemberAccess(
+        const PlannedType &BaseType,
+        const std::vector<std::string> &Members,
+        Span Loc);
+
     // ========== Type Inference ==========
 
     // Infer the type of a constant
