@@ -227,8 +227,10 @@ static int planFile(StringRef Filename) {
     if (Verbose) {
         outs() << "Plan created: " << Filename << "\n";
         outs() << "  Main module: " << PlanResult->MainModule.Name << "\n";
-        outs() << "  Structures: " << PlanResult->Structures.size() << "\n";
-        outs() << "  Functions: " << PlanResult->Functions.size() << "\n";
+        outs() << "  Modules: " << PlanResult->MainModule.Modules.size() << "\n";
+        outs() << "  Concepts: " << PlanResult->MainModule.Concepts.size() << "\n";
+        outs() << "  Instantiated structures: " << PlanResult->Structures.size() << "\n";
+        outs() << "  Instantiated functions: " << PlanResult->Functions.size() << "\n";
     }
     return 0;
 }

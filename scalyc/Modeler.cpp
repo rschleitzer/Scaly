@@ -1392,6 +1392,10 @@ llvm::Expected<Namespace> Modeler::handleNamespace(llvm::StringRef Name,
     std::vector<std::variant<Concept, Operator, Function>> Members;
     std::map<std::string, std::shared_ptr<Nameable>> Symbols;
 
+    // Construct namespace path: Path/Name/ for module lookups
+    llvm::SmallString<256> NamespacePath(Path);
+    llvm::sys::path::append(NamespacePath, Name);
+
     if (Syntax.declarations) {
         for (const auto &D : *Syntax.declarations) {
             std::visit([&](const auto &S) {
@@ -1400,7 +1404,7 @@ llvm::Expected<Namespace> Modeler::handleNamespace(llvm::StringRef Name,
                     std::visit([&](const auto &E) {
                         using ET = std::decay_t<decltype(E)>;
                         if constexpr (std::is_same_v<ET, DefinitionSyntax>) {
-                            auto Def = handleDefinition(Path, E, true);
+                            auto Def = handleDefinition(NamespacePath.str(), E, true);
                             if (Def) {
                                 Members.push_back(std::move(*Def));
                             }
@@ -1414,10 +1418,15 @@ llvm::Expected<Namespace> Modeler::handleNamespace(llvm::StringRef Name,
                             if (Op) {
                                 Members.push_back(std::move(*Op));
                             }
+                        } else if constexpr (std::is_same_v<ET, ModuleSyntax>) {
+                            auto Mod = handleModule(NamespacePath.str(), E, true);
+                            if (Mod) {
+                                Modules.push_back(std::move(*Mod));
+                            }
                         }
                     }, S.export_.Value);
                 } else if constexpr (std::is_same_v<ST, DefinitionSyntax>) {
-                    auto Def = handleDefinition(Path, S, false);
+                    auto Def = handleDefinition(NamespacePath.str(), S, false);
                     if (Def) {
                         Members.push_back(std::move(*Def));
                     }
@@ -1430,6 +1439,11 @@ llvm::Expected<Namespace> Modeler::handleNamespace(llvm::StringRef Name,
                     auto Op = handleOperator(S, false);
                     if (Op) {
                         Members.push_back(std::move(*Op));
+                    }
+                } else if constexpr (std::is_same_v<ST, ModuleSyntax>) {
+                    auto Mod = handleModule(NamespacePath.str(), S, false);
+                    if (Mod) {
+                        Modules.push_back(std::move(*Mod));
                     }
                 }
             }, D.symbol.Value);
@@ -1722,7 +1736,7 @@ llvm::Expected<Program> Modeler::buildProgram(const ProgramSyntax &Syntax) {
             Packages.push_back(Package{
                 PkgName,
                 Ver,
-                std::make_unique<Module>(std::move(*PkgResult))
+                std::make_shared<Module>(std::move(*PkgResult))
             });
         }
     }

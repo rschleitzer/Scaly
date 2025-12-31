@@ -1,0 +1,121 @@
+define PAGE_SIZE int 0x1000
+
+define Page
+(
+    next_object: pointer[void]
+    current_page: pointer[Page]
+    next_page: pointer[Page]
+    exclusive_pages: PageList
+)
+{
+    function allocate_page returns pointer[Page]$ {
+        var page (pointer[Page])aligned_alloc(PAGE_SIZE, PAGE_SIZE)
+        (*page).reset()
+        return page
+    }
+
+    function reset(this: Page) {
+        set current_page: null
+        set next_page: null
+        set next_object: this + 1
+        set exclusive_pages: PageList()
+    }
+
+    function allocate(this: Page, size: size_t, align: size_t) returns pointer[void]$ {
+        let location (size_t)next_object
+        let aligned_location (location + align - 1) & ~(align - 1)
+        let location_after_page (size_t)this + PAGE_SIZE
+        let capacity location_after_page - aligned_location
+
+        if capacity < size
+        {
+            ; We need to reserve the space for the page object
+            let gross_size size + sizeof Page
+            if gross_size > PAGE_SIZE
+                return allocate_oversized(gross_size)
+
+            if current_page <> null
+            {
+                let object (*current_page).allocate(size, align)
+                let page_of_allocated_object get(object)
+                if page_of_allocated_object <> current_page
+                    set current_page: page_of_allocated_object
+                return object
+            }
+
+            var page allocate_page()
+            set current_page: page
+            set next_page: page
+            return (*page).allocate(size, align)
+        }
+
+        ; Allocate from ourselves
+        let next_location aligned_location + size
+        set next_object: (pointer[void])next_location
+        return (pointer[void])aligned_location
+    }
+
+    function allocate_oversized(this: Page, size: size_t) returns pointer[void]$ {
+        ; We allocate oversized objects directly.
+        let address aligned_alloc(PAGE_SIZE,  (size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1))
+        if address = null
+            exit(1)
+        var page (pointer[Page])address
+
+        ; Oversized pages have no next_object
+        set (*page).next_object: null
+
+        ; An oversized page is always exclusive
+        (exclusive_pages).add(this, page)
+
+        ; The page offset by the null pointer for next_object
+        return (pointer[void])(page + 1)
+    }
+
+    function get(address: pointer[void]) returns pointer[Page]$ {
+        let mask ~(size_t)(PAGE_SIZE - 1)
+        let page (Page*)((size_t)address & mask)
+        return page
+    }
+
+    function get_capacity(this: Page, align: size_t) returns size_t$ {
+        var location (size_t)next_object
+        let aligned_location (location + align - 1) & ~(align - 1)
+        var location_after_page (size_t)this + PAGE_SIZE
+        var capacity location_after_page - aligned_location
+        return capacity
+    }
+
+    function allocate_exclusive_page(this: Page) returns pointer[Page]$ {
+        let page allocate_page()
+        (exclusive_pages).add(page, page)
+        return page
+    }
+
+    procedure deallocate_extensions(this: Page) {
+        ; Oversized pages cannot have extensions
+        if next_object = null
+            return
+
+        for exclusive_page in exclusive_pages
+        {
+            (*exclusive_page).deallocate_extensions()
+            free(exclusive_page)
+        }
+
+        var page next_page
+        while page <> null
+        {
+            let next_page (*page).next_page
+            free(page)
+            set page: next_page
+        }
+    }
+
+    function deallocate_exclusive_page(this: Page, page: pointer[Page]) {
+        (*page).deallocate_extensions()
+        free(page)
+        if (exclusive_pages).remove(page) = false
+            exit (2)
+    }
+}

@@ -485,7 +485,7 @@ struct Concept {
 struct Package {
     std::string Name;
     Version Ver;
-    std::unique_ptr<Module> Root;  // The loaded package module
+    std::shared_ptr<Module> Root;  // The loaded package module
 };
 
 // Member can be a package, concept, operator, or function
