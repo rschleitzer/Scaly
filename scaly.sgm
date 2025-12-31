@@ -291,7 +291,13 @@
 <syntax id = Package                      multiple
     <content link = package
     <content link = Name                                    property = name
+    <content link = Version                        optional property = version
     <content colon                                 optional
+
+<syntax id = Version
+    <content literal                                        property = majorMinor
+    <content link = dot
+    <content literal                                        property = patch
 
 <syntax id = Initializer
     <content link = left_paren

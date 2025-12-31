@@ -49,6 +49,26 @@ struct CharacterConstant {
     std::string Value;
 };
 
+// Package version (semantic versioning)
+struct Version {
+    unsigned Major;
+    unsigned Minor;
+    unsigned Patch;
+
+    std::string toString() const {
+        return std::to_string(Major) + "." +
+               std::to_string(Minor) + "." +
+               std::to_string(Patch);
+    }
+
+    // For mangled names: 2.0.1 -> "2_0_1"
+    std::string toMangledString() const {
+        return std::to_string(Major) + "_" +
+               std::to_string(Minor) + "_" +
+               std::to_string(Patch);
+    }
+};
+
 struct FragmentConstant {
     Span Loc;
     std::string Value;
@@ -384,6 +404,7 @@ struct Variant {
 
 // Forward declare for recursive types
 struct Module;
+struct Package;
 struct Concept;
 struct Nameable;
 
@@ -459,9 +480,17 @@ struct Concept {
     Definition Def;
 };
 
+// Package represents an external package dependency with version
+// (defined before Member/Nameable because std::variant needs complete types)
+struct Package {
+    std::string Name;
+    Version Ver;
+    std::unique_ptr<Module> Root;  // The loaded package module
+};
+
 // Member can be a package, concept, operator, or function
 using Member = std::variant<
-    std::vector<Module>,  // Package
+    Package,
     Concept,
     Operator,
     Function
@@ -470,7 +499,7 @@ using Member = std::variant<
 // Nameable represents symbols in a symbol table
 struct Nameable {
     std::variant<
-        std::vector<Module>,  // Package
+        Package,
         Concept,
         Operator,
         std::vector<Function>,  // Function overloads
@@ -492,7 +521,7 @@ struct Module {
 
 // Program represents a complete program
 struct Program {
-    std::vector<Module> Packages;
+    std::vector<Package> Packages;
     Module MainModule;
     std::vector<Statement> Statements;
 };
