@@ -432,6 +432,7 @@
     <content colon                                 optional
 
 <syntax id = Command                               abstract
+    <content link = Operation
     <content link = Let
     <content link = Var
     <content link = Mutable
@@ -440,7 +441,6 @@
     <content link = Break
     <content link = Return
     <content link = Throw
-    <content link = Operation
 
 <syntax id = Let
     <content link = let
