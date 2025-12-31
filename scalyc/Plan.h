@@ -155,6 +155,7 @@ struct PlannedVariant {
 struct PlannedAction {
     std::vector<PlannedOperand> Source;
     std::vector<PlannedOperand> Target;
+    PlannedType ResultType;  // Computed type of the Source operation sequence
 };
 
 struct PlannedBinding {
