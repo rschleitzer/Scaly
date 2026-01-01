@@ -1783,6 +1783,100 @@ static bool testPipelineTryExpression() {
     return true;
 }
 
+// SizeOf expression tests
+
+static bool testPipelineSizeOfInt() {
+    const char* Name = "Pipeline: sizeof int";
+
+    auto ResultOrErr = evalInt("sizeof int");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // int is 8 bytes (i64)
+    if (*ResultOrErr != 8) {
+        std::string Msg = "expected 8, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineSizeOfBool() {
+    const char* Name = "Pipeline: sizeof bool";
+
+    auto ResultOrErr = evalInt("sizeof bool");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // bool is 1 byte
+    if (*ResultOrErr != 1) {
+        std::string Msg = "expected 1, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineSizeOfI32() {
+    const char* Name = "Pipeline: sizeof i32";
+
+    auto ResultOrErr = evalInt("sizeof i32");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // i32 is 4 bytes
+    if (*ResultOrErr != 4) {
+        std::string Msg = "expected 4, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineSizeOfPtr() {
+    const char* Name = "Pipeline: sizeof ptr";
+
+    auto ResultOrErr = evalInt("sizeof ptr");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // ptr is 8 bytes on 64-bit
+    if (*ResultOrErr != 8) {
+        std::string Msg = "expected 8, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
 bool runEmitterTests() {
     llvm::outs() << "Running Emitter tests...\n";
 
@@ -1886,6 +1980,13 @@ bool runEmitterTests() {
     testPipelineTrySimpleValue();
     testPipelineTryWithBinding();
     testPipelineTryExpression();
+
+    // SizeOf expressions
+    llvm::outs() << "  SizeOf expression tests:\n";
+    testPipelineSizeOfInt();
+    testPipelineSizeOfBool();
+    testPipelineSizeOfI32();
+    testPipelineSizeOfPtr();
 
     llvm::outs() << "\nEmitter tests: " << TestsPassed << " passed, "
                  << TestsFailed << " failed\n";

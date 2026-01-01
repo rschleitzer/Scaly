@@ -199,6 +199,8 @@ private:
     llvm::Expected<llvm::Value*> emitFor(const PlannedFor &For);
     llvm::Expected<llvm::Value*> emitWhile(const PlannedWhile &While);
     llvm::Expected<llvm::Value*> emitTry(const PlannedTry &Try);
+    llvm::Expected<llvm::Value*> emitSizeOf(const PlannedSizeOf &SizeOf);
+    llvm::Expected<llvm::Value*> emitIs(const PlannedIs &Is);
 
     // ========================================================================
     // Memory/Region Management
