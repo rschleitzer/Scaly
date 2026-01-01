@@ -677,6 +677,10 @@ llvm::Expected<llvm::Value*> Emitter::emitExpression(const PlannedExpression &Ex
             return emitIf(E);
         } else if constexpr (std::is_same_v<T, PlannedChoose>) {
             return emitChoose(E);
+        } else if constexpr (std::is_same_v<T, PlannedWhile>) {
+            return emitWhile(E);
+        } else if constexpr (std::is_same_v<T, PlannedFor>) {
+            return emitFor(E);
         } else {
             return llvm::make_error<llvm::StringError>(
                 "Unimplemented expression type",
@@ -901,7 +905,66 @@ llvm::Expected<llvm::Value*> Emitter::emitFor(const PlannedFor &For) {
 }
 
 llvm::Expected<llvm::Value*> Emitter::emitWhile(const PlannedWhile &While) {
-    // TODO: implement while emission
+    // Create basic blocks for the loop structure
+    llvm::BasicBlock *CondBlock = createBlock("while.cond");
+    llvm::BasicBlock *BodyBlock = createBlock("while.body");
+    llvm::BasicBlock *ExitBlock = createBlock("while.exit");
+
+    // Jump to condition block
+    Builder->CreateBr(CondBlock);
+
+    // Emit condition block
+    Builder->SetInsertPoint(CondBlock);
+
+    // Emit the condition binding
+    // The condition's Operation contains the boolean expression
+    if (While.Cond.Operation.empty()) {
+        return llvm::make_error<llvm::StringError>(
+            "While condition has no expression",
+            llvm::inconvertibleErrorCode()
+        );
+    }
+
+    auto CondValueOrErr = emitOperands(While.Cond.Operation);
+    if (!CondValueOrErr)
+        return CondValueOrErr.takeError();
+
+    llvm::Value *CondValue = *CondValueOrErr;
+
+    // Ensure we have a boolean (i1) for the branch
+    if (!CondValue->getType()->isIntegerTy(1)) {
+        // Convert to boolean by comparing with zero
+        if (CondValue->getType()->isIntegerTy()) {
+            CondValue = Builder->CreateICmpNE(
+                CondValue,
+                llvm::ConstantInt::get(CondValue->getType(), 0),
+                "while.tobool"
+            );
+        } else {
+            return llvm::make_error<llvm::StringError>(
+                "While condition must be boolean or integer",
+                llvm::inconvertibleErrorCode()
+            );
+        }
+    }
+
+    // Branch: if condition is true, go to body; otherwise exit
+    Builder->CreateCondBr(CondValue, BodyBlock, ExitBlock);
+
+    // Emit body block
+    Builder->SetInsertPoint(BodyBlock);
+
+    // Emit the loop body action
+    if (auto Err = emitAction(While.Body))
+        return std::move(Err);
+
+    // Jump back to condition (loop back)
+    Builder->CreateBr(CondBlock);
+
+    // Continue at exit block
+    Builder->SetInsertPoint(ExitBlock);
+
+    // While loops don't produce a value
     return nullptr;
 }
 
