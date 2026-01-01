@@ -4,6 +4,7 @@
 #include "Planner.h"
 #include "llvm/Support/raw_ostream.h"
 #include <algorithm>
+#include <set>
 #include <sstream>
 
 namespace scaly {
@@ -565,6 +566,102 @@ bool Planner::isOperatorName(llvm::StringRef Name) {
            First == '~' || First == '[' || First == '(';
 }
 
+std::optional<Planner::OperatorMatch> Planner::findOperator(
+    llvm::StringRef Name, const PlannedType &Left, const PlannedType &Right) {
+
+    std::vector<const Operator*> OpCandidates = lookupOperator(Name);
+    for (const Operator* Op : OpCandidates) {
+        // Check parameter type matching
+        if (Op->Input.size() >= 2 && Op->Input[0].ItemType && Op->Input[1].ItemType) {
+            // Resolve the operator's parameter types
+            auto LeftParamResult = resolveType(*Op->Input[0].ItemType, Span{});
+            if (!LeftParamResult) {
+                llvm::consumeError(LeftParamResult.takeError());
+                continue;
+            }
+            auto RightParamResult = resolveType(*Op->Input[1].ItemType, Span{});
+            if (!RightParamResult) {
+                llvm::consumeError(RightParamResult.takeError());
+                continue;
+            }
+
+            // Check if parameter types match
+            if (typesEqual(*LeftParamResult, Left) &&
+                typesEqual(*RightParamResult, Right)) {
+                // Found a match
+                OperatorMatch Match;
+                Match.Op = Op;
+                Match.IsIntrinsic = std::holds_alternative<IntrinsicImpl>(Op->Impl);
+
+                // Generate mangled name for the operator
+                // Convert PlannedType to PlannedItem for mangling
+                std::vector<PlannedItem> ParamItems;
+                PlannedItem LeftItem;
+                LeftItem.ItemType = std::make_shared<PlannedType>(Left);
+                ParamItems.push_back(LeftItem);
+                PlannedItem RightItem;
+                RightItem.ItemType = std::make_shared<PlannedType>(Right);
+                ParamItems.push_back(RightItem);
+                Match.MangledName = mangleOperator(Name, ParamItems);
+
+                return Match;
+            }
+        }
+    }
+
+    // Fallback: check for intrinsic operators on primitive types
+    // These are built-in and don't require stdlib to be loaded
+    static const std::set<std::string> ArithmeticOps = {"+", "-", "*", "/", "%"};
+    static const std::set<std::string> ComparisonOps = {"=", "<>", "<", ">", "<=", ">="};
+    static const std::set<std::string> BitwiseOps = {"&", "|", "^"};
+
+    bool IsPrimitiveType = (Left.Name == "i64" || Left.Name == "i32" ||
+                            Left.Name == "i16" || Left.Name == "i8" ||
+                            Left.Name == "u64" || Left.Name == "u32" ||
+                            Left.Name == "u16" || Left.Name == "u8" ||
+                            Left.Name == "f64" || Left.Name == "f32" ||
+                            Left.Name == "bool");
+
+    if (IsPrimitiveType && typesEqual(Left, Right)) {
+        std::string OpName = Name.str();
+
+        // Determine result type and if operator is valid
+        PlannedType ResultType = Left;  // Arithmetic ops return same type
+        bool IsValidOp = false;
+
+        if (ArithmeticOps.count(OpName)) {
+            IsValidOp = true;
+        } else if (ComparisonOps.count(OpName)) {
+            IsValidOp = true;
+            ResultType.Name = "bool";
+            ResultType.MangledName = "bool";
+        } else if (BitwiseOps.count(OpName) && Left.Name != "f64" && Left.Name != "f32") {
+            // Bitwise ops only on integers
+            IsValidOp = true;
+        }
+
+        if (IsValidOp) {
+            OperatorMatch Match;
+            Match.Op = nullptr;  // No Operator* for intrinsics
+            Match.IsIntrinsic = true;
+
+            // Generate mangled name
+            std::vector<PlannedItem> ParamItems;
+            PlannedItem LeftItem;
+            LeftItem.ItemType = std::make_shared<PlannedType>(Left);
+            ParamItems.push_back(LeftItem);
+            PlannedItem RightItem;
+            RightItem.ItemType = std::make_shared<PlannedType>(Right);
+            ParamItems.push_back(RightItem);
+            Match.MangledName = mangleOperator(Name, ParamItems);
+
+            return Match;
+        }
+    }
+
+    return std::nullopt;
+}
+
 // ============================================================================
 // Operation Resolution
 // ============================================================================
@@ -785,62 +882,35 @@ llvm::Expected<PlannedType> Planner::resolveOperatorCall(
     // for operator precedence. This is a simplified built-in fallback.
 
     // Arithmetic operators on numeric types
-    bool IsArithmetic = (Name == "+" || Name == "-" || Name == "*" ||
-                         Name == "/" || Name == "div" || Name == "mod");
+    static const std::set<std::string> ArithmeticOps = {"+", "-", "*", "/", "%", "div", "mod"};
+    static const std::set<std::string> IntTypes = {"i64", "i32", "i16", "i8", "u64", "u32", "u16", "u8"};
+    static const std::set<std::string> FloatTypes = {"f64", "f32"};
 
-    if (IsArithmetic) {
-        // int op int -> int
-        if (Left.Name == "int" && Right.Name == "int") {
-            PlannedType Result;
-            Result.Loc = Loc;
-            Result.Name = "int";
-            Result.MangledName = "i";
-            return Result;
+    if (ArithmeticOps.count(Name.str())) {
+        // Same type arithmetic: T op T -> T
+        if (typesEqual(Left, Right)) {
+            if (IntTypes.count(Left.Name) || FloatTypes.count(Left.Name)) {
+                return Left;
+            }
         }
-        // float op float -> float
-        if (Left.Name == "float" && Right.Name == "float") {
+        // Mixed int/float -> larger float type
+        if ((IntTypes.count(Left.Name) && FloatTypes.count(Right.Name)) ||
+            (FloatTypes.count(Left.Name) && IntTypes.count(Right.Name))) {
             PlannedType Result;
             Result.Loc = Loc;
-            Result.Name = "float";
-            Result.MangledName = "f";
-            return Result;
-        }
-        // double op double -> double
-        if (Left.Name == "double" && Right.Name == "double") {
-            PlannedType Result;
-            Result.Loc = Loc;
-            Result.Name = "double";
-            Result.MangledName = "d";
-            return Result;
-        }
-        // Mixed int/float -> float
-        if ((Left.Name == "int" && Right.Name == "float") ||
-            (Left.Name == "float" && Right.Name == "int")) {
-            PlannedType Result;
-            Result.Loc = Loc;
-            Result.Name = "float";
-            Result.MangledName = "f";
-            return Result;
-        }
-        // Mixed with double -> double
-        if (Left.Name == "double" || Right.Name == "double") {
-            PlannedType Result;
-            Result.Loc = Loc;
-            Result.Name = "double";
-            Result.MangledName = "d";
+            Result.Name = "f64";
+            Result.MangledName = "f64";
             return Result;
         }
     }
 
     // Comparison operators return bool
-    bool IsComparison = (Name == "=" || Name == "==" || Name == "<>" ||
-                         Name == "!=" || Name == "<" || Name == ">" ||
-                         Name == "<=" || Name == ">=");
-    if (IsComparison) {
+    static const std::set<std::string> ComparisonOps = {"=", "==", "<>", "!=", "<", ">", "<=", ">="};
+    if (ComparisonOps.count(Name.str())) {
         // Allow comparison of same numeric types
-        if ((Left.Name == "int" || Left.Name == "float" || Left.Name == "double" ||
+        if ((IntTypes.count(Left.Name) || FloatTypes.count(Left.Name) ||
              Left.Name == "bool" || Left.Name == "char") &&
-            (Right.Name == "int" || Right.Name == "float" || Right.Name == "double" ||
+            (IntTypes.count(Right.Name) || FloatTypes.count(Right.Name) ||
              Right.Name == "bool" || Right.Name == "char")) {
             PlannedType Result;
             Result.Loc = Loc;
@@ -1079,6 +1149,139 @@ llvm::Expected<PlannedType> Planner::resolveOperationSequence(
     return Context;
 }
 
+llvm::Expected<PlannedOperand> Planner::collapseOperandSequence(
+    std::vector<PlannedOperand> Ops) {
+
+    if (Ops.empty()) {
+        return makePlannerNotImplementedError(File, Span{},
+            "empty operand sequence");
+    }
+
+    // Single operand: return as-is
+    if (Ops.size() == 1) {
+        return std::move(Ops[0]);
+    }
+
+    // Handle prefix operator (e.g., -x, !x)
+    if (auto* TypeExpr = std::get_if<PlannedType>(&Ops[0].Expr)) {
+        if (isOperatorName(TypeExpr->Name) && Ops.size() >= 2) {
+            // Prefix operator: collapse rest first, then apply prefix
+            std::vector<PlannedOperand> RestOps(Ops.begin() + 1, Ops.end());
+            auto RestResult = collapseOperandSequence(std::move(RestOps));
+            if (!RestResult) {
+                return RestResult.takeError();
+            }
+
+            // Create PlannedCall for prefix operator
+            PlannedCall Call;
+            Call.Loc = Ops[0].Loc;
+            Call.Name = TypeExpr->Name;
+            Call.IsOperator = true;
+            Call.IsIntrinsic = true;  // Prefix operators on primitives are intrinsic
+
+            Call.Args = std::make_shared<std::vector<PlannedOperand>>();
+            Call.Args->push_back(std::move(*RestResult));
+
+            // Result type: negation preserves type, logical not returns bool
+            PlannedType OperandType = Call.Args->front().ResultType;
+            if (TypeExpr->Name == "!" || TypeExpr->Name == "not") {
+                Call.ResultType.Name = "bool";
+                Call.ResultType.MangledName = "bool";
+            } else {
+                // Negation, bitwise not: result type = operand type
+                Call.ResultType = OperandType;
+            }
+
+            // Generate mangled name for unary operator
+            std::vector<PlannedItem> ParamItems;
+            PlannedItem Item;
+            Item.ItemType = std::make_shared<PlannedType>(OperandType);
+            ParamItems.push_back(Item);
+            Call.MangledName = mangleOperator(TypeExpr->Name, ParamItems);
+
+            PlannedOperand Result;
+            Result.Loc = Call.Loc;
+            Result.ResultType = Call.ResultType;
+            Result.Expr = std::move(Call);
+            return Result;
+        }
+    }
+
+    // Simple binary case: value op value (3 operands)
+    // Left-to-right processing for longer sequences
+    PlannedOperand Left = std::move(Ops[0]);
+    size_t I = 1;
+
+    while (I < Ops.size()) {
+        // Check if current operand is an operator
+        if (auto* TypeExpr = std::get_if<PlannedType>(&Ops[I].Expr)) {
+            if (isOperatorName(TypeExpr->Name) && I + 1 < Ops.size()) {
+                // Binary operator: left op right
+                PlannedOperand& Right = Ops[I + 1];
+
+                // Find the operator
+                auto OpMatch = findOperator(TypeExpr->Name, Left.ResultType, Right.ResultType);
+
+                if (OpMatch) {
+                    // Create a PlannedCall
+                    PlannedCall Call;
+                    Call.Loc = Ops[I].Loc;
+                    Call.Name = TypeExpr->Name;
+                    Call.MangledName = OpMatch->MangledName;
+                    Call.IsIntrinsic = OpMatch->IsIntrinsic;
+                    Call.IsOperator = true;
+
+                    // Store arguments (make copies for result type calculation)
+                    PlannedType LeftType = Left.ResultType;
+                    PlannedType RightType = Right.ResultType;
+                    Call.Args = std::make_shared<std::vector<PlannedOperand>>();
+                    Call.Args->push_back(std::move(Left));
+                    Call.Args->push_back(std::move(Right));
+
+                    // Get result type from operator
+                    if (OpMatch->Op && OpMatch->Op->Returns) {
+                        // Explicit operator with return type
+                        auto RetType = resolveType(*OpMatch->Op->Returns, Call.Loc);
+                        if (RetType) {
+                            Call.ResultType = std::move(*RetType);
+                        }
+                    } else if (OpMatch->IsIntrinsic) {
+                        // Intrinsic operator: determine result type from operation
+                        static const std::set<std::string> ComparisonOps = {"=", "<>", "<", ">", "<=", ">="};
+                        if (ComparisonOps.count(TypeExpr->Name)) {
+                            Call.ResultType.Name = "bool";
+                            Call.ResultType.MangledName = "bool";
+                        } else {
+                            // Arithmetic/bitwise: result is same type as operands
+                            Call.ResultType = LeftType;
+                        }
+                    }
+
+                    // Create new left operand with the call
+                    PlannedOperand NewLeft;
+                    NewLeft.Loc = Call.Loc;
+                    NewLeft.ResultType = Call.ResultType;
+                    NewLeft.Expr = std::move(Call);
+
+                    Left = std::move(NewLeft);
+                    I += 2;  // Skip operator and right operand
+                    continue;
+                } else {
+                    // Operator not found, skip
+                    I++;
+                    continue;
+                }
+            }
+        }
+
+        // Non-operator: use as new left
+        Left = std::move(Ops[I]);
+        I++;
+    }
+
+    return Left;
+}
+
 // ============================================================================
 // Member Access Resolution
 // ============================================================================
@@ -1196,18 +1399,18 @@ PlannedType Planner::inferConstantType(const Constant &C) {
         }
         else if constexpr (std::is_same_v<T, IntegerConstant>) {
             Result.Loc = Val.Loc;
-            Result.Name = "int";
-            Result.MangledName = "i";
+            Result.Name = "i64";
+            Result.MangledName = "i64";
         }
         else if constexpr (std::is_same_v<T, HexConstant>) {
             Result.Loc = Val.Loc;
-            Result.Name = "uint";
-            Result.MangledName = "j";
+            Result.Name = "u64";
+            Result.MangledName = "u64";
         }
         else if constexpr (std::is_same_v<T, FloatingPointConstant>) {
             Result.Loc = Val.Loc;
-            Result.Name = "float";
-            Result.MangledName = "f";
+            Result.Name = "f64";
+            Result.MangledName = "f64";
         }
         else if constexpr (std::is_same_v<T, StringConstant>) {
             Result.Loc = Val.Loc;
@@ -2156,11 +2359,15 @@ llvm::Expected<PlannedTuple> Planner::planTuple(const Tuple &Tup) {
     // Compute TupleType
     // Single anonymous component = grouping parentheses, use the operation sequence type
     if (Result.Components.size() == 1 && !Result.Components[0].Name) {
-        auto SeqType = resolveOperationSequence(Result.Components[0].Value);
-        if (!SeqType) {
-            return SeqType.takeError();
+        // For grouping parentheses, collapse the operand sequence to a single value
+        auto Collapsed = collapseOperandSequence(std::move(Result.Components[0].Value));
+        if (!Collapsed) {
+            return Collapsed.takeError();
         }
-        Result.TupleType = std::move(*SeqType);
+        // Replace the raw operand sequence with the collapsed result
+        Result.Components[0].Value.clear();
+        Result.Components[0].Value.push_back(std::move(*Collapsed));
+        Result.TupleType = Result.Components[0].Value[0].ResultType;
     } else {
         // Multi-component or named component tuple
         // Build a proper tuple type with generics for each component
@@ -2293,7 +2500,13 @@ llvm::Expected<PlannedAction> Planner::planAction(const Action &Act) {
     if (!PlannedSource) {
         return PlannedSource.takeError();
     }
-    Result.Source = std::move(*PlannedSource);
+
+    // Collapse operand sequence to create PlannedCall structures for operators
+    auto CollapsedSource = collapseOperandSequence(std::move(*PlannedSource));
+    if (!CollapsedSource) {
+        return CollapsedSource.takeError();
+    }
+    Result.Source.push_back(std::move(*CollapsedSource));
 
     auto PlannedTarget = planOperands(Act.Target);
     if (!PlannedTarget) {

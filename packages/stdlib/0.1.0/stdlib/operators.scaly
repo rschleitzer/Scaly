@@ -1,0 +1,54 @@
+; Intrinsic operators for primitive types
+; These have no Scaly implementation - the backend emits native instructions
+
+define operators {
+
+    ; Signed integer arithmetic (i64)
+    operator +(left: i64, right: i64) returns i64 intrinsic
+    operator -(left: i64, right: i64) returns i64 intrinsic
+    operator *(left: i64, right: i64) returns i64 intrinsic
+    operator /(left: i64, right: i64) returns i64 intrinsic
+    operator %(left: i64, right: i64) returns i64 intrinsic
+
+    ; Unary minus
+    operator -(value: i64) returns i64 intrinsic
+
+    ; Signed integer comparison
+    operator =(left: i64, right: i64) returns bool intrinsic
+    operator <>(left: i64, right: i64) returns bool intrinsic
+    operator <(left: i64, right: i64) returns bool intrinsic
+    operator >(left: i64, right: i64) returns bool intrinsic
+    operator <=(left: i64, right: i64) returns bool intrinsic
+    operator >=(left: i64, right: i64) returns bool intrinsic
+
+    ; 32-bit signed integer arithmetic
+    operator +(left: i32, right: i32) returns i32 intrinsic
+    operator -(left: i32, right: i32) returns i32 intrinsic
+    operator *(left: i32, right: i32) returns i32 intrinsic
+    operator /(left: i32, right: i32) returns i32 intrinsic
+
+    ; Floating point arithmetic (f64)
+    operator +(left: f64, right: f64) returns f64 intrinsic
+    operator -(left: f64, right: f64) returns f64 intrinsic
+    operator *(left: f64, right: f64) returns f64 intrinsic
+    operator /(left: f64, right: f64) returns f64 intrinsic
+
+    ; Unary minus for floats
+    operator -(value: f64) returns f64 intrinsic
+
+    ; Floating point comparison
+    operator =(left: f64, right: f64) returns bool intrinsic
+    operator <>(left: f64, right: f64) returns bool intrinsic
+    operator <(left: f64, right: f64) returns bool intrinsic
+    operator >(left: f64, right: f64) returns bool intrinsic
+    operator <=(left: f64, right: f64) returns bool intrinsic
+    operator >=(left: f64, right: f64) returns bool intrinsic
+
+    ; Boolean operators
+    operator &(left: bool, right: bool) returns bool intrinsic
+    operator |(left: bool, right: bool) returns bool intrinsic
+    operator !(value: bool) returns bool intrinsic
+    operator =(left: bool, right: bool) returns bool intrinsic
+    operator <>(left: bool, right: bool) returns bool intrinsic
+
+}

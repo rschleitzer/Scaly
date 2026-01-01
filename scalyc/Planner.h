@@ -9,6 +9,7 @@
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
 #include <map>
+#include <optional>
 #include <set>
 #include <string>
 #include <vector>
@@ -213,6 +214,20 @@ private:
     // Returns the result type of the entire operation
     llvm::Expected<PlannedType> resolveOperationSequence(
         const std::vector<PlannedOperand> &Ops);
+
+    // Collapse an operand sequence into a single operand with PlannedCall
+    // Returns a single operand containing nested PlannedCall structures
+    llvm::Expected<PlannedOperand> collapseOperandSequence(
+        std::vector<PlannedOperand> Ops);
+
+    // Find matching operator and check if it's intrinsic
+    struct OperatorMatch {
+        const Operator* Op;
+        std::string MangledName;
+        bool IsIntrinsic;
+    };
+    std::optional<OperatorMatch> findOperator(
+        llvm::StringRef Name, const PlannedType &Left, const PlannedType &Right);
 
     // Resolve a function call with given arguments
     llvm::Expected<PlannedType> resolveFunctionCall(
