@@ -1710,6 +1710,79 @@ static bool testPipelineMatchFirstCase() {
     return true;
 }
 
+// Try expression tests
+// Note: Full try expression testing requires Result/union types.
+// These tests verify basic functionality with simple values.
+
+static bool testPipelineTrySimpleValue() {
+    const char* Name = "Pipeline: try 42: else 0";
+
+    auto ResultOrErr = evalInt("try 42: else 0");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // Simple integer passes through - try returns the value
+    if (*ResultOrErr != 42) {
+        std::string Msg = "expected 42, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineTryWithBinding() {
+    const char* Name = "Pipeline: try let x = 10: else 0";
+
+    auto ResultOrErr = evalInt("try let x = 10: else 0");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // Binding succeeds, returns the bound value
+    if (*ResultOrErr != 10) {
+        std::string Msg = "expected 10, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineTryExpression() {
+    const char* Name = "Pipeline: try 3 + 4: else 0";
+
+    auto ResultOrErr = evalInt("try 3 + 4: else 0");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // Expression evaluates and passes through
+    if (*ResultOrErr != 7) {
+        std::string Msg = "expected 7, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
 bool runEmitterTests() {
     llvm::outs() << "Running Emitter tests...\n";
 
@@ -1807,6 +1880,12 @@ bool runEmitterTests() {
     testPipelineMatchElse();
     testPipelineMatchWithVar();
     testPipelineMatchFirstCase();
+
+    // Try expressions
+    llvm::outs() << "  Try expression tests:\n";
+    testPipelineTrySimpleValue();
+    testPipelineTryWithBinding();
+    testPipelineTryExpression();
 
     llvm::outs() << "\nEmitter tests: " << TestsPassed << " passed, "
                  << TestsFailed << " failed\n";
