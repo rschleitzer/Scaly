@@ -656,6 +656,111 @@ static bool testPipelineParentheses() {
     return true;
 }
 
+static bool testPipelineBoolLiteral() {
+    const char* Name = "Pipeline: true";
+
+    auto PlanResult = compileToPlan("true");
+    if (!PlanResult) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << PlanResult.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    EmitterConfig Config;
+    Config.EmitDebugInfo = false;
+    Emitter E(Config);
+
+    auto ResultOrErr = E.jitExecuteBool(*PlanResult);
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    bool Result = *ResultOrErr;
+    if (Result != true) {
+        fail(Name, "expected true, got false");
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineBoolNegateTrue() {
+    const char* Name = "Pipeline: ~true";
+
+    auto PlanResult = compileToPlan("~true");
+    if (!PlanResult) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << PlanResult.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    EmitterConfig Config;
+    Config.EmitDebugInfo = false;
+    Emitter E(Config);
+
+    auto ResultOrErr = E.jitExecuteBool(*PlanResult);
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    bool Result = *ResultOrErr;
+    if (Result != false) {
+        fail(Name, "expected false, got true");
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineBoolNegateFalse() {
+    const char* Name = "Pipeline: ~false";
+
+    auto PlanResult = compileToPlan("~false");
+    if (!PlanResult) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << PlanResult.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    EmitterConfig Config;
+    Config.EmitDebugInfo = false;
+    Emitter E(Config);
+
+    auto ResultOrErr = E.jitExecuteBool(*PlanResult);
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    bool Result = *ResultOrErr;
+    if (Result != true) {
+        fail(Name, "expected true, got false");
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
 bool runEmitterTests() {
     llvm::outs() << "Running Emitter tests...\n";
 
@@ -684,6 +789,9 @@ bool runEmitterTests() {
     testPipelineDivision();
     testPipelineModulo();
     testPipelineParentheses();
+    testPipelineBoolLiteral();
+    testPipelineBoolNegateTrue();
+    testPipelineBoolNegateFalse();
 
     llvm::outs() << "\nEmitter tests: " << TestsPassed << " passed, "
                  << TestsFailed << " failed\n";
