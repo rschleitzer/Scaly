@@ -523,7 +523,7 @@
     <content link = Operand               multiple optional property = result
 
 <syntax id = Lambda
-    <content link = lambda
+    <content link = backslash
     <content link = Operand               multiple          property = input
     <content colon
     <content link = Action                                  property = block
@@ -622,7 +622,6 @@
 <keyword id = instruction
 <keyword id = intrinsic
 <keyword id = label
-<keyword id = lambda
 <keyword id = let
 <keyword id = loop
 <keyword id = macro
@@ -661,5 +660,6 @@
 <punctuation id = dollar            value = "$"
 <punctuation id = hash              value = "#"
 <punctuation id = caret             value = "^"
+<punctuation id = backslash         value = "\\"
 
 </grammar>

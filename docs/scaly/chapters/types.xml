@@ -1,0 +1,661 @@
+<chapter xml:id="types">
+  <title>Type System</title>
+
+  <section xml:id="types-overview">
+    <title>Overview</title>
+    <para>Scaly's type system is designed for maximum portability across backends.
+      The compiler itself has no built-in knowledge of primitive types. Instead,
+      all types — including integers, floats, and booleans — are defined in
+      backend-specific prelude files.</para>
+  </section>
+
+  <section xml:id="types-intrinsic">
+    <title>Intrinsic Types</title>
+    <para>An <emphasis>intrinsic type</emphasis> is a type whose implementation is
+      provided by the backend, not by Scaly code. Intrinsic types are declared
+      using the <literal>intrinsic</literal> keyword:</para>
+    <programlisting>
+define i32 intrinsic
+define i64 intrinsic
+define f64 intrinsic
+    </programlisting>
+    <para>The compiler does not interpret these definitions — it simply records that
+      these types exist and are intrinsic. The backend (Emitter) is responsible
+      for mapping intrinsic types to the target platform's representation.</para>
+    <para>This design enables Scaly to target any backend:</para>
+    <itemizedlist>
+      <listitem><para><emphasis>LLVM</emphasis>: <literal>i32</literal>, <literal>i64</literal>, <literal>f32</literal>, <literal>f64</literal></para></listitem>
+      <listitem><para><emphasis>JavaScript</emphasis>: <literal>number</literal>, <literal>string</literal>, <literal>boolean</literal></para></listitem>
+      <listitem><para><emphasis>WebAssembly</emphasis>: <literal>i32</literal>, <literal>i64</literal>, <literal>f32</literal>, <literal>f64</literal></para></listitem>
+      <listitem><para><emphasis>JVM</emphasis>: <literal>int</literal>, <literal>long</literal>, <literal>float</literal>, <literal>double</literal></para></listitem>
+    </itemizedlist>
+  </section>
+
+  <section xml:id="types-aliases">
+    <title>Type Aliases</title>
+    <para>Type aliases provide human-friendly names for intrinsic or compound types:</para>
+    <programlisting>
+define bool i1
+define char i32       ; Unicode scalar value
+define int i64        ; Platform word size
+define size_t u64
+    </programlisting>
+    <para>The alias and its target are interchangeable — <literal>bool</literal> and
+      <literal>i1</literal> refer to the same type.</para>
+  </section>
+
+  <section xml:id="types-prelude">
+    <title>Backend Preludes</title>
+    <para>Each backend provides a <emphasis>prelude</emphasis> file that defines the
+      intrinsic types and their aliases for that target. The prelude is implicitly
+      loaded before any user code.</para>
+    <example>
+      <title>LLVM Prelude (excerpt)</title>
+      <programlisting>
+; Intrinsic types (LLVM native)
+define i1 intrinsic
+define i8 intrinsic
+define i16 intrinsic
+define i32 intrinsic
+define i64 intrinsic
+define f32 intrinsic
+define f64 intrinsic
+define ptr intrinsic
+
+; Human-friendly aliases
+define bool i1
+define char i32
+define int i64
+define size_t u64
+      </programlisting>
+    </example>
+    <example>
+      <title>JavaScript Prelude (excerpt)</title>
+      <programlisting>
+; Intrinsic types (JavaScript native)
+define number intrinsic
+define string intrinsic
+define boolean intrinsic
+
+; Aliases for compatibility
+define int number
+define float number
+define bool boolean
+      </programlisting>
+    </example>
+  </section>
+
+  <section xml:id="types-literals">
+    <title>Literal Type Inference</title>
+    <para>Numeric and other literals do not have an inherent type. Their type is
+      inferred from context:</para>
+    <programlisting>
+function double(x: i32) returns i32 { x * 2 }
+
+double(42)           ; 42 inferred as i32 from parameter type
+
+let y: i64 100       ; 100 inferred as i64 from annotation
+let z y + 50         ; 50 inferred as i64 to match y
+    </programlisting>
+    <para>If the type cannot be inferred, the compiler requires an explicit annotation:</para>
+    <programlisting>
+let x 42             ; ERROR: cannot infer type for integer literal
+let x: i32 42        ; OK: type explicitly annotated
+    </programlisting>
+    <para>Scaly does <emphasis>not</emphasis> support type suffixes on literals
+      (such as <literal>42i32</literal>). This keeps literals clean and
+      encourages explicit type annotations where they matter.</para>
+  </section>
+
+  <section xml:id="types-references">
+    <title>References and Aliasing</title>
+    <para>Scaly does not have reference types. There is no <literal>ref[T]</literal>
+      or equivalent. This follows the ParaSail philosophy: no pointers or aliasing
+      at the language level.</para>
+    <para>Values flow through functions. When a function receives a parameter, it
+      gets read-only access (implemented as a pointer under the hood, but not
+      exposed in the type system). When a function returns, it returns a value.</para>
+
+    <section xml:id="types-pointers">
+      <title>Low-Level Pointers</title>
+      <para>For low-level implementation of data structures like <literal>Page</literal>,
+        <literal>HashMap</literal>, or <literal>List</literal>, the type
+        <literal>pointer[T]</literal> is available. This is an escape hatch for
+        implementors, not for everyday code.</para>
+      <programlisting>
+; Low-level list node (internal implementation)
+define Node[T] {
+    data: T
+    next: pointer[Node[T]]    ; raw pointer for linked structure
+}
+      </programlisting>
+    </section>
+
+    <section xml:id="types-option">
+      <title>Nullable Values</title>
+      <para>For nullable values, use <literal>Option[T]</literal> — a proper sum type
+        with <literal>Some(value)</literal> and <literal>None</literal> variants:</para>
+      <programlisting>
+function find(list: List[T], predicate: function(T) returns bool) returns Option[T] {
+    ; returns Some(item) if found, None otherwise
+}
+
+let result find(items, \x: x > 10)
+choose result {
+    when Some(value): process(value)
+    when None: handle_not_found()
+}
+      </programlisting>
+      <para>The compiler optimizes <literal>Option[T]</literal> to a simple
+        nullable pointer — no space overhead for the tag.</para>
+    </section>
+  </section>
+
+  <section xml:id="types-parameters">
+    <title>Parameter Passing</title>
+    <para>All function parameters are <emphasis>borrowed</emphasis> — functions receive
+      read-only access to their arguments. The caller retains ownership.</para>
+    <programlisting>
+define Point { x: i32, y: i32 }
+
+function distance(a: Point, b: Point) returns f64 {
+    ; a and b are read-only views
+    ; cannot modify them
+    ...
+}
+
+let origin Point(0, 0)
+let target Point(3, 4)
+distance(origin, target)    ; origin and target unchanged
+    </programlisting>
+
+    <section xml:id="types-params-implementation">
+      <title>Implementation</title>
+      <para>The implementation of parameter passing depends on the execution context,
+        but the semantics remain identical:</para>
+      <itemizedlist>
+        <listitem><para><emphasis>Same thread/stack</emphasis>: A pointer is passed.
+          No copying occurs. The function reads through the pointer.</para></listitem>
+        <listitem><para><emphasis>Different thread/GPU/remote</emphasis>: The entire
+          data tree is copied to the target execution context. The function still
+          has read-only access — same semantics, different mechanism.</para></listitem>
+      </itemizedlist>
+      <para>This design means code doesn't change based on where it executes. A function
+        that works locally works identically when distributed.</para>
+    </section>
+
+    <section xml:id="types-params-mutation">
+      <title>Mutation via Procedures</title>
+      <para>To modify data, use a <literal>procedure</literal> instead of a function.
+        Procedures can declare parameters as mutable:</para>
+      <programlisting>
+procedure move(p: mutable Point, dx: i32, dy: i32) {
+    set p.x: p.x + dx
+    set p.y: p.y + dy
+}
+
+var position Point(0, 0)
+move(position, 5, 3)    ; position is now (5, 3)
+      </programlisting>
+      <para>The distinction between functions (pure, read-only) and procedures
+        (may mutate) is explicit in the code. Readers immediately know which
+        calls might have side effects.</para>
+    </section>
+  </section>
+
+  <section xml:id="types-constructors">
+    <title>Constructors</title>
+    <para>Constructors create instances of types. Scaly provides both implicit and
+      explicit constructors.</para>
+
+    <section xml:id="types-constructors-implicit">
+      <title>Implicit Constructors</title>
+      <para>If all members of a type are public, an implicit constructor is generated
+        that takes all fields as parameters in declaration order:</para>
+      <programlisting>
+define Point { x: i32, y: i32 }
+
+let p Point(10, 20)    ; implicit constructor
+      </programlisting>
+    </section>
+
+    <section xml:id="types-constructors-explicit">
+      <title>Explicit Constructors</title>
+      <para>Use <literal>init</literal> for explicit constructors when you need:</para>
+      <itemizedlist>
+        <listitem><para>Private members (implicit constructor unavailable)</para></listitem>
+        <listitem><para>Default values for some fields</para></listitem>
+        <listitem><para>Different construction signatures</para></listitem>
+      </itemizedlist>
+      <programlisting>
+define Point
+(
+    x: i32
+    y: i32
+)
+{
+    init(value: i32) {      ; convenience constructor
+        set this.x: value
+        set this.y: value
+    }
+}
+
+let p1 Point(10, 20)    ; first init
+let p2 Point(5)         ; second init - Point(5, 5)
+      </programlisting>
+    </section>
+
+    <section xml:id="types-constructors-this">
+      <title>The <literal>this</literal> Prefix</title>
+      <para>The <literal>this.</literal> prefix is optional when unambiguous, but
+        recommended for clarity:</para>
+      <programlisting>
+init(x: i32, y: i32) {
+    set this.x: x    ; clear: field x gets parameter x
+    set this.y: y
+}
+      </programlisting>
+      <para>When parameter names shadow field names, <literal>this.</literal> is
+        required to disambiguate. Avoid <literal>set x: x</literal> — it's confusing
+        even if technically resolvable.</para>
+    </section>
+
+    <section xml:id="types-constructors-complete">
+      <title>Complete Initialization</title>
+      <para>All fields must be initialized by any constructor — implicit or explicit.
+        The compiler enforces this. There are no implicit default values (no automatic
+        0, false, or null):</para>
+      <programlisting>
+define Point { x: i32, y: i32 }
+
+init(x: i32) {
+    set this.x: x
+    ; ERROR: field 'y' not initialized
+}
+      </programlisting>
+    </section>
+
+    <section xml:id="types-constructors-return">
+      <title>Constructor Return</title>
+      <para><literal>init</literal> implicitly returns <literal>this</literal>,
+        enabling direct binding:</para>
+      <programlisting>
+let p Point(10, 20)    ; init returns the new Point
+      </programlisting>
+    </section>
+
+    <section xml:id="types-constructors-lifetime">
+      <title>Constructed Value Lifetime</title>
+      <para>The lifetime of a constructed value is inferred from context:</para>
+      <itemizedlist>
+        <listitem><para><emphasis>In a block</emphasis>: Local lifetime (current block)</para></listitem>
+        <listitem><para><emphasis>Last statement / return position</emphasis>: Call lifetime (return page)</para></listitem>
+        <listitem><para><emphasis>Explicit annotation</emphasis>: As specified</para></listitem>
+      </itemizedlist>
+      <programlisting>
+function example() returns Point {
+    let temp Point(1, 2)     ; local - dies at block end
+    return Point(3, 4)       ; call - inferred from return position
+}
+      </programlisting>
+    </section>
+  </section>
+
+  <section xml:id="types-closures">
+    <title>Closures (Lambdas)</title>
+    <para>Closures are anonymous functions defined with backslash syntax:</para>
+    <programlisting>
+\x: x * 2                    ; single parameter
+\x y: x + y                  ; multiple parameters
+\: 42                        ; no parameters
+    </programlisting>
+
+    <section xml:id="types-closures-capture">
+      <title>Capturing Variables</title>
+      <para>Closures can capture variables from their enclosing scope. Captured
+        variables are treated as implicit borrowed parameters — read-only access,
+        same as explicit function parameters:</para>
+      <programlisting>
+let multiplier 10
+let scale \x: x * multiplier    ; captures multiplier (read-only)
+
+scale(5)    ; returns 50
+      </programlisting>
+    </section>
+
+    <section xml:id="types-closures-pure">
+      <title>Closures Are Pure</title>
+      <para>Closures cannot mutate captured variables. They are pure like functions,
+        not imperative like procedures:</para>
+      <programlisting>
+var count 0
+let bad \: { set count: count + 1 }   ; ERROR: cannot mutate capture
+      </programlisting>
+    </section>
+
+    <section xml:id="types-closures-lifetime">
+      <title>Closure Lifetime</title>
+      <para>Since captures are borrowed, a closure cannot outlive its captured
+        variables. The compiler enforces this through lifetime checking:</para>
+      <programlisting>
+function makeCounter() returns (function() returns i32) {
+    var count 0
+    return \: count    ; ERROR: closure outlives captured 'count'
+}
+      </programlisting>
+    </section>
+
+    <section xml:id="types-closures-impl">
+      <title>Implementation</title>
+      <para>Each closure is an anonymous struct containing its captures, with a
+        call method implementing the body. Closures are monomorphized like other
+        generic types.</para>
+    </section>
+  </section>
+
+  <section xml:id="types-errors">
+    <title>Error Handling</title>
+    <para>Scaly uses explicit error handling. There are no exceptions or stack unwinding — 
+    errors are values returned from functions or procedures.</para>
+
+    <section xml:id="types-errors-throws">
+      <title>The <literal>throws</literal> Clause</title>
+      <para>Functions or procedures that can fail declare their error type with <literal>throws</literal>:</para>
+      <programlisting>
+procedure parse(input: String) returns AST throws ParseError {
+    if invalid(input) {
+        throw InvalidSyntax(position, "expected expression")
+    }
+    ...
+}
+      </programlisting>
+      <para>Under the hood, this is equivalent to returning <literal>Result[AST, ParseError]</literal>,
+        but with dedicated syntax for clarity.</para>
+    </section>
+
+    <section xml:id="types-errors-single">
+      <title>Single Error Type</title>
+      <para>A function can only throw one error type. To represent multiple error
+        kinds, use a union:</para>
+      <programlisting>
+define FileError union {
+    NotFound { path: String }
+    PermissionDenied { path: String }
+    IoError { message: String }
+}
+
+function readFile(path: String) returns String throws FileError {
+    ...
+}
+      </programlisting>
+      <para>This ensures a clear error signature and enables the <literal>try</literal>/<literal>when</literal>
+        pattern for handling specific variants.</para>
+    </section>
+
+    <section xml:id="types-errors-try">
+      <title>The <literal>try</literal>/<literal>when</literal> Pattern</title>
+      <para>Handle errors with <literal>try</literal> and <literal>when</literal> clauses:</para>
+      <programlisting>
+try let ast parse(input)
+    when InvalidSyntax(pos, msg): reportError(pos, msg)
+    when UnexpectedEof: reportError(0, "unexpected end of file")
+      </programlisting>
+      <para>If not all error variants are covered, an <literal>else</literal> clause is required:</para>
+      <programlisting>
+try let ast parse(input)
+    when InvalidSyntax(pos, msg): reportError(pos, msg)
+    else panic("unhandled error")
+      </programlisting>
+    </section>
+
+    <section xml:id="types-errors-propagate">
+      <title>Error Propagation</title>
+      <para>Use <literal>else throw</literal> to re-throw errors to the caller:</para>
+      <programlisting>
+function process(input: String) returns Data throws ParseError {
+    try let ast parse(input)
+        else throw    ; re-throws ParseError to caller
+
+    transform(ast)
+}
+      </programlisting>
+      <para>When the error type matches exactly, the error propagates automatically.
+        This simplifies deeply nested code like parsers and visitors.</para>
+    </section>
+
+    <section xml:id="types-errors-lifetime">
+      <title>Error Lifetime</title>
+      <para>Thrown values must have thrown lifetime (<literal>!</literal>).
+        The compiler infers this from throw position. If inference fails, annotate
+        explicitly:</para>
+      <programlisting>
+throw ParseError.InvalidSyntax(pos, msg)!   ; explicit thrown lifetime</programlisting>
+      <para>The caller provides the exception region where the error will be stored.</para>
+    </section>
+  </section>
+
+  <section xml:id="types-unions">
+    <title>Union Types</title>
+    <para>A union type (also called sum type or tagged union) can hold one of
+      several variants. Each variant can have its own fields:</para>
+    <programlisting>
+define Shape union {
+    Circle { radius: f64 }
+    Rectangle { width: f64, height: f64 }
+    Triangle { a: f64, b: f64, c: f64 }
+}
+
+let s Shape.Circle(5.0)
+    </programlisting>
+
+    <section xml:id="types-unions-layout">
+      <title>Memory Layout</title>
+      <para>A union is stored as a tag plus the largest variant:</para>
+      <programlisting>
+Shape = { tag: u8, data: [size of largest variant] }
+      </programlisting>
+      <para>Unions can contain other unions. Nested unions contribute their full
+        size (tag + data) when computing the parent union's size.</para>
+    </section>
+
+    <section xml:id="types-unions-choose">
+      <title>Pattern Matching with <literal>choose</literal></title>
+      <para>Use <literal>choose</literal>-<literal>when</literal> to match on variants:</para>
+      <programlisting>
+choose s
+    when Circle(r): computeCircleArea(r)
+    when Rectangle(w, h): w * h
+    when Triangle(a, b, c): heronArea(a, b, c)</programlisting>
+      <para>If not all variants are covered, an <literal>else</literal> clause is required:</para>
+      <programlisting>
+choose s when Circle(r): computeCircleArea(r) else 0.0    ; handles Rectangle and Triangle</programlisting>
+    </section>
+
+    <section xml:id="types-unions-option">
+      <title>Option Type</title>
+      <para><literal>Option[T]</literal> is a union for nullable values:</para>
+      <programlisting>
+define Option[T] union {
+    Some { value: T }
+    None
+}
+
+function find(list: List[T], pred: function(T) returns bool) returns Option[T] {
+    ...
+}
+
+choose find(items, \x: x > 10) {
+    when Some(value): process(value)
+    when None: handle_not_found()
+}
+      </programlisting>
+    </section>
+
+    <section xml:id="types-unions-optimization">
+      <title>Option Optimization</title>
+      <para>For non-pointer types, <literal>Option[T]</literal> optimizes to a pointer:</para>
+      <itemizedlist>
+        <listitem><para><literal>None</literal> = null pointer</para></listitem>
+        <listitem><para><literal>Some(value)</literal> = pointer to value</para></listitem>
+      </itemizedlist>
+      <para>Note that if T is itself a pointer, the Option Optimization leads to a pointer to another pointer which could be null itself.</para>
+    </section>
+  </section>
+
+  <section xml:id="types-generics">
+    <title>Generics</title>
+    <para>Scaly supports generic types with type parameters in square brackets:</para>
+    <programlisting>
+define List[T] {
+    ...
+}
+
+define HashMap[K, V] {
+    ...
+}
+
+let numbers List[i32]()
+let names List[String]()
+    </programlisting>
+
+    <section xml:id="types-generics-mono">
+      <title>Monomorphization</title>
+      <para>Generics are implemented via <emphasis>monomorphization</emphasis>: each
+        concrete instantiation becomes a completely separate type at compile time.
+        <literal>List[i32]</literal> and <literal>List[String]</literal> share no
+        code at runtime — each has its own specialized implementation.</para>
+      <para>Benefits:</para>
+      <itemizedlist>
+        <listitem><para>No runtime overhead — no type descriptors or vtables</para></listitem>
+        <listitem><para>Full optimization — the compiler sees concrete types</para></listitem>
+        <listitem><para>No boxing — primitives stay primitives</para></listitem>
+      </itemizedlist>
+      <para>Trade-offs:</para>
+      <itemizedlist>
+        <listitem><para>Larger binaries — each instantiation duplicates code</para></listitem>
+        <listitem><para>Longer compile times — more code to generate</para></listitem>
+      </itemizedlist>
+    </section>
+
+    <section xml:id="types-generics-mangling">
+      <title>Name Mangling</title>
+      <para>The Planner generates unique mangled names for each instantiation,
+        following Itanium ABI conventions:</para>
+      <programlisting>
+List[i32]         → _ZN4ListIiE...
+List[String]      → _ZN4ListI6StringE...
+HashMap[String, i32] → _ZN7HashMapI6StringiE...
+      </programlisting>
+      <para>These names are compatible with <literal>c++filt</literal> for debugging.</para>
+    </section>
+  </section>
+
+  <section xml:id="types-lifetimes">
+    <title>Lifetimes and Memory Regions</title>
+    <para>Scaly uses Region-Based Memory Management (RBMM). Instead of garbage
+      collection or manual malloc/free, values are allocated in regions that
+      are deallocated in bulk. Lifetimes control which region a value lives in.</para>
+
+    <section xml:id="types-lifetime-kinds">
+      <title>Lifetime Kinds</title>
+      <variablelist>
+        <varlistentry>
+          <term>Local (<literal>$</literal>, default)</term>
+          <listitem><para>Value lives until the end of the current block. This is the
+            default — the <literal>$</literal> annotation is optional.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>Call (<literal>#</literal>)</term>
+          <listitem><para>Value lives in the "return page" — it survives the function
+            return and is managed by the caller.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>Thrown (<literal>!</literal>)</term>
+          <listitem><para>Value lives in the "exception page" — for values that may
+            be thrown as errors.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>Reference (<literal>^name</literal>)</term>
+          <listitem><para>Value's lifetime is tied to the named container. Required
+            when adding values to collections.</para></listitem>
+        </varlistentry>
+      </variablelist>
+    </section>
+
+    <section xml:id="types-lifetime-local">
+      <title>Local Lifetime</title>
+      <para>Local is the default. Values are deallocated at the end of their block,
+        not the entire function:</para>
+      <programlisting>
+function process(input: String) {
+    if condition {
+        let temp Parser(input)    ; local lifetime
+        ...
+    }                             ; temp deallocated here
+
+    ; temp is gone - block ended
+}
+      </programlisting>
+    </section>
+
+    <section xml:id="types-lifetime-call">
+      <title>Call Lifetime</title>
+      <para>Values that must survive a function return use call lifetime:</para>
+      <programlisting>
+function createParser(input: String) returns Parser {
+    let result: Parser# Parser(input)   ; call lifetime
+    return result                        ; survives to caller
+}
+      </programlisting>
+      <para>The compiler infers call lifetime for values in return position, so
+        the annotation can often be omitted:</para>
+      <programlisting>
+function createParser(input: String) returns Parser {
+    return Parser(input)    ; call lifetime inferred from return
+}
+      </programlisting>
+    </section>
+
+    <section xml:id="types-lifetime-thrown">
+      <title>Thrown Lifetime</title>
+      <para>Values that may be thrown as errors use thrown lifetime:</para>
+      <programlisting>
+function parse(input: String) returns AST throws ParseError {
+    if invalid(input) {
+        throw ParseError("invalid syntax")!   ; thrown lifetime
+    }
+    ...
+}
+      </programlisting>
+      <para>The compiler infers thrown lifetime for values in throw position.</para>
+    </section>
+
+    <section xml:id="types-lifetime-reference">
+      <title>Reference Lifetime</title>
+      <para>When adding a value to a collection, the value must live at least as
+        long as the collection. Use reference lifetime to tie them together:</para>
+      <programlisting>
+let items Array()
+{
+    let item: Car^items Car("red")   ; item lives as long as items
+    items.add(item)                   ; safe - item won't die before items
+}
+      </programlisting>
+      <para>Without <literal>^items</literal>, the item would have local (block)
+        lifetime and would be deallocated at the closing brace — leaving a
+        dangling reference in the array.</para>
+    </section>
+
+    <section xml:id="types-lifetime-inference">
+      <title>Lifetime Inference</title>
+      <para>The compiler infers lifetimes where possible:</para>
+      <itemizedlist>
+        <listitem><para>Default is Local</para></listitem>
+        <listitem><para>Return position implies Call</para></listitem>
+        <listitem><para>Throw position implies Thrown</para></listitem>
+        <listitem><para>Reference lifetime (<literal>^container</literal>) must be explicit</para></listitem>
+      </itemizedlist>
+    </section>
+  </section>
+
+</chapter>

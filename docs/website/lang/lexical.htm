@@ -13,8 +13,8 @@ REL="PREVIOUS"
 TITLE="Introduction"
 HREF="introduction.htm"><LINK
 REL="NEXT"
-TITLE="Grammar"
-HREF="grammar.htm"><META
+TITLE="Type System"
+HREF="types.htm"><META
 HTTP-EQUIV="Content-Type"
 CONTENT="text/html; charset=UTF-8"></HEAD
 ><BODY
@@ -58,7 +58,7 @@ WIDTH="10%"
 ALIGN="right"
 VALIGN="bottom"
 ><A
-HREF="grammar.htm"
+HREF="types.htm"
 ACCESSKEY="N"
 >Next</A
 ></TD
@@ -104,6 +104,11 @@ HREF="lexical.htm#AEN62"
 ><DT
 ><A
 HREF="lexical.htm#AEN88"
+>Operators and Special Symbols</A
+></DT
+><DT
+><A
+HREF="lexical.htm#AEN105"
 >Identifiers</A
 ></DT
 ></DL
@@ -321,6 +326,85 @@ CLASS="section"
 CLASS="section"
 ><A
 NAME="AEN88"
+>Operators and Special Symbols</A
+></H1
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN90"
+>The Equals Sign</A
+></H2
+><P
+>Unlike many programming languages, Scaly reserves the equals sign
+        (<TT
+CLASS="literal"
+>=</TT
+>) exclusively for equality comparison. It is
+        <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>not</I
+></SPAN
+> used for variable declarations or assignments.</P
+><PRE
+CLASS="programlisting"
+>&#13;; Equality comparison
+if x = 42 { ... }         ; tests if x equals 42
+
+; Variable declaration (NO equals sign)
+let x 42                  ; declares x with value 42
+let y: i32 100            ; with type annotation
+
+; Assignment (uses colon)
+set x: 43                 ; assigns 43 to x
+      </PRE
+><P
+>This design eliminates the classic confusion between assignment and
+        comparison that leads to bugs in C-style languages (<TT
+CLASS="literal"
+>if (x = 42)</TT
+>
+        vs <TT
+CLASS="literal"
+>if (x == 42)</TT
+>).</P
+><DIV
+CLASS="note"
+><BLOCKQUOTE
+CLASS="note"
+><P
+><B
+>Note: </B
+>Because <TT
+CLASS="literal"
+>=</TT
+> is just an operator like any other, the
+          standard library could define a unary <TT
+CLASS="literal"
+>=</TT
+> operator
+          that returns its argument unchanged. This would allow the syntax
+          <TT
+CLASS="literal"
+>let x = 42</TT
+> to parse as <TT
+CLASS="literal"
+>let x (= 42)</TT
+>,
+          for those who prefer traditional declaration style.</P
+></BLOCKQUOTE
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN105"
 >Identifiers</A
 ></H1
 ><P
@@ -420,7 +504,7 @@ WIDTH="33%"
 ALIGN="right"
 VALIGN="top"
 ><A
-HREF="grammar.htm"
+HREF="types.htm"
 ACCESSKEY="N"
 >Next</A
 ></TD
@@ -440,7 +524,7 @@ VALIGN="top"
 WIDTH="33%"
 ALIGN="right"
 VALIGN="top"
->Grammar</TD
+>Type System</TD
 ></TR
 ></TABLE
 ></DIV

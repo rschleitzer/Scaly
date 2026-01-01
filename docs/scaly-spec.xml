@@ -2,6 +2,7 @@
 <!DOCTYPE book SYSTEM "docbook.dtd" [
   <!ENTITY introduction SYSTEM "scaly/chapters/introduction.xml">
   <!ENTITY lexical SYSTEM "scaly/chapters/lexical.xml">
+  <!ENTITY types SYSTEM "scaly/chapters/types.xml">
   <!ENTITY grammar SYSTEM "scaly/chapters/grammar.xml">
   <!ENTITY grammar-productions SYSTEM "scaly/grammar.xml">
   <!ENTITY definitions SYSTEM "scaly/chapters/definitions.xml">
@@ -16,6 +17,7 @@
 
   &introduction;
   &lexical;
+  &types;
   &grammar;
   &definitions;
   &expressions;
