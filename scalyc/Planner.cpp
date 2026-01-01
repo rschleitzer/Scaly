@@ -998,31 +998,29 @@ llvm::Expected<PlannedType> Planner::resolvePrefixOperatorCall(
 
     // Negation: -x for numeric types
     if (Name == "-") {
-        if (Operand.Name == "int" || Operand.Name == "float" ||
-            Operand.Name == "double") {
+        if (Operand.Name == "i64" || Operand.Name == "i32" ||
+            Operand.Name == "i16" || Operand.Name == "i8" ||
+            Operand.Name == "f64" || Operand.Name == "f32") {
             return Operand;  // Same type
         }
     }
 
-    // Logical not: !x for bool
-    if (Name == "!") {
-        if (Operand.Name == "bool") {
-            return Operand;
-        }
-    }
-
-    // Bitwise not: ~x for integers
+    // Bitwise/logical not: ~x for integers and bools
     if (Name == "~") {
-        if (Operand.Name == "int" || Operand.Name == "uint" ||
-            Operand.Name == "size_t") {
+        if (Operand.Name == "i64" || Operand.Name == "i32" ||
+            Operand.Name == "i16" || Operand.Name == "i8" ||
+            Operand.Name == "u64" || Operand.Name == "u32" ||
+            Operand.Name == "u16" || Operand.Name == "u8" ||
+            Operand.Name == "bool") {
             return Operand;
         }
     }
 
     // Unary plus: +x
     if (Name == "+") {
-        if (Operand.Name == "int" || Operand.Name == "float" ||
-            Operand.Name == "double") {
+        if (Operand.Name == "i64" || Operand.Name == "i32" ||
+            Operand.Name == "i16" || Operand.Name == "i8" ||
+            Operand.Name == "f64" || Operand.Name == "f32") {
             return Operand;
         }
     }
@@ -2224,6 +2222,17 @@ llvm::Expected<PlannedExpression> Planner::planExpression(const Expression &Expr
             return PlannedConstant(E);
         }
         else if constexpr (std::is_same_v<T, Type>) {
+            // Check for boolean literals first (true/false are parsed as Type names)
+            if (E.Name.size() == 1 && (!E.Generics || E.Generics->empty())) {
+                const std::string &Name = E.Name[0];
+                if (Name == "true") {
+                    return PlannedConstant(BooleanConstant{E.Loc, true});
+                }
+                if (Name == "false") {
+                    return PlannedConstant(BooleanConstant{E.Loc, false});
+                }
+            }
+
             // This could be a variable reference or a type reference
             auto Resolved = resolveNameOrVariable(E);
             if (!Resolved) {

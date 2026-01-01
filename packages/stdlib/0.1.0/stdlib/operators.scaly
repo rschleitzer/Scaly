@@ -47,7 +47,7 @@ define operators {
     ; Boolean operators
     operator &(left: bool, right: bool) returns bool intrinsic
     operator |(left: bool, right: bool) returns bool intrinsic
-    operator !(value: bool) returns bool intrinsic
+    operator ~(value: bool) returns bool intrinsic  ; logical NOT (~ works on bools)
     operator =(left: bool, right: bool) returns bool intrinsic
     operator <>(left: bool, right: bool) returns bool intrinsic
 
