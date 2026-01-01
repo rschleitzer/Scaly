@@ -591,6 +591,27 @@ llvm::Expected<llvm::Value*> Emitter::emitExpression(const PlannedExpression &Ex
         } else if constexpr (std::is_same_v<T, PlannedType>) {
             // Type expression (e.g., for sizeof)
             return nullptr;  // TODO
+        } else if constexpr (std::is_same_v<T, PlannedCall>) {
+            return emitCall(E);
+        } else if constexpr (std::is_same_v<T, PlannedTuple>) {
+            // Handle grouped expressions (single anonymous component)
+            // and actual tuples (multiple or named components)
+            if (E.Components.size() == 1 && !E.Components[0].Name) {
+                // Grouped expression like (2 + 3) - evaluate the inner value
+                if (!E.Components[0].Value.empty()) {
+                    // The tuple's TupleType already contains the collapsed result
+                    // We need to emit the operations within the component
+                    // For now, emit the last operand which should have the collapsed call
+                    return emitOperand(E.Components[0].Value.back());
+                }
+                return nullptr;
+            } else {
+                // Actual tuple - TODO: emit struct construction
+                return llvm::make_error<llvm::StringError>(
+                    "Tuple construction not yet implemented",
+                    llvm::inconvertibleErrorCode()
+                );
+            }
         } else if constexpr (std::is_same_v<T, PlannedBlock>) {
             return emitBlock(E);
         } else if constexpr (std::is_same_v<T, PlannedIf>) {
@@ -604,6 +625,167 @@ llvm::Expected<llvm::Value*> Emitter::emitExpression(const PlannedExpression &Ex
             );
         }
     }, Expr);
+}
+
+llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
+    // Emit arguments first
+    std::vector<llvm::Value*> Args;
+    if (Call.Args) {
+        for (const auto &Arg : *Call.Args) {
+            auto ArgVal = emitOperand(Arg);
+            if (!ArgVal)
+                return ArgVal.takeError();
+            Args.push_back(*ArgVal);
+        }
+    }
+
+    // Handle intrinsic operators
+    if (Call.IsIntrinsic && Call.IsOperator) {
+        if (Args.size() == 2) {
+            // Binary operator
+            return emitIntrinsicOp(Call.Name, Args[0], Args[1], Call.ResultType);
+        } else if (Args.size() == 1) {
+            // Unary operator
+            return emitIntrinsicUnaryOp(Call.Name, Args[0], Call.ResultType);
+        }
+    }
+
+    // Non-intrinsic call: look up function and call it
+    auto *Func = lookupFunction(Call.MangledName);
+    if (!Func) {
+        return llvm::make_error<llvm::StringError>(
+            "Function not found: " + Call.MangledName,
+            llvm::inconvertibleErrorCode()
+        );
+    }
+
+    return Builder->CreateCall(Func, Args);
+}
+
+llvm::Expected<llvm::Value*> Emitter::emitIntrinsicOp(
+    llvm::StringRef OpName, llvm::Value *Left, llvm::Value *Right,
+    const PlannedType &ResultType) {
+
+    llvm::Type *Ty = mapType(ResultType);
+    bool IsFloat = Ty->isFloatingPointTy();
+    bool IsSigned = true;  // Default to signed for now
+
+    // Check if dealing with unsigned types
+    if (ResultType.Name.find('u') == 0) {  // u8, u16, u32, u64
+        IsSigned = false;
+    }
+
+    // Arithmetic operators
+    if (OpName == "+") {
+        if (IsFloat)
+            return Builder->CreateFAdd(Left, Right, "fadd");
+        return Builder->CreateAdd(Left, Right, "add");
+    }
+    if (OpName == "-") {
+        if (IsFloat)
+            return Builder->CreateFSub(Left, Right, "fsub");
+        return Builder->CreateSub(Left, Right, "sub");
+    }
+    if (OpName == "*") {
+        if (IsFloat)
+            return Builder->CreateFMul(Left, Right, "fmul");
+        return Builder->CreateMul(Left, Right, "mul");
+    }
+    if (OpName == "/") {
+        if (IsFloat)
+            return Builder->CreateFDiv(Left, Right, "fdiv");
+        if (IsSigned)
+            return Builder->CreateSDiv(Left, Right, "sdiv");
+        return Builder->CreateUDiv(Left, Right, "udiv");
+    }
+    if (OpName == "%") {
+        if (IsFloat)
+            return Builder->CreateFRem(Left, Right, "frem");
+        if (IsSigned)
+            return Builder->CreateSRem(Left, Right, "srem");
+        return Builder->CreateURem(Left, Right, "urem");
+    }
+
+    // Comparison operators
+    if (OpName == "=") {
+        if (IsFloat)
+            return Builder->CreateFCmpOEQ(Left, Right, "fcmp_eq");
+        return Builder->CreateICmpEQ(Left, Right, "icmp_eq");
+    }
+    if (OpName == "<>") {
+        if (IsFloat)
+            return Builder->CreateFCmpONE(Left, Right, "fcmp_ne");
+        return Builder->CreateICmpNE(Left, Right, "icmp_ne");
+    }
+    if (OpName == "<") {
+        if (IsFloat)
+            return Builder->CreateFCmpOLT(Left, Right, "fcmp_lt");
+        if (IsSigned)
+            return Builder->CreateICmpSLT(Left, Right, "icmp_slt");
+        return Builder->CreateICmpULT(Left, Right, "icmp_ult");
+    }
+    if (OpName == ">") {
+        if (IsFloat)
+            return Builder->CreateFCmpOGT(Left, Right, "fcmp_gt");
+        if (IsSigned)
+            return Builder->CreateICmpSGT(Left, Right, "icmp_sgt");
+        return Builder->CreateICmpUGT(Left, Right, "icmp_ugt");
+    }
+    if (OpName == "<=") {
+        if (IsFloat)
+            return Builder->CreateFCmpOLE(Left, Right, "fcmp_le");
+        if (IsSigned)
+            return Builder->CreateICmpSLE(Left, Right, "icmp_sle");
+        return Builder->CreateICmpULE(Left, Right, "icmp_ule");
+    }
+    if (OpName == ">=") {
+        if (IsFloat)
+            return Builder->CreateFCmpOGE(Left, Right, "fcmp_ge");
+        if (IsSigned)
+            return Builder->CreateICmpSGE(Left, Right, "icmp_sge");
+        return Builder->CreateICmpUGE(Left, Right, "icmp_uge");
+    }
+
+    // Bitwise operators
+    if (OpName == "&") {
+        return Builder->CreateAnd(Left, Right, "and");
+    }
+    if (OpName == "|") {
+        return Builder->CreateOr(Left, Right, "or");
+    }
+    if (OpName == "^") {
+        return Builder->CreateXor(Left, Right, "xor");
+    }
+
+    return llvm::make_error<llvm::StringError>(
+        "Unknown intrinsic operator: " + OpName.str(),
+        llvm::inconvertibleErrorCode()
+    );
+}
+
+llvm::Expected<llvm::Value*> Emitter::emitIntrinsicUnaryOp(
+    llvm::StringRef OpName, llvm::Value *Operand,
+    const PlannedType &ResultType) {
+
+    llvm::Type *Ty = mapType(ResultType);
+    bool IsFloat = Ty->isFloatingPointTy();
+
+    if (OpName == "-") {
+        if (IsFloat)
+            return Builder->CreateFNeg(Operand, "fneg");
+        return Builder->CreateNeg(Operand, "neg");
+    }
+    if (OpName == "!") {
+        return Builder->CreateNot(Operand, "not");
+    }
+    if (OpName == "~") {
+        return Builder->CreateNot(Operand, "bitnot");
+    }
+
+    return llvm::make_error<llvm::StringError>(
+        "Unknown intrinsic unary operator: " + OpName.str(),
+        llvm::inconvertibleErrorCode()
+    );
 }
 
 llvm::Value *Emitter::emitConstant(const PlannedConstant &Const, const PlannedType &Type) {

@@ -273,6 +273,20 @@ struct PlannedIs {
     PlannedType TestType;
 };
 
+// Forward declaration for PlannedCall
+struct PlannedOperand;
+
+// Call to a function or operator
+struct PlannedCall {
+    Span Loc;
+    std::string Name;           // Operator symbol or function name: "+", "print", etc.
+    std::string MangledName;    // Mangled name for linking
+    bool IsIntrinsic;           // True for stdlib intrinsic ops (emit LLVM instruction)
+    bool IsOperator;            // True for operators, false for functions
+    std::shared_ptr<std::vector<PlannedOperand>> Args;  // Arguments (shared_ptr to break cycle)
+    PlannedType ResultType;     // Return type
+};
+
 // ============================================================================
 // Planned Tuples and Matrices
 // ============================================================================
@@ -303,6 +317,7 @@ struct PlannedMatrix {
 using PlannedExpression = std::variant<
     PlannedConstant,
     PlannedType,
+    PlannedCall,
     PlannedTuple,
     PlannedMatrix,
     PlannedBlock,

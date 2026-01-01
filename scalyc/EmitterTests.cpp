@@ -1,6 +1,9 @@
 #include "EmitterTests.h"
 #include "Emitter.h"
 #include "Plan.h"
+#include "Parser.h"
+#include "Modeler.h"
+#include "Planner.h"
 #include "llvm/Support/raw_ostream.h"
 
 namespace scaly {
@@ -195,16 +198,492 @@ static bool testJitNegativeInteger() {
     return true;
 }
 
+// Helper to create an integer constant operand
+static PlannedOperand makeIntOperand(int64_t Value) {
+    PlannedOperand Op;
+    IntegerConstant IC;
+    IC.Value = Value;
+    Op.Expr = IC;
+    PlannedType IntType;
+    IntType.Name = "i64";
+    IntType.MangledName = "i64";
+    Op.ResultType = IntType;
+    return Op;
+}
+
+// Helper to create a PlannedCall for a binary intrinsic operator
+static PlannedCall makeBinaryIntOp(const std::string& OpName, int64_t Left, int64_t Right) {
+    PlannedCall Call;
+    Call.Name = OpName;
+    Call.MangledName = "_Z" + std::to_string(OpName.length()) + OpName + "i64i64";
+    Call.IsIntrinsic = true;
+    Call.IsOperator = true;
+    Call.Args = std::make_shared<std::vector<PlannedOperand>>();
+    Call.Args->push_back(makeIntOperand(Left));
+    Call.Args->push_back(makeIntOperand(Right));
+    PlannedType IntType;
+    IntType.Name = "i64";
+    IntType.MangledName = "i64";
+    Call.ResultType = IntType;
+    return Call;
+}
+
+static bool testJitAddition() {
+    const char* Name = "JIT addition (3 + 4 = 7)";
+
+    Plan P;
+    P.MainModule.File = "test.scaly";
+    P.MainModule.Name = "test";
+
+    // Create a PlannedCall for 3 + 4
+    PlannedAction Action;
+    PlannedOperand Operand;
+    Operand.Expr = makeBinaryIntOp("+", 3, 4);
+    PlannedType IntType;
+    IntType.Name = "i64";
+    IntType.MangledName = "i64";
+    Operand.ResultType = IntType;
+    Action.Source.push_back(Operand);
+    Action.ResultType = IntType;
+    P.Statements.push_back(Action);
+
+    EmitterConfig Config;
+    Config.EmitDebugInfo = false;
+    Emitter E(Config);
+
+    auto ResultOrErr = E.jitExecuteInt(P);
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    int64_t Result = *ResultOrErr;
+    if (Result != 7) {
+        std::string Msg = "expected 7, got " + std::to_string(Result);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testJitSubtraction() {
+    const char* Name = "JIT subtraction (10 - 3 = 7)";
+
+    Plan P;
+    P.MainModule.File = "test.scaly";
+    P.MainModule.Name = "test";
+
+    PlannedAction Action;
+    PlannedOperand Operand;
+    Operand.Expr = makeBinaryIntOp("-", 10, 3);
+    PlannedType IntType;
+    IntType.Name = "i64";
+    IntType.MangledName = "i64";
+    Operand.ResultType = IntType;
+    Action.Source.push_back(Operand);
+    Action.ResultType = IntType;
+    P.Statements.push_back(Action);
+
+    EmitterConfig Config;
+    Config.EmitDebugInfo = false;
+    Emitter E(Config);
+
+    auto ResultOrErr = E.jitExecuteInt(P);
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    int64_t Result = *ResultOrErr;
+    if (Result != 7) {
+        std::string Msg = "expected 7, got " + std::to_string(Result);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testJitMultiplication() {
+    const char* Name = "JIT multiplication (6 * 7 = 42)";
+
+    Plan P;
+    P.MainModule.File = "test.scaly";
+    P.MainModule.Name = "test";
+
+    PlannedAction Action;
+    PlannedOperand Operand;
+    Operand.Expr = makeBinaryIntOp("*", 6, 7);
+    PlannedType IntType;
+    IntType.Name = "i64";
+    IntType.MangledName = "i64";
+    Operand.ResultType = IntType;
+    Action.Source.push_back(Operand);
+    Action.ResultType = IntType;
+    P.Statements.push_back(Action);
+
+    EmitterConfig Config;
+    Config.EmitDebugInfo = false;
+    Emitter E(Config);
+
+    auto ResultOrErr = E.jitExecuteInt(P);
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    int64_t Result = *ResultOrErr;
+    if (Result != 42) {
+        std::string Msg = "expected 42, got " + std::to_string(Result);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testJitDivision() {
+    const char* Name = "JIT division (84 / 2 = 42)";
+
+    Plan P;
+    P.MainModule.File = "test.scaly";
+    P.MainModule.Name = "test";
+
+    PlannedAction Action;
+    PlannedOperand Operand;
+    Operand.Expr = makeBinaryIntOp("/", 84, 2);
+    PlannedType IntType;
+    IntType.Name = "i64";
+    IntType.MangledName = "i64";
+    Operand.ResultType = IntType;
+    Action.Source.push_back(Operand);
+    Action.ResultType = IntType;
+    P.Statements.push_back(Action);
+
+    EmitterConfig Config;
+    Config.EmitDebugInfo = false;
+    Emitter E(Config);
+
+    auto ResultOrErr = E.jitExecuteInt(P);
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    int64_t Result = *ResultOrErr;
+    if (Result != 42) {
+        std::string Msg = "expected 42, got " + std::to_string(Result);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testJitModulo() {
+    const char* Name = "JIT modulo (17 % 5 = 2)";
+
+    Plan P;
+    P.MainModule.File = "test.scaly";
+    P.MainModule.Name = "test";
+
+    PlannedAction Action;
+    PlannedOperand Operand;
+    Operand.Expr = makeBinaryIntOp("%", 17, 5);
+    PlannedType IntType;
+    IntType.Name = "i64";
+    IntType.MangledName = "i64";
+    Operand.ResultType = IntType;
+    Action.Source.push_back(Operand);
+    Action.ResultType = IntType;
+    P.Statements.push_back(Action);
+
+    EmitterConfig Config;
+    Config.EmitDebugInfo = false;
+    Emitter E(Config);
+
+    auto ResultOrErr = E.jitExecuteInt(P);
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    int64_t Result = *ResultOrErr;
+    if (Result != 2) {
+        std::string Msg = "expected 2, got " + std::to_string(Result);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+// ============================================================================
+// Full Pipeline Tests (Source -> Parse -> Model -> Plan -> JIT)
+// ============================================================================
+
+// Helper: run full pipeline from source string to Plan
+static llvm::Expected<Plan> compileToPlan(llvm::StringRef Source) {
+    Parser P(Source);
+    auto ParseResult = P.parseProgram();
+    if (!ParseResult)
+        return ParseResult.takeError();
+
+    Modeler M("test.scaly");
+    auto ModelResult = M.buildProgram(*ParseResult);
+    if (!ModelResult)
+        return ModelResult.takeError();
+
+    Planner Pl("test.scaly");
+    return Pl.plan(*ModelResult);
+}
+
+// Helper: run full pipeline from source to JIT int result
+static llvm::Expected<int64_t> evalInt(llvm::StringRef Source) {
+    auto PlanResult = compileToPlan(Source);
+    if (!PlanResult)
+        return PlanResult.takeError();
+
+    EmitterConfig Config;
+    Config.EmitDebugInfo = false;
+    Emitter E(Config);
+
+    return E.jitExecuteInt(*PlanResult);
+}
+
+static bool testPipelineIntegerLiteral() {
+    const char* Name = "Pipeline: integer literal (42)";
+
+    auto ResultOrErr = evalInt("42");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    int64_t Result = *ResultOrErr;
+    if (Result != 42) {
+        std::string Msg = "expected 42, got " + std::to_string(Result);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineNegativeLiteral() {
+    const char* Name = "Pipeline: negative literal (-7)";
+
+    auto ResultOrErr = evalInt("-7");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    int64_t Result = *ResultOrErr;
+    if (Result != -7) {
+        std::string Msg = "expected -7, got " + std::to_string(Result);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineAddition() {
+    const char* Name = "Pipeline: 3 + 4";
+
+    auto ResultOrErr = evalInt("3 + 4");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    int64_t Result = *ResultOrErr;
+    if (Result != 7) {
+        std::string Msg = "expected 7, got " + std::to_string(Result);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineSubtraction() {
+    const char* Name = "Pipeline: 10 - 3";
+
+    auto ResultOrErr = evalInt("10 - 3");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    int64_t Result = *ResultOrErr;
+    if (Result != 7) {
+        std::string Msg = "expected 7, got " + std::to_string(Result);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineMultiplication() {
+    const char* Name = "Pipeline: 6 * 7";
+
+    auto ResultOrErr = evalInt("6 * 7");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    int64_t Result = *ResultOrErr;
+    if (Result != 42) {
+        std::string Msg = "expected 42, got " + std::to_string(Result);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineDivision() {
+    const char* Name = "Pipeline: 84 / 2";
+
+    auto ResultOrErr = evalInt("84 / 2");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    int64_t Result = *ResultOrErr;
+    if (Result != 42) {
+        std::string Msg = "expected 42, got " + std::to_string(Result);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineModulo() {
+    const char* Name = "Pipeline: 17 % 5";
+
+    auto ResultOrErr = evalInt("17 % 5");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    int64_t Result = *ResultOrErr;
+    if (Result != 2) {
+        std::string Msg = "expected 2, got " + std::to_string(Result);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineParentheses() {
+    const char* Name = "Pipeline: (2 + 3) * 4";
+
+    auto ResultOrErr = evalInt("(2 + 3) * 4");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    int64_t Result = *ResultOrErr;
+    if (Result != 20) {
+        std::string Msg = "expected 20, got " + std::to_string(Result);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
 bool runEmitterTests() {
     llvm::outs() << "Running Emitter tests...\n";
 
     TestsPassed = 0;
     TestsFailed = 0;
 
+    // Direct Plan -> JIT tests
+    llvm::outs() << "  Direct JIT tests:\n";
     testJitIntegerConstant();
     testJitBooleanTrue();
     testJitBooleanFalse();
     testJitNegativeInteger();
+    testJitAddition();
+    testJitSubtraction();
+    testJitMultiplication();
+    testJitDivision();
+    testJitModulo();
+
+    // Full pipeline tests (Source -> Parse -> Model -> Plan -> JIT)
+    llvm::outs() << "  Full pipeline tests:\n";
+    testPipelineIntegerLiteral();
+    testPipelineNegativeLiteral();
+    testPipelineAddition();
+    testPipelineSubtraction();
+    testPipelineMultiplication();
+    testPipelineDivision();
+    testPipelineModulo();
+    testPipelineParentheses();
 
     llvm::outs() << "\nEmitter tests: " << TestsPassed << " passed, "
                  << TestsFailed << " failed\n";

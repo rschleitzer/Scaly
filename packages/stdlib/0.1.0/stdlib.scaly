@@ -1,0 +1,6 @@
+; Scaly Standard Library
+; Implicitly available in all Scaly programs
+
+define stdlib {
+    module operators
+}

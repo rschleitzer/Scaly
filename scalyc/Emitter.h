@@ -214,11 +214,19 @@ private:
     // Intrinsic Operations
     // ========================================================================
 
+    // Emit a call expression (function or operator)
+    llvm::Expected<llvm::Value*> emitCall(const PlannedCall &Call);
+
     // Emit intrinsic operator (add, sub, mul, etc.)
     llvm::Expected<llvm::Value*> emitIntrinsicOp(llvm::StringRef OpName,
                                                   llvm::Value *Left,
                                                   llvm::Value *Right,
                                                   const PlannedType &ResultType);
+
+    // Emit intrinsic unary operator (-, !, ~)
+    llvm::Expected<llvm::Value*> emitIntrinsicUnaryOp(llvm::StringRef OpName,
+                                                       llvm::Value *Operand,
+                                                       const PlannedType &ResultType);
 
     // Emit intrinsic function call
     llvm::Expected<llvm::Value*> emitIntrinsicCall(llvm::StringRef FuncName,
