@@ -885,7 +885,125 @@ llvm::Expected<llvm::Value*> Emitter::emitBlock(const PlannedBlock &Block) {
 }
 
 llvm::Expected<llvm::Value*> Emitter::emitIf(const PlannedIf &If) {
-    // TODO: implement if emission
+    // Emit the condition
+    if (If.Condition.empty()) {
+        return llvm::make_error<llvm::StringError>(
+            "If statement has no condition",
+            llvm::inconvertibleErrorCode()
+        );
+    }
+
+    auto CondValueOrErr = emitOperands(If.Condition);
+    if (!CondValueOrErr)
+        return CondValueOrErr.takeError();
+
+    llvm::Value *CondValue = *CondValueOrErr;
+
+    // Ensure we have a boolean (i1) for the branch
+    if (!CondValue->getType()->isIntegerTy(1)) {
+        if (CondValue->getType()->isIntegerTy()) {
+            CondValue = Builder->CreateICmpNE(
+                CondValue,
+                llvm::ConstantInt::get(CondValue->getType(), 0),
+                "if.tobool"
+            );
+        } else {
+            return llvm::make_error<llvm::StringError>(
+                "If condition must be boolean or integer",
+                llvm::inconvertibleErrorCode()
+            );
+        }
+    }
+
+    // Create basic blocks
+    llvm::BasicBlock *ThenBlock = createBlock("if.then");
+    llvm::BasicBlock *ElseBlock = If.Alternative ? createBlock("if.else") : nullptr;
+    llvm::BasicBlock *MergeBlock = createBlock("if.end");
+
+    // Branch based on condition
+    if (ElseBlock) {
+        Builder->CreateCondBr(CondValue, ThenBlock, ElseBlock);
+    } else {
+        Builder->CreateCondBr(CondValue, ThenBlock, MergeBlock);
+    }
+
+    // Emit then block
+    Builder->SetInsertPoint(ThenBlock);
+    llvm::Value *ThenValue = nullptr;
+
+    if (If.Consequent) {
+        // Emit the consequent statement
+        if (auto *Action = std::get_if<PlannedAction>(If.Consequent.get())) {
+            // For actions without target (expressions), get the value
+            if (Action->Target.empty()) {
+                auto ValueOrErr = emitOperands(Action->Source);
+                if (!ValueOrErr)
+                    return ValueOrErr.takeError();
+                ThenValue = *ValueOrErr;
+            } else {
+                // Assignment - emit it
+                if (auto Err = emitAction(*Action))
+                    return std::move(Err);
+            }
+        } else if (auto *Binding = std::get_if<PlannedBinding>(If.Consequent.get())) {
+            if (auto Err = emitBinding(*Binding))
+                return std::move(Err);
+        }
+        // Other statement types don't produce values
+    }
+
+    // Jump to merge block (if not already terminated)
+    if (!Builder->GetInsertBlock()->getTerminator()) {
+        Builder->CreateBr(MergeBlock);
+    }
+    llvm::BasicBlock *ThenEndBlock = Builder->GetInsertBlock();
+
+    // Emit else block if present
+    llvm::Value *ElseValue = nullptr;
+    llvm::BasicBlock *ElseEndBlock = nullptr;
+
+    if (ElseBlock) {
+        Builder->SetInsertPoint(ElseBlock);
+
+        if (If.Alternative) {
+            if (auto *Action = std::get_if<PlannedAction>(If.Alternative.get())) {
+                if (Action->Target.empty()) {
+                    auto ValueOrErr = emitOperands(Action->Source);
+                    if (!ValueOrErr)
+                        return ValueOrErr.takeError();
+                    ElseValue = *ValueOrErr;
+                } else {
+                    if (auto Err = emitAction(*Action))
+                        return std::move(Err);
+                }
+            } else if (auto *Binding = std::get_if<PlannedBinding>(If.Alternative.get())) {
+                if (auto Err = emitBinding(*Binding))
+                    return std::move(Err);
+            }
+        }
+
+        if (!Builder->GetInsertBlock()->getTerminator()) {
+            Builder->CreateBr(MergeBlock);
+        }
+        ElseEndBlock = Builder->GetInsertBlock();
+    }
+
+    // Continue at merge block
+    Builder->SetInsertPoint(MergeBlock);
+
+    // If both branches produce values of the same type, create a PHI node
+    if (ThenValue && ElseValue && ThenValue->getType() == ElseValue->getType()) {
+        llvm::PHINode *PHI = Builder->CreatePHI(ThenValue->getType(), 2, "if.value");
+        PHI->addIncoming(ThenValue, ThenEndBlock);
+        PHI->addIncoming(ElseValue, ElseEndBlock);
+        return PHI;
+    }
+
+    // Return the then value if only then branch has a value (no else)
+    if (ThenValue && !If.Alternative) {
+        return ThenValue;
+    }
+
     return nullptr;
 }
 
