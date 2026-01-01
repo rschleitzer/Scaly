@@ -314,9 +314,18 @@ struct PlannedMatrix {
 // Planned Expressions and Operands
 // ============================================================================
 
+// Represents a reference to a local variable
+struct PlannedVariable {
+    Span Loc;
+    std::string Name;           // The variable name
+    PlannedType VariableType;   // The type of the variable
+    bool IsMutable;             // True if it's a var/mutable binding
+};
+
 using PlannedExpression = std::variant<
     PlannedConstant,
     PlannedType,
+    PlannedVariable,
     PlannedCall,
     PlannedTuple,
     PlannedMatrix,

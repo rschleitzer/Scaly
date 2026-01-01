@@ -1118,6 +1118,98 @@ static bool testPipelineBoolOrTrueFalse() {
     return true;
 }
 
+// ============================================================================
+// Variable Binding Tests
+// ============================================================================
+
+static bool testPipelineLetSimple() {
+    const char* Name = "Pipeline: let x = 5: x";
+
+    auto ResultOrErr = evalInt("let x = 5: x");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 5) {
+        std::string Msg = "expected 5, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineLetWithOp() {
+    const char* Name = "Pipeline: let x = 3: x + 4";
+
+    auto ResultOrErr = evalInt("let x = 3: x + 4");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 7) {
+        std::string Msg = "expected 7, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineLetNested() {
+    const char* Name = "Pipeline: let x = 10: let y = 3: x - y";
+
+    auto ResultOrErr = evalInt("let x = 10: let y = 3: x - y");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 7) {
+        std::string Msg = "expected 7, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineLetMultiply() {
+    const char* Name = "Pipeline: let a = 6: let b = 7: a * b";
+
+    auto ResultOrErr = evalInt("let a = 6: let b = 7: a * b");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 42) {
+        std::string Msg = "expected 42, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
 bool runEmitterTests() {
     llvm::outs() << "Running Emitter tests...\n";
 
@@ -1171,6 +1263,13 @@ bool runEmitterTests() {
     testPipelineBoolAndTrueFalse();
     testPipelineBoolOrFalseFalse();
     testPipelineBoolOrTrueFalse();
+
+    // Variable bindings
+    llvm::outs() << "  Variable binding tests:\n";
+    testPipelineLetSimple();
+    testPipelineLetWithOp();
+    testPipelineLetNested();
+    testPipelineLetMultiply();
 
     llvm::outs() << "\nEmitter tests: " << TestsPassed << " passed, "
                  << TestsFailed << " failed\n";

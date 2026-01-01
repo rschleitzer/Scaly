@@ -507,11 +507,24 @@ llvm::Error Emitter::emitAction(const PlannedAction &Action) {
 
 llvm::Error Emitter::emitBinding(const PlannedBinding &Binding) {
     // Emit initialization expression
+    if (Binding.Operation.empty()) {
+        return llvm::make_error<llvm::StringError>(
+            "Binding has no initialization expression",
+            llvm::inconvertibleErrorCode()
+        );
+    }
+
     auto ValueOrErr = emitOperands(Binding.Operation);
     if (!ValueOrErr)
         return ValueOrErr.takeError();
 
     llvm::Value *Value = *ValueOrErr;
+    if (!Value) {
+        return llvm::make_error<llvm::StringError>(
+            "Binding initialization expression produced null value",
+            llvm::inconvertibleErrorCode()
+        );
+    }
 
     // Create alloca for the binding
     if (Binding.BindingItem.Name) {
@@ -591,6 +604,23 @@ llvm::Expected<llvm::Value*> Emitter::emitExpression(const PlannedExpression &Ex
         } else if constexpr (std::is_same_v<T, PlannedType>) {
             // Type expression (e.g., for sizeof)
             return nullptr;  // TODO
+        } else if constexpr (std::is_same_v<T, PlannedVariable>) {
+            // Variable reference - look up and load
+            llvm::Value *VarPtr = lookupVariable(E.Name);
+            if (!VarPtr) {
+                return llvm::make_error<llvm::StringError>(
+                    "Undefined variable: " + E.Name,
+                    llvm::inconvertibleErrorCode()
+                );
+            }
+            if (E.IsMutable) {
+                // Mutable binding stored as pointer - load the value
+                llvm::Type *Ty = mapType(E.VariableType);
+                return Builder->CreateLoad(Ty, VarPtr, E.Name);
+            } else {
+                // Immutable binding stored as value directly
+                return VarPtr;
+            }
         } else if constexpr (std::is_same_v<T, PlannedCall>) {
             return emitCall(E);
         } else if constexpr (std::is_same_v<T, PlannedTuple>) {

@@ -373,13 +373,24 @@ void Planner::popScope() {
     }
 }
 
-void Planner::defineLocal(llvm::StringRef Name, const PlannedType &Type) {
+void Planner::defineLocal(llvm::StringRef Name, const PlannedType &Type, bool IsMutable) {
     if (!Scopes.empty()) {
-        Scopes.back()[Name.str()] = Type;
+        Scopes.back()[Name.str()] = LocalBinding{Type, IsMutable};
     }
 }
 
 std::optional<PlannedType> Planner::lookupLocal(llvm::StringRef Name) {
+    // Search from innermost to outermost scope
+    for (auto It = Scopes.rbegin(); It != Scopes.rend(); ++It) {
+        auto Found = It->find(Name.str());
+        if (Found != It->end()) {
+            return Found->second.Type;
+        }
+    }
+    return std::nullopt;
+}
+
+std::optional<Planner::LocalBinding> Planner::lookupLocalBinding(llvm::StringRef Name) {
     // Search from innermost to outermost scope
     for (auto It = Scopes.rbegin(); It != Scopes.rend(); ++It) {
         auto Found = It->find(Name.str());
@@ -1477,6 +1488,10 @@ llvm::Expected<PlannedType> Planner::inferExpressionType(const PlannedExpression
             // This happens for type references or constructor calls
             return E;
         }
+        else if constexpr (std::is_same_v<T, PlannedVariable>) {
+            // Variable reference - return the variable's type
+            return E.VariableType;
+        }
         else if constexpr (std::is_same_v<T, PlannedTuple>) {
             // Return the pre-computed tuple type
             // For single anonymous components (grouping parens), this is the operation type
@@ -2231,9 +2246,20 @@ llvm::Expected<PlannedExpression> Planner::planExpression(const Expression &Expr
                 if (Name == "false") {
                     return PlannedConstant(BooleanConstant{E.Loc, false});
                 }
+
+                // Check if it's a local variable reference
+                auto LocalBind = lookupLocalBinding(Name);
+                if (LocalBind) {
+                    PlannedVariable Var;
+                    Var.Loc = E.Loc;
+                    Var.Name = Name;
+                    Var.VariableType = LocalBind->Type;
+                    Var.IsMutable = LocalBind->IsMutable;
+                    return PlannedExpression(Var);
+                }
             }
 
-            // This could be a variable reference or a type reference
+            // This could be a type reference (not a variable)
             auto Resolved = resolveNameOrVariable(E);
             if (!Resolved) {
                 return Resolved.takeError();
@@ -2543,7 +2569,30 @@ llvm::Expected<PlannedBinding> Planner::planBinding(const Binding &Bind) {
     if (!PlannedOp) {
         return PlannedOp.takeError();
     }
-    Result.Operation = std::move(*PlannedOp);
+
+    // Skip the leading `=` operator if present (binding syntax: name = value)
+    std::vector<PlannedOperand> ValueOps;
+    bool SkippedEquals = false;
+    for (auto &Op : *PlannedOp) {
+        if (!SkippedEquals) {
+            if (auto *TypeExpr = std::get_if<PlannedType>(&Op.Expr)) {
+                if (TypeExpr->Name == "=") {
+                    SkippedEquals = true;
+                    continue;  // Skip the = operator
+                }
+            }
+        }
+        ValueOps.push_back(std::move(Op));
+    }
+
+    // Collapse operand sequence to create PlannedCall structures for operators
+    if (!ValueOps.empty()) {
+        auto CollapsedOp = collapseOperandSequence(std::move(ValueOps));
+        if (!CollapsedOp) {
+            return CollapsedOp.takeError();
+        }
+        Result.Operation.push_back(std::move(*CollapsedOp));
+    }
 
     // Plan the binding item
     auto PlannedItemResult = planItem(Bind.BindingItem);
@@ -2591,7 +2640,8 @@ llvm::Expected<PlannedBinding> Planner::planBinding(const Binding &Bind) {
 
     // Add to scope
     if (Result.BindingItem.Name && Result.BindingItem.ItemType) {
-        defineLocal(*Result.BindingItem.Name, *Result.BindingItem.ItemType);
+        bool IsMutable = (Result.BindingType == "var" || Result.BindingType == "mutable");
+        defineLocal(*Result.BindingItem.Name, *Result.BindingItem.ItemType, IsMutable);
     }
 
     return Result;
@@ -3534,13 +3584,16 @@ llvm::Expected<Plan> Planner::plan(const Program &Prog) {
     }
     Result.MainModule = std::move(*PlannedMod);
 
-    // Plan top-level statements
+    // Plan top-level statements (push a scope for local bindings)
+    pushScope();
     auto PlannedStmts = planStatements(Prog.Statements);
     if (!PlannedStmts) {
+        popScope();
         CurrentPlan = nullptr;
         return PlannedStmts.takeError();
     }
     Result.Statements = std::move(*PlannedStmts);
+    popScope();
 
     // Solve any accumulated type constraints
     auto SolveResult = solveAndApply();
