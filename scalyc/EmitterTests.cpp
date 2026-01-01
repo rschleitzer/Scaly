@@ -1210,6 +1210,96 @@ static bool testPipelineLetMultiply() {
     return true;
 }
 
+// Mutable var bindings and assignment tests
+
+static bool testPipelineVarSimple() {
+    const char* Name = "Pipeline: var x = 5: x";
+
+    auto ResultOrErr = evalInt("var x = 5: x");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 5) {
+        std::string Msg = "expected 5, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineVarAssign() {
+    const char* Name = "Pipeline: var x = 5: set x : 10: x";
+
+    auto ResultOrErr = evalInt("var x = 5: set x : 10: x");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 10) {
+        std::string Msg = "expected 10, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineVarIncrement() {
+    const char* Name = "Pipeline: var x = 3: set x : x + 1: x";
+
+    auto ResultOrErr = evalInt("var x = 3: set x : x + 1: x");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 4) {
+        std::string Msg = "expected 4, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineVarMultipleAssign() {
+    const char* Name = "Pipeline: var a = 2: var b = 3: set a : a * b: a";
+
+    auto ResultOrErr = evalInt("var a = 2: var b = 3: set a : a * b: a");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 6) {
+        std::string Msg = "expected 6, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
 bool runEmitterTests() {
     llvm::outs() << "Running Emitter tests...\n";
 
@@ -1264,12 +1354,19 @@ bool runEmitterTests() {
     testPipelineBoolOrFalseFalse();
     testPipelineBoolOrTrueFalse();
 
-    // Variable bindings
+    // Variable bindings (immutable let)
     llvm::outs() << "  Variable binding tests:\n";
     testPipelineLetSimple();
     testPipelineLetWithOp();
     testPipelineLetNested();
     testPipelineLetMultiply();
+
+    // Mutable var bindings and assignment
+    llvm::outs() << "  Mutable var and assignment tests:\n";
+    testPipelineVarSimple();
+    testPipelineVarAssign();
+    testPipelineVarIncrement();
+    testPipelineVarMultipleAssign();
 
     llvm::outs() << "\nEmitter tests: " << TestsPassed << " passed, "
                  << TestsFailed << " failed\n";
