@@ -1527,6 +1527,189 @@ static bool testPipelineIfMax() {
     return true;
 }
 
+// For loop tests
+
+static bool testPipelineForSum() {
+    const char* Name = "Pipeline: var sum = 0: for i in 5 : set sum : sum + i: sum";
+
+    auto ResultOrErr = evalInt("var sum = 0: for i in 5 : set sum : sum + i: sum");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // 0 + 1 + 2 + 3 + 4 = 10
+    if (*ResultOrErr != 10) {
+        std::string Msg = "expected 10, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineForCount() {
+    const char* Name = "Pipeline: var count = 0: for i in 3 : set count : count + 1: count";
+
+    auto ResultOrErr = evalInt("var count = 0: for i in 3 : set count : count + 1: count");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 3) {
+        std::string Msg = "expected 3, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineForZeroIterations() {
+    const char* Name = "Pipeline: var x = 42: for i in 0 : set x : 0: x";
+
+    auto ResultOrErr = evalInt("var x = 42: for i in 0 : set x : 0: x");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // No iterations, x stays 42
+    if (*ResultOrErr != 42) {
+        std::string Msg = "expected 42, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineForFactorial() {
+    const char* Name = "Pipeline: var prod = 1: for i in 4 : set prod : prod * (i + 1): prod";
+
+    auto ResultOrErr = evalInt("var prod = 1: for i in 4 : set prod : prod * (i + 1): prod");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // 1 * 2 * 3 * 4 = 24 (using i+1 for 1,2,3,4)
+    if (*ResultOrErr != 24) {
+        std::string Msg = "expected 24, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+// Match expression tests
+
+static bool testPipelineMatchSingleCase() {
+    const char* Name = "Pipeline: match 2 : case 2: 100 else 0";
+
+    auto ResultOrErr = evalInt("match 2 : case 2: 100 else 0");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 100) {
+        std::string Msg = "expected 100, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineMatchElse() {
+    const char* Name = "Pipeline: match 5 : case 1: 10 case 2: 20 else 99";
+
+    auto ResultOrErr = evalInt("match 5 : case 1: 10 case 2: 20 else 99");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 99) {
+        std::string Msg = "expected 99, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineMatchWithVar() {
+    const char* Name = "Pipeline: let x = 3: match x : case 1: 10 case 2: 20 case 3: 30 else 0";
+
+    auto ResultOrErr = evalInt("let x = 3: match x : case 1: 10 case 2: 20 case 3: 30 else 0");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 30) {
+        std::string Msg = "expected 30, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineMatchFirstCase() {
+    const char* Name = "Pipeline: match 1 : case 1: 100 case 2: 200 else 0";
+
+    auto ResultOrErr = evalInt("match 1 : case 1: 100 case 2: 200 else 0");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 100) {
+        std::string Msg = "expected 100, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
 bool runEmitterTests() {
     llvm::outs() << "Running Emitter tests...\n";
 
@@ -1610,6 +1793,20 @@ bool runEmitterTests() {
     testPipelineIfWithVar();
     testPipelineIfSideEffect();
     testPipelineIfMax();
+
+    // For loops
+    llvm::outs() << "  For loop tests:\n";
+    testPipelineForSum();
+    testPipelineForCount();
+    testPipelineForZeroIterations();
+    testPipelineForFactorial();
+
+    // Match expressions
+    llvm::outs() << "  Match expression tests:\n";
+    testPipelineMatchSingleCase();
+    testPipelineMatchElse();
+    testPipelineMatchWithVar();
+    testPipelineMatchFirstCase();
 
     llvm::outs() << "\nEmitter tests: " << TestsPassed << " passed, "
                  << TestsFailed << " failed\n";

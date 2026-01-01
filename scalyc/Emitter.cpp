@@ -445,9 +445,9 @@ llvm::Error Emitter::emitFunctionBody(const PlannedFunction &Func,
 
     // Emit function body
     if (auto *Action = std::get_if<PlannedAction>(&Func.Impl)) {
-        if (auto Err = emitAction(*Action)) {
-            return Err;
-        }
+        auto ValueOrErr = emitAction(*Action);
+        if (!ValueOrErr)
+            return ValueOrErr.takeError();
     }
 
     // Add return if block doesn't end with terminator
@@ -471,7 +471,10 @@ llvm::Error Emitter::emitStatement(const PlannedStatement &Stmt) {
     return std::visit([this](const auto &S) -> llvm::Error {
         using T = std::decay_t<decltype(S)>;
         if constexpr (std::is_same_v<T, PlannedAction>) {
-            return emitAction(S);
+            auto ValueOrErr = emitAction(S);
+            if (!ValueOrErr)
+                return ValueOrErr.takeError();
+            return llvm::Error::success();
         } else if constexpr (std::is_same_v<T, PlannedBinding>) {
             return emitBinding(S);
         } else if constexpr (std::is_same_v<T, PlannedReturn>) {
@@ -491,7 +494,7 @@ llvm::Error Emitter::emitStatement(const PlannedStatement &Stmt) {
     }, Stmt);
 }
 
-llvm::Error Emitter::emitAction(const PlannedAction &Action) {
+llvm::Expected<llvm::Value*> Emitter::emitAction(const PlannedAction &Action) {
     // Emit source operands
     auto ValueOrErr = emitOperands(Action.Source);
     if (!ValueOrErr)
@@ -531,7 +534,7 @@ llvm::Error Emitter::emitAction(const PlannedAction &Action) {
         }
     }
 
-    return llvm::Error::success();
+    return Value;
 }
 
 llvm::Error Emitter::emitBinding(const PlannedBinding &Binding) {
@@ -677,6 +680,8 @@ llvm::Expected<llvm::Value*> Emitter::emitExpression(const PlannedExpression &Ex
             return emitIf(E);
         } else if constexpr (std::is_same_v<T, PlannedChoose>) {
             return emitChoose(E);
+        } else if constexpr (std::is_same_v<T, PlannedMatch>) {
+            return emitMatch(E);
         } else if constexpr (std::is_same_v<T, PlannedWhile>) {
             return emitWhile(E);
         } else if constexpr (std::is_same_v<T, PlannedFor>) {
@@ -934,16 +939,13 @@ llvm::Expected<llvm::Value*> Emitter::emitIf(const PlannedIf &If) {
     if (If.Consequent) {
         // Emit the consequent statement
         if (auto *Action = std::get_if<PlannedAction>(If.Consequent.get())) {
-            // For actions without target (expressions), get the value
+            // Emit the action and get its value
+            auto ValueOrErr = emitAction(*Action);
+            if (!ValueOrErr)
+                return ValueOrErr.takeError();
+            // For non-assignments, use the value
             if (Action->Target.empty()) {
-                auto ValueOrErr = emitOperands(Action->Source);
-                if (!ValueOrErr)
-                    return ValueOrErr.takeError();
                 ThenValue = *ValueOrErr;
-            } else {
-                // Assignment - emit it
-                if (auto Err = emitAction(*Action))
-                    return std::move(Err);
             }
         } else if (auto *Binding = std::get_if<PlannedBinding>(If.Consequent.get())) {
             if (auto Err = emitBinding(*Binding))
@@ -967,14 +969,13 @@ llvm::Expected<llvm::Value*> Emitter::emitIf(const PlannedIf &If) {
 
         if (If.Alternative) {
             if (auto *Action = std::get_if<PlannedAction>(If.Alternative.get())) {
+                // Emit the action and get its value
+                auto ValueOrErr = emitAction(*Action);
+                if (!ValueOrErr)
+                    return ValueOrErr.takeError();
+                // For non-assignments, use the value
                 if (Action->Target.empty()) {
-                    auto ValueOrErr = emitOperands(Action->Source);
-                    if (!ValueOrErr)
-                        return ValueOrErr.takeError();
                     ElseValue = *ValueOrErr;
-                } else {
-                    if (auto Err = emitAction(*Action))
-                        return std::move(Err);
                 }
             } else if (auto *Binding = std::get_if<PlannedBinding>(If.Alternative.get())) {
                 if (auto Err = emitBinding(*Binding))
@@ -1008,17 +1009,365 @@ llvm::Expected<llvm::Value*> Emitter::emitIf(const PlannedIf &If) {
 }
 
 llvm::Expected<llvm::Value*> Emitter::emitChoose(const PlannedChoose &Choose) {
-    // TODO: implement choose emission (switch on union tag)
+    // Emit the condition (union value)
+    if (Choose.Condition.empty()) {
+        return llvm::make_error<llvm::StringError>(
+            "Choose expression has no condition",
+            llvm::inconvertibleErrorCode()
+        );
+    }
+
+    auto CondValueOrErr = emitOperands(Choose.Condition);
+    if (!CondValueOrErr)
+        return CondValueOrErr.takeError();
+
+    llvm::Value *UnionValue = *CondValueOrErr;
+
+    // Union layout is { i8 tag, [maxSize x i8] data }
+    // We need to extract the tag to switch on it
+
+    // Get pointer to the union (may already be a pointer or need alloca)
+    llvm::Value *UnionPtr;
+    if (UnionValue->getType()->isPointerTy()) {
+        UnionPtr = UnionValue;
+    } else {
+        // Store the union value to get a pointer
+        UnionPtr = Builder->CreateAlloca(UnionValue->getType(), nullptr, "choose.union");
+        Builder->CreateStore(UnionValue, UnionPtr);
+    }
+
+    // Load the tag (first field, i8)
+    llvm::Type *I8Ty = llvm::Type::getInt8Ty(*Context);
+    llvm::Value *TagPtr = Builder->CreateStructGEP(UnionValue->getType(), UnionPtr, 0, "tag.ptr");
+    llvm::Value *Tag = Builder->CreateLoad(I8Ty, TagPtr, "tag");
+
+    // Create blocks
+    llvm::BasicBlock *MergeBlock = createBlock("choose.end");
+    llvm::BasicBlock *DefaultBlock = Choose.Alternative ? createBlock("choose.else") : MergeBlock;
+
+    // Create switch instruction
+    llvm::SwitchInst *Switch = Builder->CreateSwitch(Tag, DefaultBlock, Choose.Cases.size());
+
+    // Track values and source blocks for PHI node
+    std::vector<std::pair<llvm::Value*, llvm::BasicBlock*>> IncomingValues;
+
+    // Process each when case
+    for (size_t i = 0; i < Choose.Cases.size(); ++i) {
+        const auto &When = Choose.Cases[i];
+
+        llvm::BasicBlock *CaseBlock = createBlock("choose.when." + When.Name);
+        Switch->addCase(llvm::cast<llvm::ConstantInt>(llvm::ConstantInt::get(I8Ty, i)), CaseBlock);
+
+        Builder->SetInsertPoint(CaseBlock);
+
+        // If the variant has data and a binding name, extract and bind it
+        // TODO: For now we don't bind the variant data, just execute the consequent
+
+        llvm::Value *CaseValue = nullptr;
+
+        if (When.Consequent) {
+            if (auto *Action = std::get_if<PlannedAction>(When.Consequent.get())) {
+                auto ValueOrErr = emitAction(*Action);
+                if (!ValueOrErr)
+                    return ValueOrErr.takeError();
+                if (Action->Target.empty()) {
+                    CaseValue = *ValueOrErr;
+                }
+            } else if (auto *Binding = std::get_if<PlannedBinding>(When.Consequent.get())) {
+                if (auto Err = emitBinding(*Binding))
+                    return std::move(Err);
+            }
+        }
+
+        if (!Builder->GetInsertBlock()->getTerminator()) {
+            Builder->CreateBr(MergeBlock);
+        }
+
+        if (CaseValue) {
+            IncomingValues.push_back({CaseValue, Builder->GetInsertBlock()});
+        }
+    }
+
+    // Emit the alternative (else) block if present
+    if (Choose.Alternative) {
+        Builder->SetInsertPoint(DefaultBlock);
+        llvm::Value *ElseValue = nullptr;
+
+        if (auto *Action = std::get_if<PlannedAction>(Choose.Alternative.get())) {
+            auto ValueOrErr = emitAction(*Action);
+            if (!ValueOrErr)
+                return ValueOrErr.takeError();
+            if (Action->Target.empty()) {
+                ElseValue = *ValueOrErr;
+            }
+        } else if (auto *Binding = std::get_if<PlannedBinding>(Choose.Alternative.get())) {
+            if (auto Err = emitBinding(*Binding))
+                return std::move(Err);
+        }
+
+        if (!Builder->GetInsertBlock()->getTerminator()) {
+            Builder->CreateBr(MergeBlock);
+        }
+
+        if (ElseValue) {
+            IncomingValues.push_back({ElseValue, Builder->GetInsertBlock()});
+        }
+    }
+
+    // Continue at merge block
+    Builder->SetInsertPoint(MergeBlock);
+
+    // Create PHI node if branches produce values
+    if (!IncomingValues.empty()) {
+        llvm::Type *ValueType = IncomingValues[0].first->getType();
+        bool AllSameType = true;
+        for (const auto &[Val, Block] : IncomingValues) {
+            if (Val->getType() != ValueType) {
+                AllSameType = false;
+                break;
+            }
+        }
+
+        if (AllSameType) {
+            llvm::PHINode *PHI = Builder->CreatePHI(ValueType, IncomingValues.size(), "choose.value");
+            for (const auto &[Val, Block] : IncomingValues) {
+                PHI->addIncoming(Val, Block);
+            }
+            return PHI;
+        }
+    }
+
     return nullptr;
 }
 
 llvm::Expected<llvm::Value*> Emitter::emitMatch(const PlannedMatch &Match) {
-    // TODO: implement match emission
+    // Emit the condition being matched
+    if (Match.Condition.empty()) {
+        return llvm::make_error<llvm::StringError>(
+            "Match expression has no condition",
+            llvm::inconvertibleErrorCode()
+        );
+    }
+
+    auto CondValueOrErr = emitOperands(Match.Condition);
+    if (!CondValueOrErr)
+        return CondValueOrErr.takeError();
+
+    llvm::Value *CondValue = *CondValueOrErr;
+
+    // Create the merge block where all branches converge
+    llvm::BasicBlock *MergeBlock = createBlock("match.end");
+
+    // Track values and their source blocks for PHI node
+    std::vector<std::pair<llvm::Value*, llvm::BasicBlock*>> IncomingValues;
+
+    // Process each branch
+    for (size_t i = 0; i < Match.Branches.size(); ++i) {
+        const auto &Branch = Match.Branches[i];
+
+        // Create blocks for this branch
+        llvm::BasicBlock *BranchBlock = createBlock("match.case");
+        llvm::BasicBlock *NextBlock = (i + 1 < Match.Branches.size() || Match.Alternative)
+            ? createBlock("match.next")
+            : MergeBlock;
+
+        // Build the condition: check if CondValue matches any case in this branch
+        llvm::Value *BranchCond = nullptr;
+        for (const auto &Case : Branch.Cases) {
+            auto CaseValueOrErr = emitOperands(Case.Condition);
+            if (!CaseValueOrErr)
+                return CaseValueOrErr.takeError();
+
+            llvm::Value *CaseValue = *CaseValueOrErr;
+
+            // Compare condition with this case
+            llvm::Value *CaseCond;
+            if (CondValue->getType()->isIntegerTy()) {
+                CaseCond = Builder->CreateICmpEQ(CondValue, CaseValue, "match.cmp");
+            } else if (CondValue->getType()->isFloatingPointTy()) {
+                CaseCond = Builder->CreateFCmpOEQ(CondValue, CaseValue, "match.cmp");
+            } else {
+                return llvm::make_error<llvm::StringError>(
+                    "Match expression requires integer or float type",
+                    llvm::inconvertibleErrorCode()
+                );
+            }
+
+            // OR together multiple cases in the same branch
+            if (BranchCond) {
+                BranchCond = Builder->CreateOr(BranchCond, CaseCond, "match.or");
+            } else {
+                BranchCond = CaseCond;
+            }
+        }
+
+        // Branch to case block or next check
+        if (BranchCond) {
+            Builder->CreateCondBr(BranchCond, BranchBlock, NextBlock);
+        } else {
+            // No cases - unconditional branch (shouldn't happen)
+            Builder->CreateBr(BranchBlock);
+        }
+
+        // Emit the branch body
+        Builder->SetInsertPoint(BranchBlock);
+        llvm::Value *BranchValue = nullptr;
+
+        if (Branch.Consequent) {
+            if (auto *Action = std::get_if<PlannedAction>(Branch.Consequent.get())) {
+                auto ValueOrErr = emitAction(*Action);
+                if (!ValueOrErr)
+                    return ValueOrErr.takeError();
+                if (Action->Target.empty()) {
+                    BranchValue = *ValueOrErr;
+                }
+            } else if (auto *Binding = std::get_if<PlannedBinding>(Branch.Consequent.get())) {
+                if (auto Err = emitBinding(*Binding))
+                    return std::move(Err);
+            }
+        }
+
+        // Jump to merge block
+        if (!Builder->GetInsertBlock()->getTerminator()) {
+            Builder->CreateBr(MergeBlock);
+        }
+
+        if (BranchValue) {
+            IncomingValues.push_back({BranchValue, Builder->GetInsertBlock()});
+        }
+
+        // Continue at next block for subsequent checks
+        Builder->SetInsertPoint(NextBlock);
+    }
+
+    // Emit the alternative (else) block if present
+    if (Match.Alternative) {
+        llvm::Value *ElseValue = nullptr;
+
+        if (auto *Action = std::get_if<PlannedAction>(Match.Alternative.get())) {
+            auto ValueOrErr = emitAction(*Action);
+            if (!ValueOrErr)
+                return ValueOrErr.takeError();
+            if (Action->Target.empty()) {
+                ElseValue = *ValueOrErr;
+            }
+        } else if (auto *Binding = std::get_if<PlannedBinding>(Match.Alternative.get())) {
+            if (auto Err = emitBinding(*Binding))
+                return std::move(Err);
+        }
+
+        if (!Builder->GetInsertBlock()->getTerminator()) {
+            Builder->CreateBr(MergeBlock);
+        }
+
+        if (ElseValue) {
+            IncomingValues.push_back({ElseValue, Builder->GetInsertBlock()});
+        }
+    }
+
+    // Continue at merge block
+    Builder->SetInsertPoint(MergeBlock);
+
+    // Create PHI node if branches produce values
+    if (!IncomingValues.empty()) {
+        // Check that all values have the same type
+        llvm::Type *ValueType = IncomingValues[0].first->getType();
+        bool AllSameType = true;
+        for (const auto &[Val, Block] : IncomingValues) {
+            if (Val->getType() != ValueType) {
+                AllSameType = false;
+                break;
+            }
+        }
+
+        if (AllSameType) {
+            llvm::PHINode *PHI = Builder->CreatePHI(ValueType, IncomingValues.size(), "match.value");
+            for (const auto &[Val, Block] : IncomingValues) {
+                PHI->addIncoming(Val, Block);
+            }
+            return PHI;
+        }
+    }
+
     return nullptr;
 }
 
 llvm::Expected<llvm::Value*> Emitter::emitFor(const PlannedFor &For) {
-    // TODO: implement for emission
+    // For now, implement a simple integer range loop: for i in N : body
+    // This iterates i from 0 to N-1
+
+    if (For.Expr.empty()) {
+        return llvm::make_error<llvm::StringError>(
+            "For loop has no range expression",
+            llvm::inconvertibleErrorCode()
+        );
+    }
+
+    // Evaluate the range expression to get the end value
+    auto EndValueOrErr = emitOperands(For.Expr);
+    if (!EndValueOrErr)
+        return EndValueOrErr.takeError();
+
+    llvm::Value *EndValue = *EndValueOrErr;
+    if (!EndValue->getType()->isIntegerTy()) {
+        return llvm::make_error<llvm::StringError>(
+            "For loop range must be an integer",
+            llvm::inconvertibleErrorCode()
+        );
+    }
+
+    // Create the loop counter (allocate on stack for incrementing)
+    llvm::Type *IndexType = EndValue->getType();
+    llvm::AllocaInst *LoopCounter = Builder->CreateAlloca(IndexType, nullptr, For.Identifier + ".counter");
+
+    // Initialize loop counter to 0
+    Builder->CreateStore(llvm::ConstantInt::get(IndexType, 0), LoopCounter);
+
+    // Create basic blocks
+    llvm::BasicBlock *CondBlock = createBlock("for.cond");
+    llvm::BasicBlock *BodyBlock = createBlock("for.body");
+    llvm::BasicBlock *IncrBlock = createBlock("for.incr");
+    llvm::BasicBlock *ExitBlock = createBlock("for.exit");
+
+    // Jump to condition block
+    Builder->CreateBr(CondBlock);
+
+    // Emit condition block: i < end
+    Builder->SetInsertPoint(CondBlock);
+    llvm::Value *CurrentIndex = Builder->CreateLoad(IndexType, LoopCounter, "i");
+    llvm::Value *Cond = Builder->CreateICmpSLT(CurrentIndex, EndValue, "for.cmp");
+    Builder->CreateCondBr(Cond, BodyBlock, ExitBlock);
+
+    // Emit body block
+    Builder->SetInsertPoint(BodyBlock);
+
+    // Load current index and store as immutable value for body to access
+    llvm::Value *BodyIndex = Builder->CreateLoad(IndexType, LoopCounter, For.Identifier);
+    LocalVariables[For.Identifier] = BodyIndex;
+
+    auto BodyValueOrErr = emitAction(For.Body);
+    if (!BodyValueOrErr)
+        return BodyValueOrErr.takeError();
+
+    // Jump to increment block
+    if (!Builder->GetInsertBlock()->getTerminator()) {
+        Builder->CreateBr(IncrBlock);
+    }
+
+    // Emit increment block: i++
+    Builder->SetInsertPoint(IncrBlock);
+    llvm::Value *IncrIndex = Builder->CreateLoad(IndexType, LoopCounter, "i.load");
+    llvm::Value *NextIndex = Builder->CreateAdd(IncrIndex, llvm::ConstantInt::get(IndexType, 1), "i.next");
+    Builder->CreateStore(NextIndex, LoopCounter);
+    Builder->CreateBr(CondBlock);
+
+    // Continue at exit block
+    Builder->SetInsertPoint(ExitBlock);
+
+    // Clean up the loop variable from LocalVariables
+    LocalVariables.erase(For.Identifier);
+
+    // For loops don't produce a value
     return nullptr;
 }
 
@@ -1073,8 +1422,9 @@ llvm::Expected<llvm::Value*> Emitter::emitWhile(const PlannedWhile &While) {
     Builder->SetInsertPoint(BodyBlock);
 
     // Emit the loop body action
-    if (auto Err = emitAction(While.Body))
-        return std::move(Err);
+    auto BodyValueOrErr = emitAction(While.Body);
+    if (!BodyValueOrErr)
+        return BodyValueOrErr.takeError();
 
     // Jump back to condition (loop back)
     Builder->CreateBr(CondBlock);
@@ -1218,14 +1568,12 @@ llvm::Expected<uint64_t> Emitter::jitExecuteRaw(const Plan &P, llvm::Type *Expec
     for (const auto &Stmt : P.Statements) {
         if (auto *Action = std::get_if<PlannedAction>(&Stmt)) {
             // Handle the action (may be expression or assignment)
-            if (auto Err = emitAction(*Action))
-                return std::move(Err);
+            auto ValueOrErr = emitAction(*Action);
+            if (!ValueOrErr)
+                return ValueOrErr.takeError();
 
-            // If not an assignment, get the value as potential result
+            // If not an assignment, save value as potential result
             if (Action->Target.empty()) {
-                auto ValueOrErr = emitOperands(Action->Source);
-                if (!ValueOrErr)
-                    return ValueOrErr.takeError();
                 LastValue = *ValueOrErr;
             }
         } else if (auto *Binding = std::get_if<PlannedBinding>(&Stmt)) {

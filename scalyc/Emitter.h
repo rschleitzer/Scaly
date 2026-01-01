@@ -162,7 +162,7 @@ private:
     // ========================================================================
 
     llvm::Error emitStatement(const PlannedStatement &Stmt);
-    llvm::Error emitAction(const PlannedAction &Action);
+    llvm::Expected<llvm::Value*> emitAction(const PlannedAction &Action);
     llvm::Error emitBinding(const PlannedBinding &Binding);
     llvm::Error emitReturn(const PlannedReturn &Return);
     llvm::Error emitThrow(const PlannedThrow &Throw);
