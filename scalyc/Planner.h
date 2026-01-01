@@ -262,6 +262,12 @@ private:
         const std::vector<std::string> &Members,
         Span Loc);
 
+    // Resolve member access chain, returning full PlannedMemberAccess info with field indices
+    llvm::Expected<std::vector<PlannedMemberAccess>> resolveMemberAccessChain(
+        const PlannedType &BaseType,
+        const std::vector<std::string> &Members,
+        Span Loc);
+
     // ========== Type Inference ==========
 
     // Infer the type of a constant

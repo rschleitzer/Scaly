@@ -1968,6 +1968,121 @@ static bool testPipelineComplexGrouped() {
     return true;
 }
 
+// Member access tests
+
+static bool testPipelineMemberAccessSimple() {
+    const char* Name = "Pipeline: Point.x access";
+
+    auto ResultOrErr = evalInt("define Point(x: int, y: int)\nPoint(3, 4).x");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 3) {
+        std::string Msg = "expected 3, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineMemberAccessSecondField() {
+    const char* Name = "Pipeline: Point.y access";
+
+    auto ResultOrErr = evalInt("define Point(x: int, y: int)\nPoint(3, 4).y");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 4) {
+        std::string Msg = "expected 4, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineMemberAccessVariableOnly() {
+    const char* Name = "Pipeline: let p = Point: p.x";
+
+    auto ResultOrErr = evalInt("define Point(x: int, y: int)\nlet p = Point(3, 4)\np.x");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // p.x should be 3
+    if (*ResultOrErr != 3) {
+        std::string Msg = "expected 3, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineMemberAccessWithBinding() {
+    const char* Name = "Pipeline: let p = Point: p.x + p.y";
+
+    auto ResultOrErr = evalInt("define Point(x: int, y: int)\nlet p = Point(3, 4)\np.x + p.y");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // 3 + 4 = 7
+    if (*ResultOrErr != 7) {
+        std::string Msg = "expected 7, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineMemberAccessMultiply() {
+    const char* Name = "Pipeline: p.x * p.y";
+
+    auto ResultOrErr = evalInt("define Point(x: int, y: int)\nlet p = Point(5, 7)\np.x * p.y");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // 5 * 7 = 35
+    if (*ResultOrErr != 35) {
+        std::string Msg = "expected 35, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
 bool runEmitterTests() {
     llvm::outs() << "Running Emitter tests...\n";
 
@@ -2084,6 +2199,13 @@ bool runEmitterTests() {
     testPipelineGroupedAdd();
     testPipelineNestedGrouped();
     testPipelineComplexGrouped();
+
+    llvm::outs() << "  Member access tests:\n";
+    testPipelineMemberAccessSimple();
+    testPipelineMemberAccessSecondField();
+    testPipelineMemberAccessVariableOnly();
+    testPipelineMemberAccessWithBinding();
+    testPipelineMemberAccessMultiply();
 
     llvm::outs() << "\nEmitter tests: " << TestsPassed << " passed, "
                  << TestsFailed << " failed\n";
