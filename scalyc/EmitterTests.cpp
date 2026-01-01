@@ -1300,6 +1300,99 @@ static bool testPipelineVarMultipleAssign() {
     return true;
 }
 
+// While loop tests
+
+static bool testPipelineWhileSimple() {
+    const char* Name = "Pipeline: var x = 0: while x < 3 : set x : x + 1: x";
+
+    auto ResultOrErr = evalInt("var x = 0: while x < 3 : set x : x + 1: x");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 3) {
+        std::string Msg = "expected 3, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineWhileSum() {
+    const char* Name = "Pipeline: var sum = 0: var i = 1: while i <= 3 : { set sum : sum + i: set i : i + 1 }: sum";
+
+    auto ResultOrErr = evalInt("var sum = 0: var i = 1: while i <= 3 : { set sum : sum + i: set i : i + 1 }: sum");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // sum = 1 + 2 + 3 = 6
+    if (*ResultOrErr != 6) {
+        std::string Msg = "expected 6, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineWhileZeroIterations() {
+    const char* Name = "Pipeline: var x = 10: while x < 5 : set x : x + 1: x";
+
+    auto ResultOrErr = evalInt("var x = 10: while x < 5 : set x : x + 1: x");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // Condition is false from start, x stays 10
+    if (*ResultOrErr != 10) {
+        std::string Msg = "expected 10, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineWhileFactorial() {
+    const char* Name = "Pipeline: var result = 1: var n = 5: while n > 0 : { set result : result * n: set n : n - 1 }: result";
+
+    auto ResultOrErr = evalInt("var result = 1: var n = 5: while n > 0 : { set result : result * n: set n : n - 1 }: result");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // 5! = 120
+    if (*ResultOrErr != 120) {
+        std::string Msg = "expected 120, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
 bool runEmitterTests() {
     llvm::outs() << "Running Emitter tests...\n";
 
@@ -1367,6 +1460,13 @@ bool runEmitterTests() {
     testPipelineVarAssign();
     testPipelineVarIncrement();
     testPipelineVarMultipleAssign();
+
+    // While loops
+    llvm::outs() << "  While loop tests:\n";
+    testPipelineWhileSimple();
+    testPipelineWhileSum();
+    testPipelineWhileZeroIterations();
+    testPipelineWhileFactorial();
 
     llvm::outs() << "\nEmitter tests: " << TestsPassed << " passed, "
                  << TestsFailed << " failed\n";
