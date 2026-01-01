@@ -123,6 +123,39 @@ false
 
   </section>
 
+  <section xml:id="lex-operators">
+    <title>Operators and Special Symbols</title>
+
+    <section xml:id="lex-equals">
+      <title>The Equals Sign</title>
+      <para>Unlike many programming languages, Scaly reserves the equals sign
+        (<literal>=</literal>) exclusively for equality comparison. It is
+        <emphasis>not</emphasis> used for variable declarations or assignments.</para>
+      <programlisting>
+; Equality comparison
+if x = 42 { ... }         ; tests if x equals 42
+
+; Variable declaration (NO equals sign)
+let x 42                  ; declares x with value 42
+let y: i32 100            ; with type annotation
+
+; Assignment (uses colon)
+set x: 43                 ; assigns 43 to x
+      </programlisting>
+      <para>This design eliminates the classic confusion between assignment and
+        comparison that leads to bugs in C-style languages (<literal>if (x = 42)</literal>
+        vs <literal>if (x == 42)</literal>).</para>
+      <note>
+        <para>Because <literal>=</literal> is just an operator like any other, the
+          standard library could define a unary <literal>=</literal> operator
+          that returns its argument unchanged. This would allow the syntax
+          <literal>let x = 42</literal> to parse as <literal>let x (= 42)</literal>,
+          for those who prefer traditional declaration style.</para>
+      </note>
+    </section>
+
+  </section>
+
   <section xml:id="lex-identifiers">
     <title>Identifiers</title>
     <para>

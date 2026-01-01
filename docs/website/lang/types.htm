@@ -1,0 +1,1588 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Type System</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="The Scaly Programming Language"
+HREF="index.html"><LINK
+REL="PREVIOUS"
+TITLE="Lexical Structure"
+HREF="lexical.htm"><LINK
+REL="NEXT"
+TITLE="Grammar"
+HREF="grammar.htm"><META
+HTTP-EQUIV="Content-Type"
+CONTENT="text/html; charset=UTF-8"></HEAD
+><BODY
+CLASS="chapter"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>The Scaly Programming Language</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="lexical.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="grammar.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="chapter"
+><H1
+><A
+NAME="AEN123"
+></A
+>Chapter 3 Type System</H1
+><DIV
+CLASS="TOC"
+><DL
+><DT
+><B
+>Table of Contents</B
+></DT
+><DT
+><A
+HREF="types.htm#AEN125"
+>Overview</A
+></DT
+><DT
+><A
+HREF="types.htm#AEN128"
+>Intrinsic Types</A
+></DT
+><DT
+><A
+HREF="types.htm#AEN164"
+>Type Aliases</A
+></DT
+><DT
+><A
+HREF="types.htm#AEN171"
+>Backend Preludes</A
+></DT
+><DT
+><A
+HREF="types.htm#AEN181"
+>Literal Type Inference</A
+></DT
+><DT
+><A
+HREF="types.htm#AEN190"
+>References and Aliasing</A
+></DT
+><DT
+><A
+HREF="types.htm#AEN212"
+>Parameter Passing</A
+></DT
+><DT
+><A
+HREF="types.htm#AEN234"
+>Constructors</A
+></DT
+><DT
+><A
+HREF="types.htm#AEN286"
+>Closures (Lambdas)</A
+></DT
+><DT
+><A
+HREF="types.htm#AEN305"
+>Error Handling</A
+></DT
+><DT
+><A
+HREF="types.htm#AEN346"
+>Union Types</A
+></DT
+><DT
+><A
+HREF="types.htm#AEN382"
+>Generics</A
+></DT
+><DT
+><A
+HREF="types.htm#AEN412"
+>Lifetimes and Memory Regions</A
+></DT
+></DL
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN125"
+>Overview</A
+></H1
+><P
+>Scaly's type system is designed for maximum portability across backends.
+      The compiler itself has no built-in knowledge of primitive types. Instead,
+      all types — including integers, floats, and booleans — are defined in
+      backend-specific prelude files.</P
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN128"
+>Intrinsic Types</A
+></H1
+><P
+>An <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>intrinsic type</I
+></SPAN
+> is a type whose implementation is
+      provided by the backend, not by Scaly code. Intrinsic types are declared
+      using the <TT
+CLASS="literal"
+>intrinsic</TT
+> keyword:</P
+><PRE
+CLASS="programlisting"
+>&#13;define i32 intrinsic
+define i64 intrinsic
+define f64 intrinsic
+    </PRE
+><P
+>The compiler does not interpret these definitions — it simply records that
+      these types exist and are intrinsic. The backend (Emitter) is responsible
+      for mapping intrinsic types to the target platform's representation.</P
+><P
+>This design enables Scaly to target any backend:</P
+><P
+></P
+><UL
+><LI
+><P
+><SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>LLVM</I
+></SPAN
+>: <TT
+CLASS="literal"
+>i32</TT
+>, <TT
+CLASS="literal"
+>i64</TT
+>, <TT
+CLASS="literal"
+>f32</TT
+>, <TT
+CLASS="literal"
+>f64</TT
+></P
+></LI
+><LI
+><P
+><SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>JavaScript</I
+></SPAN
+>: <TT
+CLASS="literal"
+>number</TT
+>, <TT
+CLASS="literal"
+>string</TT
+>, <TT
+CLASS="literal"
+>boolean</TT
+></P
+></LI
+><LI
+><P
+><SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>WebAssembly</I
+></SPAN
+>: <TT
+CLASS="literal"
+>i32</TT
+>, <TT
+CLASS="literal"
+>i64</TT
+>, <TT
+CLASS="literal"
+>f32</TT
+>, <TT
+CLASS="literal"
+>f64</TT
+></P
+></LI
+><LI
+><P
+><SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>JVM</I
+></SPAN
+>: <TT
+CLASS="literal"
+>int</TT
+>, <TT
+CLASS="literal"
+>long</TT
+>, <TT
+CLASS="literal"
+>float</TT
+>, <TT
+CLASS="literal"
+>double</TT
+></P
+></LI
+></UL
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN164"
+>Type Aliases</A
+></H1
+><P
+>Type aliases provide human-friendly names for intrinsic or compound types:</P
+><PRE
+CLASS="programlisting"
+>&#13;define bool i1
+define char i32       ; Unicode scalar value
+define int i64        ; Platform word size
+define size_t u64
+    </PRE
+><P
+>The alias and its target are interchangeable — <TT
+CLASS="literal"
+>bool</TT
+> and
+      <TT
+CLASS="literal"
+>i1</TT
+> refer to the same type.</P
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN171"
+>Backend Preludes</A
+></H1
+><P
+>Each backend provides a <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>prelude</I
+></SPAN
+> file that defines the
+      intrinsic types and their aliases for that target. The prelude is implicitly
+      loaded before any user code.</P
+><DIV
+CLASS="example"
+><A
+NAME="AEN175"
+></A
+><P
+><B
+>Example 3-1. LLVM Prelude (excerpt)</B
+></P
+><PRE
+CLASS="programlisting"
+>&#13;; Intrinsic types (LLVM native)
+define i1 intrinsic
+define i8 intrinsic
+define i16 intrinsic
+define i32 intrinsic
+define i64 intrinsic
+define f32 intrinsic
+define f64 intrinsic
+define ptr intrinsic
+
+; Human-friendly aliases
+define bool i1
+define char i32
+define int i64
+define size_t u64
+      </PRE
+></DIV
+><DIV
+CLASS="example"
+><A
+NAME="AEN178"
+></A
+><P
+><B
+>Example 3-2. JavaScript Prelude (excerpt)</B
+></P
+><PRE
+CLASS="programlisting"
+>&#13;; Intrinsic types (JavaScript native)
+define number intrinsic
+define string intrinsic
+define boolean intrinsic
+
+; Aliases for compatibility
+define int number
+define float number
+define bool boolean
+      </PRE
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN181"
+>Literal Type Inference</A
+></H1
+><P
+>Numeric and other literals do not have an inherent type. Their type is
+      inferred from context:</P
+><PRE
+CLASS="programlisting"
+>&#13;function double(x: i32) returns i32 { x * 2 }
+
+double(42)           ; 42 inferred as i32 from parameter type
+
+let y: i64 100       ; 100 inferred as i64 from annotation
+let z y + 50         ; 50 inferred as i64 to match y
+    </PRE
+><P
+>If the type cannot be inferred, the compiler requires an explicit annotation:</P
+><PRE
+CLASS="programlisting"
+>&#13;let x 42             ; ERROR: cannot infer type for integer literal
+let x: i32 42        ; OK: type explicitly annotated
+    </PRE
+><P
+>Scaly does <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>not</I
+></SPAN
+> support type suffixes on literals
+      (such as <TT
+CLASS="literal"
+>42i32</TT
+>). This keeps literals clean and
+      encourages explicit type annotations where they matter.</P
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN190"
+>References and Aliasing</A
+></H1
+><P
+>Scaly does not have reference types. There is no <TT
+CLASS="literal"
+>ref[T]</TT
+>
+      or equivalent. This follows the ParaSail philosophy: no pointers or aliasing
+      at the language level.</P
+><P
+>Values flow through functions. When a function receives a parameter, it
+      gets read-only access (implemented as a pointer under the hood, but not
+      exposed in the type system). When a function returns, it returns a value.</P
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN195"
+>Low-Level Pointers</A
+></H2
+><P
+>For low-level implementation of data structures like <TT
+CLASS="literal"
+>Page</TT
+>,
+        <TT
+CLASS="literal"
+>HashMap</TT
+>, or <TT
+CLASS="literal"
+>List</TT
+>, the type
+        <TT
+CLASS="literal"
+>pointer[T]</TT
+> is available. This is an escape hatch for
+        implementors, not for everyday code.</P
+><PRE
+CLASS="programlisting"
+>&#13;; Low-level list node (internal implementation)
+define Node[T] {
+    data: T
+    next: pointer[Node[T]]    ; raw pointer for linked structure
+}
+      </PRE
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN203"
+>Nullable Values</A
+></H2
+><P
+>For nullable values, use <TT
+CLASS="literal"
+>Option[T]</TT
+> — a proper sum type
+        with <TT
+CLASS="literal"
+>Some(value)</TT
+> and <TT
+CLASS="literal"
+>None</TT
+> variants:</P
+><PRE
+CLASS="programlisting"
+>&#13;function find(list: List[T], predicate: function(T) returns bool) returns Option[T] {
+    ; returns Some(item) if found, None otherwise
+}
+
+let result find(items, \x: x &#62; 10)
+choose result {
+    when Some(value): process(value)
+    when None: handle_not_found()
+}
+      </PRE
+><P
+>The compiler optimizes <TT
+CLASS="literal"
+>Option[T]</TT
+> to a simple
+        nullable pointer — no space overhead for the tag.</P
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN212"
+>Parameter Passing</A
+></H1
+><P
+>All function parameters are <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>borrowed</I
+></SPAN
+> — functions receive
+      read-only access to their arguments. The caller retains ownership.</P
+><PRE
+CLASS="programlisting"
+>&#13;define Point { x: i32, y: i32 }
+
+function distance(a: Point, b: Point) returns f64 {
+    ; a and b are read-only views
+    ; cannot modify them
+    ...
+}
+
+let origin Point(0, 0)
+let target Point(3, 4)
+distance(origin, target)    ; origin and target unchanged
+    </PRE
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN217"
+>Implementation</A
+></H2
+><P
+>The implementation of parameter passing depends on the execution context,
+        but the semantics remain identical:</P
+><P
+></P
+><UL
+><LI
+><P
+><SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>Same thread/stack</I
+></SPAN
+>: A pointer is passed.
+          No copying occurs. The function reads through the pointer.</P
+></LI
+><LI
+><P
+><SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>Different thread/GPU/remote</I
+></SPAN
+>: The entire
+          data tree is copied to the target execution context. The function still
+          has read-only access — same semantics, different mechanism.</P
+></LI
+></UL
+><P
+>This design means code doesn't change based on where it executes. A function
+        that works locally works identically when distributed.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN228"
+>Mutation via Procedures</A
+></H2
+><P
+>To modify data, use a <TT
+CLASS="literal"
+>procedure</TT
+> instead of a function.
+        Procedures can declare parameters as mutable:</P
+><PRE
+CLASS="programlisting"
+>&#13;procedure move(p: mutable Point, dx: i32, dy: i32) {
+    set p.x: p.x + dx
+    set p.y: p.y + dy
+}
+
+var position Point(0, 0)
+move(position, 5, 3)    ; position is now (5, 3)
+      </PRE
+><P
+>The distinction between functions (pure, read-only) and procedures
+        (may mutate) is explicit in the code. Readers immediately know which
+        calls might have side effects.</P
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN234"
+>Constructors</A
+></H1
+><P
+>Constructors create instances of types. Scaly provides both implicit and
+      explicit constructors.</P
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN237"
+>Implicit Constructors</A
+></H2
+><P
+>If all members of a type are public, an implicit constructor is generated
+        that takes all fields as parameters in declaration order:</P
+><PRE
+CLASS="programlisting"
+>&#13;define Point { x: i32, y: i32 }
+
+let p Point(10, 20)    ; implicit constructor
+      </PRE
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN241"
+>Explicit Constructors</A
+></H2
+><P
+>Use <TT
+CLASS="literal"
+>init</TT
+> for explicit constructors when you need:</P
+><P
+></P
+><UL
+><LI
+><P
+>Private members (implicit constructor unavailable)</P
+></LI
+><LI
+><P
+>Default values for some fields</P
+></LI
+><LI
+><P
+>Different construction signatures</P
+></LI
+></UL
+><PRE
+CLASS="programlisting"
+>&#13;define Point
+(
+    x: i32
+    y: i32
+)
+{
+    init(value: i32) {      ; convenience constructor
+        set this.x: value
+        set this.y: value
+    }
+}
+
+let p1 Point(10, 20)    ; first init
+let p2 Point(5)         ; second init - Point(5, 5)
+      </PRE
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN253"
+>The <TT
+CLASS="literal"
+>this</TT
+> Prefix</A
+></H2
+><P
+>The <TT
+CLASS="literal"
+>this.</TT
+> prefix is optional when unambiguous, but
+        recommended for clarity:</P
+><PRE
+CLASS="programlisting"
+>&#13;init(x: i32, y: i32) {
+    set this.x: x    ; clear: field x gets parameter x
+    set this.y: y
+}
+      </PRE
+><P
+>When parameter names shadow field names, <TT
+CLASS="literal"
+>this.</TT
+> is
+        required to disambiguate. Avoid <TT
+CLASS="literal"
+>set x: x</TT
+> — it's confusing
+        even if technically resolvable.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN262"
+>Complete Initialization</A
+></H2
+><P
+>All fields must be initialized by any constructor — implicit or explicit.
+        The compiler enforces this. There are no implicit default values (no automatic
+        0, false, or null):</P
+><PRE
+CLASS="programlisting"
+>&#13;define Point { x: i32, y: i32 }
+
+init(x: i32) {
+    set this.x: x
+    ; ERROR: field 'y' not initialized
+}
+      </PRE
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN266"
+>Constructor Return</A
+></H2
+><P
+><TT
+CLASS="literal"
+>init</TT
+> implicitly returns <TT
+CLASS="literal"
+>this</TT
+>,
+        enabling direct binding:</P
+><PRE
+CLASS="programlisting"
+>&#13;let p Point(10, 20)    ; init returns the new Point
+      </PRE
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN272"
+>Constructed Value Lifetime</A
+></H2
+><P
+>The lifetime of a constructed value is inferred from context:</P
+><P
+></P
+><UL
+><LI
+><P
+><SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>In a block</I
+></SPAN
+>: Local lifetime (current block)</P
+></LI
+><LI
+><P
+><SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>Last statement / return position</I
+></SPAN
+>: Call lifetime (return page)</P
+></LI
+><LI
+><P
+><SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>Explicit annotation</I
+></SPAN
+>: As specified</P
+></LI
+></UL
+><PRE
+CLASS="programlisting"
+>&#13;function example() returns Point {
+    let temp Point(1, 2)     ; local - dies at block end
+    return Point(3, 4)       ; call - inferred from return position
+}
+      </PRE
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN286"
+>Closures (Lambdas)</A
+></H1
+><P
+>Closures are anonymous functions defined with backslash syntax:</P
+><PRE
+CLASS="programlisting"
+>&#13;\x: x * 2                    ; single parameter
+\x y: x + y                  ; multiple parameters
+\: 42                        ; no parameters
+    </PRE
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN290"
+>Capturing Variables</A
+></H2
+><P
+>Closures can capture variables from their enclosing scope. Captured
+        variables are treated as implicit borrowed parameters — read-only access,
+        same as explicit function parameters:</P
+><PRE
+CLASS="programlisting"
+>&#13;let multiplier 10
+let scale \x: x * multiplier    ; captures multiplier (read-only)
+
+scale(5)    ; returns 50
+      </PRE
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN294"
+>Closures Are Pure</A
+></H2
+><P
+>Closures cannot mutate captured variables. They are pure like functions,
+        not imperative like procedures:</P
+><PRE
+CLASS="programlisting"
+>&#13;var count 0
+let bad \: { set count: count + 1 }   ; ERROR: cannot mutate capture
+      </PRE
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN298"
+>Closure Lifetime</A
+></H2
+><P
+>Since captures are borrowed, a closure cannot outlive its captured
+        variables. The compiler enforces this through lifetime checking:</P
+><PRE
+CLASS="programlisting"
+>&#13;function makeCounter() returns (function() returns i32) {
+    var count 0
+    return \: count    ; ERROR: closure outlives captured 'count'
+}
+      </PRE
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN302"
+>Implementation</A
+></H2
+><P
+>Each closure is an anonymous struct containing its captures, with a
+        call method implementing the body. Closures are monomorphized like other
+        generic types.</P
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN305"
+>Error Handling</A
+></H1
+><P
+>Scaly uses explicit error handling. There are no exceptions or stack unwinding — 
+    errors are values returned from functions or procedures.</P
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN308"
+>The <TT
+CLASS="literal"
+>throws</TT
+> Clause</A
+></H2
+><P
+>Functions or procedures that can fail declare their error type with <TT
+CLASS="literal"
+>throws</TT
+>:</P
+><PRE
+CLASS="programlisting"
+>&#13;procedure parse(input: String) returns AST throws ParseError {
+    if invalid(input) {
+        throw InvalidSyntax(position, "expected expression")
+    }
+    ...
+}
+      </PRE
+><P
+>Under the hood, this is equivalent to returning <TT
+CLASS="literal"
+>Result[AST, ParseError]</TT
+>,
+        but with dedicated syntax for clarity.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN316"
+>Single Error Type</A
+></H2
+><P
+>A function can only throw one error type. To represent multiple error
+        kinds, use a union:</P
+><PRE
+CLASS="programlisting"
+>&#13;define FileError union {
+    NotFound { path: String }
+    PermissionDenied { path: String }
+    IoError { message: String }
+}
+
+function readFile(path: String) returns String throws FileError {
+    ...
+}
+      </PRE
+><P
+>This ensures a clear error signature and enables the <TT
+CLASS="literal"
+>try</TT
+>/<TT
+CLASS="literal"
+>when</TT
+>
+        pattern for handling specific variants.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN323"
+>The <TT
+CLASS="literal"
+>try</TT
+>/<TT
+CLASS="literal"
+>when</TT
+> Pattern</A
+></H2
+><P
+>Handle errors with <TT
+CLASS="literal"
+>try</TT
+> and <TT
+CLASS="literal"
+>when</TT
+> clauses:</P
+><PRE
+CLASS="programlisting"
+>&#13;try let ast parse(input)
+    when InvalidSyntax(pos, msg): reportError(pos, msg)
+    when UnexpectedEof: reportError(0, "unexpected end of file")
+      </PRE
+><P
+>If not all error variants are covered, an <TT
+CLASS="literal"
+>else</TT
+> clause is required:</P
+><PRE
+CLASS="programlisting"
+>&#13;try let ast parse(input)
+    when InvalidSyntax(pos, msg): reportError(pos, msg)
+    else panic("unhandled error")
+      </PRE
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN334"
+>Error Propagation</A
+></H2
+><P
+>Use <TT
+CLASS="literal"
+>else throw</TT
+> to re-throw errors to the caller:</P
+><PRE
+CLASS="programlisting"
+>&#13;function process(input: String) returns Data throws ParseError {
+    try let ast parse(input)
+        else throw    ; re-throws ParseError to caller
+
+    transform(ast)
+}
+      </PRE
+><P
+>When the error type matches exactly, the error propagates automatically.
+        This simplifies deeply nested code like parsers and visitors.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN340"
+>Error Lifetime</A
+></H2
+><P
+>Thrown values must have thrown lifetime (<TT
+CLASS="literal"
+>!</TT
+>).
+        The compiler infers this from throw position. If inference fails, annotate
+        explicitly:</P
+><PRE
+CLASS="programlisting"
+>&#13;throw ParseError.InvalidSyntax(pos, msg)!   ; explicit thrown lifetime</PRE
+><P
+>The caller provides the exception region where the error will be stored.</P
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN346"
+>Union Types</A
+></H1
+><P
+>A union type (also called sum type or tagged union) can hold one of
+      several variants. Each variant can have its own fields:</P
+><PRE
+CLASS="programlisting"
+>&#13;define Shape union {
+    Circle { radius: f64 }
+    Rectangle { width: f64, height: f64 }
+    Triangle { a: f64, b: f64, c: f64 }
+}
+
+let s Shape.Circle(5.0)
+    </PRE
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN350"
+>Memory Layout</A
+></H2
+><P
+>A union is stored as a tag plus the largest variant:</P
+><PRE
+CLASS="programlisting"
+>&#13;Shape = { tag: u8, data: [size of largest variant] }
+      </PRE
+><P
+>Unions can contain other unions. Nested unions contribute their full
+        size (tag + data) when computing the parent union's size.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN355"
+>Pattern Matching with <TT
+CLASS="literal"
+>choose</TT
+></A
+></H2
+><P
+>Use <TT
+CLASS="literal"
+>choose</TT
+>-<TT
+CLASS="literal"
+>when</TT
+> to match on variants:</P
+><PRE
+CLASS="programlisting"
+>&#13;choose s
+    when Circle(r): computeCircleArea(r)
+    when Rectangle(w, h): w * h
+    when Triangle(a, b, c): heronArea(a, b, c)</PRE
+><P
+>If not all variants are covered, an <TT
+CLASS="literal"
+>else</TT
+> clause is required:</P
+><PRE
+CLASS="programlisting"
+>&#13;choose s when Circle(r): computeCircleArea(r) else 0.0    ; handles Rectangle and Triangle</PRE
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN365"
+>Option Type</A
+></H2
+><P
+><TT
+CLASS="literal"
+>Option[T]</TT
+> is a union for nullable values:</P
+><PRE
+CLASS="programlisting"
+>&#13;define Option[T] union {
+    Some { value: T }
+    None
+}
+
+function find(list: List[T], pred: function(T) returns bool) returns Option[T] {
+    ...
+}
+
+choose find(items, \x: x &#62; 10) {
+    when Some(value): process(value)
+    when None: handle_not_found()
+}
+      </PRE
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN370"
+>Option Optimization</A
+></H2
+><P
+>For non-pointer types, <TT
+CLASS="literal"
+>Option[T]</TT
+> optimizes to a pointer:</P
+><P
+></P
+><UL
+><LI
+><P
+><TT
+CLASS="literal"
+>None</TT
+> = null pointer</P
+></LI
+><LI
+><P
+><TT
+CLASS="literal"
+>Some(value)</TT
+> = pointer to value</P
+></LI
+></UL
+><P
+>Note that if T is itself a pointer, the Option Optimization leads to a pointer to another pointer which could be null itself.</P
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN382"
+>Generics</A
+></H1
+><P
+>Scaly supports generic types with type parameters in square brackets:</P
+><PRE
+CLASS="programlisting"
+>&#13;define List[T] {
+    ...
+}
+
+define HashMap[K, V] {
+    ...
+}
+
+let numbers List[i32]()
+let names List[String]()
+    </PRE
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN386"
+>Monomorphization</A
+></H2
+><P
+>Generics are implemented via <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>monomorphization</I
+></SPAN
+>: each
+        concrete instantiation becomes a completely separate type at compile time.
+        <TT
+CLASS="literal"
+>List[i32]</TT
+> and <TT
+CLASS="literal"
+>List[String]</TT
+> share no
+        code at runtime — each has its own specialized implementation.</P
+><P
+>Benefits:</P
+><P
+></P
+><UL
+><LI
+><P
+>No runtime overhead — no type descriptors or vtables</P
+></LI
+><LI
+><P
+>Full optimization — the compiler sees concrete types</P
+></LI
+><LI
+><P
+>No boxing — primitives stay primitives</P
+></LI
+></UL
+><P
+>Trade-offs:</P
+><P
+></P
+><UL
+><LI
+><P
+>Larger binaries — each instantiation duplicates code</P
+></LI
+><LI
+><P
+>Longer compile times — more code to generate</P
+></LI
+></UL
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN406"
+>Name Mangling</A
+></H2
+><P
+>The Planner generates unique mangled names for each instantiation,
+        following Itanium ABI conventions:</P
+><PRE
+CLASS="programlisting"
+>&#13;List[i32]         → _ZN4ListIiE...
+List[String]      → _ZN4ListI6StringE...
+HashMap[String, i32] → _ZN7HashMapI6StringiE...
+      </PRE
+><P
+>These names are compatible with <TT
+CLASS="literal"
+>c++filt</TT
+> for debugging.</P
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN412"
+>Lifetimes and Memory Regions</A
+></H1
+><P
+>Scaly uses Region-Based Memory Management (RBMM). Instead of garbage
+      collection or manual malloc/free, values are allocated in regions that
+      are deallocated in bulk. Lifetimes control which region a value lives in.</P
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN415"
+>Lifetime Kinds</A
+></H2
+><P
+></P
+><DIV
+CLASS="variablelist"
+><DL
+><DT
+>Local (<TT
+CLASS="literal"
+>$</TT
+>, default)</DT
+><DD
+><P
+>Value lives until the end of the current block. This is the
+            default — the <TT
+CLASS="literal"
+>$</TT
+> annotation is optional.</P
+></DD
+><DT
+>Call (<TT
+CLASS="literal"
+>#</TT
+>)</DT
+><DD
+><P
+>Value lives in the "return page" — it survives the function
+            return and is managed by the caller.</P
+></DD
+><DT
+>Thrown (<TT
+CLASS="literal"
+>!</TT
+>)</DT
+><DD
+><P
+>Value lives in the "exception page" — for values that may
+            be thrown as errors.</P
+></DD
+><DT
+>Reference (<TT
+CLASS="literal"
+>^name</TT
+>)</DT
+><DD
+><P
+>Value's lifetime is tied to the named container. Required
+            when adding values to collections.</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN439"
+>Local Lifetime</A
+></H2
+><P
+>Local is the default. Values are deallocated at the end of their block,
+        not the entire function:</P
+><PRE
+CLASS="programlisting"
+>&#13;function process(input: String) {
+    if condition {
+        let temp Parser(input)    ; local lifetime
+        ...
+    }                             ; temp deallocated here
+
+    ; temp is gone - block ended
+}
+      </PRE
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN443"
+>Call Lifetime</A
+></H2
+><P
+>Values that must survive a function return use call lifetime:</P
+><PRE
+CLASS="programlisting"
+>&#13;function createParser(input: String) returns Parser {
+    let result: Parser# Parser(input)   ; call lifetime
+    return result                        ; survives to caller
+}
+      </PRE
+><P
+>The compiler infers call lifetime for values in return position, so
+        the annotation can often be omitted:</P
+><PRE
+CLASS="programlisting"
+>&#13;function createParser(input: String) returns Parser {
+    return Parser(input)    ; call lifetime inferred from return
+}
+      </PRE
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN449"
+>Thrown Lifetime</A
+></H2
+><P
+>Values that may be thrown as errors use thrown lifetime:</P
+><PRE
+CLASS="programlisting"
+>&#13;function parse(input: String) returns AST throws ParseError {
+    if invalid(input) {
+        throw ParseError("invalid syntax")!   ; thrown lifetime
+    }
+    ...
+}
+      </PRE
+><P
+>The compiler infers thrown lifetime for values in throw position.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN454"
+>Reference Lifetime</A
+></H2
+><P
+>When adding a value to a collection, the value must live at least as
+        long as the collection. Use reference lifetime to tie them together:</P
+><PRE
+CLASS="programlisting"
+>&#13;let items Array()
+{
+    let item: Car^items Car("red")   ; item lives as long as items
+    items.add(item)                   ; safe - item won't die before items
+}
+      </PRE
+><P
+>Without <TT
+CLASS="literal"
+>^items</TT
+>, the item would have local (block)
+        lifetime and would be deallocated at the closing brace — leaving a
+        dangling reference in the array.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN460"
+>Lifetime Inference</A
+></H2
+><P
+>The compiler infers lifetimes where possible:</P
+><P
+></P
+><UL
+><LI
+><P
+>Default is Local</P
+></LI
+><LI
+><P
+>Return position implies Call</P
+></LI
+><LI
+><P
+>Throw position implies Thrown</P
+></LI
+><LI
+><P
+>Reference lifetime (<TT
+CLASS="literal"
+>^container</TT
+>) must be explicit</P
+></LI
+></UL
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="lexical.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="grammar.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Lexical Structure</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Grammar</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

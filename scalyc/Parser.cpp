@@ -43,7 +43,6 @@ void Parser::initKeywords() {
     Keywords.insert("instruction");
     Keywords.insert("intrinsic");
     Keywords.insert("label");
-    Keywords.insert("lambda");
     Keywords.insert("let");
     Keywords.insert("loop");
     Keywords.insert("macro");
@@ -2885,7 +2884,7 @@ llvm::Expected<ThrowSyntax> Parser::parseThrow() {
 llvm::Expected<LambdaSyntax> Parser::parseLambda() {
     size_t Start = Lex.previousPosition();
 
-    if (!Lex.parseKeyword("lambda"))
+    if (!Lex.parsePunctuation('\\'))
         return different();
 
     auto InputOrErr = parseOperandList();
