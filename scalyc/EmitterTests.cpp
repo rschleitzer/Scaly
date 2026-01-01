@@ -1877,6 +1877,97 @@ static bool testPipelineSizeOfPtr() {
     return true;
 }
 
+// Grouped expression tests (exercises emitTuple for single anonymous component)
+
+static bool testPipelineGroupedSimple() {
+    const char* Name = "Pipeline: (42)";
+
+    auto ResultOrErr = evalInt("(42)");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 42) {
+        std::string Msg = "expected 42, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineGroupedAdd() {
+    const char* Name = "Pipeline: (3 + 4)";
+
+    auto ResultOrErr = evalInt("(3 + 4)");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 7) {
+        std::string Msg = "expected 7, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineNestedGrouped() {
+    const char* Name = "Pipeline: ((1 + 2))";
+
+    auto ResultOrErr = evalInt("((1 + 2))");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 3) {
+        std::string Msg = "expected 3, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineComplexGrouped() {
+    const char* Name = "Pipeline: ((2 + 3) * (4 + 1))";
+
+    auto ResultOrErr = evalInt("((2 + 3) * (4 + 1))");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // (2+3)*(4+1) = 5*5 = 25
+    if (*ResultOrErr != 25) {
+        std::string Msg = "expected 25, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
 bool runEmitterTests() {
     llvm::outs() << "Running Emitter tests...\n";
 
@@ -1987,6 +2078,12 @@ bool runEmitterTests() {
     testPipelineSizeOfBool();
     testPipelineSizeOfI32();
     testPipelineSizeOfPtr();
+
+    llvm::outs() << "  Grouped expression tests:\n";
+    testPipelineGroupedSimple();
+    testPipelineGroupedAdd();
+    testPipelineNestedGrouped();
+    testPipelineComplexGrouped();
 
     llvm::outs() << "\nEmitter tests: " << TestsPassed << " passed, "
                  << TestsFailed << " failed\n";
