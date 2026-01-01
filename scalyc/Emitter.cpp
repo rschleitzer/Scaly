@@ -686,6 +686,8 @@ llvm::Expected<llvm::Value*> Emitter::emitExpression(const PlannedExpression &Ex
             return emitWhile(E);
         } else if constexpr (std::is_same_v<T, PlannedFor>) {
             return emitFor(E);
+        } else if constexpr (std::is_same_v<T, PlannedTry>) {
+            return emitTry(E);
         } else {
             return llvm::make_error<llvm::StringError>(
                 "Unimplemented expression type",
@@ -1437,7 +1439,226 @@ llvm::Expected<llvm::Value*> Emitter::emitWhile(const PlannedWhile &While) {
 }
 
 llvm::Expected<llvm::Value*> Emitter::emitTry(const PlannedTry &Try) {
-    // TODO: implement try emission
+    // Try expressions work with Result-like types (unions with Ok/Err variants)
+    // 1. Evaluate the binding's operation
+    // 2. Check if result is Ok (tag 0) or Err (tag 1+)
+    // 3. If Ok, bind the value and return it
+    // 4. If Err, match against catch clauses
+
+    // First, emit the binding's operation
+    if (Try.Cond.Operation.empty()) {
+        return llvm::make_error<llvm::StringError>(
+            "Try binding has no operation",
+            llvm::inconvertibleErrorCode()
+        );
+    }
+
+    auto CondValueOrErr = emitOperands(Try.Cond.Operation);
+    if (!CondValueOrErr)
+        return CondValueOrErr.takeError();
+
+    llvm::Value *ResultValue = *CondValueOrErr;
+
+    // Get binding name if present
+    std::string BindingName;
+    if (Try.Cond.BindingItem.Name) {
+        BindingName = *Try.Cond.BindingItem.Name;
+    }
+    bool IsMutable = (Try.Cond.BindingType == "var");
+
+    // If result is not a struct (union), just return it (no error possible)
+    if (!ResultValue->getType()->isStructTy() && !ResultValue->getType()->isPointerTy()) {
+        // Simple value, not a Result type - just bind and return
+        if (!BindingName.empty()) {
+            LocalVariables[BindingName] = ResultValue;
+        }
+        return ResultValue;
+    }
+
+    // Get pointer to the result value
+    llvm::Value *ResultPtr;
+    llvm::Type *ResultType = ResultValue->getType();
+    if (ResultValue->getType()->isPointerTy()) {
+        ResultPtr = ResultValue;
+        // Need to determine the actual struct type - for now assume it's stored
+    } else {
+        // Store the result to get a pointer
+        ResultPtr = Builder->CreateAlloca(ResultType, nullptr, "try.result");
+        Builder->CreateStore(ResultValue, ResultPtr);
+    }
+
+    // Load the tag (first field, i8) - Result layout: { i8 tag, [size x i8] data }
+    llvm::Type *I8Ty = llvm::Type::getInt8Ty(*Context);
+    llvm::Value *TagPtr = Builder->CreateStructGEP(ResultType, ResultPtr, 0, "tag.ptr");
+    llvm::Value *Tag = Builder->CreateLoad(I8Ty, TagPtr, "tag");
+
+    // Create blocks
+    llvm::BasicBlock *OkBlock = createBlock("try.ok");
+    llvm::BasicBlock *ErrBlock = (Try.Catches.empty() && !Try.Alternative)
+        ? nullptr : createBlock("try.err");
+    llvm::BasicBlock *MergeBlock = createBlock("try.end");
+
+    // Check if tag is 0 (Ok)
+    llvm::Value *IsOk = Builder->CreateICmpEQ(Tag, llvm::ConstantInt::get(I8Ty, 0), "is.ok");
+    Builder->CreateCondBr(IsOk, OkBlock, ErrBlock ? ErrBlock : MergeBlock);
+
+    // Track values and source blocks for PHI node
+    std::vector<std::pair<llvm::Value*, llvm::BasicBlock*>> IncomingValues;
+
+    // Emit Ok block - bind the success value and continue
+    Builder->SetInsertPoint(OkBlock);
+
+    // For now, the Ok value is the whole result (since we can't easily extract
+    // the data portion without knowing the exact type)
+    // In a full implementation, we'd extract the data from offset 1
+    llvm::Value *OkValue = ResultValue;
+
+    // Bind the value if there's a name
+    if (!BindingName.empty()) {
+        if (IsMutable) {
+            llvm::Type *Ty = OkValue->getType();
+            llvm::AllocaInst *Alloca = Builder->CreateAlloca(Ty, nullptr, BindingName);
+            Builder->CreateStore(OkValue, Alloca);
+            LocalVariables[BindingName] = Alloca;
+        } else {
+            LocalVariables[BindingName] = OkValue;
+        }
+    }
+
+    IncomingValues.push_back({OkValue, OkBlock});
+    Builder->CreateBr(MergeBlock);
+
+    // Emit error handling blocks
+    if (ErrBlock) {
+        Builder->SetInsertPoint(ErrBlock);
+
+        if (!Try.Catches.empty()) {
+            // Create switch for different error types
+            llvm::BasicBlock *DefaultBlock = Try.Alternative
+                ? createBlock("try.else") : MergeBlock;
+
+            llvm::SwitchInst *Switch = Builder->CreateSwitch(Tag, DefaultBlock, Try.Catches.size());
+
+            // Process each catch clause
+            for (size_t i = 0; i < Try.Catches.size(); ++i) {
+                const auto &Catch = Try.Catches[i];
+
+                llvm::BasicBlock *CatchBlock = createBlock("try.catch." + Catch.Name);
+                // Error tags start at 1 (0 is Ok)
+                Switch->addCase(
+                    llvm::cast<llvm::ConstantInt>(llvm::ConstantInt::get(I8Ty, i + 1)),
+                    CatchBlock
+                );
+
+                Builder->SetInsertPoint(CatchBlock);
+
+                // Bind the error value if there's a name
+                // TODO: Extract actual error data from the union
+
+                llvm::Value *CatchValue = nullptr;
+
+                if (Catch.Consequent) {
+                    if (auto *Action = std::get_if<PlannedAction>(Catch.Consequent.get())) {
+                        auto ValueOrErr = emitAction(*Action);
+                        if (!ValueOrErr)
+                            return ValueOrErr.takeError();
+                        if (Action->Target.empty()) {
+                            CatchValue = *ValueOrErr;
+                        }
+                    } else if (auto *Binding = std::get_if<PlannedBinding>(Catch.Consequent.get())) {
+                        if (auto Err = emitBinding(*Binding))
+                            return std::move(Err);
+                    }
+                }
+
+                if (!Builder->GetInsertBlock()->getTerminator()) {
+                    Builder->CreateBr(MergeBlock);
+                }
+
+                if (CatchValue) {
+                    IncomingValues.push_back({CatchValue, Builder->GetInsertBlock()});
+                }
+            }
+
+            // Emit else block if present
+            if (Try.Alternative) {
+                Builder->SetInsertPoint(DefaultBlock);
+                llvm::Value *ElseValue = nullptr;
+
+                if (auto *Action = std::get_if<PlannedAction>(Try.Alternative.get())) {
+                    auto ValueOrErr = emitAction(*Action);
+                    if (!ValueOrErr)
+                        return ValueOrErr.takeError();
+                    if (Action->Target.empty()) {
+                        ElseValue = *ValueOrErr;
+                    }
+                } else if (auto *Binding = std::get_if<PlannedBinding>(Try.Alternative.get())) {
+                    if (auto Err = emitBinding(*Binding))
+                        return std::move(Err);
+                }
+
+                if (!Builder->GetInsertBlock()->getTerminator()) {
+                    Builder->CreateBr(MergeBlock);
+                }
+
+                if (ElseValue) {
+                    IncomingValues.push_back({ElseValue, Builder->GetInsertBlock()});
+                }
+            }
+        } else if (Try.Alternative) {
+            // No catches, just else
+            llvm::Value *ElseValue = nullptr;
+
+            if (auto *Action = std::get_if<PlannedAction>(Try.Alternative.get())) {
+                auto ValueOrErr = emitAction(*Action);
+                if (!ValueOrErr)
+                    return ValueOrErr.takeError();
+                if (Action->Target.empty()) {
+                    ElseValue = *ValueOrErr;
+                }
+            } else if (auto *Binding = std::get_if<PlannedBinding>(Try.Alternative.get())) {
+                if (auto Err = emitBinding(*Binding))
+                    return std::move(Err);
+            }
+
+            if (!Builder->GetInsertBlock()->getTerminator()) {
+                Builder->CreateBr(MergeBlock);
+            }
+
+            if (ElseValue) {
+                IncomingValues.push_back({ElseValue, Builder->GetInsertBlock()});
+            }
+        }
+    }
+
+    // Continue at merge block
+    Builder->SetInsertPoint(MergeBlock);
+
+    // Clean up binding from scope
+    if (!BindingName.empty()) {
+        LocalVariables.erase(BindingName);
+    }
+
+    // Create PHI node if branches produce values
+    if (!IncomingValues.empty()) {
+        llvm::Type *ValueType = IncomingValues[0].first->getType();
+        bool AllSameType = true;
+        for (const auto &[Val, Block] : IncomingValues) {
+            if (Val->getType() != ValueType) {
+                AllSameType = false;
+                break;
+            }
+        }
+
+        if (AllSameType) {
+            llvm::PHINode *PHI = Builder->CreatePHI(ValueType, IncomingValues.size(), "try.value");
+            for (const auto &[Val, Block] : IncomingValues) {
+                PHI->addIncoming(Val, Block);
+            }
+            return PHI;
+        }
+    }
+
     return nullptr;
 }
 
