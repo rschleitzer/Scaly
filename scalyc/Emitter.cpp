@@ -497,9 +497,38 @@ llvm::Error Emitter::emitAction(const PlannedAction &Action) {
     if (!ValueOrErr)
         return ValueOrErr.takeError();
 
+    llvm::Value *Value = *ValueOrErr;
+
     // If there are target operands, this is an assignment
     if (!Action.Target.empty()) {
-        // TODO: implement assignment
+        // Get the target - should be a variable reference for simple assignment
+        const PlannedOperand &TargetOp = Action.Target[0];
+
+        if (auto *Var = std::get_if<PlannedVariable>(&TargetOp.Expr)) {
+            // Look up the variable's alloca pointer
+            llvm::Value *VarPtr = lookupVariable(Var->Name);
+            if (!VarPtr) {
+                return llvm::make_error<llvm::StringError>(
+                    "Undefined variable in assignment: " + Var->Name,
+                    llvm::inconvertibleErrorCode()
+                );
+            }
+
+            if (!Var->IsMutable) {
+                return llvm::make_error<llvm::StringError>(
+                    "Cannot assign to immutable variable: " + Var->Name,
+                    llvm::inconvertibleErrorCode()
+                );
+            }
+
+            // Store the value to the variable
+            Builder->CreateStore(Value, VarPtr);
+        } else {
+            return llvm::make_error<llvm::StringError>(
+                "Assignment target must be a variable",
+                llvm::inconvertibleErrorCode()
+            );
+        }
     }
 
     return llvm::Error::success();
@@ -1007,10 +1036,17 @@ llvm::Expected<uint64_t> Emitter::jitExecuteRaw(const Plan &P, llvm::Type *Expec
     llvm::Value *LastValue = nullptr;
     for (const auto &Stmt : P.Statements) {
         if (auto *Action = std::get_if<PlannedAction>(&Stmt)) {
-            auto ValueOrErr = emitOperands(Action->Source);
-            if (!ValueOrErr)
-                return ValueOrErr.takeError();
-            LastValue = *ValueOrErr;
+            // Handle the action (may be expression or assignment)
+            if (auto Err = emitAction(*Action))
+                return std::move(Err);
+
+            // If not an assignment, get the value as potential result
+            if (Action->Target.empty()) {
+                auto ValueOrErr = emitOperands(Action->Source);
+                if (!ValueOrErr)
+                    return ValueOrErr.takeError();
+                LastValue = *ValueOrErr;
+            }
         } else if (auto *Binding = std::get_if<PlannedBinding>(&Stmt)) {
             if (auto Err = emitBinding(*Binding))
                 return std::move(Err);
