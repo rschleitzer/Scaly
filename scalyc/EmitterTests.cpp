@@ -1393,6 +1393,140 @@ static bool testPipelineWhileFactorial() {
     return true;
 }
 
+// If statement tests
+
+static bool testPipelineIfTrueExpr() {
+    const char* Name = "Pipeline: if true : 1 else 2";
+
+    auto ResultOrErr = evalInt("if true : 1 else 2");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 1) {
+        std::string Msg = "expected 1, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineIfFalseExpr() {
+    const char* Name = "Pipeline: if false : 1 else 2";
+
+    auto ResultOrErr = evalInt("if false : 1 else 2");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 2) {
+        std::string Msg = "expected 2, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineIfComparison() {
+    const char* Name = "Pipeline: if 5 > 3 : 10 else 20";
+
+    auto ResultOrErr = evalInt("if 5 > 3 : 10 else 20");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 10) {
+        std::string Msg = "expected 10, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineIfWithVar() {
+    const char* Name = "Pipeline: let x = 5: if x > 3 : x * 2 else x";
+
+    auto ResultOrErr = evalInt("let x = 5: if x > 3 : x * 2 else x");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 10) {
+        std::string Msg = "expected 10, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineIfSideEffect() {
+    const char* Name = "Pipeline: var x = 0: if true : set x : 5: x";
+
+    auto ResultOrErr = evalInt("var x = 0: if true : set x : 5: x");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 5) {
+        std::string Msg = "expected 5, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineIfMax() {
+    const char* Name = "Pipeline: let a = 7: let b = 3: if a > b : a else b";
+
+    auto ResultOrErr = evalInt("let a = 7: let b = 3: if a > b : a else b");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 7) {
+        std::string Msg = "expected 7, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
 bool runEmitterTests() {
     llvm::outs() << "Running Emitter tests...\n";
 
@@ -1467,6 +1601,15 @@ bool runEmitterTests() {
     testPipelineWhileSum();
     testPipelineWhileZeroIterations();
     testPipelineWhileFactorial();
+
+    // If statements
+    llvm::outs() << "  If statement tests:\n";
+    testPipelineIfTrueExpr();
+    testPipelineIfFalseExpr();
+    testPipelineIfComparison();
+    testPipelineIfWithVar();
+    testPipelineIfSideEffect();
+    testPipelineIfMax();
 
     llvm::outs() << "\nEmitter tests: " << TestsPassed << " passed, "
                  << TestsFailed << " failed\n";
