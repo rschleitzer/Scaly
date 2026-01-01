@@ -45,8 +45,14 @@ private:
     // Current generic substitution context
     std::map<std::string, PlannedType> TypeSubstitutions;
 
+    // Information about a local binding
+    struct LocalBinding {
+        PlannedType Type;
+        bool IsMutable;
+    };
+
     // Scope stack for local variables
-    std::vector<std::map<std::string, PlannedType>> Scopes;
+    std::vector<std::map<std::string, LocalBinding>> Scopes;
 
     // Current structure being planned (for property access in methods)
     std::string CurrentStructureName;
@@ -183,8 +189,9 @@ private:
 
     void pushScope();
     void popScope();
-    void defineLocal(llvm::StringRef Name, const PlannedType &Type);
+    void defineLocal(llvm::StringRef Name, const PlannedType &Type, bool IsMutable = false);
     std::optional<PlannedType> lookupLocal(llvm::StringRef Name);
+    std::optional<LocalBinding> lookupLocalBinding(llvm::StringRef Name);
 
     // ========== Type Utilities ==========
 
