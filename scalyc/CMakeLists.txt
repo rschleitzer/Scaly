@@ -31,6 +31,10 @@ set(SOURCES
     PlannerError.cpp
     Planner.h
     Planner.cpp
+    Emitter.h
+    Emitter.cpp
+    EmitterTests.h
+    EmitterTests.cpp
 )
 
 add_executable(scalyc ${SOURCES})

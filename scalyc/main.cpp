@@ -4,6 +4,7 @@
 #include "ParserTests.h"
 #include "Modeler.h"
 #include "Planner.h"
+#include "EmitterTests.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/raw_ostream.h"
@@ -241,9 +242,11 @@ int main(int argc, char **argv) {
 
     if (RunTests) {
         bool AllPassed = true;
+        AllPassed &= scaly::runParserTests();
+        std::cout << std::endl;
         AllPassed &= scaly::runLexerTests();
         std::cout << std::endl;
-        AllPassed &= scaly::runParserTests();
+        AllPassed &= scaly::runEmitterTests();
         return AllPassed ? 0 : 1;
     }
 
