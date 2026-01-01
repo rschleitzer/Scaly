@@ -201,6 +201,7 @@ private:
     llvm::Expected<llvm::Value*> emitTry(const PlannedTry &Try);
     llvm::Expected<llvm::Value*> emitSizeOf(const PlannedSizeOf &SizeOf);
     llvm::Expected<llvm::Value*> emitIs(const PlannedIs &Is);
+    llvm::Expected<llvm::Value*> emitMatrix(const PlannedMatrix &Matrix);
 
     // ========================================================================
     // Memory/Region Management

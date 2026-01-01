@@ -656,24 +656,9 @@ llvm::Expected<llvm::Value*> Emitter::emitExpression(const PlannedExpression &Ex
         } else if constexpr (std::is_same_v<T, PlannedCall>) {
             return emitCall(E);
         } else if constexpr (std::is_same_v<T, PlannedTuple>) {
-            // Handle grouped expressions (single anonymous component)
-            // and actual tuples (multiple or named components)
-            if (E.Components.size() == 1 && !E.Components[0].Name) {
-                // Grouped expression like (2 + 3) - evaluate the inner value
-                if (!E.Components[0].Value.empty()) {
-                    // The tuple's TupleType already contains the collapsed result
-                    // We need to emit the operations within the component
-                    // For now, emit the last operand which should have the collapsed call
-                    return emitOperand(E.Components[0].Value.back());
-                }
-                return nullptr;
-            } else {
-                // Actual tuple - TODO: emit struct construction
-                return llvm::make_error<llvm::StringError>(
-                    "Tuple construction not yet implemented",
-                    llvm::inconvertibleErrorCode()
-                );
-            }
+            return emitTuple(E);
+        } else if constexpr (std::is_same_v<T, PlannedMatrix>) {
+            return emitMatrix(E);
         } else if constexpr (std::is_same_v<T, PlannedBlock>) {
             return emitBlock(E);
         } else if constexpr (std::is_same_v<T, PlannedIf>) {
@@ -1690,6 +1675,176 @@ llvm::Expected<llvm::Value*> Emitter::emitIs(const PlannedIs &Is) {
 
     // For standalone use, return false (shouldn't happen in well-formed code)
     return llvm::ConstantInt::get(llvm::Type::getInt1Ty(*Context), 0);
+}
+
+llvm::Expected<llvm::Value*> Emitter::emitTuple(const PlannedTuple &Tuple) {
+    // Handle grouped expressions (single anonymous component)
+    // vs actual tuples (multiple or named components)
+
+    if (Tuple.Components.size() == 1 && !Tuple.Components[0].Name) {
+        // Grouped expression like (2 + 3) - evaluate the inner value
+        if (!Tuple.Components[0].Value.empty()) {
+            return emitOperand(Tuple.Components[0].Value.back());
+        }
+        return nullptr;
+    }
+
+    // Actual tuple - create a struct with the component values
+    // First, determine the component types and emit values
+    std::vector<llvm::Type*> ComponentTypes;
+    std::vector<llvm::Value*> ComponentValues;
+
+    for (const auto &Comp : Tuple.Components) {
+        if (Comp.Value.empty()) {
+            return llvm::make_error<llvm::StringError>(
+                "Tuple component has no value",
+                llvm::inconvertibleErrorCode()
+            );
+        }
+
+        // Emit the component value
+        auto ValueOrErr = emitOperands(Comp.Value);
+        if (!ValueOrErr)
+            return ValueOrErr.takeError();
+
+        llvm::Value *Val = *ValueOrErr;
+        ComponentTypes.push_back(Val->getType());
+        ComponentValues.push_back(Val);
+    }
+
+    // Create an anonymous struct type for the tuple
+    llvm::StructType *TupleTy = llvm::StructType::get(*Context, ComponentTypes);
+
+    // Allocate space for the tuple and store component values
+    llvm::Value *TuplePtr = Builder->CreateAlloca(TupleTy, nullptr, "tuple");
+
+    for (size_t i = 0; i < ComponentValues.size(); ++i) {
+        llvm::Value *FieldPtr = Builder->CreateStructGEP(TupleTy, TuplePtr, i, "tuple.field");
+        Builder->CreateStore(ComponentValues[i], FieldPtr);
+    }
+
+    // Load and return the tuple value
+    return Builder->CreateLoad(TupleTy, TuplePtr, "tuple.val");
+}
+
+llvm::Expected<llvm::Value*> Emitter::emitMatrix(const PlannedMatrix &Matrix) {
+    // Matrix is a 2D array of operands
+    // For a 1D array (vector), Operations has one row
+    // For a 2D matrix, Operations has multiple rows
+
+    if (Matrix.Operations.empty()) {
+        return llvm::make_error<llvm::StringError>(
+            "Matrix has no elements",
+            llvm::inconvertibleErrorCode()
+        );
+    }
+
+    // Check if this is a 1D array (vector) or 2D matrix
+    bool Is1D = Matrix.Operations.size() == 1;
+
+    if (Is1D) {
+        // 1D array (vector): [e1, e2, e3, ...]
+        const auto &Elements = Matrix.Operations[0];
+
+        if (Elements.empty()) {
+            // Empty array
+            llvm::Type *ElemTy = mapType(Matrix.ElementType);
+            llvm::ArrayType *ArrTy = llvm::ArrayType::get(ElemTy, 0);
+            return llvm::UndefValue::get(ArrTy);
+        }
+
+        // Emit all element values
+        std::vector<llvm::Value*> ElementValues;
+        llvm::Type *ElemTy = nullptr;
+
+        for (const auto &Elem : Elements) {
+            auto ValueOrErr = emitOperand(Elem);
+            if (!ValueOrErr)
+                return ValueOrErr.takeError();
+
+            llvm::Value *Val = *ValueOrErr;
+            ElementValues.push_back(Val);
+
+            if (!ElemTy) {
+                ElemTy = Val->getType();
+            }
+        }
+
+        // Create array type
+        llvm::ArrayType *ArrTy = llvm::ArrayType::get(ElemTy, ElementValues.size());
+
+        // Allocate and populate the array
+        llvm::Value *ArrPtr = Builder->CreateAlloca(ArrTy, nullptr, "array");
+
+        for (size_t i = 0; i < ElementValues.size(); ++i) {
+            llvm::Value *Indices[] = {
+                llvm::ConstantInt::get(llvm::Type::getInt64Ty(*Context), 0),
+                llvm::ConstantInt::get(llvm::Type::getInt64Ty(*Context), i)
+            };
+            llvm::Value *ElemPtr = Builder->CreateGEP(ArrTy, ArrPtr, Indices, "elem.ptr");
+            Builder->CreateStore(ElementValues[i], ElemPtr);
+        }
+
+        // Load and return the array value
+        return Builder->CreateLoad(ArrTy, ArrPtr, "array.val");
+    } else {
+        // 2D matrix: [[e11, e12], [e21, e22], ...]
+        size_t NumRows = Matrix.Operations.size();
+        size_t NumCols = Matrix.Operations[0].size();
+
+        // Verify all rows have the same length
+        for (const auto &Row : Matrix.Operations) {
+            if (Row.size() != NumCols) {
+                return llvm::make_error<llvm::StringError>(
+                    "Matrix rows have different lengths",
+                    llvm::inconvertibleErrorCode()
+                );
+            }
+        }
+
+        // Emit all element values
+        std::vector<std::vector<llvm::Value*>> RowValues;
+        llvm::Type *ElemTy = nullptr;
+
+        for (const auto &Row : Matrix.Operations) {
+            std::vector<llvm::Value*> ColValues;
+            for (const auto &Elem : Row) {
+                auto ValueOrErr = emitOperand(Elem);
+                if (!ValueOrErr)
+                    return ValueOrErr.takeError();
+
+                llvm::Value *Val = *ValueOrErr;
+                ColValues.push_back(Val);
+
+                if (!ElemTy) {
+                    ElemTy = Val->getType();
+                }
+            }
+            RowValues.push_back(ColValues);
+        }
+
+        // Create 2D array type: [NumRows x [NumCols x ElemTy]]
+        llvm::ArrayType *RowTy = llvm::ArrayType::get(ElemTy, NumCols);
+        llvm::ArrayType *MatrixTy = llvm::ArrayType::get(RowTy, NumRows);
+
+        // Allocate and populate the matrix
+        llvm::Value *MatrixPtr = Builder->CreateAlloca(MatrixTy, nullptr, "matrix");
+
+        for (size_t i = 0; i < NumRows; ++i) {
+            for (size_t j = 0; j < NumCols; ++j) {
+                llvm::Value *Indices[] = {
+                    llvm::ConstantInt::get(llvm::Type::getInt64Ty(*Context), 0),
+                    llvm::ConstantInt::get(llvm::Type::getInt64Ty(*Context), i),
+                    llvm::ConstantInt::get(llvm::Type::getInt64Ty(*Context), j)
+                };
+                llvm::Value *ElemPtr = Builder->CreateGEP(MatrixTy, MatrixPtr, Indices, "elem.ptr");
+                Builder->CreateStore(RowValues[i][j], ElemPtr);
+            }
+        }
+
+        // Load and return the matrix value
+        return Builder->CreateLoad(MatrixTy, MatrixPtr, "matrix.val");
+    }
 }
 
 // ============================================================================
