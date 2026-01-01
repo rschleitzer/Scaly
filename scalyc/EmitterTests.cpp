@@ -472,6 +472,19 @@ static llvm::Expected<int64_t> evalInt(llvm::StringRef Source) {
     return E.jitExecuteInt(*PlanResult);
 }
 
+// Helper: run full pipeline from source to JIT bool result
+static llvm::Expected<bool> evalBool(llvm::StringRef Source) {
+    auto PlanResult = compileToPlan(Source);
+    if (!PlanResult)
+        return PlanResult.takeError();
+
+    EmitterConfig Config;
+    Config.EmitDebugInfo = false;
+    Emitter E(Config);
+
+    return E.jitExecuteBool(*PlanResult);
+}
+
 static bool testPipelineIntegerLiteral() {
     const char* Name = "Pipeline: integer literal (42)";
 
@@ -761,6 +774,350 @@ static bool testPipelineBoolNegateFalse() {
     return true;
 }
 
+// ============================================================================
+// Comparison Operator Tests
+// ============================================================================
+
+static bool testPipelineEqualTrue() {
+    const char* Name = "Pipeline: 5 = 5";
+
+    auto ResultOrErr = evalBool("5 = 5");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != true) {
+        fail(Name, "expected true, got false");
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineEqualFalse() {
+    const char* Name = "Pipeline: 5 = 3";
+
+    auto ResultOrErr = evalBool("5 = 3");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != false) {
+        fail(Name, "expected false, got true");
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineNotEqualTrue() {
+    const char* Name = "Pipeline: 5 <> 3";
+
+    auto ResultOrErr = evalBool("5 <> 3");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != true) {
+        fail(Name, "expected true, got false");
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineNotEqualFalse() {
+    const char* Name = "Pipeline: 5 <> 5";
+
+    auto ResultOrErr = evalBool("5 <> 5");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != false) {
+        fail(Name, "expected false, got true");
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineLessThanTrue() {
+    const char* Name = "Pipeline: 3 < 5";
+
+    auto ResultOrErr = evalBool("3 < 5");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != true) {
+        fail(Name, "expected true, got false");
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineLessThanFalse() {
+    const char* Name = "Pipeline: 5 < 3";
+
+    auto ResultOrErr = evalBool("5 < 3");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != false) {
+        fail(Name, "expected false, got true");
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineGreaterThanTrue() {
+    const char* Name = "Pipeline: 5 > 3";
+
+    auto ResultOrErr = evalBool("5 > 3");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != true) {
+        fail(Name, "expected true, got false");
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineGreaterThanFalse() {
+    const char* Name = "Pipeline: 3 > 5";
+
+    auto ResultOrErr = evalBool("3 > 5");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != false) {
+        fail(Name, "expected false, got true");
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineLessOrEqualTrue() {
+    const char* Name = "Pipeline: 5 <= 5";
+
+    auto ResultOrErr = evalBool("5 <= 5");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != true) {
+        fail(Name, "expected true, got false");
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineLessOrEqualFalse() {
+    const char* Name = "Pipeline: 5 <= 3";
+
+    auto ResultOrErr = evalBool("5 <= 3");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != false) {
+        fail(Name, "expected false, got true");
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineGreaterOrEqualTrue() {
+    const char* Name = "Pipeline: 5 >= 5";
+
+    auto ResultOrErr = evalBool("5 >= 5");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != true) {
+        fail(Name, "expected true, got false");
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineGreaterOrEqualFalse() {
+    const char* Name = "Pipeline: 3 >= 5";
+
+    auto ResultOrErr = evalBool("3 >= 5");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != false) {
+        fail(Name, "expected false, got true");
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+// ============================================================================
+// Boolean Binary Operator Tests
+// ============================================================================
+
+static bool testPipelineBoolAndTrueTrue() {
+    const char* Name = "Pipeline: true & true";
+
+    auto ResultOrErr = evalBool("true & true");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != true) {
+        fail(Name, "expected true, got false");
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineBoolAndTrueFalse() {
+    const char* Name = "Pipeline: true & false";
+
+    auto ResultOrErr = evalBool("true & false");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != false) {
+        fail(Name, "expected false, got true");
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineBoolOrFalseFalse() {
+    const char* Name = "Pipeline: false | false";
+
+    auto ResultOrErr = evalBool("false | false");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != false) {
+        fail(Name, "expected false, got true");
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineBoolOrTrueFalse() {
+    const char* Name = "Pipeline: true | false";
+
+    auto ResultOrErr = evalBool("true | false");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != true) {
+        fail(Name, "expected true, got false");
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
 bool runEmitterTests() {
     llvm::outs() << "Running Emitter tests...\n";
 
@@ -792,6 +1149,28 @@ bool runEmitterTests() {
     testPipelineBoolLiteral();
     testPipelineBoolNegateTrue();
     testPipelineBoolNegateFalse();
+
+    // Comparison operators
+    llvm::outs() << "  Comparison operator tests:\n";
+    testPipelineEqualTrue();
+    testPipelineEqualFalse();
+    testPipelineNotEqualTrue();
+    testPipelineNotEqualFalse();
+    testPipelineLessThanTrue();
+    testPipelineLessThanFalse();
+    testPipelineGreaterThanTrue();
+    testPipelineGreaterThanFalse();
+    testPipelineLessOrEqualTrue();
+    testPipelineLessOrEqualFalse();
+    testPipelineGreaterOrEqualTrue();
+    testPipelineGreaterOrEqualFalse();
+
+    // Boolean binary operators
+    llvm::outs() << "  Boolean binary operator tests:\n";
+    testPipelineBoolAndTrueTrue();
+    testPipelineBoolAndTrueFalse();
+    testPipelineBoolOrFalseFalse();
+    testPipelineBoolOrTrueFalse();
 
     llvm::outs() << "\nEmitter tests: " << TestsPassed << " passed, "
                  << TestsFailed << " failed\n";
