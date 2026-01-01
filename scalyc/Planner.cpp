@@ -2337,7 +2337,34 @@ llvm::Expected<PlannedExpression> Planner::planExpression(const Expression &Expr
                 return Resolved.takeError();
             }
             PSO.SizedType = std::move(*Resolved);
-            PSO.Size = 0;  // TODO: Compute actual size
+
+            // Compute size based on type
+            const std::string &TypeName = PSO.SizedType.Name;
+            if (TypeName == "bool" || TypeName == "i1") {
+                PSO.Size = 1;
+            } else if (TypeName == "i8" || TypeName == "u8" || TypeName == "char") {
+                PSO.Size = 1;
+            } else if (TypeName == "i16" || TypeName == "u16") {
+                PSO.Size = 2;
+            } else if (TypeName == "i32" || TypeName == "u32" || TypeName == "float" || TypeName == "f32") {
+                PSO.Size = 4;
+            } else if (TypeName == "i64" || TypeName == "u64" || TypeName == "int" || TypeName == "uint" ||
+                       TypeName == "double" || TypeName == "f64" || TypeName == "size_t" || TypeName == "ptr") {
+                PSO.Size = 8;
+            } else {
+                // For structures and other types, look up in caches
+                auto StructIt = InstantiatedStructures.find(PSO.SizedType.MangledName);
+                if (StructIt != InstantiatedStructures.end()) {
+                    PSO.Size = StructIt->second.Size;
+                } else {
+                    auto UnionIt = InstantiatedUnions.find(PSO.SizedType.MangledName);
+                    if (UnionIt != InstantiatedUnions.end()) {
+                        PSO.Size = UnionIt->second.Size;
+                    } else {
+                        PSO.Size = 0;  // Unknown type size
+                    }
+                }
+            }
             return PlannedExpression(std::move(PSO));
         }
         else if constexpr (std::is_same_v<T, Is>) {

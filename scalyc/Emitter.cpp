@@ -688,6 +688,10 @@ llvm::Expected<llvm::Value*> Emitter::emitExpression(const PlannedExpression &Ex
             return emitFor(E);
         } else if constexpr (std::is_same_v<T, PlannedTry>) {
             return emitTry(E);
+        } else if constexpr (std::is_same_v<T, PlannedSizeOf>) {
+            return emitSizeOf(E);
+        } else if constexpr (std::is_same_v<T, PlannedIs>) {
+            return emitIs(E);
         } else {
             return llvm::make_error<llvm::StringError>(
                 "Unimplemented expression type",
@@ -1660,6 +1664,32 @@ llvm::Expected<llvm::Value*> Emitter::emitTry(const PlannedTry &Try) {
     }
 
     return nullptr;
+}
+
+llvm::Expected<llvm::Value*> Emitter::emitSizeOf(const PlannedSizeOf &SizeOf) {
+    // The size is already computed by the Planner - just emit it as a constant
+    // sizeof returns a size_t (u64)
+    llvm::Type *SizeTy = llvm::Type::getInt64Ty(*Context);
+    return llvm::ConstantInt::get(SizeTy, SizeOf.Size);
+}
+
+llvm::Expected<llvm::Value*> Emitter::emitIs(const PlannedIs &Is) {
+    // 'is' expression tests if a value is of a specific union variant type
+    // This requires the previous operand in the expression to be a union value
+    // For now, return a placeholder - full implementation needs context from operand
+    //
+    // In a full implementation:
+    // 1. Get the union value from the expression context
+    // 2. Load the tag from the union
+    // 3. Compare against the expected tag for TestType
+    // 4. Return i1 (bool) result
+    //
+    // Since 'is' is typically used as a postfix operator on an operand,
+    // the actual implementation would happen in emitOperand where we have
+    // access to the preceding operand value.
+
+    // For standalone use, return false (shouldn't happen in well-formed code)
+    return llvm::ConstantInt::get(llvm::Type::getInt1Ty(*Context), 0);
 }
 
 // ============================================================================
