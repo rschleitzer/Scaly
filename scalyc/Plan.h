@@ -340,10 +340,17 @@ using PlannedExpression = std::variant<
     PlannedIs
 >;
 
+// Member access step with field index for code generation
+struct PlannedMemberAccess {
+    std::string Name;        // Field name
+    size_t FieldIndex;       // Index in struct layout
+    PlannedType ResultType;  // Type after this access
+};
+
 struct PlannedOperand {
     Span Loc;
     PlannedExpression Expr;
-    std::shared_ptr<std::vector<std::string>> MemberAccess;
+    std::shared_ptr<std::vector<PlannedMemberAccess>> MemberAccess;
     PlannedType ResultType;  // The computed/inferred result type
 };
 

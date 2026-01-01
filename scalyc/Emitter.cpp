@@ -620,11 +620,29 @@ llvm::Expected<llvm::Value*> Emitter::emitOperands(const std::vector<PlannedOper
 }
 
 llvm::Expected<llvm::Value*> Emitter::emitOperand(const PlannedOperand &Op) {
+    llvm::Value *Value = nullptr;
+
     // Handle constants specially since they need type info
     if (auto *Const = std::get_if<PlannedConstant>(&Op.Expr)) {
-        return emitConstant(*Const, Op.ResultType);
+        Value = emitConstant(*Const, Op.ResultType);
+    } else {
+        auto ExprResult = emitExpression(Op.Expr);
+        if (!ExprResult)
+            return ExprResult.takeError();
+        Value = *ExprResult;
     }
-    return emitExpression(Op.Expr);
+
+    // Apply member access chain if present
+    if (Op.MemberAccess && !Op.MemberAccess->empty() && Value) {
+        for (const auto &Access : *Op.MemberAccess) {
+            // Use extractvalue for struct field access
+            // extractvalue takes a value (not pointer) and field index
+            Value = Builder->CreateExtractValue(Value, Access.FieldIndex,
+                                                 Access.Name);
+        }
+    }
+
+    return Value;
 }
 
 llvm::Expected<llvm::Value*> Emitter::emitExpression(const PlannedExpression &Expr) {

@@ -631,7 +631,9 @@ std::optional<Planner::OperatorMatch> Planner::findOperator(
                             Left.Name == "u64" || Left.Name == "u32" ||
                             Left.Name == "u16" || Left.Name == "u8" ||
                             Left.Name == "f64" || Left.Name == "f32" ||
-                            Left.Name == "bool");
+                            Left.Name == "bool" ||
+                            Left.Name == "int" || Left.Name == "float" ||
+                            Left.Name == "double" || Left.Name == "size_t");
 
     if (IsPrimitiveType && typesEqual(Left, Right)) {
         std::string OpName = Name.str();
@@ -1150,6 +1152,19 @@ llvm::Expected<PlannedType> Planner::resolveOperationSequence(
             }
         }
 
+        // Check for type constructor: Type(args)
+        // Context is a struct type, Current is a Tuple (constructor args)
+        if (auto* TupleExpr = std::get_if<PlannedTuple>(&Current.Expr)) {
+            // Check if Context is a known struct type
+            const Concept* Conc = lookupConcept(Context.Name);
+            if (Conc && std::holds_alternative<Structure>(Conc->Def)) {
+                // This is a constructor call: Type(args)
+                // Context remains as the struct type - the tuple provides init values
+                I++;
+                continue;
+            }
+        }
+
         // Default: use the operand's type directly
         Context = Current.ResultType;
         I++;
@@ -1388,6 +1403,73 @@ llvm::Expected<PlannedType> Planner::resolveMemberAccess(
     }
 
     return Current;
+}
+
+llvm::Expected<std::vector<PlannedMemberAccess>> Planner::resolveMemberAccessChain(
+    const PlannedType &BaseType,
+    const std::vector<std::string> &Members,
+    Span Loc) {
+
+    std::vector<PlannedMemberAccess> Result;
+    if (Members.empty()) {
+        return Result;
+    }
+
+    PlannedType Current = BaseType;
+
+    for (const auto& MemberName : Members) {
+        // Extract base name from instantiated type (e.g., "Node.int" -> "Node")
+        std::string BaseName = Current.Name;
+        size_t DotPos = BaseName.find('.');
+        if (DotPos != std::string::npos) {
+            BaseName = BaseName.substr(0, DotPos);
+        }
+
+        // Look up the base type as a concept
+        const Concept* Conc = lookupConcept(BaseName);
+        if (!Conc) {
+            return makePlannerNotImplementedError(File, Loc,
+                "cannot access member '" + MemberName + "' on type " +
+                 Current.Name);
+        }
+
+        // Check if it's a structure with properties
+        if (auto* Struct = std::get_if<Structure>(&Conc->Def)) {
+            bool Found = false;
+            size_t FieldIndex = 0;
+            for (const auto& Prop : Struct->Properties) {
+                if (Prop.Name == MemberName) {
+                    if (!Prop.PropType) {
+                        return makePlannerNotImplementedError(File, Loc,
+                            "property without type");
+                    }
+                    auto Resolved = resolveType(*Prop.PropType, Loc);
+                    if (!Resolved) {
+                        return Resolved.takeError();
+                    }
+
+                    PlannedMemberAccess Access;
+                    Access.Name = MemberName;
+                    Access.FieldIndex = FieldIndex;
+                    Access.ResultType = std::move(*Resolved);
+                    Result.push_back(std::move(Access));
+
+                    Current = Result.back().ResultType;
+                    Found = true;
+                    break;
+                }
+                FieldIndex++;
+            }
+            if (Found) continue;
+        }
+
+        // Member not found
+        return makePlannerNotImplementedError(File, Loc,
+            "member '" + MemberName + "' not found in type " +
+             Current.Name);
+    }
+
+    return Result;
 }
 
 // ============================================================================
@@ -2179,18 +2261,39 @@ llvm::Expected<PlannedOperand> Planner::planOperand(const Operand &Op) {
     PlannedOperand Result;
     Result.Loc = Op.Loc;
 
+    // Check for variable member access encoded as Type path (e.g., p.x parsed as Type(["p", "x"]))
+    // This happens when the parser treats dotted names as type paths
+    std::vector<std::string> ImplicitMemberAccess;
+    Operand ModifiedOp = Op;
+
+    if (auto* TypeExpr = std::get_if<Type>(&Op.Expr)) {
+        if (TypeExpr->Name.size() > 1 && (!TypeExpr->Generics || TypeExpr->Generics->empty())) {
+            // Check if the first element is a local variable
+            auto LocalBind = lookupLocalBinding(TypeExpr->Name[0]);
+            if (LocalBind) {
+                // The first element is a variable, rest are member accesses
+                // Convert to single-element Type + implicit member access
+                Type SingleType;
+                SingleType.Loc = TypeExpr->Loc;
+                SingleType.Name = {TypeExpr->Name[0]};
+                SingleType.Generics = nullptr;
+                SingleType.Life = TypeExpr->Life;
+                ModifiedOp.Expr = SingleType;
+
+                // Collect remaining path elements as implicit member access
+                for (size_t i = 1; i < TypeExpr->Name.size(); ++i) {
+                    ImplicitMemberAccess.push_back(TypeExpr->Name[i]);
+                }
+            }
+        }
+    }
+
     // Plan the expression
-    auto PlannedExpr = planExpression(Op.Expr);
+    auto PlannedExpr = planExpression(ModifiedOp.Expr);
     if (!PlannedExpr) {
         return PlannedExpr.takeError();
     }
     Result.Expr = std::move(*PlannedExpr);
-
-    // Copy member access path
-    if (Op.MemberAccess) {
-        Result.MemberAccess = std::make_shared<std::vector<std::string>>(
-            *Op.MemberAccess);
-    }
 
     // Compute ResultType via type inference
     auto InferredType = inferExpressionType(Result.Expr);
@@ -2199,14 +2302,28 @@ llvm::Expected<PlannedOperand> Planner::planOperand(const Operand &Op) {
     }
     Result.ResultType = std::move(*InferredType);
 
-    // Apply member access to refine the result type
-    if (Result.MemberAccess && !Result.MemberAccess->empty()) {
-        auto MemberType = resolveMemberAccess(Result.ResultType,
-                                               *Result.MemberAccess, Op.Loc);
-        if (!MemberType) {
-            return MemberType.takeError();
+    // Combine implicit member access (from Type path) with explicit member access
+    std::vector<std::string> CombinedMemberAccess = ImplicitMemberAccess;
+    if (Op.MemberAccess && !Op.MemberAccess->empty()) {
+        for (const auto& M : *Op.MemberAccess) {
+            CombinedMemberAccess.push_back(M);
         }
-        Result.ResultType = std::move(*MemberType);
+    }
+
+    // Apply member access to refine the result type and compute field indices
+    if (!CombinedMemberAccess.empty()) {
+        auto MemberChain = resolveMemberAccessChain(Result.ResultType,
+                                                     CombinedMemberAccess, Op.Loc);
+        if (!MemberChain) {
+            return MemberChain.takeError();
+        }
+        Result.MemberAccess = std::make_shared<std::vector<PlannedMemberAccess>>(
+            std::move(*MemberChain));
+
+        // Update result type to the final type after all member accesses
+        if (!Result.MemberAccess->empty()) {
+            Result.ResultType = Result.MemberAccess->back().ResultType;
+        }
     }
 
     return Result;
@@ -2218,7 +2335,67 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
     std::vector<PlannedOperand> Result;
     Result.reserve(Ops.size());
 
-    for (const auto &Op : Ops) {
+    for (size_t i = 0; i < Ops.size(); ++i) {
+        const auto &Op = Ops[i];
+
+        // Check for type constructor pattern: Type followed by Tuple
+        // e.g., Point(3, 4) or Point(3, 4).x where Point is a struct type
+        if (i + 1 < Ops.size()) {
+            const auto &NextOp = Ops[i + 1];
+            // Check if current op is a type that's a struct
+            if (auto* TypeExpr = std::get_if<Type>(&Op.Expr)) {
+                if (TypeExpr->Name.size() == 1 && (!TypeExpr->Generics || TypeExpr->Generics->empty())) {
+                    const Concept* Conc = lookupConcept(TypeExpr->Name[0]);
+                    if (Conc && std::holds_alternative<Structure>(Conc->Def)) {
+                        // Check if next op is a tuple (constructor args)
+                        if (std::holds_alternative<Tuple>(NextOp.Expr)) {
+                            // This is Type(args) or Type(args).member - plan the tuple as a struct
+                            // Plan the tuple (args) without its member access first
+                            Operand ArgsOp = NextOp;
+                            ArgsOp.MemberAccess = nullptr;  // Remove member access from args
+                            auto PlannedArgs = planOperand(ArgsOp);
+                            if (!PlannedArgs) {
+                                return PlannedArgs.takeError();
+                            }
+
+                            // Change the tuple's type to the struct type
+                            PlannedType StructType;
+                            StructType.Loc = Op.Loc;
+                            StructType.Name = TypeExpr->Name[0];
+                            StructType.MangledName = mangleType(StructType);
+
+                            // Update the tuple expression to have the struct type
+                            if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedArgs->Expr)) {
+                                TupleExpr->TupleType = StructType;
+                            }
+                            PlannedArgs->ResultType = StructType;
+
+                            // Apply member access to the struct type if present
+                            if (NextOp.MemberAccess && !NextOp.MemberAccess->empty()) {
+                                auto MemberChain = resolveMemberAccessChain(StructType,
+                                                                             *NextOp.MemberAccess, NextOp.Loc);
+                                if (!MemberChain) {
+                                    return MemberChain.takeError();
+                                }
+                                PlannedArgs->MemberAccess = std::make_shared<std::vector<PlannedMemberAccess>>(
+                                    std::move(*MemberChain));
+                                if (!PlannedArgs->MemberAccess->empty()) {
+                                    PlannedArgs->ResultType = PlannedArgs->MemberAccess->back().ResultType;
+                                }
+                            }
+
+                            // Push the constructed struct (skip the type operand, use only the tuple)
+                            Result.push_back(std::move(*PlannedArgs));
+
+                            // Skip the next operand (we consumed it)
+                            i++;
+                            continue;
+                        }
+                    }
+                }
+            }
+        }
+
         auto Planned = planOperand(Op);
         if (!Planned) {
             return Planned.takeError();
