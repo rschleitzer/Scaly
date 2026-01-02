@@ -2334,6 +2334,113 @@ static bool testPipelineDeinitializerWithInit() {
     return true;
 }
 
+// Standalone function call tests
+
+static bool testPipelineFunctionCallSimple() {
+    const char* Name = "Pipeline: simple function call (constant)";
+
+    // Start with simplest case - function returning a constant (no braces)
+    auto ResultOrErr = evalInt(
+        "function seven() returns int 7\n"
+        "seven()"
+    );
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 7) {
+        std::string Msg = "expected 7, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineFunctionCallWithArgs() {
+    const char* Name = "Pipeline: function call with arguments";
+
+    // Function with two arguments
+    auto ResultOrErr = evalInt(
+        "function add(a: int, b: int) returns int a + b\n"
+        "add(3, 4)"
+    );
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 7) {
+        std::string Msg = "expected 7, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineFunctionCallChained() {
+    const char* Name = "Pipeline: function calling another function";
+
+    // Function that calls another function
+    auto ResultOrErr = evalInt(
+        "function double(x: int) returns int x + x\n"
+        "function quad(x: int) returns int double(double(x))\n"
+        "quad(3)"
+    );
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 12) {
+        std::string Msg = "expected 12, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineFunctionCallWithExpression() {
+    const char* Name = "Pipeline: function call with expression arg";
+
+    // Function called with expression argument
+    auto ResultOrErr = evalInt(
+        "function square(x: int) returns int x * x\n"
+        "square(3 + 2)"
+    );
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 25) {
+        std::string Msg = "expected 25, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
 bool runEmitterTests() {
     llvm::outs() << "Running Emitter tests...\n";
     llvm::outs().flush();
@@ -2473,6 +2580,12 @@ bool runEmitterTests() {
     llvm::outs() << "  Deinitializer tests:\n";
     testPipelineDeinitializerSimple();
     testPipelineDeinitializerWithInit();
+
+    llvm::outs() << "  Function call tests:\n";
+    testPipelineFunctionCallSimple();
+    testPipelineFunctionCallWithArgs();
+    testPipelineFunctionCallChained();
+    testPipelineFunctionCallWithExpression();
 
     llvm::outs() << "\nEmitter tests: " << TestsPassed << " passed, "
                  << TestsFailed << " failed\n";
