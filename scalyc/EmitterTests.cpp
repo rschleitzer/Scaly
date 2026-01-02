@@ -2511,6 +2511,71 @@ static bool testPointerDerefMemberAccess() {
     return true;
 }
 
+// Null literal tests
+
+static bool testNullLiteralCompiles() {
+    const char* Name = "Pipeline: null literal compiles";
+
+    // Test that null compiles as a standalone expression
+    auto PlanResult = compileToPlan(
+        "function isNull(p: pointer[int]) returns bool { p = null }\n"
+        "0"
+    );
+
+    if (!PlanResult) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << PlanResult.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testNullInFunction() {
+    const char* Name = "Pipeline: null in function return";
+
+    // Test that a function can return null
+    auto PlanResult = compileToPlan(
+        "function getNull() returns pointer[int] { null }\n"
+        "0"
+    );
+
+    if (!PlanResult) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << PlanResult.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testNullComparison() {
+    const char* Name = "Pipeline: null comparison compiles";
+
+    // Test that null can be compared with <>
+    auto PlanResult = compileToPlan(
+        "function isNotNull(p: pointer[int]) returns bool { p <> null }\n"
+        "0"
+    );
+
+    if (!PlanResult) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << PlanResult.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
 // Member access tests
 
 static bool testPipelineMemberAccessSimple() {
@@ -3383,6 +3448,11 @@ bool runEmitterTests() {
     testPointerDerefCompiles();
     testPointerDerefSimple();
     testPointerDerefMemberAccess();
+
+    llvm::outs() << "  Null literal tests:\n";
+    testNullLiteralCompiles();
+    testNullInFunction();
+    testNullComparison();
 
     llvm::outs() << "  Member access tests:\n";
     testPipelineMemberAccessSimple();
