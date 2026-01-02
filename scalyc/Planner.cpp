@@ -1596,8 +1596,8 @@ PlannedType Planner::inferConstantType(const Constant &C) {
         }
         else if constexpr (std::is_same_v<T, IntegerConstant>) {
             Result.Loc = Val.Loc;
-            Result.Name = "i64";
-            Result.MangledName = "i64";
+            Result.Name = "int";
+            Result.MangledName = "i";
         }
         else if constexpr (std::is_same_v<T, HexConstant>) {
             Result.Loc = Val.Loc;
@@ -2650,6 +2650,98 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             i++;
                             continue;
                         }
+                    }
+                }
+            }
+        }
+
+        // Check for function call pattern: function_name followed by Tuple
+        // e.g., seven() or add(3, 4)
+        if (i + 1 < Ops.size()) {
+            const auto &NextOp = Ops[i + 1];
+            if (auto* TypeExpr = std::get_if<Type>(&Op.Expr)) {
+                if (TypeExpr->Name.size() == 1 && (!TypeExpr->Generics || TypeExpr->Generics->empty())) {
+                    const std::string& FuncName = TypeExpr->Name[0];
+                    // Check if it's a known function (not a struct/concept)
+                    if (isFunction(FuncName) && std::holds_alternative<Tuple>(NextOp.Expr)) {
+                        // This is function(args) - create a function call
+
+                        // Plan the arguments tuple
+                        Operand ArgsOp = NextOp;
+                        ArgsOp.MemberAccess = nullptr;
+                        auto PlannedArgs = planOperand(ArgsOp);
+                        if (!PlannedArgs) {
+                            return PlannedArgs.takeError();
+                        }
+
+                        // Extract argument types from the planned tuple
+                        std::vector<PlannedType> ArgTypes;
+                        if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedArgs->Expr)) {
+                            for (const auto &Comp : TupleExpr->Components) {
+                                if (!Comp.Value.empty()) {
+                                    ArgTypes.push_back(Comp.Value.back().ResultType);
+                                }
+                            }
+                        }
+
+                        // Resolve the function call to get return type and match function
+                        auto FuncResult = resolveFunctionCall(FuncName, Op.Loc, ArgTypes);
+                        if (!FuncResult) {
+                            return FuncResult.takeError();
+                        }
+
+                        // Build PlannedItems for mangling
+                        std::vector<PlannedItem> ParamItems;
+                        for (const auto& ArgType : ArgTypes) {
+                            PlannedItem Item;
+                            Item.ItemType = std::make_shared<PlannedType>(ArgType);
+                            ParamItems.push_back(Item);
+                        }
+
+                        // Generate mangled name for standalone function (no parent)
+                        std::string MangledName = mangleFunction(FuncName, ParamItems, nullptr);
+
+                        // Create the function call
+                        PlannedCall Call;
+                        Call.Loc = Op.Loc;
+                        Call.Name = FuncName;
+                        Call.MangledName = MangledName;
+                        Call.IsIntrinsic = false;
+                        Call.IsOperator = false;
+                        Call.ResultType = std::move(*FuncResult);
+
+                        // Convert tuple components to call arguments
+                        Call.Args = std::make_shared<std::vector<PlannedOperand>>();
+                        if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedArgs->Expr)) {
+                            for (auto &Comp : TupleExpr->Components) {
+                                if (!Comp.Value.empty()) {
+                                    Call.Args->push_back(std::move(Comp.Value.back()));
+                                }
+                            }
+                        }
+
+                        PlannedOperand CallOperand;
+                        CallOperand.Loc = Op.Loc;
+                        CallOperand.ResultType = Call.ResultType;
+                        CallOperand.Expr = std::move(Call);
+
+                        // Apply member access if present on the result
+                        if (NextOp.MemberAccess && !NextOp.MemberAccess->empty()) {
+                            auto MemberChain = resolveMemberAccessChain(CallOperand.ResultType,
+                                                                         *NextOp.MemberAccess, NextOp.Loc);
+                            if (!MemberChain) {
+                                return MemberChain.takeError();
+                            }
+                            CallOperand.MemberAccess = std::make_shared<std::vector<PlannedMemberAccess>>(
+                                std::move(*MemberChain));
+                            if (!CallOperand.MemberAccess->empty()) {
+                                CallOperand.ResultType = CallOperand.MemberAccess->back().ResultType;
+                            }
+                        }
+
+                        Result.push_back(std::move(CallOperand));
+                        i++;  // Skip the tuple operand
+                        continue;
                     }
                 }
             }
@@ -3877,6 +3969,10 @@ llvm::Expected<PlannedNamespace> Planner::planNamespace(const Namespace &NS,
                 ModuleStack.pop_back();
                 return PlannedFunc.takeError();
             }
+
+            // Also add to InstantiatedFunctions for the emitter's lookup
+            InstantiatedFunctions[PlannedFunc->MangledName] = *PlannedFunc;
+
             Result.Functions.push_back(std::move(*PlannedFunc));
         } else if (auto *Op = std::get_if<Operator>(&Member)) {
             auto PlannedOp = planOperator(*Op, nullptr);
@@ -4036,6 +4132,10 @@ llvm::Expected<PlannedModule> Planner::planModule(const Module &Mod) {
                 ModuleStack.pop_back();
                 return PlannedFunc.takeError();
             }
+
+            // Also add to InstantiatedFunctions for the emitter's lookup
+            InstantiatedFunctions[PlannedFunc->MangledName] = *PlannedFunc;
+
             Result.Functions.push_back(std::move(*PlannedFunc));
 
             // Register in symbol table
