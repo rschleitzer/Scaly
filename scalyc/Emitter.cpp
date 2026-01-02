@@ -1798,6 +1798,10 @@ llvm::Value *Emitter::emitConstant(const PlannedConstant &Const, const PlannedTy
             // Default to i64 if type not specified
             llvm::Type *Ty = Type.isResolved() ? mapType(Type) : llvm::Type::getInt64Ty(*Context);
             return llvm::ConstantInt::get(Ty, C.Value, /*isSigned=*/true);
+        } else if constexpr (std::is_same_v<T, HexConstant>) {
+            // Hex constants are unsigned integers
+            llvm::Type *Ty = Type.isResolved() ? mapType(Type) : llvm::Type::getInt64Ty(*Context);
+            return llvm::ConstantInt::get(Ty, C.Value, /*isSigned=*/false);
         } else if constexpr (std::is_same_v<T, FloatingPointConstant>) {
             llvm::Type *Ty = Type.isResolved() ? mapType(Type) : llvm::Type::getDoubleTy(*Context);
             return llvm::ConstantFP::get(Ty, C.Value);
@@ -1805,6 +1809,10 @@ llvm::Value *Emitter::emitConstant(const PlannedConstant &Const, const PlannedTy
             return llvm::ConstantInt::get(llvm::Type::getInt1Ty(*Context), C.Value ? 1 : 0);
         } else if constexpr (std::is_same_v<T, StringConstant>) {
             return Builder->CreateGlobalStringPtr(C.Value);
+        } else if constexpr (std::is_same_v<T, CharacterConstant>) {
+            // Character constant - emit as i8
+            char CharVal = C.Value.empty() ? 0 : C.Value[0];
+            return llvm::ConstantInt::get(llvm::Type::getInt8Ty(*Context), CharVal);
         } else if constexpr (std::is_same_v<T, NullConstant>) {
             // Null pointer - use the target type or default to i8*
             llvm::Type *Ty = Type.isResolved() ? mapType(Type) : llvm::PointerType::getUnqual(*Context);
