@@ -135,6 +135,7 @@ void Emitter::initRBMM() {
     PageAllocatePage = llvm::Function::Create(
         AllocatePageTy, llvm::GlobalValue::ExternalLinkage,
         "_ZN4Page13allocate_pageEv", *Module);
+    FunctionCache["_ZN4Page13allocate_pageEv"] = PageAllocatePage;
 
     // Declare Page_allocate(page: ptr, size: i64, align: i64) -> ptr
     // This is the method that allocates from a page
@@ -142,6 +143,7 @@ void Emitter::initRBMM() {
     PageAllocate = llvm::Function::Create(
         AllocateTy, llvm::GlobalValue::ExternalLinkage,
         "_ZN4Page8allocateEyy", *Module);
+    FunctionCache["_ZN4Page8allocateEyy"] = PageAllocate;
 
     // Declare Page_deallocate_extensions(page: ptr) -> void
     // Called to clean up a page's extensions when leaving a scope
@@ -149,6 +151,7 @@ void Emitter::initRBMM() {
     PageDeallocateExtensions = llvm::Function::Create(
         DeallocateTy, llvm::GlobalValue::ExternalLinkage,
         "_ZN4Page21deallocate_extensionsEv", *Module);
+    FunctionCache["_ZN4Page21deallocate_extensionsEv"] = PageDeallocateExtensions;
 }
 
 // ============================================================================
@@ -170,13 +173,13 @@ llvm::Expected<std::unique_ptr<llvm::Module>> Emitter::emit(const Plan &P,
     // Initialize debug info
     initDebugInfo(P.MainModule.File);
 
-    // Initialize RBMM runtime declarations
-    initRBMM();
-
     // Clear caches for fresh emission
     TypeCache.clear();
     StructCache.clear();
     FunctionCache.clear();
+
+    // Initialize RBMM runtime declarations (after cache clear so they persist)
+    initRBMM();
 
     // Phase 1: Emit all type declarations (forward declarations for structs)
     for (const auto &[name, Struct] : P.Structures) {

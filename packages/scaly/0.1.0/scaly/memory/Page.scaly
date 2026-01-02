@@ -8,7 +8,7 @@ define Page
     exclusive_pages: PageList
 )
 {
-    function allocate_page returns pointer[Page]$ {
+    function allocate_page returns pointer[Page] {
         var page aligned_alloc(PAGE_SIZE, PAGE_SIZE) as pointer[Page]
         (*page).reset()
         return page
