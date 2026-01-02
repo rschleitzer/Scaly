@@ -509,9 +509,9 @@ struct Plan {
     std::vector<PlannedStatement> Statements;  // Top-level program statements
 
     // All instantiated types/functions (for quick lookup during emission)
-    std::map<std::string, PlannedStructure*> Structures;
-    std::map<std::string, PlannedUnion*> Unions;
-    std::map<std::string, PlannedFunction*> Functions;
+    std::map<std::string, PlannedStructure> Structures;
+    std::map<std::string, PlannedUnion> Unions;
+    std::map<std::string, PlannedFunction> Functions;
 
     // Type inference state (used during planning, cleared after)
     uint64_t NextTypeVarId = 0;

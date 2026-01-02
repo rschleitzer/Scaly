@@ -131,29 +131,36 @@ llvm::Expected<std::unique_ptr<llvm::Module>> Emitter::emit(const Plan &P,
     FunctionCache.clear();
 
     // Phase 1: Emit all type declarations (forward declarations for structs)
-    for (const auto &[name, structPtr] : P.Structures) {
-        if (auto *Struct = structPtr) {
-            emitStructType(*Struct);
-        }
+    for (const auto &[name, Struct] : P.Structures) {
+        emitStructType(Struct);
     }
-    for (const auto &[name, unionPtr] : P.Unions) {
-        if (auto *Union = unionPtr) {
-            emitUnionType(*Union);
-        }
+    for (const auto &[name, Union] : P.Unions) {
+        emitUnionType(Union);
     }
 
     // Phase 2: Emit all function declarations
-    for (const auto &[name, funcPtr] : P.Functions) {
-        if (auto *Func = funcPtr) {
-            emitFunctionDecl(*Func);
+    for (const auto &[name, Func] : P.Functions) {
+        emitFunctionDecl(Func);
+    }
+    // Also emit method declarations from structures
+    for (const auto &[name, Struct] : P.Structures) {
+        for (const auto &Method : Struct.Methods) {
+            emitFunctionDecl(Method);
         }
     }
 
     // Phase 3: Emit function bodies
-    for (const auto &[name, funcPtr] : P.Functions) {
-        if (auto *Func = funcPtr) {
-            if (auto *LLVMFunc = FunctionCache[Func->MangledName]) {
-                if (auto Err = emitFunctionBody(*Func, LLVMFunc))
+    for (const auto &[name, Func] : P.Functions) {
+        if (auto *LLVMFunc = FunctionCache[Func.MangledName]) {
+            if (auto Err = emitFunctionBody(Func, LLVMFunc))
+                return std::move(Err);
+        }
+    }
+    // Also emit method bodies from structures
+    for (const auto &[name, Struct] : P.Structures) {
+        for (const auto &Method : Struct.Methods) {
+            if (auto *LLVMFunc = FunctionCache[Method.MangledName]) {
+                if (auto Err = emitFunctionBody(Method, LLVMFunc))
                     return std::move(Err);
             }
         }
@@ -444,18 +451,24 @@ llvm::Error Emitter::emitFunctionBody(const PlannedFunction &Func,
     }
 
     // Emit function body
+    llvm::Value *ReturnValue = nullptr;
     if (auto *Action = std::get_if<PlannedAction>(&Func.Impl)) {
         auto ValueOrErr = emitAction(*Action);
-        if (!ValueOrErr)
+        if (!ValueOrErr) {
             return ValueOrErr.takeError();
+        }
+        ReturnValue = *ValueOrErr;
     }
 
     // Add return if block doesn't end with terminator
     if (!CurrentBlock->getTerminator()) {
         if (LLVMFunc->getReturnType()->isVoidTy()) {
             Builder->CreateRetVoid();
+        } else if (ReturnValue) {
+            // Return the computed value
+            Builder->CreateRet(ReturnValue);
         } else {
-            // Should not happen in well-formed code
+            // No value computed but function expects return - this shouldn't happen
             Builder->CreateUnreachable();
         }
     }
@@ -634,6 +647,14 @@ llvm::Expected<llvm::Value*> Emitter::emitOperand(const PlannedOperand &Op) {
 
     // Apply member access chain if present
     if (Op.MemberAccess && !Op.MemberAccess->empty() && Value) {
+        // If Value is a pointer to a struct, we need to load it first for extractvalue
+        if (Value->getType()->isPointerTy()) {
+            // For PlannedVariable, get the variable type to know what to load
+            if (auto *Var = std::get_if<PlannedVariable>(&Op.Expr)) {
+                llvm::Type *StructTy = mapType(Var->VariableType);
+                Value = Builder->CreateLoad(StructTy, Value, "load.struct");
+            }
+        }
         for (const auto &Access : *Op.MemberAccess) {
             // Use extractvalue for struct field access
             // extractvalue takes a value (not pointer) and field index
@@ -736,7 +757,43 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
         );
     }
 
-    return Builder->CreateCall(Func, Args);
+    // If no arguments, just call directly
+    if (Args.empty()) {
+        return Builder->CreateCall(Func, Args);
+    }
+
+    // Check if we need to adjust any struct arguments to pointers
+    auto *FuncTy = Func->getFunctionType();
+    bool NeedsAdjustment = false;
+    for (size_t i = 0; i < Args.size() && i < FuncTy->getNumParams(); ++i) {
+        llvm::Type *ParamTy = FuncTy->getParamType(i);
+        if (ParamTy->isPointerTy() && Args[i]->getType()->isStructTy()) {
+            NeedsAdjustment = true;
+            break;
+        }
+    }
+
+    if (!NeedsAdjustment) {
+        return Builder->CreateCall(Func, Args);
+    }
+
+    // Adjust arguments: convert struct values to pointers
+    std::vector<llvm::Value*> AdjustedArgs;
+    for (size_t i = 0; i < Args.size() && i < FuncTy->getNumParams(); ++i) {
+        llvm::Value *ArgVal = Args[i];
+        llvm::Type *ParamTy = FuncTy->getParamType(i);
+
+        if (ParamTy->isPointerTy() && ArgVal->getType()->isStructTy()) {
+            // Create alloca at the current position and store the value
+            auto *Alloca = Builder->CreateAlloca(ArgVal->getType(), nullptr, "arg.tmp");
+            Builder->CreateStore(ArgVal, Alloca);
+            AdjustedArgs.push_back(Alloca);
+        } else {
+            AdjustedArgs.push_back(ArgVal);
+        }
+    }
+
+    return Builder->CreateCall(Func, AdjustedArgs);
 }
 
 llvm::Expected<llvm::Value*> Emitter::emitIntrinsicOp(
@@ -892,8 +949,24 @@ llvm::Value *Emitter::emitConstant(const PlannedConstant &Const, const PlannedTy
 llvm::Expected<llvm::Value*> Emitter::emitBlock(const PlannedBlock &Block) {
     llvm::Value *LastValue = nullptr;
     for (const auto &Stmt : Block.Statements) {
-        if (auto Err = emitStatement(Stmt))
-            return std::move(Err);
+        // For PlannedAction, capture the result value (the block's result is the last value)
+        if (auto *Action = std::get_if<PlannedAction>(&Stmt)) {
+            auto ValueOrErr = emitAction(*Action);
+            if (!ValueOrErr)
+                return ValueOrErr.takeError();
+            // Only save value if it's not an assignment (assignments have targets)
+            if (Action->Target.empty()) {
+                LastValue = *ValueOrErr;
+            }
+        } else if (auto *Return = std::get_if<PlannedReturn>(&Stmt)) {
+            auto ValueOrErr = emitOperands(Return->Result);
+            if (!ValueOrErr)
+                return ValueOrErr.takeError();
+            LastValue = *ValueOrErr;
+        } else {
+            if (auto Err = emitStatement(Stmt))
+                return std::move(Err);
+        }
     }
     return LastValue;
 }
@@ -1954,29 +2027,36 @@ llvm::Expected<uint64_t> Emitter::jitExecuteRaw(const Plan &P, llvm::Type *Expec
     FunctionCache.clear();
 
     // Emit type declarations
-    for (const auto &[name, structPtr] : P.Structures) {
-        if (auto *Struct = structPtr) {
-            emitStructType(*Struct);
-        }
+    for (const auto &[name, Struct] : P.Structures) {
+        emitStructType(Struct);
     }
-    for (const auto &[name, unionPtr] : P.Unions) {
-        if (auto *Union = unionPtr) {
-            emitUnionType(*Union);
-        }
+    for (const auto &[name, Union] : P.Unions) {
+        emitUnionType(Union);
     }
 
     // Emit function declarations
-    for (const auto &[name, funcPtr] : P.Functions) {
-        if (auto *Func = funcPtr) {
-            emitFunctionDecl(*Func);
+    for (const auto &[name, Func] : P.Functions) {
+        emitFunctionDecl(Func);
+    }
+    // Also emit method declarations from structures
+    for (const auto &[name, Struct] : P.Structures) {
+        for (const auto &Method : Struct.Methods) {
+            emitFunctionDecl(Method);
         }
     }
 
     // Emit function bodies
-    for (const auto &[name, funcPtr] : P.Functions) {
-        if (auto *Func = funcPtr) {
-            if (auto *LLVMFunc = FunctionCache[Func->MangledName]) {
-                if (auto Err = emitFunctionBody(*Func, LLVMFunc))
+    for (const auto &[name, Func] : P.Functions) {
+        if (auto *LLVMFunc = FunctionCache[Func.MangledName]) {
+            if (auto Err = emitFunctionBody(Func, LLVMFunc))
+                return std::move(Err);
+        }
+    }
+    // Also emit method bodies from structures
+    for (const auto &[name, Struct] : P.Structures) {
+        for (const auto &Method : Struct.Methods) {
+            if (auto *LLVMFunc = FunctionCache[Method.MangledName]) {
+                if (auto Err = emitFunctionBody(Method, LLVMFunc))
                     return std::move(Err);
             }
         }

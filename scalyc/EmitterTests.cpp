@@ -2083,14 +2083,108 @@ static bool testPipelineMemberAccessMultiply() {
     return true;
 }
 
+// Method call tests
+
+static bool testPipelineMethodCallSimple() {
+    const char* Name = "Pipeline: p.double_x()";
+
+    // Define a struct with a method that returns 2*x
+    auto ResultOrErr = evalInt(
+        "define Point(x: int, y: int) {\n"
+        "    function double_x(this) returns int { this.x * 2 }\n"
+        "}\n"
+        "let p = Point(5, 3)\n"
+        "p.double_x()"
+    );
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // 5 * 2 = 10
+    if (*ResultOrErr != 10) {
+        std::string Msg = "expected 10, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineMethodCallSum() {
+    const char* Name = "Pipeline: p.sum()";
+
+    // Define a struct with a method that returns x + y
+    auto ResultOrErr = evalInt(
+        "define Point(x: int, y: int) {\n"
+        "    function sum(this) returns int { this.x + this.y }\n"
+        "}\n"
+        "let p = Point(3, 7)\n"
+        "p.sum()"
+    );
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // 3 + 7 = 10
+    if (*ResultOrErr != 10) {
+        std::string Msg = "expected 10, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineMethodCallWithArgs() {
+    const char* Name = "Pipeline: p.add(n)";
+
+    // Define a struct with a method that takes an argument
+    auto ResultOrErr = evalInt(
+        "define Point(x: int, y: int) {\n"
+        "    function add(this, n: int) returns int { this.x + this.y + n }\n"
+        "}\n"
+        "let p = Point(2, 3)\n"
+        "p.add(5)"
+    );
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // 2 + 3 + 5 = 10
+    if (*ResultOrErr != 10) {
+        std::string Msg = "expected 10, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
 bool runEmitterTests() {
     llvm::outs() << "Running Emitter tests...\n";
+    llvm::outs().flush();
 
     TestsPassed = 0;
     TestsFailed = 0;
 
     // Direct Plan -> JIT tests
     llvm::outs() << "  Direct JIT tests:\n";
+    llvm::outs().flush();
     testJitIntegerConstant();
     testJitBooleanTrue();
     testJitBooleanFalse();
@@ -2206,6 +2300,11 @@ bool runEmitterTests() {
     testPipelineMemberAccessVariableOnly();
     testPipelineMemberAccessWithBinding();
     testPipelineMemberAccessMultiply();
+
+    llvm::outs() << "  Method call tests:\n";
+    testPipelineMethodCallSimple();
+    testPipelineMethodCallSum();
+    testPipelineMethodCallWithArgs();
 
     llvm::outs() << "\nEmitter tests: " << TestsPassed << " passed, "
                  << TestsFailed << " failed\n";
