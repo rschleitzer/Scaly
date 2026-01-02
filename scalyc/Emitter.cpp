@@ -1406,6 +1406,16 @@ llvm::Expected<llvm::Value*> Emitter::emitIntrinsicUnaryOp(
     if (OpName == "~") {
         return Builder->CreateNot(Operand, "bitnot");
     }
+    if (OpName == "*") {
+        // Dereference: load value from pointer
+        // Operand is the pointer, ResultType is the element type
+        return Builder->CreateLoad(Ty, Operand, "deref");
+    }
+    if (OpName == "&") {
+        // Address-of: the operand should already be a pointer (from alloca)
+        // Just return the pointer value itself
+        return Operand;
+    }
 
     return llvm::make_error<llvm::StringError>(
         "Unknown intrinsic unary operator: " + OpName.str(),
