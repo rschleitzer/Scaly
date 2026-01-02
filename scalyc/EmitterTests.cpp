@@ -2270,6 +2270,70 @@ static bool testPipelineInitializerWithComputation() {
     return true;
 }
 
+// Deinitializer tests
+
+static bool testPipelineDeinitializerSimple() {
+    const char* Name = "Pipeline: deinit with this access";
+
+    // Define a struct with a deinitializer that accesses this
+    // The deinit won't be called automatically yet, but should compile
+    auto ResultOrErr = evalInt(
+        "define Point(x: int, y: int) {\n"
+        "    deinit this.x + this.y\n"
+        "}\n"
+        "let p = Point(10, 20)\n"
+        "p.x + p.y"
+    );
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // 10 + 20 = 30
+    if (*ResultOrErr != 30) {
+        std::string Msg = "expected 30, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineDeinitializerWithInit() {
+    const char* Name = "Pipeline: deinit with init";
+
+    // Define a struct with both initializer and deinitializer
+    auto ResultOrErr = evalInt(
+        "define Point(x: int, y: int) {\n"
+        "    init(a: int, b: int) { set this.x : a : set this.y : b }\n"
+        "    deinit this.x\n"
+        "}\n"
+        "let p = Point(5, 7)\n"
+        "p.x * p.y"
+    );
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // 5 * 7 = 35
+    if (*ResultOrErr != 35) {
+        std::string Msg = "expected 35, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
 bool runEmitterTests() {
     llvm::outs() << "Running Emitter tests...\n";
     llvm::outs().flush();
@@ -2405,6 +2469,10 @@ bool runEmitterTests() {
     testPipelineInitializerSimple();
     testPipelineInitializerWithParams();
     testPipelineInitializerWithComputation();
+
+    llvm::outs() << "  Deinitializer tests:\n";
+    testPipelineDeinitializerSimple();
+    testPipelineDeinitializerWithInit();
 
     llvm::outs() << "\nEmitter tests: " << TestsPassed << " passed, "
                  << TestsFailed << " failed\n";

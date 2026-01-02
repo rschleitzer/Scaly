@@ -3618,12 +3618,21 @@ llvm::Expected<PlannedDeInitializer> Planner::planDeInitializer(
     PlannedDeInitializer Result;
     Result.Loc = DeInit.Loc;
 
+    // Push scope for deinitializer body
+    pushScope();
+
+    // Define 'this' in scope for the deinitializer body
+    defineLocal("this", Parent, false);  // 'this' is immutable in deinitializers
+
     // Plan implementation (deinitializer body)
     auto PlannedImpl = planImplementation(DeInit.Impl);
     if (!PlannedImpl) {
+        popScope();
         return PlannedImpl.takeError();
     }
     Result.Impl = std::move(*PlannedImpl);
+
+    popScope();
 
     // Mangle as destructor: _ZN<type>D1Ev
     std::string Mangled = "_ZN";
