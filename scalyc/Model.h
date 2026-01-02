@@ -74,6 +74,10 @@ struct FragmentConstant {
     std::string Value;
 };
 
+struct NullConstant {
+    Span Loc;
+};
+
 using Constant = std::variant<
     BooleanConstant,
     IntegerConstant,
@@ -81,7 +85,8 @@ using Constant = std::variant<
     FloatingPointConstant,
     StringConstant,
     CharacterConstant,
-    FragmentConstant
+    FragmentConstant,
+    NullConstant
 >;
 
 // Lifetime variants

@@ -1437,6 +1437,13 @@ llvm::Value *Emitter::emitConstant(const PlannedConstant &Const, const PlannedTy
             return llvm::ConstantInt::get(llvm::Type::getInt1Ty(*Context), C.Value ? 1 : 0);
         } else if constexpr (std::is_same_v<T, StringConstant>) {
             return Builder->CreateGlobalStringPtr(C.Value);
+        } else if constexpr (std::is_same_v<T, NullConstant>) {
+            // Null pointer - use the target type or default to i8*
+            llvm::Type *Ty = Type.isResolved() ? mapType(Type) : llvm::PointerType::getUnqual(*Context);
+            if (!Ty->isPointerTy()) {
+                Ty = llvm::PointerType::getUnqual(*Context);
+            }
+            return llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(Ty));
         } else {
             return llvm::UndefValue::get(llvm::Type::getInt64Ty(*Context));
         }

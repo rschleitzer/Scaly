@@ -1677,6 +1677,11 @@ PlannedType Planner::inferConstantType(const Constant &C) {
             Result.Name = "String";  // Fragments are strings
             Result.MangledName = "6String";
         }
+        else if constexpr (std::is_same_v<T, NullConstant>) {
+            Result.Loc = Val.Loc;
+            Result.Name = "pointer";  // Generic null pointer
+            Result.MangledName = "Pv";  // pointer to void
+        }
     }, C);
 
     return Result;
@@ -2896,6 +2901,9 @@ llvm::Expected<PlannedExpression> Planner::planExpression(const Expression &Expr
                 }
                 if (Name == "false") {
                     return PlannedConstant(BooleanConstant{E.Loc, false});
+                }
+                if (Name == "null") {
+                    return PlannedConstant(NullConstant{E.Loc});
                 }
 
                 // Check if it's a local variable reference
