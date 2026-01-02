@@ -243,9 +243,11 @@ int main(int argc, char **argv) {
     if (RunTests) {
         bool AllPassed = true;
         AllPassed &= scaly::runParserTests();
-        std::cout << std::endl;
+        std::cout << std::endl << std::flush;
+        llvm::outs().flush();
         AllPassed &= scaly::runLexerTests();
-        std::cout << std::endl;
+        std::cout << std::endl << std::flush;
+        llvm::outs().flush();
         AllPassed &= scaly::runEmitterTests();
         return AllPassed ? 0 : 1;
     }

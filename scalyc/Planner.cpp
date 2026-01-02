@@ -419,8 +419,29 @@ std::string Planner::getReadableName(const PlannedType &Type) {
     return Result;
 }
 
+// Normalize type name to canonical form
+static std::string normalizeTypeName(llvm::StringRef Name) {
+    // Integer type aliases
+    if (Name == "int" || Name == "i64") return "i64";
+    if (Name == "i32") return "i32";
+    if (Name == "i16") return "i16";
+    if (Name == "i8") return "i8";
+    if (Name == "size_t" || Name == "u64") return "u64";
+    if (Name == "u32") return "u32";
+    if (Name == "u16") return "u16";
+    if (Name == "u8") return "u8";
+    // Floating point aliases
+    if (Name == "double" || Name == "f64") return "f64";
+    if (Name == "float" || Name == "f32") return "f32";
+    // Others
+    return Name.str();
+}
+
 bool Planner::typesEqual(const PlannedType &A, const PlannedType &B) {
-    if (A.Name != B.Name) return false;
+    // Normalize both names before comparing
+    std::string NormA = normalizeTypeName(A.Name);
+    std::string NormB = normalizeTypeName(B.Name);
+    if (NormA != NormB) return false;
     if (A.Generics.size() != B.Generics.size()) return false;
 
     for (size_t I = 0; I < A.Generics.size(); ++I) {
@@ -575,6 +596,43 @@ bool Planner::isOperatorName(llvm::StringRef Name) {
            First == '%' || First == '=' || First == '<' || First == '>' ||
            First == '!' || First == '&' || First == '|' || First == '^' ||
            First == '~' || First == '[' || First == '(';
+}
+
+std::optional<Planner::MethodMatch> Planner::lookupMethod(
+    const PlannedType &StructType,
+    llvm::StringRef MethodName,
+    Span Loc) {
+
+    // Look up the struct in the instantiation cache
+    auto StructIt = InstantiatedStructures.find(StructType.Name);
+    if (StructIt == InstantiatedStructures.end()) {
+        // Also try the mangled name
+        StructIt = InstantiatedStructures.find(StructType.MangledName);
+        if (StructIt == InstantiatedStructures.end()) {
+            return std::nullopt;
+        }
+    }
+
+    const PlannedStructure &Struct = StructIt->second;
+
+    // Search for method by name
+    for (const auto &Method : Struct.Methods) {
+        if (Method.Name == MethodName) {
+            MethodMatch Match;
+            Match.Method = nullptr;  // We have the planned version, not the Model version
+            Match.MangledName = Method.MangledName;
+            if (Method.Returns) {
+                Match.ReturnType = *Method.Returns;
+            } else {
+                // Void return type
+                Match.ReturnType.Name = "void";
+                Match.ReturnType.Loc = Loc;
+            }
+            return Match;
+        }
+    }
+
+    return std::nullopt;
 }
 
 std::optional<Planner::OperatorMatch> Planner::findOperator(
@@ -2338,6 +2396,104 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
     for (size_t i = 0; i < Ops.size(); ++i) {
         const auto &Op = Ops[i];
 
+        // Check for method call pattern: variable.method followed by Tuple
+        // e.g., p.distance() where p is a variable of struct type
+        if (i + 1 < Ops.size()) {
+            const auto &NextOp = Ops[i + 1];
+
+            // Check if current op is a Type path like ["p", "method"] where "p" is a variable
+            if (auto* TypeExpr = std::get_if<Type>(&Op.Expr)) {
+                if (TypeExpr->Name.size() >= 2 && (!TypeExpr->Generics || TypeExpr->Generics->empty())) {
+                    // Check if first element is a local variable
+                    auto LocalBind = lookupLocalBinding(TypeExpr->Name[0]);
+                    if (LocalBind && std::holds_alternative<Tuple>(NextOp.Expr)) {
+                        // This is variable.member...method(args)
+                        // Last element of path is the method name
+                        std::string MethodName = TypeExpr->Name.back();
+
+                        // Build the variable access (all but the last element)
+                        Type VarType;
+                        VarType.Loc = TypeExpr->Loc;
+                        for (size_t j = 0; j < TypeExpr->Name.size() - 1; ++j) {
+                            VarType.Name.push_back(TypeExpr->Name[j]);
+                        }
+                        VarType.Generics = nullptr;
+                        VarType.Life = TypeExpr->Life;
+
+                        Operand VarOp;
+                        VarOp.Loc = Op.Loc;
+                        VarOp.Expr = VarType;
+                        // No member access - it's all in the Type path
+
+                        auto PlannedVar = planOperand(VarOp);
+                        if (!PlannedVar) {
+                            return PlannedVar.takeError();
+                        }
+
+                        // Look up the method on the variable's type
+                        auto MethodMatch = lookupMethod(PlannedVar->ResultType, MethodName, Op.Loc);
+                        if (MethodMatch) {
+                            // Plan the arguments tuple
+                            Operand ArgsOp = NextOp;
+                            ArgsOp.MemberAccess = nullptr;
+                            auto PlannedArgs = planOperand(ArgsOp);
+                            if (!PlannedArgs) {
+                                return PlannedArgs.takeError();
+                            }
+
+                            // Create method call with instance as first argument
+                            PlannedCall Call;
+                            Call.Loc = Op.Loc;
+                            Call.Name = MethodName;
+                            Call.MangledName = MethodMatch->MangledName;
+                            Call.IsIntrinsic = false;  // Methods are not intrinsic
+                            Call.IsOperator = false;
+                            Call.ResultType = MethodMatch->ReturnType;
+
+                            // Build args: [instance, ...tuple_args]
+                            Call.Args = std::make_shared<std::vector<PlannedOperand>>();
+                            Call.Args->push_back(std::move(*PlannedVar));
+
+                            // Add tuple elements as additional arguments
+                            if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedArgs->Expr)) {
+                                for (auto& Comp : TupleExpr->Components) {
+                                    // Each component's value is a vector of operands
+                                    for (auto& ValOp : Comp.Value) {
+                                        Call.Args->push_back(std::move(ValOp));
+                                    }
+                                }
+                            }
+
+                            // Create operand with the call
+                            PlannedOperand CallOp;
+                            CallOp.Loc = Op.Loc;
+                            CallOp.Expr = std::move(Call);
+                            CallOp.ResultType = MethodMatch->ReturnType;
+
+                            // Apply any member access on the result (from NextOp)
+                            if (NextOp.MemberAccess && !NextOp.MemberAccess->empty()) {
+                                auto MemberChain = resolveMemberAccessChain(CallOp.ResultType,
+                                                                             *NextOp.MemberAccess, NextOp.Loc);
+                                if (!MemberChain) {
+                                    return MemberChain.takeError();
+                                }
+                                CallOp.MemberAccess = std::make_shared<std::vector<PlannedMemberAccess>>(
+                                    std::move(*MemberChain));
+                                if (!CallOp.MemberAccess->empty()) {
+                                    CallOp.ResultType = CallOp.MemberAccess->back().ResultType;
+                                }
+                            }
+
+                            Result.push_back(std::move(CallOp));
+                            i++;  // Skip the tuple operand
+                            continue;
+                        }
+                        // If method not found, fall through to normal processing
+                    }
+                }
+            }
+        }
+
         // Check for type constructor pattern: Type followed by Tuple
         // e.g., Point(3, 4) or Point(3, 4).x where Point is a struct type
         if (i + 1 < Ops.size()) {
@@ -3172,6 +3328,20 @@ llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
             popScope();
             return PlannedParam.takeError();
         }
+
+        // Handle 'this' parameter: if no explicit type, use Parent type
+        if (PlannedParam->Name && *PlannedParam->Name == "this" && !PlannedParam->ItemType) {
+            if (Parent) {
+                PlannedParam->ItemType = std::make_shared<PlannedType>(*Parent);
+            } else {
+                popScope();
+                return llvm::make_error<llvm::StringError>(
+                    "'this' parameter without enclosing type",
+                    llvm::inconvertibleErrorCode()
+                );
+            }
+        }
+
         Result.Input.push_back(std::move(*PlannedParam));
 
         // Add parameter to scope
@@ -3654,6 +3824,8 @@ llvm::Expected<PlannedConcept> Planner::planConcept(const Concept &Conc) {
             if (!Planned) {
                 return Planned.takeError();
             }
+            // Add non-generic structures to cache for method lookup
+            InstantiatedStructures[Conc.Name] = *Planned;
             return *Planned;
         }
         else if constexpr (std::is_same_v<T, Union>) {
@@ -3808,13 +3980,13 @@ llvm::Expected<Plan> Planner::plan(const Program &Prog) {
 
     // Copy instantiated types to Plan's lookup maps
     for (auto &Pair : InstantiatedStructures) {
-        Result.Structures[Pair.first] = &Pair.second;
+        Result.Structures[Pair.first] = Pair.second;
     }
     for (auto &Pair : InstantiatedUnions) {
-        Result.Unions[Pair.first] = &Pair.second;
+        Result.Unions[Pair.first] = Pair.second;
     }
     for (auto &Pair : InstantiatedFunctions) {
-        Result.Functions[Pair.first] = &Pair.second;
+        Result.Functions[Pair.first] = Pair.second;
     }
 
     CurrentPlan = nullptr;

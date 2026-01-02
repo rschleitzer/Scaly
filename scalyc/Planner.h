@@ -268,6 +268,17 @@ private:
         const std::vector<std::string> &Members,
         Span Loc);
 
+    // Look up a method on a struct type by name
+    struct MethodMatch {
+        const Function* Method;
+        std::string MangledName;
+        PlannedType ReturnType;
+    };
+    std::optional<MethodMatch> lookupMethod(
+        const PlannedType &StructType,
+        llvm::StringRef MethodName,
+        Span Loc);
+
     // ========== Type Inference ==========
 
     // Infer the type of a constant
