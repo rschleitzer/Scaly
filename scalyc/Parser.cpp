@@ -1738,14 +1738,14 @@ llvm::Expected<MemberAccessSyntax> Parser::parseMemberAccess() {
     if (!Lex.parsePunctuation('.'))
         return different();
 
-    auto NameOrErr = parseName();
-    if (!NameOrErr)
-        return invalid(Start, Lex.position(), "expected Name");
-    auto Name = std::move(*NameOrErr);
+    auto TypeOrErr = parseType();
+    if (!TypeOrErr)
+        return invalid(Start, Lex.position(), "expected Type");
+    auto Type = std::move(*TypeOrErr);
 
     size_t End = Lex.position();
 
-    return MemberAccessSyntax{Start, End, Name};
+    return MemberAccessSyntax{Start, End, Type};
 
 }
 
