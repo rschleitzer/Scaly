@@ -1367,6 +1367,17 @@ llvm::Expected<llvm::Value*> Emitter::emitIntrinsicOp(
         return Builder->CreateXor(Left, Right, "xor");
     }
 
+    // Bit shift operators
+    if (OpName == "<<") {
+        return Builder->CreateShl(Left, Right, "shl");
+    }
+    if (OpName == ">>") {
+        // Arithmetic shift for signed (preserves sign), logical for unsigned
+        if (IsSigned)
+            return Builder->CreateAShr(Left, Right, "ashr");
+        return Builder->CreateLShr(Left, Right, "lshr");
+    }
+
     return llvm::make_error<llvm::StringError>(
         "Unknown intrinsic operator: " + OpName.str(),
         llvm::inconvertibleErrorCode()
