@@ -730,7 +730,7 @@ std::optional<Planner::OperatorMatch> Planner::findOperator(
     // These are built-in and don't require stdlib to be loaded
     static const std::set<std::string> ArithmeticOps = {"+", "-", "*", "/", "%"};
     static const std::set<std::string> ComparisonOps = {"=", "<>", "<", ">", "<=", ">="};
-    static const std::set<std::string> BitwiseOps = {"&", "|", "^"};
+    static const std::set<std::string> BitwiseOps = {"&", "|", "^", "<<", ">>"};
 
     bool IsPrimitiveType = (Left.Name == "i64" || Left.Name == "i32" ||
                             Left.Name == "i16" || Left.Name == "i8" ||

@@ -1119,6 +1119,102 @@ static bool testPipelineBoolOrTrueFalse() {
 }
 
 // ============================================================================
+// Bit Shift Operator Tests
+// ============================================================================
+
+static bool testPipelineLeftShift() {
+    const char* Name = "Pipeline: 1 << 4";
+
+    // 1 << 4 = 16
+    auto ResultOrErr = evalInt("1 << 4");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 16) {
+        std::string Msg = "expected 16, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineLeftShiftLarger() {
+    const char* Name = "Pipeline: 5 << 3";
+
+    // 5 << 3 = 40
+    auto ResultOrErr = evalInt("5 << 3");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 40) {
+        std::string Msg = "expected 40, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineRightShift() {
+    const char* Name = "Pipeline: 16 >> 2";
+
+    // 16 >> 2 = 4
+    auto ResultOrErr = evalInt("16 >> 2");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 4) {
+        std::string Msg = "expected 4, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineRightShiftOdd() {
+    const char* Name = "Pipeline: 100 >> 3";
+
+    // 100 >> 3 = 12 (100 / 8 = 12.5, truncated)
+    auto ResultOrErr = evalInt("100 >> 3");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 12) {
+        std::string Msg = "expected 12, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+// ============================================================================
 // Variable Binding Tests
 // ============================================================================
 
@@ -3110,6 +3206,13 @@ bool runEmitterTests() {
     testPipelineBoolAndTrueFalse();
     testPipelineBoolOrFalseFalse();
     testPipelineBoolOrTrueFalse();
+
+    // Bit shift operators
+    llvm::outs() << "  Bit shift operator tests:\n";
+    testPipelineLeftShift();
+    testPipelineLeftShiftLarger();
+    testPipelineRightShift();
+    testPipelineRightShiftOdd();
 
     // Variable bindings (immutable let)
     llvm::outs() << "  Variable binding tests:\n";

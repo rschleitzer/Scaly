@@ -51,4 +51,12 @@ define operators {
     operator =(left: bool, right: bool) returns bool intrinsic
     operator <>(left: bool, right: bool) returns bool intrinsic
 
+    ; Bit shift operators (i64)
+    operator <<(left: i64, right: i64) returns i64 intrinsic
+    operator >>(left: i64, right: i64) returns i64 intrinsic
+
+    ; Bit shift operators (i32)
+    operator <<(left: i32, right: i32) returns i32 intrinsic
+    operator >>(left: i32, right: i32) returns i32 intrinsic
+
 }
