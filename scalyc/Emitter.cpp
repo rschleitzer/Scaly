@@ -142,13 +142,16 @@ llvm::Expected<std::unique_ptr<llvm::Module>> Emitter::emit(const Plan &P,
     for (const auto &[name, Func] : P.Functions) {
         emitFunctionDecl(Func);
     }
-    // Also emit method and initializer declarations from structures
+    // Also emit method, initializer, and deinitializer declarations from structures
     for (const auto &[name, Struct] : P.Structures) {
         for (const auto &Method : Struct.Methods) {
             emitFunctionDecl(Method);
         }
         for (const auto &Init : Struct.Initializers) {
             emitInitializerDecl(Struct, Init);
+        }
+        if (Struct.Deinitializer) {
+            emitDeInitializerDecl(Struct, *Struct.Deinitializer);
         }
     }
 
@@ -159,7 +162,7 @@ llvm::Expected<std::unique_ptr<llvm::Module>> Emitter::emit(const Plan &P,
                 return std::move(Err);
         }
     }
-    // Also emit method and initializer bodies from structures
+    // Also emit method, initializer, and deinitializer bodies from structures
     for (const auto &[name, Struct] : P.Structures) {
         for (const auto &Method : Struct.Methods) {
             if (auto *LLVMFunc = FunctionCache[Method.MangledName]) {
@@ -170,6 +173,12 @@ llvm::Expected<std::unique_ptr<llvm::Module>> Emitter::emit(const Plan &P,
         for (const auto &Init : Struct.Initializers) {
             if (auto *LLVMFunc = FunctionCache[Init.MangledName]) {
                 if (auto Err = emitInitializerBody(Struct, Init, LLVMFunc))
+                    return std::move(Err);
+            }
+        }
+        if (Struct.Deinitializer) {
+            if (auto *LLVMFunc = FunctionCache[Struct.Deinitializer->MangledName]) {
+                if (auto Err = emitDeInitializerBody(Struct, *Struct.Deinitializer, LLVMFunc))
                     return std::move(Err);
             }
         }
@@ -592,6 +601,82 @@ llvm::Error Emitter::emitInitializerBody(const PlannedStructure &Struct,
 
     // Emit initializer body
     if (auto *Action = std::get_if<PlannedAction>(&Init.Impl)) {
+        auto ValueOrErr = emitAction(*Action);
+        if (!ValueOrErr) {
+            return ValueOrErr.takeError();
+        }
+    }
+
+    // Add return void if block doesn't end with terminator
+    if (!CurrentBlock->getTerminator()) {
+        Builder->CreateRetVoid();
+    }
+
+    return llvm::Error::success();
+}
+
+llvm::Function *Emitter::emitDeInitializerDecl(const PlannedStructure &Struct,
+                                                const PlannedDeInitializer &DeInit) {
+    // Check cache
+    if (auto It = FunctionCache.find(DeInit.MangledName); It != FunctionCache.end()) {
+        return It->second;
+    }
+
+    // Deinitializer takes only 'this' pointer
+    std::vector<llvm::Type*> ParamTypes;
+
+    // Get the struct type
+    llvm::Type *StructTy = StructCache[Struct.MangledName];
+    if (!StructTy) {
+        return nullptr;
+    }
+
+    // Only param: pointer to struct (this)
+    ParamTypes.push_back(llvm::PointerType::get(*Context, 0));
+
+    // Deinitializer returns void
+    auto *FuncType = llvm::FunctionType::get(
+        llvm::Type::getVoidTy(*Context),
+        ParamTypes,
+        false);
+
+    auto *LLVMFunc = llvm::Function::Create(
+        FuncType,
+        llvm::Function::ExternalLinkage,
+        DeInit.MangledName,
+        Module.get());
+
+    // Set parameter name
+    LLVMFunc->arg_begin()->setName("this");
+
+    FunctionCache[DeInit.MangledName] = LLVMFunc;
+    return LLVMFunc;
+}
+
+llvm::Error Emitter::emitDeInitializerBody(const PlannedStructure &Struct,
+                                            const PlannedDeInitializer &DeInit,
+                                            llvm::Function *LLVMFunc) {
+    // Skip extern/intrinsic deinitializers
+    if (std::holds_alternative<PlannedExternImpl>(DeInit.Impl) ||
+        std::holds_alternative<PlannedIntrinsicImpl>(DeInit.Impl)) {
+        return llvm::Error::success();
+    }
+
+    // Create entry block
+    auto *EntryBB = llvm::BasicBlock::Create(*Context, "entry", LLVMFunc);
+    Builder->SetInsertPoint(EntryBB);
+
+    // Set up current function state
+    CurrentFunction = LLVMFunc;
+    CurrentBlock = EntryBB;
+    LocalVariables.clear();
+
+    // First arg is 'this' - the pointer to the struct
+    llvm::Value *ThisPtr = &*LLVMFunc->arg_begin();
+    LocalVariables["this"] = ThisPtr;
+
+    // Emit deinitializer body
+    if (auto *Action = std::get_if<PlannedAction>(&DeInit.Impl)) {
         auto ValueOrErr = emitAction(*Action);
         if (!ValueOrErr) {
             return ValueOrErr.takeError();
@@ -2275,13 +2360,16 @@ llvm::Expected<uint64_t> Emitter::jitExecuteRaw(const Plan &P, llvm::Type *Expec
     for (const auto &[name, Func] : P.Functions) {
         emitFunctionDecl(Func);
     }
-    // Also emit method and initializer declarations from structures
+    // Also emit method, initializer, and deinitializer declarations from structures
     for (const auto &[name, Struct] : P.Structures) {
         for (const auto &Method : Struct.Methods) {
             emitFunctionDecl(Method);
         }
         for (const auto &Init : Struct.Initializers) {
             emitInitializerDecl(Struct, Init);
+        }
+        if (Struct.Deinitializer) {
+            emitDeInitializerDecl(Struct, *Struct.Deinitializer);
         }
     }
 
@@ -2292,7 +2380,7 @@ llvm::Expected<uint64_t> Emitter::jitExecuteRaw(const Plan &P, llvm::Type *Expec
                 return std::move(Err);
         }
     }
-    // Also emit method and initializer bodies from structures
+    // Also emit method, initializer, and deinitializer bodies from structures
     for (const auto &[name, Struct] : P.Structures) {
         for (const auto &Method : Struct.Methods) {
             if (auto *LLVMFunc = FunctionCache[Method.MangledName]) {
@@ -2303,6 +2391,12 @@ llvm::Expected<uint64_t> Emitter::jitExecuteRaw(const Plan &P, llvm::Type *Expec
         for (const auto &Init : Struct.Initializers) {
             if (auto *LLVMFunc = FunctionCache[Init.MangledName]) {
                 if (auto Err = emitInitializerBody(Struct, Init, LLVMFunc))
+                    return std::move(Err);
+            }
+        }
+        if (Struct.Deinitializer) {
+            if (auto *LLVMFunc = FunctionCache[Struct.Deinitializer->MangledName]) {
+                if (auto Err = emitDeInitializerBody(Struct, *Struct.Deinitializer, LLVMFunc))
                     return std::move(Err);
             }
         }

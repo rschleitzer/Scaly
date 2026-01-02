@@ -157,6 +157,13 @@ private:
                                      const PlannedInitializer &Init,
                                      llvm::Function *LLVMFunc);
 
+    // Emit deinitializer (destructor)
+    llvm::Function *emitDeInitializerDecl(const PlannedStructure &Struct,
+                                           const PlannedDeInitializer &DeInit);
+    llvm::Error emitDeInitializerBody(const PlannedStructure &Struct,
+                                       const PlannedDeInitializer &DeInit,
+                                       llvm::Function *LLVMFunc);
+
     // Emit operator
     llvm::Function *emitOperator(const PlannedOperator &Op);
 
