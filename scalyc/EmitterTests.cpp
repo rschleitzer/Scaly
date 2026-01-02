@@ -1780,6 +1780,39 @@ static bool testPipelineBreakInNestedLoops() {
     return true;
 }
 
+static bool testPipelineContinueInNestedLoops() {
+    const char* Name = "Pipeline: continue in nested loops";
+
+    // Outer loop runs 3 times, inner loop skips odd j values
+    // Inner loop: j = 0, 1, 2, 3, 4 - count increments for even j (0, 2, 4)
+    // count = 3 * 3 = 9
+    auto ResultOrErr = evalInt(
+        "var count = 0\n"
+        "for i in 3 : {\n"
+        "    for j in 5 : {\n"
+        "        if j % 2 = 1 : continue else set count : count + 1\n"
+        "    }\n"
+        "}\n"
+        "count"
+    );
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 9) {
+        std::string Msg = "expected 9, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
 // Match expression tests
 
 static bool testPipelineMatchSingleCase() {
@@ -2701,6 +2734,7 @@ bool runEmitterTests() {
     testPipelineContinueInFor();
     testPipelineContinueInWhile();
     testPipelineBreakInNestedLoops();
+    testPipelineContinueInNestedLoops();
 
     // Match expressions
     llvm::outs() << "  Match expression tests:\n";
