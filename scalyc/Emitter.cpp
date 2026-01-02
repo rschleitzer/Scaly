@@ -1,8 +1,11 @@
 // Emitter.cpp - LLVM IR generation from Plan
 
 #include "Emitter.h"
+#include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Verifier.h"
+#include "llvm/Support/FileSystem.h"
 #include "llvm/Support/TargetSelect.h"
+#include "llvm/Support/raw_ostream.h"
 #include "llvm/Target/TargetMachine.h"
 #include "llvm/MC/TargetRegistry.h"
 #include "llvm/TargetParser/Host.h"
@@ -203,6 +206,81 @@ llvm::Expected<std::unique_ptr<llvm::Module>> Emitter::emit(const Plan &P,
     }
 
     return std::move(Module);
+}
+
+llvm::Error Emitter::emitObjectFile(const Plan &P,
+                                     llvm::StringRef ModuleName,
+                                     llvm::StringRef OutputPath) {
+    // First, emit the LLVM IR module
+    auto ModuleOrErr = emit(P, ModuleName);
+    if (!ModuleOrErr) {
+        return ModuleOrErr.takeError();
+    }
+    auto TheModule = std::move(*ModuleOrErr);
+
+    // Get target triple
+    std::string TargetTriple = Config.TargetTriple.empty()
+        ? llvm::sys::getDefaultTargetTriple()
+        : Config.TargetTriple;
+    TheModule->setTargetTriple(TargetTriple);
+
+    // Look up the target
+    std::string Error;
+    const llvm::Target *Target = llvm::TargetRegistry::lookupTarget(TargetTriple, Error);
+    if (!Target) {
+        return llvm::make_error<llvm::StringError>(
+            "Failed to lookup target: " + Error,
+            llvm::inconvertibleErrorCode()
+        );
+    }
+
+    // Create target machine
+    llvm::TargetOptions Options;
+    auto RM = std::optional<llvm::Reloc::Model>(llvm::Reloc::PIC_);
+    auto TheTargetMachine = std::unique_ptr<llvm::TargetMachine>(
+        Target->createTargetMachine(
+            TargetTriple,
+            "generic",  // CPU
+            "",         // Features
+            Options,
+            RM
+        )
+    );
+
+    if (!TheTargetMachine) {
+        return llvm::make_error<llvm::StringError>(
+            "Failed to create target machine",
+            llvm::inconvertibleErrorCode()
+        );
+    }
+
+    // Set data layout
+    TheModule->setDataLayout(TheTargetMachine->createDataLayout());
+
+    // Open output file
+    std::error_code EC;
+    llvm::raw_fd_ostream Dest(OutputPath, EC, llvm::sys::fs::OF_None);
+    if (EC) {
+        return llvm::make_error<llvm::StringError>(
+            "Could not open output file: " + EC.message(),
+            llvm::inconvertibleErrorCode()
+        );
+    }
+
+    // Create pass manager and emit object code
+    llvm::legacy::PassManager PM;
+    if (TheTargetMachine->addPassesToEmitFile(PM, Dest, nullptr,
+                                               llvm::CodeGenFileType::ObjectFile)) {
+        return llvm::make_error<llvm::StringError>(
+            "Target machine cannot emit object file",
+            llvm::inconvertibleErrorCode()
+        );
+    }
+
+    PM.run(*TheModule);
+    Dest.flush();
+
+    return llvm::Error::success();
 }
 
 // ============================================================================
