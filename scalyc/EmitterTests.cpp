@@ -2823,6 +2823,124 @@ static bool testPipelineFunctionCallWithExpression() {
     return true;
 }
 
+// ============================================================================
+// Is Expression Tests
+// ============================================================================
+
+static bool testIsExpressionMatchesError() {
+    const char* Name = "Pipeline: is expression matches Error variant";
+
+    // Use throw to create Error variant (tag 1), then test with 'is'
+    auto ResultOrErr = evalBool(
+        "define Result union: (Ok: int, Error: int)\n"
+        "function fail() returns Result throws int { throw 42 }\n"
+        "fail() is Error"
+    );
+
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // throw creates Error variant (tag 1), so 'is Error' should be true
+    if (!*ResultOrErr) {
+        fail(Name, "expected true, got false");
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testIsExpressionNoMatchOk() {
+    const char* Name = "Pipeline: is expression does not match Ok variant";
+
+    // throw creates Error variant, so 'is Ok' should be false
+    auto ResultOrErr = evalBool(
+        "define Result union: (Ok: int, Error: int)\n"
+        "function fail() returns Result throws int { throw 42 }\n"
+        "fail() is Ok"
+    );
+
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // throw creates Error variant (tag 1), so 'is Ok' should be false
+    if (*ResultOrErr) {
+        fail(Name, "expected false, got true");
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testIsExpressionWithIf() {
+    const char* Name = "Pipeline: is expression with if statement";
+
+    // Use 'is' in an if condition to branch
+    auto ResultOrErr = evalInt(
+        "define Result union: (Ok: int, Error: int)\n"
+        "function fail() returns Result throws int { throw 42 }\n"
+        "if fail() is Error : 100 else 0"
+    );
+
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // Should take the if branch since it's Error variant
+    if (*ResultOrErr != 100) {
+        std::string Msg = "expected 100, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testIsExpressionNotMatching() {
+    const char* Name = "Pipeline: is expression takes else branch";
+
+    // Use 'is Ok' which should be false for Error variant
+    auto ResultOrErr = evalInt(
+        "define Result union: (Ok: int, Error: int)\n"
+        "function fail() returns Result throws int { throw 42 }\n"
+        "if fail() is Ok : 100 else 0"
+    );
+
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // Should take the else branch since it's Error variant, not Ok
+    if (*ResultOrErr != 0) {
+        std::string Msg = "expected 0, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
 bool runEmitterTests() {
     llvm::outs() << "Running Emitter tests...\n";
     llvm::outs().flush();
@@ -2949,6 +3067,13 @@ bool runEmitterTests() {
     testChooseWithDataBinding();
     testChooseElseFallback();
     testChooseMultipleCases();
+
+    // Is expressions
+    llvm::outs() << "  Is expression tests:\n";
+    testIsExpressionMatchesError();
+    testIsExpressionNoMatchOk();
+    testIsExpressionWithIf();
+    testIsExpressionNotMatching();
 
     // SizeOf expressions
     llvm::outs() << "  SizeOf expression tests:\n";

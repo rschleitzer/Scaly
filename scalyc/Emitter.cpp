@@ -992,8 +992,8 @@ llvm::Expected<llvm::Value*> Emitter::emitOperands(const std::vector<PlannedOper
         );
     }
 
-    // For now, just emit the first operand
-    // TODO: handle postfix operator chains
+    // After collapseOperandSequence, we typically have a single collapsed operand
+    // that contains the full expression tree (calls, operators, is expressions, etc.)
     return emitOperand(Ops[0]);
 }
 
@@ -2305,22 +2305,69 @@ llvm::Expected<llvm::Value*> Emitter::emitSizeOf(const PlannedSizeOf &SizeOf) {
 }
 
 llvm::Expected<llvm::Value*> Emitter::emitIs(const PlannedIs &Is) {
-    // 'is' expression tests if a value is of a specific union variant type
-    // This requires the previous operand in the expression to be a union value
-    // For now, return a placeholder - full implementation needs context from operand
-    //
-    // In a full implementation:
-    // 1. Get the union value from the expression context
-    // 2. Load the tag from the union
-    // 3. Compare against the expected tag for TestType
-    // 4. Return i1 (bool) result
-    //
-    // Since 'is' is typically used as a postfix operator on an operand,
-    // the actual implementation would happen in emitOperand where we have
-    // access to the preceding operand value.
+    // 'is' expression tests if a union value is of a specific variant type
+    if (!Is.Value) {
+        // No value to test - this shouldn't happen in well-formed code
+        return llvm::ConstantInt::get(llvm::Type::getInt1Ty(*Context), 0);
+    }
 
-    // For standalone use, return false (shouldn't happen in well-formed code)
-    return llvm::ConstantInt::get(llvm::Type::getInt1Ty(*Context), 0);
+    // Emit the union value
+    auto UnionValueOrErr = emitOperand(*Is.Value);
+    if (!UnionValueOrErr)
+        return UnionValueOrErr.takeError();
+
+    llvm::Value *UnionValue = *UnionValueOrErr;
+    const PlannedType &UnionType = Is.Value->ResultType;
+
+    return emitIsWithValue(UnionValue, UnionType, Is);
+}
+
+llvm::Expected<llvm::Value*> Emitter::emitIsWithValue(
+    llvm::Value *UnionValue,
+    const PlannedType &UnionType,
+    const PlannedIs &Is) {
+
+    // 'is' expression: test if a union value is of a specific variant type
+    // Union layout: { i8 tag, [maxSize x i8] data }
+    // We compare the tag against the expected variant's tag
+
+    llvm::Type *I8Ty = llvm::Type::getInt8Ty(*Context);
+    llvm::Type *I1Ty = llvm::Type::getInt1Ty(*Context);
+
+    // Get pointer to the union (may already be a pointer or need alloca)
+    llvm::Value *UnionPtr;
+    llvm::Type *LLVMUnionType = UnionValue->getType();
+
+    if (UnionValue->getType()->isPointerTy()) {
+        UnionPtr = UnionValue;
+        // Need to get the actual struct type for GEP
+        // Try to find it from the TypeCache
+        auto CacheIt = StructCache.find(UnionType.Name);
+        if (CacheIt != StructCache.end()) {
+            LLVMUnionType = CacheIt->second;
+        } else {
+            // Fallback: assume a generic struct layout
+            // This shouldn't normally happen for well-typed code
+            return llvm::make_error<llvm::StringError>(
+                "Cannot find union type for 'is' expression: " + UnionType.Name,
+                llvm::inconvertibleErrorCode()
+            );
+        }
+    } else {
+        // Store the union value to get a pointer
+        UnionPtr = Builder->CreateAlloca(LLVMUnionType, nullptr, "is.union");
+        Builder->CreateStore(UnionValue, UnionPtr);
+    }
+
+    // Load the tag (first field, i8)
+    llvm::Value *TagPtr = Builder->CreateStructGEP(LLVMUnionType, UnionPtr, 0, "is.tag.ptr");
+    llvm::Value *Tag = Builder->CreateLoad(I8Ty, TagPtr, "is.tag");
+
+    // Compare with expected variant tag
+    llvm::Value *ExpectedTag = llvm::ConstantInt::get(I8Ty, Is.VariantTag);
+    llvm::Value *Result = Builder->CreateICmpEQ(Tag, ExpectedTag, "is.result");
+
+    return Result;
 }
 
 llvm::Expected<llvm::Value*> Emitter::emitTuple(const PlannedTuple &Tuple) {

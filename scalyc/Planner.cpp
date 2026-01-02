@@ -1404,6 +1404,44 @@ llvm::Expected<PlannedOperand> Planner::collapseOperandSequence(
             }
         }
 
+        // Handle 'is' expression: value is VariantType
+        if (auto* IsExpr = std::get_if<PlannedIs>(&Ops[I].Expr)) {
+            // The 'is' expression tests if the left operand (union value) is a specific variant
+            PlannedIs NewIs = *IsExpr;
+            NewIs.Value = std::make_shared<PlannedOperand>(std::move(Left));
+            NewIs.UnionName = NewIs.Value->ResultType.Name;
+
+            // Look up the union to get the variant tag
+            auto UnionIt = InstantiatedUnions.find(NewIs.UnionName);
+            if (UnionIt != InstantiatedUnions.end()) {
+                const auto &Union = UnionIt->second;
+                // Find the variant matching the TestType name
+                std::string VariantName = NewIs.TestType.Name;
+                size_t dotPos = VariantName.rfind('.');
+                if (dotPos != std::string::npos) {
+                    VariantName = VariantName.substr(dotPos + 1);
+                }
+
+                for (const auto &Var : Union.Variants) {
+                    if (Var.Name == VariantName) {
+                        NewIs.VariantTag = Var.Tag;
+                        break;
+                    }
+                }
+            }
+
+            // Create new left operand with the is expression
+            PlannedOperand NewLeft;
+            NewLeft.Loc = Ops[I].Loc;
+            NewLeft.ResultType.Name = "bool";
+            NewLeft.ResultType.MangledName = "bool";
+            NewLeft.Expr = std::move(NewIs);
+
+            Left = std::move(NewLeft);
+            I++;
+            continue;
+        }
+
         // Non-operator: use as new left
         Left = std::move(Ops[I]);
         I++;
