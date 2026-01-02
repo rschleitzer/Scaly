@@ -98,11 +98,20 @@ private:
 
     // Region/lifetime management
     struct RegionInfo {
-        llvm::Value *LocalPage;    // Local ($) allocations
-        llvm::Value *ReturnPage;   // Call (#) - passed by caller
-        llvm::Value *ExceptionPage; // Thrown (!) - passed by caller
+        llvm::Value *LocalPage = nullptr;    // Local ($) allocations
+        llvm::Value *ReturnPage = nullptr;   // Call (#) - passed by caller
+        llvm::Value *ExceptionPage = nullptr; // Thrown (!) - passed by caller
+        std::map<std::string, llvm::Value*> NamedRegions;  // ^name references
     };
     RegionInfo CurrentRegion;
+
+    // Page type and runtime functions for RBMM
+    llvm::StructType *PageType = nullptr;
+    llvm::Function *PageAllocate = nullptr;       // Page.allocate(page, size, align)
+    llvm::Function *PageAllocatePage = nullptr;   // Page.allocate_page()
+    llvm::Function *PageDeallocateExtensions = nullptr;  // Page.deallocate_extensions(page)
+    llvm::Function *AlignedAlloc = nullptr;       // aligned_alloc(align, size)
+    llvm::Function *Free = nullptr;               // free(ptr)
 
     // Loop context for break/continue
     struct LoopContext {
@@ -117,6 +126,7 @@ private:
 
     void initIntrinsicTypes();
     void initDebugInfo(llvm::StringRef FileName);
+    void initRBMM();  // Initialize Page type and runtime functions
 
     // ========================================================================
     // Type Mapping

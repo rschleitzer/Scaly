@@ -110,6 +110,56 @@ void Emitter::initDebugInfo(llvm::StringRef FileName) {
 }
 
 // ============================================================================
+// RBMM (Region-Based Memory Management) Initialization
+// ============================================================================
+
+void Emitter::initRBMM() {
+    auto *VoidTy = llvm::Type::getVoidTy(*Context);
+    auto *PtrTy = llvm::PointerType::get(*Context, 0);
+    auto *I64Ty = llvm::Type::getInt64Ty(*Context);
+
+    // Create Page struct type
+    // Page { next_object: ptr, current_page: ptr, next_page: ptr, exclusive_pages: PageList }
+    // For now, we treat PageList as an opaque struct (pointer + pointer for simplicity)
+    // The actual layout is: { ptr, ptr, ptr, { ptr, ptr } }
+    PageType = llvm::StructType::create(*Context, "Page");
+    auto *PageListType = llvm::StructType::create(*Context, {PtrTy, PtrTy}, "PageList");
+    PageType->setBody({PtrTy, PtrTy, PtrTy, PageListType});
+
+    // Declare aligned_alloc(size_t align, size_t size) -> ptr
+    // Note: C11 aligned_alloc has (size, align) order, but we match stdlib convention
+    auto *AlignedAllocTy = llvm::FunctionType::get(PtrTy, {I64Ty, I64Ty}, false);
+    AlignedAlloc = llvm::Function::Create(
+        AlignedAllocTy, llvm::GlobalValue::ExternalLinkage, "aligned_alloc", *Module);
+
+    // Declare free(ptr) -> void
+    auto *FreeTy = llvm::FunctionType::get(VoidTy, {PtrTy}, false);
+    Free = llvm::Function::Create(
+        FreeTy, llvm::GlobalValue::ExternalLinkage, "free", *Module);
+
+    // Declare Page_allocate_page() -> ptr
+    // This is the static function that allocates a new page
+    auto *AllocatePageTy = llvm::FunctionType::get(PtrTy, {}, false);
+    PageAllocatePage = llvm::Function::Create(
+        AllocatePageTy, llvm::GlobalValue::ExternalLinkage,
+        "_ZN4Page13allocate_pageEv", *Module);
+
+    // Declare Page_allocate(page: ptr, size: i64, align: i64) -> ptr
+    // This is the method that allocates from a page
+    auto *AllocateTy = llvm::FunctionType::get(PtrTy, {PtrTy, I64Ty, I64Ty}, false);
+    PageAllocate = llvm::Function::Create(
+        AllocateTy, llvm::GlobalValue::ExternalLinkage,
+        "_ZN4Page8allocateEyy", *Module);
+
+    // Declare Page_deallocate_extensions(page: ptr) -> void
+    // Called to clean up a page's extensions when leaving a scope
+    auto *DeallocateTy = llvm::FunctionType::get(VoidTy, {PtrTy}, false);
+    PageDeallocateExtensions = llvm::Function::Create(
+        DeallocateTy, llvm::GlobalValue::ExternalLinkage,
+        "_ZN4Page21deallocate_extensionsEv", *Module);
+}
+
+// ============================================================================
 // Main Emission Entry Point
 // ============================================================================
 
@@ -127,6 +177,9 @@ llvm::Expected<std::unique_ptr<llvm::Module>> Emitter::emit(const Plan &P,
 
     // Initialize debug info
     initDebugInfo(P.MainModule.File);
+
+    // Initialize RBMM runtime declarations
+    initRBMM();
 
     // Clear caches for fresh emission
     TypeCache.clear();
@@ -522,15 +575,19 @@ llvm::Error Emitter::emitFunctionBody(const PlannedFunction &Func,
     CurrentBlock = EntryBB;
     LocalVariables.clear();
 
+    // Reset region state for this function
+    CurrentRegion = RegionInfo{};
+
     // Bind parameters to names
     unsigned ArgIdx = 0;
     auto ArgIt = LLVMFunc->arg_begin();
+    llvm::Value *SretPtr = nullptr;
 
-    // Skip sret if present
+    // Skip sret if present (this is the return struct pointer, not a page)
     if (Func.Returns) {
         llvm::Type *RetTy = mapType(*Func.Returns);
         if (RetTy->isStructTy() || RetTy->isArrayTy()) {
-            CurrentRegion.ReturnPage = &*ArgIt;
+            SretPtr = &*ArgIt;
             ArgIt++;
             ArgIdx++;
         }
@@ -547,9 +604,42 @@ llvm::Error Emitter::emitFunctionBody(const PlannedFunction &Func,
     for (const auto &Item : Func.Input) {
         if (Item.Name) {
             LocalVariables[*Item.Name] = &*ArgIt;
+
+            // If this parameter has a reference lifetime, track its region
+            if (Item.ItemType) {
+                if (std::holds_alternative<ReferenceLifetime>(Item.ItemType->Life)) {
+                    const auto &RefLife = std::get<ReferenceLifetime>(Item.ItemType->Life);
+                    // The parameter carries a region with it
+                    CurrentRegion.NamedRegions[RefLife.Location] = &*ArgIt;
+                }
+            }
         }
         ArgIt++;
         ArgIdx++;
+    }
+
+    // Allocate local page for this function's $ allocations
+    // Only allocate if the function has local lifetime allocations
+    // For now, we check if any return type or parameter has LocalLifetime
+    bool NeedsLocalPage = false;
+    if (Func.Returns && std::holds_alternative<LocalLifetime>(Func.Returns->Life)) {
+        NeedsLocalPage = true;
+    }
+    for (const auto &Item : Func.Input) {
+        if (Item.ItemType && std::holds_alternative<LocalLifetime>(Item.ItemType->Life)) {
+            NeedsLocalPage = true;
+            break;
+        }
+    }
+    // Also check the function's own lifetime annotation
+    if (std::holds_alternative<LocalLifetime>(Func.Life)) {
+        NeedsLocalPage = true;
+    }
+
+    if (NeedsLocalPage) {
+        CurrentRegion.LocalPage = Builder->CreateCall(PageAllocatePage, {}, "local_page");
+    } else {
+        CurrentRegion.LocalPage = nullptr;  // Will use stack allocation as fallback
     }
 
     // Emit function body
@@ -562,8 +652,18 @@ llvm::Error Emitter::emitFunctionBody(const PlannedFunction &Func,
         ReturnValue = *ValueOrErr;
     }
 
+    // Clean up local page before returning
+    // We need to do this before every return point
+    auto CleanupLocalPage = [this]() {
+        if (CurrentRegion.LocalPage) {
+            Builder->CreateCall(PageDeallocateExtensions, {CurrentRegion.LocalPage});
+            Builder->CreateCall(Free, {CurrentRegion.LocalPage});
+        }
+    };
+
     // Add return if block doesn't end with terminator
     if (!CurrentBlock->getTerminator()) {
+        CleanupLocalPage();
         if (LLVMFunc->getReturnType()->isVoidTy()) {
             Builder->CreateRetVoid();
         } else if (ReturnValue) {
@@ -941,13 +1041,26 @@ llvm::Error Emitter::emitBinding(const PlannedBinding &Binding) {
 }
 
 llvm::Error Emitter::emitReturn(const PlannedReturn &Return) {
-    if (Return.Result.empty()) {
-        Builder->CreateRetVoid();
-    } else {
+    // Evaluate return value first (before cleanup)
+    llvm::Value *RetVal = nullptr;
+    if (!Return.Result.empty()) {
         auto ValueOrErr = emitOperands(Return.Result);
         if (!ValueOrErr)
             return ValueOrErr.takeError();
-        Builder->CreateRet(*ValueOrErr);
+        RetVal = *ValueOrErr;
+    }
+
+    // Clean up local page before returning
+    if (CurrentRegion.LocalPage) {
+        Builder->CreateCall(PageDeallocateExtensions, {CurrentRegion.LocalPage});
+        Builder->CreateCall(Free, {CurrentRegion.LocalPage});
+    }
+
+    // Now emit the return
+    if (RetVal) {
+        Builder->CreateRet(RetVal);
+    } else {
+        Builder->CreateRetVoid();
     }
     return llvm::Error::success();
 }
@@ -2749,9 +2862,28 @@ llvm::Function *Emitter::lookupFunction(llvm::StringRef MangledName) {
 }
 
 llvm::Value *Emitter::allocate(llvm::Type *Ty, Lifetime Life, llvm::StringRef Name) {
-    // For now, all allocations go on the stack
-    // TODO: implement region-based allocation
-    return Builder->CreateAlloca(Ty, nullptr, Name);
+    // Get the appropriate page for this lifetime
+    llvm::Value *Page = getRegionPage(Life);
+
+    // If no page available (UnspecifiedLifetime or no region set up), use stack allocation
+    if (!Page) {
+        return Builder->CreateAlloca(Ty, nullptr, Name);
+    }
+
+    // Calculate size and alignment
+    auto *I64Ty = llvm::Type::getInt64Ty(*Context);
+    size_t TypeSize = getTypeSize(Ty);
+    size_t TypeAlign = getTypeAlignment(Ty);
+
+    auto *Size = llvm::ConstantInt::get(I64Ty, TypeSize);
+    auto *Align = llvm::ConstantInt::get(I64Ty, TypeAlign);
+
+    // Call Page.allocate(page, size, align)
+    llvm::Value *RawPtr = Builder->CreateCall(PageAllocate, {Page, Size, Align}, Name);
+
+    // The result is void*, but we need the correct pointer type for LLVM
+    // In opaque pointer mode (LLVM 15+), all pointers are ptr, so no cast needed
+    return RawPtr;
 }
 
 llvm::Value *Emitter::getRegionPage(Lifetime Life) {
@@ -2762,10 +2894,16 @@ llvm::Value *Emitter::getRegionPage(Lifetime Life) {
     } else if (std::holds_alternative<ThrownLifetime>(Life)) {
         return CurrentRegion.ExceptionPage;
     } else if (std::holds_alternative<ReferenceLifetime>(Life)) {
-        // TODO: look up referenced container's region
-        return nullptr;
+        // Look up the named region from the current scope
+        const auto &RefLife = std::get<ReferenceLifetime>(Life);
+        auto It = CurrentRegion.NamedRegions.find(RefLife.Location);
+        if (It != CurrentRegion.NamedRegions.end()) {
+            return It->second;
+        }
+        // Named region not found - fall back to local page
+        return CurrentRegion.LocalPage;
     }
-    // UnspecifiedLifetime or unknown
+    // UnspecifiedLifetime - use stack allocation (return nullptr)
     return nullptr;
 }
 
@@ -2879,6 +3017,9 @@ llvm::Expected<uint64_t> Emitter::jitExecuteRaw(const Plan &P, llvm::Type *Expec
     // Create fresh module for JIT
     Module = std::make_unique<llvm::Module>("jit_module", *Context);
     Module->setTargetTriple(llvm::sys::getDefaultTargetTriple());
+
+    // Initialize RBMM runtime declarations
+    initRBMM();
 
     // Clear caches
     TypeCache.clear();
