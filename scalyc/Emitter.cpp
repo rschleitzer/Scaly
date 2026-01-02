@@ -1038,8 +1038,12 @@ llvm::Expected<llvm::Value*> Emitter::emitExpression(const PlannedExpression &Ex
             // Fallback: type info not available, use defaults
             return emitConstant(E, PlannedType{});
         } else if constexpr (std::is_same_v<T, PlannedType>) {
-            // Type expression (e.g., for sizeof)
-            return nullptr;  // TODO
+            // Type used as expression value - this shouldn't normally occur
+            // sizeof is handled via PlannedSizeOf, constructors via PlannedCall
+            return llvm::make_error<llvm::StringError>(
+                "Type '" + E.Name + "' cannot be used as a value",
+                llvm::inconvertibleErrorCode()
+            );
         } else if constexpr (std::is_same_v<T, PlannedVariable>) {
             // Variable reference - look up and load
             llvm::Value *VarPtr = lookupVariable(E.Name);
