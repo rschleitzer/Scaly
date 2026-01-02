@@ -2044,6 +2044,127 @@ static bool testThrowInFunction() {
     return true;
 }
 
+// Choose expression tests
+// Note: Using throw to create union error variants since variant construction
+// (e.g., Option.Some(42)) isn't fully implemented yet
+
+static bool testChooseMatchesError() {
+    const char* Name = "Pipeline: choose matches error variant";
+
+    // Use throw to create an Error variant (tag 1), then choose to match it
+    auto ResultOrErr = evalInt(
+        "define Result union: (Ok: int, Error: int)\n"
+        "function fail() returns Result throws int { throw 42 }\n"
+        "choose fail(): when x: Ok: x when e: Error: e else 0"
+    );
+
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // throw creates Error variant (tag 1) with value 42
+    if (*ResultOrErr != 42) {
+        std::string Msg = "expected 42, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testChooseWithDataBinding() {
+    const char* Name = "Pipeline: choose with data binding";
+
+    // Choose and use the bound data in an expression
+    auto ResultOrErr = evalInt(
+        "define Result union: (Ok: int, Error: int)\n"
+        "function fail() returns Result throws int { throw 10 }\n"
+        "choose fail(): when x: Ok: x when val: Error: val * 2 else 0"
+    );
+
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // val = 10, val * 2 = 20
+    if (*ResultOrErr != 20) {
+        std::string Msg = "expected 20, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testChooseElseFallback() {
+    const char* Name = "Pipeline: choose else fallback";
+
+    // When no when clause matches, fall through to else
+    // throw creates Error (tag 1), but we only match Ok (tag 0)
+    auto ResultOrErr = evalInt(
+        "define Result union: (Ok: int, Error: int)\n"
+        "function fail() returns Result throws int { throw 5 }\n"
+        "choose fail(): when x: Ok: x else 77"
+    );
+
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // Error variant (tag 1) doesn't match Ok (tag 0), so else is taken
+    if (*ResultOrErr != 77) {
+        std::string Msg = "expected 77, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testChooseMultipleCases() {
+    const char* Name = "Pipeline: choose multiple cases";
+
+    // Multiple when clauses, matching the second one
+    auto ResultOrErr = evalInt(
+        "define Triple union: (A: int, B: int, C: int)\n"
+        "function makeB() returns Triple throws int { throw 33 }\n"
+        "choose makeB(): when a: A: a when b: B: b + 1 when c: C: c else 0"
+    );
+
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // throw creates B variant (tag 1) with value 33, result is 33 + 1 = 34
+    if (*ResultOrErr != 34) {
+        std::string Msg = "expected 34, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
 // SizeOf expression tests
 
 static bool testPipelineSizeOfInt() {
@@ -2821,6 +2942,13 @@ bool runEmitterTests() {
     // Throw statements
     llvm::outs() << "  Throw statement tests:\n";
     testThrowInFunction();
+
+    // Choose expressions
+    llvm::outs() << "  Choose expression tests:\n";
+    testChooseMatchesError();
+    testChooseWithDataBinding();
+    testChooseElseFallback();
+    testChooseMultipleCases();
 
     // SizeOf expressions
     llvm::outs() << "  SizeOf expression tests:\n";

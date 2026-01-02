@@ -3325,21 +3325,63 @@ llvm::Expected<PlannedChoose> Planner::planChoose(const Choose &ChooseExpr) {
     }
     Result.Condition = std::move(*PlannedCond);
 
+    // Get the result type from the condition to look up the union
+    const PlannedUnion *CondUnion = nullptr;
+    if (!Result.Condition.empty()) {
+        const auto &ResultType = Result.Condition[0].ResultType;
+        auto UnionIt = InstantiatedUnions.find(ResultType.Name);
+        if (UnionIt != InstantiatedUnions.end()) {
+            CondUnion = &UnionIt->second;
+        }
+    }
+
+    pushScope();
+
     for (const auto &Case : ChooseExpr.Cases) {
         PlannedWhen PW;
         PW.Loc = Case.Loc;
         PW.Name = Case.Name;
+        PW.VariantIndex = 0;  // Default
 
-        // When has VariantPath (vector<string>), not VariantType
-        auto ResolvedType = resolveTypePath(Case.VariantPath, Case.Loc);
-        if (!ResolvedType) {
-            return ResolvedType.takeError();
+        // Get the variant name from the path
+        std::string VariantName;
+        if (!Case.VariantPath.empty()) {
+            VariantName = Case.VariantPath.back();
         }
-        PW.VariantType = std::move(*ResolvedType);
+
+        // Look up the variant in the union to get its tag
+        if (CondUnion && !VariantName.empty()) {
+            for (size_t i = 0; i < CondUnion->Variants.size(); ++i) {
+                if (CondUnion->Variants[i].Name == VariantName) {
+                    PW.VariantIndex = CondUnion->Variants[i].Tag;
+                    // Also get the variant's type for the binding variable
+                    if (CondUnion->Variants[i].VarType) {
+                        PW.VariantType = *CondUnion->Variants[i].VarType;
+                    }
+                    break;
+                }
+            }
+        }
+
+        // Fallback: resolve the variant path if we didn't find it in the union
+        if (PW.VariantType.Name.empty()) {
+            auto ResolvedType = resolveTypePath(Case.VariantPath, Case.Loc);
+            if (!ResolvedType) {
+                popScope();
+                return ResolvedType.takeError();
+            }
+            PW.VariantType = std::move(*ResolvedType);
+        }
+
+        // Add the binding variable to the scope
+        if (!Case.Name.empty()) {
+            defineLocal(Case.Name, PW.VariantType, false);
+        }
 
         if (Case.Consequent) {
             auto PlannedCons = planStatement(*Case.Consequent);
             if (!PlannedCons) {
+                popScope();
                 return PlannedCons.takeError();
             }
             PW.Consequent = std::make_unique<PlannedStatement>(std::move(*PlannedCons));
@@ -3351,10 +3393,13 @@ llvm::Expected<PlannedChoose> Planner::planChoose(const Choose &ChooseExpr) {
     if (ChooseExpr.Alternative) {
         auto PlannedAlt = planStatement(*ChooseExpr.Alternative);
         if (!PlannedAlt) {
+            popScope();
             return PlannedAlt.takeError();
         }
         Result.Alternative = std::make_unique<PlannedStatement>(std::move(*PlannedAlt));
     }
+
+    popScope();
 
     return Result;
 }
