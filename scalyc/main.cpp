@@ -4,6 +4,7 @@
 #include "ParserTests.h"
 #include "Modeler.h"
 #include "Planner.h"
+#include "Emitter.h"
 #include "EmitterTests.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/FileSystem.h"
@@ -271,6 +272,90 @@ static int planFile(StringRef Filename) {
     return 0;
 }
 
+// Compile a file to object code
+static int compileFile(StringRef Filename, StringRef OutputPath) {
+    auto BufOrErr = MemoryBuffer::getFileOrSTDIN(Filename);
+    if (!BufOrErr) {
+        errs() << "scalyc: error: " << BufOrErr.getError().message() << ": " << Filename << "\n";
+        return 1;
+    }
+
+    scaly::Parser Parser((*BufOrErr)->getBuffer());
+    auto ParseResult = Parser.parseProgram();
+    if (!ParseResult) {
+        handleAllErrors(ParseResult.takeError(), [&](const llvm::ErrorInfoBase &E) {
+            errs() << "scalyc: " << Filename << ": " << E.message() << "\n";
+        });
+        return 1;
+    }
+
+    scaly::Modeler Modeler(Filename);
+    auto ModelResult = Modeler.buildProgram(*ParseResult);
+    if (!ModelResult) {
+        handleAllErrors(ModelResult.takeError(), [&](const llvm::ErrorInfoBase &E) {
+            errs() << "scalyc: " << Filename << ": " << E.message() << "\n";
+        });
+        return 1;
+    }
+
+    scaly::Planner Planner(Filename);
+
+    // Load sibling .scaly files for multi-file compilation
+    SmallString<256> Dir = sys::path::parent_path(Filename);
+    if (!Dir.empty()) {
+        std::error_code EC;
+        for (sys::fs::directory_iterator DI(Dir, EC), DE; DI != DE && !EC; DI.increment(EC)) {
+            StringRef SibPath = DI->path();
+            if (SibPath == Filename || !SibPath.ends_with(".scaly")) {
+                continue;
+            }
+
+            auto SibBuf = MemoryBuffer::getFile(SibPath);
+            if (!SibBuf) continue;
+
+            scaly::Parser SibParser((*SibBuf)->getBuffer());
+            auto SibParse = SibParser.parseProgram();
+            if (!SibParse) {
+                llvm::consumeError(SibParse.takeError());
+                continue;
+            }
+
+            scaly::Modeler SibModeler(SibPath);
+            auto SibModel = SibModeler.buildProgram(*SibParse);
+            if (!SibModel) {
+                llvm::consumeError(SibModel.takeError());
+                continue;
+            }
+
+            Planner.addSiblingProgram(std::make_shared<scaly::Program>(std::move(*SibModel)));
+        }
+    }
+
+    auto PlanResult = Planner.plan(*ModelResult);
+    if (!PlanResult) {
+        handleAllErrors(PlanResult.takeError(), [&](const llvm::ErrorInfoBase &E) {
+            errs() << "scalyc: " << Filename << ": " << E.message() << "\n";
+        });
+        return 1;
+    }
+
+    // Emit object file
+    scaly::Emitter Emitter;
+    std::string ModuleName = sys::path::stem(Filename).str();
+    auto EmitErr = Emitter.emitObjectFile(*PlanResult, ModuleName, OutputPath);
+    if (EmitErr) {
+        handleAllErrors(std::move(EmitErr), [&](const llvm::ErrorInfoBase &E) {
+            errs() << "scalyc: " << Filename << ": " << E.message() << "\n";
+        });
+        return 1;
+    }
+
+    if (Verbose) {
+        outs() << "Compiled: " << Filename << " -> " << OutputPath << "\n";
+    }
+    return 0;
+}
+
 int main(int argc, char **argv) {
     cl::HideUnrelatedOptions(ScalyCategory);
     cl::ParseCommandLineOptions(argc, argv, "Scaly Compiler\n");
@@ -314,8 +399,19 @@ int main(int argc, char **argv) {
             Result |= modelFile(File);
         } else if (PlanOnly) {
             Result |= planFile(File);
+        } else if (CompileOnly) {
+            // Compile to object file
+            std::string OutPath;
+            if (!OutputFile.empty()) {
+                OutPath = OutputFile;
+            } else {
+                // Default: replace .scaly with .o
+                OutPath = sys::path::stem(File).str() + ".o";
+            }
+            Result |= compileFile(File, OutPath);
         } else {
-            // Full compilation - run planner as final step for now
+            // Full compilation - for now just run planner
+            // TODO: Full compile + link when we have a linker
             Result |= planFile(File);
         }
     }
