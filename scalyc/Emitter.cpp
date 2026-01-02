@@ -10,6 +10,7 @@
 #include "llvm/MC/TargetRegistry.h"
 #include "llvm/TargetParser/Host.h"
 #include "llvm/ExecutionEngine/Orc/ThreadSafeModule.h"
+#include "llvm/ExecutionEngine/Orc/ExecutionUtils.h"
 #include <cstring>
 
 namespace scaly {
@@ -19,10 +20,14 @@ namespace scaly {
 // ============================================================================
 
 Emitter::Emitter(const EmitterConfig &Cfg) : Config(Cfg) {
-    // Initialize LLVM targets for JIT and AOT
-    llvm::InitializeNativeTarget();
-    llvm::InitializeNativeTargetAsmPrinter();
-    llvm::InitializeNativeTargetAsmParser();
+    // Initialize LLVM targets for JIT and AOT (only once)
+    static bool LLVMInitialized = false;
+    if (!LLVMInitialized) {
+        llvm::InitializeNativeTarget();
+        llvm::InitializeNativeTargetAsmPrinter();
+        llvm::InitializeNativeTargetAsmParser();
+        LLVMInitialized = true;
+    }
 
     Context = std::make_unique<llvm::LLVMContext>();
     Builder = std::make_unique<llvm::IRBuilder<>>(*Context);
@@ -152,6 +157,42 @@ void Emitter::initRBMM() {
         DeallocateTy, llvm::GlobalValue::ExternalLinkage,
         "_ZN4Page21deallocate_extensionsEv", *Module);
     FunctionCache["_ZN4Page21deallocate_extensionsEv"] = PageDeallocateExtensions;
+}
+
+// Declare C runtime functions (aligned_alloc, free, exit)
+// These are needed by Page.scaly for RBMM
+void Emitter::declareRuntimeFunctions() {
+    auto *PtrTy = llvm::PointerType::getUnqual(*Context);
+    auto *I64Ty = llvm::Type::getInt64Ty(*Context);
+    auto *I32Ty = llvm::Type::getInt32Ty(*Context);
+    auto *VoidTy = llvm::Type::getVoidTy(*Context);
+
+    // aligned_alloc(alignment: i64, size: i64) returns pointer[void]
+    if (!AlignedAlloc) {
+        auto *AlignedAllocTy = llvm::FunctionType::get(PtrTy, {I64Ty, I64Ty}, false);
+        AlignedAlloc = llvm::Function::Create(
+            AlignedAllocTy, llvm::GlobalValue::ExternalLinkage,
+            "aligned_alloc", *Module);
+        FunctionCache["aligned_alloc"] = AlignedAlloc;
+    }
+
+    // free(ptr: pointer[void])
+    if (!Free) {
+        auto *FreeTy = llvm::FunctionType::get(VoidTy, {PtrTy}, false);
+        Free = llvm::Function::Create(
+            FreeTy, llvm::GlobalValue::ExternalLinkage,
+            "free", *Module);
+        FunctionCache["free"] = Free;
+    }
+
+    // exit(code: int)
+    if (!ExitFunc) {
+        auto *ExitTy = llvm::FunctionType::get(VoidTy, {I32Ty}, false);
+        ExitFunc = llvm::Function::Create(
+            ExitTy, llvm::GlobalValue::ExternalLinkage,
+            "exit", *Module);
+        FunctionCache["exit"] = ExitFunc;
+    }
 }
 
 // ============================================================================
@@ -352,7 +393,14 @@ llvm::Type *Emitter::mapType(const PlannedType &Type) {
     }
 
     // Check if it's a struct we've already emitted
+    // Try multiple key formats due to mangling variations
     if (auto It = StructCache.find(Type.MangledName); It != StructCache.end()) {
+        return It->second;
+    }
+    if (auto It = StructCache.find("_Z" + Type.MangledName); It != StructCache.end()) {
+        return It->second;
+    }
+    if (auto It = StructCache.find(Type.Name); It != StructCache.end()) {
         return It->second;
     }
 
@@ -649,10 +697,29 @@ llvm::Error Emitter::emitFunctionBody(const PlannedFunction &Func,
 
     // Clean up local page before returning
     // We need to do this before every return point
+    // Only call deallocate_extensions if the page was actually used for allocations
     auto CleanupLocalPage = [this]() {
-        if (CurrentRegion.LocalPage) {
+        if (CurrentRegion.LocalPage && PageType) {
+            // Check if the page was used for allocations by comparing next_object to page + 1
+            // A fresh page has next_object = page + 1 (after reset), so if unchanged, no allocations were made
+            // This avoids infinite recursion: deallocate_extensions -> get_iterator -> deallocate_extensions
+            llvm::Value *NextObjectPtr = Builder->CreateStructGEP(PageType, CurrentRegion.LocalPage, 0, "next_object_ptr");
+            llvm::Value *NextObject = Builder->CreateLoad(Builder->getPtrTy(), NextObjectPtr, "next_object");
+            llvm::Value *PagePlus1 = Builder->CreateGEP(PageType, CurrentRegion.LocalPage,
+                                                        llvm::ConstantInt::get(llvm::Type::getInt64Ty(*Context), 1),
+                                                        "page_plus_1");
+            llvm::Value *WasUsed = Builder->CreateICmpNE(NextObject, PagePlus1, "page_was_used");
+
+            llvm::BasicBlock *CleanupBlock = llvm::BasicBlock::Create(*Context, "cleanup", CurrentFunction);
+            llvm::BasicBlock *SkipCleanupBlock = llvm::BasicBlock::Create(*Context, "skip_cleanup", CurrentFunction);
+            Builder->CreateCondBr(WasUsed, CleanupBlock, SkipCleanupBlock);
+
+            Builder->SetInsertPoint(CleanupBlock);
             Builder->CreateCall(PageDeallocateExtensions, {CurrentRegion.LocalPage});
-            // Look up 'free' from the module (declared via extern in source)
+            Builder->CreateBr(SkipCleanupBlock);
+
+            Builder->SetInsertPoint(SkipCleanupBlock);
+            // Always free the local page (even if no extensions)
             if (auto *FreeFn = Module->getFunction("free")) {
                 Builder->CreateCall(FreeFn, {CurrentRegion.LocalPage});
             }
@@ -946,9 +1013,14 @@ llvm::Expected<llvm::Value*> Emitter::emitAction(const PlannedAction &Action) {
                     // We need to check if it's a pointer type
                     if (VarPtr->getType()->isPointerTy()) {
                         // Get the struct type from cache using the variable type
+                        // Try multiple key formats due to mangling variations
                         auto TypeIt = StructCache.find(Var->VariableType.MangledName);
                         if (TypeIt == StructCache.end()) {
                             TypeIt = StructCache.find(Var->VariableType.Name);
+                        }
+                        if (TypeIt == StructCache.end()) {
+                            // Try with _Z prefix (full mangled name)
+                            TypeIt = StructCache.find("_Z" + Var->VariableType.MangledName);
                         }
                         if (TypeIt != StructCache.end()) {
                             CurrentType = TypeIt->second;
@@ -1036,10 +1108,14 @@ llvm::Expected<llvm::Value*> Emitter::emitAction(const PlannedAction &Action) {
                     }
 
                     // Get the struct type from the pointed-to type
+                    // Try multiple key formats due to mangling variations
                     llvm::Type *StructType = nullptr;
                     auto TypeIt = StructCache.find(PointedType.MangledName);
                     if (TypeIt == StructCache.end()) {
                         TypeIt = StructCache.find(PointedType.Name);
+                    }
+                    if (TypeIt == StructCache.end()) {
+                        TypeIt = StructCache.find("_Z" + PointedType.MangledName);
                     }
                     if (TypeIt != StructCache.end()) {
                         StructType = TypeIt->second;
@@ -1135,19 +1211,64 @@ llvm::Error Emitter::emitReturn(const PlannedReturn &Return) {
     }
 
     // Clean up local page before returning
+    // Only call deallocate_extensions if the page was actually used for allocations
     if (CurrentRegion.LocalPage) {
+        // Check if the page was used for allocations by comparing next_object to page + 1
+        // A fresh page has next_object = page + 1 (after reset), so if unchanged, no allocations were made
+        // This avoids infinite recursion: deallocate_extensions -> get_iterator -> deallocate_extensions
+        llvm::Value *NextObjectPtr = Builder->CreateStructGEP(PageType, CurrentRegion.LocalPage, 0, "next_object_ptr");
+        llvm::Value *NextObject = Builder->CreateLoad(Builder->getPtrTy(), NextObjectPtr, "next_object");
+        llvm::Value *PagePlus1 = Builder->CreateGEP(PageType, CurrentRegion.LocalPage,
+                                                    llvm::ConstantInt::get(llvm::Type::getInt64Ty(*Context), 1),
+                                                    "page_plus_1");
+        llvm::Value *WasUsed = Builder->CreateICmpNE(NextObject, PagePlus1, "page_was_used");
+
+        llvm::BasicBlock *CleanupBlock = llvm::BasicBlock::Create(*Context, "cleanup", CurrentFunction);
+        llvm::BasicBlock *ContinueBlock = llvm::BasicBlock::Create(*Context, "continue", CurrentFunction);
+        Builder->CreateCondBr(WasUsed, CleanupBlock, ContinueBlock);
+
+        Builder->SetInsertPoint(CleanupBlock);
         Builder->CreateCall(PageDeallocateExtensions, {CurrentRegion.LocalPage});
-        // Look up 'free' from the module (declared via extern in source)
+        Builder->CreateBr(ContinueBlock);
+
+        Builder->SetInsertPoint(ContinueBlock);
+        // Always free the local page (even if no extensions)
         if (auto *FreeFn = Module->getFunction("free")) {
             Builder->CreateCall(FreeFn, {CurrentRegion.LocalPage});
         }
     }
 
-    // Now emit the return
-    if (RetVal) {
-        Builder->CreateRet(RetVal);
-    } else {
+    // Check if function uses sret (struct return via first parameter)
+    // If so, store to the sret param and return void
+    if (CurrentFunction && CurrentFunction->arg_size() > 0 &&
+        CurrentFunction->hasParamAttribute(0, llvm::Attribute::StructRet)) {
+        llvm::Argument *SRetArg = CurrentFunction->getArg(0);
+        if (RetVal) {
+            // For struct returns, store the value to the sret pointer
+            if (RetVal->getType()->isStructTy()) {
+                Builder->CreateStore(RetVal, SRetArg);
+            } else {
+                // If returning a pointer or scalar that should populate a struct,
+                // we need to handle it properly. For PageListIterator(head), the
+                // value is a pointer that should be stored as the first field.
+                llvm::Type *SRetTy = CurrentFunction->getParamStructRetType(0);
+                if (SRetTy && SRetTy->isStructTy()) {
+                    llvm::Value *FieldPtr = Builder->CreateStructGEP(
+                        SRetTy, SRetArg, 0, "sret.field");
+                    Builder->CreateStore(RetVal, FieldPtr);
+                } else {
+                    Builder->CreateStore(RetVal, SRetArg);
+                }
+            }
+        }
         Builder->CreateRetVoid();
+    } else {
+        // Regular return
+        if (RetVal) {
+            Builder->CreateRet(RetVal);
+        } else {
+            Builder->CreateRetVoid();
+        }
     }
     return llvm::Error::success();
 }
@@ -1476,8 +1597,17 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
             );
         }
 
-        // Get the struct type from the result type
-        llvm::Type *StructTy = mapType(Call.ResultType);
+        // Check if this is a region allocation (ResultType is pointer[StructType])
+        bool IsRegionAlloc = (Call.ResultType.Name == "pointer" &&
+                              !Call.ResultType.Generics.empty());
+
+        // Get the struct type
+        llvm::Type *StructTy;
+        if (IsRegionAlloc) {
+            StructTy = mapType(Call.ResultType.Generics[0]);
+        } else {
+            StructTy = mapType(Call.ResultType);
+        }
         if (!StructTy) {
             return llvm::make_error<llvm::StringError>(
                 "Cannot map struct type for initializer: " + Call.ResultType.Name,
@@ -1485,8 +1615,23 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
             );
         }
 
-        // Allocate the struct on the stack
-        llvm::Value *StructPtr = Builder->CreateAlloca(StructTy, nullptr, "struct.init");
+        llvm::Value *StructPtr;
+        size_t ArgsOffset = 0;
+
+        if (IsRegionAlloc && !Args.empty()) {
+            // Region allocation: first arg is Page pointer, allocate on region
+            llvm::Value *Page = Args[0];
+            auto *I64Ty = llvm::Type::getInt64Ty(*Context);
+            size_t TypeSize = getTypeSize(StructTy);
+            size_t TypeAlign = getTypeAlignment(StructTy);
+            auto *Size = llvm::ConstantInt::get(I64Ty, TypeSize);
+            auto *Align = llvm::ConstantInt::get(I64Ty, TypeAlign);
+            StructPtr = Builder->CreateCall(PageAllocate, {Page, Size, Align}, "struct.region");
+            ArgsOffset = 1;  // Skip the region arg
+        } else {
+            // Stack allocation
+            StructPtr = Builder->CreateAlloca(StructTy, nullptr, "struct.init");
+        }
 
         // Prepare arguments: struct pointer first, then the other args
         std::vector<llvm::Value*> InitArgs;
@@ -1494,9 +1639,9 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
 
         // Adjust remaining arguments for the initializer
         auto *FuncTy = InitFunc->getFunctionType();
-        for (size_t i = 0; i < Args.size() && i + 1 < FuncTy->getNumParams(); ++i) {
+        for (size_t i = ArgsOffset; i < Args.size() && i - ArgsOffset + 1 < FuncTy->getNumParams(); ++i) {
             llvm::Value *ArgVal = Args[i];
-            llvm::Type *ParamTy = FuncTy->getParamType(i + 1);  // +1 because first param is 'this'
+            llvm::Type *ParamTy = FuncTy->getParamType(i - ArgsOffset + 1);  // +1 because first param is 'this'
 
             if (ParamTy->isPointerTy() && ArgVal->getType()->isStructTy()) {
                 // Create alloca and store for struct arguments
@@ -1511,8 +1656,12 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
         // Call the initializer (returns void)
         Builder->CreateCall(InitFunc, InitArgs);
 
-        // Return the constructed struct value
-        return Builder->CreateLoad(StructTy, StructPtr, "struct.val");
+        // Return: pointer for region alloc, loaded struct value for stack alloc
+        if (IsRegionAlloc) {
+            return StructPtr;
+        } else {
+            return Builder->CreateLoad(StructTy, StructPtr, "struct.val");
+        }
     }
 
     // Non-intrinsic call: use already looked-up function
@@ -1583,12 +1732,18 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
         return Builder->CreateCall(Func, Args);
     }
 
-    // Check if we need to adjust any struct arguments to pointers
+    // Check if we need to adjust any arguments
     auto *FuncTy = Func->getFunctionType();
     bool NeedsAdjustment = false;
     for (size_t i = 0; i < Args.size() && i < FuncTy->getNumParams(); ++i) {
         llvm::Type *ParamTy = FuncTy->getParamType(i);
-        if (ParamTy->isPointerTy() && Args[i]->getType()->isStructTy()) {
+        llvm::Type *ArgTy = Args[i]->getType();
+        if (ParamTy->isPointerTy() && ArgTy->isStructTy()) {
+            NeedsAdjustment = true;
+            break;
+        }
+        // Integer type mismatch (e.g., i64 arg to i32 param)
+        if (ParamTy->isIntegerTy() && ArgTy->isIntegerTy() && ParamTy != ArgTy) {
             NeedsAdjustment = true;
             break;
         }
@@ -1598,17 +1753,21 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
         return Builder->CreateCall(Func, Args);
     }
 
-    // Adjust arguments: convert struct values to pointers
+    // Adjust arguments: convert struct values to pointers, and integer types
     std::vector<llvm::Value*> AdjustedArgs;
     for (size_t i = 0; i < Args.size() && i < FuncTy->getNumParams(); ++i) {
         llvm::Value *ArgVal = Args[i];
         llvm::Type *ParamTy = FuncTy->getParamType(i);
+        llvm::Type *ArgTy = ArgVal->getType();
 
-        if (ParamTy->isPointerTy() && ArgVal->getType()->isStructTy()) {
+        if (ParamTy->isPointerTy() && ArgTy->isStructTy()) {
             // Create alloca at the current position and store the value
-            auto *Alloca = Builder->CreateAlloca(ArgVal->getType(), nullptr, "arg.tmp");
+            auto *Alloca = Builder->CreateAlloca(ArgTy, nullptr, "arg.tmp");
             Builder->CreateStore(ArgVal, Alloca);
             AdjustedArgs.push_back(Alloca);
+        } else if (ParamTy->isIntegerTy() && ArgTy->isIntegerTy() && ParamTy != ArgTy) {
+            // Integer type conversion (truncate or extend)
+            AdjustedArgs.push_back(Builder->CreateIntCast(ArgVal, ParamTy, true, "arg.cast"));
         } else {
             AdjustedArgs.push_back(ArgVal);
         }
@@ -1846,10 +2005,11 @@ llvm::Expected<llvm::Value*> Emitter::emitBlock(const PlannedBlock &Block) {
                 LastValue = *ValueOrErr;
             }
         } else if (auto *Return = std::get_if<PlannedReturn>(&Stmt)) {
-            auto ValueOrErr = emitOperands(Return->Result);
-            if (!ValueOrErr)
-                return ValueOrErr.takeError();
-            LastValue = *ValueOrErr;
+            // Emit the full return instruction (including cleanup for local pages)
+            if (auto Err = emitReturn(*Return))
+                return std::move(Err);
+            // After return, block has terminated, so LastValue doesn't matter
+            return nullptr;
         } else {
             if (auto Err = emitStatement(Stmt))
                 return std::move(Err);
@@ -2769,6 +2929,10 @@ llvm::Expected<llvm::Value*> Emitter::emitIsWithValue(
             // Fallback to Name in case it's stored differently
             CacheIt = StructCache.find(UnionType.Name);
         }
+        if (CacheIt == StructCache.end()) {
+            // Try with _Z prefix
+            CacheIt = StructCache.find("_Z" + UnionType.MangledName);
+        }
         if (CacheIt != StructCache.end()) {
             LLVMUnionType = CacheIt->second;
         } else {
@@ -2894,8 +3058,22 @@ llvm::Expected<llvm::Value*> Emitter::emitAs(const PlannedAs &As) {
         }
     }
 
-    // Fallback: try bitcast for any remaining cases
-    return Builder->CreateBitCast(SrcValue, DstTy, "as.bitcast");
+    // Fallback: struct to pointer or other invalid casts
+    // Instead of creating invalid bitcast, emit an error
+    std::string SrcTypeName, DstTypeName;
+    llvm::raw_string_ostream SrcStream(SrcTypeName), DstStream(DstTypeName);
+    SrcTy->print(SrcStream);
+    DstTy->print(DstStream);
+    std::string LocInfo;
+    if (As.Value) {
+        LocInfo = " at pos " + std::to_string(As.Value->Loc.Start);
+    }
+    return llvm::make_error<llvm::StringError>(
+        "Cannot cast from " + SrcTypeName + " to " + DstTypeName +
+        " (as " + As.TargetType.Name + " from value type " +
+        (As.Value ? As.Value->ResultType.Name : "unknown") + ")" + LocInfo,
+        llvm::inconvertibleErrorCode()
+    );
 }
 
 llvm::Expected<llvm::Value*> Emitter::emitVariantConstruction(
@@ -2909,6 +3087,10 @@ llvm::Expected<llvm::Value*> Emitter::emitVariantConstruction(
     if (CacheIt == StructCache.end()) {
         // Fallback to Name in case it's stored differently
         CacheIt = StructCache.find(Construct.UnionType.Name);
+    }
+    if (CacheIt == StructCache.end()) {
+        // Try with _Z prefix
+        CacheIt = StructCache.find("_Z" + Construct.UnionType.MangledName);
     }
     if (CacheIt == StructCache.end()) {
         return llvm::make_error<llvm::StringError>(
@@ -2984,18 +3166,76 @@ llvm::Expected<llvm::Value*> Emitter::emitTuple(const PlannedTuple &Tuple) {
         ComponentValues.push_back(Val);
     }
 
-    // Create an anonymous struct type for the tuple
-    llvm::StructType *TupleTy = llvm::StructType::get(*Context, ComponentTypes);
+    // Get the struct type - either from TupleType or create anonymous
+    llvm::StructType *TupleTy = nullptr;
+    if (!Tuple.TupleType.Name.empty() && Tuple.TupleType.Name != "Tuple") {
+        // Named struct type - look it up in cache
+        auto It = StructCache.find(Tuple.TupleType.MangledName);
+        if (It == StructCache.end()) {
+            It = StructCache.find(Tuple.TupleType.Name);
+        }
+        if (It != StructCache.end()) {
+            TupleTy = It->second;
+        }
+    }
+    if (!TupleTy) {
+        // Create an anonymous struct type for the tuple
+        TupleTy = llvm::StructType::get(*Context, ComponentTypes);
+    }
 
-    // Allocate space for the tuple and store component values
-    llvm::Value *TuplePtr = Builder->CreateAlloca(TupleTy, nullptr, "tuple");
+    llvm::Value *TuplePtr = nullptr;
 
+    if (Tuple.IsRegionAlloc && Tuple.RegionArg && PageAllocate) {
+        // Region allocation: allocate on the region using PageAllocate
+        auto PageOrErr = emitOperand(*Tuple.RegionArg);
+        if (!PageOrErr)
+            return PageOrErr.takeError();
+
+        llvm::Value *Page = *PageOrErr;
+        auto *I64Ty = llvm::Type::getInt64Ty(*Context);
+        size_t TypeSize = getTypeSize(TupleTy);
+        size_t TypeAlign = getTypeAlignment(TupleTy);
+        auto *Size = llvm::ConstantInt::get(I64Ty, TypeSize);
+        auto *Align = llvm::ConstantInt::get(I64Ty, TypeAlign);
+        TuplePtr = Builder->CreateCall(PageAllocate, {Page, Size, Align}, "tuple.region");
+    } else {
+        // Stack allocation
+        TuplePtr = Builder->CreateAlloca(TupleTy, nullptr, "tuple");
+    }
+
+    // Store provided component values
     for (size_t i = 0; i < ComponentValues.size(); ++i) {
         llvm::Value *FieldPtr = Builder->CreateStructGEP(TupleTy, TuplePtr, i, "tuple.field");
         Builder->CreateStore(ComponentValues[i], FieldPtr);
     }
 
-    // Load and return the tuple value
+    // Initialize remaining fields with null/zero values (for struct constructors with defaults)
+    unsigned NumStructFields = TupleTy->getNumElements();
+    for (size_t i = ComponentValues.size(); i < NumStructFields; ++i) {
+        llvm::Type *FieldTy = TupleTy->getElementType(i);
+        llvm::Value *DefaultVal;
+        if (FieldTy->isPointerTy()) {
+            DefaultVal = llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(FieldTy));
+        } else if (FieldTy->isIntegerTy()) {
+            DefaultVal = llvm::ConstantInt::get(FieldTy, 0);
+        } else if (FieldTy->isFloatingPointTy()) {
+            DefaultVal = llvm::ConstantFP::get(FieldTy, 0.0);
+        } else if (FieldTy->isStructTy()) {
+            // For nested structs, use zeroinitializer
+            DefaultVal = llvm::Constant::getNullValue(FieldTy);
+        } else {
+            DefaultVal = llvm::Constant::getNullValue(FieldTy);
+        }
+        llvm::Value *FieldPtr = Builder->CreateStructGEP(TupleTy, TuplePtr, i, "tuple.field.default");
+        Builder->CreateStore(DefaultVal, FieldPtr);
+    }
+
+    if (Tuple.IsRegionAlloc) {
+        // Return the pointer for region allocation
+        return TuplePtr;
+    }
+
+    // Load and return the tuple value for stack allocation
     return Builder->CreateLoad(TupleTy, TuplePtr, "tuple.val");
 }
 
@@ -3312,13 +3552,17 @@ llvm::Expected<uint64_t> Emitter::jitExecuteRaw(const Plan &P, llvm::Type *Expec
     Module = std::make_unique<llvm::Module>("jit_module", *Context);
     Module->setTargetTriple(llvm::sys::getDefaultTargetTriple());
 
-    // Initialize RBMM runtime declarations
-    initRBMM();
-
     // Clear caches
     TypeCache.clear();
     StructCache.clear();
     FunctionCache.clear();
+
+    // Initialize RBMM runtime declarations only if Page is not in the Plan
+    // (If Page is in the Plan, its methods will be emitted from the Plan)
+    bool PageInPlan = P.Structures.find("Page") != P.Structures.end();
+    if (!PageInPlan) {
+        initRBMM();
+    }
 
     // Emit type declarations
     for (const auto &[name, Struct] : P.Structures) {
@@ -3342,6 +3586,20 @@ llvm::Expected<uint64_t> Emitter::jitExecuteRaw(const Plan &P, llvm::Type *Expec
         }
         if (Struct.Deinitializer) {
             emitDeInitializerDecl(Struct, *Struct.Deinitializer);
+        }
+    }
+
+    // If Page is in the Plan, set up the RBMM function pointers from the emitted declarations
+    if (PageInPlan) {
+        // Declare C runtime functions needed by Page.scaly
+        declareRuntimeFunctions();
+
+        PageAllocatePage = FunctionCache["_ZN4Page13allocate_pageEv"];
+        PageAllocate = FunctionCache["_ZN4Page8allocateEyy"];
+        PageDeallocateExtensions = FunctionCache["_ZN4Page21deallocate_extensionsEv"];
+        // Also set up PageType from StructCache (using mangled name)
+        if (auto It = StructCache.find("_Z4Page"); It != StructCache.end()) {
+            PageType = It->second;
         }
     }
 
@@ -3445,6 +3703,15 @@ llvm::Expected<uint64_t> Emitter::jitExecuteRaw(const Plan &P, llvm::Type *Expec
         return JITOrErr.takeError();
 
     auto &JIT = *JITOrErr;
+
+    // Add process symbol generator to resolve external functions like aligned_alloc, free, exit
+    auto &MainJD = JIT->getMainJITDylib();
+    auto ProcessSymbolsGenerator = llvm::orc::DynamicLibrarySearchGenerator::GetForCurrentProcess(
+        JIT->getDataLayout().getGlobalPrefix());
+    if (!ProcessSymbolsGenerator) {
+        return ProcessSymbolsGenerator.takeError();
+    }
+    MainJD.addGenerator(std::move(*ProcessSymbolsGenerator));
 
     // Add module to JIT
     auto TSM = llvm::orc::ThreadSafeModule(std::move(Module), std::move(Context));

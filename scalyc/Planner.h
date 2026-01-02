@@ -37,6 +37,11 @@ private:
     std::map<std::string, std::vector<const Function*>> Functions;
     std::map<std::string, std::vector<const Operator*>> Operators;
 
+    // Built-in runtime functions for RBMM (aligned_alloc, free, exit)
+    std::vector<std::unique_ptr<Function>> BuiltinFunctions;
+    bool RuntimeFunctionsRegistered = false;
+    void registerRuntimeFunctions();
+
     // Module context for cross-module resolution
     std::vector<const Module*> ModuleStack;
 
