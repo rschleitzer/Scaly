@@ -3,9 +3,11 @@ define PageList
     head: pointer[PageNode] (null)
 )
 {
-    procedure add^rp(this: PageList, element: pointer[Page])
+    ; rp is the region page to allocate the new PageNode from
+    ; TODO: use rp for region-based allocation when RBMM is implemented
+    procedure add(this: PageList, rp: pointer[Page], element: pointer[Page])
     {
-        let new_node PageNode^rp(element, head)
+        let new_node PageNode(element, head)
         set head: new_node
     }
 
@@ -13,11 +15,11 @@ define PageList
     {
         var node head
         var previous_node: pointer[PageNode] null
-        while node <> nullptr
+        while node <> null
         {
             if (*node).page = element
             {
-                if previous_node <> nullptr
+                if previous_node <> null
                     set (*previous_node).next: (*node).next
                 if node = head
                     set head: null

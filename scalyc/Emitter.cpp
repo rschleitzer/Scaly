@@ -657,7 +657,9 @@ llvm::Error Emitter::emitFunctionBody(const PlannedFunction &Func,
     };
 
     // Add return if block doesn't end with terminator
-    if (!CurrentBlock->getTerminator()) {
+    // Use Builder->GetInsertBlock() to get the current block after control flow
+    llvm::BasicBlock *FinalBlock = Builder->GetInsertBlock();
+    if (!FinalBlock->getTerminator()) {
         CleanupLocalPage();
         if (LLVMFunc->getReturnType()->isVoidTy()) {
             Builder->CreateRetVoid();
@@ -787,7 +789,8 @@ llvm::Error Emitter::emitInitializerBody(const PlannedStructure &Struct,
     }
 
     // Add return void if block doesn't end with terminator
-    if (!CurrentBlock->getTerminator()) {
+    // Use Builder->GetInsertBlock() to get the current block after control flow
+    if (!Builder->GetInsertBlock()->getTerminator()) {
         Builder->CreateRetVoid();
     }
 
@@ -863,7 +866,8 @@ llvm::Error Emitter::emitDeInitializerBody(const PlannedStructure &Struct,
     }
 
     // Add return void if block doesn't end with terminator
-    if (!CurrentBlock->getTerminator()) {
+    // Use Builder->GetInsertBlock() to get the current block after control flow
+    if (!Builder->GetInsertBlock()->getTerminator()) {
         Builder->CreateRetVoid();
     }
 
@@ -1621,6 +1625,36 @@ llvm::Expected<llvm::Value*> Emitter::emitIntrinsicOp(
     // Check if dealing with unsigned types
     if (ResultType.Name.find('u') == 0) {  // u8, u16, u32, u64
         IsSigned = false;
+    }
+
+    // Pointer arithmetic: pointer + int, pointer - int
+    bool LeftIsPtr = Left->getType()->isPointerTy();
+    bool RightIsInt = Right->getType()->isIntegerTy();
+
+    if (LeftIsPtr && RightIsInt) {
+        if (OpName == "+") {
+            // pointer + int: use GEP to offset by N elements
+            // Get the element type from the result type
+            llvm::Type *ElemTy = llvm::Type::getInt8Ty(*Context);  // Default to byte offset
+            if (ResultType.Name == "pointer" && !ResultType.Generics.empty()) {
+                ElemTy = mapType(ResultType.Generics[0]);
+            }
+            return Builder->CreateGEP(ElemTy, Left, Right, "ptr.add");
+        }
+        if (OpName == "-") {
+            // pointer - int: negate and use GEP
+            llvm::Type *ElemTy = llvm::Type::getInt8Ty(*Context);
+            if (ResultType.Name == "pointer" && !ResultType.Generics.empty()) {
+                ElemTy = mapType(ResultType.Generics[0]);
+            }
+            llvm::Value *NegOffset = Builder->CreateNeg(Right, "neg");
+            return Builder->CreateGEP(ElemTy, Left, NegOffset, "ptr.sub");
+        }
+    }
+
+    // Pointer difference: pointer - pointer
+    if (LeftIsPtr && Right->getType()->isPointerTy() && OpName == "-") {
+        return Builder->CreatePtrDiff(llvm::Type::getInt8Ty(*Context), Left, Right, "ptr.diff");
     }
 
     // Arithmetic operators

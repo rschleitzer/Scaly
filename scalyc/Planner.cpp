@@ -241,6 +241,11 @@ std::string Planner::encodeType(const PlannedType &Type) {
         return "R" + encodeType(Inner);
     }
 
+    // Scaly pointer[T] types → P + encoded(T)
+    if (Type.Name == "pointer" && Type.Generics.size() == 1) {
+        return "P" + encodeType(Type.Generics[0]);
+    }
+
     // Generic types: List[int] → I4ListIiEE
     if (!Type.Generics.empty()) {
         std::string Result = "I" + encodeName(Type.Name);
@@ -292,14 +297,19 @@ std::string Planner::mangleFunction(llvm::StringRef Name,
     }
 
     // Parameter types
-    if (Params.empty()) {
-        Result += "v";  // void parameters
-    } else {
-        for (const auto &Param : Params) {
-            if (Param.ItemType) {
-                Result += encodeType(*Param.ItemType);
-            }
+    // Skip 'this' parameter for methods - Itanium ABI treats it as implicit
+    bool HasExplicitParams = false;
+    for (const auto &Param : Params) {
+        if (Param.Name && *Param.Name == "this") {
+            continue;  // Skip 'this' in mangled name
         }
+        if (Param.ItemType) {
+            Result += encodeType(*Param.ItemType);
+            HasExplicitParams = true;
+        }
+    }
+    if (!HasExplicitParams) {
+        Result += "v";  // void parameters
     }
 
     return Result;
@@ -873,6 +883,122 @@ std::optional<Planner::OperatorMatch> Planner::findOperator(
         }
     }
 
+    // Pointer arithmetic: pointer[T] +/- int, pointer[T] - pointer[T]
+    // Also handle struct types used in pointer arithmetic (like 'this + 1')
+    // Struct types passed by pointer can participate in pointer arithmetic
+    bool IsPointerType = (Left.Name == "pointer" && !Left.Generics.empty());
+    bool IsStructType = (!Left.Name.empty() && Left.Name != "pointer" &&
+                         Left.Name != "i64" && Left.Name != "i32" &&
+                         Left.Name != "i16" && Left.Name != "i8" &&
+                         Left.Name != "u64" && Left.Name != "u32" &&
+                         Left.Name != "u16" && Left.Name != "u8" &&
+                         Left.Name != "f64" && Left.Name != "f32" &&
+                         Left.Name != "bool" && Left.Name != "int" &&
+                         Left.Name != "float" && Left.Name != "double" &&
+                         Left.Name != "size_t" && Left.Name != "char" &&
+                         Left.Name != "void");
+    bool IsIntegerType = (Right.Name == "i64" || Right.Name == "i32" ||
+                          Right.Name == "i16" || Right.Name == "i8" ||
+                          Right.Name == "u64" || Right.Name == "u32" ||
+                          Right.Name == "u16" || Right.Name == "u8" ||
+                          Right.Name == "int" || Right.Name == "size_t");
+
+    if (IsPointerType && IsIntegerType) {
+        std::string OpName = Name.str();
+        if (OpName == "+" || OpName == "-") {
+            OperatorMatch Match;
+            Match.Op = nullptr;
+            Match.IsIntrinsic = true;
+            Match.ResultType = Left;  // Result is same pointer type
+
+            // Generate mangled name
+            std::vector<PlannedItem> ParamItems;
+            PlannedItem LeftItem;
+            LeftItem.ItemType = std::make_shared<PlannedType>(Left);
+            ParamItems.push_back(LeftItem);
+            PlannedItem RightItem;
+            RightItem.ItemType = std::make_shared<PlannedType>(Right);
+            ParamItems.push_back(RightItem);
+            Match.MangledName = mangleOperator(Name, ParamItems);
+
+            return Match;
+        }
+    }
+
+    // Pointer difference: pointer[T] - pointer[T] = size_t
+    if (IsPointerType && Right.Name == "pointer" && !Right.Generics.empty()) {
+        std::string OpName = Name.str();
+        if (OpName == "-" && typesEqual(Left, Right)) {
+            OperatorMatch Match;
+            Match.Op = nullptr;
+            Match.IsIntrinsic = true;
+            Match.ResultType.Name = "size_t";
+            Match.ResultType.MangledName = "y";  // size_t mangling
+
+            std::vector<PlannedItem> ParamItems;
+            PlannedItem LeftItem;
+            LeftItem.ItemType = std::make_shared<PlannedType>(Left);
+            ParamItems.push_back(LeftItem);
+            PlannedItem RightItem;
+            RightItem.ItemType = std::make_shared<PlannedType>(Right);
+            ParamItems.push_back(RightItem);
+            Match.MangledName = mangleOperator(Name, ParamItems);
+
+            return Match;
+        }
+    }
+
+    // Pointer comparison: pointer[T] == pointer[T] returns bool
+    if (IsPointerType && Right.Name == "pointer") {
+        std::string OpName = Name.str();
+        if (OpName == "=" || OpName == "==" || OpName == "<>" || OpName == "!=") {
+            OperatorMatch Match;
+            Match.Op = nullptr;
+            Match.IsIntrinsic = true;
+            Match.ResultType.Name = "bool";
+            Match.ResultType.MangledName = "b";
+
+            std::vector<PlannedItem> ParamItems;
+            PlannedItem LeftItem;
+            LeftItem.ItemType = std::make_shared<PlannedType>(Left);
+            ParamItems.push_back(LeftItem);
+            PlannedItem RightItem;
+            RightItem.ItemType = std::make_shared<PlannedType>(Right);
+            ParamItems.push_back(RightItem);
+            Match.MangledName = mangleOperator(Name, ParamItems);
+
+            return Match;
+        }
+    }
+
+    // Struct type + int: allows 'this + 1' pattern where 'this' is passed by pointer
+    // The result is pointer[StructType]
+    if (IsStructType && IsIntegerType) {
+        std::string OpName = Name.str();
+        if (OpName == "+" || OpName == "-") {
+            OperatorMatch Match;
+            Match.Op = nullptr;
+            Match.IsIntrinsic = true;
+
+            // Result type is pointer to the struct
+            Match.ResultType.Loc = Left.Loc;
+            Match.ResultType.Name = "pointer";
+            Match.ResultType.Generics.push_back(Left);
+            Match.ResultType.MangledName = "P" + Left.MangledName;
+
+            std::vector<PlannedItem> ParamItems;
+            PlannedItem LeftItem;
+            LeftItem.ItemType = std::make_shared<PlannedType>(Left);
+            ParamItems.push_back(LeftItem);
+            PlannedItem RightItem;
+            RightItem.ItemType = std::make_shared<PlannedType>(Right);
+            ParamItems.push_back(RightItem);
+            Match.MangledName = mangleOperator(Name, ParamItems);
+
+            return Match;
+        }
+    }
+
     return std::nullopt;
 }
 
@@ -1185,6 +1311,16 @@ llvm::Expected<PlannedType> Planner::resolveOperatorCall(
              Left.Name == "bool" || Left.Name == "char") &&
             (IntTypes.count(Right.Name) || FloatTypes.count(Right.Name) ||
              Right.Name == "bool" || Right.Name == "char")) {
+            PlannedType Result;
+            Result.Loc = Loc;
+            Result.Name = "bool";
+            Result.MangledName = "b";
+            return Result;
+        }
+
+        // Allow pointer comparison (equality/inequality only)
+        if ((Left.Name == "pointer" && Right.Name == "pointer") &&
+            (Name == "=" || Name == "==" || Name == "<>" || Name == "!=")) {
             PlannedType Result;
             Result.Loc = Loc;
             Result.Name = "bool";
@@ -1569,6 +1705,9 @@ llvm::Expected<PlannedOperand> Planner::collapseOperandSequence(
                         if (RetType) {
                             Call.ResultType = std::move(*RetType);
                         }
+                    } else if (!OpMatch->ResultType.Name.empty()) {
+                        // Intrinsic operator with explicit result type (e.g., pointer arithmetic)
+                        Call.ResultType = OpMatch->ResultType;
                     } else if (OpMatch->IsIntrinsic) {
                         // Intrinsic operator: determine result type from operation
                         static const std::set<std::string> ComparisonOps = {"=", "<>", "<", ">", "<=", ">="};
@@ -1876,6 +2015,12 @@ PlannedType Planner::inferConstantType(const Constant &C) {
         else if constexpr (std::is_same_v<T, NullConstant>) {
             Result.Loc = Val.Loc;
             Result.Name = "pointer";  // Generic null pointer
+            // null can be any pointer type - use void* representation
+            // The constraint solver will unify this with the expected pointer type
+            PlannedType VoidType;
+            VoidType.Name = "void";
+            VoidType.MangledName = "v";
+            Result.Generics.push_back(VoidType);
             Result.MangledName = "Pv";  // pointer to void
         }
     }, C);
@@ -2238,6 +2383,11 @@ llvm::Expected<PlannedType> Planner::resolveType(const Type &T, Span Instantiati
         // pointer[T] - Itanium ABI uses P prefix
         Result.MangledName = "P" + Result.Generics[0].MangledName;
         return Result;
+    }
+
+    // Handle pointer without generics - this is an error
+    if (Name == "pointer" && Result.Generics.empty()) {
+        return makeGenericArityError(File, T.Loc, Name, 1, 0);
     }
 
     // Check if this type refers to a generic Concept that needs instantiation
@@ -3203,6 +3353,7 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                         if (NeedsImplicitThis) {
                             // Add 'this' type for mangling
                             PlannedItem ThisItem;
+                            ThisItem.Name = std::make_shared<std::string>("this");
                             std::string BaseName = CurrentStructureName;
                             size_t DotPos = BaseName.find('.');
                             if (DotPos != std::string::npos) {
@@ -3637,7 +3788,12 @@ llvm::Expected<PlannedStatement> Planner::planStatement(const Statement &Stmt) {
                 if (!PlannedResult) {
                     return PlannedResult.takeError();
                 }
-                PR.Result = std::move(*PlannedResult);
+                // Collapse operand sequence to create PlannedCall for operators
+                auto CollapsedResult = collapseOperandSequence(std::move(*PlannedResult));
+                if (!CollapsedResult) {
+                    return CollapsedResult.takeError();
+                }
+                PR.Result.push_back(std::move(*CollapsedResult));
             }
             return PlannedStatement(std::move(PR));
         }
@@ -5085,6 +5241,12 @@ llvm::Expected<Substitution> unify(const TypeOrVariable &Left,
 
     // Case 4: Both are concrete types
     if (LeftType && RightType) {
+        // Special case: void unifies with anything (for null pointer compatibility)
+        // This allows pointer[void] (null) to unify with pointer[T] for any T
+        if (LeftType->Name == "void" || RightType->Name == "void") {
+            return Substitution{};
+        }
+
         // Names must match
         if (LeftType->Name != RightType->Name) {
             return makeTypeMismatchError(File, Loc, LeftType->Name, RightType->Name);
