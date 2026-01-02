@@ -222,6 +222,8 @@ private:
                                                    const PlannedType &UnionType,
                                                    const PlannedIs &Is);
     llvm::Expected<llvm::Value*> emitMatrix(const PlannedMatrix &Matrix);
+    llvm::Expected<llvm::Value*> emitVariantConstruction(
+        const PlannedVariantConstruction &Construct);
 
     // ========================================================================
     // Memory/Region Management

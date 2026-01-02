@@ -2045,8 +2045,6 @@ static bool testThrowInFunction() {
 }
 
 // Choose expression tests
-// Note: Using throw to create union error variants since variant construction
-// (e.g., Option.Some(42)) isn't fully implemented yet
 
 static bool testChooseMatchesError() {
     const char* Name = "Pipeline: choose matches error variant";
@@ -2941,6 +2939,122 @@ static bool testIsExpressionNotMatching() {
     return true;
 }
 
+// ============================================================================
+// Variant Construction Tests
+// ============================================================================
+
+static bool testVariantConstructionOk() {
+    const char* Name = "Pipeline: variant construction Ok";
+
+    // Construct Result.Ok(42) and extract value via choose
+    auto ResultOrErr = evalInt(
+        "define Result union: (Ok: int, Error: int)\n"
+        "choose Result.Ok(42): when x: Ok: x else 0"
+    );
+
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // Should get 42 from the Ok variant
+    if (*ResultOrErr != 42) {
+        std::string Msg = "expected 42, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testVariantConstructionError() {
+    const char* Name = "Pipeline: variant construction Error";
+
+    // Construct Result.Error(100) and extract value via choose
+    auto ResultOrErr = evalInt(
+        "define Result union: (Ok: int, Error: int)\n"
+        "choose Result.Error(100): when e: Error: e else 0"
+    );
+
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // Should get 100 from the Error variant
+    if (*ResultOrErr != 100) {
+        std::string Msg = "expected 100, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testVariantConstructionWithIs() {
+    const char* Name = "Pipeline: variant construction with is";
+
+    // Construct Result.Ok(50) and test with 'is Ok'
+    auto ResultOrErr = evalInt(
+        "define Result union: (Ok: int, Error: int)\n"
+        "if Result.Ok(50) is Ok : 1 else 0"
+    );
+
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // Should be true (1) since it's an Ok variant
+    if (*ResultOrErr != 1) {
+        std::string Msg = "expected 1, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testVariantConstructionIsNotMatch() {
+    const char* Name = "Pipeline: variant construction is not match";
+
+    // Construct Result.Error(33) and test with 'is Ok' (should not match)
+    auto ResultOrErr = evalInt(
+        "define Result union: (Ok: int, Error: int)\n"
+        "if Result.Error(33) is Ok : 1 else 0"
+    );
+
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // Should be false (0) since it's an Error variant, not Ok
+    if (*ResultOrErr != 0) {
+        std::string Msg = "expected 0, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
 bool runEmitterTests() {
     llvm::outs() << "Running Emitter tests...\n";
     llvm::outs().flush();
@@ -3074,6 +3188,13 @@ bool runEmitterTests() {
     testIsExpressionNoMatchOk();
     testIsExpressionWithIf();
     testIsExpressionNotMatching();
+
+    // Variant construction
+    llvm::outs() << "  Variant construction tests:\n";
+    testVariantConstructionOk();
+    testVariantConstructionError();
+    testVariantConstructionWithIs();
+    testVariantConstructionIsNotMatch();
 
     // SizeOf expressions
     llvm::outs() << "  SizeOf expression tests:\n";
