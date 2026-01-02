@@ -1636,6 +1636,23 @@ llvm::Expected<PlannedOperand> Planner::collapseOperandSequence(
             continue;
         }
 
+        // Handle 'as' expression: value as TargetType
+        if (auto* AsExpr = std::get_if<PlannedAs>(&Ops[I].Expr)) {
+            // The 'as' expression casts the left operand to the target type
+            PlannedAs NewAs = *AsExpr;
+            NewAs.Value = std::make_shared<PlannedOperand>(std::move(Left));
+
+            // Create new left operand with the as expression
+            PlannedOperand NewLeft;
+            NewLeft.Loc = Ops[I].Loc;
+            NewLeft.ResultType = NewAs.TargetType;  // Result type is the cast target
+            NewLeft.Expr = std::move(NewAs);
+
+            Left = std::move(NewLeft);
+            I++;
+            continue;
+        }
+
         // Non-operator: use as new left
         Left = std::move(Ops[I]);
         I++;
@@ -2081,6 +2098,10 @@ llvm::Expected<PlannedType> Planner::inferExpressionType(const PlannedExpression
             BoolType.Name = "bool";
             BoolType.MangledName = "b";
             return BoolType;
+        }
+        else if constexpr (std::is_same_v<T, PlannedAs>) {
+            // 'as' returns the target type
+            return E.TargetType;
         }
         else {
             // Fallback
@@ -2658,7 +2679,22 @@ llvm::Expected<PlannedOperand> Planner::planOperand(const Operand &Op) {
         // This should become "this.x"
         else if (TypeExpr->Name.size() == 1 && (!TypeExpr->Generics || TypeExpr->Generics->empty())) {
             const std::string& Name = TypeExpr->Name[0];
-            if (CurrentStructureProperties) {
+
+            // Check if this is a global constant
+            auto GlobalIt = PlannedGlobals.find(Name);
+            if (GlobalIt != PlannedGlobals.end()) {
+                // Return the global's first value operand directly
+                const auto& GlobalValue = GlobalIt->second.Value;
+                if (!GlobalValue.empty() && GlobalValue.size() == 1) {
+                    // Return a copy of the global's operand
+                    PlannedOperand ResultOp;
+                    ResultOp.Loc = Op.Loc;
+                    ResultOp.Expr = GlobalValue[0].Expr;
+                    ResultOp.ResultType = GlobalIt->second.GlobalType;
+                    return ResultOp;
+                }
+            }
+            else if (CurrentStructureProperties) {
                 auto ThisType = lookupLocal("this");
                 if (ThisType && ThisType->Name == CurrentStructureName) {
                     for (const auto &Prop : *CurrentStructureProperties) {
@@ -3133,22 +3169,31 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             return FuncResult.takeError();
                         }
 
-                        // Check if this is a method call with implicit 'this'
-                        // This happens when we call a sibling method like allocate_oversized(size)
-                        // from within another method of the same struct
+                        // Check if this is a method call (with or without implicit 'this')
+                        // This happens when we call a sibling method from within the same struct
                         bool NeedsImplicitThis = false;
+                        bool IsSiblingMethod = false;
                         const Function* MatchedFunc = nullptr;
                         if (!CurrentStructureName.empty()) {
                             auto Candidates = lookupFunction(FuncName);
                             for (const Function* Func : Candidates) {
+                                // Check if this function takes 'this' as first param
                                 if (Func->Parameters.empty() &&
                                     !Func->Input.empty() &&
                                     Func->Input[0].Name &&
                                     *Func->Input[0].Name == "this" &&
                                     Func->Input.size() == ArgTypes.size() + 1) {
                                     NeedsImplicitThis = true;
+                                    IsSiblingMethod = true;
                                     MatchedFunc = Func;
                                     break;
+                                }
+                                // Check if this is a static method (no 'this', but still a sibling)
+                                else if (Func->Parameters.empty() &&
+                                         Func->Input.size() == ArgTypes.size()) {
+                                    IsSiblingMethod = true;
+                                    MatchedFunc = Func;
+                                    // Don't break - prefer 'this' variant if it exists
                                 }
                             }
                         }
@@ -3175,9 +3220,30 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             ParamItems.push_back(Item);
                         }
 
-                        // Generate mangled name - if it's a method, use parent type
+                        // Generate mangled name - if it's a sibling method, use parent type
+                        // For extern functions, use the unmangled C name
                         std::string MangledName;
-                        if (NeedsImplicitThis) {
+
+                        // Check if this is an extern function (should use unmangled name)
+                        bool IsExtern = false;
+                        if (MatchedFunc && std::holds_alternative<ExternImpl>(MatchedFunc->Impl)) {
+                            IsExtern = true;
+                        } else if (!IsSiblingMethod) {
+                            // Check top-level functions for extern
+                            auto Candidates = lookupFunction(FuncName);
+                            for (const Function* Func : Candidates) {
+                                if (Func->Input.size() == ArgTypes.size() &&
+                                    std::holds_alternative<ExternImpl>(Func->Impl)) {
+                                    IsExtern = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (IsExtern) {
+                            // Extern C functions use unmangled name
+                            MangledName = FuncName;
+                        } else if (IsSiblingMethod) {
                             std::string BaseName = CurrentStructureName;
                             size_t DotPos = BaseName.find('.');
                             if (DotPos != std::string::npos) {
@@ -3418,6 +3484,18 @@ llvm::Expected<PlannedExpression> Planner::planExpression(const Expression &Expr
             }
             PI.TestType = std::move(*Resolved);
             return PlannedExpression(std::move(PI));
+        }
+        else if constexpr (std::is_same_v<T, As>) {
+            PlannedAs PA;
+            PA.Loc = E.Loc;
+            // Resolve the target type
+            auto Resolved = resolveType(E.TargetType, E.Loc);
+            if (!Resolved) {
+                return Resolved.takeError();
+            }
+            PA.TargetType = std::move(*Resolved);
+            // Note: Value will be populated later when combining with context
+            return PlannedExpression(std::move(PA));
         }
         else {
             // Shouldn't reach here
@@ -4196,7 +4274,12 @@ llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
     popScope();
 
     // Generate mangled name
-    Result.MangledName = mangleFunction(Func.Name, Result.Input, Parent);
+    // For extern functions, use the unmangled C name for linking
+    if (std::holds_alternative<PlannedExternImpl>(Result.Impl)) {
+        Result.MangledName = Func.Name;
+    } else {
+        Result.MangledName = mangleFunction(Func.Name, Result.Input, Parent);
+    }
 
     return Result;
 }
@@ -4690,8 +4773,41 @@ llvm::Expected<PlannedConcept> Planner::planConcept(const Concept &Conc) {
             }
             return *Resolved;
         }
+        else if constexpr (std::is_same_v<T, Global>) {
+            // Global constant - plan the type and value
+            PlannedGlobal PG;
+            PG.Loc = Conc.Loc;
+            PG.Name = Conc.Name;
+            PG.MangledName = encodeName(Conc.Name);
+
+            // Resolve the global's type
+            auto ResolvedType = resolveType(Def.GlobalType, Def.Loc);
+            if (!ResolvedType) {
+                return ResolvedType.takeError();
+            }
+            PG.GlobalType = std::move(*ResolvedType);
+
+            // Plan the value operands
+            for (const auto &Op : Def.Value) {
+                auto PlannedOp = planOperand(Op);
+                if (!PlannedOp) {
+                    return PlannedOp.takeError();
+                }
+                PG.Value.push_back(std::move(*PlannedOp));
+            }
+
+            return PG;
+        }
+        else if constexpr (std::is_same_v<T, IntrinsicImpl>) {
+            // Intrinsic implementation - not directly planned
+            PlannedGlobal PG;
+            PG.Loc = Conc.Loc;
+            PG.Name = Conc.Name;
+            PG.MangledName = encodeName(Conc.Name);
+            return PG;
+        }
         else {
-            // Global or other
+            // Should not happen - all Definition variants handled
             PlannedGlobal PG;
             PG.Loc = Conc.Loc;
             PG.Name = Conc.Name;
@@ -4702,6 +4818,11 @@ llvm::Expected<PlannedConcept> Planner::planConcept(const Concept &Conc) {
 
     if (!DefinitionResult) {
         return DefinitionResult.takeError();
+    }
+
+    // Cache globals for lookup during expression planning
+    if (std::holds_alternative<PlannedGlobal>(*DefinitionResult)) {
+        PlannedGlobals[Conc.Name] = std::get<PlannedGlobal>(*DefinitionResult);
     }
 
     Result.Definition = std::move(*DefinitionResult);

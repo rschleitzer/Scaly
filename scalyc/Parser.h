@@ -152,6 +152,7 @@ private:
     llvm::Expected<SetSyntax> parseSet();
     llvm::Expected<SizeOfSyntax> parseSizeOf();
     llvm::Expected<IsSyntax> parseIs();
+    llvm::Expected<AsSyntax> parseAs();
     llvm::Expected<std::vector<TypeSyntax>*> parseTypeList();
     llvm::Expected<TypeSyntax> parseType();
     llvm::Expected<NameSyntax> parseName();

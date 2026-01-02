@@ -23,6 +23,7 @@ Parser::Parser(llvm::StringRef Source) : Lex(Source) {
 }
 
 void Parser::initKeywords() {
+    Keywords.insert("as");
     Keywords.insert("break");
     Keywords.insert("case");
     Keywords.insert("choose");
@@ -1839,6 +1840,12 @@ llvm::Expected<ExpressionSyntax> Parser::parseExpression() {
             return ExpressionSyntax{std::move(*Result)};
         llvm::consumeError(Result.takeError());
     }
+    {
+        auto Result = parseAs();
+        if (Result)
+            return ExpressionSyntax{std::move(*Result)};
+        llvm::consumeError(Result.takeError());
+    }
     return different();
 
 }
@@ -3105,6 +3112,23 @@ llvm::Expected<IsSyntax> Parser::parseIs() {
     size_t End = Lex.position();
 
     return IsSyntax{Start, End, Name};
+
+}
+
+llvm::Expected<AsSyntax> Parser::parseAs() {
+    size_t Start = Lex.previousPosition();
+
+    if (!Lex.parseKeyword("as"))
+        return different();
+
+    auto TypeOrErr = parseType();
+    if (!TypeOrErr)
+        return invalid(Start, Lex.position(), "expected Type");
+    auto Type = std::move(*TypeOrErr);
+
+    size_t End = Lex.position();
+
+    return AsSyntax{Start, End, Type};
 
 }
 

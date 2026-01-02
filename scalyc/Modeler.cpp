@@ -227,6 +227,11 @@ llvm::Expected<Expression> Modeler::handleExpression(
             if (!IsResult)
                 return IsResult.takeError();
             return std::move(*IsResult);
+        } else if constexpr (std::is_same_v<T, AsSyntax>) {
+            auto AsResult = handleAs(E);
+            if (!AsResult)
+                return AsResult.takeError();
+            return std::move(*AsResult);
         } else if constexpr (std::is_same_v<T, LambdaSyntax>) {
             return makeNotImplementedError(File, "Lambda",
                                            Span{E.Start, E.End});
@@ -738,6 +743,13 @@ llvm::Expected<Is> Modeler::handleIs(const IsSyntax &Syntax) {
         }
     }
     return Is{Span{Syntax.Start, Syntax.End}, std::move(Name)};
+}
+
+llvm::Expected<As> Modeler::handleAs(const AsSyntax &Syntax) {
+    auto TypeResult = handleType(Syntax.type);
+    if (!TypeResult)
+        return TypeResult.takeError();
+    return As{Span{Syntax.Start, Syntax.End}, std::move(**TypeResult)};
 }
 
 // Action handling

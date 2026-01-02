@@ -328,6 +328,7 @@
     <content link = Repeat
     <content link = SizeOf
     <content link = Is
+    <content link = As
 
 <syntax id = Literal
     <content literal                                        property = literal
@@ -569,6 +570,10 @@
     <content link = is
     <content link = Name                                    property = name
 
+<syntax id = As
+    <content link = as
+    <content link = Type                                    property = type
+
 <syntax id = Type                        multiple
     <content link = Name                                    property = name
     <content link = GenericArguments               optional property = generics
@@ -602,6 +607,7 @@
 <syntax id = Thrown
     <content link = exclamation
 
+<keyword id = as
 <keyword id = break
 <keyword id = case
 <keyword id = choose

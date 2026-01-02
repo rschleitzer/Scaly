@@ -316,6 +316,12 @@ struct New {
     Tuple Arguments;
 };
 
+// As expression for type casting: value as Type
+struct As {
+    Span Loc;
+    Type TargetType;
+};
+
 // Expression is the main expression type
 using Expression = std::variant<
     Constant,
@@ -331,6 +337,7 @@ using Expression = std::variant<
     Try,
     SizeOf,
     Is,
+    As,
     New
 >;
 

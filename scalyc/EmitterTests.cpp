@@ -3050,6 +3050,67 @@ static bool testPipelineFunctionCallWithExpression() {
 }
 
 // ============================================================================
+// RBMM Tests (Region-Based Memory Management)
+// ============================================================================
+
+static bool testRBMMLocalLifetime() {
+    const char* Name = "Pipeline: RBMM local lifetime ($) return type";
+
+    // Function with $ lifetime annotation on return type
+    // This should trigger local page allocation in the function prologue
+    auto ResultOrErr = evalInt(
+        "function make_value() returns int$ {\n"
+        "    42\n"
+        "}\n"
+        "make_value()"
+    );
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 42) {
+        std::string Msg = "expected 42, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testRBMMLocalLifetimeWithArgs() {
+    const char* Name = "Pipeline: RBMM local lifetime ($) with args";
+
+    // Function with $ lifetime that takes arguments
+    auto ResultOrErr = evalInt(
+        "function add_local(a: int, b: int) returns int$ {\n"
+        "    a + b\n"
+        "}\n"
+        "add_local(10, 32)"
+    );
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 42) {
+        std::string Msg = "expected 42, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+// ============================================================================
 // Is Expression Tests
 // ============================================================================
 
@@ -3480,6 +3541,10 @@ bool runEmitterTests() {
     testPipelineFunctionCallWithArgs();
     testPipelineFunctionCallChained();
     testPipelineFunctionCallWithExpression();
+
+    llvm::outs() << "  RBMM tests:\n";
+    testRBMMLocalLifetime();
+    testRBMMLocalLifetimeWithArgs();
 
     llvm::outs() << "\nEmitter tests: " << TestsPassed << " passed, "
                  << TestsFailed << " failed\n";

@@ -126,16 +126,8 @@ void Emitter::initRBMM() {
     auto *PageListType = llvm::StructType::create(*Context, {PtrTy, PtrTy}, "PageList");
     PageType->setBody({PtrTy, PtrTy, PtrTy, PageListType});
 
-    // Declare aligned_alloc(size_t align, size_t size) -> ptr
-    // Note: C11 aligned_alloc has (size, align) order, but we match stdlib convention
-    auto *AlignedAllocTy = llvm::FunctionType::get(PtrTy, {I64Ty, I64Ty}, false);
-    AlignedAlloc = llvm::Function::Create(
-        AlignedAllocTy, llvm::GlobalValue::ExternalLinkage, "aligned_alloc", *Module);
-
-    // Declare free(ptr) -> void
-    auto *FreeTy = llvm::FunctionType::get(VoidTy, {PtrTy}, false);
-    Free = llvm::Function::Create(
-        FreeTy, llvm::GlobalValue::ExternalLinkage, "free", *Module);
+    // Note: aligned_alloc and free are now declared as 'extern' in Scaly source code
+    // They will be emitted when the extern function declarations are processed
 
     // Declare Page_allocate_page() -> ptr
     // This is the static function that allocates a new page
@@ -657,7 +649,10 @@ llvm::Error Emitter::emitFunctionBody(const PlannedFunction &Func,
     auto CleanupLocalPage = [this]() {
         if (CurrentRegion.LocalPage) {
             Builder->CreateCall(PageDeallocateExtensions, {CurrentRegion.LocalPage});
-            Builder->CreateCall(Free, {CurrentRegion.LocalPage});
+            // Look up 'free' from the module (declared via extern in source)
+            if (auto *FreeFn = Module->getFunction("free")) {
+                Builder->CreateCall(FreeFn, {CurrentRegion.LocalPage});
+            }
         }
     };
 
@@ -991,6 +986,88 @@ llvm::Expected<llvm::Value*> Emitter::emitAction(const PlannedAction &Action) {
                 // Store the value to the variable
                 Builder->CreateStore(Value, VarPtr);
             }
+        } else if (auto *Tuple = std::get_if<PlannedTuple>(&TargetOp.Expr)) {
+            // Handle dereferenced pointer assignment like (*ptr).field = value
+            // The tuple contains the dereference expression
+            if (Tuple->Components.size() == 1 && !Tuple->Components[0].Name) {
+                // This is a grouped expression like (*ptr)
+                if (!Tuple->Components[0].Value.empty()) {
+                    const auto& InnerOp = Tuple->Components[0].Value.back();
+
+                    // Check if this is a dereference call (*ptr)
+                    // In that case, we need to get the pointer, not the dereferenced value
+                    llvm::Value *Ptr = nullptr;
+                    PlannedType PointedType;
+
+                    if (auto *Call = std::get_if<PlannedCall>(&InnerOp.Expr)) {
+                        if (Call->Name == "*" && Call->Args && Call->Args->size() == 1) {
+                            // This is a dereference - emit the argument to get the pointer
+                            auto PtrOrErr = emitOperand((*Call->Args)[0]);
+                            if (!PtrOrErr)
+                                return PtrOrErr.takeError();
+                            Ptr = *PtrOrErr;
+                            // The result type of the dereference is the pointed-to type
+                            PointedType = InnerOp.ResultType;
+                        }
+                    }
+
+                    if (!Ptr) {
+                        // Not a dereference call, emit normally
+                        auto InnerOrErr = emitOperand(InnerOp);
+                        if (!InnerOrErr)
+                            return InnerOrErr.takeError();
+                        Ptr = *InnerOrErr;
+                        PointedType = InnerOp.ResultType;
+                    }
+
+                    // The inner result should be a pointer to the struct
+                    if (!Ptr->getType()->isPointerTy()) {
+                        return llvm::make_error<llvm::StringError>(
+                            "Dereference target is not a pointer",
+                            llvm::inconvertibleErrorCode()
+                        );
+                    }
+
+                    // Get the struct type from the pointed-to type
+                    llvm::Type *StructType = nullptr;
+                    auto TypeIt = StructCache.find(PointedType.MangledName);
+                    if (TypeIt == StructCache.end()) {
+                        TypeIt = StructCache.find(PointedType.Name);
+                    }
+                    if (TypeIt != StructCache.end()) {
+                        StructType = TypeIt->second;
+                    }
+
+                    if (!StructType) {
+                        return llvm::make_error<llvm::StringError>(
+                            "Cannot determine struct type for dereference assignment",
+                            llvm::inconvertibleErrorCode()
+                        );
+                    }
+
+                    // Navigate through member access chain if present
+                    llvm::Value *CurrentPtr = Ptr;
+                    llvm::Type *CurrentType = StructType;
+
+                    if (TargetOp.MemberAccess && !TargetOp.MemberAccess->empty()) {
+                        for (const auto &Member : *TargetOp.MemberAccess) {
+                            if (!CurrentType->isStructTy()) {
+                                return llvm::make_error<llvm::StringError>(
+                                    "Cannot access member on non-struct type",
+                                    llvm::inconvertibleErrorCode()
+                                );
+                            }
+                            CurrentPtr = Builder->CreateStructGEP(CurrentType, CurrentPtr,
+                                                                   Member.FieldIndex, Member.Name);
+                            CurrentType = llvm::cast<llvm::StructType>(CurrentType)
+                                              ->getElementType(Member.FieldIndex);
+                        }
+                    }
+
+                    // Store the value
+                    Builder->CreateStore(Value, CurrentPtr);
+                }
+            }
         } else {
             return llvm::make_error<llvm::StringError>(
                 "Assignment target must be a variable",
@@ -1053,7 +1130,10 @@ llvm::Error Emitter::emitReturn(const PlannedReturn &Return) {
     // Clean up local page before returning
     if (CurrentRegion.LocalPage) {
         Builder->CreateCall(PageDeallocateExtensions, {CurrentRegion.LocalPage});
-        Builder->CreateCall(Free, {CurrentRegion.LocalPage});
+        // Look up 'free' from the module (declared via extern in source)
+        if (auto *FreeFn = Module->getFunction("free")) {
+            Builder->CreateCall(FreeFn, {CurrentRegion.LocalPage});
+        }
     }
 
     // Now emit the return
@@ -1280,6 +1360,8 @@ llvm::Expected<llvm::Value*> Emitter::emitExpression(const PlannedExpression &Ex
             return emitSizeOf(E);
         } else if constexpr (std::is_same_v<T, PlannedIs>) {
             return emitIs(E);
+        } else if constexpr (std::is_same_v<T, PlannedAs>) {
+            return emitAs(E);
         } else if constexpr (std::is_same_v<T, PlannedVariantConstruction>) {
             return emitVariantConstruction(E);
         } else {
@@ -1292,14 +1374,72 @@ llvm::Expected<llvm::Value*> Emitter::emitExpression(const PlannedExpression &Ex
 }
 
 llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
-    // Emit arguments first
+    // Look up the function first to know parameter types
+    auto *Func = lookupFunction(Call.MangledName);
+
+    // Emit arguments, optimizing dereference-to-pointer conversions
     std::vector<llvm::Value*> Args;
     if (Call.Args) {
-        for (const auto &Arg : *Call.Args) {
-            auto ArgVal = emitOperand(Arg);
-            if (!ArgVal)
-                return ArgVal.takeError();
-            Args.push_back(*ArgVal);
+        auto *FuncTy = Func ? Func->getFunctionType() : nullptr;
+        size_t ParamOffset = 0;
+
+        // Check if function uses sret (return via first pointer param)
+        if (Func && Func->arg_size() > 0 &&
+            Func->hasParamAttribute(0, llvm::Attribute::StructRet)) {
+            ParamOffset = 1;  // Skip sret param when matching args to params
+        }
+
+        for (size_t i = 0; i < Call.Args->size(); ++i) {
+            const auto &Arg = (*Call.Args)[i];
+
+            // Check if this argument is a dereference call (*ptr) and the
+            // function expects a pointer - if so, pass the pointer directly
+            // instead of loading the struct and creating a copy
+            bool PassedPointerDirectly = false;
+            if (FuncTy && i + ParamOffset < FuncTy->getNumParams()) {
+                llvm::Type *ParamTy = FuncTy->getParamType(i + ParamOffset);
+                if (ParamTy->isPointerTy()) {
+                    // Check if argument is a dereference call directly
+                    if (auto *DerefCall = std::get_if<PlannedCall>(&Arg.Expr)) {
+                        if (DerefCall->Name == "*" && DerefCall->Args &&
+                            DerefCall->Args->size() == 1) {
+                            // This is *ptr and function expects pointer
+                            // Emit the pointer argument directly
+                            auto PtrVal = emitOperand((*DerefCall->Args)[0]);
+                            if (!PtrVal)
+                                return PtrVal.takeError();
+                            Args.push_back(*PtrVal);
+                            PassedPointerDirectly = true;
+                        }
+                    }
+                    // Check if argument is a tuple wrapping a dereference: (*ptr)
+                    else if (auto *Tuple = std::get_if<PlannedTuple>(&Arg.Expr)) {
+                        if (Tuple->Components.size() == 1 && !Tuple->Components[0].Name &&
+                            !Tuple->Components[0].Value.empty()) {
+                            const auto& InnerOp = Tuple->Components[0].Value.back();
+                            if (auto *DerefCall = std::get_if<PlannedCall>(&InnerOp.Expr)) {
+                                if (DerefCall->Name == "*" && DerefCall->Args &&
+                                    DerefCall->Args->size() == 1) {
+                                    // This is (*ptr) and function expects pointer
+                                    // Emit the pointer argument directly
+                                    auto PtrVal = emitOperand((*DerefCall->Args)[0]);
+                                    if (!PtrVal)
+                                        return PtrVal.takeError();
+                                    Args.push_back(*PtrVal);
+                                    PassedPointerDirectly = true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (!PassedPointerDirectly) {
+                auto ArgVal = emitOperand(Arg);
+                if (!ArgVal)
+                    return ArgVal.takeError();
+                Args.push_back(*ArgVal);
+            }
         }
     }
 
@@ -1368,8 +1508,7 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
         return Builder->CreateLoad(StructTy, StructPtr, "struct.val");
     }
 
-    // Non-intrinsic call: look up function and call it
-    auto *Func = lookupFunction(Call.MangledName);
+    // Non-intrinsic call: use already looked-up function
     if (!Func) {
         return llvm::make_error<llvm::StringError>(
             "Function not found: " + Call.MangledName,
@@ -1695,6 +1834,14 @@ llvm::Expected<llvm::Value*> Emitter::emitIf(const PlannedIf &If) {
             CondValue = Builder->CreateICmpNE(
                 CondValue,
                 llvm::ConstantInt::get(CondValue->getType(), 0),
+                "if.tobool"
+            );
+        } else if (CondValue->getType()->isPointerTy()) {
+            // Pointer - compare to null
+            CondValue = Builder->CreateICmpNE(
+                CondValue,
+                llvm::ConstantPointerNull::get(
+                    llvm::cast<llvm::PointerType>(CondValue->getType())),
                 "if.tobool"
             );
         } else {
@@ -2602,6 +2749,108 @@ llvm::Expected<llvm::Value*> Emitter::emitIsWithValue(
     llvm::Value *Result = Builder->CreateICmpEQ(Tag, ExpectedTag, "is.result");
 
     return Result;
+}
+
+llvm::Expected<llvm::Value*> Emitter::emitAs(const PlannedAs &As) {
+    // 'as' expression: cast a value to a target type
+    // value as Type
+
+    // First, emit the value being cast
+    if (!As.Value) {
+        return llvm::make_error<llvm::StringError>(
+            "As expression missing value",
+            llvm::inconvertibleErrorCode()
+        );
+    }
+
+    auto ValueOrErr = emitOperand(*As.Value);
+    if (!ValueOrErr)
+        return ValueOrErr.takeError();
+
+    llvm::Value *SrcValue = *ValueOrErr;
+    llvm::Type *SrcTy = SrcValue->getType();
+
+    // Map the target type to LLVM type
+    llvm::Type *DstTy = mapType(As.TargetType);
+    if (!DstTy) {
+        return llvm::make_error<llvm::StringError>(
+            "Failed to map target type: " + As.TargetType.Name,
+            llvm::inconvertibleErrorCode()
+        );
+    }
+
+    // If types are the same, no cast needed
+    if (SrcTy == DstTy) {
+        return SrcValue;
+    }
+
+    // Determine the appropriate cast based on source and target types
+    bool SrcIsPtr = SrcTy->isPointerTy();
+    bool DstIsPtr = DstTy->isPointerTy();
+    bool SrcIsInt = SrcTy->isIntegerTy();
+    bool DstIsInt = DstTy->isIntegerTy();
+    bool SrcIsFloat = SrcTy->isFloatingPointTy();
+    bool DstIsFloat = DstTy->isFloatingPointTy();
+
+    // Pointer to pointer: bitcast
+    if (SrcIsPtr && DstIsPtr) {
+        return Builder->CreateBitCast(SrcValue, DstTy, "as.ptr");
+    }
+
+    // Pointer to integer: ptrtoint
+    if (SrcIsPtr && DstIsInt) {
+        return Builder->CreatePtrToInt(SrcValue, DstTy, "as.ptrtoint");
+    }
+
+    // Integer to pointer: inttoptr
+    if (SrcIsInt && DstIsPtr) {
+        return Builder->CreateIntToPtr(SrcValue, DstTy, "as.inttoptr");
+    }
+
+    // Integer to integer: trunc, zext, or sext based on size
+    if (SrcIsInt && DstIsInt) {
+        unsigned SrcBits = SrcTy->getIntegerBitWidth();
+        unsigned DstBits = DstTy->getIntegerBitWidth();
+
+        if (SrcBits > DstBits) {
+            return Builder->CreateTrunc(SrcValue, DstTy, "as.trunc");
+        } else if (SrcBits < DstBits) {
+            // Check if the source type is signed
+            // For now, use zext (zero extend) for unsigned types
+            // We'd need type info to know if signed extension is needed
+            // Use zext by default as it's safer for most pointer-related casts
+            return Builder->CreateZExt(SrcValue, DstTy, "as.zext");
+        }
+        // Same size, different int types - no-op
+        return SrcValue;
+    }
+
+    // Float to integer: fptosi or fptoui
+    if (SrcIsFloat && DstIsInt) {
+        // Use signed conversion by default
+        return Builder->CreateFPToSI(SrcValue, DstTy, "as.fptosi");
+    }
+
+    // Integer to float: sitofp or uitofp
+    if (SrcIsInt && DstIsFloat) {
+        // Use signed conversion by default
+        return Builder->CreateSIToFP(SrcValue, DstTy, "as.sitofp");
+    }
+
+    // Float to float: fpext or fptrunc
+    if (SrcIsFloat && DstIsFloat) {
+        unsigned SrcBits = SrcTy->getPrimitiveSizeInBits();
+        unsigned DstBits = DstTy->getPrimitiveSizeInBits();
+
+        if (SrcBits > DstBits) {
+            return Builder->CreateFPTrunc(SrcValue, DstTy, "as.fptrunc");
+        } else {
+            return Builder->CreateFPExt(SrcValue, DstTy, "as.fpext");
+        }
+    }
+
+    // Fallback: try bitcast for any remaining cases
+    return Builder->CreateBitCast(SrcValue, DstTy, "as.bitcast");
 }
 
 llvm::Expected<llvm::Value*> Emitter::emitVariantConstruction(

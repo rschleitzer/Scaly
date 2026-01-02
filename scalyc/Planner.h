@@ -48,6 +48,9 @@ private:
     std::map<std::string, PlannedUnion> InstantiatedUnions;
     std::map<std::string, PlannedFunction> InstantiatedFunctions;
 
+    // Global constants cache - for constant lookup during expression planning
+    std::map<std::string, PlannedGlobal> PlannedGlobals;
+
     // Current generic substitution context
     std::map<std::string, PlannedType> TypeSubstitutions;
 
