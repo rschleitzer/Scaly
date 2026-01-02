@@ -1620,6 +1620,133 @@ static bool testPipelineForFactorial() {
     return true;
 }
 
+// Break and continue tests
+
+static bool testPipelineBreakInFor() {
+    const char* Name = "Pipeline: break in for loop";
+
+    // Sum until we hit 3, then break
+    // for i in 10: if i = 3 then break, else add i to sum
+    // sum = 0 + 1 + 2 = 3
+    auto ResultOrErr = evalInt(
+        "var sum = 0\n"
+        "for i in 10 : {\n"
+        "    if i = 3 : break else set sum : sum + i\n"
+        "}\n"
+        "sum"
+    );
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 3) {
+        std::string Msg = "expected 3, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineBreakInWhile() {
+    const char* Name = "Pipeline: break in while loop";
+
+    // Count up but break when x reaches 5
+    auto ResultOrErr = evalInt(
+        "var x = 0\n"
+        "while x < 100 : {\n"
+        "    set x : x + 1\n"
+        "    if x = 5 : break\n"
+        "}\n"
+        "x"
+    );
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 5) {
+        std::string Msg = "expected 5, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineContinueInFor() {
+    const char* Name = "Pipeline: continue in for loop";
+
+    // Sum only even numbers (skip odds with continue)
+    // for i in 6: if i % 2 = 1 then continue, else add i to sum
+    // sum = 0 + 2 + 4 = 6
+    auto ResultOrErr = evalInt(
+        "var sum = 0\n"
+        "for i in 6 : {\n"
+        "    if i % 2 = 1 : continue else set sum : sum + i\n"
+        "}\n"
+        "sum"
+    );
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 6) {
+        std::string Msg = "expected 6, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineContinueInWhile() {
+    const char* Name = "Pipeline: continue in while loop";
+
+    // Sum only even numbers from 0-9 using while
+    // sum = 0 + 2 + 4 + 6 + 8 = 20
+    auto ResultOrErr = evalInt(
+        "var sum = 0\n"
+        "var i = 0\n"
+        "while i < 10 : {\n"
+        "    let current = i\n"
+        "    set i : i + 1\n"
+        "    if current % 2 = 1 : continue else set sum : sum + current\n"
+        "}\n"
+        "sum"
+    );
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 20) {
+        std::string Msg = "expected 20, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
 // Match expression tests
 
 static bool testPipelineMatchSingleCase() {
@@ -2533,6 +2660,13 @@ bool runEmitterTests() {
     testPipelineForCount();
     testPipelineForZeroIterations();
     testPipelineForFactorial();
+
+    // Break and continue
+    llvm::outs() << "  Break and continue tests:\n";
+    testPipelineBreakInFor();
+    testPipelineBreakInWhile();
+    testPipelineContinueInFor();
+    testPipelineContinueInWhile();
 
     // Match expressions
     llvm::outs() << "  Match expression tests:\n";

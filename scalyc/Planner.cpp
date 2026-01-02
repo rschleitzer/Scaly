@@ -3232,7 +3232,12 @@ llvm::Expected<PlannedIf> Planner::planIf(const If &IfExpr) {
     if (!PlannedCond) {
         return PlannedCond.takeError();
     }
-    Result.Condition = std::move(*PlannedCond);
+    // Collapse the operand sequence (handles operator chains like "i = 3")
+    auto CollapsedCond = collapseOperandSequence(std::move(*PlannedCond));
+    if (!CollapsedCond) {
+        return CollapsedCond.takeError();
+    }
+    Result.Condition.push_back(std::move(*CollapsedCond));
 
     if (IfExpr.Prop) {
         auto PlannedProp = planProperty(*IfExpr.Prop);
