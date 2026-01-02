@@ -332,7 +332,7 @@ struct PlannedVariable {
     Span Loc;
     std::string Name;           // The variable name
     PlannedType VariableType;   // The type of the variable
-    bool IsMutable;             // True if it's a var/mutable binding
+    bool IsMutable = false;     // True if it's a var/mutable binding
 };
 
 using PlannedExpression = std::variant<

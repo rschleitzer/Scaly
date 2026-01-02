@@ -2654,6 +2654,31 @@ llvm::Expected<PlannedOperand> Planner::planOperand(const Operand &Op) {
                 }
             }
         }
+        // Check for implicit property access (e.g., just "x" in a method body)
+        // This should become "this.x"
+        else if (TypeExpr->Name.size() == 1 && (!TypeExpr->Generics || TypeExpr->Generics->empty())) {
+            const std::string& Name = TypeExpr->Name[0];
+            if (CurrentStructureProperties) {
+                auto ThisType = lookupLocal("this");
+                if (ThisType && ThisType->Name == CurrentStructureName) {
+                    for (const auto &Prop : *CurrentStructureProperties) {
+                        if (Prop.Name == Name) {
+                            // Convert to "this" with member access to the property
+                            Type ThisTypeExpr;
+                            ThisTypeExpr.Loc = TypeExpr->Loc;
+                            ThisTypeExpr.Name = {"this"};
+                            ThisTypeExpr.Generics = nullptr;
+                            ThisTypeExpr.Life = TypeExpr->Life;
+                            ModifiedOp.Expr = ThisTypeExpr;
+
+                            // Add the property as implicit member access
+                            ImplicitMemberAccess.push_back(Name);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     // Plan the expression
