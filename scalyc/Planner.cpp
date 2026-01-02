@@ -167,7 +167,7 @@ static Operand cloneOperand(const Operand &Op) {
     Result.Loc = Op.Loc;
     Result.Expr = cloneExpression(Op.Expr);
     if (Op.MemberAccess) {
-        Result.MemberAccess = std::make_shared<std::vector<std::string>>(*Op.MemberAccess);
+        Result.MemberAccess = std::make_shared<std::vector<Type>>(*Op.MemberAccess);
     }
     return Result;
 }
@@ -1966,6 +1966,22 @@ llvm::Expected<std::vector<PlannedMemberAccess>> Planner::resolveMemberAccessCha
     return Result;
 }
 
+// Overload for Type-based member access - extracts names from Types
+llvm::Expected<std::vector<PlannedMemberAccess>> Planner::resolveMemberAccessChain(
+    const PlannedType &BaseType,
+    const std::vector<Type> &Members,
+    Span Loc) {
+    // Convert vector<Type> to vector<string> by extracting names
+    std::vector<std::string> Names;
+    for (const auto& M : Members) {
+        // Flatten the Type's name path
+        for (const auto& N : M.Name) {
+            Names.push_back(N);
+        }
+    }
+    return resolveMemberAccessChain(BaseType, Names, Loc);
+}
+
 // ============================================================================
 // Type Inference
 // ============================================================================
@@ -2802,7 +2818,7 @@ llvm::Expected<PlannedOperand> Planner::planOperand(const Operand &Op) {
 
     // Check for variable member access encoded as Type path (e.g., p.x parsed as Type(["p", "x"]))
     // This happens when the parser treats dotted names as type paths
-    std::vector<std::string> ImplicitMemberAccess;
+    std::vector<Type> ImplicitMemberAccess;
     Operand ModifiedOp = Op;
 
     if (auto* TypeExpr = std::get_if<Type>(&Op.Expr)) {
@@ -2821,7 +2837,12 @@ llvm::Expected<PlannedOperand> Planner::planOperand(const Operand &Op) {
 
                 // Collect remaining path elements as implicit member access
                 for (size_t i = 1; i < TypeExpr->Name.size(); ++i) {
-                    ImplicitMemberAccess.push_back(TypeExpr->Name[i]);
+                    Type MemberType;
+                    MemberType.Loc = TypeExpr->Loc;
+                    MemberType.Name = {TypeExpr->Name[i]};
+                    MemberType.Generics = nullptr;
+                    MemberType.Life = UnspecifiedLifetime{};
+                    ImplicitMemberAccess.push_back(MemberType);
                 }
             }
         }
@@ -2858,7 +2879,12 @@ llvm::Expected<PlannedOperand> Planner::planOperand(const Operand &Op) {
                             ModifiedOp.Expr = ThisTypeExpr;
 
                             // Add the property as implicit member access
-                            ImplicitMemberAccess.push_back(Name);
+                            Type PropType;
+                            PropType.Loc = TypeExpr->Loc;
+                            PropType.Name = {Name};
+                            PropType.Generics = nullptr;
+                            PropType.Life = UnspecifiedLifetime{};
+                            ImplicitMemberAccess.push_back(PropType);
                             break;
                         }
                     }
@@ -2882,7 +2908,7 @@ llvm::Expected<PlannedOperand> Planner::planOperand(const Operand &Op) {
     Result.ResultType = std::move(*InferredType);
 
     // Combine implicit member access (from Type path) with explicit member access
-    std::vector<std::string> CombinedMemberAccess = ImplicitMemberAccess;
+    std::vector<Type> CombinedMemberAccess = ImplicitMemberAccess;
     if (Op.MemberAccess && !Op.MemberAccess->empty()) {
         for (const auto& M : *Op.MemberAccess) {
             CombinedMemberAccess.push_back(M);
@@ -2971,8 +2997,24 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             Call.IsOperator = false;
                             Call.ResultType = MethodMatch->ReturnType;
 
-                            // Build args: [instance, ...tuple_args]
+                            // Build args: [region (if any), instance, ...tuple_args]
                             Call.Args = std::make_shared<std::vector<PlannedOperand>>();
+
+                            // If the Type has a ReferenceLifetime, look up the region variable
+                            // and pass it as the first argument (before instance)
+                            if (auto* RefLife = std::get_if<ReferenceLifetime>(&TypeExpr->Life)) {
+                                auto RegionVar = lookupLocal(RefLife->Location);
+                                if (!RegionVar) {
+                                    return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
+                                }
+
+                                PlannedOperand RegionArg;
+                                RegionArg.Loc = RefLife->Loc;
+                                RegionArg.ResultType = *RegionVar;
+                                RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, *RegionVar, false};
+                                Call.Args->push_back(std::move(RegionArg));
+                            }
+
                             Call.Args->push_back(std::move(*PlannedVar));
 
                             // Add tuple elements as additional arguments
@@ -3023,7 +3065,12 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
             if (Op.MemberAccess && !Op.MemberAccess->empty() &&
                 std::holds_alternative<Tuple>(NextOp.Expr)) {
                 // The last member in the access chain might be a method name
-                std::string MethodName = Op.MemberAccess->back();
+                const Type& MethodType = Op.MemberAccess->back();
+                std::string MethodName = MethodType.Name.empty() ? "" : MethodType.Name[0];
+                // Include any extensions in the method name path
+                for (size_t j = 1; j < MethodType.Name.size(); ++j) {
+                    MethodName = MethodType.Name[j];  // Use last segment as method name
+                }
 
                 // Plan the base operand without the last member access
                 Operand BaseOp = Op;
@@ -3031,7 +3078,7 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                     BaseOp.MemberAccess = nullptr;  // No more member access
                 } else {
                     // Keep all but the last member access
-                    BaseOp.MemberAccess = std::make_shared<std::vector<std::string>>(
+                    BaseOp.MemberAccess = std::make_shared<std::vector<Type>>(
                         Op.MemberAccess->begin(), Op.MemberAccess->end() - 1);
                 }
 
@@ -3060,8 +3107,24 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                     Call.IsOperator = false;
                     Call.ResultType = MethodMatch->ReturnType;
 
-                    // Build args: [instance, ...tuple_args]
+                    // Build args: [region (if any), instance, ...tuple_args]
                     Call.Args = std::make_shared<std::vector<PlannedOperand>>();
+
+                    // If the method Type has a ReferenceLifetime, look up the region variable
+                    // and pass it as the first argument (before instance)
+                    if (auto* RefLife = std::get_if<ReferenceLifetime>(&MethodType.Life)) {
+                        auto RegionVar = lookupLocal(RefLife->Location);
+                        if (!RegionVar) {
+                            return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
+                        }
+
+                        PlannedOperand RegionArg;
+                        RegionArg.Loc = RefLife->Loc;
+                        RegionArg.ResultType = *RegionVar;
+                        RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, *RegionVar, false};
+                        Call.Args->push_back(std::move(RegionArg));
+                    }
+
                     Call.Args->push_back(std::move(*PlannedBase));
 
                     // Add tuple elements as additional arguments
@@ -3221,6 +3284,22 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
 
                                 // Convert tuple components to call arguments
                                 Call.Args = std::make_shared<std::vector<PlannedOperand>>();
+
+                                // If the Type has a ReferenceLifetime, look up the region variable
+                                // and pass it as the first argument
+                                if (auto* RefLife = std::get_if<ReferenceLifetime>(&TypeExpr->Life)) {
+                                    auto RegionVar = lookupLocal(RefLife->Location);
+                                    if (!RegionVar) {
+                                        return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
+                                    }
+
+                                    PlannedOperand RegionArg;
+                                    RegionArg.Loc = RefLife->Loc;
+                                    RegionArg.ResultType = *RegionVar;
+                                    RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, *RegionVar, false};
+                                    Call.Args->push_back(std::move(RegionArg));
+                                }
+
                                 if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedArgs->Expr)) {
                                     for (auto &Comp : TupleExpr->Components) {
                                         if (!Comp.Value.empty()) {
@@ -4369,6 +4448,35 @@ llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
     Result.Life = Func.Life;
 
     pushScope();
+
+    // If function has a ReferenceLifetime, add implicit region parameter
+    if (auto* RefLife = std::get_if<ReferenceLifetime>(&Func.Life)) {
+        // Create implicit _<name>: pointer[Page] parameter
+        std::string RegionParamName = "_" + RefLife->Location;
+
+        // Create the pointer[Page] type
+        PlannedType PageType;
+        PageType.Loc = RefLife->Loc;
+        PageType.Name = "Page";
+        PageType.MangledName = "4Page";
+
+        PlannedType PtrPageType;
+        PtrPageType.Loc = RefLife->Loc;
+        PtrPageType.Name = "pointer";
+        PtrPageType.MangledName = "P4Page";
+        PtrPageType.Generics.push_back(PageType);
+
+        PlannedItem RegionParam;
+        RegionParam.Loc = RefLife->Loc;
+        RegionParam.Private = false;
+        RegionParam.Name = std::make_shared<std::string>(RegionParamName);
+        RegionParam.ItemType = std::make_shared<PlannedType>(PtrPageType);
+
+        Result.Input.push_back(std::move(RegionParam));
+
+        // Add to scope so code inside the function can reference it
+        defineLocal(RegionParamName, PtrPageType);
+    }
 
     // Plan input parameters
     for (const auto &Param : Func.Input) {

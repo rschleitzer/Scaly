@@ -486,7 +486,7 @@ struct ExpressionSyntax {
 struct MemberAccessSyntax {
     size_t Start;
     size_t End;
-    NameSyntax name;
+    TypeSyntax type;
 };
 
 struct OperandSyntax {

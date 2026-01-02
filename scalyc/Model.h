@@ -345,7 +345,7 @@ using Expression = std::variant<
 struct Operand {
     Span Loc;
     Expression Expr;
-    std::shared_ptr<std::vector<std::string>> MemberAccess;
+    std::shared_ptr<std::vector<Type>> MemberAccess;  // Full Type to preserve lifetime
 };
 
 // Implementation variants

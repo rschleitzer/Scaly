@@ -310,7 +310,7 @@
 
 <syntax id = MemberAccess                 multiple
     <content link = dot
-    <content link = Name                                    property = name
+    <content link = Type                                    property = type
 
 <syntax id = Expression                            abstract
     <content link = Literal

@@ -279,6 +279,12 @@ private:
         const std::vector<std::string> &Members,
         Span Loc);
 
+    // Overload for Type-based member access (extracts names from Types)
+    llvm::Expected<std::vector<PlannedMemberAccess>> resolveMemberAccessChain(
+        const PlannedType &BaseType,
+        const std::vector<Type> &Members,
+        Span Loc);
+
     // Look up a method on a struct type by name
     struct MethodMatch {
         const Function* Method;

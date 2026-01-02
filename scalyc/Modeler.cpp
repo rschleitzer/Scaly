@@ -129,16 +129,14 @@ llvm::Expected<Operand> Modeler::handleOperand(const OperandSyntax &Syntax) {
     if (!Expr)
         return Expr.takeError();
 
-    std::unique_ptr<std::vector<std::string>> MemberAccess;
+    std::unique_ptr<std::vector<Type>> MemberAccess;
     if (Syntax.members) {
-        MemberAccess = std::make_unique<std::vector<std::string>>();
+        MemberAccess = std::make_unique<std::vector<Type>>();
         for (const auto &M : *Syntax.members) {
-            MemberAccess->push_back(std::string(M.name.name));
-            if (M.name.extensions) {
-                for (const auto &Ext : *M.name.extensions) {
-                    MemberAccess->push_back(std::string(Ext.name));
-                }
-            }
+            auto MemberType = handleType(M.type);
+            if (!MemberType)
+                return MemberType.takeError();
+            MemberAccess->push_back(std::move(**MemberType));
         }
     }
 
