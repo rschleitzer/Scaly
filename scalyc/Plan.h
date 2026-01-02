@@ -269,13 +269,16 @@ struct PlannedSizeOf {
     size_t Size;  // Computed size in bytes
 };
 
+// Forward declaration for PlannedOperand
+struct PlannedOperand;
+
 struct PlannedIs {
     Span Loc;
     PlannedType TestType;
+    size_t VariantTag = 0;       // Tag value to compare against
+    std::string UnionName;       // Name of the union type being tested
+    std::shared_ptr<PlannedOperand> Value;  // The union value being tested
 };
-
-// Forward declaration for PlannedCall
-struct PlannedOperand;
 
 // Call to a function or operator
 struct PlannedCall {
