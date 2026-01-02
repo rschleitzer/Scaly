@@ -1607,17 +1607,19 @@ llvm::Expected<llvm::Value*> Emitter::emitChoose(const PlannedChoose &Choose) {
 
     // Get pointer to the union (may already be a pointer or need alloca)
     llvm::Value *UnionPtr;
+    llvm::Type *UnionType = UnionValue->getType();
     if (UnionValue->getType()->isPointerTy()) {
         UnionPtr = UnionValue;
+        // For pointer, we'd need to know the pointee type - for now assume struct
     } else {
         // Store the union value to get a pointer
-        UnionPtr = Builder->CreateAlloca(UnionValue->getType(), nullptr, "choose.union");
+        UnionPtr = Builder->CreateAlloca(UnionType, nullptr, "choose.union");
         Builder->CreateStore(UnionValue, UnionPtr);
     }
 
     // Load the tag (first field, i8)
     llvm::Type *I8Ty = llvm::Type::getInt8Ty(*Context);
-    llvm::Value *TagPtr = Builder->CreateStructGEP(UnionValue->getType(), UnionPtr, 0, "tag.ptr");
+    llvm::Value *TagPtr = Builder->CreateStructGEP(UnionType, UnionPtr, 0, "tag.ptr");
     llvm::Value *Tag = Builder->CreateLoad(I8Ty, TagPtr, "tag");
 
     // Create blocks
@@ -1631,16 +1633,33 @@ llvm::Expected<llvm::Value*> Emitter::emitChoose(const PlannedChoose &Choose) {
     std::vector<std::pair<llvm::Value*, llvm::BasicBlock*>> IncomingValues;
 
     // Process each when case
-    for (size_t i = 0; i < Choose.Cases.size(); ++i) {
-        const auto &When = Choose.Cases[i];
-
+    for (const auto &When : Choose.Cases) {
         llvm::BasicBlock *CaseBlock = createBlock("choose.when." + When.Name);
-        Switch->addCase(llvm::cast<llvm::ConstantInt>(llvm::ConstantInt::get(I8Ty, i)), CaseBlock);
+        // Use the variant's tag from the planned union
+        Switch->addCase(
+            llvm::cast<llvm::ConstantInt>(llvm::ConstantInt::get(I8Ty, When.VariantIndex)),
+            CaseBlock
+        );
 
         Builder->SetInsertPoint(CaseBlock);
 
-        // If the variant has data and a binding name, extract and bind it
-        // TODO: For now we don't bind the variant data, just execute the consequent
+        // Extract variant data and bind to the when clause's variable name
+        if (!When.Name.empty()) {
+            llvm::Value *DataPtr = Builder->CreateStructGEP(
+                UnionType, UnionPtr, 1, "variant.data.ptr");
+
+            // Cast to the variant's type and load
+            llvm::Type *VarTy = mapType(When.VariantType);
+            llvm::Value *DataCast = Builder->CreateBitCast(
+                DataPtr,
+                llvm::PointerType::getUnqual(VarTy),
+                "variant.data.cast"
+            );
+            llvm::Value *VarValue = Builder->CreateLoad(VarTy, DataCast, "variant.val");
+
+            // Bind the value to the variable name
+            LocalVariables[When.Name] = VarValue;
+        }
 
         llvm::Value *CaseValue = nullptr;
 
