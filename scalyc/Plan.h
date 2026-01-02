@@ -232,6 +232,7 @@ struct PlannedWhen {
     Span Loc;
     std::string Name;
     PlannedType VariantType;
+    size_t VariantIndex;  // Index in the union (0 = Ok, 1+ = error variants)
     std::shared_ptr<PlannedStatement> Consequent;
 };
 

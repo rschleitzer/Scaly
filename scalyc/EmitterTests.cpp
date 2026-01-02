@@ -1813,6 +1813,41 @@ static bool testPipelineContinueInNestedLoops() {
     return true;
 }
 
+static bool testPipelineBreakWhileInFor() {
+    const char* Name = "Pipeline: break in while nested in for";
+
+    // Outer for loop runs 3 times, inner while breaks at j=2 each time
+    // count increments for j=0 and j=1 in each outer iteration
+    // count = 3 * 2 = 6
+    auto ResultOrErr = evalInt(
+        "var count = 0\n"
+        "for i in 3 : {\n"
+        "    var j = 0\n"
+        "    while j < 10 : {\n"
+        "        if j = 2 : break else set count : count + 1\n"
+        "        set j : j + 1\n"
+        "    }\n"
+        "}\n"
+        "count"
+    );
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 6) {
+        std::string Msg = "expected 6, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
 // Match expression tests
 
 static bool testPipelineMatchSingleCase() {
@@ -1968,6 +2003,39 @@ static bool testPipelineTryExpression() {
     // Expression evaluates and passes through
     if (*ResultOrErr != 7) {
         std::string Msg = "expected 7, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+// Throw statement tests
+
+static bool testThrowInFunction() {
+    const char* Name = "Pipeline: throw in function";
+
+    // Define a Result union and a function that throws
+    // The function returns the error value when throw is called
+    // We use try to catch it and return the error value
+    auto ResultOrErr = evalInt(
+        "define Result union: (Ok: int, Error: int)\n"
+        "function fail() returns Result throws int { throw 42 }\n"
+        "try let r = fail(): when e: Error: e else 0"
+    );
+
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // The throw should produce Error(42), and we extract the 42
+    if (*ResultOrErr != 42) {
+        std::string Msg = "expected 42, got " + std::to_string(*ResultOrErr);
         fail(Name, Msg.c_str());
         return false;
     }
@@ -2735,6 +2803,7 @@ bool runEmitterTests() {
     testPipelineContinueInWhile();
     testPipelineBreakInNestedLoops();
     testPipelineContinueInNestedLoops();
+    testPipelineBreakWhileInFor();
 
     // Match expressions
     llvm::outs() << "  Match expression tests:\n";
@@ -2748,6 +2817,10 @@ bool runEmitterTests() {
     testPipelineTrySimpleValue();
     testPipelineTryWithBinding();
     testPipelineTryExpression();
+
+    // Throw statements
+    llvm::outs() << "  Throw statement tests:\n";
+    testThrowInFunction();
 
     // SizeOf expressions
     llvm::outs() << "  SizeOf expression tests:\n";
