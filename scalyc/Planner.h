@@ -242,6 +242,7 @@ private:
         const Operator* Op;
         std::string MangledName;
         bool IsIntrinsic;
+        PlannedType ResultType;  // For intrinsic ops like pointer arithmetic
     };
     std::optional<OperatorMatch> findOperator(
         llvm::StringRef Name, const PlannedType &Left, const PlannedType &Right);
