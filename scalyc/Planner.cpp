@@ -3435,18 +3435,56 @@ llvm::Expected<PlannedTry> Planner::planTry(const Try &TryExpr) {
     }
     Result.Cond = std::move(*PlannedCond);
 
+    // Get the result type from the binding's operation to look up the union
+    const PlannedUnion *CondUnion = nullptr;
+    if (!Result.Cond.Operation.empty()) {
+        const auto &ResultType = Result.Cond.Operation[0].ResultType;
+        auto UnionIt = InstantiatedUnions.find(ResultType.Name);
+        if (UnionIt != InstantiatedUnions.end()) {
+            CondUnion = &UnionIt->second;
+        }
+    }
+
     for (const auto &Catch : TryExpr.Catches) {
         PlannedWhen PW;
         PW.Loc = Catch.Loc;
         PW.Name = Catch.Name;
+        PW.VariantIndex = 0;  // Default
 
-        // When has VariantPath (vector<string>), not VariantType
-        auto ResolvedType = resolveTypePath(Catch.VariantPath, Catch.Loc);
-        if (!ResolvedType) {
-            popScope();
-            return ResolvedType.takeError();
+        // Get the variant name from the path
+        std::string VariantName;
+        if (!Catch.VariantPath.empty()) {
+            VariantName = Catch.VariantPath.back();
         }
-        PW.VariantType = std::move(*ResolvedType);
+
+        // Look up the variant in the union to get its tag
+        if (CondUnion && !VariantName.empty()) {
+            for (size_t i = 0; i < CondUnion->Variants.size(); ++i) {
+                if (CondUnion->Variants[i].Name == VariantName) {
+                    PW.VariantIndex = CondUnion->Variants[i].Tag;
+                    // Also get the variant's type for the catch variable
+                    if (CondUnion->Variants[i].VarType) {
+                        PW.VariantType = *CondUnion->Variants[i].VarType;
+                    }
+                    break;
+                }
+            }
+        }
+
+        // Fallback: resolve the variant path if we didn't find it in the union
+        if (PW.VariantType.Name.empty()) {
+            auto ResolvedType = resolveTypePath(Catch.VariantPath, Catch.Loc);
+            if (!ResolvedType) {
+                popScope();
+                return ResolvedType.takeError();
+            }
+            PW.VariantType = std::move(*ResolvedType);
+        }
+
+        // Add the catch variable to the scope so it can be referenced in the consequent
+        if (!Catch.Name.empty()) {
+            defineLocal(Catch.Name, PW.VariantType, false);  // false = not mutable
+        }
 
         if (Catch.Consequent) {
             auto PlannedCons = planStatement(*Catch.Consequent);
@@ -4049,6 +4087,8 @@ llvm::Expected<PlannedConcept> Planner::planConcept(const Concept &Conc) {
             if (!Planned) {
                 return Planned.takeError();
             }
+            // Add non-generic unions to cache
+            InstantiatedUnions[Conc.Name] = *Planned;
             return *Planned;
         }
         else if constexpr (std::is_same_v<T, Namespace>) {

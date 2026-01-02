@@ -383,7 +383,9 @@ llvm::Function *Emitter::emitFunctionDecl(const PlannedFunction &Func) {
     // Set parameter attributes
     unsigned ParamIdx = 0;
     if (UseSret) {
-        LLVMFunc->addParamAttr(ParamIdx, llvm::Attribute::StructRet);
+        // StructRet is a type attribute - must include the struct type
+        LLVMFunc->addParamAttr(ParamIdx,
+            llvm::Attribute::getWithStructRetType(*Context, ReturnLLVMType));
         LLVMFunc->addParamAttr(ParamIdx, llvm::Attribute::NoAlias);
         ParamIdx++;
     }
@@ -869,7 +871,84 @@ llvm::Error Emitter::emitReturn(const PlannedReturn &Return) {
 }
 
 llvm::Error Emitter::emitThrow(const PlannedThrow &Throw) {
-    // TODO: implement throw (store to exception page, return error indicator)
+    // Throw creates an error Result and returns it
+    // Result layout: { i8 tag, [size x i8] data }
+    // Tag 0 = Ok, Tag 1+ = error variants
+
+    if (!CurrentFunction) {
+        return llvm::make_error<llvm::StringError>(
+            "throw statement outside of function",
+            llvm::inconvertibleErrorCode()
+        );
+    }
+
+    // Check if function uses sret (returns struct via first parameter)
+    // or returns directly
+    llvm::Value *ResultPtr = nullptr;
+    llvm::StructType *ResultTy = nullptr;
+
+    // Check for sret parameter (first param with sret attribute)
+    if (CurrentFunction->arg_size() > 0 &&
+        CurrentFunction->hasParamAttribute(0, llvm::Attribute::StructRet)) {
+        // sret: result is written to first parameter
+        ResultPtr = CurrentFunction->getArg(0);
+        // Get the struct type from the sret parameter's pointee type
+        llvm::Type *ParamTy = CurrentFunction->getParamStructRetType(0);
+        if (!ParamTy || !ParamTy->isStructTy()) {
+            return llvm::make_error<llvm::StringError>(
+                "throw: sret parameter is not a struct type",
+                llvm::inconvertibleErrorCode()
+            );
+        }
+        ResultTy = llvm::cast<llvm::StructType>(ParamTy);
+    } else {
+        // Direct return: check return type
+        llvm::Type *RetTy = CurrentFunction->getReturnType();
+        if (!RetTy->isStructTy()) {
+            return llvm::make_error<llvm::StringError>(
+                "throw in function that doesn't return a Result type",
+                llvm::inconvertibleErrorCode()
+            );
+        }
+        ResultTy = llvm::cast<llvm::StructType>(RetTy);
+        // Allocate space for the Result
+        ResultPtr = Builder->CreateAlloca(ResultTy, nullptr, "throw.result");
+    }
+
+    // Set the tag to 1 (first error variant)
+    llvm::Type *I8Ty = llvm::Type::getInt8Ty(*Context);
+    llvm::Value *TagPtr = Builder->CreateStructGEP(ResultTy, ResultPtr, 0, "throw.tag.ptr");
+    Builder->CreateStore(llvm::ConstantInt::get(I8Ty, 1), TagPtr);
+
+    // Evaluate the thrown value and store in the data portion
+    if (!Throw.Result.empty()) {
+        auto ValueOrErr = emitOperands(Throw.Result);
+        if (!ValueOrErr)
+            return ValueOrErr.takeError();
+
+        llvm::Value *ThrownValue = *ValueOrErr;
+
+        // Get pointer to the data field (field 1)
+        llvm::Value *DataPtr = Builder->CreateStructGEP(ResultTy, ResultPtr, 1, "throw.data.ptr");
+
+        // Bitcast the data pointer to the thrown value's type and store
+        llvm::Type *ThrownTy = ThrownValue->getType();
+        llvm::Value *DataCast = Builder->CreateBitCast(
+            DataPtr,
+            llvm::PointerType::getUnqual(ThrownTy),
+            "throw.data.cast"
+        );
+        Builder->CreateStore(ThrownValue, DataCast);
+    }
+
+    // Return (void for sret, value for direct return)
+    if (CurrentFunction->hasParamAttribute(0, llvm::Attribute::StructRet)) {
+        Builder->CreateRetVoid();
+    } else {
+        llvm::Value *Result = Builder->CreateLoad(ResultTy, ResultPtr, "throw.val");
+        Builder->CreateRet(Result);
+    }
+
     return llvm::Error::success();
 }
 
@@ -1095,6 +1174,61 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
             "Function not found: " + Call.MangledName,
             llvm::inconvertibleErrorCode()
         );
+    }
+
+    // Check if function uses sret (returns struct via first parameter)
+    bool UsesSret = Func->arg_size() > 0 &&
+                    Func->hasParamAttribute(0, llvm::Attribute::StructRet);
+
+    if (UsesSret) {
+        // Get the struct type from the sret attribute
+        llvm::Type *RetTy = Func->getParamStructRetType(0);
+        if (!RetTy) {
+            return llvm::make_error<llvm::StringError>(
+                "sret function has no return type: " + Call.MangledName,
+                llvm::inconvertibleErrorCode()
+            );
+        }
+
+        // Allocate space for the return value
+        llvm::Value *RetPtr = Builder->CreateAlloca(RetTy, nullptr, "sret.result");
+
+        // Build argument list: sret pointer first
+        std::vector<llvm::Value*> CallArgs;
+        CallArgs.push_back(RetPtr);
+
+        // Check for exception page parameter (pointer after sret for throwing functions)
+        auto *FuncTy = Func->getFunctionType();
+        size_t FirstUserArg = 1;  // Start after sret
+        if (FuncTy->getNumParams() > 1 &&
+            FuncTy->getParamType(1)->isPointerTy() &&
+            Args.empty()) {
+            // Likely has exception page - pass null for now
+            // (exception page is used for throwing functions)
+            CallArgs.push_back(llvm::ConstantPointerNull::get(
+                llvm::PointerType::get(*Context, 0)));
+            FirstUserArg = 2;
+        }
+
+        // Adjust remaining arguments for the function
+        for (size_t i = 0; i < Args.size() && i + FirstUserArg < FuncTy->getNumParams(); ++i) {
+            llvm::Value *ArgVal = Args[i];
+            llvm::Type *ParamTy = FuncTy->getParamType(i + FirstUserArg);
+
+            if (ParamTy->isPointerTy() && ArgVal->getType()->isStructTy()) {
+                auto *Alloca = Builder->CreateAlloca(ArgVal->getType(), nullptr, "sret.arg.tmp");
+                Builder->CreateStore(ArgVal, Alloca);
+                CallArgs.push_back(Alloca);
+            } else {
+                CallArgs.push_back(ArgVal);
+            }
+        }
+
+        // Call the function (returns void)
+        Builder->CreateCall(Func, CallArgs);
+
+        // Load and return the result
+        return Builder->CreateLoad(RetTy, RetPtr, "sret.val");
     }
 
     // If no arguments, just call directly
@@ -1974,16 +2108,16 @@ llvm::Expected<llvm::Value*> Emitter::emitTry(const PlannedTry &Try) {
     // Emit Ok block - bind the success value and continue
     Builder->SetInsertPoint(OkBlock);
 
-    // For now, the Ok value is the whole result (since we can't easily extract
-    // the data portion without knowing the exact type)
-    // In a full implementation, we'd extract the data from offset 1
-    llvm::Value *OkValue = ResultValue;
+    // Extract the Ok data from the union (data is at index 1)
+    // For now, extract as i64 to match typical catch/else types
+    llvm::Value *OkDataPtr = Builder->CreateStructGEP(ResultType, ResultPtr, 1, "ok.data.ptr");
+    llvm::Type *I64Ty = llvm::Type::getInt64Ty(*Context);
+    llvm::Value *OkValue = Builder->CreateLoad(I64Ty, OkDataPtr, "ok.val");
 
     // Bind the value if there's a name
     if (!BindingName.empty()) {
         if (IsMutable) {
-            llvm::Type *Ty = OkValue->getType();
-            llvm::AllocaInst *Alloca = Builder->CreateAlloca(Ty, nullptr, BindingName);
+            llvm::AllocaInst *Alloca = Builder->CreateAlloca(I64Ty, nullptr, BindingName);
             Builder->CreateStore(OkValue, Alloca);
             LocalVariables[BindingName] = Alloca;
         } else {
@@ -2010,16 +2144,32 @@ llvm::Expected<llvm::Value*> Emitter::emitTry(const PlannedTry &Try) {
                 const auto &Catch = Try.Catches[i];
 
                 llvm::BasicBlock *CatchBlock = createBlock("try.catch." + Catch.Name);
-                // Error tags start at 1 (0 is Ok)
+                // Use the variant's tag from the planned union
                 Switch->addCase(
-                    llvm::cast<llvm::ConstantInt>(llvm::ConstantInt::get(I8Ty, i + 1)),
+                    llvm::cast<llvm::ConstantInt>(llvm::ConstantInt::get(I8Ty, Catch.VariantIndex)),
                     CatchBlock
                 );
 
                 Builder->SetInsertPoint(CatchBlock);
 
-                // Bind the error value if there's a name
-                // TODO: Extract actual error data from the union
+                // Extract error data from union and bind to catch variable
+                // Union layout: { i8 tag, [N x i8] data }
+                if (!Catch.Name.empty()) {
+                    llvm::Value *DataPtr = Builder->CreateStructGEP(
+                        ResultType, ResultPtr, 1, "err.data.ptr");
+
+                    // Cast to the variant's type and load
+                    llvm::Type *VarTy = mapType(Catch.VariantType);
+                    llvm::Value *DataCast = Builder->CreateBitCast(
+                        DataPtr,
+                        llvm::PointerType::getUnqual(VarTy),
+                        "err.data.cast"
+                    );
+                    llvm::Value *ErrValue = Builder->CreateLoad(VarTy, DataCast, "err.val");
+
+                    // Bind the error value to the catch variable name
+                    LocalVariables[Catch.Name] = ErrValue;
+                }
 
                 llvm::Value *CatchValue = nullptr;
 
@@ -2518,9 +2668,6 @@ llvm::Expected<uint64_t> Emitter::jitExecuteRaw(const Plan &P, llvm::Type *Expec
             Builder->CreateRet(llvm::UndefValue::get(ExpectedType));
         }
     }
-
-    // DEBUG: Print module before verification
-    // Module->print(llvm::errs(), nullptr);
 
     // Verify module
     std::string VerifyError;
