@@ -280,6 +280,15 @@ struct PlannedIs {
     std::shared_ptr<PlannedOperand> Value;  // The union value being tested
 };
 
+// Construction of a union variant: Result.Ok(42) or Option.None
+struct PlannedVariantConstruction {
+    Span Loc;
+    PlannedType UnionType;       // The full union type being constructed
+    std::string VariantName;     // Name of the variant: "Ok", "Error", etc.
+    size_t VariantTag;           // Tag value for the variant
+    std::shared_ptr<PlannedOperand> Value;  // Value (null for unit variants)
+};
+
 // Call to a function or operator
 struct PlannedCall {
     Span Loc;
@@ -341,7 +350,8 @@ using PlannedExpression = std::variant<
     PlannedWhile,
     PlannedTry,
     PlannedSizeOf,
-    PlannedIs
+    PlannedIs,
+    PlannedVariantConstruction
 >;
 
 // Member access step with field index for code generation

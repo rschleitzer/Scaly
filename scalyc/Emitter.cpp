@@ -1081,6 +1081,8 @@ llvm::Expected<llvm::Value*> Emitter::emitExpression(const PlannedExpression &Ex
             return emitSizeOf(E);
         } else if constexpr (std::is_same_v<T, PlannedIs>) {
             return emitIs(E);
+        } else if constexpr (std::is_same_v<T, PlannedVariantConstruction>) {
+            return emitVariantConstruction(E);
         } else {
             return llvm::make_error<llvm::StringError>(
                 "Unimplemented expression type",
@@ -2341,8 +2343,13 @@ llvm::Expected<llvm::Value*> Emitter::emitIsWithValue(
     if (UnionValue->getType()->isPointerTy()) {
         UnionPtr = UnionValue;
         // Need to get the actual struct type for GEP
-        // Try to find it from the TypeCache
-        auto CacheIt = StructCache.find(UnionType.Name);
+        // Try to find it from the StructCache
+        // Use MangledName as that's the key used in emitUnionType
+        auto CacheIt = StructCache.find(UnionType.MangledName);
+        if (CacheIt == StructCache.end()) {
+            // Fallback to Name in case it's stored differently
+            CacheIt = StructCache.find(UnionType.Name);
+        }
         if (CacheIt != StructCache.end()) {
             LLVMUnionType = CacheIt->second;
         } else {
@@ -2368,6 +2375,57 @@ llvm::Expected<llvm::Value*> Emitter::emitIsWithValue(
     llvm::Value *Result = Builder->CreateICmpEQ(Tag, ExpectedTag, "is.result");
 
     return Result;
+}
+
+llvm::Expected<llvm::Value*> Emitter::emitVariantConstruction(
+    const PlannedVariantConstruction &Construct) {
+    // Construct a union variant: { i8 tag, [size x i8] data }
+    // Similar to throw, but with an arbitrary tag value
+
+    // Look up the union type from the cache (should have been emitted already)
+    // Use MangledName as that's the key used in emitUnionType
+    auto CacheIt = StructCache.find(Construct.UnionType.MangledName);
+    if (CacheIt == StructCache.end()) {
+        // Fallback to Name in case it's stored differently
+        CacheIt = StructCache.find(Construct.UnionType.Name);
+    }
+    if (CacheIt == StructCache.end()) {
+        return llvm::make_error<llvm::StringError>(
+            "Union type not found: " + Construct.UnionType.Name,
+            llvm::inconvertibleErrorCode()
+        );
+    }
+    llvm::StructType *UnionTy = CacheIt->second;
+
+    // Allocate space for the union
+    llvm::Value *UnionPtr = Builder->CreateAlloca(UnionTy, nullptr, "variant.ptr");
+
+    // Store the tag (field 0)
+    llvm::Type *I8Ty = llvm::Type::getInt8Ty(*Context);
+    llvm::Value *TagPtr = Builder->CreateStructGEP(UnionTy, UnionPtr, 0, "variant.tag.ptr");
+    Builder->CreateStore(llvm::ConstantInt::get(I8Ty, Construct.VariantTag), TagPtr);
+
+    // Store the value (field 1) if present
+    if (Construct.Value) {
+        auto ValueOrErr = emitOperand(*Construct.Value);
+        if (!ValueOrErr)
+            return ValueOrErr.takeError();
+
+        llvm::Value *Value = *ValueOrErr;
+        llvm::Value *DataPtr = Builder->CreateStructGEP(UnionTy, UnionPtr, 1, "variant.data.ptr");
+
+        // Bitcast the data pointer to the value's type and store
+        llvm::Type *ValueTy = Value->getType();
+        llvm::Value *DataCast = Builder->CreateBitCast(
+            DataPtr,
+            llvm::PointerType::getUnqual(ValueTy),
+            "variant.data.cast"
+        );
+        Builder->CreateStore(Value, DataCast);
+    }
+
+    // Load and return the union value
+    return Builder->CreateLoad(UnionTy, UnionPtr, "variant.val");
 }
 
 llvm::Expected<llvm::Value*> Emitter::emitTuple(const PlannedTuple &Tuple) {

@@ -2580,6 +2580,76 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
             }
         }
 
+        // Check for union variant constructor pattern: Union.Variant(value)
+        // e.g., Result.Ok(42) or Option.Some(value)
+        if (i + 1 < Ops.size()) {
+            const auto &NextOp = Ops[i + 1];
+            if (auto* TypeExpr = std::get_if<Type>(&Op.Expr)) {
+                if (TypeExpr->Name.size() >= 2 && std::holds_alternative<Tuple>(NextOp.Expr)) {
+                    // Look up the first name as a union
+                    const std::string& UnionName = TypeExpr->Name[0];
+                    const std::string& VariantName = TypeExpr->Name[1];
+
+                    auto UnionIt = InstantiatedUnions.find(UnionName);
+                    if (UnionIt != InstantiatedUnions.end()) {
+                        const PlannedUnion& Union = UnionIt->second;
+
+                        // Find the variant
+                        const PlannedVariant* FoundVariant = nullptr;
+                        for (const auto& Var : Union.Variants) {
+                            if (Var.Name == VariantName) {
+                                FoundVariant = &Var;
+                                break;
+                            }
+                        }
+
+                        if (FoundVariant) {
+                            // Plan the tuple argument
+                            Operand ArgsOp = NextOp;
+                            ArgsOp.MemberAccess = nullptr;
+                            auto PlannedArgs = planOperand(ArgsOp);
+                            if (!PlannedArgs) {
+                                return PlannedArgs.takeError();
+                            }
+
+                            // Extract the first argument value (for single-value variants)
+                            std::shared_ptr<PlannedOperand> ArgValue;
+                            if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedArgs->Expr)) {
+                                if (!TupleExpr->Components.empty() &&
+                                    !TupleExpr->Components[0].Value.empty()) {
+                                    ArgValue = std::make_shared<PlannedOperand>(
+                                        std::move(TupleExpr->Components[0].Value.back()));
+                                }
+                            }
+
+                            // Build the union type
+                            PlannedType UnionType;
+                            UnionType.Loc = Op.Loc;
+                            UnionType.Name = UnionName;
+                            UnionType.MangledName = Union.MangledName;
+
+                            // Create the variant construction
+                            PlannedVariantConstruction VarConstruct;
+                            VarConstruct.Loc = Op.Loc;
+                            VarConstruct.UnionType = UnionType;
+                            VarConstruct.VariantName = VariantName;
+                            VarConstruct.VariantTag = FoundVariant->Tag;
+                            VarConstruct.Value = ArgValue;
+
+                            PlannedOperand ResultOp;
+                            ResultOp.Loc = Op.Loc;
+                            ResultOp.ResultType = UnionType;
+                            ResultOp.Expr = std::move(VarConstruct);
+
+                            Result.push_back(std::move(ResultOp));
+                            i++;  // Skip the tuple operand
+                            continue;
+                        }
+                    }
+                }
+            }
+        }
+
         // Check for type constructor pattern: Type followed by Tuple
         // e.g., Point(3, 4) or Point(3, 4).x where Point is a struct type
         if (i + 1 < Ops.size()) {
