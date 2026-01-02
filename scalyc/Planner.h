@@ -23,8 +23,14 @@ public:
     // Main entry point - resolve a program to a plan
     llvm::Expected<Plan> plan(const Program &Prog);
 
+    // Add a sibling program (for multi-file compilation)
+    void addSiblingProgram(std::shared_ptr<Program> Prog);
+
 private:
     std::string File;
+
+    // Sibling programs for multi-file compilation
+    std::vector<std::shared_ptr<Program>> SiblingPrograms;
 
     // Symbol tables for resolution (flat cache, populated during planning)
     std::map<std::string, const Concept*> Concepts;
