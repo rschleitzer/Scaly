@@ -2844,6 +2844,33 @@ llvm::Expected<PlannedOperand> Planner::planOperand(const Operand &Op) {
                     MemberType.Life = UnspecifiedLifetime{};
                     ImplicitMemberAccess.push_back(MemberType);
                 }
+            } else if (CurrentStructureProperties) {
+                // Check if first element is a property of the current structure
+                auto ThisType = lookupLocal("this");
+                if (ThisType && ThisType->Name == CurrentStructureName) {
+                    for (const auto &Prop : *CurrentStructureProperties) {
+                        if (Prop.Name == TypeExpr->Name[0]) {
+                            // First element is a property - convert to this.property.rest...
+                            Type ThisTypeExpr;
+                            ThisTypeExpr.Loc = TypeExpr->Loc;
+                            ThisTypeExpr.Name = {"this"};
+                            ThisTypeExpr.Generics = nullptr;
+                            ThisTypeExpr.Life = TypeExpr->Life;
+                            ModifiedOp.Expr = ThisTypeExpr;
+
+                            // Add all path elements as implicit member access
+                            for (size_t i = 0; i < TypeExpr->Name.size(); ++i) {
+                                Type MemberType;
+                                MemberType.Loc = TypeExpr->Loc;
+                                MemberType.Name = {TypeExpr->Name[i]};
+                                MemberType.Generics = nullptr;
+                                MemberType.Life = UnspecifiedLifetime{};
+                                ImplicitMemberAccess.push_back(MemberType);
+                            }
+                            break;
+                        }
+                    }
+                }
             }
         }
         // Check for implicit property access (e.g., just "x" in a method body)
@@ -2951,9 +2978,21 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
             // Check if current op is a Type path like ["p", "method"] where "p" is a variable
             if (auto* TypeExpr = std::get_if<Type>(&Op.Expr)) {
                 if (TypeExpr->Name.size() >= 2 && (!TypeExpr->Generics || TypeExpr->Generics->empty())) {
-                    // Check if first element is a local variable
+                    // Check if first element is a local variable or a property
                     auto LocalBind = lookupLocalBinding(TypeExpr->Name[0]);
-                    if (LocalBind && std::holds_alternative<Tuple>(NextOp.Expr)) {
+                    bool IsProperty = false;
+                    if (!LocalBind && CurrentStructureProperties) {
+                        auto ThisType = lookupLocal("this");
+                        if (ThisType && ThisType->Name == CurrentStructureName) {
+                            for (const auto &Prop : *CurrentStructureProperties) {
+                                if (Prop.Name == TypeExpr->Name[0]) {
+                                    IsProperty = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if ((LocalBind || IsProperty) && std::holds_alternative<Tuple>(NextOp.Expr)) {
                         // This is variable.member...method(args)
                         // Last element of path is the method name
                         std::string MethodName = TypeExpr->Name.back();
