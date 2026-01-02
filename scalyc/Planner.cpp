@@ -426,7 +426,7 @@ static std::string normalizeTypeName(llvm::StringRef Name) {
     if (Name == "i32") return "i32";
     if (Name == "i16") return "i16";
     if (Name == "i8") return "i8";
-    if (Name == "size_t" || Name == "u64") return "u64";
+    if (Name == "size_t" || Name == "size" || Name == "u64" || Name == "usize") return "u64";
     if (Name == "u32") return "u32";
     if (Name == "u16") return "u16";
     if (Name == "u8") return "u8";
@@ -538,6 +538,30 @@ std::vector<const Function*> Planner::lookupFunction(llvm::StringRef Name) {
         }
     }
 
+    // If we're inside a structure, also search its methods
+    // This allows calling sibling methods like allocate_page() from allocate()
+    if (Result.empty() && !CurrentStructureName.empty()) {
+        // Extract base struct name (remove generic suffix like ".T")
+        std::string BaseName = CurrentStructureName;
+        size_t DotPos = BaseName.find('.');
+        if (DotPos != std::string::npos) {
+            BaseName = BaseName.substr(0, DotPos);
+        }
+
+        const Concept* Conc = lookupConcept(BaseName);
+        if (Conc) {
+            if (auto* Struct = std::get_if<Structure>(&Conc->Def)) {
+                for (const auto& Member : Struct->Members) {
+                    if (auto* Func = std::get_if<Function>(&Member)) {
+                        if (Func->Name == Name) {
+                            Result.push_back(Func);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     // Cache the result
     if (!Result.empty()) {
         Functions[Name.str()] = Result;
@@ -603,20 +627,34 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
     llvm::StringRef MethodName,
     Span Loc) {
 
+    const PlannedStructure *Struct = nullptr;
+
     // Look up the struct in the instantiation cache
     auto StructIt = InstantiatedStructures.find(StructType.Name);
-    if (StructIt == InstantiatedStructures.end()) {
+    if (StructIt != InstantiatedStructures.end()) {
+        Struct = &StructIt->second;
+    } else {
         // Also try the mangled name
         StructIt = InstantiatedStructures.find(StructType.MangledName);
-        if (StructIt == InstantiatedStructures.end()) {
-            return std::nullopt;
+        if (StructIt != InstantiatedStructures.end()) {
+            Struct = &StructIt->second;
         }
     }
 
-    const PlannedStructure &Struct = StructIt->second;
+    // If not found in cache, check if we're currently planning this structure
+    // This handles methods calling other methods during structure planning
+    if (!Struct && CurrentStructure &&
+        (CurrentStructure->Name == StructType.Name ||
+         CurrentStructure->MangledName == StructType.MangledName)) {
+        Struct = CurrentStructure;
+    }
 
-    // Search for method by name
-    for (const auto &Method : Struct.Methods) {
+    if (!Struct) {
+        return std::nullopt;
+    }
+
+    // Search for method by name in planned methods
+    for (const auto &Method : Struct->Methods) {
         if (Method.Name == MethodName) {
             MethodMatch Match;
             Match.Method = nullptr;  // We have the planned version, not the Model version
@@ -629,6 +667,58 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                 Match.ReturnType.Loc = Loc;
             }
             return Match;
+        }
+    }
+
+    // If method not found in planned methods, search in Model's Concept
+    // This handles forward references to methods not yet planned
+    const Concept *Conc = lookupConcept(StructType.Name);
+    if (Conc) {
+        if (auto *ModelStruct = std::get_if<Structure>(&Conc->Def)) {
+            for (const auto &Member : ModelStruct->Members) {
+                if (auto *Func = std::get_if<Function>(&Member)) {
+                    if (Func->Name == MethodName) {
+                        MethodMatch Match;
+                        Match.Method = Func;
+
+                        // Compute mangled name
+                        PlannedType ParentType;
+                        ParentType.Name = StructType.Name;
+                        ParentType.MangledName = Struct->MangledName;
+                        std::vector<PlannedItem> Params;
+                        for (const auto &Inp : Func->Input) {
+                            PlannedItem Item;
+                            Item.Loc = Inp.Loc;
+                            Item.Name = Inp.Name;
+                            // Resolve type if present
+                            if (Inp.ItemType) {
+                                auto Resolved = resolveType(*Inp.ItemType, Inp.Loc);
+                                if (Resolved) {
+                                    Item.ItemType = std::make_shared<PlannedType>(*Resolved);
+                                }
+                            }
+                            Params.push_back(Item);
+                        }
+                        Match.MangledName = mangleFunction(Func->Name, Params, &ParentType);
+
+                        // Resolve return type
+                        if (Func->Returns) {
+                            auto Resolved = resolveType(*Func->Returns, Loc);
+                            if (Resolved) {
+                                Match.ReturnType = *Resolved;
+                            } else {
+                                llvm::consumeError(Resolved.takeError());
+                                Match.ReturnType.Name = "void";
+                                Match.ReturnType.Loc = Loc;
+                            }
+                        } else {
+                            Match.ReturnType.Name = "void";
+                            Match.ReturnType.Loc = Loc;
+                        }
+                        return Match;
+                    }
+                }
+            }
         }
     }
 
@@ -898,6 +988,65 @@ llvm::Expected<PlannedType> Planner::resolveFunctionCall(
         VoidType.Name = "void";
         VoidType.MangledName = "v";
         return VoidType;
+    }
+
+    // Third pass: try methods with implicit 'this'
+    // When calling allocate_oversized(size) from within Page, treat as this.allocate_oversized(size)
+    if (!CurrentStructureName.empty()) {
+        for (const Function* Func : Candidates) {
+            // Skip generic functions
+            if (!Func->Parameters.empty()) {
+                continue;
+            }
+
+            // Check if this is a method (first param is "this")
+            if (Func->Input.empty() || !Func->Input[0].Name ||
+                *Func->Input[0].Name != "this") {
+                continue;
+            }
+
+            // Check if arity matches with implicit this
+            if (Func->Input.size() != ArgTypes.size() + 1) {
+                continue;
+            }
+
+            // Check parameter types match (starting from second param)
+            bool AllMatch = true;
+            for (size_t I = 0; I < ArgTypes.size(); ++I) {
+                if (!Func->Input[I + 1].ItemType) {
+                    // Parameter has no type annotation - match any type
+                    continue;
+                }
+
+                auto ParamTypeResult = resolveType(*Func->Input[I + 1].ItemType, Loc);
+                if (!ParamTypeResult) {
+                    llvm::consumeError(ParamTypeResult.takeError());
+                    AllMatch = false;
+                    break;
+                }
+
+                if (!typesEqual(*ParamTypeResult, ArgTypes[I])) {
+                    AllMatch = false;
+                    break;
+                }
+            }
+
+            if (AllMatch) {
+                BestMatch = Func;
+                break;
+            }
+        }
+
+        if (BestMatch) {
+            if (BestMatch->Returns) {
+                return resolveType(*BestMatch->Returns, Loc);
+            }
+            PlannedType VoidType;
+            VoidType.Loc = Loc;
+            VoidType.Name = "void";
+            VoidType.MangledName = "v";
+            return VoidType;
+        }
     }
 
     // No matching overload - build helpful error message
@@ -1290,6 +1439,31 @@ llvm::Expected<PlannedOperand> Planner::collapseOperandSequence(
     // Single operand: return as-is
     if (Ops.size() == 1) {
         return std::move(Ops[0]);
+    }
+
+    // Handle cast expression: (Type)value
+    if (auto* TupleExpr = std::get_if<PlannedTuple>(&Ops[0].Expr)) {
+        // Single-component tuple with a type expression is a cast
+        if (TupleExpr->Components.size() == 1 &&
+            !TupleExpr->Components[0].Name &&
+            TupleExpr->Components[0].Value.size() == 1) {
+            const auto& Inner = TupleExpr->Components[0].Value[0];
+            if (std::holds_alternative<PlannedType>(Inner.Expr)) {
+                // This is a cast - collapse the rest and apply cast type
+                std::vector<PlannedOperand> RestOps(Ops.begin() + 1, Ops.end());
+                if (RestOps.empty()) {
+                    // Just (Type) with no value - return the tuple as-is
+                    return std::move(Ops[0]);
+                }
+                auto ValueResult = collapseOperandSequence(std::move(RestOps));
+                if (!ValueResult) {
+                    return ValueResult.takeError();
+                }
+                // Override the result type with the cast type
+                ValueResult->ResultType = TupleExpr->TupleType;
+                return ValueResult;
+            }
+        }
     }
 
     // Handle prefix operator (e.g., -x, !x)
@@ -2600,6 +2774,92 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
             }
         }
 
+        // Check for method call pattern on any operand with member access
+        // e.g., (*page).reset() where (*page) is a grouped dereference expression
+        if (i + 1 < Ops.size()) {
+            const auto &NextOp = Ops[i + 1];
+            // Check if current op has member access and next is a tuple (args)
+            if (Op.MemberAccess && !Op.MemberAccess->empty() &&
+                std::holds_alternative<Tuple>(NextOp.Expr)) {
+                // The last member in the access chain might be a method name
+                std::string MethodName = Op.MemberAccess->back();
+
+                // Plan the base operand without the last member access
+                Operand BaseOp = Op;
+                if (Op.MemberAccess->size() == 1) {
+                    BaseOp.MemberAccess = nullptr;  // No more member access
+                } else {
+                    // Keep all but the last member access
+                    BaseOp.MemberAccess = std::make_shared<std::vector<std::string>>(
+                        Op.MemberAccess->begin(), Op.MemberAccess->end() - 1);
+                }
+
+                auto PlannedBase = planOperand(BaseOp);
+                if (!PlannedBase) {
+                    return PlannedBase.takeError();
+                }
+
+                // Look up the method on the base type
+                auto MethodMatch = lookupMethod(PlannedBase->ResultType, MethodName, Op.Loc);
+                if (MethodMatch) {
+                    // Plan the arguments tuple
+                    Operand ArgsOp = NextOp;
+                    ArgsOp.MemberAccess = nullptr;
+                    auto PlannedArgs = planOperand(ArgsOp);
+                    if (!PlannedArgs) {
+                        return PlannedArgs.takeError();
+                    }
+
+                    // Create method call with instance as first argument
+                    PlannedCall Call;
+                    Call.Loc = Op.Loc;
+                    Call.Name = MethodName;
+                    Call.MangledName = MethodMatch->MangledName;
+                    Call.IsIntrinsic = false;
+                    Call.IsOperator = false;
+                    Call.ResultType = MethodMatch->ReturnType;
+
+                    // Build args: [instance, ...tuple_args]
+                    Call.Args = std::make_shared<std::vector<PlannedOperand>>();
+                    Call.Args->push_back(std::move(*PlannedBase));
+
+                    // Add tuple elements as additional arguments
+                    if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedArgs->Expr)) {
+                        for (auto& Comp : TupleExpr->Components) {
+                            for (auto& ValOp : Comp.Value) {
+                                Call.Args->push_back(std::move(ValOp));
+                            }
+                        }
+                    }
+
+                    // Create operand with the call
+                    PlannedOperand CallOp;
+                    CallOp.Loc = Op.Loc;
+                    CallOp.Expr = std::move(Call);
+                    CallOp.ResultType = MethodMatch->ReturnType;
+
+                    // Apply any member access on the result (from NextOp)
+                    if (NextOp.MemberAccess && !NextOp.MemberAccess->empty()) {
+                        auto MemberChain = resolveMemberAccessChain(CallOp.ResultType,
+                                                                     *NextOp.MemberAccess, NextOp.Loc);
+                        if (!MemberChain) {
+                            return MemberChain.takeError();
+                        }
+                        CallOp.MemberAccess = std::make_shared<std::vector<PlannedMemberAccess>>(
+                            std::move(*MemberChain));
+                        if (!CallOp.MemberAccess->empty()) {
+                            CallOp.ResultType = CallOp.MemberAccess->back().ResultType;
+                        }
+                    }
+
+                    Result.push_back(std::move(CallOp));
+                    i++;  // Skip the tuple operand
+                    continue;
+                }
+                // If method not found, fall through to normal processing
+            }
+        }
+
         // Check for union variant constructor pattern: Union.Variant(value)
         // e.g., Result.Ok(42) or Option.Some(value)
         if (i + 1 < Ops.size()) {
@@ -2818,16 +3078,63 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             return FuncResult.takeError();
                         }
 
+                        // Check if this is a method call with implicit 'this'
+                        // This happens when we call a sibling method like allocate_oversized(size)
+                        // from within another method of the same struct
+                        bool NeedsImplicitThis = false;
+                        const Function* MatchedFunc = nullptr;
+                        if (!CurrentStructureName.empty()) {
+                            auto Candidates = lookupFunction(FuncName);
+                            for (const Function* Func : Candidates) {
+                                if (Func->Parameters.empty() &&
+                                    !Func->Input.empty() &&
+                                    Func->Input[0].Name &&
+                                    *Func->Input[0].Name == "this" &&
+                                    Func->Input.size() == ArgTypes.size() + 1) {
+                                    NeedsImplicitThis = true;
+                                    MatchedFunc = Func;
+                                    break;
+                                }
+                            }
+                        }
+
                         // Build PlannedItems for mangling
                         std::vector<PlannedItem> ParamItems;
+                        if (NeedsImplicitThis) {
+                            // Add 'this' type for mangling
+                            PlannedItem ThisItem;
+                            std::string BaseName = CurrentStructureName;
+                            size_t DotPos = BaseName.find('.');
+                            if (DotPos != std::string::npos) {
+                                BaseName = BaseName.substr(0, DotPos);
+                            }
+                            PlannedType ThisType;
+                            ThisType.Name = BaseName;
+                            ThisType.MangledName = mangleType(ThisType);
+                            ThisItem.ItemType = std::make_shared<PlannedType>(ThisType);
+                            ParamItems.push_back(ThisItem);
+                        }
                         for (const auto& ArgType : ArgTypes) {
                             PlannedItem Item;
                             Item.ItemType = std::make_shared<PlannedType>(ArgType);
                             ParamItems.push_back(Item);
                         }
 
-                        // Generate mangled name for standalone function (no parent)
-                        std::string MangledName = mangleFunction(FuncName, ParamItems, nullptr);
+                        // Generate mangled name - if it's a method, use parent type
+                        std::string MangledName;
+                        if (NeedsImplicitThis) {
+                            std::string BaseName = CurrentStructureName;
+                            size_t DotPos = BaseName.find('.');
+                            if (DotPos != std::string::npos) {
+                                BaseName = BaseName.substr(0, DotPos);
+                            }
+                            PlannedType ParentType;
+                            ParentType.Name = BaseName;
+                            ParentType.MangledName = mangleType(ParentType);
+                            MangledName = mangleFunction(FuncName, ParamItems, &ParentType);
+                        } else {
+                            MangledName = mangleFunction(FuncName, ParamItems, nullptr);
+                        }
 
                         // Create the function call
                         PlannedCall Call;
@@ -2840,6 +3147,26 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
 
                         // Convert tuple components to call arguments
                         Call.Args = std::make_shared<std::vector<PlannedOperand>>();
+
+                        // Add implicit 'this' as first argument if needed
+                        if (NeedsImplicitThis) {
+                            PlannedOperand ThisOp;
+                            ThisOp.Loc = Op.Loc;
+                            PlannedVariable ThisVar;
+                            ThisVar.Loc = Op.Loc;
+                            ThisVar.Name = "this";
+                            std::string BaseName = CurrentStructureName;
+                            size_t DotPos = BaseName.find('.');
+                            if (DotPos != std::string::npos) {
+                                BaseName = BaseName.substr(0, DotPos);
+                            }
+                            ThisVar.VariableType.Name = BaseName;
+                            ThisVar.VariableType.MangledName = mangleType(ThisVar.VariableType);
+                            ThisOp.ResultType = ThisVar.VariableType;
+                            ThisOp.Expr = std::move(ThisVar);
+                            Call.Args->push_back(std::move(ThisOp));
+                        }
+
                         if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedArgs->Expr)) {
                             for (auto &Comp : TupleExpr->Components) {
                                 if (!Comp.Value.empty()) {
@@ -4004,8 +4331,10 @@ llvm::Expected<PlannedStructure> Planner::planStructure(
     // Set current structure context for property access in methods
     std::string OldStructureName = CurrentStructureName;
     std::vector<PlannedProperty>* OldStructureProperties = CurrentStructureProperties;
+    PlannedStructure* OldStructure = CurrentStructure;
     CurrentStructureName = FullStructureName;
     CurrentStructureProperties = &Result.Properties;
+    CurrentStructure = &Result;
 
     // Plan initializers
     for (const auto &Init : Struct.Initializers) {
@@ -4014,6 +4343,7 @@ llvm::Expected<PlannedStructure> Planner::planStructure(
             TypeSubstitutions = OldSubst;
             CurrentStructureName = OldStructureName;
             CurrentStructureProperties = OldStructureProperties;
+            CurrentStructure = OldStructure;
             return PlannedInit.takeError();
         }
         Result.Initializers.push_back(std::move(*PlannedInit));
@@ -4026,6 +4356,7 @@ llvm::Expected<PlannedStructure> Planner::planStructure(
             TypeSubstitutions = OldSubst;
             CurrentStructureName = OldStructureName;
             CurrentStructureProperties = OldStructureProperties;
+            CurrentStructure = OldStructure;
             return PlannedDeInit.takeError();
         }
         Result.Deinitializer = std::make_unique<PlannedDeInitializer>(
@@ -4040,6 +4371,7 @@ llvm::Expected<PlannedStructure> Planner::planStructure(
                 TypeSubstitutions = OldSubst;
                 CurrentStructureName = OldStructureName;
                 CurrentStructureProperties = OldStructureProperties;
+                CurrentStructure = OldStructure;
                 return PlannedMethod.takeError();
             }
             Result.Methods.push_back(std::move(*PlannedMethod));
@@ -4049,6 +4381,7 @@ llvm::Expected<PlannedStructure> Planner::planStructure(
                 TypeSubstitutions = OldSubst;
                 CurrentStructureName = OldStructureName;
                 CurrentStructureProperties = OldStructureProperties;
+                CurrentStructure = OldStructure;
                 return PlannedOp.takeError();
             }
             Result.Operators.push_back(std::move(*PlannedOp));
@@ -4060,6 +4393,7 @@ llvm::Expected<PlannedStructure> Planner::planStructure(
     TypeSubstitutions = OldSubst;
     CurrentStructureName = OldStructureName;
     CurrentStructureProperties = OldStructureProperties;
+    CurrentStructure = OldStructure;
 
     // Add provenance if this is an instantiation
     if (!GenericArgs.empty()) {

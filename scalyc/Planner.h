@@ -57,6 +57,7 @@ private:
     // Current structure being planned (for property access in methods)
     std::string CurrentStructureName;
     std::vector<PlannedProperty>* CurrentStructureProperties = nullptr;
+    PlannedStructure* CurrentStructure = nullptr;  // For method lookup during planning
 
     // ========== Type Inference State ==========
 
