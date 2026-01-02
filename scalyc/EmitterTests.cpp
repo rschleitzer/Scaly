@@ -2444,6 +2444,73 @@ static bool testPipelineComplexGrouped() {
     return true;
 }
 
+// Pointer dereference tests
+
+static bool testPointerDerefCompiles() {
+    const char* Name = "Pipeline: pointer dereference compiles";
+
+    // Test that a function with pointer parameter and dereference compiles
+    auto PlanResult = compileToPlan(
+        "define Point(x: int, y: int)\n"
+        "function getX(p: pointer[Point]) returns int { (*p).x }\n"
+        "0"  // Return something for the top-level
+    );
+
+    if (!PlanResult) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << PlanResult.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPointerDerefSimple() {
+    const char* Name = "Pipeline: simple pointer dereference compiles";
+
+    // Test dereference of a pointer[int]
+    auto PlanResult = compileToPlan(
+        "function deref(p: pointer[int]) returns int { *p }\n"
+        "0"
+    );
+
+    if (!PlanResult) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << PlanResult.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPointerDerefMemberAccess() {
+    const char* Name = "Pipeline: pointer dereference with member access";
+
+    // More complex case: dereference and access multiple members
+    auto PlanResult = compileToPlan(
+        "define Point(x: int, y: int)\n"
+        "function sum(p: pointer[Point]) returns int { (*p).x + (*p).y }\n"
+        "0"
+    );
+
+    if (!PlanResult) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << PlanResult.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
 // Member access tests
 
 static bool testPipelineMemberAccessSimple() {
@@ -3311,6 +3378,11 @@ bool runEmitterTests() {
     testPipelineGroupedAdd();
     testPipelineNestedGrouped();
     testPipelineComplexGrouped();
+
+    llvm::outs() << "  Pointer dereference tests:\n";
+    testPointerDerefCompiles();
+    testPointerDerefSimple();
+    testPointerDerefMemberAccess();
 
     llvm::outs() << "  Member access tests:\n";
     testPipelineMemberAccessSimple();

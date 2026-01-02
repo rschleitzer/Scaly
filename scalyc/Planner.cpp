@@ -1312,11 +1312,26 @@ llvm::Expected<PlannedOperand> Planner::collapseOperandSequence(
             Call.Args = std::make_shared<std::vector<PlannedOperand>>();
             Call.Args->push_back(std::move(*RestResult));
 
-            // Result type: negation preserves type, logical not returns bool
+            // Result type: depends on the operator
             PlannedType OperandType = Call.Args->front().ResultType;
             if (TypeExpr->Name == "!" || TypeExpr->Name == "not") {
                 Call.ResultType.Name = "bool";
                 Call.ResultType.MangledName = "bool";
+            } else if (TypeExpr->Name == "*") {
+                // Dereference operator: result type is the element type
+                auto ElementType = getPointerElementType(OperandType);
+                if (ElementType) {
+                    Call.ResultType = *ElementType;
+                } else {
+                    // Not a pointer type - error will be caught later
+                    Call.ResultType = OperandType;
+                }
+            } else if (TypeExpr->Name == "&") {
+                // Address-of operator: result type is pointer[operand type]
+                Call.ResultType.Loc = Ops[0].Loc;
+                Call.ResultType.Name = "pointer";
+                Call.ResultType.Generics.push_back(OperandType);
+                Call.ResultType.MangledName = "P" + OperandType.MangledName;
             } else {
                 // Negation, bitwise not: result type = operand type
                 Call.ResultType = OperandType;
