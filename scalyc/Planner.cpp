@@ -635,6 +635,54 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
     return std::nullopt;
 }
 
+std::optional<Planner::InitializerMatch> Planner::findInitializer(
+    const PlannedType &StructType,
+    const std::vector<PlannedType> &ArgTypes) {
+
+    // Look up the struct in the instantiation cache
+    auto StructIt = InstantiatedStructures.find(StructType.Name);
+    if (StructIt == InstantiatedStructures.end()) {
+        // Also try the mangled name
+        StructIt = InstantiatedStructures.find(StructType.MangledName);
+        if (StructIt == InstantiatedStructures.end()) {
+            return std::nullopt;
+        }
+    }
+
+    const PlannedStructure &Struct = StructIt->second;
+
+    // Search for matching initializer
+    for (const auto &Init : Struct.Initializers) {
+        // Check if parameter count matches
+        if (Init.Input.size() != ArgTypes.size()) {
+            continue;
+        }
+
+        // Check if all parameter types match
+        bool AllMatch = true;
+        for (size_t i = 0; i < ArgTypes.size(); ++i) {
+            if (!Init.Input[i].ItemType) {
+                // Parameter has no type - treat as match
+                continue;
+            }
+            if (!typesEqual(*Init.Input[i].ItemType, ArgTypes[i])) {
+                AllMatch = false;
+                break;
+            }
+        }
+
+        if (AllMatch) {
+            InitializerMatch Match;
+            Match.Init = &Init;
+            Match.MangledName = Init.MangledName;
+            Match.StructType = StructType;
+            return Match;
+        }
+    }
+
+    return std::nullopt;
+}
+
 std::optional<Planner::OperatorMatch> Planner::findOperator(
     llvm::StringRef Name, const PlannedType &Left, const PlannedType &Right) {
 
@@ -2520,28 +2568,83 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             StructType.Name = TypeExpr->Name[0];
                             StructType.MangledName = mangleType(StructType);
 
-                            // Update the tuple expression to have the struct type
+                            // Extract argument types from the planned tuple
+                            std::vector<PlannedType> ArgTypes;
                             if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedArgs->Expr)) {
-                                TupleExpr->TupleType = StructType;
-                            }
-                            PlannedArgs->ResultType = StructType;
-
-                            // Apply member access to the struct type if present
-                            if (NextOp.MemberAccess && !NextOp.MemberAccess->empty()) {
-                                auto MemberChain = resolveMemberAccessChain(StructType,
-                                                                             *NextOp.MemberAccess, NextOp.Loc);
-                                if (!MemberChain) {
-                                    return MemberChain.takeError();
-                                }
-                                PlannedArgs->MemberAccess = std::make_shared<std::vector<PlannedMemberAccess>>(
-                                    std::move(*MemberChain));
-                                if (!PlannedArgs->MemberAccess->empty()) {
-                                    PlannedArgs->ResultType = PlannedArgs->MemberAccess->back().ResultType;
+                                for (const auto &Comp : TupleExpr->Components) {
+                                    if (!Comp.Value.empty()) {
+                                        ArgTypes.push_back(Comp.Value.back().ResultType);
+                                    }
                                 }
                             }
 
-                            // Push the constructed struct (skip the type operand, use only the tuple)
-                            Result.push_back(std::move(*PlannedArgs));
+                            // Check if there's a matching initializer
+                            auto InitMatch = findInitializer(StructType, ArgTypes);
+                            if (InitMatch) {
+                                // Generate a PlannedCall to the initializer
+                                PlannedCall Call;
+                                Call.Loc = Op.Loc;
+                                Call.Name = StructType.Name;
+                                Call.MangledName = InitMatch->MangledName;
+                                Call.IsIntrinsic = false;
+                                Call.IsOperator = false;
+                                Call.ResultType = StructType;
+
+                                // Convert tuple components to call arguments
+                                Call.Args = std::make_shared<std::vector<PlannedOperand>>();
+                                if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedArgs->Expr)) {
+                                    for (auto &Comp : TupleExpr->Components) {
+                                        if (!Comp.Value.empty()) {
+                                            Call.Args->push_back(std::move(Comp.Value.back()));
+                                        }
+                                    }
+                                }
+
+                                PlannedOperand CallOperand;
+                                CallOperand.Loc = Op.Loc;
+                                CallOperand.ResultType = StructType;
+                                CallOperand.Expr = std::move(Call);
+
+                                // Apply member access if present
+                                if (NextOp.MemberAccess && !NextOp.MemberAccess->empty()) {
+                                    auto MemberChain = resolveMemberAccessChain(StructType,
+                                                                                 *NextOp.MemberAccess, NextOp.Loc);
+                                    if (!MemberChain) {
+                                        return MemberChain.takeError();
+                                    }
+                                    CallOperand.MemberAccess = std::make_shared<std::vector<PlannedMemberAccess>>(
+                                        std::move(*MemberChain));
+                                    if (!CallOperand.MemberAccess->empty()) {
+                                        CallOperand.ResultType = CallOperand.MemberAccess->back().ResultType;
+                                    }
+                                }
+
+                                Result.push_back(std::move(CallOperand));
+                            } else {
+                                // No initializer - use direct tuple construction
+                                // Update the tuple expression to have the struct type
+                                if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedArgs->Expr)) {
+                                    TupleExpr->TupleType = StructType;
+                                }
+                                PlannedArgs->ResultType = StructType;
+
+                                // Apply member access to the struct type if present
+                                if (NextOp.MemberAccess && !NextOp.MemberAccess->empty()) {
+                                    auto MemberChain = resolveMemberAccessChain(StructType,
+                                                                                 *NextOp.MemberAccess, NextOp.Loc);
+                                    if (!MemberChain) {
+                                        return MemberChain.takeError();
+                                    }
+                                    PlannedArgs->MemberAccess = std::make_shared<std::vector<PlannedMemberAccess>>(
+                                        std::move(*MemberChain));
+                                    if (!PlannedArgs->MemberAccess->empty()) {
+                                        PlannedArgs->ResultType = PlannedArgs->MemberAccess->back().ResultType;
+                                    }
+                                }
+
+                                // Push the constructed struct (skip the type operand, use only the tuple)
+                                Result.push_back(std::move(*PlannedArgs));
+                            }
 
                             // Skip the next operand (we consumed it)
                             i++;
@@ -3477,6 +3580,9 @@ llvm::Expected<PlannedInitializer> Planner::planInitializer(const Initializer &I
         }
     }
     Result.Input = std::move(Params);
+
+    // Define 'this' in scope for the initializer body
+    defineLocal("this", Parent, true);  // 'this' is mutable in initializers
 
     // Plan implementation (initializer body)
     auto PlannedImpl = planImplementation(Init.Impl);
