@@ -71,6 +71,7 @@ private:
     // Special expressions
     llvm::Expected<SizeOf> handleSizeOf(const SizeOfSyntax &Syntax);
     llvm::Expected<Is> handleIs(const IsSyntax &Syntax);
+    llvm::Expected<As> handleAs(const AsSyntax &Syntax);
 
     // Action handling
     llvm::Expected<Action> handleAction(const ActionSyntax &Syntax);

@@ -9,7 +9,7 @@ define Page
 )
 {
     function allocate_page returns pointer[Page]$ {
-        var page (pointer[Page])aligned_alloc(PAGE_SIZE, PAGE_SIZE)
+        var page aligned_alloc(PAGE_SIZE, PAGE_SIZE) as pointer[Page]
         (*page).reset()
         return page
     }
@@ -22,9 +22,9 @@ define Page
     }
 
     function allocate(this: Page, size: size_t, align: size_t) returns pointer[void]$ {
-        let location (size_t)next_object
+        let location next_object as size_t
         let aligned_location (location + align - 1) & ~(align - 1)
-        let location_after_page (size_t)this + PAGE_SIZE
+        let location_after_page this as size_t + PAGE_SIZE
         let capacity location_after_page - aligned_location
 
         if capacity < size
@@ -51,8 +51,8 @@ define Page
 
         ; Allocate from ourselves
         let next_location aligned_location + size
-        set next_object: (pointer[void])next_location
-        return (pointer[void])aligned_location
+        set next_object: next_location as pointer[void]
+        return aligned_location as pointer[void]
     }
 
     function allocate_oversized(this: Page, size: size_t) returns pointer[void]$ {
@@ -60,7 +60,7 @@ define Page
         let address aligned_alloc(PAGE_SIZE,  (size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1))
         if address = null
             exit(1)
-        var page (pointer[Page])address
+        var page address as pointer[Page]
 
         ; Oversized pages have no next_object
         set (*page).next_object: null
@@ -69,19 +69,19 @@ define Page
         (exclusive_pages).add(this, page)
 
         ; The page offset by the null pointer for next_object
-        return (pointer[void])(page + 1)
+        return (page + 1) as pointer[void]
     }
 
     function get(address: pointer[void]) returns pointer[Page]$ {
-        let mask ~(size_t)(PAGE_SIZE - 1)
-        let page (Page*)((size_t)address & mask)
+        let mask ~((PAGE_SIZE - 1) as size_t)
+        let page (address as size_t & mask) as pointer[Page]
         return page
     }
 
     function get_capacity(this: Page, align: size_t) returns size_t$ {
-        var location (size_t)next_object
+        var location next_object as size_t
         let aligned_location (location + align - 1) & ~(align - 1)
-        var location_after_page (size_t)this + PAGE_SIZE
+        var location_after_page this as size_t + PAGE_SIZE
         var capacity location_after_page - aligned_location
         return capacity
     }

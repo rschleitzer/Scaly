@@ -3,4 +3,5 @@
 
 define stdlib {
     module operators
+    module runtime
 }

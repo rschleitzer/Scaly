@@ -280,6 +280,13 @@ struct PlannedIs {
     std::shared_ptr<PlannedOperand> Value;  // The union value being tested
 };
 
+// As expression for type casting: value as Type
+struct PlannedAs {
+    Span Loc;
+    PlannedType TargetType;      // The type to cast to
+    std::shared_ptr<PlannedOperand> Value;  // The value being cast
+};
+
 // Construction of a union variant: Result.Ok(42) or Option.None
 struct PlannedVariantConstruction {
     Span Loc;
@@ -351,6 +358,7 @@ using PlannedExpression = std::variant<
     PlannedTry,
     PlannedSizeOf,
     PlannedIs,
+    PlannedAs,
     PlannedVariantConstruction
 >;
 

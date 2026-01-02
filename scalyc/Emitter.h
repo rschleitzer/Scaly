@@ -231,6 +231,7 @@ private:
     llvm::Expected<llvm::Value*> emitIsWithValue(llvm::Value *UnionValue,
                                                    const PlannedType &UnionType,
                                                    const PlannedIs &Is);
+    llvm::Expected<llvm::Value*> emitAs(const PlannedAs &As);
     llvm::Expected<llvm::Value*> emitMatrix(const PlannedMatrix &Matrix);
     llvm::Expected<llvm::Value*> emitVariantConstruction(
         const PlannedVariantConstruction &Construct);

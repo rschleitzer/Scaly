@@ -112,6 +112,7 @@ struct OperationSyntax;
 struct SetSyntax;
 struct SizeOfSyntax;
 struct IsSyntax;
+struct AsSyntax;
 struct TypeSyntax;
 struct NameSyntax;
 struct ExtensionSyntax;
@@ -178,6 +179,12 @@ struct TypeSyntax {
     GenericArgumentsSyntax* generics;
     OptionalSyntax* optional;
     LifetimeSyntax* lifetime;
+};
+
+struct AsSyntax {
+    size_t Start;
+    size_t End;
+    TypeSyntax type;
 };
 
 struct IsSyntax {
@@ -473,7 +480,7 @@ struct LiteralSyntax {
 };
 
 struct ExpressionSyntax {
-    std::variant<LiteralSyntax, TypeSyntax, ObjectSyntax, VectorSyntax, BlockSyntax, IfSyntax, MatchSyntax, LambdaSyntax, ForSyntax, WhileSyntax, ChooseSyntax, TrySyntax, RepeatSyntax, SizeOfSyntax, IsSyntax> Value;
+    std::variant<LiteralSyntax, TypeSyntax, ObjectSyntax, VectorSyntax, BlockSyntax, IfSyntax, MatchSyntax, LambdaSyntax, ForSyntax, WhileSyntax, ChooseSyntax, TrySyntax, RepeatSyntax, SizeOfSyntax, IsSyntax, AsSyntax> Value;
 };
 
 struct MemberAccessSyntax {

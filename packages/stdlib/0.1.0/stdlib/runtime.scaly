@@ -1,0 +1,15 @@
+; C runtime functions
+; These are external functions from libc, resolved by the linker or JIT
+
+define runtime {
+
+    ; Memory allocation (C11 aligned_alloc)
+    function aligned_alloc(alignment: size_t, size: size_t) returns pointer[void] extern
+
+    ; Memory deallocation
+    function free(ptr: pointer[void]) extern
+
+    ; Process termination
+    function exit(code: i32) extern
+
+}
