@@ -874,12 +874,30 @@ llvm::Error Emitter::emitThrow(const PlannedThrow &Throw) {
 }
 
 llvm::Error Emitter::emitBreak(const PlannedBreak &Break) {
-    // TODO: implement break (needs loop context)
+    if (LoopStack.empty()) {
+        return llvm::make_error<llvm::StringError>(
+            "break statement outside of loop",
+            llvm::inconvertibleErrorCode()
+        );
+    }
+
+    // Jump to the exit block of the innermost loop
+    Builder->CreateBr(LoopStack.back().ExitBlock);
     return llvm::Error::success();
 }
 
 llvm::Error Emitter::emitContinue(const PlannedContinue &Continue) {
-    // TODO: implement continue (needs loop context)
+    if (LoopStack.empty()) {
+        return llvm::make_error<llvm::StringError>(
+            "continue statement outside of loop",
+            llvm::inconvertibleErrorCode()
+        );
+    }
+
+    // Jump to the continue block of the innermost loop
+    // For 'for' loops, this is the increment block
+    // For 'while' loops, this is the condition block
+    Builder->CreateBr(LoopStack.back().ContinueBlock);
     return llvm::Error::success();
 }
 
@@ -1354,8 +1372,19 @@ llvm::Expected<llvm::Value*> Emitter::emitIf(const PlannedIf &If) {
         } else if (auto *Binding = std::get_if<PlannedBinding>(If.Consequent.get())) {
             if (auto Err = emitBinding(*Binding))
                 return std::move(Err);
+        } else if (auto *Break = std::get_if<PlannedBreak>(If.Consequent.get())) {
+            if (auto Err = emitBreak(*Break))
+                return std::move(Err);
+        } else if (auto *Continue = std::get_if<PlannedContinue>(If.Consequent.get())) {
+            if (auto Err = emitContinue(*Continue))
+                return std::move(Err);
+        } else if (auto *Return = std::get_if<PlannedReturn>(If.Consequent.get())) {
+            if (auto Err = emitReturn(*Return))
+                return std::move(Err);
+        } else if (auto *Throw = std::get_if<PlannedThrow>(If.Consequent.get())) {
+            if (auto Err = emitThrow(*Throw))
+                return std::move(Err);
         }
-        // Other statement types don't produce values
     }
 
     // Jump to merge block (if not already terminated)
@@ -1383,6 +1412,18 @@ llvm::Expected<llvm::Value*> Emitter::emitIf(const PlannedIf &If) {
                 }
             } else if (auto *Binding = std::get_if<PlannedBinding>(If.Alternative.get())) {
                 if (auto Err = emitBinding(*Binding))
+                    return std::move(Err);
+            } else if (auto *Break = std::get_if<PlannedBreak>(If.Alternative.get())) {
+                if (auto Err = emitBreak(*Break))
+                    return std::move(Err);
+            } else if (auto *Continue = std::get_if<PlannedContinue>(If.Alternative.get())) {
+                if (auto Err = emitContinue(*Continue))
+                    return std::move(Err);
+            } else if (auto *Return = std::get_if<PlannedReturn>(If.Alternative.get())) {
+                if (auto Err = emitReturn(*Return))
+                    return std::move(Err);
+            } else if (auto *Throw = std::get_if<PlannedThrow>(If.Alternative.get())) {
+                if (auto Err = emitThrow(*Throw))
                     return std::move(Err);
             }
         }
@@ -1733,6 +1774,9 @@ llvm::Expected<llvm::Value*> Emitter::emitFor(const PlannedFor &For) {
     llvm::BasicBlock *IncrBlock = createBlock("for.incr");
     llvm::BasicBlock *ExitBlock = createBlock("for.exit");
 
+    // Push loop context for break/continue
+    LoopStack.push_back({ExitBlock, IncrBlock});
+
     // Jump to condition block
     Builder->CreateBr(CondBlock);
 
@@ -1750,10 +1794,12 @@ llvm::Expected<llvm::Value*> Emitter::emitFor(const PlannedFor &For) {
     LocalVariables[For.Identifier] = BodyIndex;
 
     auto BodyValueOrErr = emitAction(For.Body);
-    if (!BodyValueOrErr)
+    if (!BodyValueOrErr) {
+        LoopStack.pop_back();
         return BodyValueOrErr.takeError();
+    }
 
-    // Jump to increment block
+    // Jump to increment block (if not already terminated by break/continue)
     if (!Builder->GetInsertBlock()->getTerminator()) {
         Builder->CreateBr(IncrBlock);
     }
@@ -1764,6 +1810,9 @@ llvm::Expected<llvm::Value*> Emitter::emitFor(const PlannedFor &For) {
     llvm::Value *NextIndex = Builder->CreateAdd(IncrIndex, llvm::ConstantInt::get(IndexType, 1), "i.next");
     Builder->CreateStore(NextIndex, LoopCounter);
     Builder->CreateBr(CondBlock);
+
+    // Pop loop context
+    LoopStack.pop_back();
 
     // Continue at exit block
     Builder->SetInsertPoint(ExitBlock);
@@ -1781,6 +1830,10 @@ llvm::Expected<llvm::Value*> Emitter::emitWhile(const PlannedWhile &While) {
     llvm::BasicBlock *BodyBlock = createBlock("while.body");
     llvm::BasicBlock *ExitBlock = createBlock("while.exit");
 
+    // Push loop context for break/continue
+    // For while loops, continue goes back to condition check
+    LoopStack.push_back({ExitBlock, CondBlock});
+
     // Jump to condition block
     Builder->CreateBr(CondBlock);
 
@@ -1790,6 +1843,7 @@ llvm::Expected<llvm::Value*> Emitter::emitWhile(const PlannedWhile &While) {
     // Emit the condition binding
     // The condition's Operation contains the boolean expression
     if (While.Cond.Operation.empty()) {
+        LoopStack.pop_back();
         return llvm::make_error<llvm::StringError>(
             "While condition has no expression",
             llvm::inconvertibleErrorCode()
@@ -1797,8 +1851,10 @@ llvm::Expected<llvm::Value*> Emitter::emitWhile(const PlannedWhile &While) {
     }
 
     auto CondValueOrErr = emitOperands(While.Cond.Operation);
-    if (!CondValueOrErr)
+    if (!CondValueOrErr) {
+        LoopStack.pop_back();
         return CondValueOrErr.takeError();
+    }
 
     llvm::Value *CondValue = *CondValueOrErr;
 
@@ -1812,6 +1868,7 @@ llvm::Expected<llvm::Value*> Emitter::emitWhile(const PlannedWhile &While) {
                 "while.tobool"
             );
         } else {
+            LoopStack.pop_back();
             return llvm::make_error<llvm::StringError>(
                 "While condition must be boolean or integer",
                 llvm::inconvertibleErrorCode()
@@ -1827,11 +1884,18 @@ llvm::Expected<llvm::Value*> Emitter::emitWhile(const PlannedWhile &While) {
 
     // Emit the loop body action
     auto BodyValueOrErr = emitAction(While.Body);
-    if (!BodyValueOrErr)
+    if (!BodyValueOrErr) {
+        LoopStack.pop_back();
         return BodyValueOrErr.takeError();
+    }
 
-    // Jump back to condition (loop back)
-    Builder->CreateBr(CondBlock);
+    // Jump back to condition (if not already terminated by break/continue)
+    if (!Builder->GetInsertBlock()->getTerminator()) {
+        Builder->CreateBr(CondBlock);
+    }
+
+    // Pop loop context
+    LoopStack.pop_back();
 
     // Continue at exit block
     Builder->SetInsertPoint(ExitBlock);
@@ -2455,10 +2519,15 @@ llvm::Expected<uint64_t> Emitter::jitExecuteRaw(const Plan &P, llvm::Type *Expec
         }
     }
 
+    // DEBUG: Print module before verification
+    // Module->print(llvm::errs(), nullptr);
+
     // Verify module
     std::string VerifyError;
     llvm::raw_string_ostream VerifyStream(VerifyError);
     if (llvm::verifyModule(*Module, &VerifyStream)) {
+        // Print the module for debugging
+        Module->print(llvm::errs(), nullptr);
         return llvm::make_error<llvm::StringError>(
             "JIT module verification failed: " + VerifyError,
             llvm::inconvertibleErrorCode()

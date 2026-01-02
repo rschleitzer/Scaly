@@ -104,6 +104,13 @@ private:
     };
     RegionInfo CurrentRegion;
 
+    // Loop context for break/continue
+    struct LoopContext {
+        llvm::BasicBlock *ExitBlock;     // Target for 'break'
+        llvm::BasicBlock *ContinueBlock; // Target for 'continue'
+    };
+    std::vector<LoopContext> LoopStack;
+
     // ========================================================================
     // Initialization
     // ========================================================================
