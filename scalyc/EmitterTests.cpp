@@ -2175,6 +2175,101 @@ static bool testPipelineMethodCallWithArgs() {
     return true;
 }
 
+// Initializer tests
+
+static bool testPipelineInitializerSimple() {
+    const char* Name = "Pipeline: init() with fixed values";
+
+    // Define a struct with an initializer that sets fixed values
+    // Use 'set target : source' syntax for assignment
+    auto ResultOrErr = evalInt(
+        "define Point(x: int, y: int) {\n"
+        "    init() { set this.x : 10 : set this.y : 20 }\n"
+        "}\n"
+        "let p = Point()\n"
+        "p.x + p.y"
+    );
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // 10 + 20 = 30
+    if (*ResultOrErr != 30) {
+        std::string Msg = "expected 30, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineInitializerWithParams() {
+    const char* Name = "Pipeline: init(a, b) copies to fields";
+
+    // Define a struct with an initializer that uses parameters
+    // Use 'set target : source' syntax for assignment
+    auto ResultOrErr = evalInt(
+        "define Point(x: int, y: int) {\n"
+        "    init(a: int, b: int) { set this.x : a : set this.y : b }\n"
+        "}\n"
+        "let p = Point(5, 7)\n"
+        "p.x * p.y"
+    );
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // 5 * 7 = 35
+    if (*ResultOrErr != 35) {
+        std::string Msg = "expected 35, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineInitializerWithComputation() {
+    const char* Name = "Pipeline: init(v) computes fields";
+
+    // Define a struct with an initializer that performs computation
+    // Use 'set target : source' syntax for assignment
+    auto ResultOrErr = evalInt(
+        "define Point(x: int, y: int) {\n"
+        "    init(v: int) { set this.x : v : set this.y : v * 2 }\n"
+        "}\n"
+        "let p = Point(6)\n"
+        "p.x + p.y"
+    );
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // 6 + 12 = 18
+    if (*ResultOrErr != 18) {
+        std::string Msg = "expected 18, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
 bool runEmitterTests() {
     llvm::outs() << "Running Emitter tests...\n";
     llvm::outs().flush();
@@ -2305,6 +2400,11 @@ bool runEmitterTests() {
     testPipelineMethodCallSimple();
     testPipelineMethodCallSum();
     testPipelineMethodCallWithArgs();
+
+    llvm::outs() << "  Initializer tests:\n";
+    testPipelineInitializerSimple();
+    testPipelineInitializerWithParams();
+    testPipelineInitializerWithComputation();
 
     llvm::outs() << "\nEmitter tests: " << TestsPassed << " passed, "
                  << TestsFailed << " failed\n";

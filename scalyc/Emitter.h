@@ -151,8 +151,11 @@ private:
                                   llvm::Function *LLVMFunc);
 
     // Emit initializer (constructor)
-    llvm::Function *emitInitializer(const PlannedStructure &Struct,
-                                     const PlannedInitializer &Init);
+    llvm::Function *emitInitializerDecl(const PlannedStructure &Struct,
+                                         const PlannedInitializer &Init);
+    llvm::Error emitInitializerBody(const PlannedStructure &Struct,
+                                     const PlannedInitializer &Init,
+                                     llvm::Function *LLVMFunc);
 
     // Emit operator
     llvm::Function *emitOperator(const PlannedOperator &Op);

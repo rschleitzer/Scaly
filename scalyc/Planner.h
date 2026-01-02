@@ -279,6 +279,16 @@ private:
         llvm::StringRef MethodName,
         Span Loc);
 
+    // Look up an initializer on a struct type matching the given argument types
+    struct InitializerMatch {
+        const PlannedInitializer* Init;
+        std::string MangledName;
+        PlannedType StructType;
+    };
+    std::optional<InitializerMatch> findInitializer(
+        const PlannedType &StructType,
+        const std::vector<PlannedType> &ArgTypes);
+
     // ========== Type Inference ==========
 
     // Infer the type of a constant

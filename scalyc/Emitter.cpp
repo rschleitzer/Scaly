@@ -142,10 +142,13 @@ llvm::Expected<std::unique_ptr<llvm::Module>> Emitter::emit(const Plan &P,
     for (const auto &[name, Func] : P.Functions) {
         emitFunctionDecl(Func);
     }
-    // Also emit method declarations from structures
+    // Also emit method and initializer declarations from structures
     for (const auto &[name, Struct] : P.Structures) {
         for (const auto &Method : Struct.Methods) {
             emitFunctionDecl(Method);
+        }
+        for (const auto &Init : Struct.Initializers) {
+            emitInitializerDecl(Struct, Init);
         }
     }
 
@@ -156,11 +159,17 @@ llvm::Expected<std::unique_ptr<llvm::Module>> Emitter::emit(const Plan &P,
                 return std::move(Err);
         }
     }
-    // Also emit method bodies from structures
+    // Also emit method and initializer bodies from structures
     for (const auto &[name, Struct] : P.Structures) {
         for (const auto &Method : Struct.Methods) {
             if (auto *LLVMFunc = FunctionCache[Method.MangledName]) {
                 if (auto Err = emitFunctionBody(Method, LLVMFunc))
+                    return std::move(Err);
+            }
+        }
+        for (const auto &Init : Struct.Initializers) {
+            if (auto *LLVMFunc = FunctionCache[Init.MangledName]) {
+                if (auto Err = emitInitializerBody(Struct, Init, LLVMFunc))
                     return std::move(Err);
             }
         }
@@ -477,6 +486,127 @@ llvm::Error Emitter::emitFunctionBody(const PlannedFunction &Func,
 }
 
 // ============================================================================
+// Initializer Emission
+// ============================================================================
+
+llvm::Function *Emitter::emitInitializerDecl(const PlannedStructure &Struct,
+                                              const PlannedInitializer &Init) {
+    // Check cache
+    if (auto It = FunctionCache.find(Init.MangledName); It != FunctionCache.end()) {
+        return It->second;
+    }
+
+    // Build parameter types:
+    // - First param is pointer to the struct being initialized (this)
+    // - Followed by any additional parameters from Init.Input
+    std::vector<llvm::Type*> ParamTypes;
+
+    // Get the struct type
+    llvm::Type *StructTy = StructCache[Struct.MangledName];
+    if (!StructTy) {
+        return nullptr;
+    }
+
+    // First param: pointer to struct (this)
+    ParamTypes.push_back(llvm::PointerType::get(*Context, 0));
+
+    // Add additional parameters
+    for (const auto &Item : Init.Input) {
+        if (Item.ItemType) {
+            llvm::Type *ItemTy = mapType(*Item.ItemType);
+            if (ItemTy->isStructTy() || ItemTy->isArrayTy()) {
+                ParamTypes.push_back(llvm::PointerType::get(*Context, 0));
+            } else {
+                ParamTypes.push_back(ItemTy);
+            }
+        }
+    }
+
+    // Initializers return void (the struct is initialized in-place)
+    llvm::Type *ReturnTy = llvm::Type::getVoidTy(*Context);
+
+    // Create function type
+    auto *FuncTy = llvm::FunctionType::get(ReturnTy, ParamTypes, false);
+
+    // Create function
+    auto *Func = llvm::Function::Create(
+        FuncTy,
+        llvm::Function::ExternalLinkage,
+        Init.MangledName,
+        Module.get()
+    );
+
+    // Set calling convention and attributes
+    Func->setCallingConv(llvm::CallingConv::C);
+
+    // Name parameters
+    auto ArgIt = Func->arg_begin();
+    ArgIt->setName("this");
+    ++ArgIt;
+
+    for (size_t I = 0; I < Init.Input.size() && ArgIt != Func->arg_end(); ++I, ++ArgIt) {
+        if (Init.Input[I].Name) {
+            ArgIt->setName(*Init.Input[I].Name);
+        }
+    }
+
+    // Cache the function
+    FunctionCache[Init.MangledName] = Func;
+
+    return Func;
+}
+
+llvm::Error Emitter::emitInitializerBody(const PlannedStructure &Struct,
+                                          const PlannedInitializer &Init,
+                                          llvm::Function *LLVMFunc) {
+    // Skip extern/intrinsic initializers
+    if (std::holds_alternative<PlannedExternImpl>(Init.Impl) ||
+        std::holds_alternative<PlannedIntrinsicImpl>(Init.Impl)) {
+        return llvm::Error::success();
+    }
+
+    // Create entry block
+    auto *EntryBB = llvm::BasicBlock::Create(*Context, "entry", LLVMFunc);
+    Builder->SetInsertPoint(EntryBB);
+
+    // Set up current function state
+    CurrentFunction = LLVMFunc;
+    CurrentBlock = EntryBB;
+    LocalVariables.clear();
+
+    // Bind parameters to names
+    auto ArgIt = LLVMFunc->arg_begin();
+
+    // First arg is 'this' - the pointer to the struct
+    llvm::Value *ThisPtr = &*ArgIt;
+    LocalVariables["this"] = ThisPtr;
+    ++ArgIt;
+
+    // Bind additional parameters
+    for (const auto &Item : Init.Input) {
+        if (Item.Name) {
+            LocalVariables[*Item.Name] = &*ArgIt;
+        }
+        ++ArgIt;
+    }
+
+    // Emit initializer body
+    if (auto *Action = std::get_if<PlannedAction>(&Init.Impl)) {
+        auto ValueOrErr = emitAction(*Action);
+        if (!ValueOrErr) {
+            return ValueOrErr.takeError();
+        }
+    }
+
+    // Add return void if block doesn't end with terminator
+    if (!CurrentBlock->getTerminator()) {
+        Builder->CreateRetVoid();
+    }
+
+    return llvm::Error::success();
+}
+
+// ============================================================================
 // Statement Emission
 // ============================================================================
 
@@ -521,7 +651,7 @@ llvm::Expected<llvm::Value*> Emitter::emitAction(const PlannedAction &Action) {
         const PlannedOperand &TargetOp = Action.Target[0];
 
         if (auto *Var = std::get_if<PlannedVariable>(&TargetOp.Expr)) {
-            // Look up the variable's alloca pointer
+            // Look up the variable's pointer
             llvm::Value *VarPtr = lookupVariable(Var->Name);
             if (!VarPtr) {
                 return llvm::make_error<llvm::StringError>(
@@ -530,15 +660,68 @@ llvm::Expected<llvm::Value*> Emitter::emitAction(const PlannedAction &Action) {
                 );
             }
 
-            if (!Var->IsMutable) {
-                return llvm::make_error<llvm::StringError>(
-                    "Cannot assign to immutable variable: " + Var->Name,
-                    llvm::inconvertibleErrorCode()
-                );
-            }
+            // Check for member access (e.g., this.x = value)
+            if (TargetOp.MemberAccess && !TargetOp.MemberAccess->empty()) {
+                // Get the struct type
+                llvm::Type *CurrentType = nullptr;
+                llvm::Value *CurrentPtr = VarPtr;
 
-            // Store the value to the variable
-            Builder->CreateStore(Value, VarPtr);
+                // If VarPtr is an alloca, get its allocated type
+                if (auto *Alloca = llvm::dyn_cast<llvm::AllocaInst>(VarPtr)) {
+                    CurrentType = Alloca->getAllocatedType();
+                } else {
+                    // For pointers passed as arguments (like 'this'), load to get the struct
+                    // Actually, 'this' is already a pointer to the struct
+                    // We need to check if it's a pointer type
+                    if (VarPtr->getType()->isPointerTy()) {
+                        // Get the struct type from cache using the variable type
+                        auto TypeIt = StructCache.find(Var->VariableType.MangledName);
+                        if (TypeIt == StructCache.end()) {
+                            TypeIt = StructCache.find(Var->VariableType.Name);
+                        }
+                        if (TypeIt != StructCache.end()) {
+                            CurrentType = TypeIt->second;
+                            CurrentPtr = VarPtr;  // 'this' is already a pointer
+                        }
+                    }
+                }
+
+                if (!CurrentType) {
+                    return llvm::make_error<llvm::StringError>(
+                        "Cannot determine struct type for member access in assignment",
+                        llvm::inconvertibleErrorCode()
+                    );
+                }
+
+                // Navigate through member access chain
+                for (const auto &Member : *TargetOp.MemberAccess) {
+                    if (!CurrentType->isStructTy()) {
+                        return llvm::make_error<llvm::StringError>(
+                            "Cannot access member on non-struct type",
+                            llvm::inconvertibleErrorCode()
+                        );
+                    }
+                    CurrentPtr = Builder->CreateStructGEP(CurrentType, CurrentPtr,
+                                                           Member.FieldIndex, Member.Name);
+                    // Get the field type for the next iteration
+                    CurrentType = llvm::cast<llvm::StructType>(CurrentType)
+                                      ->getElementType(Member.FieldIndex);
+                }
+
+                // Store the value to the field
+                Builder->CreateStore(Value, CurrentPtr);
+            } else {
+                // Simple variable assignment
+                if (!Var->IsMutable) {
+                    return llvm::make_error<llvm::StringError>(
+                        "Cannot assign to immutable variable: " + Var->Name,
+                        llvm::inconvertibleErrorCode()
+                    );
+                }
+
+                // Store the value to the variable
+                Builder->CreateStore(Value, VarPtr);
+            }
         } else {
             return llvm::make_error<llvm::StringError>(
                 "Assignment target must be a variable",
@@ -746,6 +929,60 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
             // Unary operator
             return emitIntrinsicUnaryOp(Call.Name, Args[0], Call.ResultType);
         }
+    }
+
+    // Check if this is an initializer call (constructor)
+    // Initializers have mangled names like _ZN<type>C1E<params>
+    bool IsInitializer = Call.MangledName.find("C1E") != std::string::npos &&
+                         Call.MangledName.rfind("_ZN", 0) == 0;
+
+    if (IsInitializer) {
+        // Look up the initializer function
+        auto *InitFunc = lookupFunction(Call.MangledName);
+        if (!InitFunc) {
+            return llvm::make_error<llvm::StringError>(
+                "Initializer not found: " + Call.MangledName,
+                llvm::inconvertibleErrorCode()
+            );
+        }
+
+        // Get the struct type from the result type
+        llvm::Type *StructTy = mapType(Call.ResultType);
+        if (!StructTy) {
+            return llvm::make_error<llvm::StringError>(
+                "Cannot map struct type for initializer: " + Call.ResultType.Name,
+                llvm::inconvertibleErrorCode()
+            );
+        }
+
+        // Allocate the struct on the stack
+        llvm::Value *StructPtr = Builder->CreateAlloca(StructTy, nullptr, "struct.init");
+
+        // Prepare arguments: struct pointer first, then the other args
+        std::vector<llvm::Value*> InitArgs;
+        InitArgs.push_back(StructPtr);
+
+        // Adjust remaining arguments for the initializer
+        auto *FuncTy = InitFunc->getFunctionType();
+        for (size_t i = 0; i < Args.size() && i + 1 < FuncTy->getNumParams(); ++i) {
+            llvm::Value *ArgVal = Args[i];
+            llvm::Type *ParamTy = FuncTy->getParamType(i + 1);  // +1 because first param is 'this'
+
+            if (ParamTy->isPointerTy() && ArgVal->getType()->isStructTy()) {
+                // Create alloca and store for struct arguments
+                auto *Alloca = Builder->CreateAlloca(ArgVal->getType(), nullptr, "init.arg.tmp");
+                Builder->CreateStore(ArgVal, Alloca);
+                InitArgs.push_back(Alloca);
+            } else {
+                InitArgs.push_back(ArgVal);
+            }
+        }
+
+        // Call the initializer (returns void)
+        Builder->CreateCall(InitFunc, InitArgs);
+
+        // Return the constructed struct value
+        return Builder->CreateLoad(StructTy, StructPtr, "struct.val");
     }
 
     // Non-intrinsic call: look up function and call it
@@ -2038,10 +2275,13 @@ llvm::Expected<uint64_t> Emitter::jitExecuteRaw(const Plan &P, llvm::Type *Expec
     for (const auto &[name, Func] : P.Functions) {
         emitFunctionDecl(Func);
     }
-    // Also emit method declarations from structures
+    // Also emit method and initializer declarations from structures
     for (const auto &[name, Struct] : P.Structures) {
         for (const auto &Method : Struct.Methods) {
             emitFunctionDecl(Method);
+        }
+        for (const auto &Init : Struct.Initializers) {
+            emitInitializerDecl(Struct, Init);
         }
     }
 
@@ -2052,11 +2292,17 @@ llvm::Expected<uint64_t> Emitter::jitExecuteRaw(const Plan &P, llvm::Type *Expec
                 return std::move(Err);
         }
     }
-    // Also emit method bodies from structures
+    // Also emit method and initializer bodies from structures
     for (const auto &[name, Struct] : P.Structures) {
         for (const auto &Method : Struct.Methods) {
             if (auto *LLVMFunc = FunctionCache[Method.MangledName]) {
                 if (auto Err = emitFunctionBody(Method, LLVMFunc))
+                    return std::move(Err);
+            }
+        }
+        for (const auto &Init : Struct.Initializers) {
+            if (auto *LLVMFunc = FunctionCache[Init.MangledName]) {
+                if (auto Err = emitInitializerBody(Struct, Init, LLVMFunc))
                     return std::move(Err);
             }
         }
