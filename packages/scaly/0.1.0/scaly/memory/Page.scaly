@@ -97,24 +97,29 @@ define Page
         if next_object = null
             return
 
-        for exclusive_page in exclusive_pages
+        ; TODO: Replace with for loop when iterator support is implemented
+        var iter (exclusive_pages).get_iterator()
+        var exclusive_page_ptr iter.next()
+        while exclusive_page_ptr <> null
         {
+            let exclusive_page *exclusive_page_ptr
             (*exclusive_page).deallocate_extensions()
-            free(exclusive_page)
+            free(exclusive_page as pointer[void])
+            set exclusive_page_ptr: iter.next()
         }
 
         var page next_page
         while page <> null
         {
             let next_page (*page).next_page
-            free(page)
+            free(page as pointer[void])
             set page: next_page
         }
     }
 
     function deallocate_exclusive_page(this: Page, page: pointer[Page]) {
         (*page).deallocate_extensions()
-        free(page)
+        free(page as pointer[void])
         if (exclusive_pages).remove(page) = false
             exit (2)
     }

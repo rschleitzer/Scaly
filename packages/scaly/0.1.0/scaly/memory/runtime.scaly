@@ -4,4 +4,4 @@
 ; Note: Using i64 for size parameters since Scaly integer literals are signed
 function aligned_alloc(alignment: i64, size: i64) returns pointer[void] extern
 function free(ptr: pointer[void]) extern
-function exit(code: i32) extern
+function exit(code: int) extern
