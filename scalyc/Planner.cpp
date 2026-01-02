@@ -15,6 +15,10 @@ namespace scaly {
 
 Planner::Planner(llvm::StringRef FileName) : File(FileName.str()) {}
 
+void Planner::addSiblingProgram(std::shared_ptr<Program> Prog) {
+    SiblingPrograms.push_back(Prog);
+}
+
 // ============================================================================
 // Type Inference Helpers
 // ============================================================================
@@ -649,29 +653,28 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
         Struct = CurrentStructure;
     }
 
-    if (!Struct) {
-        return std::nullopt;
-    }
-
-    // Search for method by name in planned methods
-    for (const auto &Method : Struct->Methods) {
-        if (Method.Name == MethodName) {
-            MethodMatch Match;
-            Match.Method = nullptr;  // We have the planned version, not the Model version
-            Match.MangledName = Method.MangledName;
-            if (Method.Returns) {
-                Match.ReturnType = *Method.Returns;
-            } else {
-                // Void return type
-                Match.ReturnType.Name = "void";
-                Match.ReturnType.Loc = Loc;
+    // If we have an instantiated struct, search in planned methods first
+    if (Struct) {
+        for (const auto &Method : Struct->Methods) {
+            if (Method.Name == MethodName) {
+                MethodMatch Match;
+                Match.Method = nullptr;  // We have the planned version, not the Model version
+                Match.MangledName = Method.MangledName;
+                if (Method.Returns) {
+                    Match.ReturnType = *Method.Returns;
+                } else {
+                    // Void return type
+                    Match.ReturnType.Name = "void";
+                    Match.ReturnType.Loc = Loc;
+                }
+                return Match;
             }
-            return Match;
         }
     }
 
-    // If method not found in planned methods, search in Model's Concept
-    // This handles forward references to methods not yet planned
+    // Search in Model's Concept
+    // This handles forward references to methods not yet planned,
+    // and methods on sibling types that aren't instantiated yet
     const Concept *Conc = lookupConcept(StructType.Name);
     if (Conc) {
         if (auto *ModelStruct = std::get_if<Structure>(&Conc->Def)) {
@@ -684,7 +687,9 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                         // Compute mangled name
                         PlannedType ParentType;
                         ParentType.Name = StructType.Name;
-                        ParentType.MangledName = Struct->MangledName;
+                        // Use Struct's mangled name if available, otherwise use StructType's
+                        ParentType.MangledName = Struct ? Struct->MangledName :
+                            (StructType.MangledName.empty() ? StructType.Name : StructType.MangledName);
                         std::vector<PlannedItem> Params;
                         for (const auto &Inp : Func->Input) {
                             PlannedItem Item;
@@ -2136,6 +2141,31 @@ const Concept* Planner::lookupConcept(llvm::StringRef Name) {
                             Concepts[Name.str()] = Conc;
                             return Conc;
                         }
+                    }
+                }
+            }
+        }
+    }
+
+    // 3. Search sibling programs (for multi-file compilation)
+    for (const auto& Sibling : SiblingPrograms) {
+        // Search sibling's main module
+        for (const auto& Member : Sibling->MainModule.Members) {
+            if (auto* Conc = std::get_if<Concept>(&Member)) {
+                if (Conc->Name == Name) {
+                    Concepts[Name.str()] = Conc;
+                    return Conc;
+                }
+            }
+        }
+
+        // Also search sibling's sub-modules
+        for (const auto& SubMod : Sibling->MainModule.Modules) {
+            for (const auto& Member : SubMod.Members) {
+                if (auto* Conc = std::get_if<Concept>(&Member)) {
+                    if (Conc->Name == Name) {
+                        Concepts[Name.str()] = Conc;
+                        return Conc;
                     }
                 }
             }
@@ -3875,17 +3905,36 @@ llvm::Expected<PlannedFor> Planner::planFor(const For &ForExpr) {
 
     pushScope();
 
-    // Define loop variable in scope with inferred type
-    // For now, use the result type of the iterator expression
-    // In a full implementation, we'd look up the iterator's element type
+    // Define loop variable in scope with inferred element type
+    // Scaly for-loops use the Iterator pattern:
+    // 1. Call get_iterator() on the collection to get an iterator
+    // 2. Call next() on the iterator to get each element
+    // The element type is what next() returns (possibly with pointer dereferencing)
     if (!Result.Expr.empty()) {
-        const auto &IterType = Result.Expr[0].ResultType;
-        // If the iterator returns a generic type like pointer[T], use the element type
-        if (!IterType.Generics.empty()) {
-            defineLocal(ForExpr.Identifier, IterType.Generics[0]);
+        const auto &CollType = Result.Expr[0].ResultType;
+        PlannedType ElementType = CollType;  // Default to collection type
+
+        // Look for get_iterator method on the collection type
+        auto IterMethod = lookupMethod(CollType, "get_iterator", ForExpr.Loc);
+        if (IterMethod) {
+            // Found get_iterator, now look for next() on the iterator type
+            auto NextMethod = lookupMethod(IterMethod->ReturnType, "next", ForExpr.Loc);
+            if (NextMethod) {
+                // The element type is what next() returns
+                // If it returns pointer[T], dereference to get T
+                ElementType = NextMethod->ReturnType;
+                if (ElementType.Name == "pointer" && !ElementType.Generics.empty()) {
+                    ElementType = ElementType.Generics[0];
+                }
+            }
         } else {
-            defineLocal(ForExpr.Identifier, IterType);
+            // No get_iterator - try treating as a generic type like pointer[T]
+            if (!CollType.Generics.empty()) {
+                ElementType = CollType.Generics[0];
+            }
         }
+
+        defineLocal(ForExpr.Identifier, ElementType);
     }
 
     auto PlannedBody = planAction(ForExpr.Body);

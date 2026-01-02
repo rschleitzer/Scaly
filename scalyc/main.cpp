@@ -6,7 +6,9 @@
 #include "Planner.h"
 #include "EmitterTests.h"
 #include "llvm/Support/CommandLine.h"
+#include "llvm/Support/FileSystem.h"
 #include "llvm/Support/MemoryBuffer.h"
+#include "llvm/Support/Path.h"
 #include "llvm/Support/raw_ostream.h"
 #include <iostream>
 
@@ -217,6 +219,39 @@ static int planFile(StringRef Filename) {
     }
 
     scaly::Planner Planner(Filename);
+
+    // Load sibling .scaly files for multi-file compilation
+    SmallString<256> Dir = sys::path::parent_path(Filename);
+    if (!Dir.empty()) {
+        std::error_code EC;
+        for (sys::fs::directory_iterator DI(Dir, EC), DE; DI != DE && !EC; DI.increment(EC)) {
+            StringRef SibPath = DI->path();
+            // Skip the main file and non-.scaly files
+            if (SibPath == Filename || !SibPath.ends_with(".scaly")) {
+                continue;
+            }
+
+            auto SibBuf = MemoryBuffer::getFile(SibPath);
+            if (!SibBuf) continue;
+
+            scaly::Parser SibParser((*SibBuf)->getBuffer());
+            auto SibParse = SibParser.parseProgram();
+            if (!SibParse) {
+                llvm::consumeError(SibParse.takeError());
+                continue;
+            }
+
+            scaly::Modeler SibModeler(SibPath);
+            auto SibModel = SibModeler.buildProgram(*SibParse);
+            if (!SibModel) {
+                llvm::consumeError(SibModel.takeError());
+                continue;
+            }
+
+            Planner.addSiblingProgram(std::make_shared<scaly::Program>(std::move(*SibModel)));
+        }
+    }
+
     auto PlanResult = Planner.plan(*ModelResult);
     if (!PlanResult) {
         handleAllErrors(PlanResult.takeError(), [&](const llvm::ErrorInfoBase &E) {
