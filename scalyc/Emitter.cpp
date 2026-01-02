@@ -188,7 +188,11 @@ llvm::Expected<std::unique_ptr<llvm::Module>> Emitter::emit(const Plan &P,
     }
 
     // Phase 4: Emit top-level statements (program entry)
-    // TODO: Create main function wrapper if needed
+    if (!P.Statements.empty()) {
+        if (auto Err = emitMainWrapper(P)) {
+            return std::move(Err);
+        }
+    }
 
     // Finalize debug info
     if (DIBuilder) {
@@ -2763,6 +2767,91 @@ llvm::Value *Emitter::getRegionPage(Lifetime Life) {
     }
     // UnspecifiedLifetime or unknown
     return nullptr;
+}
+
+// ============================================================================
+// Main Function Generation
+// ============================================================================
+
+llvm::Error Emitter::emitMainWrapper(const Plan &P) {
+    // Create main function: int main(int argc, char** argv)
+    auto *Int32Ty = llvm::Type::getInt32Ty(*Context);
+    auto *Int8PtrPtrTy = llvm::PointerType::getUnqual(*Context);
+
+    auto *MainTy = llvm::FunctionType::get(
+        Int32Ty,
+        {Int32Ty, Int8PtrPtrTy},
+        false
+    );
+
+    auto *MainFunc = llvm::Function::Create(
+        MainTy,
+        llvm::GlobalValue::ExternalLinkage,
+        "main",
+        *Module
+    );
+
+    // Name the arguments
+    auto ArgIt = MainFunc->arg_begin();
+    ArgIt->setName("argc");
+    ++ArgIt;
+    ArgIt->setName("argv");
+
+    // Create entry block
+    auto *EntryBB = llvm::BasicBlock::Create(*Context, "entry", MainFunc);
+    Builder->SetInsertPoint(EntryBB);
+
+    // Set up current function state
+    CurrentFunction = MainFunc;
+    CurrentBlock = EntryBB;
+    LocalVariables.clear();
+
+    // Emit top-level statements
+    llvm::Value *LastValue = nullptr;
+    for (const auto &Stmt : P.Statements) {
+        if (auto *Action = std::get_if<PlannedAction>(&Stmt)) {
+            auto ValueOrErr = emitAction(*Action);
+            if (!ValueOrErr) {
+                return ValueOrErr.takeError();
+            }
+            // If not an assignment, save value as potential result
+            if (Action->Target.empty()) {
+                LastValue = *ValueOrErr;
+            }
+        } else if (auto *Binding = std::get_if<PlannedBinding>(&Stmt)) {
+            if (auto Err = emitBinding(*Binding)) {
+                return Err;
+            }
+        } else if (auto *Return = std::get_if<PlannedReturn>(&Stmt)) {
+            auto ValueOrErr = emitOperands(Return->Result);
+            if (!ValueOrErr) {
+                return ValueOrErr.takeError();
+            }
+            LastValue = *ValueOrErr;
+        }
+    }
+
+    // Return the last value (cast to i32) or 0
+    if (LastValue) {
+        llvm::Value *RetVal = LastValue;
+        // Cast to i32 if needed
+        if (LastValue->getType() != Int32Ty) {
+            if (LastValue->getType()->isIntegerTy()) {
+                RetVal = Builder->CreateIntCast(LastValue, Int32Ty, true, "ret.cast");
+            } else if (LastValue->getType()->isFloatingPointTy()) {
+                RetVal = Builder->CreateFPToSI(LastValue, Int32Ty, "ret.cast");
+            } else {
+                // Non-numeric type, return 0
+                RetVal = llvm::ConstantInt::get(Int32Ty, 0);
+            }
+        }
+        Builder->CreateRet(RetVal);
+    } else {
+        // No return value, return 0
+        Builder->CreateRet(llvm::ConstantInt::get(Int32Ty, 0));
+    }
+
+    return llvm::Error::success();
 }
 
 // ============================================================================

@@ -287,6 +287,13 @@ private:
     llvm::Function *lookupFunction(llvm::StringRef MangledName);
 
     // ========================================================================
+    // Main Function Generation (for executables)
+    // ========================================================================
+
+    // Emit main() wrapper for top-level statements
+    llvm::Error emitMainWrapper(const Plan &P);
+
+    // ========================================================================
     // JIT Support
     // ========================================================================
 
