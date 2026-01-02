@@ -112,6 +112,7 @@ private:
     llvm::Function *PageDeallocateExtensions = nullptr;  // Page.deallocate_extensions(page)
     llvm::Function *AlignedAlloc = nullptr;       // aligned_alloc(align, size)
     llvm::Function *Free = nullptr;               // free(ptr)
+    llvm::Function *ExitFunc = nullptr;           // exit(code)
 
     // Loop context for break/continue
     struct LoopContext {
@@ -127,6 +128,7 @@ private:
     void initIntrinsicTypes();
     void initDebugInfo(llvm::StringRef FileName);
     void initRBMM();  // Initialize Page type and runtime functions
+    void declareRuntimeFunctions();  // Declare C runtime functions (aligned_alloc, free, exit)
 
     // ========================================================================
     // Type Mapping

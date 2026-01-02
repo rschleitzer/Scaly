@@ -5,6 +5,9 @@
 #include "Modeler.h"
 #include "Planner.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/MemoryBuffer.h"
+#include "llvm/Support/FileSystem.h"
+#include "llvm/Support/Path.h"
 
 namespace scaly {
 
@@ -14,6 +17,7 @@ static int TestsFailed = 0;
 static void pass(const char* Name) {
     ++TestsPassed;
     llvm::outs() << "  PASS: " << Name << "\n";
+    llvm::outs().flush();
 }
 
 static void fail(const char* Name, const char* Message) {
@@ -46,9 +50,11 @@ static bool testJitIntegerConstant() {
     // Create emitter and execute
     EmitterConfig Config;
     Config.EmitDebugInfo = false;  // No debug info for tests
+    llvm::errs() << "  Creating Emitter\n"; llvm::errs().flush();
     Emitter E(Config);
-
+    llvm::errs() << "  Calling jitExecuteInt\n"; llvm::errs().flush();
     auto ResultOrErr = E.jitExecuteInt(P);
+    llvm::errs() << "  jitExecuteInt done\n"; llvm::errs().flush();
     if (!ResultOrErr) {
         std::string ErrMsg;
         llvm::raw_string_ostream OS(ErrMsg);
@@ -90,18 +96,22 @@ static bool testJitBooleanTrue() {
 
     EmitterConfig Config;
     Config.EmitDebugInfo = false;
+    llvm::errs() << "  BoolTest: Creating Emitter\n"; llvm::errs().flush();
     Emitter E(Config);
-
+    llvm::errs() << "  BoolTest: Calling jitExecuteBool\n"; llvm::errs().flush();
     auto ResultOrErr = E.jitExecuteBool(P);
+    llvm::errs() << "  BoolTest: jitExecuteBool done\n"; llvm::errs().flush();
     if (!ResultOrErr) {
+        llvm::errs() << "  BoolTest: ERROR\n"; llvm::errs().flush();
         std::string ErrMsg;
         llvm::raw_string_ostream OS(ErrMsg);
         OS << ResultOrErr.takeError();
         fail(Name, ErrMsg.c_str());
         return false;
     }
-
+    llvm::errs() << "  BoolTest: Getting result\n"; llvm::errs().flush();
     bool Result = *ResultOrErr;
+    llvm::errs() << "  BoolTest: Result = " << Result << "\n"; llvm::errs().flush();
     if (!Result) {
         fail(Name, "expected true, got false");
         return false;
@@ -443,6 +453,30 @@ static bool testJitModulo() {
 // Full Pipeline Tests (Source -> Parse -> Model -> Plan -> JIT)
 // ============================================================================
 
+// Helper: load a package file and add to planner as sibling
+static bool loadPackageFile(Planner &Pl, llvm::StringRef Path) {
+    auto BufOrErr = llvm::MemoryBuffer::getFile(Path);
+    if (!BufOrErr)
+        return false;
+
+    Parser P((*BufOrErr)->getBuffer());
+    auto ParseResult = P.parseProgram();
+    if (!ParseResult) {
+        llvm::consumeError(ParseResult.takeError());
+        return false;
+    }
+
+    Modeler M(Path);
+    auto ModelResult = M.buildProgram(*ParseResult);
+    if (!ModelResult) {
+        llvm::consumeError(ModelResult.takeError());
+        return false;
+    }
+
+    Pl.addSiblingProgram(std::make_shared<Program>(std::move(*ModelResult)));
+    return true;
+}
+
 // Helper: run full pipeline from source string to Plan
 static llvm::Expected<Plan> compileToPlan(llvm::StringRef Source) {
     Parser P(Source);
@@ -456,6 +490,16 @@ static llvm::Expected<Plan> compileToPlan(llvm::StringRef Source) {
         return ModelResult.takeError();
 
     Planner Pl("test.scaly");
+
+    // Load stdlib and scaly packages for RBMM support
+    loadPackageFile(Pl, "../../packages/stdlib/0.1.0/stdlib/runtime.scaly");
+    loadPackageFile(Pl, "../../packages/stdlib/0.1.0/stdlib/operators.scaly");
+    loadPackageFile(Pl, "../../packages/scaly/0.1.0/scaly/memory/runtime.scaly");
+    loadPackageFile(Pl, "../../packages/scaly/0.1.0/scaly/memory/PageNode.scaly");
+    loadPackageFile(Pl, "../../packages/scaly/0.1.0/scaly/memory/PageListIterator.scaly");
+    loadPackageFile(Pl, "../../packages/scaly/0.1.0/scaly/memory/PageList.scaly");
+    loadPackageFile(Pl, "../../packages/scaly/0.1.0/scaly/memory/Page.scaly");
+
     return Pl.plan(*ModelResult);
 }
 

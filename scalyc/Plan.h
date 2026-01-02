@@ -322,6 +322,9 @@ struct PlannedTuple {
     Span Loc;
     std::vector<PlannedComponent> Components;
     PlannedType TupleType;
+    // For region-allocated struct construction (Type^rp(args) without explicit init)
+    bool IsRegionAlloc = false;
+    std::shared_ptr<PlannedOperand> RegionArg;  // The region pointer argument
 };
 
 struct PlannedMatrix {

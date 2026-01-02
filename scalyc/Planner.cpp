@@ -19,6 +19,76 @@ void Planner::addSiblingProgram(std::shared_ptr<Program> Prog) {
     SiblingPrograms.push_back(Prog);
 }
 
+// Register built-in runtime functions (aligned_alloc, free, exit) for RBMM support
+void Planner::registerRuntimeFunctions() {
+    if (RuntimeFunctionsRegistered) return;
+    RuntimeFunctionsRegistered = true;
+
+    // Create synthetic Function objects for C runtime functions
+    // These are owned by the planner via BuiltinFunctions vector
+
+    // aligned_alloc(alignment: i64, size: i64) returns pointer[void] extern
+    auto AlignedAlloc = std::make_unique<Function>();
+    AlignedAlloc->Name = "aligned_alloc";
+    AlignedAlloc->Impl = ExternImpl{Span{0, 0}};
+    {
+        Item Param1;
+        Param1.Name = std::make_unique<std::string>("alignment");
+        Type T1; T1.Name = {"int"}; T1.Loc = Span{0, 0};
+        Param1.ItemType = std::make_unique<Type>(std::move(T1));
+        AlignedAlloc->Input.push_back(std::move(Param1));
+
+        Item Param2;
+        Param2.Name = std::make_unique<std::string>("size");
+        Type T2; T2.Name = {"int"}; T2.Loc = Span{0, 0};
+        Param2.ItemType = std::make_unique<Type>(std::move(T2));
+        AlignedAlloc->Input.push_back(std::move(Param2));
+
+        Type RetType;
+        RetType.Name = {"pointer"};
+        RetType.Loc = Span{0, 0};
+        Type VoidType; VoidType.Name = {"void"}; VoidType.Loc = Span{0, 0};
+        RetType.Generics = std::make_unique<std::vector<Type>>();
+        RetType.Generics->push_back(std::move(VoidType));
+        AlignedAlloc->Returns = std::make_unique<Type>(std::move(RetType));
+    }
+    Functions["aligned_alloc"].push_back(AlignedAlloc.get());
+    BuiltinFunctions.push_back(std::move(AlignedAlloc));
+
+    // free(ptr: pointer[void]) extern
+    auto Free = std::make_unique<Function>();
+    Free->Name = "free";
+    Free->Impl = ExternImpl{Span{0, 0}};
+    {
+        Item Param;
+        Param.Name = std::make_unique<std::string>("ptr");
+        Type PtrType;
+        PtrType.Name = {"pointer"};
+        PtrType.Loc = Span{0, 0};
+        Type VoidType; VoidType.Name = {"void"}; VoidType.Loc = Span{0, 0};
+        PtrType.Generics = std::make_unique<std::vector<Type>>();
+        PtrType.Generics->push_back(std::move(VoidType));
+        Param.ItemType = std::make_unique<Type>(std::move(PtrType));
+        Free->Input.push_back(std::move(Param));
+    }
+    Functions["free"].push_back(Free.get());
+    BuiltinFunctions.push_back(std::move(Free));
+
+    // exit(code: int) extern
+    auto Exit = std::make_unique<Function>();
+    Exit->Name = "exit";
+    Exit->Impl = ExternImpl{Span{0, 0}};
+    {
+        Item Param;
+        Param.Name = std::make_unique<std::string>("code");
+        Type IntType; IntType.Name = {"int"}; IntType.Loc = Span{0, 0};
+        Param.ItemType = std::make_unique<Type>(std::move(IntType));
+        Exit->Input.push_back(std::move(Param));
+    }
+    Functions["exit"].push_back(Exit.get());
+    BuiltinFunctions.push_back(std::move(Exit));
+}
+
 // ============================================================================
 // Type Inference Helpers
 // ============================================================================
@@ -2421,6 +2491,19 @@ llvm::Expected<PlannedType> Planner::resolveType(const Type &T, Span Instantiati
             // Instantiate the generic
             return instantiateGeneric(*Conc, Result.Generics, InstantiationLoc);
         }
+
+        // Non-generic concept - plan it if not already planned
+        if (std::get_if<Structure>(&Conc->Def)) {
+            // Plan the structure if it's a sibling concept that hasn't been planned yet
+            if (InstantiatedStructures.find(Name) == InstantiatedStructures.end()) {
+                auto PlannedConc = planConcept(*Conc);
+                if (!PlannedConc) {
+                    llvm::consumeError(PlannedConc.takeError());
+                }
+            }
+            Result.MangledName = encodeName(Name);
+            return Result;
+        }
     }
 
     // Generate mangled name for non-generic types
@@ -2880,6 +2963,16 @@ llvm::Expected<PlannedOperand> Planner::planOperand(const Operand &Op) {
 
             // Check if this is a global constant
             auto GlobalIt = PlannedGlobals.find(Name);
+            if (GlobalIt == PlannedGlobals.end()) {
+                // Try to find and plan the global if it's a sibling concept
+                const Concept *GlobalConcept = lookupConcept(Name);
+                if (GlobalConcept && std::holds_alternative<Global>(GlobalConcept->Def)) {
+                    auto PlannedConc = planConcept(*GlobalConcept);
+                    if (PlannedConc) {
+                        GlobalIt = PlannedGlobals.find(Name);
+                    }
+                }
+            }
             if (GlobalIt != PlannedGlobals.end()) {
                 // Return the global's first value operand directly
                 const auto& GlobalValue = GlobalIt->second.Value;
@@ -2892,7 +2985,7 @@ llvm::Expected<PlannedOperand> Planner::planOperand(const Operand &Op) {
                     return ResultOp;
                 }
             }
-            else if (CurrentStructureProperties) {
+            if (CurrentStructureProperties) {
                 auto ThisType = lookupLocal("this");
                 if (ThisType && ThisType->Name == CurrentStructureName) {
                     for (const auto &Prop : *CurrentStructureProperties) {
@@ -3319,13 +3412,12 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                 Call.MangledName = InitMatch->MangledName;
                                 Call.IsIntrinsic = false;
                                 Call.IsOperator = false;
-                                Call.ResultType = StructType;
-
                                 // Convert tuple components to call arguments
                                 Call.Args = std::make_shared<std::vector<PlannedOperand>>();
 
                                 // If the Type has a ReferenceLifetime, look up the region variable
-                                // and pass it as the first argument
+                                // and pass it as the first argument. Result type is pointer[StructType]
+                                bool IsRegionAlloc = false;
                                 if (auto* RefLife = std::get_if<ReferenceLifetime>(&TypeExpr->Life)) {
                                     auto RegionVar = lookupLocal(RefLife->Location);
                                     if (!RegionVar) {
@@ -3337,7 +3429,17 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                     RegionArg.ResultType = *RegionVar;
                                     RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, *RegionVar, false};
                                     Call.Args->push_back(std::move(RegionArg));
+                                    IsRegionAlloc = true;
                                 }
+
+                                // Set result type: pointer[StructType] for region alloc, StructType otherwise
+                                PlannedType ResultType = StructType;
+                                if (IsRegionAlloc) {
+                                    ResultType.Name = "pointer";
+                                    ResultType.MangledName = "P" + StructType.MangledName;
+                                    ResultType.Generics = {StructType};
+                                }
+                                Call.ResultType = ResultType;
 
                                 if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedArgs->Expr)) {
                                     for (auto &Comp : TupleExpr->Components) {
@@ -3349,7 +3451,7 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
 
                                 PlannedOperand CallOperand;
                                 CallOperand.Loc = Op.Loc;
-                                CallOperand.ResultType = StructType;
+                                CallOperand.ResultType = ResultType;
                                 CallOperand.Expr = std::move(Call);
 
                                 // Apply member access if present
@@ -3370,10 +3472,37 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             } else {
                                 // No initializer - use direct tuple construction
                                 // Update the tuple expression to have the struct type
+
+                                // Check if this is a region allocation (Type^rp(...))
+                                bool IsRegionAlloc = false;
+                                PlannedOperand RegionArg;
+                                if (auto* RefLife = std::get_if<ReferenceLifetime>(&TypeExpr->Life)) {
+                                    auto RegionVar = lookupLocal(RefLife->Location);
+                                    if (!RegionVar) {
+                                        return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
+                                    }
+                                    RegionArg.Loc = RefLife->Loc;
+                                    RegionArg.ResultType = *RegionVar;
+                                    RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, *RegionVar, false};
+                                    IsRegionAlloc = true;
+                                }
+
+                                // Set result type: pointer[StructType] for region alloc, StructType otherwise
+                                PlannedType ResultType = StructType;
+                                if (IsRegionAlloc) {
+                                    ResultType.Name = "pointer";
+                                    ResultType.MangledName = "P" + StructType.MangledName;
+                                    ResultType.Generics = {StructType};
+                                }
+
                                 if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedArgs->Expr)) {
                                     TupleExpr->TupleType = StructType;
+                                    TupleExpr->IsRegionAlloc = IsRegionAlloc;
+                                    if (IsRegionAlloc) {
+                                        TupleExpr->RegionArg = std::make_shared<PlannedOperand>(std::move(RegionArg));
+                                    }
                                 }
-                                PlannedArgs->ResultType = StructType;
+                                PlannedArgs->ResultType = ResultType;
 
                                 // Apply member access to the struct type if present
                                 if (NextOp.MemberAccess && !NextOp.MemberAccess->empty()) {
@@ -4514,7 +4643,10 @@ llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
         Result.Input.push_back(std::move(RegionParam));
 
         // Add to scope so code inside the function can reference it
+        // Define both _rp (the actual parameter name) and rp (the lifetime name)
+        // so that code can reference the region using either form
         defineLocal(RegionParamName, PtrPageType);
+        defineLocal(RefLife->Location, PtrPageType);
     }
 
     // Plan input parameters
@@ -4554,6 +4686,22 @@ llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
             return ResolvedReturn.takeError();
         }
         Result.Returns = std::make_shared<PlannedType>(std::move(*ResolvedReturn));
+
+        // If return type has LocalLifetime, ensure Page is instantiated for RBMM support
+        if (std::holds_alternative<LocalLifetime>(Result.Returns->Life)) {
+            if (InstantiatedStructures.find("Page") == InstantiatedStructures.end()) {
+                // Register runtime functions (aligned_alloc, free, exit) before planning Page
+                registerRuntimeFunctions();
+
+                const Concept *PageConcept = lookupConcept("Page");
+                if (PageConcept) {
+                    auto PlannedConc = planConcept(*PageConcept);
+                    if (!PlannedConc) {
+                        llvm::consumeError(PlannedConc.takeError());
+                    }
+                }
+            }
+        }
     }
 
     // Plan throws type
@@ -5044,20 +5192,35 @@ llvm::Expected<PlannedConcept> Planner::planConcept(const Concept &Conc) {
         using T = std::decay_t<decltype(Def)>;
 
         if constexpr (std::is_same_v<T, Structure>) {
+            // Insert placeholder BEFORE planning to handle recursive planning
+            // (e.g., when a method has LocalLifetime return type and triggers planConcept again)
+            PlannedStructure Placeholder;
+            Placeholder.Name = Conc.Name;
+            Placeholder.MangledName = encodeName(Conc.Name);
+            InstantiatedStructures[Conc.Name] = std::move(Placeholder);
+
             auto Planned = planStructure(Def, Conc.Name, {});
             if (!Planned) {
+                InstantiatedStructures.erase(Conc.Name);  // Remove placeholder on error
                 return Planned.takeError();
             }
-            // Add non-generic structures to cache for method lookup
+            // Replace placeholder with actual planned structure
             InstantiatedStructures[Conc.Name] = *Planned;
             return *Planned;
         }
         else if constexpr (std::is_same_v<T, Union>) {
+            // Insert placeholder BEFORE planning to handle recursive planning
+            PlannedUnion Placeholder;
+            Placeholder.Name = Conc.Name;
+            Placeholder.MangledName = encodeName(Conc.Name);
+            InstantiatedUnions[Conc.Name] = std::move(Placeholder);
+
             auto Planned = planUnion(Def, Conc.Name, {});
             if (!Planned) {
+                InstantiatedUnions.erase(Conc.Name);  // Remove placeholder on error
                 return Planned.takeError();
             }
-            // Add non-generic unions to cache
+            // Replace placeholder with actual planned union
             InstantiatedUnions[Conc.Name] = *Planned;
             return *Planned;
         }
