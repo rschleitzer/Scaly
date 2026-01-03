@@ -3515,6 +3515,142 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
             }
         }
 
+        // Check for static method call pattern: Type.method() followed by Tuple
+        // e.g., Page.allocate_page() or Foo.create(args)
+        // Also handles fully qualified names: scaly.memory.Page.get()
+        if (i + 1 < Ops.size()) {
+            const auto &NextOp = Ops[i + 1];
+            if (auto* TypeExpr = std::get_if<Type>(&Op.Expr)) {
+                // Type path with at least 2 segments: Type.method or module.Type.method
+                if (TypeExpr->Name.size() >= 2 && std::holds_alternative<Tuple>(NextOp.Expr)) {
+                    const std::string& MethodName = TypeExpr->Name.back();
+                    // For qualified names like scaly.memory.Page.get, the type is the second-to-last segment
+                    // For simple names like Page.get, the type is the first segment
+                    const std::string& TypeName = TypeExpr->Name.size() > 2
+                        ? TypeExpr->Name[TypeExpr->Name.size() - 2]
+                        : TypeExpr->Name[0];
+
+                    // Look up the type as a Concept
+                    const Concept* Conc = lookupConcept(TypeName);
+                    if (Conc) {
+                        if (auto* ModelStruct = std::get_if<Structure>(&Conc->Def)) {
+                            // Search for a static method (function without 'this' parameter)
+                            const Function* StaticMethod = nullptr;
+                            for (const auto& Member : ModelStruct->Members) {
+                                if (auto* Func = std::get_if<Function>(&Member)) {
+                                    if (Func->Name == MethodName) {
+                                        // Check if it's a static method (no 'this' parameter)
+                                        bool IsStatic = Func->Input.empty() ||
+                                            !Func->Input[0].Name ||
+                                            *Func->Input[0].Name != "this";
+                                        if (IsStatic) {
+                                            StaticMethod = Func;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (StaticMethod) {
+                                // Plan the arguments tuple
+                                Operand ArgsOp = NextOp;
+                                ArgsOp.MemberAccess = nullptr;
+                                auto PlannedArgs = planOperand(ArgsOp);
+                                if (!PlannedArgs) {
+                                    return PlannedArgs.takeError();
+                                }
+
+                                // Extract argument types from the planned tuple
+                                std::vector<PlannedType> ArgTypes;
+                                if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedArgs->Expr)) {
+                                    for (const auto &Comp : TupleExpr->Components) {
+                                        if (!Comp.Value.empty()) {
+                                            ArgTypes.push_back(Comp.Value.back().ResultType);
+                                        }
+                                    }
+                                }
+
+                                // Plan the static method
+                                auto PlannedFunc = planFunction(*StaticMethod, nullptr);
+                                if (!PlannedFunc) {
+                                    return PlannedFunc.takeError();
+                                }
+
+                                // Add to InstantiatedFunctions if not already present
+                                if (InstantiatedFunctions.find(PlannedFunc->MangledName) == InstantiatedFunctions.end()) {
+                                    InstantiatedFunctions[PlannedFunc->MangledName] = *PlannedFunc;
+                                }
+
+                                // Build PlannedItems for mangling
+                                std::vector<PlannedItem> ParamItems;
+                                for (const auto& Inp : StaticMethod->Input) {
+                                    PlannedItem Item;
+                                    Item.Loc = Inp.Loc;
+                                    Item.Name = Inp.Name;
+                                    if (Inp.ItemType) {
+                                        auto Resolved = resolveType(*Inp.ItemType, Inp.Loc);
+                                        if (Resolved) {
+                                            Item.ItemType = std::make_shared<PlannedType>(*Resolved);
+                                        }
+                                    }
+                                    ParamItems.push_back(Item);
+                                }
+
+                                // Create PlannedCall for the static method
+                                PlannedCall Call;
+                                Call.Loc = Op.Loc;
+                                Call.Name = MethodName;
+                                Call.MangledName = PlannedFunc->MangledName;
+                                Call.IsIntrinsic = false;
+                                Call.IsOperator = false;
+
+                                // Convert tuple components to call arguments
+                                Call.Args = std::make_shared<std::vector<PlannedOperand>>();
+                                if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedArgs->Expr)) {
+                                    for (auto &Comp : TupleExpr->Components) {
+                                        if (!Comp.Value.empty()) {
+                                            Call.Args->push_back(std::move(Comp.Value.back()));
+                                        }
+                                    }
+                                }
+
+                                // Set return type
+                                if (PlannedFunc->Returns) {
+                                    Call.ResultType = *PlannedFunc->Returns;
+                                } else {
+                                    Call.ResultType.Name = "void";
+                                    Call.ResultType.MangledName = "v";
+                                }
+
+                                PlannedOperand CallOp;
+                                CallOp.Loc = Op.Loc;
+                                CallOp.ResultType = Call.ResultType;
+                                CallOp.Expr = std::move(Call);
+
+                                // Handle member access on the result (e.g., Type.method().field)
+                                if (NextOp.MemberAccess && !NextOp.MemberAccess->empty()) {
+                                    auto MemberChain = resolveMemberAccessChain(
+                                        CallOp.ResultType, *NextOp.MemberAccess, NextOp.Loc);
+                                    if (!MemberChain) {
+                                        return MemberChain.takeError();
+                                    }
+                                    CallOp.MemberAccess = std::make_shared<std::vector<PlannedMemberAccess>>(
+                                        std::move(*MemberChain));
+                                    if (!CallOp.MemberAccess->empty()) {
+                                        CallOp.ResultType = CallOp.MemberAccess->back().ResultType;
+                                    }
+                                }
+
+                                Result.push_back(std::move(CallOp));
+                                i++;  // Skip the tuple operand
+                                continue;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         // Check for type constructor pattern: Type followed by Tuple
         // e.g., Point(3, 4) or Point(3, 4).x where Point is a struct type
         // Also handles generic types: Box[int](42) where Box[T] is a generic struct
