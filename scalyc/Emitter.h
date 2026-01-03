@@ -76,6 +76,9 @@ private:
     std::unique_ptr<llvm::DIBuilder> DIBuilder;
     EmitterConfig Config;
 
+    // Current plan being emitted (for type lookups)
+    const Plan *CurrentPlan = nullptr;
+
     // Debug info
     llvm::DICompileUnit *DICompileUnit = nullptr;
     llvm::DIFile *DIFile = nullptr;

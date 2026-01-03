@@ -3502,9 +3502,10 @@ static bool testGenericOptionSome() {
     const char* Name = "Pipeline: generic Option[int] Some variant";
 
     // Generic union - Option type
+    // Syntax: Option[int].Some(42) - union with type args, then variant
     auto ResultOrErr = evalSimpleInt(
         "define Option[T] union: (Some: T, None)\n"
-        "choose Some[int](42): when v: Some: v else 0"
+        "choose Option[int].Some(42): when v: Some: v else 0"
     );
 
     if (!ResultOrErr) {
@@ -3529,9 +3530,10 @@ static bool testGenericOptionNone() {
     const char* Name = "Pipeline: generic Option[int] None variant";
 
     // Generic union - None case
+    // Syntax: Option[int].None - union with type args, then variant (no value)
     auto ResultOrErr = evalSimpleInt(
         "define Option[T] union: (Some: T, None)\n"
-        "choose None[int]: when v: Some: v else -1"
+        "choose Option[int].None: when v: Some: v else -1"
     );
 
     if (!ResultOrErr) {
@@ -3582,35 +3584,34 @@ static bool testGenericMethodOnStruct() {
     return true;
 }
 
-// TODO: Nested generics require member access through pointers - implement later
-// static bool testGenericNestedTypes() {
-//     const char* Name = "Pipeline: nested generic types Box[Box[int]]";
-//
-//     // Nested generic instantiation
-//     auto ResultOrErr = evalSimpleInt(
-//         "define Box[T]: (value: T)\n"
-//         "let inner Box[int](42)\n"
-//         "let outer Box[Box[int]](inner)\n"
-//         "outer.value.value"
-//     );
-//
-//     if (!ResultOrErr) {
-//         std::string ErrMsg;
-//         llvm::raw_string_ostream OS(ErrMsg);
-//         OS << ResultOrErr.takeError();
-//         fail(Name, ErrMsg.c_str());
-//         return false;
-//     }
-//
-//     if (*ResultOrErr != 42) {
-//         std::string Msg = "expected 42, got " + std::to_string(*ResultOrErr);
-//         fail(Name, Msg.c_str());
-//         return false;
-//     }
-//
-//     pass(Name);
-//     return true;
-// }
+static bool testGenericNestedTypes() {
+    const char* Name = "Pipeline: nested generic types Box[Box[int]]";
+
+    // Nested generic instantiation
+    auto ResultOrErr = evalSimpleInt(
+        "define Box[T]: (value: T)\n"
+        "let inner Box[int](42)\n"
+        "let outer Box[Box[int]](inner)\n"
+        "outer.value.value"
+    );
+
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 42) {
+        std::string Msg = "expected 42, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
 
 // ============================================================================
 // Is Expression Tests
@@ -4060,7 +4061,7 @@ bool runEmitterTests() {
     testGenericOptionSome();
     testGenericOptionNone();
     testGenericMethodOnStruct();
-    // testGenericNestedTypes();  // TODO: Implement nested generics
+    testGenericNestedTypes();
 
     llvm::outs() << "\nEmitter tests: " << TestsPassed << " passed, "
                  << TestsFailed << " failed\n";
