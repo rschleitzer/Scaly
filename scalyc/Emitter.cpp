@@ -201,6 +201,9 @@ void Emitter::declareRuntimeFunctions() {
 
 llvm::Expected<std::unique_ptr<llvm::Module>> Emitter::emit(const Plan &P,
                                                              llvm::StringRef ModuleName) {
+    // Store current plan for type lookups
+    CurrentPlan = &P;
+
     // Create new module
     Module = std::make_unique<llvm::Module>(ModuleName, *Context);
 
@@ -425,16 +428,34 @@ llvm::Type *Emitter::mapType(const PlannedType &Type) {
         // Fall through to struct lookup
     }
 
-    // Unknown type - should have been planned
-    // Log a warning for debugging
-    llvm::errs() << "mapType: Unknown type Name='" << Type.Name
-                 << "' MangledName='" << Type.MangledName << "'\n";
-    llvm::errs() << "  StructCache keys: ";
-    for (const auto &[k, v] : StructCache) {
-        llvm::errs() << "'" << k << "' ";
+    // Check if this type is a struct in the Plan that hasn't been emitted yet
+    // This handles nested generics like Box[Box[int]] where the inner Box[int]
+    // is referenced as a property type before being explicitly emitted
+    if (CurrentPlan) {
+        // Try to find by Name (e.g., "Box.int")
+        auto StructIt = CurrentPlan->Structures.find(Type.Name);
+        if (StructIt != CurrentPlan->Structures.end()) {
+            auto *StructTy = emitStructType(StructIt->second);
+            return StructTy;
+        }
+
+        // Try to find by MangledName
+        for (const auto &[Key, Struct] : CurrentPlan->Structures) {
+            if (Struct.MangledName == Type.MangledName) {
+                auto *StructTy = emitStructType(Struct);
+                return StructTy;
+            }
+        }
+
+        // Check unions too
+        auto UnionIt = CurrentPlan->Unions.find(Type.Name);
+        if (UnionIt != CurrentPlan->Unions.end()) {
+            auto *UnionTy = emitUnionType(UnionIt->second);
+            return UnionTy;
+        }
     }
-    llvm::errs() << "\n";
-    llvm::errs().flush();
+
+    // Unknown type - should have been planned (programming error)
 
     // Return opaque pointer as fallback
     return llvm::PointerType::get(*Context, 0);
@@ -3608,6 +3629,9 @@ llvm::Function *Emitter::createJITWrapper(llvm::Type *ReturnType) {
 }
 
 llvm::Expected<uint64_t> Emitter::jitExecuteRaw(const Plan &P, llvm::Type *ExpectedType) {
+    // Store current plan for type lookups
+    CurrentPlan = &P;
+
     // Create fresh module for JIT
     Module = std::make_unique<llvm::Module>("jit_module", *Context);
     Module->setTargetTriple(llvm::sys::getDefaultTargetTriple());

@@ -3327,9 +3327,11 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
 
         // Check for union variant constructor pattern: Union.Variant(value)
         // e.g., Result.Ok(42) or Option.Some(value)
+        // Also handles generic unions: Option[int].Some(42)
         if (i + 1 < Ops.size()) {
             const auto &NextOp = Ops[i + 1];
             if (auto* TypeExpr = std::get_if<Type>(&Op.Expr)) {
+                // Case 1: Non-generic union - Name has both union and variant (e.g., Result.Ok)
                 if (TypeExpr->Name.size() >= 2 && std::holds_alternative<Tuple>(NextOp.Expr)) {
                     // Look up the first name as a union
                     const std::string& UnionName = TypeExpr->Name[0];
@@ -3389,6 +3391,86 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             Result.push_back(std::move(ResultOp));
                             i++;  // Skip the tuple operand
                             continue;
+                        }
+                    }
+                }
+
+                // Case 2: Generic union with member access - Option[int].Some(42)
+                // TypeExpr has Name=["Option"], Generics=[int], MemberAccess=["Some"]
+                if (TypeExpr->Name.size() == 1 && TypeExpr->Generics && !TypeExpr->Generics->empty() &&
+                    Op.MemberAccess && !Op.MemberAccess->empty()) {
+                    const std::string& UnionName = TypeExpr->Name[0];
+                    const std::string& VariantName = Op.MemberAccess->at(0).Name[0];
+
+                    // Look up the concept to check if it's a union
+                    const Concept* Conc = lookupConcept(UnionName);
+                    if (Conc && std::holds_alternative<Union>(Conc->Def)) {
+                        // Resolve the generic union type (instantiate it)
+                        auto ResolvedUnion = resolveType(*TypeExpr, Op.Loc);
+                        if (!ResolvedUnion) {
+                            return ResolvedUnion.takeError();
+                        }
+                        PlannedType UnionType = std::move(*ResolvedUnion);
+
+                        // Look up the instantiated union
+                        auto UnionIt = InstantiatedUnions.find(UnionType.Name);
+                        if (UnionIt != InstantiatedUnions.end()) {
+                            const PlannedUnion& Union = UnionIt->second;
+
+                            // Find the variant
+                            const PlannedVariant* FoundVariant = nullptr;
+                            for (const auto& Var : Union.Variants) {
+                                if (Var.Name == VariantName) {
+                                    FoundVariant = &Var;
+                                    break;
+                                }
+                            }
+
+                            if (FoundVariant) {
+                                // Check if next op is a tuple (value for the variant)
+                                std::shared_ptr<PlannedOperand> ArgValue;
+                                bool ConsumedTuple = false;
+
+                                if (std::holds_alternative<Tuple>(NextOp.Expr)) {
+                                    // Plan the tuple argument
+                                    Operand ArgsOp = NextOp;
+                                    ArgsOp.MemberAccess = nullptr;
+                                    auto PlannedArgs = planOperand(ArgsOp);
+                                    if (!PlannedArgs) {
+                                        return PlannedArgs.takeError();
+                                    }
+
+                                    // Extract the first argument value
+                                    if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedArgs->Expr)) {
+                                        if (!TupleExpr->Components.empty() &&
+                                            !TupleExpr->Components[0].Value.empty()) {
+                                            ArgValue = std::make_shared<PlannedOperand>(
+                                                std::move(TupleExpr->Components[0].Value.back()));
+                                        }
+                                    }
+                                    ConsumedTuple = true;
+                                }
+                                // Else: variant with no value (like None)
+
+                                // Create the variant construction
+                                PlannedVariantConstruction VarConstruct;
+                                VarConstruct.Loc = Op.Loc;
+                                VarConstruct.UnionType = UnionType;
+                                VarConstruct.VariantName = VariantName;
+                                VarConstruct.VariantTag = FoundVariant->Tag;
+                                VarConstruct.Value = ArgValue;
+
+                                PlannedOperand ResultOp;
+                                ResultOp.Loc = Op.Loc;
+                                ResultOp.ResultType = UnionType;
+                                ResultOp.Expr = std::move(VarConstruct);
+
+                                Result.push_back(std::move(ResultOp));
+                                if (ConsumedTuple) {
+                                    i++;  // Skip the tuple operand
+                                }
+                                continue;
+                            }
                         }
                     }
                 }
@@ -3700,6 +3782,65 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                 TupleOperand.Expr = std::move(EmptyTuple);
 
                                 Result.push_back(std::move(TupleOperand));
+                                continue;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Check for generic union unit variant: Option[int].None (no tuple)
+        // This is separate from Case 2 above because it doesn't require a next operand
+        if (auto* TypeExpr = std::get_if<Type>(&Op.Expr)) {
+            if (TypeExpr->Name.size() == 1 && TypeExpr->Generics && !TypeExpr->Generics->empty() &&
+                Op.MemberAccess && !Op.MemberAccess->empty()) {
+                const std::string& UnionName = TypeExpr->Name[0];
+                const std::string& VariantName = Op.MemberAccess->at(0).Name[0];
+
+                // Only handle if next operand is NOT a tuple (otherwise Case 2 above handles it)
+                bool NextIsTuple = (i + 1 < Ops.size()) &&
+                                   std::holds_alternative<Tuple>(Ops[i + 1].Expr);
+                if (!NextIsTuple) {
+                    // Look up the concept to check if it's a union
+                    const Concept* Conc = lookupConcept(UnionName);
+                    if (Conc && std::holds_alternative<Union>(Conc->Def)) {
+                        // Resolve the generic union type (instantiate it)
+                        auto ResolvedUnion = resolveType(*TypeExpr, Op.Loc);
+                        if (!ResolvedUnion) {
+                            return ResolvedUnion.takeError();
+                        }
+                        PlannedType UnionType = std::move(*ResolvedUnion);
+
+                        // Look up the instantiated union
+                        auto UnionIt = InstantiatedUnions.find(UnionType.Name);
+                        if (UnionIt != InstantiatedUnions.end()) {
+                            const PlannedUnion& Union = UnionIt->second;
+
+                            // Find the variant
+                            const PlannedVariant* FoundVariant = nullptr;
+                            for (const auto& Var : Union.Variants) {
+                                if (Var.Name == VariantName) {
+                                    FoundVariant = &Var;
+                                    break;
+                                }
+                            }
+
+                            if (FoundVariant) {
+                                // Create unit variant construction (no value)
+                                PlannedVariantConstruction VarConstruct;
+                                VarConstruct.Loc = Op.Loc;
+                                VarConstruct.UnionType = UnionType;
+                                VarConstruct.VariantName = VariantName;
+                                VarConstruct.VariantTag = FoundVariant->Tag;
+                                VarConstruct.Value = nullptr;  // Unit variant
+
+                                PlannedOperand ResultOp;
+                                ResultOp.Loc = Op.Loc;
+                                ResultOp.ResultType = UnionType;
+                                ResultOp.Expr = std::move(VarConstruct);
+
+                                Result.push_back(std::move(ResultOp));
                                 continue;
                             }
                         }
