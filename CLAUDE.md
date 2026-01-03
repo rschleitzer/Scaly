@@ -274,13 +274,13 @@ procedure add(this: List[T], element: T) {
    }
    ```
 
-2. **`^name` requires page-allocated variable** - You can only reference a variable's page if it was allocated with a lifetime:
+2. **`^page_ptr` requires pointer[Page] type** - The variable must be a page pointer:
    ```scaly
-   let c Car()        ; Stack-allocated
-   let p Person^c()   ; ERROR: c is not on a page
+   let c Car$()           ; c is pointer[Car], not pointer[Page]
+   let p Person^c()       ; ERROR: c is not pointer[Page]
 
-   let c Car$()       ; Page-allocated
-   let p Person^c()   ; OK: c is on a page
+   let page Page.allocate_page()   ; page is pointer[Page]
+   let p Person^page()             ; OK: page is pointer[Page]
    ```
 
 3. **Empty constructor parentheses are optional** - `Person^c` is equivalent to `Person^c()`.

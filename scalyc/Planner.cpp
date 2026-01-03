@@ -126,6 +126,7 @@ void Planner::addConstraint(const PlannedType &Left, const PlannedType &Right, S
     Eq.Left = Left;
     Eq.Right = Right;
     Eq.Loc = Loc;
+    Eq.File = File;  // Capture current file for error messages
     CurrentPlan->addConstraint(Eq);
 }
 
@@ -789,7 +790,13 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
     // Search in Model's Concept
     // This handles forward references to methods not yet planned,
     // and methods on sibling types that aren't instantiated yet
-    const Concept *Conc = lookupConcept(StructType.Name);
+    // Extract base name from instantiated type (e.g., "Array.char" -> "Array")
+    std::string BaseName = StructType.Name;
+    size_t DotPos = BaseName.find('.');
+    if (DotPos != std::string::npos) {
+        BaseName = BaseName.substr(0, DotPos);
+    }
+    const Concept *Conc = lookupConcept(BaseName);
     if (Conc) {
         if (auto *ModelStruct = std::get_if<Structure>(&Conc->Def)) {
             for (const auto &Member : ModelStruct->Members) {
@@ -2143,9 +2150,14 @@ PlannedType Planner::inferConstantType(const Constant &C) {
             Result.MangledName = "f64";
         }
         else if constexpr (std::is_same_v<T, StringConstant>) {
+            // String literals are typed as pointer[i8] (C-style null-terminated strings)
             Result.Loc = Val.Loc;
-            Result.Name = "String";
-            Result.MangledName = "6String";
+            Result.Name = "pointer";
+            PlannedType I8Type;
+            I8Type.Name = "i8";
+            I8Type.MangledName = "a";  // i8 in Itanium ABI is 'a' (signed char)
+            Result.Generics.push_back(I8Type);
+            Result.MangledName = "Pa";  // pointer[i8]
         }
         else if constexpr (std::is_same_v<T, CharacterConstant>) {
             Result.Loc = Val.Loc;
@@ -2153,9 +2165,14 @@ PlannedType Planner::inferConstantType(const Constant &C) {
             Result.MangledName = "c";
         }
         else if constexpr (std::is_same_v<T, FragmentConstant>) {
+            // Fragments are also C-style strings
             Result.Loc = Val.Loc;
-            Result.Name = "String";  // Fragments are strings
-            Result.MangledName = "6String";
+            Result.Name = "pointer";
+            PlannedType I8Type;
+            I8Type.Name = "i8";
+            I8Type.MangledName = "a";
+            Result.Generics.push_back(I8Type);
+            Result.MangledName = "Pa";
         }
         else if constexpr (std::is_same_v<T, NullConstant>) {
             Result.Loc = Val.Loc;
@@ -2381,6 +2398,14 @@ llvm::Expected<PlannedType> Planner::inferExpressionType(const PlannedExpression
             SizeType.MangledName = "m";  // size_t
             return SizeType;
         }
+        else if constexpr (std::is_same_v<T, PlannedAlignOf>) {
+            // alignof always returns size (usize/uint)
+            PlannedType SizeType;
+            SizeType.Loc = E.Loc;
+            SizeType.Name = "size";
+            SizeType.MangledName = "m";  // size_t
+            return SizeType;
+        }
         else if constexpr (std::is_same_v<T, PlannedIs>) {
             // 'is' always returns bool
             PlannedType BoolType;
@@ -2422,9 +2447,34 @@ const Concept* Planner::lookupConcept(llvm::StringRef Name) {
         for (const auto& Member : Mod->Members) {
             if (auto* Conc = std::get_if<Concept>(&Member)) {
                 if (Conc->Name == Name) {
-                    // Cache it for future lookups
                     Concepts[Name.str()] = Conc;
                     return Conc;
+                }
+
+                // Also check if this concept's definition contains sub-modules
+                // with the concept we're looking for (e.g., define containers { module Vector })
+                if (auto* Struct = std::get_if<Structure>(&Conc->Def)) {
+                    for (const auto& SubMod : Struct->Modules) {
+                        for (const auto& SubMember : SubMod.Members) {
+                            if (auto* SubConc = std::get_if<Concept>(&SubMember)) {
+                                if (SubConc->Name == Name) {
+                                    Concepts[Name.str()] = SubConc;
+                                    return SubConc;
+                                }
+                            }
+                        }
+                    }
+                } else if (auto* Ns = std::get_if<Namespace>(&Conc->Def)) {
+                    for (const auto& SubMod : Ns->Modules) {
+                        for (const auto& SubMember : SubMod.Members) {
+                            if (auto* SubConc = std::get_if<Concept>(&SubMember)) {
+                                if (SubConc->Name == Name) {
+                                    Concepts[Name.str()] = SubConc;
+                                    return SubConc;
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -2451,6 +2501,61 @@ const Concept* Planner::lookupConcept(llvm::StringRef Name) {
                         if (Conc->Name == Name) {
                             Concepts[Name.str()] = Conc;
                             return Conc;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // 2b. Check Use statements in module stack
+    // If there's a "use foo.bar.Baz" and we're looking for "Baz", resolve the full path
+    for (auto It = ModuleStack.rbegin(); It != ModuleStack.rend(); ++It) {
+        const Module* Mod = *It;
+        for (const auto& Use : Mod->Uses) {
+            // Check if the Use path ends with the name we're looking for
+            if (!Use.Path.empty() && Use.Path.back() == Name) {
+                // Try to resolve the full path by searching sibling programs
+                // Start from the first element of the path
+                for (const auto& Sibling : SiblingPrograms) {
+                    // Check if first path element matches sibling's main module name
+                    if (Use.Path.size() >= 2 && Sibling->MainModule.Name == Use.Path[0]) {
+                        // Navigate through the path
+                        const Module* CurrentMod = &Sibling->MainModule;
+                        bool Found = true;
+                        for (size_t I = 1; I < Use.Path.size() - 1 && Found; ++I) {
+                            Found = false;
+                            for (const auto& SubMod : CurrentMod->Modules) {
+                                if (SubMod.Name == Use.Path[I]) {
+                                    CurrentMod = &SubMod;
+                                    Found = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (Found) {
+                            // Look for the concept in the final module
+                            for (const auto& Member : CurrentMod->Members) {
+                                if (auto* Conc = std::get_if<Concept>(&Member)) {
+                                    if (Conc->Name == Name) {
+                                        Concepts[Name.str()] = Conc;
+                                        return Conc;
+                                    }
+                                }
+                            }
+                            // Also check sub-modules
+                            for (const auto& SubMod : CurrentMod->Modules) {
+                                if (SubMod.Name == Name) {
+                                    for (const auto& Member : SubMod.Members) {
+                                        if (auto* Conc = std::get_if<Concept>(&Member)) {
+                                            if (Conc->Name == Name) {
+                                                Concepts[Name.str()] = Conc;
+                                                return Conc;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -3033,16 +3138,52 @@ llvm::Expected<PlannedOperand> Planner::planOperand(const Operand &Op) {
                 }
             }
             if (GlobalIt != PlannedGlobals.end()) {
-                // Return the global's first value operand directly
-                const auto& GlobalValue = GlobalIt->second.Value;
-                if (!GlobalValue.empty() && GlobalValue.size() == 1) {
-                    // Return a copy of the global's operand
+                // Check if this is a scalar constant or an array constant
+                // Scalar constants (like PAGE_SIZE int 0x1000) have a single constant value
+                // Array constants (like PRIMES: int[] [2, 3, 5, 7, 11]) have a Matrix value
+                const auto& GVal = GlobalIt->second.Value;
+                bool IsArray = false;
+                if (!GVal.empty()) {
+                    if (std::holds_alternative<PlannedMatrix>(GVal[0].Expr)) {
+                        IsArray = true;
+                    }
+                }
+
+                if (!IsArray && GVal.size() == 1) {
+                    // Scalar constant - return the constant value directly (constant folding)
                     PlannedOperand ResultOp;
                     ResultOp.Loc = Op.Loc;
-                    ResultOp.Expr = GlobalValue[0].Expr;
+                    ResultOp.Expr = GVal[0].Expr;
                     ResultOp.ResultType = GlobalIt->second.GlobalType;
                     return ResultOp;
                 }
+
+                // Array constant - return a pointer to the array
+                PlannedGlobalRef GRef;
+                GRef.Loc = Op.Loc;
+                GRef.Name = GlobalIt->second.Name;
+                GRef.MangledName = GlobalIt->second.MangledName;
+                GRef.GlobalType = GlobalIt->second.GlobalType;
+
+                PlannedOperand ResultOp;
+                ResultOp.Loc = Op.Loc;
+                ResultOp.Expr = std::move(GRef);
+                // For array types, the result type is a pointer to the element type
+                // If GlobalType has no generics, it IS the element type (e.g., int[] -> pointer[int])
+                PlannedType PtrType;
+                PtrType.Loc = GlobalIt->second.GlobalType.Loc;
+                PtrType.Name = "pointer";
+                if (GlobalIt->second.GlobalType.Generics.empty()) {
+                    // Array type like int[] - use GlobalType as element type
+                    PtrType.Generics.push_back(GlobalIt->second.GlobalType);
+                    PtrType.MangledName = "P" + GlobalIt->second.GlobalType.MangledName;
+                } else {
+                    // Already has generics
+                    PtrType.Generics = GlobalIt->second.GlobalType.Generics;
+                    PtrType.MangledName = "P" + GlobalIt->second.GlobalType.MangledName;
+                }
+                ResultOp.ResultType = PtrType;
+                return ResultOp;
             }
             if (CurrentStructureProperties) {
                 auto ThisType = lookupLocal("this");
@@ -3198,8 +3339,11 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                 if (!RegionBinding) {
                                     return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
                                 }
-                                // Validate that the referenced variable is on a page
-                                if (!RegionBinding->IsOnPage) {
+                                // Validate that the referenced variable is a pointer[Page]
+                                bool isPagePointer = RegionBinding->Type.Name == "pointer" &&
+                                                     !RegionBinding->Type.Generics.empty() &&
+                                                     RegionBinding->Type.Generics[0].Name == "Page";
+                                if (!isPagePointer) {
                                     return makeStackLifetimeError(File, RefLife->Loc, RefLife->Location);
                                 }
 
@@ -3312,8 +3456,11 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                         if (!RegionBinding) {
                             return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
                         }
-                        // Validate that the referenced variable is on a page
-                        if (!RegionBinding->IsOnPage) {
+                        // Validate that the referenced variable is a pointer[Page]
+                        bool isPagePointer = RegionBinding->Type.Name == "pointer" &&
+                                             !RegionBinding->Type.Generics.empty() &&
+                                             RegionBinding->Type.Generics[0].Name == "Page";
+                        if (!isPagePointer) {
                             return makeStackLifetimeError(File, RefLife->Loc, RefLife->Location);
                         }
 
@@ -3719,8 +3866,11 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                     if (!RegionBinding) {
                                         return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
                                     }
-                                    // Validate that the referenced variable is on a page
-                                    if (!RegionBinding->IsOnPage) {
+                                    // Validate that the referenced variable is a pointer[Page]
+                                    bool isPagePointer = RegionBinding->Type.Name == "pointer" &&
+                                                         !RegionBinding->Type.Generics.empty() &&
+                                                         RegionBinding->Type.Generics[0].Name == "Page";
+                                    if (!isPagePointer) {
                                         return makeStackLifetimeError(File, RefLife->Loc, RefLife->Location);
                                     }
 
@@ -3789,8 +3939,11 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                     if (!RegionBinding) {
                                         return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
                                     }
-                                    // Validate that the referenced variable is on a page
-                                    if (!RegionBinding->IsOnPage) {
+                                    // Validate that the referenced variable is a pointer[Page]
+                                    bool isPagePointer = RegionBinding->Type.Name == "pointer" &&
+                                                         !RegionBinding->Type.Generics.empty() &&
+                                                         RegionBinding->Type.Generics[0].Name == "Page";
+                                    if (!isPagePointer) {
                                         return makeStackLifetimeError(File, RefLife->Loc, RefLife->Location);
                                     }
                                     RegionArg.Loc = RefLife->Loc;
@@ -3891,7 +4044,11 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                     if (!RegionBinding) {
                                         return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
                                     }
-                                    if (!RegionBinding->IsOnPage) {
+                                    // Validate that the referenced variable is a pointer[Page]
+                                    bool isPagePointer = RegionBinding->Type.Name == "pointer" &&
+                                                         !RegionBinding->Type.Generics.empty() &&
+                                                         RegionBinding->Type.Generics[0].Name == "Page";
+                                    if (!isPagePointer) {
                                         return makeStackLifetimeError(File, RefLife->Loc, RefLife->Location);
                                     }
                                     PlannedOperand RegionArg;
@@ -3934,7 +4091,11 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                     if (!RegionBinding) {
                                         return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
                                     }
-                                    if (!RegionBinding->IsOnPage) {
+                                    // Validate that the referenced variable is a pointer[Page]
+                                    bool isPagePointer = RegionBinding->Type.Name == "pointer" &&
+                                                         !RegionBinding->Type.Generics.empty() &&
+                                                         RegionBinding->Type.Generics[0].Name == "Page";
+                                    if (!isPagePointer) {
                                         return makeStackLifetimeError(File, RefLife->Loc, RefLife->Location);
                                     }
                                     PlannedOperand RegionArg;
@@ -4363,6 +4524,44 @@ llvm::Expected<PlannedExpression> Planner::planExpression(const Expression &Expr
                 }
             }
             return PlannedExpression(std::move(PSO));
+        }
+        else if constexpr (std::is_same_v<T, AlignOf>) {
+            PlannedAlignOf PAO;
+            PAO.Loc = E.Loc;
+            auto Resolved = resolveType(E.AlignedType, E.Loc);
+            if (!Resolved) {
+                return Resolved.takeError();
+            }
+            PAO.AlignedType = std::move(*Resolved);
+
+            // Compute alignment based on type
+            const std::string &TypeName = PAO.AlignedType.Name;
+            if (TypeName == "bool" || TypeName == "i1") {
+                PAO.Alignment = 1;
+            } else if (TypeName == "i8" || TypeName == "u8" || TypeName == "char") {
+                PAO.Alignment = 1;
+            } else if (TypeName == "i16" || TypeName == "u16") {
+                PAO.Alignment = 2;
+            } else if (TypeName == "i32" || TypeName == "u32" || TypeName == "float" || TypeName == "f32") {
+                PAO.Alignment = 4;
+            } else if (TypeName == "i64" || TypeName == "u64" || TypeName == "int" || TypeName == "uint" ||
+                       TypeName == "double" || TypeName == "f64" || TypeName == "size_t" || TypeName == "ptr") {
+                PAO.Alignment = 8;
+            } else {
+                // For structures and other types, look up in caches
+                auto StructIt = InstantiatedStructures.find(PAO.AlignedType.MangledName);
+                if (StructIt != InstantiatedStructures.end()) {
+                    PAO.Alignment = StructIt->second.Alignment;
+                } else {
+                    auto UnionIt = InstantiatedUnions.find(PAO.AlignedType.MangledName);
+                    if (UnionIt != InstantiatedUnions.end()) {
+                        PAO.Alignment = UnionIt->second.Alignment;
+                    } else {
+                        PAO.Alignment = 1;  // Unknown type alignment defaults to 1
+                    }
+                }
+            }
+            return PlannedExpression(std::move(PAO));
         }
         else if constexpr (std::is_same_v<T, Is>) {
             PlannedIs PI;
@@ -5819,6 +6018,12 @@ llvm::Expected<PlannedModule> Planner::planModule(const Module &Mod) {
     Result.File = Mod.File;
     Result.Name = Mod.Name;
 
+    // Save and update current file for error messages
+    std::string OldFile = File;
+    if (!Mod.File.empty()) {
+        File = Mod.File;
+    }
+
     // Push module onto stack for cross-module resolution
     ModuleStack.push_back(&Mod);
 
@@ -5826,6 +6031,7 @@ llvm::Expected<PlannedModule> Planner::planModule(const Module &Mod) {
     for (const auto &SubMod : Mod.Modules) {
         auto PlannedSubMod = planModule(SubMod);
         if (!PlannedSubMod) {
+            File = OldFile;
             ModuleStack.pop_back();
             return PlannedSubMod.takeError();
         }
@@ -5839,6 +6045,7 @@ llvm::Expected<PlannedModule> Planner::planModule(const Module &Mod) {
             if (Pkg->Root) {
                 auto PlannedPkgMod = planModule(*Pkg->Root);
                 if (!PlannedPkgMod) {
+                    File = OldFile;
                     ModuleStack.pop_back();
                     return PlannedPkgMod.takeError();
                 }
@@ -5851,6 +6058,7 @@ llvm::Expected<PlannedModule> Planner::planModule(const Module &Mod) {
             // Plan concept
             auto PlannedConc = planConcept(*Conc);
             if (!PlannedConc) {
+                File = OldFile;
                 ModuleStack.pop_back();
                 return PlannedConc.takeError();
             }
@@ -5858,6 +6066,7 @@ llvm::Expected<PlannedModule> Planner::planModule(const Module &Mod) {
         } else if (auto *Func = std::get_if<Function>(&Member)) {
             auto PlannedFunc = planFunction(*Func, nullptr);
             if (!PlannedFunc) {
+                File = OldFile;
                 ModuleStack.pop_back();
                 return PlannedFunc.takeError();
             }
@@ -5872,6 +6081,7 @@ llvm::Expected<PlannedModule> Planner::planModule(const Module &Mod) {
         } else if (auto *Op = std::get_if<Operator>(&Member)) {
             auto PlannedOp = planOperator(*Op, nullptr);
             if (!PlannedOp) {
+                File = OldFile;
                 ModuleStack.pop_back();
                 return PlannedOp.takeError();
             }
@@ -5882,6 +6092,7 @@ llvm::Expected<PlannedModule> Planner::planModule(const Module &Mod) {
         }
     }
 
+    File = OldFile;
     ModuleStack.pop_back();
     return Result;
 }
@@ -5931,6 +6142,9 @@ llvm::Expected<Plan> Planner::plan(const Program &Prog) {
     }
     for (auto &Pair : InstantiatedFunctions) {
         Result.Functions[Pair.first] = Pair.second;
+    }
+    for (auto &Pair : PlannedGlobals) {
+        Result.Globals[Pair.first] = Pair.second;
     }
 
     CurrentPlan = nullptr;
@@ -6003,6 +6217,23 @@ Substitution composeSubstitutions(const Substitution &S1, const Substitution &S2
     return Result;
 }
 
+// Check if a type name is an integer type
+bool isIntegerTypeName(const std::string &Name) {
+    static const std::set<std::string> IntTypes = {
+        "int", "i8", "i16", "i32", "i64",
+        "uint", "u8", "u16", "u32", "u64",
+        "size_t", "usize", "isize", "size",
+        "char"  // char is an integer type in C/C++ semantics
+    };
+    return IntTypes.count(Name) > 0;
+}
+
+// Check if two types are compatible integer types (for implicit coercion)
+// This allows integer literals (typed as 'int') to be used where size_t, u64, etc. are expected
+bool areCompatibleIntegerTypes(const std::string &Left, const std::string &Right) {
+    return isIntegerTypeName(Left) && isIntegerTypeName(Right);
+}
+
 llvm::Expected<Substitution> unify(const TypeOrVariable &Left,
                                     const TypeOrVariable &Right,
                                     Span Loc,
@@ -6070,6 +6301,12 @@ llvm::Expected<Substitution> unify(const TypeOrVariable &Left,
             return Substitution{};
         }
 
+        // Special case: compatible integer types unify with each other
+        // This allows integer literals (typed as 'int') to be used where size_t, u64, etc. are expected
+        if (areCompatibleIntegerTypes(LeftType->Name, RightType->Name)) {
+            return Substitution{};
+        }
+
         // Names must match
         if (LeftType->Name != RightType->Name) {
             return makeTypeMismatchError(File, Loc, LeftType->Name, RightType->Name);
@@ -6118,7 +6355,7 @@ llvm::Expected<Substitution> solveConstraints(
                 Right = applySubstitution(*RT, Solution);
             }
 
-            auto UnifyResult = unify(Left, Right, Eq->Loc, File);
+            auto UnifyResult = unify(Left, Right, Eq->Loc, Eq->File);
             if (!UnifyResult) {
                 return UnifyResult.takeError();
             }

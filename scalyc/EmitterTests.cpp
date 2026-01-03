@@ -1575,6 +1575,40 @@ static bool testPipelineWhileFactorial() {
     return true;
 }
 
+static bool testPipelineWhileLetBinding() {
+    const char* Name = "Pipeline: while let binding";
+
+    // Test while let with counter that decrements each iteration
+    // while let x = counter-- > 0, we can access x in the body
+    // Using simpler test: while let x = i > 0, accumulate sum
+    auto ResultOrErr = evalInt(
+        "var i = 3\n"
+        "var sum = 0\n"
+        "while let x = i > 0 : {\n"
+        "    if x : set sum : sum + i\n"
+        "    set i : i - 1\n"
+        "}\n"
+        "sum"
+    );
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // sum = 3 + 2 + 1 = 6
+    if (*ResultOrErr != 6) {
+        std::string Msg = "expected 6, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
 // If statement tests
 
 static bool testPipelineIfTrueExpr() {
@@ -2431,6 +2465,148 @@ static bool testPipelineSizeOfPtr() {
     // ptr is 8 bytes on 64-bit
     if (*ResultOrErr != 8) {
         std::string Msg = "expected 8, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+// AlignOf expression tests
+
+static bool testPipelineAlignOfInt() {
+    const char* Name = "Pipeline: alignof int";
+
+    auto ResultOrErr = evalInt("alignof int");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // int (i64) is 8-byte aligned
+    if (*ResultOrErr != 8) {
+        std::string Msg = "expected 8, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineAlignOfI32() {
+    const char* Name = "Pipeline: alignof i32";
+
+    auto ResultOrErr = evalInt("alignof i32");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // i32 is 4-byte aligned
+    if (*ResultOrErr != 4) {
+        std::string Msg = "expected 4, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineAlignOfI16() {
+    const char* Name = "Pipeline: alignof i16";
+
+    auto ResultOrErr = evalInt("alignof i16");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // i16 is 2-byte aligned
+    if (*ResultOrErr != 2) {
+        std::string Msg = "expected 2, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testPipelineAlignOfBool() {
+    const char* Name = "Pipeline: alignof bool";
+
+    auto ResultOrErr = evalInt("alignof bool");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // bool is 1-byte aligned
+    if (*ResultOrErr != 1) {
+        std::string Msg = "expected 1, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+// Extern function tests
+
+static bool testExternStrlen() {
+    const char* Name = "Pipeline: strlen extern call";
+
+    // strlen("hello") should return 5
+    auto ResultOrErr = evalInt("function strlen(s: pointer[i8]) returns size_t extern\nstrlen(\"hello\") as int");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 5) {
+        std::string Msg = "expected 5, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testExternSqrt() {
+    const char* Name = "Pipeline: sqrt extern call";
+
+    // sqrt(16.0) should return 4.0
+    auto ResultOrErr = evalInt("function sqrt(x: double) returns double extern\nsqrt(16.0) as int");
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 4) {
+        std::string Msg = "expected 4, got " + std::to_string(*ResultOrErr);
         fail(Name, Msg.c_str());
         return false;
     }
@@ -3393,6 +3569,66 @@ static bool testRBMMBlockScopedCleanup() {
     return true;
 }
 
+static bool testRBMMReferenceLifetimeRequiresPagePointer() {
+    const char* Name = "Pipeline: RBMM ^name requires pointer[Page] type";
+
+    // ^name syntax requires the variable to be of type pointer[Page]
+    // Using a regular pointer should fail
+    auto PlanResult = compileToPlan(
+        "define Point: (x: int, y: int)\n"
+        "function test() returns int {\n"
+        "    let p Point$(1, 2)\n"  // p is pointer[Point], not pointer[Page]
+        "    let q Point^p(3, 4)\n"  // ERROR: p is not pointer[Page]
+        "    (*q).x\n"
+        "}\n"
+    );
+
+    if (PlanResult) {
+        fail(Name, "Expected error for ^name with non-Page pointer type");
+        return false;
+    }
+
+    std::string ErrMsg;
+    llvm::raw_string_ostream OS(ErrMsg);
+    OS << PlanResult.takeError();
+
+    // Check that the error message mentions pointer[Page]
+    if (ErrMsg.find("pointer[Page]") == std::string::npos) {
+        std::string Msg = "Expected 'pointer[Page]' in error, got: " + ErrMsg;
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testStaticArrayConstant() {
+    const char* Name = "Pipeline: static array constant";
+
+    // Test defining and accessing a static array constant
+    auto ResultOrErr = evalInt(
+        "define PRIMES: int[] [2, 3, 5, 7, 11]\n"
+        "*(PRIMES + 2)\n"  // Access third element (5)
+    );
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 5) {
+        std::string Msg = "expected 5, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
 // ============================================================================
 // Generic Type Tests
 // ============================================================================
@@ -3930,6 +4166,7 @@ bool runEmitterTests() {
     testPipelineWhileSum();
     testPipelineWhileZeroIterations();
     testPipelineWhileFactorial();
+    testPipelineWhileLetBinding();
 
     // If statements
     llvm::outs() << "  If statement tests:\n";
@@ -4002,6 +4239,18 @@ bool runEmitterTests() {
     testPipelineSizeOfI32();
     testPipelineSizeOfPtr();
 
+    // AlignOf expressions
+    llvm::outs() << "  AlignOf expression tests:\n";
+    testPipelineAlignOfInt();
+    testPipelineAlignOfI32();
+    testPipelineAlignOfI16();
+    testPipelineAlignOfBool();
+
+    // Extern function tests
+    llvm::outs() << "  Extern function tests:\n";
+    testExternStrlen();
+    testExternSqrt();
+
     llvm::outs() << "  Grouped expression tests:\n";
     testPipelineGroupedSimple();
     testPipelineGroupedAdd();
@@ -4053,6 +4302,11 @@ bool runEmitterTests() {
     testRBMMEmptyConstructorWithoutParens();
     testRBMMThrownLifetime();
     testRBMMBlockScopedCleanup();
+    testRBMMReferenceLifetimeRequiresPagePointer();
+
+    // Static array constant tests
+    llvm::outs() << "  Static array tests:\n";
+    testStaticArrayConstant();
 
     llvm::outs() << "  Generic type tests:\n";
     testGenericBoxInt();

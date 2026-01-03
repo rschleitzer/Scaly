@@ -304,6 +304,11 @@ llvm::Expected<Expression> Modeler::handleExpression(
             if (!SizeResult)
                 return SizeResult.takeError();
             return std::move(*SizeResult);
+        } else if constexpr (std::is_same_v<T, AlignOfSyntax>) {
+            auto AlignResult = handleAlignOf(E);
+            if (!AlignResult)
+                return AlignResult.takeError();
+            return std::move(*AlignResult);
         } else if constexpr (std::is_same_v<T, IsSyntax>) {
             auto IsResult = handleIs(E);
             if (!IsResult)
@@ -814,6 +819,13 @@ llvm::Expected<SizeOf> Modeler::handleSizeOf(const SizeOfSyntax &Syntax) {
     if (!TypeResult)
         return TypeResult.takeError();
     return SizeOf{Span{Syntax.Start, Syntax.End}, std::move(**TypeResult)};
+}
+
+llvm::Expected<AlignOf> Modeler::handleAlignOf(const AlignOfSyntax &Syntax) {
+    auto TypeResult = handleType(Syntax.type);
+    if (!TypeResult)
+        return TypeResult.takeError();
+    return AlignOf{Span{Syntax.Start, Syntax.End}, std::move(**TypeResult)};
 }
 
 llvm::Expected<Is> Modeler::handleIs(const IsSyntax &Syntax) {
@@ -1558,6 +1570,8 @@ llvm::Expected<Namespace> Modeler::handleNamespace(llvm::StringRef Name,
                             auto Mod = handleModule(NamespacePath.str(), E, true);
                             if (Mod) {
                                 Modules.push_back(std::move(*Mod));
+                            } else {
+                                llvm::consumeError(Mod.takeError());
                             }
                         }
                     }, S.export_.Value);
@@ -1580,6 +1594,8 @@ llvm::Expected<Namespace> Modeler::handleNamespace(llvm::StringRef Name,
                     auto Mod = handleModule(NamespacePath.str(), S, false);
                     if (Mod) {
                         Modules.push_back(std::move(*Mod));
+                    } else {
+                        llvm::consumeError(Mod.takeError());
                     }
                 }
             }, D.symbol.Value);
@@ -1600,6 +1616,10 @@ llvm::Expected<Modeler::BodyResult> Modeler::handleBody(
     llvm::StringRef Name, llvm::StringRef Path, const BodySyntax &Syntax) {
 
     BodyResult Result;
+
+    // Construct sub-path for module lookups: Path/Name/
+    llvm::SmallString<256> SubPath(Path);
+    llvm::sys::path::append(SubPath, Name);
 
     if (Syntax.uses) {
         for (const auto &U : *Syntax.uses) {
@@ -1650,6 +1670,13 @@ llvm::Expected<Modeler::BodyResult> Modeler::handleBody(
                     if (Op) {
                         Result.Members.push_back(std::move(*Op));
                     }
+                } else if constexpr (std::is_same_v<CT, ModuleSyntax>) {
+                    auto Mod = handleModule(SubPath.str(), C, false);
+                    if (Mod) {
+                        Result.Modules.push_back(std::move(*Mod));
+                    } else {
+                        llvm::consumeError(Mod.takeError());
+                    }
                 }
             }, M.constituent.Value);
         }
@@ -1673,6 +1700,7 @@ llvm::Expected<Module> Modeler::buildReferencedModule(llvm::StringRef Path,
     }
     FilePath += ".scaly";
 
+
     // Read the file
     auto BufOrErr = llvm::MemoryBuffer::getFile(FilePath);
     if (!BufOrErr) {
@@ -1687,12 +1715,6 @@ llvm::Expected<Module> Modeler::buildReferencedModule(llvm::StringRef Path,
     if (!FileResult) {
         return llvm::make_error<llvm::StringError>(
             FilePath.str().str() + ": " + llvm::toString(FileResult.takeError()),
-            llvm::inconvertibleErrorCode());
-    }
-
-    if (!ModuleParser.isAtEnd()) {
-        return llvm::make_error<llvm::StringError>(
-            FilePath.str().str() + ": unexpected content after file",
             llvm::inconvertibleErrorCode());
     }
 

@@ -327,6 +327,7 @@
     <content link = Try
     <content link = Repeat
     <content link = SizeOf
+    <content link = AlignOf
     <content link = Is
     <content link = As
 
@@ -566,6 +567,10 @@
     <content link = sizeof
     <content link = Type                                    property = type
 
+<syntax id = AlignOf
+    <content link = alignof
+    <content link = Type                                    property = type
+
 <syntax id = Is
     <content link = is
     <content link = Name                                    property = name
@@ -607,6 +612,7 @@
 <syntax id = Thrown
     <content link = exclamation
 
+<keyword id = alignof
 <keyword id = as
 <keyword id = break
 <keyword id = case
