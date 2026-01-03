@@ -655,6 +655,31 @@ std::vector<const Function*> Planner::lookupFunction(llvm::StringRef Name) {
         }
     }
 
+    // Search sibling programs (for multi-file compilation)
+    if (Result.empty()) {
+        for (const auto& Sibling : SiblingPrograms) {
+            // Search sibling's main module
+            for (const auto& Member : Sibling->MainModule.Members) {
+                if (auto* Func = std::get_if<Function>(&Member)) {
+                    if (Func->Name == Name) {
+                        Result.push_back(Func);
+                    }
+                }
+            }
+
+            // Also search sibling's sub-modules
+            for (const auto& SubMod : Sibling->MainModule.Modules) {
+                for (const auto& Member : SubMod.Members) {
+                    if (auto* Func = std::get_if<Function>(&Member)) {
+                        if (Func->Name == Name) {
+                            Result.push_back(Func);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     // Cache the result
     if (!Result.empty()) {
         Functions[Name.str()] = Result;
@@ -1150,6 +1175,19 @@ llvm::Expected<PlannedType> Planner::resolveFunctionCall(
     }
 
     if (BestMatch) {
+        // Plan the function if it's not already in InstantiatedFunctions
+        // This handles functions from sibling files
+        auto Planned = planFunction(*BestMatch, nullptr);
+        if (Planned) {
+            // Add to InstantiatedFunctions if not already present
+            if (InstantiatedFunctions.find(Planned->MangledName) == InstantiatedFunctions.end()) {
+                InstantiatedFunctions[Planned->MangledName] = *Planned;
+            }
+        } else {
+            // If planning fails, return the error
+            return Planned.takeError();
+        }
+
         if (BestMatch->Returns) {
             return resolveType(*BestMatch->Returns, Loc);
         }
