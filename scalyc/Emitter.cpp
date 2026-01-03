@@ -89,7 +89,11 @@ void Emitter::initIntrinsicTypes() {
     // Common aliases (prelude may override)
     IntrinsicTypes["bool"] = IntrinsicTypes["i1"];
     IntrinsicTypes["int"] = IntrinsicTypes["i64"];
+    IntrinsicTypes["uint"] = IntrinsicTypes["u64"];
     IntrinsicTypes["size_t"] = IntrinsicTypes["u64"];
+    IntrinsicTypes["float"] = IntrinsicTypes["f32"];
+    IntrinsicTypes["double"] = IntrinsicTypes["f64"];
+    IntrinsicTypes["char"] = IntrinsicTypes["i8"];
 }
 
 // ============================================================================
@@ -231,6 +235,11 @@ llvm::Expected<std::unique_ptr<llvm::Module>> Emitter::emit(const Plan &P,
     }
     for (const auto &[name, Union] : P.Unions) {
         emitUnionType(Union);
+    }
+
+    // Phase 1.5: Emit global constants
+    for (const auto &[name, Global] : P.Globals) {
+        emitGlobal(Global);
     }
 
     // Phase 2: Emit all function declarations
@@ -521,6 +530,103 @@ llvm::StructType *Emitter::emitUnionType(const PlannedUnion &Union) {
     StructCache[Union.MangledName] = UnionTy;
 
     return UnionTy;
+}
+
+// ============================================================================
+// Global Constant Emission
+// ============================================================================
+
+llvm::GlobalVariable *Emitter::emitGlobal(const PlannedGlobal &Global) {
+    // Get the element type from the global's type
+    // For array types like size_t[], we need to look at the generic argument
+    llvm::Type *ElemTy = nullptr;
+    size_t ArraySize = 0;
+
+    // Check if this is an array type (has empty generics or [] suffix)
+    if (Global.GlobalType.Name == "pointer" && !Global.GlobalType.Generics.empty()) {
+        // pointer[T] - get element type from generic
+        ElemTy = mapType(Global.GlobalType.Generics[0]);
+    } else {
+        // Scalar type
+        ElemTy = mapType(Global.GlobalType);
+    }
+
+    // For array constants, the value is a Matrix (vector literal)
+    if (Global.Value.size() == 1) {
+        if (auto *Matrix = std::get_if<PlannedMatrix>(&Global.Value[0].Expr)) {
+            // Matrix structure: [2, 3, 5, 7, 11] creates 5 rows of 1 column each
+            // OR: [[2, 3, 5, 7, 11]] creates 1 row of 5 columns
+            if (!Matrix->Operations.empty()) {
+                if (Matrix->Operations.size() == 1) {
+                    // Single row with multiple columns: [[2, 3, 5, 7, 11]]
+                    ArraySize = Matrix->Operations[0].size();
+                } else if (!Matrix->Operations.empty() && Matrix->Operations[0].size() == 1) {
+                    // Multiple rows with 1 column each: [2, 3, 5, 7, 11]
+                    ArraySize = Matrix->Operations.size();
+                }
+            }
+        }
+    }
+
+    if (ArraySize == 0) {
+        // Scalar constant or single value
+        return nullptr; // TODO: Handle scalar globals
+    }
+
+    // Create array type
+    llvm::ArrayType *ArrTy = llvm::ArrayType::get(ElemTy, ArraySize);
+
+    // Build constant initializer
+    std::vector<llvm::Constant*> Elements;
+    if (Global.Value.size() == 1) {
+        if (auto *Matrix = std::get_if<PlannedMatrix>(&Global.Value[0].Expr)) {
+            if (Matrix->Operations.size() == 1) {
+                // Single row with multiple columns
+                for (const auto &Elem : Matrix->Operations[0]) {
+                    if (auto *Const = std::get_if<PlannedConstant>(&Elem.Expr)) {
+                        if (auto *IConst = std::get_if<IntegerConstant>(Const)) {
+                            Elements.push_back(llvm::ConstantInt::get(ElemTy, IConst->Value));
+                        } else if (auto *HConst = std::get_if<HexConstant>(Const)) {
+                            Elements.push_back(llvm::ConstantInt::get(ElemTy, HConst->Value));
+                        }
+                    }
+                }
+            } else {
+                // Multiple rows, 1 column each
+                for (const auto &Row : Matrix->Operations) {
+                    if (!Row.empty()) {
+                        if (auto *Const = std::get_if<PlannedConstant>(&Row[0].Expr)) {
+                            if (auto *IConst = std::get_if<IntegerConstant>(Const)) {
+                                Elements.push_back(llvm::ConstantInt::get(ElemTy, IConst->Value));
+                            } else if (auto *HConst = std::get_if<HexConstant>(Const)) {
+                                Elements.push_back(llvm::ConstantInt::get(ElemTy, HConst->Value));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (Elements.size() != ArraySize) {
+        // Not all elements could be converted to constants
+        return nullptr;
+    }
+
+    // Create constant array
+    llvm::Constant *Init = llvm::ConstantArray::get(ArrTy, Elements);
+
+    // Create global variable
+    auto *GV = new llvm::GlobalVariable(
+        *Module,
+        ArrTy,
+        true,  // isConstant
+        llvm::GlobalValue::PrivateLinkage,
+        Init,
+        Global.MangledName
+    );
+
+    return GV;
 }
 
 // ============================================================================
@@ -1496,6 +1602,23 @@ llvm::Expected<llvm::Value*> Emitter::emitExpression(const PlannedExpression &Ex
                 // Immutable binding stored as value directly
                 return VarPtr;
             }
+        } else if constexpr (std::is_same_v<T, PlannedGlobalRef>) {
+            // Global constant reference - look up in module and return pointer to first element
+            // Use getNamedGlobal instead of getGlobalVariable (the latter doesn't
+            // work for PrivateLinkage globals in LLVM 18)
+            auto *GV = Module->getNamedGlobal(E.MangledName);
+            if (!GV) {
+                return llvm::make_error<llvm::StringError>(
+                    "Undefined global: " + E.Name,
+                    llvm::inconvertibleErrorCode()
+                );
+            }
+            // Get pointer to first element of the array
+            llvm::Value *Indices[] = {
+                llvm::ConstantInt::get(llvm::Type::getInt64Ty(*Context), 0),
+                llvm::ConstantInt::get(llvm::Type::getInt64Ty(*Context), 0)
+            };
+            return Builder->CreateGEP(GV->getValueType(), GV, Indices, "global.elem");
         } else if constexpr (std::is_same_v<T, PlannedCall>) {
             return emitCall(E);
         } else if constexpr (std::is_same_v<T, PlannedTuple>) {
@@ -1518,6 +1641,8 @@ llvm::Expected<llvm::Value*> Emitter::emitExpression(const PlannedExpression &Ex
             return emitTry(E);
         } else if constexpr (std::is_same_v<T, PlannedSizeOf>) {
             return emitSizeOf(E);
+        } else if constexpr (std::is_same_v<T, PlannedAlignOf>) {
+            return emitAlignOf(E);
         } else if constexpr (std::is_same_v<T, PlannedIs>) {
             return emitIs(E);
         } else if constexpr (std::is_same_v<T, PlannedAs>) {
@@ -2626,6 +2751,17 @@ llvm::Expected<llvm::Value*> Emitter::emitWhile(const PlannedWhile &While) {
     // For while loops, continue goes back to condition check
     LoopStack.push_back({ExitBlock, CondBlock});
 
+    // For "while let" bindings with mutable variables, create alloca before the loop
+    llvm::AllocaInst *BindingAlloca = nullptr;
+    bool HasBinding = While.Cond.BindingItem.Name != nullptr;
+    bool IsMutable = While.Cond.BindingType == "var" || While.Cond.BindingType == "mutable";
+
+    if (HasBinding && IsMutable) {
+        // We need to create the alloca in the entry block for proper SSA form
+        // First, we need to know the type - evaluate once to get it
+        // For now, create a placeholder that will be set in the cond block
+    }
+
     // Jump to condition block
     Builder->CreateBr(CondBlock);
 
@@ -2649,6 +2785,26 @@ llvm::Expected<llvm::Value*> Emitter::emitWhile(const PlannedWhile &While) {
     }
 
     llvm::Value *CondValue = *CondValueOrErr;
+
+    // Handle "while let" binding - bind the value to the variable
+    if (HasBinding) {
+        if (IsMutable) {
+            // Mutable binding: allocate on stack and store
+            if (!BindingAlloca) {
+                // Create alloca in entry block for proper LLVM form
+                llvm::IRBuilder<> EntryBuilder(&CurrentFunction->getEntryBlock(),
+                                                CurrentFunction->getEntryBlock().begin());
+                BindingAlloca = EntryBuilder.CreateAlloca(CondValue->getType(), nullptr,
+                                                          *While.Cond.BindingItem.Name);
+            }
+            Builder->CreateStore(CondValue, BindingAlloca);
+            LocalVariables[*While.Cond.BindingItem.Name] = BindingAlloca;
+        } else {
+            // Immutable binding: just use the value directly
+            // Each iteration will update this
+            LocalVariables[*While.Cond.BindingItem.Name] = CondValue;
+        }
+    }
 
     // Ensure we have a boolean (i1) for the branch
     if (!CondValue->getType()->isIntegerTy(1)) {
@@ -2941,6 +3097,13 @@ llvm::Expected<llvm::Value*> Emitter::emitSizeOf(const PlannedSizeOf &SizeOf) {
     // sizeof returns a size_t (u64)
     llvm::Type *SizeTy = llvm::Type::getInt64Ty(*Context);
     return llvm::ConstantInt::get(SizeTy, SizeOf.Size);
+}
+
+llvm::Expected<llvm::Value*> Emitter::emitAlignOf(const PlannedAlignOf &AlignOf) {
+    // The alignment is already computed by the Planner - just emit it as a constant
+    // alignof returns a size_t (u64)
+    llvm::Type *SizeTy = llvm::Type::getInt64Ty(*Context);
+    return llvm::ConstantInt::get(SizeTy, AlignOf.Alignment);
 }
 
 llvm::Expected<llvm::Value*> Emitter::emitIs(const PlannedIs &Is) {
@@ -3654,6 +3817,11 @@ llvm::Expected<uint64_t> Emitter::jitExecuteRaw(const Plan &P, llvm::Type *Expec
     }
     for (const auto &[name, Union] : P.Unions) {
         emitUnionType(Union);
+    }
+
+    // Emit global constants
+    for (const auto &[name, Global] : P.Globals) {
+        emitGlobal(Global);
     }
 
     // Emit function declarations

@@ -76,6 +76,7 @@ struct EqualityConstraint {
     TypeOrVariable Left;
     TypeOrVariable Right;
     Span Loc;  // Where the constraint originated (for error messages)
+    std::string File;  // Source file for error messages
 };
 
 struct InstanceConstraint {
@@ -269,6 +270,12 @@ struct PlannedSizeOf {
     size_t Size;  // Computed size in bytes
 };
 
+struct PlannedAlignOf {
+    Span Loc;
+    PlannedType AlignedType;
+    size_t Alignment;  // Computed alignment in bytes
+};
+
 // Forward declaration for PlannedOperand
 struct PlannedOperand;
 
@@ -347,10 +354,19 @@ struct PlannedVariable {
     bool IsMutable = false;     // True if it's a var/mutable binding
 };
 
+// Represents a reference to a global constant
+struct PlannedGlobalRef {
+    Span Loc;
+    std::string Name;           // The global name
+    std::string MangledName;    // The mangled name for lookup
+    PlannedType GlobalType;     // The type of the global
+};
+
 using PlannedExpression = std::variant<
     PlannedConstant,
     PlannedType,
     PlannedVariable,
+    PlannedGlobalRef,
     PlannedCall,
     PlannedTuple,
     PlannedMatrix,
@@ -362,6 +378,7 @@ using PlannedExpression = std::variant<
     PlannedWhile,
     PlannedTry,
     PlannedSizeOf,
+    PlannedAlignOf,
     PlannedIs,
     PlannedAs,
     PlannedVariantConstruction
@@ -540,6 +557,7 @@ struct Plan {
     std::map<std::string, PlannedStructure> Structures;
     std::map<std::string, PlannedUnion> Unions;
     std::map<std::string, PlannedFunction> Functions;
+    std::map<std::string, PlannedGlobal> Globals;  // Global constants
 
     // Type inference state (used during planning, cleared after)
     uint64_t NextTypeVarId = 0;

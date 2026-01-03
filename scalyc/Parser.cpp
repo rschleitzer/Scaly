@@ -23,6 +23,7 @@ Parser::Parser(llvm::StringRef Source) : Lex(Source) {
 }
 
 void Parser::initKeywords() {
+    Keywords.insert("alignof");
     Keywords.insert("as");
     Keywords.insert("break");
     Keywords.insert("case");
@@ -524,8 +525,9 @@ llvm::Expected<ClassSyntax> Parser::parseClass() {
 llvm::Expected<BodySyntax> Parser::parseBody() {
     size_t Start = Lex.previousPosition();
 
-    if (!Lex.parsePunctuation('{'))
+    if (!Lex.parsePunctuation('{')) {
         return different();
+    }
 
     std::vector<UseSyntax>* Uses = nullptr;
     {
@@ -1835,6 +1837,12 @@ llvm::Expected<ExpressionSyntax> Parser::parseExpression() {
         llvm::consumeError(Result.takeError());
     }
     {
+        auto Result = parseAlignOf();
+        if (Result)
+            return ExpressionSyntax{std::move(*Result)};
+        llvm::consumeError(Result.takeError());
+    }
+    {
         auto Result = parseIs();
         if (Result)
             return ExpressionSyntax{std::move(*Result)};
@@ -3095,6 +3103,23 @@ llvm::Expected<SizeOfSyntax> Parser::parseSizeOf() {
     size_t End = Lex.position();
 
     return SizeOfSyntax{Start, End, Type};
+
+}
+
+llvm::Expected<AlignOfSyntax> Parser::parseAlignOf() {
+    size_t Start = Lex.previousPosition();
+
+    if (!Lex.parseKeyword("alignof"))
+        return different();
+
+    auto TypeOrErr = parseType();
+    if (!TypeOrErr)
+        return invalid(Start, Lex.position(), "expected Type");
+    auto Type = std::move(*TypeOrErr);
+
+    size_t End = Lex.position();
+
+    return AlignOfSyntax{Start, End, Type};
 
 }
 

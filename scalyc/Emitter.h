@@ -149,6 +149,9 @@ private:
     // Create LLVM type for PlannedUnion (tagged union)
     llvm::StructType *emitUnionType(const PlannedUnion &Union);
 
+    // Create LLVM global constant for PlannedGlobal
+    llvm::GlobalVariable *emitGlobal(const PlannedGlobal &Global);
+
     // Get size/alignment for a type
     size_t getTypeSize(llvm::Type *Ty);
     size_t getTypeAlignment(llvm::Type *Ty);
@@ -232,6 +235,7 @@ private:
     llvm::Expected<llvm::Value*> emitWhile(const PlannedWhile &While);
     llvm::Expected<llvm::Value*> emitTry(const PlannedTry &Try);
     llvm::Expected<llvm::Value*> emitSizeOf(const PlannedSizeOf &SizeOf);
+    llvm::Expected<llvm::Value*> emitAlignOf(const PlannedAlignOf &AlignOf);
     llvm::Expected<llvm::Value*> emitIs(const PlannedIs &Is);
     llvm::Expected<llvm::Value*> emitIsWithValue(llvm::Value *UnionValue,
                                                    const PlannedType &UnionType,

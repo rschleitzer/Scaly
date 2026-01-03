@@ -97,7 +97,7 @@ std::string StackLifetimeError::toString() const {
     std::ostringstream OS;
     OS << File << ":" << Loc.Start
        << ": error: cannot use '^" << VariableName
-       << "' - variable is stack-allocated (use $, #, or ^name to allocate on a page)";
+       << "' - variable must be of type pointer[Page]";
     return OS.str();
 }
 

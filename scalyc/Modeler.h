@@ -70,6 +70,7 @@ private:
 
     // Special expressions
     llvm::Expected<SizeOf> handleSizeOf(const SizeOfSyntax &Syntax);
+    llvm::Expected<AlignOf> handleAlignOf(const AlignOfSyntax &Syntax);
     llvm::Expected<Is> handleIs(const IsSyntax &Syntax);
     llvm::Expected<As> handleAs(const AsSyntax &Syntax);
 

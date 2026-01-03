@@ -285,6 +285,11 @@ struct SizeOf {
     Type SizedType;
 };
 
+struct AlignOf {
+    Span Loc;
+    Type AlignedType;
+};
+
 struct Is {
     Span Loc;
     std::vector<std::string> Name;
@@ -336,6 +341,7 @@ using Expression = std::variant<
     While,
     Try,
     SizeOf,
+    AlignOf,
     Is,
     As,
     New

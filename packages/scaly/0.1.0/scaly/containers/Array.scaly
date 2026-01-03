@@ -11,7 +11,7 @@ define Array[T]
         set vector: Vector[T]^exclusive_page(exclusive_page, size)
     }
 
-    function get_buffer(this: Array) returns pointer[T] {
+    function get_buffer(this: Array[T]) returns pointer[T] {
         if vector = null
             return null
         return (*vector).data
@@ -45,7 +45,7 @@ define Array[T]
         if new_length > (*vector).length
         {
             var own_page Page.get(this as pointer[void])
-            let data (T*)(*own_page).allocate(length * size, alignof(T))
+            let data (T*)(*own_page).allocate(length * size, alignof T)
             let bytes_to_copy (*vector).length * size
             if (*vector).length > 0
                 memcpy(data, (*vector).data, bytes_to_copy)
@@ -80,7 +80,7 @@ define Array[T]
         if vector = null
         {
             let exclusive_page (*own_page).allocate_exclusive_page()
-            let capacity (*exclusive_page).get_capacity(alignof(T)) - sizeof Vector[T]
+            let capacity (*exclusive_page).get_capacity(alignof T) - sizeof Vector[T]
             set length: capacity / size
             set vector: Vector[T]^exclusive_page(exclusive_page, length)
         } else {

@@ -12,4 +12,18 @@ define runtime {
     ; Process termination
     function exit(code: i32) extern
 
+    ; Memory operations
+    function memcpy(dest: pointer[void], src: pointer[void], n: size_t) returns pointer[void] extern
+    function memset(dest: pointer[void], c: i32, n: size_t) returns pointer[void] extern
+    function memmove(dest: pointer[void], src: pointer[void], n: size_t) returns pointer[void] extern
+
+    ; String operations
+    function strlen(s: pointer[i8]) returns size_t extern
+
+    ; Math operations
+    function sqrt(x: double) returns double extern
+    function sin(x: double) returns double extern
+    function cos(x: double) returns double extern
+    function pow(base: double, exp: double) returns double extern
+
 }
