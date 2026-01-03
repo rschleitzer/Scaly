@@ -10,6 +10,90 @@
 
 namespace scaly {
 
+// Process escape sequences in a string literal
+// Converts \n, \r, \t, \\, \", \', \0, and \uXXXX to their byte values
+static std::string processEscapes(llvm::StringRef Input) {
+    std::string Result;
+    Result.reserve(Input.size());
+
+    for (size_t I = 0; I < Input.size(); ++I) {
+        if (Input[I] != '\\') {
+            Result.push_back(Input[I]);
+            continue;
+        }
+
+        // Escape sequence - look at next character
+        if (I + 1 >= Input.size()) {
+            // Trailing backslash - keep it (shouldn't happen if lexer is correct)
+            Result.push_back('\\');
+            continue;
+        }
+
+        char Next = Input[I + 1];
+        switch (Next) {
+        case 'n':  Result.push_back('\n'); ++I; break;
+        case 'r':  Result.push_back('\r'); ++I; break;
+        case 't':  Result.push_back('\t'); ++I; break;
+        case '\\': Result.push_back('\\'); ++I; break;
+        case '"':  Result.push_back('"');  ++I; break;
+        case '\'': Result.push_back('\''); ++I; break;
+        case '0':  Result.push_back('\0'); ++I; break;
+        case 'u': {
+            // Unicode escape: \uXXXX (4 hex digits)
+            if (I + 5 >= Input.size()) {
+                // Not enough characters - keep raw
+                Result.push_back('\\');
+                break;
+            }
+
+            // Parse 4 hex digits
+            llvm::StringRef Hex = Input.substr(I + 2, 4);
+            unsigned CodePoint = 0;
+            bool Valid = true;
+            for (char C : Hex) {
+                CodePoint <<= 4;
+                if (C >= '0' && C <= '9') {
+                    CodePoint |= (C - '0');
+                } else if (C >= 'a' && C <= 'f') {
+                    CodePoint |= (C - 'a' + 10);
+                } else if (C >= 'A' && C <= 'F') {
+                    CodePoint |= (C - 'A' + 10);
+                } else {
+                    Valid = false;
+                    break;
+                }
+            }
+
+            if (!Valid) {
+                // Invalid hex - keep raw
+                Result.push_back('\\');
+                break;
+            }
+
+            // Encode code point as UTF-8
+            if (CodePoint < 0x80) {
+                Result.push_back(static_cast<char>(CodePoint));
+            } else if (CodePoint < 0x800) {
+                Result.push_back(static_cast<char>(0xC0 | (CodePoint >> 6)));
+                Result.push_back(static_cast<char>(0x80 | (CodePoint & 0x3F)));
+            } else {
+                Result.push_back(static_cast<char>(0xE0 | (CodePoint >> 12)));
+                Result.push_back(static_cast<char>(0x80 | ((CodePoint >> 6) & 0x3F)));
+                Result.push_back(static_cast<char>(0x80 | (CodePoint & 0x3F)));
+            }
+            I += 5; // Skip \uXXXX
+            break;
+        }
+        default:
+            // Unknown escape - keep the backslash and character as-is
+            Result.push_back('\\');
+            break;
+        }
+    }
+
+    return Result;
+}
+
 Modeler::Modeler(llvm::StringRef FileName) : File(FileName.str()) {}
 
 // Type handling
@@ -97,9 +181,9 @@ llvm::Expected<Constant> Modeler::handleLiteral(const LiteralSyntax &Syntax) {
                 return makeInvalidConstantError(File, Loc);
             return FloatingPointConstant{Loc, Value};
         } else if constexpr (std::is_same_v<T, StringLiteral>) {
-            return StringConstant{Loc, Lit.Value.str()};
+            return StringConstant{Loc, processEscapes(Lit.Value)};
         } else if constexpr (std::is_same_v<T, CharacterLiteral>) {
-            return CharacterConstant{Loc, Lit.Value.str()};
+            return CharacterConstant{Loc, processEscapes(Lit.Value)};
         } else if constexpr (std::is_same_v<T, FragmentLiteral>) {
             return FragmentConstant{Loc, Lit.Value.str()};
         }

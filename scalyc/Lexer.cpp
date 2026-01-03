@@ -222,6 +222,20 @@ Token Lexer::scanStringLiteral() {
             switch (*Current_) {
             case '"': case '\\': case '\'': case 'n': case 'r': case 't': case '0':
                 break;
+            case 'u':
+                // Unicode escape: \uXXXX (4 hex digits)
+                for (int i = 0; i < 4; ++i) {
+                    readCharacter();
+                    ++Length;
+                    if (Current_ == nullptr) {
+                        return InvalidToken{};
+                    }
+                    char H = *Current_;
+                    if (!((H >= '0' && H <= '9') || (H >= 'a' && H <= 'f') || (H >= 'A' && H <= 'F'))) {
+                        return InvalidToken{};
+                    }
+                }
+                break;
             default:
                 return InvalidToken{};
             }
@@ -256,6 +270,20 @@ Token Lexer::scanStringIdentifier() {
             }
             switch (*Current_) {
             case '"': case '\\': case '\'': case 'n': case 'r': case 't': case '0':
+                break;
+            case 'u':
+                // Unicode escape: \uXXXX (4 hex digits)
+                for (int i = 0; i < 4; ++i) {
+                    readCharacter();
+                    ++Length;
+                    if (Current_ == nullptr) {
+                        return InvalidToken{};
+                    }
+                    char H = *Current_;
+                    if (!((H >= '0' && H <= '9') || (H >= 'a' && H <= 'f') || (H >= 'A' && H <= 'F'))) {
+                        return InvalidToken{};
+                    }
+                }
                 break;
             default:
                 return InvalidToken{};
