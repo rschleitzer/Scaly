@@ -107,6 +107,23 @@ struct NoMatchingOverloadError {
     std::string toString() const;
 };
 
+// Stack variable used as lifetime reference (^foo where foo is stack-allocated)
+struct StackLifetimeError {
+    std::string File;
+    Span Loc;
+    std::string VariableName;
+
+    std::string toString() const;
+};
+
+// Local lifetime ($) used on return type (forbidden)
+struct LocalReturnError {
+    std::string File;
+    Span Loc;
+
+    std::string toString() const;
+};
+
 // Aggregate planner error type
 using PlannerErrorVariant = std::variant<
     UndefinedTypeError,
@@ -118,7 +135,9 @@ using PlannerErrorVariant = std::variant<
     InfiniteTypeError,
     PlannerNotImplementedError,
     AmbiguousOverloadError,
-    NoMatchingOverloadError
+    NoMatchingOverloadError,
+    StackLifetimeError,
+    LocalReturnError
 >;
 
 // LLVM-style error class
@@ -201,6 +220,15 @@ inline llvm::Error makeNoMatchingOverloadError(llvm::StringRef File, Span Loc,
                                                 std::vector<std::string> ArgumentTypes) {
     return makePlannerError(
         NoMatchingOverloadError{File.str(), Loc, FunctionName.str(), std::move(ArgumentTypes)});
+}
+
+inline llvm::Error makeStackLifetimeError(llvm::StringRef File, Span Loc,
+                                           llvm::StringRef VariableName) {
+    return makePlannerError(StackLifetimeError{File.str(), Loc, VariableName.str()});
+}
+
+inline llvm::Error makeLocalReturnError(llvm::StringRef File, Span Loc) {
+    return makePlannerError(LocalReturnError{File.str(), Loc});
 }
 
 } // namespace scaly

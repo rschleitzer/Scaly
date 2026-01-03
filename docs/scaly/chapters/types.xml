@@ -553,72 +553,108 @@ HashMap[String, i32] → _ZN7HashMapI6StringiE...
   <section xml:id="types-lifetimes">
     <title>Lifetimes and Memory Regions</title>
     <para>Scaly uses Region-Based Memory Management (RBMM). Instead of garbage
-      collection or manual malloc/free, values are allocated in regions that
-      are deallocated in bulk. Lifetimes control which region a value lives in.</para>
+      collection or manual malloc/free, values are allocated in memory regions
+      (pages) that are deallocated in bulk when their owning scope exits.</para>
+
+    <section xml:id="types-allocation">
+      <title>Stack vs Page Allocation</title>
+      <para>The presence or absence of a lifetime suffix on a constructor call
+        determines whether the value is stack-allocated or page-allocated:</para>
+      <variablelist>
+        <varlistentry>
+          <term>No suffix = Stack allocation</term>
+          <listitem><para>The value is allocated on the stack frame. Fast, automatic
+            cleanup when the function returns. Cannot outlive the current function.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>Lifetime suffix = Page allocation</term>
+          <listitem><para>The value is allocated on a memory page. Can outlive the
+            current block depending on which lifetime is used.</para></listitem>
+        </varlistentry>
+      </variablelist>
+      <programlisting>
+let stack_point Point(10, 20)     ; stack-allocated (by value)
+let page_point Point$(10, 20)     ; page-allocated (local page)
+      </programlisting>
+      <para>Note: The lifetime suffix comes <emphasis>before</emphasis> the constructor
+        parameters, not after. This follows the general pattern: Type + Generics + Lifetime + Parameters.</para>
+    </section>
 
     <section xml:id="types-lifetime-kinds">
       <title>Lifetime Kinds</title>
       <variablelist>
         <varlistentry>
-          <term>Local (<literal>$</literal>, default)</term>
-          <listitem><para>Value lives until the end of the current block. This is the
-            default — the <literal>$</literal> annotation is optional.</para></listitem>
+          <term>Local (<literal>$</literal>)</term>
+          <listitem><para>Value is allocated on a local page that lives until the
+            end of the current block. The page is lazily allocated on first use
+            and automatically deallocated when the block exits.</para></listitem>
         </varlistentry>
         <varlistentry>
-          <term>Call (<literal>#</literal>)</term>
-          <listitem><para>Value lives in the "return page" — it survives the function
-            return and is managed by the caller.</para></listitem>
+          <term>Caller (<literal>#</literal>)</term>
+          <listitem><para>Value is allocated on the caller's return page. It survives
+            the function return and is managed by the caller. Used for returning
+            heap-allocated values.</para></listitem>
         </varlistentry>
         <varlistentry>
           <term>Thrown (<literal>!</literal>)</term>
-          <listitem><para>Value lives in the "exception page" — for values that may
-            be thrown as errors.</para></listitem>
+          <listitem><para>Value is allocated on the exception page. Used for error
+            values that may be thrown and caught by the caller.</para></listitem>
         </varlistentry>
         <varlistentry>
           <term>Reference (<literal>^name</literal>)</term>
-          <listitem><para>Value's lifetime is tied to the named container. Required
-            when adding values to collections.</para></listitem>
+          <listitem><para>Value is allocated on the same page as the named variable.
+            The named variable must itself be page-allocated (not stack-allocated).
+            Used when adding values to collections.</para></listitem>
         </varlistentry>
       </variablelist>
     </section>
 
     <section xml:id="types-lifetime-local">
-      <title>Local Lifetime</title>
-      <para>Local is the default. Values are deallocated at the end of their block,
-        not the entire function:</para>
+      <title>Local Lifetime ($)</title>
+      <para>Local lifetime allocates on a page scoped to the current block. The
+        page is lazily allocated (only when needed) and automatically freed when
+        the block exits:</para>
       <programlisting>
 function process(input: String) {
     if condition {
-        let temp Parser(input)    ; local lifetime
-        ...
-    }                             ; temp deallocated here
+        let parser Parser$(input)    ; allocated on local page
+        parser.parse()
+    }                                 ; page deallocated here
 
-    ; temp is gone - block ended
+    ; parser and its page are gone
 }
+      </programlisting>
+      <para><emphasis role="bold">Important:</emphasis> Local lifetime (<literal>$</literal>)
+        is forbidden on return types. A function cannot return a value with local
+        lifetime because the local page is deallocated before the caller receives
+        the value.</para>
+      <programlisting>
+; ERROR: local lifetime ($) not allowed on return types
+function bad() returns Point$ { ... }
+
+; OK: use caller lifetime (#) or by-value return
+function good() returns Point# { ... }
+function also_good() returns Point { ... }
       </programlisting>
     </section>
 
-    <section xml:id="types-lifetime-call">
-      <title>Call Lifetime</title>
-      <para>Values that must survive a function return use call lifetime:</para>
+    <section xml:id="types-lifetime-caller">
+      <title>Caller Lifetime (#)</title>
+      <para>Values that must survive a function return use caller lifetime. The
+        value is allocated on the caller's page, not the function's local page:</para>
       <programlisting>
-function createParser(input: String) returns Parser {
-    let result: Parser# Parser(input)   ; call lifetime
-    return result                        ; survives to caller
+function createParser(input: String) returns pointer[Parser] {
+    Parser#(input)    ; allocated on caller's page
 }
       </programlisting>
-      <para>The compiler infers call lifetime for values in return position, so
-        the annotation can often be omitted:</para>
-      <programlisting>
-function createParser(input: String) returns Parser {
-    return Parser(input)    ; call lifetime inferred from return
-}
-      </programlisting>
+      <para>The compiler may infer caller lifetime for values in return position
+        when the return type specifies it.</para>
     </section>
 
     <section xml:id="types-lifetime-thrown">
-      <title>Thrown Lifetime</title>
-      <para>Values that may be thrown as errors use thrown lifetime:</para>
+      <title>Thrown Lifetime (!)</title>
+      <para>Error values use thrown lifetime. The value is allocated on a special
+        exception page provided by the caller:</para>
       <programlisting>
 function parse(input: String) returns AST throws ParseError {
     if invalid(input) {
@@ -631,29 +667,48 @@ function parse(input: String) returns AST throws ParseError {
     </section>
 
     <section xml:id="types-lifetime-reference">
-      <title>Reference Lifetime</title>
-      <para>When adding a value to a collection, the value must live at least as
-        long as the collection. Use reference lifetime to tie them together:</para>
+      <title>Reference Lifetime (^name)</title>
+      <para>When adding a value to a collection, the value must be allocated on
+        the same page as the collection. Use reference lifetime with the
+        collection's name:</para>
       <programlisting>
-let items Array()
-{
-    let item: Car^items Car("red")   ; item lives as long as items
-    items.add(item)                   ; safe - item won't die before items
+let items Array$()                ; items is page-allocated
+let item Car^items("red")         ; item allocated on same page as items
+items.add(item)                   ; safe - same lifetime
+      </programlisting>
+      <para><emphasis role="bold">Validation:</emphasis> The compiler verifies that
+        the referenced variable (<literal>items</literal> in this example) is
+        page-allocated. Referencing a stack-allocated variable is an error:</para>
+      <programlisting>
+let stack_car Car("blue")         ; stack-allocated (no suffix)
+let other Car^stack_car("red")    ; ERROR: cannot use ^stack_car
+                                  ; stack_car is not page-allocated
+      </programlisting>
+      <para>This prevents dangling references: you cannot tie a value's lifetime
+        to a stack variable that will be destroyed when the function returns.</para>
+    </section>
+
+    <section xml:id="types-lifetime-byvalue">
+      <title>By-Value Returns</title>
+      <para>Functions can return values by value (no lifetime annotation). This
+        is the simplest approach for small types:</para>
+      <programlisting>
+function createPoint(x: i32, y: i32) returns Point {
+    Point(x, y)    ; constructed and returned by value
 }
       </programlisting>
-      <para>Without <literal>^items</literal>, the item would have local (block)
-        lifetime and would be deallocated at the closing brace — leaving a
-        dangling reference in the array.</para>
+      <para>By-value return avoids page allocation entirely. The value is
+        constructed directly in the caller's stack frame or register.</para>
     </section>
 
     <section xml:id="types-lifetime-inference">
       <title>Lifetime Inference</title>
       <para>The compiler infers lifetimes where possible:</para>
       <itemizedlist>
-        <listitem><para>Default is Local</para></listitem>
-        <listitem><para>Return position implies Call</para></listitem>
-        <listitem><para>Throw position implies Thrown</para></listitem>
-        <listitem><para>Reference lifetime (<literal>^container</literal>) must be explicit</para></listitem>
+        <listitem><para>No suffix on constructor = stack allocation (by value)</para></listitem>
+        <listitem><para>Throw position implies thrown lifetime (<literal>!</literal>)</para></listitem>
+        <listitem><para>Reference lifetime (<literal>^container</literal>) must always be explicit</para></listitem>
+        <listitem><para><literal>$</literal>, <literal>#</literal> must be explicit on constructor calls</para></listitem>
       </itemizedlist>
     </section>
   </section>

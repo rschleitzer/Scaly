@@ -63,6 +63,7 @@ private:
     struct LocalBinding {
         PlannedType Type;
         bool IsMutable;
+        bool IsOnPage;  // true if allocated with $, #, or ^name (not stack)
     };
 
     // Scope stack for local variables
@@ -204,7 +205,7 @@ private:
 
     void pushScope();
     void popScope();
-    void defineLocal(llvm::StringRef Name, const PlannedType &Type, bool IsMutable = false);
+    void defineLocal(llvm::StringRef Name, const PlannedType &Type, bool IsMutable = false, bool IsOnPage = false);
     std::optional<PlannedType> lookupLocal(llvm::StringRef Name);
     std::optional<LocalBinding> lookupLocalBinding(llvm::StringRef Name);
 

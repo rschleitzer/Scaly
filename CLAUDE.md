@@ -225,6 +225,71 @@ procedure appendItems(builder: StringBuilder, items: List[String]) {
 - Parallelism-friendly - functions and operators are automatically safe to parallelize
 - Builders fit naturally - procedures work with mutable state
 
+### Memory Allocation and Lifetimes
+
+Scaly uses Region-Based Memory Management (RBMM) with explicit lifetime annotations on allocations. The rule is simple: **lifetime suffix = heap allocation, no suffix = stack allocation**. The lifetime suffix comes **before** the constructor parameters.
+
+| Syntax | Meaning | Allocation |
+|--------|---------|------------|
+| `Foo(args)` | No lifetime | Stack (by value) |
+| `Foo$(args)` | Local lifetime | Heap, on local page |
+| `Foo#(args)` | Caller lifetime | Heap, on caller's page (rp) |
+| `Foo^name(args)` | Reference lifetime | Heap, on named page |
+
+**Examples:**
+
+```scaly
+; Stack allocation (by value, small/short-lived):
+function get_iterator(this: List[T]) returns ListIterator[T] {
+    ListIterator[T](head)    ; No suffix = stack, returned by value
+}
+
+; Local page allocation (automatically cleaned up at block exit):
+function process() {
+    let builder StringBuilder$()   ; $ = allocate on local page
+    builder.append("hello")
+}   ; Compiler cleans up local page here
+
+; Caller's page allocation (returned to caller):
+function create_node(data: T) returns pointer[Node[T]] {
+    Node[T]#(data, null)     ; # = allocate on caller's rp
+}
+
+; Explicit page allocation (for container internals):
+procedure add(this: List[T], element: T) {
+    let lp get_page()                    ; Get page where 'this' lives
+    let new_node Node[T]^lp(element, head)  ; ^lp = allocate on lp
+    set head: new_node
+}
+```
+
+**Important rules:**
+
+1. **`$` on return type is forbidden** - Use no lifetime for by-value return, or `#` for caller's page:
+   ```scaly
+   function foo() returns int$ { ... }   ; ERROR: $ not allowed on return type
+   function foo() returns int { ... }    ; OK: by-value return
+   function foo() returns pointer[int] { ; OK: return pointer allocated with #
+       42#
+   }
+   ```
+
+2. **`^name` requires page-allocated variable** - You can only reference a variable's page if it was allocated with a lifetime:
+   ```scaly
+   let c Car()        ; Stack-allocated
+   let p Person^c()   ; ERROR: c is not on a page
+
+   let c Car$()       ; Page-allocated
+   let p Person^c()   ; OK: c is on a page
+   ```
+
+3. **Empty constructor parentheses are optional** - `Person^c` is equivalent to `Person^c()`.
+
+4. **No explicit Region or `new` keyword needed** - The compiler automatically:
+   - Allocates local pages when `$` allocations exist in a block
+   - Cleans up local pages at block exit
+   - Passes `rp` parameter for `#` return types
+
 ### Package System
 
 Scaly has a built-in package system with no external tooling or configuration files.
@@ -640,7 +705,7 @@ cd retired/packages/scaly && ../../../scalyc/build/scalyc -v --plan scaly.scaly
 - Module system: `module` declarations, `use` statements
 - All syntax: `init`, `procedure`, `function`, `operator`, `choose`/`when`
 - Attributes: `@summary`, `@remarks` on types and parameters
-- Lifetime annotations: `$` (call), `^name` (reference)
+- Lifetime annotations: `$` (local page), `#` (caller's page), `^name` (reference)
 
 ## Language Features
 

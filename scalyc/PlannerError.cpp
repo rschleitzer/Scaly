@@ -93,6 +93,21 @@ std::string NoMatchingOverloadError::toString() const {
     return OS.str();
 }
 
+std::string StackLifetimeError::toString() const {
+    std::ostringstream OS;
+    OS << File << ":" << Loc.Start
+       << ": error: cannot use '^" << VariableName
+       << "' - variable is stack-allocated (use $, #, or ^name to allocate on a page)";
+    return OS.str();
+}
+
+std::string LocalReturnError::toString() const {
+    std::ostringstream OS;
+    OS << File << ":" << Loc.Start
+       << ": error: local lifetime ($) is not allowed on return types";
+    return OS.str();
+}
+
 void PlannerError::log(llvm::raw_ostream &OS) const {
     std::visit([&OS](const auto &E) { OS << E.toString(); }, Err);
 }

@@ -3097,16 +3097,46 @@ static bool testPipelineFunctionCallWithExpression() {
 // RBMM Tests (Region-Based Memory Management)
 // ============================================================================
 
-static bool testRBMMLocalLifetime() {
-    const char* Name = "Pipeline: RBMM local lifetime ($) return type";
+static bool testRBMMLocalLifetimeForbidden() {
+    const char* Name = "Pipeline: RBMM local lifetime ($) on return type is forbidden";
 
-    // Function with $ lifetime annotation on return type
-    // This should trigger local page allocation in the function prologue
+    // Local lifetime ($) on return type should produce an error
+    // Use no lifetime for by-value return, or # for caller's page allocation
     auto ResultOrErr = evalInt(
         "function make_value() returns int$ {\n"
         "    42\n"
         "}\n"
         "make_value()"
+    );
+    if (ResultOrErr) {
+        fail(Name, "Expected error for $ on return type, but got success");
+        return false;
+    }
+
+    std::string ErrMsg;
+    llvm::raw_string_ostream OS(ErrMsg);
+    OS << ResultOrErr.takeError();
+
+    // Check that the error message mentions local lifetime
+    if (ErrMsg.find("local lifetime") == std::string::npos) {
+        std::string Msg = "Expected 'local lifetime' error, got: " + ErrMsg;
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testRBMMByValueReturn() {
+    const char* Name = "Pipeline: RBMM by-value return (no lifetime)";
+
+    // Function without lifetime annotation returns by value
+    auto ResultOrErr = evalInt(
+        "function add_values(a: int, b: int) returns int {\n"
+        "    a + b\n"
+        "}\n"
+        "add_values(10, 32)"
     );
     if (!ResultOrErr) {
         std::string ErrMsg;
@@ -3126,15 +3156,52 @@ static bool testRBMMLocalLifetime() {
     return true;
 }
 
-static bool testRBMMLocalLifetimeWithArgs() {
-    const char* Name = "Pipeline: RBMM local lifetime ($) with args";
+static bool testRBMMLocalPageAllocation() {
+    const char* Name = "Pipeline: RBMM local page ($) allocation";
 
-    // Function with $ lifetime that takes arguments
+    // Test that $ lifetime allocates on local page
+    // Syntax: Type$(args) - lifetime comes before parameters
     auto ResultOrErr = evalInt(
-        "function add_local(a: int, b: int) returns int$ {\n"
-        "    a + b\n"
+        "define Point: (x: int, y: int)\n"
+        "function test_local_alloc() returns int {\n"
+        "    let p Point$(10, 32)\n"  // Allocate on local page
+        "    (*p).x + (*p).y\n"       // Dereference to get values
         "}\n"
-        "add_local(10, 32)"
+        "test_local_alloc()"
+    );
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 42) {
+        std::string Msg = "expected 42, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testRBMMCallerPageAllocation() {
+    const char* Name = "Pipeline: RBMM caller page (#) allocation";
+
+    // Test that # lifetime allocates on caller's page and can be returned
+    // Syntax: Type#(args) - lifetime comes before parameters
+    auto ResultOrErr = evalInt(
+        "define Point: (x: int, y: int)\n"
+        "function make_point() returns pointer[Point] {\n"
+        "    Point#(10, 32)\n"  // Allocate on caller's page
+        "}\n"
+        "function test_caller_alloc() returns int {\n"
+        "    let p make_point()\n"
+        "    (*p).x + (*p).y\n"
+        "}\n"
+        "test_caller_alloc()"
     );
     if (!ResultOrErr) {
         std::string ErrMsg;
@@ -3587,8 +3654,10 @@ bool runEmitterTests() {
     testPipelineFunctionCallWithExpression();
 
     llvm::outs() << "  RBMM tests:\n";
-    testRBMMLocalLifetime();
-    testRBMMLocalLifetimeWithArgs();
+    testRBMMLocalLifetimeForbidden();
+    testRBMMByValueReturn();
+    testRBMMLocalPageAllocation();
+    testRBMMCallerPageAllocation();
 
     llvm::outs() << "\nEmitter tests: " << TestsPassed << " passed, "
                  << TestsFailed << " failed\n";
