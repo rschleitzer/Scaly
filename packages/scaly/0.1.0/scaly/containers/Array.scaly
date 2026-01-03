@@ -1,0 +1,96 @@
+define Array[T]
+(
+    length: size_t
+    vector: pointer[Vector[T]]
+)
+{
+    init () (length(0), vector(null)) {}
+
+    init (size: size_t) (length(0), vector(null)) {
+        let exclusive_page (*scaly.memory.Page.get(this as pointer[void])).allocate_exclusive_page()
+        set vector: Vector[T]^exclusive_page(exclusive_page, size)
+    }
+
+    function get_buffer(this: Array) returns pointer[T] {
+        if vector = null
+            return null
+        return (*vector).data
+    }
+
+    function get_length(this: Array[T]) returns size_t
+        length
+
+    function get_capacity(this: Array[T]) returns size_t {
+        if vector =  null
+            return 0
+        return (*vector).length
+    }
+
+    function add(this: Array[T], item: T) {
+        if vector = null || length = (*vector).length
+            reallocate()
+
+        let location (*vector).data + length
+        set *location: item
+
+        set length: length + 1
+    }
+
+    function add(this: Array[T], items: Vector[T]) {
+        var new_length length + items.length
+        let size sizeof T
+        if vector = nullptr || new_length > (*vector).length
+            reallocate()
+
+        if new_length > (*vector).length
+        {
+            var own_page Page.get(this as pointer[void])
+            let data (T*)(*own_page).allocate(length * size, alignof(T))
+            let bytes_to_copy (*vector).length * size
+            if (*vector).length > 0
+                memcpy(data, (*vector).data, bytes_to_copy)
+            let old_exclusive_page Page.get((*vector).data as pointer[void])
+            (*own_page).deallocate_exclusive_page(old_exclusive_page)
+            set (*vector).data: data
+            set (*vector).length: new_length
+        }
+
+        if items.length > 0
+            memcpy((*vector).data + length * size, items.data, items.length * size)
+        set length: length + items.length
+    }
+
+    function get(this: Array[T], i: size_t) returns pointer[T] {
+        if i >= length
+            return null
+
+        return (*this)[i]
+    }
+
+    operator [](this: Array[T], i: size_t) returns pointer[T] {
+        if length < i + 1
+            return null
+        return (*vector).data + i
+    }
+
+    function reallocate(this: Array[T]) {
+        let own_page Page.get(this as pointer[void])
+        let size sizeof T
+        var length: size_t 0
+        if vector = null
+        {
+            let exclusive_page (*own_page).allocate_exclusive_page()
+            let capacity (*exclusive_page).get_capacity(alignof(T)) - sizeof Vector[T]
+            set length: capacity / size
+            set vector: Vector[T]^exclusive_page(exclusive_page, length)
+        } else {
+            set length: (*vector).length * 2
+            let new_vector Vector[T]^own_page(own_page, length)
+            let bytes_to_copy (*vector).length * size
+            memcpy((*new_vector).data, (*vector).data, bytes_to_copy)
+            let old_exclusive_page Page.get((*vector).data as pointer[void])
+            (*own_page).deallocate_exclusive_page(old_exclusive_page)
+            set vector: new_vector
+        }
+    }
+}    

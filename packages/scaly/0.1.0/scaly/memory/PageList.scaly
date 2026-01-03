@@ -3,13 +3,13 @@ define PageList
     head: pointer[PageNode] (null)
 )
 {
-    procedure add^rp(this: PageList, element: pointer[Page])
+    procedure add(this: PageList, element: pointer[Page])
     {
-        let new_node PageNode^rp(element, head)
+        let new_node PageNode#(element, head)
         set head: new_node
     }
 
-    procedure remove(this: PageList, element: pointer[Page]) returns bool$
+    procedure remove(this: PageList, element: pointer[Page]) returns bool
     {
         var node head
         var previous_node: pointer[PageNode] null
@@ -30,7 +30,7 @@ define PageList
         return false
     }
 
-    function get_iterator(this: PageList) returns PageListIterator$
+    function get_iterator(this: PageList) returns PageListIterator
     {
         return PageListIterator(head)
     }

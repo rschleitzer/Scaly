@@ -1,0 +1,110 @@
+define VectorIterator[T]
+(
+    vector: pointer[Vector[T]]
+    position: size_t
+)
+{
+    init (vector: pointer[Vector[T]]) : (vector(vector), position(0)) {}
+
+    function next(this: VectorIterator[T]) returns pointer[T] {
+        if vector = null
+            return null
+
+        if position = (*vector).length
+            return null
+
+        set position: position + 1
+        return (*vector).get(position - 1)
+    }
+}
+
+define Vector[T]
+(
+    length: size_t
+    data: pointer[T]
+)
+{
+    init () (length(0), data(nullptr)) {}
+
+    init (data: pointer[T], length: size_t) (length(length), data(data)) {}
+
+    init (rp: pointer[Page], length: size_t) (length(length)) {
+        if length > 0
+        {
+            set data: (T*)(*rp).allocate(length * sizeof T, alignof(T))
+            memset(data, 0, length * sizeof T)
+        } else {
+            set data: null
+        }
+    }
+
+    init (rp: pointer[Page], array: pointer[T], legnth: size_t) (length(length)) {
+        if length > 0
+        {
+            set data: (T*)(*rp).allocate(length * sizeof T, alignof(T))
+            memcpy(data, array, length * sizeof T)
+        } else {
+            set data: null
+        }
+    }
+
+    init (rp: pointer[Page], other: Vector[T]) (length(other.length)) {
+        if length > 0
+        {
+            set data: (T*)(*rp).allocate(length * sizeof T, alignof(T))
+            memcpy(data, other.data, length * sizeof T)
+        } else {
+            set data: null
+        }
+    }
+
+    init (rp: pointer[Page], array: Array[T]) (length(array.length)) {
+        if length > 0
+        {
+            set data: (T*)(*rp).allocate(length * sizeof T, alignof(T))
+            memcpy(data, (*array.vector).data, length * sizeof T)
+        } else {
+            set data: null
+        }
+    }
+
+    init (rp: pointer[Page], list: List[T]) (length(list.count())) {
+        if length > 0
+        {
+            set data: (T*) (*rp).allocate(length * sizeof T, alignof(T))
+            var list_iterator list.get_iterator()
+            var i: size_t length
+            while let item list_iterator.next()
+            {
+                set i: i -1
+                set *(*this)[i]: *item
+            }
+        } else {
+            set data: null
+        }
+    }
+
+    function get(this: Vector[T], i: size_t) returns pointer[T] {
+        if i >= length
+            return null
+        return (*this)[i]
+    }
+
+    function put(this: Vector[T], i: size_t, item: T) returns bool {
+        if i >= length
+            return false
+        set *(*this)[i]: item
+        return true
+    }
+
+    operator [](i: size_t) returns pointer[T] {
+        if i >= length
+            return null
+
+        return data + i
+    }
+
+    function get_iterator(this: Vector[T]) returns VectorIterator[T] {
+        return VectorIterator[T](this)
+    }
+}

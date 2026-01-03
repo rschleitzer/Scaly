@@ -21,7 +21,7 @@ define Page
         set exclusive_pages: PageList()
     }
 
-    function allocate(this: Page, size: size_t, align: size_t) returns pointer[void]$ {
+    function allocate(this: Page, size: size_t, align: size_t) returns pointer[void] {
         let location next_object as size_t
         let aligned_location (location + align - 1) & ~(align - 1)
         let location_after_page this as size_t + PAGE_SIZE
@@ -55,7 +55,7 @@ define Page
         return aligned_location as pointer[void]
     }
 
-    function allocate_oversized(this: Page, size: size_t) returns pointer[void]$ {
+    function allocate_oversized(this: Page, size: size_t) returns pointer[void] {
         ; We allocate oversized objects directly.
         let address aligned_alloc(PAGE_SIZE,  (size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1))
         if address = null
@@ -66,19 +66,19 @@ define Page
         set (*page).next_object: null
 
         ; An oversized page is always exclusive
-        exclusive_pages.add^this(page)
+        exclusive_pages.add(page)
 
         ; The page offset by the null pointer for next_object
         return (page + 1) as pointer[void]
     }
 
-    function get(address: pointer[void]) returns pointer[Page]$ {
+    function get(address: pointer[void]) returns pointer[Page] {
         let mask ~((PAGE_SIZE - 1) as size_t)
         let page (address as size_t & mask) as pointer[Page]
         return page
     }
 
-    function get_capacity(this: Page, align: size_t) returns size_t$ {
+    function get_capacity(this: Page, align: size_t) returns size_t {
         var location next_object as size_t
         let aligned_location (location + align - 1) & ~(align - 1)
         var location_after_page this as size_t + PAGE_SIZE
@@ -86,9 +86,9 @@ define Page
         return capacity
     }
 
-    function allocate_exclusive_page(this: Page) returns pointer[Page]$ {
+    function allocate_exclusive_page(this: Page) returns pointer[Page] {
         let page allocate_page()
-        exclusive_pages.add^page(page)
+        exclusive_pages.add(page)
         return page
     }
 

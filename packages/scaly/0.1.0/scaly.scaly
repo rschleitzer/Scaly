@@ -1,3 +1,4 @@
 define scaly {
     module memory
+    module containers
 }
