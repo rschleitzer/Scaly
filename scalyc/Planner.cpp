@@ -2008,16 +2008,27 @@ llvm::Expected<std::vector<PlannedMemberAccess>> Planner::resolveMemberAccessCha
 
         // Check if it's a structure with properties
         if (auto* Struct = std::get_if<Structure>(&Conc->Def)) {
+            // Set up type substitutions if this is a generic type
+            // e.g., for Box.int, we need T -> int when resolving property types
+            std::map<std::string, PlannedType> OldSubst = TypeSubstitutions;
+            if (!Conc->Parameters.empty() && !Current.Generics.empty()) {
+                for (size_t I = 0; I < Conc->Parameters.size() && I < Current.Generics.size(); ++I) {
+                    TypeSubstitutions[Conc->Parameters[I].Name] = Current.Generics[I];
+                }
+            }
+
             bool Found = false;
             size_t FieldIndex = 0;
             for (const auto& Prop : Struct->Properties) {
                 if (Prop.Name == MemberName) {
                     if (!Prop.PropType) {
+                        TypeSubstitutions = OldSubst;
                         return makePlannerNotImplementedError(File, Loc,
                             "property without type");
                     }
                     auto Resolved = resolveType(*Prop.PropType, Loc);
                     if (!Resolved) {
+                        TypeSubstitutions = OldSubst;
                         return Resolved.takeError();
                     }
 
@@ -2033,6 +2044,7 @@ llvm::Expected<std::vector<PlannedMemberAccess>> Planner::resolveMemberAccessCha
                 }
                 FieldIndex++;
             }
+            TypeSubstitutions = OldSubst;
             if (Found) continue;
         }
 
@@ -3385,16 +3397,17 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
 
         // Check for type constructor pattern: Type followed by Tuple
         // e.g., Point(3, 4) or Point(3, 4).x where Point is a struct type
+        // Also handles generic types: Box[int](42) where Box[T] is a generic struct
         if (i + 1 < Ops.size()) {
             const auto &NextOp = Ops[i + 1];
-            // Check if current op is a type that's a struct
+            // Check if current op is a type that's a struct (with or without generics)
             if (auto* TypeExpr = std::get_if<Type>(&Op.Expr)) {
-                if (TypeExpr->Name.size() == 1 && (!TypeExpr->Generics || TypeExpr->Generics->empty())) {
+                if (TypeExpr->Name.size() == 1) {
                     const Concept* Conc = lookupConcept(TypeExpr->Name[0]);
                     if (Conc && std::holds_alternative<Structure>(Conc->Def)) {
                         // Check if next op is a tuple (constructor args)
                         if (std::holds_alternative<Tuple>(NextOp.Expr)) {
-                            // This is Type(args) or Type(args).member - plan the tuple as a struct
+                            // This is Type(args) or Type[T](args) - plan the tuple as a struct
                             // Plan the tuple (args) without its member access first
                             Operand ArgsOp = NextOp;
                             ArgsOp.MemberAccess = nullptr;  // Remove member access from args
@@ -3403,11 +3416,13 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                 return PlannedArgs.takeError();
                             }
 
-                            // Change the tuple's type to the struct type
-                            PlannedType StructType;
-                            StructType.Loc = Op.Loc;
-                            StructType.Name = TypeExpr->Name[0];
-                            StructType.MangledName = mangleType(StructType);
+                            // Resolve the type (handles both generic and non-generic)
+                            // For generics, this triggers instantiation (e.g., Box[int] -> Box.int)
+                            auto ResolvedType = resolveType(*TypeExpr, Op.Loc);
+                            if (!ResolvedType) {
+                                return ResolvedType.takeError();
+                            }
+                            PlannedType StructType = std::move(*ResolvedType);
 
                             // Extract argument types from the planned tuple
                             std::vector<PlannedType> ArgTypes;

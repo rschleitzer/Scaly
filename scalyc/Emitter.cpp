@@ -426,6 +426,16 @@ llvm::Type *Emitter::mapType(const PlannedType &Type) {
     }
 
     // Unknown type - should have been planned
+    // Log a warning for debugging
+    llvm::errs() << "mapType: Unknown type Name='" << Type.Name
+                 << "' MangledName='" << Type.MangledName << "'\n";
+    llvm::errs() << "  StructCache keys: ";
+    for (const auto &[k, v] : StructCache) {
+        llvm::errs() << "'" << k << "' ";
+    }
+    llvm::errs() << "\n";
+    llvm::errs().flush();
+
     // Return opaque pointer as fallback
     return llvm::PointerType::get(*Context, 0);
 }
@@ -3161,8 +3171,15 @@ llvm::Expected<llvm::Value*> Emitter::emitVariantConstruction(
 llvm::Expected<llvm::Value*> Emitter::emitTuple(const PlannedTuple &Tuple) {
     // Handle grouped expressions (single anonymous component)
     // vs actual tuples (multiple or named components)
+    // But NOT for struct construction - if TupleType is a struct, we must create a struct
 
-    if (Tuple.Components.size() == 1 && !Tuple.Components[0].Name) {
+    // Check if this is struct construction (TupleType names a struct)
+    bool IsStructConstruction = !Tuple.TupleType.Name.empty() &&
+                                 Tuple.TupleType.Name != "Tuple" &&
+                                 (StructCache.find(Tuple.TupleType.MangledName) != StructCache.end() ||
+                                  StructCache.find(Tuple.TupleType.Name) != StructCache.end());
+
+    if (Tuple.Components.size() == 1 && !Tuple.Components[0].Name && !IsStructConstruction) {
         // Grouped expression like (2 + 3) - evaluate the inner value
         if (!Tuple.Components[0].Value.empty()) {
             return emitOperand(Tuple.Components[0].Value.back());

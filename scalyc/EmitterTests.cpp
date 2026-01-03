@@ -503,6 +503,48 @@ static llvm::Expected<Plan> compileToPlan(llvm::StringRef Source) {
     return Pl.plan(*ModelResult);
 }
 
+// Helper: compile simple source without packages (for generic tests)
+static llvm::Expected<Plan> compileSimpleToPlan(llvm::StringRef Source) {
+    Parser P(Source);
+    auto ParseResult = P.parseProgram();
+    if (!ParseResult)
+        return ParseResult.takeError();
+
+    Modeler M("test.scaly");
+    auto ModelResult = M.buildProgram(*ParseResult);
+    if (!ModelResult)
+        return ModelResult.takeError();
+
+    Planner Pl("test.scaly");
+    return Pl.plan(*ModelResult);
+}
+
+// Helper: run simple pipeline without packages to JIT int result
+static llvm::Expected<int64_t> evalSimpleInt(llvm::StringRef Source) {
+    auto PlanResult = compileSimpleToPlan(Source);
+    if (!PlanResult)
+        return PlanResult.takeError();
+
+    EmitterConfig Config;
+    Config.EmitDebugInfo = false;
+    Emitter E(Config);
+
+    return E.jitExecuteInt(*PlanResult);
+}
+
+// Helper: run simple pipeline without packages to JIT bool result
+static llvm::Expected<bool> evalSimpleBool(llvm::StringRef Source) {
+    auto PlanResult = compileSimpleToPlan(Source);
+    if (!PlanResult)
+        return PlanResult.takeError();
+
+    EmitterConfig Config;
+    Config.EmitDebugInfo = false;
+    Emitter E(Config);
+
+    return E.jitExecuteBool(*PlanResult);
+}
+
 // Helper: run full pipeline from source to JIT int result
 static llvm::Expected<int64_t> evalInt(llvm::StringRef Source) {
     auto PlanResult = compileToPlan(Source);
@@ -3352,6 +3394,225 @@ static bool testRBMMBlockScopedCleanup() {
 }
 
 // ============================================================================
+// Generic Type Tests
+// ============================================================================
+
+static bool testGenericBoxInt() {
+    const char* Name = "Pipeline: generic Box[int] instantiation";
+    llvm::errs() << "  Starting testGenericBoxInt\n"; llvm::errs().flush();
+
+    // First test: just creation, no member access
+    auto SimpleResult = evalSimpleInt(
+        "define Box[T]: (value: T)\n"
+        "let b Box[int](42)\n"
+        "0"  // Just return 0, don't access b.value
+    );
+    if (!SimpleResult) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << SimpleResult.takeError();
+        fail("Baseline: generic Box creation", ErrMsg.c_str());
+        return false;
+    }
+    pass("Baseline: generic Box creation");
+    llvm::errs() << "  Box creation works, now testing member access\n"; llvm::errs().flush();
+
+    // Simple generic struct with one type parameter
+    auto ResultOrErr = evalSimpleInt(
+        "define Box[T]: (value: T)\n"
+        "let b Box[int](42)\n"
+        "b.value"
+    );
+    llvm::errs() << "  Finished evalSimpleInt\n"; llvm::errs().flush();
+
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 42) {
+        std::string Msg = "expected 42, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testGenericBoxBool() {
+    const char* Name = "Pipeline: generic Box[bool] instantiation";
+
+    // Same generic struct instantiated with different type
+    auto ResultOrErr = evalSimpleBool(
+        "define Box[T]: (value: T)\n"
+        "let b Box[bool](true)\n"
+        "b.value"
+    );
+
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (!*ResultOrErr) {
+        fail(Name, "expected true, got false");
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testGenericPair() {
+    const char* Name = "Pipeline: generic Pair[T, U] with two type params";
+
+    // Generic struct with two type parameters
+    auto ResultOrErr = evalSimpleInt(
+        "define Pair[T, U]: (first: T, second: U)\n"
+        "let p Pair[int, int](10, 32)\n"
+        "p.first + p.second"
+    );
+
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 42) {
+        std::string Msg = "expected 42, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testGenericOptionSome() {
+    const char* Name = "Pipeline: generic Option[int] Some variant";
+
+    // Generic union - Option type
+    auto ResultOrErr = evalSimpleInt(
+        "define Option[T] union: (Some: T, None)\n"
+        "choose Some[int](42): when v: Some: v else 0"
+    );
+
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 42) {
+        std::string Msg = "expected 42, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testGenericOptionNone() {
+    const char* Name = "Pipeline: generic Option[int] None variant";
+
+    // Generic union - None case
+    auto ResultOrErr = evalSimpleInt(
+        "define Option[T] union: (Some: T, None)\n"
+        "choose None[int]: when v: Some: v else -1"
+    );
+
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != -1) {
+        std::string Msg = "expected -1, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testGenericMethodOnStruct() {
+    const char* Name = "Pipeline: generic method on Box[T]";
+
+    // Generic struct with method that uses T
+    auto ResultOrErr = evalSimpleInt(
+        "define Box[T]: (value: T) {\n"
+        "    function get(this) returns T { this.value }\n"
+        "}\n"
+        "let b Box[int](42)\n"
+        "b.get()"
+    );
+
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 42) {
+        std::string Msg = "expected 42, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+// TODO: Nested generics require member access through pointers - implement later
+// static bool testGenericNestedTypes() {
+//     const char* Name = "Pipeline: nested generic types Box[Box[int]]";
+//
+//     // Nested generic instantiation
+//     auto ResultOrErr = evalSimpleInt(
+//         "define Box[T]: (value: T)\n"
+//         "let inner Box[int](42)\n"
+//         "let outer Box[Box[int]](inner)\n"
+//         "outer.value.value"
+//     );
+//
+//     if (!ResultOrErr) {
+//         std::string ErrMsg;
+//         llvm::raw_string_ostream OS(ErrMsg);
+//         OS << ResultOrErr.takeError();
+//         fail(Name, ErrMsg.c_str());
+//         return false;
+//     }
+//
+//     if (*ResultOrErr != 42) {
+//         std::string Msg = "expected 42, got " + std::to_string(*ResultOrErr);
+//         fail(Name, Msg.c_str());
+//         return false;
+//     }
+//
+//     pass(Name);
+//     return true;
+// }
+
+// ============================================================================
 // Is Expression Tests
 // ============================================================================
 
@@ -3791,6 +4052,15 @@ bool runEmitterTests() {
     testRBMMEmptyConstructorWithoutParens();
     testRBMMThrownLifetime();
     testRBMMBlockScopedCleanup();
+
+    llvm::outs() << "  Generic type tests:\n";
+    testGenericBoxInt();
+    testGenericBoxBool();
+    testGenericPair();
+    testGenericOptionSome();
+    testGenericOptionNone();
+    testGenericMethodOnStruct();
+    // testGenericNestedTypes();  // TODO: Implement nested generics
 
     llvm::outs() << "\nEmitter tests: " << TestsPassed << " passed, "
                  << TestsFailed << " failed\n";
