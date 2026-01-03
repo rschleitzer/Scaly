@@ -1329,14 +1329,61 @@ NAME="AEN412"
 ></H1
 ><P
 >Scaly uses Region-Based Memory Management (RBMM). Instead of garbage
-      collection or manual malloc/free, values are allocated in regions that
-      are deallocated in bulk. Lifetimes control which region a value lives in.</P
+      collection or manual malloc/free, values are allocated in memory regions
+      (pages) that are deallocated in bulk when their owning scope exits.</P
 ><DIV
 CLASS="section"
 ><H2
 CLASS="section"
 ><A
 NAME="AEN415"
+>Stack vs Page Allocation</A
+></H2
+><P
+>The presence or absence of a lifetime suffix on a constructor call
+        determines whether the value is stack-allocated or page-allocated:</P
+><P
+></P
+><DIV
+CLASS="variablelist"
+><DL
+><DT
+>No suffix = Stack allocation</DT
+><DD
+><P
+>The value is allocated on the stack frame. Fast, automatic
+            cleanup when the function returns. Cannot outlive the current function.</P
+></DD
+><DT
+>Lifetime suffix = Page allocation</DT
+><DD
+><P
+>The value is allocated on a memory page. Can outlive the
+            current block depending on which lifetime is used.</P
+></DD
+></DL
+></DIV
+><PRE
+CLASS="programlisting"
+>&#13;let stack_point Point(10, 20)     ; stack-allocated (by value)
+let page_point Point$(10, 20)     ; page-allocated (local page)
+      </PRE
+><P
+>Note: The lifetime suffix comes <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>before</I
+></SPAN
+> the constructor
+        parameters, not after. This follows the general pattern: Type + Generics + Lifetime + Parameters.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN430"
 >Lifetime Kinds</A
 ></H2
 ><P
@@ -1348,24 +1395,23 @@ CLASS="variablelist"
 >Local (<TT
 CLASS="literal"
 >$</TT
->, default)</DT
+>)</DT
 ><DD
 ><P
->Value lives until the end of the current block. This is the
-            default — the <TT
-CLASS="literal"
->$</TT
-> annotation is optional.</P
+>Value is allocated on a local page that lives until the
+            end of the current block. The page is lazily allocated on first use
+            and automatically deallocated when the block exits.</P
 ></DD
 ><DT
->Call (<TT
+>Caller (<TT
 CLASS="literal"
 >#</TT
 >)</DT
 ><DD
 ><P
->Value lives in the "return page" — it survives the function
-            return and is managed by the caller.</P
+>Value is allocated on the caller's return page. It survives
+            the function return and is managed by the caller. Used for returning
+            heap-allocated values.</P
 ></DD
 ><DT
 >Thrown (<TT
@@ -1374,8 +1420,8 @@ CLASS="literal"
 >)</DT
 ><DD
 ><P
->Value lives in the "exception page" — for values that may
-            be thrown as errors.</P
+>Value is allocated on the exception page. Used for error
+            values that may be thrown and caught by the caller.</P
 ></DD
 ><DT
 >Reference (<TT
@@ -1384,8 +1430,9 @@ CLASS="literal"
 >)</DT
 ><DD
 ><P
->Value's lifetime is tied to the named container. Required
-            when adding values to collections.</P
+>Value is allocated on the same page as the named variable.
+            The named variable must itself be page-allocated (not stack-allocated).
+            Used when adding values to collections.</P
 ></DD
 ></DL
 ></DIV
@@ -1395,22 +1442,46 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN439"
->Local Lifetime</A
+NAME="AEN453"
+>Local Lifetime ($)</A
 ></H2
 ><P
->Local is the default. Values are deallocated at the end of their block,
-        not the entire function:</P
+>Local lifetime allocates on a page scoped to the current block. The
+        page is lazily allocated (only when needed) and automatically freed when
+        the block exits:</P
 ><PRE
 CLASS="programlisting"
 >&#13;function process(input: String) {
     if condition {
-        let temp Parser(input)    ; local lifetime
-        ...
-    }                             ; temp deallocated here
+        let parser Parser$(input)    ; allocated on local page
+        parser.parse()
+    }                                 ; page deallocated here
 
-    ; temp is gone - block ended
+    ; parser and its page are gone
 }
+      </PRE
+><P
+><SPAN
+CLASS="bold"
+><B
+CLASS="emphasis"
+>Important:</B
+></SPAN
+> Local lifetime (<TT
+CLASS="literal"
+>$</TT
+>)
+        is forbidden on return types. A function cannot return a value with local
+        lifetime because the local page is deallocated before the caller receives
+        the value.</P
+><PRE
+CLASS="programlisting"
+>&#13;; ERROR: local lifetime ($) not allowed on return types
+function bad() returns Point$ { ... }
+
+; OK: use caller lifetime (#) or by-value return
+function good() returns Point# { ... }
+function also_good() returns Point { ... }
       </PRE
 ></DIV
 ><DIV
@@ -1418,38 +1489,33 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN443"
->Call Lifetime</A
+NAME="AEN461"
+>Caller Lifetime (#)</A
 ></H2
 ><P
->Values that must survive a function return use call lifetime:</P
+>Values that must survive a function return use caller lifetime. The
+        value is allocated on the caller's page, not the function's local page:</P
 ><PRE
 CLASS="programlisting"
->&#13;function createParser(input: String) returns Parser {
-    let result: Parser# Parser(input)   ; call lifetime
-    return result                        ; survives to caller
+>&#13;function createParser(input: String) returns pointer[Parser] {
+    Parser#(input)    ; allocated on caller's page
 }
       </PRE
 ><P
->The compiler infers call lifetime for values in return position, so
-        the annotation can often be omitted:</P
-><PRE
-CLASS="programlisting"
->&#13;function createParser(input: String) returns Parser {
-    return Parser(input)    ; call lifetime inferred from return
-}
-      </PRE
+>The compiler may infer caller lifetime for values in return position
+        when the return type specifies it.</P
 ></DIV
 ><DIV
 CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN449"
->Thrown Lifetime</A
+NAME="AEN466"
+>Thrown Lifetime (!)</A
 ></H2
 ><P
->Values that may be thrown as errors use thrown lifetime:</P
+>Error values use thrown lifetime. The value is allocated on a special
+        exception page provided by the caller:</P
 ><PRE
 CLASS="programlisting"
 >&#13;function parse(input: String) returns AST throws ParseError {
@@ -1467,34 +1533,69 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN454"
->Reference Lifetime</A
+NAME="AEN471"
+>Reference Lifetime (^name)</A
 ></H2
 ><P
->When adding a value to a collection, the value must live at least as
-        long as the collection. Use reference lifetime to tie them together:</P
+>When adding a value to a collection, the value must be allocated on
+        the same page as the collection. Use reference lifetime with the
+        collection's name:</P
 ><PRE
 CLASS="programlisting"
->&#13;let items Array()
-{
-    let item: Car^items Car("red")   ; item lives as long as items
-    items.add(item)                   ; safe - item won't die before items
-}
+>&#13;let items Array$()                ; items is page-allocated
+let item Car^items("red")         ; item allocated on same page as items
+items.add(item)                   ; safe - same lifetime
       </PRE
 ><P
->Without <TT
+><SPAN
+CLASS="bold"
+><B
+CLASS="emphasis"
+>Validation:</B
+></SPAN
+> The compiler verifies that
+        the referenced variable (<TT
 CLASS="literal"
->^items</TT
->, the item would have local (block)
-        lifetime and would be deallocated at the closing brace — leaving a
-        dangling reference in the array.</P
+>items</TT
+> in this example) is
+        page-allocated. Referencing a stack-allocated variable is an error:</P
+><PRE
+CLASS="programlisting"
+>&#13;let stack_car Car("blue")         ; stack-allocated (no suffix)
+let other Car^stack_car("red")    ; ERROR: cannot use ^stack_car
+                                  ; stack_car is not page-allocated
+      </PRE
+><P
+>This prevents dangling references: you cannot tie a value's lifetime
+        to a stack variable that will be destroyed when the function returns.</P
 ></DIV
 ><DIV
 CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN460"
+NAME="AEN480"
+>By-Value Returns</A
+></H2
+><P
+>Functions can return values by value (no lifetime annotation). This
+        is the simplest approach for small types:</P
+><PRE
+CLASS="programlisting"
+>&#13;function createPoint(x: i32, y: i32) returns Point {
+    Point(x, y)    ; constructed and returned by value
+}
+      </PRE
+><P
+>By-value return avoids page allocation entirely. The value is
+        constructed directly in the caller's stack frame or register.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN485"
 >Lifetime Inference</A
 ></H2
 ><P
@@ -1504,22 +1605,31 @@ NAME="AEN460"
 ><UL
 ><LI
 ><P
->Default is Local</P
+>No suffix on constructor = stack allocation (by value)</P
 ></LI
 ><LI
 ><P
->Return position implies Call</P
-></LI
-><LI
-><P
->Throw position implies Thrown</P
+>Throw position implies thrown lifetime (<TT
+CLASS="literal"
+>!</TT
+>)</P
 ></LI
 ><LI
 ><P
 >Reference lifetime (<TT
 CLASS="literal"
 >^container</TT
->) must be explicit</P
+>) must always be explicit</P
+></LI
+><LI
+><P
+><TT
+CLASS="literal"
+>$</TT
+>, <TT
+CLASS="literal"
+>#</TT
+> must be explicit on constructor calls</P
 ></LI
 ></UL
 ></DIV

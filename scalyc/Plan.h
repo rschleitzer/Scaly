@@ -305,6 +305,7 @@ struct PlannedCall {
     bool IsOperator;            // True for operators, false for functions
     std::shared_ptr<std::vector<PlannedOperand>> Args;  // Arguments (shared_ptr to break cycle)
     PlannedType ResultType;     // Return type
+    Lifetime Life;              // For constructors: allocation lifetime ($, #, ^name, or none=stack)
 };
 
 // ============================================================================
@@ -322,9 +323,10 @@ struct PlannedTuple {
     Span Loc;
     std::vector<PlannedComponent> Components;
     PlannedType TupleType;
-    // For region-allocated struct construction (Type^rp(args) without explicit init)
+    // For region-allocated struct construction (Type$(args), Type#(args), Type^rp(args))
     bool IsRegionAlloc = false;
-    std::shared_ptr<PlannedOperand> RegionArg;  // The region pointer argument
+    Lifetime Life;  // Allocation lifetime ($, #, ^name, or UnspecifiedLifetime for stack)
+    std::shared_ptr<PlannedOperand> RegionArg;  // For ^name: the region pointer argument
 };
 
 struct PlannedMatrix {

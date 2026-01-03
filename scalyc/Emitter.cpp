@@ -1597,14 +1597,20 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
             );
         }
 
-        // Check if this is a region allocation (ResultType is pointer[StructType])
-        bool IsRegionAlloc = (Call.ResultType.Name == "pointer" &&
-                              !Call.ResultType.Generics.empty());
+        // Determine allocation strategy based on Call.Life
+        // UnspecifiedLifetime = stack, LocalLifetime ($) = local page,
+        // CallLifetime (#) = caller's page, ReferenceLifetime (^name) = named region
+        bool IsRegionAlloc = !std::holds_alternative<UnspecifiedLifetime>(Call.Life);
 
         // Get the struct type
         llvm::Type *StructTy;
         if (IsRegionAlloc) {
-            StructTy = mapType(Call.ResultType.Generics[0]);
+            // For region allocation, ResultType is pointer[StructType]
+            if (!Call.ResultType.Generics.empty()) {
+                StructTy = mapType(Call.ResultType.Generics[0]);
+            } else {
+                StructTy = mapType(Call.ResultType);
+            }
         } else {
             StructTy = mapType(Call.ResultType);
         }
@@ -1618,18 +1624,38 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
         llvm::Value *StructPtr;
         size_t ArgsOffset = 0;
 
-        if (IsRegionAlloc && !Args.empty()) {
-            // Region allocation: first arg is Page pointer, allocate on region
-            llvm::Value *Page = Args[0];
-            auto *I64Ty = llvm::Type::getInt64Ty(*Context);
-            size_t TypeSize = getTypeSize(StructTy);
-            size_t TypeAlign = getTypeAlignment(StructTy);
-            auto *Size = llvm::ConstantInt::get(I64Ty, TypeSize);
-            auto *Align = llvm::ConstantInt::get(I64Ty, TypeAlign);
-            StructPtr = Builder->CreateCall(PageAllocate, {Page, Size, Align}, "struct.region");
-            ArgsOffset = 1;  // Skip the region arg
+        if (IsRegionAlloc) {
+            // Determine which page to use based on lifetime
+            llvm::Value *Page = nullptr;
+
+            if (std::holds_alternative<LocalLifetime>(Call.Life)) {
+                // $ = local page
+                Page = CurrentRegion.LocalPage;
+            } else if (std::holds_alternative<CallLifetime>(Call.Life)) {
+                // # = caller's return page
+                Page = CurrentRegion.ReturnPage;
+            } else if (std::holds_alternative<ReferenceLifetime>(Call.Life)) {
+                // ^name = first argument is the page pointer
+                if (!Args.empty()) {
+                    Page = Args[0];
+                    ArgsOffset = 1;  // Skip the region arg
+                }
+            }
+
+            if (Page) {
+                auto *I64Ty = llvm::Type::getInt64Ty(*Context);
+                size_t TypeSize = getTypeSize(StructTy);
+                size_t TypeAlign = getTypeAlignment(StructTy);
+                auto *Size = llvm::ConstantInt::get(I64Ty, TypeSize);
+                auto *Align = llvm::ConstantInt::get(I64Ty, TypeAlign);
+                StructPtr = Builder->CreateCall(PageAllocate, {Page, Size, Align}, "struct.region");
+            } else {
+                // Fallback to stack if page not available
+                StructPtr = Builder->CreateAlloca(StructTy, nullptr, "struct.init");
+                IsRegionAlloc = false;  // Adjust for return logic
+            }
         } else {
-            // Stack allocation
+            // Stack allocation (no lifetime suffix)
             StructPtr = Builder->CreateAlloca(StructTy, nullptr, "struct.init");
         }
 
@@ -3185,21 +3211,37 @@ llvm::Expected<llvm::Value*> Emitter::emitTuple(const PlannedTuple &Tuple) {
 
     llvm::Value *TuplePtr = nullptr;
 
-    if (Tuple.IsRegionAlloc && Tuple.RegionArg && PageAllocate) {
-        // Region allocation: allocate on the region using PageAllocate
-        auto PageOrErr = emitOperand(*Tuple.RegionArg);
-        if (!PageOrErr)
-            return PageOrErr.takeError();
+    if (Tuple.IsRegionAlloc && PageAllocate) {
+        // Determine which page to use based on lifetime
+        llvm::Value *Page = nullptr;
 
-        llvm::Value *Page = *PageOrErr;
-        auto *I64Ty = llvm::Type::getInt64Ty(*Context);
-        size_t TypeSize = getTypeSize(TupleTy);
-        size_t TypeAlign = getTypeAlignment(TupleTy);
-        auto *Size = llvm::ConstantInt::get(I64Ty, TypeSize);
-        auto *Align = llvm::ConstantInt::get(I64Ty, TypeAlign);
-        TuplePtr = Builder->CreateCall(PageAllocate, {Page, Size, Align}, "tuple.region");
+        if (std::holds_alternative<LocalLifetime>(Tuple.Life)) {
+            // $ = local page
+            Page = CurrentRegion.LocalPage;
+        } else if (std::holds_alternative<CallLifetime>(Tuple.Life)) {
+            // # = caller's return page
+            Page = CurrentRegion.ReturnPage;
+        } else if (std::holds_alternative<ReferenceLifetime>(Tuple.Life) && Tuple.RegionArg) {
+            // ^name = emit the region argument
+            auto PageOrErr = emitOperand(*Tuple.RegionArg);
+            if (!PageOrErr)
+                return PageOrErr.takeError();
+            Page = *PageOrErr;
+        }
+
+        if (Page) {
+            auto *I64Ty = llvm::Type::getInt64Ty(*Context);
+            size_t TypeSize = getTypeSize(TupleTy);
+            size_t TypeAlign = getTypeAlignment(TupleTy);
+            auto *Size = llvm::ConstantInt::get(I64Ty, TypeSize);
+            auto *Align = llvm::ConstantInt::get(I64Ty, TypeAlign);
+            TuplePtr = Builder->CreateCall(PageAllocate, {Page, Size, Align}, "tuple.region");
+        } else {
+            // Fallback to stack if page not available
+            TuplePtr = Builder->CreateAlloca(TupleTy, nullptr, "tuple");
+        }
     } else {
-        // Stack allocation
+        // Stack allocation (no lifetime suffix)
         TuplePtr = Builder->CreateAlloca(TupleTy, nullptr, "tuple");
     }
 

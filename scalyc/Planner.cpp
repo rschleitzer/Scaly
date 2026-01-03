@@ -10,6 +10,15 @@
 namespace scaly {
 
 // ============================================================================
+// Helper: Check if lifetime indicates page allocation
+// ============================================================================
+
+static bool isOnPageLifetime(const Lifetime &Life) {
+    // Unspecified = stack allocation, everything else = page allocation
+    return !std::holds_alternative<UnspecifiedLifetime>(Life);
+}
+
+// ============================================================================
 // Constructor
 // ============================================================================
 
@@ -457,9 +466,9 @@ void Planner::popScope() {
     }
 }
 
-void Planner::defineLocal(llvm::StringRef Name, const PlannedType &Type, bool IsMutable) {
+void Planner::defineLocal(llvm::StringRef Name, const PlannedType &Type, bool IsMutable, bool IsOnPage) {
     if (!Scopes.empty()) {
-        Scopes.back()[Name.str()] = LocalBinding{Type, IsMutable};
+        Scopes.back()[Name.str()] = LocalBinding{Type, IsMutable, IsOnPage};
     }
 }
 
@@ -3135,15 +3144,19 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             // If the Type has a ReferenceLifetime, look up the region variable
                             // and pass it as the first argument (before instance)
                             if (auto* RefLife = std::get_if<ReferenceLifetime>(&TypeExpr->Life)) {
-                                auto RegionVar = lookupLocal(RefLife->Location);
-                                if (!RegionVar) {
+                                auto RegionBinding = lookupLocalBinding(RefLife->Location);
+                                if (!RegionBinding) {
                                     return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
+                                }
+                                // Validate that the referenced variable is on a page
+                                if (!RegionBinding->IsOnPage) {
+                                    return makeStackLifetimeError(File, RefLife->Loc, RefLife->Location);
                                 }
 
                                 PlannedOperand RegionArg;
                                 RegionArg.Loc = RefLife->Loc;
-                                RegionArg.ResultType = *RegionVar;
-                                RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, *RegionVar, false};
+                                RegionArg.ResultType = RegionBinding->Type;
+                                RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, false};
                                 Call.Args->push_back(std::move(RegionArg));
                             }
 
@@ -3245,15 +3258,19 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                     // If the method Type has a ReferenceLifetime, look up the region variable
                     // and pass it as the first argument (before instance)
                     if (auto* RefLife = std::get_if<ReferenceLifetime>(&MethodType.Life)) {
-                        auto RegionVar = lookupLocal(RefLife->Location);
-                        if (!RegionVar) {
+                        auto RegionBinding = lookupLocalBinding(RefLife->Location);
+                        if (!RegionBinding) {
                             return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
+                        }
+                        // Validate that the referenced variable is on a page
+                        if (!RegionBinding->IsOnPage) {
+                            return makeStackLifetimeError(File, RefLife->Loc, RefLife->Location);
                         }
 
                         PlannedOperand RegionArg;
                         RegionArg.Loc = RefLife->Loc;
-                        RegionArg.ResultType = *RegionVar;
-                        RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, *RegionVar, false};
+                        RegionArg.ResultType = RegionBinding->Type;
+                        RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, false};
                         Call.Args->push_back(std::move(RegionArg));
                     }
 
@@ -3412,27 +3429,34 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                 Call.MangledName = InitMatch->MangledName;
                                 Call.IsIntrinsic = false;
                                 Call.IsOperator = false;
+                                Call.Life = TypeExpr->Life;  // Preserve lifetime for Emitter
                                 // Convert tuple components to call arguments
                                 Call.Args = std::make_shared<std::vector<PlannedOperand>>();
 
-                                // If the Type has a ReferenceLifetime, look up the region variable
-                                // and pass it as the first argument. Result type is pointer[StructType]
-                                bool IsRegionAlloc = false;
+                                // Check if this is a page allocation (any lifetime suffix)
+                                // $ = local page, # = caller page, ^name = named region
+                                bool IsRegionAlloc = !std::holds_alternative<UnspecifiedLifetime>(TypeExpr->Life);
+
+                                // For ReferenceLifetime (^name), pass the region variable as first arg
                                 if (auto* RefLife = std::get_if<ReferenceLifetime>(&TypeExpr->Life)) {
-                                    auto RegionVar = lookupLocal(RefLife->Location);
-                                    if (!RegionVar) {
+                                    auto RegionBinding = lookupLocalBinding(RefLife->Location);
+                                    if (!RegionBinding) {
                                         return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
+                                    }
+                                    // Validate that the referenced variable is on a page
+                                    if (!RegionBinding->IsOnPage) {
+                                        return makeStackLifetimeError(File, RefLife->Loc, RefLife->Location);
                                     }
 
                                     PlannedOperand RegionArg;
                                     RegionArg.Loc = RefLife->Loc;
-                                    RegionArg.ResultType = *RegionVar;
-                                    RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, *RegionVar, false};
+                                    RegionArg.ResultType = RegionBinding->Type;
+                                    RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, false};
                                     Call.Args->push_back(std::move(RegionArg));
-                                    IsRegionAlloc = true;
                                 }
+                                // For $ and # lifetimes, Emitter uses CurrentRegion.LocalPage or ReturnPage
 
-                                // Set result type: pointer[StructType] for region alloc, StructType otherwise
+                                // Set result type: pointer[StructType] for page alloc, StructType for stack
                                 PlannedType ResultType = StructType;
                                 if (IsRegionAlloc) {
                                     ResultType.Name = "pointer";
@@ -3473,21 +3497,28 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                 // No initializer - use direct tuple construction
                                 // Update the tuple expression to have the struct type
 
-                                // Check if this is a region allocation (Type^rp(...))
-                                bool IsRegionAlloc = false;
+                                // Check if this is a page allocation (any lifetime suffix)
+                                // $ = local page, # = caller page, ^name = named region
+                                bool IsRegionAlloc = !std::holds_alternative<UnspecifiedLifetime>(TypeExpr->Life);
+
+                                // For ReferenceLifetime (^name), look up the region variable
                                 PlannedOperand RegionArg;
                                 if (auto* RefLife = std::get_if<ReferenceLifetime>(&TypeExpr->Life)) {
-                                    auto RegionVar = lookupLocal(RefLife->Location);
-                                    if (!RegionVar) {
+                                    auto RegionBinding = lookupLocalBinding(RefLife->Location);
+                                    if (!RegionBinding) {
                                         return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
                                     }
+                                    // Validate that the referenced variable is on a page
+                                    if (!RegionBinding->IsOnPage) {
+                                        return makeStackLifetimeError(File, RefLife->Loc, RefLife->Location);
+                                    }
                                     RegionArg.Loc = RefLife->Loc;
-                                    RegionArg.ResultType = *RegionVar;
-                                    RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, *RegionVar, false};
-                                    IsRegionAlloc = true;
+                                    RegionArg.ResultType = RegionBinding->Type;
+                                    RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, false};
                                 }
+                                // For $ and # lifetimes, Emitter uses CurrentRegion.LocalPage or ReturnPage
 
-                                // Set result type: pointer[StructType] for region alloc, StructType otherwise
+                                // Set result type: pointer[StructType] for page alloc, StructType for stack
                                 PlannedType ResultType = StructType;
                                 if (IsRegionAlloc) {
                                     ResultType.Name = "pointer";
@@ -3498,7 +3529,8 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                 if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedArgs->Expr)) {
                                     TupleExpr->TupleType = StructType;
                                     TupleExpr->IsRegionAlloc = IsRegionAlloc;
-                                    if (IsRegionAlloc) {
+                                    TupleExpr->Life = TypeExpr->Life;  // Preserve lifetime for Emitter
+                                    if (std::holds_alternative<ReferenceLifetime>(TypeExpr->Life)) {
                                         TupleExpr->RegionArg = std::make_shared<PlannedOperand>(std::move(RegionArg));
                                     }
                                 }
@@ -4190,7 +4222,8 @@ llvm::Expected<PlannedBinding> Planner::planBinding(const Binding &Bind) {
     // Add to scope
     if (Result.BindingItem.Name && Result.BindingItem.ItemType) {
         bool IsMutable = (Result.BindingType == "var" || Result.BindingType == "mutable");
-        defineLocal(*Result.BindingItem.Name, *Result.BindingItem.ItemType, IsMutable);
+        bool IsOnPage = isOnPageLifetime(Result.BindingItem.ItemType->Life);
+        defineLocal(*Result.BindingItem.Name, *Result.BindingItem.ItemType, IsMutable, IsOnPage);
     }
 
     return Result;
@@ -4687,8 +4720,16 @@ llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
         }
         Result.Returns = std::make_shared<PlannedType>(std::move(*ResolvedReturn));
 
-        // If return type has LocalLifetime, ensure Page is instantiated for RBMM support
+        // Local lifetime ($) is forbidden on return types
+        // Use no lifetime for by-value return, or # for caller's page allocation
         if (std::holds_alternative<LocalLifetime>(Result.Returns->Life)) {
+            popScope();
+            return makeLocalReturnError(File, Func.Returns->Loc);
+        }
+
+        // If return type has CallLifetime (#), ensure Page is instantiated for RBMM support
+        if (std::holds_alternative<CallLifetime>(Result.Returns->Life) ||
+            std::holds_alternative<ReferenceLifetime>(Result.Returns->Life)) {
             if (InstantiatedStructures.find("Page") == InstantiatedStructures.end()) {
                 // Register runtime functions (aligned_alloc, free, exit) before planning Page
                 registerRuntimeFunctions();
@@ -4771,6 +4812,12 @@ llvm::Expected<PlannedOperator> Planner::planOperator(const Operator &Op,
             return ResolvedReturn.takeError();
         }
         Result.Returns = std::make_shared<PlannedType>(std::move(*ResolvedReturn));
+
+        // Local lifetime ($) is forbidden on return types
+        if (std::holds_alternative<LocalLifetime>(Result.Returns->Life)) {
+            popScope();
+            return makeLocalReturnError(File, Op.Returns->Loc);
+        }
     }
 
     // Plan throws type
