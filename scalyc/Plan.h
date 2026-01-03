@@ -417,6 +417,7 @@ struct PlannedFunction {
     Lifetime Life;
     PlannedImplementation Impl;
     std::shared_ptr<InstantiationInfo> Origin;
+    bool NeedsLocalPage = false;  // True if function body uses $ allocations
 
     // For polymorphic functions: the type scheme before instantiation
     std::shared_ptr<TypeScheme> Scheme;

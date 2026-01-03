@@ -662,9 +662,10 @@ llvm::Error Emitter::emitFunctionBody(const PlannedFunction &Func,
     }
 
     // Allocate local page for this function's $ allocations
-    // Only allocate if the function has local lifetime allocations
-    // For now, we check if any return type or parameter has LocalLifetime
-    bool NeedsLocalPage = false;
+    // Use the NeedsLocalPage flag set by the Planner based on function body analysis
+    bool NeedsLocalPage = Func.NeedsLocalPage;
+
+    // Also check if any return type or parameter has LocalLifetime
     if (Func.Returns && std::holds_alternative<LocalLifetime>(Func.Returns->Life)) {
         NeedsLocalPage = true;
     }

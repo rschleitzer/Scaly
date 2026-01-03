@@ -3437,6 +3437,11 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                 // $ = local page, # = caller page, ^name = named region
                                 bool IsRegionAlloc = !std::holds_alternative<UnspecifiedLifetime>(TypeExpr->Life);
 
+                                // Track if this function uses local lifetime allocations
+                                if (std::holds_alternative<LocalLifetime>(TypeExpr->Life)) {
+                                    CurrentFunctionUsesLocalLifetime = true;
+                                }
+
                                 // For ReferenceLifetime (^name), pass the region variable as first arg
                                 if (auto* RefLife = std::get_if<ReferenceLifetime>(&TypeExpr->Life)) {
                                     auto RegionBinding = lookupLocalBinding(RefLife->Location);
@@ -3501,6 +3506,11 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                 // $ = local page, # = caller page, ^name = named region
                                 bool IsRegionAlloc = !std::holds_alternative<UnspecifiedLifetime>(TypeExpr->Life);
 
+                                // Track if this function uses local lifetime allocations
+                                if (std::holds_alternative<LocalLifetime>(TypeExpr->Life)) {
+                                    CurrentFunctionUsesLocalLifetime = true;
+                                }
+
                                 // For ReferenceLifetime (^name), look up the region variable
                                 PlannedOperand RegionArg;
                                 if (auto* RefLife = std::get_if<ReferenceLifetime>(&TypeExpr->Life)) {
@@ -3557,6 +3567,126 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             // Skip the next operand (we consumed it)
                             i++;
                             continue;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Check for zero-argument struct constructor: Type$ or Type# without parentheses
+        // e.g., Empty$ or Point$ where the struct has no required fields
+        if (auto* TypeExpr = std::get_if<Type>(&Op.Expr)) {
+            if (TypeExpr->Name.size() == 1 && (!TypeExpr->Generics || TypeExpr->Generics->empty())) {
+                // Only handle if lifetime is specified (not UnspecifiedLifetime)
+                if (!std::holds_alternative<UnspecifiedLifetime>(TypeExpr->Life)) {
+                    const Concept* Conc = lookupConcept(TypeExpr->Name[0]);
+                    if (Conc && std::holds_alternative<Structure>(Conc->Def)) {
+                        // Check that next operand is NOT a tuple (otherwise the above block handles it)
+                        bool NextIsTuple = (i + 1 < Ops.size()) &&
+                                           std::holds_alternative<Tuple>(Ops[i + 1].Expr);
+                        if (!NextIsTuple) {
+                            // This is Type$ or Type# without args - zero-argument constructor
+                            PlannedType StructType;
+                            StructType.Loc = Op.Loc;
+                            StructType.Name = TypeExpr->Name[0];
+                            StructType.MangledName = mangleType(StructType);
+
+                            // Check if there's a matching zero-argument initializer
+                            std::vector<PlannedType> ArgTypes;  // Empty
+                            auto InitMatch = findInitializer(StructType, ArgTypes);
+
+                            if (InitMatch) {
+                                // Generate a PlannedCall to the initializer
+                                PlannedCall Call;
+                                Call.Loc = Op.Loc;
+                                Call.Name = StructType.Name;
+                                Call.MangledName = InitMatch->MangledName;
+                                Call.IsIntrinsic = false;
+                                Call.IsOperator = false;
+                                Call.Life = TypeExpr->Life;
+                                Call.Args = std::make_shared<std::vector<PlannedOperand>>();
+
+                                // Page allocation based on lifetime
+                                bool IsRegionAlloc = true;  // We already checked lifetime is not Unspecified
+
+                                // Track if this function uses local lifetime allocations
+                                if (std::holds_alternative<LocalLifetime>(TypeExpr->Life)) {
+                                    CurrentFunctionUsesLocalLifetime = true;
+                                }
+
+                                // For ReferenceLifetime (^name), pass the region variable as first arg
+                                if (auto* RefLife = std::get_if<ReferenceLifetime>(&TypeExpr->Life)) {
+                                    auto RegionBinding = lookupLocalBinding(RefLife->Location);
+                                    if (!RegionBinding) {
+                                        return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
+                                    }
+                                    if (!RegionBinding->IsOnPage) {
+                                        return makeStackLifetimeError(File, RefLife->Loc, RefLife->Location);
+                                    }
+                                    PlannedOperand RegionArg;
+                                    RegionArg.Loc = RefLife->Loc;
+                                    RegionArg.ResultType = RegionBinding->Type;
+                                    RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, false};
+                                    Call.Args->push_back(std::move(RegionArg));
+                                }
+
+                                // Set result type: pointer[StructType] for page alloc
+                                PlannedType ResultType;
+                                ResultType.Loc = StructType.Loc;
+                                ResultType.Name = "pointer";
+                                ResultType.MangledName = "P" + StructType.MangledName;
+                                ResultType.Generics = {StructType};
+                                Call.ResultType = ResultType;
+
+                                PlannedOperand CallOperand;
+                                CallOperand.Loc = Op.Loc;
+                                CallOperand.ResultType = ResultType;
+                                CallOperand.Expr = std::move(Call);
+
+                                Result.push_back(std::move(CallOperand));
+                                continue;
+                            } else {
+                                // No initializer - use direct tuple construction with empty components
+                                PlannedTuple EmptyTuple;
+                                EmptyTuple.Loc = Op.Loc;
+                                EmptyTuple.TupleType = StructType;
+                                EmptyTuple.IsRegionAlloc = true;
+                                EmptyTuple.Life = TypeExpr->Life;
+
+                                // Track if this function uses local lifetime allocations
+                                if (std::holds_alternative<LocalLifetime>(TypeExpr->Life)) {
+                                    CurrentFunctionUsesLocalLifetime = true;
+                                }
+
+                                if (auto* RefLife = std::get_if<ReferenceLifetime>(&TypeExpr->Life)) {
+                                    auto RegionBinding = lookupLocalBinding(RefLife->Location);
+                                    if (!RegionBinding) {
+                                        return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
+                                    }
+                                    if (!RegionBinding->IsOnPage) {
+                                        return makeStackLifetimeError(File, RefLife->Loc, RefLife->Location);
+                                    }
+                                    PlannedOperand RegionArg;
+                                    RegionArg.Loc = RefLife->Loc;
+                                    RegionArg.ResultType = RegionBinding->Type;
+                                    RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, false};
+                                    EmptyTuple.RegionArg = std::make_shared<PlannedOperand>(std::move(RegionArg));
+                                }
+
+                                PlannedType ResultType;
+                                ResultType.Loc = StructType.Loc;
+                                ResultType.Name = "pointer";
+                                ResultType.MangledName = "P" + StructType.MangledName;
+                                ResultType.Generics = {StructType};
+
+                                PlannedOperand TupleOperand;
+                                TupleOperand.Loc = Op.Loc;
+                                TupleOperand.ResultType = ResultType;
+                                TupleOperand.Expr = std::move(EmptyTuple);
+
+                                Result.push_back(std::move(TupleOperand));
+                                continue;
+                            }
                         }
                     }
                 }
@@ -4648,6 +4778,9 @@ llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
     Result.Name = Func.Name;
     Result.Life = Func.Life;
 
+    // Reset tracking for $ allocations in function body
+    CurrentFunctionUsesLocalLifetime = false;
+
     pushScope();
 
     // If function has a ReferenceLifetime, add implicit region parameter
@@ -4764,6 +4897,9 @@ llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
     Result.Impl = std::move(*PlannedImpl);
 
     popScope();
+
+    // Copy the flag to indicate if function needs a local page
+    Result.NeedsLocalPage = CurrentFunctionUsesLocalLifetime;
 
     // Generate mangled name
     // For extern functions, use the unmangled C name for linking

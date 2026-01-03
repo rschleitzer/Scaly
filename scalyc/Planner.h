@@ -74,6 +74,9 @@ private:
     std::vector<PlannedProperty>* CurrentStructureProperties = nullptr;
     PlannedStructure* CurrentStructure = nullptr;  // For method lookup during planning
 
+    // Track if current function uses $ allocations (needs local page)
+    bool CurrentFunctionUsesLocalLifetime = false;
+
     // ========== Type Inference State ==========
 
     // Current plan being built (for constraint collection)
