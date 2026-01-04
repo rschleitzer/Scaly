@@ -908,7 +908,23 @@ llvm::Error Emitter::emitFunctionBody(const PlannedFunction &Func,
         if (LLVMFunc->getReturnType()->isVoidTy()) {
             Builder->CreateRetVoid();
         } else if (ReturnValue) {
-            // Return the computed value
+            // Return the computed value, with type conversion if needed
+            llvm::Type *ExpectedRetTy = LLVMFunc->getReturnType();
+            llvm::Type *ActualTy = ReturnValue->getType();
+
+            if (ActualTy != ExpectedRetTy) {
+                if (ExpectedRetTy->isStructTy() && ActualTy->isPointerTy()) {
+                    // Returning pointer but function expects struct by value
+                    ReturnValue = Builder->CreateLoad(ExpectedRetTy, ReturnValue, "ret.load");
+                } else if ((ExpectedRetTy->isIntegerTy() || ExpectedRetTy->isFloatTy() ||
+                            ExpectedRetTy->isDoubleTy()) && ActualTy->isPointerTy()) {
+                    // Returning pointer but function expects primitive type
+                    ReturnValue = Builder->CreateLoad(ExpectedRetTy, ReturnValue, "ret.load");
+                } else if (ExpectedRetTy->isIntegerTy() && ActualTy->isIntegerTy()) {
+                    // Integer type mismatch - cast
+                    ReturnValue = Builder->CreateIntCast(ReturnValue, ExpectedRetTy, true, "ret.cast");
+                }
+            }
             Builder->CreateRet(ReturnValue);
         } else {
             // No value computed but function expects return - this shouldn't happen
@@ -1515,8 +1531,9 @@ llvm::Error Emitter::emitReturn(const PlannedReturn &Return) {
 
     // Check if function uses sret (struct return via first parameter)
     // If so, store to the sret param and return void
-    if (CurrentFunction && CurrentFunction->arg_size() > 0 &&
-        CurrentFunction->hasParamAttribute(0, llvm::Attribute::StructRet)) {
+    bool HasSret = CurrentFunction && CurrentFunction->arg_size() > 0 &&
+                   CurrentFunction->hasParamAttribute(0, llvm::Attribute::StructRet);
+    if (HasSret) {
         llvm::Argument *SRetArg = CurrentFunction->getArg(0);
         if (RetVal) {
             // For struct returns, store the value to the sret pointer
@@ -1596,6 +1613,15 @@ llvm::Error Emitter::emitReturn(const PlannedReturn &Return) {
                             break;
                         }
                     }
+                } else if (ExpectedRetTy->isStructTy() && ActualTy->isPointerTy()) {
+                    // Returning pointer but function expects struct by value
+                    // Load the struct from the pointer
+                    RetVal = Builder->CreateLoad(ExpectedRetTy, RetVal, "ret.load");
+                } else if ((ExpectedRetTy->isIntegerTy() || ExpectedRetTy->isFloatTy() ||
+                            ExpectedRetTy->isDoubleTy()) && ActualTy->isPointerTy()) {
+                    // Returning pointer but function expects primitive type
+                    // Load the value from the pointer
+                    RetVal = Builder->CreateLoad(ExpectedRetTy, RetVal, "ret.load");
                 }
             }
             Builder->CreateRet(RetVal);
@@ -1972,7 +1998,23 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
             // Binary operator
             return emitIntrinsicOp(Call.Name, Args[0], Args[1], Call.ResultType);
         } else if (Args.size() == 1) {
-            // Unary operator
+            // Unary operator - but handle address-of specially
+            if (Call.Name == "&") {
+                // Address-of operator: we need to get a pointer, not a loaded value
+                // The argument was already emitted, so we need to check its type
+                llvm::Value *Operand = Args[0];
+
+                if (Operand->getType()->isPointerTy()) {
+                    // Already a pointer (from variable or GEP) - return it
+                    return Operand;
+                } else {
+                    // The value was loaded - we need to store it and return the address
+                    // This happens when address-of is applied to an expression result
+                    auto *Alloca = Builder->CreateAlloca(Operand->getType(), nullptr, "addr.tmp");
+                    Builder->CreateStore(Operand, Alloca);
+                    return Alloca;
+                }
+            }
             return emitIntrinsicUnaryOp(Call.Name, Args[0], Call.ResultType);
         }
     }
@@ -2168,6 +2210,11 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
             NeedsAdjustment = true;
             break;
         }
+        // Pointer to integer mismatch (e.g., ptr arg to i8 param) - indicates a bug
+        if (ParamTy->isIntegerTy() && ArgTy->isPointerTy()) {
+            NeedsAdjustment = true;
+            break;
+        }
     }
 
     if (!NeedsAdjustment) {
@@ -2189,6 +2236,10 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
         } else if (ParamTy->isIntegerTy() && ArgTy->isIntegerTy() && ParamTy != ArgTy) {
             // Integer type conversion (truncate or extend)
             AdjustedArgs.push_back(Builder->CreateIntCast(ArgVal, ParamTy, true, "arg.cast"));
+        } else if (ParamTy->isIntegerTy() && ArgTy->isPointerTy()) {
+            // Pointer to integer - load the value from pointer
+            // This happens when a global string constant is passed where a char is expected
+            AdjustedArgs.push_back(Builder->CreateLoad(ParamTy, ArgVal, "arg.load"));
         } else {
             AdjustedArgs.push_back(ArgVal);
         }
