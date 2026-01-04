@@ -618,6 +618,123 @@ void Planner::computeUnionLayout(PlannedUnion &Union) {
 // Symbol Lookup
 // ============================================================================
 
+// Look up a function by qualified package path (e.g., ["scaly", "containers", "test"])
+const Function* Planner::lookupPackageFunction(const std::vector<std::string>& Path) {
+    if (Path.size() < 2) return nullptr;
+
+    // Check if first element is a loaded package
+    auto PkgIt = LoadedPackages.find(Path[0]);
+    if (PkgIt == LoadedPackages.end()) return nullptr;
+
+    // Navigate through the package module hierarchy
+    const Module* CurrentMod = PkgIt->second;
+    const Namespace* CurrentNS = nullptr;
+
+    // The package typically contains a `define <package_name> {...}` concept
+    // Look for the namespace with the same name as the package
+    for (const auto& Member : CurrentMod->Members) {
+        if (auto* Conc = std::get_if<Concept>(&Member)) {
+            if (Conc->Name == Path[0]) {
+                if (auto* NS = std::get_if<Namespace>(&Conc->Def)) {
+                    CurrentNS = NS;
+                    break;
+                }
+            }
+        }
+    }
+
+    // Walk through intermediate path elements (start from index 1 since 0 is the package name)
+    for (size_t i = 1; i < Path.size() - 1; ++i) {
+        const std::string& PathElem = Path[i];
+        bool Found = false;
+
+        // If we're in a namespace, check its modules and members
+        if (CurrentNS) {
+            for (const auto& SubMod : CurrentNS->Modules) {
+                if (SubMod.Name == PathElem) {
+                    CurrentMod = &SubMod;
+                    // Check if the module has a namespace with the same name (the define statement)
+                    CurrentNS = nullptr;
+                    for (const auto& Member : SubMod.Members) {
+                        if (auto* Conc = std::get_if<Concept>(&Member)) {
+                            if (Conc->Name == PathElem) {
+                                if (auto* NS = std::get_if<Namespace>(&Conc->Def)) {
+                                    CurrentNS = NS;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    Found = true;
+                    break;
+                }
+            }
+            if (!Found) {
+                for (const auto& Member : CurrentNS->Members) {
+                    if (auto* Conc = std::get_if<Concept>(&Member)) {
+                        if (Conc->Name == PathElem) {
+                            if (auto* NS = std::get_if<Namespace>(&Conc->Def)) {
+                                CurrentNS = NS;
+                                Found = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            // Check Module's submodules
+            for (const auto& SubMod : CurrentMod->Modules) {
+                if (SubMod.Name == PathElem) {
+                    CurrentMod = &SubMod;
+                    Found = true;
+                    break;
+                }
+            }
+            // Check Module's members for Concepts with Namespace definitions
+            if (!Found) {
+                for (const auto& Member : CurrentMod->Members) {
+                    if (auto* Conc = std::get_if<Concept>(&Member)) {
+                        if (Conc->Name == PathElem) {
+                            if (auto* NS = std::get_if<Namespace>(&Conc->Def)) {
+                                CurrentNS = NS;
+                                Found = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!Found) {
+            return nullptr;
+        }
+    }
+
+    // Look for the function in the final module/namespace
+    const std::string& FuncName = Path.back();
+    if (CurrentNS) {
+        for (const auto& Member : CurrentNS->Members) {
+            if (auto* Func = std::get_if<Function>(&Member)) {
+                if (Func->Name == FuncName) {
+                    return Func;
+                }
+            }
+        }
+    } else {
+        for (const auto& Member : CurrentMod->Members) {
+            if (auto* Func = std::get_if<Function>(&Member)) {
+                if (Func->Name == FuncName) {
+                    return Func;
+                }
+            }
+        }
+    }
+
+    return nullptr;
+}
+
 std::vector<const Function*> Planner::lookupFunction(llvm::StringRef Name) {
     // Check function cache
     auto It = Functions.find(Name.str());
@@ -3803,6 +3920,78 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                         }
                         // If method not found, fall through to normal processing
                     }
+
+                    // Check for package function call pattern (e.g., scaly.containers.test())
+                    // First element is package name, path leads to function
+                    if (TypeExpr->Name.size() >= 2 && std::holds_alternative<Tuple>(NextOp.Expr)) {
+                        auto PkgIt = LoadedPackages.find(TypeExpr->Name[0]);
+                        if (PkgIt != LoadedPackages.end()) {
+                            // Look up the function in the package
+                            const Function* PkgFunc = lookupPackageFunction(TypeExpr->Name);
+                            if (PkgFunc) {
+                                // Plan the arguments
+                                Operand ArgsOp = NextOp;
+                                ArgsOp.MemberAccess = nullptr;
+                                auto PlannedArgs = planOperand(ArgsOp);
+                                if (!PlannedArgs) {
+                                    return PlannedArgs.takeError();
+                                }
+
+                                // Plan the function
+                                auto PlannedFunc = planFunction(*PkgFunc, nullptr);
+                                if (!PlannedFunc) {
+                                    return PlannedFunc.takeError();
+                                }
+
+                                // Create the function call
+                                PlannedCall Call;
+                                Call.Loc = Op.Loc;
+                                Call.Name = PkgFunc->Name;
+                                Call.MangledName = PlannedFunc->MangledName;
+                                Call.IsIntrinsic = false;
+                                Call.IsOperator = false;
+                                if (PlannedFunc->Returns) {
+                                    Call.ResultType = *PlannedFunc->Returns;
+                                }
+
+                                // Build args from tuple
+                                Call.Args = std::make_shared<std::vector<PlannedOperand>>();
+                                if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedArgs->Expr)) {
+                                    for (auto& Comp : TupleExpr->Components) {
+                                        for (auto& ValOp : Comp.Value) {
+                                            Call.Args->push_back(std::move(ValOp));
+                                        }
+                                    }
+                                }
+
+                                // Create operand with the call
+                                PlannedOperand CallOp;
+                                CallOp.Loc = Op.Loc;
+                                CallOp.Expr = std::move(Call);
+                                if (PlannedFunc->Returns) {
+                                    CallOp.ResultType = *PlannedFunc->Returns;
+                                }
+
+                                // Apply any member access on the result
+                                if (NextOp.MemberAccess && !NextOp.MemberAccess->empty()) {
+                                    auto MemberChain = resolveMemberAccessChain(CallOp.ResultType,
+                                                                                 *NextOp.MemberAccess, NextOp.Loc);
+                                    if (!MemberChain) {
+                                        return MemberChain.takeError();
+                                    }
+                                    CallOp.MemberAccess = std::make_shared<std::vector<PlannedMemberAccess>>(
+                                        std::move(*MemberChain));
+                                    if (!CallOp.MemberAccess->empty()) {
+                                        CallOp.ResultType = CallOp.MemberAccess->back().ResultType;
+                                    }
+                                }
+
+                                Result.push_back(std::move(CallOp));
+                                i++;  // Skip the tuple operand
+                                continue;
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -6598,6 +6787,13 @@ llvm::Expected<Plan> Planner::plan(const Program &Prog) {
 
     // Set up type inference context
     CurrentPlan = &Result;
+
+    // Load packages into the lookup map
+    for (const auto &Pkg : Prog.Packages) {
+        if (Pkg.Root) {
+            LoadedPackages[Pkg.Name] = Pkg.Root.get();
+        }
+    }
 
     // Plan the main module
     auto PlannedMod = planModule(Prog.MainModule);

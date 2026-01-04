@@ -1710,7 +1710,6 @@ llvm::Expected<Module> Modeler::buildReferencedModule(llvm::StringRef Path,
     }
     FilePath += ".scaly";
 
-
     // Read the file
     auto BufOrErr = llvm::MemoryBuffer::getFile(FilePath);
     if (!BufOrErr) {
