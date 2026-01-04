@@ -1164,6 +1164,72 @@ std::optional<Planner::InitializerMatch> Planner::findInitializer(
     return std::nullopt;
 }
 
+std::optional<Planner::OperatorMatch> Planner::findSubscriptOperator(
+    const PlannedType &ContainerType, const PlannedType &IndexType, Span Loc) {
+
+    // Look for operator[] defined on the container type
+    // Extract base name (e.g., "Vector" from "Vector.int")
+    std::string BaseName = ContainerType.Name;
+    size_t DotPos = BaseName.find('.');
+    if (DotPos != std::string::npos) {
+        BaseName = BaseName.substr(0, DotPos);
+    }
+
+    // Look up the concept for this type
+    const Concept* Conc = lookupConcept(BaseName);
+    if (!Conc) {
+        return std::nullopt;
+    }
+
+    // Check if it's a structure with an operator[] member
+    if (auto* Struct = std::get_if<Structure>(&Conc->Def)) {
+        for (const auto& Member : Struct->Members) {
+            if (auto* Op = std::get_if<Operator>(&Member)) {
+                if (Op->Name == "[]") {
+                    // Found subscript operator
+                    OperatorMatch Match;
+                    Match.Op = Op;
+                    Match.IsIntrinsic = std::holds_alternative<IntrinsicImpl>(Op->Impl);
+
+                    // Resolve return type with generic substitution
+                    if (Op->Returns) {
+                        // Set up type substitutions for generics
+                        std::map<std::string, PlannedType> OldSubst = TypeSubstitutions;
+                        if (!Conc->Parameters.empty() && !ContainerType.Generics.empty()) {
+                            for (size_t I = 0; I < Conc->Parameters.size() &&
+                                              I < ContainerType.Generics.size(); ++I) {
+                                TypeSubstitutions[Conc->Parameters[I].Name] =
+                                    ContainerType.Generics[I];
+                            }
+                        }
+
+                        auto RetResult = resolveType(*Op->Returns, Loc);
+                        TypeSubstitutions = OldSubst;
+
+                        if (!RetResult) {
+                            llvm::consumeError(RetResult.takeError());
+                            continue;
+                        }
+                        Match.ResultType = std::move(*RetResult);
+                    }
+
+                    // Generate mangled name
+                    // operator[] on Type with Index -> _ZN<Type>ixE<IndexType>
+                    std::vector<PlannedItem> ParamItems;
+                    PlannedItem IdxItem;
+                    IdxItem.ItemType = std::make_shared<PlannedType>(IndexType);
+                    ParamItems.push_back(IdxItem);
+                    Match.MangledName = mangleOperator("[]", ParamItems, &ContainerType);
+
+                    return Match;
+                }
+            }
+        }
+    }
+
+    return std::nullopt;
+}
+
 std::optional<Planner::OperatorMatch> Planner::findOperator(
     llvm::StringRef Name, const PlannedType &Left, const PlannedType &Right) {
 
@@ -5114,6 +5180,102 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
         if (!Planned) {
             return Planned.takeError();
         }
+
+        // Check for subscript operator pattern: operand followed by Matrix
+        // e.g., (*vector)[1] where (*vector) is the operand and [1] is the Matrix
+        // This is NOT generic instantiation (which was handled in pre-processing)
+        if (i + 1 < ProcessedOps.size()) {
+            const auto &NextOp = ProcessedOps[i + 1];
+            if (auto* MatrixExpr = std::get_if<Matrix>(&NextOp.Expr)) {
+                // Check if this looks like a subscript (Matrix contains non-type expressions)
+                // Generic instantiation was already handled in pre-processing
+                bool IsSubscript = false;
+                for (const auto& Row : MatrixExpr->Operations) {
+                    for (const auto& Op : Row) {
+                        // If the expression is not a simple type name, it's likely a subscript index
+                        if (auto* T = std::get_if<Type>(&Op.Expr)) {
+                            // Check if it's a literal or variable (subscript) vs type name
+                            if (T->Name.size() == 1) {
+                                auto Bind = lookupLocalBinding(T->Name[0]);
+                                if (Bind) {
+                                    IsSubscript = true;
+                                    break;
+                                }
+                            }
+                        } else if (std::holds_alternative<Constant>(Op.Expr)) {
+                            IsSubscript = true;
+                            break;
+                        } else if (std::holds_alternative<Tuple>(Op.Expr)) {
+                            // Expression like String(rp, "key") - definitely subscript
+                            IsSubscript = true;
+                            break;
+                        }
+                    }
+                    if (IsSubscript) break;
+                }
+
+                if (IsSubscript) {
+                    // Look up operator[] on the result type
+                    PlannedType& LeftType = Planned->ResultType;
+
+                    // Plan the index expression (from Matrix)
+                    Operand IndexOp;
+                    IndexOp.Loc = NextOp.Loc;
+                    // Extract the first element from the Matrix as the index
+                    if (!MatrixExpr->Operations.empty() && !MatrixExpr->Operations[0].empty()) {
+                        IndexOp.Expr = MatrixExpr->Operations[0][0].Expr;
+                        IndexOp.MemberAccess = nullptr;
+
+                        auto PlannedIndex = planOperand(IndexOp);
+                        if (!PlannedIndex) {
+                            return PlannedIndex.takeError();
+                        }
+
+                        // Look for operator[] on the left type
+                        auto OpMatch = findSubscriptOperator(LeftType, PlannedIndex->ResultType, NextOp.Loc);
+                        if (OpMatch) {
+                            // Create the operator call
+                            PlannedCall Call;
+                            Call.Loc = NextOp.Loc;
+                            Call.Name = "[]";
+                            Call.MangledName = OpMatch->MangledName;
+                            Call.IsIntrinsic = false;
+                            Call.IsOperator = true;
+                            Call.ResultType = OpMatch->ResultType;
+
+                            // Build args: [left, index]
+                            Call.Args = std::make_shared<std::vector<PlannedOperand>>();
+                            Call.Args->push_back(std::move(*Planned));
+                            Call.Args->push_back(std::move(*PlannedIndex));
+
+                            PlannedOperand CallOp;
+                            CallOp.Loc = NextOp.Loc;
+                            CallOp.Expr = std::move(Call);
+                            CallOp.ResultType = OpMatch->ResultType;
+
+                            // Apply any member access from the Matrix operand
+                            if (NextOp.MemberAccess && !NextOp.MemberAccess->empty()) {
+                                auto MemberChain = resolveMemberAccessChain(CallOp.ResultType,
+                                                                             *NextOp.MemberAccess, NextOp.Loc);
+                                if (!MemberChain) {
+                                    return MemberChain.takeError();
+                                }
+                                CallOp.MemberAccess = std::make_shared<std::vector<PlannedMemberAccess>>(
+                                    std::move(*MemberChain));
+                                if (!CallOp.MemberAccess->empty()) {
+                                    CallOp.ResultType = CallOp.MemberAccess->back().ResultType;
+                                }
+                            }
+
+                            Result.push_back(std::move(CallOp));
+                            i++;  // Skip the Matrix operand
+                            continue;
+                        }
+                    }
+                }
+            }
+        }
+
         Result.push_back(std::move(*Planned));
     }
 
