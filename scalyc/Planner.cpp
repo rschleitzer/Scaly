@@ -326,7 +326,7 @@ std::string Planner::encodeType(const PlannedType &Type) {
         return "P" + encodeType(Type.Generics[0]);
     }
 
-    // Generic types: List[int] → I4ListIiEE
+    // Generic types: Vector[int] → 6VectorIiE (Itanium ABI: name + I + args + E)
     if (!Type.Generics.empty()) {
         // Extract base name if Name contains instantiation suffix (e.g., "Vector.char" -> "Vector")
         std::string BaseName = Type.Name;
@@ -334,7 +334,7 @@ std::string Planner::encodeType(const PlannedType &Type) {
         if (DotPos != std::string::npos) {
             BaseName = BaseName.substr(0, DotPos);
         }
-        std::string Result = "I" + encodeName(BaseName);
+        std::string Result = encodeName(BaseName) + "I";
         for (const auto &Arg : Type.Generics) {
             Result += encodeType(Arg);
         }
@@ -445,13 +445,18 @@ std::string Planner::mangleOperator(llvm::StringRef Name,
         Result += OpCode;
     }
 
-    // Parameter types
-    if (Params.empty()) {
-        Result += "v";
+    // Parameter types (skip 'this' for member operators)
+    size_t StartIdx = 0;
+    if (Parent && !Params.empty() && Params[0].Name && *Params[0].Name == "this") {
+        StartIdx = 1;  // Skip 'this' parameter for member operators
+    }
+
+    if (StartIdx >= Params.size()) {
+        Result += "v";  // No parameters after 'this'
     } else {
-        for (const auto &Param : Params) {
-            if (Param.ItemType) {
-                Result += encodeType(*Param.ItemType);
+        for (size_t I = StartIdx; I < Params.size(); ++I) {
+            if (Params[I].ItemType) {
+                Result += encodeType(*Params[I].ItemType);
             }
         }
     }
@@ -1228,12 +1233,34 @@ std::optional<Planner::OperatorMatch> Planner::findSubscriptOperator(
                         Match.ResultType = std::move(*RetResult);
                     }
 
-                    // Generate mangled name
-                    // operator[] on Type with Index -> _ZN<Type>ixE<IndexType>
+                    // Generate mangled name using operator's parameter type (not argument type)
+                    // This allows implicit conversions (e.g., int -> size_t)
+                    // Note: Operator Input doesn't include 'this' - first param is the index
                     std::vector<PlannedItem> ParamItems;
-                    PlannedItem IdxItem;
-                    IdxItem.ItemType = std::make_shared<PlannedType>(IndexType);
-                    ParamItems.push_back(IdxItem);
+                    if (Op->Input.size() >= 1 && Op->Input[0].ItemType) {
+                        // Use the operator's declared parameter type for mangling
+                        std::map<std::string, PlannedType> OldSubst2 = TypeSubstitutions;
+                        if (!Conc->Parameters.empty() && !ContainerType.Generics.empty()) {
+                            for (size_t I = 0; I < Conc->Parameters.size() &&
+                                              I < ContainerType.Generics.size(); ++I) {
+                                TypeSubstitutions[Conc->Parameters[I].Name] =
+                                    ContainerType.Generics[I];
+                            }
+                        }
+                        auto ParamTypeResult = resolveType(*Op->Input[0].ItemType, Loc);
+                        TypeSubstitutions = OldSubst2;
+                        if (ParamTypeResult) {
+                            PlannedItem IdxItem;
+                            IdxItem.ItemType = std::make_shared<PlannedType>(*ParamTypeResult);
+                            ParamItems.push_back(IdxItem);
+                        }
+                    }
+                    if (ParamItems.empty()) {
+                        // Fallback to argument type if operator param not found
+                        PlannedItem IdxItem;
+                        IdxItem.ItemType = std::make_shared<PlannedType>(IndexType);
+                        ParamItems.push_back(IdxItem);
+                    }
                     Match.MangledName = mangleOperator("[]", ParamItems, &ContainerType);
 
                     return Match;
