@@ -114,10 +114,13 @@ llvm::Expected<std::unique_ptr<Type>> Modeler::handleType(
     if (Syntax.generics && Syntax.generics->generics) {
         Generics = std::make_unique<std::vector<Type>>();
         for (const auto &GA : *Syntax.generics->generics) {
-            auto TypeResult = handleType(GA.type);
-            if (!TypeResult)
-                return TypeResult.takeError();
-            Generics->push_back(std::move(**TypeResult));
+            if (auto *TA = std::get_if<TypeArgumentSyntax>(&GA.Value)) {
+                auto TypeResult = handleType(TA->type);
+                if (!TypeResult)
+                    return TypeResult.takeError();
+                Generics->push_back(std::move(**TypeResult));
+            }
+            // LiteralArgumentSyntax is ignored for now (used for array sizes, etc.)
         }
     }
 
@@ -217,20 +220,10 @@ llvm::Expected<Operand> Modeler::handleOperand(const OperandSyntax &Syntax) {
     if (Syntax.members) {
         MemberAccess = std::make_unique<std::vector<Type>>();
         for (const auto &M : *Syntax.members) {
-            if (auto *Dot = std::get_if<DotAccessSyntax>(&M.Value)) {
-                auto MemberType = handleType(Dot->type);
-                if (!MemberType)
-                    return MemberType.takeError();
-                MemberAccess->push_back(std::move(**MemberType));
-            } else if (std::get_if<SubscriptSyntax>(&M.Value)) {
-                // TODO: Subscript access not yet fully supported in semantic model
-                // For now, treat [i] as accessing a member named "[]"
-                // This will need to be updated when we add proper subscript support
-                Type SubscriptType;
-                SubscriptType.Loc = Span{M.Value.index(), M.Value.index()};  // Placeholder
-                SubscriptType.Name = {"[]"};
-                MemberAccess->push_back(std::move(SubscriptType));
-            }
+            auto MemberType = handleType(M.type);
+            if (!MemberType)
+                return MemberType.takeError();
+            MemberAccess->push_back(std::move(**MemberType));
         }
     }
 
@@ -1085,12 +1078,15 @@ std::vector<GenericParameter> Modeler::extractGenericParams(
         for (const auto &GA : *Syntax.generics) {
             // Extract the type name as the parameter name
             // For simple generic params like [T], name.name is a single identifier
-            if (!GA.type.name.name.empty()) {
-                GenericParameter Param;
-                Param.Loc = Span{GA.Start, GA.End};
-                Param.Name = std::string(GA.type.name.name);
-                Params.push_back(std::move(Param));
+            if (auto *TA = std::get_if<TypeArgumentSyntax>(&GA.Value)) {
+                if (!TA->type.name.name.empty()) {
+                    GenericParameter Param;
+                    Param.Loc = Span{TA->Start, TA->End};
+                    Param.Name = std::string(TA->type.name.name);
+                    Params.push_back(std::move(Param));
+                }
             }
+            // LiteralArgumentSyntax is not a valid generic parameter declaration
         }
     }
     return Params;

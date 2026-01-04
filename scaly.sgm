@@ -131,8 +131,16 @@
     <content link = GenericArgument       multiple optional property = generics
     <content link = right_bracket
 
-<syntax id = GenericArgument              multiple
+<syntax id = GenericArgument              multiple abstract
+    <content link = TypeArgument
+    <content link = LiteralArgument
+
+<syntax id = TypeArgument
     <content link = Type                                    property = type
+    <content link = comma                          optional
+
+<syntax id = LiteralArgument
+    <content literal                                        property = literal
     <content link = comma                          optional
 
 <syntax id = Optional
@@ -308,18 +316,9 @@
     <content link = Expression                              property = expression
     <content link = MemberAccess          multiple optional property = members
 
-<syntax id = MemberAccess                 multiple abstract
-    <content link = DotAccess
-    <content link = Subscript
-
-<syntax id = DotAccess
+<syntax id = MemberAccess                 multiple
     <content link = dot
     <content link = Type                                    property = type
-
-<syntax id = Subscript
-    <content link = left_bracket
-    <content link = Operand               multiple          property = operands
-    <content link = right_bracket
 
 <syntax id = Expression                            abstract
     <content link = Literal

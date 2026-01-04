@@ -33,6 +33,8 @@ struct ConstantSyntax;
 struct DelegateSyntax;
 struct GenericArgumentsSyntax;
 struct GenericArgumentSyntax;
+struct TypeArgumentSyntax;
+struct LiteralArgumentSyntax;
 struct OptionalSyntax;
 struct ParameterSetSyntax;
 struct ParametersSyntax;
@@ -66,8 +68,6 @@ struct VersionSyntax;
 struct InitializerSyntax;
 struct OperandSyntax;
 struct MemberAccessSyntax;
-struct DotAccessSyntax;
-struct SubscriptSyntax;
 struct ExpressionSyntax;
 struct LiteralSyntax;
 struct ObjectSyntax;
@@ -492,20 +492,10 @@ struct ExpressionSyntax {
     std::variant<LiteralSyntax, TypeSyntax, ObjectSyntax, VectorSyntax, BlockSyntax, IfSyntax, MatchSyntax, LambdaSyntax, ForSyntax, WhileSyntax, ChooseSyntax, TrySyntax, RepeatSyntax, SizeOfSyntax, AlignOfSyntax, IsSyntax, AsSyntax> Value;
 };
 
-struct SubscriptSyntax {
-    size_t Start;
-    size_t End;
-    std::vector<OperandSyntax>* operands;
-};
-
-struct DotAccessSyntax {
+struct MemberAccessSyntax {
     size_t Start;
     size_t End;
     TypeSyntax type;
-};
-
-struct MemberAccessSyntax {
-    std::variant<DotAccessSyntax, SubscriptSyntax> Value;
 };
 
 struct OperandSyntax {
@@ -711,10 +701,20 @@ struct OptionalSyntax {
     size_t End;
 };
 
-struct GenericArgumentSyntax {
+struct LiteralArgumentSyntax {
+    size_t Start;
+    size_t End;
+    Literal literal;
+};
+
+struct TypeArgumentSyntax {
     size_t Start;
     size_t End;
     TypeSyntax type;
+};
+
+struct GenericArgumentSyntax {
+    std::variant<TypeArgumentSyntax, LiteralArgumentSyntax> Value;
 };
 
 struct GenericArgumentsSyntax {
