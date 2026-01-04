@@ -295,6 +295,20 @@ std::string Planner::encodeName(llvm::StringRef Name) {
 
 // Encode a type for mangling
 std::string Planner::encodeType(const PlannedType &Type) {
+    // If MangledName is already set and encodes generics, use it
+    // This handles cases where we have the mangled name but not the Generics vector
+    if (!Type.MangledName.empty() && Type.Generics.empty()) {
+        // MangledName starts with "_Z" (from mangleStructure/mangleType)
+        // Strip the prefix and use the encoded name directly
+        if (Type.MangledName.size() > 2 && Type.MangledName.substr(0, 2) == "_Z") {
+            return Type.MangledName.substr(2);
+        }
+        // If it's just an encoded name without _Z prefix, use it directly
+        if (!Type.MangledName.empty() && std::isdigit(Type.MangledName[0])) {
+            return Type.MangledName;
+        }
+    }
+
     // Built-in types use single-letter codes (Itanium ABI)
     if (Type.Name == "void") return "v";
     if (Type.Name == "bool") return "b";
@@ -358,7 +372,8 @@ std::string Planner::mangleStructure(llvm::StringRef Name,
         return "_Z" + encodeName(Name);
     }
 
-    std::string Result = "_ZI" + encodeName(Name);
+    // Itanium ABI: Name + I + args + E  (e.g., 6VectorIiE for Vector[int])
+    std::string Result = "_Z" + encodeName(Name) + "I";
     for (const auto &Arg : GenericArgs) {
         Result += encodeType(Arg);
     }
@@ -754,10 +769,18 @@ std::vector<const Function*> Planner::lookupFunction(llvm::StringRef Name) {
         CacheKey += "@" + BaseName;
     }
 
-    // Check function cache
+    // Check function cache with structure-qualified key
     auto It = Functions.find(CacheKey);
     if (It != Functions.end()) {
         return It->second;
+    }
+
+    // Also try unqualified key (for functions registered from sibling modules)
+    if (!CurrentStructureName.empty()) {
+        auto UnqualifiedIt = Functions.find(Name.str());
+        if (UnqualifiedIt != Functions.end()) {
+            return UnqualifiedIt->second;
+        }
     }
 
     // Search module stack for functions
@@ -948,13 +971,30 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                         MethodMatch Match;
                         Match.Method = Func;
 
+                        // Set up type substitutions for the struct's type parameters
+                        // This is needed when resolving parameter/return types that use T
+                        std::map<std::string, PlannedType> OldSubst = TypeSubstitutions;
+                        if (!Conc->Parameters.empty() && !StructType.Generics.empty()) {
+                            for (size_t I = 0; I < Conc->Parameters.size() && I < StructType.Generics.size(); ++I) {
+                                TypeSubstitutions[Conc->Parameters[I].Name] = StructType.Generics[I];
+                            }
+                        }
+
                         // Compute mangled name
                         PlannedType ParentType;
                         ParentType.Name = StructType.Name;
                         ParentType.Generics = StructType.Generics;  // Preserve generics for correct mangling
-                        // Use Struct's mangled name if available, otherwise use StructType's
-                        ParentType.MangledName = Struct ? Struct->MangledName :
-                            (StructType.MangledName.empty() ? StructType.Name : StructType.MangledName);
+                        // Use Struct's mangled name if available, otherwise compute it
+                        if (Struct) {
+                            ParentType.MangledName = Struct->MangledName;
+                        } else if (!StructType.MangledName.empty()) {
+                            ParentType.MangledName = StructType.MangledName;
+                        } else if (!StructType.Generics.empty()) {
+                            // Compute mangled name with generics
+                            ParentType.MangledName = mangleStructure(BaseName, StructType.Generics);
+                        } else {
+                            ParentType.MangledName = encodeName(StructType.Name);
+                        }
                         std::vector<PlannedItem> Params;
                         for (const auto &Inp : Func->Input) {
                             PlannedItem Item;
@@ -985,6 +1025,9 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                             Match.ReturnType.Name = "void";
                             Match.ReturnType.Loc = Loc;
                         }
+
+                        // Restore type substitutions
+                        TypeSubstitutions = OldSubst;
                         return Match;
                     }
                 }
@@ -5153,15 +5196,28 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             // Extern C functions use unmangled name
                             MangledName = FuncName;
                         } else if (IsSiblingMethod) {
-                            std::string BaseName = CurrentStructureName;
-                            size_t DotPos = BaseName.find('.');
-                            if (DotPos != std::string::npos) {
-                                BaseName = BaseName.substr(0, DotPos);
+                            // Look up the current structure to get its mangled name
+                            auto StructIt = InstantiatedStructures.find(CurrentStructureName);
+                            if (StructIt != InstantiatedStructures.end()) {
+                                // Use the instantiated structure's mangled name directly
+                                // The MangledName already encodes generic type arguments correctly
+                                PlannedType ParentType;
+                                ParentType.Name = StructIt->second.Name;
+                                ParentType.MangledName = StructIt->second.MangledName;
+                                // Don't set Generics here - we use MangledName directly in mangleFunction
+                                MangledName = mangleFunction(FuncName, ParamItems, &ParentType);
+                            } else {
+                                // Fallback for non-generic structures
+                                std::string BaseName = CurrentStructureName;
+                                size_t DotPos = BaseName.find('.');
+                                if (DotPos != std::string::npos) {
+                                    BaseName = BaseName.substr(0, DotPos);
+                                }
+                                PlannedType ParentType;
+                                ParentType.Name = BaseName;
+                                ParentType.MangledName = encodeName(BaseName);
+                                MangledName = mangleFunction(FuncName, ParamItems, &ParentType);
                             }
-                            PlannedType ParentType;
-                            ParentType.Name = BaseName;
-                            ParentType.MangledName = mangleType(ParentType);
-                            MangledName = mangleFunction(FuncName, ParamItems, &ParentType);
                         } else {
                             MangledName = mangleFunction(FuncName, ParamItems, nullptr);
                         }
@@ -5185,13 +5241,21 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             PlannedVariable ThisVar;
                             ThisVar.Loc = Op.Loc;
                             ThisVar.Name = "this";
-                            std::string BaseName = CurrentStructureName;
-                            size_t DotPos = BaseName.find('.');
-                            if (DotPos != std::string::npos) {
-                                BaseName = BaseName.substr(0, DotPos);
+                            // Look up the current structure to get its type info
+                            auto StructIt = InstantiatedStructures.find(CurrentStructureName);
+                            if (StructIt != InstantiatedStructures.end()) {
+                                ThisVar.VariableType.Name = StructIt->second.Name;
+                                ThisVar.VariableType.MangledName = StructIt->second.MangledName;
+                                // Generics are encoded in MangledName, don't need to set them
+                            } else {
+                                std::string BaseName = CurrentStructureName;
+                                size_t DotPos = BaseName.find('.');
+                                if (DotPos != std::string::npos) {
+                                    BaseName = BaseName.substr(0, DotPos);
+                                }
+                                ThisVar.VariableType.Name = BaseName;
+                                ThisVar.VariableType.MangledName = encodeName(BaseName);
                             }
-                            ThisVar.VariableType.Name = BaseName;
-                            ThisVar.VariableType.MangledName = mangleType(ThisVar.VariableType);
                             ThisOp.ResultType = ThisVar.VariableType;
                             ThisOp.Expr = std::move(ThisVar);
                             Call.Args->push_back(std::move(ThisOp));
@@ -5275,20 +5339,30 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                     PlannedType& LeftType = Planned->ResultType;
 
                     // Plan the index expression (from Matrix)
-                    Operand IndexOp;
-                    IndexOp.Loc = NextOp.Loc;
-                    // Extract the first element from the Matrix as the index
+                    // The row may contain multiple operands forming a pattern like String(rp, "using")
+                    // We need to plan the entire row to recognize constructor calls
                     if (!MatrixExpr->Operations.empty() && !MatrixExpr->Operations[0].empty()) {
-                        IndexOp.Expr = MatrixExpr->Operations[0][0].Expr;
-                        IndexOp.MemberAccess = nullptr;
+                        const auto& IndexRow = MatrixExpr->Operations[0];
 
-                        auto PlannedIndex = planOperand(IndexOp);
-                        if (!PlannedIndex) {
-                            return PlannedIndex.takeError();
+                        // Plan the entire row as a sequence of operands
+                        auto PlannedRow = planOperands(IndexRow);
+                        if (!PlannedRow) {
+                            return PlannedRow.takeError();
                         }
 
+                        // The result should be a single operand after pattern recognition
+                        if (PlannedRow->empty()) {
+                            return llvm::make_error<llvm::StringError>(
+                                "Empty subscript index",
+                                llvm::inconvertibleErrorCode()
+                            );
+                        }
+
+                        // Take the last operand (result of pattern recognition)
+                        PlannedOperand PlannedIndex = std::move(PlannedRow->back());
+
                         // Look for operator[] on the left type
-                        auto OpMatch = findSubscriptOperator(LeftType, PlannedIndex->ResultType, NextOp.Loc);
+                        auto OpMatch = findSubscriptOperator(LeftType, PlannedIndex.ResultType, NextOp.Loc);
                         if (OpMatch) {
                             // Create the operator call
                             PlannedCall Call;
@@ -5302,7 +5376,7 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             // Build args: [left, index]
                             Call.Args = std::make_shared<std::vector<PlannedOperand>>();
                             Call.Args->push_back(std::move(*Planned));
-                            Call.Args->push_back(std::move(*PlannedIndex));
+                            Call.Args->push_back(std::move(PlannedIndex));
 
                             PlannedOperand CallOp;
                             CallOp.Loc = NextOp.Loc;
