@@ -131,16 +131,8 @@
     <content link = GenericArgument       multiple optional property = generics
     <content link = right_bracket
 
-<syntax id = GenericArgument              multiple abstract
-    <content link = TypeArgument
-    <content link = LiteralArgument
-
-<syntax id = TypeArgument
+<syntax id = GenericArgument              multiple
     <content link = Type                                    property = type
-    <content link = comma                          optional
-
-<syntax id = LiteralArgument
-    <content literal                                        property = literal
     <content link = comma                          optional
 
 <syntax id = Optional

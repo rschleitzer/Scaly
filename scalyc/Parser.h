@@ -54,8 +54,6 @@ private:
     llvm::Expected<GenericArgumentsSyntax> parseGenericArguments();
     llvm::Expected<std::vector<GenericArgumentSyntax>*> parseGenericArgumentList();
     llvm::Expected<GenericArgumentSyntax> parseGenericArgument();
-    llvm::Expected<TypeArgumentSyntax> parseTypeArgument();
-    llvm::Expected<LiteralArgumentSyntax> parseLiteralArgument();
     llvm::Expected<OptionalSyntax> parseOptional();
     llvm::Expected<ParameterSetSyntax> parseParameterSet();
     llvm::Expected<ParametersSyntax> parseParameters();

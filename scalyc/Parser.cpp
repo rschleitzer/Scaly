@@ -796,23 +796,6 @@ llvm::Expected<std::vector<GenericArgumentSyntax>*> Parser::parseGenericArgument
 }
 
 llvm::Expected<GenericArgumentSyntax> Parser::parseGenericArgument() {
-    {
-        auto Result = parseTypeArgument();
-        if (Result)
-            return GenericArgumentSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
-    }
-    {
-        auto Result = parseLiteralArgument();
-        if (Result)
-            return GenericArgumentSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
-    }
-    return different();
-
-}
-
-llvm::Expected<TypeArgumentSyntax> Parser::parseTypeArgument() {
     size_t Start = Lex.previousPosition();
 
     auto TypeOrErr = parseType();
@@ -824,23 +807,7 @@ llvm::Expected<TypeArgumentSyntax> Parser::parseTypeArgument() {
 
     size_t End = Lex.position();
 
-    return TypeArgumentSyntax{Start, End, Type};
-
-}
-
-llvm::Expected<LiteralArgumentSyntax> Parser::parseLiteralArgument() {
-    size_t Start = Lex.previousPosition();
-
-    auto LiteralOrErr = parseLiteralToken();
-    if (!LiteralOrErr)
-        return LiteralOrErr.takeError();
-    auto Literal = std::move(*LiteralOrErr);
-
-    Lex.parsePunctuation(',');
-
-    size_t End = Lex.position();
-
-    return LiteralArgumentSyntax{Start, End, Literal};
+    return GenericArgumentSyntax{Start, End, Type};
 
 }
 

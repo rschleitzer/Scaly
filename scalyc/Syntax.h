@@ -33,8 +33,6 @@ struct ConstantSyntax;
 struct DelegateSyntax;
 struct GenericArgumentsSyntax;
 struct GenericArgumentSyntax;
-struct TypeArgumentSyntax;
-struct LiteralArgumentSyntax;
 struct OptionalSyntax;
 struct ParameterSetSyntax;
 struct ParametersSyntax;
@@ -701,20 +699,10 @@ struct OptionalSyntax {
     size_t End;
 };
 
-struct LiteralArgumentSyntax {
-    size_t Start;
-    size_t End;
-    Literal literal;
-};
-
-struct TypeArgumentSyntax {
+struct GenericArgumentSyntax {
     size_t Start;
     size_t End;
     TypeSyntax type;
-};
-
-struct GenericArgumentSyntax {
-    std::variant<TypeArgumentSyntax, LiteralArgumentSyntax> Value;
 };
 
 struct GenericArgumentsSyntax {

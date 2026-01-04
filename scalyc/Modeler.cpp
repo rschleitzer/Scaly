@@ -133,13 +133,10 @@ llvm::Expected<std::unique_ptr<Type>> Modeler::handleType(
     if (Syntax.generics && Syntax.generics->generics) {
         Generics = std::make_unique<std::vector<Type>>();
         for (const auto &GA : *Syntax.generics->generics) {
-            if (auto *TA = std::get_if<TypeArgumentSyntax>(&GA.Value)) {
-                auto TypeResult = handleType(TA->type);
-                if (!TypeResult)
-                    return TypeResult.takeError();
-                Generics->push_back(std::move(**TypeResult));
-            }
-            // LiteralArgumentSyntax is ignored for now (used for array sizes, etc.)
+            auto TypeResult = handleType(GA.type);
+            if (!TypeResult)
+                return TypeResult.takeError();
+            Generics->push_back(std::move(**TypeResult));
         }
     }
 
@@ -1105,15 +1102,12 @@ std::vector<GenericParameter> Modeler::extractGenericParams(
         for (const auto &GA : *Syntax.generics) {
             // Extract the type name as the parameter name
             // For simple generic params like [T], name.name is a single identifier
-            if (auto *TA = std::get_if<TypeArgumentSyntax>(&GA.Value)) {
-                if (!TA->type.name.name.empty()) {
-                    GenericParameter Param;
-                    Param.Loc = Span{TA->Start, TA->End};
-                    Param.Name = std::string(TA->type.name.name);
-                    Params.push_back(std::move(Param));
-                }
+            if (!GA.type.name.name.empty()) {
+                GenericParameter Param;
+                Param.Loc = Span{GA.Start, GA.End};
+                Param.Name = std::string(GA.type.name.name);
+                Params.push_back(std::move(Param));
             }
-            // LiteralArgumentSyntax is not a valid generic parameter declaration
         }
     }
     return Params;
