@@ -34,28 +34,28 @@ define Vector[T]
         set data: null
     }
 
-    init (data: pointer[T], length: size_t) {
-        set length: length
-        set data: data
+    init (d: pointer[T], len: size_t) {
+        set length: len
+        set data: d
     }
 
-    init (rp: pointer[Page], length: size_t) {
-        set length: length
-        if length > 0
+    init (rp: pointer[Page], len: size_t) {
+        set length: len
+        if len > 0
         {
-            set data: (T*)(*rp).allocate(length * sizeof T, alignof T)
-            memset(data, 0, length * sizeof T)
+            set data: (T*)(*rp).allocate(len * sizeof T, alignof T)
+            memset(data, 0, len * sizeof T)
         } else {
             set data: null
         }
     }
 
-    init (rp: pointer[Page], array: pointer[T], length: size_t) {
-        set length: length
-        if length > 0
+    init (rp: pointer[Page], arr: pointer[T], len: size_t) {
+        set length: len
+        if len > 0
         {
-            set data: (T*)(*rp).allocate(length * sizeof T, alignof T)
-            memcpy(data, array, length * sizeof T)
+            set data: (T*)(*rp).allocate(len * sizeof T, alignof T)
+            memcpy(data, arr, len * sizeof T)
         } else {
             set data: null
         }
