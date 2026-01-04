@@ -68,22 +68,21 @@ define Vector[T]
         }
     }
 
-    ; TODO: Uncomment when List is implemented
-    ; init (rp: pointer[Page], list: List[T]) (length(list.count())) {
-    ;     if length > 0
-    ;     {
-    ;         set data: (T*) (*rp).allocate(length * sizeof T, alignof T)
-    ;         var list_iterator list.get_iterator()
-    ;         var i: size_t length
-    ;         while let item list_iterator.next()
-    ;         {
-    ;             set i: i -1
-    ;             set *(*this)[i]: *item
-    ;         }
-    ;     } else {
-    ;         set data: null
-    ;     }
-    ; }
+    init (rp: pointer[Page], list: List[T]) (length(list.count())) {
+        if length > 0
+        {
+            set data: (T*) (*rp).allocate(length * sizeof T, alignof T)
+            var list_iterator list.get_iterator()
+            var i: size_t length
+            while let item list_iterator.next()
+            {
+                set i: i - 1
+                set *(data + i): *item
+            }
+        } else {
+            set data: null
+        }
+    }
 
     function get(this: Vector[T], i: size_t) returns pointer[T] {
         if i >= length

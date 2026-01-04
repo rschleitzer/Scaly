@@ -2,9 +2,304 @@ use scaly.memory.Page
 
 define containers {
     module hashing
-    module Array
+    module Node
+    module ListIterator
+    module List
     module Vector
+    module Array
+    module BuilderListIterator
+    module BuilderList
+    module Slot
+    module KeyValuePair
+    module HashSetBuilder
+    module HashSet
+    module HashMapBuilder
+    module HashMap
     module String
-    module StringBuilder
     module StringIterator
+    module StringBuilder
+
+    function test_vector() {
+        var rp Page.allocate_page()
+        var vector Vector[int]^rp(rp, 2)
+        set *(*vector).get(0): 1
+        (*vector).put(1, 2)
+        if *((*vector).get(0)) <> 1
+            exit(-1)
+        if *(*vector)[1] <> 2
+            exit(-2)
+        (*rp).deallocate_extensions()
+        free(rp as pointer[void])
+    }
+
+    function test_array() {
+        var array Array[int]$()
+
+        ; A quarter gigabyte worth of ints
+        let huge_number: int 1024 * 1024 * 64
+        {
+            var i: int 1
+            while i <= huge_number
+            {
+                (*array).add(i)
+                set i: i + 1
+            }
+        }
+
+        let buffer: pointer[int] (*array).get_buffer()
+        {
+            var i: int 1
+            while i <= huge_number
+            {
+                if *(buffer + i - 1) <> i
+                    exit(-6)
+                set i: i + 1
+            }
+        }
+    }
+
+    function test_string() {
+        var rp Page.allocate_page()
+        var string String(rp, "Hello world!")
+        let length string.get_length()
+        if length <> 12
+            exit(-7)
+        var long_string String(rp, "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890")
+        if long_string.get_length() <> 130
+            exit(-8)
+        var c_string long_string.to_c_string(rp)
+        var string_c String(rp, c_string)
+
+        var semi String(rp, ";")
+        var dot String(rp, ".")
+        if semi.equals(dot)
+            exit(-9)
+        var semi2 String(rp, ";")
+        if semi.equals(semi2) <> true
+            exit(-10)
+        (*rp).deallocate_extensions()
+        free(rp as pointer[void])
+    }
+
+    function test_string_builder() {
+        var rp Page.allocate_page()
+        var string_builder StringBuilder$()
+        let length (*string_builder).get_length()
+        if length <> 0
+            exit(-11)
+        (*string_builder).append('a')
+        (*string_builder).append('b')
+        (*string_builder).append('c')
+        if (*string_builder).to_string(rp).equals("abc") = false
+            exit(-12)
+        if (*string_builder).get_length() <> 3
+            exit(-13)
+
+        var string_builder2 StringBuilder$('d')
+        (*string_builder2).append('e')
+        (*string_builder2).append('f')
+        (*string_builder2).append('g')
+        if (*string_builder2).to_string(rp).equals("defg") = false
+            exit(-14)
+        if (*string_builder2).get_length() <> 4
+            exit(-15)
+
+        var string_builder3 StringBuilder$("hijk")
+        (*string_builder3).append("lmno")
+        if (*string_builder3).to_string(rp).equals("hijklmno") = false
+            exit(-16)
+        (*rp).deallocate_extensions()
+        free(rp as pointer[void])
+    }
+
+    function test_list() {
+        var list List[int]$()
+
+        let huge_number: int 1024 * 1024 * 62
+        {
+            var i: int 1
+            while i <= huge_number
+            {
+                (*list).add(i)
+                set i: i + 1
+            }
+        }
+
+        var iterator (*list).get_iterator()
+        {
+            var i: int huge_number
+            while i >= 1
+            {
+                let p iterator.next()
+                if p = null
+                    exit(-17)
+                if *p <> i
+                    exit(-18)
+                set i: i - 1
+            }
+        }
+    }
+
+    function test_hash_set() {
+        var rp Page.allocate_page()
+        var array Array[String]$()
+        (*array).add(String(rp, "using"))
+        (*array).add(String(rp, "namespace"))
+        (*array).add(String(rp, "typedef"))
+        let vector Vector[String](rp, *array)
+        var keywords_builder HashSetBuilder[String]$(vector)
+        if (*keywords_builder).contains(String(rp, "using")) = false
+            exit (-19)
+        if (*keywords_builder).contains(String(rp, "namespace")) = false
+            exit (-20)
+        if (*keywords_builder).contains(String(rp, "typedef")) = false
+            exit (-21)
+        if (*keywords_builder).contains(String(rp, "nix"))
+            exit (-22)
+        var keywords HashSet[String](rp, *keywords_builder)
+        if keywords.contains(String(rp, "using")) = false
+            exit (-23)
+        if keywords.contains(String(rp, "namespace")) = false
+            exit (-24)
+        if keywords.contains(String(rp, "typedef")) = false
+            exit (-25)
+        if keywords.contains(String(rp, "nix"))
+            exit (-26)
+        (*rp).deallocate_extensions()
+        free(rp as pointer[void])
+    }
+
+    function test_hash_map() {
+        {
+            var rp Page.allocate_page()
+            var array Array[KeyValuePair[String, int]]$()
+            (*array).add(KeyValuePair[String, int](String(rp, "using"), 1))
+            (*array).add(KeyValuePair[String, int](String(rp, "namespace"), 2))
+            (*array).add(KeyValuePair[String, int](String(rp, "typedef"), 3))
+            let vector Vector[KeyValuePair[String, int]](rp, *array)
+            var keywords_builder HashMapBuilder[String, int]$(rp, vector)
+            if (*keywords_builder).contains(String(rp, "using")) = false
+                exit (-27)
+            if (*keywords_builder).contains(String(rp, "namespace")) = false
+                exit (-28)
+            if (*keywords_builder).contains(String(rp, "typedef")) = false
+                exit (-29)
+            if (*keywords_builder).contains(String(rp, "nix"))
+                exit (-30)
+            if *(*keywords_builder)[String(rp, "using")] <> 1
+                exit (-31)
+            if *(*keywords_builder)[String(rp, "namespace")] <> 2
+                exit (-32)
+            if *(*keywords_builder)[String(rp, "typedef")] <> 3
+                exit (-33)
+            if (*keywords_builder)[String(rp, "nix")] <> null
+                exit (-34)
+            var keywords HashMap[String, int](rp, *keywords_builder)
+            if keywords.contains(String(rp, "using")) = false
+                exit (-35)
+            if keywords.contains(String(rp, "namespace")) = false
+                exit (-36)
+            if keywords.contains(String(rp, "typedef")) = false
+                exit (-37)
+            if keywords.contains(String(rp, "nix"))
+                exit (-38)
+            if *keywords[String(rp, "using")] <> 1
+                exit (-39)
+            if *keywords[String(rp, "namespace")] <> 2
+                exit (-40)
+            if *keywords[String(rp, "typedef")] <> 3
+                exit (-41)
+            if keywords[String(rp, "nix")] <> null
+                exit (-42)
+            (*rp).deallocate_extensions()
+            free(rp as pointer[void])
+        }
+        {
+            var rp Page.allocate_page()
+            var map HashMapBuilder[String, size_t]$()
+            var hash_set HashSetBuilder[String]$()
+            {
+                var i: char 'A'
+                while i <= 'Z'
+                {
+                    var j: char 'a'
+                    while j <= 'z'
+                    {
+                        var k: char '0'
+                        while k <= '9'
+                        {
+                            var l: char '!'
+                            while l <= '/'
+                            {
+                                var rp2 Page.allocate_page()
+                                var sb StringBuilder^rp2(i)
+                                (*sb).append(j)
+                                (*sb).append(k)
+                                (*sb).append(l)
+                                (*map).add((*sb).to_string(rp), (size_t)i * j * k * l)
+                                (*hash_set).add((*sb).to_string(rp))
+                                (*rp2).deallocate_extensions()
+                                free(rp2 as pointer[void])
+
+                                set l: l + 1
+                            }
+                            set k: k + 1
+                        }
+                        set j: j + 1
+                    }
+                    set i: i + 1
+                }
+            }
+
+            {
+                var i: char 'A'
+                while i <= 'Z'
+                {
+                    var j: char 'a'
+                    while j <= 'z'
+                    {
+                        var k: char '0'
+                        while k <= '9'
+                        {
+                            var l: char '!'
+                            while l <= '/'
+                            {
+                                var rp2 Page.allocate_page()
+                                var sb StringBuilder^rp2(i)
+                                (*sb).append(j)
+                                (*sb).append(k)
+                                (*sb).append(l)
+                                let theString (*sb).to_string(rp2)
+                                if (*hash_set).contains(theString) = false
+                                    exit(-43)
+                                if (*map).contains(theString) = false
+                                    exit(-44)
+                                if *(*map)[theString] <> (size_t)i * j * k * l
+                                    exit(-45)
+                                (*rp2).deallocate_extensions()
+                                free(rp2 as pointer[void])
+
+                                set l: l + 1
+                            }
+                            set k: k + 1
+                        }
+                        set j: j + 1
+                    }
+                    set i: i + 1
+                }
+            }
+            (*rp).deallocate_extensions()
+            free(rp as pointer[void])
+        }
+    }
+
+    function test() {
+        test_vector()
+        test_array()
+        test_string()
+        test_string_builder()
+        test_list()
+        test_hash_set()
+        test_hash_map()
+    }
 }

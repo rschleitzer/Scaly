@@ -37,6 +37,9 @@ private:
     std::map<std::string, std::vector<const Function*>> Functions;
     std::map<std::string, std::vector<const Operator*>> Operators;
 
+    // Loaded packages (name -> root module)
+    std::map<std::string, const Module*> LoadedPackages;
+
     // Built-in runtime functions for RBMM (aligned_alloc, free, exit)
     std::vector<std::unique_ptr<Function>> BuiltinFunctions;
     bool RuntimeFunctionsRegistered = false;
@@ -47,6 +50,9 @@ private:
 
     // Lookup a concept by name, searching module hierarchy
     const Concept* lookupConcept(llvm::StringRef Name);
+
+    // Look up a function by qualified package path (e.g., ["scaly", "containers", "test"])
+    const Function* lookupPackageFunction(const std::vector<std::string>& Path);
 
     // Instantiation cache - avoid duplicate monomorphization
     std::map<std::string, PlannedStructure> InstantiatedStructures;
