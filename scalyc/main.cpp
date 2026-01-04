@@ -13,22 +13,20 @@
 #include "llvm/Support/raw_ostream.h"
 #include <iostream>
 #include <set>
+#include <functional>
 
 using namespace llvm;
 
 // Helper function to load sibling .scaly files for multi-file compilation
-// Loads files from the same directory and sibling directories
+// Loads files from the same directory, subdirectories, and sibling directories
 static void loadSiblingPrograms(scaly::Planner &Planner, StringRef Filename) {
     SmallString<256> Dir = sys::path::parent_path(Filename);
     if (Dir.empty()) return;
 
     std::set<std::string> ProcessedDirs;
 
-    // Helper lambda to load all .scaly files from a directory
-    auto loadFromDir = [&](StringRef DirPath) {
-        if (ProcessedDirs.count(DirPath.str())) return;
-        ProcessedDirs.insert(DirPath.str());
-
+    // Helper lambda to load all .scaly files from a directory (non-recursive)
+    auto loadFilesFromDir = [&](StringRef DirPath) {
         std::error_code EC;
         for (sys::fs::directory_iterator DI(DirPath, EC), DE; DI != DE && !EC; DI.increment(EC)) {
             StringRef SibPath = DI->path();
@@ -58,8 +56,29 @@ static void loadSiblingPrograms(scaly::Planner &Planner, StringRef Filename) {
         }
     };
 
-    // Load from the same directory
-    loadFromDir(Dir);
+    // Recursive helper to load from directory and all subdirectories
+    std::function<void(StringRef)> loadFromDirRecursive = [&](StringRef DirPath) {
+        if (ProcessedDirs.count(DirPath.str())) return;
+        ProcessedDirs.insert(DirPath.str());
+
+        // Load .scaly files from this directory
+        loadFilesFromDir(DirPath);
+
+        // Recurse into subdirectories
+        std::error_code EC;
+        for (sys::fs::directory_iterator DI(DirPath, EC), DE; DI != DE && !EC; DI.increment(EC)) {
+            StringRef SubPath = DI->path();
+            bool IsDir = false;
+            std::error_code EC2;
+            EC2 = sys::fs::is_directory(SubPath, IsDir);
+            if (!EC2 && IsDir) {
+                loadFromDirRecursive(SubPath);
+            }
+        }
+    };
+
+    // Load from the same directory and its subdirectories
+    loadFromDirRecursive(Dir);
 
     // Load from sibling directories (directories at the same level)
     SmallString<256> ParentDir = sys::path::parent_path(Dir);
@@ -74,7 +93,7 @@ static void loadSiblingPrograms(scaly::Planner &Planner, StringRef Filename) {
             std::error_code EC2;
             EC2 = sys::fs::is_directory(SubPath, IsDir);
             if (!EC2 && IsDir) {
-                loadFromDir(SubPath);
+                loadFromDirRecursive(SubPath);
             }
         }
     }
@@ -138,6 +157,12 @@ static cl::opt<bool> ModelOnly(
 static cl::opt<bool> PlanOnly(
     "plan",
     cl::desc("Run planner (type resolution, name mangling)"),
+    cl::cat(ScalyCategory));
+
+static cl::opt<std::string> RunFunction(
+    "run",
+    cl::desc("JIT-execute a function by name"),
+    cl::value_desc("function"),
     cl::cat(ScalyCategory));
 
 // Print a token in readable format
@@ -434,6 +459,78 @@ static int emitLLVMFile(StringRef Filename, StringRef OutputPath) {
     return 0;
 }
 
+// JIT-execute a function from a file
+static int runFile(StringRef Filename, StringRef FunctionName) {
+    auto BufOrErr = MemoryBuffer::getFileOrSTDIN(Filename);
+    if (!BufOrErr) {
+        errs() << "scalyc: error: " << BufOrErr.getError().message() << ": " << Filename << "\n";
+        return 1;
+    }
+
+    scaly::Parser Parser((*BufOrErr)->getBuffer());
+    auto ParseResult = Parser.parseProgram();
+    if (!ParseResult) {
+        handleAllErrors(ParseResult.takeError(), [&](const llvm::ErrorInfoBase &E) {
+            errs() << "scalyc: " << Filename << ": " << E.message() << "\n";
+        });
+        return 1;
+    }
+
+    scaly::Modeler Modeler(Filename);
+    auto ModelResult = Modeler.buildProgram(*ParseResult);
+    if (!ModelResult) {
+        handleAllErrors(ModelResult.takeError(), [&](const llvm::ErrorInfoBase &E) {
+            errs() << "scalyc: " << Filename << ": " << E.message() << "\n";
+        });
+        return 1;
+    }
+
+    scaly::Planner Planner(Filename);
+    loadSiblingPrograms(Planner, Filename);
+
+    auto PlanResult = Planner.plan(*ModelResult);
+    if (!PlanResult) {
+        handleAllErrors(PlanResult.takeError(), [&](const llvm::ErrorInfoBase &E) {
+            errs() << "scalyc: " << Filename << ": " << E.message() << "\n";
+        });
+        return 1;
+    }
+
+    // Find the mangled name for the function
+    std::string MangledName;
+    for (const auto &[name, Func] : PlanResult->Functions) {
+        if (Func.Name == FunctionName) {
+            MangledName = Func.MangledName;
+            break;
+        }
+    }
+
+    if (MangledName.empty()) {
+        errs() << "scalyc: error: function '" << FunctionName << "' not found\n";
+        return 1;
+    }
+
+    if (Verbose) {
+        outs() << "Running function: " << FunctionName << " (mangled: " << MangledName << ")\n";
+        outs().flush();
+    }
+
+    // JIT execute the function
+    scaly::Emitter Emitter;
+    if (auto Err = Emitter.jitExecuteVoid(*PlanResult, MangledName)) {
+        handleAllErrors(std::move(Err), [&](const llvm::ErrorInfoBase &E) {
+            errs() << "scalyc: " << Filename << ": " << E.message() << "\n";
+        });
+        return 1;
+    }
+
+    if (Verbose) {
+        outs() << "Function " << FunctionName << " completed successfully.\n";
+    }
+
+    return 0;
+}
+
 int main(int argc, char **argv) {
     cl::HideUnrelatedOptions(ScalyCategory);
     cl::ParseCommandLineOptions(argc, argv, "Scaly Compiler\n");
@@ -450,7 +547,7 @@ int main(int argc, char **argv) {
         return AllPassed ? 0 : 1;
     }
 
-    if (InputFiles.empty() && !LexOnly && !ParseOnly && !ModelOnly && !PlanOnly) {
+    if (InputFiles.empty() && !LexOnly && !ParseOnly && !ModelOnly && !PlanOnly && RunFunction.empty()) {
         errs() << "scalyc: error: no input files\n";
         return 1;
     }
@@ -467,6 +564,7 @@ int main(int argc, char **argv) {
     for (const auto &File : InputFiles) {
         if (Verbose) {
             outs() << "Processing: " << File << "\n";
+            outs().flush();
         }
 
         if (LexOnly) {
@@ -497,6 +595,9 @@ int main(int argc, char **argv) {
                 OutPath = sys::path::stem(File).str() + ".ll";
             }
             Result |= emitLLVMFile(File, OutPath);
+        } else if (!RunFunction.empty()) {
+            // JIT-execute a function
+            Result |= runFile(File, RunFunction);
         } else {
             // Full compilation - for now just run planner
             // TODO: Full compile + link when we have a linker
