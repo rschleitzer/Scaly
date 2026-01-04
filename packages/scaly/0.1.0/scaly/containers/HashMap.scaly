@@ -1,3 +1,5 @@
+use scaly.memory.Page
+
 define HashMapIterator[K, V]
 (
     slot_iterator: VectorIterator[Vector[KeyValuePair[K, V]]]
@@ -42,8 +44,8 @@ define HashMap[K, V]
             var array Array[KeyValuePair[K, V]]$()
             var list_iterator ListIterator[Slot[KeyValuePair[K, V]]]((*(*hash_map_builder.slots).get(i)).head)
             while let item list_iterator.next()
-                array.add((*item).value)
-            if array.length > 0
+                (*array).add((*item).value)
+            if (*array).length > 0
                 (*slots).put(i, Vector[KeyValuePair[K, V]](rp, array))
 
             set i: i + 1

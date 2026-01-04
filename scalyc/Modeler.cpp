@@ -428,7 +428,8 @@ llvm::Expected<Matrix> Modeler::handleVector(const VectorSyntax &Syntax) {
             Operations.push_back(std::move(*Ops));
         }
     }
-    return Matrix{Span{Syntax.Start, Syntax.End}, std::move(Operations)};
+    Lifetime Life = handleLifetime(Syntax.lifetime);
+    return Matrix{Span{Syntax.Start, Syntax.End}, std::move(Operations), std::move(Life)};
 }
 
 // Block handling

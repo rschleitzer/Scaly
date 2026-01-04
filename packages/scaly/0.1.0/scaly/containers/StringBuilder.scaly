@@ -1,3 +1,5 @@
+use scaly.memory.Page
+
 define StringBuilder
 (
     buffer: Array[char]
@@ -22,7 +24,7 @@ define StringBuilder
         if length = 0
             return
 
-        buffer.add(Vector[char]((char*)c_string, length))
+        buffer.add(Vector[char](c_string as pointer[char], length))
     }
 
     function append(this: StringBuilder, start: pointer[char], length: size_t) {

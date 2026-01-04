@@ -11,7 +11,7 @@ define HASH_PRIMES: size_t[] [
 function is_prime(candidate: size_t) returns bool {
     if (candidate & 1) <> 0
     {
-        let limit (size_t)sqrt((double)candidate)
+        let limit sqrt(candidate as double) as size_t
         var divisor: size_t 3
         while divisor <= limit
         {
