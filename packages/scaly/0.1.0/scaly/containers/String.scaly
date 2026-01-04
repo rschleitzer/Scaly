@@ -1,8 +1,8 @@
 define PACKED_SIZE: int 9
 
-define String (data: pointer[char](nullptr)) {
+define String (data: pointer[char](null)) {
     init (rp: pointer[Page], length: size_t) {
-        var length_array: char []PACKED_SIZE
+        var length_array: char[PACKED_SIZE]
         var rest length
 
         var counter: size_t 0
@@ -26,7 +26,7 @@ define String (data: pointer[char](nullptr)) {
             return
         }
 
-        var length_array: char []PACKED_SIZE
+        var length_array: char[PACKED_SIZE]
         var rest length
 
         var counter: size_t 0
@@ -87,7 +87,7 @@ define String (data: pointer[char](nullptr)) {
 
     function get_buffer(this: String) returns pointer[char] {
         if data = null
-            return nullptr
+            return null
 
         var length: size_t 0
         var bit_count 0

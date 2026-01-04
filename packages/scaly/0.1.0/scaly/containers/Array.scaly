@@ -28,7 +28,7 @@ define Array[T]
 
     function add(this: Array[T], item: T) {
         if vector = null || length = (*vector).length
-            reallocate()
+            this.reallocate()
 
         let location (*vector).data + length
         set *location: item
@@ -39,8 +39,8 @@ define Array[T]
     function add(this: Array[T], items: Vector[T]) {
         var new_length length + items.length
         let size sizeof T
-        if vector = nullptr || new_length > (*vector).length
-            reallocate()
+        if vector = null || new_length > (*vector).length
+            this.reallocate()
 
         if new_length > (*vector).length
         {
@@ -64,7 +64,7 @@ define Array[T]
         if i >= length
             return null
 
-        return (*this)[i]
+        return (*vector).data + i
     }
 
     operator [](this: Array[T], i: size_t) returns pointer[T] {

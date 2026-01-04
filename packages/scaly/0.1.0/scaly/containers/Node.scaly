@@ -1,0 +1,1 @@
+define Node[T] (element: T, next: pointer[Node[T]])

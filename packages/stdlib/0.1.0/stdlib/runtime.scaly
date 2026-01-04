@@ -1,6 +1,9 @@
 ; C runtime functions
 ; These are external functions from libc, resolved by the linker or JIT
 
+; Platform constants
+define SIZE_MAX: size_t 0xFFFFFFFFFFFFFFFF
+
 define runtime {
 
     ; Memory allocation (C11 aligned_alloc)
@@ -16,6 +19,7 @@ define runtime {
     function memcpy(dest: pointer[void], src: pointer[void], n: size_t) returns pointer[void] extern
     function memset(dest: pointer[void], c: i32, n: size_t) returns pointer[void] extern
     function memmove(dest: pointer[void], src: pointer[void], n: size_t) returns pointer[void] extern
+    function memcmp(s1: pointer[void], s2: pointer[void], n: size_t) returns i32 extern
 
     ; String operations
     function strlen(s: pointer[i8]) returns size_t extern

@@ -102,7 +102,7 @@ define Page
         var exclusive_page_ptr iter.next()
         while exclusive_page_ptr <> null
         {
-            let exclusive_page *exclusive_page_ptr
+            let exclusive_page (*exclusive_page_ptr)
             (*exclusive_page).deallocate_extensions()
             free(exclusive_page as pointer[void])
             set exclusive_page_ptr: iter.next()

@@ -66,6 +66,8 @@ struct VersionSyntax;
 struct InitializerSyntax;
 struct OperandSyntax;
 struct MemberAccessSyntax;
+struct DotAccessSyntax;
+struct SubscriptSyntax;
 struct ExpressionSyntax;
 struct LiteralSyntax;
 struct ObjectSyntax;
@@ -73,7 +75,6 @@ struct ComponentSyntax;
 struct ValueSyntax;
 struct VectorSyntax;
 struct ElementSyntax;
-struct BlockSyntax;
 struct IfSyntax;
 struct ElseSyntax;
 struct MatchSyntax;
@@ -110,6 +111,7 @@ struct RepeatSyntax;
 struct ActionSyntax;
 struct OperationSyntax;
 struct SetSyntax;
+struct BlockSyntax;
 struct SizeOfSyntax;
 struct AlignOfSyntax;
 struct IsSyntax;
@@ -206,6 +208,13 @@ struct SizeOfSyntax {
     TypeSyntax type;
 };
 
+struct BlockSyntax {
+    size_t Start;
+    size_t End;
+    std::vector<UseSyntax>* uses;
+    std::vector<StatementSyntax>* statements;
+};
+
 struct SetSyntax {
     size_t Start;
     size_t End;
@@ -220,7 +229,7 @@ struct OperationSyntax {
 };
 
 struct ActionSyntax {
-    std::variant<OperationSyntax, SetSyntax> Value;
+    std::variant<OperationSyntax, SetSyntax, BlockSyntax> Value;
 };
 
 struct RepeatSyntax {
@@ -438,13 +447,6 @@ struct IfSyntax {
     ElseSyntax* alternative;
 };
 
-struct BlockSyntax {
-    size_t Start;
-    size_t End;
-    std::vector<UseSyntax>* uses;
-    std::vector<StatementSyntax>* statements;
-};
-
 struct ElementSyntax {
     size_t Start;
     size_t End;
@@ -490,10 +492,20 @@ struct ExpressionSyntax {
     std::variant<LiteralSyntax, TypeSyntax, ObjectSyntax, VectorSyntax, BlockSyntax, IfSyntax, MatchSyntax, LambdaSyntax, ForSyntax, WhileSyntax, ChooseSyntax, TrySyntax, RepeatSyntax, SizeOfSyntax, AlignOfSyntax, IsSyntax, AsSyntax> Value;
 };
 
-struct MemberAccessSyntax {
+struct SubscriptSyntax {
+    size_t Start;
+    size_t End;
+    std::vector<OperandSyntax>* operands;
+};
+
+struct DotAccessSyntax {
     size_t Start;
     size_t End;
     TypeSyntax type;
+};
+
+struct MemberAccessSyntax {
+    std::variant<DotAccessSyntax, SubscriptSyntax> Value;
 };
 
 struct OperandSyntax {

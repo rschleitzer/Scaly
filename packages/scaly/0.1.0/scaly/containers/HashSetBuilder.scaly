@@ -1,0 +1,81 @@
+define HashSetBuilder[T]
+(
+    length: size_t (0)
+    slots: pointer[Vector[BuilderList[Slot[T]]]] (null)
+)
+{
+    init (vector: Vector[T]) (HashSetBuilder[T]()) {
+        if vector.length > 0
+        {
+            reallocate(vector.length)
+            var vector_iterator VectorIterator[T](&vector)
+            while let element vector_iterator.next()
+                add_internal(*element)
+        }
+    }
+
+    function reallocate(this: HashSetBuilder[T], size: size_t) {
+        let hash_size hashing.get_prime(size)
+        let own_page Page.get(this as pointer[void])
+        let slots_page (*own_page).allocate_exclusive_page()
+        let new_slots Vector[BuilderList[Slot[T]]]^slots_page(slots_page, hash_size)
+
+        if slots <> null
+        {
+            var vector_iterator VectorIterator[BuilderList[Slot[T]]](slots)
+            while let element vector_iterator.next()
+            {
+                var list_iterator BuilderListIterator[Slot[T]]((*element).head)
+                while let item list_iterator.next()
+                {
+                    let hash_code (*item).hash_code
+                    let slot_number hash_code % (*new_slots).length
+                    let slot_list (*new_slots).get(slot_number)
+                    (*slot_list).add(slots_page, *item)
+                }
+            }
+            (*own_page).deallocate_exclusive_page(Page.get(slots as pointer[void]))
+        }
+        set slots: new_slots
+    }
+
+    function add(this: HashSetBuilder[T], value: T) returns bool {
+        let hash_size hashing.get_prime(length + 1)
+        if slots = null || hash_size > (*slots).length
+            reallocate(length + 1)
+        return add_internal(value)
+    }
+
+    function add_internal(this: HashSetBuilder[T], value: T) returns bool {
+        let hash_code value.hash()
+        let slot_number hash_code % (*slots).length
+        let slot_list (*slots).get(slot_number)
+        var iterator (*slot_list).get_iterator()
+        while let item iterator.next()
+        {
+            if value.equals((*item).value)
+                return false
+        }
+
+        let own_page Page.get(slots as pointer[void])
+        (*slot_list).add(own_page, Slot[T](value, hash_code))
+
+        set length: length + 1
+        return true
+    }
+
+    function contains(this: HashSetBuilder[T], value: T) returns bool {
+        if slots = null
+            return false
+
+        let hash value.hash()
+        let slot_number hash % (*slots).length
+        let slot (*slots).get(slot_number)
+        var iterator (*slot).get_iterator()
+        while let item iterator.next()
+            if value.equals((*item).value)
+                return true
+
+        return false
+    }
+}

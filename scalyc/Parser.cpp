@@ -525,9 +525,8 @@ llvm::Expected<ClassSyntax> Parser::parseClass() {
 llvm::Expected<BodySyntax> Parser::parseBody() {
     size_t Start = Lex.previousPosition();
 
-    if (!Lex.parsePunctuation('{')) {
+    if (!Lex.parsePunctuation('{'))
         return different();
-    }
 
     std::vector<UseSyntax>* Uses = nullptr;
     {
@@ -1735,6 +1734,23 @@ llvm::Expected<std::vector<MemberAccessSyntax>*> Parser::parseMemberAccessList()
 }
 
 llvm::Expected<MemberAccessSyntax> Parser::parseMemberAccess() {
+    {
+        auto Result = parseDotAccess();
+        if (Result)
+            return MemberAccessSyntax{std::move(*Result)};
+        llvm::consumeError(Result.takeError());
+    }
+    {
+        auto Result = parseSubscript();
+        if (Result)
+            return MemberAccessSyntax{std::move(*Result)};
+        llvm::consumeError(Result.takeError());
+    }
+    return different();
+
+}
+
+llvm::Expected<DotAccessSyntax> Parser::parseDotAccess() {
     size_t Start = Lex.previousPosition();
 
     if (!Lex.parsePunctuation('.'))
@@ -1747,7 +1763,27 @@ llvm::Expected<MemberAccessSyntax> Parser::parseMemberAccess() {
 
     size_t End = Lex.position();
 
-    return MemberAccessSyntax{Start, End, Type};
+    return DotAccessSyntax{Start, End, Type};
+
+}
+
+llvm::Expected<SubscriptSyntax> Parser::parseSubscript() {
+    size_t Start = Lex.previousPosition();
+
+    if (!Lex.parsePunctuation('['))
+        return different();
+
+    auto OperandsOrErr = parseOperandList();
+    if (!OperandsOrErr)
+        return invalid(Start, Lex.position(), "expected Operand");
+    auto *Operands = *OperandsOrErr;
+
+    if (!Lex.parsePunctuation(']'))
+        return invalid(Start, Lex.position(), "expected ']'");
+
+    size_t End = Lex.position();
+
+    return SubscriptSyntax{Start, End, Operands};
 
 }
 
@@ -2031,35 +2067,6 @@ llvm::Expected<ElementSyntax> Parser::parseElement() {
     size_t End = Lex.position();
 
     return ElementSyntax{Start, End, Operation, Attributes};
-
-}
-
-llvm::Expected<BlockSyntax> Parser::parseBlock() {
-    size_t Start = Lex.previousPosition();
-
-    if (!Lex.parsePunctuation('{'))
-        return different();
-
-    std::vector<UseSyntax>* Uses = nullptr;
-    {
-        auto ParseResult = parseUseList();
-        if (ParseResult)
-            Uses = *ParseResult;
-    }
-
-    std::vector<StatementSyntax>* Statements = nullptr;
-    {
-        auto ParseResult = parseStatementList();
-        if (ParseResult)
-            Statements = *ParseResult;
-    }
-
-    if (!Lex.parsePunctuation('}'))
-        return invalid(Start, Lex.position(), "expected '}'");
-
-    size_t End = Lex.position();
-
-    return BlockSyntax{Start, End, Uses, Statements};
 
 }
 
@@ -2553,10 +2560,12 @@ llvm::Expected<BindingSyntax> Parser::parseBinding() {
             llvm::consumeError(ParseResult.takeError());
     }
 
-    auto OperationOrErr = parseOperandList();
-    if (!OperationOrErr)
-        return invalid(Start, Lex.position(), "expected Operand");
-    auto *Operation = *OperationOrErr;
+    std::vector<OperandSyntax>* Operation = nullptr;
+    {
+        auto ParseResult = parseOperandList();
+        if (ParseResult)
+            Operation = *ParseResult;
+    }
 
     size_t End = Lex.position();
 
@@ -3046,6 +3055,12 @@ llvm::Expected<ActionSyntax> Parser::parseAction() {
             return ActionSyntax{std::move(*Result)};
         llvm::consumeError(Result.takeError());
     }
+    {
+        auto Result = parseBlock();
+        if (Result)
+            return ActionSyntax{std::move(*Result)};
+        llvm::consumeError(Result.takeError());
+    }
     return different();
 
 }
@@ -3086,6 +3101,35 @@ llvm::Expected<SetSyntax> Parser::parseSet() {
     size_t End = Lex.position();
 
     return SetSyntax{Start, End, Target, Source};
+
+}
+
+llvm::Expected<BlockSyntax> Parser::parseBlock() {
+    size_t Start = Lex.previousPosition();
+
+    if (!Lex.parsePunctuation('{'))
+        return different();
+
+    std::vector<UseSyntax>* Uses = nullptr;
+    {
+        auto ParseResult = parseUseList();
+        if (ParseResult)
+            Uses = *ParseResult;
+    }
+
+    std::vector<StatementSyntax>* Statements = nullptr;
+    {
+        auto ParseResult = parseStatementList();
+        if (ParseResult)
+            Statements = *ParseResult;
+    }
+
+    if (!Lex.parsePunctuation('}'))
+        return invalid(Start, Lex.position(), "expected '}'");
+
+    size_t End = Lex.position();
+
+    return BlockSyntax{Start, End, Uses, Statements};
 
 }
 

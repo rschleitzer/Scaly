@@ -1,0 +1,46 @@
+define BuilderList[T] (head: pointer[Node[T]]) {
+
+    init () (head(null)) {}
+
+    function add(this: BuilderList[T], rp: pointer[Page], element: T) {
+        let new_node Node[T]^rp(element, head)
+        set head: new_node
+    }
+
+    function remove(this: BuilderList[T], element: T) returns bool {
+        var node head
+        var previous_node: pointer[Node[T]] null
+        while node <> null
+        {
+            if (*node).element = element
+            {
+                if previous_node <> null
+                    set (*previous_node).next: (*node).next
+                if node = head
+                    set head: null
+                return true
+            }
+
+            set previous_node: node
+            set node: (*node).next
+        }
+        return false
+    }
+
+    function get_head(this: BuilderList[T]) returns pointer[T] {
+        if head = null
+            return null
+        return &(*head).element
+    }
+
+    function count(this: BuilderList[T]) returns size_t {
+        var list_iterator get_iterator()
+        var i: size_t 0
+        while list_iterator.next() <> null
+            set i: i + 1
+        return i
+    }
+
+    function get_iterator(this: BuilderList[T]) returns BuilderListIterator[T]
+        BuilderListIterator[T](head)
+}
