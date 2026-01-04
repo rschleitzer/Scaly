@@ -529,7 +529,8 @@ llvm::StructType *Emitter::emitStructType(const PlannedStructure &Struct) {
     // Map properties to LLVM types
     std::vector<llvm::Type*> Elements;
     for (const auto &Prop : Struct.Properties) {
-        Elements.push_back(mapType(Prop.PropType));
+        auto *PropTy = mapType(Prop.PropType);
+        Elements.push_back(PropTy);
     }
 
     // Set struct body
@@ -1749,13 +1750,55 @@ llvm::Expected<llvm::Value*> Emitter::emitOperand(const PlannedOperand &Op) {
     if (Op.MemberAccess && !Op.MemberAccess->empty() && Value) {
         // If Value is a pointer to a struct, we need to load it first for extractvalue
         if (Value->getType()->isPointerTy()) {
-            // For PlannedVariable, get the variable type to know what to load
+            // Get the type to load based on the expression type
+            PlannedType BaseType;
             if (auto *Var = std::get_if<PlannedVariable>(&Op.Expr)) {
-                llvm::Type *StructTy = mapType(Var->VariableType);
-                Value = Builder->CreateLoad(StructTy, Value, "load.struct");
+                BaseType = Var->VariableType;
+            } else if (auto *Call = std::get_if<PlannedCall>(&Op.Expr)) {
+                BaseType = Call->ResultType;
+            } else if (auto *GlobalRef = std::get_if<PlannedGlobalRef>(&Op.Expr)) {
+                BaseType = GlobalRef->GlobalType;
+            }
+
+            // If we have a base type and it's a pointer, get the element type
+            if (!BaseType.Name.empty()) {
+                if (BaseType.Name == "pointer" && !BaseType.Generics.empty()) {
+                    // Load the pointed-to struct
+                    auto &InnerType = BaseType.Generics[0];
+                    llvm::Type *StructTy = mapType(InnerType);
+                    Value = Builder->CreateLoad(StructTy, Value, "load.struct");
+                } else {
+                    // Load the struct directly
+                    llvm::Type *StructTy = mapType(BaseType);
+                    Value = Builder->CreateLoad(StructTy, Value, "load.struct");
+                }
             }
         }
+
+        // Now apply member accesses - but handle pointer returns from extractvalue
         for (const auto &Access : *Op.MemberAccess) {
+            // Check if Value is still a pointer (e.g., when extracting a pointer field)
+            if (Value->getType()->isPointerTy()) {
+                // Need to load the struct first - use ParentType (the struct being accessed)
+                llvm::Type *StructTy = mapType(Access.ParentType);
+                if (!StructTy) {
+                    return llvm::make_error<llvm::StringError>(
+                        "Cannot map parent type for member access '" + Access.Name + "'",
+                        llvm::inconvertibleErrorCode()
+                    );
+                }
+                Value = Builder->CreateLoad(StructTy, Value, "deref");
+            }
+
+            // Ensure Value is an aggregate type before extracting
+            llvm::Type *ValTy = Value->getType();
+            if (!ValTy->isAggregateType()) {
+                return llvm::make_error<llvm::StringError>(
+                    "Cannot apply member access '" + Access.Name + "' to non-aggregate type",
+                    llvm::inconvertibleErrorCode()
+                );
+            }
+
             // Use extractvalue for struct field access
             // extractvalue takes a value (not pointer) and field index
             Value = Builder->CreateExtractValue(Value, Access.FieldIndex,
@@ -2332,6 +2375,13 @@ llvm::Expected<llvm::Value*> Emitter::emitIntrinsicUnaryOp(
     if (OpName == "*") {
         // Dereference: load value from pointer
         // Operand is the pointer, ResultType is the element type
+        if (!Operand->getType()->isPointerTy()) {
+            return llvm::make_error<llvm::StringError>(
+                "Dereference operator '*' requires a pointer operand, got: " +
+                    std::to_string(Operand->getType()->getTypeID()),
+                llvm::inconvertibleErrorCode()
+            );
+        }
         return Builder->CreateLoad(Ty, Operand, "deref");
     }
     if (OpName == "&") {
@@ -3018,12 +3068,21 @@ llvm::Expected<llvm::Value*> Emitter::emitWhile(const PlannedWhile &While) {
 
     // Ensure we have a boolean (i1) for the branch
     if (!CondValue->getType()->isIntegerTy(1)) {
-        // Convert to boolean by comparing with zero
+        // Convert to boolean by comparing with zero/null
         if (CondValue->getType()->isIntegerTy()) {
             CondValue = Builder->CreateICmpNE(
                 CondValue,
                 llvm::ConstantInt::get(CondValue->getType(), 0),
                 "while.tobool"
+            );
+        } else if (CondValue->getType()->isPointerTy()) {
+            // Pointer-to-boolean: compare with null
+            // This handles "while let x = ptr_returning_func()" patterns
+            CondValue = Builder->CreateICmpNE(
+                CondValue,
+                llvm::ConstantPointerNull::get(
+                    llvm::cast<llvm::PointerType>(CondValue->getType())),
+                "while.ptrtobool"
             );
         } else {
             LoopStack.pop_back();

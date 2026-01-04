@@ -1106,6 +1106,15 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                         MethodMatch Match;
                         Match.Method = Func;
 
+                        // Set up type substitutions for the struct's type parameters
+                        // This is needed when resolving parameter/return types that use T
+                        std::map<std::string, PlannedType> OldSubst = TypeSubstitutions;
+                        if (!Conc->Parameters.empty() && !StructType.Generics.empty()) {
+                            for (size_t I = 0; I < Conc->Parameters.size() && I < StructType.Generics.size(); ++I) {
+                                TypeSubstitutions[Conc->Parameters[I].Name] = StructType.Generics[I];
+                            }
+                        }
+
                         // Compute mangled name
                         PlannedType ParentType;
                         ParentType.Name = StructType.Name;
@@ -1145,6 +1154,7 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                             Match.ReturnType.Name = "void";
                             Match.ReturnType.Loc = Loc;
                         }
+                        TypeSubstitutions = OldSubst;  // Restore substitutions
                         Candidates.push_back(std::move(Match));
                     }
                 }
@@ -2590,6 +2600,7 @@ llvm::Expected<std::vector<PlannedMemberAccess>> Planner::resolveMemberAccessCha
                     PlannedMemberAccess Access;
                     Access.Name = MemberName;
                     Access.FieldIndex = FieldIndex;
+                    Access.ParentType = Current;  // Type being accessed
                     Access.ResultType = std::move(*Resolved);
                     Result.push_back(std::move(Access));
 
@@ -2612,6 +2623,7 @@ llvm::Expected<std::vector<PlannedMemberAccess>> Planner::resolveMemberAccessCha
                         Access.Name = MemberName;
                         Access.FieldIndex = SIZE_MAX;  // Special marker for methods
                         Access.IsMethod = true;
+                        Access.ParentType = Current;  // Type being accessed
                         Access.ResultType.Name = "function";
                         Access.ResultType.MangledName = "Pv";
                         Result.push_back(std::move(Access));
