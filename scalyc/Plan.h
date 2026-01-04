@@ -54,6 +54,9 @@ struct PlannedType {
     Lifetime Life;
     std::shared_ptr<InstantiationInfo> Origin;  // null if not from generic
 
+    // For fixed-size array types: stores the size reference (e.g., "9" or "PACKED_SIZE")
+    std::string ArraySize;
+
     // For inference: may contain unresolved type variables
     std::shared_ptr<TypeVariable> Variable;  // non-null if this is a type variable
 
@@ -388,6 +391,7 @@ using PlannedExpression = std::variant<
 struct PlannedMemberAccess {
     std::string Name;        // Field name
     size_t FieldIndex;       // Index in struct layout
+    bool IsMethod = false;   // True if this is a method reference
     PlannedType ResultType;  // Type after this access
 };
 

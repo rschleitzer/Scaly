@@ -308,9 +308,18 @@
     <content link = Expression                              property = expression
     <content link = MemberAccess          multiple optional property = members
 
-<syntax id = MemberAccess                 multiple
+<syntax id = MemberAccess                 multiple abstract
+    <content link = DotAccess
+    <content link = Subscript
+
+<syntax id = DotAccess
     <content link = dot
     <content link = Type                                    property = type
+
+<syntax id = Subscript
+    <content link = left_bracket
+    <content link = Operand               multiple          property = operands
+    <content link = right_bracket
 
 <syntax id = Expression                            abstract
     <content link = Literal
@@ -360,12 +369,6 @@
     <content link = Operand               multiple          property = operation
     <content link = Attribute             multiple optional property = attributes
     <content link = comma                          optional
-
-<syntax id = Block
-    <content link = left_curly
-    <content link = Use                   multiple optional property = uses
-    <content link = Statement             multiple optional property = statements
-    <content link = right_curly
 
 <syntax id = If
     <content link = if
@@ -459,7 +462,7 @@
 <syntax id = Binding
     <content identifier                                     property = name
     <content link = BindingAnnotation              optional property = annotation
-    <content link = Operand               multiple          property = operation
+    <content link = Operand               multiple optional property = operation
 
 <syntax id = BindingAnnotation
     <content colon
@@ -553,6 +556,7 @@
 <syntax id = Action                       multiple abstract
     <content link = Operation
     <content link = Set
+    <content link = Block
 
 <syntax id = Operation
     <content link = Operand               multiple          property = operands
@@ -562,6 +566,12 @@
     <content link = Operand               multiple          property = target
     <content colon
     <content link = Operand               multiple          property = source
+
+<syntax id = Block
+    <content link = left_curly
+    <content link = Use                   multiple optional property = uses
+    <content link = Statement             multiple optional property = statements
+    <content link = right_curly
 
 <syntax id = SizeOf
     <content link = sizeof

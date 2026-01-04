@@ -217,10 +217,20 @@ llvm::Expected<Operand> Modeler::handleOperand(const OperandSyntax &Syntax) {
     if (Syntax.members) {
         MemberAccess = std::make_unique<std::vector<Type>>();
         for (const auto &M : *Syntax.members) {
-            auto MemberType = handleType(M.type);
-            if (!MemberType)
-                return MemberType.takeError();
-            MemberAccess->push_back(std::move(**MemberType));
+            if (auto *Dot = std::get_if<DotAccessSyntax>(&M.Value)) {
+                auto MemberType = handleType(Dot->type);
+                if (!MemberType)
+                    return MemberType.takeError();
+                MemberAccess->push_back(std::move(**MemberType));
+            } else if (std::get_if<SubscriptSyntax>(&M.Value)) {
+                // TODO: Subscript access not yet fully supported in semantic model
+                // For now, treat [i] as accessing a member named "[]"
+                // This will need to be updated when we add proper subscript support
+                Type SubscriptType;
+                SubscriptType.Loc = Span{M.Value.index(), M.Value.index()};  // Placeholder
+                SubscriptType.Name = {"[]"};
+                MemberAccess->push_back(std::move(SubscriptType));
+            }
         }
     }
 

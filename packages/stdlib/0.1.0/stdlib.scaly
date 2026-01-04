@@ -6,14 +6,21 @@ define stdlib {
     module runtime
 }
 
+; Platform constants
+define SIZE_MAX: size_t 0xFFFFFFFFFFFFFFFF
+
 ; C runtime functions exposed at top level for easy access
 ; These are external functions from libc, resolved by the linker or JIT
 
 function memcpy(dest: pointer[void], src: pointer[void], n: size_t) returns pointer[void] extern
 function memset(dest: pointer[void], c: i32, n: size_t) returns pointer[void] extern
 function memmove(dest: pointer[void], src: pointer[void], n: size_t) returns pointer[void] extern
+function memcmp(s1: pointer[void], s2: pointer[void], n: size_t) returns i32 extern
 function strlen(s: pointer[i8]) returns size_t extern
 function sqrt(x: double) returns double extern
 function sin(x: double) returns double extern
 function cos(x: double) returns double extern
 function pow(base: double, exp: double) returns double extern
+function aligned_alloc(alignment: size_t, size: size_t) returns pointer[void] extern
+function free(ptr: pointer[void]) extern
+function exit(code: i32) extern

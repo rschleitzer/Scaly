@@ -96,6 +96,8 @@ private:
     llvm::Expected<OperandSyntax> parseOperand();
     llvm::Expected<std::vector<MemberAccessSyntax>*> parseMemberAccessList();
     llvm::Expected<MemberAccessSyntax> parseMemberAccess();
+    llvm::Expected<DotAccessSyntax> parseDotAccess();
+    llvm::Expected<SubscriptSyntax> parseSubscript();
     llvm::Expected<ExpressionSyntax> parseExpression();
     llvm::Expected<LiteralSyntax> parseLiteral();
     llvm::Expected<ObjectSyntax> parseObject();
@@ -105,7 +107,6 @@ private:
     llvm::Expected<VectorSyntax> parseVector();
     llvm::Expected<std::vector<ElementSyntax>*> parseElementList();
     llvm::Expected<ElementSyntax> parseElement();
-    llvm::Expected<BlockSyntax> parseBlock();
     llvm::Expected<IfSyntax> parseIf();
     llvm::Expected<ElseSyntax> parseElse();
     llvm::Expected<MatchSyntax> parseMatch();
@@ -150,6 +151,7 @@ private:
     llvm::Expected<ActionSyntax> parseAction();
     llvm::Expected<OperationSyntax> parseOperation();
     llvm::Expected<SetSyntax> parseSet();
+    llvm::Expected<BlockSyntax> parseBlock();
     llvm::Expected<SizeOfSyntax> parseSizeOf();
     llvm::Expected<AlignOfSyntax> parseAlignOf();
     llvm::Expected<IsSyntax> parseIs();

@@ -1,0 +1,96 @@
+define HashMapIterator[K, V]
+(
+    slot_iterator: VectorIterator[Vector[KeyValuePair[K, V]]]
+    element_iterator: VectorIterator[KeyValuePair[K, V]]
+)
+{
+    init (hash_map: HashMap[K, V]) (slot_iterator(VectorIterator[Vector[KeyValuePair[K, V]]](hash_map.slots)), element_iterator(VectorIterator[KeyValuePair[K, V]](slot_iterator.next()))) {}
+
+    function next(this: HashMapIterator[K, V]) returns pointer[V] {
+        while true
+        {
+            let ret element_iterator.next()
+            if ret <> null
+                return &(*ret).value
+
+            let next_slot slot_iterator.next()
+            if next_slot = null
+                return null
+
+            set element_iterator: VectorIterator[KeyValuePair[K, V]](next_slot)
+        }
+    }
+}
+
+define HashMap[K, V]
+(
+    slots: pointer[Vector[Vector[KeyValuePair[K, V]]]] (null)
+)
+{
+    init (rp: pointer[Page], hash_map_builder: HashMapBuilder[K, V]) {
+        if hash_map_builder.length = 0
+        {
+            set slots: null
+            return
+        }
+
+        set slots: Vector[Vector[KeyValuePair[K, V]]]^rp(rp, (*hash_map_builder.slots).length)
+        let length (*hash_map_builder.slots).length
+        var i: size_t 0
+        while i < length
+        {
+            var array Array[KeyValuePair[K, V]]$()
+            var list_iterator ListIterator[Slot[KeyValuePair[K, V]]]((*(*hash_map_builder.slots).get(i)).head)
+            while let item list_iterator.next()
+                array.add((*item).value)
+            if array.length > 0
+                (*slots).put(i, Vector[KeyValuePair[K, V]](rp, array))
+
+            set i: i + 1
+        }
+    }
+
+    function contains(this: HashMap[K, V], key: K) returns bool {
+        if slots = null
+            return false
+
+        let hash key.hash()
+        let slot_number hash % (*slots).length
+        let slot (*slots).get(slot_number)
+        let length (*slot).length
+        var i: size_t 0
+        while i < length
+        {
+            if key.equals((*(*slot).get(i)).key)
+                return true
+
+            set i: i + 1
+        }
+
+        return false
+    }
+
+    operator [](key: K) returns pointer[V] {
+        return get(key)
+    }
+
+    function get(this: HashMap[K, V], key: K) returns pointer[V] {
+        if slots = null
+            return null
+
+        let hash key.hash()
+        let slot_number hash % (*slots).length
+        let slot (*slots).get(slot_number)
+        let length (*slot).length
+        var i: size_t 0
+        while i < length
+        {
+            if key.equals((*(*slot).get(i)).key)
+                return &(*(*slot).get(i)).value
+
+            set i: i + 1
+        }
+
+        return null
+    }
+}

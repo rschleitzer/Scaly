@@ -12,8 +12,73 @@
 #include "llvm/Support/Path.h"
 #include "llvm/Support/raw_ostream.h"
 #include <iostream>
+#include <set>
 
 using namespace llvm;
+
+// Helper function to load sibling .scaly files for multi-file compilation
+// Loads files from the same directory and sibling directories
+static void loadSiblingPrograms(scaly::Planner &Planner, StringRef Filename) {
+    SmallString<256> Dir = sys::path::parent_path(Filename);
+    if (Dir.empty()) return;
+
+    std::set<std::string> ProcessedDirs;
+
+    // Helper lambda to load all .scaly files from a directory
+    auto loadFromDir = [&](StringRef DirPath) {
+        if (ProcessedDirs.count(DirPath.str())) return;
+        ProcessedDirs.insert(DirPath.str());
+
+        std::error_code EC;
+        for (sys::fs::directory_iterator DI(DirPath, EC), DE; DI != DE && !EC; DI.increment(EC)) {
+            StringRef SibPath = DI->path();
+            // Skip the main file and non-.scaly files
+            if (SibPath == Filename || !SibPath.ends_with(".scaly")) {
+                continue;
+            }
+
+            auto SibBuf = MemoryBuffer::getFile(SibPath);
+            if (!SibBuf) continue;
+
+            scaly::Parser SibParser((*SibBuf)->getBuffer());
+            auto SibParse = SibParser.parseProgram();
+            if (!SibParse) {
+                llvm::consumeError(SibParse.takeError());
+                continue;
+            }
+
+            scaly::Modeler SibModeler(SibPath);
+            auto SibModel = SibModeler.buildProgram(*SibParse);
+            if (!SibModel) {
+                llvm::consumeError(SibModel.takeError());
+                continue;
+            }
+
+            Planner.addSiblingProgram(std::make_shared<scaly::Program>(std::move(*SibModel)));
+        }
+    };
+
+    // Load from the same directory
+    loadFromDir(Dir);
+
+    // Load from sibling directories (directories at the same level)
+    SmallString<256> ParentDir = sys::path::parent_path(Dir);
+    if (!ParentDir.empty()) {
+        std::error_code EC;
+        for (sys::fs::directory_iterator DI(ParentDir, EC), DE; DI != DE && !EC; DI.increment(EC)) {
+            StringRef SubPath = DI->path();
+            // Check if it's a directory and not the same as our dir
+            if (SubPath == Dir) continue;
+
+            bool IsDir = false;
+            std::error_code EC2;
+            EC2 = sys::fs::is_directory(SubPath, IsDir);
+            if (!EC2 && IsDir) {
+                loadFromDir(SubPath);
+            }
+        }
+    }
+}
 
 // Command line options
 static cl::OptionCategory ScalyCategory("Scaly Compiler Options");
@@ -220,38 +285,7 @@ static int planFile(StringRef Filename) {
     }
 
     scaly::Planner Planner(Filename);
-
-    // Load sibling .scaly files for multi-file compilation
-    SmallString<256> Dir = sys::path::parent_path(Filename);
-    if (!Dir.empty()) {
-        std::error_code EC;
-        for (sys::fs::directory_iterator DI(Dir, EC), DE; DI != DE && !EC; DI.increment(EC)) {
-            StringRef SibPath = DI->path();
-            // Skip the main file and non-.scaly files
-            if (SibPath == Filename || !SibPath.ends_with(".scaly")) {
-                continue;
-            }
-
-            auto SibBuf = MemoryBuffer::getFile(SibPath);
-            if (!SibBuf) continue;
-
-            scaly::Parser SibParser((*SibBuf)->getBuffer());
-            auto SibParse = SibParser.parseProgram();
-            if (!SibParse) {
-                llvm::consumeError(SibParse.takeError());
-                continue;
-            }
-
-            scaly::Modeler SibModeler(SibPath);
-            auto SibModel = SibModeler.buildProgram(*SibParse);
-            if (!SibModel) {
-                llvm::consumeError(SibModel.takeError());
-                continue;
-            }
-
-            Planner.addSiblingProgram(std::make_shared<scaly::Program>(std::move(*SibModel)));
-        }
-    }
+    loadSiblingPrograms(Planner, Filename);
 
     auto PlanResult = Planner.plan(*ModelResult);
     if (!PlanResult) {
@@ -268,6 +302,16 @@ static int planFile(StringRef Filename) {
         outs() << "  Concepts: " << PlanResult->MainModule.Concepts.size() << "\n";
         outs() << "  Instantiated structures: " << PlanResult->Structures.size() << "\n";
         outs() << "  Instantiated functions: " << PlanResult->Functions.size() << "\n";
+
+        // Debug: show Vector.char methods if present
+        for (const auto &[name, Struct] : PlanResult->Structures) {
+            if (name.find("Vector") != std::string::npos) {
+                outs() << "  Structure: " << name << " has " << Struct.Methods.size() << " methods\n";
+                for (const auto &Method : Struct.Methods) {
+                    outs() << "    Method: " << Method.MangledName << "\n";
+                }
+            }
+        }
     }
     return 0;
 }
@@ -299,37 +343,7 @@ static int compileFile(StringRef Filename, StringRef OutputPath) {
     }
 
     scaly::Planner Planner(Filename);
-
-    // Load sibling .scaly files for multi-file compilation
-    SmallString<256> Dir = sys::path::parent_path(Filename);
-    if (!Dir.empty()) {
-        std::error_code EC;
-        for (sys::fs::directory_iterator DI(Dir, EC), DE; DI != DE && !EC; DI.increment(EC)) {
-            StringRef SibPath = DI->path();
-            if (SibPath == Filename || !SibPath.ends_with(".scaly")) {
-                continue;
-            }
-
-            auto SibBuf = MemoryBuffer::getFile(SibPath);
-            if (!SibBuf) continue;
-
-            scaly::Parser SibParser((*SibBuf)->getBuffer());
-            auto SibParse = SibParser.parseProgram();
-            if (!SibParse) {
-                llvm::consumeError(SibParse.takeError());
-                continue;
-            }
-
-            scaly::Modeler SibModeler(SibPath);
-            auto SibModel = SibModeler.buildProgram(*SibParse);
-            if (!SibModel) {
-                llvm::consumeError(SibModel.takeError());
-                continue;
-            }
-
-            Planner.addSiblingProgram(std::make_shared<scaly::Program>(std::move(*SibModel)));
-        }
-    }
+    loadSiblingPrograms(Planner, Filename);
 
     auto PlanResult = Planner.plan(*ModelResult);
     if (!PlanResult) {
@@ -383,37 +397,7 @@ static int emitLLVMFile(StringRef Filename, StringRef OutputPath) {
     }
 
     scaly::Planner Planner(Filename);
-
-    // Load sibling .scaly files for multi-file compilation
-    SmallString<256> Dir = sys::path::parent_path(Filename);
-    if (!Dir.empty()) {
-        std::error_code EC;
-        for (sys::fs::directory_iterator DI(Dir, EC), DE; DI != DE && !EC; DI.increment(EC)) {
-            StringRef SibPath = DI->path();
-            if (SibPath == Filename || !SibPath.ends_with(".scaly")) {
-                continue;
-            }
-
-            auto SibBuf = MemoryBuffer::getFile(SibPath);
-            if (!SibBuf) continue;
-
-            scaly::Parser SibParser((*SibBuf)->getBuffer());
-            auto SibParse = SibParser.parseProgram();
-            if (!SibParse) {
-                llvm::consumeError(SibParse.takeError());
-                continue;
-            }
-
-            scaly::Modeler SibModeler(SibPath);
-            auto SibModel = SibModeler.buildProgram(*SibParse);
-            if (!SibModel) {
-                llvm::consumeError(SibModel.takeError());
-                continue;
-            }
-
-            Planner.addSiblingProgram(std::make_shared<scaly::Program>(std::move(*SibModel)));
-        }
-    }
+    loadSiblingPrograms(Planner, Filename);
 
     auto PlanResult = Planner.plan(*ModelResult);
     if (!PlanResult) {

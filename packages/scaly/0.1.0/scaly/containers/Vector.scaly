@@ -24,7 +24,7 @@ define Vector[T]
     data: pointer[T]
 )
 {
-    init () (length(0), data(nullptr)) {}
+    init () (length(0), data(null)) {}
 
     init (data: pointer[T], length: size_t) (length(length), data(data)) {}
 
@@ -88,13 +88,13 @@ define Vector[T]
     function get(this: Vector[T], i: size_t) returns pointer[T] {
         if i >= length
             return null
-        return (*this)[i]
+        return data + i
     }
 
     function put(this: Vector[T], i: size_t, item: T) returns bool {
         if i >= length
             return false
-        set *(*this)[i]: item
+        set *(data + i): item
         return true
     }
 

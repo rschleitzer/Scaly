@@ -305,7 +305,7 @@ std::string Planner::encodeType(const PlannedType &Type) {
     if (Type.Name == "ulong") return "m";
     if (Type.Name == "float") return "f";
     if (Type.Name == "double") return "d";
-    if (Type.Name == "size") return "m";  // size_t → unsigned long
+    if (Type.Name == "size" || Type.Name == "size_t") return "m";  // size_t → unsigned long
 
     // Pointer types
     if (Type.Name.size() > 1 && Type.Name.back() == '*') {
@@ -328,7 +328,13 @@ std::string Planner::encodeType(const PlannedType &Type) {
 
     // Generic types: List[int] → I4ListIiEE
     if (!Type.Generics.empty()) {
-        std::string Result = "I" + encodeName(Type.Name);
+        // Extract base name if Name contains instantiation suffix (e.g., "Vector.char" -> "Vector")
+        std::string BaseName = Type.Name;
+        size_t DotPos = BaseName.find('.');
+        if (DotPos != std::string::npos) {
+            BaseName = BaseName.substr(0, DotPos);
+        }
+        std::string Result = "I" + encodeName(BaseName);
         for (const auto &Arg : Type.Generics) {
             Result += encodeType(Arg);
         }
@@ -808,6 +814,7 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                         // Compute mangled name
                         PlannedType ParentType;
                         ParentType.Name = StructType.Name;
+                        ParentType.Generics = StructType.Generics;  // Preserve generics for correct mangling
                         // Use Struct's mangled name if available, otherwise use StructType's
                         ParentType.MangledName = Struct ? Struct->MangledName :
                             (StructType.MangledName.empty() ? StructType.Name : StructType.MangledName);
@@ -846,6 +853,147 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                 }
             }
         }
+    }
+
+    return std::nullopt;
+}
+
+std::optional<Planner::MethodMatch> Planner::lookupMethod(
+    const PlannedType &StructType,
+    llvm::StringRef MethodName,
+    const std::vector<PlannedType> &ArgTypes,
+    Span Loc) {
+
+    // Collect all method candidates
+    std::vector<MethodMatch> Candidates;
+
+    const PlannedStructure *Struct = nullptr;
+
+    // Look up the struct in the instantiation cache
+    auto StructIt = InstantiatedStructures.find(StructType.Name);
+    if (StructIt != InstantiatedStructures.end()) {
+        Struct = &StructIt->second;
+    } else {
+        StructIt = InstantiatedStructures.find(StructType.MangledName);
+        if (StructIt != InstantiatedStructures.end()) {
+            Struct = &StructIt->second;
+        }
+    }
+
+    // Check currently planning structure
+    if (!Struct && CurrentStructure &&
+        (CurrentStructure->Name == StructType.Name ||
+         CurrentStructure->MangledName == StructType.MangledName)) {
+        Struct = CurrentStructure;
+    }
+
+    // Collect from planned methods
+    if (Struct) {
+        for (const auto &Method : Struct->Methods) {
+            if (Method.Name == MethodName) {
+                MethodMatch Match;
+                Match.Method = nullptr;
+                Match.MangledName = Method.MangledName;
+                if (Method.Returns) {
+                    Match.ReturnType = *Method.Returns;
+                } else {
+                    Match.ReturnType.Name = "void";
+                    Match.ReturnType.Loc = Loc;
+                }
+                // Collect parameter types (skip 'this')
+                for (size_t i = 1; i < Method.Input.size(); ++i) {
+                    if (Method.Input[i].ItemType) {
+                        Match.ParameterTypes.push_back(*Method.Input[i].ItemType);
+                    }
+                }
+                Candidates.push_back(std::move(Match));
+            }
+        }
+    }
+
+    // Also collect from Model's Concept
+    std::string BaseName = StructType.Name;
+    size_t DotPos = BaseName.find('.');
+    if (DotPos != std::string::npos) {
+        BaseName = BaseName.substr(0, DotPos);
+    }
+    const Concept *Conc = lookupConcept(BaseName);
+    if (Conc) {
+        if (auto *ModelStruct = std::get_if<Structure>(&Conc->Def)) {
+            for (const auto &Member : ModelStruct->Members) {
+                if (auto *Func = std::get_if<Function>(&Member)) {
+                    if (Func->Name == MethodName) {
+                        MethodMatch Match;
+                        Match.Method = Func;
+
+                        // Compute mangled name
+                        PlannedType ParentType;
+                        ParentType.Name = StructType.Name;
+                        ParentType.Generics = StructType.Generics;
+                        ParentType.MangledName = Struct ? Struct->MangledName :
+                            (StructType.MangledName.empty() ? StructType.Name : StructType.MangledName);
+                        std::vector<PlannedItem> Params;
+                        for (const auto &Inp : Func->Input) {
+                            PlannedItem Item;
+                            Item.Loc = Inp.Loc;
+                            Item.Name = Inp.Name;
+                            if (Inp.ItemType) {
+                                auto Resolved = resolveType(*Inp.ItemType, Inp.Loc);
+                                if (Resolved) {
+                                    Item.ItemType = std::make_shared<PlannedType>(*Resolved);
+                                    // Collect parameter types (skip 'this')
+                                    if (!Inp.Name || *Inp.Name != "this") {
+                                        Match.ParameterTypes.push_back(*Resolved);
+                                    }
+                                }
+                            }
+                            Params.push_back(Item);
+                        }
+                        Match.MangledName = mangleFunction(Func->Name, Params, &ParentType);
+
+                        // Resolve return type
+                        if (Func->Returns) {
+                            auto Resolved = resolveType(*Func->Returns, Loc);
+                            if (Resolved) {
+                                Match.ReturnType = *Resolved;
+                            } else {
+                                llvm::consumeError(Resolved.takeError());
+                                Match.ReturnType.Name = "void";
+                                Match.ReturnType.Loc = Loc;
+                            }
+                        } else {
+                            Match.ReturnType.Name = "void";
+                            Match.ReturnType.Loc = Loc;
+                        }
+                        Candidates.push_back(std::move(Match));
+                    }
+                }
+            }
+        }
+    }
+
+    // Now find the best match based on argument types
+    for (const auto &Candidate : Candidates) {
+        if (Candidate.ParameterTypes.size() != ArgTypes.size()) {
+            continue;
+        }
+
+        bool AllMatch = true;
+        for (size_t i = 0; i < ArgTypes.size(); ++i) {
+            if (!typesEqual(Candidate.ParameterTypes[i], ArgTypes[i])) {
+                AllMatch = false;
+                break;
+            }
+        }
+
+        if (AllMatch) {
+            return Candidate;
+        }
+    }
+
+    // No exact match found, fall back to first candidate (for backwards compatibility)
+    if (!Candidates.empty()) {
+        return Candidates[0];
     }
 
     return std::nullopt;
@@ -948,16 +1096,30 @@ std::optional<Planner::OperatorMatch> Planner::findOperator(
     static const std::set<std::string> ComparisonOps = {"=", "<>", "<", ">", "<=", ">="};
     static const std::set<std::string> BitwiseOps = {"&", "|", "^", "<<", ">>"};
 
-    bool IsPrimitiveType = (Left.Name == "i64" || Left.Name == "i32" ||
-                            Left.Name == "i16" || Left.Name == "i8" ||
-                            Left.Name == "u64" || Left.Name == "u32" ||
-                            Left.Name == "u16" || Left.Name == "u8" ||
-                            Left.Name == "f64" || Left.Name == "f32" ||
-                            Left.Name == "bool" ||
-                            Left.Name == "int" || Left.Name == "float" ||
-                            Left.Name == "double" || Left.Name == "size_t");
+    auto isIntegerType = [](const std::string& Name) {
+        return Name == "i64" || Name == "i32" || Name == "i16" || Name == "i8" ||
+               Name == "u64" || Name == "u32" || Name == "u16" || Name == "u8" ||
+               Name == "int" || Name == "size_t" || Name == "char";
+    };
+    auto isFloatType = [](const std::string& Name) {
+        return Name == "f64" || Name == "f32" || Name == "float" || Name == "double";
+    };
+    auto isNumericType = [&](const std::string& Name) {
+        return isIntegerType(Name) || isFloatType(Name);
+    };
 
-    if (IsPrimitiveType && typesEqual(Left, Right)) {
+    bool LeftIsPrimitive = isNumericType(Left.Name) || Left.Name == "bool";
+    bool RightIsPrimitive = isNumericType(Right.Name) || Right.Name == "bool";
+
+    // Allow operations between compatible primitive types
+    // - Same types: always allowed
+    // - Different integer types: allowed for comparisons and arithmetic
+    // - Integer + float: allowed (implicit conversion)
+    bool TypesCompatible = typesEqual(Left, Right) ||
+        (isIntegerType(Left.Name) && isIntegerType(Right.Name)) ||
+        (isNumericType(Left.Name) && isNumericType(Right.Name));
+
+    if (LeftIsPrimitive && RightIsPrimitive && TypesCompatible) {
         std::string OpName = Name.str();
 
         // Determine result type and if operator is valid
@@ -1731,15 +1893,83 @@ llvm::Expected<PlannedOperand> Planner::collapseOperandSequence(
         }
     }
 
-    // Handle prefix operator (e.g., -x, !x)
+    // Handle prefix operator (e.g., -x, !x, *ptr)
+    // Prefix operators only consume ONE operand (the immediately following one)
+    // For `*p >= 5`, `*` applies to `p`, then the result is compared with `5`
     if (auto* TypeExpr = std::get_if<PlannedType>(&Ops[0].Expr)) {
         if (isOperatorName(TypeExpr->Name) && Ops.size() >= 2) {
-            // Prefix operator: collapse rest first, then apply prefix
-            std::vector<PlannedOperand> RestOps(Ops.begin() + 1, Ops.end());
-            auto RestResult = collapseOperandSequence(std::move(RestOps));
-            if (!RestResult) {
-                return RestResult.takeError();
+            // Find the operand for this prefix operator
+            // It's either:
+            // 1. Another prefix operator followed by its operand (e.g., *-x)
+            // 2. A non-operator value (e.g., *p)
+            PlannedOperand PrefixOperand;
+            size_t ConsumedOps = 1; // Start after the prefix operator itself
+
+            // Check if next element is also a prefix operator
+            if (auto* NextType = std::get_if<PlannedType>(&Ops[1].Expr)) {
+                if (isOperatorName(NextType->Name)) {
+                    // Recursively handle chained prefix operators (e.g., *-x)
+                    // Take everything from the second prefix operator to the end
+                    // then extract just the prefix chain result
+                    std::vector<PlannedOperand> ChainOps(Ops.begin() + 1, Ops.end());
+                    auto ChainResult = collapseOperandSequence(std::move(ChainOps));
+                    if (!ChainResult) {
+                        return ChainResult.takeError();
+                    }
+                    // This consumes the entire chain, but we only want the prefix part
+                    // Actually, we need to figure out how many ops the inner prefix consumed
+                    // For simplicity, just take Ops[1] as the inner prefix operand directly
+                    // This handles cases like *-p but may not be perfect for all cases
+                    PrefixOperand = std::move(*ChainResult);
+                    // Return immediately since the entire sequence was consumed
+
+                    // Create PlannedCall for THIS prefix operator (the outer one)
+                    PlannedCall Call;
+                    Call.Loc = Ops[0].Loc;
+                    Call.Name = TypeExpr->Name;
+                    Call.IsOperator = true;
+                    Call.IsIntrinsic = true;
+
+                    Call.Args = std::make_shared<std::vector<PlannedOperand>>();
+                    Call.Args->push_back(std::move(PrefixOperand));
+
+                    PlannedType OperandType = Call.Args->front().ResultType;
+                    if (TypeExpr->Name == "!" || TypeExpr->Name == "not") {
+                        Call.ResultType.Name = "bool";
+                        Call.ResultType.MangledName = "bool";
+                    } else if (TypeExpr->Name == "*") {
+                        auto ElementType = getPointerElementType(OperandType);
+                        if (ElementType) {
+                            Call.ResultType = *ElementType;
+                        } else {
+                            Call.ResultType = OperandType;
+                        }
+                    } else if (TypeExpr->Name == "&") {
+                        Call.ResultType.Loc = Ops[0].Loc;
+                        Call.ResultType.Name = "pointer";
+                        Call.ResultType.Generics.push_back(OperandType);
+                        Call.ResultType.MangledName = "P" + OperandType.MangledName;
+                    } else {
+                        Call.ResultType = OperandType;
+                    }
+
+                    std::vector<PlannedItem> ParamItems;
+                    PlannedItem Item;
+                    Item.ItemType = std::make_shared<PlannedType>(OperandType);
+                    ParamItems.push_back(Item);
+                    Call.MangledName = mangleOperator(TypeExpr->Name, ParamItems);
+
+                    PlannedOperand Result;
+                    Result.Loc = Call.Loc;
+                    Result.ResultType = Call.ResultType;
+                    Result.Expr = std::move(Call);
+                    return Result;
+                }
             }
+
+            // Next element is a regular operand (not a prefix operator)
+            PrefixOperand = std::move(Ops[1]);
+            ConsumedOps = 2; // prefix operator + its operand
 
             // Create PlannedCall for prefix operator
             PlannedCall Call;
@@ -1749,7 +1979,7 @@ llvm::Expected<PlannedOperand> Planner::collapseOperandSequence(
             Call.IsIntrinsic = true;  // Prefix operators on primitives are intrinsic
 
             Call.Args = std::make_shared<std::vector<PlannedOperand>>();
-            Call.Args->push_back(std::move(*RestResult));
+            Call.Args->push_back(std::move(PrefixOperand));
 
             // Result type: depends on the operator
             PlannedType OperandType = Call.Args->front().ResultType;
@@ -1783,11 +2013,23 @@ llvm::Expected<PlannedOperand> Planner::collapseOperandSequence(
             ParamItems.push_back(Item);
             Call.MangledName = mangleOperator(TypeExpr->Name, ParamItems);
 
-            PlannedOperand Result;
-            Result.Loc = Call.Loc;
-            Result.ResultType = Call.ResultType;
-            Result.Expr = std::move(Call);
-            return Result;
+            PlannedOperand PrefixResult;
+            PrefixResult.Loc = Call.Loc;
+            PrefixResult.ResultType = Call.ResultType;
+            PrefixResult.Expr = std::move(Call);
+
+            // If there are remaining operands after the prefix operator and its operand,
+            // continue processing with the result as the new left operand
+            // For `*p >= 5`: Ops = [*, p, >=, 5], after prefix: [*p_result, >=, 5]
+            if (ConsumedOps < Ops.size()) {
+                std::vector<PlannedOperand> RemainingOps;
+                RemainingOps.push_back(std::move(PrefixResult));
+                for (size_t j = ConsumedOps; j < Ops.size(); ++j) {
+                    RemainingOps.push_back(std::move(Ops[j]));
+                }
+                return collapseOperandSequence(std::move(RemainingOps));
+            }
+            return PrefixResult;
         }
     }
 
@@ -2091,6 +2333,27 @@ llvm::Expected<std::vector<PlannedMemberAccess>> Planner::resolveMemberAccessCha
             }
             TypeSubstitutions = OldSubst;
             if (Found) continue;
+
+            // Check methods
+            for (const auto& Member : Struct->Members) {
+                if (auto* Func = std::get_if<Function>(&Member)) {
+                    if (Func->Name == MemberName) {
+                        // Method reference - return a "method" type
+                        // The actual call will be resolved later
+                        PlannedMemberAccess Access;
+                        Access.Name = MemberName;
+                        Access.FieldIndex = SIZE_MAX;  // Special marker for methods
+                        Access.IsMethod = true;
+                        Access.ResultType.Name = "function";
+                        Access.ResultType.MangledName = "Pv";
+                        Result.push_back(std::move(Access));
+                        Current = Result.back().ResultType;
+                        Found = true;
+                        break;
+                    }
+                }
+            }
+            if (Found) continue;
         }
 
         // Member not found
@@ -2208,7 +2471,13 @@ llvm::Expected<PlannedType> Planner::resolveNameOrVariable(const Type &T) {
         if (CurrentStructureProperties) {
             // Check if 'this' is in scope
             auto ThisType = lookupLocal("this");
-            if (ThisType && ThisType->Name == CurrentStructureName) {
+            // Extract base name from CurrentStructureName for generic types
+            std::string BaseStructName = CurrentStructureName;
+            size_t DotPos = BaseStructName.find('.');
+            if (DotPos != std::string::npos) {
+                BaseStructName = BaseStructName.substr(0, DotPos);
+            }
+            if (ThisType && (ThisType->Name == CurrentStructureName || ThisType->Name == BaseStructName)) {
                 // Look for property with this name
                 for (const auto &Prop : *CurrentStructureProperties) {
                     if (Prop.Name == Name) {
@@ -2638,6 +2907,36 @@ llvm::Expected<PlannedType> Planner::resolveType(const Type &T, Span Instantiati
     // Handle pointer without generics - this is an error
     if (Name == "pointer" && Result.Generics.empty()) {
         return makeGenericArityError(File, T.Loc, Name, 1, 0);
+    }
+
+    // Handle fixed-size array types: char[]N, int[]N, etc.
+    // When a primitive type has a "generic argument", it's actually an array size
+    // Convert char[]9 to pointer[char] for stack array access
+    bool IsPrimitive = (Name == "char" || Name == "int" || Name == "bool" ||
+                        Name == "size_t" || Name == "float" || Name == "double" ||
+                        Name == "i8" || Name == "i16" || Name == "i32" || Name == "i64" ||
+                        Name == "u8" || Name == "u16" || Name == "u32" || Name == "u64");
+    if (IsPrimitive && !Result.Generics.empty()) {
+        // This is a fixed-size array type like char[]PACKED_SIZE
+        // Store the array size in ArraySize field
+        // The generic argument is the array size (a constant like PACKED_SIZE)
+        // For stack arrays, we treat them as pointer[T] for pointer arithmetic
+        PlannedType PtrType;
+        PtrType.Loc = T.Loc;
+        PtrType.Name = "pointer";
+        PlannedType ElemType;
+        ElemType.Loc = T.Loc;
+        ElemType.Name = Name;
+        ElemType.MangledName = mangleType(ElemType);
+        PtrType.Generics.push_back(std::move(ElemType));
+        PtrType.MangledName = "P" + PtrType.Generics[0].MangledName;
+        PtrType.Life = T.Life;
+        // Store array size for alloca sizing - the generic argument should be a constant
+        // For now, use the Name of the first generic as the size reference
+        if (!Result.Generics.empty()) {
+            PtrType.ArraySize = Result.Generics[0].Name;
+        }
+        return PtrType;
     }
 
     // Check if this type refers to a generic Concept that needs instantiation
@@ -3094,7 +3393,13 @@ llvm::Expected<PlannedOperand> Planner::planOperand(const Operand &Op) {
             } else if (CurrentStructureProperties) {
                 // Check if first element is a property of the current structure
                 auto ThisType = lookupLocal("this");
-                if (ThisType && ThisType->Name == CurrentStructureName) {
+                // Extract base name from CurrentStructureName for generic types
+                std::string BaseStructName = CurrentStructureName;
+                size_t DotPos = BaseStructName.find('.');
+                if (DotPos != std::string::npos) {
+                    BaseStructName = BaseStructName.substr(0, DotPos);
+                }
+                if (ThisType && (ThisType->Name == CurrentStructureName || ThisType->Name == BaseStructName)) {
                     for (const auto &Prop : *CurrentStructureProperties) {
                         if (Prop.Name == TypeExpr->Name[0]) {
                             // First element is a property - convert to this.property.rest...
@@ -3119,11 +3424,90 @@ llvm::Expected<PlannedOperand> Planner::planOperand(const Operand &Op) {
                     }
                 }
             }
+
+            // Check for qualified global constant access (e.g., hashing.HASH_PRIMES)
+            if (ImplicitMemberAccess.empty() && TypeExpr->Name.size() == 2) {
+                const std::string& NamespaceName = TypeExpr->Name[0];
+                const std::string& GlobalName = TypeExpr->Name[1];
+
+                // Check if first element is a namespace concept
+                const Concept* Conc = lookupConcept(NamespaceName);
+                if (Conc && std::holds_alternative<Namespace>(Conc->Def)) {
+                    // Look for a global constant in this namespace
+                    const Namespace& NS = std::get<Namespace>(Conc->Def);
+                    for (const auto& Member : NS.Members) {
+                        if (auto* NestedConc = std::get_if<Concept>(&Member)) {
+                            if (NestedConc->Name == GlobalName &&
+                                std::holds_alternative<Global>(NestedConc->Def)) {
+                                // Found the global - plan it if needed
+                                auto GlobalIt = PlannedGlobals.find(GlobalName);
+                                if (GlobalIt == PlannedGlobals.end()) {
+                                    auto PlannedConc = planConcept(*NestedConc);
+                                    if (PlannedConc) {
+                                        GlobalIt = PlannedGlobals.find(GlobalName);
+                                    }
+                                }
+                                if (GlobalIt != PlannedGlobals.end()) {
+                                    // Return the global reference
+                                    const auto& GVal = GlobalIt->second.Value;
+                                    bool IsArray = !GVal.empty() &&
+                                        std::holds_alternative<PlannedMatrix>(GVal[0].Expr);
+
+                                    if (!IsArray && GVal.size() == 1) {
+                                        // Scalar constant
+                                        PlannedOperand ResultOp;
+                                        ResultOp.Loc = Op.Loc;
+                                        ResultOp.Expr = GVal[0].Expr;
+                                        ResultOp.ResultType = GlobalIt->second.GlobalType;
+                                        return ResultOp;
+                                    }
+
+                                    // Array constant - return a pointer to the array
+                                    PlannedGlobalRef GRef;
+                                    GRef.Loc = Op.Loc;
+                                    GRef.Name = GlobalIt->second.Name;
+                                    GRef.MangledName = GlobalIt->second.MangledName;
+                                    GRef.GlobalType = GlobalIt->second.GlobalType;
+
+                                    PlannedOperand ResultOp;
+                                    ResultOp.Loc = Op.Loc;
+                                    ResultOp.Expr = std::move(GRef);
+                                    PlannedType PtrType;
+                                    PtrType.Loc = GlobalIt->second.GlobalType.Loc;
+                                    PtrType.Name = "pointer";
+                                    if (GlobalIt->second.GlobalType.Generics.empty()) {
+                                        PtrType.Generics.push_back(GlobalIt->second.GlobalType);
+                                        PtrType.MangledName = "P" + GlobalIt->second.GlobalType.MangledName;
+                                    } else {
+                                        PtrType.Generics = GlobalIt->second.GlobalType.Generics;
+                                        PtrType.MangledName = "P" + GlobalIt->second.GlobalType.MangledName;
+                                    }
+                                    ResultOp.ResultType = PtrType;
+                                    return ResultOp;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
         // Check for implicit property access (e.g., just "x" in a method body)
         // This should become "this.x"
         else if (TypeExpr->Name.size() == 1 && (!TypeExpr->Generics || TypeExpr->Generics->empty())) {
             const std::string& Name = TypeExpr->Name[0];
+
+            // Check for built-in constants (available without loading stdlib)
+            if (Name == "SIZE_MAX") {
+                PlannedOperand ResultOp;
+                ResultOp.Loc = Op.Loc;
+                ResultOp.Expr = PlannedConstant{IntegerConstant{0xFFFFFFFFFFFFFFFFULL}};
+                PlannedType SizeType;
+                SizeType.Loc = Op.Loc;
+                SizeType.Name = "size_t";
+                SizeType.MangledName = "m";
+                ResultOp.ResultType = SizeType;
+                return ResultOp;
+            }
 
             // Check if this is a global constant
             auto GlobalIt = PlannedGlobals.find(Name);
@@ -3185,9 +3569,20 @@ llvm::Expected<PlannedOperand> Planner::planOperand(const Operand &Op) {
                 ResultOp.ResultType = PtrType;
                 return ResultOp;
             }
-            if (CurrentStructureProperties) {
-                auto ThisType = lookupLocal("this");
-                if (ThisType && ThisType->Name == CurrentStructureName) {
+            // Check for implicit property access: when 'data' is used in a method body,
+            // it should become 'this.data'. But ONLY if 'this' is actually in scope.
+            // This guards against context mismatches during recursive planning.
+            auto ThisType = lookupLocal("this");
+            if (CurrentStructureProperties && ThisType) {
+                // Extract base name from CurrentStructureName for generic types
+                // e.g., "VectorIterator.char" -> "VectorIterator"
+                std::string BaseStructName = CurrentStructureName;
+                size_t DotPos = BaseStructName.find('.');
+                if (DotPos != std::string::npos) {
+                    BaseStructName = BaseStructName.substr(0, DotPos);
+                }
+
+                if (ThisType->Name == CurrentStructureName || ThisType->Name == BaseStructName) {
                     for (const auto &Prop : *CurrentStructureProperties) {
                         if (Prop.Name == Name) {
                             // Convert to "this" with member access to the property
@@ -3276,7 +3671,13 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                     bool IsProperty = false;
                     if (!LocalBind && CurrentStructureProperties) {
                         auto ThisType = lookupLocal("this");
-                        if (ThisType && ThisType->Name == CurrentStructureName) {
+                        // Extract base name from CurrentStructureName for generic types
+                        std::string BaseStructName = CurrentStructureName;
+                        size_t DotPos = BaseStructName.find('.');
+                        if (DotPos != std::string::npos) {
+                            BaseStructName = BaseStructName.substr(0, DotPos);
+                        }
+                        if (ThisType && (ThisType->Name == CurrentStructureName || ThisType->Name == BaseStructName)) {
                             for (const auto &Prop : *CurrentStructureProperties) {
                                 if (Prop.Name == TypeExpr->Name[0]) {
                                     IsProperty = true;
@@ -3309,17 +3710,27 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             return PlannedVar.takeError();
                         }
 
-                        // Look up the method on the variable's type
-                        auto MethodMatch = lookupMethod(PlannedVar->ResultType, MethodName, Op.Loc);
-                        if (MethodMatch) {
-                            // Plan the arguments tuple
-                            Operand ArgsOp = NextOp;
-                            ArgsOp.MemberAccess = nullptr;
-                            auto PlannedArgs = planOperand(ArgsOp);
-                            if (!PlannedArgs) {
-                                return PlannedArgs.takeError();
-                            }
+                        // Plan the arguments first to get their types for overload resolution
+                        Operand ArgsOp = NextOp;
+                        ArgsOp.MemberAccess = nullptr;
+                        auto PlannedArgs = planOperand(ArgsOp);
+                        if (!PlannedArgs) {
+                            return PlannedArgs.takeError();
+                        }
 
+                        // Extract argument types for overload resolution
+                        std::vector<PlannedType> ArgTypes;
+                        if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedArgs->Expr)) {
+                            for (const auto& Comp : TupleExpr->Components) {
+                                for (const auto& ValOp : Comp.Value) {
+                                    ArgTypes.push_back(ValOp.ResultType);
+                                }
+                            }
+                        }
+
+                        // Look up the method on the variable's type with overload resolution
+                        auto MethodMatch = lookupMethod(PlannedVar->ResultType, MethodName, ArgTypes, Op.Loc);
+                        if (MethodMatch) {
                             // Create method call with instance as first argument
                             PlannedCall Call;
                             Call.Loc = Op.Loc;
@@ -3426,17 +3837,27 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                     return PlannedBase.takeError();
                 }
 
-                // Look up the method on the base type
-                auto MethodMatch = lookupMethod(PlannedBase->ResultType, MethodName, Op.Loc);
-                if (MethodMatch) {
-                    // Plan the arguments tuple
-                    Operand ArgsOp = NextOp;
-                    ArgsOp.MemberAccess = nullptr;
-                    auto PlannedArgs = planOperand(ArgsOp);
-                    if (!PlannedArgs) {
-                        return PlannedArgs.takeError();
-                    }
+                // Plan the arguments first to get their types for overload resolution
+                Operand ArgsOp = NextOp;
+                ArgsOp.MemberAccess = nullptr;
+                auto PlannedArgs = planOperand(ArgsOp);
+                if (!PlannedArgs) {
+                    return PlannedArgs.takeError();
+                }
 
+                // Extract argument types for overload resolution
+                std::vector<PlannedType> ArgTypes;
+                if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedArgs->Expr)) {
+                    for (const auto& Comp : TupleExpr->Components) {
+                        for (const auto& ValOp : Comp.Value) {
+                            ArgTypes.push_back(ValOp.ResultType);
+                        }
+                    }
+                }
+
+                // Look up the method on the base type with overload resolution
+                auto MethodMatch = lookupMethod(PlannedBase->ResultType, MethodName, ArgTypes, Op.Loc);
+                if (MethodMatch) {
                     // Create method call with instance as first argument
                     PlannedCall Call;
                     Call.Loc = Op.Loc;
@@ -4613,7 +5034,16 @@ llvm::Expected<PlannedTuple> Planner::planTuple(const Tuple &Tup) {
         if (!PlannedValue) {
             return PlannedValue.takeError();
         }
-        PC.Value = std::move(*PlannedValue);
+
+        // Collapse the operand sequence to a single value
+        // This handles operators like *ptr within tuple arguments
+        if (!PlannedValue->empty()) {
+            auto Collapsed = collapseOperandSequence(std::move(*PlannedValue));
+            if (!Collapsed) {
+                return Collapsed.takeError();
+            }
+            PC.Value.push_back(std::move(*Collapsed));
+        }
 
         for (const auto &Attr : Comp.Attributes) {
             PlannedAttribute PA;
@@ -4627,17 +5057,12 @@ llvm::Expected<PlannedTuple> Planner::planTuple(const Tuple &Tup) {
     }
 
     // Compute TupleType
-    // Single anonymous component = grouping parentheses, use the operation sequence type
+    // Single anonymous component = grouping parentheses, use the value's result type
     if (Result.Components.size() == 1 && !Result.Components[0].Name) {
-        // For grouping parentheses, collapse the operand sequence to a single value
-        auto Collapsed = collapseOperandSequence(std::move(Result.Components[0].Value));
-        if (!Collapsed) {
-            return Collapsed.takeError();
+        // For grouping parentheses, use the collapsed value's type
+        if (!Result.Components[0].Value.empty()) {
+            Result.TupleType = Result.Components[0].Value[0].ResultType;
         }
-        // Replace the raw operand sequence with the collapsed result
-        Result.Components[0].Value.clear();
-        Result.Components[0].Value.push_back(std::move(*Collapsed));
-        Result.TupleType = Result.Components[0].Value[0].ResultType;
     } else {
         // Multi-component or named component tuple
         // Build a proper tuple type with generics for each component
@@ -4787,7 +5212,17 @@ llvm::Expected<PlannedAction> Planner::planAction(const Action &Act) {
     if (!PlannedTarget) {
         return PlannedTarget.takeError();
     }
-    Result.Target = std::move(*PlannedTarget);
+
+    // Collapse target operand sequence to create PlannedCall structures for operators
+    // This is needed for pointer dereference targets like *(ptr + offset)
+    // Only collapse if there's a target (some actions like function calls have no target)
+    if (!PlannedTarget->empty()) {
+        auto CollapsedTarget = collapseOperandSequence(std::move(*PlannedTarget));
+        if (!CollapsedTarget) {
+            return CollapsedTarget.takeError();
+        }
+        Result.Target.push_back(std::move(*CollapsedTarget));
+    }
 
     // Compute the result type of the source operation sequence
     auto SeqType = resolveOperationSequence(Result.Source);
@@ -5454,6 +5889,29 @@ llvm::Expected<PlannedOperator> Planner::planOperator(const Operator &Op,
 
     pushScope();
 
+    // For operators inside a struct, add implicit 'this' parameter if not present
+    // This allows operators to access struct properties directly
+    bool HasThisParam = false;
+    for (const auto &Param : Op.Input) {
+        if (Param.Name && *Param.Name == "this") {
+            HasThisParam = true;
+            break;
+        }
+    }
+
+    if (Parent && !HasThisParam) {
+        // Add implicit 'this' parameter at the beginning
+        PlannedItem ThisParam;
+        ThisParam.Loc = Op.Loc;
+        ThisParam.Private = false;
+        ThisParam.Name = std::make_shared<std::string>("this");
+        ThisParam.ItemType = std::make_shared<PlannedType>(*Parent);
+        Result.Input.push_back(std::move(ThisParam));
+
+        // Define 'this' in scope
+        defineLocal("this", *Parent);
+    }
+
     // Plan input parameters
     for (const auto &Param : Op.Input) {
         auto PlannedParam = planItem(Param);
@@ -5461,6 +5919,20 @@ llvm::Expected<PlannedOperator> Planner::planOperator(const Operator &Op,
             popScope();
             return PlannedParam.takeError();
         }
+
+        // Handle explicit 'this' parameter: if no explicit type, use Parent type
+        if (PlannedParam->Name && *PlannedParam->Name == "this" && !PlannedParam->ItemType) {
+            if (Parent) {
+                PlannedParam->ItemType = std::make_shared<PlannedType>(*Parent);
+            } else {
+                popScope();
+                return llvm::make_error<llvm::StringError>(
+                    "'this' parameter without enclosing type",
+                    llvm::inconvertibleErrorCode()
+                );
+            }
+        }
+
         Result.Input.push_back(std::move(*PlannedParam));
 
         // Add parameter to scope
@@ -5540,7 +6012,9 @@ llvm::Expected<PlannedInitializer> Planner::planInitializer(const Initializer &I
     Result.Input = std::move(Params);
 
     // Define 'this' in scope for the initializer body
-    defineLocal("this", Parent, true);  // 'this' is mutable in initializers
+    // IsMutable=false because 'this' is passed as a pointer parameter, not an alloca
+    // Field mutations are handled via GEP on the pointer
+    defineLocal("this", Parent, false);
 
     // Plan implementation (initializer body)
     auto PlannedImpl = planImplementation(Init.Impl);
@@ -5608,7 +6082,6 @@ llvm::Expected<PlannedDeInitializer> Planner::planDeInitializer(
 llvm::Expected<PlannedStructure> Planner::planStructure(
     const Structure &Struct, llvm::StringRef Name,
     const std::vector<PlannedType> &GenericArgs) {
-
     PlannedStructure Result;
     Result.Loc = Struct.Loc;
     Result.Private = Struct.Private;
@@ -5694,6 +6167,8 @@ llvm::Expected<PlannedStructure> Planner::planStructure(
                 CurrentStructure = OldStructure;
                 return PlannedMethod.takeError();
             }
+            // Register method in InstantiatedFunctions for the Emitter to find
+            InstantiatedFunctions[PlannedMethod->MangledName] = *PlannedMethod;
             Result.Methods.push_back(std::move(*PlannedMethod));
         } else if (auto *Op = std::get_if<Operator>(&Member)) {
             auto PlannedOp = planOperator(*Op, &ParentType);
@@ -5772,6 +6247,8 @@ llvm::Expected<PlannedUnion> Planner::planUnion(
                 TypeSubstitutions = OldSubst;
                 return PlannedMethod.takeError();
             }
+            // Register method in InstantiatedFunctions for the Emitter to find
+            InstantiatedFunctions[PlannedMethod->MangledName] = *PlannedMethod;
             Result.Methods.push_back(std::move(*PlannedMethod));
         } else if (auto *Op = std::get_if<Operator>(&Member)) {
             auto PlannedOp = planOperator(*Op, &ParentType);
@@ -5904,6 +6381,15 @@ llvm::Expected<PlannedConcept> Planner::planConcept(const Concept &Conc) {
         using T = std::decay_t<decltype(Def)>;
 
         if constexpr (std::is_same_v<T, Structure>) {
+            // Check if structure is already being planned or fully planned
+            auto ExistingIt = InstantiatedStructures.find(Conc.Name);
+            if (ExistingIt != InstantiatedStructures.end()) {
+                // Structure is already in cache - return it to avoid re-planning
+                // This can happen when a method call triggers planConcept for the
+                // same structure that's currently being planned
+                return ExistingIt->second;
+            }
+
             // Insert placeholder BEFORE planning to handle recursive planning
             // (e.g., when a method has LocalLifetime return type and triggers planConcept again)
             PlannedStructure Placeholder;
@@ -5921,6 +6407,12 @@ llvm::Expected<PlannedConcept> Planner::planConcept(const Concept &Conc) {
             return *Planned;
         }
         else if constexpr (std::is_same_v<T, Union>) {
+            // Check if union is already being planned or fully planned
+            auto ExistingIt = InstantiatedUnions.find(Conc.Name);
+            if (ExistingIt != InstantiatedUnions.end()) {
+                return ExistingIt->second;
+            }
+
             // Insert placeholder BEFORE planning to handle recursive planning
             PlannedUnion Placeholder;
             Placeholder.Name = Conc.Name;

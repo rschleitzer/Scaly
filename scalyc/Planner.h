@@ -299,10 +299,18 @@ private:
         const Function* Method;
         std::string MangledName;
         PlannedType ReturnType;
+        std::vector<PlannedType> ParameterTypes;  // For overload resolution
     };
     std::optional<MethodMatch> lookupMethod(
         const PlannedType &StructType,
         llvm::StringRef MethodName,
+        Span Loc);
+
+    // Look up a method with overload resolution based on argument types
+    std::optional<MethodMatch> lookupMethod(
+        const PlannedType &StructType,
+        llvm::StringRef MethodName,
+        const std::vector<PlannedType> &ArgTypes,
         Span Loc);
 
     // Look up an initializer on a struct type matching the given argument types

@@ -1,0 +1,49 @@
+define List[T]
+(
+    head: pointer[Node[T]] (null)
+)
+{
+    function get_head(this: List[T]) returns pointer[T] {
+        if head = null
+            return null
+
+        return &(*head).element
+    }
+
+    function count(this: List[T]) returns size_t {
+        var list_iterator get_iterator()
+        var i: size_t 0
+        while list_iterator.next() <> null
+            set i: i + 1
+        return i
+    }
+
+    function remove(this: List[T], element: T) returns bool {
+        var node head
+        var previous_node: pointer[Node[T]] null
+        while node <> null
+        {
+            if (*node).element = element
+            {
+                if previous_node <> null
+                    set (*previous_node).next: (*node).next
+                if node = head
+                    set head: null
+                return true
+            }
+            set previous_node: node
+            set node: (*node).next
+        }
+
+        return false
+    }
+
+    function get_iterator(this: List[T]) returns ListIterator[T]
+        ListIterator[T](head)
+
+    function add(this: List[T], element: T) {
+        let lp Page.get(this as pointer[void])
+        let new_node Node[T]^lp(element, head)
+        set head: new_node
+    }
+}

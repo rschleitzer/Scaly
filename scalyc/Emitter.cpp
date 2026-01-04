@@ -1239,8 +1239,12 @@ llvm::Expected<llvm::Value*> Emitter::emitAction(const PlannedAction &Action) {
 
                     // The inner result should be a pointer to the struct
                     if (!Ptr->getType()->isPointerTy()) {
+                        std::string TypeStr;
+                        llvm::raw_string_ostream TypeStream(TypeStr);
+                        Ptr->getType()->print(TypeStream);
                         return llvm::make_error<llvm::StringError>(
-                            "Dereference target is not a pointer",
+                            "Dereference target is not a pointer (got " + TypeStr +
+                            ", PointedType=" + PointedType.Name + ")",
                             llvm::inconvertibleErrorCode()
                         );
                     }
@@ -1289,9 +1293,96 @@ llvm::Expected<llvm::Value*> Emitter::emitAction(const PlannedAction &Action) {
                     Builder->CreateStore(Value, CurrentPtr);
                 }
             }
+        } else if (auto *Call = std::get_if<PlannedCall>(&TargetOp.Expr)) {
+            // Handle direct dereference assignment like *ptr = value (no parentheses)
+            if (Call->Name == "*" && Call->Args && Call->Args->size() == 1) {
+                // Emit the argument to get the pointer
+                auto PtrOrErr = emitOperand((*Call->Args)[0]);
+                if (!PtrOrErr)
+                    return PtrOrErr.takeError();
+                llvm::Value *Ptr = *PtrOrErr;
+
+                if (!Ptr->getType()->isPointerTy()) {
+                    std::string TypeStr, ArgTypeName;
+                    llvm::raw_string_ostream TypeStream(TypeStr);
+                    Ptr->getType()->print(TypeStream);
+                    if ((*Call->Args)[0].ResultType.Name.empty()) {
+                        ArgTypeName = "(empty)";
+                    } else {
+                        ArgTypeName = (*Call->Args)[0].ResultType.Name;
+                    }
+                    std::string FuncName = CurrentFunction ? CurrentFunction->getName().str() : "(unknown)";
+                    return llvm::make_error<llvm::StringError>(
+                        "Dereference target is not a pointer (got " + TypeStr +
+                        ", ArgResultType=" + ArgTypeName + ", in function " + FuncName + ")",
+                        llvm::inconvertibleErrorCode()
+                    );
+                }
+
+                llvm::Value *CurrentPtr = Ptr;
+
+                // Navigate through member access chain if present
+                if (TargetOp.MemberAccess && !TargetOp.MemberAccess->empty()) {
+                    PlannedType PointedType = TargetOp.ResultType;
+                    // Get the initial struct type (before member access)
+                    // Since we're dereferencing a pointer[Struct], look up Struct from first element's type
+                    PlannedType InitialPointedType = (*Call->Args)[0].ResultType;
+                    if (!InitialPointedType.Generics.empty()) {
+                        InitialPointedType = InitialPointedType.Generics[0];  // pointer[T] -> T
+                    }
+
+                    llvm::Type *CurrentType = nullptr;
+                    auto TypeIt = StructCache.find(InitialPointedType.MangledName);
+                    if (TypeIt == StructCache.end()) {
+                        TypeIt = StructCache.find(InitialPointedType.Name);
+                    }
+                    if (TypeIt != StructCache.end()) {
+                        CurrentType = TypeIt->second;
+                    }
+
+                    if (!CurrentType || !CurrentType->isStructTy()) {
+                        return llvm::make_error<llvm::StringError>(
+                            "Cannot determine struct type for dereference assignment",
+                            llvm::inconvertibleErrorCode()
+                        );
+                    }
+
+                    for (const auto &Member : *TargetOp.MemberAccess) {
+                        CurrentPtr = Builder->CreateStructGEP(CurrentType, CurrentPtr,
+                                                               Member.FieldIndex, Member.Name);
+                        CurrentType = llvm::cast<llvm::StructType>(CurrentType)
+                                          ->getElementType(Member.FieldIndex);
+                    }
+                }
+
+                // Store the value to the pointer target
+                Builder->CreateStore(Value, CurrentPtr);
+            } else {
+                return llvm::make_error<llvm::StringError>(
+                    "Assignment target must be a variable or dereference",
+                    llvm::inconvertibleErrorCode()
+                );
+            }
         } else {
+            // Debug: what type is the target?
+            std::string TypeName = std::visit([](auto &&arg) -> std::string {
+                using T = std::decay_t<decltype(arg)>;
+                if constexpr (std::is_same_v<T, PlannedConstant>) return "PlannedConstant";
+                else if constexpr (std::is_same_v<T, PlannedType>) return "PlannedType";
+                else if constexpr (std::is_same_v<T, PlannedVariable>) return "PlannedVariable";
+                else if constexpr (std::is_same_v<T, PlannedTuple>) return "PlannedTuple";
+                else if constexpr (std::is_same_v<T, PlannedCall>) {
+                    return "PlannedCall(" + arg.Name + ")";
+                }
+                else if constexpr (std::is_same_v<T, PlannedBlock>) return "PlannedBlock";
+                else if constexpr (std::is_same_v<T, PlannedMatrix>) {
+                    return "PlannedMatrix(" + std::to_string(arg.Operations.size()) + " rows)";
+                }
+                else return "Unknown";
+            }, TargetOp.Expr);
             return llvm::make_error<llvm::StringError>(
-                "Assignment target must be a variable",
+                "Assignment target must be a variable (got " + TypeName +
+                    " at offset " + std::to_string(TargetOp.Loc.Start) + ")",
                 llvm::inconvertibleErrorCode()
             );
         }
@@ -1301,37 +1392,47 @@ llvm::Expected<llvm::Value*> Emitter::emitAction(const PlannedAction &Action) {
 }
 
 llvm::Error Emitter::emitBinding(const PlannedBinding &Binding) {
-    // Emit initialization expression
-    if (Binding.Operation.empty()) {
-        return llvm::make_error<llvm::StringError>(
-            "Binding has no initialization expression",
-            llvm::inconvertibleErrorCode()
-        );
-    }
+    llvm::Value *Value = nullptr;
 
-    auto ValueOrErr = emitOperands(Binding.Operation);
-    if (!ValueOrErr)
-        return ValueOrErr.takeError();
+    // Emit initialization expression if present
+    if (!Binding.Operation.empty()) {
+        auto ValueOrErr = emitOperands(Binding.Operation);
+        if (!ValueOrErr)
+            return ValueOrErr.takeError();
 
-    llvm::Value *Value = *ValueOrErr;
-    if (!Value) {
-        return llvm::make_error<llvm::StringError>(
-            "Binding initialization expression produced null value",
-            llvm::inconvertibleErrorCode()
-        );
+        Value = *ValueOrErr;
+        if (!Value) {
+            return llvm::make_error<llvm::StringError>(
+                "Binding initialization expression produced null value",
+                llvm::inconvertibleErrorCode()
+            );
+        }
     }
 
     // Create alloca for the binding
     if (Binding.BindingItem.Name) {
-        llvm::Type *Ty = Value->getType();
-        if (Binding.BindingType == "var" || Binding.BindingType == "mutable") {
-            // Mutable binding: allocate on stack
+        if (Value) {
+            llvm::Type *Ty = Value->getType();
+            if (Binding.BindingType == "var" || Binding.BindingType == "mutable") {
+                // Mutable binding: allocate on stack
+                auto *Alloca = Builder->CreateAlloca(Ty, nullptr, *Binding.BindingItem.Name);
+                Builder->CreateStore(Value, Alloca);
+                LocalVariables[*Binding.BindingItem.Name] = Alloca;
+            } else {
+                // Immutable binding: just use the value directly
+                LocalVariables[*Binding.BindingItem.Name] = Value;
+            }
+        } else if (Binding.BindingItem.ItemType) {
+            // No initialization but has type annotation - allocate uninitialized
+            // For now, create an i64 placeholder (proper type resolution needed)
+            llvm::Type *Ty = llvm::Type::getInt64Ty(*Context);
             auto *Alloca = Builder->CreateAlloca(Ty, nullptr, *Binding.BindingItem.Name);
-            Builder->CreateStore(Value, Alloca);
             LocalVariables[*Binding.BindingItem.Name] = Alloca;
         } else {
-            // Immutable binding: just use the value directly
-            LocalVariables[*Binding.BindingItem.Name] = Value;
+            return llvm::make_error<llvm::StringError>(
+                "Binding has no initialization expression and no type annotation",
+                llvm::inconvertibleErrorCode()
+            );
         }
     }
 
@@ -1403,6 +1504,64 @@ llvm::Error Emitter::emitReturn(const PlannedReturn &Return) {
     } else {
         // Regular return
         if (RetVal) {
+            llvm::Type *ExpectedRetTy = CurrentFunction->getReturnType();
+            llvm::Type *ActualTy = RetVal->getType();
+
+            // Handle type mismatch between return value and expected return type
+            if (ActualTy != ExpectedRetTy) {
+                if (ExpectedRetTy->isIntegerTy() && ActualTy->isIntegerTy()) {
+                    // Integer type mismatch - truncate or extend
+                    unsigned ExpectedBits = ExpectedRetTy->getIntegerBitWidth();
+                    unsigned ActualBits = ActualTy->getIntegerBitWidth();
+                    if (ExpectedBits < ActualBits) {
+                        RetVal = Builder->CreateTrunc(RetVal, ExpectedRetTy, "ret.trunc");
+                    } else {
+                        RetVal = Builder->CreateZExt(RetVal, ExpectedRetTy, "ret.zext");
+                    }
+                } else if (ExpectedRetTy->isIntegerTy() && ActualTy->isStructTy()) {
+                    // Returning struct but function expects integer
+                    // Find the field with matching integer type
+                    llvm::StructType *StructTy = llvm::cast<llvm::StructType>(ActualTy);
+                    bool Found = false;
+                    for (unsigned i = 0; i < StructTy->getNumElements(); ++i) {
+                        llvm::Type *FieldTy = StructTy->getElementType(i);
+                        if (FieldTy == ExpectedRetTy) {
+                            RetVal = Builder->CreateExtractValue(RetVal, {i}, "ret.extract");
+                            Found = true;
+                            break;
+                        }
+                    }
+                    if (!Found) {
+                        // Try to find any integer field and cast it
+                        for (unsigned i = 0; i < StructTy->getNumElements(); ++i) {
+                            llvm::Type *FieldTy = StructTy->getElementType(i);
+                            if (FieldTy->isIntegerTy()) {
+                                RetVal = Builder->CreateExtractValue(RetVal, {i}, "ret.extract");
+                                unsigned ExpectedBits = ExpectedRetTy->getIntegerBitWidth();
+                                unsigned ActualBits = FieldTy->getIntegerBitWidth();
+                                if (ExpectedBits < ActualBits) {
+                                    RetVal = Builder->CreateTrunc(RetVal, ExpectedRetTy, "ret.trunc");
+                                } else if (ExpectedBits > ActualBits) {
+                                    RetVal = Builder->CreateZExt(RetVal, ExpectedRetTy, "ret.zext");
+                                }
+                                Found = true;
+                                break;
+                            }
+                        }
+                    }
+                } else if (ExpectedRetTy->isPointerTy() && ActualTy->isStructTy()) {
+                    // Returning struct but function expects pointer
+                    // Find the pointer field
+                    llvm::StructType *StructTy = llvm::cast<llvm::StructType>(ActualTy);
+                    for (unsigned i = 0; i < StructTy->getNumElements(); ++i) {
+                        llvm::Type *FieldTy = StructTy->getElementType(i);
+                        if (FieldTy->isPointerTy()) {
+                            RetVal = Builder->CreateExtractValue(RetVal, {i}, "ret.extract");
+                            break;
+                        }
+                    }
+                }
+            }
             Builder->CreateRet(RetVal);
         } else {
             Builder->CreateRetVoid();
@@ -1582,7 +1741,8 @@ llvm::Expected<llvm::Value*> Emitter::emitExpression(const PlannedExpression &Ex
             // Type used as expression value - this shouldn't normally occur
             // sizeof is handled via PlannedSizeOf, constructors via PlannedCall
             return llvm::make_error<llvm::StringError>(
-                "Type '" + E.Name + "' cannot be used as a value",
+                "Type '" + E.Name + "' cannot be used as a value (offset " +
+                    std::to_string(E.Loc.Start) + ")",
                 llvm::inconvertibleErrorCode()
             );
         } else if constexpr (std::is_same_v<T, PlannedVariable>) {
@@ -2000,6 +2160,21 @@ llvm::Expected<llvm::Value*> Emitter::emitIntrinsicOp(
     // Pointer difference: pointer - pointer
     if (LeftIsPtr && Right->getType()->isPointerTy() && OpName == "-") {
         return Builder->CreatePtrDiff(llvm::Type::getInt8Ty(*Context), Left, Right, "ptr.diff");
+    }
+
+    // Integer type promotion: if both are integers but different widths, extend the narrower one
+    if (Left->getType()->isIntegerTy() && Right->getType()->isIntegerTy()) {
+        unsigned LeftBits = Left->getType()->getIntegerBitWidth();
+        unsigned RightBits = Right->getType()->getIntegerBitWidth();
+        if (LeftBits != RightBits) {
+            if (LeftBits > RightBits) {
+                // Extend Right to match Left's width
+                Right = Builder->CreateZExt(Right, Left->getType(), "zext");
+            } else {
+                // Extend Left to match Right's width
+                Left = Builder->CreateZExt(Left, Right->getType(), "zext");
+            }
+        }
     }
 
     // Arithmetic operators
