@@ -4,9 +4,14 @@ define Array[T]
     vector: pointer[Vector[T]]
 )
 {
-    init () (length(0), vector(null)) {}
+    init () {
+        set length: 0
+        set vector: null
+    }
 
-    init (size: size_t) (length(0), vector(null)) {
+    init (size: size_t) {
+        set length: 0
+        set vector: null
         let exclusive_page (*scaly.memory.Page.get(this as pointer[void])).allocate_exclusive_page()
         set vector: Vector[T]^exclusive_page(exclusive_page, size)
     }

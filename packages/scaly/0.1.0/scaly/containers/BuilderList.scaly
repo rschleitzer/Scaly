@@ -2,7 +2,9 @@ use scaly.memory.Page
 
 define BuilderList[T] (head: pointer[Node[T]]) {
 
-    init () (head(null)) {}
+    init () {
+        set head: null
+    }
 
     function add(this: BuilderList[T], rp: pointer[Page], element: T) {
         let new_node Node[T]^rp(element, head)

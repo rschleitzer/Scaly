@@ -4,11 +4,13 @@ define HashSetBuilder[T]
     slots: pointer[Vector[BuilderList[Slot[T]]]] (null)
 )
 {
-    init (vector: Vector[T]) (HashSetBuilder[T]()) {
-        if vector.length > 0
+    init (vec: Vector[T]) {
+        set length: 0
+        set slots: null
+        if vec.length > 0
         {
-            reallocate(vector.length)
-            var vector_iterator VectorIterator[T](&vector)
+            reallocate(vec.length)
+            var vector_iterator VectorIterator[T](&vec)
             while let element vector_iterator.next()
                 add_internal(*element)
         }

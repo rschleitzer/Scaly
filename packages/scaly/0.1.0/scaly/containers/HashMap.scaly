@@ -6,7 +6,10 @@ define HashMapIterator[K, V]
     element_iterator: VectorIterator[KeyValuePair[K, V]]
 )
 {
-    init (hash_map: HashMap[K, V]) (slot_iterator(VectorIterator[Vector[KeyValuePair[K, V]]](hash_map.slots)), element_iterator(VectorIterator[KeyValuePair[K, V]](slot_iterator.next()))) {}
+    init (hash_map: HashMap[K, V]) {
+        set slot_iterator: VectorIterator[Vector[KeyValuePair[K, V]]](hash_map.slots)
+        set element_iterator: VectorIterator[KeyValuePair[K, V]](slot_iterator.next())
+    }
 
     function next(this: HashMapIterator[K, V]) returns pointer[V] {
         while true
@@ -46,7 +49,7 @@ define HashMap[K, V]
             while let item list_iterator.next()
                 (*array).add((*item).value)
             if (*array).length > 0
-                (*slots).put(i, Vector[KeyValuePair[K, V]](rp, array))
+                (*slots).put(i, Vector[KeyValuePair[K, V]](rp, *array))
 
             set i: i + 1
         }

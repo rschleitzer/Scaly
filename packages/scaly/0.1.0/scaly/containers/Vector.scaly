@@ -6,7 +6,10 @@ define VectorIterator[T]
     position: size_t
 )
 {
-    init (vector: pointer[Vector[T]]) : (vector(vector), position(0)) {}
+    init (v: pointer[Vector[T]]) {
+        set vector: v
+        set position: 0
+    }
 
     function next(this: VectorIterator[T]) returns pointer[T] {
         if vector = null
@@ -26,11 +29,18 @@ define Vector[T]
     data: pointer[T]
 )
 {
-    init () (length(0), data(null)) {}
+    init () {
+        set length: 0
+        set data: null
+    }
 
-    init (data: pointer[T], length: size_t) (length(length), data(data)) {}
+    init (data: pointer[T], length: size_t) {
+        set length: length
+        set data: data
+    }
 
-    init (rp: pointer[Page], length: size_t) (length(length)) {
+    init (rp: pointer[Page], length: size_t) {
+        set length: length
         if length > 0
         {
             set data: (T*)(*rp).allocate(length * sizeof T, alignof T)
@@ -40,7 +50,8 @@ define Vector[T]
         }
     }
 
-    init (rp: pointer[Page], array: pointer[T], legnth: size_t) (length(length)) {
+    init (rp: pointer[Page], array: pointer[T], length: size_t) {
+        set length: length
         if length > 0
         {
             set data: (T*)(*rp).allocate(length * sizeof T, alignof T)
@@ -50,7 +61,8 @@ define Vector[T]
         }
     }
 
-    init (rp: pointer[Page], other: Vector[T]) (length(other.length)) {
+    init (rp: pointer[Page], other: Vector[T]) {
+        set length: other.length
         if length > 0
         {
             set data: (T*)(*rp).allocate(length * sizeof T, alignof T)
@@ -60,7 +72,8 @@ define Vector[T]
         }
     }
 
-    init (rp: pointer[Page], array: Array[T]) (length(array.length)) {
+    init (rp: pointer[Page], array: Array[T]) {
+        set length: array.length
         if length > 0
         {
             set data: (T*)(*rp).allocate(length * sizeof T, alignof T)
@@ -71,7 +84,8 @@ define Vector[T]
         }
     }
 
-    init (rp: pointer[Page], list: List[T]) (length(list.count())) {
+    init (rp: pointer[Page], list: List[T]) {
+        set length: list.count()
         if length > 0
         {
             set data: (T*) (*rp).allocate(length * sizeof T, alignof T)

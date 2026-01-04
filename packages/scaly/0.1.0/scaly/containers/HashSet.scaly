@@ -22,7 +22,7 @@ define HashSet[T]
             while let item list_iterator.next()
                 (*array).add((*item).value)
             if (*array).length > 0
-                (*slots).put(i, Vector[T](rp, array))
+                (*slots).put(i, Vector[T](rp, *array))
 
             set i: i + 1
         }

@@ -6,11 +6,13 @@ define HashMapBuilder[K, V]
     slots: pointer[Vector[BuilderList[Slot[KeyValuePair[K, V]]]]] (null)
 )
 {
-    init (rp: pointer[Page], vector: Vector[KeyValuePair[K, V]]) (HashMapBuilder[K, V]()) {
-        if vector.length > 0
+    init (rp: pointer[Page], vec: Vector[KeyValuePair[K, V]]) {
+        set length: 0
+        set slots: null
+        if vec.length > 0
         {
-            reallocate(vector.length)
-            var vector_iterator VectorIterator[KeyValuePair[K, V]](&vector)
+            reallocate(vec.length)
+            var vector_iterator VectorIterator[KeyValuePair[K, V]](&vec)
             while let element vector_iterator.next()
                 add_internal((*element).key, (*element).value)
         }

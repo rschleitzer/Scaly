@@ -46,11 +46,52 @@ define String (data: pointer[char](null)) {
         memcpy((data + counter + 1) as pointer[void], other, length)
     }
 
-    init (rp: pointer[Page], other: Vector[char])
-        (String(rp, other.data, other.length)) {}
+    init (rp: pointer[Page], other: Vector[char]) {
+        ; Delegate to String(rp, pointer, length)
+        var length_array: char[PACKED_SIZE]
+        var rest other.length
 
-    init (rp: pointer[Page], c_string: pointer[const_char])
-        (String(rp, c_string, strlen(c_string))) {}
+        var counter: size_t 0
+        while rest >= 0x80
+        {
+            set *(length_array + counter): (rest as char) | 0x80
+            set rest: rest >> 7
+            set counter: counter + 1
+        }
+
+        set *(length_array + counter): rest as char
+        let overall_length counter + 1 + other.length
+        set data: (*rp).allocate(overall_length, 1) as pointer[char]
+        memcpy(data, length_array, counter + 1)
+        if other.length > 0
+            memcpy((data + counter + 1) as pointer[void], other.data, other.length)
+    }
+
+    init (rp: pointer[Page], c_string: pointer[const_char]) {
+        let length strlen(c_string)
+        if length = 0
+        {
+            set data: null
+            return
+        }
+
+        var length_array: char[PACKED_SIZE]
+        var rest length
+
+        var counter: size_t 0
+        while rest >= 0x80
+        {
+            set *(length_array + counter): (rest as char) | 0x80
+            set rest: rest >> 7
+            set counter: counter + 1
+        }
+
+        set *(length_array + counter): rest as char
+        let overall_length counter + 1 + length
+        set data: (*rp).allocate(overall_length, 1) as pointer[char]
+        memcpy(data, length_array, counter + 1)
+        memcpy((data + counter + 1) as pointer[void], c_string, length)
+    }
 
     init (rp: pointer[Page], other: String) {
         if other.data = null

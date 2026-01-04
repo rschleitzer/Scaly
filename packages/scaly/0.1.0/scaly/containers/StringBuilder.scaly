@@ -5,15 +5,28 @@ define StringBuilder
     buffer: Array[char]
 )
 {
-    init () (StringBuilder(Array[char]())) {}
+    init () {
+        set buffer: Array[char]()
+    }
 
-    init (size: size_t) (StringBuilder(Array[char](size))) {}
+    init (size: size_t) {
+        set buffer: Array[char](size)
+    }
 
-    init (character: char) (StringBuilder()) { append(character) }
+    init (character: char) {
+        set buffer: Array[char]()
+        append(character)
+    }
 
-    init (string: String) (StringBuilder()) { append(string) }
+    init (string: String) {
+        set buffer: Array[char]()
+        append(string)
+    }
 
-    init (c_string: pointer[const_char]) (StringBuilder()) { append(c_string) }
+    init (c_string: pointer[const_char]) {
+        set buffer: Array[char]()
+        append(c_string)
+    }
 
     function append(this: StringBuilder, character: char) { buffer.add(character) }
 
