@@ -151,8 +151,8 @@ void Emitter::initRBMM() {
     auto *AllocateTy = llvm::FunctionType::get(PtrTy, {PtrTy, I64Ty, I64Ty}, false);
     PageAllocate = llvm::Function::Create(
         AllocateTy, llvm::GlobalValue::ExternalLinkage,
-        "_ZN4Page8allocateEyy", *Module);
-    FunctionCache["_ZN4Page8allocateEyy"] = PageAllocate;
+        "_ZN4Page8allocateEmm", *Module);  // size_t = unsigned long (m)
+    FunctionCache["_ZN4Page8allocateEmm"] = PageAllocate;
 
     // Declare Page_deallocate_extensions(page: ptr) -> void
     // Called to clean up a page's extensions when leaving a scope
@@ -172,7 +172,10 @@ void Emitter::declareRuntimeFunctions() {
     auto *VoidTy = llvm::Type::getVoidTy(*Context);
 
     // aligned_alloc(alignment: i64, size: i64) returns pointer[void]
-    if (!AlignedAlloc) {
+    // First check if it was already declared (e.g., from Plan's extern declarations)
+    if (auto It = FunctionCache.find("aligned_alloc"); It != FunctionCache.end()) {
+        AlignedAlloc = It->second;
+    } else if (!AlignedAlloc) {
         auto *AlignedAllocTy = llvm::FunctionType::get(PtrTy, {I64Ty, I64Ty}, false);
         AlignedAlloc = llvm::Function::Create(
             AlignedAllocTy, llvm::GlobalValue::ExternalLinkage,
@@ -181,7 +184,9 @@ void Emitter::declareRuntimeFunctions() {
     }
 
     // free(ptr: pointer[void])
-    if (!Free) {
+    if (auto It = FunctionCache.find("free"); It != FunctionCache.end()) {
+        Free = It->second;
+    } else if (!Free) {
         auto *FreeTy = llvm::FunctionType::get(VoidTy, {PtrTy}, false);
         Free = llvm::Function::Create(
             FreeTy, llvm::GlobalValue::ExternalLinkage,
@@ -190,7 +195,9 @@ void Emitter::declareRuntimeFunctions() {
     }
 
     // exit(code: int)
-    if (!ExitFunc) {
+    if (auto It = FunctionCache.find("exit"); It != FunctionCache.end()) {
+        ExitFunc = It->second;
+    } else if (!ExitFunc) {
         auto *ExitTy = llvm::FunctionType::get(VoidTy, {I32Ty}, false);
         ExitFunc = llvm::Function::Create(
             ExitTy, llvm::GlobalValue::ExternalLinkage,
@@ -4167,7 +4174,7 @@ llvm::Expected<uint64_t> Emitter::jitExecuteRaw(const Plan &P, llvm::Type *Expec
         declareRuntimeFunctions();
 
         PageAllocatePage = FunctionCache["_ZN4Page13allocate_pageEv"];
-        PageAllocate = FunctionCache["_ZN4Page8allocateEyy"];
+        PageAllocate = FunctionCache["_ZN4Page8allocateEmm"];  // size_t = unsigned long (m)
         PageDeallocateExtensions = FunctionCache["_ZN4Page21deallocate_extensionsEv"];
         // Also set up PageType from StructCache (using mangled name)
         if (auto It = StructCache.find("_Z4Page"); It != StructCache.end()) {
@@ -4348,6 +4355,15 @@ llvm::Error Emitter::jitExecuteVoid(const Plan &P, llvm::StringRef MangledFuncti
     StructCache.clear();
     FunctionCache.clear();
 
+    // Reset runtime function pointers (they belonged to the old module)
+    AlignedAlloc = nullptr;
+    Free = nullptr;
+    ExitFunc = nullptr;
+    PageAllocatePage = nullptr;
+    PageAllocate = nullptr;
+    PageDeallocateExtensions = nullptr;
+    PageType = nullptr;
+
     // Check if Page is in the Plan
     bool PageInPlan = P.Structures.find("Page") != P.Structures.end();
     if (!PageInPlan) {
@@ -4404,7 +4420,7 @@ llvm::Error Emitter::jitExecuteVoid(const Plan &P, llvm::StringRef MangledFuncti
     if (PageInPlan) {
         declareRuntimeFunctions();
         PageAllocatePage = FunctionCache["_ZN4Page13allocate_pageEv"];
-        PageAllocate = FunctionCache["_ZN4Page8allocateEyy"];
+        PageAllocate = FunctionCache["_ZN4Page8allocateEmm"];  // size_t = unsigned long (m)
         PageDeallocateExtensions = FunctionCache["_ZN4Page21deallocate_extensionsEv"];
         if (auto It = StructCache.find("_Z4Page"); It != StructCache.end()) {
             PageType = It->second;
@@ -4412,7 +4428,6 @@ llvm::Error Emitter::jitExecuteVoid(const Plan &P, llvm::StringRef MangledFuncti
     }
 
     // Emit function bodies
-    size_t funcCount = 0;
     for (const auto &[name, Func] : P.Functions) {
         if (auto *LLVMFunc = FunctionCache[Func.MangledName]) {
             if (auto Err = emitFunctionBody(Func, LLVMFunc))
