@@ -226,6 +226,9 @@ private:
     // Check if two types are equal
     bool typesEqual(const PlannedType &A, const PlannedType &B);
 
+    // Check if ArgType can be implicitly converted to ParamType
+    bool typesCompatible(const PlannedType &ParamType, const PlannedType &ArgType);
+
     // ========== Symbol Lookup ==========
 
     // Look up a function by name, returning candidates for overload resolution

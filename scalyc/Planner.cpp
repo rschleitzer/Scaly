@@ -572,6 +572,29 @@ bool Planner::typesEqual(const PlannedType &A, const PlannedType &B) {
     return true;
 }
 
+// Check if ArgType can be implicitly converted to ParamType
+static bool isIntegerType(llvm::StringRef Normalized) {
+    return Normalized == "i64" || Normalized == "i32" || Normalized == "i16" || Normalized == "i8" ||
+           Normalized == "u64" || Normalized == "u32" || Normalized == "u16" || Normalized == "u8";
+}
+
+bool Planner::typesCompatible(const PlannedType &ParamType, const PlannedType &ArgType) {
+    // First check for exact equality
+    if (typesEqual(ParamType, ArgType)) return true;
+
+    // Check for integer type compatibility (allow int <-> size_t, etc.)
+    std::string NormParam = normalizeTypeName(ParamType.Name);
+    std::string NormArg = normalizeTypeName(ArgType.Name);
+
+    // Allow any integer type to be passed where another integer type is expected
+    // (the Emitter will handle any necessary casts)
+    if (isIntegerType(NormParam) && isIntegerType(NormArg)) {
+        return true;
+    }
+
+    return false;
+}
+
 void Planner::computeStructLayout(PlannedStructure &Struct) {
     size_t Offset = 0;
     size_t MaxAlign = 1;
@@ -1205,7 +1228,97 @@ std::optional<Planner::InitializerMatch> Planner::findInitializer(
 
     const PlannedStructure &Struct = StructIt->second;
 
-    // Search for matching initializer
+    // If the struct has 0 initializers, it might be a placeholder.
+    // Fall back to looking at the original Concept to match initializers.
+    if (Struct.Initializers.empty()) {
+        // Extract base name (e.g., "Vector" from "Vector.int")
+        std::string BaseName = StructType.Name;
+        size_t DotPos = BaseName.find('.');
+        if (DotPos != std::string::npos) {
+            BaseName = BaseName.substr(0, DotPos);
+        }
+
+        // Look up the original Concept
+        const Concept* Conc = lookupConcept(BaseName);
+        if (Conc && std::holds_alternative<Structure>(Conc->Def)) {
+            const Structure& OrigStruct = std::get<Structure>(Conc->Def);
+
+            // Set up type substitutions for generic args
+            std::map<std::string, PlannedType> OldSubst = TypeSubstitutions;
+            for (size_t I = 0; I < Conc->Parameters.size() && I < StructType.Generics.size(); ++I) {
+                TypeSubstitutions[Conc->Parameters[I].Name] = StructType.Generics[I];
+            }
+
+            // Check each original initializer
+            for (const auto &Init : OrigStruct.Initializers) {
+                if (Init.Input.size() != ArgTypes.size()) {
+                    continue;
+                }
+
+                bool AllMatch = true;
+                for (size_t i = 0; i < ArgTypes.size(); ++i) {
+                    if (!Init.Input[i].ItemType) {
+                        continue; // No type specified = match
+                    }
+
+                    // Resolve the parameter type with current substitutions
+                    auto ParamTypeResult = resolveType(*Init.Input[i].ItemType, Init.Loc);
+                    if (!ParamTypeResult) {
+                        llvm::consumeError(ParamTypeResult.takeError());
+                        AllMatch = false;
+                        break;
+                    }
+
+                    if (!typesCompatible(*ParamTypeResult, ArgTypes[i])) {
+                        AllMatch = false;
+                        break;
+                    }
+                }
+
+                if (AllMatch) {
+                    // Found a match - generate the mangled name
+                    // Note: TypeSubstitutions still has the generic substitutions set up
+
+                    // Mangle constructor name: _ZN<qualified-name>C1E<params>
+                    // Struct.MangledName is like "_Z6VectorIiE" - strip the _Z prefix
+                    std::string StructName = Struct.MangledName;
+                    if (StructName.substr(0, 2) == "_Z") {
+                        StructName = StructName.substr(2);
+                    }
+                    std::string MangledName = "_ZN" + StructName + "C1E";
+
+                    // Mangle parameters - need to use parameter types, not argument types
+                    // Use encodeType to get the mangling without _Z prefix
+                    for (size_t i = 0; i < ArgTypes.size(); ++i) {
+                        if (Init.Input[i].ItemType) {
+                            auto ParamTypeResult = resolveType(*Init.Input[i].ItemType, Init.Loc);
+                            if (ParamTypeResult) {
+                                MangledName += encodeType(*ParamTypeResult);
+                            } else {
+                                llvm::consumeError(ParamTypeResult.takeError());
+                                MangledName += encodeType(ArgTypes[i]);
+                            }
+                        } else {
+                            MangledName += encodeType(ArgTypes[i]);
+                        }
+                    }
+
+                    TypeSubstitutions = OldSubst;
+
+                    InitializerMatch Match;
+                    Match.Init = nullptr;  // We don't have a PlannedInitializer yet
+                    Match.StructType = StructType;
+                    Match.MangledName = MangledName;
+                    return Match;
+                }
+            }
+
+            TypeSubstitutions = OldSubst;
+        }
+        return std::nullopt;
+    }
+
+    // Search for matching initializer in the cached PlannedStructure
     for (const auto &Init : Struct.Initializers) {
         // Check if parameter count matches
         if (Init.Input.size() != ArgTypes.size()) {
@@ -1219,7 +1332,7 @@ std::optional<Planner::InitializerMatch> Planner::findInitializer(
                 // Parameter has no type - treat as match
                 continue;
             }
-            if (!typesEqual(*Init.Input[i].ItemType, ArgTypes[i])) {
+            if (!typesCompatible(*Init.Input[i].ItemType, ArgTypes[i])) {
                 AllMatch = false;
                 break;
             }
@@ -4007,35 +4120,40 @@ llvm::Expected<PlannedOperand> Planner::planOperand(const Operand &Op) {
             // Check for implicit property access: when 'data' is used in a method body,
             // it should become 'this.data'. But ONLY if 'this' is actually in scope.
             // This guards against context mismatches during recursive planning.
-            auto ThisType = lookupLocal("this");
-            if (CurrentStructureProperties && ThisType) {
-                // Extract base name from CurrentStructureName for generic types
-                // e.g., "VectorIterator.char" -> "VectorIterator"
-                std::string BaseStructName = CurrentStructureName;
-                size_t DotPos = BaseStructName.find('.');
-                if (DotPos != std::string::npos) {
-                    BaseStructName = BaseStructName.substr(0, DotPos);
-                }
+            // IMPORTANT: Check if the name is a local variable first - local variables
+            // (including parameters) should shadow properties with the same name.
+            auto LocalBind = lookupLocalBinding(Name);
+            if (!LocalBind) {
+                auto ThisType = lookupLocal("this");
+                if (CurrentStructureProperties && ThisType) {
+                    // Extract base name from CurrentStructureName for generic types
+                    // e.g., "VectorIterator.char" -> "VectorIterator"
+                    std::string BaseStructName = CurrentStructureName;
+                    size_t DotPos = BaseStructName.find('.');
+                    if (DotPos != std::string::npos) {
+                        BaseStructName = BaseStructName.substr(0, DotPos);
+                    }
 
-                if (ThisType->Name == CurrentStructureName || ThisType->Name == BaseStructName) {
-                    for (const auto &Prop : *CurrentStructureProperties) {
-                        if (Prop.Name == Name) {
-                            // Convert to "this" with member access to the property
-                            Type ThisTypeExpr;
-                            ThisTypeExpr.Loc = TypeExpr->Loc;
-                            ThisTypeExpr.Name = {"this"};
-                            ThisTypeExpr.Generics = nullptr;
-                            ThisTypeExpr.Life = TypeExpr->Life;
-                            ModifiedOp.Expr = ThisTypeExpr;
+                    if (ThisType->Name == CurrentStructureName || ThisType->Name == BaseStructName) {
+                        for (const auto &Prop : *CurrentStructureProperties) {
+                            if (Prop.Name == Name) {
+                                // Convert to "this" with member access to the property
+                                Type ThisTypeExpr;
+                                ThisTypeExpr.Loc = TypeExpr->Loc;
+                                ThisTypeExpr.Name = {"this"};
+                                ThisTypeExpr.Generics = nullptr;
+                                ThisTypeExpr.Life = TypeExpr->Life;
+                                ModifiedOp.Expr = ThisTypeExpr;
 
-                            // Add the property as implicit member access
-                            Type PropType;
-                            PropType.Loc = TypeExpr->Loc;
-                            PropType.Name = {Name};
-                            PropType.Generics = nullptr;
-                            PropType.Life = UnspecifiedLifetime{};
-                            ImplicitMemberAccess.push_back(PropType);
-                            break;
+                                // Add the property as implicit member access
+                                Type PropType;
+                                PropType.Loc = TypeExpr->Loc;
+                                PropType.Name = {Name};
+                                PropType.Generics = nullptr;
+                                PropType.Life = UnspecifiedLifetime{};
+                                ImplicitMemberAccess.push_back(PropType);
+                                break;
+                            }
                         }
                     }
                 }
