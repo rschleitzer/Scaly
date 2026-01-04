@@ -1772,14 +1772,14 @@ llvm::Expected<MemberAccessSyntax> Parser::parseMemberAccess() {
     if (!Lex.parsePunctuation('.'))
         return different();
 
-    auto TypeOrErr = parseType();
-    if (!TypeOrErr)
-        return invalid(Start, Lex.position(), "expected Type");
-    auto Type = std::move(*TypeOrErr);
+    auto NameOrErr = parseName();
+    if (!NameOrErr)
+        return invalid(Start, Lex.position(), "expected Name");
+    auto Name = std::move(*NameOrErr);
 
     size_t End = Lex.position();
 
-    return MemberAccessSyntax{Start, End, Type};
+    return MemberAccessSyntax{Start, End, Name};
 
 }
 
@@ -1791,7 +1791,7 @@ llvm::Expected<ExpressionSyntax> Parser::parseExpression() {
         llvm::consumeError(Result.takeError());
     }
     {
-        auto Result = parseType();
+        auto Result = parseName();
         if (Result)
             return ExpressionSyntax{std::move(*Result)};
         llvm::consumeError(Result.takeError());
@@ -1882,6 +1882,12 @@ llvm::Expected<ExpressionSyntax> Parser::parseExpression() {
     }
     {
         auto Result = parseAs();
+        if (Result)
+            return ExpressionSyntax{std::move(*Result)};
+        llvm::consumeError(Result.takeError());
+    }
+    {
+        auto Result = parseLifetime();
         if (Result)
             return ExpressionSyntax{std::move(*Result)};
         llvm::consumeError(Result.takeError());

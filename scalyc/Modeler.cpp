@@ -96,6 +96,25 @@ static std::string processEscapes(llvm::StringRef Input) {
 
 Modeler::Modeler(llvm::StringRef FileName) : File(FileName.str()) {}
 
+// Name to Type conversion (for expressions - no generics attached)
+Type Modeler::nameToType(const NameSyntax &Syntax) {
+    std::vector<std::string> Path;
+    Path.push_back(std::string(Syntax.name));
+
+    if (Syntax.extensions) {
+        for (const auto &Ext : *Syntax.extensions) {
+            Path.push_back(std::string(Ext.name));
+        }
+    }
+
+    return Type{
+        Span{Syntax.Start, Syntax.End},
+        std::move(Path),
+        nullptr,  // No generics
+        UnspecifiedLifetime{}
+    };
+}
+
 // Type handling
 
 llvm::Expected<std::unique_ptr<Type>> Modeler::handleType(
@@ -220,10 +239,7 @@ llvm::Expected<Operand> Modeler::handleOperand(const OperandSyntax &Syntax) {
     if (Syntax.members) {
         MemberAccess = std::make_unique<std::vector<Type>>();
         for (const auto &M : *Syntax.members) {
-            auto MemberType = handleType(M.type);
-            if (!MemberType)
-                return MemberType.takeError();
-            MemberAccess->push_back(std::move(**MemberType));
+            MemberAccess->push_back(nameToType(M.name));
         }
     }
 
@@ -252,11 +268,22 @@ llvm::Expected<Expression> Modeler::handleExpression(
             if (!Const)
                 return Const.takeError();
             return *Const;
-        } else if constexpr (std::is_same_v<T, TypeSyntax>) {
-            auto TypeResult = handleType(E);
-            if (!TypeResult)
-                return TypeResult.takeError();
-            return std::move(**TypeResult);
+        } else if constexpr (std::is_same_v<T, NameSyntax>) {
+            return nameToType(E);
+        } else if constexpr (std::is_same_v<T, LifetimeSyntax>) {
+            // Lifetime as standalone expression (for generic instantiation)
+            // Convert to a Type with just the lifetime marker
+            Lifetime Life = handleLifetime(&E);
+            // Get span from the inner variant
+            Span LifeSpan = std::visit([](const auto &L) -> Span {
+                return Span{L.Start, L.End};
+            }, E.Value);
+            return Type{
+                LifeSpan,
+                {},  // Empty name - just lifetime marker
+                nullptr,
+                std::move(Life)
+            };
         } else if constexpr (std::is_same_v<T, ObjectSyntax>) {
             auto Obj = handleObject(E);
             if (!Obj)
@@ -358,8 +385,8 @@ llvm::Expected<Component> Modeler::handleComponent(
         // Named component
         if (Syntax.operands && !Syntax.operands->empty()) {
             const auto &NameOp = (*Syntax.operands)[0];
-            if (auto *TypeExpr = std::get_if<TypeSyntax>(&NameOp.expression.Value)) {
-                Name = std::make_unique<std::string>(TypeExpr->name.name.str());
+            if (auto *NameExpr = std::get_if<NameSyntax>(&NameOp.expression.Value)) {
+                Name = std::make_unique<std::string>(NameExpr->name.str());
             }
         }
         if (Syntax.value->value) {
