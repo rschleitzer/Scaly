@@ -1,3 +1,5 @@
+use scaly.memory.Page
+
 define HashSet[T]
 (
     slots: pointer[Vector[Vector[T]]] (null)
@@ -18,8 +20,8 @@ define HashSet[T]
             var array Array[T]$()
             var list_iterator ListIterator[Slot[T]]((*(*hash_set_builder.slots).get(i)).head)
             while let item list_iterator.next()
-                array.add((*item).value)
-            if array.length > 0
+                (*array).add((*item).value)
+            if (*array).length > 0
                 (*slots).put(i, Vector[T](rp, array))
 
             set i: i + 1

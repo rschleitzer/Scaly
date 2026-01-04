@@ -2220,7 +2220,9 @@ llvm::Expected<PlannedOperand> Planner::collapseOperandSequence(
                         if (ElementType) {
                             Call.ResultType = *ElementType;
                         } else {
-                            Call.ResultType = OperandType;
+                            // Not a pointer type - raise an error
+                            return makePlannerNotImplementedError(File, Ops[0].Loc,
+                                "cannot dereference non-pointer type: " + OperandType.Name);
                         }
                     } else if (TypeExpr->Name == "&") {
                         Call.ResultType.Loc = Ops[0].Loc;
@@ -2270,8 +2272,9 @@ llvm::Expected<PlannedOperand> Planner::collapseOperandSequence(
                 if (ElementType) {
                     Call.ResultType = *ElementType;
                 } else {
-                    // Not a pointer type - error will be caught later
-                    Call.ResultType = OperandType;
+                    // Not a pointer type - raise an error
+                    return makePlannerNotImplementedError(File, Ops[0].Loc,
+                        "cannot dereference non-pointer type: " + OperandType.Name);
                 }
             } else if (TypeExpr->Name == "&") {
                 // Address-of operator: result type is pointer[operand type]
@@ -3064,6 +3067,76 @@ const Concept* Planner::lookupConcept(llvm::StringRef Name) {
         for (const auto& Use : Mod->Uses) {
             // Check if the Use path ends with the name we're looking for
             if (!Use.Path.empty() && Use.Path.back() == Name) {
+                // First, check if the path starts with a namespace defined in our module stack
+                // This handles intra-package references like "use scaly.memory.Page" from within scaly
+                if (Use.Path.size() >= 2) {
+                    for (auto StackIt = ModuleStack.rbegin(); StackIt != ModuleStack.rend(); ++StackIt) {
+                        const Module* ParentMod = *StackIt;
+                        for (const auto& Member : ParentMod->Members) {
+                            if (auto* Conc = std::get_if<Concept>(&Member)) {
+                                if (Conc->Name == Use.Path[0]) {
+                                    // Found a namespace matching the first path element
+                                    // Navigate through the namespace's modules
+                                    const Namespace* CurrentNS = nullptr;
+                                    if (auto* NS = std::get_if<Namespace>(&Conc->Def)) {
+                                        CurrentNS = NS;
+                                    }
+                                    const Module* CurrentMod = nullptr;
+                                    bool Found = CurrentNS != nullptr;
+
+                                    for (size_t I = 1; I < Use.Path.size() - 1 && Found; ++I) {
+                                        Found = false;
+                                        if (CurrentNS) {
+                                            for (const auto& SubMod : CurrentNS->Modules) {
+                                                if (SubMod.Name == Use.Path[I]) {
+                                                    CurrentMod = &SubMod;
+                                                    CurrentNS = nullptr;
+                                                    Found = true;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        if (!Found && CurrentMod) {
+                                            for (const auto& SubMod : CurrentMod->Modules) {
+                                                if (SubMod.Name == Use.Path[I]) {
+                                                    CurrentMod = &SubMod;
+                                                    Found = true;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    if (Found && CurrentMod) {
+                                        // Look for the concept in the final module
+                                        for (const auto& ModMember : CurrentMod->Members) {
+                                            if (auto* SubConc = std::get_if<Concept>(&ModMember)) {
+                                                if (SubConc->Name == Name) {
+                                                    Concepts[Name.str()] = SubConc;
+                                                    return SubConc;
+                                                }
+                                            }
+                                        }
+                                        // Also check sub-modules
+                                        for (const auto& SubMod : CurrentMod->Modules) {
+                                            if (SubMod.Name == Name) {
+                                                for (const auto& SubMember : SubMod.Members) {
+                                                    if (auto* SubConc = std::get_if<Concept>(&SubMember)) {
+                                                        if (SubConc->Name == Name) {
+                                                            Concepts[Name.str()] = SubConc;
+                                                            return SubConc;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // Try to resolve the full path by searching sibling programs
                 // Start from the first element of the path
                 for (const auto& Sibling : SiblingPrograms) {
@@ -3083,6 +3156,77 @@ const Concept* Planner::lookupConcept(llvm::StringRef Name) {
                             }
                         }
                         if (Found) {
+                            // Look for the concept in the final module
+                            for (const auto& Member : CurrentMod->Members) {
+                                if (auto* Conc = std::get_if<Concept>(&Member)) {
+                                    if (Conc->Name == Name) {
+                                        Concepts[Name.str()] = Conc;
+                                        return Conc;
+                                    }
+                                }
+                            }
+                            // Also check sub-modules
+                            for (const auto& SubMod : CurrentMod->Modules) {
+                                if (SubMod.Name == Name) {
+                                    for (const auto& Member : SubMod.Members) {
+                                        if (auto* Conc = std::get_if<Concept>(&Member)) {
+                                            if (Conc->Name == Name) {
+                                                Concepts[Name.str()] = Conc;
+                                                return Conc;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Also check LoadedPackages for packages loaded via "package" statements
+                if (Use.Path.size() >= 2) {
+                    auto PkgIt = LoadedPackages.find(Use.Path[0]);
+                    if (PkgIt != LoadedPackages.end()) {
+                        const Module* CurrentMod = PkgIt->second;
+                        const Namespace* CurrentNS = nullptr;
+
+                        // The package typically contains a `define <package_name> {...}` concept
+                        for (const auto& Member : CurrentMod->Members) {
+                            if (auto* Conc = std::get_if<Concept>(&Member)) {
+                                if (Conc->Name == Use.Path[0]) {
+                                    if (auto* NS = std::get_if<Namespace>(&Conc->Def)) {
+                                        CurrentNS = NS;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
+                        // Navigate through the path (start from index 1 since 0 is the package name)
+                        bool Found = true;
+                        for (size_t I = 1; I < Use.Path.size() - 1 && Found; ++I) {
+                            Found = false;
+                            if (CurrentNS) {
+                                for (const auto& SubMod : CurrentNS->Modules) {
+                                    if (SubMod.Name == Use.Path[I]) {
+                                        CurrentMod = &SubMod;
+                                        CurrentNS = nullptr;
+                                        Found = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (!Found && CurrentMod) {
+                                for (const auto& SubMod : CurrentMod->Modules) {
+                                    if (SubMod.Name == Use.Path[I]) {
+                                        CurrentMod = &SubMod;
+                                        Found = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
+                        if (Found && CurrentMod) {
                             // Look for the concept in the final module
                             for (const auto& Member : CurrentMod->Members) {
                                 if (auto* Conc = std::get_if<Concept>(&Member)) {
@@ -4017,17 +4161,9 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                         Type CombinedType = *TypeExpr;
                         CombinedType.Generics = std::make_shared<std::vector<Type>>(std::move(ExtractedGenerics));
 
-                        // Check if there's a subsequent Lifetime operand (Type with empty Name)
-                        size_t NextIdx = i + 2;
-                        if (NextIdx < Ops.size()) {
-                            if (auto* LifeType = std::get_if<Type>(&Ops[NextIdx].Expr)) {
-                                if (LifeType->Name.empty() &&
-                                    !std::holds_alternative<UnspecifiedLifetime>(LifeType->Life)) {
-                                    // Attach the lifetime to combined type
-                                    CombinedType.Life = LifeType->Life;
-                                    i = NextIdx;  // Skip the lifetime operand
-                                }
-                            }
+                        // Use the lifetime from the Matrix (e.g., [T]^lifetime)
+                        if (!std::holds_alternative<UnspecifiedLifetime>(MatrixExpr->Life)) {
+                            CombinedType.Life = MatrixExpr->Life;
                         }
 
                         // Create new operand with combined type

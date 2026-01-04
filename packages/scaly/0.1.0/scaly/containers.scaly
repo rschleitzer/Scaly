@@ -236,7 +236,7 @@ define containers {
                                 (*sb).append(j)
                                 (*sb).append(k)
                                 (*sb).append(l)
-                                (*map).add((*sb).to_string(rp), (size_t)i * j * k * l)
+                                (*map).add((*sb).to_string(rp), (i * j * k * l) as size_t)
                                 (*hash_set).add((*sb).to_string(rp))
                                 (*rp2).deallocate_extensions()
                                 free(rp2 as pointer[void])
@@ -274,7 +274,7 @@ define containers {
                                     exit(-43)
                                 if (*map).contains(theString) = false
                                     exit(-44)
-                                if *(*map)[theString] <> (size_t)i * j * k * l
+                                if *(*map)[theString] <> (i * j * k * l) as size_t
                                     exit(-45)
                                 (*rp2).deallocate_extensions()
                                 free(rp2 as pointer[void])

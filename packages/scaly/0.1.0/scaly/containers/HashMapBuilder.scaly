@@ -1,3 +1,5 @@
+use scaly.memory.Page
+
 define HashMapBuilder[K, V]
 (
     length: size_t (0)

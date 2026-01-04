@@ -313,6 +313,7 @@ struct Tuple {
 struct Matrix {
     Span Loc;
     std::vector<std::vector<Operand>> Operations;
+    Lifetime Life;  // Lifetime from vector syntax (e.g., [T]^lifetime)
 };
 
 struct New {
