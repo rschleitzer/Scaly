@@ -261,6 +261,8 @@ private:
     };
     std::optional<OperatorMatch> findOperator(
         llvm::StringRef Name, const PlannedType &Left, const PlannedType &Right);
+    std::optional<OperatorMatch> findSubscriptOperator(
+        const PlannedType &ContainerType, const PlannedType &IndexType, Span Loc);
 
     // Resolve a function call with given arguments
     llvm::Expected<PlannedType> resolveFunctionCall(
