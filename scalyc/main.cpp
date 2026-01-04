@@ -81,8 +81,9 @@ static void loadSiblingPrograms(scaly::Planner &Planner, StringRef Filename) {
     loadFromDirRecursive(Dir);
 
     // Load from sibling directories (directories at the same level)
+    // But skip if parent is root or a system directory
     SmallString<256> ParentDir = sys::path::parent_path(Dir);
-    if (!ParentDir.empty()) {
+    if (!ParentDir.empty() && ParentDir != "/" && ParentDir.size() > 4) {
         std::error_code EC;
         for (sys::fs::directory_iterator DI(ParentDir, EC), DE; DI != DE && !EC; DI.increment(EC)) {
             StringRef SubPath = DI->path();
