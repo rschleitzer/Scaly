@@ -3595,6 +3595,11 @@ llvm::Expected<PlannedType> Planner::instantiateGeneric(
         TypeSubstitutions[Generic.Parameters[I].Name] = Args[I];
     }
 
+    // Save and clear scopes to prevent caller's local variables from leaking
+    // into the generic instantiation context
+    std::vector<std::map<std::string, LocalBinding>> OldScopes;
+    std::swap(Scopes, OldScopes);
+
     // 5. Plan the specialized version based on definition kind
     PlannedType Result;
     Result.Loc = InstantiationLoc;
@@ -3625,6 +3630,7 @@ llvm::Expected<PlannedType> Planner::instantiateGeneric(
         if (!Planned) {
             InstantiatedStructures.erase(CacheKey);  // Remove placeholder on error
             TypeSubstitutions = OldSubst;
+            std::swap(Scopes, OldScopes);  // Restore scopes on error
             return Planned.takeError();
         }
         Planned->Origin = Origin;
@@ -3643,6 +3649,7 @@ llvm::Expected<PlannedType> Planner::instantiateGeneric(
         if (!Planned) {
             InstantiatedUnions.erase(CacheKey);  // Remove placeholder on error
             TypeSubstitutions = OldSubst;
+            std::swap(Scopes, OldScopes);  // Restore scopes on error
             return Planned.takeError();
         }
         Planned->Origin = Origin;
@@ -3653,14 +3660,16 @@ llvm::Expected<PlannedType> Planner::instantiateGeneric(
         // Type alias - resolve with substitutions active
         auto Resolved = resolveType(*T, InstantiationLoc);
         TypeSubstitutions = OldSubst;
+        std::swap(Scopes, OldScopes);  // Restore scopes
         if (!Resolved) {
             return Resolved.takeError();
         }
         return *Resolved;
     }
 
-    // Restore old substitutions
+    // Restore old substitutions and scopes
     TypeSubstitutions = OldSubst;
+    std::swap(Scopes, OldScopes);
 
     if (!Success) {
         return makePlannerNotImplementedError(File, InstantiationLoc,
