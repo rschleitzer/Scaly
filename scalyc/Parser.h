@@ -54,6 +54,8 @@ private:
     llvm::Expected<GenericArgumentsSyntax> parseGenericArguments();
     llvm::Expected<std::vector<GenericArgumentSyntax>*> parseGenericArgumentList();
     llvm::Expected<GenericArgumentSyntax> parseGenericArgument();
+    llvm::Expected<TypeArgumentSyntax> parseTypeArgument();
+    llvm::Expected<LiteralArgumentSyntax> parseLiteralArgument();
     llvm::Expected<OptionalSyntax> parseOptional();
     llvm::Expected<ParameterSetSyntax> parseParameterSet();
     llvm::Expected<ParametersSyntax> parseParameters();
@@ -96,8 +98,6 @@ private:
     llvm::Expected<OperandSyntax> parseOperand();
     llvm::Expected<std::vector<MemberAccessSyntax>*> parseMemberAccessList();
     llvm::Expected<MemberAccessSyntax> parseMemberAccess();
-    llvm::Expected<DotAccessSyntax> parseDotAccess();
-    llvm::Expected<SubscriptSyntax> parseSubscript();
     llvm::Expected<ExpressionSyntax> parseExpression();
     llvm::Expected<LiteralSyntax> parseLiteral();
     llvm::Expected<ObjectSyntax> parseObject();

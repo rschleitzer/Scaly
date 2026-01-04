@@ -796,6 +796,23 @@ llvm::Expected<std::vector<GenericArgumentSyntax>*> Parser::parseGenericArgument
 }
 
 llvm::Expected<GenericArgumentSyntax> Parser::parseGenericArgument() {
+    {
+        auto Result = parseTypeArgument();
+        if (Result)
+            return GenericArgumentSyntax{std::move(*Result)};
+        llvm::consumeError(Result.takeError());
+    }
+    {
+        auto Result = parseLiteralArgument();
+        if (Result)
+            return GenericArgumentSyntax{std::move(*Result)};
+        llvm::consumeError(Result.takeError());
+    }
+    return different();
+
+}
+
+llvm::Expected<TypeArgumentSyntax> Parser::parseTypeArgument() {
     size_t Start = Lex.previousPosition();
 
     auto TypeOrErr = parseType();
@@ -807,7 +824,23 @@ llvm::Expected<GenericArgumentSyntax> Parser::parseGenericArgument() {
 
     size_t End = Lex.position();
 
-    return GenericArgumentSyntax{Start, End, Type};
+    return TypeArgumentSyntax{Start, End, Type};
+
+}
+
+llvm::Expected<LiteralArgumentSyntax> Parser::parseLiteralArgument() {
+    size_t Start = Lex.previousPosition();
+
+    auto LiteralOrErr = parseLiteralToken();
+    if (!LiteralOrErr)
+        return LiteralOrErr.takeError();
+    auto Literal = std::move(*LiteralOrErr);
+
+    Lex.parsePunctuation(',');
+
+    size_t End = Lex.position();
+
+    return LiteralArgumentSyntax{Start, End, Literal};
 
 }
 
@@ -1734,23 +1767,6 @@ llvm::Expected<std::vector<MemberAccessSyntax>*> Parser::parseMemberAccessList()
 }
 
 llvm::Expected<MemberAccessSyntax> Parser::parseMemberAccess() {
-    {
-        auto Result = parseDotAccess();
-        if (Result)
-            return MemberAccessSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
-    }
-    {
-        auto Result = parseSubscript();
-        if (Result)
-            return MemberAccessSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
-    }
-    return different();
-
-}
-
-llvm::Expected<DotAccessSyntax> Parser::parseDotAccess() {
     size_t Start = Lex.previousPosition();
 
     if (!Lex.parsePunctuation('.'))
@@ -1763,27 +1779,7 @@ llvm::Expected<DotAccessSyntax> Parser::parseDotAccess() {
 
     size_t End = Lex.position();
 
-    return DotAccessSyntax{Start, End, Type};
-
-}
-
-llvm::Expected<SubscriptSyntax> Parser::parseSubscript() {
-    size_t Start = Lex.previousPosition();
-
-    if (!Lex.parsePunctuation('['))
-        return different();
-
-    auto OperandsOrErr = parseOperandList();
-    if (!OperandsOrErr)
-        return invalid(Start, Lex.position(), "expected Operand");
-    auto *Operands = *OperandsOrErr;
-
-    if (!Lex.parsePunctuation(']'))
-        return invalid(Start, Lex.position(), "expected ']'");
-
-    size_t End = Lex.position();
-
-    return SubscriptSyntax{Start, End, Operands};
+    return MemberAccessSyntax{Start, End, Type};
 
 }
 
