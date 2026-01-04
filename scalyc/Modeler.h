@@ -28,6 +28,7 @@ private:
     std::string File;
 
     // Type handling
+    Type nameToType(const NameSyntax &Syntax);
     llvm::Expected<std::unique_ptr<Type>> handleType(const TypeSyntax &Syntax);
     Lifetime handleLifetime(const LifetimeSyntax *Syntax);
 

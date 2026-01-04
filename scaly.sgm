@@ -318,11 +318,11 @@
 
 <syntax id = MemberAccess                 multiple
     <content link = dot
-    <content link = Type                                    property = type
+    <content link = Name                                    property = name
 
 <syntax id = Expression                            abstract
     <content link = Literal
-    <content link = Type
+    <content link = Name
     <content link = Object
     <content link = Vector
     <content link = Block
@@ -338,6 +338,7 @@
     <content link = AlignOf
     <content link = Is
     <content link = As
+    <content link = Lifetime
 
 <syntax id = Literal
     <content literal                                        property = literal

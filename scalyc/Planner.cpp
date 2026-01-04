@@ -3769,16 +3769,142 @@ llvm::Expected<PlannedOperand> Planner::planOperand(const Operand &Op) {
 llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
     const std::vector<Operand> &Ops) {
 
-    std::vector<PlannedOperand> Result;
-    Result.reserve(Ops.size());
+    // Pre-process: Combine Type + Matrix patterns into Type with generics
+    // This handles the new grammar where generic arguments are parsed as Vector
+    // e.g., HashMap[String, int]$() becomes: Name + Vector + Lifetime + Tuple
+    // We combine Name + Vector into Type with generics, then attach Lifetime
+    std::vector<Operand> ProcessedOps;
+    ProcessedOps.reserve(Ops.size());
 
     for (size_t i = 0; i < Ops.size(); ++i) {
-        const auto &Op = Ops[i];
+        const Operand& Op = Ops[i];
+
+        // Check for Type (name only, no generics) followed by Matrix (generic arguments)
+        if (auto* TypeExpr = std::get_if<Type>(&Op.Expr)) {
+            if (!TypeExpr->Name.empty() && (!TypeExpr->Generics || TypeExpr->Generics->empty()) &&
+                i + 1 < Ops.size()) {
+                const Operand& NextOp = Ops[i + 1];
+                if (auto* MatrixExpr = std::get_if<Matrix>(&NextOp.Expr)) {
+                    // Extract types from Matrix elements (each element is a vector of operands)
+                    // Handle nested generics: [Box[int]] is Matrix containing [Name("Box"), Matrix([int])]
+                    std::vector<Type> ExtractedGenerics;
+                    bool ValidGenerics = true;
+                    for (const auto& Row : MatrixExpr->Operations) {
+                        // Check for nested generic pattern: Name + Matrix within a row
+                        if (Row.size() >= 2) {
+                            if (auto* NestedName = std::get_if<Type>(&Row[0].Expr)) {
+                                if (!NestedName->Name.empty() &&
+                                    (!NestedName->Generics || NestedName->Generics->empty())) {
+                                    if (auto* NestedMatrix = std::get_if<Matrix>(&Row[1].Expr)) {
+                                        // Recursively extract generics from nested Matrix
+                                        std::vector<Type> NestedGenerics;
+                                        bool ValidNested = true;
+                                        for (const auto& NestedRow : NestedMatrix->Operations) {
+                                            for (const auto& NestedOp : NestedRow) {
+                                                if (auto* NestedType = std::get_if<Type>(&NestedOp.Expr)) {
+                                                    NestedGenerics.push_back(*NestedType);
+                                                } else {
+                                                    ValidNested = false;
+                                                    break;
+                                                }
+                                            }
+                                            if (!ValidNested) break;
+                                        }
+                                        if (ValidNested && !NestedGenerics.empty()) {
+                                            // Create combined nested type
+                                            Type NestedType = *NestedName;
+                                            NestedType.Generics = std::make_shared<std::vector<Type>>(
+                                                std::move(NestedGenerics));
+                                            ExtractedGenerics.push_back(std::move(NestedType));
+                                            continue;  // Skip normal processing for this row
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        // Normal case: single-element rows
+                        for (const auto& Operand : Row) {
+                            if (auto* ElemType = std::get_if<Type>(&Operand.Expr)) {
+                                ExtractedGenerics.push_back(*ElemType);
+                            } else {
+                                // Not a type - could be literal or expression, skip
+                                ValidGenerics = false;
+                                break;
+                            }
+                        }
+                        if (!ValidGenerics) break;
+                    }
+
+                    if (ValidGenerics && !ExtractedGenerics.empty()) {
+                        // Create combined Type with generics
+                        Type CombinedType = *TypeExpr;
+                        CombinedType.Generics = std::make_shared<std::vector<Type>>(std::move(ExtractedGenerics));
+
+                        // Check if there's a subsequent Lifetime operand (Type with empty Name)
+                        size_t NextIdx = i + 2;
+                        if (NextIdx < Ops.size()) {
+                            if (auto* LifeType = std::get_if<Type>(&Ops[NextIdx].Expr)) {
+                                if (LifeType->Name.empty() &&
+                                    !std::holds_alternative<UnspecifiedLifetime>(LifeType->Life)) {
+                                    // Attach the lifetime to combined type
+                                    CombinedType.Life = LifeType->Life;
+                                    i = NextIdx;  // Skip the lifetime operand
+                                }
+                            }
+                        }
+
+                        // Create new operand with combined type
+                        Operand CombinedOp;
+                        CombinedOp.Loc = Op.Loc;
+                        CombinedOp.Expr = CombinedType;
+                        CombinedOp.MemberAccess = NextOp.MemberAccess;  // Preserve member access from Matrix
+                        ProcessedOps.push_back(std::move(CombinedOp));
+                        i++;  // Skip the Matrix operand (already processed)
+                        continue;
+                    }
+                }
+            }
+        }
+
+        // Check for Type (no generics) + Lifetime pattern (e.g., Point$(1,2))
+        // This handles non-generic constructor calls with lifetime
+        if (auto* TypeExpr = std::get_if<Type>(&Op.Expr)) {
+            if (!TypeExpr->Name.empty() && (!TypeExpr->Generics || TypeExpr->Generics->empty()) &&
+                std::holds_alternative<UnspecifiedLifetime>(TypeExpr->Life) &&
+                i + 1 < Ops.size()) {
+                const Operand& NextOp = Ops[i + 1];
+                if (auto* LifeType = std::get_if<Type>(&NextOp.Expr)) {
+                    if (LifeType->Name.empty() &&
+                        !std::holds_alternative<UnspecifiedLifetime>(LifeType->Life)) {
+                        // Combine Type + Lifetime
+                        Type CombinedType = *TypeExpr;
+                        CombinedType.Life = LifeType->Life;
+
+                        Operand CombinedOp;
+                        CombinedOp.Loc = Op.Loc;
+                        CombinedOp.Expr = CombinedType;
+                        CombinedOp.MemberAccess = Op.MemberAccess;
+                        ProcessedOps.push_back(std::move(CombinedOp));
+                        i++;  // Skip the Lifetime operand
+                        continue;
+                    }
+                }
+            }
+        }
+
+        ProcessedOps.push_back(Op);
+    }
+
+    std::vector<PlannedOperand> Result;
+    Result.reserve(ProcessedOps.size());
+
+    for (size_t i = 0; i < ProcessedOps.size(); ++i) {
+        const auto &Op = ProcessedOps[i];
 
         // Check for method call pattern: variable.method followed by Tuple
         // e.g., p.distance() where p is a variable of struct type
-        if (i + 1 < Ops.size()) {
-            const auto &NextOp = Ops[i + 1];
+        if (i + 1 < ProcessedOps.size()) {
+            const auto &NextOp = ProcessedOps[i + 1];
 
             // Check if current op is a Type path like ["p", "method"] where "p" is a variable
             if (auto* TypeExpr = std::get_if<Type>(&Op.Expr)) {
@@ -3998,8 +4124,8 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
 
         // Check for method call pattern on any operand with member access
         // e.g., (*page).reset() where (*page) is a grouped dereference expression
-        if (i + 1 < Ops.size()) {
-            const auto &NextOp = Ops[i + 1];
+        if (i + 1 < ProcessedOps.size()) {
+            const auto &NextOp = ProcessedOps[i + 1];
             // Check if current op has member access and next is a tuple (args)
             if (Op.MemberAccess && !Op.MemberAccess->empty() &&
                 std::holds_alternative<Tuple>(NextOp.Expr)) {
@@ -4123,8 +4249,8 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
         // Check for union variant constructor pattern: Union.Variant(value)
         // e.g., Result.Ok(42) or Option.Some(value)
         // Also handles generic unions: Option[int].Some(42)
-        if (i + 1 < Ops.size()) {
-            const auto &NextOp = Ops[i + 1];
+        if (i + 1 < ProcessedOps.size()) {
+            const auto &NextOp = ProcessedOps[i + 1];
             if (auto* TypeExpr = std::get_if<Type>(&Op.Expr)) {
                 // Case 1: Non-generic union - Name has both union and variant (e.g., Result.Ok)
                 if (TypeExpr->Name.size() >= 2 && std::holds_alternative<Tuple>(NextOp.Expr)) {
@@ -4275,8 +4401,8 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
         // Check for static method call pattern: Type.method() followed by Tuple
         // e.g., Page.allocate_page() or Foo.create(args)
         // Also handles fully qualified names: scaly.memory.Page.get()
-        if (i + 1 < Ops.size()) {
-            const auto &NextOp = Ops[i + 1];
+        if (i + 1 < ProcessedOps.size()) {
+            const auto &NextOp = ProcessedOps[i + 1];
             if (auto* TypeExpr = std::get_if<Type>(&Op.Expr)) {
                 // Type path with at least 2 segments: Type.method or module.Type.method
                 if (TypeExpr->Name.size() >= 2 && std::holds_alternative<Tuple>(NextOp.Expr)) {
@@ -4411,8 +4537,8 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
         // Check for type constructor pattern: Type followed by Tuple
         // e.g., Point(3, 4) or Point(3, 4).x where Point is a struct type
         // Also handles generic types: Box[int](42) where Box[T] is a generic struct
-        if (i + 1 < Ops.size()) {
-            const auto &NextOp = Ops[i + 1];
+        if (i + 1 < ProcessedOps.size()) {
+            const auto &NextOp = ProcessedOps[i + 1];
             // Check if current op is a type that's a struct (with or without generics)
             if (auto* TypeExpr = std::get_if<Type>(&Op.Expr)) {
                 if (TypeExpr->Name.size() == 1) {
@@ -4616,8 +4742,8 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                     const Concept* Conc = lookupConcept(TypeExpr->Name[0]);
                     if (Conc && std::holds_alternative<Structure>(Conc->Def)) {
                         // Check that next operand is NOT a tuple (otherwise the above block handles it)
-                        bool NextIsTuple = (i + 1 < Ops.size()) &&
-                                           std::holds_alternative<Tuple>(Ops[i + 1].Expr);
+                        bool NextIsTuple = (i + 1 < ProcessedOps.size()) &&
+                                           std::holds_alternative<Tuple>(ProcessedOps[i + 1].Expr);
                         if (!NextIsTuple) {
                             // This is Type$ or Type# without args - zero-argument constructor
                             PlannedType StructType;
@@ -4744,8 +4870,8 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                 const std::string& VariantName = Op.MemberAccess->at(0).Name[0];
 
                 // Only handle if next operand is NOT a tuple (otherwise Case 2 above handles it)
-                bool NextIsTuple = (i + 1 < Ops.size()) &&
-                                   std::holds_alternative<Tuple>(Ops[i + 1].Expr);
+                bool NextIsTuple = (i + 1 < ProcessedOps.size()) &&
+                                   std::holds_alternative<Tuple>(ProcessedOps[i + 1].Expr);
                 if (!NextIsTuple) {
                     // Look up the concept to check if it's a union
                     const Concept* Conc = lookupConcept(UnionName);
@@ -4796,8 +4922,8 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
 
         // Check for function call pattern: function_name followed by Tuple
         // e.g., seven() or add(3, 4)
-        if (i + 1 < Ops.size()) {
-            const auto &NextOp = Ops[i + 1];
+        if (i + 1 < ProcessedOps.size()) {
+            const auto &NextOp = ProcessedOps[i + 1];
             if (auto* TypeExpr = std::get_if<Type>(&Op.Expr)) {
                 if (TypeExpr->Name.size() == 1 && (!TypeExpr->Generics || TypeExpr->Generics->empty())) {
                     const std::string& FuncName = TypeExpr->Name[0];

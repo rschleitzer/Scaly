@@ -489,13 +489,13 @@ struct LiteralSyntax {
 };
 
 struct ExpressionSyntax {
-    std::variant<LiteralSyntax, TypeSyntax, ObjectSyntax, VectorSyntax, BlockSyntax, IfSyntax, MatchSyntax, LambdaSyntax, ForSyntax, WhileSyntax, ChooseSyntax, TrySyntax, RepeatSyntax, SizeOfSyntax, AlignOfSyntax, IsSyntax, AsSyntax> Value;
+    std::variant<LiteralSyntax, NameSyntax, ObjectSyntax, VectorSyntax, BlockSyntax, IfSyntax, MatchSyntax, LambdaSyntax, ForSyntax, WhileSyntax, ChooseSyntax, TrySyntax, RepeatSyntax, SizeOfSyntax, AlignOfSyntax, IsSyntax, AsSyntax, LifetimeSyntax> Value;
 };
 
 struct MemberAccessSyntax {
     size_t Start;
     size_t End;
-    TypeSyntax type;
+    NameSyntax name;
 };
 
 struct OperandSyntax {
