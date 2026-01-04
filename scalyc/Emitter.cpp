@@ -246,10 +246,26 @@ llvm::Expected<std::unique_ptr<llvm::Module>> Emitter::emit(const Plan &P,
     for (const auto &[name, Func] : P.Functions) {
         emitFunctionDecl(Func);
     }
-    // Also emit method, initializer, and deinitializer declarations from structures
+    // Also emit method, operator, initializer, and deinitializer declarations from structures
     for (const auto &[name, Struct] : P.Structures) {
         for (const auto &Method : Struct.Methods) {
             emitFunctionDecl(Method);
+        }
+        for (const auto &Op : Struct.Operators) {
+            // Convert PlannedOperator to PlannedFunction for emission
+            PlannedFunction OpFunc;
+            OpFunc.Loc = Op.Loc;
+            OpFunc.Private = Op.Private;
+            OpFunc.Pure = true;  // Operators are always pure
+            OpFunc.Name = Op.Name;
+            OpFunc.MangledName = Op.MangledName;
+            OpFunc.Input = Op.Input;
+            OpFunc.Returns = Op.Returns;
+            OpFunc.Throws = Op.Throws;
+            OpFunc.Impl = Op.Impl;
+            OpFunc.Origin = Op.Origin;
+            OpFunc.Scheme = Op.Scheme;
+            emitFunctionDecl(OpFunc);
         }
         for (const auto &Init : Struct.Initializers) {
             emitInitializerDecl(Struct, Init);
@@ -266,11 +282,30 @@ llvm::Expected<std::unique_ptr<llvm::Module>> Emitter::emit(const Plan &P,
                 return std::move(Err);
         }
     }
-    // Also emit method, initializer, and deinitializer bodies from structures
+    // Also emit method, operator, initializer, and deinitializer bodies from structures
     for (const auto &[name, Struct] : P.Structures) {
         for (const auto &Method : Struct.Methods) {
             if (auto *LLVMFunc = FunctionCache[Method.MangledName]) {
                 if (auto Err = emitFunctionBody(Method, LLVMFunc))
+                    return std::move(Err);
+            }
+        }
+        for (const auto &Op : Struct.Operators) {
+            if (auto *LLVMFunc = FunctionCache[Op.MangledName]) {
+                // Convert PlannedOperator to PlannedFunction for emission
+                PlannedFunction OpFunc;
+                OpFunc.Loc = Op.Loc;
+                OpFunc.Private = Op.Private;
+                OpFunc.Pure = true;
+                OpFunc.Name = Op.Name;
+                OpFunc.MangledName = Op.MangledName;
+                OpFunc.Input = Op.Input;
+                OpFunc.Returns = Op.Returns;
+                OpFunc.Throws = Op.Throws;
+                OpFunc.Impl = Op.Impl;
+                OpFunc.Origin = Op.Origin;
+                OpFunc.Scheme = Op.Scheme;
+                if (auto Err = emitFunctionBody(OpFunc, LLVMFunc))
                     return std::move(Err);
             }
         }
