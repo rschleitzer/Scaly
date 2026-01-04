@@ -736,8 +736,21 @@ const Function* Planner::lookupPackageFunction(const std::vector<std::string>& P
 }
 
 std::vector<const Function*> Planner::lookupFunction(llvm::StringRef Name) {
+    // Build cache key that includes current structure context
+    // Functions visible depend on what structure we're inside
+    std::string CacheKey = Name.str();
+    if (!CurrentStructureName.empty()) {
+        // Extract base struct name for cache key
+        std::string BaseName = CurrentStructureName;
+        size_t DotPos = BaseName.find('.');
+        if (DotPos != std::string::npos) {
+            BaseName = BaseName.substr(0, DotPos);
+        }
+        CacheKey += "@" + BaseName;
+    }
+
     // Check function cache
-    auto It = Functions.find(Name.str());
+    auto It = Functions.find(CacheKey);
     if (It != Functions.end()) {
         return It->second;
     }
@@ -757,7 +770,9 @@ std::vector<const Function*> Planner::lookupFunction(llvm::StringRef Name) {
 
     // If we're inside a structure, also search its methods
     // This allows calling sibling methods like allocate_page() from allocate()
-    if (Result.empty() && !CurrentStructureName.empty()) {
+    // Always search the current structure's methods (not just when Result is empty)
+    // to ensure we find methods that might shadow module-level functions
+    if (!CurrentStructureName.empty()) {
         // Extract base struct name (remove generic suffix like ".T")
         std::string BaseName = CurrentStructureName;
         size_t DotPos = BaseName.find('.');
@@ -806,7 +821,7 @@ std::vector<const Function*> Planner::lookupFunction(llvm::StringRef Name) {
 
     // Cache the result
     if (!Result.empty()) {
-        Functions[Name.str()] = Result;
+        Functions[CacheKey] = Result;
     }
 
     return Result;
@@ -3130,6 +3145,17 @@ llvm::Expected<PlannedType> Planner::resolveType(const Type &T, Span Instantiati
         if (!Conc->Parameters.empty()) {
             if (Result.Generics.empty()) {
                 // Generic type used without type arguments
+                // Debug: Print the Type's name path to understand where it comes from
+                llvm::errs() << "ERROR: Generic type '" << Name << "' used without type args\n";
+                llvm::errs() << "  Loc.Start=" << T.Loc.Start << ", Loc.End=" << T.Loc.End << "\n";
+                llvm::errs() << "  Name path: ";
+                for (size_t i = 0; i < T.Name.size(); ++i) {
+                    if (i > 0) llvm::errs() << ".";
+                    llvm::errs() << T.Name[i];
+                }
+                llvm::errs() << "\n";
+                llvm::errs() << "  Generics ptr: " << (T.Generics ? "non-null" : "null") << "\n";
+                llvm::errs() << "  File: " << File << "\n";
                 return makeGenericArityError(File, T.Loc, Name,
                     Conc->Parameters.size(), 0);
             }
@@ -3853,52 +3879,55 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                 if (auto* MatrixExpr = std::get_if<Matrix>(&NextOp.Expr)) {
                     // Extract types from Matrix elements (each element is a vector of operands)
                     // Handle nested generics: [Box[int]] is Matrix containing [Name("Box"), Matrix([int])]
-                    std::vector<Type> ExtractedGenerics;
-                    bool ValidGenerics = true;
-                    for (const auto& Row : MatrixExpr->Operations) {
-                        // Check for nested generic pattern: Name + Matrix within a row
+                    // Use a recursive lambda to handle arbitrary nesting depth
+                    std::function<std::optional<Type>(const std::vector<Operand>&)> extractTypeFromRow;
+                    extractTypeFromRow = [&](const std::vector<Operand>& Row) -> std::optional<Type> {
+                        if (Row.empty()) return std::nullopt;
+
+                        // Check for nested generic pattern: Type + Matrix
                         if (Row.size() >= 2) {
-                            if (auto* NestedName = std::get_if<Type>(&Row[0].Expr)) {
-                                if (!NestedName->Name.empty() &&
-                                    (!NestedName->Generics || NestedName->Generics->empty())) {
+                            if (auto* NameType = std::get_if<Type>(&Row[0].Expr)) {
+                                if (!NameType->Name.empty() &&
+                                    (!NameType->Generics || NameType->Generics->empty())) {
                                     if (auto* NestedMatrix = std::get_if<Matrix>(&Row[1].Expr)) {
                                         // Recursively extract generics from nested Matrix
                                         std::vector<Type> NestedGenerics;
-                                        bool ValidNested = true;
                                         for (const auto& NestedRow : NestedMatrix->Operations) {
-                                            for (const auto& NestedOp : NestedRow) {
-                                                if (auto* NestedType = std::get_if<Type>(&NestedOp.Expr)) {
-                                                    NestedGenerics.push_back(*NestedType);
-                                                } else {
-                                                    ValidNested = false;
-                                                    break;
-                                                }
-                                            }
-                                            if (!ValidNested) break;
+                                            auto NestedType = extractTypeFromRow(NestedRow);
+                                            if (!NestedType) return std::nullopt;
+                                            NestedGenerics.push_back(std::move(*NestedType));
                                         }
-                                        if (ValidNested && !NestedGenerics.empty()) {
-                                            // Create combined nested type
-                                            Type NestedType = *NestedName;
-                                            NestedType.Generics = std::make_shared<std::vector<Type>>(
+                                        if (!NestedGenerics.empty()) {
+                                            Type Result = *NameType;
+                                            Result.Generics = std::make_shared<std::vector<Type>>(
                                                 std::move(NestedGenerics));
-                                            ExtractedGenerics.push_back(std::move(NestedType));
-                                            continue;  // Skip normal processing for this row
+                                            return Result;
                                         }
                                     }
                                 }
                             }
                         }
-                        // Normal case: single-element rows
-                        for (const auto& Operand : Row) {
-                            if (auto* ElemType = std::get_if<Type>(&Operand.Expr)) {
-                                ExtractedGenerics.push_back(*ElemType);
-                            } else {
-                                // Not a type - could be literal or expression, skip
-                                ValidGenerics = false;
-                                break;
+
+                        // Single-element row: just extract the type
+                        if (Row.size() == 1) {
+                            if (auto* ElemType = std::get_if<Type>(&Row[0].Expr)) {
+                                return *ElemType;
                             }
                         }
-                        if (!ValidGenerics) break;
+
+                        return std::nullopt;
+                    };
+
+                    std::vector<Type> ExtractedGenerics;
+                    bool ValidGenerics = true;
+                    for (const auto& Row : MatrixExpr->Operations) {
+                        auto Extracted = extractTypeFromRow(Row);
+                        if (Extracted) {
+                            ExtractedGenerics.push_back(std::move(*Extracted));
+                        } else {
+                            ValidGenerics = false;
+                            break;
+                        }
                     }
 
                     if (ValidGenerics && !ExtractedGenerics.empty()) {
