@@ -139,6 +139,30 @@ static bool testContainersModule() {
     return true;
 }
 
+static bool testIoModule() {
+    const char* Name = "Module: io.test()";
+
+    auto ResultOrErr = runPackageTestFunction(ScalyPackagePath, "io.test");
+
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    int64_t Result = *ResultOrErr;
+    if (Result != 0) {
+        std::string Msg = "test returned error code " + std::to_string(Result);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
 // ============================================================================
 // Main Test Runner
 // ============================================================================
@@ -157,6 +181,10 @@ bool runModuleTests() {
     // Container module tests
     llvm::outs() << "  Container module tests:\n";
     testContainersModule();
+
+    // IO module tests
+    llvm::outs() << "  IO module tests:\n";
+    testIoModule();
 
     llvm::outs() << "\nModule tests: " << TestsPassed << " passed, "
                  << TestsFailed << " failed\n";
