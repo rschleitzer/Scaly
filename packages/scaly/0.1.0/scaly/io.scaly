@@ -2,6 +2,7 @@ use scaly.memory.runtime
 
 define io {
     module Console
+    module File
 
     function test_direct() returns int {
         ; Direct write call to test if external functions work in io module
@@ -24,6 +25,7 @@ define io {
         set result: test_console()
         if result <> 0
             return result
+        ; TODO: Add File.read/write tests once cross-module calls work in JIT
         return 0
     }
 }
