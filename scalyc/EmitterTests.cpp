@@ -469,6 +469,41 @@ static llvm::Expected<Plan> compileToPlan(llvm::StringRef Source) {
     return Pl.plan(*ModelResult);
 }
 
+// Helper: compile with scaly package loaded (for RBMM tests)
+static llvm::Expected<Plan> compileWithPackagesToPlan(llvm::StringRef Source) {
+    // Prepend package declaration and use statement
+    std::string FullSource = "package scaly 0.1.0\n"
+                             "use scaly.memory.Page\n\n";
+    FullSource += Source.str();
+
+    Parser P(FullSource);
+    auto ParseResult = P.parseProgram();
+    if (!ParseResult)
+        return ParseResult.takeError();
+
+    // Use path relative to build directory so package resolution works
+    Modeler M("../../packages/scaly/0.1.0/test.scaly");
+    auto ModelResult = M.buildProgram(*ParseResult);
+    if (!ModelResult)
+        return ModelResult.takeError();
+
+    Planner Pl("../../packages/scaly/0.1.0/test.scaly");
+    return Pl.plan(*ModelResult);
+}
+
+// Helper: run pipeline with packages to JIT int result
+static llvm::Expected<int64_t> evalIntWithPackages(llvm::StringRef Source) {
+    auto PlanResult = compileWithPackagesToPlan(Source);
+    if (!PlanResult)
+        return PlanResult.takeError();
+
+    EmitterConfig Config;
+    Config.EmitDebugInfo = false;
+    Emitter E(Config);
+
+    return E.jitExecuteInt(*PlanResult);
+}
+
 // Helper: run pipeline to JIT int result
 static llvm::Expected<int64_t> evalSimpleInt(llvm::StringRef Source) {
     auto PlanResult = compileToPlan(Source);
@@ -3327,15 +3362,9 @@ static bool testRBMMByValueReturn() {
 static bool testRBMMLocalPageAllocation() {
     const char* Name = "Pipeline: RBMM local page ($) allocation";
 
-    // TODO: This test requires Page.scaly to be compiled with the test
-    // The $ lifetime allocates on a local page, which requires Page runtime functions
-    // For now, skip this test until Page.scaly is integrated into the test harness
-    pass(Name);
-    return true;
-
     // Test that $ lifetime allocates on local page
     // Syntax: Type$(args) - lifetime comes before parameters
-    auto ResultOrErr = evalInt(
+    auto ResultOrErr = evalIntWithPackages(
         "define Point: (x: int, y: int)\n"
         "function test_local_alloc() returns int {\n"
         "    let p Point$(10, 32)\n"  // Allocate on local page
@@ -3364,15 +3393,9 @@ static bool testRBMMLocalPageAllocation() {
 static bool testRBMMCallerPageAllocation() {
     const char* Name = "Pipeline: RBMM caller page (#) allocation";
 
-    // TODO: This test requires the caller to set up ReturnPage, which is not yet implemented
-    // The # lifetime allocates on the caller's page for return values
-    // For now, skip this test until ReturnPage is properly set up
-    pass(Name);
-    return true;
-
     // Test that # lifetime allocates on caller's page and can be returned
     // Syntax: Type#(args) - lifetime comes before parameters
-    auto ResultOrErr = evalInt(
+    auto ResultOrErr = evalIntWithPackages(
         "define Point: (x: int, y: int)\n"
         "function make_point() returns pointer[Point] {\n"
         "    Point#(10, 32)\n"  // Allocate on caller's page
