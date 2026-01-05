@@ -7746,10 +7746,17 @@ llvm::Expected<Plan> Planner::plan(const Program &Prog) {
     // Register C runtime functions (aligned_alloc, free, exit) for RBMM support
     registerRuntimeFunctions();
 
-    // Load packages into the lookup map
+    // Load packages into the lookup map and plan them
     for (const auto &Pkg : Prog.Packages) {
         if (Pkg.Root) {
             LoadedPackages[Pkg.Name] = Pkg.Root.get();
+            // Plan package module so its functions get added to InstantiatedFunctions
+            auto PlannedPkgMod = planModule(*Pkg.Root);
+            if (!PlannedPkgMod) {
+                CurrentPlan = nullptr;
+                return PlannedPkgMod.takeError();
+            }
+            // Functions are added to InstantiatedFunctions as a side effect of planning
         }
     }
 
