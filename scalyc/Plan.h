@@ -204,6 +204,7 @@ using PlannedStatement = std::variant<
 struct PlannedBlock {
     Span Loc;
     std::vector<PlannedStatement> Statements;
+    bool NeedsLocalPageCleanup = false;  // True if this block contains $ allocations
 };
 
 struct PlannedIf {
@@ -440,6 +441,7 @@ struct PlannedFunction {
     PlannedImplementation Impl;
     std::shared_ptr<InstantiationInfo> Origin;
     bool NeedsLocalPage = false;  // True if function body uses $ allocations
+    bool CanThrow = false;        // True if function has Throws annotation
 
     // For polymorphic functions: the type scheme before instantiation
     std::shared_ptr<TypeScheme> Scheme;

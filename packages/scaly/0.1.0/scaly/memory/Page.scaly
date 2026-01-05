@@ -123,4 +123,45 @@ define Page
         if exclusive_pages.remove(page) = false
             exit (2)
     }
+
+    function save_watermark(this: Page) returns BlockWatermark {
+        if current_page <> null
+            return BlockWatermark(current_page, (*current_page).next_object, next_page, exclusive_pages.head)
+        let this_page Page.get(next_object)
+        BlockWatermark(this_page, next_object, next_page, exclusive_pages.head)
+    }
+
+    procedure restore_watermark(this: Page, mark: BlockWatermark) {
+        ; Deallocate exclusive pages added after watermark (prepended, so at front)
+        while exclusive_pages.head <> mark.exclusive_head
+        {
+            let node exclusive_pages.head
+            let page (*node).page
+            (*page).deallocate_extensions()
+            free(page as pointer[void])
+            set exclusive_pages.head: (*node).next
+        }
+
+        ; Deallocate extensions added after mark.extension_tail
+        deallocate_extensions_after(mark.extension_tail)
+
+        ; Restore allocation state
+        set current_page: mark.page
+        if mark.page <> null
+        {
+            set (*mark.page).next_object: mark.next_object
+        } else {
+            set next_object: mark.next_object
+        }
+    }
+
+    procedure deallocate_extensions_after(this: Page, stop_at: pointer[Page]) {
+        ; Walk next_page chain and free until we hit stop_at
+        while next_page <> null & next_page <> stop_at
+        {
+            let page_to_free next_page
+            set next_page: (*page_to_free).next_page
+            free(page_to_free as pointer[void])
+        }
+    }
 }
