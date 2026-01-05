@@ -4596,4 +4596,216 @@ llvm::Error Emitter::jitExecuteVoid(const Plan &P, llvm::StringRef MangledFuncti
     return llvm::Error::success();
 }
 
+llvm::Expected<int64_t> Emitter::jitExecuteIntFunction(const Plan &P, llvm::StringRef MangledFunctionName) {
+
+    // Store current plan for type lookups
+    CurrentPlan = &P;
+
+    // Create fresh module for JIT
+    Module = std::make_unique<llvm::Module>("jit_module", *Context);
+    Module->setTargetTriple(llvm::sys::getDefaultTargetTriple());
+
+    // Clear caches
+    TypeCache.clear();
+    StructCache.clear();
+    FunctionCache.clear();
+
+    // Reset runtime function pointers (they belonged to the old module)
+    AlignedAlloc = nullptr;
+    Free = nullptr;
+    ExitFunc = nullptr;
+    PageAllocatePage = nullptr;
+    PageAllocate = nullptr;
+    PageDeallocateExtensions = nullptr;
+    PageType = nullptr;
+
+    // Check if Page is in the Plan
+    bool PageInPlan = P.Structures.find("Page") != P.Structures.end();
+    if (!PageInPlan) {
+        initRBMM();
+    }
+
+    // Emit type declarations
+    for (const auto &[name, Struct] : P.Structures) {
+        emitStructType(Struct);
+    }
+    for (const auto &[name, Union] : P.Unions) {
+        emitUnionType(Union);
+    }
+
+    // Emit global constants
+    for (const auto &[name, Global] : P.Globals) {
+        emitGlobal(Global);
+    }
+
+    // Emit function declarations
+    for (const auto &[name, Func] : P.Functions) {
+        emitFunctionDecl(Func);
+    }
+    // Also emit method, operator, initializer, and deinitializer declarations from structures
+    for (const auto &[name, Struct] : P.Structures) {
+        for (const auto &Method : Struct.Methods) {
+            emitFunctionDecl(Method);
+        }
+        for (const auto &Op : Struct.Operators) {
+            PlannedFunction OpFunc;
+            OpFunc.Loc = Op.Loc;
+            OpFunc.Private = Op.Private;
+            OpFunc.Pure = true;
+            OpFunc.Name = Op.Name;
+            OpFunc.MangledName = Op.MangledName;
+            OpFunc.Input = Op.Input;
+            OpFunc.Returns = Op.Returns;
+            OpFunc.Throws = Op.Throws;
+            OpFunc.Impl = Op.Impl;
+            OpFunc.Origin = Op.Origin;
+            OpFunc.Scheme = Op.Scheme;
+            emitFunctionDecl(OpFunc);
+        }
+        for (const auto &Init : Struct.Initializers) {
+            emitInitializerDecl(Struct, Init);
+        }
+        if (Struct.Deinitializer) {
+            emitDeInitializerDecl(Struct, *Struct.Deinitializer);
+        }
+    }
+
+
+    // Set up RBMM function pointers if Page is in the Plan
+    if (PageInPlan) {
+        declareRuntimeFunctions();
+        PageAllocatePage = FunctionCache["_ZN4Page13allocate_pageEv"];
+        PageAllocate = FunctionCache["_ZN4Page8allocateEmm"];  // size_t = unsigned long (m)
+        PageDeallocateExtensions = FunctionCache["_ZN4Page21deallocate_extensionsEv"];
+        if (auto It = StructCache.find("_Z4Page"); It != StructCache.end()) {
+            PageType = It->second;
+        }
+    }
+
+    // Emit function bodies
+    for (const auto &[name, Func] : P.Functions) {
+        if (auto *LLVMFunc = FunctionCache[Func.MangledName]) {
+            if (auto Err = emitFunctionBody(Func, LLVMFunc))
+                return Err;
+        }
+    }
+    // Also emit method, operator, initializer, and deinitializer bodies from structures
+    for (const auto &[name, Struct] : P.Structures) {
+        for (const auto &Method : Struct.Methods) {
+            if (auto *LLVMFunc = FunctionCache[Method.MangledName]) {
+                if (auto Err = emitFunctionBody(Method, LLVMFunc))
+                    return Err;
+            }
+        }
+        for (const auto &Op : Struct.Operators) {
+            if (auto *LLVMFunc = FunctionCache[Op.MangledName]) {
+                PlannedFunction OpFunc;
+                OpFunc.Loc = Op.Loc;
+                OpFunc.Private = Op.Private;
+                OpFunc.Pure = true;
+                OpFunc.Name = Op.Name;
+                OpFunc.MangledName = Op.MangledName;
+                OpFunc.Input = Op.Input;
+                OpFunc.Returns = Op.Returns;
+                OpFunc.Throws = Op.Throws;
+                OpFunc.Impl = Op.Impl;
+                OpFunc.Origin = Op.Origin;
+                OpFunc.Scheme = Op.Scheme;
+                if (auto Err = emitFunctionBody(OpFunc, LLVMFunc))
+                    return Err;
+            }
+        }
+        for (const auto &Init : Struct.Initializers) {
+            if (auto *LLVMFunc = FunctionCache[Init.MangledName]) {
+                if (auto Err = emitInitializerBody(Struct, Init, LLVMFunc))
+                    return Err;
+            }
+        }
+        if (Struct.Deinitializer) {
+            if (auto *LLVMFunc = FunctionCache[Struct.Deinitializer->MangledName]) {
+                if (auto Err = emitDeInitializerBody(Struct, *Struct.Deinitializer, LLVMFunc))
+                    return Err;
+            }
+        }
+    }
+
+    // Find the target function
+    llvm::Function *TargetFunc = FunctionCache[MangledFunctionName.str()];
+    if (!TargetFunc) {
+        return llvm::make_error<llvm::StringError>(
+            "Function not found: " + MangledFunctionName.str(),
+            llvm::inconvertibleErrorCode()
+        );
+    }
+
+    // Create JIT wrapper that calls the target function and returns the int result
+    auto *WrapperTy = llvm::FunctionType::get(llvm::Type::getInt64Ty(*Context), {}, false);
+    auto *Wrapper = llvm::Function::Create(
+        WrapperTy,
+        llvm::GlobalValue::ExternalLinkage,
+        "__scaly_jit_main",
+        *Module
+    );
+
+    auto *Entry = llvm::BasicBlock::Create(*Context, "entry", Wrapper);
+    Builder->SetInsertPoint(Entry);
+
+    // Call the target function
+    auto *CallResult = Builder->CreateCall(TargetFunc);
+
+    // The function might return i32 or i64, ensure we return i64
+    llvm::Value *ReturnValue = CallResult;
+    if (CallResult->getType()->isIntegerTy(32)) {
+        ReturnValue = Builder->CreateSExt(CallResult, llvm::Type::getInt64Ty(*Context));
+    }
+    Builder->CreateRet(ReturnValue);
+
+    // Verify module
+    std::string VerifyError;
+    llvm::raw_string_ostream VerifyStream(VerifyError);
+    if (llvm::verifyModule(*Module, &VerifyStream)) {
+        Module->print(llvm::errs(), nullptr);
+        return llvm::make_error<llvm::StringError>(
+            "JIT module verification failed: " + VerifyError,
+            llvm::inconvertibleErrorCode()
+        );
+    }
+
+    // Create LLJIT instance
+    auto JITOrErr = llvm::orc::LLJITBuilder().create();
+    if (!JITOrErr)
+        return JITOrErr.takeError();
+
+    auto &JIT = *JITOrErr;
+
+    // Add process symbol generator for external functions
+    auto &MainJD = JIT->getMainJITDylib();
+    auto ProcessSymbolsGenerator = llvm::orc::DynamicLibrarySearchGenerator::GetForCurrentProcess(
+        JIT->getDataLayout().getGlobalPrefix());
+    if (!ProcessSymbolsGenerator) {
+        return ProcessSymbolsGenerator.takeError();
+    }
+    MainJD.addGenerator(std::move(*ProcessSymbolsGenerator));
+
+    // Add module to JIT
+    auto TSM = llvm::orc::ThreadSafeModule(std::move(Module), std::move(Context));
+    if (auto Err = JIT->addIRModule(std::move(TSM)))
+        return Err;
+
+    // Look up and execute the wrapper function
+    auto SymOrErr = JIT->lookup("__scaly_jit_main");
+    if (!SymOrErr)
+        return SymOrErr.takeError();
+
+    // Execute the wrapper (which calls the target function) and get the result
+    auto *MainFn = SymOrErr->toPtr<int64_t(*)()>();
+    int64_t Result = MainFn();
+
+    // Recreate context for future use
+    Context = std::make_unique<llvm::LLVMContext>();
+    Builder = std::make_unique<llvm::IRBuilder<>>(*Context);
+
+    return Result;
+}
+
 } // namespace scaly

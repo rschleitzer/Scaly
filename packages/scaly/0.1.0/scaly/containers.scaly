@@ -19,20 +19,21 @@ define containers {
     module StringIterator
     module StringBuilder
 
-    function test_vector() {
+    function test_vector() returns int {
         var rp Page.allocate_page()
         var vector Vector[int]^rp(rp, 2)
         set *(*vector).get(0): 1
         (*vector).put(1, 2)
         if *((*vector).get(0)) <> 1
-            exit(-1)
+            return -1
         if *(*vector)[1] <> 2
-            exit(-2)
+            return -2
         (*rp).deallocate_extensions()
         free(rp as pointer[void])
+        return 0
     }
 
-    function test_array() {
+    function test_array() returns int {
         var array Array[int]$()
 
         ; A quarter gigabyte worth of ints
@@ -52,67 +53,81 @@ define containers {
             while i <= huge_number
             {
                 if *(buffer + i - 1) <> i
-                    exit(-6)
+                    return -6
                 set i: i + 1
             }
         }
+        return 0
     }
 
-    function test_string() {
+    function test_string_simple() returns int {
+        var rp Page.allocate_page()
+        var s String(rp, "Hello world!")
+        let length s.get_length()
+        if length <> 12
+            return -100
+        (*rp).deallocate_extensions()
+        free(rp as pointer[void])
+        return 0
+    }
+
+    function test_string() returns int {
         var rp Page.allocate_page()
         var string String(rp, "Hello world!")
         let length string.get_length()
         if length <> 12
-            exit(-7)
+            return -7
         var long_string String(rp, "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890")
         if long_string.get_length() <> 130
-            exit(-8)
+            return -8
         var c_string long_string.to_c_string(rp)
         var string_c String(rp, c_string)
 
         var semi String(rp, ";")
         var dot String(rp, ".")
         if semi.equals(dot)
-            exit(-9)
+            return -9
         var semi2 String(rp, ";")
         if semi.equals(semi2) <> true
-            exit(-10)
+            return -10
         (*rp).deallocate_extensions()
         free(rp as pointer[void])
+        return 0
     }
 
-    function test_string_builder() {
+    function test_string_builder() returns int {
         var rp Page.allocate_page()
         var string_builder StringBuilder$()
         let length (*string_builder).get_length()
         if length <> 0
-            exit(-11)
+            return -11
         (*string_builder).append('a')
         (*string_builder).append('b')
         (*string_builder).append('c')
         if (*string_builder).to_string(rp).equals("abc") = false
-            exit(-12)
+            return -12
         if (*string_builder).get_length() <> 3
-            exit(-13)
+            return -13
 
         var string_builder2 StringBuilder$('d')
         (*string_builder2).append('e')
         (*string_builder2).append('f')
         (*string_builder2).append('g')
         if (*string_builder2).to_string(rp).equals("defg") = false
-            exit(-14)
+            return -14
         if (*string_builder2).get_length() <> 4
-            exit(-15)
+            return -15
 
         var string_builder3 StringBuilder$("hijk")
         (*string_builder3).append("lmno")
         if (*string_builder3).to_string(rp).equals("hijklmno") = false
-            exit(-16)
+            return -16
         (*rp).deallocate_extensions()
         free(rp as pointer[void])
+        return 0
     }
 
-    function test_list() {
+    function test_list() returns int {
         var list List[int]$()
 
         let huge_number: int 1024 * 1024 * 62
@@ -132,15 +147,16 @@ define containers {
             {
                 let p iterator.next()
                 if p = null
-                    exit(-17)
+                    return -17
                 if *p <> i
-                    exit(-18)
+                    return -18
                 set i: i - 1
             }
         }
+        return 0
     }
 
-    function test_hash_set() {
+    function test_hash_set() returns int {
         var rp Page.allocate_page()
         var array Array[String]$()
         (*array).add(String(rp, "using"))
@@ -149,27 +165,28 @@ define containers {
         let vector Vector[String](rp, *array)
         var keywords_builder HashSetBuilder[String]$(vector)
         if (*keywords_builder).contains(String(rp, "using")) = false
-            exit (-19)
+            return -19
         if (*keywords_builder).contains(String(rp, "namespace")) = false
-            exit (-20)
+            return -20
         if (*keywords_builder).contains(String(rp, "typedef")) = false
-            exit (-21)
+            return -21
         if (*keywords_builder).contains(String(rp, "nix"))
-            exit (-22)
+            return -22
         var keywords HashSet[String](rp, *keywords_builder)
         if keywords.contains(String(rp, "using")) = false
-            exit (-23)
+            return -23
         if keywords.contains(String(rp, "namespace")) = false
-            exit (-24)
+            return -24
         if keywords.contains(String(rp, "typedef")) = false
-            exit (-25)
+            return -25
         if keywords.contains(String(rp, "nix"))
-            exit (-26)
+            return -26
         (*rp).deallocate_extensions()
         free(rp as pointer[void])
+        return 0
     }
 
-    function test_hash_map() {
+    function test_hash_map() returns int {
         {
             var rp Page.allocate_page()
             var array Array[KeyValuePair[String, int]]$()
@@ -179,38 +196,38 @@ define containers {
             let vector Vector[KeyValuePair[String, int]](rp, *array)
             var keywords_builder HashMapBuilder[String, int]$(rp, vector)
             if (*keywords_builder).contains(String(rp, "using")) = false
-                exit (-27)
+                return -27
             if (*keywords_builder).contains(String(rp, "namespace")) = false
-                exit (-28)
+                return -28
             if (*keywords_builder).contains(String(rp, "typedef")) = false
-                exit (-29)
+                return -29
             if (*keywords_builder).contains(String(rp, "nix"))
-                exit (-30)
+                return -30
             if *(*keywords_builder)[String(rp, "using")] <> 1
-                exit (-31)
+                return -31
             if *(*keywords_builder)[String(rp, "namespace")] <> 2
-                exit (-32)
+                return -32
             if *(*keywords_builder)[String(rp, "typedef")] <> 3
-                exit (-33)
+                return -33
             if (*keywords_builder)[String(rp, "nix")] <> null
-                exit (-34)
+                return -34
             var keywords HashMap[String, int](rp, *keywords_builder)
             if keywords.contains(String(rp, "using")) = false
-                exit (-35)
+                return -35
             if keywords.contains(String(rp, "namespace")) = false
-                exit (-36)
+                return -36
             if keywords.contains(String(rp, "typedef")) = false
-                exit (-37)
+                return -37
             if keywords.contains(String(rp, "nix"))
-                exit (-38)
+                return -38
             if *keywords[String(rp, "using")] <> 1
-                exit (-39)
+                return -39
             if *keywords[String(rp, "namespace")] <> 2
-                exit (-40)
+                return -40
             if *keywords[String(rp, "typedef")] <> 3
-                exit (-41)
+                return -41
             if keywords[String(rp, "nix")] <> null
-                exit (-42)
+                return -42
             (*rp).deallocate_extensions()
             free(rp as pointer[void])
         }
@@ -271,11 +288,11 @@ define containers {
                                 (*sb).append(l)
                                 let theString (*sb).to_string(rp2)
                                 if (*hash_set).contains(theString) = false
-                                    exit(-43)
+                                    return -43
                                 if (*map).contains(theString) = false
-                                    exit(-44)
+                                    return -44
                                 if *(*map)[theString] <> (i * j * k * l) as size_t
-                                    exit(-45)
+                                    return -45
                                 (*rp2).deallocate_extensions()
                                 free(rp2 as pointer[void])
 
@@ -291,15 +308,34 @@ define containers {
             (*rp).deallocate_extensions()
             free(rp as pointer[void])
         }
+        return 0
     }
 
-    function test() {
-        test_vector()
-        test_array()
-        test_string()
-        test_string_builder()
-        test_list()
-        test_hash_set()
-        test_hash_map()
+    function test() returns int {
+        var result test_string_simple()
+        if result <> 0
+            return result
+        set result: test_vector()
+        if result <> 0
+            return result
+        set result: test_array()
+        if result <> 0
+            return result
+        set result: test_string()
+        if result <> 0
+            return result
+        set result: test_string_builder()
+        if result <> 0
+            return result
+        set result: test_list()
+        if result <> 0
+            return result
+        set result: test_hash_set()
+        if result <> 0
+            return result
+        set result: test_hash_map()
+        if result <> 0
+            return result
+        return 0
     }
 }

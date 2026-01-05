@@ -39,6 +39,8 @@ set(SOURCES
     Emitter.cpp
     EmitterTests.h
     EmitterTests.cpp
+    ModuleTests.h
+    ModuleTests.cpp
 )
 
 add_executable(scalyc ${SOURCES})
