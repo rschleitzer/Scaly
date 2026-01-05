@@ -6,13 +6,18 @@
 #include "Syntax.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
+#include <set>
 #include <string>
+#include <vector>
 
 namespace scaly {
 
 class Modeler {
 public:
     explicit Modeler(llvm::StringRef FileName);
+
+    // Add package search path (from -I flag)
+    void addPackageSearchPath(llvm::StringRef Path);
 
     // Main entry point - build a program from syntax
     llvm::Expected<Program> buildProgram(const ProgramSyntax &Syntax);
@@ -26,6 +31,11 @@ public:
 
 private:
     std::string File;
+    std::vector<std::string> PackageSearchPaths;
+    std::set<std::string> LoadingPackages;  // For circular dependency detection
+
+    // Package resolution with multi-path search
+    llvm::Expected<Module> resolvePackage(llvm::StringRef Name, const Version &Ver);
 
     // Type handling
     Type nameToType(const NameSyntax &Syntax);

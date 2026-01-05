@@ -1,13 +1,11 @@
 // ModuleTests.cpp - Tests for complete Scaly modules
 //
-// This test infrastructure compiles and runs test functions from module files.
+// This test infrastructure compiles the scaly package and runs test functions.
 // Test functions return int: 0 for success, negative for error codes.
 // This allows proper error handling without exit() calls.
 //
-// NOTE: loadSiblingPrograms is a workaround because the package/module
-// resolution system isn't fully implemented yet. The 'use' statement brings
-// names into scope but doesn't trigger file loading. Once proper package
-// resolution is implemented, this can be simplified.
+// The package entry point (scaly.scaly) is compiled, which loads all modules
+// (memory, containers, io). Test functions from any module are then available.
 
 #include "ModuleTests.h"
 #include "Emitter.h"
@@ -17,10 +15,6 @@
 #include "Planner.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/MemoryBuffer.h"
-#include "llvm/Support/FileSystem.h"
-#include "llvm/Support/Path.h"
-#include <set>
-#include <functional>
 
 namespace scaly {
 
@@ -39,79 +33,15 @@ static void fail(const char* Name, const char* Message) {
     llvm::outs().flush();
 }
 
-// Workaround: Load sibling .scaly files until proper package resolution is implemented
-static void loadSiblingPrograms(Planner &Planner, llvm::StringRef Filename) {
-    llvm::SmallString<256> Dir = llvm::sys::path::parent_path(Filename);
-    if (Dir.empty()) return;
-
-    std::set<std::string> ProcessedDirs;
-
-    auto loadFilesFromDir = [&](llvm::StringRef DirPath) {
-        std::error_code EC;
-        for (llvm::sys::fs::directory_iterator DI(DirPath, EC), DE; DI != DE && !EC; DI.increment(EC)) {
-            llvm::StringRef SibPath = DI->path();
-            if (SibPath == Filename || !SibPath.ends_with(".scaly"))
-                continue;
-
-            auto SibBuf = llvm::MemoryBuffer::getFile(SibPath);
-            if (!SibBuf) continue;
-
-            Parser SibParser((*SibBuf)->getBuffer());
-            auto SibParse = SibParser.parseProgram();
-            if (!SibParse) {
-                llvm::consumeError(SibParse.takeError());
-                continue;
-            }
-
-            Modeler SibModeler(SibPath);
-            auto SibModel = SibModeler.buildProgram(*SibParse);
-            if (!SibModel) {
-                llvm::consumeError(SibModel.takeError());
-                continue;
-            }
-
-            Planner.addSiblingProgram(std::make_shared<Program>(std::move(*SibModel)));
-        }
-    };
-
-    std::function<void(llvm::StringRef)> loadFromDirRecursive = [&](llvm::StringRef DirPath) {
-        if (ProcessedDirs.count(DirPath.str())) return;
-        ProcessedDirs.insert(DirPath.str());
-        loadFilesFromDir(DirPath);
-
-        std::error_code EC;
-        for (llvm::sys::fs::directory_iterator DI(DirPath, EC), DE; DI != DE && !EC; DI.increment(EC)) {
-            llvm::StringRef SubPath = DI->path();
-            bool IsDir = false;
-            if (!llvm::sys::fs::is_directory(SubPath, IsDir) && IsDir)
-                loadFromDirRecursive(SubPath);
-        }
-    };
-
-    loadFromDirRecursive(Dir);
-
-    llvm::SmallString<256> ParentDir = llvm::sys::path::parent_path(Dir);
-    if (!ParentDir.empty() && ParentDir != "/" && ParentDir.size() > 4) {
-        std::error_code EC;
-        for (llvm::sys::fs::directory_iterator DI(ParentDir, EC), DE; DI != DE && !EC; DI.increment(EC)) {
-            llvm::StringRef SubPath = DI->path();
-            if (SubPath == Dir) continue;
-            bool IsDir = false;
-            if (!llvm::sys::fs::is_directory(SubPath, IsDir) && IsDir)
-                loadFromDirRecursive(SubPath);
-        }
-    }
-}
-
-// Compile a module file and run a test function, returning the int result
-static llvm::Expected<int64_t> runModuleTestFunction(
-    llvm::StringRef ModulePath,
+// Compile a package and run a test function by name
+static llvm::Expected<int64_t> runPackageTestFunction(
+    llvm::StringRef PackagePath,
     llvm::StringRef FunctionName
 ) {
-    auto BufOrErr = llvm::MemoryBuffer::getFile(ModulePath);
+    auto BufOrErr = llvm::MemoryBuffer::getFile(PackagePath);
     if (!BufOrErr) {
         return llvm::make_error<llvm::StringError>(
-            "Cannot open file: " + ModulePath.str(),
+            "Cannot open file: " + PackagePath.str(),
             llvm::inconvertibleErrorCode()
         );
     }
@@ -121,18 +51,17 @@ static llvm::Expected<int64_t> runModuleTestFunction(
     if (!ParseResult)
         return ParseResult.takeError();
 
-    Modeler M(ModulePath);
+    Modeler M(PackagePath);
     auto ModelResult = M.buildProgram(*ParseResult);
     if (!ModelResult)
         return ModelResult.takeError();
 
-    Planner Pl(ModulePath);
-    loadSiblingPrograms(Pl, ModulePath);
-
+    Planner Pl(PackagePath);
     auto PlanResult = Pl.plan(*ModelResult);
     if (!PlanResult)
         return PlanResult.takeError();
 
+    // Find the function by name
     std::string MangledName;
     for (const auto &[name, Func] : PlanResult->Functions) {
         if (Func.Name == FunctionName) {
@@ -159,13 +88,13 @@ static llvm::Expected<int64_t> runModuleTestFunction(
 // Module Test Cases
 // ============================================================================
 
-static bool testMemoryModule() {
-    const char* Name = "Module: memory.test()";
+// Path to the scaly package entry point (relative to scalyc/build/)
+static const char* ScalyPackagePath = "../../packages/scaly/0.1.0/scaly.scaly";
 
-    auto ResultOrErr = runModuleTestFunction(
-        "../../packages/scaly/0.1.0/scaly/memory.scaly",
-        "test"
-    );
+static bool testMemoryModule() {
+    const char* Name = "Module: test_memory()";
+
+    auto ResultOrErr = runPackageTestFunction(ScalyPackagePath, "test_memory");
 
     if (!ResultOrErr) {
         std::string ErrMsg;
@@ -187,12 +116,9 @@ static bool testMemoryModule() {
 }
 
 static bool testContainersModule() {
-    const char* Name = "Module: containers.test()";
+    const char* Name = "Module: test_containers()";
 
-    auto ResultOrErr = runModuleTestFunction(
-        "../../packages/scaly/0.1.0/scaly/containers.scaly",
-        "test"
-    );
+    auto ResultOrErr = runPackageTestFunction(ScalyPackagePath, "test_containers");
 
     if (!ResultOrErr) {
         std::string ErrMsg;

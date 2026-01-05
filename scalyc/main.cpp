@@ -8,98 +8,12 @@
 #include "EmitterTests.h"
 #include "ModuleTests.h"
 #include "llvm/Support/CommandLine.h"
-#include "llvm/Support/FileSystem.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/Path.h"
 #include "llvm/Support/raw_ostream.h"
 #include <iostream>
-#include <set>
-#include <functional>
 
 using namespace llvm;
-
-// Helper function to load sibling .scaly files for multi-file compilation
-// Loads files from the same directory, subdirectories, and sibling directories
-static void loadSiblingPrograms(scaly::Planner &Planner, StringRef Filename) {
-    SmallString<256> Dir = sys::path::parent_path(Filename);
-    if (Dir.empty()) return;
-
-    std::set<std::string> ProcessedDirs;
-
-    // Helper lambda to load all .scaly files from a directory (non-recursive)
-    auto loadFilesFromDir = [&](StringRef DirPath) {
-        std::error_code EC;
-        for (sys::fs::directory_iterator DI(DirPath, EC), DE; DI != DE && !EC; DI.increment(EC)) {
-            StringRef SibPath = DI->path();
-            // Skip the main file and non-.scaly files
-            if (SibPath == Filename || !SibPath.ends_with(".scaly")) {
-                continue;
-            }
-
-            auto SibBuf = MemoryBuffer::getFile(SibPath);
-            if (!SibBuf) continue;
-
-            scaly::Parser SibParser((*SibBuf)->getBuffer());
-            auto SibParse = SibParser.parseProgram();
-            if (!SibParse) {
-                llvm::consumeError(SibParse.takeError());
-                continue;
-            }
-
-            scaly::Modeler SibModeler(SibPath);
-            auto SibModel = SibModeler.buildProgram(*SibParse);
-            if (!SibModel) {
-                llvm::consumeError(SibModel.takeError());
-                continue;
-            }
-
-            Planner.addSiblingProgram(std::make_shared<scaly::Program>(std::move(*SibModel)));
-        }
-    };
-
-    // Recursive helper to load from directory and all subdirectories
-    std::function<void(StringRef)> loadFromDirRecursive = [&](StringRef DirPath) {
-        if (ProcessedDirs.count(DirPath.str())) return;
-        ProcessedDirs.insert(DirPath.str());
-
-        // Load .scaly files from this directory
-        loadFilesFromDir(DirPath);
-
-        // Recurse into subdirectories
-        std::error_code EC;
-        for (sys::fs::directory_iterator DI(DirPath, EC), DE; DI != DE && !EC; DI.increment(EC)) {
-            StringRef SubPath = DI->path();
-            bool IsDir = false;
-            std::error_code EC2;
-            EC2 = sys::fs::is_directory(SubPath, IsDir);
-            if (!EC2 && IsDir) {
-                loadFromDirRecursive(SubPath);
-            }
-        }
-    };
-
-    // Load from the same directory and its subdirectories
-    loadFromDirRecursive(Dir);
-
-    // Load from sibling directories (directories at the same level)
-    // But skip if parent is root or a system directory
-    SmallString<256> ParentDir = sys::path::parent_path(Dir);
-    if (!ParentDir.empty() && ParentDir != "/" && ParentDir.size() > 4) {
-        std::error_code EC;
-        for (sys::fs::directory_iterator DI(ParentDir, EC), DE; DI != DE && !EC; DI.increment(EC)) {
-            StringRef SubPath = DI->path();
-            // Check if it's a directory and not the same as our dir
-            if (SubPath == Dir) continue;
-
-            bool IsDir = false;
-            std::error_code EC2;
-            EC2 = sys::fs::is_directory(SubPath, IsDir);
-            if (!EC2 && IsDir) {
-                loadFromDirRecursive(SubPath);
-            }
-        }
-    }
-}
 
 // Command line options
 static cl::OptionCategory ScalyCategory("Scaly Compiler Options");
@@ -165,6 +79,13 @@ static cl::opt<std::string> RunFunction(
     "run",
     cl::desc("JIT-execute a function by name"),
     cl::value_desc("function"),
+    cl::cat(ScalyCategory));
+
+static cl::list<std::string> IncludePaths(
+    "I",
+    cl::desc("Add package search path"),
+    cl::value_desc("path"),
+    cl::Prefix,
     cl::cat(ScalyCategory));
 
 // Print a token in readable format
@@ -269,6 +190,9 @@ static int modelFile(StringRef Filename) {
     }
 
     scaly::Modeler Modeler(Filename);
+    for (const auto &P : IncludePaths) {
+        Modeler.addPackageSearchPath(P);
+    }
     auto ModelResult = Modeler.buildProgram(*ParseResult);
     if (!ModelResult) {
         handleAllErrors(ModelResult.takeError(), [&](const llvm::ErrorInfoBase &E) {
@@ -303,6 +227,9 @@ static int planFile(StringRef Filename) {
     }
 
     scaly::Modeler Modeler(Filename);
+    for (const auto &P : IncludePaths) {
+        Modeler.addPackageSearchPath(P);
+    }
     auto ModelResult = Modeler.buildProgram(*ParseResult);
     if (!ModelResult) {
         handleAllErrors(ModelResult.takeError(), [&](const llvm::ErrorInfoBase &E) {
@@ -312,8 +239,6 @@ static int planFile(StringRef Filename) {
     }
 
     scaly::Planner Planner(Filename);
-    loadSiblingPrograms(Planner, Filename);
-
     auto PlanResult = Planner.plan(*ModelResult);
     if (!PlanResult) {
         handleAllErrors(PlanResult.takeError(), [&](const llvm::ErrorInfoBase &E) {
@@ -361,6 +286,9 @@ static int compileFile(StringRef Filename, StringRef OutputPath) {
     }
 
     scaly::Modeler Modeler(Filename);
+    for (const auto &P : IncludePaths) {
+        Modeler.addPackageSearchPath(P);
+    }
     auto ModelResult = Modeler.buildProgram(*ParseResult);
     if (!ModelResult) {
         handleAllErrors(ModelResult.takeError(), [&](const llvm::ErrorInfoBase &E) {
@@ -370,8 +298,6 @@ static int compileFile(StringRef Filename, StringRef OutputPath) {
     }
 
     scaly::Planner Planner(Filename);
-    loadSiblingPrograms(Planner, Filename);
-
     auto PlanResult = Planner.plan(*ModelResult);
     if (!PlanResult) {
         handleAllErrors(PlanResult.takeError(), [&](const llvm::ErrorInfoBase &E) {
@@ -415,6 +341,9 @@ static int emitLLVMFile(StringRef Filename, StringRef OutputPath) {
     }
 
     scaly::Modeler Modeler(Filename);
+    for (const auto &P : IncludePaths) {
+        Modeler.addPackageSearchPath(P);
+    }
     auto ModelResult = Modeler.buildProgram(*ParseResult);
     if (!ModelResult) {
         handleAllErrors(ModelResult.takeError(), [&](const llvm::ErrorInfoBase &E) {
@@ -424,8 +353,6 @@ static int emitLLVMFile(StringRef Filename, StringRef OutputPath) {
     }
 
     scaly::Planner Planner(Filename);
-    loadSiblingPrograms(Planner, Filename);
-
     auto PlanResult = Planner.plan(*ModelResult);
     if (!PlanResult) {
         handleAllErrors(PlanResult.takeError(), [&](const llvm::ErrorInfoBase &E) {
@@ -479,6 +406,9 @@ static int runFile(StringRef Filename, StringRef FunctionName) {
     }
 
     scaly::Modeler Modeler(Filename);
+    for (const auto &P : IncludePaths) {
+        Modeler.addPackageSearchPath(P);
+    }
     auto ModelResult = Modeler.buildProgram(*ParseResult);
     if (!ModelResult) {
         handleAllErrors(ModelResult.takeError(), [&](const llvm::ErrorInfoBase &E) {
@@ -488,8 +418,6 @@ static int runFile(StringRef Filename, StringRef FunctionName) {
     }
 
     scaly::Planner Planner(Filename);
-    loadSiblingPrograms(Planner, Filename);
-
     auto PlanResult = Planner.plan(*ModelResult);
     if (!PlanResult) {
         handleAllErrors(PlanResult.takeError(), [&](const llvm::ErrorInfoBase &E) {

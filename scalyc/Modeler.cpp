@@ -2,6 +2,7 @@
 #include "Modeler.h"
 #include "Parser.h"
 #include "llvm/ADT/SmallString.h"
+#include "llvm/Support/FileSystem.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/Path.h"
 #include "llvm/Support/raw_ostream.h"
@@ -95,6 +96,10 @@ static std::string processEscapes(llvm::StringRef Input) {
 }
 
 Modeler::Modeler(llvm::StringRef FileName) : File(FileName.str()) {}
+
+void Modeler::addPackageSearchPath(llvm::StringRef Path) {
+    PackageSearchPaths.push_back(Path.str());
+}
 
 // Name to Type conversion (for expressions - no generics attached)
 Type Modeler::nameToType(const NameSyntax &Syntax) {
@@ -1864,6 +1869,84 @@ llvm::Expected<Module> Modeler::buildModule(llvm::StringRef Path,
     };
 }
 
+// Package resolution with multi-path search
+
+llvm::Expected<Module> Modeler::resolvePackage(llvm::StringRef Name, const Version &Ver) {
+    // Check for circular dependency
+    std::string Key = Name.str() + "@" + Ver.toString();
+    if (LoadingPackages.count(Key)) {
+        return llvm::make_error<llvm::StringError>(
+            "circular package dependency: " + Key,
+            llvm::inconvertibleErrorCode()
+        );
+    }
+    LoadingPackages.insert(Key);
+
+    // Build list of search paths per CLAUDE.md:
+    // 1. ./packages/ relative to current working directory
+    // 2. ./packages/ relative to source file directory
+    // 3. Walk up from source file looking for packages/ directory
+    // 4. /usr/share/scaly/packages/ (system-wide, skip on Windows)
+    // 5. -I paths in order
+    std::vector<std::string> SearchPaths;
+
+    // Current working directory's packages/
+    SearchPaths.push_back("packages");
+
+    // Source file directory's packages/
+    llvm::SmallString<256> LocalPath(File);
+    llvm::sys::path::remove_filename(LocalPath);
+    llvm::SmallString<256> SourcePackages(LocalPath);
+    llvm::sys::path::append(SourcePackages, "packages");
+    SearchPaths.push_back(SourcePackages.str().str());
+
+    // Walk up directory tree from source file looking for packages/
+    llvm::SmallString<256> WalkUp(LocalPath);
+    for (int i = 0; i < 10 && !WalkUp.empty(); ++i) {
+        llvm::sys::path::remove_filename(WalkUp);
+        if (WalkUp.empty()) break;
+        llvm::SmallString<256> ParentPackages(WalkUp);
+        llvm::sys::path::append(ParentPackages, "packages");
+        if (llvm::sys::fs::is_directory(ParentPackages)) {
+            SearchPaths.push_back(ParentPackages.str().str());
+            break;
+        }
+    }
+
+    // System-wide (skip on Windows)
+#ifndef _WIN32
+    SearchPaths.push_back("/usr/share/scaly/packages");
+#endif
+
+    // User-provided -I paths
+    for (const auto &P : PackageSearchPaths) {
+        SearchPaths.push_back(P);
+    }
+
+    // Try each search path
+    for (const auto &Base : SearchPaths) {
+        llvm::SmallString<256> PkgPath(Base);
+        llvm::sys::path::append(PkgPath, Name, Ver.toString(), Name.str() + ".scaly");
+
+        if (llvm::sys::fs::exists(PkgPath)) {
+            auto Result = buildReferencedModule(
+                llvm::sys::path::parent_path(PkgPath),
+                Name,
+                false
+            );
+            LoadingPackages.erase(Key);
+            return Result;
+        }
+    }
+
+    LoadingPackages.erase(Key);
+    return llvm::make_error<llvm::StringError>(
+        "package not found: " + Name.str() + " " + Ver.toString() +
+        " (searched " + std::to_string(SearchPaths.size()) + " paths)",
+        llvm::inconvertibleErrorCode()
+    );
+}
+
 // Program building
 
 llvm::Expected<Program> Modeler::buildProgram(const ProgramSyntax &Syntax) {
@@ -1905,16 +1988,8 @@ llvm::Expected<Program> Modeler::buildProgram(const ProgramSyntax &Syntax) {
                 }, Pkg.version->patch);
             }
 
-            // Package path: packages/<name>/<version>/<name>.scaly (if versioned)
-            // Or fallback: ../<name> (legacy unversioned)
-            llvm::SmallString<256> PkgPath(BasePath);
-            if (Pkg.version) {
-                llvm::sys::path::append(PkgPath, "packages", PkgName, Ver.toString());
-            } else {
-                llvm::sys::path::append(PkgPath, "..", PkgName);
-            }
-
-            auto PkgResult = buildReferencedModule(PkgPath.str(), PkgName, false);
+            // Resolve package using multi-path search
+            auto PkgResult = resolvePackage(PkgName, Ver);
             if (!PkgResult)
                 return PkgResult.takeError();
 
