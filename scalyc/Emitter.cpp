@@ -2681,6 +2681,14 @@ llvm::Expected<llvm::Value*> Emitter::emitIf(const PlannedIf &If) {
 
     llvm::Value *CondValue = *CondValueOrErr;
 
+    // Defensive null check - emitOperands should not return nullptr without error
+    if (!CondValue) {
+        return llvm::make_error<llvm::StringError>(
+            "If condition emitted to null value (possible cross-module call issue)",
+            llvm::inconvertibleErrorCode()
+        );
+    }
+
     // Ensure we have a boolean (i1) for the branch
     if (!CondValue->getType()->isIntegerTy(1)) {
         if (CondValue->getType()->isIntegerTy()) {
