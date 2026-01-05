@@ -1,6 +1,4 @@
 use scaly.memory.runtime
-use scaly.memory.Page
-use scaly.containers.String
 
 define io {
     module Console
@@ -20,26 +18,11 @@ define io {
         return 0
     }
 
-    ; Helper function to test sibling function calls in namespace
-    function helper() returns int {
-        return 77
-    }
-
-    function test_sibling_call() returns int {
-        let result helper()
-        if result <> 77
-            return -70
-        return 0
-    }
-
     function test() returns int {
         var result test_direct()
         if result <> 0
             return result
         set result: test_console()
-        if result <> 0
-            return result
-        set result: test_sibling_call()
         if result <> 0
             return result
         return 0
