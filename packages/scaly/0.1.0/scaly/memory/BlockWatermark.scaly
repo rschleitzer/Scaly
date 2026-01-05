@@ -1,0 +1,7 @@
+define BlockWatermark
+(
+    page: pointer[Page]
+    next_object: pointer[void]
+    extension_tail: pointer[Page]
+    exclusive_head: pointer[PageNode]
+)

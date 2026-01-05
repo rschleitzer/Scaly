@@ -3,6 +3,7 @@ define memory {
     module PageNode
     module PageList
     module PageListIterator
+    module BlockWatermark
     module Page
 
     function test_page_allocate() returns int {
