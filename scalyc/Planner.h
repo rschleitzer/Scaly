@@ -82,6 +82,7 @@ private:
 
     // Current namespace being planned (for sibling function calls in define blocks)
     std::string CurrentNamespaceName;
+    const Namespace* CurrentNamespace = nullptr;  // Pointer to namespace for function lookup
 
     // Track if current function uses $ allocations (needs local page)
     bool CurrentFunctionUsesLocalLifetime = false;

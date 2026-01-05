@@ -857,6 +857,18 @@ std::vector<const Function*> Planner::lookupFunction(llvm::StringRef Name) {
         }
     }
 
+    // If we're inside a namespace (define block), search its functions
+    // This allows calling sibling functions like helper() from test()
+    if (CurrentNamespace) {
+        for (const auto& Member : CurrentNamespace->Members) {
+            if (auto* Func = std::get_if<Function>(&Member)) {
+                if (Func->Name == Name) {
+                    Result.push_back(Func);
+                }
+            }
+        }
+    }
+
     // Search sibling programs (for multi-file compilation)
     if (Result.empty()) {
         for (const auto& Sibling : SiblingPrograms) {
@@ -5103,8 +5115,24 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                     }
                                 }
 
-                                // Plan the namespace function
-                                auto PlannedFunc = planFunction(*NSFunction, nullptr);
+                                // Plan the namespace function - set namespace context
+                                // so sibling function calls can be resolved
+                                std::string OldNamespaceName = CurrentNamespaceName;
+                                const Namespace* OldNamespace = CurrentNamespace;
+                                CurrentNamespaceName = Conc->Name;
+                                CurrentNamespace = ModelNS;
+
+                                // Create ParentType for namespace (needed for correct mangling)
+                                PlannedType NSParentType;
+                                NSParentType.Name = Conc->Name;
+                                NSParentType.MangledName = encodeName(Conc->Name);
+
+                                auto PlannedFunc = planFunction(*NSFunction, &NSParentType);
+
+                                // Restore namespace context
+                                CurrentNamespaceName = OldNamespaceName;
+                                CurrentNamespace = OldNamespace;
+
                                 if (!PlannedFunc) {
                                     return PlannedFunc.takeError();
                                 }
@@ -7566,7 +7594,9 @@ llvm::Expected<PlannedNamespace> Planner::planNamespace(const Namespace &NS,
 
     // Set current namespace context for sibling function calls
     std::string OldNamespaceName = CurrentNamespaceName;
+    const Namespace* OldNamespace = CurrentNamespace;
     CurrentNamespaceName = Name.str();
+    CurrentNamespace = &NS;
 
     // Create a pseudo-module wrapper for the namespace to enable cross-module lookup
     // This allows functions in the namespace to find concepts from sub-modules
@@ -7589,6 +7619,7 @@ llvm::Expected<PlannedNamespace> Planner::planNamespace(const Namespace &NS,
         if (!PlannedSubMod) {
             ModuleStack.pop_back();
             CurrentNamespaceName = OldNamespaceName;
+            CurrentNamespace = OldNamespace;
             return PlannedSubMod.takeError();
         }
         Result.Modules.push_back(std::move(*PlannedSubMod));
@@ -7601,6 +7632,7 @@ llvm::Expected<PlannedNamespace> Planner::planNamespace(const Namespace &NS,
             if (!PlannedFunc) {
                 ModuleStack.pop_back();
                 CurrentNamespaceName = OldNamespaceName;
+            CurrentNamespace = OldNamespace;
                 return PlannedFunc.takeError();
             }
 
@@ -7616,6 +7648,7 @@ llvm::Expected<PlannedNamespace> Planner::planNamespace(const Namespace &NS,
             if (!PlannedOp) {
                 ModuleStack.pop_back();
                 CurrentNamespaceName = OldNamespaceName;
+            CurrentNamespace = OldNamespace;
                 return PlannedOp.takeError();
             }
             Result.Operators.push_back(std::move(*PlannedOp));
@@ -7625,6 +7658,7 @@ llvm::Expected<PlannedNamespace> Planner::planNamespace(const Namespace &NS,
 
     ModuleStack.pop_back();
     CurrentNamespaceName = OldNamespaceName;
+            CurrentNamespace = OldNamespace;
     return Result;
 }
 
