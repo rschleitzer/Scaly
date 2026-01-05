@@ -80,6 +80,9 @@ private:
     std::vector<PlannedProperty>* CurrentStructureProperties = nullptr;
     PlannedStructure* CurrentStructure = nullptr;  // For method lookup during planning
 
+    // Current namespace being planned (for sibling function calls in define blocks)
+    std::string CurrentNamespaceName;
+
     // Track if current function uses $ allocations (needs local page)
     bool CurrentFunctionUsesLocalLifetime = false;
 
