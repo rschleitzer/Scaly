@@ -63,7 +63,7 @@ define memory {
         return 0
     }
 
-    function test_memory() returns int {
+    function test() returns int {
         var result test_page_allocate()
         if result <> 0
             return result

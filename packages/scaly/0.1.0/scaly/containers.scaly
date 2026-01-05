@@ -311,7 +311,7 @@ define containers {
         return 0
     }
 
-    function test_containers() returns int {
+    function test() returns int {
         var result test_string_simple()
         if result <> 0
             return result

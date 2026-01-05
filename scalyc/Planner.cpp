@@ -7420,6 +7420,12 @@ llvm::Expected<PlannedNamespace> Planner::planNamespace(const Namespace &NS,
     PlannedNamespace Result;
     Result.Loc = NS.Loc;
     Result.Name = Name.str();
+    Result.MangledName = encodeName(Name);
+
+    // Create parent type for function/operator mangling (namespace prefix)
+    PlannedType ParentType;
+    ParentType.Name = Name.str();
+    ParentType.MangledName = Result.MangledName;
 
     // Create a pseudo-module wrapper for the namespace to enable cross-module lookup
     // This allows functions in the namespace to find concepts from sub-modules
@@ -7449,18 +7455,21 @@ llvm::Expected<PlannedNamespace> Planner::planNamespace(const Namespace &NS,
     // Plan members (Functions and Operators come from Members variant)
     for (const auto &Member : NS.Members) {
         if (auto *Func = std::get_if<Function>(&Member)) {
-            auto PlannedFunc = planFunction(*Func, nullptr);
+            auto PlannedFunc = planFunction(*Func, &ParentType);
             if (!PlannedFunc) {
                 ModuleStack.pop_back();
                 return PlannedFunc.takeError();
             }
+
+            // Set fully qualified name for namespace functions
+            PlannedFunc->Name = Name.str() + "." + PlannedFunc->Name;
 
             // Also add to InstantiatedFunctions for the emitter's lookup
             InstantiatedFunctions[PlannedFunc->MangledName] = *PlannedFunc;
 
             Result.Functions.push_back(std::move(*PlannedFunc));
         } else if (auto *Op = std::get_if<Operator>(&Member)) {
-            auto PlannedOp = planOperator(*Op, nullptr);
+            auto PlannedOp = planOperator(*Op, &ParentType);
             if (!PlannedOp) {
                 ModuleStack.pop_back();
                 return PlannedOp.takeError();
