@@ -92,9 +92,9 @@ static llvm::Expected<int64_t> runPackageTestFunction(
 static const char* ScalyPackagePath = "../../packages/scaly/0.1.0/scaly.scaly";
 
 static bool testMemoryModule() {
-    const char* Name = "Module: test_memory()";
+    const char* Name = "Module: memory.test()";
 
-    auto ResultOrErr = runPackageTestFunction(ScalyPackagePath, "test_memory");
+    auto ResultOrErr = runPackageTestFunction(ScalyPackagePath, "memory.test");
 
     if (!ResultOrErr) {
         std::string ErrMsg;
@@ -116,9 +116,9 @@ static bool testMemoryModule() {
 }
 
 static bool testContainersModule() {
-    const char* Name = "Module: test_containers()";
+    const char* Name = "Module: containers.test()";
 
-    auto ResultOrErr = runPackageTestFunction(ScalyPackagePath, "test_containers");
+    auto ResultOrErr = runPackageTestFunction(ScalyPackagePath, "containers.test");
 
     if (!ResultOrErr) {
         std::string ErrMsg;
