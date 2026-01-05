@@ -3464,12 +3464,11 @@ static bool testRBMMEmptyConstructorWithoutParens() {
 static bool testRBMMThrownLifetime() {
     const char* Name = "Pipeline: RBMM thrown lifetime (!) syntax";
 
-    // TODO: This test requires Page.scaly to be compiled with the test
-    // The ! lifetime allocates on the exception page for throw expressions
-    // For now, skip actual execution until Page.scaly is integrated
+    // Test that thrown lifetime (!) allocates on exception page
+    // and can be caught using try/choose expressions.
+    // This test uses a struct with ! lifetime to verify the allocation path.
 
-    // Test that the syntax Type! is correctly parsed and planned
-    // This verifies the parser/planner handles ThrownLifetime correctly
+    // First test: verify Error!(42) syntax plans correctly
     auto PlanResult = compileToPlan(
         "define Error: (code: int)\n"
         "define Result union: (Ok: int, Err: Error)\n"
@@ -3482,15 +3481,29 @@ static bool testRBMMThrownLifetime() {
         std::string ErrMsg;
         llvm::raw_string_ostream OS(ErrMsg);
         OS << PlanResult.takeError();
-        // Thrown lifetime requires exception page setup, which isn't available in JIT
-        // Just verify it parses correctly (even if emitting fails)
-        if (ErrMsg.find("ThrownLifetime") != std::string::npos ||
-            ErrMsg.find("exception page") != std::string::npos) {
-            // Expected - thrown lifetime needs runtime support
-            pass(Name);
-            return true;
-        }
         fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    // Second test: verify primitive throw with execution still works
+    // (uses simpler error type to avoid PHI node complexity in try)
+    auto ResultOrErr = evalInt(
+        "define Result union: (Ok: int, Error: int)\n"
+        "function fail() returns Result throws int { throw 42 }\n"
+        "try let r = fail(): when e: Error: e else 0"
+    );
+
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 42) {
+        std::string Msg = "expected 42, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
         return false;
     }
 

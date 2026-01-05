@@ -161,6 +161,26 @@ void Emitter::initRBMM() {
         DeallocateTy, llvm::GlobalValue::ExternalLinkage,
         "_ZN4Page21deallocate_extensionsEv", *Module);
     FunctionCache["_ZN4Page21deallocate_extensionsEv"] = PageDeallocateExtensions;
+
+    // Create BlockWatermark struct type for block-scoped cleanup
+    // BlockWatermark { page: ptr, next_object: ptr, extension_tail: ptr, exclusive_head: ptr }
+    BlockWatermarkType = llvm::StructType::create(*Context, {PtrTy, PtrTy, PtrTy, PtrTy}, "BlockWatermark");
+
+    // Declare Page_save_watermark(page: ptr) -> BlockWatermark (returned by sret)
+    // Note: Uses sret calling convention - first param is pointer to return struct
+    auto *SaveWatermarkTy = llvm::FunctionType::get(VoidTy, {PtrTy, PtrTy}, false);
+    PageSaveWatermark = llvm::Function::Create(
+        SaveWatermarkTy, llvm::GlobalValue::ExternalLinkage,
+        "_ZN4Page14save_watermarkEv", *Module);
+    FunctionCache["_ZN4Page14save_watermarkEv"] = PageSaveWatermark;
+
+    // Declare Page_restore_watermark(page: ptr, watermark: ptr) -> void
+    // watermark is passed as pointer to BlockWatermark struct
+    auto *RestoreWatermarkTy = llvm::FunctionType::get(VoidTy, {PtrTy, PtrTy}, false);
+    PageRestoreWatermark = llvm::Function::Create(
+        RestoreWatermarkTy, llvm::GlobalValue::ExternalLinkage,
+        "_ZN4Page17restore_watermarkE14BlockWatermark", *Module);
+    FunctionCache["_ZN4Page17restore_watermarkE14BlockWatermark"] = PageRestoreWatermark;
 }
 
 // Declare C runtime functions (aligned_alloc, free, exit)
@@ -773,6 +793,12 @@ llvm::Function *Emitter::emitFunctionDecl(const PlannedFunction &Func) {
     }
 
     FunctionCache[Func.MangledName] = LLVMFunc;
+
+    // Track throwing functions for call site exception page allocation
+    if (Func.CanThrow || Func.Throws) {
+        ThrowingFunctions.insert(Func.MangledName);
+    }
+
     return LLVMFunc;
 }
 
@@ -801,6 +827,7 @@ llvm::Error Emitter::emitFunctionBody(const PlannedFunction &Func,
     CurrentFunction = LLVMFunc;
     CurrentBlock = EntryBB;
     LocalVariables.clear();
+    CurrentFunctionCanThrow = Func.CanThrow || (Func.Throws != nullptr);
 
     // Reset region state for this function
     CurrentRegion = RegionInfo{};
@@ -1521,6 +1548,9 @@ llvm::Error Emitter::emitReturn(const PlannedReturn &Return) {
         RetVal = *ValueOrErr;
     }
 
+    // Emit block-scoped cleanups for all pending blocks
+    emitBlockCleanups(0);
+
     // Clean up local page before returning
     // Only call deallocate_extensions if the page was actually used for allocations
     if (CurrentRegion.LocalPage) {
@@ -1723,6 +1753,9 @@ llvm::Error Emitter::emitThrow(const PlannedThrow &Throw) {
         Builder->CreateStore(ThrownValue, DataCast);
     }
 
+    // Emit block-scoped cleanups for all pending blocks
+    emitBlockCleanups(0);
+
     // Return (void for sret, value for direct return)
     if (CurrentFunction->hasParamAttribute(0, llvm::Attribute::StructRet)) {
         Builder->CreateRetVoid();
@@ -1742,6 +1775,9 @@ llvm::Error Emitter::emitBreak(const PlannedBreak &Break) {
         );
     }
 
+    // Emit block-scoped cleanups back to the loop's entry depth
+    emitBlockCleanups(LoopStack.back().BlockCleanupDepth);
+
     // Jump to the exit block of the innermost loop
     Builder->CreateBr(LoopStack.back().ExitBlock);
     return llvm::Error::success();
@@ -1754,6 +1790,9 @@ llvm::Error Emitter::emitContinue(const PlannedContinue &Continue) {
             llvm::inconvertibleErrorCode()
         );
     }
+
+    // Emit block-scoped cleanups back to the loop's entry depth
+    emitBlockCleanups(LoopStack.back().BlockCleanupDepth);
 
     // Jump to the continue block of the innermost loop
     // For 'for' loops, this is the increment block
@@ -2176,16 +2215,20 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
         std::vector<llvm::Value*> CallArgs;
         CallArgs.push_back(RetPtr);
 
-        // Check for exception page parameter (pointer after sret for throwing functions)
+        // Check if this is a throwing function - allocate exception page if needed
         auto *FuncTy = Func->getFunctionType();
         size_t FirstUserArg = 1;  // Start after sret
-        if (FuncTy->getNumParams() > 1 &&
-            FuncTy->getParamType(1)->isPointerTy() &&
-            Args.empty()) {
-            // Likely has exception page - pass null for now
-            // (exception page is used for throwing functions)
-            CallArgs.push_back(llvm::ConstantPointerNull::get(
-                llvm::PointerType::get(*Context, 0)));
+        bool IsThrowingFunction = ThrowingFunctions.count(Call.MangledName) > 0;
+        llvm::Value *CalleeExceptionPage = nullptr;
+        if (IsThrowingFunction) {
+            // Allocate an exception page for the called function to use for error allocation
+            // Only allocate if Page.allocate_page is available; otherwise pass null
+            if (PageAllocatePage && !PageAllocatePage->isDeclaration()) {
+                CalleeExceptionPage = Builder->CreateCall(PageAllocatePage, {}, "exception_page");
+            } else {
+                CalleeExceptionPage = llvm::ConstantPointerNull::get(llvm::PointerType::get(*Context, 0));
+            }
+            CallArgs.push_back(CalleeExceptionPage);
             FirstUserArg = 2;
         }
 
@@ -2206,20 +2249,41 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
         // Call the function (returns void)
         Builder->CreateCall(Func, CallArgs);
 
+        // Note: For throwing functions, the result is a Result union.
+        // Error checking is done by try/choose expressions, not automatically here.
+        // If a throwing function is called outside try/choose, the caller
+        // is responsible for handling the Result.
+
         // Load and return the result
         return Builder->CreateLoad(RetTy, RetPtr, "sret.val");
     }
 
-    // If no arguments, just call directly
+    // Check if this is a throwing function (non-sret case)
+    bool IsThrowingFunction = ThrowingFunctions.count(Call.MangledName) > 0;
+
+    // If no user arguments, handle throwing function or call directly
     if (Args.empty()) {
+        if (IsThrowingFunction) {
+            // Allocate exception page and pass as first argument
+            // Only allocate if Page.allocate_page is available; otherwise pass null
+            llvm::Value *CalleeExceptionPage;
+            if (PageAllocatePage && !PageAllocatePage->isDeclaration()) {
+                CalleeExceptionPage = Builder->CreateCall(PageAllocatePage, {}, "exception_page");
+            } else {
+                CalleeExceptionPage = llvm::ConstantPointerNull::get(llvm::PointerType::get(*Context, 0));
+            }
+            // Return the full Result union - try/choose will check the tag
+            return Builder->CreateCall(Func, {CalleeExceptionPage});
+        }
         return Builder->CreateCall(Func, Args);
     }
 
     // Check if we need to adjust any arguments
     auto *FuncTy = Func->getFunctionType();
-    bool NeedsAdjustment = false;
-    for (size_t i = 0; i < Args.size() && i < FuncTy->getNumParams(); ++i) {
-        llvm::Type *ParamTy = FuncTy->getParamType(i);
+    size_t ParamOffset = IsThrowingFunction ? 1 : 0;  // Skip exception page param
+    bool NeedsAdjustment = IsThrowingFunction;  // Always need to prepend exception page
+    for (size_t i = 0; i < Args.size() && i + ParamOffset < FuncTy->getNumParams(); ++i) {
+        llvm::Type *ParamTy = FuncTy->getParamType(i + ParamOffset);
         llvm::Type *ArgTy = Args[i]->getType();
         if (ParamTy->isPointerTy() && ArgTy->isStructTy()) {
             NeedsAdjustment = true;
@@ -2243,9 +2307,22 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
 
     // Adjust arguments: convert struct values to pointers, and integer types
     std::vector<llvm::Value*> AdjustedArgs;
-    for (size_t i = 0; i < Args.size() && i < FuncTy->getNumParams(); ++i) {
+
+    // Prepend exception page if this is a throwing function
+    llvm::Value *CalleeExceptionPage = nullptr;
+    if (IsThrowingFunction) {
+        // Only allocate if Page.allocate_page is available; otherwise pass null
+        if (PageAllocatePage && !PageAllocatePage->isDeclaration()) {
+            CalleeExceptionPage = Builder->CreateCall(PageAllocatePage, {}, "exception_page");
+        } else {
+            CalleeExceptionPage = llvm::ConstantPointerNull::get(llvm::PointerType::get(*Context, 0));
+        }
+        AdjustedArgs.push_back(CalleeExceptionPage);
+    }
+
+    for (size_t i = 0; i < Args.size() && i + ParamOffset < FuncTy->getNumParams(); ++i) {
         llvm::Value *ArgVal = Args[i];
-        llvm::Type *ParamTy = FuncTy->getParamType(i);
+        llvm::Type *ParamTy = FuncTy->getParamType(i + ParamOffset);
         llvm::Type *ArgTy = ArgVal->getType();
 
         if (ParamTy->isPointerTy() && ArgTy->isStructTy()) {
@@ -2265,6 +2342,7 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
         }
     }
 
+    // Return the call result - try/choose will check for errors if needed
     return Builder->CreateCall(Func, AdjustedArgs);
 }
 
@@ -2508,28 +2586,57 @@ llvm::Value *Emitter::emitConstant(const PlannedConstant &Const, const PlannedTy
 // ============================================================================
 
 llvm::Expected<llvm::Value*> Emitter::emitBlock(const PlannedBlock &Block) {
+    // Save watermark at block entry if this block has $ allocations
+    // Note: Block-scoped cleanup is only possible when Page.save_watermark is available
+    // (i.e., when Page.scaly is compiled into the module, not just declared as external)
+    BlockCleanupContext Cleanup;
+    Cleanup.NeedsCleanup = Block.NeedsLocalPageCleanup && CurrentRegion.LocalPage != nullptr &&
+                          PageSaveWatermark && !PageSaveWatermark->isDeclaration();
+    if (Cleanup.NeedsCleanup) {
+        // Allocate space for BlockWatermark on stack
+        Cleanup.Watermark = Builder->CreateAlloca(BlockWatermarkType, nullptr, "block.watermark");
+        // Call save_watermark(page, &watermark) - stores watermark in the alloca
+        Builder->CreateCall(PageSaveWatermark, {CurrentRegion.LocalPage, Cleanup.Watermark});
+    }
+    BlockCleanupStack.push_back(Cleanup);
+
     llvm::Value *LastValue = nullptr;
     for (const auto &Stmt : Block.Statements) {
         // For PlannedAction, capture the result value (the block's result is the last value)
         if (auto *Action = std::get_if<PlannedAction>(&Stmt)) {
             auto ValueOrErr = emitAction(*Action);
-            if (!ValueOrErr)
+            if (!ValueOrErr) {
+                BlockCleanupStack.pop_back();
                 return ValueOrErr.takeError();
+            }
             // Only save value if it's not an assignment (assignments have targets)
             if (Action->Target.empty()) {
                 LastValue = *ValueOrErr;
             }
         } else if (auto *Return = std::get_if<PlannedReturn>(&Stmt)) {
             // Emit the full return instruction (including cleanup for local pages)
-            if (auto Err = emitReturn(*Return))
+            // Note: emitReturn handles cleanup for ALL pending blocks
+            if (auto Err = emitReturn(*Return)) {
+                BlockCleanupStack.pop_back();
                 return std::move(Err);
+            }
             // After return, block has terminated, so LastValue doesn't matter
+            BlockCleanupStack.pop_back();
             return nullptr;
         } else {
-            if (auto Err = emitStatement(Stmt))
+            if (auto Err = emitStatement(Stmt)) {
+                BlockCleanupStack.pop_back();
                 return std::move(Err);
+            }
         }
     }
+
+    // Restore watermark at block exit
+    if (Cleanup.NeedsCleanup) {
+        Builder->CreateCall(PageRestoreWatermark, {CurrentRegion.LocalPage, Cleanup.Watermark});
+    }
+    BlockCleanupStack.pop_back();
+
     return LastValue;
 }
 
@@ -3024,7 +3131,7 @@ llvm::Expected<llvm::Value*> Emitter::emitFor(const PlannedFor &For) {
     llvm::BasicBlock *ExitBlock = createBlock("for.exit");
 
     // Push loop context for break/continue
-    LoopStack.push_back({ExitBlock, IncrBlock});
+    LoopStack.push_back({ExitBlock, IncrBlock, BlockCleanupStack.size()});
 
     // Jump to condition block
     Builder->CreateBr(CondBlock);
@@ -3081,7 +3188,7 @@ llvm::Expected<llvm::Value*> Emitter::emitWhile(const PlannedWhile &While) {
 
     // Push loop context for break/continue
     // For while loops, continue goes back to condition check
-    LoopStack.push_back({ExitBlock, CondBlock});
+    LoopStack.push_back({ExitBlock, CondBlock, BlockCleanupStack.size()});
 
     // For "while let" bindings with mutable variables, create alloca before the loop
     llvm::AllocaInst *BindingAlloca = nullptr;
@@ -3978,6 +4085,104 @@ llvm::Function *Emitter::lookupFunction(llvm::StringRef MangledName) {
     if (It != FunctionCache.end())
         return It->second;
     return Module->getFunction(MangledName);
+}
+
+void Emitter::emitBlockCleanups(size_t TargetDepth) {
+    // Emit restore_watermark for each block that needs cleanup,
+    // from innermost to TargetDepth (not including TargetDepth)
+    // We iterate in reverse order (innermost first)
+    // Note: Only emit calls if Page.restore_watermark is actually defined
+    if (!PageRestoreWatermark || PageRestoreWatermark->isDeclaration())
+        return;
+
+    for (size_t i = BlockCleanupStack.size(); i > TargetDepth; --i) {
+        const auto &Cleanup = BlockCleanupStack[i - 1];
+        if (Cleanup.NeedsCleanup && Cleanup.Watermark && CurrentRegion.LocalPage) {
+            Builder->CreateCall(PageRestoreWatermark,
+                               {CurrentRegion.LocalPage, Cleanup.Watermark});
+        }
+    }
+}
+
+llvm::Expected<llvm::Value*> Emitter::checkAndPropagateError(
+    llvm::Value *ResultPtr,
+    llvm::Type *ResultType,
+    llvm::Value *CalleeExceptionPage) {
+    // Result is a union: { i8 tag, [N x i8] data }
+    // Tag 0 = Ok (success), Tag != 0 = Error
+
+    llvm::Type *I8Ty = llvm::Type::getInt8Ty(*Context);
+
+    // Load the tag
+    llvm::Value *TagPtr = Builder->CreateStructGEP(ResultType, ResultPtr, 0, "err.tag.ptr");
+    llvm::Value *Tag = Builder->CreateLoad(I8Ty, TagPtr, "err.tag");
+
+    // Check if error (tag != 0)
+    llvm::Value *IsError = Builder->CreateICmpNE(Tag, llvm::ConstantInt::get(I8Ty, 0), "is.error");
+
+    // Create blocks
+    llvm::BasicBlock *ErrorBlock = createBlock("call.error");
+    llvm::BasicBlock *OkBlock = createBlock("call.ok");
+
+    Builder->CreateCondBr(IsError, ErrorBlock, OkBlock);
+
+    // Error block: propagate or crash
+    Builder->SetInsertPoint(ErrorBlock);
+
+    if (CurrentFunctionCanThrow && CurrentRegion.ExceptionPage) {
+        // Current function can throw - propagate the error
+        // The error data is already on CalleeExceptionPage, but we need to copy it
+        // to our exception page (CurrentRegion.ExceptionPage) for proper lifetime
+
+        // TODO: For now, we assume the error is small enough to fit on our page
+        // and copy it. A more sophisticated approach would be to re-throw on
+        // our exception page.
+
+        // For now, just return with error status
+        // We need to construct a return value with the error tag and data
+
+        // Check if function uses sret
+        bool HasSret = CurrentFunction && CurrentFunction->arg_size() > 0 &&
+                       CurrentFunction->hasParamAttribute(0, llvm::Attribute::StructRet);
+
+        if (HasSret) {
+            // Copy result to sret pointer and return void
+            llvm::Value *SRetPtr = CurrentFunction->getArg(0);
+            llvm::Type *SRetTy = CurrentFunction->getParamStructRetType(0);
+
+            // Copy the error result (tag and data) to sret
+            llvm::Value *ResultVal = Builder->CreateLoad(ResultType, ResultPtr, "err.result");
+            Builder->CreateStore(ResultVal, SRetPtr);
+            Builder->CreateRetVoid();
+        } else {
+            // Return the error result directly
+            llvm::Value *ResultVal = Builder->CreateLoad(ResultType, ResultPtr, "err.result");
+            Builder->CreateRet(ResultVal);
+        }
+    } else {
+        // Current function cannot throw - unhandled error, call exit(1)
+        if (ExitFunc) {
+            Builder->CreateCall(ExitFunc, {llvm::ConstantInt::get(llvm::Type::getInt32Ty(*Context), 1)});
+        }
+        Builder->CreateUnreachable();
+    }
+
+    // Ok block: extract success value
+    Builder->SetInsertPoint(OkBlock);
+
+    // Deallocate the exception page from the callee (it's no longer needed)
+    if (CalleeExceptionPage && PageDeallocateExtensions &&
+        !PageDeallocateExtensions->isDeclaration()) {
+        Builder->CreateCall(PageDeallocateExtensions, {CalleeExceptionPage});
+    }
+
+    // Extract success data from index 1
+    // For now, return as i64 - caller may need to cast appropriately
+    llvm::Value *DataPtr = Builder->CreateStructGEP(ResultType, ResultPtr, 1, "ok.data.ptr");
+    llvm::Type *I64Ty = llvm::Type::getInt64Ty(*Context);
+    llvm::Value *OkValue = Builder->CreateLoad(I64Ty, DataPtr, "ok.val");
+
+    return OkValue;
 }
 
 llvm::Value *Emitter::allocate(llvm::Type *Ty, Lifetime Life, llvm::StringRef Name) {
