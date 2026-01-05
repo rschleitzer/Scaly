@@ -5071,6 +5071,99 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                 continue;
                             }
                         }
+                        // Also handle Namespace (define blocks) for functions like File.write_from_string
+                        else if (auto* ModelNS = std::get_if<Namespace>(&Conc->Def)) {
+                            // Search for a function in the namespace
+                            const Function* NSFunction = nullptr;
+                            for (const auto& Member : ModelNS->Members) {
+                                if (auto* Func = std::get_if<Function>(&Member)) {
+                                    if (Func->Name == MethodName) {
+                                        NSFunction = Func;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (NSFunction) {
+                                // Plan the arguments tuple
+                                Operand ArgsOp = NextOp;
+                                ArgsOp.MemberAccess = nullptr;
+                                auto PlannedArgs = planOperand(ArgsOp);
+                                if (!PlannedArgs) {
+                                    return PlannedArgs.takeError();
+                                }
+
+                                // Extract argument types from the planned tuple
+                                std::vector<PlannedType> ArgTypes;
+                                if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedArgs->Expr)) {
+                                    for (const auto &Comp : TupleExpr->Components) {
+                                        if (!Comp.Value.empty()) {
+                                            ArgTypes.push_back(Comp.Value.back().ResultType);
+                                        }
+                                    }
+                                }
+
+                                // Plan the namespace function
+                                auto PlannedFunc = planFunction(*NSFunction, nullptr);
+                                if (!PlannedFunc) {
+                                    return PlannedFunc.takeError();
+                                }
+
+                                // Add to InstantiatedFunctions if not already present
+                                if (InstantiatedFunctions.find(PlannedFunc->MangledName) == InstantiatedFunctions.end()) {
+                                    InstantiatedFunctions[PlannedFunc->MangledName] = *PlannedFunc;
+                                }
+
+                                // Create PlannedCall for the namespace function
+                                PlannedCall Call;
+                                Call.Loc = Op.Loc;
+                                Call.Name = MethodName;
+                                Call.MangledName = PlannedFunc->MangledName;
+                                Call.IsIntrinsic = false;
+                                Call.IsOperator = false;
+
+                                // Convert tuple components to call arguments
+                                Call.Args = std::make_shared<std::vector<PlannedOperand>>();
+                                if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedArgs->Expr)) {
+                                    for (auto &Comp : TupleExpr->Components) {
+                                        if (!Comp.Value.empty()) {
+                                            Call.Args->push_back(std::move(Comp.Value.back()));
+                                        }
+                                    }
+                                }
+
+                                // Set return type
+                                if (PlannedFunc->Returns) {
+                                    Call.ResultType = *PlannedFunc->Returns;
+                                } else {
+                                    Call.ResultType.Name = "void";
+                                    Call.ResultType.MangledName = "v";
+                                }
+
+                                PlannedOperand CallOp;
+                                CallOp.Loc = Op.Loc;
+                                CallOp.ResultType = Call.ResultType;
+                                CallOp.Expr = std::move(Call);
+
+                                // Handle member access on the result
+                                if (NextOp.MemberAccess && !NextOp.MemberAccess->empty()) {
+                                    auto MemberChain = resolveMemberAccessChain(
+                                        CallOp.ResultType, *NextOp.MemberAccess, NextOp.Loc);
+                                    if (!MemberChain) {
+                                        return MemberChain.takeError();
+                                    }
+                                    CallOp.MemberAccess = std::make_shared<std::vector<PlannedMemberAccess>>(
+                                        std::move(*MemberChain));
+                                    if (!CallOp.MemberAccess->empty()) {
+                                        CallOp.ResultType = CallOp.MemberAccess->back().ResultType;
+                                    }
+                                }
+
+                                Result.push_back(std::move(CallOp));
+                                i++;  // Skip the tuple operand
+                                continue;
+                            }
+                        }
                     }
                 }
             }
@@ -5557,6 +5650,7 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                         // This happens when we call a sibling method from within the same struct
                         bool NeedsImplicitThis = false;
                         bool IsSiblingMethod = false;
+                        bool IsNamespaceSibling = false;
                         const Function* MatchedFunc = nullptr;
                         if (!CurrentStructureName.empty()) {
                             auto Candidates = lookupFunction(FuncName);
@@ -5578,6 +5672,19 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                     IsSiblingMethod = true;
                                     MatchedFunc = Func;
                                     // Don't break - prefer 'this' variant if it exists
+                                }
+                            }
+                        }
+                        // Check if this is a sibling function in the same namespace (define block)
+                        if (!IsSiblingMethod && !CurrentNamespaceName.empty()) {
+                            auto Candidates = lookupFunction(FuncName);
+                            for (const Function* Func : Candidates) {
+                                // Check if this function has matching parameter count (no 'this')
+                                if (Func->Parameters.empty() &&
+                                    Func->Input.size() == ArgTypes.size()) {
+                                    IsNamespaceSibling = true;
+                                    MatchedFunc = Func;
+                                    break;
                                 }
                             }
                         }
@@ -5651,6 +5758,12 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                 ParentType.MangledName = encodeName(BaseName);
                                 MangledName = mangleFunction(FuncName, ParamItems, &ParentType);
                             }
+                        } else if (IsNamespaceSibling) {
+                            // Sibling function in the same namespace - use namespace prefix
+                            PlannedType ParentType;
+                            ParentType.Name = CurrentNamespaceName;
+                            ParentType.MangledName = encodeName(CurrentNamespaceName);
+                            MangledName = mangleFunction(FuncName, ParamItems, &ParentType);
                         } else {
                             MangledName = mangleFunction(FuncName, ParamItems, nullptr);
                         }
@@ -7451,6 +7564,10 @@ llvm::Expected<PlannedNamespace> Planner::planNamespace(const Namespace &NS,
     ParentType.Name = Name.str();
     ParentType.MangledName = Result.MangledName;
 
+    // Set current namespace context for sibling function calls
+    std::string OldNamespaceName = CurrentNamespaceName;
+    CurrentNamespaceName = Name.str();
+
     // Create a pseudo-module wrapper for the namespace to enable cross-module lookup
     // This allows functions in the namespace to find concepts from sub-modules
     Module PseudoModule;
@@ -7471,6 +7588,7 @@ llvm::Expected<PlannedNamespace> Planner::planNamespace(const Namespace &NS,
         auto PlannedSubMod = planModule(SubMod);
         if (!PlannedSubMod) {
             ModuleStack.pop_back();
+            CurrentNamespaceName = OldNamespaceName;
             return PlannedSubMod.takeError();
         }
         Result.Modules.push_back(std::move(*PlannedSubMod));
@@ -7482,6 +7600,7 @@ llvm::Expected<PlannedNamespace> Planner::planNamespace(const Namespace &NS,
             auto PlannedFunc = planFunction(*Func, &ParentType);
             if (!PlannedFunc) {
                 ModuleStack.pop_back();
+                CurrentNamespaceName = OldNamespaceName;
                 return PlannedFunc.takeError();
             }
 
@@ -7496,6 +7615,7 @@ llvm::Expected<PlannedNamespace> Planner::planNamespace(const Namespace &NS,
             auto PlannedOp = planOperator(*Op, &ParentType);
             if (!PlannedOp) {
                 ModuleStack.pop_back();
+                CurrentNamespaceName = OldNamespaceName;
                 return PlannedOp.takeError();
             }
             Result.Operators.push_back(std::move(*PlannedOp));
@@ -7504,6 +7624,7 @@ llvm::Expected<PlannedNamespace> Planner::planNamespace(const Namespace &NS,
     }
 
     ModuleStack.pop_back();
+    CurrentNamespaceName = OldNamespaceName;
     return Result;
 }
 
