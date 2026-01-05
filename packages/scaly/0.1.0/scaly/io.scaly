@@ -18,11 +18,48 @@ define io {
         return 0
     }
 
+    function test_file_raw() returns int {
+        ; Test raw file I/O using C functions directly
+        ; This tests the sibling function call pattern without String method issues
+
+        ; Write a test file
+        let test_path "/tmp/scaly_raw_test.txt"
+        let test_content "Hello from Scaly raw I/O!\n"
+        let content_len 26 as size_t
+
+        var file fopen(test_path, "wb")
+        if file = null
+            return -10
+
+        let written fwrite(test_content as pointer[void], 1, content_len, file)
+        fclose(file)
+        if written <> content_len
+            return -11
+
+        ; Read the file back
+        set file: fopen(test_path, "rb")
+        if file = null
+            return -12
+
+        var buffer: char[64]
+        let read_count fread(buffer, 1, 64 as size_t, file)
+        fclose(file)
+
+        if read_count <> content_len
+            return -13
+
+        ; Success - raw file I/O works
+        return 0
+    }
+
     function test() returns int {
         var result test_direct()
         if result <> 0
             return result
         set result: test_console()
+        if result <> 0
+            return result
+        set result: test_file_raw()
         if result <> 0
             return result
         return 0

@@ -2,4 +2,12 @@ define scaly {
     module memory
     module containers
     module io
+
+    ; Test entry point that calls all module tests
+    function test() returns int {
+        var result io.test()
+        if result <> 0
+            return result
+        return 0
+    }
 }
