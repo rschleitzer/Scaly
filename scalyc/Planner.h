@@ -83,6 +83,12 @@ private:
     // Track if current function uses $ allocations (needs local page)
     bool CurrentFunctionUsesLocalLifetime = false;
 
+    // Track per-scope $ allocations for block-scoped cleanup
+    struct ScopeInfo {
+        bool HasLocalAllocations = false;  // True if this scope has $ allocations
+    };
+    std::vector<ScopeInfo> ScopeInfoStack;
+
     // ========== Type Inference State ==========
 
     // Current plan being built (for constraint collection)
