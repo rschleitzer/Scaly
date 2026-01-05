@@ -6,6 +6,7 @@
 #include "Planner.h"
 #include "Emitter.h"
 #include "EmitterTests.h"
+#include "ModuleTests.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/MemoryBuffer.h"
@@ -545,6 +546,9 @@ int main(int argc, char **argv) {
         std::cout << std::endl << std::flush;
         llvm::outs().flush();
         AllPassed &= scaly::runEmitterTests();
+        std::cout << std::endl << std::flush;
+        llvm::outs().flush();
+        AllPassed &= scaly::runModuleTests();
         return AllPassed ? 0 : 1;
     }
 
