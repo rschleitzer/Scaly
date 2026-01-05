@@ -485,11 +485,15 @@ std::string Planner::mangleOperator(llvm::StringRef Name,
 
 void Planner::pushScope() {
     Scopes.emplace_back();
+    ScopeInfoStack.emplace_back();
 }
 
 void Planner::popScope() {
     if (!Scopes.empty()) {
         Scopes.pop_back();
+    }
+    if (!ScopeInfoStack.empty()) {
+        ScopeInfoStack.pop_back();
     }
 }
 
@@ -5129,9 +5133,12 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                 // $ = local page, # = caller page, ^name = named region
                                 bool IsRegionAlloc = !std::holds_alternative<UnspecifiedLifetime>(TypeExpr->Life);
 
-                                // Track if this function uses local lifetime allocations
+                                // Track if this function/scope uses local lifetime allocations
                                 if (std::holds_alternative<LocalLifetime>(TypeExpr->Life)) {
                                     CurrentFunctionUsesLocalLifetime = true;
+                                    if (!ScopeInfoStack.empty()) {
+                                        ScopeInfoStack.back().HasLocalAllocations = true;
+                                    }
                                 }
 
                                 // For ReferenceLifetime (^name), pass the region variable as first arg
@@ -5245,9 +5252,12 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                 // $ = local page, # = caller page, ^name = named region
                                 bool IsRegionAlloc = !std::holds_alternative<UnspecifiedLifetime>(TypeExpr->Life);
 
-                                // Track if this function uses local lifetime allocations
+                                // Track if this function/scope uses local lifetime allocations
                                 if (std::holds_alternative<LocalLifetime>(TypeExpr->Life)) {
                                     CurrentFunctionUsesLocalLifetime = true;
+                                    if (!ScopeInfoStack.empty()) {
+                                        ScopeInfoStack.back().HasLocalAllocations = true;
+                                    }
                                 }
 
                                 // For ReferenceLifetime (^name), look up the region variable
@@ -5351,9 +5361,12 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                 // Page allocation based on lifetime
                                 bool IsRegionAlloc = true;  // We already checked lifetime is not Unspecified
 
-                                // Track if this function uses local lifetime allocations
+                                // Track if this function/scope uses local lifetime allocations
                                 if (std::holds_alternative<LocalLifetime>(TypeExpr->Life)) {
                                     CurrentFunctionUsesLocalLifetime = true;
+                                    if (!ScopeInfoStack.empty()) {
+                                        ScopeInfoStack.back().HasLocalAllocations = true;
+                                    }
                                 }
 
                                 // For ReferenceLifetime (^name), pass the region variable as first arg
@@ -5399,9 +5412,12 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                 EmptyTuple.IsRegionAlloc = true;
                                 EmptyTuple.Life = TypeExpr->Life;
 
-                                // Track if this function uses local lifetime allocations
+                                // Track if this function/scope uses local lifetime allocations
                                 if (std::holds_alternative<LocalLifetime>(TypeExpr->Life)) {
                                     CurrentFunctionUsesLocalLifetime = true;
+                                    if (!ScopeInfoStack.empty()) {
+                                        ScopeInfoStack.back().HasLocalAllocations = true;
+                                    }
                                 }
 
                                 if (auto* RefLife = std::get_if<ReferenceLifetime>(&TypeExpr->Life)) {
@@ -6414,6 +6430,11 @@ llvm::Expected<PlannedBlock> Planner::planBlock(const Block &Blk) {
         return PlannedStmts.takeError();
     }
     Result.Statements = std::move(*PlannedStmts);
+
+    // Capture scope info before popping - does this block need cleanup?
+    if (!ScopeInfoStack.empty()) {
+        Result.NeedsLocalPageCleanup = ScopeInfoStack.back().HasLocalAllocations;
+    }
 
     popScope();
 
