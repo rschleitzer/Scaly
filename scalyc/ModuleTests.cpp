@@ -159,10 +159,36 @@ static llvm::Expected<int64_t> runModuleTestFunction(
 // Module Test Cases
 // ============================================================================
 
+static bool testMemoryModule() {
+    const char* Name = "Module: memory.test()";
+
+    auto ResultOrErr = runModuleTestFunction(
+        "../../packages/scaly/0.1.0/scaly/memory.scaly",
+        "test"
+    );
+
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    int64_t Result = *ResultOrErr;
+    if (Result != 0) {
+        std::string Msg = "test returned error code " + std::to_string(Result);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
 static bool testContainersModule() {
     const char* Name = "Module: containers.test()";
 
-    // Path relative to scalyc/build directory
     auto ResultOrErr = runModuleTestFunction(
         "../../packages/scaly/0.1.0/scaly/containers.scaly",
         "test"
@@ -197,6 +223,10 @@ bool runModuleTests() {
 
     TestsPassed = 0;
     TestsFailed = 0;
+
+    // Memory module tests
+    llvm::outs() << "  Memory module tests:\n";
+    testMemoryModule();
 
     // Container module tests
     llvm::outs() << "  Container module tests:\n";
