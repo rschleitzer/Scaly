@@ -6,6 +6,7 @@
 #include "Syntax.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
+#include <map>
 #include <set>
 #include <string>
 #include <vector>
@@ -33,8 +34,9 @@ private:
     std::string File;
     std::vector<std::string> PackageSearchPaths;
     std::set<std::string> LoadingPackages;  // For circular dependency detection
+    std::map<std::string, Package> ResolvedPackages;  // Cache of resolved packages
 
-    // Package resolution with multi-path search
+    // Package resolution with multi-path search (recursive for transitive deps)
     llvm::Expected<Module> resolvePackage(llvm::StringRef Name, const Version &Ver);
 
     // Type handling

@@ -1872,8 +1872,16 @@ llvm::Expected<Module> Modeler::buildModule(llvm::StringRef Path,
 // Package resolution with multi-path search
 
 llvm::Expected<Module> Modeler::resolvePackage(llvm::StringRef Name, const Version &Ver) {
-    // Check for circular dependency
     std::string Key = Name.str() + "@" + Ver.toString();
+
+    // Check if already resolved (avoid duplicate loading)
+    auto CacheIt = ResolvedPackages.find(Key);
+    if (CacheIt != ResolvedPackages.end()) {
+        // Return a copy of the cached module
+        return *CacheIt->second.Root;
+    }
+
+    // Check for circular dependency
     if (LoadingPackages.count(Key)) {
         return llvm::make_error<llvm::StringError>(
             "circular package dependency: " + Key,
@@ -1929,13 +1937,84 @@ llvm::Expected<Module> Modeler::resolvePackage(llvm::StringRef Name, const Versi
         llvm::sys::path::append(PkgPath, Name, Ver.toString(), Name.str() + ".scaly");
 
         if (llvm::sys::fs::exists(PkgPath)) {
-            auto Result = buildReferencedModule(
-                llvm::sys::path::parent_path(PkgPath),
-                Name,
+            // Read and parse with parseProgram to get package declarations
+            auto BufOrErr = llvm::MemoryBuffer::getFile(PkgPath);
+            if (!BufOrErr) {
+                LoadingPackages.erase(Key);
+                return llvm::make_error<llvm::StringError>(
+                    "cannot open package file: " + PkgPath.str().str(),
+                    BufOrErr.getError());
+            }
+
+            Parser PkgParser((*BufOrErr)->getBuffer());
+            auto ParseResult = PkgParser.parseProgram();
+            if (!ParseResult) {
+                LoadingPackages.erase(Key);
+                return llvm::make_error<llvm::StringError>(
+                    PkgPath.str().str() + ": " + llvm::toString(ParseResult.takeError()),
+                    llvm::inconvertibleErrorCode());
+            }
+
+            // Recursively resolve transitive package dependencies
+            if (ParseResult->file.packages) {
+                for (const auto &Pkg : *ParseResult->file.packages) {
+                    std::string TransPkgName(Pkg.name.name);
+                    Version TransVer{0, 0, 0};
+                    if (Pkg.version) {
+                        std::visit([&TransVer](const auto &Lit) {
+                            using T = std::decay_t<decltype(Lit)>;
+                            if constexpr (std::is_same_v<T, FloatingPointLiteral>) {
+                                llvm::StringRef MajorMinor(Lit.Value);
+                                auto DotPos = MajorMinor.find('.');
+                                if (DotPos != llvm::StringRef::npos) {
+                                    MajorMinor.substr(0, DotPos).getAsInteger(10, TransVer.Major);
+                                    MajorMinor.substr(DotPos + 1).getAsInteger(10, TransVer.Minor);
+                                }
+                            } else if constexpr (std::is_same_v<T, IntegerLiteral>) {
+                                Lit.Value.getAsInteger(10, TransVer.Major);
+                            }
+                        }, Pkg.version->majorMinor);
+
+                        std::visit([&TransVer](const auto &Lit) {
+                            using T = std::decay_t<decltype(Lit)>;
+                            if constexpr (std::is_same_v<T, IntegerLiteral>) {
+                                Lit.Value.getAsInteger(10, TransVer.Patch);
+                            }
+                        }, Pkg.version->patch);
+                    }
+
+                    // Recursively resolve (will detect cycles)
+                    auto TransResult = resolvePackage(TransPkgName, TransVer);
+                    if (!TransResult) {
+                        LoadingPackages.erase(Key);
+                        return TransResult.takeError();
+                    }
+                }
+            }
+
+            // Build the module from the file syntax
+            auto Result = buildModule(
+                llvm::sys::path::parent_path(PkgPath).str(),
+                PkgPath.str().str(),
+                Name.str(),
+                ParseResult->file,
                 false
             );
+
+            if (!Result) {
+                LoadingPackages.erase(Key);
+                return Result.takeError();
+            }
+
+            // Cache the resolved package
+            ResolvedPackages[Key] = Package{
+                Name.str(),
+                Ver,
+                std::make_shared<Module>(std::move(*Result))
+            };
+
             LoadingPackages.erase(Key);
-            return Result;
+            return *ResolvedPackages[Key].Root;
         }
     }
 
@@ -1954,8 +2033,7 @@ llvm::Expected<Program> Modeler::buildProgram(const ProgramSyntax &Syntax) {
     llvm::SmallString<256> BasePath(File);
     llvm::sys::path::remove_filename(BasePath);
 
-    // Load packages
-    std::vector<Package> Packages;
+    // Load packages (resolvePackage handles transitive deps and caches in ResolvedPackages)
     if (Syntax.file.packages) {
         for (const auto &Pkg : *Syntax.file.packages) {
             // Get package name from NameSyntax
@@ -1988,18 +2066,19 @@ llvm::Expected<Program> Modeler::buildProgram(const ProgramSyntax &Syntax) {
                 }, Pkg.version->patch);
             }
 
-            // Resolve package using multi-path search
+            // Resolve package (recursively resolves transitive dependencies)
             auto PkgResult = resolvePackage(PkgName, Ver);
             if (!PkgResult)
                 return PkgResult.takeError();
-
-            Packages.push_back(Package{
-                PkgName,
-                Ver,
-                std::make_shared<Module>(std::move(*PkgResult))
-            });
         }
     }
+
+    // Collect all resolved packages (including transitive dependencies)
+    std::vector<Package> Packages;
+    for (auto &[Key, Pkg] : ResolvedPackages) {
+        Packages.push_back(std::move(Pkg));
+    }
+    ResolvedPackages.clear();  // Clear for next use
 
     // Build main module
     auto MainModule = buildModule(BasePath.str(), File, "", Syntax.file, false);
