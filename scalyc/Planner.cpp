@@ -6971,6 +6971,9 @@ llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
             return ResolvedThrows.takeError();
         }
         Result.Throws = std::make_shared<PlannedType>(std::move(*ResolvedThrows));
+        Result.CanThrow = true;
+        // Note: The exception page parameter is added by the Emitter, not here.
+        // The Emitter checks Func.CanThrow/Func.Throws and adds the parameter.
     }
 
     // Plan implementation (function body)

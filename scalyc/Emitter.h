@@ -13,6 +13,7 @@
 #include "llvm/ExecutionEngine/Orc/LLJIT.h"
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 
 namespace scaly {
@@ -97,6 +98,9 @@ private:
     // Function cache: mangled name -> LLVM function
     std::map<std::string, llvm::Function*> FunctionCache;
 
+    // Track which functions can throw (populated when emitting declarations)
+    std::set<std::string> ThrowingFunctions;
+
     // Intrinsic type info (baked in)
     std::map<std::string, IntrinsicTypeInfo> IntrinsicTypes;
 
@@ -104,6 +108,7 @@ private:
     llvm::Function *CurrentFunction = nullptr;
     llvm::BasicBlock *CurrentBlock = nullptr;
     std::map<std::string, llvm::Value*> LocalVariables;
+    bool CurrentFunctionCanThrow = false;  // True if current function has Throws annotation
 
     // Region/lifetime management
     struct RegionInfo {
@@ -116,9 +121,12 @@ private:
 
     // Page type and runtime functions for RBMM
     llvm::StructType *PageType = nullptr;
+    llvm::StructType *BlockWatermarkType = nullptr;  // BlockWatermark struct type
     llvm::Function *PageAllocate = nullptr;       // Page.allocate(page, size, align)
     llvm::Function *PageAllocatePage = nullptr;   // Page.allocate_page()
     llvm::Function *PageDeallocateExtensions = nullptr;  // Page.deallocate_extensions(page)
+    llvm::Function *PageSaveWatermark = nullptr;  // Page.save_watermark(page) -> BlockWatermark
+    llvm::Function *PageRestoreWatermark = nullptr;  // Page.restore_watermark(page, watermark)
     llvm::Function *AlignedAlloc = nullptr;       // aligned_alloc(align, size)
     llvm::Function *Free = nullptr;               // free(ptr)
     llvm::Function *ExitFunc = nullptr;           // exit(code)
@@ -127,8 +135,16 @@ private:
     struct LoopContext {
         llvm::BasicBlock *ExitBlock;     // Target for 'break'
         llvm::BasicBlock *ContinueBlock; // Target for 'continue'
+        size_t BlockCleanupDepth;        // BlockCleanupStack size at loop entry
     };
     std::vector<LoopContext> LoopStack;
+
+    // Block cleanup context for block-scoped RBMM cleanup
+    struct BlockCleanupContext {
+        llvm::Value *Watermark = nullptr;  // BlockWatermark saved at block entry
+        bool NeedsCleanup = false;         // True if this block has $ allocations
+    };
+    std::vector<BlockCleanupContext> BlockCleanupStack;
 
     // ========================================================================
     // Initialization
@@ -311,6 +327,17 @@ private:
 
     // Look up a function by mangled name
     llvm::Function *lookupFunction(llvm::StringRef MangledName);
+
+    // Emit block-scoped cleanup from current position back to TargetDepth
+    // Calls restore_watermark for each block that needs cleanup
+    void emitBlockCleanups(size_t TargetDepth);
+
+    // Check result from throwing function and propagate errors
+    // Takes result pointer (to union), result type, and exception page used for the call
+    // Returns the success value if Ok, or propagates error if not
+    llvm::Expected<llvm::Value*> checkAndPropagateError(llvm::Value *ResultPtr,
+                                                         llvm::Type *ResultType,
+                                                         llvm::Value *CalleeExceptionPage);
 
     // ========================================================================
     // Main Function Generation (for executables)
