@@ -1743,14 +1743,40 @@ llvm::Error Emitter::emitThrow(const PlannedThrow &Throw) {
         // Get pointer to the data field (field 1)
         llvm::Value *DataPtr = Builder->CreateStructGEP(ResultTy, ResultPtr, 1, "throw.data.ptr");
 
-        // Bitcast the data pointer to the thrown value's type and store
+        // Check if thrown value is a pointer to a struct (from ! lifetime allocation)
+        // If so, copy the struct into the union data, not the pointer
         llvm::Type *ThrownTy = ThrownValue->getType();
-        llvm::Value *DataCast = Builder->CreateBitCast(
-            DataPtr,
-            llvm::PointerType::getUnqual(ThrownTy),
-            "throw.data.cast"
-        );
-        Builder->CreateStore(ThrownValue, DataCast);
+        if (ThrownTy->isPointerTy()) {
+            // Load the struct from the pointer and store it
+            // We need to determine the struct type - check the Result union's data size
+            // For now, load as the struct type that fits in the data portion
+            llvm::Type *DataFieldTy = ResultTy->getStructElementType(1);
+            if (DataFieldTy->isArrayTy()) {
+                // Data is [N x i8] - we have N bytes available
+                // Copy from the pointer source to the data destination
+                auto *I64Ty = llvm::Type::getInt64Ty(*Context);
+                size_t DataSize = DataFieldTy->getArrayNumElements();
+                Builder->CreateMemCpy(DataPtr, llvm::MaybeAlign(1),
+                                      ThrownValue, llvm::MaybeAlign(1),
+                                      llvm::ConstantInt::get(I64Ty, DataSize));
+            } else {
+                // Fallback: store the pointer directly
+                llvm::Value *DataCast = Builder->CreateBitCast(
+                    DataPtr,
+                    llvm::PointerType::getUnqual(ThrownTy),
+                    "throw.data.cast"
+                );
+                Builder->CreateStore(ThrownValue, DataCast);
+            }
+        } else {
+            // Non-pointer value: store directly
+            llvm::Value *DataCast = Builder->CreateBitCast(
+                DataPtr,
+                llvm::PointerType::getUnqual(ThrownTy),
+                "throw.data.cast"
+            );
+            Builder->CreateStore(ThrownValue, DataCast);
+        }
     }
 
     // Emit block-scoped cleanups for all pending blocks

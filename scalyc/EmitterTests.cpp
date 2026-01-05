@@ -3467,12 +3467,12 @@ static bool testRBMMThrownLifetime() {
     // Test that thrown lifetime (!) allocates on exception page
     // and can be caught using try/choose expressions.
 
-    // Test 1: Verify Error!(42) syntax plans correctly
+    // Test 1: Verify struct throw with ! lifetime plans and emits correctly
     auto PlanResult = compileToPlan(
         "define Error: (code: int)\n"
         "define Result union: (Ok: int, Err: Error)\n"
         "function fail() returns Result throws Error {\n"
-        "    throw Error!(42)\n"  // Allocate Error on exception page
+        "    throw Error!(42)\n"
         "}\n"
     );
 
@@ -3484,11 +3484,44 @@ static bool testRBMMThrownLifetime() {
         return false;
     }
 
-    // Test 2: Verify primitive throw with try/catch executes correctly
+    // Test 2: Verify primitive throw executes correctly with try/catch
     auto ResultOrErr = evalInt(
         "define Result union: (Ok: int, Error: int)\n"
         "function fail() returns Result throws int { throw 42 }\n"
         "try let r = fail(): when e: Error: e else 0"
+    );
+
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 42) {
+        std::string Msg = "expected 42, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testThrowStructWithMemberAccess() {
+    const char* Name = "Pipeline: throw struct with member access in catch";
+
+    // Test extracting member from caught struct error
+    // Note: This test documents a current limitation - direct member access
+    // on catch variable (e.code) has PHI node issues. Use choose instead.
+    auto ResultOrErr = evalInt(
+        "define Error: (code: int)\n"
+        "define Result union: (Ok: int, Err: Error)\n"
+        "function fail() returns Result throws Error {\n"
+        "    throw Error!(42)\n"
+        "}\n"
+        "choose fail(): when e: Err: e.code when x: Ok: x else 0\n"
     );
 
     if (!ResultOrErr) {
@@ -4285,6 +4318,7 @@ bool runEmitterTests() {
     testRBMMCallerPageAllocation();
     testRBMMEmptyConstructorWithoutParens();
     testRBMMThrownLifetime();
+    testThrowStructWithMemberAccess();
     testRBMMBlockScopedCleanup();
     testRBMMReferenceLifetimeRequiresPagePointer();
 
