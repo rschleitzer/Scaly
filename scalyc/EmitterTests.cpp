@@ -3466,9 +3466,8 @@ static bool testRBMMThrownLifetime() {
 
     // Test that thrown lifetime (!) allocates on exception page
     // and can be caught using try/choose expressions.
-    // This test uses a struct with ! lifetime to verify the allocation path.
 
-    // First test: verify Error!(42) syntax plans correctly
+    // Test 1: Verify Error!(42) syntax plans correctly
     auto PlanResult = compileToPlan(
         "define Error: (code: int)\n"
         "define Result union: (Ok: int, Err: Error)\n"
@@ -3485,8 +3484,7 @@ static bool testRBMMThrownLifetime() {
         return false;
     }
 
-    // Second test: verify primitive throw with execution still works
-    // (uses simpler error type to avoid PHI node complexity in try)
+    // Test 2: Verify primitive throw with try/catch executes correctly
     auto ResultOrErr = evalInt(
         "define Result union: (Ok: int, Error: int)\n"
         "function fail() returns Result throws int { throw 42 }\n"

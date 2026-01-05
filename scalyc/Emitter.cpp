@@ -3449,12 +3449,15 @@ llvm::Expected<llvm::Value*> Emitter::emitTry(const PlannedTry &Try) {
                     }
                 }
 
-                if (!Builder->GetInsertBlock()->getTerminator()) {
-                    Builder->CreateBr(MergeBlock);
-                }
+                // Capture the current block BEFORE adding the branch
+                llvm::BasicBlock *CatchEndBlock = Builder->GetInsertBlock();
 
-                if (CatchValue) {
-                    IncomingValues.push_back({CatchValue, Builder->GetInsertBlock()});
+                if (!CatchEndBlock->getTerminator()) {
+                    Builder->CreateBr(MergeBlock);
+                    // Add to PHI if we have a value
+                    if (CatchValue) {
+                        IncomingValues.push_back({CatchValue, CatchEndBlock});
+                    }
                 }
             }
 
@@ -3475,12 +3478,14 @@ llvm::Expected<llvm::Value*> Emitter::emitTry(const PlannedTry &Try) {
                         return std::move(Err);
                 }
 
-                if (!Builder->GetInsertBlock()->getTerminator()) {
-                    Builder->CreateBr(MergeBlock);
-                }
+                // Capture the current block BEFORE adding the branch
+                llvm::BasicBlock *ElseEndBlock = Builder->GetInsertBlock();
 
-                if (ElseValue) {
-                    IncomingValues.push_back({ElseValue, Builder->GetInsertBlock()});
+                if (!ElseEndBlock->getTerminator()) {
+                    Builder->CreateBr(MergeBlock);
+                    if (ElseValue) {
+                        IncomingValues.push_back({ElseValue, ElseEndBlock});
+                    }
                 }
             }
         } else if (Try.Alternative) {
@@ -3499,12 +3504,14 @@ llvm::Expected<llvm::Value*> Emitter::emitTry(const PlannedTry &Try) {
                     return std::move(Err);
             }
 
-            if (!Builder->GetInsertBlock()->getTerminator()) {
-                Builder->CreateBr(MergeBlock);
-            }
+            // Capture the current block BEFORE adding the branch
+            llvm::BasicBlock *ElseEndBlock = Builder->GetInsertBlock();
 
-            if (ElseValue) {
-                IncomingValues.push_back({ElseValue, Builder->GetInsertBlock()});
+            if (!ElseEndBlock->getTerminator()) {
+                Builder->CreateBr(MergeBlock);
+                if (ElseValue) {
+                    IncomingValues.push_back({ElseValue, ElseEndBlock});
+                }
             }
         }
     }
