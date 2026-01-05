@@ -453,30 +453,6 @@ static bool testJitModulo() {
 // Full Pipeline Tests (Source -> Parse -> Model -> Plan -> JIT)
 // ============================================================================
 
-// Helper: load a package file and add to planner as sibling
-static bool loadPackageFile(Planner &Pl, llvm::StringRef Path) {
-    auto BufOrErr = llvm::MemoryBuffer::getFile(Path);
-    if (!BufOrErr)
-        return false;
-
-    Parser P((*BufOrErr)->getBuffer());
-    auto ParseResult = P.parseProgram();
-    if (!ParseResult) {
-        llvm::consumeError(ParseResult.takeError());
-        return false;
-    }
-
-    Modeler M(Path);
-    auto ModelResult = M.buildProgram(*ParseResult);
-    if (!ModelResult) {
-        llvm::consumeError(ModelResult.takeError());
-        return false;
-    }
-
-    Pl.addSiblingProgram(std::make_shared<Program>(std::move(*ModelResult)));
-    return true;
-}
-
 // Helper: run full pipeline from source string to Plan
 static llvm::Expected<Plan> compileToPlan(llvm::StringRef Source) {
     Parser P(Source);
@@ -490,38 +466,12 @@ static llvm::Expected<Plan> compileToPlan(llvm::StringRef Source) {
         return ModelResult.takeError();
 
     Planner Pl("test.scaly");
-
-    // Load stdlib and scaly packages for RBMM support
-    loadPackageFile(Pl, "../../packages/stdlib/0.1.0/stdlib/runtime.scaly");
-    loadPackageFile(Pl, "../../packages/stdlib/0.1.0/stdlib/operators.scaly");
-    loadPackageFile(Pl, "../../packages/scaly/0.1.0/scaly/memory/runtime.scaly");
-    loadPackageFile(Pl, "../../packages/scaly/0.1.0/scaly/memory/PageNode.scaly");
-    loadPackageFile(Pl, "../../packages/scaly/0.1.0/scaly/memory/PageListIterator.scaly");
-    loadPackageFile(Pl, "../../packages/scaly/0.1.0/scaly/memory/PageList.scaly");
-    loadPackageFile(Pl, "../../packages/scaly/0.1.0/scaly/memory/Page.scaly");
-
     return Pl.plan(*ModelResult);
 }
 
-// Helper: compile simple source without packages (for generic tests)
-static llvm::Expected<Plan> compileSimpleToPlan(llvm::StringRef Source) {
-    Parser P(Source);
-    auto ParseResult = P.parseProgram();
-    if (!ParseResult)
-        return ParseResult.takeError();
-
-    Modeler M("test.scaly");
-    auto ModelResult = M.buildProgram(*ParseResult);
-    if (!ModelResult)
-        return ModelResult.takeError();
-
-    Planner Pl("test.scaly");
-    return Pl.plan(*ModelResult);
-}
-
-// Helper: run simple pipeline without packages to JIT int result
+// Helper: run pipeline to JIT int result
 static llvm::Expected<int64_t> evalSimpleInt(llvm::StringRef Source) {
-    auto PlanResult = compileSimpleToPlan(Source);
+    auto PlanResult = compileToPlan(Source);
     if (!PlanResult)
         return PlanResult.takeError();
 
@@ -532,9 +482,9 @@ static llvm::Expected<int64_t> evalSimpleInt(llvm::StringRef Source) {
     return E.jitExecuteInt(*PlanResult);
 }
 
-// Helper: run simple pipeline without packages to JIT bool result
+// Helper: run pipeline to JIT bool result
 static llvm::Expected<bool> evalSimpleBool(llvm::StringRef Source) {
-    auto PlanResult = compileSimpleToPlan(Source);
+    auto PlanResult = compileToPlan(Source);
     if (!PlanResult)
         return PlanResult.takeError();
 
