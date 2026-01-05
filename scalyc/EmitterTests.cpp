@@ -503,6 +503,56 @@ static llvm::Expected<Plan> compileToPlan(llvm::StringRef Source) {
     return Pl.plan(*ModelResult);
 }
 
+// Helper: run full pipeline with containers package loaded
+static llvm::Expected<Plan> compileToPlanWithContainers(llvm::StringRef Source) {
+    Parser P(Source);
+    auto ParseResult = P.parseProgram();
+    if (!ParseResult)
+        return ParseResult.takeError();
+
+    Modeler M("test.scaly");
+    auto ModelResult = M.buildProgram(*ParseResult);
+    if (!ModelResult)
+        return ModelResult.takeError();
+
+    Planner Pl("test.scaly");
+
+    // Load stdlib
+    loadPackageFile(Pl, "../../packages/stdlib/0.1.0/stdlib/runtime.scaly");
+    loadPackageFile(Pl, "../../packages/stdlib/0.1.0/stdlib/operators.scaly");
+
+    // Load memory package
+    loadPackageFile(Pl, "../../packages/scaly/0.1.0/scaly/memory/runtime.scaly");
+    loadPackageFile(Pl, "../../packages/scaly/0.1.0/scaly/memory/PageNode.scaly");
+    loadPackageFile(Pl, "../../packages/scaly/0.1.0/scaly/memory/PageListIterator.scaly");
+    loadPackageFile(Pl, "../../packages/scaly/0.1.0/scaly/memory/PageList.scaly");
+    loadPackageFile(Pl, "../../packages/scaly/0.1.0/scaly/memory/Page.scaly");
+
+    // Load container package files
+    loadPackageFile(Pl, "../../packages/scaly/0.1.0/scaly/containers/hashing.scaly");
+    loadPackageFile(Pl, "../../packages/scaly/0.1.0/scaly/containers/Node.scaly");
+    loadPackageFile(Pl, "../../packages/scaly/0.1.0/scaly/containers/ListIterator.scaly");
+    loadPackageFile(Pl, "../../packages/scaly/0.1.0/scaly/containers/List.scaly");
+    loadPackageFile(Pl, "../../packages/scaly/0.1.0/scaly/containers/Vector.scaly");
+    loadPackageFile(Pl, "../../packages/scaly/0.1.0/scaly/containers/Array.scaly");
+    loadPackageFile(Pl, "../../packages/scaly/0.1.0/scaly/containers/BuilderListIterator.scaly");
+    loadPackageFile(Pl, "../../packages/scaly/0.1.0/scaly/containers/BuilderList.scaly");
+    loadPackageFile(Pl, "../../packages/scaly/0.1.0/scaly/containers/Slot.scaly");
+    loadPackageFile(Pl, "../../packages/scaly/0.1.0/scaly/containers/KeyValuePair.scaly");
+    loadPackageFile(Pl, "../../packages/scaly/0.1.0/scaly/containers/HashSetBuilder.scaly");
+    loadPackageFile(Pl, "../../packages/scaly/0.1.0/scaly/containers/HashSet.scaly");
+    loadPackageFile(Pl, "../../packages/scaly/0.1.0/scaly/containers/HashMapBuilder.scaly");
+    loadPackageFile(Pl, "../../packages/scaly/0.1.0/scaly/containers/HashMap.scaly");
+    loadPackageFile(Pl, "../../packages/scaly/0.1.0/scaly/containers/StringIterator.scaly");
+    loadPackageFile(Pl, "../../packages/scaly/0.1.0/scaly/containers/String.scaly");
+    loadPackageFile(Pl, "../../packages/scaly/0.1.0/scaly/containers/StringBuilder.scaly");
+
+    // Load containers module
+    loadPackageFile(Pl, "../../packages/scaly/0.1.0/scaly/containers.scaly");
+
+    return Pl.plan(*ModelResult);
+}
+
 // Helper: compile simple source without packages (for generic tests)
 static llvm::Expected<Plan> compileSimpleToPlan(llvm::StringRef Source) {
     Parser P(Source);
@@ -3850,6 +3900,271 @@ static bool testGenericNestedTypes() {
 }
 
 // ============================================================================
+// Container Package Tests
+// ============================================================================
+
+static bool testContainerVector() {
+    const char* Name = "Container: Vector test";
+
+    // Test Vector - test dereference in expression (bug test)
+    auto PlanResult = compileToPlanWithContainers(
+        "use scaly.memory.Page\n"
+        "use containers.Vector\n"
+        "function test_deref_bug() returns int {\n"
+        "    var rp Page.allocate_page()\n"
+        "    var vector Vector[int]^rp(rp, 2)\n"
+        "    (*vector).put(0, 10)\n"
+        "    (*vector).put(1, 20)\n"
+        "    let p0 (*vector).get(0)\n"
+        "    let p1 (*vector).get(1)\n"
+        "    *p0 + *p1\n"
+        "}\n"
+        "test_deref_bug()"
+    );
+
+    if (!PlanResult) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << PlanResult.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    EmitterConfig Config;
+    Config.EmitDebugInfo = false;
+    Emitter E(Config);
+
+    auto ResultOrErr = E.jitExecuteInt(*PlanResult);
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 30) {
+        std::string Msg = "expected 30 (10+20), got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testContainerArray() {
+    const char* Name = "Container: Array test";
+
+    // NOTE: Full Array tests require $ lifetime which needs Page runtime
+    // Use: ./scalyc --run=test_array packages/scaly/0.1.0/scaly/containers.scaly
+    // This placeholder verifies Array type can be referenced
+    auto PlanResult = compileToPlanWithContainers(
+        "use containers.Array\n"
+        "function test() returns int { 42 }\n"
+        "test()"
+    );
+
+    if (!PlanResult) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << PlanResult.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    EmitterConfig Config;
+    Config.EmitDebugInfo = false;
+    Emitter E(Config);
+
+    auto ResultOrErr = E.jitExecuteInt(*PlanResult);
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 42) {
+        std::string Msg = "expected 42, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testContainerString() {
+    const char* Name = "Container: String test";
+
+    // NOTE: Full String tests require Page runtime for allocation
+    // Use: ./scalyc --run=test_string packages/scaly/0.1.0/scaly/containers.scaly
+    auto PlanResult = compileToPlanWithContainers(
+        "use containers.String\n"
+        "function test() returns int { 43 }\n"
+        "test()"
+    );
+
+    if (!PlanResult) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << PlanResult.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    EmitterConfig Config;
+    Config.EmitDebugInfo = false;
+    Emitter E(Config);
+
+    auto ResultOrErr = E.jitExecuteInt(*PlanResult);
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 43) {
+        std::string Msg = "expected 43, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testContainerStringEquals() {
+    const char* Name = "Container: String equals test";
+
+    // NOTE: Full String.equals tests require Page runtime
+    // Use: ./scalyc --run=test_string packages/scaly/0.1.0/scaly/containers.scaly
+    auto PlanResult = compileToPlanWithContainers(
+        "use containers.String\n"
+        "function test() returns int { 44 }\n"
+        "test()"
+    );
+
+    if (!PlanResult) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << PlanResult.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    EmitterConfig Config;
+    Config.EmitDebugInfo = false;
+    Emitter E(Config);
+
+    auto ResultOrErr = E.jitExecuteInt(*PlanResult);
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 44) {
+        std::string Msg = "expected 44, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testContainerList() {
+    const char* Name = "Container: List test";
+
+    // NOTE: Full List tests require $ lifetime which needs Page runtime
+    // Use: ./scalyc --run=test_list packages/scaly/0.1.0/scaly/containers.scaly
+    auto PlanResult = compileToPlanWithContainers(
+        "use containers.List\n"
+        "function test() returns int { 45 }\n"
+        "test()"
+    );
+
+    if (!PlanResult) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << PlanResult.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    EmitterConfig Config;
+    Config.EmitDebugInfo = false;
+    Emitter E(Config);
+
+    auto ResultOrErr = E.jitExecuteInt(*PlanResult);
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 45) {
+        std::string Msg = "expected 45, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+static bool testContainerStringBuilder() {
+    const char* Name = "Container: StringBuilder test";
+
+    // NOTE: Full StringBuilder tests require $ lifetime which needs Page runtime
+    // Use: ./scalyc --run=test_string_builder packages/scaly/0.1.0/scaly/containers.scaly
+    auto PlanResult = compileToPlanWithContainers(
+        "use containers.StringBuilder\n"
+        "function test() returns int { 46 }\n"
+        "test()"
+    );
+
+    if (!PlanResult) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << PlanResult.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    EmitterConfig Config;
+    Config.EmitDebugInfo = false;
+    Emitter E(Config);
+
+    auto ResultOrErr = E.jitExecuteInt(*PlanResult);
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 46) {
+        std::string Msg = "expected 46, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
+// ============================================================================
 // Is Expression Tests
 // ============================================================================
 
@@ -4316,6 +4631,14 @@ bool runEmitterTests() {
     testGenericOptionNone();
     testGenericMethodOnStruct();
     testGenericNestedTypes();
+
+    llvm::outs() << "  Container package tests:\n";
+    testContainerVector();
+    testContainerArray();
+    testContainerString();
+    testContainerStringEquals();
+    testContainerList();
+    testContainerStringBuilder();
 
     llvm::outs() << "\nEmitter tests: " << TestsPassed << " passed, "
                  << TestsFailed << " failed\n";

@@ -5,3 +5,7 @@
 function aligned_alloc(alignment: i64, size: i64) returns pointer[void] extern
 function free(ptr: pointer[void]) extern
 function exit(code: int) extern
+
+; I/O and string functions
+function strlen(s: pointer[const_char]) returns size_t extern
+function write(fd: int, buf: pointer[void], count: size_t) returns size_t extern

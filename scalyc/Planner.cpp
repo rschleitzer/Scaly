@@ -36,20 +36,20 @@ void Planner::registerRuntimeFunctions() {
     // Create synthetic Function objects for C runtime functions
     // These are owned by the planner via BuiltinFunctions vector
 
-    // aligned_alloc(alignment: i64, size: i64) returns pointer[void] extern
+    // aligned_alloc(alignment: size_t, size: size_t) returns pointer[void] extern
     auto AlignedAlloc = std::make_unique<Function>();
     AlignedAlloc->Name = "aligned_alloc";
     AlignedAlloc->Impl = ExternImpl{Span{0, 0}};
     {
         Item Param1;
         Param1.Name = std::make_unique<std::string>("alignment");
-        Type T1; T1.Name = {"int"}; T1.Loc = Span{0, 0};
+        Type T1; T1.Name = {"size_t"}; T1.Loc = Span{0, 0};
         Param1.ItemType = std::make_unique<Type>(std::move(T1));
         AlignedAlloc->Input.push_back(std::move(Param1));
 
         Item Param2;
         Param2.Name = std::make_unique<std::string>("size");
-        Type T2; T2.Name = {"int"}; T2.Loc = Span{0, 0};
+        Type T2; T2.Name = {"size_t"}; T2.Loc = Span{0, 0};
         Param2.ItemType = std::make_unique<Type>(std::move(T2));
         AlignedAlloc->Input.push_back(std::move(Param2));
 
@@ -590,6 +590,14 @@ bool Planner::typesCompatible(const PlannedType &ParamType, const PlannedType &A
     // (the Emitter will handle any necessary casts)
     if (isIntegerType(NormParam) && isIntegerType(NormArg)) {
         return true;
+    }
+
+    // Allow pointer[T] to be passed where T is expected (implicit dereference)
+    // This handles 'this' being passed to functions expecting the value type
+    if (ArgType.Name == "pointer" && !ArgType.Generics.empty()) {
+        if (typesEqual(ParamType, ArgType.Generics[0])) {
+            return true;
+        }
     }
 
     return false;
@@ -1353,6 +1361,42 @@ std::optional<Planner::InitializerMatch> Planner::findInitializer(
 std::optional<Planner::OperatorMatch> Planner::findSubscriptOperator(
     const PlannedType &ContainerType, const PlannedType &IndexType, Span Loc) {
 
+    // First, ensure the container type is instantiated if it's a generic type
+    // This triggers planStructure which will create the operators
+    auto StructIt = InstantiatedStructures.find(ContainerType.Name);
+    if (StructIt == InstantiatedStructures.end()) {
+        // Try to find and instantiate the structure
+        std::string BaseName = ContainerType.Name;
+        size_t DotPos = BaseName.find('.');
+        if (DotPos != std::string::npos) {
+            BaseName = BaseName.substr(0, DotPos);
+        }
+        const Concept* Conc = lookupConcept(BaseName);
+        if (Conc && std::holds_alternative<Structure>(Conc->Def)) {
+            // Trigger instantiation by resolving the type
+            // Build a Type from ContainerType
+            Type TypeExpr;
+            TypeExpr.Loc = Loc;
+            TypeExpr.Name = {BaseName};
+            if (!ContainerType.Generics.empty()) {
+                TypeExpr.Generics = std::make_shared<std::vector<Type>>();
+                for (const auto &G : ContainerType.Generics) {
+                    Type GenArg;
+                    GenArg.Loc = Loc;
+                    GenArg.Name = {G.Name};
+                    GenArg.Life = UnspecifiedLifetime{};
+                    TypeExpr.Generics->push_back(GenArg);
+                }
+            }
+            TypeExpr.Life = UnspecifiedLifetime{};
+            // This will instantiate the structure if needed
+            auto Resolved = resolveType(TypeExpr, Loc);
+            if (!Resolved) {
+                llvm::consumeError(Resolved.takeError());
+            }
+        }
+    }
+
     // Look for operator[] defined on the container type
     // Extract base name (e.g., "Vector" from "Vector.int")
     std::string BaseName = ContainerType.Name;
@@ -1490,7 +1534,7 @@ std::optional<Planner::OperatorMatch> Planner::findOperator(
     auto isIntegerType = [](const std::string& Name) {
         return Name == "i64" || Name == "i32" || Name == "i16" || Name == "i8" ||
                Name == "u64" || Name == "u32" || Name == "u16" || Name == "u8" ||
-               Name == "int" || Name == "size_t" || Name == "char";
+               Name == "int" || Name == "size_t" || Name == "size" || Name == "char";
     };
     auto isFloatType = [](const std::string& Name) {
         return Name == "f64" || Name == "f32" || Name == "float" || Name == "double";
@@ -2438,9 +2482,34 @@ llvm::Expected<PlannedOperand> Planner::collapseOperandSequence(
             if (isOperatorName(TypeExpr->Name) && I + 1 < Ops.size()) {
                 // Binary operator: left op right
                 PlannedOperand& Right = Ops[I + 1];
+                size_t RightConsumed = 1;
 
                 // Find the operator
                 auto OpMatch = findOperator(TypeExpr->Name, Left.ResultType, Right.ResultType);
+
+                // If the direct match fails and the right operand looks like a prefix operator,
+                // try collapsing it first (e.g., in "*p0 + *p1", treat the second "*" as prefix)
+                if (!OpMatch) {
+                    if (auto* RightType = std::get_if<PlannedType>(&Right.Expr)) {
+                        if (isOperatorName(RightType->Name) && I + 2 < Ops.size()) {
+                            // Right is an operator symbol - try to collapse it with next operand
+                            std::vector<PlannedOperand> PrefixOps;
+                            PrefixOps.push_back(std::move(Right));
+                            PrefixOps.push_back(std::move(Ops[I + 2]));
+
+                            auto CollapsedRight = collapseOperandSequence(std::move(PrefixOps));
+                            if (CollapsedRight) {
+                                // Prefix collapse succeeded - retry findOperator
+                                Right = std::move(*CollapsedRight);
+                                RightConsumed = 2;
+                                OpMatch = findOperator(TypeExpr->Name, Left.ResultType, Right.ResultType);
+                            } else {
+                                // Prefix collapse failed - propagate error
+                                return CollapsedRight.takeError();
+                            }
+                        }
+                    }
+                }
 
                 if (OpMatch) {
                     // Create a PlannedCall
@@ -2487,7 +2556,7 @@ llvm::Expected<PlannedOperand> Planner::collapseOperandSequence(
                     NewLeft.Expr = std::move(Call);
 
                     Left = std::move(NewLeft);
-                    I += 2;  // Skip operator and right operand
+                    I += 1 + RightConsumed;  // Skip operator and right operand(s)
                     continue;
                 } else {
                     // Operator not found, skip
@@ -2576,8 +2645,14 @@ llvm::Expected<PlannedType> Planner::resolveMemberAccess(
     PlannedType Current = BaseType;
 
     for (const auto& MemberName : Members) {
+        // Handle pointer types by dereferencing to inner type
+        PlannedType LookupType = Current;
+        if (Current.Name == "pointer" && !Current.Generics.empty()) {
+            LookupType = Current.Generics[0];
+        }
+
         // Extract base name from instantiated type (e.g., "Node.int" -> "Node")
-        std::string BaseName = Current.Name;
+        std::string BaseName = LookupType.Name;
         size_t DotPos = BaseName.find('.');
         if (DotPos != std::string::npos) {
             BaseName = BaseName.substr(0, DotPos);
@@ -2672,8 +2747,14 @@ llvm::Expected<std::vector<PlannedMemberAccess>> Planner::resolveMemberAccessCha
     PlannedType Current = BaseType;
 
     for (const auto& MemberName : Members) {
+        // Handle pointer types by dereferencing to inner type
+        PlannedType LookupType = Current;
+        if (Current.Name == "pointer" && !Current.Generics.empty()) {
+            LookupType = Current.Generics[0];
+        }
+
         // Extract base name from instantiated type (e.g., "Node.int" -> "Node")
-        std::string BaseName = Current.Name;
+        std::string BaseName = LookupType.Name;
         size_t DotPos = BaseName.find('.');
         if (DotPos != std::string::npos) {
             BaseName = BaseName.substr(0, DotPos);
@@ -2692,9 +2773,9 @@ llvm::Expected<std::vector<PlannedMemberAccess>> Planner::resolveMemberAccessCha
             // Set up type substitutions if this is a generic type
             // e.g., for Box.int, we need T -> int when resolving property types
             std::map<std::string, PlannedType> OldSubst = TypeSubstitutions;
-            if (!Conc->Parameters.empty() && !Current.Generics.empty()) {
-                for (size_t I = 0; I < Conc->Parameters.size() && I < Current.Generics.size(); ++I) {
-                    TypeSubstitutions[Conc->Parameters[I].Name] = Current.Generics[I];
+            if (!Conc->Parameters.empty() && !LookupType.Generics.empty()) {
+                for (size_t I = 0; I < Conc->Parameters.size() && I < LookupType.Generics.size(); ++I) {
+                    TypeSubstitutions[Conc->Parameters[I].Name] = LookupType.Generics[I];
                 }
             }
 
@@ -2860,6 +2941,8 @@ llvm::Expected<PlannedType> Planner::resolveNameOrVariable(const Type &T) {
             // It's a local variable - return its type
             PlannedType Result = *LocalType;
             Result.Loc = T.Loc;  // Use the reference location
+            // Note: 'this' is stored as pointer[T] in scope - keep it that way
+            // Type compatibility will handle pointer[T] -> T conversion when needed
             return Result;
         }
 
@@ -2873,7 +2956,12 @@ llvm::Expected<PlannedType> Planner::resolveNameOrVariable(const Type &T) {
             if (DotPos != std::string::npos) {
                 BaseStructName = BaseStructName.substr(0, DotPos);
             }
-            if (ThisType && (ThisType->Name == CurrentStructureName || ThisType->Name == BaseStructName)) {
+            // 'this' is now pointer[T], so check the inner type
+            std::string ThisTypeName = ThisType ? ThisType->Name : "";
+            if (ThisType && ThisType->Name == "pointer" && !ThisType->Generics.empty()) {
+                ThisTypeName = ThisType->Generics[0].Name;
+            }
+            if (ThisType && (ThisTypeName == CurrentStructureName || ThisTypeName == BaseStructName)) {
                 // Look for property with this name
                 for (const auto &Prop : *CurrentStructureProperties) {
                     if (Prop.Name == Name) {
@@ -3484,17 +3572,6 @@ llvm::Expected<PlannedType> Planner::resolveType(const Type &T, Span Instantiati
         if (!Conc->Parameters.empty()) {
             if (Result.Generics.empty()) {
                 // Generic type used without type arguments
-                // Debug: Print the Type's name path to understand where it comes from
-                llvm::errs() << "ERROR: Generic type '" << Name << "' used without type args\n";
-                llvm::errs() << "  Loc.Start=" << T.Loc.Start << ", Loc.End=" << T.Loc.End << "\n";
-                llvm::errs() << "  Name path: ";
-                for (size_t i = 0; i < T.Name.size(); ++i) {
-                    if (i > 0) llvm::errs() << ".";
-                    llvm::errs() << T.Name[i];
-                }
-                llvm::errs() << "\n";
-                llvm::errs() << "  Generics ptr: " << (T.Generics ? "non-null" : "null") << "\n";
-                llvm::errs() << "  File: " << File << "\n";
                 return makeGenericArityError(File, T.Loc, Name,
                     Conc->Parameters.size(), 0);
             }
@@ -3956,7 +4033,12 @@ llvm::Expected<PlannedOperand> Planner::planOperand(const Operand &Op) {
                 if (DotPos != std::string::npos) {
                     BaseStructName = BaseStructName.substr(0, DotPos);
                 }
-                if (ThisType && (ThisType->Name == CurrentStructureName || ThisType->Name == BaseStructName)) {
+                // 'this' is now pointer[T], so check the inner type
+                std::string ThisTypeName = ThisType ? ThisType->Name : "";
+                if (ThisType && ThisType->Name == "pointer" && !ThisType->Generics.empty()) {
+                    ThisTypeName = ThisType->Generics[0].Name;
+                }
+                if (ThisType && (ThisTypeName == CurrentStructureName || ThisTypeName == BaseStructName)) {
                     for (const auto &Prop : *CurrentStructureProperties) {
                         if (Prop.Name == TypeExpr->Name[0]) {
                             // First element is a property - convert to this.property.rest...
@@ -4143,7 +4225,13 @@ llvm::Expected<PlannedOperand> Planner::planOperand(const Operand &Op) {
                         BaseStructName = BaseStructName.substr(0, DotPos);
                     }
 
-                    if (ThisType->Name == CurrentStructureName || ThisType->Name == BaseStructName) {
+                    // 'this' is now pointer[T], so check the inner type
+                    std::string ThisTypeName = ThisType->Name;
+                    if (ThisType->Name == "pointer" && !ThisType->Generics.empty()) {
+                        ThisTypeName = ThisType->Generics[0].Name;
+                    }
+
+                    if (ThisTypeName == CurrentStructureName || ThisTypeName == BaseStructName) {
                         for (const auto &Prop : *CurrentStructureProperties) {
                             if (Prop.Name == Name) {
                                 // Convert to "this" with member access to the property
@@ -4360,7 +4448,17 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                         if (DotPos != std::string::npos) {
                             BaseStructName = BaseStructName.substr(0, DotPos);
                         }
-                        if (ThisType && (ThisType->Name == CurrentStructureName || ThisType->Name == BaseStructName)) {
+
+                        // 'this' may be pointer[T], so extract the inner type
+                        std::string ThisTypeName = "";
+                        if (ThisType) {
+                            ThisTypeName = ThisType->Name;
+                            if (ThisType->Name == "pointer" && !ThisType->Generics.empty()) {
+                                ThisTypeName = ThisType->Generics[0].Name;
+                            }
+                        }
+
+                        if (ThisType && (ThisTypeName == CurrentStructureName || ThisTypeName == BaseStructName)) {
                             for (const auto &Prop : *CurrentStructureProperties) {
                                 if (Prop.Name == TypeExpr->Name[0]) {
                                     IsProperty = true;
@@ -4444,7 +4542,7 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                 PlannedOperand RegionArg;
                                 RegionArg.Loc = RefLife->Loc;
                                 RegionArg.ResultType = RegionBinding->Type;
-                                RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, false};
+                                RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, RegionBinding->IsMutable};
                                 Call.Args->push_back(std::move(RegionArg));
                             }
 
@@ -4643,7 +4741,7 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                         PlannedOperand RegionArg;
                         RegionArg.Loc = RefLife->Loc;
                         RegionArg.ResultType = RegionBinding->Type;
-                        RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, false};
+                        RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, RegionBinding->IsMutable};
                         Call.Args->push_back(std::move(RegionArg));
                     }
 
@@ -5053,7 +5151,7 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                     PlannedOperand RegionArg;
                                     RegionArg.Loc = RefLife->Loc;
                                     RegionArg.ResultType = RegionBinding->Type;
-                                    RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, false};
+                                    RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, RegionBinding->IsMutable};
                                     Call.Args->push_back(std::move(RegionArg));
                                 }
                                 // For $ and # lifetimes, Emitter uses CurrentRegion.LocalPage or ReturnPage
@@ -5096,8 +5194,52 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
 
                                 Result.push_back(std::move(CallOperand));
                             } else {
-                                // No initializer - use direct tuple construction
-                                // Update the tuple expression to have the struct type
+                                // No explicit initializer - check if we can use property defaults
+                                // Get the Structure to access property default values
+                                const Structure& Struct = std::get<Structure>(Conc->Def);
+
+                                // Get tuple component count
+                                size_t ProvidedArgs = 0;
+                                if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedArgs->Expr)) {
+                                    ProvidedArgs = TupleExpr->Components.size();
+                                }
+
+                                // Check if we need to fill in defaults
+                                if (ProvidedArgs < Struct.Properties.size()) {
+                                    // Verify ALL missing properties have defaults
+                                    for (size_t pi = ProvidedArgs; pi < Struct.Properties.size(); ++pi) {
+                                        const Property& Prop = Struct.Properties[pi];
+                                        if (!Prop.Initializer) {
+                                            // Property has no default - error
+                                            return makePlannerNotImplementedError(File, Op.Loc,
+                                                "no matching constructor for " + StructType.Name +
+                                                ": property '" + Prop.Name + "' has no default value");
+                                        }
+                                    }
+
+                                    // Fill in defaults for missing properties
+                                    if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedArgs->Expr)) {
+                                        for (size_t pi = ProvidedArgs; pi < Struct.Properties.size(); ++pi) {
+                                            const Property& Prop = Struct.Properties[pi];
+                                            // Plan the default value expression
+                                            auto PlannedDefault = planOperands(*Prop.Initializer);
+                                            if (!PlannedDefault) {
+                                                return PlannedDefault.takeError();
+                                            }
+                                            // Collapse to single operand
+                                            if (!PlannedDefault->empty()) {
+                                                auto Collapsed = collapseOperandSequence(std::move(*PlannedDefault));
+                                                if (!Collapsed) {
+                                                    return Collapsed.takeError();
+                                                }
+                                                PlannedComponent PC;
+                                                PC.Loc = Prop.Loc;
+                                                PC.Value.push_back(std::move(*Collapsed));
+                                                TupleExpr->Components.push_back(std::move(PC));
+                                            }
+                                        }
+                                    }
+                                }
 
                                 // Check if this is a page allocation (any lifetime suffix)
                                 // $ = local page, # = caller page, ^name = named region
@@ -5124,7 +5266,7 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                     }
                                     RegionArg.Loc = RefLife->Loc;
                                     RegionArg.ResultType = RegionBinding->Type;
-                                    RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, false};
+                                    RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, RegionBinding->IsMutable};
                                 }
                                 // For $ and # lifetimes, Emitter uses CurrentRegion.LocalPage or ReturnPage
 
@@ -5230,7 +5372,7 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                     PlannedOperand RegionArg;
                                     RegionArg.Loc = RefLife->Loc;
                                     RegionArg.ResultType = RegionBinding->Type;
-                                    RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, false};
+                                    RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, RegionBinding->IsMutable};
                                     Call.Args->push_back(std::move(RegionArg));
                                 }
 
@@ -5277,7 +5419,7 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                     PlannedOperand RegionArg;
                                     RegionArg.Loc = RefLife->Loc;
                                     RegionArg.ResultType = RegionBinding->Type;
-                                    RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, false};
+                                    RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, RegionBinding->IsMutable};
                                     EmptyTuple.RegionArg = std::make_shared<PlannedOperand>(std::move(RegionArg));
                                 }
 
@@ -5716,7 +5858,55 @@ llvm::Expected<PlannedExpression> Planner::planExpression(const Expression &Expr
                     Var.Name = Name;
                     Var.VariableType = LocalBind->Type;
                     Var.IsMutable = LocalBind->IsMutable;
+                    // Note: 'this' is stored as pointer[T] in scope - keep it that way
+                    // Type compatibility will handle pointer[T] -> T conversion when needed
                     return PlannedExpression(Var);
+                }
+
+                // Check if it's a structure property access (when inside a method via 'this')
+                if (CurrentStructureProperties) {
+                    auto ThisType = lookupLocal("this");
+                    std::string BaseStructName = CurrentStructureName;
+                    size_t DotPos = BaseStructName.find('.');
+                    if (DotPos != std::string::npos) {
+                        BaseStructName = BaseStructName.substr(0, DotPos);
+                    }
+                    std::string ThisTypeName = ThisType ? ThisType->Name : "";
+                    if (ThisType && ThisType->Name == "pointer" && !ThisType->Generics.empty()) {
+                        ThisTypeName = ThisType->Generics[0].Name;
+                    }
+                    if (ThisType && (ThisTypeName == CurrentStructureName || ThisTypeName == BaseStructName)) {
+                        for (const auto &Prop : *CurrentStructureProperties) {
+                            if (Prop.Name == Name) {
+                                // Property found - create an Operand that represents this.property
+                                // and plan it through planOperand which handles member access properly
+                                Operand PropOp;
+                                PropOp.Loc = E.Loc;
+                                Type ThisTypeExpr;
+                                ThisTypeExpr.Loc = E.Loc;
+                                ThisTypeExpr.Name = {"this"};
+                                ThisTypeExpr.Generics = nullptr;
+                                ThisTypeExpr.Life = UnspecifiedLifetime{};
+                                PropOp.Expr = ThisTypeExpr;
+
+                                // Add property as member access
+                                auto MemberList = std::make_shared<std::vector<Type>>();
+                                Type MemberType;
+                                MemberType.Loc = E.Loc;
+                                MemberType.Name = {Name};
+                                MemberType.Generics = nullptr;
+                                MemberType.Life = UnspecifiedLifetime{};
+                                MemberList->push_back(MemberType);
+                                PropOp.MemberAccess = MemberList;
+
+                                auto PlannedOp = planOperand(PropOp);
+                                if (!PlannedOp) {
+                                    return PlannedOp.takeError();
+                                }
+                                return PlannedOp->Expr;
+                            }
+                        }
+                    }
                 }
             }
 
@@ -5948,6 +6138,13 @@ llvm::Expected<PlannedTuple> Planner::planTuple(const Tuple &Tup) {
     } else {
         // Multi-component or named component tuple
         // Build a proper tuple type with generics for each component
+        if (Result.Components.size() == 0) {
+            // Empty tuple - this is valid for () constructor calls
+            Result.TupleType.Loc = Tup.Loc;
+            Result.TupleType.Name = "void";
+            Result.TupleType.MangledName = "v";
+            return Result;
+        }
         Result.TupleType.Loc = Tup.Loc;
         Result.TupleType.Name = "Tuple";
 
@@ -6624,7 +6821,10 @@ llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
     Result.Name = Func.Name;
     Result.Life = Func.Life;
 
-    // Reset tracking for $ allocations in function body
+    // Save and reset tracking for $ allocations in function body
+    // This allows nested planFunction calls (e.g., when planning constructors)
+    // without corrupting the outer function's NeedsLocalPage flag
+    bool SavedUsesLocalLifetime = CurrentFunctionUsesLocalLifetime;
     CurrentFunctionUsesLocalLifetime = false;
 
     pushScope();
@@ -6682,11 +6882,29 @@ llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
             }
         }
 
+        // For 'this' parameter, the type in scope should be pointer[T] since
+        // 'this' is passed by reference at runtime (like C++ 'this' pointer)
+        PlannedType ScopeType;
+        bool IsThisParam = PlannedParam->Name && *PlannedParam->Name == "this";
+        if (IsThisParam && PlannedParam->ItemType) {
+            // Wrap the declared type in pointer[T]
+            PlannedType InnerType = *PlannedParam->ItemType;
+            ScopeType.Loc = InnerType.Loc;
+            ScopeType.Name = "pointer";
+            ScopeType.MangledName = "P" + InnerType.MangledName;
+            ScopeType.Generics.push_back(InnerType);
+        }
+
         Result.Input.push_back(std::move(*PlannedParam));
 
         // Add parameter to scope
         if (Result.Input.back().Name && Result.Input.back().ItemType) {
-            defineLocal(*Result.Input.back().Name, *Result.Input.back().ItemType);
+            if (IsThisParam) {
+                // Use pointer[T] type for 'this' in scope
+                defineLocal(*Result.Input.back().Name, ScopeType);
+            } else {
+                defineLocal(*Result.Input.back().Name, *Result.Input.back().ItemType);
+            }
         }
     }
 
@@ -6747,6 +6965,9 @@ llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
     // Copy the flag to indicate if function needs a local page
     Result.NeedsLocalPage = CurrentFunctionUsesLocalLifetime;
 
+    // Restore saved flag (allows outer function to continue tracking its own $ allocations)
+    CurrentFunctionUsesLocalLifetime = SavedUsesLocalLifetime;
+
     // Generate mangled name
     // For extern functions, use the unmangled C name for linking
     if (std::holds_alternative<PlannedExternImpl>(Result.Impl)) {
@@ -6790,8 +7011,13 @@ llvm::Expected<PlannedOperator> Planner::planOperator(const Operator &Op,
         ThisParam.ItemType = std::make_shared<PlannedType>(*Parent);
         Result.Input.push_back(std::move(ThisParam));
 
-        // Define 'this' in scope
-        defineLocal("this", *Parent);
+        // Define 'this' in scope as pointer[T] since it's passed by reference
+        PlannedType ThisPtrType;
+        ThisPtrType.Loc = Parent->Loc;
+        ThisPtrType.Name = "pointer";
+        ThisPtrType.MangledName = "P" + Parent->MangledName;
+        ThisPtrType.Generics.push_back(*Parent);
+        defineLocal("this", ThisPtrType);
     }
 
     // Plan input parameters
@@ -6815,11 +7041,26 @@ llvm::Expected<PlannedOperator> Planner::planOperator(const Operator &Op,
             }
         }
 
+        // For 'this' parameter, the type in scope should be pointer[T]
+        PlannedType ScopeType;
+        bool IsThisParam = PlannedParam->Name && *PlannedParam->Name == "this";
+        if (IsThisParam && PlannedParam->ItemType) {
+            PlannedType InnerType = *PlannedParam->ItemType;
+            ScopeType.Loc = InnerType.Loc;
+            ScopeType.Name = "pointer";
+            ScopeType.MangledName = "P" + InnerType.MangledName;
+            ScopeType.Generics.push_back(InnerType);
+        }
+
         Result.Input.push_back(std::move(*PlannedParam));
 
         // Add parameter to scope
         if (Result.Input.back().Name && Result.Input.back().ItemType) {
-            defineLocal(*Result.Input.back().Name, *Result.Input.back().ItemType);
+            if (IsThisParam) {
+                defineLocal(*Result.Input.back().Name, ScopeType);
+            } else {
+                defineLocal(*Result.Input.back().Name, *Result.Input.back().ItemType);
+            }
         }
     }
 
@@ -6896,7 +7137,13 @@ llvm::Expected<PlannedInitializer> Planner::planInitializer(const Initializer &I
     // Define 'this' in scope for the initializer body
     // IsMutable=false because 'this' is passed as a pointer parameter, not an alloca
     // Field mutations are handled via GEP on the pointer
-    defineLocal("this", Parent, false);
+    // Wrap Parent in pointer[T] since 'this' is actually a pointer at runtime
+    PlannedType ThisPtrType;
+    ThisPtrType.Loc = Parent.Loc;
+    ThisPtrType.Name = "pointer";
+    ThisPtrType.MangledName = "P" + Parent.MangledName;
+    ThisPtrType.Generics.push_back(Parent);
+    defineLocal("this", ThisPtrType, false);
 
     // Plan implementation (initializer body)
     auto PlannedImpl = planImplementation(Init.Impl);
@@ -6936,7 +7183,13 @@ llvm::Expected<PlannedDeInitializer> Planner::planDeInitializer(
     pushScope();
 
     // Define 'this' in scope for the deinitializer body
-    defineLocal("this", Parent, false);  // 'this' is immutable in deinitializers
+    // Wrap Parent in pointer[T] since 'this' is actually a pointer at runtime
+    PlannedType ThisPtrType;
+    ThisPtrType.Loc = Parent.Loc;
+    ThisPtrType.Name = "pointer";
+    ThisPtrType.MangledName = "P" + Parent.MangledName;
+    ThisPtrType.Generics.push_back(Parent);
+    defineLocal("this", ThisPtrType, false);  // 'this' is immutable in deinitializers
 
     // Plan implementation (deinitializer body)
     auto PlannedImpl = planImplementation(DeInit.Impl);
@@ -7480,6 +7733,9 @@ llvm::Expected<Plan> Planner::plan(const Program &Prog) {
 
     // Set up type inference context
     CurrentPlan = &Result;
+
+    // Register C runtime functions (aligned_alloc, free, exit) for RBMM support
+    registerRuntimeFunctions();
 
     // Load packages into the lookup map
     for (const auto &Pkg : Prog.Packages) {

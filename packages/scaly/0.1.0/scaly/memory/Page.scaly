@@ -1,4 +1,4 @@
-define PAGE_SIZE int 0x1000
+define PAGE_SIZE size_t 0x1000
 
 define Page
 (
@@ -23,7 +23,7 @@ define Page
 
     function allocate(this: Page, size: size_t, align: size_t) returns pointer[void] {
         let location next_object as size_t
-        let aligned_location (location + align - 1) & ~(align - 1)
+        let aligned_location (location + align - 1) & (~(align - 1))
         let location_after_page this as size_t + PAGE_SIZE
         let capacity location_after_page - aligned_location
 
@@ -57,7 +57,7 @@ define Page
 
     function allocate_oversized(this: Page, size: size_t) returns pointer[void] {
         ; We allocate oversized objects directly.
-        let address aligned_alloc(PAGE_SIZE,  (size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1))
+        let address aligned_alloc(PAGE_SIZE,  (size + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1)))
         if address = null
             exit(1)
         var page address as pointer[Page]
@@ -80,7 +80,7 @@ define Page
 
     function get_capacity(this: Page, align: size_t) returns size_t {
         var location next_object as size_t
-        let aligned_location (location + align - 1) & ~(align - 1)
+        let aligned_location (location + align - 1) & (~(align - 1))
         var location_after_page this as size_t + PAGE_SIZE
         var capacity location_after_page - aligned_location
         return capacity

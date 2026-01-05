@@ -1,0 +1,50 @@
+use scaly.memory.Page
+use scaly.containers.String
+
+; C stdio constants
+define SEEK_SET: int 0
+define SEEK_CUR: int 1
+define SEEK_END: int 2
+
+define File {
+    function read_to_string(rp: pointer[Page], path: String) returns String {
+        var local_page Page.allocate_page()
+        var file fopen(path.to_c_string(local_page), "rb")
+        if file = null
+        {
+            (*local_page).deallocate_extensions()
+            free(local_page as pointer[void])
+            return String()
+        }
+
+        fseek(file, 0, SEEK_END)
+        let size ftell(file)
+        rewind(file)
+        var ret String(rp, size as size_t)
+        let buffer ret.get_buffer()
+        fread(buffer, 1, size as size_t, file)
+        fclose(file)
+
+        (*local_page).deallocate_extensions()
+        free(local_page as pointer[void])
+        return ret
+    }
+
+    function write_from_string(path: String, contents: String) returns bool {
+        var local_page Page.allocate_page()
+        var file fopen(path.to_c_string(local_page), "wb")
+        if file = null
+        {
+            (*local_page).deallocate_extensions()
+            free(local_page as pointer[void])
+            return false
+        }
+
+        fwrite(contents.get_buffer(), 1, contents.get_length(), file)
+        fclose(file)
+
+        (*local_page).deallocate_extensions()
+        free(local_page as pointer[void])
+        return true
+    }
+}

@@ -640,6 +640,7 @@ bool Lexer::parseColon() {
         advance();
     }
 
+    // Accept Colon, Empty (linefeeds become ColonToken via scanLineFeed)
     if (is<ColonToken>(Token_) || is<EmptyToken>(Token_)) {
         empty();
         return true;

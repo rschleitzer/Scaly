@@ -507,7 +507,6 @@ llvm::Type *Emitter::mapType(const PlannedType &Type) {
     }
 
     // Unknown type - should have been planned (programming error)
-
     // Return opaque pointer as fallback
     return llvm::PointerType::get(*Context, 0);
 }
@@ -786,6 +785,11 @@ llvm::Error Emitter::emitFunctionBody(const PlannedFunction &Func,
     // Skip extern/intrinsic functions
     if (std::holds_alternative<PlannedExternImpl>(Func.Impl) ||
         std::holds_alternative<PlannedIntrinsicImpl>(Func.Impl)) {
+        return llvm::Error::success();
+    }
+
+    // Skip if function body already emitted
+    if (!LLVMFunc->isDeclaration()) {
         return llvm::Error::success();
     }
 
@@ -1210,14 +1214,23 @@ llvm::Expected<llvm::Value*> Emitter::emitAction(const PlannedAction &Action) {
                     // We need to check if it's a pointer type
                     if (VarPtr->getType()->isPointerTy()) {
                         // Get the struct type from cache using the variable type
+                        // For 'this' which is pointer[T], use the inner type T
+                        std::string LookupName = Var->VariableType.Name;
+                        std::string LookupMangled = Var->VariableType.MangledName;
+                        if (Var->VariableType.Name == "pointer" &&
+                            !Var->VariableType.Generics.empty()) {
+                            LookupName = Var->VariableType.Generics[0].Name;
+                            LookupMangled = Var->VariableType.Generics[0].MangledName;
+                        }
+
                         // Try multiple key formats due to mangling variations
-                        auto TypeIt = StructCache.find(Var->VariableType.MangledName);
+                        auto TypeIt = StructCache.find(LookupMangled);
                         if (TypeIt == StructCache.end()) {
-                            TypeIt = StructCache.find(Var->VariableType.Name);
+                            TypeIt = StructCache.find(LookupName);
                         }
                         if (TypeIt == StructCache.end()) {
                             // Try with _Z prefix (full mangled name)
-                            TypeIt = StructCache.find("_Z" + Var->VariableType.MangledName);
+                            TypeIt = StructCache.find("_Z" + LookupMangled);
                         }
                         if (TypeIt != StructCache.end()) {
                             CurrentType = TypeIt->second;
@@ -2440,7 +2453,8 @@ llvm::Expected<llvm::Value*> Emitter::emitIntrinsicUnaryOp(
                 llvm::inconvertibleErrorCode()
             );
         }
-        return Builder->CreateLoad(Ty, Operand, "deref");
+        auto *Result = Builder->CreateLoad(Ty, Operand, "deref");
+        return Result;
     }
     if (OpName == "&") {
         // Address-of: the operand should already be a pointer (from alloca)
@@ -4155,10 +4169,26 @@ llvm::Expected<uint64_t> Emitter::jitExecuteRaw(const Plan &P, llvm::Type *Expec
     for (const auto &[name, Func] : P.Functions) {
         emitFunctionDecl(Func);
     }
-    // Also emit method, initializer, and deinitializer declarations from structures
+    // Also emit method, operator, initializer, and deinitializer declarations from structures
     for (const auto &[name, Struct] : P.Structures) {
         for (const auto &Method : Struct.Methods) {
             emitFunctionDecl(Method);
+        }
+        for (const auto &Op : Struct.Operators) {
+            // Convert PlannedOperator to PlannedFunction for emission
+            PlannedFunction OpFunc;
+            OpFunc.Loc = Op.Loc;
+            OpFunc.Private = Op.Private;
+            OpFunc.Pure = true;  // Operators are always pure
+            OpFunc.Name = Op.Name;
+            OpFunc.MangledName = Op.MangledName;
+            OpFunc.Input = Op.Input;
+            OpFunc.Returns = Op.Returns;
+            OpFunc.Throws = Op.Throws;
+            OpFunc.Impl = Op.Impl;
+            OpFunc.Origin = Op.Origin;
+            OpFunc.Scheme = Op.Scheme;
+            emitFunctionDecl(OpFunc);
         }
         for (const auto &Init : Struct.Initializers) {
             emitInitializerDecl(Struct, Init);
@@ -4189,11 +4219,30 @@ llvm::Expected<uint64_t> Emitter::jitExecuteRaw(const Plan &P, llvm::Type *Expec
                 return std::move(Err);
         }
     }
-    // Also emit method, initializer, and deinitializer bodies from structures
+    // Also emit method, operator, initializer, and deinitializer bodies from structures
     for (const auto &[name, Struct] : P.Structures) {
         for (const auto &Method : Struct.Methods) {
             if (auto *LLVMFunc = FunctionCache[Method.MangledName]) {
                 if (auto Err = emitFunctionBody(Method, LLVMFunc))
+                    return std::move(Err);
+            }
+        }
+        for (const auto &Op : Struct.Operators) {
+            if (auto *LLVMFunc = FunctionCache[Op.MangledName]) {
+                // Convert PlannedOperator to PlannedFunction for emission
+                PlannedFunction OpFunc;
+                OpFunc.Loc = Op.Loc;
+                OpFunc.Private = Op.Private;
+                OpFunc.Pure = true;
+                OpFunc.Name = Op.Name;
+                OpFunc.MangledName = Op.MangledName;
+                OpFunc.Input = Op.Input;
+                OpFunc.Returns = Op.Returns;
+                OpFunc.Throws = Op.Throws;
+                OpFunc.Impl = Op.Impl;
+                OpFunc.Origin = Op.Origin;
+                OpFunc.Scheme = Op.Scheme;
+                if (auto Err = emitFunctionBody(OpFunc, LLVMFunc))
                     return std::move(Err);
             }
         }
