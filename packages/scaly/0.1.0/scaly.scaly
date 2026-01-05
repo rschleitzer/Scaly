@@ -1,4 +1,5 @@
 define scaly {
     module memory
     module containers
+    module io
 }

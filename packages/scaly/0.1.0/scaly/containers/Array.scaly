@@ -32,7 +32,7 @@ define Array[T]
     }
 
     function add(this: Array[T], item: T) {
-        if vector = null || length = (*vector).length
+        if (vector = null) || (length = (*vector).length)
             this.reallocate()
 
         let location (*vector).data + length
@@ -44,7 +44,7 @@ define Array[T]
     function add(this: Array[T], items: Vector[T]) {
         var new_length length + items.length
         let size sizeof T
-        if vector = null || new_length > (*vector).length
+        if (vector = null) || (new_length > (*vector).length)
             this.reallocate()
 
         if new_length > (*vector).length

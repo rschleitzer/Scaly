@@ -1,0 +1,14 @@
+use scaly.memory.Page
+use scaly.containers.String
+
+; Simplified error types for now - union member access needs work
+define FileError (
+    error_code: int
+    file_name: String
+)
+{
+    init (code: int, name: String) {
+        set error_code: code
+        set file_name: name
+    }
+}

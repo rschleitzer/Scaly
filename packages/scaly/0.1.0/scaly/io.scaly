@@ -1,0 +1,16 @@
+use scaly.memory.runtime
+
+define io {
+    module Console
+
+    function test_direct() {
+        ; Direct write call to test if external functions work in io module
+        write(1, "Direct test\n" as pointer[void], 12 as size_t)
+    }
+
+    function test() {
+        test_direct()
+        Console.println("Hello from Scaly!")
+        Console.println("Console test passed.")
+    }
+}
