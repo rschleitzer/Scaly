@@ -3646,6 +3646,44 @@ static bool testStaticArrayConstant() {
     return true;
 }
 
+static bool testStackArrayDeclaration() {
+    const char* Name = "Pipeline: stack array declaration";
+
+    // Test stack array syntax: var buffer int[4]
+    // This should allocate 4 integers on the stack
+    auto ResultOrErr = evalSimpleInt(
+        "define test {\n"
+        "    function run() returns int {\n"
+        "        var buffer int[4]\n"
+        "        ; Write to array elements via pointer arithmetic\n"
+        "        set *(buffer + 0): 10\n"
+        "        set *(buffer + 1): 20\n"
+        "        set *(buffer + 2): 30\n"
+        "        set *(buffer + 3): 40\n"
+        "        ; Read back and sum\n"
+        "        *buffer + *(buffer + 1) + *(buffer + 2) + *(buffer + 3)\n"
+        "    }\n"
+        "}\n"
+        "test.run()\n"
+    );
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 100) {  // 10 + 20 + 30 + 40 = 100
+        std::string Msg = "expected 100, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
 // ============================================================================
 // Generic Type Tests
 // ============================================================================
@@ -4325,6 +4363,7 @@ bool runEmitterTests() {
     // Static array constant tests
     llvm::outs() << "  Static array tests:\n";
     testStaticArrayConstant();
+    testStackArrayDeclaration();
 
     llvm::outs() << "  Generic type tests:\n";
     testGenericBoxInt();
