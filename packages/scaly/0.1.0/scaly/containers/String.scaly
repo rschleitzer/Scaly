@@ -305,4 +305,29 @@ define String (data: pointer[char](null)) {
     function get_iterator(this: String) returns StringIterator {
         return StringIterator(this)
     }
+
+    ; Get a non-owning slice view of the string data
+    function as_slice(this: String) returns Slice[char] {
+        if data = null
+            return Slice[char]()
+
+        ; Decode length and find where actual chars start
+        var string_length: size_t 0
+        var bit_count 0
+        var index: size_t 0
+        while true
+        {
+            if bit_count = PACKED_SIZE * 7
+                exit(11)
+
+            var byte: char *(data + index)
+            set string_length: string_length | (((byte & 0x7F) as size_t)) << bit_count
+            if (byte & 0x80) == 0
+                break
+            set bit_count: bit_count + 7
+            set index: index + 1
+        }
+
+        Slice[char](data + index + 1, string_length)
+    }
 }

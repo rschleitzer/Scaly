@@ -124,4 +124,8 @@ define Vector[T]
     function get_iterator(this: Vector[T]) returns VectorIterator[T] {
         return VectorIterator[T](this)
     }
+
+    function as_slice(this: Vector[T]) returns Slice[T] {
+        Slice[T](data, length)
+    }
 }
