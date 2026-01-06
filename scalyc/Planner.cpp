@@ -6013,26 +6013,46 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                         }
 
                         // Build PlannedItems for mangling
+                        // Use the matched function's declared parameter types, not argument types
+                        // This ensures correct mangling when integer literals are passed
+                        // (e.g., passing '0' where size_t is expected)
                         std::vector<PlannedItem> ParamItems;
-                        if (NeedsImplicitThis) {
-                            // Add 'this' type for mangling
-                            PlannedItem ThisItem;
-                            ThisItem.Name = std::make_shared<std::string>("this");
-                            std::string BaseName = CurrentStructureName;
-                            size_t DotPos = BaseName.find('.');
-                            if (DotPos != std::string::npos) {
-                                BaseName = BaseName.substr(0, DotPos);
+                        if (MatchedFunc) {
+                            // Use declared parameter types from the matched function
+                            for (const auto& Inp : MatchedFunc->Input) {
+                                PlannedItem Item;
+                                Item.Loc = Inp.Loc;
+                                Item.Name = Inp.Name;
+                                if (Inp.ItemType) {
+                                    auto Resolved = resolveType(*Inp.ItemType, Inp.Loc);
+                                    if (Resolved) {
+                                        Item.ItemType = std::make_shared<PlannedType>(*Resolved);
+                                    }
+                                }
+                                ParamItems.push_back(Item);
                             }
-                            PlannedType ThisType;
-                            ThisType.Name = BaseName;
-                            ThisType.MangledName = mangleType(ThisType);
-                            ThisItem.ItemType = std::make_shared<PlannedType>(ThisType);
-                            ParamItems.push_back(ThisItem);
-                        }
-                        for (const auto& ArgType : ArgTypes) {
-                            PlannedItem Item;
-                            Item.ItemType = std::make_shared<PlannedType>(ArgType);
-                            ParamItems.push_back(Item);
+                        } else {
+                            // Fallback: build from argument types (for unmatched functions)
+                            if (NeedsImplicitThis) {
+                                // Add 'this' type for mangling
+                                PlannedItem ThisItem;
+                                ThisItem.Name = std::make_shared<std::string>("this");
+                                std::string BaseName = CurrentStructureName;
+                                size_t DotPos = BaseName.find('.');
+                                if (DotPos != std::string::npos) {
+                                    BaseName = BaseName.substr(0, DotPos);
+                                }
+                                PlannedType ThisType;
+                                ThisType.Name = BaseName;
+                                ThisType.MangledName = mangleType(ThisType);
+                                ThisItem.ItemType = std::make_shared<PlannedType>(ThisType);
+                                ParamItems.push_back(ThisItem);
+                            }
+                            for (const auto& ArgType : ArgTypes) {
+                                PlannedItem Item;
+                                Item.ItemType = std::make_shared<PlannedType>(ArgType);
+                                ParamItems.push_back(Item);
+                            }
                         }
 
                         // Generate mangled name - if it's a sibling method, use parent type
