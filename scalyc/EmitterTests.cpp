@@ -3684,6 +3684,39 @@ static bool testStackArrayDeclaration() {
     return true;
 }
 
+static bool testStackArrayWithTypeAnnotation() {
+    const char* Name = "Pipeline: stack array with type annotation";
+
+    // Test explicit type annotation: var buffer: pointer[int] int[4]
+    auto ResultOrErr = evalSimpleInt(
+        "define test {\n"
+        "    function run() returns int {\n"
+        "        var buffer: pointer[int] int[4]\n"
+        "        set *(buffer + 0): 5\n"
+        "        set *(buffer + 1): 15\n"
+        "        *buffer + *(buffer + 1)\n"
+        "    }\n"
+        "}\n"
+        "test.run()\n"
+    );
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 20) {  // 5 + 15 = 20
+        std::string Msg = "expected 20, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
 // ============================================================================
 // Generic Type Tests
 // ============================================================================
@@ -4364,6 +4397,7 @@ bool runEmitterTests() {
     llvm::outs() << "  Static array tests:\n";
     testStaticArrayConstant();
     testStackArrayDeclaration();
+    testStackArrayWithTypeAnnotation();
 
     llvm::outs() << "  Generic type tests:\n";
     testGenericBoxInt();
