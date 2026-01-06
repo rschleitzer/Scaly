@@ -2,6 +2,7 @@ use scaly.memory.Page
 
 define containers {
     module hashing
+    module Slice
     module Node
     module ListIterator
     module List
@@ -311,8 +312,60 @@ define containers {
         return 0
     }
 
+    function test_slice() returns int {
+        var rp Page.allocate_page()
+
+        ; Test Vector slice
+        var vector Vector[int]^rp(rp, 5)
+        set *(*vector).get(0): 10
+        set *(*vector).get(1): 20
+        set *(*vector).get(2): 30
+        set *(*vector).get(3): 40
+        set *(*vector).get(4): 50
+
+        let slice (*vector).as_slice()
+        if slice.length <> 5
+            return -50
+        if *slice[0] <> 10
+            return -51
+        if *slice[4] <> 50
+            return -52
+
+        ; Test sub-slice
+        let sub slice.subslice(1 as size_t, 4 as size_t)
+        if sub.length <> 3
+            return -53
+        if *sub[0] <> 20
+            return -54
+        if *sub[2] <> 40
+            return -55
+
+        ; Test String slice
+        var s String(rp, "Hello")
+        let str_slice s.as_slice()
+        if str_slice.length <> 5
+            return -56
+        if *str_slice[0] <> 'H'
+            return -57
+        if *str_slice[4] <> 'o'
+            return -58
+
+        ; Test slice equality
+        var s2 String(rp, "Hello")
+        let str_slice2 s2.as_slice()
+        if str_slice == str_slice2 = false
+            return -59
+
+        (*rp).deallocate_extensions()
+        free(rp as pointer[void])
+        return 0
+    }
+
     function test() returns int {
-        var result test_string_simple()
+        var result test_slice()
+        if result <> 0
+            return result
+        set result: test_string_simple()
         if result <> 0
             return result
         set result: test_vector()
