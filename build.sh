@@ -11,7 +11,7 @@ cd scalyc
 mkdir -p build
 cd build
 cmake ..
-make
+make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
 
 # Optionally run tests
 if [ "$1" = "test" ]; then
