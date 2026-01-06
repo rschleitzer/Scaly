@@ -105,6 +105,11 @@ void Emitter::initDebugInfo(llvm::StringRef FileName) {
     if (!Config.EmitDebugInfo)
         return;
 
+    // Set DWARF version (4 is widely supported)
+    Module->addModuleFlag(llvm::Module::Warning, "Dwarf Version", 4);
+    Module->addModuleFlag(llvm::Module::Warning, "Debug Info Version",
+                          llvm::DEBUG_METADATA_VERSION);
+
     DIBuilder = std::make_unique<llvm::DIBuilder>(*Module);
 
     // Create compile unit
