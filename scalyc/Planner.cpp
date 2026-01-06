@@ -6173,6 +6173,97 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             CallOperand.MemberAccess = std::make_shared<std::vector<PlannedMemberAccess>>(
                                 std::move(*MemberChain));
                             if (!CallOperand.MemberAccess->empty()) {
+                                const auto& LastMember = CallOperand.MemberAccess->back();
+
+                                // Check if the last member is a method and there's another tuple following
+                                // This handles chained method calls: func(args).method(more_args)
+                                if (LastMember.IsMethod && i + 2 < ProcessedOps.size()) {
+                                    const auto& MethodArgsOp = ProcessedOps[i + 2];
+                                    if (std::holds_alternative<Tuple>(MethodArgsOp.Expr)) {
+                                        // Chained method call detected
+                                        std::string MethodName = LastMember.Name;
+                                        PlannedType InstanceType = LastMember.ParentType;
+
+                                        // Remove the method from member access chain
+                                        CallOperand.MemberAccess->pop_back();
+                                        if (CallOperand.MemberAccess->empty()) {
+                                            CallOperand.MemberAccess = nullptr;
+                                        } else {
+                                            CallOperand.ResultType = CallOperand.MemberAccess->back().ResultType;
+                                        }
+                                        // Reset ResultType to the instance type (what the method is called on)
+                                        CallOperand.ResultType = InstanceType;
+
+                                        // Plan the method arguments
+                                        Operand ArgsOp = MethodArgsOp;
+                                        ArgsOp.MemberAccess = nullptr;
+                                        auto PlannedMethodArgs = planOperand(ArgsOp);
+                                        if (!PlannedMethodArgs) {
+                                            return PlannedMethodArgs.takeError();
+                                        }
+
+                                        // Extract argument types for overload resolution
+                                        std::vector<PlannedType> MethodArgTypes;
+                                        if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedMethodArgs->Expr)) {
+                                            for (const auto& Comp : TupleExpr->Components) {
+                                                for (const auto& ValOp : Comp.Value) {
+                                                    MethodArgTypes.push_back(ValOp.ResultType);
+                                                }
+                                            }
+                                        }
+
+                                        // Look up the method on the instance type
+                                        auto MethodMatch = lookupMethod(InstanceType, MethodName, MethodArgTypes, MethodArgsOp.Loc);
+                                        if (MethodMatch) {
+                                            // Create method call
+                                            PlannedCall MethodCall;
+                                            MethodCall.Loc = MethodArgsOp.Loc;
+                                            MethodCall.Name = MethodName;
+                                            MethodCall.MangledName = MethodMatch->MangledName;
+                                            MethodCall.IsIntrinsic = false;
+                                            MethodCall.IsOperator = false;
+                                            MethodCall.ResultType = MethodMatch->ReturnType;
+
+                                            MethodCall.Args = std::make_shared<std::vector<PlannedOperand>>();
+
+                                            // First argument is the instance (the CallOperand)
+                                            MethodCall.Args->push_back(std::move(CallOperand));
+
+                                            // Add remaining arguments from the tuple
+                                            if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedMethodArgs->Expr)) {
+                                                for (auto& Comp : TupleExpr->Components) {
+                                                    for (auto& ValOp : Comp.Value) {
+                                                        MethodCall.Args->push_back(std::move(ValOp));
+                                                    }
+                                                }
+                                            }
+
+                                            // Apply any member access on the method result (from MethodArgsOp)
+                                            PlannedOperand MethodCallOp;
+                                            MethodCallOp.Loc = MethodArgsOp.Loc;
+                                            MethodCallOp.ResultType = MethodMatch->ReturnType;
+                                            MethodCallOp.Expr = std::move(MethodCall);
+
+                                            if (MethodArgsOp.MemberAccess && !MethodArgsOp.MemberAccess->empty()) {
+                                                auto ChainedMemberChain = resolveMemberAccessChain(MethodCallOp.ResultType,
+                                                                                                   *MethodArgsOp.MemberAccess, MethodArgsOp.Loc);
+                                                if (!ChainedMemberChain) {
+                                                    return ChainedMemberChain.takeError();
+                                                }
+                                                MethodCallOp.MemberAccess = std::make_shared<std::vector<PlannedMemberAccess>>(
+                                                    std::move(*ChainedMemberChain));
+                                                if (!MethodCallOp.MemberAccess->empty()) {
+                                                    MethodCallOp.ResultType = MethodCallOp.MemberAccess->back().ResultType;
+                                                }
+                                            }
+
+                                            Result.push_back(std::move(MethodCallOp));
+                                            i += 2;  // Skip both tuples
+                                            continue;
+                                        }
+                                    }
+                                }
+
                                 CallOperand.ResultType = CallOperand.MemberAccess->back().ResultType;
                             }
                         }
