@@ -41,7 +41,7 @@ define io {
         if file = null
             return -12
 
-        var buffer: char[64]
+        var buffer char[64]
         let read_count fread(buffer, 1, 64 as size_t, file)
         fclose(file)
 
