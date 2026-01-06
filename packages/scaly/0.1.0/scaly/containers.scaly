@@ -356,6 +356,15 @@ define containers {
         if str_slice == str_slice2 = false
             return -59
 
+        ; Test triple chained method calls: as_slice().subslice().subslice()
+        let triple_chain (*vector).as_slice().subslice(0, 4).subslice(1, 3)
+        if triple_chain.length <> 2
+            return -60
+        if *triple_chain[0] <> 20
+            return -61
+        if *triple_chain[1] <> 30
+            return -62
+
         (*rp).deallocate_extensions()
         free(rp as pointer[void])
         return 0
