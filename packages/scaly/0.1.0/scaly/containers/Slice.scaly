@@ -49,14 +49,14 @@ define Slice[T](data: pointer[T], length: size_t) {
 
     ; Slice to end
     function slice_to(this, to: size_t) returns Slice[T] {
-        subslice(0 as size_t, to)
+        subslice(0, to)
     }
 
     ; Equality (element-wise)
     function equals(this, other: Slice[T]) returns bool {
         if length <> other.length
             return false
-        if length = 0 as size_t
+        if length = 0
             return true
         memcmp(data as pointer[void], other.data as pointer[void], length * sizeof T) = 0
     }
@@ -73,7 +73,7 @@ define Slice[T](data: pointer[T], length: size_t) {
     function starts_with(this, prefix: Slice[T]) returns bool {
         if prefix.length > length
             return false
-        let sub subslice(0 as size_t, prefix.length)
+        let sub subslice(0, prefix.length)
         sub.equals(prefix)
     }
 

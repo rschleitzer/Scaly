@@ -332,7 +332,7 @@ define containers {
             return -52
 
         ; Test sub-slice
-        let sub slice.subslice(1 as size_t, 4 as size_t)
+        let sub slice.subslice(1, 4)
         if sub.length <> 3
             return -53
         if *sub[0] <> 20
