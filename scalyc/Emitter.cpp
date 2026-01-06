@@ -1541,12 +1541,23 @@ llvm::Error Emitter::emitBinding(const PlannedBinding &Binding) {
 
             if (IsStackArray) {
                 // Stack array declaration: var buffer char[64]
-                // Allocate [ArraySize x ElementType] and store pointer to it
+                // Allocate [ArraySize x ElementType] on the stack
                 llvm::Type *ElemTy = mapType(ItemType.Generics[0]);
                 llvm::ArrayType *ArrTy = llvm::ArrayType::get(ElemTy, ArraySizeVal);
-                auto *Alloca = Builder->CreateAlloca(ArrTy, nullptr, *Binding.BindingItem.Name);
-                // Store the pointer to the array (which decays to pointer to first element)
-                LocalVariables[*Binding.BindingItem.Name] = Alloca;
+                auto *ArrayAlloca = Builder->CreateAlloca(ArrTy, nullptr, *Binding.BindingItem.Name + ".arr");
+                // Get pointer to the first element (array decay semantics)
+                llvm::Value *Indices[] = {
+                    llvm::ConstantInt::get(llvm::Type::getInt64Ty(*Context), 0),
+                    llvm::ConstantInt::get(llvm::Type::getInt64Ty(*Context), 0)
+                };
+                llvm::Value *FirstElemPtr = Builder->CreateGEP(ArrTy, ArrayAlloca, Indices,
+                                                                *Binding.BindingItem.Name + ".ptr");
+                // Store the pointer in an alloca so mutable variable access works correctly
+                // (mutable variables are accessed via load from their alloca)
+                auto *PtrAlloca = Builder->CreateAlloca(Builder->getPtrTy(), nullptr,
+                                                         *Binding.BindingItem.Name);
+                Builder->CreateStore(FirstElemPtr, PtrAlloca);
+                LocalVariables[*Binding.BindingItem.Name] = PtrAlloca;
             } else {
                 // Regular type - map and allocate
                 llvm::Type *Ty = mapType(ItemType);
