@@ -1121,6 +1121,39 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
     const Concept *Conc = lookupConcept(BaseName);
     if (Conc) {
         if (auto *ModelStruct = std::get_if<Structure>(&Conc->Def)) {
+            // Ensure non-generic struct is planned so its methods are registered
+            // This is needed for on-demand loaded packages where the struct hasn't been planned yet
+            if (Conc->Parameters.empty() && !Struct) {
+                // Plan the struct if not already planned
+                if (InstantiatedStructures.find(BaseName) == InstantiatedStructures.end()) {
+                    auto PlannedConc = planConcept(*Conc);
+                    if (PlannedConc) {
+                        // Now get the planned struct
+                        auto StructIt = InstantiatedStructures.find(BaseName);
+                        if (StructIt != InstantiatedStructures.end()) {
+                            Struct = &StructIt->second;
+                            // Try finding the method in the now-planned struct
+                            for (const auto &Method : Struct->Methods) {
+                                if (Method.Name == MethodName) {
+                                    MethodMatch Match;
+                                    Match.Method = nullptr;
+                                    Match.MangledName = Method.MangledName;
+                                    if (Method.Returns) {
+                                        Match.ReturnType = *Method.Returns;
+                                    } else {
+                                        Match.ReturnType.Name = "void";
+                                        Match.ReturnType.Loc = Loc;
+                                    }
+                                    return Match;
+                                }
+                            }
+                        }
+                    } else {
+                        llvm::consumeError(PlannedConc.takeError());
+                    }
+                }
+            }
+
             for (const auto &Member : ModelStruct->Members) {
                 if (auto *Func = std::get_if<Function>(&Member)) {
                     if (Func->Name == MethodName) {
@@ -1256,6 +1289,45 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
     const Concept *Conc = lookupConcept(BaseName);
     if (Conc) {
         if (auto *ModelStruct = std::get_if<Structure>(&Conc->Def)) {
+            // Ensure non-generic struct is planned so its methods are registered
+            // This is needed for on-demand loaded packages where the struct hasn't been planned yet
+            if (Conc->Parameters.empty() && !Struct) {
+                // Plan the struct if not already planned
+                if (InstantiatedStructures.find(BaseName) == InstantiatedStructures.end()) {
+                    auto PlannedConc = planConcept(*Conc);
+                    if (PlannedConc) {
+                        // Now get the planned struct and collect from its methods
+                        auto StructIt = InstantiatedStructures.find(BaseName);
+                        if (StructIt != InstantiatedStructures.end()) {
+                            Struct = &StructIt->second;
+                            // Collect candidates from the now-planned struct
+                            for (const auto &Method : Struct->Methods) {
+                                if (Method.Name == MethodName) {
+                                    MethodMatch Match;
+                                    Match.Method = nullptr;
+                                    Match.MangledName = Method.MangledName;
+                                    if (Method.Returns) {
+                                        Match.ReturnType = *Method.Returns;
+                                    } else {
+                                        Match.ReturnType.Name = "void";
+                                        Match.ReturnType.Loc = Loc;
+                                    }
+                                    // Collect parameter types (skip 'this')
+                                    for (size_t i = 1; i < Method.Input.size(); ++i) {
+                                        if (Method.Input[i].ItemType) {
+                                            Match.ParameterTypes.push_back(*Method.Input[i].ItemType);
+                                        }
+                                    }
+                                    Candidates.push_back(std::move(Match));
+                                }
+                            }
+                        }
+                    } else {
+                        llvm::consumeError(PlannedConc.takeError());
+                    }
+                }
+            }
+
             for (const auto &Member : ModelStruct->Members) {
                 if (auto *Func = std::get_if<Function>(&Member)) {
                     if (Func->Name == MethodName) {
@@ -3325,6 +3397,35 @@ const Concept* Planner::lookupConcept(llvm::StringRef Name) {
                 if (Conc->Name == Name) {
                     Concepts[Name.str()] = Conc;
                     return Conc;
+                }
+                // Also search inside namespace definitions (e.g., define memory { module PageList })
+                if (auto* NS = std::get_if<Namespace>(&Conc->Def)) {
+                    for (const auto& NsMod : NS->Modules) {
+                        if (NsMod.Name == Name) {
+                            for (const auto& NsMember : NsMod.Members) {
+                                if (auto* NsConc = std::get_if<Concept>(&NsMember)) {
+                                    if (NsConc->Name == Name) {
+                                        Concepts[Name.str()] = NsConc;
+                                        return NsConc;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        // Also search sub-modules (e.g., memory has "module PageList" as a sub-module)
+        for (const auto& SubMod : AccessedMod->Modules) {
+            if (SubMod.Name == Name) {
+                // Found a sub-module with matching name - look for concept with same name inside
+                for (const auto& SubMember : SubMod.Members) {
+                    if (auto* SubConc = std::get_if<Concept>(&SubMember)) {
+                        if (SubConc->Name == Name) {
+                            Concepts[Name.str()] = SubConc;
+                            return SubConc;
+                        }
+                    }
                 }
             }
         }
