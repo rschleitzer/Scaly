@@ -1,6 +1,7 @@
 // Emitter.cpp - LLVM IR generation from Plan
 
 #include "Emitter.h"
+#include "llvm/Bitcode/BitcodeWriter.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/Support/FileSystem.h"
@@ -445,6 +446,33 @@ llvm::Error Emitter::emitObjectFile(const Plan &P,
     }
 
     PM.run(*TheModule);
+    Dest.flush();
+
+    return llvm::Error::success();
+}
+
+llvm::Error Emitter::emitBitcodeFile(const Plan &P,
+                                     llvm::StringRef ModuleName,
+                                     llvm::StringRef OutputPath) {
+    // First, emit the LLVM IR module
+    auto ModuleOrErr = emit(P, ModuleName);
+    if (!ModuleOrErr) {
+        return ModuleOrErr.takeError();
+    }
+    auto TheModule = std::move(*ModuleOrErr);
+
+    // Open output file
+    std::error_code EC;
+    llvm::raw_fd_ostream Dest(OutputPath, EC, llvm::sys::fs::OF_None);
+    if (EC) {
+        return llvm::make_error<llvm::StringError>(
+            "Could not open output file: " + EC.message(),
+            llvm::inconvertibleErrorCode()
+        );
+    }
+
+    // Write bitcode
+    llvm::WriteBitcodeToFile(*TheModule, Dest);
     Dest.flush();
 
     return llvm::Error::success();
