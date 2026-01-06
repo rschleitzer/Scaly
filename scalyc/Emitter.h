@@ -73,6 +73,11 @@ public:
                                llvm::StringRef ModuleName,
                                llvm::StringRef OutputPath);
 
+    // AOT: write to bitcode file (for LTO)
+    llvm::Error emitBitcodeFile(const Plan &P,
+                                llvm::StringRef ModuleName,
+                                llvm::StringRef OutputPath);
+
     // Access the context (for advanced use)
     llvm::LLVMContext &getContext() { return *Context; }
 

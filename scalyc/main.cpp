@@ -8,8 +8,10 @@
 #include "EmitterTests.h"
 #include "ModuleTests.h"
 #include "llvm/Support/CommandLine.h"
+#include "llvm/Support/FileSystem.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/Path.h"
+#include "llvm/Support/Program.h"
 #include "llvm/Support/raw_ostream.h"
 #include <iostream>
 
@@ -86,6 +88,25 @@ static cl::list<std::string> IncludePaths(
     cl::desc("Add package search path"),
     cl::value_desc("path"),
     cl::Prefix,
+    cl::cat(ScalyCategory));
+
+static cl::list<std::string> LibraryPaths(
+    "L",
+    cl::desc("Add library search path"),
+    cl::value_desc("path"),
+    cl::Prefix,
+    cl::cat(ScalyCategory));
+
+static cl::list<std::string> Libraries(
+    "l",
+    cl::desc("Link library"),
+    cl::value_desc("library"),
+    cl::Prefix,
+    cl::cat(ScalyCategory));
+
+static cl::opt<bool> EnableLTO(
+    "flto",
+    cl::desc("Enable Link Time Optimization"),
     cl::cat(ScalyCategory));
 
 // Print a token in readable format
@@ -473,6 +494,176 @@ static int runFile(StringRef Filename, StringRef FunctionName) {
     return 0;
 }
 
+// Link object/bitcode file(s) to executable using clang
+static int linkExecutable(ArrayRef<std::string> InputFiles,
+                          StringRef OutputPath,
+                          ArrayRef<std::string> LibPaths,
+                          ArrayRef<std::string> Libs,
+                          bool LTO) {
+    auto ClangOrErr = sys::findProgramByName("clang");
+    if (!ClangOrErr) {
+        errs() << "scalyc: error: cannot find clang in PATH\n";
+        return 1;
+    }
+    std::string Clang = *ClangOrErr;
+
+    // Build argument list - need stable storage for StringRefs
+    SmallVector<std::string, 32> ArgStorage;
+    SmallVector<StringRef, 32> Args;
+
+    ArgStorage.push_back(Clang);
+    Args.push_back(ArgStorage.back());
+
+    // Add input files
+    for (const auto &File : InputFiles) {
+        ArgStorage.push_back(File);
+        Args.push_back(ArgStorage.back());
+    }
+
+    // Output file
+    ArgStorage.push_back("-o");
+    Args.push_back(ArgStorage.back());
+    ArgStorage.push_back(OutputPath.str());
+    Args.push_back(ArgStorage.back());
+
+    // LTO flag
+    if (LTO) {
+        ArgStorage.push_back("-flto");
+        Args.push_back(ArgStorage.back());
+    }
+
+    // Library search paths
+    for (const auto &Path : LibPaths) {
+        ArgStorage.push_back("-L" + Path);
+        Args.push_back(ArgStorage.back());
+    }
+
+    // Libraries
+    for (const auto &Lib : Libs) {
+        ArgStorage.push_back("-l" + Lib);
+        Args.push_back(ArgStorage.back());
+    }
+
+    if (Verbose) {
+        outs() << "Linking:";
+        for (const auto &Arg : Args) {
+            outs() << " " << Arg;
+        }
+        outs() << "\n";
+    }
+
+    std::string ErrMsg;
+    int Result = sys::ExecuteAndWait(Clang, Args, std::nullopt, {}, 0, 0, &ErrMsg);
+    if (Result != 0) {
+        if (!ErrMsg.empty()) {
+            errs() << "scalyc: link error: " << ErrMsg << "\n";
+        } else {
+            errs() << "scalyc: link failed with exit code " << Result << "\n";
+        }
+        return 1;
+    }
+
+    return 0;
+}
+
+// Compile file to bitcode (for LTO)
+static int compileToBitcode(StringRef Filename, StringRef OutputPath) {
+    auto BufOrErr = MemoryBuffer::getFileOrSTDIN(Filename);
+    if (!BufOrErr) {
+        errs() << "scalyc: error: " << BufOrErr.getError().message() << ": " << Filename << "\n";
+        return 1;
+    }
+
+    scaly::Parser Parser((*BufOrErr)->getBuffer());
+    auto ParseResult = Parser.parseProgram();
+    if (!ParseResult) {
+        handleAllErrors(ParseResult.takeError(), [&](const llvm::ErrorInfoBase &E) {
+            errs() << "scalyc: " << Filename << ": " << E.message() << "\n";
+        });
+        return 1;
+    }
+
+    scaly::Modeler Modeler(Filename);
+    for (const auto &P : IncludePaths) {
+        Modeler.addPackageSearchPath(P);
+    }
+    auto ModelResult = Modeler.buildProgram(*ParseResult);
+    if (!ModelResult) {
+        handleAllErrors(ModelResult.takeError(), [&](const llvm::ErrorInfoBase &E) {
+            errs() << "scalyc: " << Filename << ": " << E.message() << "\n";
+        });
+        return 1;
+    }
+
+    scaly::Planner Planner(Filename);
+    for (const auto &P : IncludePaths) {
+        Planner.addPackageSearchPath(P);
+    }
+    auto PlanResult = Planner.plan(*ModelResult);
+    if (!PlanResult) {
+        handleAllErrors(PlanResult.takeError(), [&](const llvm::ErrorInfoBase &E) {
+            errs() << "scalyc: " << Filename << ": " << E.message() << "\n";
+        });
+        return 1;
+    }
+
+    // Emit bitcode file
+    scaly::Emitter Emitter;
+    std::string ModuleName = sys::path::stem(Filename).str();
+    auto EmitErr = Emitter.emitBitcodeFile(*PlanResult, ModuleName, OutputPath);
+    if (EmitErr) {
+        handleAllErrors(std::move(EmitErr), [&](const llvm::ErrorInfoBase &E) {
+            errs() << "scalyc: " << Filename << ": " << E.message() << "\n";
+        });
+        return 1;
+    }
+
+    if (Verbose) {
+        outs() << "Compiled (bitcode): " << Filename << " -> " << OutputPath << "\n";
+    }
+    return 0;
+}
+
+// Compile and link a file to executable
+static int buildFile(StringRef Filename, StringRef OutputPath) {
+    SmallString<128> TempPath;
+    const char *Extension = EnableLTO ? "bc" : "o";
+
+    if (auto EC = sys::fs::createTemporaryFile("scalyc", Extension, TempPath)) {
+        errs() << "scalyc: error: cannot create temp file: " << EC.message() << "\n";
+        return 1;
+    }
+
+    // Compile to object or bitcode
+    int CompileResult;
+    if (EnableLTO) {
+        CompileResult = compileToBitcode(Filename, TempPath);
+    } else {
+        CompileResult = compileFile(Filename, TempPath);
+    }
+
+    if (CompileResult != 0) {
+        sys::fs::remove(TempPath);
+        return CompileResult;
+    }
+
+    // Link to executable
+    std::vector<std::string> InputFiles = {std::string(TempPath)};
+    std::vector<std::string> LibPaths(LibraryPaths.begin(), LibraryPaths.end());
+    std::vector<std::string> Libs(Libraries.begin(), Libraries.end());
+
+    int LinkResult = linkExecutable(InputFiles, OutputPath, LibPaths, Libs, EnableLTO);
+
+    // Clean up temp file
+    sys::fs::remove(TempPath);
+
+    if (LinkResult == 0 && Verbose) {
+        outs() << "Built: " << Filename << " -> " << OutputPath << "\n";
+    }
+
+    return LinkResult;
+}
+
 int main(int argc, char **argv) {
     cl::HideUnrelatedOptions(ScalyCategory);
     cl::ParseCommandLineOptions(argc, argv, "Scaly Compiler\n");
@@ -544,9 +735,15 @@ int main(int argc, char **argv) {
             // JIT-execute a function
             Result |= runFile(File, RunFunction);
         } else {
-            // Full compilation - for now just run planner
-            // TODO: Full compile + link when we have a linker
-            Result |= planFile(File);
+            // Full compilation: compile + link to executable
+            std::string OutPath;
+            if (!OutputFile.empty()) {
+                OutPath = OutputFile;
+            } else {
+                // Default: remove .scaly extension (or add nothing)
+                OutPath = sys::path::stem(File).str();
+            }
+            Result |= buildFile(File, OutPath);
         }
     }
 
