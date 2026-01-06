@@ -526,9 +526,12 @@ static int linkExecutable(ArrayRef<std::string> InputFiles,
     ArgStorage.push_back(OutputPath.str());
     Args.push_back(ArgStorage.back());
 
-    // LTO flag
+    // LTO flags
     if (LTO) {
         ArgStorage.push_back("-flto");
+        Args.push_back(ArgStorage.back());
+        // Suppress warning about triple override (LLVM/clang versions may differ)
+        ArgStorage.push_back("-Wno-override-module");
         Args.push_back(ArgStorage.back());
     }
 
