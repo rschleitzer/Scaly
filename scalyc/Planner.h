@@ -100,6 +100,8 @@ private:
 
     // Current namespace being planned (for sibling function calls in define blocks)
     std::string CurrentNamespaceName;
+    const Namespace* CurrentNamespace = nullptr;  // For sibling module lookup in lookupConcept
+    std::vector<const Module*> CurrentNamespaceModules;  // Planned sibling modules for concept lookup
 
     // Track if current function uses $ allocations (needs local page)
     bool CurrentFunctionUsesLocalLifetime = false;

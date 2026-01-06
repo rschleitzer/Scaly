@@ -3365,6 +3365,25 @@ const Concept* Planner::lookupConcept(llvm::StringRef Name) {
         return CacheIt->second;
     }
 
+    // 1a. If we're inside a namespace (define block), search sibling modules
+    // These are stored in CurrentNamespaceModules during planNamespace
+    // This allows scaly.test() to find io when calling io.test()
+    if (!CurrentNamespaceModules.empty()) {
+        for (const Module* Mod : CurrentNamespaceModules) {
+            if (Mod->Name == Name) {
+                // Found a module with matching name - look for a concept with same name
+                for (const auto& Member : Mod->Members) {
+                    if (auto* Conc = std::get_if<Concept>(&Member)) {
+                        if (Conc->Name == Name) {
+                            Concepts[Name.str()] = Conc;
+                            return Conc;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     // 1b. Search modules we've previously accessed from on-demand packages
     // This allows finding sibling concepts like PAGE_SIZE when Page is used
     for (const Module* AccessedMod : AccessedPackageModules) {
@@ -7828,7 +7847,9 @@ llvm::Expected<PlannedNamespace> Planner::planNamespace(const Namespace &NS,
 
     // Set current namespace context for sibling function calls
     std::string OldNamespaceName = CurrentNamespaceName;
+    const Namespace* OldNamespace = CurrentNamespace;
     CurrentNamespaceName = Name.str();
+    CurrentNamespace = &NS;
 
     // Create a pseudo-module wrapper for the namespace to enable cross-module lookup
     // This allows functions in the namespace to find concepts from sub-modules
@@ -7846,13 +7867,24 @@ llvm::Expected<PlannedNamespace> Planner::planNamespace(const Namespace &NS,
     ModuleStack.push_back(&PseudoModule);
 
     // Plan sub-modules first (so their concepts are available)
+    // Store pointers to loaded modules for sibling concept lookup
+    std::vector<const Module*> OldNamespaceModules = CurrentNamespaceModules;
+    CurrentNamespaceModules.clear();
     for (const auto &SubMod : NS.Modules) {
+        // planModule pushes the module onto ModuleStack, we capture it from there
+        size_t stackSizeBefore = ModuleStack.size();
         auto PlannedSubMod = planModule(SubMod);
         if (!PlannedSubMod) {
             ModuleStack.pop_back();
             CurrentNamespaceName = OldNamespaceName;
+            CurrentNamespace = OldNamespace;
+            CurrentNamespaceModules = OldNamespaceModules;
             return PlannedSubMod.takeError();
         }
+        // planModule leaves the loaded module on stack temporarily - capture it
+        // Actually planModule pops it before returning, but we can get it from &SubMod
+        // The SubMod reference points to the original module which is populated by Modeler
+        CurrentNamespaceModules.push_back(&SubMod);
         Result.Modules.push_back(std::move(*PlannedSubMod));
     }
 
@@ -7863,6 +7895,8 @@ llvm::Expected<PlannedNamespace> Planner::planNamespace(const Namespace &NS,
             if (!PlannedFunc) {
                 ModuleStack.pop_back();
                 CurrentNamespaceName = OldNamespaceName;
+                CurrentNamespace = OldNamespace;
+                CurrentNamespaceModules = OldNamespaceModules;
                 return PlannedFunc.takeError();
             }
 
@@ -7878,6 +7912,8 @@ llvm::Expected<PlannedNamespace> Planner::planNamespace(const Namespace &NS,
             if (!PlannedOp) {
                 ModuleStack.pop_back();
                 CurrentNamespaceName = OldNamespaceName;
+                CurrentNamespace = OldNamespace;
+                CurrentNamespaceModules = OldNamespaceModules;
                 return PlannedOp.takeError();
             }
             Result.Operators.push_back(std::move(*PlannedOp));
@@ -7887,6 +7923,8 @@ llvm::Expected<PlannedNamespace> Planner::planNamespace(const Namespace &NS,
 
     ModuleStack.pop_back();
     CurrentNamespaceName = OldNamespaceName;
+    CurrentNamespace = OldNamespace;
+    CurrentNamespaceModules = OldNamespaceModules;
     return Result;
 }
 
