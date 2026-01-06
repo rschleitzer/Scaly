@@ -2,7 +2,12 @@
 // Transforms Model (with generics) → Plan (concrete types, mangled names)
 
 #include "Planner.h"
+#include "Parser.h"
+#include "Modeler.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/MemoryBuffer.h"
+#include "llvm/Support/FileSystem.h"
+#include "llvm/Support/Path.h"
 #include <algorithm>
 #include <set>
 #include <sstream>
@@ -26,6 +31,97 @@ Planner::Planner(llvm::StringRef FileName) : File(FileName.str()) {}
 
 void Planner::addSiblingProgram(std::shared_ptr<Program> Prog) {
     SiblingPrograms.push_back(Prog);
+}
+
+void Planner::addPackageSearchPath(llvm::StringRef Path) {
+    PackageSearchPaths.push_back(Path.str());
+}
+
+const Module* Planner::loadPackageOnDemand(llvm::StringRef PackageName) {
+    // Check if already loaded
+    auto It = LoadedPackages.find(PackageName.str());
+    if (It != LoadedPackages.end()) {
+        return It->second;
+    }
+
+    // Build search paths list
+    std::vector<std::string> SearchPaths;
+
+    // Current working directory's packages/
+    SearchPaths.push_back("packages");
+
+    // Source file directory's packages/
+    llvm::SmallString<256> LocalPath(File);
+    llvm::sys::path::remove_filename(LocalPath);
+    llvm::SmallString<256> SourcePackages(LocalPath);
+    llvm::sys::path::append(SourcePackages, "packages");
+    SearchPaths.push_back(SourcePackages.str().str());
+
+    // Walk up directory tree from source file looking for packages/
+    llvm::SmallString<256> WalkUp(LocalPath);
+    for (int i = 0; i < 10 && !WalkUp.empty(); ++i) {
+        llvm::sys::path::remove_filename(WalkUp);
+        if (WalkUp.empty()) break;
+        llvm::SmallString<256> ParentPackages(WalkUp);
+        llvm::sys::path::append(ParentPackages, "packages");
+        if (llvm::sys::fs::is_directory(ParentPackages)) {
+            SearchPaths.push_back(ParentPackages.str().str());
+            break;
+        }
+    }
+
+    // User-provided -I paths
+    for (const auto &P : PackageSearchPaths) {
+        SearchPaths.push_back(P);
+    }
+
+    // Try each search path with default version 0.1.0
+    // (In a full implementation, we'd parse version from Use statements)
+    std::string VersionStr = "0.1.0";
+
+    for (const auto &Base : SearchPaths) {
+        llvm::SmallString<256> PkgPath(Base);
+        llvm::sys::path::append(PkgPath, PackageName, VersionStr,
+                                 PackageName.str() + ".scaly");
+
+        if (llvm::sys::fs::exists(PkgPath)) {
+            // Read and parse the package file
+            auto BufOrErr = llvm::MemoryBuffer::getFile(PkgPath);
+            if (!BufOrErr) {
+                continue;  // Try next path
+            }
+
+            Parser PkgParser((*BufOrErr)->getBuffer());
+            auto ParseResult = PkgParser.parseProgram();
+            if (!ParseResult) {
+                llvm::consumeError(ParseResult.takeError());
+                continue;  // Try next path
+            }
+
+            // Use Modeler to build the program model
+            Modeler PkgModeler(PkgPath.str());
+            for (const auto &P : PackageSearchPaths) {
+                PkgModeler.addPackageSearchPath(P);
+            }
+            auto ModelResult = PkgModeler.buildProgram(*ParseResult);
+            if (!ModelResult) {
+                llvm::consumeError(ModelResult.takeError());
+                continue;  // Try next path
+            }
+
+            // Store the Program and register the package
+            auto Prog = std::make_unique<Program>(std::move(*ModelResult));
+            OnDemandPackages.push_back(std::move(Prog));
+
+            // Get the module pointer from the stored Program (after the move)
+            const Module* RootMod = &OnDemandPackages.back()->MainModule;
+            LoadedPackages[PackageName.str()] = RootMod;
+
+            return RootMod;
+        }
+    }
+
+    return nullptr;  // Package not found
 }
 
 // Register built-in runtime functions (aligned_alloc, free, exit) for RBMM support
@@ -3400,8 +3496,17 @@ const Concept* Planner::lookupConcept(llvm::StringRef Name) {
                 }
 
                 // Also check LoadedPackages for packages loaded via "package" statements
+                // or try to load the package on demand if not found
                 if (Use.Path.size() >= 2) {
                     auto PkgIt = LoadedPackages.find(Use.Path[0]);
+
+                    // Try to load the package on demand if not already loaded
+                    if (PkgIt == LoadedPackages.end()) {
+                        if (const Module* LoadedMod = loadPackageOnDemand(Use.Path[0])) {
+                            PkgIt = LoadedPackages.find(Use.Path[0]);
+                        }
+                    }
+
                     if (PkgIt != LoadedPackages.end()) {
                         const Module* CurrentMod = PkgIt->second;
                         const Namespace* CurrentNS = nullptr;
@@ -3444,7 +3549,7 @@ const Concept* Planner::lookupConcept(llvm::StringRef Name) {
                         }
 
                         if (Found && CurrentMod) {
-                            // Look for the concept in the final module
+                            // First look directly in the module's members
                             for (const auto& Member : CurrentMod->Members) {
                                 if (auto* Conc = std::get_if<Concept>(&Member)) {
                                     if (Conc->Name == Name) {
@@ -3453,6 +3558,29 @@ const Concept* Planner::lookupConcept(llvm::StringRef Name) {
                                     }
                                 }
                             }
+
+                            // If the module has a concept with a namespace definition
+                            // (e.g., define containers { ... }), look inside that namespace
+                            for (const auto& Member : CurrentMod->Members) {
+                                if (auto* Conc = std::get_if<Concept>(&Member)) {
+                                    if (auto* NS = std::get_if<Namespace>(&Conc->Def)) {
+                                        // Look in namespace's modules for the target concept
+                                        for (const auto& SubMod : NS->Modules) {
+                                            if (SubMod.Name == Name) {
+                                                for (const auto& SubMember : SubMod.Members) {
+                                                    if (auto* SubConc = std::get_if<Concept>(&SubMember)) {
+                                                        if (SubConc->Name == Name) {
+                                                            Concepts[Name.str()] = SubConc;
+                                                            return SubConc;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
                             // Also check sub-modules
                             for (const auto& SubMod : CurrentMod->Modules) {
                                 if (SubMod.Name == Name) {

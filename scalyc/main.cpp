@@ -239,6 +239,9 @@ static int planFile(StringRef Filename) {
     }
 
     scaly::Planner Planner(Filename);
+    for (const auto &P : IncludePaths) {
+        Planner.addPackageSearchPath(P);
+    }
     auto PlanResult = Planner.plan(*ModelResult);
     if (!PlanResult) {
         handleAllErrors(PlanResult.takeError(), [&](const llvm::ErrorInfoBase &E) {
@@ -298,6 +301,9 @@ static int compileFile(StringRef Filename, StringRef OutputPath) {
     }
 
     scaly::Planner Planner(Filename);
+    for (const auto &P : IncludePaths) {
+        Planner.addPackageSearchPath(P);
+    }
     auto PlanResult = Planner.plan(*ModelResult);
     if (!PlanResult) {
         handleAllErrors(PlanResult.takeError(), [&](const llvm::ErrorInfoBase &E) {
@@ -353,6 +359,9 @@ static int emitLLVMFile(StringRef Filename, StringRef OutputPath) {
     }
 
     scaly::Planner Planner(Filename);
+    for (const auto &P : IncludePaths) {
+        Planner.addPackageSearchPath(P);
+    }
     auto PlanResult = Planner.plan(*ModelResult);
     if (!PlanResult) {
         handleAllErrors(PlanResult.takeError(), [&](const llvm::ErrorInfoBase &E) {
@@ -418,6 +427,9 @@ static int runFile(StringRef Filename, StringRef FunctionName) {
     }
 
     scaly::Planner Planner(Filename);
+    for (const auto &P : IncludePaths) {
+        Planner.addPackageSearchPath(P);
+    }
     auto PlanResult = Planner.plan(*ModelResult);
     if (!PlanResult) {
         handleAllErrors(PlanResult.takeError(), [&](const llvm::ErrorInfoBase &E) {

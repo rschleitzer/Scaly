@@ -26,6 +26,9 @@ public:
     // Add a sibling program (for multi-file compilation)
     void addSiblingProgram(std::shared_ptr<Program> Prog);
 
+    // Add a package search path for on-demand loading
+    void addPackageSearchPath(llvm::StringRef Path);
+
 private:
     std::string File;
 
@@ -40,6 +43,12 @@ private:
     // Loaded packages (name -> root module)
     std::map<std::string, const Module*> LoadedPackages;
 
+    // On-demand loaded packages (owns the Program objects)
+    std::vector<std::unique_ptr<Program>> OnDemandPackages;
+
+    // Package search paths for on-demand loading
+    std::vector<std::string> PackageSearchPaths;
+
     // Built-in runtime functions for RBMM (aligned_alloc, free, exit)
     std::vector<std::unique_ptr<Function>> BuiltinFunctions;
     bool RuntimeFunctionsRegistered = false;
@@ -50,6 +59,10 @@ private:
 
     // Lookup a concept by name, searching module hierarchy
     const Concept* lookupConcept(llvm::StringRef Name);
+
+    // Load a package on demand from search paths
+    // Returns the root module of the loaded package, or nullptr if not found
+    const Module* loadPackageOnDemand(llvm::StringRef PackageName);
 
     // Look up a function by qualified package path (e.g., ["scaly", "containers", "test"])
     const Function* lookupPackageFunction(const std::vector<std::string>& Path);
