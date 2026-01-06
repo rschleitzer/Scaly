@@ -4675,6 +4675,48 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                         i++;  // Skip the Matrix operand (already processed)
                         continue;
                     }
+
+                    // Check for stack array pattern: PrimitiveType[Constant]
+                    // e.g., char[64] where Matrix contains a single integer constant
+                    // This creates a fixed-size stack array
+                    if (!ValidGenerics && MatrixExpr->Operations.size() == 1 &&
+                        MatrixExpr->Operations[0].size() == 1) {
+                        const auto& SizeOp = MatrixExpr->Operations[0][0];
+                        if (auto* SizeConst = std::get_if<Constant>(&SizeOp.Expr)) {
+                            // Check if this is an integer constant
+                            if (auto* IntConst = std::get_if<IntegerConstant>(SizeConst)) {
+                                // Check if base type is a primitive
+                                std::string BaseName = TypeExpr->Name.empty() ? "" : TypeExpr->Name[0];
+                                bool IsPrimitive = (BaseName == "char" || BaseName == "int" ||
+                                                    BaseName == "bool" || BaseName == "size_t" ||
+                                                    BaseName == "float" || BaseName == "double" ||
+                                                    BaseName == "i8" || BaseName == "i16" ||
+                                                    BaseName == "i32" || BaseName == "i64" ||
+                                                    BaseName == "u8" || BaseName == "u16" ||
+                                                    BaseName == "u32" || BaseName == "u64");
+                                if (IsPrimitive) {
+                                    // Create a Type with the size as a "generic" argument
+                                    // resolveType will then handle this as a fixed-size array
+                                    Type SizeType;
+                                    SizeType.Loc = SizeOp.Loc;
+                                    SizeType.Name = {std::to_string(IntConst->Value)};
+                                    SizeType.Life = UnspecifiedLifetime{};
+
+                                    Type CombinedType = *TypeExpr;
+                                    CombinedType.Generics = std::make_shared<std::vector<Type>>();
+                                    CombinedType.Generics->push_back(std::move(SizeType));
+
+                                    Operand CombinedOp;
+                                    CombinedOp.Loc = Op.Loc;
+                                    CombinedOp.Expr = CombinedType;
+                                    CombinedOp.MemberAccess = NextOp.MemberAccess;
+                                    ProcessedOps.push_back(std::move(CombinedOp));
+                                    i++;  // Skip the Matrix operand
+                                    continue;
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -6750,12 +6792,27 @@ llvm::Expected<PlannedBinding> Planner::planBinding(const Binding &Bind) {
     }
 
     // Collapse operand sequence to create PlannedCall structures for operators
+    PlannedType StackArrayType;  // For stack array declarations like char[64]
+    bool IsStackArrayDecl = false;
     if (!ValueOps.empty()) {
         auto CollapsedOp = collapseOperandSequence(std::move(ValueOps));
         if (!CollapsedOp) {
             return CollapsedOp.takeError();
         }
-        Result.Operation.push_back(std::move(*CollapsedOp));
+
+        // Check if this is a stack array type declaration (e.g., char[64])
+        // In this case, the collapsed result is a PlannedType with ArraySize set
+        if (auto* TypeExpr = std::get_if<PlannedType>(&CollapsedOp->Expr)) {
+            if (!TypeExpr->ArraySize.empty() && TypeExpr->Name == "pointer") {
+                // This is a stack array declaration - use as type, not value
+                IsStackArrayDecl = true;
+                StackArrayType = std::move(*TypeExpr);
+            } else {
+                Result.Operation.push_back(std::move(*CollapsedOp));
+            }
+        } else {
+            Result.Operation.push_back(std::move(*CollapsedOp));
+        }
     }
 
     // Plan the binding item
@@ -6765,8 +6822,12 @@ llvm::Expected<PlannedBinding> Planner::planBinding(const Binding &Bind) {
     }
     Result.BindingItem = std::move(*PlannedItemResult);
 
+    // Handle stack array declaration (e.g., var buffer char[64])
+    if (IsStackArrayDecl) {
+        Result.BindingItem.ItemType = std::make_shared<PlannedType>(std::move(StackArrayType));
+    }
     // Type inference for bindings without explicit type annotation
-    if (!Result.BindingItem.ItemType && !Result.Operation.empty()) {
+    else if (!Result.BindingItem.ItemType && !Result.Operation.empty()) {
         // Try to infer the type from the initializer expression
         auto SeqType = resolveOperationSequence(Result.Operation);
         if (SeqType) {

@@ -1523,10 +1523,36 @@ llvm::Error Emitter::emitBinding(const PlannedBinding &Binding) {
             }
         } else if (Binding.BindingItem.ItemType) {
             // No initialization but has type annotation - allocate uninitialized
-            // For now, create an i64 placeholder (proper type resolution needed)
-            llvm::Type *Ty = llvm::Type::getInt64Ty(*Context);
-            auto *Alloca = Builder->CreateAlloca(Ty, nullptr, *Binding.BindingItem.Name);
-            LocalVariables[*Binding.BindingItem.Name] = Alloca;
+            const PlannedType& ItemType = *Binding.BindingItem.ItemType;
+
+            // Check for stack array: pointer[T] with ArraySize set (must be numeric)
+            bool IsStackArray = false;
+            uint64_t ArraySizeVal = 0;
+            if (!ItemType.ArraySize.empty() && ItemType.Name == "pointer" &&
+                !ItemType.Generics.empty()) {
+                // Try to parse ArraySize as a number
+                try {
+                    ArraySizeVal = std::stoull(ItemType.ArraySize);
+                    IsStackArray = true;
+                } catch (const std::exception&) {
+                    // Not a numeric size - treat as regular pointer type
+                }
+            }
+
+            if (IsStackArray) {
+                // Stack array declaration: var buffer char[64]
+                // Allocate [ArraySize x ElementType] and store pointer to it
+                llvm::Type *ElemTy = mapType(ItemType.Generics[0]);
+                llvm::ArrayType *ArrTy = llvm::ArrayType::get(ElemTy, ArraySizeVal);
+                auto *Alloca = Builder->CreateAlloca(ArrTy, nullptr, *Binding.BindingItem.Name);
+                // Store the pointer to the array (which decays to pointer to first element)
+                LocalVariables[*Binding.BindingItem.Name] = Alloca;
+            } else {
+                // Regular type - map and allocate
+                llvm::Type *Ty = mapType(ItemType);
+                auto *Alloca = Builder->CreateAlloca(Ty, nullptr, *Binding.BindingItem.Name);
+                LocalVariables[*Binding.BindingItem.Name] = Alloca;
+            }
         } else {
             return llvm::make_error<llvm::StringError>(
                 "Binding has no initialization expression and no type annotation",
