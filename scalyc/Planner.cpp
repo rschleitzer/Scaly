@@ -675,7 +675,8 @@ bool Planner::typesEqual(const PlannedType &A, const PlannedType &B) {
 // Check if ArgType can be implicitly converted to ParamType
 static bool isIntegerType(llvm::StringRef Normalized) {
     return Normalized == "i64" || Normalized == "i32" || Normalized == "i16" || Normalized == "i8" ||
-           Normalized == "u64" || Normalized == "u32" || Normalized == "u16" || Normalized == "u8";
+           Normalized == "u64" || Normalized == "u32" || Normalized == "u16" || Normalized == "u8" ||
+           Normalized == "size_t" || Normalized == "int" || Normalized == "uint";
 }
 
 bool Planner::typesCompatible(const PlannedType &ParamType, const PlannedType &ArgType) {
@@ -960,6 +961,18 @@ std::vector<const Function*> Planner::lookupFunction(llvm::StringRef Name) {
             if (auto* Func = std::get_if<Function>(&Member)) {
                 if (Func->Name == Name) {
                     Result.push_back(Func);
+                }
+            }
+        }
+
+        // Also search sibling modules within the namespace
+        // This allows Page to call aligned_alloc from runtime module
+        for (const auto& SiblingMod : CurrentNamespace->Modules) {
+            for (const auto& Member : SiblingMod.Members) {
+                if (auto* Func = std::get_if<Function>(&Member)) {
+                    if (Func->Name == Name) {
+                        Result.push_back(Func);
+                    }
                 }
             }
         }
@@ -1878,7 +1891,7 @@ llvm::Expected<PlannedType> Planner::resolveFunctionCall(
                 break;
             }
 
-            if (!typesEqual(*ParamTypeResult, ArgTypes[I])) {
+            if (!typesCompatible(*ParamTypeResult, ArgTypes[I])) {
                 AllMatch = false;
                 break;
             }
@@ -1989,7 +2002,7 @@ llvm::Expected<PlannedType> Planner::resolveFunctionCall(
                     break;
                 }
 
-                if (!typesEqual(*ParamTypeResult, ArgTypes[I])) {
+                if (!typesCompatible(*ParamTypeResult, ArgTypes[I])) {
                     AllMatch = false;
                     break;
                 }
@@ -3304,6 +3317,19 @@ const Concept* Planner::lookupConcept(llvm::StringRef Name) {
         return CacheIt->second;
     }
 
+    // 1b. Search modules we've previously accessed from on-demand packages
+    // This allows finding sibling concepts like PAGE_SIZE when Page is used
+    for (const Module* AccessedMod : AccessedPackageModules) {
+        for (const auto& Member : AccessedMod->Members) {
+            if (auto* Conc = std::get_if<Concept>(&Member)) {
+                if (Conc->Name == Name) {
+                    Concepts[Name.str()] = Conc;
+                    return Conc;
+                }
+            }
+        }
+    }
+
     // 2. Search current module stack (innermost to outermost)
     for (auto It = ModuleStack.rbegin(); It != ModuleStack.rend(); ++It) {
         const Module* Mod = *It;
@@ -3549,6 +3575,13 @@ const Concept* Planner::lookupConcept(llvm::StringRef Name) {
                         }
 
                         if (Found && CurrentMod) {
+                            // Cache this module for sibling concept lookup
+                            if (std::find(AccessedPackageModules.begin(),
+                                          AccessedPackageModules.end(),
+                                          CurrentMod) == AccessedPackageModules.end()) {
+                                AccessedPackageModules.push_back(CurrentMod);
+                            }
+
                             // First look directly in the module's members
                             for (const auto& Member : CurrentMod->Members) {
                                 if (auto* Conc = std::get_if<Concept>(&Member)) {
@@ -3567,6 +3600,12 @@ const Concept* Planner::lookupConcept(llvm::StringRef Name) {
                                         // Look in namespace's modules for the target concept
                                         for (const auto& SubMod : NS->Modules) {
                                             if (SubMod.Name == Name) {
+                                                // Cache the sub-module for sibling lookup
+                                                if (std::find(AccessedPackageModules.begin(),
+                                                              AccessedPackageModules.end(),
+                                                              &SubMod) == AccessedPackageModules.end()) {
+                                                    AccessedPackageModules.push_back(&SubMod);
+                                                }
                                                 for (const auto& SubMember : SubMod.Members) {
                                                     if (auto* SubConc = std::get_if<Concept>(&SubMember)) {
                                                         if (SubConc->Name == Name) {
@@ -3584,6 +3623,12 @@ const Concept* Planner::lookupConcept(llvm::StringRef Name) {
                             // Also check sub-modules
                             for (const auto& SubMod : CurrentMod->Modules) {
                                 if (SubMod.Name == Name) {
+                                    // Cache the sub-module for sibling lookup
+                                    if (std::find(AccessedPackageModules.begin(),
+                                                  AccessedPackageModules.end(),
+                                                  &SubMod) == AccessedPackageModules.end()) {
+                                        AccessedPackageModules.push_back(&SubMod);
+                                    }
                                     for (const auto& Member : SubMod.Members) {
                                         if (auto* Conc = std::get_if<Concept>(&Member)) {
                                             if (Conc->Name == Name) {

@@ -46,6 +46,11 @@ private:
     // On-demand loaded packages (owns the Program objects)
     std::vector<std::unique_ptr<Program>> OnDemandPackages;
 
+    // Modules accessed via on-demand loading (for sibling concept lookup)
+    // When we find Page in scaly.memory.Page, we cache the Page module
+    // so later lookups for PAGE_SIZE can find it as a sibling
+    std::vector<const Module*> AccessedPackageModules;
+
     // Package search paths for on-demand loading
     std::vector<std::string> PackageSearchPaths;
 
