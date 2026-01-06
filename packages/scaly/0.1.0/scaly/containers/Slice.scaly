@@ -73,16 +73,14 @@ define Slice[T](data: pointer[T], length: size_t) {
     function starts_with(this, prefix: Slice[T]) returns bool {
         if prefix.length > length
             return false
-        let sub subslice(0, prefix.length)
-        sub.equals(prefix)
+        subslice(0, prefix.length).equals(prefix)
     }
 
     ; Check if ends with suffix
     function ends_with(this, suffix: Slice[T]) returns bool {
         if suffix.length > length
             return false
-        let sub subslice(length - suffix.length, length)
-        sub.equals(suffix)
+        subslice(length - suffix.length, length).equals(suffix)
     }
 
     ; Iterator support
