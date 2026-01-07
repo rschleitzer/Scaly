@@ -169,7 +169,9 @@ static bool testIoModule() {
 static bool testLexerModule() {
     const char* Name = "Module: scalyc lexer test()";
 
-    auto ResultOrErr = runPackageTestFunction(ScalycPackagePath, "scalyc.test");
+    // Note: The function is named "test" (from lexer.scaly), not "scalyc.test"
+    // because it's a standalone function, not inside a define block
+    auto ResultOrErr = runPackageTestFunction(ScalycPackagePath, "test");
 
     if (!ResultOrErr) {
         std::string ErrMsg;
@@ -214,10 +216,8 @@ bool runModuleTests() {
     testIoModule();
 
     // Scalyc lexer module tests
-    // TODO: Enable when choose/when pattern matching is fixed in code generation
-    // The lexer test function body generates empty tuples instead of proper code
-    // llvm::outs() << "  Lexer module tests:\n";
-    // testLexerModule();
+    llvm::outs() << "  Lexer module tests:\n";
+    testLexerModule();
 
     llvm::outs() << "\nModule tests: " << TestsPassed << " passed, "
                  << TestsFailed << " failed\n";
