@@ -11,13 +11,13 @@ define Path
         let directory_name_as_c_string dirname(path_as_c_string as pointer[char])
         if strcmp(directory_name_as_c_string, ".") = 0
         {
-            (*local_page).deallocate_extensions()
+            local_page.deallocate_extensions()
             free(local_page as pointer[void])
             return String(rp, "")
         }
 
         let ret String(rp, directory_name_as_c_string)
-        (*local_page).deallocate_extensions()
+        local_page.deallocate_extensions()
         free(local_page as pointer[void])
         return ret
     }
@@ -28,7 +28,7 @@ define Path
         let path_as_c_string path.to_c_string(local_page)
         let file_name_as_c_string basename(path_as_c_string as pointer[char])
         let ret String(rp, file_name_as_c_string)
-        (*local_page).deallocate_extensions()
+        local_page.deallocate_extensions()
         free(local_page as pointer[void])
         return ret
     }
@@ -39,12 +39,12 @@ define Path
             return String(rp, path2)
 
         var path StringBuilder$()
-        (*path).append(path1)
+        path.append(path1)
         if path2.get_length() = 0
-            return (*path).to_string(rp)
+            return path.to_string(rp)
 
-        (*path).append('/')
-        (*path).append(path2)
-        return (*path).to_string(rp)
+        path.append('/')
+        path.append(path2)
+        return path.to_string(rp)
     }
 }

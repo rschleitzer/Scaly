@@ -23,7 +23,7 @@ define HashMapBuilder[K, V]
     {
         let hash_size hashing.get_prime(size)
         let own_page Page.get(this as pointer[void])
-        let slots_page (*own_page).allocate_exclusive_page()
+        let slots_page own_page.allocate_exclusive_page()
         let new_slots Vector[BuilderList[Slot[KeyValuePair[K, V]]]]^slots_page(slots_page, hash_size)
 
         if slots <> null
@@ -36,11 +36,11 @@ define HashMapBuilder[K, V]
                 {
                     let hash_code (*item).hash_code
                     let slot_number hash_code % (*new_slots).length
-                    let slot_list (*new_slots).get(slot_number)
-                    (*slot_list).add(slots_page, *item)
+                    let slot_list new_slots.get(slot_number)
+                    slot_list.add(slots_page, *item)
                 }
             }
-            (*own_page).deallocate_exclusive_page(Page.get(slots as pointer[void]))
+            own_page.deallocate_exclusive_page(Page.get(slots as pointer[void]))
         }
         set slots: new_slots
     }
@@ -57,8 +57,8 @@ define HashMapBuilder[K, V]
     {
         let hash_code key.hash()
         let slot_number hash_code % (*slots).length
-        let slot_list (*slots).get(slot_number)
-        var iterator (*slot_list).get_iterator()
+        let slot_list slots.get(slot_number)
+        var iterator slot_list.get_iterator()
         while let item iterator.next()
         {
             if key.equals((*item).value.key)
@@ -66,7 +66,7 @@ define HashMapBuilder[K, V]
         }
 
         let own_page Page.get(slots as pointer[void])
-        (*slot_list).add(own_page, Slot[KeyValuePair[K, V]](KeyValuePair[K, V](key, value), hash_code))
+        slot_list.add(own_page, Slot[KeyValuePair[K, V]](KeyValuePair[K, V](key, value), hash_code))
 
         set length: length + 1
         return true
@@ -79,8 +79,8 @@ define HashMapBuilder[K, V]
 
         let hash key.hash()
         let slot_number hash % (*slots).length
-        let slot (*slots).get(slot_number)
-        var iterator (*slot).get_iterator()
+        let slot slots.get(slot_number)
+        var iterator slot.get_iterator()
         while let item iterator.next()
         {
             if key.equals((*item).value.key)
@@ -95,8 +95,8 @@ define HashMapBuilder[K, V]
         if slots = null
             return null
 
-        let slot (*slots).get(key.hash() % (*slots).length)
-        var iterator (*slot).get_iterator()
+        let slot slots.get(key.hash() % (*slots).length)
+        var iterator slot.get_iterator()
         while let item iterator.next()
         {
             if key.equals((*item).value.key)

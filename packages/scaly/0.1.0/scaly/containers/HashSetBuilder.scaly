@@ -21,7 +21,7 @@ define HashSetBuilder[T]
     {
         let hash_size hashing.get_prime(size)
         let own_page Page.get(this as pointer[void])
-        let slots_page (*own_page).allocate_exclusive_page()
+        let slots_page own_page.allocate_exclusive_page()
         let new_slots Vector[BuilderList[Slot[T]]]^slots_page(slots_page, hash_size)
 
         if slots <> null
@@ -34,11 +34,11 @@ define HashSetBuilder[T]
                 {
                     let hash_code (*item).hash_code
                     let slot_number hash_code % (*new_slots).length
-                    let slot_list (*new_slots).get(slot_number)
-                    (*slot_list).add(slots_page, *item)
+                    let slot_list new_slots.get(slot_number)
+                    slot_list.add(slots_page, *item)
                 }
             }
-            (*own_page).deallocate_exclusive_page(Page.get(slots as pointer[void]))
+            own_page.deallocate_exclusive_page(Page.get(slots as pointer[void]))
         }
         set slots: new_slots
     }
@@ -55,8 +55,8 @@ define HashSetBuilder[T]
     {
         let hash_code value.hash()
         let slot_number hash_code % (*slots).length
-        let slot_list (*slots).get(slot_number)
-        var iterator (*slot_list).get_iterator()
+        let slot_list slots.get(slot_number)
+        var iterator slot_list.get_iterator()
         while let item iterator.next()
         {
             if value.equals((*item).value)
@@ -64,7 +64,7 @@ define HashSetBuilder[T]
         }
 
         let own_page Page.get(slots as pointer[void])
-        (*slot_list).add(own_page, Slot[T](value, hash_code))
+        slot_list.add(own_page, Slot[T](value, hash_code))
 
         set length: length + 1
         return true
@@ -77,8 +77,8 @@ define HashSetBuilder[T]
 
         let hash value.hash()
         let slot_number hash % (*slots).length
-        let slot (*slots).get(slot_number)
-        var iterator (*slot).get_iterator()
+        let slot slots.get(slot_number)
+        var iterator slot.get_iterator()
         while let item iterator.next()
             if value.equals((*item).value)
                 return true

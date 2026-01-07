@@ -11,7 +11,7 @@ define Page
     function allocate_page returns pointer[Page]
     {
         var page aligned_alloc(PAGE_SIZE, PAGE_SIZE) as pointer[Page]
-        (*page).reset()
+        page.reset()
         return page
     }
 
@@ -39,7 +39,7 @@ define Page
 
             if current_page <> null
             {
-                let object (*current_page).allocate(size, align)
+                let object current_page.allocate(size, align)
                 let page_of_allocated_object get(object)
                 if page_of_allocated_object <> current_page
                     set current_page: page_of_allocated_object
@@ -49,7 +49,7 @@ define Page
             var page allocate_page()
             set current_page: page
             set next_page: page
-            return (*page).allocate(size, align)
+            return page.allocate(size, align)
         }
 
         ; Allocate from ourselves
@@ -111,7 +111,7 @@ define Page
         while exclusive_page_ptr <> null
         {
             let exclusive_page (*exclusive_page_ptr)
-            (*exclusive_page).deallocate_extensions()
+            exclusive_page.deallocate_extensions()
             free(exclusive_page as pointer[void])
             set exclusive_page_ptr: iter.next()
         }
@@ -127,7 +127,7 @@ define Page
 
     function deallocate_exclusive_page(this: Page, page: pointer[Page])
     {
-        (*page).deallocate_extensions()
+        page.deallocate_extensions()
         free(page as pointer[void])
         if exclusive_pages.remove(page) = false
             exit (2)
@@ -148,7 +148,7 @@ define Page
         {
             let node exclusive_pages.head
             let page (*node).page
-            (*page).deallocate_extensions()
+            page.deallocate_extensions()
             free(page as pointer[void])
             set exclusive_pages.head: (*node).next
         }

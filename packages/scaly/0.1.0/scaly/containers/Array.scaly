@@ -56,12 +56,12 @@ define Array[T]
         if new_length > (*vector).length
         {
             var own_page Page.get(this as pointer[void])
-            let data (T*)(*own_page).allocate(length * size, alignof T)
+            let data (T*)own_page.allocate(length * size, alignof T)
             let bytes_to_copy (*vector).length * size
             if (*vector).length > 0
                 memcpy(data, (*vector).data, bytes_to_copy)
             let old_exclusive_page Page.get((*vector).data as pointer[void])
-            (*own_page).deallocate_exclusive_page(old_exclusive_page)
+            own_page.deallocate_exclusive_page(old_exclusive_page)
             set (*vector).data: data
             set (*vector).length: new_length
         }
@@ -93,8 +93,8 @@ define Array[T]
         var length: size_t 0
         if vector = null
         {
-            let exclusive_page (*own_page).allocate_exclusive_page()
-            let capacity (*exclusive_page).get_capacity(alignof T) - sizeof Vector[T]
+            let exclusive_page own_page.allocate_exclusive_page()
+            let capacity exclusive_page.get_capacity(alignof T) - sizeof Vector[T]
             set length: capacity / size
             set vector: Vector[T]^exclusive_page(exclusive_page, length)
         }
@@ -105,7 +105,7 @@ define Array[T]
             let bytes_to_copy (*vector).length * size
             memcpy((*new_vector).data, (*vector).data, bytes_to_copy)
             let old_exclusive_page Page.get((*vector).data as pointer[void])
-            (*own_page).deallocate_exclusive_page(old_exclusive_page)
+            own_page.deallocate_exclusive_page(old_exclusive_page)
             set vector: new_vector
         }
     }

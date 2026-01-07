@@ -14,7 +14,7 @@ define File
         var file fopen(path.to_c_string(local_page), "rb")
         if file = null
         {
-            (*local_page).deallocate_extensions()
+            local_page.deallocate_extensions()
             free(local_page as pointer[void])
             return String()
         }
@@ -27,7 +27,7 @@ define File
         fread(buffer, 1, size as size_t, file)
         fclose(file)
 
-        (*local_page).deallocate_extensions()
+        local_page.deallocate_extensions()
         free(local_page as pointer[void])
         return ret
     }
@@ -38,7 +38,7 @@ define File
         var file fopen(path.to_c_string(local_page), "wb")
         if file = null
         {
-            (*local_page).deallocate_extensions()
+            local_page.deallocate_extensions()
             free(local_page as pointer[void])
             return false
         }
@@ -46,7 +46,7 @@ define File
         fwrite(contents.get_buffer(), 1, contents.get_length(), file)
         fclose(file)
 
-        (*local_page).deallocate_extensions()
+        local_page.deallocate_extensions()
         free(local_page as pointer[void])
         return true
     }
