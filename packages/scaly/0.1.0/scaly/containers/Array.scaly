@@ -22,7 +22,7 @@ define Array[T]
     {
         if vector = null
             return null
-        return (*vector).data
+        return vector.data
     }
 
     function get_length(this: Array[T]) returns size_t
@@ -32,15 +32,15 @@ define Array[T]
     {
         if vector =  null
             return 0
-        return (*vector).length
+        return vector.length
     }
 
     function add(this: Array[T], item: T)
     {
-        if (vector = null) || (length = (*vector).length)
+        if (vector = null) || (length = vector.length)
             this.reallocate()
 
-        let location (*vector).data + length
+        let location vector.data + length
         set *location: item
 
         set length: length + 1
@@ -50,24 +50,24 @@ define Array[T]
     {
         var new_length length + items.length
         let size sizeof T
-        if (vector = null) || (new_length > (*vector).length)
+        if (vector = null) || (new_length > vector.length)
             this.reallocate()
 
-        if new_length > (*vector).length
+        if new_length > vector.length
         {
             var own_page Page.get(this as pointer[void])
             let data (T*)own_page.allocate(length * size, alignof T)
-            let bytes_to_copy (*vector).length * size
-            if (*vector).length > 0
-                memcpy(data, (*vector).data, bytes_to_copy)
-            let old_exclusive_page Page.get((*vector).data as pointer[void])
+            let bytes_to_copy vector.length * size
+            if vector.length > 0
+                memcpy(data, vector.data, bytes_to_copy)
+            let old_exclusive_page Page.get(vector.data as pointer[void])
             own_page.deallocate_exclusive_page(old_exclusive_page)
             set (*vector).data: data
             set (*vector).length: new_length
         }
 
         if items.length > 0
-            memcpy((*vector).data + length * size, items.data, items.length * size)
+            memcpy(vector.data + length * size, items.data, items.length * size)
         set length: length + items.length
     }
 
@@ -76,14 +76,14 @@ define Array[T]
         if i >= length
             return null
 
-        return (*vector).data + i
+        return vector.data + i
     }
 
     operator [](this: Array[T], i: size_t) returns pointer[T]
     {
         if length < i + 1
             return null
-        return (*vector).data + i
+        return vector.data + i
     }
 
     function reallocate(this: Array[T])
@@ -100,11 +100,11 @@ define Array[T]
         }
         else
         {
-            set length: (*vector).length * 2
+            set length: vector.length * 2
             let new_vector Vector[T]^own_page(own_page, length)
-            let bytes_to_copy (*vector).length * size
-            memcpy((*new_vector).data, (*vector).data, bytes_to_copy)
-            let old_exclusive_page Page.get((*vector).data as pointer[void])
+            let bytes_to_copy vector.length * size
+            memcpy(new_vector.data, vector.data, bytes_to_copy)
+            let old_exclusive_page Page.get(vector.data as pointer[void])
             own_page.deallocate_exclusive_page(old_exclusive_page)
             set vector: new_vector
         }

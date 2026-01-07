@@ -29,11 +29,11 @@ define HashSetBuilder[T]
             var vector_iterator VectorIterator[BuilderList[Slot[T]]](slots)
             while let element vector_iterator.next()
             {
-                var list_iterator BuilderListIterator[Slot[T]]((*element).head)
+                var list_iterator BuilderListIterator[Slot[T]](element.head)
                 while let item list_iterator.next()
                 {
-                    let hash_code (*item).hash_code
-                    let slot_number hash_code % (*new_slots).length
+                    let hash_code item.hash_code
+                    let slot_number hash_code % new_slots.length
                     let slot_list new_slots.get(slot_number)
                     slot_list.add(slots_page, *item)
                 }
@@ -46,7 +46,7 @@ define HashSetBuilder[T]
     function add(this: HashSetBuilder[T], value: T) returns bool
     {
         let hash_size hashing.get_prime(length + 1)
-        if slots = null || hash_size > (*slots).length
+        if slots = null || hash_size > slots.length
             reallocate(length + 1)
         return add_internal(value)
     }
@@ -54,12 +54,12 @@ define HashSetBuilder[T]
     function add_internal(this: HashSetBuilder[T], value: T) returns bool
     {
         let hash_code value.hash()
-        let slot_number hash_code % (*slots).length
+        let slot_number hash_code % slots.length
         let slot_list slots.get(slot_number)
         var iterator slot_list.get_iterator()
         while let item iterator.next()
         {
-            if value.equals((*item).value)
+            if value.equals(item.value)
                 return false
         }
 
@@ -76,11 +76,11 @@ define HashSetBuilder[T]
             return false
 
         let hash value.hash()
-        let slot_number hash % (*slots).length
+        let slot_number hash % slots.length
         let slot slots.get(slot_number)
         var iterator slot.get_iterator()
         while let item iterator.next()
-            if value.equals((*item).value)
+            if value.equals(item.value)
                 return true
 
         return false

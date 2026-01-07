@@ -17,7 +17,7 @@ define VectorIterator[T]
         if vector = null
             return null
 
-        if position = (*vector).length
+        if position = vector.length
             return null
 
         set position: position + 1
@@ -86,7 +86,7 @@ define Vector[T]
         {
             set data: (T*)rp.allocate(length * sizeof T, alignof T)
             let arr_vector array.vector
-            memcpy(data, (*arr_vector).data, length * sizeof T)
+            memcpy(data, arr_vector.data, length * sizeof T)
         }
         else
             set data: null
