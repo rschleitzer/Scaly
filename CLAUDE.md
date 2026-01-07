@@ -200,19 +200,21 @@ Scaly distinguishes between **functions** and **procedures** with distinct seman
 
 ```scaly
 ; Pure function - inputs immutable, result returned
-function formatName(first: String, last: String) returns String {
-  StringBuilder.build(b => {
-    b.append(first)
-    b.append(" ")
-    b.append(last)
-  })
+function formatName(first: String, last: String) returns String
+{
+    StringBuilder.build(b =>
+    {
+        b.append(first)
+        b.append(" ")
+        b.append(last)
+    })
 }
 
 ; Procedure - can mutate the builder
-procedure appendItems(builder: StringBuilder, items: List[String]) {
-  for item in items {
-    builder.append(item)
-  }
+procedure appendItems(builder: StringBuilder, items: List[String])
+{
+    for item in items
+        builder.append(item)
 }
 ```
 
@@ -240,23 +242,27 @@ Scaly uses Region-Based Memory Management (RBMM) with explicit lifetime annotati
 
 ```scaly
 ; Stack allocation (by value, small/short-lived):
-function get_iterator(this: List[T]) returns ListIterator[T] {
+function get_iterator(this: List[T]) returns ListIterator[T]
+{
     ListIterator[T](head)    ; No suffix = stack, returned by value
 }
 
 ; Local page allocation (automatically cleaned up at block exit):
-function process() {
+function process()
+{
     let builder StringBuilder$()   ; $ = allocate on local page
     builder.append("hello")
 }   ; Compiler cleans up local page here
 
 ; Caller's page allocation (returned to caller):
-function create_node(data: T) returns pointer[Node[T]] {
+function create_node(data: T) returns pointer[Node[T]]
+{
     Node[T]#(data, null)     ; # = allocate on caller's rp
 }
 
 ; Explicit page allocation (for container internals):
-procedure add(this: List[T], element: T) {
+procedure add(this: List[T], element: T)
+{
     let lp get_page()                    ; Get page where 'this' lives
     let new_node Node[T]^lp(element, head)  ; ^lp = allocate on lp
     set head: new_node
@@ -269,7 +275,8 @@ procedure add(this: List[T], element: T) {
    ```scaly
    function foo() returns int$ { ... }   ; ERROR: $ not allowed on return type
    function foo() returns int { ... }    ; OK: by-value return
-   function foo() returns pointer[int] { ; OK: return pointer allocated with #
+   function foo() returns pointer[int]   ; OK: return pointer allocated with #
+   {
        42#
    }
    ```
@@ -333,7 +340,8 @@ The package version comes entirely from the filesystem path. The entry file cont
 
 ```scaly
 ; packages/scaly/0.1.0/scaly.scaly
-define scaly {
+define scaly
+{
     module memory
 }
 ```
@@ -383,7 +391,8 @@ package scaly 0.1.0
 
 use scaly.memory.Page
 
-function main() {
+function main()
+{
     let page Page.allocate_page()
     ; ...
 }
@@ -459,7 +468,8 @@ No boilerplate needed for common operations:
 
 ```scaly
 ; Just works - no package declaration needed
-function example() returns int {
+function example() returns int
+{
     3 + 4 * 5   ; operators from stdlib
 }
 ```
@@ -726,8 +736,62 @@ Scaly syntax includes:
 ### Grammar Details
 - Operators are not hardcoded; no built-in operator precedence in the grammar
 - Functions apply as prefix, operators as postfix (binary)
-- **IMPORTANT**: In if statements, `else` must be on the same line as the closing brace
 - See scaly.sgm for full language specification (grammar, tests, and documentation)
+
+### Code Style: Allman Braces
+
+Scaly uses **Allman style** (also called BSD style) for brace placement. All opening braces go on their own line:
+
+```scaly
+function allocate(this: Page, size: size_t) returns pointer[void]
+{
+    if capacity < size
+    {
+        return allocate_oversized(size)
+    }
+    else
+        return null
+}
+
+define Vector[T]
+(
+    length: size_t
+    data: pointer[T]
+)
+{
+    init ()
+    {
+        set length: 0
+        set data: null
+    }
+}
+```
+
+**Why Allman style:**
+
+1. **Future doc attributes**: Allows documentation attributes between signature and body:
+   ```scaly
+   function allocate(this: Page, size: size_t) returns pointer[void]
+       @summary "Allocates memory from this page"
+       @param size "Number of bytes to allocate"
+   {
+       ...
+   }
+   ```
+
+2. **Visual clarity**: Block boundaries are immediately visible - the opening and closing braces align vertically
+
+3. **Historical precedent**: Named after Eric Allman, a UC Berkeley hacker who wrote many BSD Unix utilities (including sendmail) in the late 1970s. The style resembles Pascal/Algol block structure.
+
+4. **Modern tooling**: Works well with IDE code folding and diff tools
+
+**Single-line bodies**: When a control structure has a single statement, braces can be omitted:
+```scaly
+if capacity < size
+    return allocate_oversized(size)
+else
+    return null
+```
 
 ### Standard Library and Operator Precedence
 
@@ -735,10 +799,12 @@ The standard library (`stdlib.scaly`) defines arithmetic operators with preceden
 
 ```scaly
 ; Wrapper types encode precedence level
-define Sum(left: int, right: int) {
+define Sum(left: int, right: int)
+{
     function value(this) returns int intrinsic
 }
-define Product(left: int, right: int) {
+define Product(left: int, right: int)
+{
     function value(this) returns int intrinsic
 }
 
@@ -747,12 +813,14 @@ operator +(left: int, right: int) returns Sum intrinsic
 operator *(left: int, right: int) returns Product intrinsic
 
 ; Higher precedence operators "reach into" lower precedence wrappers
-operator *(left: Sum, right: int) returns Sum {
+operator *(left: Sum, right: int) returns Sum
+{
     Sum(left.left, left.right * right)  ; Multiply only the right component
 }
 
 ; Lower precedence operators evaluate higher precedence wrappers first
-operator +(left: Product, right: int) returns Sum {
+operator +(left: Product, right: int) returns Sum
+{
     Sum(left.value, right)  ; .value collapses Product to int
 }
 ```
