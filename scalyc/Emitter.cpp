@@ -5242,4 +5242,144 @@ llvm::Expected<int64_t> Emitter::jitExecuteIntFunction(const Plan &P, llvm::Stri
     return Result;
 }
 
+void Emitter::dumpIR(const Plan &P) {
+    // Store current plan for type lookups
+    CurrentPlan = &P;
+
+    // Create fresh module for IR dump
+    Module = std::make_unique<llvm::Module>("ir_dump_module", *Context);
+    Module->setTargetTriple(llvm::sys::getDefaultTargetTriple());
+
+    // Clear caches
+    TypeCache.clear();
+    StructCache.clear();
+    FunctionCache.clear();
+
+    // Reset runtime function pointers
+    AlignedAlloc = nullptr;
+    Free = nullptr;
+    ExitFunc = nullptr;
+    PageAllocatePage = nullptr;
+    PageAllocate = nullptr;
+    PageDeallocateExtensions = nullptr;
+    PageType = nullptr;
+
+    // Check if Page is in the Plan
+    bool PageInPlan = P.Structures.find("Page") != P.Structures.end();
+    if (!PageInPlan) {
+        initRBMM();
+    }
+
+    // Emit type declarations
+    for (const auto &[name, Struct] : P.Structures) {
+        emitStructType(Struct);
+    }
+    for (const auto &[name, Union] : P.Unions) {
+        emitUnionType(Union);
+    }
+
+    // Emit global constants
+    for (const auto &[name, Global] : P.Globals) {
+        emitGlobal(Global);
+    }
+
+    // Emit function declarations
+    for (const auto &[name, Func] : P.Functions) {
+        emitFunctionDecl(Func);
+    }
+    // Also emit method, operator, initializer, and deinitializer declarations from structures
+    for (const auto &[name, Struct] : P.Structures) {
+        for (const auto &Method : Struct.Methods) {
+            emitFunctionDecl(Method);
+        }
+        for (const auto &Op : Struct.Operators) {
+            PlannedFunction OpFunc;
+            OpFunc.Loc = Op.Loc;
+            OpFunc.Private = Op.Private;
+            OpFunc.Pure = true;
+            OpFunc.Name = Op.Name;
+            OpFunc.MangledName = Op.MangledName;
+            OpFunc.Input = Op.Input;
+            OpFunc.Returns = Op.Returns;
+            OpFunc.Throws = Op.Throws;
+            OpFunc.Impl = Op.Impl;
+            OpFunc.Origin = Op.Origin;
+            OpFunc.Scheme = Op.Scheme;
+            emitFunctionDecl(OpFunc);
+        }
+        for (const auto &Init : Struct.Initializers) {
+            emitInitializerDecl(Struct, Init);
+        }
+        if (Struct.Deinitializer) {
+            emitDeInitializerDecl(Struct, *Struct.Deinitializer);
+        }
+    }
+
+    // Set up RBMM function pointers if Page is in the Plan
+    if (PageInPlan) {
+        declareRuntimeFunctions();
+        PageAllocatePage = FunctionCache["_ZN4Page13allocate_pageEv"];
+        PageAllocate = FunctionCache["_ZN4Page8allocateEmm"];
+        PageDeallocateExtensions = FunctionCache["_ZN4Page21deallocate_extensionsEv"];
+        if (auto It = StructCache.find("_Z4Page"); It != StructCache.end()) {
+            PageType = It->second;
+        }
+    }
+
+    // Emit function bodies
+    for (const auto &[name, Func] : P.Functions) {
+        if (auto *LLVMFunc = FunctionCache[Func.MangledName]) {
+            if (auto Err = emitFunctionBody(Func, LLVMFunc)) {
+                llvm::consumeError(std::move(Err));
+            }
+        }
+    }
+    for (const auto &[name, Struct] : P.Structures) {
+        for (const auto &Method : Struct.Methods) {
+            if (auto *LLVMFunc = FunctionCache[Method.MangledName]) {
+                if (auto Err = emitFunctionBody(Method, LLVMFunc)) {
+                    llvm::consumeError(std::move(Err));
+                }
+            }
+        }
+        for (const auto &Op : Struct.Operators) {
+            if (auto *LLVMFunc = FunctionCache[Op.MangledName]) {
+                PlannedFunction OpFunc;
+                OpFunc.Loc = Op.Loc;
+                OpFunc.Private = Op.Private;
+                OpFunc.Pure = true;
+                OpFunc.Name = Op.Name;
+                OpFunc.MangledName = Op.MangledName;
+                OpFunc.Input = Op.Input;
+                OpFunc.Returns = Op.Returns;
+                OpFunc.Throws = Op.Throws;
+                OpFunc.Impl = Op.Impl;
+                OpFunc.Origin = Op.Origin;
+                OpFunc.Scheme = Op.Scheme;
+                if (auto Err = emitFunctionBody(OpFunc, LLVMFunc)) {
+                    llvm::consumeError(std::move(Err));
+                }
+            }
+        }
+        for (const auto &Init : Struct.Initializers) {
+            if (auto *LLVMFunc = FunctionCache[Init.MangledName]) {
+                if (auto Err = emitInitializerBody(Struct, Init, LLVMFunc)) {
+                    llvm::consumeError(std::move(Err));
+                }
+            }
+        }
+        if (Struct.Deinitializer) {
+            auto &DeInit = *Struct.Deinitializer;
+            if (auto *LLVMFunc = FunctionCache[DeInit.MangledName]) {
+                if (auto Err = emitDeInitializerBody(Struct, DeInit, LLVMFunc)) {
+                    llvm::consumeError(std::move(Err));
+                }
+            }
+        }
+    }
+
+    // Print the module IR
+    Module->print(llvm::errs(), nullptr);
+}
+
 } // namespace scaly

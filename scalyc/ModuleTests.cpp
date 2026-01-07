@@ -81,11 +81,7 @@ static llvm::Expected<int64_t> runPackageTestFunction(
     Config.EmitDebugInfo = false;
     Emitter E(Config);
 
-    llvm::outs() << "DEBUG: About to JIT execute " << MangledName << "\n";
-    llvm::outs().flush();
     auto Result = E.jitExecuteIntFunction(*PlanResult, MangledName);
-    llvm::outs() << "DEBUG: JIT execution complete\n";
-    llvm::outs().flush();
     return Result;
 }
 
