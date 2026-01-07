@@ -7,7 +7,8 @@ define FileError (
     file_name: String
 )
 {
-    init (code: int, name: String) {
+    init (code: int, name: String)
+    {
         set error_code: code
         set file_name: name
     }

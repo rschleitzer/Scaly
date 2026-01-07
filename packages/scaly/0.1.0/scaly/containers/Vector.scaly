@@ -6,12 +6,14 @@ define VectorIterator[T]
     position: size_t
 )
 {
-    init (v: pointer[Vector[T]]) {
+    init (v: pointer[Vector[T]])
+    {
         set vector: v
         set position: 0
     }
 
-    function next(this: VectorIterator[T]) returns pointer[T] {
+    function next(this: VectorIterator[T]) returns pointer[T]
+    {
         if vector = null
             return null
 
@@ -29,17 +31,20 @@ define Vector[T]
     data: pointer[T]
 )
 {
-    init () {
+    init ()
+    {
         set length: 0
         set data: null
     }
 
-    init (d: pointer[T], len: size_t) {
+    init (d: pointer[T], len: size_t)
+    {
         set length: len
         set data: d
     }
 
-    init (rp: pointer[Page], len: size_t) {
+    init (rp: pointer[Page], len: size_t)
+    {
         set length: len
         if len > 0
         {
@@ -50,7 +55,8 @@ define Vector[T]
             set data: null
     }
 
-    init (rp: pointer[Page], arr: pointer[T], len: size_t) {
+    init (rp: pointer[Page], arr: pointer[T], len: size_t)
+    {
         set length: len
         if len > 0
         {
@@ -61,7 +67,8 @@ define Vector[T]
             set data: null
     }
 
-    init (rp: pointer[Page], other: Vector[T]) {
+    init (rp: pointer[Page], other: Vector[T])
+    {
         set length: other.length
         if length > 0
         {
@@ -72,7 +79,8 @@ define Vector[T]
             set data: null
     }
 
-    init (rp: pointer[Page], array: Array[T]) {
+    init (rp: pointer[Page], array: Array[T])
+    {
         set length: array.length
         if length > 0
         {
@@ -84,7 +92,8 @@ define Vector[T]
             set data: null
     }
 
-    init (rp: pointer[Page], list: List[T]) {
+    init (rp: pointer[Page], list: List[T])
+    {
         set length: list.count()
         if length > 0
         {
@@ -101,31 +110,36 @@ define Vector[T]
             set data: null
     }
 
-    function get(this: Vector[T], i: size_t) returns pointer[T] {
+    function get(this: Vector[T], i: size_t) returns pointer[T]
+    {
         if i >= length
             return null
         return data + i
     }
 
-    function put(this: Vector[T], i: size_t, item: T) returns bool {
+    function put(this: Vector[T], i: size_t, item: T) returns bool
+    {
         if i >= length
             return false
         set *(data + i): item
         return true
     }
 
-    operator [](i: size_t) returns pointer[T] {
+    operator [](i: size_t) returns pointer[T]
+    {
         if i >= length
             return null
 
         return data + i
     }
 
-    function get_iterator(this: Vector[T]) returns VectorIterator[T] {
+    function get_iterator(this: Vector[T]) returns VectorIterator[T]
+    {
         return VectorIterator[T](this)
     }
 
-    function as_slice(this: Vector[T]) returns Slice[T] {
+    function as_slice(this: Vector[T]) returns Slice[T]
+    {
         Slice[T](data, length)
     }
 }

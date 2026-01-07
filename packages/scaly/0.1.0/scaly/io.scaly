@@ -1,10 +1,12 @@
 use scaly.memory.runtime
 
-define io {
+define io
+{
     module Console
     module File
 
-    function test_direct() returns int {
+    function test_direct() returns int
+    {
         ; Direct write call to test if external functions work in io module
         let result write(1, "Direct test\n" as pointer[void], 12 as size_t)
         if result <> 12
@@ -12,13 +14,15 @@ define io {
         return 0
     }
 
-    function test_console() returns int {
+    function test_console() returns int
+    {
         Console.println("Hello from Scaly!")
         Console.println("Console test passed.")
         return 0
     }
 
-    function test_file_raw() returns int {
+    function test_file_raw() returns int
+    {
         ; Test raw file I/O using C functions directly
         ; This tests the sibling function call pattern without String method issues
 
@@ -52,7 +56,8 @@ define io {
         return 0
     }
 
-    function test() returns int {
+    function test() returns int
+    {
         var result test_direct()
         if result <> 0
             return result

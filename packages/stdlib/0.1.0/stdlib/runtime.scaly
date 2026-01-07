@@ -4,7 +4,8 @@
 ; Platform constants
 define SIZE_MAX: size_t 0xFFFFFFFFFFFFFFFF
 
-define runtime {
+define runtime
+{
 
     ; Memory allocation (C11 aligned_alloc)
     function aligned_alloc(alignment: size_t, size: size_t) returns pointer[void] extern

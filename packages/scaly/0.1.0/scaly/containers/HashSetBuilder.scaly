@@ -4,7 +4,8 @@ define HashSetBuilder[T]
     slots: pointer[Vector[BuilderList[Slot[T]]]] (null)
 )
 {
-    init (vec: Vector[T]) {
+    init (vec: Vector[T])
+    {
         set length: 0
         set slots: null
         if vec.length > 0
@@ -16,7 +17,8 @@ define HashSetBuilder[T]
         }
     }
 
-    function reallocate(this: HashSetBuilder[T], size: size_t) {
+    function reallocate(this: HashSetBuilder[T], size: size_t)
+    {
         let hash_size hashing.get_prime(size)
         let own_page Page.get(this as pointer[void])
         let slots_page (*own_page).allocate_exclusive_page()
@@ -41,14 +43,16 @@ define HashSetBuilder[T]
         set slots: new_slots
     }
 
-    function add(this: HashSetBuilder[T], value: T) returns bool {
+    function add(this: HashSetBuilder[T], value: T) returns bool
+    {
         let hash_size hashing.get_prime(length + 1)
         if slots = null || hash_size > (*slots).length
             reallocate(length + 1)
         return add_internal(value)
     }
 
-    function add_internal(this: HashSetBuilder[T], value: T) returns bool {
+    function add_internal(this: HashSetBuilder[T], value: T) returns bool
+    {
         let hash_code value.hash()
         let slot_number hash_code % (*slots).length
         let slot_list (*slots).get(slot_number)
@@ -66,7 +70,8 @@ define HashSetBuilder[T]
         return true
     }
 
-    function contains(this: HashSetBuilder[T], value: T) returns bool {
+    function contains(this: HashSetBuilder[T], value: T) returns bool
+    {
         if slots = null
             return false
 

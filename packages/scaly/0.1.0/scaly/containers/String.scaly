@@ -2,8 +2,10 @@ use scaly.memory.Page
 
 define PACKED_SIZE: int 9
 
-define String (data: pointer[char](null)) {
-    init (rp: pointer[Page], length: size_t) {
+define String (data: pointer[char](null))
+{
+    init (rp: pointer[Page], length: size_t)
+    {
         var length_array: char[PACKED_SIZE]
         var rest length
 
@@ -21,7 +23,8 @@ define String (data: pointer[char](null)) {
         memcpy(data, length_array, counter + 1)
     }
 
-    init (rp: pointer[Page], other: pointer[const_char], length: size_t) {
+    init (rp: pointer[Page], other: pointer[const_char], length: size_t)
+    {
         if length = 0
         {
             set data: null
@@ -46,7 +49,8 @@ define String (data: pointer[char](null)) {
         memcpy((data + counter + 1) as pointer[void], other, length)
     }
 
-    init (rp: pointer[Page], other: Vector[char]) {
+    init (rp: pointer[Page], other: Vector[char])
+    {
         ; Delegate to String(rp, pointer, length)
         var length_array: char[PACKED_SIZE]
         var rest other.length
@@ -67,7 +71,8 @@ define String (data: pointer[char](null)) {
             memcpy((data + counter + 1) as pointer[void], other.data, other.length)
     }
 
-    init (rp: pointer[Page], c_string: pointer[const_char]) {
+    init (rp: pointer[Page], c_string: pointer[const_char])
+    {
         let length strlen(c_string)
         if length = 0
         {
@@ -93,7 +98,8 @@ define String (data: pointer[char](null)) {
         memcpy((data + counter + 1) as pointer[void], c_string, length)
     }
 
-    init (rp: pointer[Page], other: String) {
+    init (rp: pointer[Page], other: String)
+    {
         if other.data = null
         {
             set data: null
@@ -122,13 +128,15 @@ define String (data: pointer[char](null)) {
         memcpy(data, other.data, overall_length)
     }
 
-    init (rp: pointer[Page], character: char) {
+    init (rp: pointer[Page], character: char)
+    {
         set data: (*rp).allocate(2, 1) as pointer[char]
         set *data: 1
         set *(data + 1): character
     }
 
-    function get_buffer(this: String) returns pointer[char] {
+    function get_buffer(this: String) returns pointer[char]
+    {
         if data = null
             return null
 
@@ -151,7 +159,8 @@ define String (data: pointer[char](null)) {
         return data + index + 1
     }
 
-    function to_c_string(this: String, rp: pointer[Page]) returns pointer[const_char] {
+    function to_c_string(this: String, rp: pointer[Page]) returns pointer[const_char]
+    {
         var length: size_t 0
         var bit_count 0
         var index: size_t 0
@@ -179,7 +188,8 @@ define String (data: pointer[char](null)) {
         return dest as pointer[const_char]
     }
 
-    function get_length(this: String) returns size_t {
+    function get_length(this: String) returns size_t
+    {
         if data = null
             return 0
 
@@ -201,7 +211,8 @@ define String (data: pointer[char](null)) {
         return result
     }
 
-    function equals(this: String, other: String) returns bool {
+    function equals(this: String, other: String) returns bool
+    {
         var length: size_t 0
         var index: size_t 0
         if data <> null
@@ -230,7 +241,8 @@ define String (data: pointer[char](null)) {
         return memcmp(data + index + 1, other.data + index + 1, length) = 0
     }
 
-    function equals(this: String, other: pointer[const_char]) returns bool {
+    function equals(this: String, other: pointer[const_char]) returns bool
+    {
         var length: size_t 0
         var index: size_t 0
         if data <> null
@@ -259,7 +271,8 @@ define String (data: pointer[char](null)) {
         return memcmp(data + index + 1, other, length) = 0
     }
 
-    function equals (this: String, other: Vector[char]) returns bool {
+    function equals (this: String, other: Vector[char]) returns bool
+    {
         var length: size_t 0
         var bit_count 0
         var index: size_t 0
@@ -282,7 +295,8 @@ define String (data: pointer[char](null)) {
         return memcmp(data + index + 1, other.data, length) = 0
     }
 
-    function hash(this: String) returns size_t {
+    function hash(this: String) returns size_t
+    {
         var length: size_t 0
         var bit_count 0
         var index: size_t 0
@@ -302,12 +316,14 @@ define String (data: pointer[char](null)) {
         return hashing.hash(data + index + 1, length)
     }
 
-    function get_iterator(this: String) returns StringIterator {
+    function get_iterator(this: String) returns StringIterator
+    {
         return StringIterator(this)
     }
 
     ; Get a non-owning slice view of the string data
-    function as_slice(this: String) returns Slice[char] {
+    function as_slice(this: String) returns Slice[char]
+    {
         if data = null
             return Slice[char]()
 

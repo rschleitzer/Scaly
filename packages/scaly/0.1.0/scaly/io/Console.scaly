@@ -3,13 +3,16 @@ use scaly.memory.runtime
 ; Use write() syscall directly - fd 1 is stdout
 define STDOUT_FD: int 1
 
-define Console {
-    function print(message: pointer[const_char]) {
+define Console
+{
+    function print(message: pointer[const_char])
+    {
         var len strlen(message)
         write(STDOUT_FD, message as pointer[void], len)
     }
 
-    function println(message: pointer[const_char]) {
+    function println(message: pointer[const_char])
+    {
         print(message)
         write(STDOUT_FD, "\n" as pointer[void], 1 as size_t)
     }

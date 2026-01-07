@@ -1,5 +1,7 @@
-define ListIterator[T] (current: pointer[Node[T]]) {
-    function next(this: ListIterator[T]) returns pointer[T] {
+define ListIterator[T] (current: pointer[Node[T]])
+{
+    function next(this: ListIterator[T]) returns pointer[T]
+    {
         if current <> null
         {
             var old_current current

@@ -8,20 +8,23 @@ define Page
     exclusive_pages: PageList
 )
 {
-    function allocate_page returns pointer[Page] {
+    function allocate_page returns pointer[Page]
+    {
         var page aligned_alloc(PAGE_SIZE, PAGE_SIZE) as pointer[Page]
         (*page).reset()
         return page
     }
 
-    function reset(this: Page) {
+    function reset(this: Page)
+    {
         set current_page: null
         set next_page: null
         set next_object: this + 1
         set exclusive_pages: PageList()
     }
 
-    function allocate(this: Page, size: size_t, align: size_t) returns pointer[void] {
+    function allocate(this: Page, size: size_t, align: size_t) returns pointer[void]
+    {
         let location next_object as size_t
         let aligned_location (location + align - 1) & (~(align - 1))
         let location_after_page this as size_t + PAGE_SIZE
@@ -55,7 +58,8 @@ define Page
         return aligned_location as pointer[void]
     }
 
-    function allocate_oversized(this: Page, size: size_t) returns pointer[void] {
+    function allocate_oversized(this: Page, size: size_t) returns pointer[void]
+    {
         ; We allocate oversized objects directly.
         let address aligned_alloc(PAGE_SIZE,  (size + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1)))
         if address = null
@@ -72,13 +76,15 @@ define Page
         return (page + 1) as pointer[void]
     }
 
-    function get(address: pointer[void]) returns pointer[Page] {
+    function get(address: pointer[void]) returns pointer[Page]
+    {
         let mask ~((PAGE_SIZE - 1) as size_t)
         let page (address as size_t & mask) as pointer[Page]
         return page
     }
 
-    function get_capacity(this: Page, align: size_t) returns size_t {
+    function get_capacity(this: Page, align: size_t) returns size_t
+    {
         var location next_object as size_t
         let aligned_location (location + align - 1) & (~(align - 1))
         var location_after_page this as size_t + PAGE_SIZE
@@ -86,13 +92,15 @@ define Page
         return capacity
     }
 
-    function allocate_exclusive_page(this: Page) returns pointer[Page] {
+    function allocate_exclusive_page(this: Page) returns pointer[Page]
+    {
         let page allocate_page()
         exclusive_pages.add(page)
         return page
     }
 
-    procedure deallocate_extensions(this: Page) {
+    procedure deallocate_extensions(this: Page)
+    {
         ; Oversized pages cannot have extensions
         if next_object = null
             return
@@ -117,21 +125,24 @@ define Page
         }
     }
 
-    function deallocate_exclusive_page(this: Page, page: pointer[Page]) {
+    function deallocate_exclusive_page(this: Page, page: pointer[Page])
+    {
         (*page).deallocate_extensions()
         free(page as pointer[void])
         if exclusive_pages.remove(page) = false
             exit (2)
     }
 
-    function save_watermark(this: Page) returns BlockWatermark {
+    function save_watermark(this: Page) returns BlockWatermark
+    {
         if current_page <> null
             return BlockWatermark(current_page, (*current_page).next_object, next_page, exclusive_pages.head)
         let this_page Page.get(next_object)
         BlockWatermark(this_page, next_object, next_page, exclusive_pages.head)
     }
 
-    procedure restore_watermark(this: Page, mark: BlockWatermark) {
+    procedure restore_watermark(this: Page, mark: BlockWatermark)
+    {
         ; Deallocate exclusive pages added after watermark (prepended, so at front)
         while exclusive_pages.head <> mark.exclusive_head
         {
@@ -153,7 +164,8 @@ define Page
             set next_object: mark.next_object
     }
 
-    procedure deallocate_extensions_after(this: Page, stop_at: pointer[Page]) {
+    procedure deallocate_extensions_after(this: Page, stop_at: pointer[Page])
+    {
         ; Walk next_page chain and free until we hit stop_at
         while next_page <> null & next_page <> stop_at
         {

@@ -1,7 +1,8 @@
 ; Scaly Standard Library
 ; Implicitly available in all Scaly programs
 
-define stdlib {
+define stdlib
+{
     module operators
     module runtime
 }

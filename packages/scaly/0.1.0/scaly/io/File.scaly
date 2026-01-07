@@ -6,8 +6,10 @@ define SEEK_SET: int 0
 define SEEK_CUR: int 1
 define SEEK_END: int 2
 
-define File {
-    function read_to_string(rp: pointer[Page], path: String) returns String {
+define File
+{
+    function read_to_string(rp: pointer[Page], path: String) returns String
+    {
         var local_page Page.allocate_page()
         var file fopen(path.to_c_string(local_page), "rb")
         if file = null
@@ -30,7 +32,8 @@ define File {
         return ret
     }
 
-    function write_from_string(path: String, contents: String) returns bool {
+    function write_from_string(path: String, contents: String) returns bool
+    {
         var local_page Page.allocate_page()
         var file fopen(path.to_c_string(local_page), "wb")
         if file = null

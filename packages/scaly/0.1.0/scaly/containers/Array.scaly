@@ -4,19 +4,22 @@ define Array[T]
     vector: pointer[Vector[T]]
 )
 {
-    init () {
+    init ()
+    {
         set length: 0
         set vector: null
     }
 
-    init (size: size_t) {
+    init (size: size_t)
+    {
         set length: 0
         set vector: null
         let exclusive_page (*scaly.memory.Page.get(this as pointer[void])).allocate_exclusive_page()
         set vector: Vector[T]^exclusive_page(exclusive_page, size)
     }
 
-    function get_buffer(this: Array[T]) returns pointer[T] {
+    function get_buffer(this: Array[T]) returns pointer[T]
+    {
         if vector = null
             return null
         return (*vector).data
@@ -25,13 +28,15 @@ define Array[T]
     function get_length(this: Array[T]) returns size_t
         length
 
-    function get_capacity(this: Array[T]) returns size_t {
+    function get_capacity(this: Array[T]) returns size_t
+    {
         if vector =  null
             return 0
         return (*vector).length
     }
 
-    function add(this: Array[T], item: T) {
+    function add(this: Array[T], item: T)
+    {
         if (vector = null) || (length = (*vector).length)
             this.reallocate()
 
@@ -41,7 +46,8 @@ define Array[T]
         set length: length + 1
     }
 
-    function add(this: Array[T], items: Vector[T]) {
+    function add(this: Array[T], items: Vector[T])
+    {
         var new_length length + items.length
         let size sizeof T
         if (vector = null) || (new_length > (*vector).length)
@@ -65,20 +71,23 @@ define Array[T]
         set length: length + items.length
     }
 
-    function get(this: Array[T], i: size_t) returns pointer[T] {
+    function get(this: Array[T], i: size_t) returns pointer[T]
+    {
         if i >= length
             return null
 
         return (*vector).data + i
     }
 
-    operator [](this: Array[T], i: size_t) returns pointer[T] {
+    operator [](this: Array[T], i: size_t) returns pointer[T]
+    {
         if length < i + 1
             return null
         return (*vector).data + i
     }
 
-    function reallocate(this: Array[T]) {
+    function reallocate(this: Array[T])
+    {
         let own_page Page.get(this as pointer[void])
         let size sizeof T
         var length: size_t 0
