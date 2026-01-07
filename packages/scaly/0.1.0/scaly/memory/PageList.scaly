@@ -31,7 +31,5 @@ define PageList
     }
 
     function get_iterator(this: PageList) returns PageListIterator
-    {
-        return PageListIterator(head)
-    }
+        PageListIterator(head)
 }
