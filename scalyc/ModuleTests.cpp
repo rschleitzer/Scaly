@@ -81,7 +81,12 @@ static llvm::Expected<int64_t> runPackageTestFunction(
     Config.EmitDebugInfo = false;
     Emitter E(Config);
 
-    return E.jitExecuteIntFunction(*PlanResult, MangledName);
+    llvm::outs() << "DEBUG: About to JIT execute " << MangledName << "\n";
+    llvm::outs().flush();
+    auto Result = E.jitExecuteIntFunction(*PlanResult, MangledName);
+    llvm::outs() << "DEBUG: JIT execution complete\n";
+    llvm::outs().flush();
+    return Result;
 }
 
 // ============================================================================
@@ -169,8 +174,10 @@ static bool testIoModule() {
 static bool testLexerModule() {
     const char* Name = "Module: scalyc lexer test()";
 
-    // Note: The function is named "test" (from lexer.scaly), not "scalyc.test"
-    // because it's a standalone function, not inside a define block
+    // The function is named "test" in the scalyc namespace
+    // It calls lexer.test() to run the actual tests
+    llvm::outs() << "DEBUG: Looking for function 'test'...\n";
+    llvm::outs().flush();
     auto ResultOrErr = runPackageTestFunction(ScalycPackagePath, "test");
 
     if (!ResultOrErr) {
