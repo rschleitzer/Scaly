@@ -711,13 +711,26 @@ bool Planner::typesCompatible(const PlannedType &ParamType, const PlannedType &A
         }
     }
 
-    // Allow string literals (pointer[i8]) to be passed where String is expected
-    // The Emitter will wrap the C-string in a String constructor
-    if (ParamType.Name == "String" && ArgType.Name == "pointer" && !ArgType.Generics.empty()) {
-        if (ArgType.Generics[0].Name == "i8") {
+    // Allow string literals (pointer[i8]) to be passed where pointer[const_char] is expected
+    // This handles C-string function parameters like strlen, String(rp, c_string), etc.
+    if (ParamType.Name == "pointer" && ArgType.Name == "pointer" &&
+        !ParamType.Generics.empty() && !ArgType.Generics.empty()) {
+        if ((ParamType.Generics[0].Name == "const_char" && ArgType.Generics[0].Name == "i8") ||
+            (ParamType.Generics[0].Name == "i8" && ArgType.Generics[0].Name == "const_char")) {
             return true;
         }
     }
+
+    // Allow string literals (pointer[i8]) to be passed where String is expected
+    // But only as a FALLBACK if no pointer[const_char] initializer is found
+    // The Emitter will wrap the C-string in a String constructor
+    // NOTE: This should have lower priority than the pointer[const_char] match above
+    // For now, we disable this to force the correct initializer selection
+    // if (ParamType.Name == "String" && ArgType.Name == "pointer" && !ArgType.Generics.empty()) {
+    //     if (ArgType.Generics[0].Name == "i8") {
+    //         return true;
+    //     }
+    // }
 
     return false;
 }
@@ -1227,13 +1240,27 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
     const std::vector<PlannedType> &ArgTypes,
     Span Loc) {
 
+    // Debug: uncomment to trace method lookups
+    // llvm::errs() << "DEBUG lookupMethod(with args): StructType.Name='" << StructType.Name
+    //              << "' MethodName='" << MethodName << "'\n";
+
     // Collect all method candidates
     std::vector<MethodMatch> Candidates;
 
     const PlannedStructure *Struct = nullptr;
 
     // Look up the struct in the instantiation cache
-    auto StructIt = InstantiatedStructures.find(StructType.Name);
+    // Handle fully qualified type names like "scaly.containers.String"
+    // But preserve generic instantiation names like "List.char"
+    std::string LookupName = StructType.Name;
+    if (LookupName.rfind("scaly.", 0) == 0) {
+        // Strip package prefix to get just the type name
+        size_t LastDotForLookup = LookupName.rfind('.');
+        if (LastDotForLookup != std::string::npos) {
+            LookupName = LookupName.substr(LastDotForLookup + 1);
+        }
+    }
+    auto StructIt = InstantiatedStructures.find(LookupName);
     if (StructIt != InstantiatedStructures.end()) {
         Struct = &StructIt->second;
     } else {
@@ -1275,10 +1302,21 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
     }
 
     // Also collect from Model's Concept
+    // Extract the actual type name from fully qualified paths like "scaly.containers.String"
+    // But for generic instantiation names like "List.char", extract just the base type name
     std::string BaseName = StructType.Name;
-    size_t DotPos = BaseName.find('.');
-    if (DotPos != std::string::npos) {
-        BaseName = BaseName.substr(0, DotPos);
+    if (BaseName.rfind("scaly.", 0) == 0) {
+        // Strip package prefix to get just the type name
+        size_t LastDot = BaseName.rfind('.');
+        if (LastDot != std::string::npos) {
+            BaseName = BaseName.substr(LastDot + 1);
+        }
+    } else {
+        // For generic instantiation names like "List.char", extract the base type
+        size_t FirstDot = BaseName.find('.');
+        if (FirstDot != std::string::npos) {
+            BaseName = BaseName.substr(0, FirstDot);
+        }
     }
     const Concept *Conc = lookupConcept(BaseName);
     if (Conc) {
@@ -1599,7 +1637,15 @@ std::optional<Planner::InitializerMatch> Planner::findInitializer(
     const std::vector<PlannedType> &ArgTypes) {
 
     // Look up the struct in the instantiation cache
-    auto StructIt = InstantiatedStructures.find(StructType.Name);
+    // Handle fully qualified type names like "scaly.containers.String"
+    std::string LookupName = StructType.Name;
+    if (LookupName.rfind("scaly.", 0) == 0) {
+        size_t LastDot = LookupName.rfind('.');
+        if (LastDot != std::string::npos) {
+            LookupName = LookupName.substr(LastDot + 1);
+        }
+    }
+    auto StructIt = InstantiatedStructures.find(LookupName);
     if (StructIt == InstantiatedStructures.end()) {
         // Also try the mangled name
         StructIt = InstantiatedStructures.find(StructType.MangledName);
@@ -1608,11 +1654,22 @@ std::optional<Planner::InitializerMatch> Planner::findInitializer(
     // If struct is not in cache OR has no initializers, look up the original Concept
     if (StructIt == InstantiatedStructures.end() ||
         StructIt->second.Initializers.empty()) {
-        // Extract base name (e.g., "Vector" from "Vector.int")
+        // Extract base name - handle both package prefixes and generic suffixes
+        // "scaly.containers.String" -> "String"
+        // "Vector.int" -> "Vector"
         std::string BaseName = StructType.Name;
-        size_t DotPos = BaseName.find('.');
-        if (DotPos != std::string::npos) {
-            BaseName = BaseName.substr(0, DotPos);
+        if (BaseName.rfind("scaly.", 0) == 0) {
+            // Package-qualified name - extract the type name (last component)
+            size_t LastDot = BaseName.rfind('.');
+            if (LastDot != std::string::npos) {
+                BaseName = BaseName.substr(LastDot + 1);
+            }
+        } else {
+            // Generic instantiation name - extract the base type (first component)
+            size_t FirstDot = BaseName.find('.');
+            if (FirstDot != std::string::npos) {
+                BaseName = BaseName.substr(0, FirstDot);
+            }
         }
 
         // Look up the original Concept
@@ -4076,9 +4133,43 @@ llvm::Expected<PlannedType> Planner::resolveType(const Type &T, Span Instantiati
         PtrType.MangledName = "P" + PtrType.Generics[0].MangledName;
         PtrType.Life = T.Life;
         // Store array size for alloca sizing - the generic argument should be a constant
-        // For now, use the Name of the first generic as the size reference
+        // Evaluate the constant to get the numeric value
         if (!Result.Generics.empty()) {
-            PtrType.ArraySize = Result.Generics[0].Name;
+            std::string SizeName = Result.Generics[0].Name;
+            // Try to parse as a number first
+            try {
+                std::stoull(SizeName);
+                // Already numeric
+                PtrType.ArraySize = SizeName;
+            } catch (const std::exception&) {
+                // Not a number - look up as global constant
+                auto GlobalIt = PlannedGlobals.find(SizeName);
+                if (GlobalIt != PlannedGlobals.end()) {
+                    // Extract the value from the global constant
+                    const auto& Global = GlobalIt->second;
+                    if (!Global.Value.empty()) {
+                        // The value should be a constant expression
+                        const auto& ValueOp = Global.Value[0];
+                        if (auto* ConstExpr = std::get_if<PlannedConstant>(&ValueOp.Expr)) {
+                            // PlannedConstant is a Constant variant - extract integer
+                            if (auto* IntConst = std::get_if<IntegerConstant>(ConstExpr)) {
+                                PtrType.ArraySize = std::to_string(IntConst->Value);
+                            } else {
+                                // Not an integer constant - use name as fallback
+                                PtrType.ArraySize = SizeName;
+                            }
+                        } else {
+                            // Fallback - use the name as-is
+                            PtrType.ArraySize = SizeName;
+                        }
+                    } else {
+                        PtrType.ArraySize = SizeName;
+                    }
+                } else {
+                    // Unknown constant - use name as-is (may cause emitter error)
+                    PtrType.ArraySize = SizeName;
+                }
+            }
         }
         return PtrType;
     }

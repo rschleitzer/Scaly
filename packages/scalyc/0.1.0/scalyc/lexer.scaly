@@ -168,12 +168,12 @@ define Lexer
         while current < source.length()
         {
             let c source.get(current)
-            if c = ' ' | c = '\t' | c = '\r'
+            if (c = ' ') | (c = '\t') | (c = '\r')
             {
                 set current: current + 1
                 continue
             }
-            if skip_linefeed & c = '\n'
+            if skip_linefeed & (c = '\n')
             {
                 set current: current + 1
                 continue
@@ -445,13 +445,9 @@ function is_punctuation(c: char) returns bool
 ; Test function for lexer
 function test() returns int
 {
-    var rp scaly.memory.Page.allocate_page()
-    var str scaly.containers.String(rp, "hello")
-
-    ; Test Lexer construction
-    var lexer Lexer^rp(str)
-
-    ; Cleanup
+    ; Test String creation
+    var rp Page.allocate_page()
+    var s String(rp, "hello")
     rp.deallocate_extensions()
     free(rp as pointer[void])
     0

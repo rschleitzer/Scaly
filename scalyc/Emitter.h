@@ -68,6 +68,9 @@ public:
     // JIT execution: execute a specific function by mangled name and return int result
     llvm::Expected<int64_t> jitExecuteIntFunction(const Plan &P, llvm::StringRef MangledFunctionName);
 
+    // Debug: dump IR to stderr
+    void dumpIR(const Plan &P);
+
     // AOT: write to object file
     llvm::Error emitObjectFile(const Plan &P,
                                llvm::StringRef ModuleName,
