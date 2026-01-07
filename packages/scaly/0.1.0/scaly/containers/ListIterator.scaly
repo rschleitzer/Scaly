@@ -5,7 +5,9 @@ define ListIterator[T] (current: pointer[Node[T]]) {
             var old_current current
             set current: (*current).next
             return &(*old_current).element
-        } else {
+        }
+        else
+        {
             return null
         }
     }

@@ -7,7 +7,8 @@ define PageListIterator(current: pointer[PageNode])
             let previous_current current
             set current: (*current).next
             return &((*previous_current).page)
-        } else
+        }
+        else
             return null
     }
 }

@@ -74,6 +74,7 @@ struct ValueSyntax;
 struct VectorSyntax;
 struct ElementSyntax;
 struct IfSyntax;
+struct ThenSyntax;
 struct ElseSyntax;
 struct MatchSyntax;
 struct BranchSyntax;
@@ -437,11 +438,17 @@ struct ElseSyntax {
     CommandSyntax alternative;
 };
 
+struct ThenSyntax {
+    size_t Start;
+    size_t End;
+    CommandSyntax command;
+};
+
 struct IfSyntax {
     size_t Start;
     size_t End;
     std::vector<OperandSyntax>* condition;
-    CommandSyntax consequent;
+    ThenSyntax consequent;
     ElseSyntax* alternative;
 };
 
