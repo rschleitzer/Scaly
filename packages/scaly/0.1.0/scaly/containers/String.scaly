@@ -156,7 +156,7 @@ define String (data: pointer[char](null))
             set index: index + 1
         }
 
-        return data + index + 1
+        data + index + 1
     }
 
     function to_c_string(this: String, rp: pointer[Page]) returns pointer[const_char]
@@ -185,7 +185,7 @@ define String (data: pointer[char](null))
             memcpy(dest, data + index + 1, length)
         set *(dest as pointer[char] + index + length): 0
 
-        return dest as pointer[const_char]
+        dest as pointer[const_char]
     }
 
     function get_length(this: String) returns size_t
@@ -208,7 +208,7 @@ define String (data: pointer[char](null))
             set bit_count: bit_count + 7
             set index: index + 1
         }
-        return result
+        result
     }
 
     function equals(this: String, other: String) returns bool
@@ -238,7 +238,7 @@ define String (data: pointer[char](null))
         if data = null
             return true
 
-        return memcmp(data + index + 1, other.data + index + 1, length) = 0
+        memcmp(data + index + 1, other.data + index + 1, length) = 0
     }
 
     function equals(this: String, other: pointer[const_char]) returns bool
@@ -268,7 +268,7 @@ define String (data: pointer[char](null))
         if data = null
             return true
 
-        return memcmp(data + index + 1, other, length) = 0
+        memcmp(data + index + 1, other, length) = 0
     }
 
     function equals (this: String, other: Vector[char]) returns bool
@@ -292,7 +292,7 @@ define String (data: pointer[char](null))
         if length <> other.length
             return false
 
-        return memcmp(data + index + 1, other.data, length) = 0
+        memcmp(data + index + 1, other.data, length) = 0
     }
 
     function hash(this: String) returns size_t
@@ -313,7 +313,7 @@ define String (data: pointer[char](null))
             set index: index + 1
         }
 
-        return hashing.hash(data + index + 1, length)
+        hashing.hash(data + index + 1, length)
     }
 
     function get_iterator(this: String) returns StringIterator

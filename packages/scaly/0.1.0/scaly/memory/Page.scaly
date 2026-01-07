@@ -80,7 +80,7 @@ define Page
     {
         let mask ~((PAGE_SIZE - 1) as size_t)
         let page (address as size_t & mask) as pointer[Page]
-        return page
+        page
     }
 
     function get_capacity(this: Page, align: size_t) returns size_t
@@ -89,14 +89,14 @@ define Page
         let aligned_location (location + align - 1) & (~(align - 1))
         var location_after_page this as size_t + PAGE_SIZE
         var capacity location_after_page - aligned_location
-        return capacity
+        capacity
     }
 
     function allocate_exclusive_page(this: Page) returns pointer[Page]
     {
         let page allocate_page()
         exclusive_pages.add(page)
-        return page
+        page
     }
 
     procedure deallocate_extensions(this: Page)
