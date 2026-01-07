@@ -1446,6 +1446,97 @@ PlannedCall Planner::createMethodCall(
 // Pattern Detection Helpers
 // ============================================================================
 
+llvm::Expected<Planner::MethodCallResult> Planner::processChainedMethodCalls(
+    PlannedOperand InitialOp,
+    const std::vector<Operand> &Ops,
+    size_t StartIndex) {
+
+    MethodCallResult Result;
+    Result.Matched = true;
+    Result.CallOp = std::move(InitialOp);
+    Result.ConsumedOperands = 0;
+
+    size_t ChainIdx = StartIndex;
+    const Operand* CurrentArgsOp = &Ops[ChainIdx];
+
+    while (CurrentArgsOp->MemberAccess && !CurrentArgsOp->MemberAccess->empty()) {
+        auto MemberChain = resolveMemberAccessChain(Result.CallOp.ResultType,
+                                                     *CurrentArgsOp->MemberAccess, CurrentArgsOp->Loc);
+        if (!MemberChain) {
+            return MemberChain.takeError();
+        }
+
+        if (!MemberChain->empty() && MemberChain->back().IsMethod) {
+            // Check if there's another tuple following for the chained method
+            if (ChainIdx + 1 < Ops.size() &&
+                std::holds_alternative<Tuple>(Ops[ChainIdx + 1].Expr)) {
+
+                const auto& ChainedArgsOp = Ops[ChainIdx + 1];
+                std::string ChainedMethodName = MemberChain->back().Name;
+                PlannedType ChainedInstanceType = MemberChain->back().ParentType;
+
+                // Plan the chained method arguments
+                Operand ArgsOpCopy = ChainedArgsOp;
+                ArgsOpCopy.MemberAccess = nullptr;
+                auto PlannedChainedArgs = planOperand(ArgsOpCopy);
+                if (!PlannedChainedArgs) {
+                    return PlannedChainedArgs.takeError();
+                }
+
+                // Look up the chained method
+                auto ChainedArgTypes = extractArgTypes(*PlannedChainedArgs);
+                auto ChainedMethodMatch = lookupMethod(ChainedInstanceType, ChainedMethodName,
+                                                       ChainedArgTypes, ChainedArgsOp.Loc);
+                if (ChainedMethodMatch) {
+                    // Create chained method call
+                    PlannedCall ChainedCall;
+                    ChainedCall.Loc = ChainedArgsOp.Loc;
+                    ChainedCall.Name = ChainedMethodName;
+                    ChainedCall.MangledName = ChainedMethodMatch->MangledName;
+                    ChainedCall.IsIntrinsic = false;
+                    ChainedCall.IsOperator = false;
+                    ChainedCall.ResultType = ChainedMethodMatch->ReturnType;
+
+                    ChainedCall.Args = std::make_shared<std::vector<PlannedOperand>>();
+
+                    // First arg is the instance (current CallOp)
+                    ChainedCall.Args->push_back(std::move(Result.CallOp));
+
+                    // Add remaining arguments
+                    if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedChainedArgs->Expr)) {
+                        for (auto& Comp : TupleExpr->Components) {
+                            for (auto& ValOp : Comp.Value) {
+                                ChainedCall.Args->push_back(std::move(ValOp));
+                            }
+                        }
+                    }
+
+                    // Replace CallOp with the chained call
+                    Result.CallOp = PlannedOperand();
+                    Result.CallOp.Loc = ChainedArgsOp.Loc;
+                    Result.CallOp.ResultType = ChainedMethodMatch->ReturnType;
+                    Result.CallOp.Expr = std::move(ChainedCall);
+
+                    ChainIdx++;
+                    Result.ConsumedOperands++;
+                    CurrentArgsOp = &Ops[ChainIdx];
+                    continue;  // Check for more chained calls
+                }
+            }
+        }
+
+        // Not a chained method call - just apply member access
+        Result.CallOp.MemberAccess = std::make_shared<std::vector<PlannedMemberAccess>>(
+            std::move(*MemberChain));
+        if (!Result.CallOp.MemberAccess->empty()) {
+            Result.CallOp.ResultType = Result.CallOp.MemberAccess->back().ResultType;
+        }
+        break;
+    }
+
+    return Result;
+}
+
 Planner::BindingInfo Planner::checkLocalOrProperty(llvm::StringRef Name) {
     BindingInfo Result;
 
@@ -4922,87 +5013,14 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             CallOp.Expr = std::move(Call);
                             CallOp.ResultType = MethodMatch->ReturnType;
 
-                            // Apply any member access on the result (from NextOp)
                             // Handle chained method calls: expr.method1().method2().method3()
-                            size_t ChainIdx = i + 1;  // Start at the first tuple (NextOp)
-                            const Operand* CurrentArgsOp = &NextOp;
-
-                            while (CurrentArgsOp->MemberAccess && !CurrentArgsOp->MemberAccess->empty()) {
-                                auto MemberChain = resolveMemberAccessChain(CallOp.ResultType,
-                                                                             *CurrentArgsOp->MemberAccess, CurrentArgsOp->Loc);
-                                if (!MemberChain) {
-                                    return MemberChain.takeError();
-                                }
-
-                                if (!MemberChain->empty() && MemberChain->back().IsMethod) {
-                                    // Check if there's another tuple following for the chained method
-                                    if (ChainIdx + 1 < ProcessedOps.size() &&
-                                        std::holds_alternative<Tuple>(ProcessedOps[ChainIdx + 1].Expr)) {
-
-                                        const auto& ChainedArgsOp = ProcessedOps[ChainIdx + 1];
-                                        std::string ChainedMethodName = MemberChain->back().Name;
-                                        PlannedType ChainedInstanceType = MemberChain->back().ParentType;
-
-                                        // Plan the chained method arguments
-                                        Operand ArgsOpCopy = ChainedArgsOp;
-                                        ArgsOpCopy.MemberAccess = nullptr;
-                                        auto PlannedChainedArgs = planOperand(ArgsOpCopy);
-                                        if (!PlannedChainedArgs) {
-                                            return PlannedChainedArgs.takeError();
-                                        }
-
-                                        // Look up the chained method
-                                        auto ChainedArgTypes = extractArgTypes(*PlannedChainedArgs);
-                                        auto ChainedMethodMatch = lookupMethod(ChainedInstanceType, ChainedMethodName,
-                                                                               ChainedArgTypes, ChainedArgsOp.Loc);
-                                        if (ChainedMethodMatch) {
-                                            // Create chained method call
-                                            PlannedCall ChainedCall;
-                                            ChainedCall.Loc = ChainedArgsOp.Loc;
-                                            ChainedCall.Name = ChainedMethodName;
-                                            ChainedCall.MangledName = ChainedMethodMatch->MangledName;
-                                            ChainedCall.IsIntrinsic = false;
-                                            ChainedCall.IsOperator = false;
-                                            ChainedCall.ResultType = ChainedMethodMatch->ReturnType;
-
-                                            ChainedCall.Args = std::make_shared<std::vector<PlannedOperand>>();
-
-                                            // First arg is the instance (current CallOp)
-                                            ChainedCall.Args->push_back(std::move(CallOp));
-
-                                            // Add remaining arguments
-                                            if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedChainedArgs->Expr)) {
-                                                for (auto& Comp : TupleExpr->Components) {
-                                                    for (auto& ValOp : Comp.Value) {
-                                                        ChainedCall.Args->push_back(std::move(ValOp));
-                                                    }
-                                                }
-                                            }
-
-                                            // Replace CallOp with the chained call
-                                            CallOp = PlannedOperand();
-                                            CallOp.Loc = ChainedArgsOp.Loc;
-                                            CallOp.ResultType = ChainedMethodMatch->ReturnType;
-                                            CallOp.Expr = std::move(ChainedCall);
-
-                                            ChainIdx++;  // Move to the next tuple
-                                            CurrentArgsOp = &ProcessedOps[ChainIdx];
-                                            continue;  // Check for more chained calls
-                                        }
-                                    }
-                                }
-
-                                // Not a chained method call - just apply member access
-                                CallOp.MemberAccess = std::make_shared<std::vector<PlannedMemberAccess>>(
-                                    std::move(*MemberChain));
-                                if (!CallOp.MemberAccess->empty()) {
-                                    CallOp.ResultType = CallOp.MemberAccess->back().ResultType;
-                                }
-                                break;
+                            auto ChainResult = processChainedMethodCalls(std::move(CallOp), ProcessedOps, i + 1);
+                            if (!ChainResult) {
+                                return ChainResult.takeError();
                             }
 
-                            Result.push_back(std::move(CallOp));
-                            i = ChainIdx;  // Skip all consumed tuples
+                            Result.push_back(std::move(ChainResult->CallOp));
+                            i += 1 + ChainResult->ConsumedOperands;  // Skip consumed tuples
                             continue;
                         }
                         // If method not found, fall through to normal processing
@@ -5176,87 +5194,14 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                     CallOp.Expr = std::move(Call);
                     CallOp.ResultType = MethodMatch->ReturnType;
 
-                    // Apply any member access on the result (from NextOp)
                     // Handle chained method calls: expr.method1().method2().method3()
-                    size_t ChainIdx = i + 1;  // Start at the first tuple
-                    const Operand* CurrentArgsOp = &NextOp;
-
-                    while (CurrentArgsOp->MemberAccess && !CurrentArgsOp->MemberAccess->empty()) {
-                        auto MemberChain = resolveMemberAccessChain(CallOp.ResultType,
-                                                                     *CurrentArgsOp->MemberAccess, CurrentArgsOp->Loc);
-                        if (!MemberChain) {
-                            return MemberChain.takeError();
-                        }
-
-                        if (!MemberChain->empty() && MemberChain->back().IsMethod) {
-                            // Check if there's another tuple following for the chained method
-                            if (ChainIdx + 1 < ProcessedOps.size() &&
-                                std::holds_alternative<Tuple>(ProcessedOps[ChainIdx + 1].Expr)) {
-
-                                const auto& ChainedArgsOp = ProcessedOps[ChainIdx + 1];
-                                std::string ChainedMethodName = MemberChain->back().Name;
-                                PlannedType ChainedInstanceType = MemberChain->back().ParentType;
-
-                                // Plan the chained method arguments
-                                Operand ArgsOpCopy = ChainedArgsOp;
-                                ArgsOpCopy.MemberAccess = nullptr;
-                                auto PlannedChainedArgs = planOperand(ArgsOpCopy);
-                                if (!PlannedChainedArgs) {
-                                    return PlannedChainedArgs.takeError();
-                                }
-
-                                // Look up the chained method
-                                auto ChainedArgTypes = extractArgTypes(*PlannedChainedArgs);
-                                auto ChainedMethodMatch = lookupMethod(ChainedInstanceType, ChainedMethodName,
-                                                                       ChainedArgTypes, ChainedArgsOp.Loc);
-                                if (ChainedMethodMatch) {
-                                    // Create chained method call
-                                    PlannedCall ChainedCall;
-                                    ChainedCall.Loc = ChainedArgsOp.Loc;
-                                    ChainedCall.Name = ChainedMethodName;
-                                    ChainedCall.MangledName = ChainedMethodMatch->MangledName;
-                                    ChainedCall.IsIntrinsic = false;
-                                    ChainedCall.IsOperator = false;
-                                    ChainedCall.ResultType = ChainedMethodMatch->ReturnType;
-
-                                    ChainedCall.Args = std::make_shared<std::vector<PlannedOperand>>();
-
-                                    // First arg is the instance (current CallOp)
-                                    ChainedCall.Args->push_back(std::move(CallOp));
-
-                                    // Add remaining arguments
-                                    if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedChainedArgs->Expr)) {
-                                        for (auto& Comp : TupleExpr->Components) {
-                                            for (auto& ValOp : Comp.Value) {
-                                                ChainedCall.Args->push_back(std::move(ValOp));
-                                            }
-                                        }
-                                    }
-
-                                    // Replace CallOp with the chained call
-                                    CallOp = PlannedOperand();
-                                    CallOp.Loc = ChainedArgsOp.Loc;
-                                    CallOp.ResultType = ChainedMethodMatch->ReturnType;
-                                    CallOp.Expr = std::move(ChainedCall);
-
-                                    ChainIdx++;  // Move to the next tuple
-                                    CurrentArgsOp = &ProcessedOps[ChainIdx];
-                                    continue;  // Check for more chained calls
-                                }
-                            }
-                        }
-
-                        // Not a chained method call - just apply member access
-                        CallOp.MemberAccess = std::make_shared<std::vector<PlannedMemberAccess>>(
-                            std::move(*MemberChain));
-                        if (!CallOp.MemberAccess->empty()) {
-                            CallOp.ResultType = CallOp.MemberAccess->back().ResultType;
-                        }
-                        break;
+                    auto ChainResult = processChainedMethodCalls(std::move(CallOp), ProcessedOps, i + 1);
+                    if (!ChainResult) {
+                        return ChainResult.takeError();
                     }
 
-                    Result.push_back(std::move(CallOp));
-                    i = ChainIdx;  // Skip all consumed tuples
+                    Result.push_back(std::move(ChainResult->CallOp));
+                    i += 1 + ChainResult->ConsumedOperands;  // Skip consumed tuples
                     continue;
                 }
                 // If method not found, fall through to normal processing

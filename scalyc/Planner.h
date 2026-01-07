@@ -430,12 +430,12 @@ private:
         size_t ConsumedOperands = 0;  // How many operands were consumed (for index advancement)
     };
 
-    // Try to plan a method call pattern (variable.method(args) or expr.method(args))
-    llvm::Expected<MethodCallResult> tryPlanMethodCall(
+    // Process chained method calls on an operand (e.g., expr.method1().method2().method3())
+    // Returns the final operand and number of additional operands consumed
+    llvm::Expected<MethodCallResult> processChainedMethodCalls(
+        PlannedOperand InitialOp,
         const std::vector<Operand> &Ops,
-        size_t StartIndex,
-        const Operand &CurrentOp,
-        const Operand &NextOp);
+        size_t StartIndex);  // Index of the first tuple (args for initial call)
 };
 
 } // namespace scaly
