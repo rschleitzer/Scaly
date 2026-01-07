@@ -178,6 +178,8 @@ void Emitter::initRBMM() {
     PageSaveWatermark = llvm::Function::Create(
         SaveWatermarkTy, llvm::GlobalValue::ExternalLinkage,
         "_ZN4Page14save_watermarkEv", *Module);
+    // Set sret attribute on first param so emitReturn knows to store-and-return-void
+    PageSaveWatermark->addParamAttr(0, llvm::Attribute::getWithStructRetType(*Context, BlockWatermarkType));
     FunctionCache["_ZN4Page14save_watermarkEv"] = PageSaveWatermark;
 
     // Declare Page_restore_watermark(page: ptr, watermark: ptr) -> void
@@ -372,6 +374,8 @@ llvm::Expected<std::unique_ptr<llvm::Module>> Emitter::emit(const Plan &P,
     std::string VerifyError;
     llvm::raw_string_ostream VerifyStream(VerifyError);
     if (llvm::verifyModule(*Module, &VerifyStream)) {
+        // Print the module for debugging
+        Module->print(llvm::errs(), nullptr);
         return llvm::make_error<llvm::StringError>(
             "Module verification failed: " + VerifyError,
             llvm::inconvertibleErrorCode()
@@ -1115,6 +1119,11 @@ llvm::Error Emitter::emitInitializerBody(const PlannedStructure &Struct,
         return llvm::Error::success();
     }
 
+    // Skip if initializer body already emitted
+    if (!LLVMFunc->isDeclaration()) {
+        return llvm::Error::success();
+    }
+
     // Create entry block
     auto *EntryBB = llvm::BasicBlock::Create(*Context, "entry", LLVMFunc);
     Builder->SetInsertPoint(EntryBB);
@@ -1201,6 +1210,11 @@ llvm::Error Emitter::emitDeInitializerBody(const PlannedStructure &Struct,
     // Skip extern/intrinsic deinitializers
     if (std::holds_alternative<PlannedExternImpl>(DeInit.Impl) ||
         std::holds_alternative<PlannedIntrinsicImpl>(DeInit.Impl)) {
+        return llvm::Error::success();
+    }
+
+    // Skip if deinitializer body already emitted
+    if (!LLVMFunc->isDeclaration()) {
         return llvm::Error::success();
     }
 
