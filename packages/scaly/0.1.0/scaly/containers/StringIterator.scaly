@@ -13,9 +13,7 @@ init(string: String) {
 
 function next(this: StringIterator) returns pointer[char] {
     if current = last
-    {
         return null
-    }
     else
     {
         let ret current

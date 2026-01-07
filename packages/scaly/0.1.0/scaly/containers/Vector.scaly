@@ -47,9 +47,7 @@ define Vector[T]
             memset(data, 0, len * sizeof T)
         }
         else
-        {
             set data: null
-        }
     }
 
     init (rp: pointer[Page], arr: pointer[T], len: size_t) {
@@ -60,9 +58,7 @@ define Vector[T]
             memcpy(data, arr, len * sizeof T)
         }
         else
-        {
             set data: null
-        }
     }
 
     init (rp: pointer[Page], other: Vector[T]) {
@@ -73,9 +69,7 @@ define Vector[T]
             memcpy(data, other.data, length * sizeof T)
         }
         else
-        {
             set data: null
-        }
     }
 
     init (rp: pointer[Page], array: Array[T]) {
@@ -87,9 +81,7 @@ define Vector[T]
             memcpy(data, (*arr_vector).data, length * sizeof T)
         }
         else
-        {
             set data: null
-        }
     }
 
     init (rp: pointer[Page], list: List[T]) {
@@ -106,9 +98,7 @@ define Vector[T]
             }
         }
         else
-        {
             set data: null
-        }
     }
 
     function get(this: Vector[T], i: size_t) returns pointer[T] {
