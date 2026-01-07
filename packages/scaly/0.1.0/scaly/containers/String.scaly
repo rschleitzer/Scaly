@@ -211,6 +211,22 @@ define String (data: pointer[char](null))
         result
     }
 
+    function get(this: String, index: size_t) returns char
+    {
+        let buffer get_buffer()
+        *(buffer + index)
+    }
+
+    function length(this: String) returns size_t
+        get_length()
+
+    function substring(this: String, start: size_t, len: size_t) returns String
+    {
+        let rp get_page()
+        let buffer get_buffer()
+        String#(rp, buffer + start, len)
+    }
+
     function equals(this: String, other: String) returns bool
     {
         var length: size_t 0

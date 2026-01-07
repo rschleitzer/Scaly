@@ -1,0 +1,401 @@
+package scaly 0.1.0
+
+use scaly.containers.Array
+use scaly.containers.String
+
+; Literal types
+define StringLiteral(value: String)
+define CharacterLiteral(value: String)
+define FragmentLiteral(value: String)
+define IntegerLiteral(value: String)
+define BooleanLiteral(value: bool)
+define FloatingPointLiteral(value: String)
+define HexLiteral(value: String)
+
+define Literal
+[
+    String: StringLiteral
+    Character: CharacterLiteral
+    Fragment: FragmentLiteral
+    Integer: IntegerLiteral
+    Boolean: BooleanLiteral
+    FloatingPoint: FloatingPointLiteral
+    Hex: HexLiteral
+]
+
+; Token types
+define EmptyToken()
+define InvalidToken()
+define ColonToken()
+define IdentifierToken(name: String)
+define AttributeToken(name: String)
+define PunctuationToken(sign: char)
+define LiteralToken(value: Literal)
+
+define Token
+[
+    Empty: EmptyToken
+    Invalid: InvalidToken
+    Colon: ColonToken
+    Identifier: IdentifierToken
+    Attribute: AttributeToken
+    Punctuation: PunctuationToken
+    Literal: LiteralToken
+]
+
+; Lexer state
+define Lexer
+(
+    source: String
+    current: size_t
+    token: Token
+    position: size_t
+    previous_position: size_t
+)
+{
+    init(source: String)
+    {
+        set this.source: source
+        set current: 0
+        set token: Token.Empty(EmptyToken())
+        set position: 0
+        set previous_position: 0
+    }
+
+    function is_at_end(this: Lexer) returns bool
+        current >= source.length()
+
+    procedure advance(this: Lexer)
+    {
+        set previous_position: position
+        skip_whitespace(true)
+
+        if is_at_end()
+        {
+            set token: Token.Empty(EmptyToken())
+            return
+        }
+
+        let c source.get(current)
+
+        ; Identifier or keyword
+        if is_identifier_start(c)
+        {
+            set token: scan_identifier()
+            return
+        }
+
+        ; Attribute (@name)
+        if c = '@'
+        {
+            set token: scan_attribute()
+            return
+        }
+
+        ; String literal
+        if c = '"'
+        {
+            set token: scan_string_literal()
+            return
+        }
+
+        ; Character literal
+        if c = '\''
+        {
+            set token: scan_character_literal()
+            return
+        }
+
+        ; Numeric literal
+        if is_digit(c)
+        {
+            set token: scan_numeric_literal()
+            return
+        }
+
+        ; Colon (special - used as separator)
+        if c = ':'
+        {
+            set current: current + 1
+            set position: current
+            set token: Token.Colon(ColonToken())
+            return
+        }
+
+        ; Single-line comment
+        if c = ';'
+        {
+            if current + 1 < source.length() & source.get(current + 1) = '*'
+            {
+                handle_multi_line_comment()
+                advance()
+                return
+            }
+            handle_single_line_comment()
+            advance()
+            return
+        }
+
+        ; Punctuation and operators
+        if is_punctuation(c)
+        {
+            set current: current + 1
+            set position: current
+            set token: Token.Punctuation(PunctuationToken(c))
+            return
+        }
+
+        ; Operator characters
+        if is_operator_char(c)
+        {
+            set token: scan_operator()
+            return
+        }
+
+        ; Invalid character
+        set current: current + 1
+        set token: Token.Invalid(InvalidToken())
+    }
+
+    procedure skip_whitespace(this: Lexer, skip_linefeed: bool)
+    {
+        while current < source.length()
+        {
+            let c source.get(current)
+            if c = ' ' | c = '\t' | c = '\r'
+            {
+                set current: current + 1
+                continue
+            }
+            if skip_linefeed & c = '\n'
+            {
+                set current: current + 1
+                continue
+            }
+            break
+        }
+        set position: current
+    }
+
+    procedure handle_single_line_comment(this: Lexer)
+    {
+        while current < source.length() & source.get(current) <> '\n'
+            set current: current + 1
+    }
+
+    procedure handle_multi_line_comment(this: Lexer)
+    {
+        set current: current + 2  ; Skip ;*
+        while current + 1 < source.length()
+        {
+            if source.get(current) = '*' & source.get(current + 1) = ';'
+            {
+                set current: current + 2
+                return
+            }
+            set current: current + 1
+        }
+    }
+
+    function scan_identifier(this: Lexer) returns Token
+    {
+        let start current
+        while current < source.length() & is_identifier_char(source.get(current))
+            set current: current + 1
+
+        let name source.substring(start, current - start)
+        set position: current
+
+        ; Check for boolean literals
+        if name.equals("true")
+            return Token.Literal(LiteralToken(Literal.Boolean(BooleanLiteral(true))))
+        if name.equals("false")
+            return Token.Literal(LiteralToken(Literal.Boolean(BooleanLiteral(false))))
+
+        Token.Identifier(IdentifierToken(name))
+    }
+
+    function scan_attribute(this: Lexer) returns Token
+    {
+        set current: current + 1  ; Skip @
+        let start current
+        while current < source.length() & is_identifier_char(source.get(current))
+            set current: current + 1
+
+        let name source.substring(start, current - start)
+        set position: current
+        Token.Attribute(AttributeToken(name))
+    }
+
+    function scan_operator(this: Lexer) returns Token
+    {
+        let start current
+        while current < source.length() & is_operator_char(source.get(current))
+            set current: current + 1
+
+        let name source.substring(start, current - start)
+        set position: current
+        Token.Identifier(IdentifierToken(name))
+    }
+
+    function scan_string_literal(this: Lexer) returns Token
+    {
+        set current: current + 1  ; Skip opening "
+        let start current
+
+        while current < source.length() & source.get(current) <> '"'
+        {
+            if source.get(current) = '\\'
+                set current: current + 1  ; Skip escape
+            set current: current + 1
+        }
+
+        let value source.substring(start, current - start)
+
+        if current < source.length()
+            set current: current + 1  ; Skip closing "
+
+        set position: current
+        Token.Literal(LiteralToken(Literal.String(StringLiteral(value))))
+    }
+
+    function scan_character_literal(this: Lexer) returns Token
+    {
+        set current: current + 1  ; Skip opening '
+        let start current
+
+        while current < source.length() & source.get(current) <> '\''
+        {
+            if source.get(current) = '\\'
+                set current: current + 1  ; Skip escape
+            set current: current + 1
+        }
+
+        let value source.substring(start, current - start)
+
+        if current < source.length()
+            set current: current + 1  ; Skip closing '
+
+        set position: current
+        Token.Literal(LiteralToken(Literal.Character(CharacterLiteral(value))))
+    }
+
+    function scan_numeric_literal(this: Lexer) returns Token
+    {
+        let start current
+
+        ; Check for hex literal (0x...)
+        if source.get(current) = '0' & current + 1 < source.length()
+        {
+            let next source.get(current + 1)
+            if next = 'x' | next = 'X'
+            {
+                set current: current + 2
+                while current < source.length() & is_hex_digit(source.get(current))
+                    set current: current + 1
+                let value source.substring(start + 2, current - start - 2)
+                set position: current
+                return Token.Literal(LiteralToken(Literal.Hex(HexLiteral(value))))
+            }
+        }
+
+        ; Integer part
+        while current < source.length() & is_digit(source.get(current))
+            set current: current + 1
+
+        ; Check for decimal point
+        if current < source.length() & source.get(current) = '.'
+        {
+            set current: current + 1
+            while current < source.length() & is_digit(source.get(current))
+                set current: current + 1
+
+            let value source.substring(start, current - start)
+            set position: current
+            return Token.Literal(LiteralToken(Literal.FloatingPoint(FloatingPointLiteral(value))))
+        }
+
+        let value source.substring(start, current - start)
+        set position: current
+        Token.Literal(LiteralToken(Literal.Integer(IntegerLiteral(value))))
+    }
+
+    ; Parser helper methods
+    function parse_keyword(this: Lexer, keyword: String) returns bool
+    {
+        choose token
+        {
+            when Identifier(id)
+            {
+                if id.name.equals(keyword)
+                {
+                    advance()
+                    return true
+                }
+            }
+        }
+        false
+    }
+
+    function parse_identifier(this: Lexer) returns String
+    {
+        choose token
+        {
+            when Identifier(id)
+            {
+                let name id.name
+                advance()
+                return name
+            }
+        }
+        String("")
+    }
+
+    function parse_punctuation(this: Lexer, c: char) returns bool
+    {
+        choose token
+        {
+            when Punctuation(p)
+            {
+                if p.sign = c
+                {
+                    advance()
+                    return true
+                }
+            }
+        }
+        false
+    }
+
+    function parse_colon(this: Lexer) returns bool
+    {
+        choose token
+        {
+            when Colon(c)
+            {
+                advance()
+                return true
+            }
+        }
+        false
+    }
+}
+
+; Character classification helpers
+function is_identifier_start(c: char) returns bool
+    (c >= 'a' & c <= 'z') | (c >= 'A' & c <= 'Z') | c = '_'
+
+function is_identifier_char(c: char) returns bool
+    is_identifier_start(c) | is_digit(c)
+
+function is_digit(c: char) returns bool
+    c >= '0' & c <= '9'
+
+function is_hex_digit(c: char) returns bool
+    is_digit(c) | (c >= 'a' & c <= 'f') | (c >= 'A' & c <= 'F')
+
+function is_operator_char(c: char) returns bool
+    c = '+' | c = '-' | c = '*' | c = '/' | c = '=' | c = '<' | c = '>' | c = '&' | c = '|' | c = '~' | c = '^' | c = '%'
+
+function is_punctuation(c: char) returns bool
+    c = '(' | c = ')' | c = '[' | c = ']' | c = '{' | c = '}' | c = ',' | c = '.'
