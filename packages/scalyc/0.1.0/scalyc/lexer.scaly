@@ -511,6 +511,219 @@ function test() returns int
             return 13  ; Failed: expected ColonToken
     }
 
+    ; Test 7: Floating point literal
+    set lexer: Lexer$("3.14")
+    lexer.advance()
+
+    choose lexer.token
+    {
+        when Literal(lit)
+        {
+            choose lit.value
+            {
+                when FloatingPoint(fp)
+                {
+                    if fp.value.equals("3.14") = false
+                        return 14  ; Failed: expected "3.14"
+                }
+                else
+                    return 15  ; Failed: expected FloatingPointLiteral
+            }
+        }
+        else
+            return 16  ; Failed: expected LiteralToken
+    }
+
+    ; Test 8: Hex literal
+    set lexer: Lexer$("0xABcd")
+    lexer.advance()
+
+    choose lexer.token
+    {
+        when Literal(lit)
+        {
+            choose lit.value
+            {
+                when Hex(h)
+                {
+                    if h.value.equals("ABcd") = false
+                        return 17  ; Failed: expected "ABcd"
+                }
+                else
+                    return 18  ; Failed: expected HexLiteral
+            }
+        }
+        else
+            return 19  ; Failed: expected LiteralToken
+    }
+
+    ; Test 9: Boolean literal true
+    set lexer: Lexer$("true")
+    lexer.advance()
+
+    choose lexer.token
+    {
+        when Literal(lit)
+        {
+            choose lit.value
+            {
+                when Boolean(b)
+                {
+                    if b.value = false
+                        return 20  ; Failed: expected true
+                }
+                else
+                    return 21  ; Failed: expected BooleanLiteral
+            }
+        }
+        else
+            return 22  ; Failed: expected LiteralToken
+    }
+
+    ; Test 10: Boolean literal false
+    set lexer: Lexer$("false")
+    lexer.advance()
+
+    choose lexer.token
+    {
+        when Literal(lit)
+        {
+            choose lit.value
+            {
+                when Boolean(b)
+                {
+                    if b.value = true
+                        return 23  ; Failed: expected false
+                }
+                else
+                    return 24  ; Failed: expected BooleanLiteral
+            }
+        }
+        else
+            return 25  ; Failed: expected LiteralToken
+    }
+
+    ; Test 11: Attribute token
+    set lexer: Lexer$("@summary")
+    lexer.advance()
+
+    choose lexer.token
+    {
+        when Attribute(a)
+        {
+            if a.name.equals("summary") = false
+                return 26  ; Failed: expected "summary"
+        }
+        else
+            return 27  ; Failed: expected AttributeToken
+    }
+
+    ; Test 12: Operator token
+    set lexer: Lexer$("+")
+    lexer.advance()
+
+    choose lexer.token
+    {
+        when Identifier(id)
+        {
+            if id.name.equals("+") = false
+                return 28  ; Failed: expected "+"
+        }
+        else
+            return 29  ; Failed: expected IdentifierToken for operator
+    }
+
+    ; Test 13: Multi-char operator
+    set lexer: Lexer$("<>")
+    lexer.advance()
+
+    choose lexer.token
+    {
+        when Identifier(id)
+        {
+            if id.name.equals("<>") = false
+                return 30  ; Failed: expected "<>"
+        }
+        else
+            return 31  ; Failed: expected IdentifierToken for <>
+    }
+
+    ; Test 14: Character literal
+    set lexer: Lexer$("'x'")
+    lexer.advance()
+
+    choose lexer.token
+    {
+        when Literal(lit)
+        {
+            choose lit.value
+            {
+                when Character(ch)
+                {
+                    if ch.value.equals("x") = false
+                        return 32  ; Failed: expected "x"
+                }
+                else
+                    return 33  ; Failed: expected CharacterLiteral
+            }
+        }
+        else
+            return 34  ; Failed: expected LiteralToken
+    }
+
+    ; Test 15: Identifier with underscores and digits
+    set lexer: Lexer$("abc_123_XYZ")
+    lexer.advance()
+
+    choose lexer.token
+    {
+        when Identifier(id)
+        {
+            if id.name.equals("abc_123_XYZ") = false
+                return 35  ; Failed: expected "abc_123_XYZ"
+        }
+        else
+            return 36  ; Failed: expected IdentifierToken
+    }
+
+    ; Test 16: Single-line comment skipped
+    set lexer: Lexer$("; comment\nhello")
+    lexer.advance()
+
+    choose lexer.token
+    {
+        when Identifier(id)
+        {
+            if id.name.equals("hello") = false
+                return 37  ; Failed: expected "hello" after comment
+        }
+        else
+            return 38  ; Failed: expected IdentifierToken after comment
+    }
+
+    ; Test 17: Float with exponent
+    set lexer: Lexer$("1.5E10")
+    lexer.advance()
+
+    choose lexer.token
+    {
+        when Literal(lit)
+        {
+            choose lit.value
+            {
+                when FloatingPoint(fp)
+                {
+                    if fp.value.equals("1.5E10") = false
+                        return 39  ; Failed: expected "1.5E10"
+                }
+                else
+                    return 40  ; Failed: expected FloatingPointLiteral
+            }
+        }
+        else
+            return 41  ; Failed: expected LiteralToken
+    }
+
     ; All tests passed
     0
 }
