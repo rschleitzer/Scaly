@@ -29,7 +29,7 @@ define List[T]
             if node.element = element
             {
                 if previous_node <> null
-                    set (*previous_node).next: node.next
+                    set previous_node.next: node.next
                 if node = head
                     set head: null
                 return true

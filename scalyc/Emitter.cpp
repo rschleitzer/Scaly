@@ -1284,6 +1284,30 @@ llvm::Expected<llvm::Value*> Emitter::emitAction(const PlannedAction &Action) {
                 // If VarPtr is an alloca, get its allocated type
                 if (auto *Alloca = llvm::dyn_cast<llvm::AllocaInst>(VarPtr)) {
                     CurrentType = Alloca->getAllocatedType();
+
+                    // Handle auto-deref for pointer types:
+                    // If the variable is pointer[T], we need to load the pointer value first
+                    if (Var->VariableType.Name == "pointer" &&
+                        !Var->VariableType.Generics.empty()) {
+                        // Load the pointer value from the alloca
+                        llvm::Type *PtrType = mapType(Var->VariableType);
+                        CurrentPtr = Builder->CreateLoad(PtrType, VarPtr, "deref.ptr");
+
+                        // Get the struct type from the inner type
+                        std::string LookupName = Var->VariableType.Generics[0].Name;
+                        std::string LookupMangled = Var->VariableType.Generics[0].MangledName;
+
+                        auto TypeIt = StructCache.find(LookupMangled);
+                        if (TypeIt == StructCache.end()) {
+                            TypeIt = StructCache.find(LookupName);
+                        }
+                        if (TypeIt == StructCache.end()) {
+                            TypeIt = StructCache.find("_Z" + LookupMangled);
+                        }
+                        if (TypeIt != StructCache.end()) {
+                            CurrentType = TypeIt->second;
+                        }
+                    }
                 } else {
                     // For pointers passed as arguments (like 'this'), load to get the struct
                     // Actually, 'this' is already a pointer to the struct

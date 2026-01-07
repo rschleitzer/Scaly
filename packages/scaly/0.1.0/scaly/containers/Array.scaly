@@ -62,8 +62,8 @@ define Array[T]
                 memcpy(data, vector.data, bytes_to_copy)
             let old_exclusive_page Page.get(vector.data as pointer[void])
             own_page.deallocate_exclusive_page(old_exclusive_page)
-            set (*vector).data: data
-            set (*vector).length: new_length
+            set vector.data: data
+            set vector.length: new_length
         }
 
         if items.length > 0
