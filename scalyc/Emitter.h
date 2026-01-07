@@ -183,6 +183,11 @@ private:
     size_t getTypeSize(llvm::Type *Ty);
     size_t getTypeAlignment(llvm::Type *Ty);
 
+    // Look up struct type from cache with multiple fallback keys
+    // Tries: MangledName, Name, "_Z" + MangledName
+    llvm::StructType *lookupStructType(const PlannedType &Type);
+    llvm::StructType *lookupStructType(llvm::StringRef Name, llvm::StringRef MangledName);
+
     // ========================================================================
     // Debug Info
     // ========================================================================

@@ -1394,6 +1394,54 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
     return std::nullopt;
 }
 
+// ============================================================================
+// Method Call Helpers
+// ============================================================================
+
+std::vector<PlannedType> Planner::extractArgTypes(const PlannedOperand &ArgsOp) {
+    std::vector<PlannedType> ArgTypes;
+    if (auto *TupleExpr = std::get_if<PlannedTuple>(&ArgsOp.Expr)) {
+        for (const auto &Comp : TupleExpr->Components) {
+            for (const auto &ValOp : Comp.Value) {
+                ArgTypes.push_back(ValOp.ResultType);
+            }
+        }
+    }
+    return ArgTypes;
+}
+
+PlannedCall Planner::createMethodCall(
+    const MethodMatch &Match,
+    PlannedOperand InstanceOp,
+    const PlannedOperand &ArgsOp,
+    Span Loc) {
+
+    PlannedCall Call;
+    Call.Loc = Loc;
+    Call.Name = Match.Method ? Match.Method->Name : "";
+    Call.MangledName = Match.MangledName;
+    Call.IsIntrinsic = false;
+    Call.IsOperator = false;
+    Call.ResultType = Match.ReturnType;
+
+    Call.Args = std::make_shared<std::vector<PlannedOperand>>();
+
+    // First arg is the instance
+    Call.Args->push_back(std::move(InstanceOp));
+
+    // Add tuple elements as additional arguments
+    if (auto *TupleExpr = std::get_if<PlannedTuple>(&ArgsOp.Expr)) {
+        for (const auto &Comp : TupleExpr->Components) {
+            for (const auto &ValOp : Comp.Value) {
+                // Make a copy since we're iterating over const ref
+                Call.Args->push_back(ValOp);
+            }
+        }
+    }
+
+    return Call;
+}
+
 std::optional<Planner::InitializerMatch> Planner::findInitializer(
     const PlannedType &StructType,
     const std::vector<PlannedType> &ArgTypes) {
@@ -2819,11 +2867,8 @@ llvm::Expected<PlannedType> Planner::resolveMemberAccess(
     PlannedType Current = BaseType;
 
     for (const auto& MemberName : Members) {
-        // Handle pointer types by dereferencing to inner type
-        PlannedType LookupType = Current;
-        if (Current.Name == "pointer" && !Current.Generics.empty()) {
-            LookupType = Current.Generics[0];
-        }
+        // Handle pointer types by dereferencing to inner type (auto-deref)
+        PlannedType LookupType = Current.getInnerTypeIfPointer();
 
         // Extract base name from instantiated type (e.g., "Node.int" -> "Node")
         std::string BaseName = LookupType.Name;
@@ -2921,11 +2966,8 @@ llvm::Expected<std::vector<PlannedMemberAccess>> Planner::resolveMemberAccessCha
     PlannedType Current = BaseType;
 
     for (const auto& MemberName : Members) {
-        // Handle pointer types by dereferencing to inner type
-        PlannedType LookupType = Current;
-        if (Current.Name == "pointer" && !Current.Generics.empty()) {
-            LookupType = Current.Generics[0];
-        }
+        // Handle pointer types by dereferencing to inner type (auto-deref)
+        PlannedType LookupType = Current.getInnerTypeIfPointer();
 
         // Extract base name from instantiated type (e.g., "Node.int" -> "Node")
         std::string BaseName = LookupType.Name;
@@ -4827,25 +4869,10 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             return PlannedArgs.takeError();
                         }
 
-                        // Extract argument types for overload resolution
-                        std::vector<PlannedType> ArgTypes;
-                        if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedArgs->Expr)) {
-                            for (const auto& Comp : TupleExpr->Components) {
-                                for (const auto& ValOp : Comp.Value) {
-                                    ArgTypes.push_back(ValOp.ResultType);
-                                }
-                            }
-                        }
-
                         // Look up the method on the variable's type with overload resolution
                         // Auto-deref pointer types for method lookup
-                        PlannedType LookupType = PlannedVar->ResultType;
-                        if (LookupType.Name == "pointer" && !LookupType.Generics.empty()) {
-                            // Make a copy first to avoid self-referential assignment issues
-                            // (assigning from a subobject to its parent can cause UB)
-                            PlannedType Inner = LookupType.Generics[0];
-                            LookupType = std::move(Inner);
-                        }
+                        PlannedType LookupType = PlannedVar->ResultType.getInnerTypeIfPointer();
+                        auto ArgTypes = extractArgTypes(*PlannedArgs);
                         auto MethodMatch = lookupMethod(LookupType, MethodName, ArgTypes, Op.Loc);
                         if (MethodMatch) {
                             // Create method call with instance as first argument
@@ -4929,17 +4956,8 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                             return PlannedChainedArgs.takeError();
                                         }
 
-                                        // Extract argument types
-                                        std::vector<PlannedType> ChainedArgTypes;
-                                        if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedChainedArgs->Expr)) {
-                                            for (const auto& Comp : TupleExpr->Components) {
-                                                for (const auto& ValOp : Comp.Value) {
-                                                    ChainedArgTypes.push_back(ValOp.ResultType);
-                                                }
-                                            }
-                                        }
-
                                         // Look up the chained method
+                                        auto ChainedArgTypes = extractArgTypes(*PlannedChainedArgs);
                                         auto ChainedMethodMatch = lookupMethod(ChainedInstanceType, ChainedMethodName,
                                                                                ChainedArgTypes, ChainedArgsOp.Loc);
                                         if (ChainedMethodMatch) {
@@ -5108,17 +5126,8 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                     return PlannedArgs.takeError();
                 }
 
-                // Extract argument types for overload resolution
-                std::vector<PlannedType> ArgTypes;
-                if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedArgs->Expr)) {
-                    for (const auto& Comp : TupleExpr->Components) {
-                        for (const auto& ValOp : Comp.Value) {
-                            ArgTypes.push_back(ValOp.ResultType);
-                        }
-                    }
-                }
-
                 // Look up the method on the base type with overload resolution
+                auto ArgTypes = extractArgTypes(*PlannedArgs);
                 auto MethodMatch = lookupMethod(PlannedBase->ResultType, MethodName, ArgTypes, Op.Loc);
                 if (MethodMatch) {
                     // Create method call with instance as first argument

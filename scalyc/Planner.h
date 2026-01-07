@@ -379,6 +379,18 @@ private:
 
     // Compute union layout (size = max variant, plus tag)
     void computeUnionLayout(PlannedUnion &Union);
+
+    // ========== Method Call Helpers ==========
+
+    // Extract argument types from a planned operand containing a tuple
+    std::vector<PlannedType> extractArgTypes(const PlannedOperand &ArgsOp);
+
+    // Create a PlannedCall for a method invocation
+    PlannedCall createMethodCall(
+        const MethodMatch &Match,
+        PlannedOperand InstanceOp,
+        const PlannedOperand &ArgsOp,
+        Span Loc);
 };
 
 } // namespace scaly
