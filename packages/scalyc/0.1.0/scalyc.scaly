@@ -1,0 +1,16 @@
+package scaly 0.1.0
+
+use scaly.containers.String
+
+define scalyc {
+    module lexer
+
+    function test() returns int
+    {
+        ; Test String.get and String.length
+        let s String("hello")
+        let len s.length()
+        let c s.get(0)
+        0
+    }
+}
