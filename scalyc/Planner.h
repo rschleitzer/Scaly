@@ -391,6 +391,30 @@ private:
         PlannedOperand InstanceOp,
         const PlannedOperand &ArgsOp,
         Span Loc);
+
+    // ========== Pattern Detection Helpers ==========
+
+    // Check if a name refers to a local variable or property in current struct
+    struct BindingInfo {
+        bool IsLocal = false;      // True if it's a local variable
+        bool IsProperty = false;   // True if it's a property of current struct
+        std::optional<LocalBinding> Binding;  // The binding if IsLocal
+    };
+    BindingInfo checkLocalOrProperty(llvm::StringRef Name);
+
+    // Result of trying to plan a method call
+    struct MethodCallResult {
+        bool Matched = false;
+        PlannedOperand CallOp;
+        size_t ConsumedOperands = 0;  // How many operands were consumed (for index advancement)
+    };
+
+    // Try to plan a method call pattern (variable.method(args) or expr.method(args))
+    llvm::Expected<MethodCallResult> tryPlanMethodCall(
+        const std::vector<Operand> &Ops,
+        size_t StartIndex,
+        const Operand &CurrentOp,
+        const Operand &NextOp);
 };
 
 } // namespace scaly

@@ -1442,6 +1442,52 @@ PlannedCall Planner::createMethodCall(
     return Call;
 }
 
+// ============================================================================
+// Pattern Detection Helpers
+// ============================================================================
+
+Planner::BindingInfo Planner::checkLocalOrProperty(llvm::StringRef Name) {
+    BindingInfo Result;
+
+    // First check if it's a local variable
+    auto LocalBind = lookupLocalBinding(Name);
+    if (LocalBind) {
+        Result.IsLocal = true;
+        Result.Binding = LocalBind;
+        return Result;
+    }
+
+    // Check if it's a property of the current struct
+    if (CurrentStructureProperties) {
+        auto ThisType = lookupLocal("this");
+        if (ThisType) {
+            // Extract base name from CurrentStructureName for generic types
+            std::string BaseStructName = CurrentStructureName;
+            size_t DotPos = BaseStructName.find('.');
+            if (DotPos != std::string::npos) {
+                BaseStructName = BaseStructName.substr(0, DotPos);
+            }
+
+            // 'this' may be pointer[T], so extract the inner type
+            std::string ThisTypeName = ThisType->Name;
+            if (ThisType->isPointer()) {
+                ThisTypeName = ThisType->getInnerTypeIfPointer().Name;
+            }
+
+            if (ThisTypeName == CurrentStructureName || ThisTypeName == BaseStructName) {
+                for (const auto &Prop : *CurrentStructureProperties) {
+                    if (Prop.Name == Name) {
+                        Result.IsProperty = true;
+                        return Result;
+                    }
+                }
+            }
+        }
+    }
+
+    return Result;
+}
+
 std::optional<Planner::InitializerMatch> Planner::findInitializer(
     const PlannedType &StructType,
     const std::vector<PlannedType> &ArgTypes) {
@@ -4331,9 +4377,9 @@ llvm::Expected<PlannedOperand> Planner::planOperand(const Operand &Op) {
 
     if (auto* TypeExpr = std::get_if<Type>(&Op.Expr)) {
         if (TypeExpr->Name.size() > 1 && (!TypeExpr->Generics || TypeExpr->Generics->empty())) {
-            // Check if the first element is a local variable
-            auto LocalBind = lookupLocalBinding(TypeExpr->Name[0]);
-            if (LocalBind) {
+            // Check if the first element is a local variable or property
+            auto BindInfo = checkLocalOrProperty(TypeExpr->Name[0]);
+            if (BindInfo.IsLocal) {
                 // The first element is a variable, rest are member accesses
                 // Convert to single-element Type + implicit member access
                 Type SingleType;
@@ -4352,43 +4398,23 @@ llvm::Expected<PlannedOperand> Planner::planOperand(const Operand &Op) {
                     MemberType.Life = UnspecifiedLifetime{};
                     ImplicitMemberAccess.push_back(MemberType);
                 }
-            } else if (CurrentStructureProperties) {
-                // Check if first element is a property of the current structure
-                auto ThisType = lookupLocal("this");
-                // Extract base name from CurrentStructureName for generic types
-                std::string BaseStructName = CurrentStructureName;
-                size_t DotPos = BaseStructName.find('.');
-                if (DotPos != std::string::npos) {
-                    BaseStructName = BaseStructName.substr(0, DotPos);
-                }
-                // 'this' is now pointer[T], so check the inner type
-                std::string ThisTypeName = ThisType ? ThisType->Name : "";
-                if (ThisType && ThisType->Name == "pointer" && !ThisType->Generics.empty()) {
-                    ThisTypeName = ThisType->Generics[0].Name;
-                }
-                if (ThisType && (ThisTypeName == CurrentStructureName || ThisTypeName == BaseStructName)) {
-                    for (const auto &Prop : *CurrentStructureProperties) {
-                        if (Prop.Name == TypeExpr->Name[0]) {
-                            // First element is a property - convert to this.property.rest...
-                            Type ThisTypeExpr;
-                            ThisTypeExpr.Loc = TypeExpr->Loc;
-                            ThisTypeExpr.Name = {"this"};
-                            ThisTypeExpr.Generics = nullptr;
-                            ThisTypeExpr.Life = TypeExpr->Life;
-                            ModifiedOp.Expr = ThisTypeExpr;
+            } else if (BindInfo.IsProperty) {
+                // First element is a property - convert to this.property.rest...
+                Type ThisTypeExpr;
+                ThisTypeExpr.Loc = TypeExpr->Loc;
+                ThisTypeExpr.Name = {"this"};
+                ThisTypeExpr.Generics = nullptr;
+                ThisTypeExpr.Life = TypeExpr->Life;
+                ModifiedOp.Expr = ThisTypeExpr;
 
-                            // Add all path elements as implicit member access
-                            for (size_t i = 0; i < TypeExpr->Name.size(); ++i) {
-                                Type MemberType;
-                                MemberType.Loc = TypeExpr->Loc;
-                                MemberType.Name = {TypeExpr->Name[i]};
-                                MemberType.Generics = nullptr;
-                                MemberType.Life = UnspecifiedLifetime{};
-                                ImplicitMemberAccess.push_back(MemberType);
-                            }
-                            break;
-                        }
-                    }
+                // Add all path elements as implicit member access
+                for (size_t i = 0; i < TypeExpr->Name.size(); ++i) {
+                    Type MemberType;
+                    MemberType.Loc = TypeExpr->Loc;
+                    MemberType.Name = {TypeExpr->Name[i]};
+                    MemberType.Generics = nullptr;
+                    MemberType.Life = UnspecifiedLifetime{};
+                    ImplicitMemberAccess.push_back(MemberType);
                 }
             }
 
@@ -4808,36 +4834,8 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
             if (auto* TypeExpr = std::get_if<Type>(&Op.Expr)) {
                 if (TypeExpr->Name.size() >= 2 && (!TypeExpr->Generics || TypeExpr->Generics->empty())) {
                     // Check if first element is a local variable or a property
-                    auto LocalBind = lookupLocalBinding(TypeExpr->Name[0]);
-                    bool IsProperty = false;
-                    if (!LocalBind && CurrentStructureProperties) {
-                        auto ThisType = lookupLocal("this");
-                        // Extract base name from CurrentStructureName for generic types
-                        std::string BaseStructName = CurrentStructureName;
-                        size_t DotPos = BaseStructName.find('.');
-                        if (DotPos != std::string::npos) {
-                            BaseStructName = BaseStructName.substr(0, DotPos);
-                        }
-
-                        // 'this' may be pointer[T], so extract the inner type
-                        std::string ThisTypeName = "";
-                        if (ThisType) {
-                            ThisTypeName = ThisType->Name;
-                            if (ThisType->Name == "pointer" && !ThisType->Generics.empty()) {
-                                ThisTypeName = ThisType->Generics[0].Name;
-                            }
-                        }
-
-                        if (ThisType && (ThisTypeName == CurrentStructureName || ThisTypeName == BaseStructName)) {
-                            for (const auto &Prop : *CurrentStructureProperties) {
-                                if (Prop.Name == TypeExpr->Name[0]) {
-                                    IsProperty = true;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    if ((LocalBind || IsProperty) && std::holds_alternative<Tuple>(NextOp.Expr)) {
+                    auto BindInfo = checkLocalOrProperty(TypeExpr->Name[0]);
+                    if ((BindInfo.IsLocal || BindInfo.IsProperty) && std::holds_alternative<Tuple>(NextOp.Expr)) {
                         // This is variable.member...method(args)
                         // Last element of path is the method name
                         std::string MethodName = TypeExpr->Name.back();
