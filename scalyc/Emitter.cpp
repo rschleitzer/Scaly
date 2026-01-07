@@ -2949,13 +2949,39 @@ llvm::Expected<llvm::Value*> Emitter::emitChoose(const PlannedChoose &Choose) {
     // Union layout is { i8 tag, [maxSize x i8] data }
     // We need to extract the tag to switch on it
 
+    // Get the planned union type for proper LLVM type lookup
+    const PlannedType &CondType = Choose.Condition[0].ResultType;
+
     // Get pointer to the union (may already be a pointer or need alloca)
     llvm::Value *UnionPtr;
     llvm::Type *UnionType = UnionValue->getType();
     if (UnionValue->getType()->isPointerTy()) {
         UnionPtr = UnionValue;
-        // For pointer, we'd need to know the pointee type - for now assume struct
+        // Look up the pointee type from cache
+        auto CacheIt = StructCache.find(CondType.MangledName);
+        if (CacheIt == StructCache.end()) {
+            CacheIt = StructCache.find(CondType.Name);
+        }
+        if (CacheIt == StructCache.end()) {
+            CacheIt = StructCache.find("_Z" + CondType.MangledName);
+        }
+        if (CacheIt != StructCache.end()) {
+            UnionType = CacheIt->second;
+        }
     } else {
+        // The union value might have an anonymous struct type (from extractvalue)
+        // that is structurally equivalent to the named type but not identical.
+        // Use the value's actual type for consistency.
+        UnionType = UnionValue->getType();
+
+        // Ensure it's a struct type suitable for GEP
+        if (!UnionType->isStructTy()) {
+            return llvm::make_error<llvm::StringError>(
+                "Choose condition is not a union/struct type",
+                llvm::inconvertibleErrorCode()
+            );
+        }
+
         // Store the union value to get a pointer
         UnionPtr = Builder->CreateAlloca(UnionType, nullptr, "choose.union");
         Builder->CreateStore(UnionValue, UnionPtr);
@@ -3953,11 +3979,66 @@ llvm::Expected<llvm::Value*> Emitter::emitTuple(const PlannedTuple &Tuple) {
     // vs actual tuples (multiple or named components)
     // But NOT for struct construction - if TupleType is a struct, we must create a struct
 
-    // Check if this is struct construction (TupleType names a struct)
-    bool IsStructConstruction = !Tuple.TupleType.Name.empty() &&
-                                 Tuple.TupleType.Name != "Tuple" &&
-                                 (StructCache.find(Tuple.TupleType.MangledName) != StructCache.end() ||
-                                  StructCache.find(Tuple.TupleType.Name) != StructCache.end());
+    // Check if this is struct construction (TupleType names a user-defined struct/union)
+    // We need to distinguish between:
+    // - Grouped expressions like (2 + 3) where TupleType might be "int" (result type)
+    // - Actual struct construction like Container(value) where TupleType is "Container"
+    bool IsStructConstruction = false;
+    llvm::StructType *PreEmittedStructTy = nullptr;
+    if (!Tuple.TupleType.Name.empty() && Tuple.TupleType.Name != "Tuple") {
+        // Check if it's already in the StructCache (from previous emission)
+        if (auto It = StructCache.find(Tuple.TupleType.MangledName); It != StructCache.end()) {
+            IsStructConstruction = true;
+            PreEmittedStructTy = It->second;
+        } else if (auto It = StructCache.find(Tuple.TupleType.Name); It != StructCache.end()) {
+            IsStructConstruction = true;
+            PreEmittedStructTy = It->second;
+        }
+        // For single-component tuples that aren't in StructCache, check the Plan.
+        // This handles inline struct definitions like `define Container(value: Option)`.
+        // We only do this for single-component tuples if the struct/union has exactly 1 property,
+        // to distinguish from grouped expressions like (*p) where the TupleType might be set
+        // to the result type but it's not actually struct construction.
+        if (!IsStructConstruction && Tuple.Components.size() == 1 && CurrentPlan) {
+            // Check if it's a struct in the plan with exactly 1 property
+            auto StructIt = CurrentPlan->Structures.find(Tuple.TupleType.Name);
+            if (StructIt != CurrentPlan->Structures.end() &&
+                StructIt->second.Properties.size() == 1) {
+                IsStructConstruction = true;
+                PreEmittedStructTy = emitStructType(StructIt->second);
+            }
+            if (!IsStructConstruction) {
+                // Check by mangled name
+                for (const auto &[key, s] : CurrentPlan->Structures) {
+                    if (s.MangledName == Tuple.TupleType.MangledName &&
+                        s.Properties.size() == 1) {
+                        IsStructConstruction = true;
+                        PreEmittedStructTy = emitStructType(s);
+                        break;
+                    }
+                }
+            }
+            // Check unions too - for unions with exactly 1 variant (degenerate case)
+            if (!IsStructConstruction) {
+                auto UnionIt = CurrentPlan->Unions.find(Tuple.TupleType.Name);
+                if (UnionIt != CurrentPlan->Unions.end() &&
+                    UnionIt->second.Variants.size() == 1) {
+                    IsStructConstruction = true;
+                    PreEmittedStructTy = emitUnionType(UnionIt->second);
+                }
+                if (!IsStructConstruction) {
+                    for (const auto &[key, u] : CurrentPlan->Unions) {
+                        if (u.MangledName == Tuple.TupleType.MangledName &&
+                            u.Variants.size() == 1) {
+                            IsStructConstruction = true;
+                            PreEmittedStructTy = emitUnionType(u);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     if (Tuple.Components.size() == 1 && !Tuple.Components[0].Name && !IsStructConstruction) {
         // Grouped expression like (2 + 3) - evaluate the inner value
@@ -3990,9 +4071,9 @@ llvm::Expected<llvm::Value*> Emitter::emitTuple(const PlannedTuple &Tuple) {
         ComponentValues.push_back(Val);
     }
 
-    // Get the struct type - either from TupleType or create anonymous
-    llvm::StructType *TupleTy = nullptr;
-    if (!Tuple.TupleType.Name.empty() && Tuple.TupleType.Name != "Tuple") {
+    // Get the struct type - either from pre-emitted type, TupleType lookup, or create anonymous
+    llvm::StructType *TupleTy = PreEmittedStructTy;
+    if (!TupleTy && !Tuple.TupleType.Name.empty() && Tuple.TupleType.Name != "Tuple") {
         // Named struct type - look it up in cache
         auto It = StructCache.find(Tuple.TupleType.MangledName);
         if (It == StructCache.end()) {

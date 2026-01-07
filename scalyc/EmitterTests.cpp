@@ -2364,6 +2364,35 @@ static bool testChooseMultipleCases() {
     return true;
 }
 
+static bool testChooseOnStructField() {
+    const char* Name = "Pipeline: choose on struct field";
+
+    // Test choose on a union field of a struct
+    auto ResultOrErr = evalInt(
+        "define Option union: (Some: int, None)\n"
+        "define Container(value: Option)\n"
+        "let c Container(Option.Some(42))\n"
+        "choose c.value: when v: Some: v else 0"
+    );
+
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 42) {
+        std::string Msg = "expected 42, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
 // SizeOf expression tests
 
 static bool testPipelineSizeOfInt() {
@@ -4305,6 +4334,7 @@ bool runEmitterTests() {
     testChooseWithDataBinding();
     testChooseElseFallback();
     testChooseMultipleCases();
+    testChooseOnStructField();
 
     // Is expressions
     llvm::outs() << "  Is expression tests:\n";
