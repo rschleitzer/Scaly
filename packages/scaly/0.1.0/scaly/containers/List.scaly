@@ -8,7 +8,7 @@ define List[T]
         if head = null
             return null
 
-        return &(*head).element
+        return &head.element
     }
 
     function count(this: List[T]) returns size_t
@@ -26,16 +26,16 @@ define List[T]
         var previous_node: pointer[Node[T]] null
         while node <> null
         {
-            if (*node).element = element
+            if node.element = element
             {
                 if previous_node <> null
-                    set (*previous_node).next: (*node).next
+                    set (*previous_node).next: node.next
                 if node = head
                     set head: null
                 return true
             }
             set previous_node: node
-            set node: (*node).next
+            set node: node.next
         }
 
         false

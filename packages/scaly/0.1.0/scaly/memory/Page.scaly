@@ -119,7 +119,7 @@ define Page
         var page next_page
         while page <> null
         {
-            let next_page (*page).next_page
+            let next_page page.next_page
             free(page as pointer[void])
             set page: next_page
         }
@@ -136,7 +136,7 @@ define Page
     function save_watermark(this: Page) returns BlockWatermark
     {
         if current_page <> null
-            return BlockWatermark(current_page, (*current_page).next_object, next_page, exclusive_pages.head)
+            return BlockWatermark(current_page, current_page.next_object, next_page, exclusive_pages.head)
         let this_page Page.get(next_object)
         BlockWatermark(this_page, next_object, next_page, exclusive_pages.head)
     }
@@ -147,10 +147,10 @@ define Page
         while exclusive_pages.head <> mark.exclusive_head
         {
             let node exclusive_pages.head
-            let page (*node).page
+            let page node.page
             page.deallocate_extensions()
             free(page as pointer[void])
-            set exclusive_pages.head: (*node).next
+            set exclusive_pages.head: node.next
         }
 
         ; Deallocate extensions added after mark.extension_tail
@@ -170,7 +170,7 @@ define Page
         while next_page <> null & next_page <> stop_at
         {
             let page_to_free next_page
-            set next_page: (*page_to_free).next_page
+            set next_page: page_to_free.next_page
             free(page_to_free as pointer[void])
         }
     }

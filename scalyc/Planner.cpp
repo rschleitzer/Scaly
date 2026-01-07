@@ -2971,7 +2971,7 @@ llvm::Expected<std::vector<PlannedMemberAccess>> Planner::resolveMemberAccessCha
                     PlannedMemberAccess Access;
                     Access.Name = MemberName;
                     Access.FieldIndex = FieldIndex;
-                    Access.ParentType = Current;  // Type being accessed
+                    Access.ParentType = LookupType;  // Use dereferenced type for auto-deref
                     Access.ResultType = std::move(*Resolved);
                     Result.push_back(std::move(Access));
 
@@ -2994,7 +2994,7 @@ llvm::Expected<std::vector<PlannedMemberAccess>> Planner::resolveMemberAccessCha
                         Access.Name = MemberName;
                         Access.FieldIndex = SIZE_MAX;  // Special marker for methods
                         Access.IsMethod = true;
-                        Access.ParentType = Current;  // Type being accessed
+                        Access.ParentType = LookupType;  // Use dereferenced type for auto-deref
                         Access.ResultType.Name = "function";
                         Access.ResultType.MangledName = "Pv";
                         Result.push_back(std::move(Access));

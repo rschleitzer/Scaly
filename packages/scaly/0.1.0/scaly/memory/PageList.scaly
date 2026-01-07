@@ -15,16 +15,16 @@ define PageList
         var previous_node: pointer[PageNode] null
         while node <> null
         {
-            if (*node).page = element
+            if node.page = element
             {
                 if previous_node <> null
-                    set (*previous_node).next: (*node).next
+                    set (*previous_node).next: node.next
                 if node = head
                     set head: null
                 return true
             }
             set previous_node: node
-            set node: (*node).next
+            set node: node.next
         }
 
         return false
