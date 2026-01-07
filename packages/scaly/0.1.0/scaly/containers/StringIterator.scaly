@@ -15,7 +15,9 @@ function next(this: StringIterator) returns pointer[char] {
     if current = last
     {
         return null
-    } else {
+    }
+    else
+    {
         let ret current
         set current: current + 1
         return ret

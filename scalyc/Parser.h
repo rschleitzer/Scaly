@@ -106,6 +106,7 @@ private:
     llvm::Expected<std::vector<ElementSyntax>*> parseElementList();
     llvm::Expected<ElementSyntax> parseElement();
     llvm::Expected<IfSyntax> parseIf();
+    llvm::Expected<ThenSyntax> parseThen();
     llvm::Expected<ElseSyntax> parseElse();
     llvm::Expected<MatchSyntax> parseMatch();
     llvm::Expected<std::vector<BranchSyntax>*> parseBranchList();

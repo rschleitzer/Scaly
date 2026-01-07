@@ -150,7 +150,9 @@ define Page
         if mark.page <> null
         {
             set (*mark.page).next_object: mark.next_object
-        } else {
+        }
+        else
+        {
             set next_object: mark.next_object
         }
     }

@@ -45,7 +45,9 @@ define Vector[T]
         {
             set data: (T*)(*rp).allocate(len * sizeof T, alignof T)
             memset(data, 0, len * sizeof T)
-        } else {
+        }
+        else
+        {
             set data: null
         }
     }
@@ -56,7 +58,9 @@ define Vector[T]
         {
             set data: (T*)(*rp).allocate(len * sizeof T, alignof T)
             memcpy(data, arr, len * sizeof T)
-        } else {
+        }
+        else
+        {
             set data: null
         }
     }
@@ -67,7 +71,9 @@ define Vector[T]
         {
             set data: (T*)(*rp).allocate(length * sizeof T, alignof T)
             memcpy(data, other.data, length * sizeof T)
-        } else {
+        }
+        else
+        {
             set data: null
         }
     }
@@ -79,7 +85,9 @@ define Vector[T]
             set data: (T*)(*rp).allocate(length * sizeof T, alignof T)
             let arr_vector array.vector
             memcpy(data, (*arr_vector).data, length * sizeof T)
-        } else {
+        }
+        else
+        {
             set data: null
         }
     }
@@ -96,7 +104,9 @@ define Vector[T]
                 set i: i - 1
                 set *(data + i): *item
             }
-        } else {
+        }
+        else
+        {
             set data: null
         }
     }

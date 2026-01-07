@@ -366,8 +366,12 @@
     <content link = if
     <content link = Operand               multiple          property = condition
     <content colon
-    <content link = Command                                 property = consequent
+    <content link = Then                                    property = consequent
     <content link = Else                           optional property = alternative
+
+<syntax id = Then
+    <content link = Command                                 property = command
+    <content colon                                 optional
 
 <syntax id = Else
     <content link = else

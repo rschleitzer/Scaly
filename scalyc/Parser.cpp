@@ -2053,9 +2053,9 @@ llvm::Expected<IfSyntax> Parser::parseIf() {
     if (!Lex.parseColon())
         return invalid(Start, Lex.position(), "expected colon or newline");
 
-    auto ConsequentOrErr = parseCommand();
+    auto ConsequentOrErr = parseThen();
     if (!ConsequentOrErr)
-        return invalid(Start, Lex.position(), "expected Command");
+        return invalid(Start, Lex.position(), "expected Then");
     auto Consequent = std::move(*ConsequentOrErr);
 
     ElseSyntax* Alternative = nullptr;
@@ -2070,6 +2070,22 @@ llvm::Expected<IfSyntax> Parser::parseIf() {
     size_t End = Lex.position();
 
     return IfSyntax{Start, End, Condition, Consequent, Alternative};
+
+}
+
+llvm::Expected<ThenSyntax> Parser::parseThen() {
+    size_t Start = Lex.previousPosition();
+
+    auto CommandOrErr = parseCommand();
+    if (!CommandOrErr)
+        return CommandOrErr.takeError();
+    auto Command = std::move(*CommandOrErr);
+
+    Lex.parseColon();
+
+    size_t End = Lex.position();
+
+    return ThenSyntax{Start, End, Command};
 
 }
 

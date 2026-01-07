@@ -651,7 +651,7 @@ llvm::Expected<If> Modeler::handleIf(const IfSyntax &Syntax) {
     if (!Cond)
         return Cond.takeError();
 
-    auto Cons = handleCommand(Syntax.consequent);
+    auto Cons = handleCommand(Syntax.consequent.command);
     if (!Cons)
         return Cons.takeError();
 

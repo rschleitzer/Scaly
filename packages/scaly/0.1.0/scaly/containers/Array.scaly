@@ -88,7 +88,9 @@ define Array[T]
             let capacity (*exclusive_page).get_capacity(alignof T) - sizeof Vector[T]
             set length: capacity / size
             set vector: Vector[T]^exclusive_page(exclusive_page, length)
-        } else {
+        }
+        else
+        {
             set length: (*vector).length * 2
             let new_vector Vector[T]^own_page(own_page, length)
             let bytes_to_copy (*vector).length * size

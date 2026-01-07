@@ -5,7 +5,9 @@ define BuilderListIterator[T] (current: pointer[Node[T]]) {
             let next_node current
             set current: (*current).next
             return &(*next_node).element
-        } else {
+        }
+        else
+        {
             return null
         }
     }
