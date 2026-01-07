@@ -399,3 +399,118 @@ function is_operator_char(c: char) returns bool
 
 function is_punctuation(c: char) returns bool
     c = '(' | c = ')' | c = '[' | c = ']' | c = '{' | c = '}' | c = ',' | c = '.'
+
+; Test function for lexer
+function test() returns int
+{
+    ; Test 1: Empty input should produce EmptyToken
+    var lexer Lexer$("")
+    choose lexer.token
+    {
+        when Empty(e)
+            ; OK - empty token as expected
+        else
+            return 1  ; Failed: expected EmptyToken
+    }
+
+    lexer.advance()
+
+    choose lexer.token
+    {
+        when Empty(e)
+            ; OK - still empty after advance on empty input
+        else
+            return 2  ; Failed: expected EmptyToken after advance
+    }
+
+    ; Test 2: Simple identifier
+    set lexer: Lexer$("hello")
+    lexer.advance()
+
+    choose lexer.token
+    {
+        when Identifier(id)
+        {
+            if id.name.equals("hello") = false
+                return 3  ; Failed: expected "hello"
+        }
+        else
+            return 4  ; Failed: expected IdentifierToken
+    }
+
+    ; Test 3: Integer literal
+    set lexer: Lexer$("42")
+    lexer.advance()
+
+    choose lexer.token
+    {
+        when Literal(lit)
+        {
+            choose lit.value
+            {
+                when Integer(i)
+                {
+                    if i.value.equals("42") = false
+                        return 5  ; Failed: expected "42"
+                }
+                else
+                    return 6  ; Failed: expected IntegerLiteral
+            }
+        }
+        else
+            return 7  ; Failed: expected LiteralToken
+    }
+
+    ; Test 4: String literal
+    set lexer: Lexer$("\"hello world\"")
+    lexer.advance()
+
+    choose lexer.token
+    {
+        when Literal(lit)
+        {
+            choose lit.value
+            {
+                when String(s)
+                {
+                    if s.value.equals("hello world") = false
+                        return 8  ; Failed: expected "hello world"
+                }
+                else
+                    return 9  ; Failed: expected StringLiteral
+            }
+        }
+        else
+            return 10  ; Failed: expected LiteralToken
+    }
+
+    ; Test 5: Punctuation
+    set lexer: Lexer$("(")
+    lexer.advance()
+
+    choose lexer.token
+    {
+        when Punctuation(p)
+        {
+            if p.sign <> '('
+                return 11  ; Failed: expected '('
+        }
+        else
+            return 12  ; Failed: expected PunctuationToken
+    }
+
+    ; Test 6: Colon
+    set lexer: Lexer$(":")
+    lexer.advance()
+
+    choose lexer.token
+    {
+        when Colon(c)
+            ; OK
+        else
+            return 13  ; Failed: expected ColonToken
+    }
+
+    ; All tests passed
+    0
+}
