@@ -152,6 +152,13 @@ define Lexer
             return
         }
 
+        ; Fragment literal
+        if c = '`'
+        {
+            set token: scan_fragment_literal()
+            return
+        }
+
         ; Invalid character
         set current: current + 1
         set token: Token.Invalid(InvalidToken())
@@ -186,12 +193,20 @@ define Lexer
     procedure handle_multi_line_comment(this: Lexer)
     {
         set current: current + 2  ; Skip ;*
-        while current + 1 < source.length()
+        var nesting_level 1
+        while current + 1 < source.length() & nesting_level > 0
         {
+            if source.get(current) = ';' & source.get(current + 1) = '*'
+            {
+                set nesting_level: nesting_level + 1
+                set current: current + 2
+                continue
+            }
             if source.get(current) = '*' & source.get(current + 1) = ';'
             {
+                set nesting_level: nesting_level - 1
                 set current: current + 2
-                return
+                continue
             }
             set current: current + 1
         }
@@ -280,6 +295,23 @@ define Lexer
         Token.Literal(LiteralToken(Literal.Character(CharacterLiteral(value))))
     }
 
+    function scan_fragment_literal(this: Lexer) returns Token
+    {
+        set current: current + 1  ; Skip opening `
+        let start current
+
+        while current < source.length() & source.get(current) <> '`'
+            set current: current + 1
+
+        let value source.substring(start, current - start)
+
+        if current < source.length()
+            set current: current + 1  ; Skip closing `
+
+        set position: current
+        Token.Literal(LiteralToken(Literal.Fragment(FragmentLiteral(value))))
+    }
+
     function scan_numeric_literal(this: Lexer) returns Token
     {
         let start current
@@ -309,6 +341,25 @@ define Lexer
             set current: current + 1
             while current < source.length() & is_digit(source.get(current))
                 set current: current + 1
+
+            ; Check for exponent
+            if current < source.length()
+            {
+                let exp_char source.get(current)
+                if exp_char = 'e' | exp_char = 'E'
+                {
+                    set current: current + 1
+                    ; Optional sign
+                    if current < source.length()
+                    {
+                        let sign_char source.get(current)
+                        if sign_char = '+' | sign_char = '-'
+                            set current: current + 1
+                    }
+                    while current < source.length() & is_digit(source.get(current))
+                        set current: current + 1
+                }
+            }
 
             let value source.substring(start, current - start)
             set position: current
@@ -722,6 +773,156 @@ function test() returns int
         }
         else
             return 41  ; Failed: expected LiteralToken
+    }
+
+    ; Test 18: Multi-line comment skipped
+    set lexer: Lexer$(";* this is a\nmulti-line\ncomment *;hello")
+    lexer.advance()
+
+    choose lexer.token
+    {
+        when Identifier(id)
+        {
+            if id.name.equals("hello") = false
+                return 42  ; Failed: expected "hello" after multi-line comment
+        }
+        else
+            return 43  ; Failed: expected IdentifierToken after multi-line comment
+    }
+
+    ; Test 19: Nested multi-line comment
+    set lexer: Lexer$(";* outer ;* nested *; outer *;world")
+    lexer.advance()
+
+    choose lexer.token
+    {
+        when Identifier(id)
+        {
+            if id.name.equals("world") = false
+                return 44  ; Failed: expected "world" after nested comment
+        }
+        else
+            return 45  ; Failed: expected IdentifierToken after nested comment
+    }
+
+    ; Test 20: Fragment literal
+    set lexer: Lexer$("`hello fragment`")
+    lexer.advance()
+
+    choose lexer.token
+    {
+        when Literal(lit)
+        {
+            choose lit.value
+            {
+                when Fragment(f)
+                {
+                    if f.value.equals("hello fragment") = false
+                        return 46  ; Failed: expected "hello fragment"
+                }
+                else
+                    return 47  ; Failed: expected FragmentLiteral
+            }
+        }
+        else
+            return 48  ; Failed: expected LiteralToken for fragment
+    }
+
+    ; Test 21: String with escape sequences
+    set lexer: Lexer$("\"hello\\nworld\"")
+    lexer.advance()
+
+    choose lexer.token
+    {
+        when Literal(lit)
+        {
+            choose lit.value
+            {
+                when String(s)
+                {
+                    if s.value.equals("hello\\nworld") = false
+                        return 49  ; Failed: expected "hello\\nworld"
+                }
+                else
+                    return 50  ; Failed: expected StringLiteral
+            }
+        }
+        else
+            return 51  ; Failed: expected LiteralToken for escaped string
+    }
+
+    ; Test 22: String with quote escape
+    set lexer: Lexer$("\"say \\\"hi\\\"\"")
+    lexer.advance()
+
+    choose lexer.token
+    {
+        when Literal(lit)
+        {
+            choose lit.value
+            {
+                when String(s)
+                {
+                    if s.value.equals("say \\\"hi\\\"") = false
+                        return 52  ; Failed: expected escaped quotes
+                }
+                else
+                    return 53  ; Failed: expected StringLiteral
+            }
+        }
+        else
+            return 54  ; Failed: expected LiteralToken
+    }
+
+    ; Test 23: Multiple tokens in sequence
+    set lexer: Lexer$("foo 123")
+    lexer.advance()
+
+    choose lexer.token
+    {
+        when Identifier(id)
+        {
+            if id.name.equals("foo") = false
+                return 55  ; Failed: expected "foo"
+        }
+        else
+            return 56  ; Failed: expected first IdentifierToken
+    }
+
+    lexer.advance()
+
+    choose lexer.token
+    {
+        when Literal(lit)
+        {
+            choose lit.value
+            {
+                when Integer(i)
+                {
+                    if i.value.equals("123") = false
+                        return 57  ; Failed: expected "123"
+                }
+                else
+                    return 58  ; Failed: expected IntegerLiteral
+            }
+        }
+        else
+            return 59  ; Failed: expected second token LiteralToken
+    }
+
+    ; Test 24: Whitespace handling (tabs and spaces)
+    set lexer: Lexer$("  \t  abc")
+    lexer.advance()
+
+    choose lexer.token
+    {
+        when Identifier(id)
+        {
+            if id.name.equals("abc") = false
+                return 60  ; Failed: expected "abc" after whitespace
+        }
+        else
+            return 61  ; Failed: expected IdentifierToken after whitespace
     }
 
     ; All tests passed
