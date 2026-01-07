@@ -93,15 +93,36 @@ private:
     // Scope stack for local variables
     std::vector<std::map<std::string, LocalBinding>> Scopes;
 
-    // Current structure being planned (for property access in methods)
-    std::string CurrentStructureName;
-    std::vector<PlannedProperty>* CurrentStructureProperties = nullptr;
-    PlannedStructure* CurrentStructure = nullptr;  // For method lookup during planning
+    // ========== Planning Context ==========
+    // Grouped state for current planning scope
 
-    // Current namespace being planned (for sibling function calls in define blocks)
-    std::string CurrentNamespaceName;
-    const Namespace* CurrentNamespace = nullptr;  // For sibling module lookup in lookupConcept
-    std::vector<const Module*> CurrentNamespaceModules;  // Planned sibling modules for concept lookup
+    // Structure context - active when planning methods/properties of a struct
+    struct StructureContext {
+        std::string Name;
+        std::vector<PlannedProperty>* Properties = nullptr;
+        PlannedStructure* Structure = nullptr;
+
+        bool isActive() const { return !Name.empty(); }
+    };
+    StructureContext CurrentStructureCtx;
+
+    // Namespace context - active when planning namespace members
+    struct NamespaceContext {
+        std::string Name;
+        const Namespace* NS = nullptr;
+        std::vector<const Module*> Modules;
+
+        bool isActive() const { return !Name.empty(); }
+    };
+    NamespaceContext CurrentNamespaceCtx;
+
+    // Legacy accessors for gradual migration
+    std::string& CurrentStructureName = CurrentStructureCtx.Name;
+    std::vector<PlannedProperty>*& CurrentStructureProperties = CurrentStructureCtx.Properties;
+    PlannedStructure*& CurrentStructure = CurrentStructureCtx.Structure;
+    std::string& CurrentNamespaceName = CurrentNamespaceCtx.Name;
+    const Namespace*& CurrentNamespace = CurrentNamespaceCtx.NS;
+    std::vector<const Module*>& CurrentNamespaceModules = CurrentNamespaceCtx.Modules;
 
     // Track if current function uses $ allocations (needs local page)
     bool CurrentFunctionUsesLocalLifetime = false;
