@@ -442,14 +442,140 @@ function is_operator_char(c: char) returns bool
 function is_punctuation(c: char) returns bool
     c = '(' | c = ')' | c = '[' | c = ']' | c = '{' | c = '}' | c = ',' | c = '.'
 
-; Test function for lexer
-function test() returns int
+; Test helper classification functions
+function test_helpers() returns int
 {
-    ; Test String creation
+    ; Test is_identifier_start
+    if ~is_identifier_start('a')
+        return -1
+    if ~is_identifier_start('Z')
+        return -2
+    if ~is_identifier_start('_')
+        return -3
+    if is_identifier_start('0')
+        return -4
+    if is_identifier_start(' ')
+        return -5
+
+    ; Test is_digit
+    if ~is_digit('0')
+        return -6
+    if ~is_digit('9')
+        return -7
+    if is_digit('a')
+        return -8
+
+    ; Test is_hex_digit
+    if ~is_hex_digit('0')
+        return -9
+    if ~is_hex_digit('a')
+        return -10
+    if ~is_hex_digit('F')
+        return -11
+    if is_hex_digit('g')
+        return -12
+
+    ; Test is_punctuation
+    if ~is_punctuation('(')
+        return -13
+    if ~is_punctuation(')')
+        return -14
+    if is_punctuation(':')
+        return -15
+
+    ; Test is_operator_char
+    if ~is_operator_char('+')
+        return -16
+    if ~is_operator_char('-')
+        return -17
+    if is_operator_char('a')
+        return -18
+
+    0
+}
+
+; Test string creation and basic operations
+function test_string_basics() returns int
+{
     var rp Page.allocate_page()
+
+    ; Create a string and check its contents
     var s String(rp, "hello")
+
+    ; Check length using function call syntax (workaround for method call bug)
+    let len get_length(s)
+    if len <> 5
+    {
+        rp.deallocate_extensions()
+        free(rp as pointer[void])
+        return -1
+    }
+
+    ; Check individual characters
+    if get(s, 0) <> 'h'
+    {
+        rp.deallocate_extensions()
+        free(rp as pointer[void])
+        return -2
+    }
+
+    if get(s, 4) <> 'o'
+    {
+        rp.deallocate_extensions()
+        free(rp as pointer[void])
+        return -3
+    }
+
     rp.deallocate_extensions()
     free(rp as pointer[void])
+    0
+}
+
+; Test lexer creation
+function test_lexer_creation() returns int
+{
+    var rp Page.allocate_page()
+    var lexer Lexer(String(rp, "hello"))
+
+    ; Check initial state
+    if lexer.current <> 0
+    {
+        rp.deallocate_extensions()
+        free(rp as pointer[void])
+        return -1
+    }
+
+    ; Check initial token is Empty
+    choose lexer.token
+        when e: Empty
+        {
+            rp.deallocate_extensions()
+            free(rp as pointer[void])
+            return 0
+        }
+        else
+        {
+            rp.deallocate_extensions()
+            free(rp as pointer[void])
+            return -2
+        }
+}
+
+; Main test function
+function test() returns int
+{
+    var result test_helpers()
+    if result <> 0
+        return result - 100
+
+    set result: test_string_basics()
+    if result <> 0
+        return result - 200
+
+    set result: test_lexer_creation()
+    if result <> 0
+        return result - 300
+
     0
 }
 
