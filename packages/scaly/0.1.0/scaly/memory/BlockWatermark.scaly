@@ -5,3 +5,12 @@ define BlockWatermark
     extension_tail: pointer[Page]
     exclusive_head: pointer[PageNode]
 )
+{
+    init(p: pointer[Page], obj: pointer[void], ext: pointer[Page], head: pointer[PageNode])
+    {
+        set page: p
+        set next_object: obj
+        set extension_tail: ext
+        set exclusive_head: head
+    }
+}
