@@ -33,9 +33,11 @@ define StringBuilder
         append(c_string)
     }
 
-    function append(this: StringBuilder, character: char) { buffer.add(character) }
+    function append(this: StringBuilder, character: char)
+        buffer.add(character)
 
-    function append(this: StringBuilder, string: String) { buffer.add(Vector[char](string.get_buffer(), string.get_length())) }
+    function append(this: StringBuilder, string: String)
+        buffer.add(Vector[char](string.get_buffer(), string.get_length()))
 
     function append(this: StringBuilder, c_string: pointer[const_char])
     {
@@ -51,7 +53,9 @@ define StringBuilder
         buffer.add(Vector[char](start, length))
     }
 
-    function get_length(this: StringBuilder) returns size_t { buffer.get_length() }
+    function get_length(this: StringBuilder) returns size_t
+        buffer.get_length()
 
-    function to_string(this: StringBuilder, rp: pointer[Page]) returns String { String(rp, buffer.get_buffer(), buffer.get_length()) }
+    function to_string(this: StringBuilder, rp: pointer[Page]) returns String
+        String(rp, buffer.get_buffer(), buffer.get_length())
 }

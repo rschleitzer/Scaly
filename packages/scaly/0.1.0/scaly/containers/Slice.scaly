@@ -30,9 +30,7 @@ define Slice[T](data: pointer[T], length: size_t)
 
     ; Check if empty
     function is_empty(this) returns bool
-    {
         length = 0
-    }
 
     ; Create sub-slice (no allocation)
     function subslice(this, start: size_t, end: size_t) returns Slice[T]
@@ -50,15 +48,11 @@ define Slice[T](data: pointer[T], length: size_t)
 
     ; Slice from start
     function slice_from(this, from: size_t) returns Slice[T]
-    {
         subslice(from, length)
-    }
 
     ; Slice to end
     function slice_to(this, to: size_t) returns Slice[T]
-    {
         subslice(0, to)
-    }
 
     ; Equality (element-wise)
     function equals(this, other: Slice[T]) returns bool
@@ -71,14 +65,10 @@ define Slice[T](data: pointer[T], length: size_t)
     }
 
     operator ==(other: Slice[T]) returns bool
-    {
         equals(other)
-    }
 
     operator <>(other: Slice[T]) returns bool
-    {
         not equals(other)
-    }
 
     ; Check if starts with prefix
     function starts_with(this, prefix: Slice[T]) returns bool
@@ -98,9 +88,7 @@ define Slice[T](data: pointer[T], length: size_t)
 
     ; Iterator support
     function get_iterator(this) returns SliceIterator[T]
-    {
         SliceIterator[T](this)
-    }
 }
 
 define SliceIterator[T](slice: Slice[T], position: size_t(0))
