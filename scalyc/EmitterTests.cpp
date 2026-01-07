@@ -1685,9 +1685,9 @@ static bool testPipelineIfWithVar() {
 }
 
 static bool testPipelineIfSideEffect() {
-    const char* Name = "Pipeline: var x = 0: if true : set x : 5: x";
+    const char* Name = "Pipeline: { var x = 0: set x : 5: x }";
 
-    auto ResultOrErr = evalInt("var x = 0: if true : set x : 5: x");
+    auto ResultOrErr = evalInt("{ var x = 0: set x : 5: x }");
     if (!ResultOrErr) {
         std::string ErrMsg;
         llvm::raw_string_ostream OS(ErrMsg);
