@@ -777,6 +777,46 @@ function equals(this: String, other: String) returns bool
 
 **Style guideline:** Prefer implicit returns for the final expression. Use explicit `return` only for early exits in the middle of a function.
 
+### Single-Line Function Bodies
+
+When a function, procedure, or operator has a single-expression body, the braces can be omitted entirely. The expression is placed on the next line, indented:
+
+```scaly
+; Single-line functions - no braces needed
+function get_iterator(this: List[T]) returns ListIterator[T]
+    ListIterator[T](head)
+
+function is_empty(this: Slice[T]) returns bool
+    length = 0
+
+function get_length(this: StringBuilder) returns size_t
+    buffer.get_length()
+
+operator ==(other: Slice[T]) returns bool
+    equals(other)
+```
+
+**When to use single-line syntax:**
+- Function body is a single expression (no `let`, `var`, `set`, `if`, `while`, etc.)
+- The expression fits comfortably on one line
+- No early returns needed
+
+**When to keep braces:**
+- Multiple statements in the body
+- Control flow (`if`, `while`, `for`, `match`)
+- Variable bindings (`let`, `var`)
+- Side effects with `set`
+
+```scaly
+; Keep braces for multi-statement bodies
+function get(this: Vector[T], i: size_t) returns pointer[T]
+{
+    if i >= length
+        return null
+    data + i
+}
+```
+
 ### Code Style: Allman Braces
 
 Scaly uses **Allman style** (also called BSD style) for brace placement. All opening braces go on their own line:
