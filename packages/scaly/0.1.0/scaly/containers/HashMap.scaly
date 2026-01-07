@@ -6,12 +6,14 @@ define HashMapIterator[K, V]
     element_iterator: VectorIterator[KeyValuePair[K, V]]
 )
 {
-    init (hash_map: HashMap[K, V]) {
+    init (hash_map: HashMap[K, V])
+    {
         set slot_iterator: VectorIterator[Vector[KeyValuePair[K, V]]](hash_map.slots)
         set element_iterator: VectorIterator[KeyValuePair[K, V]](slot_iterator.next())
     }
 
-    function next(this: HashMapIterator[K, V]) returns pointer[V] {
+    function next(this: HashMapIterator[K, V]) returns pointer[V]
+    {
         while true
         {
             let ret element_iterator.next()
@@ -32,7 +34,8 @@ define HashMap[K, V]
     slots: pointer[Vector[Vector[KeyValuePair[K, V]]]] (null)
 )
 {
-    init (rp: pointer[Page], hash_map_builder: HashMapBuilder[K, V]) {
+    init (rp: pointer[Page], hash_map_builder: HashMapBuilder[K, V])
+    {
         if hash_map_builder.length = 0
         {
             set slots: null
@@ -55,7 +58,8 @@ define HashMap[K, V]
         }
     }
 
-    function contains(this: HashMap[K, V], key: K) returns bool {
+    function contains(this: HashMap[K, V], key: K) returns bool
+    {
         if slots = null
             return false
 
@@ -75,11 +79,13 @@ define HashMap[K, V]
         return false
     }
 
-    operator [](key: K) returns pointer[V] {
+    operator [](key: K) returns pointer[V]
+    {
         return get(key)
     }
 
-    function get(this: HashMap[K, V], key: K) returns pointer[V] {
+    function get(this: HashMap[K, V], key: K) returns pointer[V]
+    {
         if slots = null
             return null
 

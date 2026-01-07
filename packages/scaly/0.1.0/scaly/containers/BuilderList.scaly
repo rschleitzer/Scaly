@@ -1,17 +1,21 @@
 use scaly.memory.Page
 
-define BuilderList[T] (head: pointer[Node[T]]) {
+define BuilderList[T] (head: pointer[Node[T]])
+{
 
-    init () {
+    init ()
+    {
         set head: null
     }
 
-    function add(this: BuilderList[T], rp: pointer[Page], element: T) {
+    function add(this: BuilderList[T], rp: pointer[Page], element: T)
+    {
         let new_node Node[T]^rp(element, head)
         set head: new_node
     }
 
-    function remove(this: BuilderList[T], element: T) returns bool {
+    function remove(this: BuilderList[T], element: T) returns bool
+    {
         var node head
         var previous_node: pointer[Node[T]] null
         while node <> null
@@ -31,13 +35,15 @@ define BuilderList[T] (head: pointer[Node[T]]) {
         return false
     }
 
-    function get_head(this: BuilderList[T]) returns pointer[T] {
+    function get_head(this: BuilderList[T]) returns pointer[T]
+    {
         if head = null
             return null
         return &(*head).element
     }
 
-    function count(this: BuilderList[T]) returns size_t {
+    function count(this: BuilderList[T]) returns size_t
+    {
         var list_iterator get_iterator()
         var i: size_t 0
         while list_iterator.next() <> null

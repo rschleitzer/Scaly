@@ -1,7 +1,8 @@
 ; Intrinsic operators for primitive types
 ; These have no Scaly implementation - the backend emits native instructions
 
-define operators {
+define operators
+{
 
     ; Signed integer arithmetic (i64)
     operator +(left: i64, right: i64) returns i64 intrinsic

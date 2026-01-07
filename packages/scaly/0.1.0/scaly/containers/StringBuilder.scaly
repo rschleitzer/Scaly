@@ -5,25 +5,30 @@ define StringBuilder
     buffer: Array[char]
 )
 {
-    init () {
+    init ()
+    {
         set buffer: Array[char]()
     }
 
-    init (size: size_t) {
+    init (size: size_t)
+    {
         set buffer: Array[char](size)
     }
 
-    init (character: char) {
+    init (character: char)
+    {
         set buffer: Array[char]()
         append(character)
     }
 
-    init (string: String) {
+    init (string: String)
+    {
         set buffer: Array[char]()
         append(string)
     }
 
-    init (c_string: pointer[const_char]) {
+    init (c_string: pointer[const_char])
+    {
         set buffer: Array[char]()
         append(c_string)
     }
@@ -32,7 +37,8 @@ define StringBuilder
 
     function append(this: StringBuilder, string: String) { buffer.add(Vector[char](string.get_buffer(), string.get_length())) }
 
-    function append(this: StringBuilder, c_string: pointer[const_char]) {
+    function append(this: StringBuilder, c_string: pointer[const_char])
+    {
         let length strlen(c_string)
         if length = 0
             return
@@ -40,7 +46,8 @@ define StringBuilder
         buffer.add(Vector[char](c_string as pointer[char], length))
     }
 
-    function append(this: StringBuilder, start: pointer[char], length: size_t) {
+    function append(this: StringBuilder, start: pointer[char], length: size_t)
+    {
         buffer.add(Vector[char](start, length))
     }
 

@@ -8,7 +8,8 @@ define HASH_PRIMES: size_t[] [
     402653189, 805306457, 1610612741,
 ]
 
-function is_prime(candidate: size_t) returns bool {
+function is_prime(candidate: size_t) returns bool
+{
     if (candidate & 1) <> 0
     {
         let limit sqrt(candidate as double) as size_t
@@ -25,7 +26,8 @@ function is_prime(candidate: size_t) returns bool {
     return candidate = 2
 }
 
-function get_prime(size: size_t) returns size_t {
+function get_prime(size: size_t) returns size_t
+{
     {
         var i: int 0
         while i < 30
@@ -50,7 +52,8 @@ function get_prime(size: size_t) returns size_t {
 }
 
 ; FNV-1a hash
-function hash(data: pointer[char], length: size_t) returns size_t {
+function hash(data: pointer[char], length: size_t) returns size_t
+{
     var hash: size_t 0xcbf29ce484222325
     var prime: size_t 0x100000001b3
     var i: int 0

@@ -5,7 +5,8 @@ define HashSet[T]
     slots: pointer[Vector[Vector[T]]] (null)
 )
 {
-    init (rp: pointer[Page], hash_set_builder: HashSetBuilder[T]) {
+    init (rp: pointer[Page], hash_set_builder: HashSetBuilder[T])
+    {
         if hash_set_builder.length = 0
         {
             set slots: null
@@ -28,7 +29,8 @@ define HashSet[T]
         }
     }
 
-    function contains(this: HashSet[T], value: T) returns bool {
+    function contains(this: HashSet[T], value: T) returns bool
+    {
         if slots = null
             return false
 

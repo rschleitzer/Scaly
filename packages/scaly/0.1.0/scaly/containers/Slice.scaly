@@ -2,35 +2,41 @@
 ; Zero allocation, zero copy - just pointer + length
 ; Lifetime bounded by source data
 
-define Slice[T](data: pointer[T], length: size_t) {
+define Slice[T](data: pointer[T], length: size_t)
+{
 
     ; Empty slice
-    init () {
+    init ()
+    {
         set data: null
         set length: 0
     }
 
     ; Get element at index (returns null if out of bounds)
-    function get(this, index: size_t) returns pointer[T] {
+    function get(this, index: size_t) returns pointer[T]
+    {
         if index >= length
             return null
         data + index
     }
 
     ; Indexed access
-    operator [](index: size_t) returns pointer[T] {
+    operator [](index: size_t) returns pointer[T]
+    {
         if index >= length
             return null
         data + index
     }
 
     ; Check if empty
-    function is_empty(this) returns bool {
+    function is_empty(this) returns bool
+    {
         length = 0
     }
 
     ; Create sub-slice (no allocation)
-    function subslice(this, start: size_t, end: size_t) returns Slice[T] {
+    function subslice(this, start: size_t, end: size_t) returns Slice[T]
+    {
         var from start
         var to end
         if from > length
@@ -43,17 +49,20 @@ define Slice[T](data: pointer[T], length: size_t) {
     }
 
     ; Slice from start
-    function slice_from(this, from: size_t) returns Slice[T] {
+    function slice_from(this, from: size_t) returns Slice[T]
+    {
         subslice(from, length)
     }
 
     ; Slice to end
-    function slice_to(this, to: size_t) returns Slice[T] {
+    function slice_to(this, to: size_t) returns Slice[T]
+    {
         subslice(0, to)
     }
 
     ; Equality (element-wise)
-    function equals(this, other: Slice[T]) returns bool {
+    function equals(this, other: Slice[T]) returns bool
+    {
         if length <> other.length
             return false
         if length = 0
@@ -61,41 +70,49 @@ define Slice[T](data: pointer[T], length: size_t) {
         memcmp(data as pointer[void], other.data as pointer[void], length * sizeof T) = 0
     }
 
-    operator ==(other: Slice[T]) returns bool {
+    operator ==(other: Slice[T]) returns bool
+    {
         equals(other)
     }
 
-    operator <>(other: Slice[T]) returns bool {
+    operator <>(other: Slice[T]) returns bool
+    {
         not equals(other)
     }
 
     ; Check if starts with prefix
-    function starts_with(this, prefix: Slice[T]) returns bool {
+    function starts_with(this, prefix: Slice[T]) returns bool
+    {
         if prefix.length > length
             return false
         subslice(0, prefix.length).equals(prefix)
     }
 
     ; Check if ends with suffix
-    function ends_with(this, suffix: Slice[T]) returns bool {
+    function ends_with(this, suffix: Slice[T]) returns bool
+    {
         if suffix.length > length
             return false
         subslice(length - suffix.length, length).equals(suffix)
     }
 
     ; Iterator support
-    function get_iterator(this) returns SliceIterator[T] {
+    function get_iterator(this) returns SliceIterator[T]
+    {
         SliceIterator[T](this)
     }
 }
 
-define SliceIterator[T](slice: Slice[T], position: size_t(0)) {
-    init (s: Slice[T]) {
+define SliceIterator[T](slice: Slice[T], position: size_t(0))
+{
+    init (s: Slice[T])
+    {
         set slice: s
         set position: 0
     }
 
-    function next(this) returns pointer[T] {
+    function next(this) returns pointer[T]
+    {
         if position >= slice.length
             return null
         let result slice.data + position

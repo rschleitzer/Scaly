@@ -6,7 +6,8 @@ define HashMapBuilder[K, V]
     slots: pointer[Vector[BuilderList[Slot[KeyValuePair[K, V]]]]] (null)
 )
 {
-    init (rp: pointer[Page], vec: Vector[KeyValuePair[K, V]]) {
+    init (rp: pointer[Page], vec: Vector[KeyValuePair[K, V]])
+    {
         set length: 0
         set slots: null
         if vec.length > 0
@@ -18,7 +19,8 @@ define HashMapBuilder[K, V]
         }
     }
 
-    function reallocate(this: HashMapBuilder[K, V], size: size_t) {
+    function reallocate(this: HashMapBuilder[K, V], size: size_t)
+    {
         let hash_size hashing.get_prime(size)
         let own_page Page.get(this as pointer[void])
         let slots_page (*own_page).allocate_exclusive_page()
@@ -43,14 +45,16 @@ define HashMapBuilder[K, V]
         set slots: new_slots
     }
 
-    function add(this: HashMapBuilder[K, V], key: K, value: V) returns bool {
+    function add(this: HashMapBuilder[K, V], key: K, value: V) returns bool
+    {
         let hash_size hashing.get_prime(length + 1)
         if slots = null || hash_size > (*slots).length
             reallocate(length + 1)
         return add_internal(key, value)
     }
 
-    function add_internal(this: HashMapBuilder[K, V], key: K, value: V) returns bool {
+    function add_internal(this: HashMapBuilder[K, V], key: K, value: V) returns bool
+    {
         let hash_code key.hash()
         let slot_number hash_code % (*slots).length
         let slot_list (*slots).get(slot_number)
@@ -68,7 +72,8 @@ define HashMapBuilder[K, V]
         return true
     }
 
-    function contains(this: HashMapBuilder[K, V], key: K) returns bool {
+    function contains(this: HashMapBuilder[K, V], key: K) returns bool
+    {
         if slots = null
             return false
 
@@ -85,7 +90,8 @@ define HashMapBuilder[K, V]
         return false
     }
 
-    function get(this: HashMapBuilder[K, V], key: K) returns pointer[V] {
+    function get(this: HashMapBuilder[K, V], key: K) returns pointer[V]
+    {
         if slots = null
             return null
 
@@ -100,7 +106,8 @@ define HashMapBuilder[K, V]
         return null
     }
 
-    operator [](key: K) returns pointer[V] {
+    operator [](key: K) returns pointer[V]
+    {
         return get(key)
     }
 }
