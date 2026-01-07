@@ -148,13 +148,9 @@ define Page
         ; Restore allocation state
         set current_page: mark.page
         if mark.page <> null
-        {
             set (*mark.page).next_object: mark.next_object
-        }
         else
-        {
             set next_object: mark.next_object
-        }
     }
 
     procedure deallocate_extensions_after(this: Page, stop_at: pointer[Page]) {

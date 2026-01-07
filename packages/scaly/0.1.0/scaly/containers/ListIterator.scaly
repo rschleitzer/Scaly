@@ -7,8 +7,6 @@ define ListIterator[T] (current: pointer[Node[T]]) {
             return &(*old_current).element
         }
         else
-        {
             return null
-        }
     }
 }
