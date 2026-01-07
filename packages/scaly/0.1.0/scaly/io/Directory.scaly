@@ -11,7 +11,7 @@ define Directory
         var local_page Page.allocate_page()
         let path_c_string path.to_c_string(local_page)
         let result access(path_c_string, F_OK)
-        (*local_page).deallocate_extensions()
+        local_page.deallocate_extensions()
         free(local_page as pointer[void])
         return result = 0
     }
@@ -21,7 +21,7 @@ define Directory
         var local_page Page.allocate_page()
         let path_c_string path.to_c_string(local_page)
         let result mkdir(path_c_string, 493) ; 0755 in octal = 493
-        (*local_page).deallocate_extensions()
+        local_page.deallocate_extensions()
         free(local_page as pointer[void])
         return result = 0
     }
@@ -31,7 +31,7 @@ define Directory
         var local_page Page.allocate_page()
         let path_c_string path.to_c_string(local_page)
         let result rmdir(path_c_string)
-        (*local_page).deallocate_extensions()
+        local_page.deallocate_extensions()
         free(local_page as pointer[void])
         return result = 0
     }

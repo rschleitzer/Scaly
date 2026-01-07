@@ -12,7 +12,7 @@ define memory
         var page Page.allocate_page()
         if page = null
             return -1
-        (*page).deallocate_extensions()
+        page.deallocate_extensions()
         free(page as pointer[void])
         0
     }
@@ -22,13 +22,13 @@ define memory
         var page Page.allocate_page()
         if page = null
             return -2
-        let ptr (*page).allocate(sizeof int, alignof int) as pointer[int]
+        let ptr page.allocate(sizeof int, alignof int) as pointer[int]
         if ptr = null
             return -3
         set *ptr: 42
         if *ptr <> 42
             return -4
-        (*page).deallocate_extensions()
+        page.deallocate_extensions()
         free(page as pointer[void])
         0
     }
@@ -38,9 +38,9 @@ define memory
         var page Page.allocate_page()
         if page = null
             return -5
-        let p1 (*page).allocate(sizeof int, alignof int) as pointer[int]
-        let p2 (*page).allocate(sizeof int, alignof int) as pointer[int]
-        let p3 (*page).allocate(sizeof int, alignof int) as pointer[int]
+        let p1 page.allocate(sizeof int, alignof int) as pointer[int]
+        let p2 page.allocate(sizeof int, alignof int) as pointer[int]
+        let p3 page.allocate(sizeof int, alignof int) as pointer[int]
         set *p1: 1
         set *p2: 2
         set *p3: 3
@@ -50,7 +50,7 @@ define memory
             return -7
         if *p3 <> 3
             return -8
-        (*page).deallocate_extensions()
+        page.deallocate_extensions()
         free(page as pointer[void])
         0
     }
@@ -60,11 +60,11 @@ define memory
         var page Page.allocate_page()
         if page = null
             return -9
-        let ptr (*page).allocate(sizeof int, alignof int) as pointer[int]
+        let ptr page.allocate(sizeof int, alignof int) as pointer[int]
         let retrieved_page Page.get(ptr as pointer[void])
         if retrieved_page <> page
             return -10
-        (*page).deallocate_extensions()
+        page.deallocate_extensions()
         free(page as pointer[void])
         0
     }

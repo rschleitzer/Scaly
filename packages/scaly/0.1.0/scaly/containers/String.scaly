@@ -19,7 +19,7 @@ define String (data: pointer[char](null))
 
         set *(length_array + counter): rest as char
         let overall_length counter + 1 + length
-        set data: (*rp).allocate(overall_length, 1) as pointer[char]
+        set data: rp.allocate(overall_length, 1) as pointer[char]
         memcpy(data, length_array, counter + 1)
     }
 
@@ -44,7 +44,7 @@ define String (data: pointer[char](null))
 
         set *(length_array + counter): rest as char
         let overall_length counter + 1 + length
-        set data: (*rp).allocate(overall_length, 1) as pointer[char]
+        set data: rp.allocate(overall_length, 1) as pointer[char]
         memcpy(data, length_array, counter + 1)
         memcpy((data + counter + 1) as pointer[void], other, length)
     }
@@ -65,7 +65,7 @@ define String (data: pointer[char](null))
 
         set *(length_array + counter): rest as char
         let overall_length counter + 1 + other.length
-        set data: (*rp).allocate(overall_length, 1) as pointer[char]
+        set data: rp.allocate(overall_length, 1) as pointer[char]
         memcpy(data, length_array, counter + 1)
         if other.length > 0
             memcpy((data + counter + 1) as pointer[void], other.data, other.length)
@@ -93,7 +93,7 @@ define String (data: pointer[char](null))
 
         set *(length_array + counter): rest as char
         let overall_length counter + 1 + length
-        set data: (*rp).allocate(overall_length, 1) as pointer[char]
+        set data: rp.allocate(overall_length, 1) as pointer[char]
         memcpy(data, length_array, counter + 1)
         memcpy((data + counter + 1) as pointer[void], c_string, length)
     }
@@ -124,13 +124,13 @@ define String (data: pointer[char](null))
             set index: index + 1
         }
         var overall_length index + 1 + length
-        set data: (*rp).allocate(overall_length, 1) as pointer[char]
+        set data: rp.allocate(overall_length, 1) as pointer[char]
         memcpy(data, other.data, overall_length)
     }
 
     init (rp: pointer[Page], character: char)
     {
-        set data: (*rp).allocate(2, 1) as pointer[char]
+        set data: rp.allocate(2, 1) as pointer[char]
         set *data: 1
         set *(data + 1): character
     }
@@ -180,7 +180,7 @@ define String (data: pointer[char](null))
             }
         }
 
-        var dest (*rp).allocate(length + 1, 1)
+        var dest rp.allocate(length + 1, 1)
         if data <> null
             memcpy(dest, data + index + 1, length)
         set *(dest as pointer[char] + index + length): 0

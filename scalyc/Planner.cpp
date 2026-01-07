@@ -1325,6 +1325,7 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                         ParentType.Generics = StructType.Generics;
                         ParentType.MangledName = Struct ? Struct->MangledName :
                             (StructType.MangledName.empty() ? StructType.Name : StructType.MangledName);
+
                         std::vector<PlannedItem> Params;
                         for (const auto &Inp : Func->Input) {
                             PlannedItem Item;
@@ -4837,7 +4838,15 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                         }
 
                         // Look up the method on the variable's type with overload resolution
-                        auto MethodMatch = lookupMethod(PlannedVar->ResultType, MethodName, ArgTypes, Op.Loc);
+                        // Auto-deref pointer types for method lookup
+                        PlannedType LookupType = PlannedVar->ResultType;
+                        if (LookupType.Name == "pointer" && !LookupType.Generics.empty()) {
+                            // Make a copy first to avoid self-referential assignment issues
+                            // (assigning from a subobject to its parent can cause UB)
+                            PlannedType Inner = LookupType.Generics[0];
+                            LookupType = std::move(Inner);
+                        }
+                        auto MethodMatch = lookupMethod(LookupType, MethodName, ArgTypes, Op.Loc);
                         if (MethodMatch) {
                             // Create method call with instance as first argument
                             PlannedCall Call;
