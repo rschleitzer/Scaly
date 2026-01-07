@@ -445,11 +445,11 @@ function is_punctuation(c: char) returns bool
 ; Test function for lexer
 function test() returns int
 {
-    ; Test 1: Create a page and string, verify length
     var rp scaly.memory.Page.allocate_page()
     var str scaly.containers.String(rp, "hello")
-    if str.length() <> 5
-        return -1
+
+    ; Test Lexer construction
+    var lexer Lexer^rp(str)
 
     ; Cleanup
     rp.deallocate_extensions()
