@@ -67,7 +67,7 @@ define Page
         var page address as pointer[Page]
 
         ; Oversized pages have no next_object
-        set (*page).next_object: null
+        set page.next_object: null
 
         ; An oversized page is always exclusive
         exclusive_pages.add(page)
