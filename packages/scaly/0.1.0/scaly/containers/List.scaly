@@ -17,7 +17,7 @@ define List[T]
         var i: size_t 0
         while list_iterator.next() <> null
             set i: i + 1
-        return i
+        i
     }
 
     function remove(this: List[T], element: T) returns bool
@@ -38,7 +38,7 @@ define List[T]
             set node: (*node).next
         }
 
-        return false
+        false
     }
 
     function get_iterator(this: List[T]) returns ListIterator[T]

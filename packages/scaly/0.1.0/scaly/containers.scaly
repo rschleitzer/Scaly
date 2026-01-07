@@ -33,7 +33,7 @@ define containers
             return -2
         (*rp).deallocate_extensions()
         free(rp as pointer[void])
-        return 0
+        0
     }
 
     function test_array() returns int
@@ -61,7 +61,7 @@ define containers
                 set i: i + 1
             }
         }
-        return 0
+        0
     }
 
     function test_string_simple() returns int
@@ -73,7 +73,7 @@ define containers
             return -100
         (*rp).deallocate_extensions()
         free(rp as pointer[void])
-        return 0
+        0
     }
 
     function test_string() returns int
@@ -98,7 +98,7 @@ define containers
             return -10
         (*rp).deallocate_extensions()
         free(rp as pointer[void])
-        return 0
+        0
     }
 
     function test_string_builder() returns int
@@ -131,7 +131,7 @@ define containers
             return -16
         (*rp).deallocate_extensions()
         free(rp as pointer[void])
-        return 0
+        0
     }
 
     function test_list() returns int
@@ -161,7 +161,7 @@ define containers
                 set i: i - 1
             }
         }
-        return 0
+        0
     }
 
     function test_hash_set() returns int
@@ -192,7 +192,7 @@ define containers
             return -26
         (*rp).deallocate_extensions()
         free(rp as pointer[void])
-        return 0
+        0
     }
 
     function test_hash_map() returns int
@@ -318,7 +318,7 @@ define containers
             (*rp).deallocate_extensions()
             free(rp as pointer[void])
         }
-        return 0
+        0
     }
 
     function test_slice() returns int
@@ -377,7 +377,7 @@ define containers
 
         (*rp).deallocate_extensions()
         free(rp as pointer[void])
-        return 0
+        0
     }
 
     function test() returns int
@@ -409,6 +409,6 @@ define containers
         set result: test_hash_map()
         if result <> 0
             return result
-        return 0
+        0
     }
 }

@@ -14,7 +14,7 @@ define memory
             return -1
         (*page).deallocate_extensions()
         free(page as pointer[void])
-        return 0
+        0
     }
 
     function test_page_allocate_int() returns int
@@ -30,7 +30,7 @@ define memory
             return -4
         (*page).deallocate_extensions()
         free(page as pointer[void])
-        return 0
+        0
     }
 
     function test_page_multiple_allocs() returns int
@@ -52,7 +52,7 @@ define memory
             return -8
         (*page).deallocate_extensions()
         free(page as pointer[void])
-        return 0
+        0
     }
 
     function test_page_get() returns int
@@ -66,7 +66,7 @@ define memory
             return -10
         (*page).deallocate_extensions()
         free(page as pointer[void])
-        return 0
+        0
     }
 
     function test() returns int
@@ -83,6 +83,6 @@ define memory
         set result: test_page_get()
         if result <> 0
             return result
-        return 0
+        0
     }
 }
