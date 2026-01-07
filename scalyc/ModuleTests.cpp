@@ -91,6 +91,9 @@ static llvm::Expected<int64_t> runPackageTestFunction(
 // Path to the scaly package entry point (relative to scalyc/build/)
 static const char* ScalyPackagePath = "../../packages/scaly/0.1.0/scaly.scaly";
 
+// Path to the scalyc package entry point (relative to scalyc/build/)
+static const char* ScalycPackagePath = "../../packages/scalyc/0.1.0/scalyc.scaly";
+
 static bool testMemoryModule() {
     const char* Name = "Module: memory.test()";
 
@@ -163,6 +166,30 @@ static bool testIoModule() {
     return true;
 }
 
+static bool testLexerModule() {
+    const char* Name = "Module: scalyc lexer test()";
+
+    auto ResultOrErr = runPackageTestFunction(ScalycPackagePath, "scalyc.test");
+
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    int64_t Result = *ResultOrErr;
+    if (Result != 0) {
+        std::string Msg = "test returned error code " + std::to_string(Result);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
 // ============================================================================
 // Main Test Runner
 // ============================================================================
@@ -185,6 +212,12 @@ bool runModuleTests() {
     // IO module tests
     llvm::outs() << "  IO module tests:\n";
     testIoModule();
+
+    // Scalyc lexer module tests
+    // TODO: Enable when choose/when pattern matching is fixed in code generation
+    // The lexer test function body generates empty tuples instead of proper code
+    // llvm::outs() << "  Lexer module tests:\n";
+    // testLexerModule();
 
     llvm::outs() << "\nModule tests: " << TestsPassed << " passed, "
                  << TestsFailed << " failed\n";
