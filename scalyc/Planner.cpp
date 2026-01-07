@@ -641,6 +641,16 @@ std::string Planner::getReadableName(const PlannedType &Type) {
 
 // Normalize type name to canonical form
 static std::string normalizeTypeName(llvm::StringRef Name) {
+    // Extract the last component of qualified namespace paths (e.g., "scaly.containers.String" -> "String")
+    // but NOT generic instantiations (e.g., "Vector.int" stays as "Vector.int")
+    // Heuristic: if the name starts with a known package prefix, extract last component
+    if (Name.starts_with("scaly.")) {
+        size_t LastDot = Name.rfind('.');
+        if (LastDot != std::string::npos) {
+            Name = Name.substr(LastDot + 1);
+        }
+    }
+
     // Integer type aliases
     if (Name == "int" || Name == "i64") return "i64";
     if (Name == "i32") return "i32";
@@ -1593,16 +1603,11 @@ std::optional<Planner::InitializerMatch> Planner::findInitializer(
     if (StructIt == InstantiatedStructures.end()) {
         // Also try the mangled name
         StructIt = InstantiatedStructures.find(StructType.MangledName);
-        if (StructIt == InstantiatedStructures.end()) {
-            return std::nullopt;
-        }
     }
 
-    const PlannedStructure &Struct = StructIt->second;
-
-    // If the struct has 0 initializers, it might be a placeholder.
-    // Fall back to looking at the original Concept to match initializers.
-    if (Struct.Initializers.empty()) {
+    // If struct is not in cache OR has no initializers, look up the original Concept
+    if (StructIt == InstantiatedStructures.end() ||
+        StructIt->second.Initializers.empty()) {
         // Extract base name (e.g., "Vector" from "Vector.int")
         std::string BaseName = StructType.Name;
         size_t DotPos = BaseName.find('.');
@@ -1652,8 +1657,8 @@ std::optional<Planner::InitializerMatch> Planner::findInitializer(
                     // Note: TypeSubstitutions still has the generic substitutions set up
 
                     // Mangle constructor name: _ZN<qualified-name>C1E<params>
-                    // Struct.MangledName is like "_Z6VectorIiE" - strip the _Z prefix
-                    std::string StructName = Struct.MangledName;
+                    // StructType.MangledName is like "_Z6VectorIiE" - strip the _Z prefix
+                    std::string StructName = StructType.MangledName;
                     if (StructName.substr(0, 2) == "_Z") {
                         StructName = StructName.substr(2);
                     }
@@ -1690,11 +1695,13 @@ std::optional<Planner::InitializerMatch> Planner::findInitializer(
         return std::nullopt;
     }
 
+    // At this point, StructIt is valid and has initializers
+    const PlannedStructure &Struct = StructIt->second;
+
     // Search for matching initializer in the cached PlannedStructure
     for (const auto &Init : Struct.Initializers) {
         // Check if parameter count matches
         if (Init.Input.size() != ArgTypes.size()) {
-            // llvm::errs() << "DEBUG findInitializer: param count mismatch\n";
             continue;
         }
 
@@ -1703,20 +1710,15 @@ std::optional<Planner::InitializerMatch> Planner::findInitializer(
         for (size_t i = 0; i < ArgTypes.size(); ++i) {
             if (!Init.Input[i].ItemType) {
                 // Parameter has no type - treat as match
-                // llvm::errs() << "DEBUG findInitializer: param " << i << " has no type (untyped)\n";
                 continue;
             }
-            // llvm::errs() << "DEBUG findInitializer: param " << i << " type "
-            //              << Init.Input[i].ItemType->Name << " vs arg type " << ArgTypes[i].Name << "\n";
             if (!typesCompatible(*Init.Input[i].ItemType, ArgTypes[i])) {
-                // llvm::errs() << "DEBUG findInitializer: type mismatch at param " << i << "\n";
                 AllMatch = false;
                 break;
             }
         }
 
         if (AllMatch) {
-            // llvm::errs() << "DEBUG findInitializer: found match with " << Init.MangledName << "\n";
             InitializerMatch Match;
             Match.Init = &Init;
             Match.MangledName = Init.MangledName;
