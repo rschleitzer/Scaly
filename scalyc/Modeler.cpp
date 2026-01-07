@@ -1783,9 +1783,13 @@ llvm::Expected<Module> Modeler::buildModule(llvm::StringRef Path,
     llvm::Error Err = llvm::Error::success();
 
     if (Syntax.declarations) {
+        // llvm::errs() << "DEBUG buildModule: " << Name << " has " << Syntax.declarations->size() << " declarations\n";
+        int declIdx = 0;
         for (const auto &D : *Syntax.declarations) {
-            if (Err)
+            if (Err) {
+                // llvm::errs() << "DEBUG buildModule: Error occurred at decl " << declIdx << "\n";
                 break;
+            }
 
             std::visit([&](const auto &S) {
                 using ST = std::decay_t<decltype(S)>;
@@ -1823,17 +1827,23 @@ llvm::Expected<Module> Modeler::buildModule(llvm::StringRef Path,
                         }
                     }, S.export_.Value);
                 } else if constexpr (std::is_same_v<ST, DefinitionSyntax>) {
+                    // llvm::errs() << "DEBUG buildModule: Processing definition at decl " << declIdx << "\n";
                     auto Def = handleDefinition(Path.str(), S, false);
                     if (Def) {
+                        // llvm::errs() << "DEBUG buildModule: Added definition: " << Def->Name << "\n";
                         Members.push_back(std::move(*Def));
                     } else {
+                        // llvm::errs() << "DEBUG buildModule: Definition failed\n";
                         Err = Def.takeError();
                     }
                 } else if constexpr (std::is_same_v<ST, FunctionSyntax>) {
+                    // llvm::errs() << "DEBUG buildModule: Processing function at decl " << declIdx << "\n";
                     auto Func = buildFunction(S.Start, S.End, S.target, false, true);
                     if (Func) {
+                        // llvm::errs() << "DEBUG buildModule: Added function: " << Func->Name << "\n";
                         Members.push_back(std::move(*Func));
                     } else {
+                        // llvm::errs() << "DEBUG buildModule: Function failed\n";
                         Err = Func.takeError();
                     }
                 } else if constexpr (std::is_same_v<ST, OperatorSyntax>) {
@@ -1852,9 +1862,11 @@ llvm::Expected<Module> Modeler::buildModule(llvm::StringRef Path,
                     }
                 }
             }, D.symbol.Value);
+            declIdx++;
         }
     }
 
+    // llvm::errs() << "DEBUG buildModule: " << Name << " finished with " << Members.size() << " members\n";
     if (Err)
         return std::move(Err);
 

@@ -701,6 +701,14 @@ bool Planner::typesCompatible(const PlannedType &ParamType, const PlannedType &A
         }
     }
 
+    // Allow string literals (pointer[i8]) to be passed where String is expected
+    // The Emitter will wrap the C-string in a String constructor
+    if (ParamType.Name == "String" && ArgType.Name == "pointer" && !ArgType.Generics.empty()) {
+        if (ArgType.Generics[0].Name == "i8") {
+            return true;
+        }
+    }
+
     return false;
 }
 
@@ -1686,6 +1694,7 @@ std::optional<Planner::InitializerMatch> Planner::findInitializer(
     for (const auto &Init : Struct.Initializers) {
         // Check if parameter count matches
         if (Init.Input.size() != ArgTypes.size()) {
+            // llvm::errs() << "DEBUG findInitializer: param count mismatch\n";
             continue;
         }
 
@@ -1694,15 +1703,20 @@ std::optional<Planner::InitializerMatch> Planner::findInitializer(
         for (size_t i = 0; i < ArgTypes.size(); ++i) {
             if (!Init.Input[i].ItemType) {
                 // Parameter has no type - treat as match
+                // llvm::errs() << "DEBUG findInitializer: param " << i << " has no type (untyped)\n";
                 continue;
             }
+            // llvm::errs() << "DEBUG findInitializer: param " << i << " type "
+            //              << Init.Input[i].ItemType->Name << " vs arg type " << ArgTypes[i].Name << "\n";
             if (!typesCompatible(*Init.Input[i].ItemType, ArgTypes[i])) {
+                // llvm::errs() << "DEBUG findInitializer: type mismatch at param " << i << "\n";
                 AllMatch = false;
                 break;
             }
         }
 
         if (AllMatch) {
+            // llvm::errs() << "DEBUG findInitializer: found match with " << Init.MangledName << "\n";
             InitializerMatch Match;
             Match.Init = &Init;
             Match.MangledName = Init.MangledName;
@@ -1711,6 +1725,7 @@ std::optional<Planner::InitializerMatch> Planner::findInitializer(
         }
     }
 
+    // llvm::errs() << "DEBUG findInitializer: no match found\n";
     return std::nullopt;
 }
 
@@ -3004,15 +3019,35 @@ llvm::Expected<PlannedType> Planner::resolveMemberAccess(
         // Handle pointer types by dereferencing to inner type (auto-deref)
         PlannedType LookupType = Current.getInnerTypeIfPointer();
 
-        // Extract base name from instantiated type (e.g., "Node.int" -> "Node")
+        // Extract base name from type
+        // For generic instantiations: "Box.int" -> "Box" (first part before generic args)
+        // For qualified names: "scaly.containers.String" -> "String" (last component)
         std::string BaseName = LookupType.Name;
-        size_t DotPos = BaseName.find('.');
-        if (DotPos != std::string::npos) {
-            BaseName = BaseName.substr(0, DotPos);
+        const Concept* Conc = nullptr;
+
+        // If we have generic arguments populated, this is a generic instantiation
+        // So the base type is the first component (e.g., "Box.int" -> "Box")
+        if (!LookupType.Generics.empty()) {
+            size_t DotPos = BaseName.find('.');
+            if (DotPos != std::string::npos) {
+                BaseName = BaseName.substr(0, DotPos);
+            }
+            Conc = lookupConcept(BaseName);
         }
 
-        // Look up the base type as a concept
-        const Concept* Conc = lookupConcept(BaseName);
+        // If not found or no generics, try the full name first
+        if (!Conc) {
+            Conc = lookupConcept(LookupType.Name);
+        }
+
+        // If not found, try the last component (for qualified names like scaly.containers.String)
+        if (!Conc) {
+            size_t LastDotPos = LookupType.Name.rfind('.');
+            if (LastDotPos != std::string::npos) {
+                std::string LastComponent = LookupType.Name.substr(LastDotPos + 1);
+                Conc = lookupConcept(LastComponent);
+            }
+        }
         if (!Conc) {
             return makePlannerNotImplementedError(File, Loc,
                 "cannot access member '" + MemberName + "' on type " +
@@ -3103,15 +3138,35 @@ llvm::Expected<std::vector<PlannedMemberAccess>> Planner::resolveMemberAccessCha
         // Handle pointer types by dereferencing to inner type (auto-deref)
         PlannedType LookupType = Current.getInnerTypeIfPointer();
 
-        // Extract base name from instantiated type (e.g., "Node.int" -> "Node")
+        // Extract base name from type
+        // For generic instantiations: "Box.int" -> "Box" (first part before generic args)
+        // For qualified names: "scaly.containers.String" -> "String" (last component)
         std::string BaseName = LookupType.Name;
-        size_t DotPos = BaseName.find('.');
-        if (DotPos != std::string::npos) {
-            BaseName = BaseName.substr(0, DotPos);
+        const Concept* Conc = nullptr;
+
+        // If we have generic arguments populated, this is a generic instantiation
+        // So the base type is the first component (e.g., "Box.int" -> "Box")
+        if (!LookupType.Generics.empty()) {
+            size_t DotPos = BaseName.find('.');
+            if (DotPos != std::string::npos) {
+                BaseName = BaseName.substr(0, DotPos);
+            }
+            Conc = lookupConcept(BaseName);
         }
 
-        // Look up the base type as a concept
-        const Concept* Conc = lookupConcept(BaseName);
+        // If not found or no generics, try the full name first
+        if (!Conc) {
+            Conc = lookupConcept(LookupType.Name);
+        }
+
+        // If not found, try the last component (for qualified names like scaly.containers.String)
+        if (!Conc) {
+            size_t LastDotPos = LookupType.Name.rfind('.');
+            if (LastDotPos != std::string::npos) {
+                std::string LastComponent = LookupType.Name.substr(LastDotPos + 1);
+                Conc = lookupConcept(LastComponent);
+            }
+        }
         if (!Conc) {
             return makePlannerNotImplementedError(File, Loc,
                 "cannot access member '" + MemberName + "' on type " +
@@ -5026,6 +5081,112 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                         // If method not found, fall through to normal processing
                     }
 
+                    // Check for sibling module function call pattern (e.g., lexer.test())
+                    // First element is sibling module name, second is function name
+                    if (TypeExpr->Name.size() == 2 && std::holds_alternative<Tuple>(NextOp.Expr)) {
+                        const std::string& ModuleName = TypeExpr->Name[0];
+                        const std::string& FuncName = TypeExpr->Name[1];
+
+                        // llvm::errs() << "DEBUG: Looking for module function: " << ModuleName << "." << FuncName << "\n";
+                        // llvm::errs() << "DEBUG: CurrentNamespaceModules.size() = " << CurrentNamespaceModules.size() << "\n";
+                        for (const Module* Mod : CurrentNamespaceModules) {
+                            // llvm::errs() << "DEBUG: Module in namespace: " << Mod->Name << "\n";
+                        }
+
+                        // Search CurrentNamespaceModules for the module
+                        const Module* TargetModule = nullptr;
+                        for (const Module* Mod : CurrentNamespaceModules) {
+                            if (Mod->Name == ModuleName) {
+                                TargetModule = Mod;
+                                break;
+                            }
+                        }
+
+                        if (TargetModule) {
+                            // llvm::errs() << "DEBUG: Found target module: " << ModuleName << "\n";
+                            // llvm::errs() << "DEBUG: Looking for function: " << FuncName << " in module with " << TargetModule->Members.size() << " members\n";
+                            // Look for the function in the module
+                            const Function* TargetFunc = nullptr;
+                            for (const auto& Member : TargetModule->Members) {
+                                if (auto* Func = std::get_if<Function>(&Member)) {
+                                    // llvm::errs() << "DEBUG: Found function in module: " << Func->Name << "\n";
+                                    if (Func->Name == FuncName) {
+                                        TargetFunc = Func;
+                                        break;
+                                    }
+                                } else if (auto* Conc = std::get_if<Concept>(&Member)) {
+                                    // llvm::errs() << "DEBUG: Found concept in module: " << Conc->Name << "\n";
+                                } else {
+                                    // llvm::errs() << "DEBUG: Found other member type in module\n";
+                                }
+                            }
+
+                            if (TargetFunc) {
+                                // llvm::errs() << "DEBUG: Found target function: " << TargetFunc->Name << "\n";
+                                // Plan the arguments
+                                Operand ArgsOp = NextOp;
+                                ArgsOp.MemberAccess = nullptr;
+                                auto PlannedArgs = planOperand(ArgsOp);
+                                if (!PlannedArgs) {
+                                    return PlannedArgs.takeError();
+                                }
+
+                                // Plan the function
+                                auto PlannedFunc = planFunction(*TargetFunc, nullptr);
+                                if (!PlannedFunc) {
+                                    return PlannedFunc.takeError();
+                                }
+
+                                // Create the function call
+                                PlannedCall Call;
+                                Call.Loc = Op.Loc;
+                                Call.Name = TargetFunc->Name;
+                                Call.MangledName = PlannedFunc->MangledName;
+                                Call.IsIntrinsic = false;
+                                Call.IsOperator = false;
+                                if (PlannedFunc->Returns) {
+                                    Call.ResultType = *PlannedFunc->Returns;
+                                }
+
+                                // Build args from tuple
+                                Call.Args = std::make_shared<std::vector<PlannedOperand>>();
+                                if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedArgs->Expr)) {
+                                    for (auto& Comp : TupleExpr->Components) {
+                                        for (auto& ValOp : Comp.Value) {
+                                            Call.Args->push_back(std::move(ValOp));
+                                        }
+                                    }
+                                }
+
+                                // Create operand with the call
+                                PlannedOperand CallOp;
+                                CallOp.Loc = Op.Loc;
+                                CallOp.Expr = std::move(Call);
+                                if (PlannedFunc->Returns) {
+                                    CallOp.ResultType = *PlannedFunc->Returns;
+                                }
+
+                                // Apply any member access on the result
+                                if (NextOp.MemberAccess && !NextOp.MemberAccess->empty()) {
+                                    auto MemberChain = resolveMemberAccessChain(CallOp.ResultType,
+                                                                                 *NextOp.MemberAccess, NextOp.Loc);
+                                    if (!MemberChain) {
+                                        return MemberChain.takeError();
+                                    }
+                                    CallOp.MemberAccess = std::make_shared<std::vector<PlannedMemberAccess>>(
+                                        std::move(*MemberChain));
+                                    if (!CallOp.MemberAccess->empty()) {
+                                        CallOp.ResultType = CallOp.MemberAccess->back().ResultType;
+                                    }
+                                }
+
+                                Result.push_back(std::move(CallOp));
+                                i++;  // Skip the tuple operand
+                                continue;
+                            }
+                        }
+                    }
+
                     // Check for package function call pattern (e.g., scaly.containers.test())
                     // First element is package name, path leads to function
                     if (TypeExpr->Name.size() >= 2 && std::holds_alternative<Tuple>(NextOp.Expr)) {
@@ -5592,13 +5753,23 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
         // Check for type constructor pattern: Type followed by Tuple
         // e.g., Point(3, 4) or Point(3, 4).x where Point is a struct type
         // Also handles generic types: Box[int](42) where Box[T] is a generic struct
+        // Also handles qualified type names: scaly.containers.String(rp, "hello")
         if (i + 1 < ProcessedOps.size()) {
             const auto &NextOp = ProcessedOps[i + 1];
             // Check if current op is a type that's a struct (with or without generics)
             if (auto* TypeExpr = std::get_if<Type>(&Op.Expr)) {
-                if (TypeExpr->Name.size() == 1) {
-                    const Concept* Conc = lookupConcept(TypeExpr->Name[0]);
-                    if (Conc && std::holds_alternative<Structure>(Conc->Def)) {
+                // Build full type name for lookup (handles both simple and qualified names)
+                std::string FullTypeName;
+                for (size_t j = 0; j < TypeExpr->Name.size(); ++j) {
+                    if (j > 0) FullTypeName += ".";
+                    FullTypeName += TypeExpr->Name[j];
+                }
+                const Concept* Conc = lookupConcept(FullTypeName);
+                // If qualified name lookup fails, try just the last component (for use statements)
+                if (!Conc && TypeExpr->Name.size() > 1) {
+                    Conc = lookupConcept(TypeExpr->Name.back());
+                }
+                if (Conc && std::holds_alternative<Structure>(Conc->Def)) {
                         // Check if next op is a tuple (constructor args)
                         if (std::holds_alternative<Tuple>(NextOp.Expr)) {
                             // This is Type(args) or Type[T](args) - plan the tuple as a struct
@@ -5833,7 +6004,6 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             i++;
                             continue;
                         }
-                    }
                 }
             }
         }
@@ -6073,8 +6243,42 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                         bool IsNamespaceSibling = false;
                         const Function* MatchedFunc = nullptr;
                         if (!CurrentStructureName.empty()) {
+                            // Get the current structure to verify membership
+                            std::string BaseName = CurrentStructureName;
+                            size_t DotPos = BaseName.find('.');
+                            if (DotPos != std::string::npos) {
+                                BaseName = BaseName.substr(0, DotPos);
+                            }
+                            const Concept* StructConc = lookupConcept(BaseName);
+                            const Structure* CurrentStruct = nullptr;
+                            if (StructConc && std::holds_alternative<Structure>(StructConc->Def)) {
+                                CurrentStruct = &std::get<Structure>(StructConc->Def);
+                            }
+
                             auto Candidates = lookupFunction(FuncName);
                             for (const Function* Func : Candidates) {
+                                // Verify this function is actually a member of the current structure
+                                bool IsStructMember = false;
+                                if (CurrentStruct) {
+                                    for (const auto& Member : CurrentStruct->Members) {
+                                        if (auto* StructFunc = std::get_if<Function>(&Member)) {
+                                            if (StructFunc == Func) {
+                                                IsStructMember = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if (!IsStructMember) {
+                                    // Not a struct member, just track as potential match
+                                    if (!MatchedFunc && Func->Parameters.empty() &&
+                                        Func->Input.size() == ArgTypes.size()) {
+                                        MatchedFunc = Func;
+                                    }
+                                    continue;
+                                }
+
                                 // Check if this function takes 'this' as first param
                                 if (Func->Parameters.empty() &&
                                     !Func->Input.empty() &&
@@ -6096,15 +6300,32 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             }
                         }
                         // Check if this is a sibling function in the same namespace (define block)
-                        if (!IsSiblingMethod && !CurrentNamespaceName.empty()) {
+                        if (!IsSiblingMethod && !CurrentNamespaceName.empty() && CurrentNamespace) {
                             auto Candidates = lookupFunction(FuncName);
                             for (const Function* Func : Candidates) {
                                 // Check if this function has matching parameter count (no 'this')
                                 if (Func->Parameters.empty() &&
                                     Func->Input.size() == ArgTypes.size()) {
-                                    IsNamespaceSibling = true;
-                                    MatchedFunc = Func;
-                                    break;
+                                    // Verify the function is actually in the current namespace
+                                    // by checking if it's in CurrentNamespace->Members
+                                    bool InNamespace = false;
+                                    for (const auto& Member : CurrentNamespace->Members) {
+                                        if (auto* NSFunc = std::get_if<Function>(&Member)) {
+                                            if (NSFunc == Func) {
+                                                InNamespace = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    if (InNamespace) {
+                                        IsNamespaceSibling = true;
+                                        MatchedFunc = Func;
+                                        break;
+                                    }
+                                    // If not in namespace, still use as MatchedFunc but not as namespace sibling
+                                    if (!MatchedFunc) {
+                                        MatchedFunc = Func;
+                                    }
                                 }
                             }
                         }

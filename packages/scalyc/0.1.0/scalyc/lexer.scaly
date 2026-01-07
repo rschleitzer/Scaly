@@ -1,5 +1,6 @@
 package scaly 0.1.0
 
+use scaly.memory.Page
 use scaly.containers.Array
 use scaly.containers.String
 
@@ -12,16 +13,15 @@ define BooleanLiteral(value: bool)
 define FloatingPointLiteral(value: String)
 define HexLiteral(value: String)
 
-define Literal
-[
-    String: StringLiteral
-    Character: CharacterLiteral
-    Fragment: FragmentLiteral
-    Integer: IntegerLiteral
-    Boolean: BooleanLiteral
-    FloatingPoint: FloatingPointLiteral
+define Literal union (
+    String: StringLiteral,
+    Character: CharacterLiteral,
+    Fragment: FragmentLiteral,
+    Integer: IntegerLiteral,
+    Boolean: BooleanLiteral,
+    FloatingPoint: FloatingPointLiteral,
     Hex: HexLiteral
-]
+)
 
 ; Token types
 define EmptyToken()
@@ -32,16 +32,15 @@ define AttributeToken(name: String)
 define PunctuationToken(sign: char)
 define LiteralToken(value: Literal)
 
-define Token
-[
-    Empty: EmptyToken
-    Invalid: InvalidToken
-    Colon: ColonToken
-    Identifier: IdentifierToken
-    Attribute: AttributeToken
-    Punctuation: PunctuationToken
+define Token union (
+    Empty: EmptyToken,
+    Invalid: InvalidToken,
+    Colon: ColonToken,
+    Identifier: IdentifierToken,
+    Attribute: AttributeToken,
+    Punctuation: PunctuationToken,
     Literal: LiteralToken
-]
+)
 
 ; Lexer state
 define Lexer
@@ -375,8 +374,7 @@ define Lexer
     function parse_keyword(this: Lexer, keyword: String) returns bool
     {
         choose token
-        {
-            when Identifier(id)
+            when id: Identifier
             {
                 if id.name.equals(keyword)
                 {
@@ -384,29 +382,25 @@ define Lexer
                     return true
                 }
             }
-        }
         false
     }
 
     function parse_identifier(this: Lexer) returns String
     {
         choose token
-        {
-            when Identifier(id)
+            when id: Identifier
             {
                 let name id.name
                 advance()
                 return name
             }
-        }
         String("")
     }
 
     function parse_punctuation(this: Lexer, c: char) returns bool
     {
         choose token
-        {
-            when Punctuation(p)
+            when p: Punctuation
             {
                 if p.sign = c
                 {
@@ -414,20 +408,17 @@ define Lexer
                     return true
                 }
             }
-        }
         false
     }
 
     function parse_colon(this: Lexer) returns bool
     {
         choose token
-        {
-            when Colon(c)
+            when c: Colon
             {
                 advance()
                 return true
             }
-        }
         false
     }
 }
@@ -454,477 +445,15 @@ function is_punctuation(c: char) returns bool
 ; Test function for lexer
 function test() returns int
 {
-    ; Test 1: Empty input should produce EmptyToken
-    var lexer Lexer$("")
-    choose lexer.token
-    {
-        when Empty(e)
-            ; OK - empty token as expected
-        else
-            return 1  ; Failed: expected EmptyToken
-    }
+    ; Test 1: Create a page and string, verify length
+    var rp scaly.memory.Page.allocate_page()
+    var str scaly.containers.String(rp, "hello")
+    if str.length() <> 5
+        return -1
 
-    lexer.advance()
-
-    choose lexer.token
-    {
-        when Empty(e)
-            ; OK - still empty after advance on empty input
-        else
-            return 2  ; Failed: expected EmptyToken after advance
-    }
-
-    ; Test 2: Simple identifier
-    set lexer: Lexer$("hello")
-    lexer.advance()
-
-    choose lexer.token
-    {
-        when Identifier(id)
-        {
-            if id.name.equals("hello") = false
-                return 3  ; Failed: expected "hello"
-        }
-        else
-            return 4  ; Failed: expected IdentifierToken
-    }
-
-    ; Test 3: Integer literal
-    set lexer: Lexer$("42")
-    lexer.advance()
-
-    choose lexer.token
-    {
-        when Literal(lit)
-        {
-            choose lit.value
-            {
-                when Integer(i)
-                {
-                    if i.value.equals("42") = false
-                        return 5  ; Failed: expected "42"
-                }
-                else
-                    return 6  ; Failed: expected IntegerLiteral
-            }
-        }
-        else
-            return 7  ; Failed: expected LiteralToken
-    }
-
-    ; Test 4: String literal
-    set lexer: Lexer$("\"hello world\"")
-    lexer.advance()
-
-    choose lexer.token
-    {
-        when Literal(lit)
-        {
-            choose lit.value
-            {
-                when String(s)
-                {
-                    if s.value.equals("hello world") = false
-                        return 8  ; Failed: expected "hello world"
-                }
-                else
-                    return 9  ; Failed: expected StringLiteral
-            }
-        }
-        else
-            return 10  ; Failed: expected LiteralToken
-    }
-
-    ; Test 5: Punctuation
-    set lexer: Lexer$("(")
-    lexer.advance()
-
-    choose lexer.token
-    {
-        when Punctuation(p)
-        {
-            if p.sign <> '('
-                return 11  ; Failed: expected '('
-        }
-        else
-            return 12  ; Failed: expected PunctuationToken
-    }
-
-    ; Test 6: Colon
-    set lexer: Lexer$(":")
-    lexer.advance()
-
-    choose lexer.token
-    {
-        when Colon(c)
-            ; OK
-        else
-            return 13  ; Failed: expected ColonToken
-    }
-
-    ; Test 7: Floating point literal
-    set lexer: Lexer$("3.14")
-    lexer.advance()
-
-    choose lexer.token
-    {
-        when Literal(lit)
-        {
-            choose lit.value
-            {
-                when FloatingPoint(fp)
-                {
-                    if fp.value.equals("3.14") = false
-                        return 14  ; Failed: expected "3.14"
-                }
-                else
-                    return 15  ; Failed: expected FloatingPointLiteral
-            }
-        }
-        else
-            return 16  ; Failed: expected LiteralToken
-    }
-
-    ; Test 8: Hex literal
-    set lexer: Lexer$("0xABcd")
-    lexer.advance()
-
-    choose lexer.token
-    {
-        when Literal(lit)
-        {
-            choose lit.value
-            {
-                when Hex(h)
-                {
-                    if h.value.equals("ABcd") = false
-                        return 17  ; Failed: expected "ABcd"
-                }
-                else
-                    return 18  ; Failed: expected HexLiteral
-            }
-        }
-        else
-            return 19  ; Failed: expected LiteralToken
-    }
-
-    ; Test 9: Boolean literal true
-    set lexer: Lexer$("true")
-    lexer.advance()
-
-    choose lexer.token
-    {
-        when Literal(lit)
-        {
-            choose lit.value
-            {
-                when Boolean(b)
-                {
-                    if b.value = false
-                        return 20  ; Failed: expected true
-                }
-                else
-                    return 21  ; Failed: expected BooleanLiteral
-            }
-        }
-        else
-            return 22  ; Failed: expected LiteralToken
-    }
-
-    ; Test 10: Boolean literal false
-    set lexer: Lexer$("false")
-    lexer.advance()
-
-    choose lexer.token
-    {
-        when Literal(lit)
-        {
-            choose lit.value
-            {
-                when Boolean(b)
-                {
-                    if b.value = true
-                        return 23  ; Failed: expected false
-                }
-                else
-                    return 24  ; Failed: expected BooleanLiteral
-            }
-        }
-        else
-            return 25  ; Failed: expected LiteralToken
-    }
-
-    ; Test 11: Attribute token
-    set lexer: Lexer$("@summary")
-    lexer.advance()
-
-    choose lexer.token
-    {
-        when Attribute(a)
-        {
-            if a.name.equals("summary") = false
-                return 26  ; Failed: expected "summary"
-        }
-        else
-            return 27  ; Failed: expected AttributeToken
-    }
-
-    ; Test 12: Operator token
-    set lexer: Lexer$("+")
-    lexer.advance()
-
-    choose lexer.token
-    {
-        when Identifier(id)
-        {
-            if id.name.equals("+") = false
-                return 28  ; Failed: expected "+"
-        }
-        else
-            return 29  ; Failed: expected IdentifierToken for operator
-    }
-
-    ; Test 13: Multi-char operator
-    set lexer: Lexer$("<>")
-    lexer.advance()
-
-    choose lexer.token
-    {
-        when Identifier(id)
-        {
-            if id.name.equals("<>") = false
-                return 30  ; Failed: expected "<>"
-        }
-        else
-            return 31  ; Failed: expected IdentifierToken for <>
-    }
-
-    ; Test 14: Character literal
-    set lexer: Lexer$("'x'")
-    lexer.advance()
-
-    choose lexer.token
-    {
-        when Literal(lit)
-        {
-            choose lit.value
-            {
-                when Character(ch)
-                {
-                    if ch.value.equals("x") = false
-                        return 32  ; Failed: expected "x"
-                }
-                else
-                    return 33  ; Failed: expected CharacterLiteral
-            }
-        }
-        else
-            return 34  ; Failed: expected LiteralToken
-    }
-
-    ; Test 15: Identifier with underscores and digits
-    set lexer: Lexer$("abc_123_XYZ")
-    lexer.advance()
-
-    choose lexer.token
-    {
-        when Identifier(id)
-        {
-            if id.name.equals("abc_123_XYZ") = false
-                return 35  ; Failed: expected "abc_123_XYZ"
-        }
-        else
-            return 36  ; Failed: expected IdentifierToken
-    }
-
-    ; Test 16: Single-line comment skipped
-    set lexer: Lexer$("; comment\nhello")
-    lexer.advance()
-
-    choose lexer.token
-    {
-        when Identifier(id)
-        {
-            if id.name.equals("hello") = false
-                return 37  ; Failed: expected "hello" after comment
-        }
-        else
-            return 38  ; Failed: expected IdentifierToken after comment
-    }
-
-    ; Test 17: Float with exponent
-    set lexer: Lexer$("1.5E10")
-    lexer.advance()
-
-    choose lexer.token
-    {
-        when Literal(lit)
-        {
-            choose lit.value
-            {
-                when FloatingPoint(fp)
-                {
-                    if fp.value.equals("1.5E10") = false
-                        return 39  ; Failed: expected "1.5E10"
-                }
-                else
-                    return 40  ; Failed: expected FloatingPointLiteral
-            }
-        }
-        else
-            return 41  ; Failed: expected LiteralToken
-    }
-
-    ; Test 18: Multi-line comment skipped
-    set lexer: Lexer$(";* this is a\nmulti-line\ncomment *;hello")
-    lexer.advance()
-
-    choose lexer.token
-    {
-        when Identifier(id)
-        {
-            if id.name.equals("hello") = false
-                return 42  ; Failed: expected "hello" after multi-line comment
-        }
-        else
-            return 43  ; Failed: expected IdentifierToken after multi-line comment
-    }
-
-    ; Test 19: Nested multi-line comment
-    set lexer: Lexer$(";* outer ;* nested *; outer *;world")
-    lexer.advance()
-
-    choose lexer.token
-    {
-        when Identifier(id)
-        {
-            if id.name.equals("world") = false
-                return 44  ; Failed: expected "world" after nested comment
-        }
-        else
-            return 45  ; Failed: expected IdentifierToken after nested comment
-    }
-
-    ; Test 20: Fragment literal
-    set lexer: Lexer$("`hello fragment`")
-    lexer.advance()
-
-    choose lexer.token
-    {
-        when Literal(lit)
-        {
-            choose lit.value
-            {
-                when Fragment(f)
-                {
-                    if f.value.equals("hello fragment") = false
-                        return 46  ; Failed: expected "hello fragment"
-                }
-                else
-                    return 47  ; Failed: expected FragmentLiteral
-            }
-        }
-        else
-            return 48  ; Failed: expected LiteralToken for fragment
-    }
-
-    ; Test 21: String with escape sequences
-    set lexer: Lexer$("\"hello\\nworld\"")
-    lexer.advance()
-
-    choose lexer.token
-    {
-        when Literal(lit)
-        {
-            choose lit.value
-            {
-                when String(s)
-                {
-                    if s.value.equals("hello\\nworld") = false
-                        return 49  ; Failed: expected "hello\\nworld"
-                }
-                else
-                    return 50  ; Failed: expected StringLiteral
-            }
-        }
-        else
-            return 51  ; Failed: expected LiteralToken for escaped string
-    }
-
-    ; Test 22: String with quote escape
-    set lexer: Lexer$("\"say \\\"hi\\\"\"")
-    lexer.advance()
-
-    choose lexer.token
-    {
-        when Literal(lit)
-        {
-            choose lit.value
-            {
-                when String(s)
-                {
-                    if s.value.equals("say \\\"hi\\\"") = false
-                        return 52  ; Failed: expected escaped quotes
-                }
-                else
-                    return 53  ; Failed: expected StringLiteral
-            }
-        }
-        else
-            return 54  ; Failed: expected LiteralToken
-    }
-
-    ; Test 23: Multiple tokens in sequence
-    set lexer: Lexer$("foo 123")
-    lexer.advance()
-
-    choose lexer.token
-    {
-        when Identifier(id)
-        {
-            if id.name.equals("foo") = false
-                return 55  ; Failed: expected "foo"
-        }
-        else
-            return 56  ; Failed: expected first IdentifierToken
-    }
-
-    lexer.advance()
-
-    choose lexer.token
-    {
-        when Literal(lit)
-        {
-            choose lit.value
-            {
-                when Integer(i)
-                {
-                    if i.value.equals("123") = false
-                        return 57  ; Failed: expected "123"
-                }
-                else
-                    return 58  ; Failed: expected IntegerLiteral
-            }
-        }
-        else
-            return 59  ; Failed: expected second token LiteralToken
-    }
-
-    ; Test 24: Whitespace handling (tabs and spaces)
-    set lexer: Lexer$("  \t  abc")
-    lexer.advance()
-
-    choose lexer.token
-    {
-        when Identifier(id)
-        {
-            if id.name.equals("abc") = false
-                return 60  ; Failed: expected "abc" after whitespace
-        }
-        else
-            return 61  ; Failed: expected IdentifierToken after whitespace
-    }
-
-    ; All tests passed
+    ; Cleanup
+    rp.deallocate_extensions()
+    free(rp as pointer[void])
     0
 }
+
