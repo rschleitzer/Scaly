@@ -500,15 +500,8 @@ llvm::Type *Emitter::mapType(const PlannedType &Type) {
     }
 
     // Check if it's a struct we've already emitted
-    // Try multiple key formats due to mangling variations
-    if (auto It = StructCache.find(Type.MangledName); It != StructCache.end()) {
-        return It->second;
-    }
-    if (auto It = StructCache.find("_Z" + Type.MangledName); It != StructCache.end()) {
-        return It->second;
-    }
-    if (auto It = StructCache.find(Type.Name); It != StructCache.end()) {
-        return It->second;
+    if (auto *StructTy = lookupStructType(Type)) {
+        return StructTy;
     }
 
     // For pointer types: pointer[T]
@@ -567,6 +560,26 @@ llvm::Type *Emitter::mapType(const PlannedType &Type) {
 llvm::Type *Emitter::mapIntrinsicType(llvm::StringRef Name) {
     if (auto It = IntrinsicTypes.find(Name.str()); It != IntrinsicTypes.end()) {
         return It->second.LLVMType;
+    }
+    return nullptr;
+}
+
+llvm::StructType *Emitter::lookupStructType(const PlannedType &Type) {
+    return lookupStructType(Type.Name, Type.MangledName);
+}
+
+llvm::StructType *Emitter::lookupStructType(llvm::StringRef Name, llvm::StringRef MangledName) {
+    // Try mangled name first (most specific)
+    if (auto It = StructCache.find(MangledName.str()); It != StructCache.end()) {
+        return It->second;
+    }
+    // Try readable name
+    if (auto It = StructCache.find(Name.str()); It != StructCache.end()) {
+        return It->second;
+    }
+    // Try with _Z prefix (full mangled name)
+    if (auto It = StructCache.find("_Z" + MangledName.str()); It != StructCache.end()) {
+        return It->second;
     }
     return nullptr;
 }
@@ -1287,26 +1300,14 @@ llvm::Expected<llvm::Value*> Emitter::emitAction(const PlannedAction &Action) {
 
                     // Handle auto-deref for pointer types:
                     // If the variable is pointer[T], we need to load the pointer value first
-                    if (Var->VariableType.Name == "pointer" &&
-                        !Var->VariableType.Generics.empty()) {
+                    if (Var->VariableType.isPointer()) {
                         // Load the pointer value from the alloca
                         llvm::Type *PtrType = mapType(Var->VariableType);
                         CurrentPtr = Builder->CreateLoad(PtrType, VarPtr, "deref.ptr");
 
                         // Get the struct type from the inner type
-                        std::string LookupName = Var->VariableType.Generics[0].Name;
-                        std::string LookupMangled = Var->VariableType.Generics[0].MangledName;
-
-                        auto TypeIt = StructCache.find(LookupMangled);
-                        if (TypeIt == StructCache.end()) {
-                            TypeIt = StructCache.find(LookupName);
-                        }
-                        if (TypeIt == StructCache.end()) {
-                            TypeIt = StructCache.find("_Z" + LookupMangled);
-                        }
-                        if (TypeIt != StructCache.end()) {
-                            CurrentType = TypeIt->second;
-                        }
+                        PlannedType InnerType = Var->VariableType.getInnerTypeIfPointer();
+                        CurrentType = lookupStructType(InnerType);
                     }
                 } else {
                     // For pointers passed as arguments (like 'this'), load to get the struct
@@ -1315,27 +1316,9 @@ llvm::Expected<llvm::Value*> Emitter::emitAction(const PlannedAction &Action) {
                     if (VarPtr->getType()->isPointerTy()) {
                         // Get the struct type from cache using the variable type
                         // For 'this' which is pointer[T], use the inner type T
-                        std::string LookupName = Var->VariableType.Name;
-                        std::string LookupMangled = Var->VariableType.MangledName;
-                        if (Var->VariableType.Name == "pointer" &&
-                            !Var->VariableType.Generics.empty()) {
-                            LookupName = Var->VariableType.Generics[0].Name;
-                            LookupMangled = Var->VariableType.Generics[0].MangledName;
-                        }
-
-                        // Try multiple key formats due to mangling variations
-                        auto TypeIt = StructCache.find(LookupMangled);
-                        if (TypeIt == StructCache.end()) {
-                            TypeIt = StructCache.find(LookupName);
-                        }
-                        if (TypeIt == StructCache.end()) {
-                            // Try with _Z prefix (full mangled name)
-                            TypeIt = StructCache.find("_Z" + LookupMangled);
-                        }
-                        if (TypeIt != StructCache.end()) {
-                            CurrentType = TypeIt->second;
-                            CurrentPtr = VarPtr;  // 'this' is already a pointer
-                        }
+                        PlannedType LookupType = Var->VariableType.getInnerTypeIfPointer();
+                        CurrentType = lookupStructType(LookupType);
+                        CurrentPtr = VarPtr;  // 'this' is already a pointer
                     }
                 }
 

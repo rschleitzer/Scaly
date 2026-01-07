@@ -62,6 +62,20 @@ struct PlannedType {
 
     // Helper: is this type fully resolved (no variables)?
     bool isResolved() const { return Variable == nullptr; }
+
+    // Helper: if this is pointer[T], return T; otherwise return *this
+    // Used for auto-deref when accessing members through pointers
+    PlannedType getInnerTypeIfPointer() const {
+        if (Name == "pointer" && !Generics.empty()) {
+            return Generics[0];
+        }
+        return *this;
+    }
+
+    // Helper: check if this is a pointer type
+    bool isPointer() const {
+        return Name == "pointer" && !Generics.empty();
+    }
 };
 
 // ============================================================================
