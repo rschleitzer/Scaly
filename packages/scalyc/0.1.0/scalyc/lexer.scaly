@@ -498,15 +498,12 @@ function test_helpers() returns int
 function test_string_basics() returns int
 {
     var rp Page.allocate_page()
-
-    ; Create a string and check its contents
     var s String(rp, "hello")
 
     ; Check length using function call syntax (workaround for method call bug)
     let len get_length(s)
     if len <> 5
     {
-        rp.deallocate_extensions()
         free(rp as pointer[void])
         return -1
     }
@@ -514,19 +511,16 @@ function test_string_basics() returns int
     ; Check individual characters
     if get(s, 0) <> 'h'
     {
-        rp.deallocate_extensions()
         free(rp as pointer[void])
         return -2
     }
 
     if get(s, 4) <> 'o'
     {
-        rp.deallocate_extensions()
         free(rp as pointer[void])
         return -3
     }
 
-    rp.deallocate_extensions()
     free(rp as pointer[void])
     0
 }
@@ -540,7 +534,6 @@ function test_lexer_creation() returns int
     ; Check initial state
     if lexer.current <> 0
     {
-        rp.deallocate_extensions()
         free(rp as pointer[void])
         return -1
     }
@@ -549,13 +542,11 @@ function test_lexer_creation() returns int
     choose lexer.token
         when e: Empty
         {
-            rp.deallocate_extensions()
             free(rp as pointer[void])
             return 0
         }
         else
         {
-            rp.deallocate_extensions()
             free(rp as pointer[void])
             return -2
         }
