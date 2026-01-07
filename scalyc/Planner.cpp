@@ -5210,17 +5210,8 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                     return PlannedChainedArgs.takeError();
                                 }
 
-                                // Extract argument types
-                                std::vector<PlannedType> ChainedArgTypes;
-                                if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedChainedArgs->Expr)) {
-                                    for (const auto& Comp : TupleExpr->Components) {
-                                        for (const auto& ValOp : Comp.Value) {
-                                            ChainedArgTypes.push_back(ValOp.ResultType);
-                                        }
-                                    }
-                                }
-
                                 // Look up the chained method
+                                auto ChainedArgTypes = extractArgTypes(*PlannedChainedArgs);
                                 auto ChainedMethodMatch = lookupMethod(ChainedInstanceType, ChainedMethodName,
                                                                        ChainedArgTypes, ChainedArgsOp.Loc);
                                 if (ChainedMethodMatch) {
@@ -6368,17 +6359,8 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                             return PlannedMethodArgs.takeError();
                                         }
 
-                                        // Extract argument types for overload resolution
-                                        std::vector<PlannedType> MethodArgTypes;
-                                        if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedMethodArgs->Expr)) {
-                                            for (const auto& Comp : TupleExpr->Components) {
-                                                for (const auto& ValOp : Comp.Value) {
-                                                    MethodArgTypes.push_back(ValOp.ResultType);
-                                                }
-                                            }
-                                        }
-
                                         // Look up the method on the instance type
+                                        auto MethodArgTypes = extractArgTypes(*PlannedMethodArgs);
                                         auto MethodMatch = lookupMethod(InstanceType, MethodName, MethodArgTypes, MethodArgsOp.Loc);
                                         if (MethodMatch) {
                                             // Create method call
