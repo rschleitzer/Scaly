@@ -317,9 +317,7 @@ define String (data: pointer[char](null))
     }
 
     function get_iterator(this: String) returns StringIterator
-    {
-        return StringIterator(this)
-    }
+        StringIterator(this)
 
     ; Get a non-owning slice view of the string data
     function as_slice(this: String) returns Slice[char]
