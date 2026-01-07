@@ -738,6 +738,45 @@ Scaly syntax includes:
 - Functions apply as prefix, operators as postfix (binary)
 - See scaly.sgm for full language specification (grammar, tests, and documentation)
 
+### Implicit Returns
+
+Like Rust and ML, Scaly supports **implicit returns** - the last expression in a function body is the return value without needing an explicit `return` keyword:
+
+```scaly
+function get_capacity(this: Page, align: size_t) returns size_t
+{
+    var location next_object as size_t
+    let aligned_location (location + align - 1) & (~(align - 1))
+    var location_after_page this as size_t + PAGE_SIZE
+    var capacity location_after_page - aligned_location
+    capacity  ; implicit return - no 'return' keyword needed
+}
+
+function equals(this: String, other: String) returns bool
+{
+    if length <> other.get_length()
+        return false  ; early return still uses 'return'
+
+    if data = null
+        return true
+
+    memcmp(data, other.data, length) = 0  ; implicit return
+}
+```
+
+**Patterns that work:**
+- Simple variables: `capacity`, `result`, `i`
+- Pointer arithmetic: `data + i`, `data + index + 1`
+- Literals: `true`, `false`, `0`
+- Comparisons: `memcmp(...) = 0`, `length = 0`
+- Function calls: `buffer.get_length()`, `hashing.hash(...)`
+- Constructor calls: `Slice[T](data, length)`, `ListIterator[T](head)`
+
+**Known limitation:**
+- Address-of expressions (`&(*head).element`) as implicit returns cause type mismatch errors - use explicit `return` for these
+
+**Style guideline:** Prefer implicit returns for the final expression. Use explicit `return` only for early exits in the middle of a function.
+
 ### Code Style: Allman Braces
 
 Scaly uses **Allman style** (also called BSD style) for brace placement. All opening braces go on their own line:
