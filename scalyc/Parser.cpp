@@ -142,10 +142,8 @@ llvm::Expected<FileSyntax> Parser::parseFile() {
 llvm::Expected<std::vector<DeclarationSyntax>*> Parser::parseDeclarationList() {
     auto *List = new std::vector<DeclarationSyntax>();
     while (true) {
-        // llvm::errs() << "DEBUG parseDeclarationList: trying decl " << List->size() << " at pos " << Lex.position() << "\n";
         auto NodeOrErr = parseDeclaration();
         if (!NodeOrErr) {
-            // llvm::errs() << "DEBUG parseDeclarationList: decl " << List->size() << " failed at pos " << Lex.position() << "\n";
             if (List->empty()) {
                 delete List;
                 return NodeOrErr.takeError();
@@ -153,7 +151,6 @@ llvm::Expected<std::vector<DeclarationSyntax>*> Parser::parseDeclarationList() {
             llvm::consumeError(NodeOrErr.takeError());
             return List;
         }
-        // llvm::errs() << "DEBUG parseDeclarationList: decl " << List->size() << " succeeded\n";
         List->push_back(std::move(*NodeOrErr));
     }
 }
@@ -306,7 +303,6 @@ llvm::Expected<MemberSyntax> Parser::parseMember() {
 }
 
 llvm::Expected<ConstituentSyntax> Parser::parseConstituent() {
-    // llvm::errs() << "DEBUG parseConstituent: at pos " << Lex.position() << "\n";
     {
         auto Result = parseDefinition();
         if (Result)
@@ -317,7 +313,6 @@ llvm::Expected<ConstituentSyntax> Parser::parseConstituent() {
         auto Result = parseFunction();
         if (Result)
             return ConstituentSyntax{std::move(*Result)};
-        // llvm::errs() << "DEBUG parseConstituent: parseFunction failed at pos " << Lex.position() << "\n";
         llvm::consumeError(Result.takeError());
     }
     {
@@ -2290,28 +2285,19 @@ llvm::Expected<ChooseSyntax> Parser::parseChoose() {
     if (!Lex.parseKeyword("choose"))
         return different();
 
-    // llvm::errs() << "DEBUG parseChoose: parsing condition at pos " << Lex.position() << "\n";
     auto ConditionOrErr = parseOperandList();
     if (!ConditionOrErr)
         return invalid(Start, Lex.position(), "expected Operand");
     auto *Condition = *ConditionOrErr;
-    // llvm::errs() << "DEBUG parseChoose: condition parsed, at pos " << Lex.position() << "\n";
 
-    if (!Lex.parseColon()) {
-        // llvm::errs() << "DEBUG parseChoose: no colon at pos " << Lex.position() << "\n";
+    if (!Lex.parseColon())
         return invalid(Start, Lex.position(), "expected colon or newline");
-    }
-    // llvm::errs() << "DEBUG parseChoose: after colon at pos " << Lex.position() << "\n";
 
     std::vector<WhenSyntax>* Cases = nullptr;
     {
         auto ParseResult = parseWhenList();
-        if (ParseResult) {
+        if (ParseResult)
             Cases = *ParseResult;
-            // llvm::errs() << "DEBUG parseChoose: parsed " << Cases->size() << " when clauses\n";
-        } else {
-            // llvm::errs() << "DEBUG parseChoose: parseWhenList failed at pos " << Lex.position() << "\n";
-        }
     }
 
     ElseSyntax* Alternative = nullptr;
@@ -2401,42 +2387,27 @@ llvm::Expected<std::vector<WhenSyntax>*> Parser::parseWhenList() {
 llvm::Expected<WhenSyntax> Parser::parseWhen() {
     size_t Start = Lex.previousPosition();
 
-    if (!Lex.parseKeyword("when")) {
-        // // llvm::errs() << "DEBUG parseWhen: no 'when' at pos " << Lex.position() << "\n";
+    if (!Lex.parseKeyword("when"))
         return different();
-    }
-
-    // llvm::errs() << "DEBUG parseWhen: found 'when' at pos " << Lex.position() << "\n";
 
     llvm::StringRef Name = Lex.peekIdentifier();
-    if (Name.empty() || Keywords.count(Name)) {
-        // llvm::errs() << "DEBUG parseWhen: no identifier after 'when', name='" << Name << "'\n";
+    if (Name.empty() || Keywords.count(Name))
         return invalid(Start, Lex.position(), "expected identifier");
-    }
     Lex.parseIdentifier();  // Consume the identifier
-    // llvm::errs() << "DEBUG parseWhen: identifier='" << Name << "'\n";
 
-    if (!Lex.parseColon()) {
-        // llvm::errs() << "DEBUG parseWhen: no colon after identifier at pos " << Lex.position() << "\n";
+    if (!Lex.parseColon())
         return invalid(Start, Lex.position(), "expected colon or newline");
-    }
-    // llvm::errs() << "DEBUG parseWhen: found colon\n";
 
     auto VariantOrErr = parseName();
-    if (!VariantOrErr) {
-        // llvm::errs() << "DEBUG parseWhen: parseName failed at pos " << Lex.position() << "\n";
+    if (!VariantOrErr)
         return invalid(Start, Lex.position(), "expected Name");
-    }
     auto Variant = std::move(*VariantOrErr);
-    // llvm::errs() << "DEBUG parseWhen: parsed variant name\n";
 
     Lex.parseColon();
 
     auto CommandOrErr = parseCommand();
-    if (!CommandOrErr) {
-        // llvm::errs() << "DEBUG parseWhen: parseCommand failed at pos " << Lex.position() << "\n";
+    if (!CommandOrErr)
         return invalid(Start, Lex.position(), "expected Command");
-    }
     auto Command = std::move(*CommandOrErr);
 
     Lex.parseColon();
@@ -2448,14 +2419,10 @@ llvm::Expected<WhenSyntax> Parser::parseWhen() {
 }
 
 llvm::Expected<CommandSyntax> Parser::parseCommand() {
-    // llvm::errs() << "DEBUG parseCommand: at pos " << Lex.position() << "\n";
     {
         auto Result = parseOperation();
-        if (Result) {
-            // llvm::errs() << "DEBUG parseCommand: parseOperation succeeded\n";
+        if (Result)
             return CommandSyntax{std::move(*Result)};
-        }
-        // llvm::errs() << "DEBUG parseCommand: parseOperation failed at pos " << Lex.position() << "\n";
         llvm::consumeError(Result.takeError());
     }
     {
@@ -3061,31 +3028,22 @@ llvm::Expected<std::vector<ActionSyntax>*> Parser::parseActionList() {
 }
 
 llvm::Expected<ActionSyntax> Parser::parseAction() {
-    // llvm::errs() << "DEBUG parseAction: at pos " << Lex.position() << "\n";
     {
         auto Result = parseOperation();
-        if (Result) {
-            // llvm::errs() << "DEBUG parseAction: parseOperation succeeded at pos " << Lex.position() << "\n";
+        if (Result)
             return ActionSyntax{std::move(*Result)};
-        }
-        // llvm::errs() << "DEBUG parseAction: parseOperation failed at pos " << Lex.position() << "\n";
         llvm::consumeError(Result.takeError());
     }
     {
         auto Result = parseSet();
-        if (Result) {
-            // llvm::errs() << "DEBUG parseAction: parseSet succeeded\n";
+        if (Result)
             return ActionSyntax{std::move(*Result)};
-        }
         llvm::consumeError(Result.takeError());
     }
     {
         auto Result = parseBlock();
-        if (Result) {
-            // llvm::errs() << "DEBUG parseAction: parseBlock succeeded\n";
+        if (Result)
             return ActionSyntax{std::move(*Result)};
-        }
-        // llvm::errs() << "DEBUG parseAction: parseBlock failed at pos " << Lex.position() << "\n";
         llvm::consumeError(Result.takeError());
     }
     return different();
