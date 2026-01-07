@@ -1458,24 +1458,21 @@ Planner::BindingInfo Planner::checkLocalOrProperty(llvm::StringRef Name) {
     }
 
     // Check if it's a property of the current struct
-    if (CurrentStructureProperties) {
+    if (CurrentStructureCtx.isActive() && CurrentStructureCtx.Properties) {
         auto ThisType = lookupLocal("this");
         if (ThisType) {
-            // Extract base name from CurrentStructureName for generic types
-            std::string BaseStructName = CurrentStructureName;
+            // Extract base name for generic types (e.g., "Box.int" -> "Box")
+            std::string BaseStructName = CurrentStructureCtx.Name;
             size_t DotPos = BaseStructName.find('.');
             if (DotPos != std::string::npos) {
                 BaseStructName = BaseStructName.substr(0, DotPos);
             }
 
             // 'this' may be pointer[T], so extract the inner type
-            std::string ThisTypeName = ThisType->Name;
-            if (ThisType->isPointer()) {
-                ThisTypeName = ThisType->getInnerTypeIfPointer().Name;
-            }
+            std::string ThisTypeName = ThisType->getInnerTypeIfPointer().Name;
 
-            if (ThisTypeName == CurrentStructureName || ThisTypeName == BaseStructName) {
-                for (const auto &Prop : *CurrentStructureProperties) {
+            if (ThisTypeName == CurrentStructureCtx.Name || ThisTypeName == BaseStructName) {
+                for (const auto &Prop : *CurrentStructureCtx.Properties) {
                     if (Prop.Name == Name) {
                         Result.IsProperty = true;
                         return Result;
