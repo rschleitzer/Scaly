@@ -15,7 +15,7 @@ define Array[T]
         set length: 0
         set vector: null
         let exclusive_page (*scaly.memory.Page.get(this as pointer[void])).allocate_exclusive_page()
-        set vector: Vector[T]^exclusive_page(exclusive_page, size)
+        set vector: Vector[T]^exclusive_page(size)
     }
 
     function get_buffer(this: Array[T]) returns pointer[T]
@@ -96,12 +96,12 @@ define Array[T]
             let exclusive_page own_page.allocate_exclusive_page()
             let capacity exclusive_page.get_capacity(alignof T) - sizeof Vector[T]
             set length: capacity / size
-            set vector: Vector[T]^exclusive_page(exclusive_page, length)
+            set vector: Vector[T]^exclusive_page(length)
         }
         else
         {
             set length: vector.length * 2
-            let new_vector Vector[T]^own_page(own_page, length)
+            let new_vector Vector[T]^own_page(length)
             let bytes_to_copy vector.length * size
             memcpy(new_vector.data, vector.data, bytes_to_copy)
             let old_exclusive_page Page.get(vector.data as pointer[void])
