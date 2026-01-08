@@ -1743,6 +1743,7 @@ std::optional<Planner::InitializerMatch> Planner::findInitializer(
                     Match.Init = nullptr;  // We don't have a PlannedInitializer yet
                     Match.StructType = StructType;
                     Match.MangledName = MangledName;
+                    Match.RequiresPageParam = Init.PageParameter.has_value();
                     return Match;
                 }
             }
@@ -1780,6 +1781,7 @@ std::optional<Planner::InitializerMatch> Planner::findInitializer(
             Match.Init = &Init;
             Match.MangledName = Init.MangledName;
             Match.StructType = StructType;
+            Match.RequiresPageParam = Init.PageParameter.has_value();
             return Match;
         }
     }
@@ -5129,9 +5131,12 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                     return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
                                 }
                                 // Validate that the referenced variable is a pointer[Page]
+                                auto isPageType = [](const std::string &Name) {
+                                    return Name == "Page" || Name == "scaly.memory.Page";
+                                };
                                 bool isPagePointer = RegionBinding->Type.Name == "pointer" &&
                                                      !RegionBinding->Type.Generics.empty() &&
-                                                     RegionBinding->Type.Generics[0].Name == "Page";
+                                                     isPageType(RegionBinding->Type.Generics[0].Name);
                                 if (!isPagePointer) {
                                     return makeStackLifetimeError(File, RefLife->Loc, RefLife->Location);
                                 }
@@ -5417,9 +5422,12 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
                         }
                         // Validate that the referenced variable is a pointer[Page]
+                        auto isPageType = [](const std::string &Name) {
+                            return Name == "Page" || Name == "scaly.memory.Page";
+                        };
                         bool isPagePointer = RegionBinding->Type.Name == "pointer" &&
                                              !RegionBinding->Type.Generics.empty() &&
-                                             RegionBinding->Type.Generics[0].Name == "Page";
+                                             isPageType(RegionBinding->Type.Generics[0].Name);
                         if (!isPagePointer) {
                             return makeStackLifetimeError(File, RefLife->Loc, RefLife->Location);
                         }
@@ -5902,6 +5910,7 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                 Call.MangledName = InitMatch->MangledName;
                                 Call.IsIntrinsic = false;
                                 Call.IsOperator = false;
+                                Call.RequiresPageParam = InitMatch->RequiresPageParam;
                                 Call.Life = TypeExpr->Life;  // Preserve lifetime for Emitter
                                 // Convert tuple components to call arguments
                                 Call.Args = std::make_shared<std::vector<PlannedOperand>>();
@@ -5925,9 +5934,12 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                         return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
                                     }
                                     // Validate that the referenced variable is a pointer[Page]
+                                    auto isPageType = [](const std::string &Name) {
+                                        return Name == "Page" || Name == "scaly.memory.Page";
+                                    };
                                     bool isPagePointer = RegionBinding->Type.Name == "pointer" &&
                                                          !RegionBinding->Type.Generics.empty() &&
-                                                         RegionBinding->Type.Generics[0].Name == "Page";
+                                                         isPageType(RegionBinding->Type.Generics[0].Name);
                                     if (!isPagePointer) {
                                         return makeStackLifetimeError(File, RefLife->Loc, RefLife->Location);
                                     }
@@ -6045,9 +6057,12 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                         return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
                                     }
                                     // Validate that the referenced variable is a pointer[Page]
+                                    auto isPageType = [](const std::string &Name) {
+                                        return Name == "Page" || Name == "scaly.memory.Page";
+                                    };
                                     bool isPagePointer = RegionBinding->Type.Name == "pointer" &&
                                                          !RegionBinding->Type.Generics.empty() &&
-                                                         RegionBinding->Type.Generics[0].Name == "Page";
+                                                         isPageType(RegionBinding->Type.Generics[0].Name);
                                     if (!isPagePointer) {
                                         return makeStackLifetimeError(File, RefLife->Loc, RefLife->Location);
                                     }
@@ -6131,6 +6146,7 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                 Call.MangledName = InitMatch->MangledName;
                                 Call.IsIntrinsic = false;
                                 Call.IsOperator = false;
+                                Call.RequiresPageParam = InitMatch->RequiresPageParam;
                                 Call.Life = TypeExpr->Life;
                                 Call.Args = std::make_shared<std::vector<PlannedOperand>>();
 
@@ -6152,9 +6168,12 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                         return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
                                     }
                                     // Validate that the referenced variable is a pointer[Page]
+                                    auto isPageType = [](const std::string &Name) {
+                                        return Name == "Page" || Name == "scaly.memory.Page";
+                                    };
                                     bool isPagePointer = RegionBinding->Type.Name == "pointer" &&
                                                          !RegionBinding->Type.Generics.empty() &&
-                                                         RegionBinding->Type.Generics[0].Name == "Page";
+                                                         isPageType(RegionBinding->Type.Generics[0].Name);
                                     if (!isPagePointer) {
                                         return makeStackLifetimeError(File, RefLife->Loc, RefLife->Location);
                                     }
@@ -6202,9 +6221,12 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                         return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
                                     }
                                     // Validate that the referenced variable is a pointer[Page]
+                                    auto isPageType = [](const std::string &Name) {
+                                        return Name == "Page" || Name == "scaly.memory.Page";
+                                    };
                                     bool isPagePointer = RegionBinding->Type.Name == "pointer" &&
                                                          !RegionBinding->Type.Generics.empty() &&
-                                                         RegionBinding->Type.Generics[0].Name == "Page";
+                                                         isPageType(RegionBinding->Type.Generics[0].Name);
                                     if (!isPagePointer) {
                                         return makeStackLifetimeError(File, RefLife->Loc, RefLife->Location);
                                     }
@@ -8107,8 +8129,25 @@ llvm::Expected<PlannedInitializer> Planner::planInitializer(const Initializer &I
     PlannedInitializer Result;
     Result.Loc = Init.Loc;
     Result.Private = Init.Private;
+    Result.PageParameter = Init.PageParameter;
 
     pushScope();
+
+    // If init# was used, define the page parameter in scope
+    if (Init.PageParameter) {
+        PlannedType PagePtrType;
+        PagePtrType.Loc = Init.Loc;
+        PagePtrType.Name = "pointer";
+        PagePtrType.MangledName = "PN4scaly6memory4PageE";  // pointer[scaly.memory.Page]
+
+        PlannedType PageType;
+        PageType.Loc = Init.Loc;
+        PageType.Name = "scaly.memory.Page";
+        PageType.MangledName = "N4scaly6memory4PageE";
+        PagePtrType.Generics.push_back(PageType);
+
+        defineLocal(*Init.PageParameter, PagePtrType, false);
+    }
 
     // Plan input parameters
     std::vector<PlannedItem> Params;
@@ -8151,15 +8190,28 @@ llvm::Expected<PlannedInitializer> Planner::planInitializer(const Initializer &I
     std::string Mangled = "_ZN";
     Mangled += encodeType(Parent);
     Mangled += "C1E";  // C1 = complete object constructor
-    if (Result.Input.empty()) {
-        Mangled += "v";
-    } else {
+
+    bool HasParams = false;
+
+    // If init# was used, include page parameter first
+    if (Result.PageParameter) {
+        Mangled += "PN4scaly6memory4PageE";  // pointer[scaly.memory.Page]
+        HasParams = true;
+    }
+
+    if (!Result.Input.empty()) {
         for (const auto &P : Result.Input) {
             if (P.ItemType) {
                 Mangled += encodeType(*P.ItemType);
             }
         }
+        HasParams = true;
     }
+
+    if (!HasParams) {
+        Mangled += "v";
+    }
+
     Result.MangledName = Mangled;
 
     return Result;

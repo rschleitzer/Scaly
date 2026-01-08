@@ -329,6 +329,7 @@ struct PlannedCall {
     bool IsIntrinsic;           // True for stdlib intrinsic ops (emit LLVM instruction)
     bool IsOperator;            // True for operators, false for functions
     bool CanThrow = false;      // True if function can throw (has Throws annotation)
+    bool RequiresPageParam = false;  // True if init# - initializer needs page parameter
     std::shared_ptr<std::vector<PlannedOperand>> Args;  // Arguments (shared_ptr to break cycle)
     PlannedType ResultType;     // Return type
     Lifetime Life;              // For constructors: allocation lifetime ($, #, ^name, or none=stack)
@@ -465,6 +466,7 @@ struct PlannedFunction {
 struct PlannedInitializer {
     Span Loc;
     bool Private;
+    std::optional<std::string> PageParameter;  // Name of page param if init#
     std::string MangledName;
     std::vector<PlannedItem> Input;
     PlannedImplementation Impl;

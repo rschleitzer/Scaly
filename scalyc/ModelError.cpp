@@ -72,6 +72,10 @@ std::string ModuleRootMustBeConceptError::toString() const {
     return File + ": error: The root definition of a module must be a concept.";
 }
 
+std::string InvalidInitLifetimeError::toString() const {
+    return File + ": error: " + Message;
+}
+
 std::string modelBuilderErrorToString(const ModelBuilderError &Err) {
     return std::visit([](const auto &E) { return E.toString(); }, Err);
 }

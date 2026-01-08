@@ -13,10 +13,10 @@ define Path
         {
             local_page.deallocate_extensions()
             free(local_page as pointer[void])
-            return String(rp, "")
+            return String^rp("")
         }
 
-        let ret String(rp, directory_name_as_c_string)
+        let ret String^rp(directory_name_as_c_string)
         local_page.deallocate_extensions()
         free(local_page as pointer[void])
         return ret
@@ -27,7 +27,7 @@ define Path
         var local_page Page.allocate_page()
         let path_as_c_string path.to_c_string(local_page)
         let file_name_as_c_string basename(path_as_c_string as pointer[char])
-        let ret String(rp, file_name_as_c_string)
+        let ret String^rp(file_name_as_c_string)
         local_page.deallocate_extensions()
         free(local_page as pointer[void])
         return ret
@@ -36,7 +36,7 @@ define Path
     function join(rp: pointer[Page], path1: String, path2: String) returns String
     {
         if path1.get_length() = 0
-            return String(rp, path2)
+            return String^rp(path2)
 
         var path StringBuilder$()
         path.append(path1)

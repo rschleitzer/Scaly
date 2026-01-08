@@ -636,6 +636,7 @@ struct DeInitSyntax {
 struct InitSyntax {
     size_t Start;
     size_t End;
+    LifetimeSyntax* lifetime;
     ParameterSetSyntax* parameters;
     ActionSyntax action;
 };

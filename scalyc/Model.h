@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <variant>
 #include <vector>
@@ -400,6 +401,7 @@ struct Function {
 struct Initializer {
     Span Loc;
     bool Private;
+    std::optional<std::string> PageParameter;  // Name of page param if init#
     std::vector<Item> Input;
     Implementation Impl;
 };

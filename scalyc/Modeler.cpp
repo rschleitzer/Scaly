@@ -1123,12 +1123,52 @@ std::vector<GenericParameter> Modeler::extractGenericParams(
 
 llvm::Expected<Initializer> Modeler::handleInitializer(
     const InitSyntax &Syntax, bool Private) {
+
+    // Handle page parameter from lifetime annotation
+    std::optional<std::string> PageParameter;
+    if (Syntax.lifetime) {
+        const auto &Life = Syntax.lifetime->Value;
+        if (std::holds_alternative<CallSyntax>(Life)) {
+            // init# - valid, first parameter is page name
+            // Will extract page name from first parameter below
+        } else if (std::holds_alternative<LocalSyntax>(Life)) {
+            return makeInvalidInitLifetimeError(File,
+                Span{Syntax.Start, Syntax.End},
+                "init$ is reserved - use init# for page parameter");
+        } else if (std::holds_alternative<ReferenceSyntax>(Life)) {
+            return makeInvalidInitLifetimeError(File,
+                Span{Syntax.Start, Syntax.End},
+                "init^ is reserved - use init# for page parameter");
+        } else if (std::holds_alternative<ThrownSyntax>(Life)) {
+            return makeInvalidInitLifetimeError(File,
+                Span{Syntax.Start, Syntax.End},
+                "init! is reserved - use init# for page parameter");
+        }
+    }
+
     std::vector<Item> Input;
     if (Syntax.parameters) {
         auto Params = handleParameterSet(*Syntax.parameters);
         if (!Params)
             return Params.takeError();
         Input = std::move(*Params);
+    }
+
+    // If init# was used, extract the page parameter name from first param
+    if (Syntax.lifetime && std::holds_alternative<CallSyntax>(Syntax.lifetime->Value)) {
+        if (Input.empty()) {
+            return makeInvalidInitLifetimeError(File,
+                Span{Syntax.Start, Syntax.End},
+                "init# requires a page parameter as first argument");
+        }
+        // First parameter is the page name - extract and remove from Input
+        if (!Input[0].Name) {
+            return makeInvalidInitLifetimeError(File,
+                Span{Syntax.Start, Syntax.End},
+                "init# page parameter must have a name");
+        }
+        PageParameter = *Input[0].Name;
+        Input.erase(Input.begin());
     }
 
     auto Act = handleAction(Syntax.action);
@@ -1138,6 +1178,7 @@ llvm::Expected<Initializer> Modeler::handleInitializer(
     return Initializer{
         Span{Syntax.Start, Syntax.End},
         Private,
+        PageParameter,
         std::move(Input),
         std::move(*Act)
     };

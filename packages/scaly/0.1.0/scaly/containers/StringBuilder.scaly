@@ -56,6 +56,6 @@ define StringBuilder
     function get_length(this: StringBuilder) returns size_t
         buffer.get_length()
 
-    function to_string(this: StringBuilder, rp: pointer[Page]) returns String
-        String(rp, buffer.get_buffer(), buffer.get_length())
+    function to_string(this: StringBuilder, page: pointer[Page]) returns String
+        String^page(buffer.get_buffer(), buffer.get_length())
 }
