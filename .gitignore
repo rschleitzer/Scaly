@@ -20,6 +20,7 @@ output/
 # IDE
 .vscode-test/
 .vs/
+.cache/
 
 # Retired code build artifacts
 retired/*/obj/

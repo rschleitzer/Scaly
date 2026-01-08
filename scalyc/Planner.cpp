@@ -1498,6 +1498,108 @@ PlannedCall Planner::createMethodCall(
     return Call;
 }
 
+llvm::Expected<PlannedOperand> Planner::generatePageGetThis(Span Loc) {
+    // Look up 'this' to get its type
+    auto ThisType = lookupLocal("this");
+    if (!ThisType) {
+        return makePlannerNotImplementedError(File, Loc,
+            "^this can only be used in methods (no 'this' in scope)");
+    }
+
+    // Look up Page concept to get the Page.get function
+    const Concept* PageConcept = lookupConcept("Page");
+    if (!PageConcept) {
+        return makePlannerNotImplementedError(File, Loc,
+            "^this requires Page type (not found in scope)");
+    }
+
+    // Find the static 'get' function in Page
+    const Function* GetFunc = nullptr;
+    if (auto* PageStruct = std::get_if<Structure>(&PageConcept->Def)) {
+        for (const auto& Member : PageStruct->Members) {
+            if (auto* Func = std::get_if<Function>(&Member)) {
+                if (Func->Name == "get") {
+                    // Verify it's the static version (no 'this' parameter, takes pointer[void])
+                    bool IsStatic = Func->Input.empty() ||
+                        !Func->Input[0].Name ||
+                        *Func->Input[0].Name != "this";
+                    if (IsStatic && Func->Input.size() == 1) {
+                        GetFunc = Func;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    if (!GetFunc) {
+        return makePlannerNotImplementedError(File, Loc,
+            "^this requires Page.get function (not found)");
+    }
+
+    // Plan the Page.get function
+    auto PlannedFunc = planFunction(*GetFunc, nullptr);
+    if (!PlannedFunc) {
+        return PlannedFunc.takeError();
+    }
+
+    // Add to InstantiatedFunctions if not already present
+    if (InstantiatedFunctions.find(PlannedFunc->MangledName) == InstantiatedFunctions.end()) {
+        InstantiatedFunctions[PlannedFunc->MangledName] = *PlannedFunc;
+    }
+
+    // Create the argument: 'this' cast to pointer[void]
+    PlannedOperand ThisArg;
+    ThisArg.Loc = Loc;
+    ThisArg.ResultType = *ThisType;
+    ThisArg.Expr = PlannedVariable{Loc, "this", *ThisType, false};
+
+    // Wrap in cast to pointer[void]
+    PlannedType VoidPtrType;
+    VoidPtrType.Loc = Loc;
+    VoidPtrType.Name = "pointer";
+    VoidPtrType.MangledName = "Pv";
+    PlannedType VoidType;
+    VoidType.Name = "void";
+    VoidType.MangledName = "v";
+    VoidPtrType.Generics.push_back(VoidType);
+
+    PlannedOperand CastArg;
+    CastArg.Loc = Loc;
+    CastArg.ResultType = VoidPtrType;
+    CastArg.Expr = PlannedAs{Loc, VoidPtrType, std::make_shared<PlannedOperand>(std::move(ThisArg))};
+
+    // Create the PlannedCall for Page.get
+    PlannedCall Call;
+    Call.Loc = Loc;
+    Call.Name = "get";
+    Call.MangledName = PlannedFunc->MangledName;
+    Call.IsIntrinsic = false;
+    Call.IsOperator = false;
+    Call.Args = std::make_shared<std::vector<PlannedOperand>>();
+    Call.Args->push_back(std::move(CastArg));
+
+    // Result type is pointer[Page]
+    PlannedType PageType;
+    PageType.Loc = Loc;
+    PageType.Name = "scaly.memory.Page";
+    PageType.MangledName = "N5scaly6memory4PageE";
+
+    PlannedType PagePtrType;
+    PagePtrType.Loc = Loc;
+    PagePtrType.Name = "pointer";
+    PagePtrType.MangledName = "PN5scaly6memory4PageE";
+    PagePtrType.Generics.push_back(PageType);
+    Call.ResultType = PagePtrType;
+
+    PlannedOperand Result;
+    Result.Loc = Loc;
+    Result.ResultType = PagePtrType;
+    Result.Expr = std::move(Call);
+
+    return Result;
+}
+
 // ============================================================================
 // Pattern Detection Helpers
 // ============================================================================
@@ -5131,26 +5233,35 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             // If the Type has a ReferenceLifetime, look up the region variable
                             // and pass it as the first argument (before instance)
                             if (auto* RefLife = std::get_if<ReferenceLifetime>(&TypeExpr->Life)) {
-                                auto RegionBinding = lookupLocalBinding(RefLife->Location);
-                                if (!RegionBinding) {
-                                    return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
-                                }
-                                // Validate that the referenced variable is a pointer[Page]
-                                auto isPageType = [](const std::string &Name) {
-                                    return Name == "Page" || Name == "scaly.memory.Page";
-                                };
-                                bool isPagePointer = RegionBinding->Type.Name == "pointer" &&
-                                                     !RegionBinding->Type.Generics.empty() &&
-                                                     isPageType(RegionBinding->Type.Generics[0].Name);
-                                if (!isPagePointer) {
-                                    return makeStackLifetimeError(File, RefLife->Loc, RefLife->Location);
-                                }
+                                // Special case: ^this generates Page.get(this)
+                                if (RefLife->Location == "this") {
+                                    auto PageGetResult = generatePageGetThis(RefLife->Loc);
+                                    if (!PageGetResult) {
+                                        return PageGetResult.takeError();
+                                    }
+                                    Call.Args->push_back(std::move(*PageGetResult));
+                                } else {
+                                    auto RegionBinding = lookupLocalBinding(RefLife->Location);
+                                    if (!RegionBinding) {
+                                        return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
+                                    }
+                                    // Validate that the referenced variable is a pointer[Page]
+                                    auto isPageType = [](const std::string &Name) {
+                                        return Name == "Page" || Name == "scaly.memory.Page";
+                                    };
+                                    bool isPagePointer = RegionBinding->Type.Name == "pointer" &&
+                                                         !RegionBinding->Type.Generics.empty() &&
+                                                         isPageType(RegionBinding->Type.Generics[0].Name);
+                                    if (!isPagePointer) {
+                                        return makeStackLifetimeError(File, RefLife->Loc, RefLife->Location);
+                                    }
 
-                                PlannedOperand RegionArg;
-                                RegionArg.Loc = RefLife->Loc;
-                                RegionArg.ResultType = RegionBinding->Type;
-                                RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, RegionBinding->IsMutable};
-                                Call.Args->push_back(std::move(RegionArg));
+                                    PlannedOperand RegionArg;
+                                    RegionArg.Loc = RefLife->Loc;
+                                    RegionArg.ResultType = RegionBinding->Type;
+                                    RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, RegionBinding->IsMutable};
+                                    Call.Args->push_back(std::move(RegionArg));
+                                }
                             }
 
                             Call.Args->push_back(std::move(*PlannedVar));
@@ -5426,10 +5537,57 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
 
                         if (auto* RefLife = std::get_if<ReferenceLifetime>(&MethodType.Life)) {
                             // ^name - pass explicit page as first argument
+                            // Special case: ^this generates Page.get(this)
+                            if (RefLife->Location == "this") {
+                                auto PageGetResult = generatePageGetThis(RefLife->Loc);
+                                if (!PageGetResult) {
+                                    return PageGetResult.takeError();
+                                }
+                                Call.Args->push_back(std::move(*PageGetResult));
+                            } else {
+                                auto RegionBinding = lookupLocalBinding(RefLife->Location);
+                                if (!RegionBinding) {
+                                    return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
+                                }
+                                auto isPageType = [](const std::string &Name) {
+                                    return Name == "Page" || Name == "scaly.memory.Page";
+                                };
+                                bool isPagePointer = RegionBinding->Type.Name == "pointer" &&
+                                                     !RegionBinding->Type.Generics.empty() &&
+                                                     isPageType(RegionBinding->Type.Generics[0].Name);
+                                if (!isPagePointer) {
+                                    return makeStackLifetimeError(File, RefLife->Loc, RefLife->Location);
+                                }
+
+                                PlannedOperand RegionArg;
+                                RegionArg.Loc = RefLife->Loc;
+                                RegionArg.ResultType = RegionBinding->Type;
+                                RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, RegionBinding->IsMutable};
+                                Call.Args->push_back(std::move(RegionArg));
+                            }
+                        }
+                        // For # lifetime, Emitter uses ReturnPage (rp)
+                        else if (!std::holds_alternative<CallLifetime>(MethodType.Life)) {
+                            return makePlannerNotImplementedError(File, Op.Loc,
+                                "method# '" + MethodName + "' must be called with # or ^page syntax");
+                        }
+                    }
+                    // If the method Type has a ReferenceLifetime but method doesn't have PageParameter,
+                    // still pass the region (for legacy/init calls)
+                    else if (auto* RefLife = std::get_if<ReferenceLifetime>(&MethodType.Life)) {
+                        // Special case: ^this generates Page.get(this)
+                        if (RefLife->Location == "this") {
+                            auto PageGetResult = generatePageGetThis(RefLife->Loc);
+                            if (!PageGetResult) {
+                                return PageGetResult.takeError();
+                            }
+                            Call.Args->push_back(std::move(*PageGetResult));
+                        } else {
                             auto RegionBinding = lookupLocalBinding(RefLife->Location);
                             if (!RegionBinding) {
                                 return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
                             }
+                            // Validate that the referenced variable is a pointer[Page]
                             auto isPageType = [](const std::string &Name) {
                                 return Name == "Page" || Name == "scaly.memory.Page";
                             };
@@ -5446,35 +5604,6 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, RegionBinding->IsMutable};
                             Call.Args->push_back(std::move(RegionArg));
                         }
-                        // For # lifetime, Emitter uses ReturnPage (rp)
-                        else if (!std::holds_alternative<CallLifetime>(MethodType.Life)) {
-                            return makePlannerNotImplementedError(File, Op.Loc,
-                                "method# '" + MethodName + "' must be called with # or ^page syntax");
-                        }
-                    }
-                    // If the method Type has a ReferenceLifetime but method doesn't have PageParameter,
-                    // still pass the region (for legacy/init calls)
-                    else if (auto* RefLife = std::get_if<ReferenceLifetime>(&MethodType.Life)) {
-                        auto RegionBinding = lookupLocalBinding(RefLife->Location);
-                        if (!RegionBinding) {
-                            return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
-                        }
-                        // Validate that the referenced variable is a pointer[Page]
-                        auto isPageType = [](const std::string &Name) {
-                            return Name == "Page" || Name == "scaly.memory.Page";
-                        };
-                        bool isPagePointer = RegionBinding->Type.Name == "pointer" &&
-                                             !RegionBinding->Type.Generics.empty() &&
-                                             isPageType(RegionBinding->Type.Generics[0].Name);
-                        if (!isPagePointer) {
-                            return makeStackLifetimeError(File, RefLife->Loc, RefLife->Location);
-                        }
-
-                        PlannedOperand RegionArg;
-                        RegionArg.Loc = RefLife->Loc;
-                        RegionArg.ResultType = RegionBinding->Type;
-                        RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, RegionBinding->IsMutable};
-                        Call.Args->push_back(std::move(RegionArg));
                     }
 
                     Call.Args->push_back(std::move(*PlannedBase));
@@ -5967,26 +6096,35 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
 
                                 // For ReferenceLifetime (^name), pass the region variable as first arg
                                 if (auto* RefLife = std::get_if<ReferenceLifetime>(&TypeExpr->Life)) {
-                                    auto RegionBinding = lookupLocalBinding(RefLife->Location);
-                                    if (!RegionBinding) {
-                                        return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
-                                    }
-                                    // Validate that the referenced variable is a pointer[Page]
-                                    auto isPageType = [](const std::string &Name) {
-                                        return Name == "Page" || Name == "scaly.memory.Page";
-                                    };
-                                    bool isPagePointer = RegionBinding->Type.Name == "pointer" &&
-                                                         !RegionBinding->Type.Generics.empty() &&
-                                                         isPageType(RegionBinding->Type.Generics[0].Name);
-                                    if (!isPagePointer) {
-                                        return makeStackLifetimeError(File, RefLife->Loc, RefLife->Location);
-                                    }
+                                    // Special case: ^this generates Page.get(this)
+                                    if (RefLife->Location == "this") {
+                                        auto PageGetResult = generatePageGetThis(RefLife->Loc);
+                                        if (!PageGetResult) {
+                                            return PageGetResult.takeError();
+                                        }
+                                        Call.Args->push_back(std::move(*PageGetResult));
+                                    } else {
+                                        auto RegionBinding = lookupLocalBinding(RefLife->Location);
+                                        if (!RegionBinding) {
+                                            return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
+                                        }
+                                        // Validate that the referenced variable is a pointer[Page]
+                                        auto isPageType = [](const std::string &Name) {
+                                            return Name == "Page" || Name == "scaly.memory.Page";
+                                        };
+                                        bool isPagePointer = RegionBinding->Type.Name == "pointer" &&
+                                                             !RegionBinding->Type.Generics.empty() &&
+                                                             isPageType(RegionBinding->Type.Generics[0].Name);
+                                        if (!isPagePointer) {
+                                            return makeStackLifetimeError(File, RefLife->Loc, RefLife->Location);
+                                        }
 
-                                    PlannedOperand RegionArg;
-                                    RegionArg.Loc = RefLife->Loc;
-                                    RegionArg.ResultType = RegionBinding->Type;
-                                    RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, RegionBinding->IsMutable};
-                                    Call.Args->push_back(std::move(RegionArg));
+                                        PlannedOperand RegionArg;
+                                        RegionArg.Loc = RefLife->Loc;
+                                        RegionArg.ResultType = RegionBinding->Type;
+                                        RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, RegionBinding->IsMutable};
+                                        Call.Args->push_back(std::move(RegionArg));
+                                    }
                                 }
                                 // For $ and # lifetimes, Emitter uses CurrentRegion.LocalPage or ReturnPage
 
@@ -6090,23 +6228,32 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                 // For ReferenceLifetime (^name), look up the region variable
                                 PlannedOperand RegionArg;
                                 if (auto* RefLife = std::get_if<ReferenceLifetime>(&TypeExpr->Life)) {
-                                    auto RegionBinding = lookupLocalBinding(RefLife->Location);
-                                    if (!RegionBinding) {
-                                        return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
+                                    // Special case: ^this generates Page.get(this)
+                                    if (RefLife->Location == "this") {
+                                        auto PageGetResult = generatePageGetThis(RefLife->Loc);
+                                        if (!PageGetResult) {
+                                            return PageGetResult.takeError();
+                                        }
+                                        RegionArg = std::move(*PageGetResult);
+                                    } else {
+                                        auto RegionBinding = lookupLocalBinding(RefLife->Location);
+                                        if (!RegionBinding) {
+                                            return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
+                                        }
+                                        // Validate that the referenced variable is a pointer[Page]
+                                        auto isPageType = [](const std::string &Name) {
+                                            return Name == "Page" || Name == "scaly.memory.Page";
+                                        };
+                                        bool isPagePointer = RegionBinding->Type.Name == "pointer" &&
+                                                             !RegionBinding->Type.Generics.empty() &&
+                                                             isPageType(RegionBinding->Type.Generics[0].Name);
+                                        if (!isPagePointer) {
+                                            return makeStackLifetimeError(File, RefLife->Loc, RefLife->Location);
+                                        }
+                                        RegionArg.Loc = RefLife->Loc;
+                                        RegionArg.ResultType = RegionBinding->Type;
+                                        RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, RegionBinding->IsMutable};
                                     }
-                                    // Validate that the referenced variable is a pointer[Page]
-                                    auto isPageType = [](const std::string &Name) {
-                                        return Name == "Page" || Name == "scaly.memory.Page";
-                                    };
-                                    bool isPagePointer = RegionBinding->Type.Name == "pointer" &&
-                                                         !RegionBinding->Type.Generics.empty() &&
-                                                         isPageType(RegionBinding->Type.Generics[0].Name);
-                                    if (!isPagePointer) {
-                                        return makeStackLifetimeError(File, RefLife->Loc, RefLife->Location);
-                                    }
-                                    RegionArg.Loc = RefLife->Loc;
-                                    RegionArg.ResultType = RegionBinding->Type;
-                                    RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, RegionBinding->IsMutable};
                                 }
                                 // For $ and # lifetimes, Emitter uses CurrentRegion.LocalPage or ReturnPage
 
@@ -6201,25 +6348,34 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
 
                                 // For ReferenceLifetime (^name), pass the region variable as first arg
                                 if (auto* RefLife = std::get_if<ReferenceLifetime>(&TypeExpr->Life)) {
-                                    auto RegionBinding = lookupLocalBinding(RefLife->Location);
-                                    if (!RegionBinding) {
-                                        return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
+                                    // Special case: ^this generates Page.get(this)
+                                    if (RefLife->Location == "this") {
+                                        auto PageGetResult = generatePageGetThis(RefLife->Loc);
+                                        if (!PageGetResult) {
+                                            return PageGetResult.takeError();
+                                        }
+                                        Call.Args->push_back(std::move(*PageGetResult));
+                                    } else {
+                                        auto RegionBinding = lookupLocalBinding(RefLife->Location);
+                                        if (!RegionBinding) {
+                                            return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
+                                        }
+                                        // Validate that the referenced variable is a pointer[Page]
+                                        auto isPageType = [](const std::string &Name) {
+                                            return Name == "Page" || Name == "scaly.memory.Page";
+                                        };
+                                        bool isPagePointer = RegionBinding->Type.Name == "pointer" &&
+                                                             !RegionBinding->Type.Generics.empty() &&
+                                                             isPageType(RegionBinding->Type.Generics[0].Name);
+                                        if (!isPagePointer) {
+                                            return makeStackLifetimeError(File, RefLife->Loc, RefLife->Location);
+                                        }
+                                        PlannedOperand RegionArg;
+                                        RegionArg.Loc = RefLife->Loc;
+                                        RegionArg.ResultType = RegionBinding->Type;
+                                        RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, RegionBinding->IsMutable};
+                                        Call.Args->push_back(std::move(RegionArg));
                                     }
-                                    // Validate that the referenced variable is a pointer[Page]
-                                    auto isPageType = [](const std::string &Name) {
-                                        return Name == "Page" || Name == "scaly.memory.Page";
-                                    };
-                                    bool isPagePointer = RegionBinding->Type.Name == "pointer" &&
-                                                         !RegionBinding->Type.Generics.empty() &&
-                                                         isPageType(RegionBinding->Type.Generics[0].Name);
-                                    if (!isPagePointer) {
-                                        return makeStackLifetimeError(File, RefLife->Loc, RefLife->Location);
-                                    }
-                                    PlannedOperand RegionArg;
-                                    RegionArg.Loc = RefLife->Loc;
-                                    RegionArg.ResultType = RegionBinding->Type;
-                                    RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, RegionBinding->IsMutable};
-                                    Call.Args->push_back(std::move(RegionArg));
                                 }
 
                                 // Set result type: pointer[StructType] for page alloc
@@ -6254,25 +6410,34 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                 }
 
                                 if (auto* RefLife = std::get_if<ReferenceLifetime>(&TypeExpr->Life)) {
-                                    auto RegionBinding = lookupLocalBinding(RefLife->Location);
-                                    if (!RegionBinding) {
-                                        return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
+                                    // Special case: ^this generates Page.get(this)
+                                    if (RefLife->Location == "this") {
+                                        auto PageGetResult = generatePageGetThis(RefLife->Loc);
+                                        if (!PageGetResult) {
+                                            return PageGetResult.takeError();
+                                        }
+                                        EmptyTuple.RegionArg = std::make_shared<PlannedOperand>(std::move(*PageGetResult));
+                                    } else {
+                                        auto RegionBinding = lookupLocalBinding(RefLife->Location);
+                                        if (!RegionBinding) {
+                                            return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
+                                        }
+                                        // Validate that the referenced variable is a pointer[Page]
+                                        auto isPageType = [](const std::string &Name) {
+                                            return Name == "Page" || Name == "scaly.memory.Page";
+                                        };
+                                        bool isPagePointer = RegionBinding->Type.Name == "pointer" &&
+                                                             !RegionBinding->Type.Generics.empty() &&
+                                                             isPageType(RegionBinding->Type.Generics[0].Name);
+                                        if (!isPagePointer) {
+                                            return makeStackLifetimeError(File, RefLife->Loc, RefLife->Location);
+                                        }
+                                        PlannedOperand RegionArg;
+                                        RegionArg.Loc = RefLife->Loc;
+                                        RegionArg.ResultType = RegionBinding->Type;
+                                        RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, RegionBinding->IsMutable};
+                                        EmptyTuple.RegionArg = std::make_shared<PlannedOperand>(std::move(RegionArg));
                                     }
-                                    // Validate that the referenced variable is a pointer[Page]
-                                    auto isPageType = [](const std::string &Name) {
-                                        return Name == "Page" || Name == "scaly.memory.Page";
-                                    };
-                                    bool isPagePointer = RegionBinding->Type.Name == "pointer" &&
-                                                         !RegionBinding->Type.Generics.empty() &&
-                                                         isPageType(RegionBinding->Type.Generics[0].Name);
-                                    if (!isPagePointer) {
-                                        return makeStackLifetimeError(File, RefLife->Loc, RefLife->Location);
-                                    }
-                                    PlannedOperand RegionArg;
-                                    RegionArg.Loc = RefLife->Loc;
-                                    RegionArg.ResultType = RegionBinding->Type;
-                                    RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, RegionBinding->IsMutable};
-                                    EmptyTuple.RegionArg = std::make_shared<PlannedOperand>(std::move(RegionArg));
                                 }
 
                                 PlannedType ResultType;
@@ -6602,26 +6767,35 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
 
                             if (auto* RefLife = std::get_if<ReferenceLifetime>(&TypeExpr->Life)) {
                                 // ^name - pass explicit page as first argument
-                                auto RegionBinding = lookupLocalBinding(RefLife->Location);
-                                if (!RegionBinding) {
-                                    return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
-                                }
-                                // Validate that the referenced variable is a pointer[Page]
-                                auto isPageType = [](const std::string &Name) {
-                                    return Name == "Page" || Name == "scaly.memory.Page";
-                                };
-                                bool isPagePointer = RegionBinding->Type.Name == "pointer" &&
-                                                     !RegionBinding->Type.Generics.empty() &&
-                                                     isPageType(RegionBinding->Type.Generics[0].Name);
-                                if (!isPagePointer) {
-                                    return makeStackLifetimeError(File, RefLife->Loc, RefLife->Location);
-                                }
+                                // Special case: ^this generates Page.get(this)
+                                if (RefLife->Location == "this") {
+                                    auto PageGetResult = generatePageGetThis(RefLife->Loc);
+                                    if (!PageGetResult) {
+                                        return PageGetResult.takeError();
+                                    }
+                                    Call.Args->push_back(std::move(*PageGetResult));
+                                } else {
+                                    auto RegionBinding = lookupLocalBinding(RefLife->Location);
+                                    if (!RegionBinding) {
+                                        return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
+                                    }
+                                    // Validate that the referenced variable is a pointer[Page]
+                                    auto isPageType = [](const std::string &Name) {
+                                        return Name == "Page" || Name == "scaly.memory.Page";
+                                    };
+                                    bool isPagePointer = RegionBinding->Type.Name == "pointer" &&
+                                                         !RegionBinding->Type.Generics.empty() &&
+                                                         isPageType(RegionBinding->Type.Generics[0].Name);
+                                    if (!isPagePointer) {
+                                        return makeStackLifetimeError(File, RefLife->Loc, RefLife->Location);
+                                    }
 
-                                PlannedOperand RegionArg;
-                                RegionArg.Loc = RefLife->Loc;
-                                RegionArg.ResultType = RegionBinding->Type;
-                                RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, RegionBinding->IsMutable};
-                                Call.Args->push_back(std::move(RegionArg));
+                                    PlannedOperand RegionArg;
+                                    RegionArg.Loc = RefLife->Loc;
+                                    RegionArg.ResultType = RegionBinding->Type;
+                                    RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, RegionBinding->IsMutable};
+                                    Call.Args->push_back(std::move(RegionArg));
+                                }
                             }
                             // For # lifetime, Emitter uses ReturnPage (rp)
                             // For $ or unspecified, error - function# must be called with # or ^name
