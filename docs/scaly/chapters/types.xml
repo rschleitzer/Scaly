@@ -299,6 +299,37 @@ function example() returns Point {
 }
       </programlisting>
     </section>
+
+    <section xml:id="types-constructors-page-param">
+      <title>Page-Parameterized Constructors (<literal>init#</literal>)</title>
+      <para>Some types are value types (can live on the stack) but need to allocate
+        internal data on a page. The <literal>init#</literal> syntax supports this pattern:</para>
+      <programlisting>
+define String(data: pointer[char], length: size_t)
+{
+    ; init# takes an implicit page parameter as first argument
+    init#(page, text: pointer[const_char])
+    {
+        let len strlen(text)
+        set data: page.allocate(len + 1, 1) as pointer[char]
+        memcpy(data, text, len)
+        set length: len
+    }
+}
+      </programlisting>
+      <para>At call sites, the lifetime modifier determines which page is passed:</para>
+      <itemizedlist>
+        <listitem><para><literal>String#("hello")</literal> — passes caller's page (rp)</para></listitem>
+        <listitem><para><literal>String$("world")</literal> — passes local page</para></listitem>
+        <listitem><para><literal>String^hashMap("key")</literal> — passes the named page</para></listitem>
+      </itemizedlist>
+      <para>The <literal>init#</literal> pattern is distinct from regular heap allocation.
+        The struct itself can live on the stack — only its internal data needs a page.
+        This is ideal for types like String, Array, or other containers where the
+        wrapper is small but the content may be large.</para>
+      <para>Note: <literal>init$</literal>, <literal>init^</literal>, and <literal>init!</literal>
+        are reserved for future use and will produce an error.</para>
+    </section>
   </section>
 
   <section xml:id="types-closures">

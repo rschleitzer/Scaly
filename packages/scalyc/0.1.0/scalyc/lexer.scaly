@@ -45,6 +45,7 @@ define Token union (
 ; Lexer state
 define Lexer
 (
+    rp: pointer[Page]
     source: String
     current: size_t
     token: Token
@@ -52,8 +53,9 @@ define Lexer
     previous_position: size_t
 )
 {
-    init(source: String)
+    init(rp: pointer[Page], source: String)
     {
+        set this.rp: rp
         set this.source: source
         set current: 0
         set token: Token.Empty(EmptyToken())
@@ -217,7 +219,7 @@ define Lexer
         while current < source.length() & is_identifier_char(source.get(current))
             set current: current + 1
 
-        let name source.substring(start, current - start)
+        let name source.substring(rp, start, current - start)
         set position: current
 
         ; Check for boolean literals
@@ -236,7 +238,7 @@ define Lexer
         while current < source.length() & is_identifier_char(source.get(current))
             set current: current + 1
 
-        let name source.substring(start, current - start)
+        let name source.substring(rp, start, current - start)
         set position: current
         Token.Attribute(AttributeToken(name))
     }
@@ -247,7 +249,7 @@ define Lexer
         while current < source.length() & is_operator_char(source.get(current))
             set current: current + 1
 
-        let name source.substring(start, current - start)
+        let name source.substring(rp, start, current - start)
         set position: current
         Token.Identifier(IdentifierToken(name))
     }
@@ -264,7 +266,7 @@ define Lexer
             set current: current + 1
         }
 
-        let value source.substring(start, current - start)
+        let value source.substring(rp, start, current - start)
 
         if current < source.length()
             set current: current + 1  ; Skip closing "
@@ -285,7 +287,7 @@ define Lexer
             set current: current + 1
         }
 
-        let value source.substring(start, current - start)
+        let value source.substring(rp, start, current - start)
 
         if current < source.length()
             set current: current + 1  ; Skip closing '
@@ -302,7 +304,7 @@ define Lexer
         while current < source.length() & source.get(current) <> '`'
             set current: current + 1
 
-        let value source.substring(start, current - start)
+        let value source.substring(rp, start, current - start)
 
         if current < source.length()
             set current: current + 1  ; Skip closing `
@@ -324,7 +326,7 @@ define Lexer
                 set current: current + 2
                 while current < source.length() & is_hex_digit(source.get(current))
                     set current: current + 1
-                let value source.substring(start + 2, current - start - 2)
+                let value source.substring(rp, start + 2, current - start - 2)
                 set position: current
                 return Token.Literal(LiteralToken(Literal.Hex(HexLiteral(value))))
             }
@@ -360,12 +362,12 @@ define Lexer
                 }
             }
 
-            let value source.substring(start, current - start)
+            let value source.substring(rp, start, current - start)
             set position: current
             return Token.Literal(LiteralToken(Literal.FloatingPoint(FloatingPointLiteral(value))))
         }
 
-        let value source.substring(start, current - start)
+        let value source.substring(rp, start, current - start)
         set position: current
         Token.Literal(LiteralToken(Literal.Integer(IntegerLiteral(value))))
     }
@@ -394,7 +396,7 @@ define Lexer
                 advance()
                 return name
             }
-        String("")
+        String()
     }
 
     function parse_punctuation(this: Lexer, c: char) returns bool
@@ -498,7 +500,7 @@ function test_helpers() returns int
 function test_string_basics() returns int
 {
     var rp Page.allocate_page()
-    var s String(rp, "hello")
+    var s String^rp("hello")
 
     ; Check length using function call syntax (workaround for method call bug)
     let len get_length(s)
@@ -529,7 +531,7 @@ function test_string_basics() returns int
 function test_lexer_creation() returns int
 {
     var rp Page.allocate_page()
-    var lexer Lexer(String(rp, "hello"))
+    var lexer Lexer(rp, String^rp("hello"))
 
     ; Check initial state
     if lexer.current <> 0

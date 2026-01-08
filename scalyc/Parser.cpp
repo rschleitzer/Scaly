@@ -1161,6 +1161,15 @@ llvm::Expected<InitSyntax> Parser::parseInit() {
     if (!Lex.parseKeyword("init"))
         return different();
 
+    LifetimeSyntax* Lifetime = nullptr;
+    {
+        auto ParseResult = parseLifetime();
+        if (ParseResult)
+            Lifetime = new LifetimeSyntax(std::move(*ParseResult));
+        else
+            llvm::consumeError(ParseResult.takeError());
+    }
+
     ParameterSetSyntax* Parameters = nullptr;
     {
         auto ParseResult = parseParameterSet();
@@ -1181,7 +1190,7 @@ llvm::Expected<InitSyntax> Parser::parseInit() {
 
     size_t End = Lex.position();
 
-    return InitSyntax{Start, End, Parameters, Action};
+    return InitSyntax{Start, End, Lifetime, Parameters, Action};
 
 }
 

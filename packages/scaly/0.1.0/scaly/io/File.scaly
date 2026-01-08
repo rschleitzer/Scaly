@@ -22,7 +22,7 @@ define File
         fseek(file, 0, SEEK_END)
         let size ftell(file)
         rewind(file)
-        var ret String(rp, size as size_t)
+        var ret String^rp(size as size_t)
         let buffer ret.get_buffer()
         fread(buffer, 1, size as size_t, file)
         fclose(file)

@@ -4,7 +4,13 @@ define PACKED_SIZE: int 9
 
 define String (data: pointer[char](null))
 {
-    init (rp: pointer[Page], length: size_t)
+    ; Empty string - no page needed
+    init()
+    {
+        set data: null
+    }
+
+    init#(page, length: size_t)
     {
         var length_array: char[PACKED_SIZE]
         var rest length
@@ -19,11 +25,11 @@ define String (data: pointer[char](null))
 
         set *(length_array + counter): rest as char
         let overall_length counter + 1 + length
-        set data: rp.allocate(overall_length, 1) as pointer[char]
+        set data: page.allocate(overall_length, 1) as pointer[char]
         memcpy(data, length_array, counter + 1)
     }
 
-    init (rp: pointer[Page], other: pointer[const_char], length: size_t)
+    init#(page, other: pointer[const_char], length: size_t)
     {
         if length = 0
         {
@@ -44,14 +50,14 @@ define String (data: pointer[char](null))
 
         set *(length_array + counter): rest as char
         let overall_length counter + 1 + length
-        set data: rp.allocate(overall_length, 1) as pointer[char]
+        set data: page.allocate(overall_length, 1) as pointer[char]
         memcpy(data, length_array, counter + 1)
         memcpy((data + counter + 1) as pointer[void], other, length)
     }
 
-    init (rp: pointer[Page], other: Vector[char])
+    init#(page, other: Vector[char])
     {
-        ; Delegate to String(rp, pointer, length)
+        ; Delegate to String(page, pointer, length)
         var length_array: char[PACKED_SIZE]
         var rest other.length
 
@@ -65,13 +71,13 @@ define String (data: pointer[char](null))
 
         set *(length_array + counter): rest as char
         let overall_length counter + 1 + other.length
-        set data: rp.allocate(overall_length, 1) as pointer[char]
+        set data: page.allocate(overall_length, 1) as pointer[char]
         memcpy(data, length_array, counter + 1)
         if other.length > 0
             memcpy((data + counter + 1) as pointer[void], other.data, other.length)
     }
 
-    init (rp: pointer[Page], c_string: pointer[const_char])
+    init#(page, c_string: pointer[const_char])
     {
         let length strlen(c_string)
         if length = 0
@@ -93,12 +99,12 @@ define String (data: pointer[char](null))
 
         set *(length_array + counter): rest as char
         let overall_length counter + 1 + length
-        set data: rp.allocate(overall_length, 1) as pointer[char]
+        set data: page.allocate(overall_length, 1) as pointer[char]
         memcpy(data, length_array, counter + 1)
         memcpy((data + counter + 1) as pointer[void], c_string, length)
     }
 
-    init (rp: pointer[Page], other: String)
+    init#(page, other: String)
     {
         if other.data = null
         {
@@ -124,13 +130,13 @@ define String (data: pointer[char](null))
             set index: index + 1
         }
         var overall_length index + 1 + length
-        set data: rp.allocate(overall_length, 1) as pointer[char]
+        set data: page.allocate(overall_length, 1) as pointer[char]
         memcpy(data, other.data, overall_length)
     }
 
-    init (rp: pointer[Page], character: char)
+    init#(page, character: char)
     {
-        set data: rp.allocate(2, 1) as pointer[char]
+        set data: page.allocate(2, 1) as pointer[char]
         set *data: 1
         set *(data + 1): character
     }
@@ -159,7 +165,7 @@ define String (data: pointer[char](null))
         data + index + 1
     }
 
-    function to_c_string(this: String, rp: pointer[Page]) returns pointer[const_char]
+    function to_c_string(this: String, page: pointer[Page]) returns pointer[const_char]
     {
         var length: size_t 0
         var bit_count 0
@@ -180,7 +186,7 @@ define String (data: pointer[char](null))
             }
         }
 
-        var dest rp.allocate(length + 1, 1)
+        var dest page.allocate(length + 1, 1)
         if data <> null
             memcpy(dest, data + index + 1, length)
         set *(dest as pointer[char] + index + length): 0
@@ -220,12 +226,8 @@ define String (data: pointer[char](null))
     function length(this: String) returns size_t
         get_length()
 
-    function substring(this: String, start: size_t, len: size_t) returns String
-    {
-        let rp get_page()
-        let buffer get_buffer()
-        String#(rp, buffer + start, len)
-    }
+    function substring(this: String, page: pointer[Page], start: size_t, len: size_t) returns String
+        String^page(get_buffer() + start, len)
 
     function equals(this: String, other: String) returns bool
     {

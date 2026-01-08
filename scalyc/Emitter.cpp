@@ -1052,6 +1052,7 @@ llvm::Function *Emitter::emitInitializerDecl(const PlannedStructure &Struct,
 
     // Build parameter types:
     // - First param is pointer to the struct being initialized (this)
+    // - If init#, second param is pointer to Page
     // - Followed by any additional parameters from Init.Input
     std::vector<llvm::Type*> ParamTypes;
 
@@ -1063,6 +1064,11 @@ llvm::Function *Emitter::emitInitializerDecl(const PlannedStructure &Struct,
 
     // First param: pointer to struct (this)
     ParamTypes.push_back(llvm::PointerType::get(*Context, 0));
+
+    // If init# was used, add page parameter
+    if (Init.PageParameter) {
+        ParamTypes.push_back(llvm::PointerType::get(*Context, 0));  // pointer[Page]
+    }
 
     // Add additional parameters
     for (const auto &Item : Init.Input) {
@@ -1097,6 +1103,12 @@ llvm::Function *Emitter::emitInitializerDecl(const PlannedStructure &Struct,
     auto ArgIt = Func->arg_begin();
     ArgIt->setName("this");
     ++ArgIt;
+
+    // If init# was used, name the page parameter
+    if (Init.PageParameter && ArgIt != Func->arg_end()) {
+        ArgIt->setName(*Init.PageParameter);
+        ++ArgIt;
+    }
 
     for (size_t I = 0; I < Init.Input.size() && ArgIt != Func->arg_end(); ++I, ++ArgIt) {
         if (Init.Input[I].Name) {
@@ -1140,6 +1152,12 @@ llvm::Error Emitter::emitInitializerBody(const PlannedStructure &Struct,
     llvm::Value *ThisPtr = &*ArgIt;
     LocalVariables["this"] = ThisPtr;
     ++ArgIt;
+
+    // If init# was used, second arg is the page pointer
+    if (Init.PageParameter) {
+        LocalVariables[*Init.PageParameter] = &*ArgIt;
+        ++ArgIt;
+    }
 
     // Bind additional parameters
     for (const auto &Item : Init.Input) {
@@ -2288,15 +2306,37 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
             StructPtr = Builder->CreateAlloca(StructTy, nullptr, "struct.init");
         }
 
-        // Prepare arguments: struct pointer first, then the other args
+        // Prepare arguments: struct pointer first, then page if init#, then other args
         std::vector<llvm::Value*> InitArgs;
         InitArgs.push_back(StructPtr);
 
+        // If init# was used, pass the page as second argument
+        if (Call.RequiresPageParam) {
+            llvm::Value *PageArg = nullptr;
+            if (std::holds_alternative<LocalLifetime>(Call.Life)) {
+                PageArg = CurrentRegion.LocalPage;
+            } else if (std::holds_alternative<CallLifetime>(Call.Life)) {
+                PageArg = CurrentRegion.ReturnPage;
+            } else if (std::holds_alternative<ReferenceLifetime>(Call.Life)) {
+                // For ^name, the page is already in Args[0]
+                if (!Args.empty()) {
+                    PageArg = Args[0];
+                }
+            }
+            if (PageArg) {
+                InitArgs.push_back(PageArg);
+            }
+        }
+
         // Adjust remaining arguments for the initializer
         auto *FuncTy = InitFunc->getFunctionType();
-        for (size_t i = ArgsOffset; i < Args.size() && i - ArgsOffset + 1 < FuncTy->getNumParams(); ++i) {
+        size_t ParamOffset = 1;  // Skip 'this' param
+        if (Call.RequiresPageParam) {
+            ParamOffset = 2;  // Skip 'this' and 'page' params
+        }
+        for (size_t i = ArgsOffset; i < Args.size() && i - ArgsOffset + ParamOffset < FuncTy->getNumParams(); ++i) {
             llvm::Value *ArgVal = Args[i];
-            llvm::Type *ParamTy = FuncTy->getParamType(i - ArgsOffset + 1);  // +1 because first param is 'this'
+            llvm::Type *ParamTy = FuncTy->getParamType(i - ArgsOffset + ParamOffset);
 
             if (ParamTy->isPointerTy() && ArgVal->getType()->isStructTy()) {
                 // Create alloca and store for struct arguments

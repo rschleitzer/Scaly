@@ -379,6 +379,7 @@ private:
         const PlannedInitializer* Init;
         std::string MangledName;
         PlannedType StructType;
+        bool RequiresPageParam = false;  // True if init# - initializer needs page parameter
     };
     std::optional<InitializerMatch> findInitializer(
         const PlannedType &StructType,

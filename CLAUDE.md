@@ -297,6 +297,33 @@ procedure add(this: List[T], element: T)
    - Cleans up local pages at block exit
    - Passes `rp` parameter for `#` return types
 
+5. **`init#` for types needing page parameter** - Some types are value types (stack-allocatable) but need a page for internal allocations:
+   ```scaly
+   ; Definition: init# takes an implicit page parameter as first argument
+   define String(data: pointer[char], length: size_t)
+   {
+       init#(page, text: pointer[const_char])
+       {
+           let len strlen(text)
+           set data: page.allocate(len + 1, 1) as pointer[char]
+           memcpy(data, text, len)
+           set length: len
+       }
+   }
+
+   ; Call sites: lifetime modifier determines which page to pass
+   var s1 String#("hello")        ; Pass caller's page (rp) to init#
+   var s2 String$("world")        ; Pass local page to init#
+   var s3 String^hashMap("key")   ; Pass named page (hashMap) to init#
+   ```
+
+   The `init#` pattern is for types where:
+   - The struct itself is a value type (can live on stack)
+   - But internal data needs to be allocated on a page
+   - The call-site lifetime determines which page to use
+
+   Reserved: `init$`, `init^`, `init!` are reserved for future use and will error.
+
 ### Package System
 
 Scaly has a built-in package system with no external tooling or configuration files.

@@ -199,6 +199,7 @@
 
 <syntax id = Init                         multiple
     <content link = init
+    <content link = Lifetime                       optional property = lifetime
     <content link = ParameterSet                   optional property = parameters
     <content colon                                 optional
     <content link = Action                                  property = action

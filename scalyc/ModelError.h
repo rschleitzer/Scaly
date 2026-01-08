@@ -93,6 +93,14 @@ struct ModuleRootMustBeConceptError {
     std::string toString() const;
 };
 
+struct InvalidInitLifetimeError {
+    std::string File;
+    Span Loc;
+    std::string Message;
+
+    std::string toString() const;
+};
+
 // Aggregate builder error type
 using ModelBuilderError = std::variant<
     NotImplementedError,
@@ -102,7 +110,8 @@ using ModelBuilderError = std::variant<
     DeInitializerExistsError,
     InvalidConstantError,
     InvalidComponentNameError,
-    ModuleRootMustBeConceptError
+    ModuleRootMustBeConceptError,
+    InvalidInitLifetimeError
 >;
 
 std::string modelBuilderErrorToString(const ModelBuilderError &Err);
@@ -175,6 +184,13 @@ inline llvm::Error makeInvalidComponentNameError(llvm::StringRef File,
                                                   Span Loc) {
     return makeModelError(ModelBuilderError{
         InvalidComponentNameError{File.str(), Loc}});
+}
+
+inline llvm::Error makeInvalidInitLifetimeError(llvm::StringRef File,
+                                                 Span Loc,
+                                                 llvm::StringRef Message) {
+    return makeModelError(ModelBuilderError{
+        InvalidInitLifetimeError{File.str(), Loc, Message.str()}});
 }
 
 inline llvm::Error makeFileError(llvm::StringRef Path, llvm::StringRef Message) {
