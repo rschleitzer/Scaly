@@ -22,7 +22,7 @@ define HashSetBuilder[T]
         let hash_size hashing.get_prime(size)
         let own_page Page.get(this as pointer[void])
         let slots_page own_page.allocate_exclusive_page()
-        let new_slots Vector[BuilderList[Slot[T]]]^slots_page(slots_page, hash_size)
+        let new_slots Vector[BuilderList[Slot[T]]]^slots_page(hash_size)
 
         if slots <> null
         {

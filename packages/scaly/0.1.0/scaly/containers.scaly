@@ -24,7 +24,7 @@ define containers
     function test_vector() returns int
     {
         var rp Page.allocate_page()
-        var vector Vector[int]^rp(rp, 2)
+        var vector Vector[int]^rp(2)
         set *vector.get(0): 1
         vector.put(1, 2)
         if *(vector.get(0)) <> 1
@@ -195,7 +195,7 @@ define containers
         array.add(String$("using"))
         array.add(String$("namespace"))
         array.add(String$("typedef"))
-        let vector Vector[String](rp, *array)
+        let vector Vector[String]^rp(*array)
         var keywords_builder HashSetBuilder[String]$(vector)
         if keywords_builder.contains(String$("using")) = false
         {
@@ -452,7 +452,7 @@ define containers
         var rp Page.allocate_page()
 
         ; Test Vector slice
-        var vector Vector[int]^rp(rp, 5)
+        var vector Vector[int]^rp(5)
         set *vector.get(0): 10
         set *vector.get(1): 20
         set *vector.get(2): 30

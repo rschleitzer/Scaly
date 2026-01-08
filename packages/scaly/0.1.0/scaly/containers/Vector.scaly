@@ -43,7 +43,7 @@ define Vector[T]
         set data: d
     }
 
-    init (rp: pointer[Page], len: size_t)
+    init#(rp, len: size_t)
     {
         set length: len
         if len > 0
@@ -55,7 +55,7 @@ define Vector[T]
             set data: null
     }
 
-    init (rp: pointer[Page], arr: pointer[T], len: size_t)
+    init#(rp, arr: pointer[T], len: size_t)
     {
         set length: len
         if len > 0
@@ -67,7 +67,7 @@ define Vector[T]
             set data: null
     }
 
-    init (rp: pointer[Page], other: Vector[T])
+    init#(rp, other: Vector[T])
     {
         set length: other.length
         if length > 0
@@ -79,7 +79,7 @@ define Vector[T]
             set data: null
     }
 
-    init (rp: pointer[Page], array: Array[T])
+    init#(rp, array: Array[T])
     {
         set length: array.length
         if length > 0
@@ -92,7 +92,7 @@ define Vector[T]
             set data: null
     }
 
-    init (rp: pointer[Page], list: List[T])
+    init#(rp, list: List[T])
     {
         set length: list.count()
         if length > 0

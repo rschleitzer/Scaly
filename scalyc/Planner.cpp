@@ -1721,6 +1721,11 @@ std::optional<Planner::InitializerMatch> Planner::findInitializer(
                     }
                     std::string MangledName = "_ZN" + StructName + "C1E";
 
+                    // If init# was used, include page parameter first
+                    if (Init.PageParameter) {
+                        MangledName += "PN4scaly6memory4PageE";  // pointer[scaly.memory.Page]
+                    }
+
                     // Mangle parameters - need to use parameter types, not argument types
                     // Use encodeType to get the mangling without _Z prefix
                     for (size_t i = 0; i < ArgTypes.size(); ++i) {
