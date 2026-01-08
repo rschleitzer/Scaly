@@ -1,5 +1,3 @@
-use scaly.memory.Page
-
 define HashMapIterator[K, V]
 (
     slot_iterator: VectorIterator[Vector[KeyValuePair[K, V]]]
@@ -34,7 +32,7 @@ define HashMap[K, V]
     slots: pointer[Vector[Vector[KeyValuePair[K, V]]]] (null)
 )
 {
-    init (rp: pointer[Page], hash_map_builder: HashMapBuilder[K, V])
+    init# (rp, hash_map_builder: HashMapBuilder[K, V])
     {
         if hash_map_builder.length = 0
         {
