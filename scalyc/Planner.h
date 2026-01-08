@@ -404,6 +404,10 @@ private:
 
     // ========== Method Call Helpers ==========
 
+    // Generate a Page.get(this) call for ^this lifetime annotation
+    // Returns a PlannedOperand with result type pointer[Page]
+    llvm::Expected<PlannedOperand> generatePageGetThis(Span Loc);
+
     // Extract argument types from a planned operand containing a tuple
     std::vector<PlannedType> extractArgTypes(const PlannedOperand &ArgsOp);
 

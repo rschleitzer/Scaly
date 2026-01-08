@@ -46,8 +46,7 @@ define List[T]
 
     function add(this: List[T], element: T)
     {
-        let lp Page.get(this as pointer[void])
-        let new_node Node[T]^lp(element, head)
+        let new_node Node[T]^this(element, head)
         set head: new_node
     }
 }
