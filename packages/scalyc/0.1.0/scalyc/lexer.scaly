@@ -53,7 +53,7 @@ define Lexer
     previous_position: size_t
 )
 {
-    init(rp: pointer[Page], source: String)
+    init#(rp, source: String)
     {
         set this.rp: rp
         set this.source: source
@@ -531,7 +531,7 @@ function test_string_basics() returns int
 function test_lexer_creation() returns int
 {
     var rp Page.allocate_page()
-    var lexer Lexer(rp, String^rp("hello"))
+    var lexer Lexer^rp(String^rp("hello"))
 
     ; Check initial state
     if lexer.current <> 0

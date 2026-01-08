@@ -165,7 +165,7 @@ define String (data: pointer[char](null))
         data + index + 1
     }
 
-    function to_c_string(this: String, page: pointer[Page]) returns pointer[const_char]
+    function to_c_string#(page, this: String) returns pointer[const_char]
     {
         var length: size_t 0
         var bit_count 0
