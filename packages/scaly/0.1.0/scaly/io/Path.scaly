@@ -4,10 +4,10 @@ use scaly.containers.StringBuilder
 
 define Path
 {
-    function get_directory_name(rp: pointer[Page], path: String) returns String
+    function get_directory_name#(rp, path: String) returns String
     {
         var local_page Page.allocate_page()
-        let path_as_c_string path.to_c_string(local_page)
+        let path_as_c_string path.to_c_string^local_page()
         let directory_name_as_c_string dirname(path_as_c_string as pointer[char])
         if strcmp(directory_name_as_c_string, ".") = 0
         {
@@ -22,10 +22,10 @@ define Path
         return ret
     }
 
-    function get_file_name(rp: pointer[Page], path: String) returns String
+    function get_file_name#(rp, path: String) returns String
     {
         var local_page Page.allocate_page()
-        let path_as_c_string path.to_c_string(local_page)
+        let path_as_c_string path.to_c_string^local_page()
         let file_name_as_c_string basename(path_as_c_string as pointer[char])
         let ret String^rp(file_name_as_c_string)
         local_page.deallocate_extensions()
@@ -33,7 +33,7 @@ define Path
         return ret
     }
 
-    function join(rp: pointer[Page], path1: String, path2: String) returns String
+    function join#(rp, path1: String, path2: String) returns String
     {
         if path1.get_length() = 0
             return String^rp(path2)
@@ -41,10 +41,10 @@ define Path
         var path StringBuilder$()
         path.append(path1)
         if path2.get_length() = 0
-            return path.to_string(rp)
+            return path.to_string^rp()
 
         path.append('/')
         path.append(path2)
-        return path.to_string(rp)
+        return path.to_string^rp()
     }
 }

@@ -8,10 +8,10 @@ define SEEK_END: int 2
 
 define File
 {
-    function read_to_string(rp: pointer[Page], path: String) returns String
+    function read_to_string#(rp, path: String) returns String
     {
         var local_page Page.allocate_page()
-        var file fopen(path.to_c_string(local_page), "rb")
+        var file fopen(path.to_c_string^local_page(), "rb")
         if file = null
         {
             local_page.deallocate_extensions()
@@ -35,7 +35,7 @@ define File
     function write_from_string(path: String, contents: String) returns bool
     {
         var local_page Page.allocate_page()
-        var file fopen(path.to_c_string(local_page), "wb")
+        var file fopen(path.to_c_string^local_page(), "wb")
         if file = null
         {
             local_page.deallocate_extensions()

@@ -450,6 +450,7 @@ struct PlannedFunction {
     bool Pure;
     std::string Name;           // Readable: "List.get"
     std::string MangledName;    // Itanium: "_ZN4ListIiE3getEi"
+    std::optional<std::string> PageParameter;  // Name of page param if function#
     std::vector<PlannedItem> Input;
     std::shared_ptr<PlannedType> Returns;
     std::shared_ptr<PlannedType> Throws;

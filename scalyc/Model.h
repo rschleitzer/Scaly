@@ -390,6 +390,7 @@ struct Function {
     bool Pure;
     std::string Name;
     std::vector<GenericParameter> Parameters;  // Generic type parameters (if any)
+    std::optional<std::string> PageParameter;  // Name of page param if function#
     std::vector<Item> Input;
     std::shared_ptr<Type> Returns;
     std::shared_ptr<Type> Throws;

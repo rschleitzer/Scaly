@@ -1214,12 +1214,51 @@ llvm::Expected<Function> Modeler::buildFunction(size_t Start, size_t End,
                 GenericParams = extractGenericParams(*T.routine.generics);
             }
 
+            // Handle page parameter from lifetime annotation (function#)
+            std::optional<std::string> PageParameter;
+            if (T.routine.lifetime) {
+                const auto &Life = T.routine.lifetime->Value;
+                if (std::holds_alternative<CallSyntax>(Life)) {
+                    // function# - valid, first parameter is page name
+                    // Will extract page name from first parameter below
+                } else if (std::holds_alternative<LocalSyntax>(Life)) {
+                    return makeInvalidInitLifetimeError(File,
+                        Span{Start, End},
+                        "function$ is not supported - use function# for page parameter");
+                } else if (std::holds_alternative<ReferenceSyntax>(Life)) {
+                    return makeInvalidInitLifetimeError(File,
+                        Span{Start, End},
+                        "function^ is not supported - use function# for page parameter");
+                } else if (std::holds_alternative<ThrownSyntax>(Life)) {
+                    return makeInvalidInitLifetimeError(File,
+                        Span{Start, End},
+                        "function! is not supported - use function# for page parameter");
+                }
+            }
+
             std::vector<Item> Input;
             if (T.routine.parameters) {
                 auto Params = handleParameterSet(*T.routine.parameters);
                 if (!Params)
                     return Params.takeError();
                 Input = std::move(*Params);
+            }
+
+            // If function# was used, extract the page parameter name from first param
+            if (T.routine.lifetime && std::holds_alternative<CallSyntax>(T.routine.lifetime->Value)) {
+                if (Input.empty()) {
+                    return makeInvalidInitLifetimeError(File,
+                        Span{Start, End},
+                        "function# requires a page parameter as first argument");
+                }
+                // First parameter is the page name - extract and remove from Input
+                if (!Input[0].Name) {
+                    return makeInvalidInitLifetimeError(File,
+                        Span{Start, End},
+                        "function# page parameter must have a name");
+                }
+                PageParameter = *Input[0].Name;
+                Input.erase(Input.begin());
             }
 
             std::unique_ptr<Type> Returns;
@@ -1263,6 +1302,7 @@ llvm::Expected<Function> Modeler::buildFunction(size_t Start, size_t End,
                 Pure,
                 std::string(T.name),
                 std::move(GenericParams),
+                PageParameter,
                 std::move(Input),
                 std::move(Returns),
                 std::move(Throws),
@@ -1733,11 +1773,15 @@ llvm::Expected<Modeler::BodyResult> Modeler::handleBody(
                     auto Func = buildFunction(C.Start, C.End, C.target, false, true);
                     if (Func) {
                         Result.Members.push_back(std::move(*Func));
+                    } else {
+                        llvm::consumeError(Func.takeError());
                     }
                 } else if constexpr (std::is_same_v<CT, ProcedureSyntax>) {
                     auto Func = buildFunction(C.Start, C.End, C.target, false, false);
                     if (Func) {
                         Result.Members.push_back(std::move(*Func));
+                    } else {
+                        llvm::consumeError(Func.takeError());
                     }
                 } else if constexpr (std::is_same_v<CT, OperatorSyntax>) {
                     auto Op = handleOperator(C, false);

@@ -115,7 +115,7 @@ define containers
         string_builder.append('a')
         string_builder.append('b')
         string_builder.append('c')
-        if string_builder.to_string(rp).equals("abc") = false
+        if string_builder.to_string^rp().equals("abc") = false
         {
             rp.deallocate_extensions()
             free(rp as pointer[void])
@@ -132,7 +132,7 @@ define containers
         string_builder2.append('e')
         string_builder2.append('f')
         string_builder2.append('g')
-        if string_builder2.to_string(rp).equals("defg") = false
+        if string_builder2.to_string^rp().equals("defg") = false
         {
             rp.deallocate_extensions()
             free(rp as pointer[void])
@@ -147,7 +147,7 @@ define containers
 
         var string_builder3 StringBuilder$("hijk")
         string_builder3.append("lmno")
-        if string_builder3.to_string(rp).equals("hijklmno") = false
+        if string_builder3.to_string^rp().equals("hijklmno") = false
         {
             rp.deallocate_extensions()
             free(rp as pointer[void])
@@ -382,8 +382,8 @@ define containers
                                 sb.append(j)
                                 sb.append(k)
                                 sb.append(l)
-                                map.add(sb.to_string(rp), (i * j * k * l) as size_t)
-                                hash_set.add(sb.to_string(rp))
+                                map.add(sb.to_string^rp(), (i * j * k * l) as size_t)
+                                hash_set.add(sb.to_string^rp())
 
                                 set l: l + 1
                             }
@@ -412,7 +412,7 @@ define containers
                                 sb.append(j)
                                 sb.append(k)
                                 sb.append(l)
-                                let theString sb.to_string(rp)
+                                let theString sb.to_string^rp()
                                 if hash_set.contains(theString) = false
                                 {
                                     rp.deallocate_extensions()

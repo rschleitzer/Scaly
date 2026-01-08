@@ -766,6 +766,11 @@ llvm::Function *Emitter::emitFunctionDecl(const PlannedFunction &Func) {
         }
     }
 
+    // If function# was used, add page parameter
+    if (Func.PageParameter) {
+        ParamTypes.push_back(llvm::PointerType::get(*Context, 0));
+    }
+
     // If can throw, add exception page parameter
     if (Func.Throws) {
         ParamTypes.push_back(llvm::PointerType::get(*Context, 0));
@@ -814,6 +819,10 @@ llvm::Function *Emitter::emitFunctionDecl(const PlannedFunction &Func) {
         LLVMFunc->addParamAttr(ParamIdx,
             llvm::Attribute::getWithStructRetType(*Context, ReturnLLVMType));
         LLVMFunc->addParamAttr(ParamIdx, llvm::Attribute::NoAlias);
+        ParamIdx++;
+    }
+    if (Func.PageParameter) {
+        // Page parameter - skip it for attribute setting
         ParamIdx++;
     }
     if (Func.Throws) {
@@ -895,6 +904,16 @@ llvm::Error Emitter::emitFunctionBody(const PlannedFunction &Func,
             ArgIt++;
             ArgIdx++;
         }
+    }
+
+    // Handle function# page parameter
+    if (Func.PageParameter && ArgIt != LLVMFunc->arg_end()) {
+        ArgIt->setName(*Func.PageParameter);
+        LocalVariables[*Func.PageParameter] = &*ArgIt;
+        // Use this as the return page for # allocations within this function
+        CurrentRegion.ReturnPage = &*ArgIt;
+        ArgIt++;
+        ArgIdx++;
     }
 
     // Skip exception page if present
@@ -2367,6 +2386,24 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
         );
     }
 
+    // Handle function# page parameter (similar to init#)
+    // For CallLifetime (#), pass ReturnPage. For ReferenceLifetime (^name), Args[0] has it.
+    size_t FuncArgsOffset = 0;  // Skip Args[0] if it's an explicit page
+    llvm::Value *FuncPageArg = nullptr;
+    if (Call.RequiresPageParam) {
+        if (std::holds_alternative<LocalLifetime>(Call.Life)) {
+            FuncPageArg = CurrentRegion.LocalPage;
+        } else if (std::holds_alternative<CallLifetime>(Call.Life)) {
+            FuncPageArg = CurrentRegion.ReturnPage;
+        } else if (std::holds_alternative<ReferenceLifetime>(Call.Life)) {
+            // For ^name, the page is already in Args[0]
+            if (!Args.empty()) {
+                FuncPageArg = Args[0];
+                FuncArgsOffset = 1;  // Skip the page in the regular args
+            }
+        }
+    }
+
     // Check if function uses sret (returns struct via first parameter)
     bool UsesSret = Func->arg_size() > 0 &&
                     Func->hasParamAttribute(0, llvm::Attribute::StructRet);
@@ -2388,9 +2425,15 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
         std::vector<llvm::Value*> CallArgs;
         CallArgs.push_back(RetPtr);
 
-        // Check if this is a throwing function - allocate exception page if needed
+        // If function# was used, pass the page as second argument (after sret)
         auto *FuncTy = Func->getFunctionType();
         size_t FirstUserArg = 1;  // Start after sret
+        if (FuncPageArg) {
+            CallArgs.push_back(FuncPageArg);
+            FirstUserArg = 2;
+        }
+
+        // Check if this is a throwing function - allocate exception page if needed
         bool IsThrowingFunction = ThrowingFunctions.count(Call.MangledName) > 0;
         llvm::Value *CalleeExceptionPage = nullptr;
         if (IsThrowingFunction) {
@@ -2402,13 +2445,13 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
                 CalleeExceptionPage = llvm::ConstantPointerNull::get(llvm::PointerType::get(*Context, 0));
             }
             CallArgs.push_back(CalleeExceptionPage);
-            FirstUserArg = 2;
+            FirstUserArg++;
         }
 
         // Adjust remaining arguments for the function
-        for (size_t i = 0; i < Args.size() && i + FirstUserArg < FuncTy->getNumParams(); ++i) {
+        for (size_t i = FuncArgsOffset; i < Args.size() && i - FuncArgsOffset + FirstUserArg < FuncTy->getNumParams(); ++i) {
             llvm::Value *ArgVal = Args[i];
-            llvm::Type *ParamTy = FuncTy->getParamType(i + FirstUserArg);
+            llvm::Type *ParamTy = FuncTy->getParamType(i - FuncArgsOffset + FirstUserArg);
 
             if (ParamTy->isPointerTy() && ArgVal->getType()->isStructTy()) {
                 auto *Alloca = Builder->CreateAlloca(ArgVal->getType(), nullptr, "sret.arg.tmp");
@@ -2434,10 +2477,15 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
     // Check if this is a throwing function (non-sret case)
     bool IsThrowingFunction = ThrowingFunctions.count(Call.MangledName) > 0;
 
-    // If no user arguments, handle throwing function or call directly
-    if (Args.empty()) {
+    // If no user arguments (after accounting for page offset), handle special cases
+    if (Args.size() <= FuncArgsOffset) {
+        std::vector<llvm::Value*> CallArgs;
+        // Add function# page parameter if needed
+        if (FuncPageArg) {
+            CallArgs.push_back(FuncPageArg);
+        }
         if (IsThrowingFunction) {
-            // Allocate exception page and pass as first argument
+            // Allocate exception page and pass as argument
             // Only allocate if Page.allocate_page is available; otherwise pass null
             llvm::Value *CalleeExceptionPage;
             if (PageAllocatePage && !PageAllocatePage->isDeclaration()) {
@@ -2445,18 +2493,20 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
             } else {
                 CalleeExceptionPage = llvm::ConstantPointerNull::get(llvm::PointerType::get(*Context, 0));
             }
-            // Return the full Result union - try/choose will check the tag
-            return Builder->CreateCall(Func, {CalleeExceptionPage});
+            CallArgs.push_back(CalleeExceptionPage);
         }
-        return Builder->CreateCall(Func, Args);
+        if (CallArgs.empty()) {
+            return Builder->CreateCall(Func, Args);
+        }
+        return Builder->CreateCall(Func, CallArgs);
     }
 
     // Check if we need to adjust any arguments
     auto *FuncTy = Func->getFunctionType();
-    size_t ParamOffset = IsThrowingFunction ? 1 : 0;  // Skip exception page param
-    bool NeedsAdjustment = IsThrowingFunction;  // Always need to prepend exception page
-    for (size_t i = 0; i < Args.size() && i + ParamOffset < FuncTy->getNumParams(); ++i) {
-        llvm::Type *ParamTy = FuncTy->getParamType(i + ParamOffset);
+    size_t ParamOffset = (FuncPageArg ? 1 : 0) + (IsThrowingFunction ? 1 : 0);  // Skip page and/or exception page param
+    bool NeedsAdjustment = FuncPageArg || IsThrowingFunction;  // Always need to prepend page or exception page
+    for (size_t i = FuncArgsOffset; i < Args.size() && i - FuncArgsOffset + ParamOffset < FuncTy->getNumParams(); ++i) {
+        llvm::Type *ParamTy = FuncTy->getParamType(i - FuncArgsOffset + ParamOffset);
         llvm::Type *ArgTy = Args[i]->getType();
         if (ParamTy->isPointerTy() && ArgTy->isStructTy()) {
             NeedsAdjustment = true;
@@ -2481,6 +2531,11 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
     // Adjust arguments: convert struct values to pointers, and integer types
     std::vector<llvm::Value*> AdjustedArgs;
 
+    // Prepend function# page parameter if needed
+    if (FuncPageArg) {
+        AdjustedArgs.push_back(FuncPageArg);
+    }
+
     // Prepend exception page if this is a throwing function
     llvm::Value *CalleeExceptionPage = nullptr;
     if (IsThrowingFunction) {
@@ -2493,9 +2548,9 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
         AdjustedArgs.push_back(CalleeExceptionPage);
     }
 
-    for (size_t i = 0; i < Args.size() && i + ParamOffset < FuncTy->getNumParams(); ++i) {
+    for (size_t i = FuncArgsOffset; i < Args.size() && i - FuncArgsOffset + ParamOffset < FuncTy->getNumParams(); ++i) {
         llvm::Value *ArgVal = Args[i];
-        llvm::Type *ParamTy = FuncTy->getParamType(i + ParamOffset);
+        llvm::Type *ParamTy = FuncTy->getParamType(i - FuncArgsOffset + ParamOffset);
         llvm::Type *ArgTy = ArgVal->getType();
 
         if (ParamTy->isPointerTy() && ArgTy->isStructTy()) {

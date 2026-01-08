@@ -5414,9 +5414,42 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                     // Build args: [region (if any), instance, ...tuple_args]
                     Call.Args = std::make_shared<std::vector<PlannedOperand>>();
 
-                    // If the method Type has a ReferenceLifetime, look up the region variable
-                    // and pass it as the first argument (before instance)
-                    if (auto* RefLife = std::get_if<ReferenceLifetime>(&MethodType.Life)) {
+                    // Handle function# page parameter for method calls
+                    if (MethodMatch->Method && MethodMatch->Method->PageParameter) {
+                        Call.RequiresPageParam = true;
+                        Call.Life = MethodType.Life;
+
+                        if (auto* RefLife = std::get_if<ReferenceLifetime>(&MethodType.Life)) {
+                            // ^name - pass explicit page as first argument
+                            auto RegionBinding = lookupLocalBinding(RefLife->Location);
+                            if (!RegionBinding) {
+                                return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
+                            }
+                            auto isPageType = [](const std::string &Name) {
+                                return Name == "Page" || Name == "scaly.memory.Page";
+                            };
+                            bool isPagePointer = RegionBinding->Type.Name == "pointer" &&
+                                                 !RegionBinding->Type.Generics.empty() &&
+                                                 isPageType(RegionBinding->Type.Generics[0].Name);
+                            if (!isPagePointer) {
+                                return makeStackLifetimeError(File, RefLife->Loc, RefLife->Location);
+                            }
+
+                            PlannedOperand RegionArg;
+                            RegionArg.Loc = RefLife->Loc;
+                            RegionArg.ResultType = RegionBinding->Type;
+                            RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, RegionBinding->IsMutable};
+                            Call.Args->push_back(std::move(RegionArg));
+                        }
+                        // For # lifetime, Emitter uses ReturnPage (rp)
+                        else if (!std::holds_alternative<CallLifetime>(MethodType.Life)) {
+                            return makePlannerNotImplementedError(File, Op.Loc,
+                                "method# '" + MethodName + "' must be called with # or ^page syntax");
+                        }
+                    }
+                    // If the method Type has a ReferenceLifetime but method doesn't have PageParameter,
+                    // still pass the region (for legacy/init calls)
+                    else if (auto* RefLife = std::get_if<ReferenceLifetime>(&MethodType.Life)) {
                         auto RegionBinding = lookupLocalBinding(RefLife->Location);
                         if (!RegionBinding) {
                             return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
@@ -6555,6 +6588,43 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
 
                         // Convert tuple components to call arguments
                         Call.Args = std::make_shared<std::vector<PlannedOperand>>();
+
+                        // Handle function# page parameter
+                        if (MatchedFunc && MatchedFunc->PageParameter) {
+                            // Function requires a page parameter - check call site lifetime
+                            Call.RequiresPageParam = true;
+                            Call.Life = TypeExpr->Life;
+
+                            if (auto* RefLife = std::get_if<ReferenceLifetime>(&TypeExpr->Life)) {
+                                // ^name - pass explicit page as first argument
+                                auto RegionBinding = lookupLocalBinding(RefLife->Location);
+                                if (!RegionBinding) {
+                                    return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
+                                }
+                                // Validate that the referenced variable is a pointer[Page]
+                                auto isPageType = [](const std::string &Name) {
+                                    return Name == "Page" || Name == "scaly.memory.Page";
+                                };
+                                bool isPagePointer = RegionBinding->Type.Name == "pointer" &&
+                                                     !RegionBinding->Type.Generics.empty() &&
+                                                     isPageType(RegionBinding->Type.Generics[0].Name);
+                                if (!isPagePointer) {
+                                    return makeStackLifetimeError(File, RefLife->Loc, RefLife->Location);
+                                }
+
+                                PlannedOperand RegionArg;
+                                RegionArg.Loc = RefLife->Loc;
+                                RegionArg.ResultType = RegionBinding->Type;
+                                RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, RegionBinding->IsMutable};
+                                Call.Args->push_back(std::move(RegionArg));
+                            }
+                            // For # lifetime, Emitter uses ReturnPage (rp)
+                            // For $ or unspecified, error - function# must be called with # or ^name
+                            else if (!std::holds_alternative<CallLifetime>(TypeExpr->Life)) {
+                                return makePlannerNotImplementedError(File, Op.Loc,
+                                    "function# '" + FuncName + "' must be called with # or ^page syntax");
+                            }
+                        }
 
                         // Add implicit 'this' as first argument if needed
                         if (NeedsImplicitThis) {
@@ -7831,6 +7901,7 @@ llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
     Result.Pure = Func.Pure;
     Result.Name = Func.Name;
     Result.Life = Func.Life;
+    Result.PageParameter = Func.PageParameter;
 
     // Save and reset tracking for $ allocations in function body
     // This allows nested planFunction calls (e.g., when planning constructors)
@@ -7839,6 +7910,22 @@ llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
     CurrentFunctionUsesLocalLifetime = false;
 
     pushScope();
+
+    // If function# was used, define the page parameter in scope
+    if (Func.PageParameter) {
+        PlannedType PagePtrType;
+        PagePtrType.Loc = Func.Loc;
+        PagePtrType.Name = "pointer";
+        PagePtrType.MangledName = "PN4scaly6memory4PageE";  // pointer[scaly.memory.Page]
+
+        PlannedType PageType;
+        PageType.Loc = Func.Loc;
+        PageType.Name = "scaly.memory.Page";
+        PageType.MangledName = "N4scaly6memory4PageE";
+        PagePtrType.Generics.push_back(PageType);
+
+        defineLocal(*Func.PageParameter, PagePtrType, false);
+    }
 
     // If function has a ReferenceLifetime, add implicit region parameter
     if (auto* RefLife = std::get_if<ReferenceLifetime>(&Func.Life)) {
