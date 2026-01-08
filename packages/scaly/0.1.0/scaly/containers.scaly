@@ -221,7 +221,7 @@ define containers
             free(rp as pointer[void])
             return -22
         }
-        var keywords HashSet[String](rp, *keywords_builder)
+        var keywords HashSet[String]^rp(*keywords_builder)
         if keywords.contains(String$("using")) = false
         {
             rp.deallocate_extensions()
@@ -309,7 +309,7 @@ define containers
                 free(rp as pointer[void])
                 return -34
             }
-            var keywords HashMap[String, int](rp, *keywords_builder)
+            var keywords HashMap[String, int]^rp(*keywords_builder)
             if keywords.contains(String$("using")) = false
             {
                 rp.deallocate_extensions()
