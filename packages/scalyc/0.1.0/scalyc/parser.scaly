@@ -990,7 +990,7 @@ define Parser
             when error: ParserError
                 throw error
             when success: FileSyntax
-                set file: FileSyntax#(success)
+                set file: success
 
         let statements_start lexer.position
         var statements: pointer[Vector[StatementSyntax]] null
@@ -1092,7 +1092,7 @@ define Parser
             when error: ParserError
                 throw error
             when success: SymbolSyntax
-                set symbol: SymbolSyntax#(success)
+                set symbol: success
 
         lexer.parse_colon#()
 
@@ -1195,7 +1195,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: ExportSyntax
-                set export_: ExportSyntax#(success)
+                set export_: success
 
         let end lexer.position
 
@@ -1291,7 +1291,7 @@ define Parser
             when error: ParserError
                 throw error
             when success: ConstituentSyntax
-                set constituent: ConstituentSyntax#(success)
+                set constituent: success
 
         lexer.parse_colon#()
 
@@ -1407,7 +1407,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: GenericParametersSyntax
-                set parameters: GenericParametersSyntax#(success)
+                set parameters: success
 
         lexer.parse_colon#()
 
@@ -1436,7 +1436,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: ConceptSyntax
-                set concept_: ConceptSyntax#(success)
+                set concept_: success
 
         let end lexer.position
 
@@ -1599,7 +1599,7 @@ define Parser
             when error: ParserError
                 throw error
             when success: StructureSyntax
-                set structure: StructureSyntax#(success)
+                set structure: success
 
         lexer.parse_colon#()
 
@@ -1614,7 +1614,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: BodySyntax
-                set body: BodySyntax#(success)
+                set body: success
 
         lexer.parse_colon#()
 
@@ -1667,7 +1667,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: DeInitSyntax
-                set deInit: DeInitSyntax#(success)
+                set deInit: success
 
         let members_start lexer.position
         var members: pointer[Vector[MemberSyntax]] null
@@ -1777,7 +1777,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: BodySyntax
-                set body: BodySyntax#(success)
+                set body: success
 
         lexer.parse_colon#()
 
@@ -1842,7 +1842,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: TypeAnnotationSyntax
-                set annotation: TypeAnnotationSyntax#(success)
+                set annotation: success
 
         lexer.parse_punctuation#(',')
 
@@ -1863,7 +1863,7 @@ define Parser
             when error: ParserError
                 throw error
             when success: TypeSyntax
-                set type: TypeSyntax#(success)
+                set type: success
 
         let operation_start lexer.position
         var operation: pointer[Vector[OperandSyntax]] null
@@ -1903,7 +1903,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: ParameterSetSyntax
-                set parameters: ParameterSetSyntax#(success)
+                set parameters: success
 
         let attributes_start lexer.position
         var attributes: pointer[Vector[AttributeSyntax]] null
@@ -1929,7 +1929,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: ReturnsSyntax
-                set result: ReturnsSyntax#(success)
+                set result: success
 
         let error_start lexer.position
         var error: pointer[ThrowsSyntax] null
@@ -1942,7 +1942,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: ThrowsSyntax
-                set error: ThrowsSyntax#(success)
+                set error: success
 
         let end lexer.position
 
@@ -2011,7 +2011,7 @@ define Parser
             when error: ParserError
                 throw error
             when success: TypeSyntax
-                set type: TypeSyntax#(success)
+                set type: success
 
         lexer.parse_punctuation#(',')
 
@@ -2128,7 +2128,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: TypeAnnotationSyntax
-                set annotation: TypeAnnotationSyntax#(success)
+                set annotation: success
 
         lexer.parse_punctuation#(',')
 
@@ -2173,7 +2173,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: TypeSyntax
-                set type: TypeSyntax#(success)
+                set type: success
 
         let attributes_start lexer.position
         var attributes: pointer[Vector[AttributeSyntax]] null
@@ -2212,7 +2212,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: TypeSyntax
-                set type: TypeSyntax#(success)
+                set type: success
 
         let attributes_start lexer.position
         var attributes: pointer[Vector[AttributeSyntax]] null
@@ -2275,7 +2275,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: NameSyntax
-                set name: NameSyntax#(success)
+                set name: success
 
         lexer.parse_colon#()
 
@@ -2303,7 +2303,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: TypeSyntax
-                set type: TypeSyntax#(success)
+                set type: success
 
         let attributes_start lexer.position
         var attributes: pointer[Vector[AttributeSyntax]] null
@@ -2378,7 +2378,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: NameSyntax
-                set name: NameSyntax#(success)
+                set name: success
 
         let extension_start lexer.position
         var extension: pointer[ExtendsSyntax] null
@@ -2391,7 +2391,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: ExtendsSyntax
-                set extension: ExtendsSyntax#(success)
+                set extension: success
 
         let attributes_start lexer.position
         var attributes: pointer[Vector[AttributeSyntax]] null
@@ -2546,7 +2546,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: LifetimeSyntax
-                set lifetime: LifetimeSyntax#(success)
+                set lifetime: success
 
         let parameters_start lexer.position
         var parameters: pointer[ParameterSetSyntax] null
@@ -2559,7 +2559,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: ParameterSetSyntax
-                set parameters: ParameterSetSyntax#(success)
+                set parameters: success
 
         lexer.parse_colon#()
 
@@ -2575,7 +2575,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: ActionSyntax
-                set action: ActionSyntax#(success)
+                set action: success
 
         lexer.parse_colon#()
 
@@ -2605,7 +2605,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: ActionSyntax
-                set action: ActionSyntax#(success)
+                set action: success
 
         lexer.parse_colon#()
 
@@ -2633,7 +2633,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: TargetSyntax
-                set target: TargetSyntax#(success)
+                set target: success
 
         let end lexer.position
 
@@ -2659,7 +2659,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: TargetSyntax
-                set target: TargetSyntax#(success)
+                set target: success
 
         let end lexer.position
 
@@ -2685,7 +2685,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: TargetSyntax
-                set target: TargetSyntax#(success)
+                set target: success
 
         let end lexer.position
 
@@ -2737,7 +2737,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: RoutineSyntax
-                set routine: RoutineSyntax#(success)
+                set routine: success
 
         let end lexer.position
 
@@ -2759,7 +2759,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: GenericArgumentsSyntax
-                set generics: GenericArgumentsSyntax#(success)
+                set generics: success
 
         let lifetime_start lexer.position
         var lifetime: pointer[LifetimeSyntax] null
@@ -2772,7 +2772,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: LifetimeSyntax
-                set lifetime: LifetimeSyntax#(success)
+                set lifetime: success
 
         let parameters_start lexer.position
         var parameters: pointer[ParameterSetSyntax] null
@@ -2785,7 +2785,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: ParameterSetSyntax
-                set parameters: ParameterSetSyntax#(success)
+                set parameters: success
 
         let attributes_start lexer.position
         var attributes: pointer[Vector[AttributeSyntax]] null
@@ -2811,7 +2811,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: ReturnsSyntax
-                set returns_: ReturnsSyntax#(success)
+                set returns_: success
 
         lexer.parse_colon#()
 
@@ -2826,7 +2826,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: ThrowsSyntax
-                set throws_: ThrowsSyntax#(success)
+                set throws_: success
 
         lexer.parse_colon#()
 
@@ -2842,7 +2842,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: ImplementationSyntax
-                set implementation: ImplementationSyntax#(success)
+                set implementation: success
 
         let end lexer.position
 
@@ -2993,7 +2993,7 @@ define Parser
             when error: ParserError
                 throw error
             when success: TypeSyntax
-                set type: TypeSyntax#(success)
+                set type: success
 
         lexer.parse_punctuation#(',')
 
@@ -3025,7 +3025,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: ModelSyntax
-                set model: ModelSyntax#(success)
+                set model: success
 
         let rule_start lexer.position
         var rule: pointer[Vector[OperandSyntax]]
@@ -3090,7 +3090,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: ModelSyntax
-                set model: ModelSyntax#(success)
+                set model: success
 
         lexer.parse_colon#()
 
@@ -3205,7 +3205,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: NameSyntax
-                set name: NameSyntax#(success)
+                set name: success
 
         let version_start lexer.position
         var version: pointer[VersionSyntax] null
@@ -3218,7 +3218,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: VersionSyntax
-                set version: VersionSyntax#(success)
+                set version: success
 
         lexer.parse_colon#()
 
@@ -3316,7 +3316,7 @@ define Parser
             when error: ParserError
                 throw error
             when success: ExpressionSyntax
-                set expression: ExpressionSyntax#(success)
+                set expression: success
 
         let members_start lexer.position
         var members: pointer[Vector[MemberAccessSyntax]] null
@@ -3379,7 +3379,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: NameSyntax
-                set name: NameSyntax#(success)
+                set name: success
 
         let end lexer.position
 
@@ -3675,7 +3675,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: ValueSyntax
-                set value: ValueSyntax#(success)
+                set value: success
 
         lexer.parse_punctuation#(',')
 
@@ -3758,7 +3758,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: LifetimeSyntax
-                set lifetime: LifetimeSyntax#(success)
+                set lifetime: success
 
         let end lexer.position
 
@@ -3857,7 +3857,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: ThenSyntax
-                set consequent: ThenSyntax#(success)
+                set consequent: success
 
         let alternative_start lexer.position
         var alternative: pointer[ElseSyntax] null
@@ -3870,7 +3870,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: ElseSyntax
-                set alternative: ElseSyntax#(success)
+                set alternative: success
 
         let end lexer.position
 
@@ -3887,7 +3887,7 @@ define Parser
             when error: ParserError
                 throw error
             when success: CommandSyntax
-                set command: CommandSyntax#(success)
+                set command: success
 
         lexer.parse_colon#()
 
@@ -3917,7 +3917,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: CommandSyntax
-                set alternative: CommandSyntax#(success)
+                set alternative: success
 
         let end lexer.position
 
@@ -3973,7 +3973,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: ElseSyntax
-                set alternative: ElseSyntax#(success)
+                set alternative: success
 
         let end lexer.position
 
@@ -4031,7 +4031,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: StatementSyntax
-                set consequent: StatementSyntax#(success)
+                set consequent: success
 
         let end lexer.position
 
@@ -4122,7 +4122,7 @@ define Parser
             when error: ParserError
                 throw error
             when success: CommandSyntax
-                set command: CommandSyntax#(success)
+                set command: success
 
         lexer.parse_colon#()
 
@@ -4150,7 +4150,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: ConditionSyntax
-                set condition: ConditionSyntax#(success)
+                set condition: success
 
         if ~lexer.parse_colon#()
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected colon or newline")))
@@ -4166,7 +4166,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: LabelSyntax
-                set name: LabelSyntax#(success)
+                set name: success
 
         let action_start lexer.position
         var action: ActionSyntax
@@ -4180,7 +4180,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: ActionSyntax
-                set action: ActionSyntax#(success)
+                set action: success
 
         let end lexer.position
 
@@ -4235,7 +4235,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: ElseSyntax
-                set alternative: ElseSyntax#(success)
+                set alternative: success
 
         let end lexer.position
 
@@ -4261,7 +4261,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: ConditionSyntax
-                set condition: ConditionSyntax#(success)
+                set condition: success
 
         if ~lexer.parse_colon#()
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected colon or newline")))
@@ -4290,7 +4290,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: ElseSyntax
-                set dropper: ElseSyntax#(success)
+                set dropper: success
 
         let end lexer.position
 
@@ -4372,7 +4372,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: NameSyntax
-                set variant: NameSyntax#(success)
+                set variant: success
 
         lexer.parse_colon#()
 
@@ -4388,7 +4388,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: CommandSyntax
-                set command: CommandSyntax#(success)
+                set command: success
 
         lexer.parse_colon#()
 
@@ -4511,7 +4511,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: BindingSyntax
-                set binding: BindingSyntax#(success)
+                set binding: success
 
         let end lexer.position
 
@@ -4537,7 +4537,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: BindingSyntax
-                set binding: BindingSyntax#(success)
+                set binding: success
 
         let end lexer.position
 
@@ -4563,7 +4563,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: BindingSyntax
-                set binding: BindingSyntax#(success)
+                set binding: success
 
         let end lexer.position
 
@@ -4589,7 +4589,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: BindingAnnotationSyntax
-                set annotation: BindingAnnotationSyntax#(success)
+                set annotation: success
 
         let operation_start lexer.position
         var operation: pointer[Vector[OperandSyntax]] null
@@ -4628,7 +4628,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: BindingSpecSyntax
-                set spec: BindingSpecSyntax#(success)
+                set spec: success
 
         let end lexer.position
 
@@ -4818,7 +4818,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: PropertySyntax
-                set property: PropertySyntax#(success)
+                set property: success
 
         let end lexer.position
 
@@ -4869,7 +4869,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: TypeAnnotationSyntax
-                set annotation: TypeAnnotationSyntax#(success)
+                set annotation: success
 
         let initializer_start lexer.position
         var initializer: pointer[InitializerSyntax] null
@@ -4882,7 +4882,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: InitializerSyntax
-                set initializer: InitializerSyntax#(success)
+                set initializer: success
 
         lexer.parse_punctuation#(',')
 
@@ -4927,7 +4927,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: TypeSyntax
-                set type: TypeSyntax#(success)
+                set type: success
 
         let end lexer.position
 
@@ -4952,7 +4952,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: LoopSyntax
-                set name: LoopSyntax#(success)
+                set name: success
 
         lexer.parse_colon#()
 
@@ -4979,7 +4979,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: LoopSyntax
-                set name: LoopSyntax#(success)
+                set name: success
 
         let result_start lexer.position
         var result: pointer[Vector[OperandSyntax]] null
@@ -5103,7 +5103,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: ActionSyntax
-                set block: ActionSyntax#(success)
+                set block: success
 
         let end lexer.position
 
@@ -5132,7 +5132,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: TypeAnnotationSyntax
-                set annotation: TypeAnnotationSyntax#(success)
+                set annotation: success
 
         if ~lexer.parse_keyword#(String#("in"))
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected 'in'")))
@@ -5165,7 +5165,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: LabelSyntax
-                set name: LabelSyntax#(success)
+                set name: success
 
         let action_start lexer.position
         var action: ActionSyntax
@@ -5179,7 +5179,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: ActionSyntax
-                set action: ActionSyntax#(success)
+                set action: success
 
         let end lexer.position
 
@@ -5222,7 +5222,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: LabelSyntax
-                set name: LabelSyntax#(success)
+                set name: success
 
         let action_start lexer.position
         var action: ActionSyntax
@@ -5236,7 +5236,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: ActionSyntax
-                set action: ActionSyntax#(success)
+                set action: success
 
         let end lexer.position
 
@@ -5422,7 +5422,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: TypeSyntax
-                set type: TypeSyntax#(success)
+                set type: success
 
         let end lexer.position
 
@@ -5448,7 +5448,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: TypeSyntax
-                set type: TypeSyntax#(success)
+                set type: success
 
         let end lexer.position
 
@@ -5474,7 +5474,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: NameSyntax
-                set name: NameSyntax#(success)
+                set name: success
 
         let end lexer.position
 
@@ -5500,7 +5500,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: TypeSyntax
-                set type: TypeSyntax#(success)
+                set type: success
 
         let end lexer.position
 
@@ -5541,7 +5541,7 @@ define Parser
             when error: ParserError
                 throw error
             when success: NameSyntax
-                set name: NameSyntax#(success)
+                set name: success
 
         let generics_start lexer.position
         var generics: pointer[GenericArgumentsSyntax] null
@@ -5554,7 +5554,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: GenericArgumentsSyntax
-                set generics: GenericArgumentsSyntax#(success)
+                set generics: success
 
         let optional_start lexer.position
         var optional: pointer[OptionalSyntax] null
@@ -5567,7 +5567,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: OptionalSyntax
-                set optional: OptionalSyntax#(success)
+                set optional: success
 
         let lifetime_start lexer.position
         var lifetime: pointer[LifetimeSyntax] null
@@ -5580,7 +5580,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: LifetimeSyntax
-                set lifetime: LifetimeSyntax#(success)
+                set lifetime: success
 
         let end lexer.position
 
