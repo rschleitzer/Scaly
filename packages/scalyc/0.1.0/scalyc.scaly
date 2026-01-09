@@ -4,6 +4,7 @@ use scaly.containers.String
 
 define scalyc {
     module lexer
+    module parser
 
     function test() returns int
     {
