@@ -1,5 +1,5 @@
 <!DOCTYPE STYLE-SHEET PUBLIC "-//James Clark//DTD DSSSL Style Sheet//EN" [
-<!ENTITY testjs    SYSTEM "testjs.scm">
+<!ENTITY testcpp   SYSTEM "testcpp.scm">
 <!ENTITY testdoc   SYSTEM "testdoc.scm">
 <!ENTITY helpers   SYSTEM "helpers.scm">
 <!ENTITY fodeclare SYSTEM "fodeclare.scm">
@@ -10,14 +10,17 @@
 
 &fodeclare;
 &helpers;
-&testjs;
+&testcpp;
 &testdoc;
 
 <![CDATA[
 (element suite
     (sosofo-append
-        (file "packages/scaly-lang/tests/generated-expressions.test.ts"
-            (generate-testjs)
+        (file "scalyc/ExpressionTests.h"
+            (generate-tests-h "Expression")
+        )
+        (file "scalyc/ExpressionTests.cpp"
+            (generate-tests-cpp "Expression")
         )
         (file "docs/scaly/generated-expressions.xml"
             (generate-testdoc)

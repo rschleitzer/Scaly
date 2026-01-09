@@ -24,7 +24,6 @@ set(SOURCES
     Lexer.cpp
     LexerTests.cpp
     Parser.cpp
-    ParserTests.cpp
     Model.h
     ModelError.h
     ModelError.cpp
@@ -41,6 +40,13 @@ set(SOURCES
     EmitterTests.cpp
     ModuleTests.h
     ModuleTests.cpp
+    # Generated test files
+    ExpressionTests.h
+    ExpressionTests.cpp
+    DefinitionTests.h
+    DefinitionTests.cpp
+    ChooseTests.h
+    ChooseTests.cpp
 )
 
 add_executable(scalyc ${SOURCES})

@@ -1,12 +1,15 @@
 #include "Lexer.h"
 #include "LexerTests.h"
 #include "Parser.h"
-#include "ParserTests.h"
 #include "Modeler.h"
 #include "Planner.h"
 #include "Emitter.h"
 #include "EmitterTests.h"
 #include "ModuleTests.h"
+// Generated test headers
+#include "ExpressionTests.h"
+#include "DefinitionTests.h"
+#include "ChooseTests.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/MemoryBuffer.h"
@@ -673,13 +676,20 @@ int main(int argc, char **argv) {
 
     if (RunTests) {
         bool AllPassed = true;
-        AllPassed &= scaly::runParserTests();
-        std::cout << std::endl << std::flush;
-        llvm::outs().flush();
         AllPassed &= scaly::runLexerTests();
         std::cout << std::endl << std::flush;
         llvm::outs().flush();
         AllPassed &= scaly::runEmitterTests();
+        std::cout << std::endl << std::flush;
+        llvm::outs().flush();
+        // Generated literate tests
+        AllPassed &= scaly::runExpressionTests();
+        std::cout << std::endl << std::flush;
+        llvm::outs().flush();
+        AllPassed &= scaly::runDefinitionTests();
+        std::cout << std::endl << std::flush;
+        llvm::outs().flush();
+        AllPassed &= scaly::runChooseTests();
         std::cout << std::endl << std::flush;
         llvm::outs().flush();
         AllPassed &= scaly::runModuleTests();

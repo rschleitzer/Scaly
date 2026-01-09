@@ -1,2 +1,10 @@
 #!/bin/bash
+set -e
+
+# Generate Parser.cpp, Syntax.h from grammar
 openjade -G -t sgml -d codegen/scaly.dsl scaly.sgm
+
+# Generate test files from literate test documents
+openjade -G -t sgml -d codegen/test-expressions.dsl tests/expressions.sgm
+openjade -G -t sgml -d codegen/test-definitions.dsl tests/definitions.sgm
+openjade -G -t sgml -d codegen/test-choose.dsl tests/choose.sgm
