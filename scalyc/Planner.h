@@ -361,6 +361,7 @@ private:
         std::string MangledName;
         PlannedType ReturnType;
         std::vector<PlannedType> ParameterTypes;  // For overload resolution
+        bool RequiresPageParam = false;  // True if function# - method needs page parameter
     };
     std::optional<MethodMatch> lookupMethod(
         const PlannedType &StructType,

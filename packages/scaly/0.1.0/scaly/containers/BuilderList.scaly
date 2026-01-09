@@ -8,7 +8,7 @@ define BuilderList[T] (head: pointer[Node[T]])
         set head: null
     }
 
-    function add(this: BuilderList[T], rp: pointer[Page], element: T)
+    function add#(rp, this: BuilderList[T], element: T)
     {
         let new_node Node[T]^rp(element, head)
         set head: new_node

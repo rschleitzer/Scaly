@@ -1,4 +1,3 @@
-use scaly.memory.Page
 use scaly.containers.String
 use scaly.containers.StringBuilder
 
@@ -6,31 +5,19 @@ define Path
 {
     function get_directory_name#(rp, path: String) returns String
     {
-        var local_page Page.allocate_page()
-        let path_as_c_string path.to_c_string^local_page()
+        let path_as_c_string path.to_c_string$()
         let directory_name_as_c_string dirname(path_as_c_string as pointer[char])
         if strcmp(directory_name_as_c_string, ".") = 0
-        {
-            local_page.deallocate_extensions()
-            free(local_page as pointer[void])
             return String^rp("")
-        }
 
-        let ret String^rp(directory_name_as_c_string)
-        local_page.deallocate_extensions()
-        free(local_page as pointer[void])
-        return ret
+        String^rp(directory_name_as_c_string)
     }
 
     function get_file_name#(rp, path: String) returns String
     {
-        var local_page Page.allocate_page()
-        let path_as_c_string path.to_c_string^local_page()
+        let path_as_c_string path.to_c_string$()
         let file_name_as_c_string basename(path_as_c_string as pointer[char])
-        let ret String^rp(file_name_as_c_string)
-        local_page.deallocate_extensions()
-        free(local_page as pointer[void])
-        return ret
+        String^rp(file_name_as_c_string)
     }
 
     function join#(rp, path1: String, path2: String) returns String
@@ -45,6 +32,6 @@ define Path
 
         path.append('/')
         path.append(path2)
-        return path.to_string^rp()
+        path.to_string^rp()
     }
 }

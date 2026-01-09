@@ -1,4 +1,3 @@
-use scaly.memory.Page
 use scaly.containers.String
 
 ; C stdio constants
@@ -10,14 +9,9 @@ define File
 {
     function read_to_string#(rp, path: String) returns String
     {
-        var local_page Page.allocate_page()
-        var file fopen(path.to_c_string^local_page(), "rb")
+        var file fopen(path.to_c_string$(), "rb")
         if file = null
-        {
-            local_page.deallocate_extensions()
-            free(local_page as pointer[void])
             return String()
-        }
 
         fseek(file, 0, SEEK_END)
         let size ftell(file)
@@ -26,28 +20,17 @@ define File
         let buffer ret.get_buffer()
         fread(buffer, 1, size as size_t, file)
         fclose(file)
-
-        local_page.deallocate_extensions()
-        free(local_page as pointer[void])
-        return ret
+        ret
     }
 
     function write_from_string(path: String, contents: String) returns bool
     {
-        var local_page Page.allocate_page()
-        var file fopen(path.to_c_string^local_page(), "wb")
+        var file fopen(path.to_c_string$(), "wb")
         if file = null
-        {
-            local_page.deallocate_extensions()
-            free(local_page as pointer[void])
             return false
-        }
 
         fwrite(contents.get_buffer(), 1, contents.get_length(), file)
         fclose(file)
-
-        local_page.deallocate_extensions()
-        free(local_page as pointer[void])
-        return true
+        true
     }
 }
