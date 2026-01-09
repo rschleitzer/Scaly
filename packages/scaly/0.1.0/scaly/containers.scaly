@@ -23,24 +23,13 @@ define containers
 
     function test_vector() returns int
     {
-        var rp Page.allocate_page()
-        var vector Vector[int]^rp(2)
+        var vector Vector[int]$(2)
         set *vector.get(0): 1
         vector.put(1, 2)
         if *(vector.get(0)) <> 1
-        {
-            rp.deallocate_extensions()
-            free(rp as pointer[void])
             return -1
-        }
         if *(*vector)[1] <> 2
-        {
-            rp.deallocate_extensions()
-            free(rp as pointer[void])
             return -2
-        }
-        rp.deallocate_extensions()
-        free(rp as pointer[void])
         0
     }
 
@@ -103,58 +92,31 @@ define containers
 
     function test_string_builder() returns int
     {
-        var rp Page.allocate_page()
         var string_builder StringBuilder$()
         let length string_builder.get_length()
         if length <> 0
-        {
-            rp.deallocate_extensions()
-            free(rp as pointer[void])
             return -11
-        }
         string_builder.append('a')
         string_builder.append('b')
         string_builder.append('c')
-        if string_builder.to_string^rp().equals("abc") = false
-        {
-            rp.deallocate_extensions()
-            free(rp as pointer[void])
+        if string_builder.to_string$().equals("abc") = false
             return -12
-        }
         if string_builder.get_length() <> 3
-        {
-            rp.deallocate_extensions()
-            free(rp as pointer[void])
             return -13
-        }
 
         var string_builder2 StringBuilder$('d')
         string_builder2.append('e')
         string_builder2.append('f')
         string_builder2.append('g')
-        if string_builder2.to_string^rp().equals("defg") = false
-        {
-            rp.deallocate_extensions()
-            free(rp as pointer[void])
+        if string_builder2.to_string$().equals("defg") = false
             return -14
-        }
         if string_builder2.get_length() <> 4
-        {
-            rp.deallocate_extensions()
-            free(rp as pointer[void])
             return -15
-        }
 
         var string_builder3 StringBuilder$("hijk")
         string_builder3.append("lmno")
-        if string_builder3.to_string^rp().equals("hijklmno") = false
-        {
-            rp.deallocate_extensions()
-            free(rp as pointer[void])
+        if string_builder3.to_string$().equals("hijklmno") = false
             return -16
-        }
-        rp.deallocate_extensions()
-        free(rp as pointer[void])
         0
     }
 
@@ -190,179 +152,76 @@ define containers
 
     function test_hash_set() returns int
     {
-        var rp Page.allocate_page()
         var array Array[String]$()
         array.add(String$("using"))
         array.add(String$("namespace"))
         array.add(String$("typedef"))
-        let vector Vector[String]^rp(*array)
+        let vector Vector[String]$(*array)
         var keywords_builder HashSetBuilder[String]$(vector)
         if keywords_builder.contains(String$("using")) = false
-        {
-            rp.deallocate_extensions()
-            free(rp as pointer[void])
             return -19
-        }
         if keywords_builder.contains(String$("namespace")) = false
-        {
-            rp.deallocate_extensions()
-            free(rp as pointer[void])
             return -20
-        }
         if keywords_builder.contains(String$("typedef")) = false
-        {
-            rp.deallocate_extensions()
-            free(rp as pointer[void])
             return -21
-        }
         if keywords_builder.contains(String$("nix"))
-        {
-            rp.deallocate_extensions()
-            free(rp as pointer[void])
             return -22
-        }
-        var keywords HashSet[String]^rp(*keywords_builder)
+        var keywords HashSet[String]$(*keywords_builder)
         if keywords.contains(String$("using")) = false
-        {
-            rp.deallocate_extensions()
-            free(rp as pointer[void])
             return -23
-        }
         if keywords.contains(String$("namespace")) = false
-        {
-            rp.deallocate_extensions()
-            free(rp as pointer[void])
             return -24
-        }
         if keywords.contains(String$("typedef")) = false
-        {
-            rp.deallocate_extensions()
-            free(rp as pointer[void])
             return -25
-        }
         if keywords.contains(String$("nix"))
-        {
-            rp.deallocate_extensions()
-            free(rp as pointer[void])
             return -26
-        }
-        rp.deallocate_extensions()
-        free(rp as pointer[void])
         0
     }
 
     function test_hash_map() returns int
     {
         {
-            var rp Page.allocate_page()
             var array Array[KeyValuePair[String, int]]$()
             array.add(KeyValuePair[String, int](String$("using"), 1))
             array.add(KeyValuePair[String, int](String$("namespace"), 2))
             array.add(KeyValuePair[String, int](String$("typedef"), 3))
-            let vector Vector[KeyValuePair[String, int]](rp, *array)
+            let vector Vector[KeyValuePair[String, int]]$(*array)
             var keywords_builder HashMapBuilder[String, int]$(vector)
             if keywords_builder.contains(String$("using")) = false
-            {
-                rp.deallocate_extensions()
-                free(rp as pointer[void])
                 return -27
-            }
             if keywords_builder.contains(String$("namespace")) = false
-            {
-                rp.deallocate_extensions()
-                free(rp as pointer[void])
                 return -28
-            }
             if keywords_builder.contains(String$("typedef")) = false
-            {
-                rp.deallocate_extensions()
-                free(rp as pointer[void])
                 return -29
-            }
             if keywords_builder.contains(String$("nix"))
-            {
-                rp.deallocate_extensions()
-                free(rp as pointer[void])
                 return -30
-            }
             if *(*keywords_builder)[String$("using")] <> 1
-            {
-                rp.deallocate_extensions()
-                free(rp as pointer[void])
                 return -31
-            }
             if *(*keywords_builder)[String$("namespace")] <> 2
-            {
-                rp.deallocate_extensions()
-                free(rp as pointer[void])
                 return -32
-            }
             if *(*keywords_builder)[String$("typedef")] <> 3
-            {
-                rp.deallocate_extensions()
-                free(rp as pointer[void])
                 return -33
-            }
             if (*keywords_builder)[String$("nix")] <> null
-            {
-                rp.deallocate_extensions()
-                free(rp as pointer[void])
                 return -34
-            }
-            var keywords HashMap[String, int]^rp(*keywords_builder)
+            var keywords HashMap[String, int]$(*keywords_builder)
             if keywords.contains(String$("using")) = false
-            {
-                rp.deallocate_extensions()
-                free(rp as pointer[void])
                 return -35
-            }
             if keywords.contains(String$("namespace")) = false
-            {
-                rp.deallocate_extensions()
-                free(rp as pointer[void])
                 return -36
-            }
             if keywords.contains(String$("typedef")) = false
-            {
-                rp.deallocate_extensions()
-                free(rp as pointer[void])
                 return -37
-            }
             if keywords.contains(String$("nix"))
-            {
-                rp.deallocate_extensions()
-                free(rp as pointer[void])
                 return -38
-            }
             if *keywords[String$("using")] <> 1
-            {
-                rp.deallocate_extensions()
-                free(rp as pointer[void])
                 return -39
-            }
             if *keywords[String$("namespace")] <> 2
-            {
-                rp.deallocate_extensions()
-                free(rp as pointer[void])
                 return -40
-            }
             if *keywords[String$("typedef")] <> 3
-            {
-                rp.deallocate_extensions()
-                free(rp as pointer[void])
                 return -41
-            }
             if keywords[String$("nix")] <> null
-            {
-                rp.deallocate_extensions()
-                free(rp as pointer[void])
                 return -42
-            }
-            rp.deallocate_extensions()
-            free(rp as pointer[void])
         }
         {
-            var rp Page.allocate_page()
             var map HashMapBuilder[String, size_t]$()
             var hash_set HashSetBuilder[String]$()
             {
@@ -382,8 +241,8 @@ define containers
                                 sb.append(j)
                                 sb.append(k)
                                 sb.append(l)
-                                map.add(sb.to_string^rp(), (i * j * k * l) as size_t)
-                                hash_set.add(sb.to_string^rp())
+                                map.add(sb.to_string$(), (i * j * k * l) as size_t)
+                                hash_set.add(sb.to_string$())
 
                                 set l: l + 1
                             }
@@ -412,25 +271,13 @@ define containers
                                 sb.append(j)
                                 sb.append(k)
                                 sb.append(l)
-                                let theString sb.to_string^rp()
+                                let theString sb.to_string$()
                                 if hash_set.contains(theString) = false
-                                {
-                                    rp.deallocate_extensions()
-                                    free(rp as pointer[void])
                                     return -43
-                                }
                                 if map.contains(theString) = false
-                                {
-                                    rp.deallocate_extensions()
-                                    free(rp as pointer[void])
                                     return -44
-                                }
                                 if *(*map)[theString] <> (i * j * k * l) as size_t
-                                {
-                                    rp.deallocate_extensions()
-                                    free(rp as pointer[void])
                                     return -45
-                                }
 
                                 set l: l + 1
                             }
@@ -441,18 +288,14 @@ define containers
                     set i: i + 1
                 }
             }
-            rp.deallocate_extensions()
-            free(rp as pointer[void])
         }
         0
     }
 
     function test_slice() returns int
     {
-        var rp Page.allocate_page()
-
         ; Test Vector slice
-        var vector Vector[int]^rp(5)
+        var vector Vector[int]$(5)
         set *vector.get(0): 10
         set *vector.get(1): 20
         set *vector.get(2): 30
@@ -461,100 +304,46 @@ define containers
 
         let slice vector.as_slice()
         if slice.length <> 5
-        {
-            rp.deallocate_extensions()
-            free(rp as pointer[void])
             return -50
-        }
         if *slice[0] <> 10
-        {
-            rp.deallocate_extensions()
-            free(rp as pointer[void])
             return -51
-        }
         if *slice[4] <> 50
-        {
-            rp.deallocate_extensions()
-            free(rp as pointer[void])
             return -52
-        }
 
         ; Test sub-slice
         let sub slice.subslice(1, 4)
         if sub.length <> 3
-        {
-            rp.deallocate_extensions()
-            free(rp as pointer[void])
             return -53
-        }
         if *sub[0] <> 20
-        {
-            rp.deallocate_extensions()
-            free(rp as pointer[void])
             return -54
-        }
         if *sub[2] <> 40
-        {
-            rp.deallocate_extensions()
-            free(rp as pointer[void])
             return -55
-        }
 
         ; Test String slice
         var s String$("Hello")
         let str_slice s.as_slice()
         if str_slice.length <> 5
-        {
-            rp.deallocate_extensions()
-            free(rp as pointer[void])
             return -56
-        }
         if *str_slice[0] <> 'H'
-        {
-            rp.deallocate_extensions()
-            free(rp as pointer[void])
             return -57
-        }
         if *str_slice[4] <> 'o'
-        {
-            rp.deallocate_extensions()
-            free(rp as pointer[void])
             return -58
-        }
 
         ; Test slice equality
         var s2 String$("Hello")
         let str_slice2 s2.as_slice()
         if str_slice == str_slice2 = false
-        {
-            rp.deallocate_extensions()
-            free(rp as pointer[void])
             return -59
-        }
 
         ; Test triple chained method calls: as_slice().subslice().subslice()
         let triple_chain vector.as_slice().subslice(0, 4).subslice(1, 3)
         if triple_chain.length <> 2
-        {
-            rp.deallocate_extensions()
-            free(rp as pointer[void])
             return -60
-        }
         if *triple_chain[0] <> 20
-        {
-            rp.deallocate_extensions()
-            free(rp as pointer[void])
             return -61
-        }
         if *triple_chain[1] <> 30
-        {
-            rp.deallocate_extensions()
-            free(rp as pointer[void])
             return -62
-        }
 
-        rp.deallocate_extensions()
-        free(rp as pointer[void])
         0
     }
 

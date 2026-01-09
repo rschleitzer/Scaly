@@ -1104,6 +1104,7 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                 MethodMatch Match;
                 Match.Method = nullptr;  // We have the planned version, not the Model version
                 Match.MangledName = Method.MangledName;
+                Match.RequiresPageParam = Method.PageParameter.has_value();
                 if (Method.Returns) {
                     Match.ReturnType = *Method.Returns;
                 } else {
@@ -1145,6 +1146,7 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                                     MethodMatch Match;
                                     Match.Method = nullptr;
                                     Match.MangledName = Method.MangledName;
+                                    Match.RequiresPageParam = Method.PageParameter.has_value();
                                     if (Method.Returns) {
                                         Match.ReturnType = *Method.Returns;
                                     } else {
@@ -1166,6 +1168,7 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                     if (Func->Name == MethodName) {
                         MethodMatch Match;
                         Match.Method = Func;
+                        Match.RequiresPageParam = Func->PageParameter.has_value();
 
                         // Set up type substitutions for the struct's type parameters
                         // This is needed when resolving parameter/return types that use T
@@ -1284,6 +1287,7 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                 MethodMatch Match;
                 Match.Method = nullptr;
                 Match.MangledName = Method.MangledName;
+                Match.RequiresPageParam = Method.PageParameter.has_value();
                 if (Method.Returns) {
                     Match.ReturnType = *Method.Returns;
                 } else {
@@ -1338,6 +1342,7 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                                     MethodMatch Match;
                                     Match.Method = nullptr;
                                     Match.MangledName = Method.MangledName;
+                                    Match.RequiresPageParam = Method.PageParameter.has_value();
                                     if (Method.Returns) {
                                         Match.ReturnType = *Method.Returns;
                                     } else {
@@ -1365,6 +1370,7 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                     if (Func->Name == MethodName) {
                         MethodMatch Match;
                         Match.Method = Func;
+                        Match.RequiresPageParam = Func->PageParameter.has_value();
 
                         // Set up type substitutions for the struct's type parameters
                         // This is needed when resolving parameter/return types that use T
@@ -5230,9 +5236,60 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             // Build args: [region (if any), instance, ...tuple_args]
                             Call.Args = std::make_shared<std::vector<PlannedOperand>>();
 
-                            // If the Type has a ReferenceLifetime, look up the region variable
-                            // and pass it as the first argument (before instance)
-                            if (auto* RefLife = std::get_if<ReferenceLifetime>(&TypeExpr->Life)) {
+                            // Handle function# page parameter for method calls
+                            if (MethodMatch->RequiresPageParam) {
+                                Call.RequiresPageParam = true;
+                                Call.Life = TypeExpr->Life;
+
+                                if (auto* RefLife = std::get_if<ReferenceLifetime>(&TypeExpr->Life)) {
+                                    // ^name - pass explicit page as first argument
+                                    // Special case: ^this generates Page.get(this)
+                                    if (RefLife->Location == "this") {
+                                        auto PageGetResult = generatePageGetThis(RefLife->Loc);
+                                        if (!PageGetResult) {
+                                            return PageGetResult.takeError();
+                                        }
+                                        Call.Args->push_back(std::move(*PageGetResult));
+                                    } else {
+                                        auto RegionBinding = lookupLocalBinding(RefLife->Location);
+                                        if (!RegionBinding) {
+                                            return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
+                                        }
+                                        // Validate that the referenced variable is a pointer[Page]
+                                        auto isPageType = [](const std::string &Name) {
+                                            return Name == "Page" || Name == "scaly.memory.Page";
+                                        };
+                                        bool isPagePointer = RegionBinding->Type.Name == "pointer" &&
+                                                             !RegionBinding->Type.Generics.empty() &&
+                                                             isPageType(RegionBinding->Type.Generics[0].Name);
+                                        if (!isPagePointer) {
+                                            return makeStackLifetimeError(File, RefLife->Loc, RefLife->Location);
+                                        }
+
+                                        PlannedOperand RegionArg;
+                                        RegionArg.Loc = RefLife->Loc;
+                                        RegionArg.ResultType = RegionBinding->Type;
+                                        RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, RegionBinding->IsMutable};
+                                        Call.Args->push_back(std::move(RegionArg));
+                                    }
+                                }
+                                // For # lifetime, Emitter uses ReturnPage (rp)
+                                // For $ lifetime, Emitter uses LocalPage
+                                else if (std::holds_alternative<LocalLifetime>(TypeExpr->Life)) {
+                                    // Track that we need local page allocation
+                                    CurrentFunctionUsesLocalLifetime = true;
+                                    if (!ScopeInfoStack.empty()) {
+                                        ScopeInfoStack.back().HasLocalAllocations = true;
+                                    }
+                                }
+                                else if (!std::holds_alternative<CallLifetime>(TypeExpr->Life)) {
+                                    return makePlannerNotImplementedError(File, Op.Loc,
+                                        "method# '" + MethodName + "' must be called with #, $, or ^page syntax");
+                                }
+                            }
+                            // If the Type has a ReferenceLifetime but method doesn't have PageParameter,
+                            // still pass the region (for legacy/init calls)
+                            else if (auto* RefLife = std::get_if<ReferenceLifetime>(&TypeExpr->Life)) {
                                 // Special case: ^this generates Page.get(this)
                                 if (RefLife->Location == "this") {
                                     auto PageGetResult = generatePageGetThis(RefLife->Loc);
@@ -5531,7 +5588,7 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                     Call.Args = std::make_shared<std::vector<PlannedOperand>>();
 
                     // Handle function# page parameter for method calls
-                    if (MethodMatch->Method && MethodMatch->Method->PageParameter) {
+                    if (MethodMatch->RequiresPageParam) {
                         Call.RequiresPageParam = true;
                         Call.Life = MethodType.Life;
 
@@ -5567,9 +5624,17 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             }
                         }
                         // For # lifetime, Emitter uses ReturnPage (rp)
+                        // For $ lifetime, Emitter uses LocalPage
+                        else if (std::holds_alternative<LocalLifetime>(MethodType.Life)) {
+                            // Track that we need local page allocation
+                            CurrentFunctionUsesLocalLifetime = true;
+                            if (!ScopeInfoStack.empty()) {
+                                ScopeInfoStack.back().HasLocalAllocations = true;
+                            }
+                        }
                         else if (!std::holds_alternative<CallLifetime>(MethodType.Life)) {
                             return makePlannerNotImplementedError(File, Op.Loc,
-                                "method# '" + MethodName + "' must be called with # or ^page syntax");
+                                "method# '" + MethodName + "' must be called with #, $, or ^page syntax");
                         }
                     }
                     // If the method Type has a ReferenceLifetime but method doesn't have PageParameter,
@@ -6798,10 +6863,18 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                 }
                             }
                             // For # lifetime, Emitter uses ReturnPage (rp)
-                            // For $ or unspecified, error - function# must be called with # or ^name
+                            // For $ lifetime, Emitter uses LocalPage
+                            // For unspecified, error - function# must be called with #, $, or ^name
+                            else if (std::holds_alternative<LocalLifetime>(TypeExpr->Life)) {
+                                // Track that we need local page allocation
+                                CurrentFunctionUsesLocalLifetime = true;
+                                if (!ScopeInfoStack.empty()) {
+                                    ScopeInfoStack.back().HasLocalAllocations = true;
+                                }
+                            }
                             else if (!std::holds_alternative<CallLifetime>(TypeExpr->Life)) {
                                 return makePlannerNotImplementedError(File, Op.Loc,
-                                    "function# '" + FuncName + "' must be called with # or ^page syntax");
+                                    "function# '" + FuncName + "' must be called with #, $, or ^page syntax");
                             }
                         }
 

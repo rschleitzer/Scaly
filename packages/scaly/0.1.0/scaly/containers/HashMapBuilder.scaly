@@ -37,7 +37,7 @@ define HashMapBuilder[K, V]
                     let hash_code item.hash_code
                     let slot_number hash_code % new_slots.length
                     let slot_list new_slots.get(slot_number)
-                    slot_list.add(slots_page, *item)
+                    slot_list.add^slots_page(*item)
                 }
             }
             own_page.deallocate_exclusive_page(Page.get(slots as pointer[void]))
@@ -66,7 +66,7 @@ define HashMapBuilder[K, V]
         }
 
         let own_page Page.get(slots as pointer[void])
-        slot_list.add(own_page, Slot[KeyValuePair[K, V]](KeyValuePair[K, V](key, value), hash_code))
+        slot_list.add^own_page(Slot[KeyValuePair[K, V]](KeyValuePair[K, V](key, value), hash_code))
 
         set length: length + 1
         return true
