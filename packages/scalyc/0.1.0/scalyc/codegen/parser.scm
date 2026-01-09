@@ -130,7 +130,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: " type-name "
-                set " prop ": " (if (multiple? content) "success" ($ (link content) "Syntax#(success)")) "
+                set " prop ": success
 "
                                 )
                                 ;; non-optional syntax
@@ -156,7 +156,7 @@ define Parser
                                         )
                                     )
 "            when success: " type-name "
-                set " prop ": " (if (multiple? content) "success" ($ (link content) "Syntax#(success)")) "
+                set " prop ": success
 "
                                 )
                             )) "")  ; close (if optional), (let), else "", close (if property)
