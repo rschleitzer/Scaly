@@ -3222,10 +3222,116 @@ llvm::Expected<PlannedType> Planner::resolveMemberAccess(
                 Conc = lookupConcept(LastComponent);
             }
         }
+
+        // If still not found and we have a qualified name, try loading the package on demand
+        // This handles cases like "scaly.memory.Page" during generic instantiation
+        if (!Conc && LookupType.Name.find('.') != std::string::npos) {
+            // Parse the qualified name: "scaly.memory.Page" -> package "scaly", path ["memory"], concept "Page"
+            std::vector<std::string> Parts;
+            std::string Remaining = LookupType.Name;
+            size_t Pos;
+            while ((Pos = Remaining.find('.')) != std::string::npos) {
+                Parts.push_back(Remaining.substr(0, Pos));
+                Remaining = Remaining.substr(Pos + 1);
+            }
+            Parts.push_back(Remaining);  // Last component (concept name)
+
+            if (Parts.size() >= 2) {
+                // Try to load the package
+                const Module* PkgMod = loadPackageOnDemand(Parts[0]);
+                if (PkgMod) {
+                    // Find the namespace concept in the package
+                    const Namespace* CurrentNS = nullptr;
+                    for (const auto& Member : PkgMod->Members) {
+                        if (auto* PkgConc = std::get_if<Concept>(&Member)) {
+                            if (PkgConc->Name == Parts[0]) {
+                                if (auto* NS = std::get_if<Namespace>(&PkgConc->Def)) {
+                                    CurrentNS = NS;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    // Navigate through the path to find the concept
+                    const Module* CurrentMod = nullptr;
+                    bool Found = CurrentNS != nullptr;
+                    for (size_t I = 1; I < Parts.size() - 1 && Found; ++I) {
+                        Found = false;
+                        if (CurrentNS) {
+                            for (const auto& SubMod : CurrentNS->Modules) {
+                                if (SubMod.Name == Parts[I]) {
+                                    CurrentMod = &SubMod;
+                                    CurrentNS = nullptr;
+                                    Found = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (!Found && CurrentMod) {
+                            for (const auto& SubMod : CurrentMod->Modules) {
+                                if (SubMod.Name == Parts[I]) {
+                                    CurrentMod = &SubMod;
+                                    Found = true;
+                                    break;
+                                }
+                            }
+                        }
+                        // After finding a module, check if it contains a namespace with the same name
+                        // This handles: scaly (namespace) → memory (module) → memory (namespace inside module) → Page (module)
+                        if (Found && CurrentMod && !CurrentNS) {
+                            for (const auto& ModMember : CurrentMod->Members) {
+                                if (auto* SubConc = std::get_if<Concept>(&ModMember)) {
+                                    if (SubConc->Name == Parts[I]) {
+                                        if (auto* SubNS = std::get_if<Namespace>(&SubConc->Def)) {
+                                            CurrentNS = SubNS;
+                                            CurrentMod = nullptr;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // After navigation, if we ended on a namespace, look for the concept's module
+                    if (Found && CurrentNS && !CurrentMod) {
+                        std::string ConceptName = Parts.back();
+                        for (const auto& SubMod : CurrentNS->Modules) {
+                            if (SubMod.Name == ConceptName) {
+                                CurrentMod = &SubMod;
+                                break;
+                            }
+                        }
+                    }
+
+                    // Look for the concept in the final module
+                    if (Found && CurrentMod) {
+                        std::string ConceptName = Parts.back();
+                        for (const auto& ModMember : CurrentMod->Members) {
+                            if (auto* SubConc = std::get_if<Concept>(&ModMember)) {
+                                if (SubConc->Name == ConceptName) {
+                                    Conc = SubConc;
+                                    Concepts[ConceptName] = Conc;
+                                    // Add module to accessed list for sibling lookups
+                                    if (std::find(AccessedPackageModules.begin(),
+                                                  AccessedPackageModules.end(),
+                                                  CurrentMod) == AccessedPackageModules.end()) {
+                                        AccessedPackageModules.push_back(CurrentMod);
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         if (!Conc) {
             return makePlannerNotImplementedError(File, Loc,
                 "cannot access member '" + MemberName + "' on type " +
-                 Current.Name);
+                 LookupType.Name);
         }
 
         // Check if it's a structure with properties
@@ -3341,10 +3447,116 @@ llvm::Expected<std::vector<PlannedMemberAccess>> Planner::resolveMemberAccessCha
                 Conc = lookupConcept(LastComponent);
             }
         }
+
+        // If still not found and we have a qualified name, try loading the package on demand
+        // This handles cases like "scaly.memory.Page" during generic instantiation
+        if (!Conc && LookupType.Name.find('.') != std::string::npos) {
+            // Parse the qualified name: "scaly.memory.Page" -> package "scaly", path ["memory"], concept "Page"
+            std::vector<std::string> Parts;
+            std::string Remaining = LookupType.Name;
+            size_t Pos;
+            while ((Pos = Remaining.find('.')) != std::string::npos) {
+                Parts.push_back(Remaining.substr(0, Pos));
+                Remaining = Remaining.substr(Pos + 1);
+            }
+            Parts.push_back(Remaining);  // Last component (concept name)
+
+            if (Parts.size() >= 2) {
+                // Try to load the package
+                const Module* PkgMod = loadPackageOnDemand(Parts[0]);
+                if (PkgMod) {
+                    // Find the namespace concept in the package
+                    const Namespace* CurrentNS = nullptr;
+                    for (const auto& Member : PkgMod->Members) {
+                        if (auto* PkgConc = std::get_if<Concept>(&Member)) {
+                            if (PkgConc->Name == Parts[0]) {
+                                if (auto* NS = std::get_if<Namespace>(&PkgConc->Def)) {
+                                    CurrentNS = NS;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    // Navigate through the path to find the concept
+                    const Module* CurrentMod = nullptr;
+                    bool Found = CurrentNS != nullptr;
+                    for (size_t I = 1; I < Parts.size() - 1 && Found; ++I) {
+                        Found = false;
+                        if (CurrentNS) {
+                            for (const auto& SubMod : CurrentNS->Modules) {
+                                if (SubMod.Name == Parts[I]) {
+                                    CurrentMod = &SubMod;
+                                    CurrentNS = nullptr;
+                                    Found = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (!Found && CurrentMod) {
+                            for (const auto& SubMod : CurrentMod->Modules) {
+                                if (SubMod.Name == Parts[I]) {
+                                    CurrentMod = &SubMod;
+                                    Found = true;
+                                    break;
+                                }
+                            }
+                        }
+                        // After finding a module, check if it contains a namespace with the same name
+                        // This handles: scaly (namespace) → memory (module) → memory (namespace inside module) → Page (module)
+                        if (Found && CurrentMod && !CurrentNS) {
+                            for (const auto& ModMember : CurrentMod->Members) {
+                                if (auto* SubConc = std::get_if<Concept>(&ModMember)) {
+                                    if (SubConc->Name == Parts[I]) {
+                                        if (auto* SubNS = std::get_if<Namespace>(&SubConc->Def)) {
+                                            CurrentNS = SubNS;
+                                            CurrentMod = nullptr;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // After navigation, if we ended on a namespace, look for the concept's module
+                    if (Found && CurrentNS && !CurrentMod) {
+                        std::string ConceptName = Parts.back();
+                        for (const auto& SubMod : CurrentNS->Modules) {
+                            if (SubMod.Name == ConceptName) {
+                                CurrentMod = &SubMod;
+                                break;
+                            }
+                        }
+                    }
+
+                    // Look for the concept in the final module
+                    if (Found && CurrentMod) {
+                        std::string ConceptName = Parts.back();
+                        for (const auto& ModMember : CurrentMod->Members) {
+                            if (auto* SubConc = std::get_if<Concept>(&ModMember)) {
+                                if (SubConc->Name == ConceptName) {
+                                    Conc = SubConc;
+                                    Concepts[ConceptName] = Conc;
+                                    // Add module to accessed list for sibling lookups
+                                    if (std::find(AccessedPackageModules.begin(),
+                                                  AccessedPackageModules.end(),
+                                                  CurrentMod) == AccessedPackageModules.end()) {
+                                        AccessedPackageModules.push_back(CurrentMod);
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         if (!Conc) {
             return makePlannerNotImplementedError(File, Loc,
                 "cannot access member '" + MemberName + "' on type " +
-                 Current.Name);
+                 LookupType.Name);
         }
 
         // Check if it's a structure with properties
