@@ -45,7 +45,6 @@ define Token union (
 ; Lexer state
 define Lexer
 (
-    rp: pointer[Page]
     source: String
     current: size_t
     token: Token
@@ -53,9 +52,8 @@ define Lexer
     previous_position: size_t
 )
 {
-    init#(rp, source: String)
+    init (source: String)
     {
-        set this.rp: rp
         set this.source: source
         set current: 0
         set token: Token.Empty(EmptyToken())
@@ -66,7 +64,7 @@ define Lexer
     function is_at_end(this: Lexer) returns bool
         current >= source.length()
 
-    procedure advance(this: Lexer)
+    procedure advance#(rp, this: Lexer)
     {
         set previous_position: position
         skip_whitespace(true)
@@ -82,35 +80,35 @@ define Lexer
         ; Identifier or keyword
         if is_identifier_start(c)
         {
-            set token: scan_identifier()
+            set token: scan_identifier#()
             return
         }
 
         ; Attribute (@name)
         if c = '@'
         {
-            set token: scan_attribute()
+            set token: scan_attribute#()
             return
         }
 
         ; String literal
         if c = '"'
         {
-            set token: scan_string_literal()
+            set token: scan_string_literal#()
             return
         }
 
         ; Character literal
         if c = '\''
         {
-            set token: scan_character_literal()
+            set token: scan_character_literal#()
             return
         }
 
         ; Numeric literal
         if is_digit(c)
         {
-            set token: scan_numeric_literal()
+            set token: scan_numeric_literal#()
             return
         }
 
@@ -129,11 +127,11 @@ define Lexer
             if current + 1 < source.length() & source.get(current + 1) = '*'
             {
                 handle_multi_line_comment()
-                advance()
+                advance#()
                 return
             }
             handle_single_line_comment()
-            advance()
+            advance#()
             return
         }
 
@@ -149,14 +147,14 @@ define Lexer
         ; Operator characters
         if is_operator_char(c)
         {
-            set token: scan_operator()
+            set token: scan_operator#()
             return
         }
 
         ; Fragment literal
         if c = '`'
         {
-            set token: scan_fragment_literal()
+            set token: scan_fragment_literal#()
             return
         }
 
@@ -213,7 +211,7 @@ define Lexer
         }
     }
 
-    function scan_identifier(this: Lexer) returns Token
+    function scan_identifier#(rp, this: Lexer) returns Token
     {
         let start current
         while current < source.length() & is_identifier_char(source.get(current))
@@ -231,7 +229,7 @@ define Lexer
         Token.Identifier(IdentifierToken(name))
     }
 
-    function scan_attribute(this: Lexer) returns Token
+    function scan_attribute#(rp, this: Lexer) returns Token
     {
         set current: current + 1  ; Skip @
         let start current
@@ -243,7 +241,7 @@ define Lexer
         Token.Attribute(AttributeToken(name))
     }
 
-    function scan_operator(this: Lexer) returns Token
+    function scan_operator#(rp, this: Lexer) returns Token
     {
         let start current
         while current < source.length() & is_operator_char(source.get(current))
@@ -254,7 +252,7 @@ define Lexer
         Token.Identifier(IdentifierToken(name))
     }
 
-    function scan_string_literal(this: Lexer) returns Token
+    function scan_string_literal#(rp, this: Lexer) returns Token
     {
         set current: current + 1  ; Skip opening "
         let start current
@@ -275,7 +273,7 @@ define Lexer
         Token.Literal(LiteralToken(Literal.String(StringLiteral(value))))
     }
 
-    function scan_character_literal(this: Lexer) returns Token
+    function scan_character_literal#(rp, this: Lexer) returns Token
     {
         set current: current + 1  ; Skip opening '
         let start current
@@ -296,7 +294,7 @@ define Lexer
         Token.Literal(LiteralToken(Literal.Character(CharacterLiteral(value))))
     }
 
-    function scan_fragment_literal(this: Lexer) returns Token
+    function scan_fragment_literal#(rp, this: Lexer) returns Token
     {
         set current: current + 1  ; Skip opening `
         let start current
@@ -313,7 +311,7 @@ define Lexer
         Token.Literal(LiteralToken(Literal.Fragment(FragmentLiteral(value))))
     }
 
-    function scan_numeric_literal(this: Lexer) returns Token
+    function scan_numeric_literal#(rp, this: Lexer) returns Token
     {
         let start current
 
@@ -373,52 +371,52 @@ define Lexer
     }
 
     ; Parser helper methods
-    function parse_keyword(this: Lexer, keyword: String) returns bool
+    function parse_keyword#(rp, this: Lexer, keyword: String) returns bool
     {
         choose token
             when id: Identifier
             {
                 if id.name.equals(keyword)
                 {
-                    advance()
+                    advance#()
                     return true
                 }
             }
         false
     }
 
-    function parse_identifier(this: Lexer) returns String
+    function parse_identifier#(rp, this: Lexer) returns String
     {
         choose token
             when id: Identifier
             {
                 let name id.name
-                advance()
+                advance#()
                 return name
             }
         String()
     }
 
-    function parse_punctuation(this: Lexer, c: char) returns bool
+    function parse_punctuation#(rp, this: Lexer, c: char) returns bool
     {
         choose token
             when p: Punctuation
             {
                 if p.sign = c
                 {
-                    advance()
+                    advance#()
                     return true
                 }
             }
         false
     }
 
-    function parse_colon(this: Lexer) returns bool
+    function parse_colon#(rp, this: Lexer) returns bool
     {
         choose token
             when c: Colon
             {
-                advance()
+                advance#()
                 return true
             }
         false
@@ -531,7 +529,7 @@ function test_string_basics() returns int
 function test_lexer_creation() returns int
 {
     var rp Page.allocate_page()
-    var lexer Lexer^rp(String^rp("hello"))
+    var lexer Lexer(String^rp("hello"))
 
     ; Check initial state
     if lexer.current <> 0
