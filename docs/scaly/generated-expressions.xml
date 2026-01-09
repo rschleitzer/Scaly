@@ -21,11 +21,14 @@
           <tbody>
             <row>
               <entry><literal>true</literal></entry>
-              <entry><literal>true</literal></entry>
+              <entry><literal>true
+        </literal></entry>
             </row>
             <row>
               <entry><literal>false</literal></entry>
-              <entry><literal>false</literal></entry>
+              <entry><literal>false
+
+    </literal></entry>
             </row>
           </tbody>
         </tgroup>
@@ -48,15 +51,19 @@
           <tbody>
             <row>
               <entry><literal>42</literal></entry>
-              <entry><literal>42</literal></entry>
+              <entry><literal>42
+        </literal></entry>
             </row>
             <row>
               <entry><literal>0</literal></entry>
-              <entry><literal>0</literal></entry>
+              <entry><literal>0
+        </literal></entry>
             </row>
             <row>
               <entry><literal>-7</literal></entry>
-              <entry><literal>-7</literal></entry>
+              <entry><literal>-7
+
+    </literal></entry>
             </row>
           </tbody>
         </tgroup>
@@ -79,15 +86,19 @@
           <tbody>
             <row>
               <entry><literal>0xFF</literal></entry>
-              <entry><literal>255</literal></entry>
+              <entry><literal>255
+        </literal></entry>
             </row>
             <row>
               <entry><literal>0x1A</literal></entry>
-              <entry><literal>26</literal></entry>
+              <entry><literal>26
+        </literal></entry>
             </row>
             <row>
               <entry><literal>0x0</literal></entry>
-              <entry><literal>0</literal></entry>
+              <entry><literal>0
+
+    </literal></entry>
             </row>
           </tbody>
         </tgroup>
@@ -110,15 +121,19 @@
           <tbody>
             <row>
               <entry><literal>3.14</literal></entry>
-              <entry><literal>3.14</literal></entry>
+              <entry><literal>3.14
+        </literal></entry>
             </row>
             <row>
               <entry><literal>2.0</literal></entry>
-              <entry><literal>2</literal></entry>
+              <entry><literal>2
+        </literal></entry>
             </row>
             <row>
               <entry><literal>0.5</literal></entry>
-              <entry><literal>0.5</literal></entry>
+              <entry><literal>0.5
+
+    </literal></entry>
             </row>
           </tbody>
         </tgroup>
@@ -141,11 +156,13 @@
           <tbody>
             <row>
               <entry><literal>"hello"</literal></entry>
-              <entry><literal>hello</literal></entry>
+              <entry><literal>hello
+        </literal></entry>
             </row>
             <row>
               <entry><literal>""</literal></entry>
-              <entry><literal></literal></entry>
+              <entry><literal>
+    </literal></entry>
             </row>
           </tbody>
         </tgroup>
@@ -168,11 +185,13 @@
           <tbody>
             <row>
               <entry><literal>`a`</literal></entry>
-              <entry><literal>a</literal></entry>
+              <entry><literal>a
+        </literal></entry>
             </row>
             <row>
               <entry><literal>`Z`</literal></entry>
-              <entry><literal>Z</literal></entry>
+              <entry><literal>Z
+</literal></entry>
             </row>
           </tbody>
         </tgroup>
@@ -203,15 +222,19 @@
           <tbody>
             <row>
               <entry><literal>-7</literal></entry>
-              <entry><literal>-7</literal></entry>
+              <entry><literal>-7
+        </literal></entry>
             </row>
             <row>
               <entry><literal>-(-3)</literal></entry>
-              <entry><literal>3</literal></entry>
+              <entry><literal>3
+        </literal></entry>
             </row>
             <row>
               <entry><literal>+ 3</literal></entry>
-              <entry><literal>3</literal></entry>
+              <entry><literal>3
+
+    </literal></entry>
             </row>
           </tbody>
         </tgroup>
@@ -236,23 +259,29 @@
           <tbody>
             <row>
               <entry><literal>3 + 4</literal></entry>
-              <entry><literal>7</literal></entry>
+              <entry><literal>7
+        </literal></entry>
             </row>
             <row>
               <entry><literal>10 - 3</literal></entry>
-              <entry><literal>7</literal></entry>
+              <entry><literal>7
+        </literal></entry>
             </row>
             <row>
               <entry><literal>6 * 7</literal></entry>
-              <entry><literal>42</literal></entry>
+              <entry><literal>42
+        </literal></entry>
             </row>
             <row>
               <entry><literal>3 + 4 * 2</literal></entry>
-              <entry><literal>11</literal></entry>
+              <entry><literal>11
+        </literal></entry>
             </row>
             <row>
               <entry><literal>20 - 5 - 3</literal></entry>
-              <entry><literal>12</literal></entry>
+              <entry><literal>12
+
+    </literal></entry>
             </row>
           </tbody>
         </tgroup>
@@ -276,15 +305,19 @@
           <tbody>
             <row>
               <entry><literal>5 * (- 2)</literal></entry>
-              <entry><literal>-10</literal></entry>
+              <entry><literal>-10
+        </literal></entry>
             </row>
             <row>
               <entry><literal>2 * (3 + 4)</literal></entry>
-              <entry><literal>14</literal></entry>
+              <entry><literal>14
+        </literal></entry>
             </row>
             <row>
               <entry><literal>(2 + 3) * (4 + 1)</literal></entry>
-              <entry><literal>25</literal></entry>
+              <entry><literal>25
+
+    </literal></entry>
             </row>
           </tbody>
         </tgroup>
@@ -307,11 +340,14 @@
           <tbody>
             <row>
               <entry><literal>10 div 3</literal></entry>
-              <entry><literal>3</literal></entry>
+              <entry><literal>3
+        </literal></entry>
             </row>
             <row>
               <entry><literal>abs (- 5)</literal></entry>
-              <entry><literal>5</literal></entry>
+              <entry><literal>5
+
+    </literal></entry>
             </row>
           </tbody>
         </tgroup>
@@ -335,23 +371,27 @@
             <row>
               <entry><programlisting>let x 5
 x</programlisting></entry>
-              <entry><literal>5</literal></entry>
+              <entry><literal>5
+        </literal></entry>
             </row>
             <row>
               <entry><programlisting>let x 5
 x + 3</programlisting></entry>
-              <entry><literal>8</literal></entry>
+              <entry><literal>8
+        </literal></entry>
             </row>
             <row>
               <entry><programlisting>let x 5
 let y 3
 x + y</programlisting></entry>
-              <entry><literal>8</literal></entry>
+              <entry><literal>8
+        </literal></entry>
             </row>
             <row>
               <entry><programlisting>let x 2 + 3
 x * 2</programlisting></entry>
-              <entry><literal>10</literal></entry>
+              <entry><literal>10
+</literal></entry>
             </row>
           </tbody>
         </tgroup>
