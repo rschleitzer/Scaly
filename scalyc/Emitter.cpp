@@ -4985,6 +4985,13 @@ llvm::Expected<bool> Emitter::jitExecuteBool(const Plan &P) {
     return (*ResultOrErr) != 0;
 }
 
+llvm::Expected<const char*> Emitter::jitExecuteString(const Plan &P) {
+    auto ResultOrErr = jitExecuteRaw(P, llvm::PointerType::getUnqual(*Context));
+    if (!ResultOrErr)
+        return ResultOrErr.takeError();
+    return reinterpret_cast<const char*>(*ResultOrErr);
+}
+
 llvm::Error Emitter::jitExecuteVoid(const Plan &P, llvm::StringRef MangledFunctionName) {
 
     // Store current plan for type lookups
