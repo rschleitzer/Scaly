@@ -123,27 +123,27 @@ HREF="types.htm#AEN234"
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN286"
+HREF="types.htm#AEN309"
 >Closures (Lambdas)</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN305"
+HREF="types.htm#AEN328"
 >Error Handling</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN346"
+HREF="types.htm#AEN369"
 >Union Types</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN382"
+HREF="types.htm#AEN405"
 >Generics</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN412"
+HREF="types.htm#AEN435"
 >Lifetimes and Memory Regions</A
 ></DT
 ></DL
@@ -825,13 +825,92 @@ CLASS="programlisting"
 }
       </PRE
 ></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN286"
+>Page-Parameterized Constructors (<TT
+CLASS="literal"
+>init#</TT
+>)</A
+></H2
+><P
+>Some types are value types (can live on the stack) but need to allocate
+        internal data on a page. The <TT
+CLASS="literal"
+>init#</TT
+> syntax supports this pattern:</P
+><PRE
+CLASS="programlisting"
+>&#13;define String(data: pointer[char], length: size_t)
+{
+    ; init# takes an implicit page parameter as first argument
+    init#(page, text: pointer[const_char])
+    {
+        let len strlen(text)
+        set data: page.allocate(len + 1, 1) as pointer[char]
+        memcpy(data, text, len)
+        set length: len
+    }
+}
+      </PRE
+><P
+>At call sites, the lifetime modifier determines which page is passed:</P
+><P
+></P
+><UL
+><LI
+><P
+><TT
+CLASS="literal"
+>String#("hello")</TT
+> — passes caller's page (rp)</P
+></LI
+><LI
+><P
+><TT
+CLASS="literal"
+>String$("world")</TT
+> — passes local page</P
+></LI
+><LI
+><P
+><TT
+CLASS="literal"
+>String^hashMap("key")</TT
+> — passes the named page</P
+></LI
+></UL
+><P
+>The <TT
+CLASS="literal"
+>init#</TT
+> pattern is distinct from regular heap allocation.
+        The struct itself can live on the stack — only its internal data needs a page.
+        This is ideal for types like String, Array, or other containers where the
+        wrapper is small but the content may be large.</P
+><P
+>Note: <TT
+CLASS="literal"
+>init$</TT
+>, <TT
+CLASS="literal"
+>init^</TT
+>, and <TT
+CLASS="literal"
+>init!</TT
+>
+        are reserved for future use and will produce an error.</P
+></DIV
 ></DIV
 ><DIV
 CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN286"
+NAME="AEN309"
 >Closures (Lambdas)</A
 ></H1
 ><P
@@ -847,7 +926,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN290"
+NAME="AEN313"
 >Capturing Variables</A
 ></H2
 ><P
@@ -867,7 +946,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN294"
+NAME="AEN317"
 >Closures Are Pure</A
 ></H2
 ><P
@@ -884,7 +963,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN298"
+NAME="AEN321"
 >Closure Lifetime</A
 ></H2
 ><P
@@ -903,7 +982,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN302"
+NAME="AEN325"
 >Implementation</A
 ></H2
 ><P
@@ -917,7 +996,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN305"
+NAME="AEN328"
 >Error Handling</A
 ></H1
 ><P
@@ -928,7 +1007,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN308"
+NAME="AEN331"
 >The <TT
 CLASS="literal"
 >throws</TT
@@ -960,7 +1039,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN316"
+NAME="AEN339"
 >Single Error Type</A
 ></H2
 ><P
@@ -993,7 +1072,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN323"
+NAME="AEN346"
 >The <TT
 CLASS="literal"
 >try</TT
@@ -1033,7 +1112,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN334"
+NAME="AEN357"
 >Error Propagation</A
 ></H2
 ><P
@@ -1059,7 +1138,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN340"
+NAME="AEN363"
 >Error Lifetime</A
 ></H2
 ><P
@@ -1081,7 +1160,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN346"
+NAME="AEN369"
 >Union Types</A
 ></H1
 ><P
@@ -1102,7 +1181,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN350"
+NAME="AEN373"
 >Memory Layout</A
 ></H2
 ><P
@@ -1120,7 +1199,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN355"
+NAME="AEN378"
 >Pattern Matching with <TT
 CLASS="literal"
 >choose</TT
@@ -1154,7 +1233,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN365"
+NAME="AEN388"
 >Option Type</A
 ></H2
 ><P
@@ -1184,7 +1263,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN370"
+NAME="AEN393"
 >Option Optimization</A
 ></H2
 ><P
@@ -1219,7 +1298,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN382"
+NAME="AEN405"
 >Generics</A
 ></H1
 ><P
@@ -1242,7 +1321,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN386"
+NAME="AEN409"
 >Monomorphization</A
 ></H2
 ><P
@@ -1300,7 +1379,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN406"
+NAME="AEN429"
 >Name Mangling</A
 ></H2
 ><P
@@ -1324,7 +1403,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN412"
+NAME="AEN435"
 >Lifetimes and Memory Regions</A
 ></H1
 ><P
@@ -1336,7 +1415,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN415"
+NAME="AEN438"
 >Stack vs Page Allocation</A
 ></H2
 ><P
@@ -1383,7 +1462,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN430"
+NAME="AEN453"
 >Lifetime Kinds</A
 ></H2
 ><P
@@ -1442,7 +1521,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN453"
+NAME="AEN476"
 >Local Lifetime ($)</A
 ></H2
 ><P
@@ -1489,7 +1568,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN461"
+NAME="AEN484"
 >Caller Lifetime (#)</A
 ></H2
 ><P
@@ -1510,7 +1589,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN466"
+NAME="AEN489"
 >Thrown Lifetime (!)</A
 ></H2
 ><P
@@ -1533,7 +1612,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN471"
+NAME="AEN494"
 >Reference Lifetime (^name)</A
 ></H2
 ><P
@@ -1574,7 +1653,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN480"
+NAME="AEN503"
 >By-Value Returns</A
 ></H2
 ><P
@@ -1595,7 +1674,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN485"
+NAME="AEN508"
 >Lifetime Inference</A
 ></H2
 ><P

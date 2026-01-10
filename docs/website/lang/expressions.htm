@@ -71,7 +71,7 @@ WIDTH="100%"></DIV
 CLASS="chapter"
 ><H1
 ><A
-NAME="AEN1146"
+NAME="AEN1169"
 ></A
 >Chapter 6 Expressions</H1
 ><DIV
@@ -83,33 +83,58 @@ CLASS="TOC"
 ></DT
 ><DT
 ><A
-HREF="expressions.htm#AEN1148"
+HREF="expressions.htm#AEN1171"
 >Overview</A
 ></DT
 ><DT
 ><A
-HREF="expressions.htm#AEN1151"
+HREF="expressions.htm#AEN1174"
 >Literals</A
 ></DT
 ><DT
 ><A
-HREF="expressions.htm#AEN1301"
+HREF="expressions.htm#AEN1324"
 >Operations</A
 ></DT
 ><DT
 ><A
-HREF="expressions.htm#AEN1449"
+HREF="expressions.htm#AEN1482"
+>Comparison Operators</A
+></DT
+><DT
+><A
+HREF="expressions.htm#AEN1569"
+>Boolean Operators</A
+></DT
+><DT
+><A
+HREF="expressions.htm#AEN1626"
+>Bitwise Operators</A
+></DT
+><DT
+><A
+HREF="expressions.htm#AEN1661"
 >If Expressions</A
 ></DT
 ><DT
 ><A
-HREF="expressions.htm#AEN1457"
+HREF="expressions.htm#AEN1669"
 >Match Expressions</A
 ></DT
 ><DT
 ><A
-HREF="expressions.htm#AEN1466"
+HREF="expressions.htm#AEN1678"
 >Choose Expressions</A
+></DT
+><DT
+><A
+HREF="expressions.htm#AEN1742"
+>Optional Types</A
+></DT
+><DT
+><A
+HREF="expressions.htm#AEN1806"
+>Variant Construction</A
 ></DT
 ></DL
 ></DIV
@@ -118,7 +143,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN1148"
+NAME="AEN1171"
 >Overview</A
 ></H1
 ><P
@@ -133,7 +158,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN1151"
+NAME="AEN1174"
 >Literals</A
 ></H1
 ><P
@@ -143,7 +168,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1154"
+NAME="AEN1177"
 >Boolean Literals</A
 ></H2
 ><P
@@ -153,7 +178,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1157"
+NAME="AEN1180"
 ></A
 ><TABLE
 BORDER="0"
@@ -179,7 +204,8 @@ CLASS="literal"
 ><TD
 ><TT
 CLASS="literal"
->true</TT
+>true
+        </TT
 ></TD
 ></TR
 ><TR
@@ -191,7 +217,9 @@ CLASS="literal"
 ><TD
 ><TT
 CLASS="literal"
->false</TT
+>false
+
+    </TT
 ></TD
 ></TR
 ></TBODY
@@ -205,7 +233,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1176"
+NAME="AEN1199"
 >Integer Literals</A
 ></H2
 ><P
@@ -215,7 +243,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1179"
+NAME="AEN1202"
 ></A
 ><TABLE
 BORDER="0"
@@ -241,7 +269,8 @@ CLASS="literal"
 ><TD
 ><TT
 CLASS="literal"
->42</TT
+>42
+        </TT
 ></TD
 ></TR
 ><TR
@@ -253,7 +282,8 @@ CLASS="literal"
 ><TD
 ><TT
 CLASS="literal"
->0</TT
+>0
+        </TT
 ></TD
 ></TR
 ><TR
@@ -265,7 +295,9 @@ CLASS="literal"
 ><TD
 ><TT
 CLASS="literal"
->-7</TT
+>-7
+
+    </TT
 ></TD
 ></TR
 ></TBODY
@@ -279,7 +311,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1203"
+NAME="AEN1226"
 >Hexadecimal Literals</A
 ></H2
 ><P
@@ -289,7 +321,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1206"
+NAME="AEN1229"
 ></A
 ><TABLE
 BORDER="0"
@@ -315,7 +347,8 @@ CLASS="literal"
 ><TD
 ><TT
 CLASS="literal"
->255</TT
+>255
+        </TT
 ></TD
 ></TR
 ><TR
@@ -327,7 +360,8 @@ CLASS="literal"
 ><TD
 ><TT
 CLASS="literal"
->26</TT
+>26
+        </TT
 ></TD
 ></TR
 ><TR
@@ -339,7 +373,9 @@ CLASS="literal"
 ><TD
 ><TT
 CLASS="literal"
->0</TT
+>0
+
+    </TT
 ></TD
 ></TR
 ></TBODY
@@ -353,7 +389,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1230"
+NAME="AEN1253"
 >Floating-Point Literals</A
 ></H2
 ><P
@@ -363,7 +399,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1233"
+NAME="AEN1256"
 ></A
 ><TABLE
 BORDER="0"
@@ -389,7 +425,8 @@ CLASS="literal"
 ><TD
 ><TT
 CLASS="literal"
->3.14</TT
+>3.14
+        </TT
 ></TD
 ></TR
 ><TR
@@ -401,7 +438,8 @@ CLASS="literal"
 ><TD
 ><TT
 CLASS="literal"
->2</TT
+>2.0
+        </TT
 ></TD
 ></TR
 ><TR
@@ -413,7 +451,9 @@ CLASS="literal"
 ><TD
 ><TT
 CLASS="literal"
->0.5</TT
+>0.5
+
+    </TT
 ></TD
 ></TR
 ></TBODY
@@ -427,7 +467,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1257"
+NAME="AEN1280"
 >String Literals</A
 ></H2
 ><P
@@ -437,7 +477,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1260"
+NAME="AEN1283"
 ></A
 ><TABLE
 BORDER="0"
@@ -463,7 +503,8 @@ CLASS="literal"
 ><TD
 ><TT
 CLASS="literal"
->hello</TT
+>hello
+        </TT
 ></TD
 ></TR
 ><TR
@@ -475,7 +516,7 @@ CLASS="literal"
 ><TD
 ><TT
 CLASS="literal"
-></TT
+>&#13;    </TT
 ></TD
 ></TR
 ></TBODY
@@ -489,7 +530,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1279"
+NAME="AEN1302"
 >Character Literals</A
 ></H2
 ><P
@@ -499,7 +540,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1282"
+NAME="AEN1305"
 ></A
 ><TABLE
 BORDER="0"
@@ -525,7 +566,8 @@ CLASS="literal"
 ><TD
 ><TT
 CLASS="literal"
->a</TT
+>a
+        </TT
 ></TD
 ></TR
 ><TR
@@ -537,7 +579,8 @@ CLASS="literal"
 ><TD
 ><TT
 CLASS="literal"
->Z</TT
+>Z
+</TT
 ></TD
 ></TR
 ></TBODY
@@ -552,7 +595,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN1301"
+NAME="AEN1324"
 >Operations</A
 ></H1
 ><P
@@ -562,7 +605,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1304"
+NAME="AEN1327"
 >Prefix Functions</A
 ></H2
 ><P
@@ -575,7 +618,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1307"
+NAME="AEN1330"
 ></A
 ><TABLE
 BORDER="0"
@@ -601,7 +644,8 @@ CLASS="literal"
 ><TD
 ><TT
 CLASS="literal"
->-7</TT
+>-7
+        </TT
 ></TD
 ></TR
 ><TR
@@ -613,7 +657,8 @@ CLASS="literal"
 ><TD
 ><TT
 CLASS="literal"
->3</TT
+>3
+        </TT
 ></TD
 ></TR
 ><TR
@@ -625,7 +670,9 @@ CLASS="literal"
 ><TD
 ><TT
 CLASS="literal"
->3</TT
+>3
+
+    </TT
 ></TD
 ></TR
 ></TBODY
@@ -639,19 +686,20 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1331"
+NAME="AEN1354"
 >Operator Chains</A
 ></H2
 ><P
->When the context holds a value, operators chain left-to-right. Each operator takes the current value and the next operand,
-        producing a new value. There is no operator precedence built into the language itself. Operator precedence is built into the implementation
-        of the individual operators. The common arithmetic operators are built into the standard library.</P
+>When the context holds a value, operators combine with operands according to standard mathematical precedence.
+        Multiplicative operators (*, /, %, div, mod) bind tighter than additive operators (+, -).
+        Comparison and equality operators have lower precedence than arithmetic.
+        Operators of equal precedence associate left-to-right.</P
 ><DIV
 CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1334"
+NAME="AEN1357"
 ></A
 ><TABLE
 BORDER="0"
@@ -677,7 +725,8 @@ CLASS="literal"
 ><TD
 ><TT
 CLASS="literal"
->7</TT
+>7
+        </TT
 ></TD
 ></TR
 ><TR
@@ -689,7 +738,8 @@ CLASS="literal"
 ><TD
 ><TT
 CLASS="literal"
->7</TT
+>7
+        </TT
 ></TD
 ></TR
 ><TR
@@ -701,7 +751,34 @@ CLASS="literal"
 ><TD
 ><TT
 CLASS="literal"
->42</TT
+>42
+        </TT
+></TD
+></TR
+><TR
+><TD
+><TT
+CLASS="literal"
+>84 / 2</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>42
+        </TT
+></TD
+></TR
+><TR
+><TD
+><TT
+CLASS="literal"
+>17 % 5</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>2
+        </TT
 ></TD
 ></TR
 ><TR
@@ -713,7 +790,8 @@ CLASS="literal"
 ><TD
 ><TT
 CLASS="literal"
->11</TT
+>11
+        </TT
 ></TD
 ></TR
 ><TR
@@ -725,7 +803,9 @@ CLASS="literal"
 ><TD
 ><TT
 CLASS="literal"
->12</TT
+>12
+
+    </TT
 ></TD
 ></TR
 ></TBODY
@@ -739,7 +819,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1368"
+NAME="AEN1401"
 >Parentheses and Grouping</A
 ></H2
 ><P
@@ -750,7 +830,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1371"
+NAME="AEN1404"
 ></A
 ><TABLE
 BORDER="0"
@@ -776,7 +856,8 @@ CLASS="literal"
 ><TD
 ><TT
 CLASS="literal"
->-10</TT
+>-10
+        </TT
 ></TD
 ></TR
 ><TR
@@ -788,7 +869,8 @@ CLASS="literal"
 ><TD
 ><TT
 CLASS="literal"
->14</TT
+>14
+        </TT
 ></TD
 ></TR
 ><TR
@@ -800,7 +882,9 @@ CLASS="literal"
 ><TD
 ><TT
 CLASS="literal"
->25</TT
+>25
+
+    </TT
 ></TD
 ></TR
 ></TBODY
@@ -814,7 +898,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1395"
+NAME="AEN1428"
 >Identifier Shapes</A
 ></H2
 ><P
@@ -824,7 +908,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1398"
+NAME="AEN1431"
 ></A
 ><TABLE
 BORDER="0"
@@ -850,7 +934,8 @@ CLASS="literal"
 ><TD
 ><TT
 CLASS="literal"
->3</TT
+>3
+        </TT
 ></TD
 ></TR
 ><TR
@@ -862,7 +947,9 @@ CLASS="literal"
 ><TD
 ><TT
 CLASS="literal"
->5</TT
+>5
+
+    </TT
 ></TD
 ></TR
 ></TBODY
@@ -876,7 +963,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1417"
+NAME="AEN1450"
 >Let Bindings</A
 ></H2
 ><P
@@ -886,7 +973,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1420"
+NAME="AEN1453"
 ></A
 ><TABLE
 BORDER="0"
@@ -913,7 +1000,8 @@ x</PRE
 ><TD
 ><TT
 CLASS="literal"
->5</TT
+>5
+        </TT
 ></TD
 ></TR
 ><TR
@@ -926,7 +1014,8 @@ x + 3</PRE
 ><TD
 ><TT
 CLASS="literal"
->8</TT
+>8
+        </TT
 ></TD
 ></TR
 ><TR
@@ -940,7 +1029,8 @@ x + y</PRE
 ><TD
 ><TT
 CLASS="literal"
->8</TT
+>8
+        </TT
 ></TD
 ></TR
 ><TR
@@ -953,7 +1043,8 @@ x * 2</PRE
 ><TD
 ><TT
 CLASS="literal"
->10</TT
+>10
+</TT
 ></TD
 ></TR
 ></TBODY
@@ -968,7 +1059,518 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN1449"
+NAME="AEN1482"
+>Comparison Operators</A
+></H1
+><P
+>Comparison operators compare two values and return a boolean result.</P
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN1485"
+>Equality</A
+></H2
+><P
+>The equality operator (=) tests if two values are equal. The inequality operator (not equal to) tests if two values are different.</P
+><DIV
+CLASS="informaltable"
+><P
+></P
+><A
+NAME="AEN1488"
+></A
+><TABLE
+BORDER="0"
+FRAME="void"
+CLASS="CALSTABLE"
+><COL
+WIDTH="1*"><COL
+WIDTH="1*"><THEAD
+><TR
+><TH
+>Input</TH
+><TH
+>Result</TH
+></TR
+></THEAD
+><TBODY
+><TR
+><TD
+><TT
+CLASS="literal"
+>5 = 5</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>true
+        </TT
+></TD
+></TR
+><TR
+><TD
+><TT
+CLASS="literal"
+>5 = 3</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>false
+        </TT
+></TD
+></TR
+><TR
+><TD
+><TT
+CLASS="literal"
+>5 &#60;&#62; 3</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>true
+        </TT
+></TD
+></TR
+><TR
+><TD
+><TT
+CLASS="literal"
+>5 &#60;&#62; 5</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>false
+
+    </TT
+></TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN1517"
+>Relational Operators</A
+></H2
+><P
+>Relational operators compare the ordering of values.</P
+><DIV
+CLASS="informaltable"
+><P
+></P
+><A
+NAME="AEN1520"
+></A
+><TABLE
+BORDER="0"
+FRAME="void"
+CLASS="CALSTABLE"
+><COL
+WIDTH="1*"><COL
+WIDTH="1*"><THEAD
+><TR
+><TH
+>Input</TH
+><TH
+>Result</TH
+></TR
+></THEAD
+><TBODY
+><TR
+><TD
+><TT
+CLASS="literal"
+>3 &#60; 5</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>true
+        </TT
+></TD
+></TR
+><TR
+><TD
+><TT
+CLASS="literal"
+>5 &#60; 3</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>false
+        </TT
+></TD
+></TR
+><TR
+><TD
+><TT
+CLASS="literal"
+>5 &#62; 3</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>true
+        </TT
+></TD
+></TR
+><TR
+><TD
+><TT
+CLASS="literal"
+>3 &#62; 5</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>false
+        </TT
+></TD
+></TR
+><TR
+><TD
+><TT
+CLASS="literal"
+>5 &#60;= 5</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>true
+        </TT
+></TD
+></TR
+><TR
+><TD
+><TT
+CLASS="literal"
+>5 &#60;= 3</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>false
+        </TT
+></TD
+></TR
+><TR
+><TD
+><TT
+CLASS="literal"
+>5 &#62;= 5</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>true
+        </TT
+></TD
+></TR
+><TR
+><TD
+><TT
+CLASS="literal"
+>3 &#62;= 5</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>false
+</TT
+></TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN1569"
+>Boolean Operators</A
+></H1
+><P
+>Boolean operators combine boolean values.</P
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN1572"
+>Boolean Negation</A
+></H2
+><P
+>The tilde operator negates a boolean value.</P
+><DIV
+CLASS="informaltable"
+><P
+></P
+><A
+NAME="AEN1575"
+></A
+><TABLE
+BORDER="0"
+FRAME="void"
+CLASS="CALSTABLE"
+><COL
+WIDTH="1*"><COL
+WIDTH="1*"><THEAD
+><TR
+><TH
+>Input</TH
+><TH
+>Result</TH
+></TR
+></THEAD
+><TBODY
+><TR
+><TD
+><TT
+CLASS="literal"
+>~true</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>false
+        </TT
+></TD
+></TR
+><TR
+><TD
+><TT
+CLASS="literal"
+>~false</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>true
+
+    </TT
+></TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN1594"
+>Boolean And/Or</A
+></H2
+><P
+>The ampersand operator performs logical AND, the pipe operator performs logical OR.</P
+><DIV
+CLASS="informaltable"
+><P
+></P
+><A
+NAME="AEN1597"
+></A
+><TABLE
+BORDER="0"
+FRAME="void"
+CLASS="CALSTABLE"
+><COL
+WIDTH="1*"><COL
+WIDTH="1*"><THEAD
+><TR
+><TH
+>Input</TH
+><TH
+>Result</TH
+></TR
+></THEAD
+><TBODY
+><TR
+><TD
+><TT
+CLASS="literal"
+>true &#38; true</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>true
+        </TT
+></TD
+></TR
+><TR
+><TD
+><TT
+CLASS="literal"
+>true &#38; false</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>false
+        </TT
+></TD
+></TR
+><TR
+><TD
+><TT
+CLASS="literal"
+>false | false</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>false
+        </TT
+></TD
+></TR
+><TR
+><TD
+><TT
+CLASS="literal"
+>true | false</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>true
+</TT
+></TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN1626"
+>Bitwise Operators</A
+></H1
+><P
+>Bitwise operators manipulate integer values at the bit level.</P
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN1629"
+>Bit Shifts</A
+></H2
+><P
+>The left shift operator shifts bits to the left, effectively multiplying by powers of two. The right shift operator shifts bits to the right, effectively dividing by powers of two.</P
+><DIV
+CLASS="informaltable"
+><P
+></P
+><A
+NAME="AEN1632"
+></A
+><TABLE
+BORDER="0"
+FRAME="void"
+CLASS="CALSTABLE"
+><COL
+WIDTH="1*"><COL
+WIDTH="1*"><THEAD
+><TR
+><TH
+>Input</TH
+><TH
+>Result</TH
+></TR
+></THEAD
+><TBODY
+><TR
+><TD
+><TT
+CLASS="literal"
+>1 &#60;&#60; 4</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>16
+        </TT
+></TD
+></TR
+><TR
+><TD
+><TT
+CLASS="literal"
+>5 &#60;&#60; 3</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>40
+        </TT
+></TD
+></TR
+><TR
+><TD
+><TT
+CLASS="literal"
+>16 &#62;&#62; 2</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>4
+        </TT
+></TD
+></TR
+><TR
+><TD
+><TT
+CLASS="literal"
+>100 &#62;&#62; 3</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>12
+</TT
+></TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN1661"
 >If Expressions</A
 ></H1
 ><P
@@ -999,7 +1601,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN1457"
+NAME="AEN1669"
 >Match Expressions</A
 ></H1
 ><P
@@ -1032,27 +1634,27 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN1466"
+NAME="AEN1678"
 >Choose Expressions</A
 ></H1
 ><P
->Choose expressions pattern match on union types, binding the inner value to a variable.</P
+>Choose expressions pattern match on union types, allowing different code paths based on which variant is present.</P
 ><DIV
 CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1469"
->Basic Choose</A
+NAME="AEN1681"
+>Choose on Variant Construction</A
 ></H2
 ><P
->Choose expressions match on the variant of a union value and bind the inner value.</P
+>Choose can match directly on constructed variants.</P
 ><DIV
 CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1472"
+NAME="AEN1684"
 ></A
 ><TABLE
 BORDER="0"
@@ -1074,12 +1676,13 @@ WIDTH="1*"><THEAD
 ><PRE
 CLASS="programlisting"
 >define Option union(Some: int, None)
-choose Some(5): when v: Some: v + 1 else 0</PRE
+choose Option.Some(7): when v: Some: v else 0</PRE
 ></TD
 ><TD
 ><TT
 CLASS="literal"
->6</TT
+>7
+        </TT
 ></TD
 ></TR
 ><TR
@@ -1087,26 +1690,14 @@ CLASS="literal"
 ><PRE
 CLASS="programlisting"
 >define Option union(Some: int, None)
-choose None: when v: Some: v else -1</PRE
+choose Option.None: when v: Some: v else 0</PRE
 ></TD
 ><TD
 ><TT
 CLASS="literal"
->-1</TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
->define Option union(Some: int, None)
-let x Some(10)
-choose x: when v: Some: v * 2 else 0</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
->20</TT
+>0
+
+    </TT
 ></TD
 ></TR
 ></TBODY
@@ -1120,17 +1711,17 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1496"
->Choose with Result</A
+NAME="AEN1703"
+>Choose with Binding</A
 ></H2
 ><P
->Choose works with any union type, including Result.</P
+>When a variant carries a value, the value can be bound to a name.</P
 ><DIV
 CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1499"
+NAME="AEN1706"
 ></A
 ><TABLE
 BORDER="0"
@@ -1151,26 +1742,15 @@ WIDTH="1*"><THEAD
 ><TD
 ><PRE
 CLASS="programlisting"
->define Result union(Ok: int, Err: String)
-choose Ok(42): when v: Ok: v when e: Err: 0 else -1</PRE
+>define Result union(Ok: int, Err: int)
+choose Result.Ok(42): when x: Ok: x + 1 else 0</PRE
 ></TD
 ><TD
 ><TT
 CLASS="literal"
->42</TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
->define Result union(Ok: int, Err: String)
-choose Err("error"): when v: Ok: v when e: Err: 0 else -1</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
->0</TT
+>43
+
+    </TT
 ></TD
 ></TR
 ></TBODY
@@ -1184,17 +1764,17 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1518"
->Choose Else Branch</A
+NAME="AEN1720"
+>Multiple When Clauses</A
 ></H2
 ><P
->The else branch is evaluated when no when clause matches.</P
+>Choose can have multiple when clauses to match different variants.</P
 ><DIV
 CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1521"
+NAME="AEN1723"
 ></A
 ><TABLE
 BORDER="0"
@@ -1215,13 +1795,372 @@ WIDTH="1*"><THEAD
 ><TD
 ><PRE
 CLASS="programlisting"
->define Option union(Some: int, None)
-choose None: when v: Some: v else 99</PRE
+>define Result union(Ok: int, Err: int)
+choose Result.Ok(10): when x: Ok: x when e: Err: e + 100</PRE
 ></TD
 ><TD
 ><TT
 CLASS="literal"
->99</TT
+>10
+        </TT
+></TD
+></TR
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>define Result union(Ok: int, Err: int)
+choose Result.Err(5): when x: Ok: x when e: Err: e + 100</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>105
+</TT
+></TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN1742"
+>Optional Types</A
+></H1
+><P
+>Optional types use null pointer optimization (NPO) for efficient representation.</P
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN1745"
+>Is Null Check</A
+></H2
+><P
+>The is null expression checks if an optional value is None.</P
+><DIV
+CLASS="informaltable"
+><P
+></P
+><A
+NAME="AEN1748"
+></A
+><TABLE
+BORDER="0"
+FRAME="void"
+CLASS="CALSTABLE"
+><COL
+WIDTH="1*"><COL
+WIDTH="1*"><THEAD
+><TR
+><TH
+>Input</TH
+><TH
+>Result</TH
+></TR
+></THEAD
+><TBODY
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>define Option[T] union: (Some: T, None)
+function check(x: int?) returns int: if x is null: 0 else 1
+check(Option[int].None)</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>0
+        </TT
+></TD
+></TR
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>define Option[T] union: (Some: T, None)
+function check(x: int?) returns int: if x is null: 0 else 1
+check(Option[int].Some(42))</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>1
+
+    </TT
+></TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN1767"
+>Optional Type Sugar</A
+></H2
+><P
+>T? is syntactic sugar for Option[T].</P
+><DIV
+CLASS="informaltable"
+><P
+></P
+><A
+NAME="AEN1770"
+></A
+><TABLE
+BORDER="0"
+FRAME="void"
+CLASS="CALSTABLE"
+><COL
+WIDTH="1*"><COL
+WIDTH="1*"><THEAD
+><TR
+><TH
+>Input</TH
+><TH
+>Result</TH
+></TR
+></THEAD
+><TBODY
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>define Option[T] union: (Some: T, None)
+function unwrap(x: int?) returns int: choose x: when v: Some: v else 0
+unwrap(Option[int].Some(42))</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>42
+
+    </TT
+></TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN1784"
+>Generic Option Types</A
+></H2
+><P
+>Generic unions like Option[T] work with choose for pattern matching.</P
+><DIV
+CLASS="informaltable"
+><P
+></P
+><A
+NAME="AEN1787"
+></A
+><TABLE
+BORDER="0"
+FRAME="void"
+CLASS="CALSTABLE"
+><COL
+WIDTH="1*"><COL
+WIDTH="1*"><THEAD
+><TR
+><TH
+>Input</TH
+><TH
+>Result</TH
+></TR
+></THEAD
+><TBODY
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>define Option[T] union: (Some: T, None)
+choose Option[int].Some(42): when v: Some: v else 0</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>42
+        </TT
+></TD
+></TR
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>define Option[T] union: (Some: T, None)
+choose Option[int].None: when v: Some: v else -1</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>-1
+</TT
+></TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN1806"
+>Variant Construction</A
+></H1
+><P
+>Union variants can be constructed explicitly using Type.Variant syntax.</P
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN1809"
+>Construct Variants</A
+></H2
+><P
+>Variants are constructed with Type.Variant(value) syntax.</P
+><DIV
+CLASS="informaltable"
+><P
+></P
+><A
+NAME="AEN1812"
+></A
+><TABLE
+BORDER="0"
+FRAME="void"
+CLASS="CALSTABLE"
+><COL
+WIDTH="1*"><COL
+WIDTH="1*"><THEAD
+><TR
+><TH
+>Input</TH
+><TH
+>Result</TH
+></TR
+></THEAD
+><TBODY
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>define Result union: (Ok: int, Error: int)
+choose Result.Ok(42): when x: Ok: x else 0</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>42
+        </TT
+></TD
+></TR
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>define Result union: (Ok: int, Error: int)
+choose Result.Error(100): when e: Error: e else 0</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>100
+
+    </TT
+></TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN1831"
+>Variant Is Expression</A
+></H2
+><P
+>The is expression tests if a union value matches a variant.</P
+><DIV
+CLASS="informaltable"
+><P
+></P
+><A
+NAME="AEN1834"
+></A
+><TABLE
+BORDER="0"
+FRAME="void"
+CLASS="CALSTABLE"
+><COL
+WIDTH="1*"><COL
+WIDTH="1*"><THEAD
+><TR
+><TH
+>Input</TH
+><TH
+>Result</TH
+></TR
+></THEAD
+><TBODY
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>define Result union: (Ok: int, Error: int)
+if Result.Ok(50) is Ok : 1 else 0</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>1
+        </TT
+></TD
+></TR
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>define Result union: (Ok: int, Error: int)
+if Result.Error(33) is Ok : 1 else 0</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>0
+</TT
 ></TD
 ></TR
 ></TBODY

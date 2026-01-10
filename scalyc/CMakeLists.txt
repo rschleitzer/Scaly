@@ -47,6 +47,8 @@ set(SOURCES
     DefinitionTests.cpp
     ChooseTests.h
     ChooseTests.cpp
+    ControlFlowTests.h
+    ControlFlowTests.cpp
 )
 
 add_executable(scalyc ${SOURCES})
