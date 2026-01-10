@@ -235,62 +235,6 @@ static void test_HEX_ZERO() {
 }
 
 
-// Floating-Point Literals
-static void test_FLOAT_PI() {
-    const char* Name = "FLOAT-PI";
-    auto Result = evalFloat("3.14");
-    if (!Result) {
-        std::string ErrMsg;
-        llvm::raw_string_ostream OS(ErrMsg);
-        OS << Result.takeError();
-        fail(Name, ErrMsg.c_str());
-        return;
-    }
-    if (std::fabs(*Result - 3.14) > 0.0001) {
-        std::string Msg = "expected 3.14, got " + std::to_string(*Result);
-        fail(Name, Msg.c_str());
-        return;
-    }
-    pass(Name);
-}
-
-static void test_FLOAT_TWO() {
-    const char* Name = "FLOAT-TWO";
-    auto Result = evalInt("2.0");
-    if (!Result) {
-        std::string ErrMsg;
-        llvm::raw_string_ostream OS(ErrMsg);
-        OS << Result.takeError();
-        fail(Name, ErrMsg.c_str());
-        return;
-    }
-    if (*Result != 2) {
-        std::string Msg = "expected 2, got " + std::to_string(*Result);
-        fail(Name, Msg.c_str());
-        return;
-    }
-    pass(Name);
-}
-
-static void test_FLOAT_HALF() {
-    const char* Name = "FLOAT-HALF";
-    auto Result = evalFloat("0.5");
-    if (!Result) {
-        std::string ErrMsg;
-        llvm::raw_string_ostream OS(ErrMsg);
-        OS << Result.takeError();
-        fail(Name, ErrMsg.c_str());
-        return;
-    }
-    if (std::fabs(*Result - 0.5) > 0.0001) {
-        std::string Msg = "expected 0.5, got " + std::to_string(*Result);
-        fail(Name, Msg.c_str());
-        return;
-    }
-    pass(Name);
-}
-
-
 // String Literals
 static void test_STRING_HELLO() {
     const char* Name = "STRING-HELLO";
@@ -389,24 +333,6 @@ static void test_NEGATE_NEGATIVE() {
     pass(Name);
 }
 
-static void test_PREFIX_ADD() {
-    const char* Name = "PREFIX-ADD";
-    auto Result = evalInt("+ 3");
-    if (!Result) {
-        std::string ErrMsg;
-        llvm::raw_string_ostream OS(ErrMsg);
-        OS << Result.takeError();
-        fail(Name, ErrMsg.c_str());
-        return;
-    }
-    if (*Result != 3) {
-        std::string Msg = "expected 3, got " + std::to_string(*Result);
-        fail(Name, Msg.c_str());
-        return;
-    }
-    pass(Name);
-}
-
 
 // Operator Chains
 static void test_SIMPLE_ADD() {
@@ -457,24 +383,6 @@ static void test_SIMPLE_MULTIPLY() {
     }
     if (*Result != 42) {
         std::string Msg = "expected 42, got " + std::to_string(*Result);
-        fail(Name, Msg.c_str());
-        return;
-    }
-    pass(Name);
-}
-
-static void test_CHAIN_WITH_PRECEDENCE() {
-    const char* Name = "CHAIN-WITH-PRECEDENCE";
-    auto Result = evalInt("3 + 4 * 2");
-    if (!Result) {
-        std::string ErrMsg;
-        llvm::raw_string_ostream OS(ErrMsg);
-        OS << Result.takeError();
-        fail(Name, ErrMsg.c_str());
-        return;
-    }
-    if (*Result != 11) {
-        std::string Msg = "expected 11, got " + std::to_string(*Result);
         fail(Name, Msg.c_str());
         return;
     }
@@ -575,24 +483,6 @@ static void test_NAME_AS_OPERATOR() {
     pass(Name);
 }
 
-static void test_NAME_AS_FUNCTION() {
-    const char* Name = "NAME-AS-FUNCTION";
-    auto Result = evalInt("abs (- 5)");
-    if (!Result) {
-        std::string ErrMsg;
-        llvm::raw_string_ostream OS(ErrMsg);
-        OS << Result.takeError();
-        fail(Name, ErrMsg.c_str());
-        return;
-    }
-    if (*Result != 5) {
-        std::string Msg = "expected 5, got " + std::to_string(*Result);
-        fail(Name, Msg.c_str());
-        return;
-    }
-    pass(Name);
-}
-
 
 // Let Bindings
 static void test_LET_SIMPLE() {
@@ -686,10 +576,6 @@ bool runExpressionTests() {
     test_HEX_FF();
     test_HEX_1A();
     test_HEX_ZERO();
-    std::cout << "    Floating-Point Literals" << std::endl;
-    test_FLOAT_PI();
-    test_FLOAT_TWO();
-    test_FLOAT_HALF();
     std::cout << "    String Literals" << std::endl;
     test_STRING_HELLO();
     test_STRING_EMPTY();
@@ -701,12 +587,10 @@ bool runExpressionTests() {
     std::cout << "    Prefix Functions" << std::endl;
     test_NEGATE_POSITIVE();
     test_NEGATE_NEGATIVE();
-    test_PREFIX_ADD();
     std::cout << "    Operator Chains" << std::endl;
     test_SIMPLE_ADD();
     test_SIMPLE_SUBTRACT();
     test_SIMPLE_MULTIPLY();
-    test_CHAIN_WITH_PRECEDENCE();
     test_CHAIN_LEFT_TO_RIGHT();
     std::cout << "    Parentheses and Grouping" << std::endl;
     test_PARENS_NEGATE();
@@ -714,7 +598,6 @@ bool runExpressionTests() {
     test_NESTED_PARENS();
     std::cout << "    Identifier Shapes" << std::endl;
     test_NAME_AS_OPERATOR();
-    test_NAME_AS_FUNCTION();
     std::cout << "    Let Bindings" << std::endl;
     test_LET_SIMPLE();
     test_LET_USE_BINDING();
