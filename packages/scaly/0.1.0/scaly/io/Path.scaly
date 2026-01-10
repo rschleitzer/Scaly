@@ -1,10 +1,10 @@
 use scaly.containers.String
 use scaly.containers.StringBuilder
 
-let CHAR_SLASH: char = "/"
-
 define Path
 {
+    let CHAR_SLASH: char "/"
+
     function get_directory_name#(rp, path: String) returns String
     {
         let path_as_c_string path.to_c_string$()

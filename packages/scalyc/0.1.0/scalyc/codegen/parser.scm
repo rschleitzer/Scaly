@@ -29,20 +29,20 @@ use scaly.containers.HashSet
 use scaly.containers.HashSetBuilder
 
 ; Character constants for punctuation (char literals use double-quote + type annotation)
-let CHAR_LPAREN: char = \"(\"
-let CHAR_RPAREN: char = \")\"
-let CHAR_LBRACKET: char = \"[\"
-let CHAR_RBRACKET: char = \"]\"
-let CHAR_LBRACE: char = \"{\"
-let CHAR_RBRACE: char = \"}\"
-let CHAR_COMMA: char = \",\"
-let CHAR_DOT: char = \".\"
-let CHAR_EXCL: char = \"!\"
-let CHAR_QUESTION: char = \"?\"
-let CHAR_HASH: char = \"#\"
-let CHAR_DOLLAR: char = \"$\"
-let CHAR_CARET: char = \"^\"
-let CHAR_BACKSLASH: char = \"\\\\\"
+let CHAR_LPAREN: char \"(\"
+let CHAR_RPAREN: char \")\"
+let CHAR_LBRACKET: char \"[\"
+let CHAR_RBRACKET: char \"]\"
+let CHAR_LBRACE: char \"{\"
+let CHAR_RBRACE: char \"}\"
+let CHAR_COMMA: char \",\"
+let CHAR_DOT: char \".\"
+let CHAR_EXCL: char \"!\"
+let CHAR_QUESTION: char \"?\"
+let CHAR_HASH: char \"#\"
+let CHAR_DOLLAR: char \"$\"
+let CHAR_CARET: char \"^\"
+let CHAR_BACKSLASH: char \"\\\\\"
 
 ; Lexer import (uses its own char constants)
 module lexer

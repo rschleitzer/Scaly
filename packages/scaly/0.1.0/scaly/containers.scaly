@@ -1,23 +1,5 @@
 use scaly.memory.Page
 
-; Character constants for tests
-let CHAR_A: char = "A"
-let CHAR_H: char = "H"
-let CHAR_Z: char = "Z"
-let CHAR_a: char = "a"
-let CHAR_b: char = "b"
-let CHAR_c: char = "c"
-let CHAR_d: char = "d"
-let CHAR_e: char = "e"
-let CHAR_f: char = "f"
-let CHAR_g: char = "g"
-let CHAR_o: char = "o"
-let CHAR_z: char = "z"
-let CHAR_0: char = "0"
-let CHAR_9: char = "9"
-let CHAR_EXCL: char = "!"
-let CHAR_SLASH: char = "/"
-
 define containers
 {
     module hashing
@@ -38,6 +20,24 @@ define containers
     module String
     module StringIterator
     module StringBuilder
+
+    ; Character constants for tests
+    let CHAR_A: char "A"
+    let CHAR_H: char "H"
+    let CHAR_Z: char "Z"
+    let CHAR_a: char "a"
+    let CHAR_b: char "b"
+    let CHAR_c: char "c"
+    let CHAR_d: char "d"
+    let CHAR_e: char "e"
+    let CHAR_f: char "f"
+    let CHAR_g: char "g"
+    let CHAR_o: char "o"
+    let CHAR_z: char "z"
+    let CHAR_0: char "0"
+    let CHAR_9: char "9"
+    let CHAR_EXCL: char "!"
+    let CHAR_SLASH: char "/"
 
     function test_vector() returns int
     {
