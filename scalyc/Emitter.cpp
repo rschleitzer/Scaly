@@ -539,17 +539,11 @@ llvm::Type *Emitter::mapType(const PlannedType &Type) {
         return PtrTy;
     }
 
-    // For Option[T]: optimize to pointer when T is not a pointer
+    // For Option[T]: null pointer optimization (null = None, non-null = Some)
     if (Type.Name == "Option" && !Type.Generics.empty()) {
-        const auto &Inner = Type.Generics[0];
-        if (Inner.Name != "pointer") {
-            // Option[NonPointer] -> ptr (null = None, non-null = Some)
-            auto *PtrTy = llvm::PointerType::get(*Context, 0);
-            TypeCache[Type.MangledName] = PtrTy;
-            return PtrTy;
-        }
-        // Option[pointer[T]] -> ptr to ptr (need full tagged union)
-        // Fall through to struct lookup
+        auto *PtrTy = llvm::PointerType::get(*Context, 0);
+        TypeCache[Type.MangledName] = PtrTy;
+        return PtrTy;
     }
 
     // Check if this type is a struct in the Plan that hasn't been emitted yet
