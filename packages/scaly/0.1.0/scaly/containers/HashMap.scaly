@@ -7,22 +7,24 @@ define HashMapIterator[K, V]
     init (hash_map: HashMap[K, V])
     {
         set slot_iterator: VectorIterator[Vector[KeyValuePair[K, V]]](hash_map.slots)
-        set element_iterator: VectorIterator[KeyValuePair[K, V]](slot_iterator.next())
+        let first_slot slot_iterator.next()
+        if first_slot <> null
+            set element_iterator: VectorIterator[KeyValuePair[K, V]](*first_slot)
     }
 
-    function next(this: HashMapIterator[K, V]) returns pointer[V]
+    function next(this: HashMapIterator[K, V]) returns ref[V]
     {
         while true
         {
             let ret element_iterator.next()
             if ret <> null
-                return &ret.value
+                return (&(*ret).value) as ref[V]
 
             let next_slot slot_iterator.next()
             if next_slot = null
                 return null
 
-            set element_iterator: VectorIterator[KeyValuePair[K, V]](next_slot)
+            set element_iterator: VectorIterator[KeyValuePair[K, V]](*next_slot)
         }
     }
 }
@@ -63,13 +65,20 @@ define HashMap[K, V]
 
         let hash key.hash()
         let slot_number hash % slots.length
-        let slot slots.get(slot_number)
+        let slot_ref slots.get(slot_number)
+        if slot_ref = null
+            return false
+        let slot *slot_ref
         let length slot.length
         var i: size_t 0
         while i < length
         {
-            if key.equals(slot.get(i).key)
-                return true
+            let item slot.get(i)
+            if item <> null
+            {
+                if key.equals((*item).key)
+                    return true
+            }
 
             set i: i + 1
         }
@@ -77,25 +86,32 @@ define HashMap[K, V]
         return false
     }
 
-    operator [](key: K) returns pointer[V]
+    operator [](key: K) returns ref[V]
     {
         return get(key)
     }
 
-    function get(this: HashMap[K, V], key: K) returns pointer[V]
+    function get(this: HashMap[K, V], key: K) returns ref[V]
     {
         if slots = null
             return null
 
         let hash key.hash()
         let slot_number hash % slots.length
-        let slot slots.get(slot_number)
+        let slot_ref slots.get(slot_number)
+        if slot_ref = null
+            return null
+        let slot *slot_ref
         let length slot.length
         var i: size_t 0
         while i < length
         {
-            if key.equals(slot.get(i).key)
-                return &slot.get(i).value
+            let item slot.get(i)
+            if item <> null
+            {
+                if key.equals((*item).key)
+                    return (&(*item).value) as ref[V]
+            }
 
             set i: i + 1
         }

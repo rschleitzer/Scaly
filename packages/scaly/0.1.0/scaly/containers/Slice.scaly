@@ -13,19 +13,19 @@ define Slice[T](data: pointer[T], length: size_t)
     }
 
     ; Get element at index (returns null if out of bounds)
-    function get(this, index: size_t) returns pointer[T]
+    function get(this, index: size_t) returns ref[T]
     {
         if index >= length
             return null
-        data + index
+        (data + index) as ref[T]
     }
 
     ; Indexed access
-    operator [](index: size_t) returns pointer[T]
+    operator [](index: size_t) returns ref[T]
     {
         if index >= length
             return null
-        data + index
+        (data + index) as ref[T]
     }
 
     ; Check if empty
@@ -99,11 +99,11 @@ define SliceIterator[T](slice: Slice[T], position: size_t(0))
         set position: 0
     }
 
-    function next(this) returns pointer[T]
+    function next(this) returns ref[T]
     {
         if position >= slice.length
             return null
-        let result slice.data + position
+        let result (slice.data + position) as ref[T]
         set position: position + 1
         result
     }

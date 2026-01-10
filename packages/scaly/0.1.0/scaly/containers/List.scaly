@@ -3,12 +3,12 @@ define List[T]
     head: pointer[Node[T]] (null)
 )
 {
-    function get_head(this: List[T]) returns pointer[T]
+    function get_head(this: List[T]) returns ref[T]
     {
         if head = null
             return null
 
-        return &head.element
+        (&head.element) as ref[T]
     }
 
     function count(this: List[T]) returns size_t

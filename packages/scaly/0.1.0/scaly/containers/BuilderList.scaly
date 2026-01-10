@@ -35,11 +35,11 @@ define BuilderList[T] (head: pointer[Node[T]])
         return false
     }
 
-    function get_head(this: BuilderList[T]) returns pointer[T]
+    function get_head(this: BuilderList[T]) returns ref[T]
     {
         if head = null
             return null
-        return &head.element
+        (&head.element) as ref[T]
     }
 
     function count(this: BuilderList[T]) returns size_t
