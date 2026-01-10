@@ -76,6 +76,33 @@ struct PlannedType {
     bool isPointer() const {
         return Name == "pointer" && !Generics.empty();
     }
+
+    // Helper: check if this is a ref type (non-owning reference)
+    bool isRef() const {
+        return Name == "ref" && !Generics.empty();
+    }
+
+    // Helper: if this is ref[T], return T; otherwise return *this
+    // Used for auto-deref when accessing members through refs
+    PlannedType getInnerTypeIfRef() const {
+        if (Name == "ref" && !Generics.empty()) {
+            return Generics[0];
+        }
+        return *this;
+    }
+
+    // Helper: check if this is a pointer-like type (pointer or ref)
+    bool isPointerLike() const {
+        return isPointer() || isRef();
+    }
+
+    // Helper: if this is pointer[T] or ref[T], return T; otherwise return *this
+    PlannedType getInnerTypeIfPointerLike() const {
+        if ((Name == "pointer" || Name == "ref") && !Generics.empty()) {
+            return Generics[0];
+        }
+        return *this;
+    }
 };
 
 // ============================================================================

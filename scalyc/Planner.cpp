@@ -526,6 +526,11 @@ std::string Planner::encodeType(const PlannedType &Type) {
         return "P" + encodeType(Type.Generics[0]);
     }
 
+    // Scaly ref[T] types → R + encoded(T) (non-owning reference)
+    if (Type.Name == "ref" && Type.Generics.size() == 1) {
+        return "R" + encodeType(Type.Generics[0]);
+    }
+
     // Generic types: Vector[int] → 6VectorIiE (Itanium ABI: name + I + args + E)
     if (!Type.Generics.empty()) {
         // Extract base name if Name contains instantiation suffix (e.g., "Vector.char" -> "Vector")
@@ -796,6 +801,14 @@ bool Planner::typesCompatible(const PlannedType &ParamType, const PlannedType &A
     // Allow pointer[T] to be passed where T is expected (implicit dereference)
     // This handles 'this' being passed to functions expecting the value type
     if (ArgType.Name == "pointer" && !ArgType.Generics.empty()) {
+        if (typesEqual(ParamType, ArgType.Generics[0])) {
+            return true;
+        }
+    }
+
+    // Allow ref[T] to be passed where T is expected (implicit dereference)
+    // ref[T] is a non-owning reference that can be implicitly dereferenced
+    if (ArgType.Name == "ref" && !ArgType.Generics.empty()) {
         if (typesEqual(ParamType, ArgType.Generics[0])) {
             return true;
         }
@@ -1832,7 +1845,7 @@ Planner::BindingInfo Planner::checkLocalOrProperty(llvm::StringRef Name) {
             }
 
             // 'this' may be pointer[T], so extract the inner type
-            std::string ThisTypeName = ThisType->getInnerTypeIfPointer().Name;
+            std::string ThisTypeName = ThisType->getInnerTypeIfPointerLike().Name;
 
             if (ThisTypeName == CurrentStructureCtx.Name || ThisTypeName == BaseStructName) {
                 for (const auto &Prop : *CurrentStructureCtx.Properties) {
@@ -2745,9 +2758,19 @@ std::optional<PlannedType> Planner::getPointerElementType(const PlannedType &Ptr
         return PtrType.Generics[0];
     }
 
+    // Check if this is a ref type with a generic argument (non-owning reference)
+    if (PtrType.Name == "ref" && !PtrType.Generics.empty()) {
+        return PtrType.Generics[0];
+    }
+
     // Check for pointer[T] in name form (e.g., from unresolved types)
     if (PtrType.Name.substr(0, 8) == "pointer[") {
         // This shouldn't happen after resolution, but handle it gracefully
+        return std::nullopt;
+    }
+
+    // Check for ref[T] in name form
+    if (PtrType.Name.substr(0, 4) == "ref[") {
         return std::nullopt;
     }
 
@@ -3335,7 +3358,7 @@ llvm::Expected<PlannedType> Planner::resolveMemberAccess(
 
     for (const auto& MemberName : Members) {
         // Handle pointer types by dereferencing to inner type (auto-deref)
-        PlannedType LookupType = Current.getInnerTypeIfPointer();
+        PlannedType LookupType = Current.getInnerTypeIfPointerLike();
 
         // Extract base name from type
         // For generic instantiations: "Box.int" -> "Box" (first part before generic args)
@@ -3560,7 +3583,7 @@ llvm::Expected<std::vector<PlannedMemberAccess>> Planner::resolveMemberAccessCha
 
     for (const auto& MemberName : Members) {
         // Handle pointer types by dereferencing to inner type (auto-deref)
-        PlannedType LookupType = Current.getInnerTypeIfPointer();
+        PlannedType LookupType = Current.getInnerTypeIfPointerLike();
 
         // Extract base name from type
         // For generic instantiations: "Box.int" -> "Box" (first part before generic args)
@@ -5649,7 +5672,7 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
 
                         // Look up the method on the variable's type with overload resolution
                         // Auto-deref pointer types for method lookup
-                        PlannedType LookupType = PlannedVar->ResultType.getInnerTypeIfPointer();
+                        PlannedType LookupType = PlannedVar->ResultType.getInnerTypeIfPointerLike();
                         auto ArgTypes = extractArgTypes(*PlannedArgs);
                         auto MethodMatch = lookupMethod(LookupType, MethodName, ArgTypes, Op.Loc);
                         if (MethodMatch) {

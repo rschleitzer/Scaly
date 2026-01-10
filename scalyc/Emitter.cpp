@@ -539,6 +539,13 @@ llvm::Type *Emitter::mapType(const PlannedType &Type) {
         return PtrTy;
     }
 
+    // For ref types: ref[T] (non-owning reference, same as pointer at LLVM level)
+    if (Type.Name == "ref" && !Type.Generics.empty()) {
+        auto *PtrTy = llvm::PointerType::get(*Context, 0);
+        TypeCache[Type.MangledName] = PtrTy;
+        return PtrTy;
+    }
+
     // For Option[T]: null pointer optimization (null = None, non-null = Some)
     if (Type.Name == "Option" && !Type.Generics.empty()) {
         auto *PtrTy = llvm::PointerType::get(*Context, 0);
