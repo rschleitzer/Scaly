@@ -3133,7 +3133,8 @@ llvm::Expected<llvm::Value*> Emitter::emitChoose(const PlannedChoose &Choose) {
 
     // Create blocks
     llvm::BasicBlock *MergeBlock = createBlock("choose.end");
-    llvm::BasicBlock *DefaultBlock = Choose.Alternative ? createBlock("choose.else") : MergeBlock;
+    // Always create a separate default block to avoid PHI node predecessor issues
+    llvm::BasicBlock *DefaultBlock = createBlock("choose.else");
 
     // Create switch instruction
     llvm::SwitchInst *Switch = Builder->CreateSwitch(Tag, DefaultBlock, Choose.Cases.size());
@@ -3195,11 +3196,11 @@ llvm::Expected<llvm::Value*> Emitter::emitChoose(const PlannedChoose &Choose) {
         }
     }
 
-    // Emit the alternative (else) block if present
-    if (Choose.Alternative) {
-        Builder->SetInsertPoint(DefaultBlock);
-        llvm::Value *ElseValue = nullptr;
+    // Emit the alternative (else) block
+    Builder->SetInsertPoint(DefaultBlock);
+    llvm::Value *ElseValue = nullptr;
 
+    if (Choose.Alternative) {
         if (auto *Action = std::get_if<PlannedAction>(Choose.Alternative.get())) {
             auto ValueOrErr = emitAction(*Action);
             if (!ValueOrErr)
@@ -3211,14 +3212,20 @@ llvm::Expected<llvm::Value*> Emitter::emitChoose(const PlannedChoose &Choose) {
             if (auto Err = emitBinding(*Binding))
                 return std::move(Err);
         }
+    }
 
-        if (!Builder->GetInsertBlock()->getTerminator()) {
-            Builder->CreateBr(MergeBlock);
-        }
+    if (!Builder->GetInsertBlock()->getTerminator()) {
+        Builder->CreateBr(MergeBlock);
+    }
 
-        if (ElseValue) {
-            IncomingValues.push_back({ElseValue, Builder->GetInsertBlock()});
-        }
+    // If when clauses produce values but no else was given, use undef for the default path
+    if (!IncomingValues.empty() && !ElseValue) {
+        llvm::Type *ValueType = IncomingValues[0].first->getType();
+        ElseValue = llvm::UndefValue::get(ValueType);
+    }
+
+    if (ElseValue) {
+        IncomingValues.push_back({ElseValue, DefaultBlock});
     }
 
     // Continue at merge block

@@ -143,6 +143,44 @@ static void test_CHOOSE_BIND_VALUE() {
 }
 
 
+// Multiple When Clauses
+static void test_CHOOSE_MULTI_MATCH_FIRST() {
+    const char* Name = "CHOOSE-MULTI-MATCH-FIRST";
+    auto Result = evalInt("define Result union(Ok: int, Err: int)\nchoose Result.Ok(10): when x: Ok: x when e: Err: e + 100");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != 10) {
+        std::string Msg = "expected 10, got " + std::to_string(*Result);
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
+static void test_CHOOSE_MULTI_MATCH_SECOND() {
+    const char* Name = "CHOOSE-MULTI-MATCH-SECOND";
+    auto Result = evalInt("define Result union(Ok: int, Err: int)\nchoose Result.Err(5): when x: Ok: x when e: Err: e + 100");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != 105) {
+        std::string Msg = "expected 105, got " + std::to_string(*Result);
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
+
 bool runChooseTests() {
     TestsPassed = 0;
     TestsFailed = 0;
@@ -155,6 +193,9 @@ bool runChooseTests() {
     test_CHOOSE_MATCH_NONE();
     std::cout << "    Choose with Binding" << std::endl;
     test_CHOOSE_BIND_VALUE();
+    std::cout << "    Multiple When Clauses" << std::endl;
+    test_CHOOSE_MULTI_MATCH_FIRST();
+    test_CHOOSE_MULTI_MATCH_SECOND();
 
     std::cout << std::endl;
     std::cout << "Choose tests: " << TestsPassed << " passed, "
