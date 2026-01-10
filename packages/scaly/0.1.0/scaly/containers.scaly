@@ -1,5 +1,23 @@
 use scaly.memory.Page
 
+; Character constants for tests
+let CHAR_A: char = "A"
+let CHAR_H: char = "H"
+let CHAR_Z: char = "Z"
+let CHAR_a: char = "a"
+let CHAR_b: char = "b"
+let CHAR_c: char = "c"
+let CHAR_d: char = "d"
+let CHAR_e: char = "e"
+let CHAR_f: char = "f"
+let CHAR_g: char = "g"
+let CHAR_o: char = "o"
+let CHAR_z: char = "z"
+let CHAR_0: char = "0"
+let CHAR_9: char = "9"
+let CHAR_EXCL: char = "!"
+let CHAR_SLASH: char = "/"
+
 define containers
 {
     module hashing
@@ -96,18 +114,18 @@ define containers
         let length string_builder.get_length()
         if length <> 0
             return -11
-        string_builder.append('a')
-        string_builder.append('b')
-        string_builder.append('c')
+        string_builder.append(CHAR_a)
+        string_builder.append(CHAR_b)
+        string_builder.append(CHAR_c)
         if string_builder.to_string$().equals("abc") = false
             return -12
         if string_builder.get_length() <> 3
             return -13
 
-        var string_builder2 StringBuilder$('d')
-        string_builder2.append('e')
-        string_builder2.append('f')
-        string_builder2.append('g')
+        var string_builder2 StringBuilder$(CHAR_d)
+        string_builder2.append(CHAR_e)
+        string_builder2.append(CHAR_f)
+        string_builder2.append(CHAR_g)
         if string_builder2.to_string$().equals("defg") = false
             return -14
         if string_builder2.get_length() <> 4
@@ -225,17 +243,17 @@ define containers
             var map HashMapBuilder[String, size_t]$()
             var hash_set HashSetBuilder[String]$()
             {
-                var i: char 'A'
-                while i <= 'Z'
+                var i: char = CHAR_A
+                while i <= CHAR_Z
                 {
-                    var j: char 'a'
-                    while j <= 'z'
+                    var j: char = CHAR_a
+                    while j <= CHAR_z
                     {
-                        var k: char '0'
-                        while k <= '9'
+                        var k: char = CHAR_0
+                        while k <= CHAR_9
                         {
-                            var l: char '!'
-                            while l <= '/'
+                            var l: char = CHAR_EXCL
+                            while l <= CHAR_SLASH
                             {
                                 var sb StringBuilder$(i)
                                 sb.append(j)
@@ -255,17 +273,17 @@ define containers
             }
 
             {
-                var i: char 'A'
-                while i <= 'Z'
+                var i: char = CHAR_A
+                while i <= CHAR_Z
                 {
-                    var j: char 'a'
-                    while j <= 'z'
+                    var j: char = CHAR_a
+                    while j <= CHAR_z
                     {
-                        var k: char '0'
-                        while k <= '9'
+                        var k: char = CHAR_0
+                        while k <= CHAR_9
                         {
-                            var l: char '!'
-                            while l <= '/'
+                            var l: char = CHAR_EXCL
+                            while l <= CHAR_SLASH
                             {
                                 var sb StringBuilder$(i)
                                 sb.append(j)
@@ -324,9 +342,9 @@ define containers
         let str_slice s.as_slice()
         if str_slice.length <> 5
             return -56
-        if *str_slice[0] <> 'H'
+        if *str_slice[0] <> CHAR_H
             return -57
-        if *str_slice[4] <> 'o'
+        if *str_slice[4] <> CHAR_o
             return -58
 
         ; Test slice equality
