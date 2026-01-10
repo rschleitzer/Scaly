@@ -2393,6 +2393,33 @@ static bool testChooseOnStructField() {
     return true;
 }
 
+static bool testChooseOnVariantConstruction() {
+    const char* Name = "Pipeline: choose on variant construction";
+
+    // Test choose directly on a variant construction (not through a variable)
+    auto ResultOrErr = evalInt(
+        "define Option union: (Some: int, None)\n"
+        "choose Option.Some(7): when v: Some: v else 0"
+    );
+
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 7) {
+        std::string Msg = "expected 7, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
 // SizeOf expression tests
 
 static bool testPipelineSizeOfInt() {
@@ -4335,6 +4362,7 @@ bool runEmitterTests() {
     testChooseElseFallback();
     testChooseMultipleCases();
     testChooseOnStructField();
+    testChooseOnVariantConstruction();
 
     // Is expressions
     llvm::outs() << "  Is expression tests:\n";

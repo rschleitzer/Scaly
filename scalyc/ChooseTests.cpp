@@ -85,10 +85,10 @@ static llvm::Expected<double> evalFloat(llvm::StringRef Source) {
 
 // Category: Choose Expressions
 
-// Pending
-static void test_CHOOSE_PLACEHOLDER() {
-    const char* Name = "CHOOSE-PLACEHOLDER";
-    auto Result = evalInt("42");
+// Choose on Variant Construction
+static void test_CHOOSE_MATCH_SOME() {
+    const char* Name = "CHOOSE-MATCH-SOME";
+    auto Result = evalInt("define Option union(Some: int, None)\nchoose Option.Some(7): when v: Some: v else 0");
     if (!Result) {
         std::string ErrMsg;
         llvm::raw_string_ostream OS(ErrMsg);
@@ -96,8 +96,28 @@ static void test_CHOOSE_PLACEHOLDER() {
         fail(Name, ErrMsg.c_str());
         return;
     }
-    if (*Result != 42) {
-        std::string Msg = "expected 42, got " + std::to_string(*Result);
+    if (*Result != 7) {
+        std::string Msg = "expected 7, got " + std::to_string(*Result);
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
+
+// Choose with Binding
+static void test_CHOOSE_BIND_VALUE() {
+    const char* Name = "CHOOSE-BIND-VALUE";
+    auto Result = evalInt("define Result union(Ok: int, Err: int)\nchoose Result.Ok(42): when x: Ok: x + 1 else 0");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != 43) {
+        std::string Msg = "expected 43, got " + std::to_string(*Result);
         fail(Name, Msg.c_str());
         return;
     }
@@ -112,8 +132,10 @@ bool runChooseTests() {
     std::cout << "Running Choose tests..." << std::endl;
 
     std::cout << "  Choose Expressions" << std::endl;
-    std::cout << "    Pending" << std::endl;
-    test_CHOOSE_PLACEHOLDER();
+    std::cout << "    Choose on Variant Construction" << std::endl;
+    test_CHOOSE_MATCH_SOME();
+    std::cout << "    Choose with Binding" << std::endl;
+    test_CHOOSE_BIND_VALUE();
 
     std::cout << std::endl;
     std::cout << "Choose tests: " << TestsPassed << " passed, "
