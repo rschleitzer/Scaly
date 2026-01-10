@@ -3102,11 +3102,19 @@ llvm::Expected<llvm::Value*> Emitter::emitChoose(const PlannedChoose &Choose) {
 
     llvm::Value *UnionValue = *CondValueOrErr;
 
-    // Union layout is { i8 tag, [maxSize x i8] data }
-    // We need to extract the tag to switch on it
-
     // Get the planned union type for proper LLVM type lookup
     const PlannedType &CondType = Choose.Condition[0].ResultType;
+
+    // Handle Option with NPO (Null Pointer Optimization)
+    // Option types are represented as a single pointer: null = None, non-null = Some
+    bool IsOption = CondType.Name == "Option" ||
+                    (CondType.Name.size() > 7 && CondType.Name.substr(0, 7) == "Option.");
+    if (IsOption && !CondType.Generics.empty()) {
+        return emitChooseNPO(Choose, UnionValue);
+    }
+
+    // Union layout is { i8 tag, [maxSize x i8] data }
+    // We need to extract the tag to switch on it
 
     // Get pointer to the union (may already be a pointer or need alloca)
     llvm::Value *UnionPtr;
@@ -3266,6 +3274,117 @@ llvm::Expected<llvm::Value*> Emitter::emitChoose(const PlannedChoose &Choose) {
             }
             return PHI;
         }
+    }
+
+    return nullptr;
+}
+
+llvm::Expected<llvm::Value*> Emitter::emitChooseNPO(
+    const PlannedChoose &Choose, llvm::Value *OptionPtr) {
+    // Handle Option[T] with NPO (Null Pointer Optimization)
+    // OptionPtr is a pointer: null = None, non-null = Some(value)
+
+    // Get the element type from the Option's generic argument
+    const PlannedType &CondType = Choose.Condition[0].ResultType;
+    llvm::Type *ElemTy = mapType(CondType.Generics[0]);
+
+    // Create blocks
+    llvm::BasicBlock *MergeBlock = createBlock("choose.end");
+    llvm::BasicBlock *SomeBlock = createBlock("choose.some");
+    llvm::BasicBlock *NoneBlock = createBlock("choose.none");
+
+    // Check if null
+    llvm::Value *IsNull = Builder->CreateIsNull(OptionPtr, "is.none");
+    Builder->CreateCondBr(IsNull, NoneBlock, SomeBlock);
+
+    // Track values for PHI node
+    std::vector<std::pair<llvm::Value*, llvm::BasicBlock*>> IncomingValues;
+
+    // Find Some and None cases
+    const PlannedWhen *SomeCase = nullptr;
+    const PlannedWhen *NoneCase = nullptr;
+    for (const auto &When : Choose.Cases) {
+        if (When.VariantIndex == 0) {
+            // Some is usually tag 0 (first variant)
+            SomeCase = &When;
+        } else {
+            // None is usually tag 1 (second variant)
+            NoneCase = &When;
+        }
+    }
+
+    // Emit Some case
+    Builder->SetInsertPoint(SomeBlock);
+    if (SomeCase && !SomeCase->Name.empty()) {
+        // Dereference to get the value
+        llvm::Value *Value = Builder->CreateLoad(ElemTy, OptionPtr, "some.val");
+        LocalVariables[SomeCase->Name] = Value;
+    }
+
+    llvm::Value *SomeValue = nullptr;
+    if (SomeCase && SomeCase->Consequent) {
+        if (auto *Action = std::get_if<PlannedAction>(SomeCase->Consequent.get())) {
+            auto ValueOrErr = emitAction(*Action);
+            if (!ValueOrErr)
+                return ValueOrErr.takeError();
+            if (Action->Target.empty()) {
+                SomeValue = *ValueOrErr;
+            }
+        }
+    }
+
+    if (!Builder->GetInsertBlock()->getTerminator()) {
+        Builder->CreateBr(MergeBlock);
+    }
+    llvm::BasicBlock *SomeEndBlock = Builder->GetInsertBlock();
+    if (SomeValue) {
+        IncomingValues.push_back({SomeValue, SomeEndBlock});
+    }
+
+    // Emit None case
+    Builder->SetInsertPoint(NoneBlock);
+    llvm::Value *NoneValue = nullptr;
+
+    if (NoneCase && NoneCase->Consequent) {
+        if (auto *Action = std::get_if<PlannedAction>(NoneCase->Consequent.get())) {
+            auto ValueOrErr = emitAction(*Action);
+            if (!ValueOrErr)
+                return ValueOrErr.takeError();
+            if (Action->Target.empty()) {
+                NoneValue = *ValueOrErr;
+            }
+        }
+    } else if (Choose.Alternative) {
+        // Use else clause for None
+        if (auto *Action = std::get_if<PlannedAction>(Choose.Alternative.get())) {
+            auto ValueOrErr = emitAction(*Action);
+            if (!ValueOrErr)
+                return ValueOrErr.takeError();
+            if (Action->Target.empty()) {
+                NoneValue = *ValueOrErr;
+            }
+        }
+    }
+
+    if (!Builder->GetInsertBlock()->getTerminator()) {
+        Builder->CreateBr(MergeBlock);
+    }
+    llvm::BasicBlock *NoneEndBlock = Builder->GetInsertBlock();
+    if (NoneValue) {
+        IncomingValues.push_back({NoneValue, NoneEndBlock});
+    }
+
+    // Merge block
+    Builder->SetInsertPoint(MergeBlock);
+
+    // Create PHI if we have values
+    if (!IncomingValues.empty()) {
+        llvm::Type *ValueType = IncomingValues[0].first->getType();
+        llvm::PHINode *PHI = Builder->CreatePHI(ValueType, IncomingValues.size(), "choose.value");
+        for (const auto &[Val, Block] : IncomingValues) {
+            PHI->addIncoming(Val, Block);
+        }
+        return PHI;
     }
 
     return nullptr;
@@ -4012,10 +4131,17 @@ llvm::Expected<llvm::Value*> Emitter::emitIs(const PlannedIs &Is) {
     if (!UnionValueOrErr)
         return UnionValueOrErr.takeError();
 
-    llvm::Value *UnionValue = *UnionValueOrErr;
-    const PlannedType &UnionType = Is.Value->ResultType;
+    llvm::Value *Value = *UnionValueOrErr;
 
-    return emitIsWithValue(UnionValue, UnionType, Is);
+    // Handle "is null" for optional types (NPO - null pointer optimization)
+    if (Is.IsNullCheck) {
+        // For Option[T] with NPO, the value is a pointer - null means None
+        llvm::Value *IsNull = Builder->CreateIsNull(Value, "is.null");
+        return IsNull;
+    }
+
+    const PlannedType &UnionType = Is.Value->ResultType;
+    return emitIsWithValue(Value, UnionType, Is);
 }
 
 llvm::Expected<llvm::Value*> Emitter::emitIsWithValue(
@@ -4193,6 +4319,34 @@ llvm::Expected<llvm::Value*> Emitter::emitAs(const PlannedAs &As) {
 
 llvm::Expected<llvm::Value*> Emitter::emitVariantConstruction(
     const PlannedVariantConstruction &Construct) {
+    // Handle Option with NPO (Null Pointer Optimization)
+    // Option types are represented as a single pointer: null = None, non-null = Some
+    // UnionType.Name may be "Option" (without generics) or "Option.int" (with generics)
+    bool IsOption = Construct.UnionType.Name == "Option" ||
+                    Construct.UnionType.Name.substr(0, 7) == "Option.";
+    if (IsOption && !Construct.UnionType.Generics.empty()) {
+        auto *PtrTy = llvm::PointerType::get(*Context, 0);
+
+        if (Construct.VariantName == "None") {
+            // None = null pointer
+            return llvm::ConstantPointerNull::get(PtrTy);
+        } else if (Construct.VariantName == "Some" && Construct.Value) {
+            // Some(value) = pointer to allocated value
+            auto ValueOrErr = emitOperand(*Construct.Value);
+            if (!ValueOrErr)
+                return ValueOrErr.takeError();
+
+            llvm::Value *Value = *ValueOrErr;
+            llvm::Type *ValueTy = Value->getType();
+
+            // Allocate space for the value on the stack
+            llvm::Value *ValuePtr = Builder->CreateAlloca(ValueTy, nullptr, "option.some");
+            Builder->CreateStore(Value, ValuePtr);
+
+            return ValuePtr;
+        }
+    }
+
     // Construct a union variant: { i8 tag, [size x i8] data }
     // Similar to throw, but with an arbitrary tag value
 

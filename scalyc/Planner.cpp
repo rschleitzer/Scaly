@@ -7858,6 +7858,12 @@ llvm::Expected<PlannedExpression> Planner::planExpression(const Expression &Expr
         else if constexpr (std::is_same_v<T, Is>) {
             PlannedIs PI;
             PI.Loc = E.Loc;
+            // Check for "is null" - null check on optional types
+            if (E.Name.size() == 1 && E.Name[0] == "null") {
+                PI.IsNullCheck = true;
+                // TestType not used for null checks
+                return PlannedExpression(std::move(PI));
+            }
             // Is has Name (vector<string>), not TestType
             auto Resolved = resolveTypePath(E.Name, E.Loc);
             if (!Resolved) {

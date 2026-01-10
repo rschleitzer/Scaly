@@ -311,6 +311,7 @@ struct PlannedIs {
     size_t VariantTag = 0;       // Tag value to compare against
     std::string UnionName;       // Name of the union type being tested
     std::shared_ptr<PlannedOperand> Value;  // The union value being tested
+    bool IsNullCheck = false;    // true for "is null" checks on optional types
 };
 
 // As expression for type casting: value as Type

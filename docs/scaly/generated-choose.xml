@@ -94,3 +94,68 @@ choose Result.Err(5): when x: Ok: x when e: Err: e + 100</programlisting></entry
       </informaltable>
     </section>
   </section>
+
+  <section xmlns='http://docbook.org/ns/docbook' xml:id='category-OPTIONAL-TYPES'>
+    <title>Optional Types</title>
+    <para>Optional types use null pointer optimization (NPO) for efficient representation.</para>
+
+    <section xml:id='tests-IS-NULL-CHECK'>
+      <title>Is Null Check</title>
+      <para>The is null expression checks if an optional value is None.</para>
+      <informaltable frame='none'>
+        <tgroup cols='2'>
+          <colspec colwidth='1*'/>
+          <colspec colwidth='1*'/>
+          <thead>
+            <row>
+              <entry>Input</entry>
+              <entry>Result</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry><programlisting>define Option[T] union: (Some: T, None)
+function check(x: int?) returns int: if x is null: 0 else 1
+check(Option[int].None)</programlisting></entry>
+              <entry><literal>0
+        </literal></entry>
+            </row>
+            <row>
+              <entry><programlisting>define Option[T] union: (Some: T, None)
+function check(x: int?) returns int: if x is null: 0 else 1
+check(Option[int].Some(42))</programlisting></entry>
+              <entry><literal>1
+
+    </literal></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+
+    <section xml:id='tests-OPTIONAL-SUGAR'>
+      <title>Optional Type Sugar</title>
+      <para>T? is syntactic sugar for Option[T].</para>
+      <informaltable frame='none'>
+        <tgroup cols='2'>
+          <colspec colwidth='1*'/>
+          <colspec colwidth='1*'/>
+          <thead>
+            <row>
+              <entry>Input</entry>
+              <entry>Result</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry><programlisting>define Option[T] union: (Some: T, None)
+function unwrap(x: int?) returns int: choose x: when v: Some: v else 0
+unwrap(Option[int].Some(42))</programlisting></entry>
+              <entry><literal>42
+</literal></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+  </section>
