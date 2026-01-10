@@ -195,7 +195,11 @@
             <row>
               <entry><literal>-(-3)</literal></entry>
               <entry><literal>3
-        
+        </literal></entry>
+            </row>
+            <row>
+              <entry><literal>+ 3</literal></entry>
+              <entry><literal>3
 
     </literal></entry>
             </row>

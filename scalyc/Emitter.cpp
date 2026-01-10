@@ -2743,6 +2743,10 @@ llvm::Expected<llvm::Value*> Emitter::emitIntrinsicUnaryOp(
             return Builder->CreateFNeg(Operand, "fneg");
         return Builder->CreateNeg(Operand, "neg");
     }
+    if (OpName == "+") {
+        // Unary plus: just return the operand unchanged
+        return Operand;
+    }
     if (OpName == "!") {
         return Builder->CreateNot(Operand, "not");
     }

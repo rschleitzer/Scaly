@@ -333,6 +333,24 @@ static void test_NEGATE_NEGATIVE() {
     pass(Name);
 }
 
+static void test_PREFIX_ADD() {
+    const char* Name = "PREFIX-ADD";
+    auto Result = evalInt("+ 3");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != 3) {
+        std::string Msg = "expected 3, got " + std::to_string(*Result);
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
 
 // Operator Chains
 static void test_SIMPLE_ADD() {
@@ -587,6 +605,7 @@ bool runExpressionTests() {
     std::cout << "    Prefix Functions" << std::endl;
     test_NEGATE_POSITIVE();
     test_NEGATE_NEGATIVE();
+    test_PREFIX_ADD();
     std::cout << "    Operator Chains" << std::endl;
     test_SIMPLE_ADD();
     test_SIMPLE_SUBTRACT();

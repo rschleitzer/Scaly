@@ -52,9 +52,7 @@
         When the context is empty, operator-shaped identifiers act as prefix functions, taking the next operand as their argument.
         <test id = negate-positive><input>-7<expect>-7
         <test id = negate-negative><input>-(-3)<expect>3
-        <!-- TODO: Unary + not yet implemented
         <test id = prefix-add><input>+ 3<expect>3
-        -->
 
     <tests id = operator-chains title = "Operator Chains">
         <prose>When the context holds a value, operators chain left-to-right. Each operator takes the current value and the next operand,
