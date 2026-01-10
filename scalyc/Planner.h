@@ -293,6 +293,9 @@ private:
     // Check if a name refers to an operator
     bool isOperatorName(llvm::StringRef Name);
 
+    // Get operator precedence (higher = binds tighter, 0 = unknown)
+    int getOperatorPrecedence(llvm::StringRef Op);
+
     // ========== Operation Resolution ==========
 
     // Resolve an operation sequence (function calls and operators)

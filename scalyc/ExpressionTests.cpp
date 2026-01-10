@@ -463,6 +463,24 @@ static void test_SIMPLE_MULTIPLY() {
     pass(Name);
 }
 
+static void test_CHAIN_WITH_PRECEDENCE() {
+    const char* Name = "CHAIN-WITH-PRECEDENCE";
+    auto Result = evalInt("3 + 4 * 2");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != 11) {
+        std::string Msg = "expected 11, got " + std::to_string(*Result);
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
 static void test_CHAIN_LEFT_TO_RIGHT() {
     const char* Name = "CHAIN-LEFT-TO-RIGHT";
     auto Result = evalInt("20 - 5 - 3");
@@ -688,6 +706,7 @@ bool runExpressionTests() {
     test_SIMPLE_ADD();
     test_SIMPLE_SUBTRACT();
     test_SIMPLE_MULTIPLY();
+    test_CHAIN_WITH_PRECEDENCE();
     test_CHAIN_LEFT_TO_RIGHT();
     std::cout << "    Parentheses and Grouping" << std::endl;
     test_PARENS_NEGATE();
