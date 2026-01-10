@@ -96,7 +96,6 @@ static void test_DEFINE_POINT() {
         fail(Name, ErrMsg.c_str());
         return;
     }
-    // TODO: Add JSON serialization and comparison
     pass(Name);
 }
 
@@ -166,7 +165,6 @@ static void test_OPTION_SOME() {
         fail(Name, ErrMsg.c_str());
         return;
     }
-    // TODO: Add JSON serialization and comparison
     pass(Name);
 }
 
@@ -180,7 +178,6 @@ static void test_OPTION_NONE() {
         fail(Name, ErrMsg.c_str());
         return;
     }
-    // TODO: Add JSON serialization and comparison
     pass(Name);
 }
 
@@ -194,7 +191,6 @@ static void test_RESULT_OK() {
         fail(Name, ErrMsg.c_str());
         return;
     }
-    // TODO: Add JSON serialization and comparison
     pass(Name);
 }
 
@@ -208,7 +204,6 @@ static void test_RESULT_ERR() {
         fail(Name, ErrMsg.c_str());
         return;
     }
-    // TODO: Add JSON serialization and comparison
     pass(Name);
 }
 
