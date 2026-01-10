@@ -9,6 +9,7 @@
 #include "llvm/Support/raw_ostream.h"
 #include <iostream>
 #include <cmath>
+#include <cstring>
 
 namespace scaly {
 
@@ -79,6 +80,18 @@ static llvm::Expected<double> evalFloat(llvm::StringRef Source) {
     Config.EmitDebugInfo = false;
     Emitter E(Config);
     return E.jitExecuteFloat(*PlanResult);
+}
+
+// Helper to evaluate string expression
+static llvm::Expected<const char*> evalString(llvm::StringRef Source) {
+    auto PlanResult = compileToPlan(Source);
+    if (!PlanResult)
+        return PlanResult.takeError();
+
+    EmitterConfig Config;
+    Config.EmitDebugInfo = false;
+    Emitter E(Config);
+    return E.jitExecuteString(*PlanResult);
 }
 
 } // anonymous namespace
@@ -294,7 +307,7 @@ static void test_FLOAT_HALF() {
 // String Literals
 static void test_STRING_HELLO() {
     const char* Name = "STRING-HELLO";
-    auto Result = compileToPlan("\"hello\"");
+    auto Result = evalString("\"hello\"");
     if (!Result) {
         std::string ErrMsg;
         llvm::raw_string_ostream OS(ErrMsg);
@@ -302,13 +315,17 @@ static void test_STRING_HELLO() {
         fail(Name, ErrMsg.c_str());
         return;
     }
-    // TODO: Add string JIT evaluation when implemented
+    if (std::strcmp(*Result, "hello") != 0) {
+        std::string Msg = "expected 'hello', got '" + std::string(*Result) + "'";
+        fail(Name, Msg.c_str());
+        return;
+    }
     pass(Name);
 }
 
 static void test_STRING_EMPTY() {
     const char* Name = "STRING-EMPTY";
-    auto Result = compileToPlan("\"\"");
+    auto Result = evalString("\"\"");
     if (!Result) {
         std::string ErrMsg;
         llvm::raw_string_ostream OS(ErrMsg);
@@ -316,7 +333,11 @@ static void test_STRING_EMPTY() {
         fail(Name, ErrMsg.c_str());
         return;
     }
-    // TODO: Add string JIT evaluation when implemented
+    if (std::strcmp(*Result, "") != 0) {
+        std::string Msg = "expected '', got '" + std::string(*Result) + "'";
+        fail(Name, Msg.c_str());
+        return;
+    }
     pass(Name);
 }
 
