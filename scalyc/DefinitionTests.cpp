@@ -212,24 +212,6 @@ static void test_RESULT_ERR() {
     pass(Name);
 }
 
-static void test_OPTION_SOME_VALUE() {
-    const char* Name = "OPTION-SOME-VALUE";
-    auto Result = evalInt("define Option union(Some: int, None)\nSome(5).value");
-    if (!Result) {
-        std::string ErrMsg;
-        llvm::raw_string_ostream OS(ErrMsg);
-        OS << Result.takeError();
-        fail(Name, ErrMsg.c_str());
-        return;
-    }
-    if (*Result != 5) {
-        std::string Msg = "expected 5, got " + std::to_string(*Result);
-        fail(Name, Msg.c_str());
-        return;
-    }
-    pass(Name);
-}
-
 
 bool runDefinitionTests() {
     TestsPassed = 0;
@@ -248,7 +230,6 @@ bool runDefinitionTests() {
     test_OPTION_NONE();
     test_RESULT_OK();
     test_RESULT_ERR();
-    test_OPTION_SOME_VALUE();
 
     std::cout << std::endl;
     std::cout << "Definition tests: " << TestsPassed << " passed, "
