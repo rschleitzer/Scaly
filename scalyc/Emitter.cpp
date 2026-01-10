@@ -2045,6 +2045,32 @@ llvm::Expected<llvm::Value*> Emitter::emitOperand(const PlannedOperand &Op) {
                 Value = Builder->CreateLoad(StructTy, Value, "deref");
             }
 
+            // Handle union .value extraction specially
+            if (Access.IsUnionValue) {
+                // Union layout is { i8 tag, [size x i8] data }
+                // We need to store to alloca, GEP to field 1, bitcast, and load
+                llvm::Type *UnionTy = mapType(Access.ParentType);
+                llvm::Type *ResultTy = mapType(Access.ResultType);
+
+                // Store the union value to an alloca
+                llvm::AllocaInst *UnionPtr = Builder->CreateAlloca(UnionTy, nullptr, "union.tmp");
+                Builder->CreateStore(Value, UnionPtr);
+
+                // Get pointer to field 1 (the data field)
+                llvm::Value *DataPtr = Builder->CreateStructGEP(UnionTy, UnionPtr, 1, "union.data.ptr");
+
+                // Bitcast to the result type pointer
+                llvm::Value *DataCast = Builder->CreateBitCast(
+                    DataPtr,
+                    llvm::PointerType::getUnqual(ResultTy),
+                    "union.data.cast"
+                );
+
+                // Load the value
+                Value = Builder->CreateLoad(ResultTy, DataCast, "union.value");
+                continue;
+            }
+
             // Ensure Value is an aggregate type before extracting
             llvm::Type *ValTy = Value->getType();
             if (!ValTy->isAggregateType()) {

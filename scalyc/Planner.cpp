@@ -3678,6 +3678,51 @@ llvm::Expected<std::vector<PlannedMemberAccess>> Planner::resolveMemberAccessCha
             if (Found) continue;
         }
 
+        // Check if it's a union - handle .value access
+        if (auto* Un = std::get_if<Union>(&Conc->Def)) {
+            if (MemberName == "value") {
+                // .value on a union extracts the data from the current variant
+                // We need to know the variant type - for now, use the first variant with a type
+                // In practice, this is typically used after constructing a specific variant
+                // Set up type substitutions if this is a generic type
+                std::map<std::string, PlannedType> OldSubst = TypeSubstitutions;
+                if (!Conc->Parameters.empty() && !LookupType.Generics.empty()) {
+                    for (size_t I = 0; I < Conc->Parameters.size() && I < LookupType.Generics.size(); ++I) {
+                        TypeSubstitutions[Conc->Parameters[I].Name] = LookupType.Generics[I];
+                    }
+                }
+
+                // Find the first variant with a type (non-unit variant)
+                PlannedType ValueType;
+                for (const auto& Var : Un->Variants) {
+                    if (Var.VarType) {
+                        auto Resolved = resolveType(*Var.VarType, Loc);
+                        if (Resolved) {
+                            ValueType = std::move(*Resolved);
+                            break;
+                        }
+                    }
+                }
+                TypeSubstitutions = OldSubst;
+
+                if (ValueType.Name.empty()) {
+                    return makePlannerNotImplementedError(File, Loc,
+                        "union has no variant with a value type");
+                }
+
+                PlannedMemberAccess Access;
+                Access.Name = "value";
+                Access.FieldIndex = 1;  // Data is at field index 1 in union layout
+                Access.IsUnionValue = true;
+                Access.ParentType = LookupType;
+                Access.ResultType = std::move(ValueType);
+                Result.push_back(std::move(Access));
+
+                Current = Result.back().ResultType;
+                continue;
+            }
+        }
+
         // Member not found
         return makePlannerNotImplementedError(File, Loc,
             "member '" + MemberName + "' not found in type " +
@@ -6031,6 +6076,20 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             ResultOp.ResultType = UnionType;
                             ResultOp.Expr = std::move(VarConstruct);
 
+                            // Apply member access from the tuple operand (e.g., Some(5).value)
+                            if (NextOp.MemberAccess && !NextOp.MemberAccess->empty()) {
+                                auto MemberChain = resolveMemberAccessChain(
+                                    UnionType, *NextOp.MemberAccess, NextOp.Loc);
+                                if (!MemberChain) {
+                                    return MemberChain.takeError();
+                                }
+                                ResultOp.MemberAccess = std::make_shared<std::vector<PlannedMemberAccess>>(
+                                    std::move(*MemberChain));
+                                if (!ResultOp.MemberAccess->empty()) {
+                                    ResultOp.ResultType = ResultOp.MemberAccess->back().ResultType;
+                                }
+                            }
+
                             Result.push_back(std::move(ResultOp));
                             i++;  // Skip the tuple operand
                             continue;
@@ -6107,6 +6166,20 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                 ResultOp.Loc = Op.Loc;
                                 ResultOp.ResultType = UnionType;
                                 ResultOp.Expr = std::move(VarConstruct);
+
+                                // Apply member access from the tuple operand (e.g., Some(42).value)
+                                if (ConsumedTuple && NextOp.MemberAccess && !NextOp.MemberAccess->empty()) {
+                                    auto MemberChain = resolveMemberAccessChain(
+                                        UnionType, *NextOp.MemberAccess, NextOp.Loc);
+                                    if (!MemberChain) {
+                                        return MemberChain.takeError();
+                                    }
+                                    ResultOp.MemberAccess = std::make_shared<std::vector<PlannedMemberAccess>>(
+                                        std::move(*MemberChain));
+                                    if (!ResultOp.MemberAccess->empty()) {
+                                        ResultOp.ResultType = ResultOp.MemberAccess->back().ResultType;
+                                    }
+                                }
 
                                 Result.push_back(std::move(ResultOp));
                                 if (ConsumedTuple) {
