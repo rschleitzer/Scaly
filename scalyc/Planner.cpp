@@ -171,6 +171,49 @@ const Module* Planner::loadPackageOnDemand(llvm::StringRef PackageName) {
     return nullptr;  // Package not found
 }
 
+const Module* Planner::loadIntraPackageModule(llvm::StringRef BasePath, llvm::StringRef ModuleName) {
+    // Build the module file path: BasePath/ModuleName.scaly
+    llvm::SmallString<256> ModulePath(BasePath);
+    llvm::sys::path::append(ModulePath, ModuleName.str() + ".scaly");
+
+    // Check if the file exists
+    if (!llvm::sys::fs::exists(ModulePath)) {
+        return nullptr;
+    }
+
+    // Read and parse the module file
+    auto BufOrErr = llvm::MemoryBuffer::getFile(ModulePath);
+    if (!BufOrErr) {
+        return nullptr;
+    }
+
+    Parser ModParser((*BufOrErr)->getBuffer());
+    auto ParseResult = ModParser.parseProgram();
+    if (!ParseResult) {
+        llvm::consumeError(ParseResult.takeError());
+        return nullptr;
+    }
+
+    // Use Modeler to build the program model
+    Modeler ModModeler(ModulePath.str());
+    for (const auto &P : PackageSearchPaths) {
+        ModModeler.addPackageSearchPath(P);
+    }
+    auto ModelResult = ModModeler.buildProgram(*ParseResult);
+    if (!ModelResult) {
+        llvm::consumeError(ModelResult.takeError());
+        return nullptr;
+    }
+
+    // Store the Program and return the module
+    auto Prog = std::make_unique<Program>(std::move(*ModelResult));
+    OnDemandPackages.push_back(std::move(Prog));
+
+    // Get the module pointer from the stored Program
+    const Module* LoadedMod = &OnDemandPackages.back()->MainModule;
+    return LoadedMod;
+}
+
 // Register built-in runtime functions (aligned_alloc, free, exit) for RBMM support
 void Planner::registerRuntimeFunctions() {
     if (RuntimeFunctionsRegistered) return;
@@ -4288,7 +4331,22 @@ const Concept* Planner::lookupConcept(llvm::StringRef Name) {
                                         if (CurrentNS) {
                                             for (const auto& SubMod : CurrentNS->Modules) {
                                                 if (SubMod.Name == Use.Path[I]) {
-                                                    CurrentMod = &SubMod;
+                                                    // Check if this is a stub (no members) and needs loading
+                                                    if (SubMod.Members.empty()) {
+                                                        // Get the base path from the parent module's file
+                                                        llvm::SmallString<256> BasePath(ParentMod->File);
+                                                        llvm::sys::path::remove_filename(BasePath);
+                                                        llvm::sys::path::append(BasePath, Use.Path[0]);
+
+                                                        // Try to load the module on demand
+                                                        if (const Module* Loaded = loadIntraPackageModule(BasePath.str(), SubMod.Name)) {
+                                                            CurrentMod = Loaded;
+                                                        } else {
+                                                            CurrentMod = &SubMod;  // Fall back to stub
+                                                        }
+                                                    } else {
+                                                        CurrentMod = &SubMod;
+                                                    }
                                                     CurrentNS = nullptr;
                                                     Found = true;
                                                     break;
@@ -4298,7 +4356,20 @@ const Concept* Planner::lookupConcept(llvm::StringRef Name) {
                                         if (!Found && CurrentMod) {
                                             for (const auto& SubMod : CurrentMod->Modules) {
                                                 if (SubMod.Name == Use.Path[I]) {
-                                                    CurrentMod = &SubMod;
+                                                    // Check if this is a stub that needs loading
+                                                    if (SubMod.Members.empty() && !CurrentMod->File.empty()) {
+                                                        llvm::SmallString<256> BasePath(CurrentMod->File);
+                                                        llvm::sys::path::remove_filename(BasePath);
+                                                        llvm::sys::path::append(BasePath, CurrentMod->Name);
+
+                                                        if (const Module* Loaded = loadIntraPackageModule(BasePath.str(), SubMod.Name)) {
+                                                            CurrentMod = Loaded;
+                                                        } else {
+                                                            CurrentMod = &SubMod;
+                                                        }
+                                                    } else {
+                                                        CurrentMod = &SubMod;
+                                                    }
                                                     Found = true;
                                                     break;
                                                 }
@@ -5716,12 +5787,6 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                         const std::string& ModuleName = TypeExpr->Name[0];
                         const std::string& FuncName = TypeExpr->Name[1];
 
-                        // llvm::errs() << "DEBUG: Looking for module function: " << ModuleName << "." << FuncName << "\n";
-                        // llvm::errs() << "DEBUG: CurrentNamespaceModules.size() = " << CurrentNamespaceModules.size() << "\n";
-                        for (const Module* Mod : CurrentNamespaceModules) {
-                            // llvm::errs() << "DEBUG: Module in namespace: " << Mod->Name << "\n";
-                        }
-
                         // Search CurrentNamespaceModules for the module
                         const Module* TargetModule = nullptr;
                         for (const Module* Mod : CurrentNamespaceModules) {
@@ -5732,26 +5797,19 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                         }
 
                         if (TargetModule) {
-                            // llvm::errs() << "DEBUG: Found target module: " << ModuleName << "\n";
-                            // llvm::errs() << "DEBUG: Looking for function: " << FuncName << " in module with " << TargetModule->Members.size() << " members\n";
                             // Look for the function in the module
                             const Function* TargetFunc = nullptr;
                             for (const auto& Member : TargetModule->Members) {
                                 if (auto* Func = std::get_if<Function>(&Member)) {
-                                    // llvm::errs() << "DEBUG: Found function in module: " << Func->Name << "\n";
                                     if (Func->Name == FuncName) {
                                         TargetFunc = Func;
                                         break;
                                     }
-                                } else if (auto* Conc = std::get_if<Concept>(&Member)) {
-                                    // llvm::errs() << "DEBUG: Found concept in module: " << Conc->Name << "\n";
-                                } else {
-                                    // llvm::errs() << "DEBUG: Found other member type in module\n";
                                 }
+                                // Skip non-function members
                             }
 
                             if (TargetFunc) {
-                                // llvm::errs() << "DEBUG: Found target function: " << TargetFunc->Name << "\n";
                                 // Plan the arguments
                                 Operand ArgsOp = NextOp;
                                 ArgsOp.MemberAccess = nullptr;

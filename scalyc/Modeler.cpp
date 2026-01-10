@@ -1951,7 +1951,6 @@ llvm::Expected<Module> Modeler::buildModule(llvm::StringRef Path,
         }
     }
 
-    // llvm::errs() << "DEBUG buildModule: " << Name << " finished with " << Members.size() << " members\n";
     if (Err)
         return std::move(Err);
 
