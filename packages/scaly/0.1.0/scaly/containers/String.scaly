@@ -362,4 +362,137 @@ define String (data: pointer[char](null))
 
         Slice[char](data + index + 1, string_length)
     }
+
+    ; Check if string contains a character
+    function contains(this: String, c: char) returns bool
+    {
+        let buf get_buffer()
+        if buf = null
+            return false
+        let len get_length()
+        var i: size_t 0
+        while i < len
+        {
+            if *(buf + i) = c
+                return true
+            set i: i + 1
+        }
+        false
+    }
+
+    ; Check if string contains a substring
+    function contains(this: String, other: String) returns bool
+    {
+        let this_len get_length()
+        let other_len other.get_length()
+        if other_len = 0
+            return true
+        if other_len > this_len
+            return false
+
+        let buf get_buffer()
+        let other_buf other.get_buffer()
+        var i: size_t 0
+        while i <= this_len - other_len
+        {
+            if memcmp(buf + i, other_buf, other_len) = 0
+                return true
+            set i: i + 1
+        }
+        false
+    }
+
+    ; Check if string starts with prefix
+    function starts_with(this: String, prefix: String) returns bool
+    {
+        let this_len get_length()
+        let prefix_len prefix.get_length()
+        if prefix_len > this_len
+            return false
+        if prefix_len = 0
+            return true
+
+        let buf get_buffer()
+        let prefix_buf prefix.get_buffer()
+        memcmp(buf, prefix_buf, prefix_len) = 0
+    }
+
+    ; Check if string starts with C string prefix
+    function starts_with(this: String, prefix: pointer[const_char]) returns bool
+    {
+        let this_len get_length()
+        let prefix_len strlen(prefix)
+        if prefix_len > this_len
+            return false
+        if prefix_len = 0
+            return true
+
+        let buf get_buffer()
+        memcmp(buf, prefix, prefix_len) = 0
+    }
+
+    ; Check if string ends with suffix
+    function ends_with(this: String, suffix: String) returns bool
+    {
+        let this_len get_length()
+        let suffix_len suffix.get_length()
+        if suffix_len > this_len
+            return false
+        if suffix_len = 0
+            return true
+
+        let buf get_buffer()
+        let suffix_buf suffix.get_buffer()
+        memcmp(buf + this_len - suffix_len, suffix_buf, suffix_len) = 0
+    }
+
+    ; Check if string ends with C string suffix
+    function ends_with(this: String, suffix: pointer[const_char]) returns bool
+    {
+        let this_len get_length()
+        let suffix_len strlen(suffix)
+        if suffix_len > this_len
+            return false
+        if suffix_len = 0
+            return true
+
+        let buf get_buffer()
+        memcmp(buf + this_len - suffix_len, suffix, suffix_len) = 0
+    }
+
+    ; Find first occurrence of character, returns -1 if not found
+    function index_of(this: String, c: char) returns int
+    {
+        let buf get_buffer()
+        if buf = null
+            return -1
+        let len get_length()
+        var i: size_t 0
+        while i < len
+        {
+            if *(buf + i) = c
+                return i as int
+            set i: i + 1
+        }
+        -1
+    }
+
+    ; Find first occurrence of character starting at offset, returns -1 if not found
+    function index_of(this: String, c: char, start: size_t) returns int
+    {
+        let buf get_buffer()
+        if buf = null
+            return -1
+        let len get_length()
+        if start >= len
+            return -1
+        var i start
+        while i < len
+        {
+            if *(buf + i) = c
+                return i as int
+            set i: i + 1
+        }
+        -1
+    }
 }
