@@ -27,4 +27,25 @@ choose Result.Err(5): when x: Ok: x when e: Err: e + 100<expect>105
 
 </category>
 
+<category id = optional-types title = "Optional Types">
+
+    <prose>Optional types use null pointer optimization (NPO) for efficient representation.
+
+    <tests id = is-null-check title = "Is Null Check">
+        <prose>The is null expression checks if an optional value is None.
+        <test id = is-null-none program = program><input>define Option[T] union: (Some: T, None)
+function check(x: int?) returns int: if x is null: 0 else 1
+check(Option[int].None)<expect>0
+        <test id = is-null-some program = program><input>define Option[T] union: (Some: T, None)
+function check(x: int?) returns int: if x is null: 0 else 1
+check(Option[int].Some(42))<expect>1
+
+    <tests id = optional-sugar title = "Optional Type Sugar">
+        <prose>T? is syntactic sugar for Option[T].
+        <test id = optional-sugar-unwrap program = program><input>define Option[T] union: (Some: T, None)
+function unwrap(x: int?) returns int: choose x: when v: Some: v else 0
+unwrap(Option[int].Some(42))<expect>42
+
+</category>
+
 </suite>

@@ -267,6 +267,8 @@ private:
     llvm::Expected<llvm::Value*> emitBlock(const PlannedBlock &Block);
     llvm::Expected<llvm::Value*> emitIf(const PlannedIf &If);
     llvm::Expected<llvm::Value*> emitChoose(const PlannedChoose &Choose);
+    llvm::Expected<llvm::Value*> emitChooseNPO(const PlannedChoose &Choose,
+                                                llvm::Value *OptionPtr);
     llvm::Expected<llvm::Value*> emitMatch(const PlannedMatch &Match);
     llvm::Expected<llvm::Value*> emitFor(const PlannedFor &For);
     llvm::Expected<llvm::Value*> emitForIntegerRange(const PlannedFor &For);

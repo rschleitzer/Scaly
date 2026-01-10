@@ -180,6 +180,65 @@ static void test_CHOOSE_MULTI_MATCH_SECOND() {
     pass(Name);
 }
 
+// Category: Optional Types
+
+// Is Null Check
+static void test_IS_NULL_NONE() {
+    const char* Name = "IS-NULL-NONE";
+    auto Result = evalInt("define Option[T] union: (Some: T, None)\nfunction check(x: int?) returns int: if x is null: 0 else 1\ncheck(Option[int].None)");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != 0) {
+        std::string Msg = "expected 0, got " + std::to_string(*Result);
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
+static void test_IS_NULL_SOME() {
+    const char* Name = "IS-NULL-SOME";
+    auto Result = evalInt("define Option[T] union: (Some: T, None)\nfunction check(x: int?) returns int: if x is null: 0 else 1\ncheck(Option[int].Some(42))");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != 1) {
+        std::string Msg = "expected 1, got " + std::to_string(*Result);
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
+
+// Optional Type Sugar
+static void test_OPTIONAL_SUGAR_UNWRAP() {
+    const char* Name = "OPTIONAL-SUGAR-UNWRAP";
+    auto Result = evalInt("define Option[T] union: (Some: T, None)\nfunction unwrap(x: int?) returns int: choose x: when v: Some: v else 0\nunwrap(Option[int].Some(42))");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != 42) {
+        std::string Msg = "expected 42, got " + std::to_string(*Result);
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
 
 bool runChooseTests() {
     TestsPassed = 0;
@@ -196,6 +255,13 @@ bool runChooseTests() {
     std::cout << "    Multiple When Clauses" << std::endl;
     test_CHOOSE_MULTI_MATCH_FIRST();
     test_CHOOSE_MULTI_MATCH_SECOND();
+
+    std::cout << "  Optional Types" << std::endl;
+    std::cout << "    Is Null Check" << std::endl;
+    test_IS_NULL_NONE();
+    test_IS_NULL_SOME();
+    std::cout << "    Optional Type Sugar" << std::endl;
+    test_OPTIONAL_SUGAR_UNWRAP();
 
     std::cout << std::endl;
     std::cout << "Choose tests: " << TestsPassed << " passed, "
