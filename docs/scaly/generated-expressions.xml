@@ -274,6 +274,16 @@
         </literal></entry>
             </row>
             <row>
+              <entry><literal>84 / 2</literal></entry>
+              <entry><literal>42
+        </literal></entry>
+            </row>
+            <row>
+              <entry><literal>17 % 5</literal></entry>
+              <entry><literal>2
+        </literal></entry>
+            </row>
+            <row>
               <entry><literal>3 + 4 * 2</literal></entry>
               <entry><literal>11
         </literal></entry>
@@ -392,6 +402,228 @@ x + y</programlisting></entry>
               <entry><programlisting>let x 2 + 3
 x * 2</programlisting></entry>
               <entry><literal>10
+</literal></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+  </section>
+
+  <section xmlns='http://docbook.org/ns/docbook' xml:id='category-COMPARISON-OPERATORS'>
+    <title>Comparison Operators</title>
+    <para>Comparison operators compare two values and return a boolean result.</para>
+
+    <section xml:id='tests-EQUALITY'>
+      <title>Equality</title>
+      <para>The equality operator (=) tests if two values are equal. The inequality operator (not equal to) tests if two values are different.</para>
+      <informaltable frame='none'>
+        <tgroup cols='2'>
+          <colspec colwidth='1*'/>
+          <colspec colwidth='1*'/>
+          <thead>
+            <row>
+              <entry>Input</entry>
+              <entry>Result</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry><literal>5 = 5</literal></entry>
+              <entry><literal>true
+        </literal></entry>
+            </row>
+            <row>
+              <entry><literal>5 = 3</literal></entry>
+              <entry><literal>false
+        </literal></entry>
+            </row>
+            <row>
+              <entry><literal>5 &lt;&gt; 3</literal></entry>
+              <entry><literal>true
+        </literal></entry>
+            </row>
+            <row>
+              <entry><literal>5 &lt;&gt; 5</literal></entry>
+              <entry><literal>false
+
+    </literal></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+
+    <section xml:id='tests-RELATIONAL'>
+      <title>Relational Operators</title>
+      <para>Relational operators compare the ordering of values.</para>
+      <informaltable frame='none'>
+        <tgroup cols='2'>
+          <colspec colwidth='1*'/>
+          <colspec colwidth='1*'/>
+          <thead>
+            <row>
+              <entry>Input</entry>
+              <entry>Result</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry><literal>3 &lt; 5</literal></entry>
+              <entry><literal>true
+        </literal></entry>
+            </row>
+            <row>
+              <entry><literal>5 &lt; 3</literal></entry>
+              <entry><literal>false
+        </literal></entry>
+            </row>
+            <row>
+              <entry><literal>5 &gt; 3</literal></entry>
+              <entry><literal>true
+        </literal></entry>
+            </row>
+            <row>
+              <entry><literal>3 &gt; 5</literal></entry>
+              <entry><literal>false
+        </literal></entry>
+            </row>
+            <row>
+              <entry><literal>5 &lt;= 5</literal></entry>
+              <entry><literal>true
+        </literal></entry>
+            </row>
+            <row>
+              <entry><literal>5 &lt;= 3</literal></entry>
+              <entry><literal>false
+        </literal></entry>
+            </row>
+            <row>
+              <entry><literal>5 &gt;= 5</literal></entry>
+              <entry><literal>true
+        </literal></entry>
+            </row>
+            <row>
+              <entry><literal>3 &gt;= 5</literal></entry>
+              <entry><literal>false
+</literal></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+  </section>
+
+  <section xmlns='http://docbook.org/ns/docbook' xml:id='category-BOOLEAN-OPERATORS'>
+    <title>Boolean Operators</title>
+    <para>Boolean operators combine boolean values.</para>
+
+    <section xml:id='tests-BOOLEAN-NEGATION'>
+      <title>Boolean Negation</title>
+      <para>The tilde operator negates a boolean value.</para>
+      <informaltable frame='none'>
+        <tgroup cols='2'>
+          <colspec colwidth='1*'/>
+          <colspec colwidth='1*'/>
+          <thead>
+            <row>
+              <entry>Input</entry>
+              <entry>Result</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry><literal>~true</literal></entry>
+              <entry><literal>false
+        </literal></entry>
+            </row>
+            <row>
+              <entry><literal>~false</literal></entry>
+              <entry><literal>true
+
+    </literal></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+
+    <section xml:id='tests-BOOLEAN-AND-OR'>
+      <title>Boolean And/Or</title>
+      <para>The ampersand operator performs logical AND, the pipe operator performs logical OR.</para>
+      <informaltable frame='none'>
+        <tgroup cols='2'>
+          <colspec colwidth='1*'/>
+          <colspec colwidth='1*'/>
+          <thead>
+            <row>
+              <entry>Input</entry>
+              <entry>Result</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry><literal>true &amp; true</literal></entry>
+              <entry><literal>true
+        </literal></entry>
+            </row>
+            <row>
+              <entry><literal>true &amp; false</literal></entry>
+              <entry><literal>false
+        </literal></entry>
+            </row>
+            <row>
+              <entry><literal>false | false</literal></entry>
+              <entry><literal>false
+        </literal></entry>
+            </row>
+            <row>
+              <entry><literal>true | false</literal></entry>
+              <entry><literal>true
+</literal></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+  </section>
+
+  <section xmlns='http://docbook.org/ns/docbook' xml:id='category-BITWISE-OPERATORS'>
+    <title>Bitwise Operators</title>
+    <para>Bitwise operators manipulate integer values at the bit level.</para>
+
+    <section xml:id='tests-BIT-SHIFTS'>
+      <title>Bit Shifts</title>
+      <para>The left shift operator shifts bits to the left, effectively multiplying by powers of two. The right shift operator shifts bits to the right, effectively dividing by powers of two.</para>
+      <informaltable frame='none'>
+        <tgroup cols='2'>
+          <colspec colwidth='1*'/>
+          <colspec colwidth='1*'/>
+          <thead>
+            <row>
+              <entry>Input</entry>
+              <entry>Result</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry><literal>1 &lt;&lt; 4</literal></entry>
+              <entry><literal>16
+        </literal></entry>
+            </row>
+            <row>
+              <entry><literal>5 &lt;&lt; 3</literal></entry>
+              <entry><literal>40
+        </literal></entry>
+            </row>
+            <row>
+              <entry><literal>16 &gt;&gt; 2</literal></entry>
+              <entry><literal>4
+        </literal></entry>
+            </row>
+            <row>
+              <entry><literal>100 &gt;&gt; 3</literal></entry>
+              <entry><literal>12
 </literal></entry>
             </row>
           </tbody>
