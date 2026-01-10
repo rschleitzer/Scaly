@@ -369,19 +369,14 @@ static bool testComprehensiveTokenization() {
     }
     L.advance();
 
-    // Character literal: 'a string identifier'
-    if (auto* Lit = get_if<LiteralToken>(L.token())) {
-        if (auto* Ch = std::get_if<CharacterLiteral>(&Lit->Value)) {
-            if (Ch->Value != "a string identifier") {
-                fail(Name, "expected character 'a string identifier'");
-                return false;
-            }
-        } else {
-            fail(Name, "expected CharacterLiteral");
+    // Freeform identifier: 'a string identifier'
+    if (auto* Id = get_if<IdentifierToken>(L.token())) {
+        if (Id->Name != "a string identifier") {
+            fail(Name, "expected identifier 'a string identifier'");
             return false;
         }
     } else {
-        fail(Name, "expected LiteralToken for character literal");
+        fail(Name, "expected IdentifierToken for single-quoted identifier");
         return false;
     }
     L.advance();

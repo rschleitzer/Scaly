@@ -245,6 +245,7 @@ Token Lexer::scanStringLiteral() {
 }
 
 Token Lexer::scanStringIdentifier() {
+    // Single-quoted strings are freeform identifiers (like SQL's 'column name')
     const char* Start = Current_ + 1;
     size_t Length = 0;
 
@@ -260,7 +261,8 @@ Token Lexer::scanStringIdentifier() {
         switch (C) {
         case '\'':
             readCharacter();
-            return LiteralToken{CharacterLiteral{llvm::StringRef(Start, Length - 1)}};
+            // Return as identifier token, not character literal
+            return IdentifierToken{llvm::StringRef(Start, Length - 1)};
 
         case '\\':
             readCharacter();
