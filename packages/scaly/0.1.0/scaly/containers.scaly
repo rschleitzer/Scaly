@@ -380,6 +380,73 @@ define containers
         set result: test_result()
         if result <> 0
             return result
+        set result: test_string_operations()
+        if result <> 0
+            return result
+        0
+    }
+
+    function test_string_operations() returns int
+    {
+        var s String$("Hello, World!")
+
+        ; Test contains(char)
+        if s.contains("H" as char) = false
+            return -200
+        if s.contains("d" as char) = false
+            return -201
+        if s.contains("X" as char)
+            return -202
+
+        ; Test contains(String)
+        var hello String$("Hello")
+        if s.contains(hello) = false
+            return -203
+        var world String$("World")
+        if s.contains(world) = false
+            return -204
+        var foo String$("foo")
+        if s.contains(foo)
+            return -205
+
+        ; Test starts_with
+        if s.starts_with(hello) = false
+            return -206
+        if s.starts_with("Hello")= false
+            return -207
+        if s.starts_with(world)
+            return -208
+        if s.starts_with("World")
+            return -209
+
+        ; Test ends_with
+        if s.ends_with("!") = false
+            return -210
+        var exclaim String$("!")
+        if s.ends_with(exclaim) = false
+            return -211
+        var ending String$("World!")
+        if s.ends_with(ending) = false
+            return -212
+        if s.ends_with(hello)
+            return -213
+
+        ; Test index_of
+        if s.index_of("H" as char) <> 0
+            return -214
+        if s.index_of("," as char) <> 5
+            return -215
+        if s.index_of("!" as char) <> 12
+            return -216
+        if s.index_of("X" as char) <> -1
+            return -217
+
+        ; Test index_of with start offset
+        if s.index_of("o" as char, 0) <> 4
+            return -218
+        if s.index_of("o" as char, 5) <> 8
+            return -219
+
         0
     }
 
