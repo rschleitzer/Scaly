@@ -2620,15 +2620,18 @@ llvm::Expected<PlannedType> Planner::resolveFunctionCall(
     if (BestMatch) {
         // Plan the function if it's not already in InstantiatedFunctions
         // This handles functions from sibling files
-        auto Planned = planFunction(*BestMatch, nullptr);
-        if (Planned) {
-            // Add to InstantiatedFunctions if not already present
-            if (InstantiatedFunctions.find(Planned->MangledName) == InstantiatedFunctions.end()) {
-                InstantiatedFunctions[Planned->MangledName] = *Planned;
+        // Skip planning if the function is currently being planned (recursive call)
+        if (FunctionsBeingPlanned.count(BestMatch) == 0) {
+            auto Planned = planFunction(*BestMatch, nullptr);
+            if (Planned) {
+                // Add to InstantiatedFunctions if not already present
+                if (InstantiatedFunctions.find(Planned->MangledName) == InstantiatedFunctions.end()) {
+                    InstantiatedFunctions[Planned->MangledName] = *Planned;
+                }
+            } else {
+                // If planning fails, return the error
+                return Planned.takeError();
             }
-        } else {
-            // If planning fails, return the error
-            return Planned.takeError();
         }
 
         if (BestMatch->Returns) {
@@ -8968,6 +8971,9 @@ llvm::Expected<PlannedImplementation> Planner::planImplementation(
 
 llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
                                                        const PlannedType *Parent) {
+    // Track this function to handle recursive calls
+    FunctionsBeingPlanned.insert(&Func);
+
     PlannedFunction Result;
     Result.Loc = Func.Loc;
     Result.Private = Func.Private;
@@ -9037,6 +9043,7 @@ llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
         auto PlannedParam = planItem(Param);
         if (!PlannedParam) {
             popScope();
+            FunctionsBeingPlanned.erase(&Func);
             return PlannedParam.takeError();
         }
 
@@ -9046,6 +9053,7 @@ llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
                 PlannedParam->ItemType = std::make_shared<PlannedType>(*Parent);
             } else {
                 popScope();
+                FunctionsBeingPlanned.erase(&Func);
                 return llvm::make_error<llvm::StringError>(
                     "'this' parameter without enclosing type",
                     llvm::inconvertibleErrorCode()
@@ -9084,6 +9092,7 @@ llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
         auto ResolvedReturn = resolveType(*Func.Returns, Func.Loc);
         if (!ResolvedReturn) {
             popScope();
+            FunctionsBeingPlanned.erase(&Func);
             return ResolvedReturn.takeError();
         }
         Result.Returns = std::make_shared<PlannedType>(std::move(*ResolvedReturn));
@@ -9092,6 +9101,7 @@ llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
         // Use no lifetime for by-value return, or # for caller's page allocation
         if (std::holds_alternative<LocalLifetime>(Result.Returns->Life)) {
             popScope();
+            FunctionsBeingPlanned.erase(&Func);
             return makeLocalReturnError(File, Func.Returns->Loc);
         }
 
@@ -9118,6 +9128,7 @@ llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
         auto ResolvedThrows = resolveType(*Func.Throws, Func.Loc);
         if (!ResolvedThrows) {
             popScope();
+            FunctionsBeingPlanned.erase(&Func);
             return ResolvedThrows.takeError();
         }
         Result.Throws = std::make_shared<PlannedType>(std::move(*ResolvedThrows));
@@ -9130,6 +9141,7 @@ llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
     auto PlannedImpl = planImplementation(Func.Impl);
     if (!PlannedImpl) {
         popScope();
+        FunctionsBeingPlanned.erase(&Func);
         return PlannedImpl.takeError();
     }
     Result.Impl = std::move(*PlannedImpl);
@@ -9150,6 +9162,7 @@ llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
         Result.MangledName = mangleFunction(Func.Name, Result.Input, Parent);
     }
 
+    FunctionsBeingPlanned.erase(&Func);
     return Result;
 }
 
