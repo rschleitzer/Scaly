@@ -82,6 +82,9 @@ private:
     std::map<std::string, PlannedUnion> InstantiatedUnions;
     std::map<std::string, PlannedFunction> InstantiatedFunctions;
 
+    // Track functions currently being planned to handle recursive calls
+    std::set<const Function*> FunctionsBeingPlanned;
+
     // Global constants cache - for constant lookup during expression planning
     std::map<std::string, PlannedGlobal> PlannedGlobals;
 
