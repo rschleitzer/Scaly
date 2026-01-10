@@ -152,6 +152,106 @@ check(Option[int].Some(42))</programlisting></entry>
 function unwrap(x: int?) returns int: choose x: when v: Some: v else 0
 unwrap(Option[int].Some(42))</programlisting></entry>
               <entry><literal>42
+
+    </literal></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+
+    <section xml:id='tests-GENERIC-OPTION'>
+      <title>Generic Option Types</title>
+      <para>Generic unions like Option[T] work with choose for pattern matching.</para>
+      <informaltable frame='none'>
+        <tgroup cols='2'>
+          <colspec colwidth='1*'/>
+          <colspec colwidth='1*'/>
+          <thead>
+            <row>
+              <entry>Input</entry>
+              <entry>Result</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry><programlisting>define Option[T] union: (Some: T, None)
+choose Option[int].Some(42): when v: Some: v else 0</programlisting></entry>
+              <entry><literal>42
+        </literal></entry>
+            </row>
+            <row>
+              <entry><programlisting>define Option[T] union: (Some: T, None)
+choose Option[int].None: when v: Some: v else -1</programlisting></entry>
+              <entry><literal>-1
+</literal></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+  </section>
+
+  <section xmlns='http://docbook.org/ns/docbook' xml:id='category-VARIANT-CONSTRUCTION'>
+    <title>Variant Construction</title>
+    <para>Union variants can be constructed explicitly using Type.Variant syntax.</para>
+
+    <section xml:id='tests-VARIANT-CONSTRUCT'>
+      <title>Construct Variants</title>
+      <para>Variants are constructed with Type.Variant(value) syntax.</para>
+      <informaltable frame='none'>
+        <tgroup cols='2'>
+          <colspec colwidth='1*'/>
+          <colspec colwidth='1*'/>
+          <thead>
+            <row>
+              <entry>Input</entry>
+              <entry>Result</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry><programlisting>define Result union: (Ok: int, Error: int)
+choose Result.Ok(42): when x: Ok: x else 0</programlisting></entry>
+              <entry><literal>42
+        </literal></entry>
+            </row>
+            <row>
+              <entry><programlisting>define Result union: (Ok: int, Error: int)
+choose Result.Error(100): when e: Error: e else 0</programlisting></entry>
+              <entry><literal>100
+
+    </literal></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+
+    <section xml:id='tests-VARIANT-IS'>
+      <title>Variant Is Expression</title>
+      <para>The is expression tests if a union value matches a variant.</para>
+      <informaltable frame='none'>
+        <tgroup cols='2'>
+          <colspec colwidth='1*'/>
+          <colspec colwidth='1*'/>
+          <thead>
+            <row>
+              <entry>Input</entry>
+              <entry>Result</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry><programlisting>define Result union: (Ok: int, Error: int)
+if Result.Ok(50) is Ok : 1 else 0</programlisting></entry>
+              <entry><literal>1
+        </literal></entry>
+            </row>
+            <row>
+              <entry><programlisting>define Result union: (Ok: int, Error: int)
+if Result.Error(33) is Ok : 1 else 0</programlisting></entry>
+              <entry><literal>0
 </literal></entry>
             </row>
           </tbody>

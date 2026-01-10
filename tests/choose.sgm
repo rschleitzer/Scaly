@@ -46,6 +46,33 @@ check(Option[int].Some(42))<expect>1
 function unwrap(x: int?) returns int: choose x: when v: Some: v else 0
 unwrap(Option[int].Some(42))<expect>42
 
+    <tests id = generic-option title = "Generic Option Types">
+        <prose>Generic unions like Option[T] work with choose for pattern matching.
+        <test id = generic-option-some program = program><input>define Option[T] union: (Some: T, None)
+choose Option[int].Some(42): when v: Some: v else 0<expect>42
+        <test id = generic-option-none program = program><input>define Option[T] union: (Some: T, None)
+choose Option[int].None: when v: Some: v else -1<expect>-1
+
+</category>
+
+<category id = variant-construction title = "Variant Construction">
+
+    <prose>Union variants can be constructed explicitly using Type.Variant syntax.
+
+    <tests id = variant-construct title = "Construct Variants">
+        <prose>Variants are constructed with Type.Variant(value) syntax.
+        <test id = variant-ok program = program><input>define Result union: (Ok: int, Error: int)
+choose Result.Ok(42): when x: Ok: x else 0<expect>42
+        <test id = variant-error program = program><input>define Result union: (Ok: int, Error: int)
+choose Result.Error(100): when e: Error: e else 0<expect>100
+
+    <tests id = variant-is title = "Variant Is Expression">
+        <prose>The is expression tests if a union value matches a variant.
+        <test id = variant-is-ok program = program><input>define Result union: (Ok: int, Error: int)
+if Result.Ok(50) is Ok : 1 else 0<expect>1
+        <test id = variant-is-not-match program = program><input>define Result union: (Ok: int, Error: int)
+if Result.Error(33) is Ok : 1 else 0<expect>0
+
 </category>
 
 </suite>
