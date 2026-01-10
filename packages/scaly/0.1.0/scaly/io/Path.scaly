@@ -3,8 +3,6 @@ use scaly.containers.StringBuilder
 
 define Path
 {
-    let CHAR_SLASH: char "/"
-
     function get_directory_name#(rp, path: String) returns String
     {
         let path_as_c_string path.to_c_string$()
@@ -32,7 +30,7 @@ define Path
         if path2.get_length() = 0
             return path.to_string^rp()
 
-        path.append(CHAR_SLASH)
+        path.append("/" as char)
         path.append(path2)
         path.to_string^rp()
     }
