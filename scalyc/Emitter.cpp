@@ -3129,15 +3129,22 @@ llvm::Expected<llvm::Value*> Emitter::emitChoose(const PlannedChoose &Choose) {
     if (UnionValue->getType()->isPointerTy()) {
         UnionPtr = UnionValue;
         // Look up the pointee type from cache
-        auto CacheIt = StructCache.find(CondType.MangledName);
+        // If CondType is pointer[T], we need the inner type T for cache lookup
+        const PlannedType &LookupType = CondType.isPointer() && !CondType.Generics.empty()
+            ? CondType.Generics[0] : CondType;
+
+        auto CacheIt = StructCache.find(LookupType.MangledName);
         if (CacheIt == StructCache.end()) {
-            CacheIt = StructCache.find(CondType.Name);
+            CacheIt = StructCache.find(LookupType.Name);
         }
         if (CacheIt == StructCache.end()) {
-            CacheIt = StructCache.find("_Z" + CondType.MangledName);
+            CacheIt = StructCache.find("_Z" + LookupType.MangledName);
         }
         if (CacheIt != StructCache.end()) {
             UnionType = CacheIt->second;
+        } else {
+            // Fallback: get the type via mapType
+            UnionType = mapType(LookupType);
         }
     } else {
         // The union value might have an anonymous struct type (from extractvalue)

@@ -20,6 +20,7 @@ define containers
     module String
     module StringIterator
     module StringBuilder
+    module Result
 
     function test_vector() returns int
     {
@@ -376,6 +377,45 @@ define containers
         set result: test_hash_map()
         if result <> 0
             return result
+        set result: test_result()
+        if result <> 0
+            return result
+        0
+    }
+
+    function test_result() returns int
+    {
+        ; Test Result.Ok construction
+        let ok_result Result[int, bool].Ok(42)
+        if ok_result.is_ok() = false
+            return -100
+
+        if ok_result.is_error()
+            return -101
+
+        if ok_result.unwrap() <> 42
+            return -102
+
+        ; Test Result.Error construction
+        let err_result Result[int, bool].Error(true)
+        if err_result.is_error() = false
+            return -103
+
+        if err_result.is_ok()
+            return -104
+
+        if err_result.unwrap_error() <> true
+            return -105
+
+        ; Test unwrap_or
+        let ok2 Result[int, bool].Ok(10)
+        if ok2.unwrap_or(99) <> 10
+            return -106
+
+        let err2 Result[int, bool].Error(false)
+        if err2.unwrap_or(99) <> 99
+            return -107
+
         0
     }
 }

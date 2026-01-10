@@ -1,0 +1,58 @@
+; Result[T, E] - Success or error type for explicit error handling
+; Similar to Rust's Result<T, E> or LLVM's Expected<T>
+
+define Result[T, E] union
+(
+    Ok: T
+    Error: E
+)
+{
+    ; Check if this is a success
+    function is_ok(this: Result[T, E]) returns bool
+    {
+        choose this
+            when ok: Ok
+                return true
+            else
+                return false
+    }
+
+    ; Check if this is an error
+    function is_error(this: Result[T, E]) returns bool
+    {
+        choose this
+            when err: Error
+                return true
+            else
+                return false
+    }
+
+    ; Unwrap the success value - panics if error
+    ; Caller should check is_ok() first or use unwrap_or()
+    function unwrap(this: Result[T, E]) returns T
+    {
+        choose this
+            when ok: Ok
+                return ok
+    }
+
+    ; Unwrap the error value - panics if ok
+    ; Caller should check is_error() first
+    function unwrap_error(this: Result[T, E]) returns E
+    {
+        choose this
+            when err: Error
+                return err
+    }
+
+    ; Get success value or default
+    function unwrap_or(this: Result[T, E], default: T) returns T
+    {
+        choose this
+            when ok: Ok
+                return ok
+            else
+                return default
+    }
+
+}

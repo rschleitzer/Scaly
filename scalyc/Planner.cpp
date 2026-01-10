@@ -1238,6 +1238,36 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
         }
     }
 
+    // Also check unions - unions can have methods too
+    const PlannedUnion *Union = nullptr;
+    auto UnionIt = InstantiatedUnions.find(StructType.Name);
+    if (UnionIt != InstantiatedUnions.end()) {
+        Union = &UnionIt->second;
+    } else {
+        UnionIt = InstantiatedUnions.find(StructType.MangledName);
+        if (UnionIt != InstantiatedUnions.end()) {
+            Union = &UnionIt->second;
+        }
+    }
+
+    if (Union) {
+        for (const auto &Method : Union->Methods) {
+            if (Method.Name == MethodName) {
+                MethodMatch Match;
+                Match.Method = nullptr;
+                Match.MangledName = Method.MangledName;
+                Match.RequiresPageParam = Method.PageParameter.has_value();
+                if (Method.Returns) {
+                    Match.ReturnType = *Method.Returns;
+                } else {
+                    Match.ReturnType.Name = "void";
+                    Match.ReturnType.Loc = Loc;
+                }
+                return Match;
+            }
+        }
+    }
+
     // Search in Model's Concept
     // This handles forward references to methods not yet planned,
     // and methods on sibling types that aren't instantiated yet
@@ -1426,6 +1456,42 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
         }
     }
 
+    // Also check unions - unions can have methods too
+    const PlannedUnion *Union = nullptr;
+    auto UnionIt = InstantiatedUnions.find(LookupName);
+    if (UnionIt != InstantiatedUnions.end()) {
+        Union = &UnionIt->second;
+    } else {
+        UnionIt = InstantiatedUnions.find(StructType.MangledName);
+        if (UnionIt != InstantiatedUnions.end()) {
+            Union = &UnionIt->second;
+        }
+    }
+
+    if (Union) {
+        for (const auto &Method : Union->Methods) {
+            if (Method.Name == MethodName) {
+                MethodMatch Match;
+                Match.Method = nullptr;
+                Match.MangledName = Method.MangledName;
+                Match.RequiresPageParam = Method.PageParameter.has_value();
+                if (Method.Returns) {
+                    Match.ReturnType = *Method.Returns;
+                } else {
+                    Match.ReturnType.Name = "void";
+                    Match.ReturnType.Loc = Loc;
+                }
+                // Collect parameter types (skip 'this')
+                for (size_t i = 1; i < Method.Input.size(); ++i) {
+                    if (Method.Input[i].ItemType) {
+                        Match.ParameterTypes.push_back(*Method.Input[i].ItemType);
+                    }
+                }
+                Candidates.push_back(std::move(Match));
+            }
+        }
+    }
+
     // Also collect from Model's Concept
     // Extract the actual type name from fully qualified paths like "scaly.containers.String"
     // But for generic instantiation names like "List.char", extract just the base type name
@@ -1543,6 +1609,99 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                             Match.ReturnType.Loc = Loc;
                         }
                         TypeSubstitutions = OldSubst;  // Restore substitutions
+                        Candidates.push_back(std::move(Match));
+                    }
+                }
+            }
+        } else if (auto *ModelUnion = std::get_if<scaly::Union>(&Conc->Def)) {
+            // Handle union methods
+            // Ensure non-generic union is planned so its methods are registered
+            if (Conc->Parameters.empty() && !Union) {
+                if (InstantiatedUnions.find(BaseName) == InstantiatedUnions.end()) {
+                    auto PlannedConc = planConcept(*Conc);
+                    if (PlannedConc) {
+                        auto UnionIt = InstantiatedUnions.find(BaseName);
+                        if (UnionIt != InstantiatedUnions.end()) {
+                            Union = &UnionIt->second;
+                            for (const auto &Method : Union->Methods) {
+                                if (Method.Name == MethodName) {
+                                    MethodMatch Match;
+                                    Match.Method = nullptr;
+                                    Match.MangledName = Method.MangledName;
+                                    Match.RequiresPageParam = Method.PageParameter.has_value();
+                                    if (Method.Returns) {
+                                        Match.ReturnType = *Method.Returns;
+                                    } else {
+                                        Match.ReturnType.Name = "void";
+                                        Match.ReturnType.Loc = Loc;
+                                    }
+                                    for (size_t i = 1; i < Method.Input.size(); ++i) {
+                                        if (Method.Input[i].ItemType) {
+                                            Match.ParameterTypes.push_back(*Method.Input[i].ItemType);
+                                        }
+                                    }
+                                    Candidates.push_back(std::move(Match));
+                                }
+                            }
+                        }
+                    } else {
+                        llvm::consumeError(PlannedConc.takeError());
+                    }
+                }
+            }
+
+            for (const auto &Member : ModelUnion->Members) {
+                if (auto *Func = std::get_if<Function>(&Member)) {
+                    if (Func->Name == MethodName) {
+                        MethodMatch Match;
+                        Match.Method = Func;
+                        Match.RequiresPageParam = Func->PageParameter.has_value();
+
+                        std::map<std::string, PlannedType> OldSubst = TypeSubstitutions;
+                        if (!Conc->Parameters.empty() && !StructType.Generics.empty()) {
+                            for (size_t I = 0; I < Conc->Parameters.size() && I < StructType.Generics.size(); ++I) {
+                                TypeSubstitutions[Conc->Parameters[I].Name] = StructType.Generics[I];
+                            }
+                        }
+
+                        PlannedType ParentType;
+                        ParentType.Name = StructType.Name;
+                        ParentType.Generics = StructType.Generics;
+                        ParentType.MangledName = Union ? Union->MangledName :
+                            (StructType.MangledName.empty() ? StructType.Name : StructType.MangledName);
+
+                        std::vector<PlannedItem> Params;
+                        for (const auto &Inp : Func->Input) {
+                            PlannedItem Item;
+                            Item.Loc = Inp.Loc;
+                            Item.Name = Inp.Name;
+                            if (Inp.ItemType) {
+                                auto Resolved = resolveType(*Inp.ItemType, Inp.Loc);
+                                if (Resolved) {
+                                    Item.ItemType = std::make_shared<PlannedType>(*Resolved);
+                                    if (!Inp.Name || *Inp.Name != "this") {
+                                        Match.ParameterTypes.push_back(*Resolved);
+                                    }
+                                }
+                            }
+                            Params.push_back(Item);
+                        }
+                        Match.MangledName = mangleFunction(Func->Name, Params, &ParentType);
+
+                        if (Func->Returns) {
+                            auto Resolved = resolveType(*Func->Returns, Loc);
+                            if (Resolved) {
+                                Match.ReturnType = *Resolved;
+                            } else {
+                                llvm::consumeError(Resolved.takeError());
+                                Match.ReturnType.Name = "void";
+                                Match.ReturnType.Loc = Loc;
+                            }
+                        } else {
+                            Match.ReturnType.Name = "void";
+                            Match.ReturnType.Loc = Loc;
+                        }
+                        TypeSubstitutions = OldSubst;
                         Candidates.push_back(std::move(Match));
                     }
                 }
