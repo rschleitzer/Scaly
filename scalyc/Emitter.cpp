@@ -704,8 +704,8 @@ llvm::GlobalVariable *Emitter::emitGlobal(const PlannedGlobal &Global) {
     }
 
     if (ArraySize == 0) {
-        // Scalar constant or single value
-        return nullptr; // TODO: Handle scalar globals
+        // Scalar constants are inlined by the Planner, so this path is not reached
+        return nullptr;
     }
 
     // Create array type
