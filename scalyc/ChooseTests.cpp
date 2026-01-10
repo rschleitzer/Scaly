@@ -104,6 +104,24 @@ static void test_CHOOSE_MATCH_SOME() {
     pass(Name);
 }
 
+static void test_CHOOSE_MATCH_NONE() {
+    const char* Name = "CHOOSE-MATCH-NONE";
+    auto Result = evalInt("define Option union(Some: int, None)\nchoose Option.None: when v: Some: v else 0");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != 0) {
+        std::string Msg = "expected 0, got " + std::to_string(*Result);
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
 
 // Choose with Binding
 static void test_CHOOSE_BIND_VALUE() {
@@ -134,6 +152,7 @@ bool runChooseTests() {
     std::cout << "  Choose Expressions" << std::endl;
     std::cout << "    Choose on Variant Construction" << std::endl;
     test_CHOOSE_MATCH_SOME();
+    test_CHOOSE_MATCH_NONE();
     std::cout << "    Choose with Binding" << std::endl;
     test_CHOOSE_BIND_VALUE();
 

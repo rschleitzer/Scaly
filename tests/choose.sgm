@@ -10,6 +10,8 @@
         <prose>Choose can match directly on constructed variants.
         <test id = choose-match-some program = program><input>define Option union(Some: int, None)
 choose Option.Some(7): when v: Some: v else 0<expect>7
+        <test id = choose-match-none program = program><input>define Option union(Some: int, None)
+choose Option.None: when v: Some: v else 0<expect>0
 
     <tests id = choose-binding title = "Choose with Binding">
         <prose>When a variant carries a value, the value can be bound to a name.
