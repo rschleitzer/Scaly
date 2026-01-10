@@ -1,6 +1,25 @@
 <![CDATA[
 ;; Generate Scaly Parser from scaly.sgm
 
+;; Helper to generate char constant name from punctuation value
+(define (punct-const-name value)
+    (case value
+        (("(") "CHAR_LPAREN")
+        ((")") "CHAR_RPAREN")
+        (("[") "CHAR_LBRACKET")
+        (("]") "CHAR_RBRACKET")
+        (("{") "CHAR_LBRACE")
+        (("}") "CHAR_RBRACE")
+        ((",") "CHAR_COMMA")
+        ((".") "CHAR_DOT")
+        (("!") "CHAR_EXCL")
+        (("?") "CHAR_QUESTION")
+        (("#") "CHAR_HASH")
+        (("$") "CHAR_DOLLAR")
+        (("^") "CHAR_CARET")
+        (("\\") "CHAR_BACKSLASH")
+        (else ($ "CHAR_" value))))
+
 (define (generate-parser-scaly) ($
 "
 use scaly.memory.Page
@@ -8,6 +27,25 @@ use scaly.containers.Array
 use scaly.containers.List
 use scaly.containers.HashSet
 use scaly.containers.HashSetBuilder
+
+; Character constants for punctuation (char literals use double-quote + type annotation)
+let CHAR_LPAREN: char = \"(\"
+let CHAR_RPAREN: char = \")\"
+let CHAR_LBRACKET: char = \"[\"
+let CHAR_RBRACKET: char = \"]\"
+let CHAR_LBRACE: char = \"{\"
+let CHAR_RBRACE: char = \"}\"
+let CHAR_COMMA: char = \",\"
+let CHAR_DOT: char = \".\"
+let CHAR_EXCL: char = \"!\"
+let CHAR_QUESTION: char = \"?\"
+let CHAR_HASH: char = \"#\"
+let CHAR_DOLLAR: char = \"$\"
+let CHAR_CARET: char = \"^\"
+let CHAR_BACKSLASH: char = \"\\\\\"
+
+; Lexer import (uses its own char constants)
+module lexer
 
 define Parser
 (
@@ -193,12 +231,12 @@ define Parser
                                 ;; Optional punctuation - just try it
                                 ($
 "
-        lexer.parse_punctuation#('"(value (element-with-id (link content)))"')
+        lexer.parse_punctuation#("(punct-const-name (value (element-with-id (link content))))")
 "                               )
                                 ;; Required punctuation
                                 ($
 "
-        if ~lexer.parse_punctuation#('"(value (element-with-id (link content)))"')"
+        if ~lexer.parse_punctuation#("(punct-const-name (value (element-with-id (link content))))")"
                                     (if (equal? 1 (child-number content))
                                         "
             throw ParserError.Different(DifferentSyntax())
