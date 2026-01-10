@@ -890,6 +890,25 @@ use scaly.containers.List
 use scaly.containers.HashSet
 use scaly.containers.HashSetBuilder
 
+; Character constants for punctuation (char literals use double-quote + type annotation)
+let CHAR_LPAREN: char = "("
+let CHAR_RPAREN: char = ")"
+let CHAR_LBRACKET: char = "["
+let CHAR_RBRACKET: char = "]"
+let CHAR_LBRACE: char = "{"
+let CHAR_RBRACE: char = "}"
+let CHAR_COMMA: char = ","
+let CHAR_DOT: char = "."
+let CHAR_EXCL: char = "!"
+let CHAR_QUESTION: char = "?"
+let CHAR_HASH: char = "#"
+let CHAR_DOLLAR: char = "$"
+let CHAR_CARET: char = "^"
+let CHAR_BACKSLASH: char = "\\"
+
+; Lexer import (uses its own char constants)
+module lexer
+
 define Parser
 (
     lexer: Lexer
@@ -1447,7 +1466,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        if ~lexer.parse_punctuation#('[')
+        if ~lexer.parse_punctuation#(CHAR_LBRACKET)
             throw ParserError.Different(DifferentSyntax())
 
         let parameters_start lexer.position
@@ -1464,7 +1483,7 @@ define Parser
             when success: pointer[Vector[GenericParameterSyntax]]
                 set parameters: success
 
-        if ~lexer.parse_punctuation#(']')
+        if ~lexer.parse_punctuation#(CHAR_RBRACKET)
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected ']'")))
 
         let end lexer.position
@@ -1517,7 +1536,7 @@ define Parser
             when success: pointer[Vector[AttributeSyntax]]
                 set attributes: success
 
-        lexer.parse_punctuation#(',')
+        lexer.parse_punctuation#(CHAR_COMMA)
 
         let end lexer.position
 
@@ -1627,7 +1646,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        if ~lexer.parse_punctuation#('{')
+        if ~lexer.parse_punctuation#(CHAR_LBRACE)
             throw ParserError.Different(DifferentSyntax())
 
         let uses_start lexer.position
@@ -1682,7 +1701,7 @@ define Parser
             when success: pointer[Vector[MemberSyntax]]
                 set members: success
 
-        if ~lexer.parse_punctuation#('}')
+        if ~lexer.parse_punctuation#(CHAR_RBRACE)
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected '}'")))
 
         lexer.parse_colon#()
@@ -1696,7 +1715,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        if ~lexer.parse_punctuation#('{')
+        if ~lexer.parse_punctuation#(CHAR_LBRACE)
             throw ParserError.Different(DifferentSyntax())
 
         let uses_start lexer.position
@@ -1725,7 +1744,7 @@ define Parser
             when success: pointer[Vector[DeclarationSyntax]]
                 set declarations: success
 
-        if ~lexer.parse_punctuation#('}')
+        if ~lexer.parse_punctuation#(CHAR_RBRACE)
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected '}'")))
 
         lexer.parse_colon#()
@@ -1744,7 +1763,7 @@ define Parser
 
         lexer.parse_colon#()
 
-        if ~lexer.parse_punctuation#('(')
+        if ~lexer.parse_punctuation#(CHAR_LPAREN)
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected '('")))
 
         let variants_start lexer.position
@@ -1761,7 +1780,7 @@ define Parser
             when success: pointer[Vector[VariantSyntax]]
                 set variants: success
 
-        if ~lexer.parse_punctuation#(')')
+        if ~lexer.parse_punctuation#(CHAR_RPAREN)
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected ')'")))
 
         lexer.parse_colon#()
@@ -1844,7 +1863,7 @@ define Parser
             when success: TypeAnnotationSyntax
                 set annotation: success
 
-        lexer.parse_punctuation#(',')
+        lexer.parse_punctuation#(CHAR_COMMA)
 
         lexer.parse_colon#()
 
@@ -1953,7 +1972,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        if ~lexer.parse_punctuation#('[')
+        if ~lexer.parse_punctuation#(CHAR_LBRACKET)
             throw ParserError.Different(DifferentSyntax())
 
         let generics_start lexer.position
@@ -1969,7 +1988,7 @@ define Parser
             when success: pointer[Vector[GenericArgumentSyntax]]
                 set generics: success
 
-        if ~lexer.parse_punctuation#(']')
+        if ~lexer.parse_punctuation#(CHAR_RBRACKET)
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected ']'")))
 
         let end lexer.position
@@ -2013,7 +2032,7 @@ define Parser
             when success: TypeSyntax
                 set type: success
 
-        lexer.parse_punctuation#(',')
+        lexer.parse_punctuation#(CHAR_COMMA)
 
         let end lexer.position
 
@@ -2024,7 +2043,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        if ~lexer.parse_punctuation#('?')
+        if ~lexer.parse_punctuation#(CHAR_QUESTION)
             throw ParserError.Different(DifferentSyntax())
 
         let end lexer.position
@@ -2061,7 +2080,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        if ~lexer.parse_punctuation#('(')
+        if ~lexer.parse_punctuation#(CHAR_LPAREN)
             throw ParserError.Different(DifferentSyntax())
 
         let items_start lexer.position
@@ -2077,7 +2096,7 @@ define Parser
             when success: pointer[Vector[ItemSyntax]]
                 set items: success
 
-        if ~lexer.parse_punctuation#(')')
+        if ~lexer.parse_punctuation#(CHAR_RPAREN)
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected ')'")))
 
         let end lexer.position
@@ -2130,7 +2149,7 @@ define Parser
             when success: TypeAnnotationSyntax
                 set annotation: success
 
-        lexer.parse_punctuation#(',')
+        lexer.parse_punctuation#(CHAR_COMMA)
 
         lexer.parse_colon#()
 
@@ -2320,7 +2339,7 @@ define Parser
 
         lexer.parse_colon#()
 
-        if ~lexer.parse_punctuation#('{')
+        if ~lexer.parse_punctuation#(CHAR_LBRACE)
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected '{'")))
 
         let uses_start lexer.position
@@ -2349,7 +2368,7 @@ define Parser
             when success: pointer[Vector[MethodSyntax]]
                 set methods: success
 
-        if ~lexer.parse_punctuation#('}')
+        if ~lexer.parse_punctuation#(CHAR_RBRACE)
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected '}'")))
 
         lexer.parse_colon#()
@@ -2406,7 +2425,7 @@ define Parser
             when success: pointer[Vector[AttributeSyntax]]
                 set attributes: success
 
-        if ~lexer.parse_punctuation#('{')
+        if ~lexer.parse_punctuation#(CHAR_LBRACE)
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected '{'")))
 
         let uses_start lexer.position
@@ -2435,7 +2454,7 @@ define Parser
             when success: pointer[Vector[MethodSyntax]]
                 set functions: success
 
-        if ~lexer.parse_punctuation#('}')
+        if ~lexer.parse_punctuation#(CHAR_RBRACE)
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected '}'")))
 
         lexer.parse_colon#()
@@ -2995,7 +3014,7 @@ define Parser
             when success: TypeSyntax
                 set type: success
 
-        lexer.parse_punctuation#(',')
+        lexer.parse_punctuation#(CHAR_COMMA)
 
         let end lexer.position
 
@@ -3238,7 +3257,7 @@ define Parser
             when success: Literal
                 set majorMinor: success
 
-        if ~lexer.parse_punctuation#('.')
+        if ~lexer.parse_punctuation#(CHAR_DOT)
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected '.'")))
 
         var patch: Literal
@@ -3257,7 +3276,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        if ~lexer.parse_punctuation#('(')
+        if ~lexer.parse_punctuation#(CHAR_LPAREN)
             throw ParserError.Different(DifferentSyntax())
 
         let operands_start lexer.position
@@ -3274,7 +3293,7 @@ define Parser
             when success: pointer[Vector[OperandSyntax]]
                 set operands: success
 
-        if ~lexer.parse_punctuation#(')')
+        if ~lexer.parse_punctuation#(CHAR_RPAREN)
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected ')'")))
 
         let end lexer.position
@@ -3364,7 +3383,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        if ~lexer.parse_punctuation#('.')
+        if ~lexer.parse_punctuation#(CHAR_DOT)
             throw ParserError.Different(DifferentSyntax())
 
         let name_start lexer.position
@@ -3591,7 +3610,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        if ~lexer.parse_punctuation#('(')
+        if ~lexer.parse_punctuation#(CHAR_LPAREN)
             throw ParserError.Different(DifferentSyntax())
 
         let components_start lexer.position
@@ -3607,7 +3626,7 @@ define Parser
             when success: pointer[Vector[ComponentSyntax]]
                 set components: success
 
-        if ~lexer.parse_punctuation#(')')
+        if ~lexer.parse_punctuation#(CHAR_RPAREN)
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected ')'")))
 
         let end lexer.position
@@ -3677,7 +3696,7 @@ define Parser
             when success: ValueSyntax
                 set value: success
 
-        lexer.parse_punctuation#(',')
+        lexer.parse_punctuation#(CHAR_COMMA)
 
         let end lexer.position
 
@@ -3727,7 +3746,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        if ~lexer.parse_punctuation#('[')
+        if ~lexer.parse_punctuation#(CHAR_LBRACKET)
             throw ParserError.Different(DifferentSyntax())
 
         let elements_start lexer.position
@@ -3744,7 +3763,7 @@ define Parser
             when success: pointer[Vector[ElementSyntax]]
                 set elements: success
 
-        if ~lexer.parse_punctuation#(']')
+        if ~lexer.parse_punctuation#(CHAR_RBRACKET)
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected ']'")))
 
         let lifetime_start lexer.position
@@ -3814,7 +3833,7 @@ define Parser
             when success: pointer[Vector[AttributeSyntax]]
                 set attributes: success
 
-        lexer.parse_punctuation#(',')
+        lexer.parse_punctuation#(CHAR_COMMA)
 
         let end lexer.position
 
@@ -4698,7 +4717,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        if ~lexer.parse_punctuation#('[')
+        if ~lexer.parse_punctuation#(CHAR_LBRACKET)
             throw ParserError.Different(DifferentSyntax())
 
         let members_start lexer.position
@@ -4714,7 +4733,7 @@ define Parser
             when success: pointer[Vector[TypeSyntax]]
                 set members: success
 
-        if ~lexer.parse_punctuation#(']')
+        if ~lexer.parse_punctuation#(CHAR_RBRACKET)
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected ']'")))
 
         let end lexer.position
@@ -4726,7 +4745,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        if ~lexer.parse_punctuation#('(')
+        if ~lexer.parse_punctuation#(CHAR_LPAREN)
             throw ParserError.Different(DifferentSyntax())
 
         let parts_start lexer.position
@@ -4742,7 +4761,7 @@ define Parser
             when success: pointer[Vector[PartSyntax]]
                 set parts: success
 
-        if ~lexer.parse_punctuation#(')')
+        if ~lexer.parse_punctuation#(CHAR_RPAREN)
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected ')'")))
 
         let end lexer.position
@@ -4884,7 +4903,7 @@ define Parser
             when success: InitializerSyntax
                 set initializer: success
 
-        lexer.parse_punctuation#(',')
+        lexer.parse_punctuation#(CHAR_COMMA)
 
         lexer.parse_colon#()
 
@@ -5071,7 +5090,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        if ~lexer.parse_punctuation#('\\')
+        if ~lexer.parse_punctuation#(CHAR_\\)
             throw ParserError.Different(DifferentSyntax())
 
         let input_start lexer.position
@@ -5366,7 +5385,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        if ~lexer.parse_punctuation#('{')
+        if ~lexer.parse_punctuation#(CHAR_LBRACE)
             throw ParserError.Different(DifferentSyntax())
 
         let uses_start lexer.position
@@ -5395,7 +5414,7 @@ define Parser
             when success: pointer[Vector[StatementSyntax]]
                 set statements: success
 
-        if ~lexer.parse_punctuation#('}')
+        if ~lexer.parse_punctuation#(CHAR_RBRACE)
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected '}'")))
 
         let end lexer.position
@@ -5641,7 +5660,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        if ~lexer.parse_punctuation#('.')
+        if ~lexer.parse_punctuation#(CHAR_DOT)
             throw ParserError.Different(DifferentSyntax())
 
         let name lexer.parse_identifier#(keywords)
@@ -5702,7 +5721,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        if ~lexer.parse_punctuation#('#')
+        if ~lexer.parse_punctuation#(CHAR_HASH)
             throw ParserError.Different(DifferentSyntax())
 
         let end lexer.position
@@ -5714,7 +5733,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        if ~lexer.parse_punctuation#('$')
+        if ~lexer.parse_punctuation#(CHAR_DOLLAR)
             throw ParserError.Different(DifferentSyntax())
 
         let end lexer.position
@@ -5726,7 +5745,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        if ~lexer.parse_punctuation#('^')
+        if ~lexer.parse_punctuation#(CHAR_CARET)
             throw ParserError.Different(DifferentSyntax())
 
         let location lexer.parse_identifier#(keywords)
@@ -5742,7 +5761,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        if ~lexer.parse_punctuation#('!')
+        if ~lexer.parse_punctuation#(CHAR_EXCL)
             throw ParserError.Different(DifferentSyntax())
 
         let end lexer.position
