@@ -6617,6 +6617,45 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
 
                                 // Convert tuple components to call arguments
                                 Call.Args = std::make_shared<std::vector<PlannedOperand>>();
+
+                                // Handle function# page parameter for static method calls
+                                if (PlannedFunc->PageParameter) {
+                                    Call.RequiresPageParam = true;
+                                    Call.Life = TypeExpr->Life;
+
+                                    if (auto* RefLife = std::get_if<ReferenceLifetime>(&TypeExpr->Life)) {
+                                        // ^name - pass explicit page as first argument
+                                        if (RefLife->Location == "this") {
+                                            auto PageGetResult = generatePageGetThis(RefLife->Loc);
+                                            if (!PageGetResult) {
+                                                return PageGetResult.takeError();
+                                            }
+                                            Call.Args->push_back(std::move(*PageGetResult));
+                                        } else {
+                                            auto RegionBinding = lookupLocalBinding(RefLife->Location);
+                                            if (!RegionBinding) {
+                                                return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
+                                            }
+                                            PlannedOperand RegionArg;
+                                            RegionArg.Loc = RefLife->Loc;
+                                            RegionArg.ResultType = RegionBinding->Type;
+                                            RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, RegionBinding->IsMutable};
+                                            Call.Args->push_back(std::move(RegionArg));
+                                        }
+                                    }
+                                    else if (std::holds_alternative<LocalLifetime>(TypeExpr->Life)) {
+                                        // $ - track that we need local page allocation
+                                        CurrentFunctionUsesLocalLifetime = true;
+                                        if (!ScopeInfoStack.empty()) {
+                                            ScopeInfoStack.back().HasLocalAllocations = true;
+                                        }
+                                    }
+                                    else if (!std::holds_alternative<CallLifetime>(TypeExpr->Life)) {
+                                        return makePlannerNotImplementedError(File, Op.Loc,
+                                            "function# '" + MethodName + "' must be called with #, $, or ^page syntax");
+                                    }
+                                }
+
                                 if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedArgs->Expr)) {
                                     for (auto &Comp : TupleExpr->Components) {
                                         if (!Comp.Value.empty()) {
@@ -6710,6 +6749,45 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
 
                                 // Convert tuple components to call arguments
                                 Call.Args = std::make_shared<std::vector<PlannedOperand>>();
+
+                                // Handle function# page parameter for namespace function calls
+                                if (PlannedFunc->PageParameter) {
+                                    Call.RequiresPageParam = true;
+                                    Call.Life = TypeExpr->Life;
+
+                                    if (auto* RefLife = std::get_if<ReferenceLifetime>(&TypeExpr->Life)) {
+                                        // ^name - pass explicit page as first argument
+                                        if (RefLife->Location == "this") {
+                                            auto PageGetResult = generatePageGetThis(RefLife->Loc);
+                                            if (!PageGetResult) {
+                                                return PageGetResult.takeError();
+                                            }
+                                            Call.Args->push_back(std::move(*PageGetResult));
+                                        } else {
+                                            auto RegionBinding = lookupLocalBinding(RefLife->Location);
+                                            if (!RegionBinding) {
+                                                return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
+                                            }
+                                            PlannedOperand RegionArg;
+                                            RegionArg.Loc = RefLife->Loc;
+                                            RegionArg.ResultType = RegionBinding->Type;
+                                            RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, RegionBinding->IsMutable};
+                                            Call.Args->push_back(std::move(RegionArg));
+                                        }
+                                    }
+                                    else if (std::holds_alternative<LocalLifetime>(TypeExpr->Life)) {
+                                        // $ - track that we need local page allocation
+                                        CurrentFunctionUsesLocalLifetime = true;
+                                        if (!ScopeInfoStack.empty()) {
+                                            ScopeInfoStack.back().HasLocalAllocations = true;
+                                        }
+                                    }
+                                    else if (!std::holds_alternative<CallLifetime>(TypeExpr->Life)) {
+                                        return makePlannerNotImplementedError(File, Op.Loc,
+                                            "function# '" + MethodName + "' must be called with #, $, or ^page syntax");
+                                    }
+                                }
+
                                 if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedArgs->Expr)) {
                                     for (auto &Comp : TupleExpr->Components) {
                                         if (!Comp.Value.empty()) {

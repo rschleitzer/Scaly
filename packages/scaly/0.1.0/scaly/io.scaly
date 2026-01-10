@@ -56,6 +56,27 @@ define io
         0
     }
 
+    function test_file_string() returns int
+    {
+        ; Test File API with String
+        var test_path String$("/tmp/scaly_string_test.txt")
+        var test_content String$("Hello from String-based I/O!")
+
+        ; Write using String API
+        if File.write_from_string(test_path, test_content) = false
+            return -20
+
+        ; Read back using String API
+        var read_content File.read_to_string$(test_path)
+        if read_content.get_length() <> test_content.get_length()
+            return -21
+
+        if read_content.equals(test_content) = false
+            return -22
+
+        0
+    }
+
     function test() returns int
     {
         var result test_direct()
@@ -67,7 +88,9 @@ define io
         set result: test_file_raw()
         if result <> 0
             return result
-        ; TODO: test_file_string requires fixing namespace function page parameter passing
+        set result: test_file_string()
+        if result <> 0
+            return result
         0
     }
 }
