@@ -23,6 +23,12 @@
               <entry><programlisting>define Option union(Some: int, None)
 choose Option.Some(7): when v: Some: v else 0</programlisting></entry>
               <entry><literal>7
+        </literal></entry>
+            </row>
+            <row>
+              <entry><programlisting>define Option union(Some: int, None)
+choose Option.None: when v: Some: v else 0</programlisting></entry>
+              <entry><literal>0
 
     </literal></entry>
             </row>

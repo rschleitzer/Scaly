@@ -6193,6 +6193,52 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
             }
         }
 
+        // Case 3: Unit variant without tuple - Option.None
+        // Name has both union and variant but no tuple follows
+        if (auto* TypeExpr = std::get_if<Type>(&Op.Expr)) {
+            if (TypeExpr->Name.size() >= 2) {
+                const std::string& UnionName = TypeExpr->Name[0];
+                const std::string& VariantName = TypeExpr->Name[1];
+
+                auto UnionIt = InstantiatedUnions.find(UnionName);
+                if (UnionIt != InstantiatedUnions.end()) {
+                    const PlannedUnion& Union = UnionIt->second;
+
+                    // Find the variant
+                    const PlannedVariant* FoundVariant = nullptr;
+                    for (const auto& Var : Union.Variants) {
+                        if (Var.Name == VariantName) {
+                            FoundVariant = &Var;
+                            break;
+                        }
+                    }
+
+                    if (FoundVariant && !FoundVariant->VarType) {
+                        // Unit variant (no value type)
+                        PlannedType UnionType;
+                        UnionType.Loc = Op.Loc;
+                        UnionType.Name = UnionName;
+                        UnionType.MangledName = Union.MangledName;
+
+                        PlannedVariantConstruction VarConstruct;
+                        VarConstruct.Loc = Op.Loc;
+                        VarConstruct.UnionType = UnionType;
+                        VarConstruct.VariantName = VariantName;
+                        VarConstruct.VariantTag = FoundVariant->Tag;
+                        VarConstruct.Value = nullptr;  // No value for unit variant
+
+                        PlannedOperand ResultOp;
+                        ResultOp.Loc = Op.Loc;
+                        ResultOp.ResultType = UnionType;
+                        ResultOp.Expr = std::move(VarConstruct);
+
+                        Result.push_back(std::move(ResultOp));
+                        continue;
+                    }
+                }
+            }
+        }
+
         // Check for static method call pattern: Type.method() followed by Tuple
         // e.g., Page.allocate_page() or Foo.create(args)
         // Also handles fully qualified names: scaly.memory.Page.get()
