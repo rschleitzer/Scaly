@@ -8468,35 +8468,57 @@ llvm::Expected<PlannedFor> Planner::planFor(const For &ForExpr) {
     pushScope();
 
     // Define loop variable in scope with inferred element type
-    // Scaly for-loops use the Iterator pattern:
-    // 1. Call get_iterator() on the collection to get an iterator
-    // 2. Call next() on the iterator to get each element
-    // The element type is what next() returns (possibly with pointer dereferencing)
+    // Scaly for-loops can be:
+    // 1. Integer range: for i in N (iterates 0 to N-1)
+    // 2. Iterator-based: for item in collection (uses get_iterator/next protocol)
     if (!Result.Expr.empty()) {
-        const auto &CollType = Result.Expr[0].ResultType;
-        PlannedType ElementType = CollType;  // Default to collection type
+        const auto &CollType = Result.Expr.back().ResultType;
+        Result.CollectionType = CollType;
 
-        // Look for get_iterator method on the collection type
-        auto IterMethod = lookupMethod(CollType, "get_iterator", ForExpr.Loc);
-        if (IterMethod) {
-            // Found get_iterator, now look for next() on the iterator type
-            auto NextMethod = lookupMethod(IterMethod->ReturnType, "next", ForExpr.Loc);
-            if (NextMethod) {
-                // The element type is what next() returns
-                // If it returns pointer[T], dereference to get T
-                ElementType = NextMethod->ReturnType;
-                if (ElementType.Name == "pointer" && !ElementType.Generics.empty()) {
-                    ElementType = ElementType.Generics[0];
-                }
-            }
+        // Check if this is an integer range loop
+        if (CollType.Name == "int" || CollType.Name == "int8" ||
+            CollType.Name == "int16" || CollType.Name == "int32" ||
+            CollType.Name == "int64" || CollType.Name == "size_t" ||
+            CollType.Name == "uint8" || CollType.Name == "uint16" ||
+            CollType.Name == "uint32" || CollType.Name == "uint64") {
+            // Integer range loop: for i in N
+            Result.IsIteratorLoop = false;
+            Result.ElementType = CollType;
         } else {
-            // No get_iterator - try treating as a generic type like pointer[T]
-            if (!CollType.Generics.empty()) {
-                ElementType = CollType.Generics[0];
+            // Try iterator protocol
+            auto IterMethod = lookupMethod(CollType, "get_iterator", ForExpr.Loc);
+            if (IterMethod) {
+                Result.IsIteratorLoop = true;
+                Result.IteratorType = IterMethod->ReturnType;
+                Result.GetIteratorMethod = IterMethod->MangledName;
+
+                // Look for next() on the iterator type
+                auto NextMethod = lookupMethod(Result.IteratorType, "next", ForExpr.Loc);
+                if (NextMethod) {
+                    Result.NextMethod = NextMethod->MangledName;
+                    // Element type is exactly what next() returns
+                    // (typically pointer[T] where null means end of iteration)
+                    Result.ElementType = NextMethod->ReturnType;
+                } else {
+                    // No next() method found - error
+                    popScope();
+                    return llvm::make_error<PlannerError>(UndefinedSymbolError{
+                        File, ForExpr.Loc,
+                        Result.IteratorType.Name + ".next"
+                    });
+                }
+            } else {
+                // No get_iterator - fallback to first generic arg (for pointer[T] etc.)
+                Result.IsIteratorLoop = false;
+                if (!CollType.Generics.empty()) {
+                    Result.ElementType = CollType.Generics[0];
+                } else {
+                    Result.ElementType = CollType;
+                }
             }
         }
 
-        defineLocal(ForExpr.Identifier, ElementType);
+        defineLocal(ForExpr.Identifier, Result.ElementType);
     }
 
     auto PlannedBody = planAction(ForExpr.Body);

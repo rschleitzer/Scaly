@@ -267,6 +267,14 @@ struct PlannedFor {
     std::string Identifier;
     std::vector<PlannedOperand> Expr;
     PlannedAction Body;
+
+    // Iterator support fields
+    bool IsIteratorLoop = false;           // true if iterator-based, false if integer range
+    PlannedType CollectionType;            // Type of the collection
+    PlannedType IteratorType;              // Return type of get_iterator()
+    PlannedType ElementType;               // Element type (what next() returns)
+    std::string GetIteratorMethod;         // Mangled name of get_iterator
+    std::string NextMethod;                // Mangled name of next
 };
 
 struct PlannedWhile {
