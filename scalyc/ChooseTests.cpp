@@ -240,6 +240,121 @@ static void test_OPTIONAL_SUGAR_UNWRAP() {
 }
 
 
+// Generic Option Types
+static void test_GENERIC_OPTION_SOME() {
+    const char* Name = "GENERIC-OPTION-SOME";
+    auto Result = evalInt("define Option[T] union: (Some: T, None)\nchoose Option[int].Some(42): when v: Some: v else 0");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != 42) {
+        std::string Msg = "expected 42, got " + std::to_string(*Result);
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
+static void test_GENERIC_OPTION_NONE() {
+    const char* Name = "GENERIC-OPTION-NONE";
+    auto Result = evalInt("define Option[T] union: (Some: T, None)\nchoose Option[int].None: when v: Some: v else -1");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != -1) {
+        std::string Msg = "expected -1, got " + std::to_string(*Result);
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
+// Category: Variant Construction
+
+// Construct Variants
+static void test_VARIANT_OK() {
+    const char* Name = "VARIANT-OK";
+    auto Result = evalInt("define Result union: (Ok: int, Error: int)\nchoose Result.Ok(42): when x: Ok: x else 0");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != 42) {
+        std::string Msg = "expected 42, got " + std::to_string(*Result);
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
+static void test_VARIANT_ERROR() {
+    const char* Name = "VARIANT-ERROR";
+    auto Result = evalInt("define Result union: (Ok: int, Error: int)\nchoose Result.Error(100): when e: Error: e else 0");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != 100) {
+        std::string Msg = "expected 100, got " + std::to_string(*Result);
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
+
+// Variant Is Expression
+static void test_VARIANT_IS_OK() {
+    const char* Name = "VARIANT-IS-OK";
+    auto Result = evalInt("define Result union: (Ok: int, Error: int)\nif Result.Ok(50) is Ok : 1 else 0");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != 1) {
+        std::string Msg = "expected 1, got " + std::to_string(*Result);
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
+static void test_VARIANT_IS_NOT_MATCH() {
+    const char* Name = "VARIANT-IS-NOT-MATCH";
+    auto Result = evalInt("define Result union: (Ok: int, Error: int)\nif Result.Error(33) is Ok : 1 else 0");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != 0) {
+        std::string Msg = "expected 0, got " + std::to_string(*Result);
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
+
 bool runChooseTests() {
     TestsPassed = 0;
     TestsFailed = 0;
@@ -262,6 +377,17 @@ bool runChooseTests() {
     test_IS_NULL_SOME();
     std::cout << "    Optional Type Sugar" << std::endl;
     test_OPTIONAL_SUGAR_UNWRAP();
+    std::cout << "    Generic Option Types" << std::endl;
+    test_GENERIC_OPTION_SOME();
+    test_GENERIC_OPTION_NONE();
+
+    std::cout << "  Variant Construction" << std::endl;
+    std::cout << "    Construct Variants" << std::endl;
+    test_VARIANT_OK();
+    test_VARIANT_ERROR();
+    std::cout << "    Variant Is Expression" << std::endl;
+    test_VARIANT_IS_OK();
+    test_VARIANT_IS_NOT_MATCH();
 
     std::cout << std::endl;
     std::cout << "Choose tests: " << TestsPassed << " passed, "
