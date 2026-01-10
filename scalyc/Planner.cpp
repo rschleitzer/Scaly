@@ -1062,6 +1062,9 @@ bool Planner::isFunction(llvm::StringRef Name) {
 bool Planner::isOperatorName(llvm::StringRef Name) {
     if (Name.empty()) return false;
 
+    // Known name-shaped prefix functions (act like unary operators)
+    if (Name == "abs") return true;
+
     // Operator names start with operator characters
     char First = Name[0];
     return First == '+' || First == '-' || First == '*' || First == '/' ||
@@ -2693,6 +2696,15 @@ llvm::Expected<PlannedType> Planner::resolvePrefixOperatorCall(
 
     // Unary plus: +x
     if (Name == "+") {
+        if (Operand.Name == "i64" || Operand.Name == "i32" ||
+            Operand.Name == "i16" || Operand.Name == "i8" ||
+            Operand.Name == "f64" || Operand.Name == "f32") {
+            return Operand;
+        }
+    }
+
+    // Absolute value: abs x
+    if (Name == "abs") {
         if (Operand.Name == "i64" || Operand.Name == "i32" ||
             Operand.Name == "i16" || Operand.Name == "i8" ||
             Operand.Name == "f64" || Operand.Name == "f32") {

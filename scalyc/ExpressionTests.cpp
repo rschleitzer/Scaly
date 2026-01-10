@@ -501,6 +501,24 @@ static void test_NAME_AS_OPERATOR() {
     pass(Name);
 }
 
+static void test_NAME_AS_FUNCTION() {
+    const char* Name = "NAME-AS-FUNCTION";
+    auto Result = evalInt("abs (- 5)");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != 5) {
+        std::string Msg = "expected 5, got " + std::to_string(*Result);
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
 
 // Let Bindings
 static void test_LET_SIMPLE() {
@@ -617,6 +635,7 @@ bool runExpressionTests() {
     test_NESTED_PARENS();
     std::cout << "    Identifier Shapes" << std::endl;
     test_NAME_AS_OPERATOR();
+    test_NAME_AS_FUNCTION();
     std::cout << "    Let Bindings" << std::endl;
     test_LET_SIMPLE();
     test_LET_USE_BINDING();

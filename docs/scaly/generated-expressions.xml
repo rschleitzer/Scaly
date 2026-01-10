@@ -304,7 +304,11 @@
             <row>
               <entry><literal>10 div 3</literal></entry>
               <entry><literal>3
-        
+        </literal></entry>
+            </row>
+            <row>
+              <entry><literal>abs (- 5)</literal></entry>
+              <entry><literal>5
 
     </literal></entry>
             </row>

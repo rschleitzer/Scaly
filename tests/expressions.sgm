@@ -76,9 +76,7 @@
     <tests id = identifier-shapes title = "Identifier Shapes">
         <prose>Identifiers can have name shape (alphanumeric) or operator shape (symbols). The shape is purely lexical and does not determine behavior. Whether an identifier acts as a prefix function or chain operator depends on its declaration and the register state.
         <test id = name-as-operator><input>10 div 3<expect>3
-        <!-- TODO: abs function returns wrong sign
         <test id = name-as-function><input>abs (- 5)<expect>5
-        -->
 
     <tests id = let-bindings title = "Let Bindings">
         <prose>Let bindings introduce local variables. The syntax is let followed by a name and a value expression (no equals sign). Multiple statements are separated by colons or newlines.
