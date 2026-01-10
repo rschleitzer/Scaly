@@ -4,57 +4,6 @@ use scaly.memory.Page
 use scaly.containers.Array
 use scaly.containers.String
 
-; Character constants (char literals use double-quote + type annotation)
-let CHAR_AT: char "@"
-let CHAR_DQUOTE: char "\""
-let CHAR_SQUOTE: char "'"
-let CHAR_COLON: char ":"
-let CHAR_SEMI: char ";"
-let CHAR_STAR: char "*"
-let CHAR_BACKTICK: char "`"
-let CHAR_BACKSLASH: char "\\"
-let CHAR_SPACE: char " "
-let CHAR_TAB: char "\t"
-let CHAR_CR: char "\r"
-let CHAR_LF: char "\n"
-let CHAR_DOT: char "."
-let CHAR_PLUS: char "+"
-let CHAR_MINUS: char "-"
-let CHAR_SLASH: char "/"
-let CHAR_EQ: char "="
-let CHAR_LT: char "<"
-let CHAR_GT: char ">"
-let CHAR_AMP: char "&"
-let CHAR_PIPE: char "|"
-let CHAR_TILDE: char "~"
-let CHAR_CARET: char "^"
-let CHAR_PERCENT: char "%"
-let CHAR_LPAREN: char "("
-let CHAR_RPAREN: char ")"
-let CHAR_LBRACKET: char "["
-let CHAR_RBRACKET: char "]"
-let CHAR_LBRACE: char "{"
-let CHAR_RBRACE: char "}"
-let CHAR_COMMA: char ","
-let CHAR_UNDERSCORE: char "_"
-let CHAR_0: char "0"
-let CHAR_9: char "9"
-let CHAR_a: char "a"
-let CHAR_f: char "f"
-let CHAR_g: char "g"
-let CHAR_h: char "h"
-let CHAR_n: char "n"
-let CHAR_o: char "o"
-let CHAR_r: char "r"
-let CHAR_t: char "t"
-let CHAR_x: char "x"
-let CHAR_z: char "z"
-let CHAR_A: char "A"
-let CHAR_E: char "E"
-let CHAR_F: char "F"
-let CHAR_X: char "X"
-let CHAR_Z: char "Z"
-
 ; Literal types
 define StringLiteral(value: String)
 define CharacterLiteral(value: String)
@@ -136,21 +85,21 @@ define Lexer
         }
 
         ; Attribute (@name)
-        if c = CHAR_AT
+        if c = "@" as char
         {
             set token: scan_attribute#()
             return
         }
 
         ; String literal
-        if c = CHAR_DQUOTE
+        if c = "\"" as char
         {
             set token: scan_string_literal#()
             return
         }
 
         ; Freeform identifier (single quotes)
-        if c = CHAR_SQUOTE
+        if c = "'" as char
         {
             set token: scan_freeform_identifier#()
             return
@@ -164,7 +113,7 @@ define Lexer
         }
 
         ; Colon (special - used as separator)
-        if c = CHAR_COLON
+        if c = ":" as char
         {
             set current: current + 1
             set position: current
@@ -173,9 +122,9 @@ define Lexer
         }
 
         ; Single-line comment
-        if c = CHAR_SEMI
+        if c = ";" as char
         {
-            if current + 1 < source.length() & source.get(current + 1) = CHAR_STAR
+            if current + 1 < source.length() & source.get(current + 1) = "*" as char
             {
                 handle_multi_line_comment()
                 advance#()
@@ -203,7 +152,7 @@ define Lexer
         }
 
         ; Fragment literal
-        if c = CHAR_BACKTICK
+        if c = "`" as char
         {
             set token: scan_fragment_literal#()
             return
@@ -219,12 +168,12 @@ define Lexer
         while current < source.length()
         {
             let c source.get(current)
-            if (c = CHAR_SPACE) | (c = CHAR_TAB) | (c = CHAR_CR)
+            if (c = " " as char) | (c = "\t" as char) | (c = "\r" as char)
             {
                 set current: current + 1
                 continue
             }
-            if skip_linefeed & (c = CHAR_LF)
+            if skip_linefeed & (c = "\n" as char)
             {
                 set current: current + 1
                 continue
@@ -236,7 +185,7 @@ define Lexer
 
     procedure handle_single_line_comment(this: Lexer)
     {
-        while current < source.length() & source.get(current) <> CHAR_LF
+        while current < source.length() & source.get(current) <> "\n" as char
             set current: current + 1
     }
 
@@ -246,13 +195,13 @@ define Lexer
         var nesting_level 1
         while current + 1 < source.length() & nesting_level > 0
         {
-            if source.get(current) = CHAR_SEMI & source.get(current + 1) = CHAR_STAR
+            if source.get(current) = ";" as char & source.get(current + 1) = "*" as char
             {
                 set nesting_level: nesting_level + 1
                 set current: current + 2
                 continue
             }
-            if source.get(current) = CHAR_STAR & source.get(current + 1) = CHAR_SEMI
+            if source.get(current) = "*" as char & source.get(current + 1) = ";" as char
             {
                 set nesting_level: nesting_level - 1
                 set current: current + 2
@@ -308,9 +257,9 @@ define Lexer
         set current: current + 1  ; Skip opening "
         let start current
 
-        while current < source.length() & source.get(current) <> CHAR_DQUOTE
+        while current < source.length() & source.get(current) <> "\"" as char
         {
-            if source.get(current) = CHAR_BACKSLASH
+            if source.get(current) = "\\" as char
                 set current: current + 1  ; Skip escape
             set current: current + 1
         }
@@ -329,9 +278,9 @@ define Lexer
         set current: current + 1  ; Skip opening '
         let start current
 
-        while current < source.length() & source.get(current) <> CHAR_SQUOTE
+        while current < source.length() & source.get(current) <> "'" as char
         {
-            if source.get(current) = CHAR_BACKSLASH
+            if source.get(current) = "\\" as char
                 set current: current + 1  ; Skip escape
             set current: current + 1
         }
@@ -351,7 +300,7 @@ define Lexer
         set current: current + 1  ; Skip opening `
         let start current
 
-        while current < source.length() & source.get(current) <> CHAR_BACKTICK
+        while current < source.length() & source.get(current) <> "`" as char
             set current: current + 1
 
         let value source.substring(rp, start, current - start)
@@ -368,10 +317,10 @@ define Lexer
         let start current
 
         ; Check for hex literal (0x...)
-        if source.get(current) = CHAR_0 & current + 1 < source.length()
+        if source.get(current) = "0" as char & current + 1 < source.length()
         {
             let next source.get(current + 1)
-            if next = CHAR_x | next = CHAR_X
+            if next = "x" as char | next = "X" as char
             {
                 set current: current + 2
                 while current < source.length() & is_hex_digit(source.get(current))
@@ -387,7 +336,7 @@ define Lexer
             set current: current + 1
 
         ; Check for decimal point
-        if current < source.length() & source.get(current) = CHAR_DOT
+        if current < source.length() & source.get(current) = "." as char
         {
             set current: current + 1
             while current < source.length() & is_digit(source.get(current))
@@ -398,14 +347,14 @@ define Lexer
             {
                 let exp_char source.get(current)
                 let e_lower: char = "e"
-                if exp_char = e_lower | exp_char = CHAR_E
+                if exp_char = e_lower | exp_char = "E" as char
                 {
                     set current: current + 1
                     ; Optional sign
                     if current < source.length()
                     {
                         let sign_char source.get(current)
-                        if sign_char = CHAR_PLUS | sign_char = CHAR_MINUS
+                        if sign_char = "+" as char | sign_char = "-" as char
                             set current: current + 1
                     }
                     while current < source.length() & is_digit(source.get(current))
@@ -478,70 +427,70 @@ define Lexer
 
 ; Character classification helpers
 function is_identifier_start(c: char) returns bool
-    (c >= CHAR_a & c <= CHAR_z) | (c >= CHAR_A & c <= CHAR_Z) | c = CHAR_UNDERSCORE
+    (c >= "a" as char & c <= "z" as char) | (c >= "A" as char & c <= "Z" as char) | c = "_" as char
 
 function is_identifier_char(c: char) returns bool
     is_identifier_start(c) | is_digit(c)
 
 function is_digit(c: char) returns bool
-    c >= CHAR_0 & c <= CHAR_9
+    c >= "0" as char & c <= "9" as char
 
 function is_hex_digit(c: char) returns bool
-    is_digit(c) | (c >= CHAR_a & c <= CHAR_f) | (c >= CHAR_A & c <= CHAR_F)
+    is_digit(c) | (c >= "a" as char & c <= "f" as char) | (c >= "A" as char & c <= "F" as char)
 
 function is_operator_char(c: char) returns bool
-    c = CHAR_PLUS | c = CHAR_MINUS | c = CHAR_STAR | c = CHAR_SLASH | c = CHAR_EQ | c = CHAR_LT | c = CHAR_GT | c = CHAR_AMP | c = CHAR_PIPE | c = CHAR_TILDE | c = CHAR_CARET | c = CHAR_PERCENT
+    c = "+" as char | c = "-" as char | c = "*" as char | c = "/" as char | c = "=" as char | c = "<" as char | c = ">" as char | c = "&" as char | c = "|" as char | c = "~" as char | c = "^" as char | c = "%" as char
 
 function is_punctuation(c: char) returns bool
-    c = CHAR_LPAREN | c = CHAR_RPAREN | c = CHAR_LBRACKET | c = CHAR_RBRACKET | c = CHAR_LBRACE | c = CHAR_RBRACE | c = CHAR_COMMA | c = CHAR_DOT
+    c = "(" as char | c = ")" as char | c = "[" as char | c = "]" as char | c = "{" as char | c = "}" as char | c = "," as char | c = "." as char
 
 ; Test helper classification functions
 function test_helpers() returns int
 {
     ; Test is_identifier_start
-    if ~is_identifier_start(CHAR_a)
+    if ~is_identifier_start("a" as char)
         return -1
-    if ~is_identifier_start(CHAR_Z)
+    if ~is_identifier_start("Z" as char)
         return -2
-    if ~is_identifier_start(CHAR_UNDERSCORE)
+    if ~is_identifier_start("_" as char)
         return -3
-    if is_identifier_start(CHAR_0)
+    if is_identifier_start("0" as char)
         return -4
-    if is_identifier_start(CHAR_SPACE)
+    if is_identifier_start(" " as char)
         return -5
 
     ; Test is_digit
-    if ~is_digit(CHAR_0)
+    if ~is_digit("0" as char)
         return -6
-    if ~is_digit(CHAR_9)
+    if ~is_digit("9" as char)
         return -7
-    if is_digit(CHAR_a)
+    if is_digit("a" as char)
         return -8
 
     ; Test is_hex_digit
-    if ~is_hex_digit(CHAR_0)
+    if ~is_hex_digit("0" as char)
         return -9
-    if ~is_hex_digit(CHAR_a)
+    if ~is_hex_digit("a" as char)
         return -10
-    if ~is_hex_digit(CHAR_F)
+    if ~is_hex_digit("F" as char)
         return -11
-    if is_hex_digit(CHAR_g)
+    if is_hex_digit("g" as char)
         return -12
 
     ; Test is_punctuation
-    if ~is_punctuation(CHAR_LPAREN)
+    if ~is_punctuation("(" as char)
         return -13
-    if ~is_punctuation(CHAR_RPAREN)
+    if ~is_punctuation(")" as char)
         return -14
-    if is_punctuation(CHAR_COLON)
+    if is_punctuation(":" as char)
         return -15
 
     ; Test is_operator_char
-    if ~is_operator_char(CHAR_PLUS)
+    if ~is_operator_char("+" as char)
         return -16
-    if ~is_operator_char(CHAR_MINUS)
+    if ~is_operator_char("-" as char)
         return -17
-    if is_operator_char(CHAR_a)
+    if is_operator_char("a" as char)
         return -18
 
     0
@@ -562,13 +511,13 @@ function test_string_basics() returns int
     }
 
     ; Check individual characters
-    if get(s, 0) <> CHAR_h
+    if get(s, 0) <> "h" as char
     {
         free(rp as pointer[void])
         return -2
     }
 
-    if get(s, 4) <> CHAR_o
+    if get(s, 4) <> "o" as char
     {
         free(rp as pointer[void])
         return -3
