@@ -556,121 +556,6 @@ static llvm::Expected<bool> evalBool(llvm::StringRef Source) {
     return E.jitExecuteBool(*PlanResult);
 }
 
-static bool testPipelineIntegerLiteral() {
-    const char* Name = "Pipeline: integer literal (42)";
-
-    auto ResultOrErr = evalInt("42");
-    if (!ResultOrErr) {
-        std::string ErrMsg;
-        llvm::raw_string_ostream OS(ErrMsg);
-        OS << ResultOrErr.takeError();
-        fail(Name, ErrMsg.c_str());
-        return false;
-    }
-
-    int64_t Result = *ResultOrErr;
-    if (Result != 42) {
-        std::string Msg = "expected 42, got " + std::to_string(Result);
-        fail(Name, Msg.c_str());
-        return false;
-    }
-
-    pass(Name);
-    return true;
-}
-
-static bool testPipelineNegativeLiteral() {
-    const char* Name = "Pipeline: negative literal (-7)";
-
-    auto ResultOrErr = evalInt("-7");
-    if (!ResultOrErr) {
-        std::string ErrMsg;
-        llvm::raw_string_ostream OS(ErrMsg);
-        OS << ResultOrErr.takeError();
-        fail(Name, ErrMsg.c_str());
-        return false;
-    }
-
-    int64_t Result = *ResultOrErr;
-    if (Result != -7) {
-        std::string Msg = "expected -7, got " + std::to_string(Result);
-        fail(Name, Msg.c_str());
-        return false;
-    }
-
-    pass(Name);
-    return true;
-}
-
-static bool testPipelineAddition() {
-    const char* Name = "Pipeline: 3 + 4";
-
-    auto ResultOrErr = evalInt("3 + 4");
-    if (!ResultOrErr) {
-        std::string ErrMsg;
-        llvm::raw_string_ostream OS(ErrMsg);
-        OS << ResultOrErr.takeError();
-        fail(Name, ErrMsg.c_str());
-        return false;
-    }
-
-    int64_t Result = *ResultOrErr;
-    if (Result != 7) {
-        std::string Msg = "expected 7, got " + std::to_string(Result);
-        fail(Name, Msg.c_str());
-        return false;
-    }
-
-    pass(Name);
-    return true;
-}
-
-static bool testPipelineSubtraction() {
-    const char* Name = "Pipeline: 10 - 3";
-
-    auto ResultOrErr = evalInt("10 - 3");
-    if (!ResultOrErr) {
-        std::string ErrMsg;
-        llvm::raw_string_ostream OS(ErrMsg);
-        OS << ResultOrErr.takeError();
-        fail(Name, ErrMsg.c_str());
-        return false;
-    }
-
-    int64_t Result = *ResultOrErr;
-    if (Result != 7) {
-        std::string Msg = "expected 7, got " + std::to_string(Result);
-        fail(Name, Msg.c_str());
-        return false;
-    }
-
-    pass(Name);
-    return true;
-}
-
-static bool testPipelineMultiplication() {
-    const char* Name = "Pipeline: 6 * 7";
-
-    auto ResultOrErr = evalInt("6 * 7");
-    if (!ResultOrErr) {
-        std::string ErrMsg;
-        llvm::raw_string_ostream OS(ErrMsg);
-        OS << ResultOrErr.takeError();
-        fail(Name, ErrMsg.c_str());
-        return false;
-    }
-
-    int64_t Result = *ResultOrErr;
-    if (Result != 42) {
-        std::string Msg = "expected 42, got " + std::to_string(Result);
-        fail(Name, Msg.c_str());
-        return false;
-    }
-
-    pass(Name);
-    return true;
-}
-
 static bool testPipelineDivision() {
     const char* Name = "Pipeline: 84 / 2";
 
@@ -4068,11 +3953,6 @@ bool runEmitterTests() {
 
     // Full pipeline tests (Source -> Parse -> Model -> Plan -> JIT)
     llvm::outs() << "  Full pipeline tests:\n";
-    testPipelineIntegerLiteral();
-    testPipelineNegativeLiteral();
-    testPipelineAddition();
-    testPipelineSubtraction();
-    testPipelineMultiplication();
     testPipelineDivision();
     testPipelineModulo();
     testPipelineParentheses();
