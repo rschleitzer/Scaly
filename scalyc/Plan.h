@@ -409,7 +409,8 @@ struct PlannedMemberAccess {
     std::string Name;        // Field name
     size_t FieldIndex;       // Index in struct layout
     bool IsMethod = false;   // True if this is a method reference
-    PlannedType ParentType;  // Type of the struct being accessed
+    bool IsUnionValue = false; // True if extracting .value from a union
+    PlannedType ParentType;  // Type of the struct/union being accessed
     PlannedType ResultType;  // Type after this access
 };
 

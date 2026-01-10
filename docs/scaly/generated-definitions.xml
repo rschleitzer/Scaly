@@ -87,7 +87,12 @@ Ok(42)</programlisting></entry>
               <entry><programlisting>define Result union(Ok: int, Err: String)
 Err("error")</programlisting></entry>
               <entry><literal>{"_type":"Result","_variant":"Err","value":"error"}
-        
+        </literal></entry>
+            </row>
+            <row>
+              <entry><programlisting>define Option union(Some: int, None)
+Option.Some(5).value</programlisting></entry>
+              <entry><literal>5
 </literal></entry>
             </row>
           </tbody>
