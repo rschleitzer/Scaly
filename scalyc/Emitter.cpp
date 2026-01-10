@@ -16,6 +16,29 @@
 
 namespace scaly {
 
+// Helper to decode first UTF-8 character to Unicode code point
+static int32_t decodeUtf8ToCodePoint(const std::string &Str) {
+    if (Str.empty()) return 0;
+
+    const unsigned char *s = reinterpret_cast<const unsigned char*>(Str.data());
+    size_t len = Str.size();
+    int32_t codePoint;
+
+    if ((s[0] & 0x80) == 0) {
+        codePoint = s[0];
+    } else if ((s[0] & 0xE0) == 0xC0 && len >= 2) {
+        codePoint = ((s[0] & 0x1F) << 6) | (s[1] & 0x3F);
+    } else if ((s[0] & 0xF0) == 0xE0 && len >= 3) {
+        codePoint = ((s[0] & 0x0F) << 12) | ((s[1] & 0x3F) << 6) | (s[2] & 0x3F);
+    } else if ((s[0] & 0xF8) == 0xF0 && len >= 4) {
+        codePoint = ((s[0] & 0x07) << 18) | ((s[1] & 0x3F) << 12) |
+                    ((s[2] & 0x3F) << 6) | (s[3] & 0x3F);
+    } else {
+        codePoint = s[0];  // Fallback to raw byte
+    }
+    return codePoint;
+}
+
 // ============================================================================
 // Constructor / Destructor
 // ============================================================================
@@ -94,7 +117,7 @@ void Emitter::initIntrinsicTypes() {
     IntrinsicTypes["size_t"] = IntrinsicTypes["u64"];
     IntrinsicTypes["float"] = IntrinsicTypes["f32"];
     IntrinsicTypes["double"] = IntrinsicTypes["f64"];
-    IntrinsicTypes["char"] = IntrinsicTypes["i8"];
+    IntrinsicTypes["char"] = IntrinsicTypes["i32"];  // Unicode code point
 }
 
 // ============================================================================
@@ -2837,9 +2860,9 @@ llvm::Value *Emitter::emitConstant(const PlannedConstant &Const, const PlannedTy
         } else if constexpr (std::is_same_v<T, StringConstant>) {
             return Builder->CreateGlobalStringPtr(C.Value);
         } else if constexpr (std::is_same_v<T, CharacterConstant>) {
-            // Character constant - emit as i8
-            char CharVal = C.Value.empty() ? 0 : C.Value[0];
-            return llvm::ConstantInt::get(llvm::Type::getInt8Ty(*Context), CharVal);
+            // Character constant - emit as i32 (Unicode code point)
+            int32_t CharVal = decodeUtf8ToCodePoint(C.Value);
+            return llvm::ConstantInt::get(llvm::Type::getInt32Ty(*Context), CharVal);
         } else if constexpr (std::is_same_v<T, NullConstant>) {
             // Null pointer - use the target type or default to i8*
             llvm::Type *Ty = Type.isResolved() ? mapType(Type) : llvm::PointerType::getUnqual(*Context);
@@ -4990,6 +5013,13 @@ llvm::Expected<const char*> Emitter::jitExecuteString(const Plan &P) {
     if (!ResultOrErr)
         return ResultOrErr.takeError();
     return reinterpret_cast<const char*>(*ResultOrErr);
+}
+
+llvm::Expected<int32_t> Emitter::jitExecuteChar(const Plan &P) {
+    auto ResultOrErr = jitExecuteRaw(P, llvm::Type::getInt32Ty(*Context));
+    if (!ResultOrErr)
+        return ResultOrErr.takeError();
+    return static_cast<int32_t>(*ResultOrErr);
 }
 
 llvm::Error Emitter::jitExecuteVoid(const Plan &P, llvm::StringRef MangledFunctionName) {
