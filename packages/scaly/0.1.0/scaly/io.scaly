@@ -67,6 +67,7 @@ define io
         set result: test_file_raw()
         if result <> 0
             return result
+        ; TODO: test_file_string requires fixing namespace function page parameter passing
         0
     }
 }
