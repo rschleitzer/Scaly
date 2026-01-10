@@ -474,6 +474,18 @@ static Model cloneModel(const Model &M) {
 // Name Mangling (Itanium ABI inspired)
 // ============================================================================
 
+// Strip package prefix from qualified type names
+// e.g., "scaly.containers.String" -> "String"
+static std::string stripPackagePrefix(llvm::StringRef Name) {
+    if (Name.starts_with("scaly.")) {
+        size_t LastDot = Name.rfind('.');
+        if (LastDot != std::string::npos) {
+            return Name.substr(LastDot + 1).str();
+        }
+    }
+    return Name.str();
+}
+
 // Encode a name with length prefix: "foo" → "3foo"
 std::string Planner::encodeName(llvm::StringRef Name) {
     return std::to_string(Name.size()) + Name.str();
@@ -548,7 +560,9 @@ std::string Planner::encodeType(const PlannedType &Type) {
     }
 
     // User-defined types: use length-prefixed name
-    return encodeName(Type.Name);
+    // Strip package prefix like "scaly.containers." for consistent naming
+    std::string NormalizedName = stripPackagePrefix(Type.Name);
+    return encodeName(NormalizedName);
 }
 
 // Mangle a type name
@@ -4974,10 +4988,11 @@ llvm::Expected<PlannedType> Planner::instantiateGeneric(
     }
 
     // 2. Generate cache key (e.g., "List.int" or "Map.string.int")
+    // Strip package prefixes like "scaly.containers." for consistent cache keys
     std::string CacheKey = Generic.Name;
     for (const auto &Arg : Args) {
         CacheKey += ".";
-        CacheKey += Arg.Name;
+        CacheKey += stripPackagePrefix(Arg.Name);
     }
 
     // 3. Check cache for structures
@@ -5259,6 +5274,7 @@ llvm::Expected<PlannedProperty> Planner::planProperty(const Property &Prop) {
     if (!Prop.PropType) {
         return makePlannerNotImplementedError(File, Prop.Loc, "property without type");
     }
+
     auto ResolvedType = resolveType(*Prop.PropType, Prop.Loc);
     if (!ResolvedType) {
         return ResolvedType.takeError();
@@ -9435,12 +9451,13 @@ llvm::Expected<PlannedStructure> Planner::planStructure(
     ParentType.MangledName = Result.MangledName;
 
     // Build full structure name including generic args for property lookup
+    // Strip package prefixes for consistent comparison with cache key names
     std::string FullStructureName = Name.str();
     if (!GenericArgs.empty()) {
         FullStructureName += ".";
         for (size_t i = 0; i < GenericArgs.size(); ++i) {
             if (i > 0) FullStructureName += ".";
-            FullStructureName += GenericArgs[i].Name;
+            FullStructureName += stripPackagePrefix(GenericArgs[i].Name);
         }
     }
 

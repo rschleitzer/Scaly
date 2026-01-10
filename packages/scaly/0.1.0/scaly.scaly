@@ -3,6 +3,7 @@ define scaly
     module memory
     module containers
     module io
+    module compiler
 
     ; Test entry point that calls all module tests
     function test() returns int

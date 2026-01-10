@@ -1,0 +1,12 @@
+; Modeler.scaly - Syntax to semantic model transformation
+; Ported from C++ Modeler.cpp
+
+; use scaly.compiler.Model  ; Disabled until namespace type access is fixed
+
+; Placeholder for now - full implementation pending
+function test() returns int
+{
+    ; Model types are defined in Model.scaly
+    ; Modeler class implementation pending namespace type access fix
+    0
+}
