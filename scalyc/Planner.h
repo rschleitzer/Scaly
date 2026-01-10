@@ -69,6 +69,11 @@ private:
     // Returns the root module of the loaded package, or nullptr if not found
     const Module* loadPackageOnDemand(llvm::StringRef PackageName);
 
+    // Load an intra-package module on demand (e.g., "containers" from within scaly package)
+    // BasePath: path to the parent directory (e.g., "packages/scaly/0.1.0/scaly")
+    // ModuleName: name of the module to load (e.g., "containers")
+    const Module* loadIntraPackageModule(llvm::StringRef BasePath, llvm::StringRef ModuleName);
+
     // Look up a function by qualified package path (e.g., ["scaly", "containers", "test"])
     const Function* lookupPackageFunction(const std::vector<std::string>& Path);
 
