@@ -23,13 +23,11 @@
         <test id = hex-1a><input>0x1A<expect>26
         <test id = hex-zero><input>0x0<expect>0
 
-    <!-- TODO: Float literals not yet implemented in native compiler
     <tests id = float-literals title = "Floating-Point Literals">
         <prose>Floating-point literals contain a decimal point separating the integer and fractional parts.
         <test id = float-pi><input>3.14<expect>3.14
-        <test id = float-two><input>2.0<expect>2
+        <test id = float-two><input>2.0<expect>2.0
         <test id = float-half><input>0.5<expect>0.5
-    -->
 
     <tests id = string-literals title = "String Literals">
         <prose>String literals are enclosed in double quotes. They may span multiple lines, with line breaks preserved in the resulting string.

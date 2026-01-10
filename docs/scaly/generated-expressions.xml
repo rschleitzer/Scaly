@@ -98,7 +98,40 @@
               <entry><literal>0x0</literal></entry>
               <entry><literal>0
 
-    
+    </literal></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+
+    <section xml:id='tests-FLOAT-LITERALS'>
+      <title>Floating-Point Literals</title>
+      <para>Floating-point literals contain a decimal point separating the integer and fractional parts.</para>
+      <informaltable frame='none'>
+        <tgroup cols='2'>
+          <colspec colwidth='1*'/>
+          <colspec colwidth='1*'/>
+          <thead>
+            <row>
+              <entry>Input</entry>
+              <entry>Result</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry><literal>3.14</literal></entry>
+              <entry><literal>3.14
+        </literal></entry>
+            </row>
+            <row>
+              <entry><literal>2.0</literal></entry>
+              <entry><literal>2.0
+        </literal></entry>
+            </row>
+            <row>
+              <entry><literal>0.5</literal></entry>
+              <entry><literal>0.5
 
     </literal></entry>
             </row>

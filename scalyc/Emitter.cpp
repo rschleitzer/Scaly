@@ -4663,8 +4663,11 @@ llvm::Error Emitter::emitMainWrapper(const Plan &P) {
 // ============================================================================
 
 llvm::Function *Emitter::createJITWrapper(llvm::Type *ReturnType) {
-    // Create a wrapper function: i64 __scaly_jit_main()
-    auto *WrapperTy = llvm::FunctionType::get(ReturnType, {}, false);
+    // Create a wrapper function: always returns i64 __scaly_jit_main()
+    // For floats, we bitcast to i64 before returning (ARM64 uses different registers)
+    (void)ReturnType;  // Unused - always return i64
+    auto *I64Ty = llvm::Type::getInt64Ty(*Context);
+    auto *WrapperTy = llvm::FunctionType::get(I64Ty, {}, false);
     auto *Wrapper = llvm::Function::Create(
         WrapperTy,
         llvm::GlobalValue::ExternalLinkage,
@@ -4837,8 +4840,10 @@ llvm::Expected<uint64_t> Emitter::jitExecuteRaw(const Plan &P, llvm::Type *Expec
     }
 
     // Return the last value (or default)
+    // Wrapper always returns i64, so we may need to convert
+    auto *I64Ty = llvm::Type::getInt64Ty(*Context);
     if (LastValue) {
-        // Cast to expected type if needed
+        // Cast to expected type first if needed
         if (LastValue->getType() != ExpectedType) {
             if (ExpectedType->isIntegerTy() && LastValue->getType()->isIntegerTy()) {
                 LastValue = Builder->CreateIntCast(LastValue, ExpectedType, true);
@@ -4848,16 +4853,26 @@ llvm::Expected<uint64_t> Emitter::jitExecuteRaw(const Plan &P, llvm::Type *Expec
                 LastValue = Builder->CreateFPTrunc(LastValue, ExpectedType);
             }
         }
+        // Now convert to i64 for the wrapper return
+        if (LastValue->getType()->isFloatingPointTy()) {
+            // Bitcast float/double to i64
+            if (LastValue->getType()->isFloatTy()) {
+                // f32 -> i32 -> i64
+                auto *I32Val = Builder->CreateBitCast(LastValue, llvm::Type::getInt32Ty(*Context));
+                LastValue = Builder->CreateZExt(I32Val, I64Ty);
+            } else {
+                // f64 -> i64
+                LastValue = Builder->CreateBitCast(LastValue, I64Ty);
+            }
+        } else if (LastValue->getType()->isIntegerTy() && LastValue->getType() != I64Ty) {
+            LastValue = Builder->CreateIntCast(LastValue, I64Ty, true);
+        } else if (LastValue->getType()->isPointerTy()) {
+            LastValue = Builder->CreatePtrToInt(LastValue, I64Ty);
+        }
         Builder->CreateRet(LastValue);
     } else {
-        // Return default value
-        if (ExpectedType->isIntegerTy()) {
-            Builder->CreateRet(llvm::ConstantInt::get(ExpectedType, 0));
-        } else if (ExpectedType->isFloatingPointTy()) {
-            Builder->CreateRet(llvm::ConstantFP::get(ExpectedType, 0.0));
-        } else {
-            Builder->CreateRet(llvm::UndefValue::get(ExpectedType));
-        }
+        // Return default value (0)
+        Builder->CreateRet(llvm::ConstantInt::get(I64Ty, 0));
     }
 
     // Verify module
