@@ -463,6 +463,42 @@ static void test_SIMPLE_MULTIPLY() {
     pass(Name);
 }
 
+static void test_SIMPLE_DIVIDE() {
+    const char* Name = "SIMPLE-DIVIDE";
+    auto Result = evalInt("84 / 2");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != 42) {
+        std::string Msg = "expected 42, got " + std::to_string(*Result);
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
+static void test_SIMPLE_MODULO() {
+    const char* Name = "SIMPLE-MODULO";
+    auto Result = evalInt("17 % 5");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != 2) {
+        std::string Msg = "expected 2, got " + std::to_string(*Result);
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
 static void test_CHAIN_WITH_PRECEDENCE() {
     const char* Name = "CHAIN-WITH-PRECEDENCE";
     auto Result = evalInt("3 + 4 * 2");
@@ -667,6 +703,415 @@ static void test_LET_EXPR_VALUE() {
     pass(Name);
 }
 
+// Category: Comparison Operators
+
+// Equality
+static void test_EQUAL_TRUE() {
+    const char* Name = "EQUAL-TRUE";
+    auto Result = evalBool("5 = 5");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != true) {
+        std::string Msg = "expected true, got " + std::string(*Result ? "true" : "false");
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
+static void test_EQUAL_FALSE() {
+    const char* Name = "EQUAL-FALSE";
+    auto Result = evalBool("5 = 3");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != false) {
+        std::string Msg = "expected false, got " + std::string(*Result ? "true" : "false");
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
+static void test_NOT_EQUAL_TRUE() {
+    const char* Name = "NOT-EQUAL-TRUE";
+    auto Result = evalBool("5 <> 3");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != true) {
+        std::string Msg = "expected true, got " + std::string(*Result ? "true" : "false");
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
+static void test_NOT_EQUAL_FALSE() {
+    const char* Name = "NOT-EQUAL-FALSE";
+    auto Result = evalBool("5 <> 5");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != false) {
+        std::string Msg = "expected false, got " + std::string(*Result ? "true" : "false");
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
+
+// Relational Operators
+static void test_LESS_THAN_TRUE() {
+    const char* Name = "LESS-THAN-TRUE";
+    auto Result = evalBool("3 < 5");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != true) {
+        std::string Msg = "expected true, got " + std::string(*Result ? "true" : "false");
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
+static void test_LESS_THAN_FALSE() {
+    const char* Name = "LESS-THAN-FALSE";
+    auto Result = evalBool("5 < 3");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != false) {
+        std::string Msg = "expected false, got " + std::string(*Result ? "true" : "false");
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
+static void test_GREATER_THAN_TRUE() {
+    const char* Name = "GREATER-THAN-TRUE";
+    auto Result = evalBool("5 > 3");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != true) {
+        std::string Msg = "expected true, got " + std::string(*Result ? "true" : "false");
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
+static void test_GREATER_THAN_FALSE() {
+    const char* Name = "GREATER-THAN-FALSE";
+    auto Result = evalBool("3 > 5");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != false) {
+        std::string Msg = "expected false, got " + std::string(*Result ? "true" : "false");
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
+static void test_LESS_OR_EQUAL_TRUE() {
+    const char* Name = "LESS-OR-EQUAL-TRUE";
+    auto Result = evalBool("5 <= 5");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != true) {
+        std::string Msg = "expected true, got " + std::string(*Result ? "true" : "false");
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
+static void test_LESS_OR_EQUAL_FALSE() {
+    const char* Name = "LESS-OR-EQUAL-FALSE";
+    auto Result = evalBool("5 <= 3");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != false) {
+        std::string Msg = "expected false, got " + std::string(*Result ? "true" : "false");
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
+static void test_GREATER_OR_EQUAL_TRUE() {
+    const char* Name = "GREATER-OR-EQUAL-TRUE";
+    auto Result = evalBool("5 >= 5");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != true) {
+        std::string Msg = "expected true, got " + std::string(*Result ? "true" : "false");
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
+static void test_GREATER_OR_EQUAL_FALSE() {
+    const char* Name = "GREATER-OR-EQUAL-FALSE";
+    auto Result = evalBool("3 >= 5");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != false) {
+        std::string Msg = "expected false, got " + std::string(*Result ? "true" : "false");
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
+// Category: Boolean Operators
+
+// Boolean Negation
+static void test_NEGATE_TRUE() {
+    const char* Name = "NEGATE-TRUE";
+    auto Result = evalBool("~true");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != false) {
+        std::string Msg = "expected false, got " + std::string(*Result ? "true" : "false");
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
+static void test_NEGATE_FALSE() {
+    const char* Name = "NEGATE-FALSE";
+    auto Result = evalBool("~false");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != true) {
+        std::string Msg = "expected true, got " + std::string(*Result ? "true" : "false");
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
+
+// Boolean And/Or
+static void test_AND_TRUE_TRUE() {
+    const char* Name = "AND-TRUE-TRUE";
+    auto Result = evalBool("true & true");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != true) {
+        std::string Msg = "expected true, got " + std::string(*Result ? "true" : "false");
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
+static void test_AND_TRUE_FALSE() {
+    const char* Name = "AND-TRUE-FALSE";
+    auto Result = evalBool("true & false");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != false) {
+        std::string Msg = "expected false, got " + std::string(*Result ? "true" : "false");
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
+static void test_OR_FALSE_FALSE() {
+    const char* Name = "OR-FALSE-FALSE";
+    auto Result = evalBool("false | false");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != false) {
+        std::string Msg = "expected false, got " + std::string(*Result ? "true" : "false");
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
+static void test_OR_TRUE_FALSE() {
+    const char* Name = "OR-TRUE-FALSE";
+    auto Result = evalBool("true | false");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != true) {
+        std::string Msg = "expected true, got " + std::string(*Result ? "true" : "false");
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
+// Category: Bitwise Operators
+
+// Bit Shifts
+static void test_LEFT_SHIFT_ONE() {
+    const char* Name = "LEFT-SHIFT-ONE";
+    auto Result = evalInt("1 << 4");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != 16) {
+        std::string Msg = "expected 16, got " + std::to_string(*Result);
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
+static void test_LEFT_SHIFT_FIVE() {
+    const char* Name = "LEFT-SHIFT-FIVE";
+    auto Result = evalInt("5 << 3");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != 40) {
+        std::string Msg = "expected 40, got " + std::to_string(*Result);
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
+static void test_RIGHT_SHIFT_SIXTEEN() {
+    const char* Name = "RIGHT-SHIFT-SIXTEEN";
+    auto Result = evalInt("16 >> 2");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != 4) {
+        std::string Msg = "expected 4, got " + std::to_string(*Result);
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
+static void test_RIGHT_SHIFT_HUNDRED() {
+    const char* Name = "RIGHT-SHIFT-HUNDRED";
+    auto Result = evalInt("100 >> 3");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != 12) {
+        std::string Msg = "expected 12, got " + std::to_string(*Result);
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
 
 bool runExpressionTests() {
     TestsPassed = 0;
@@ -706,6 +1151,8 @@ bool runExpressionTests() {
     test_SIMPLE_ADD();
     test_SIMPLE_SUBTRACT();
     test_SIMPLE_MULTIPLY();
+    test_SIMPLE_DIVIDE();
+    test_SIMPLE_MODULO();
     test_CHAIN_WITH_PRECEDENCE();
     test_CHAIN_LEFT_TO_RIGHT();
     std::cout << "    Parentheses and Grouping" << std::endl;
@@ -720,6 +1167,39 @@ bool runExpressionTests() {
     test_LET_USE_BINDING();
     test_LET_NESTED();
     test_LET_EXPR_VALUE();
+
+    std::cout << "  Comparison Operators" << std::endl;
+    std::cout << "    Equality" << std::endl;
+    test_EQUAL_TRUE();
+    test_EQUAL_FALSE();
+    test_NOT_EQUAL_TRUE();
+    test_NOT_EQUAL_FALSE();
+    std::cout << "    Relational Operators" << std::endl;
+    test_LESS_THAN_TRUE();
+    test_LESS_THAN_FALSE();
+    test_GREATER_THAN_TRUE();
+    test_GREATER_THAN_FALSE();
+    test_LESS_OR_EQUAL_TRUE();
+    test_LESS_OR_EQUAL_FALSE();
+    test_GREATER_OR_EQUAL_TRUE();
+    test_GREATER_OR_EQUAL_FALSE();
+
+    std::cout << "  Boolean Operators" << std::endl;
+    std::cout << "    Boolean Negation" << std::endl;
+    test_NEGATE_TRUE();
+    test_NEGATE_FALSE();
+    std::cout << "    Boolean And/Or" << std::endl;
+    test_AND_TRUE_TRUE();
+    test_AND_TRUE_FALSE();
+    test_OR_FALSE_FALSE();
+    test_OR_TRUE_FALSE();
+
+    std::cout << "  Bitwise Operators" << std::endl;
+    std::cout << "    Bit Shifts" << std::endl;
+    test_LEFT_SHIFT_ONE();
+    test_LEFT_SHIFT_FIVE();
+    test_RIGHT_SHIFT_SIXTEEN();
+    test_RIGHT_SHIFT_HUNDRED();
 
     std::cout << std::endl;
     std::cout << "Expression tests: " << TestsPassed << " passed, "

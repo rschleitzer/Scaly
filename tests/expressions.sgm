@@ -60,6 +60,8 @@
         <test id = simple-add><input>3 + 4<expect>7
         <test id = simple-subtract><input>10 - 3<expect>7
         <test id = simple-multiply><input>6 * 7<expect>42
+        <test id = simple-divide><input>84 / 2<expect>42
+        <test id = simple-modulo><input>17 % 5<expect>2
         <test id = chain-with-precedence><input>3 + 4 * 2<expect>11
         <test id = chain-left-to-right><input>20 - 5 - 3<expect>12
 
@@ -86,6 +88,61 @@ let y 3
 x + y<expect>8
         <test id = let-expr-value program = program><input>let x 2 + 3
 x * 2<expect>10
+
+</category>
+
+<category id = comparison-operators title = "Comparison Operators">
+
+    <prose>Comparison operators compare two values and return a boolean result.
+
+    <tests id = equality title = "Equality">
+        <prose>The equality operator (=) tests if two values are equal. The inequality operator (not equal to) tests if two values are different.
+        <test id = equal-true><input>5 = 5<expect>true
+        <test id = equal-false><input>5 = 3<expect>false
+        <test id = not-equal-true><input>5 &#60;&#62; 3<expect>true
+        <test id = not-equal-false><input>5 &#60;&#62; 5<expect>false
+
+    <tests id = relational title = "Relational Operators">
+        <prose>Relational operators compare the ordering of values.
+        <test id = less-than-true><input>3 < 5<expect>true
+        <test id = less-than-false><input>5 < 3<expect>false
+        <test id = greater-than-true><input>5 > 3<expect>true
+        <test id = greater-than-false><input>3 > 5<expect>false
+        <test id = less-or-equal-true><input>5 <= 5<expect>true
+        <test id = less-or-equal-false><input>5 <= 3<expect>false
+        <test id = greater-or-equal-true><input>5 >= 5<expect>true
+        <test id = greater-or-equal-false><input>3 >= 5<expect>false
+
+</category>
+
+<category id = boolean-operators title = "Boolean Operators">
+
+    <prose>Boolean operators combine boolean values.
+
+    <tests id = boolean-negation title = "Boolean Negation">
+        <prose>The tilde operator negates a boolean value.
+        <test id = negate-true><input>~true<expect>false
+        <test id = negate-false><input>~false<expect>true
+
+    <tests id = boolean-and-or title = "Boolean And/Or">
+        <prose>The ampersand operator performs logical AND, the pipe operator performs logical OR.
+        <test id = and-true-true><input>true & true<expect>true
+        <test id = and-true-false><input>true & false<expect>false
+        <test id = or-false-false><input>false | false<expect>false
+        <test id = or-true-false><input>true | false<expect>true
+
+</category>
+
+<category id = bitwise-operators title = "Bitwise Operators">
+
+    <prose>Bitwise operators manipulate integer values at the bit level.
+
+    <tests id = bit-shifts title = "Bit Shifts">
+        <prose>The left shift operator shifts bits to the left, effectively multiplying by powers of two. The right shift operator shifts bits to the right, effectively dividing by powers of two.
+        <test id = left-shift-one><input>1 << 4<expect>16
+        <test id = left-shift-five><input>5 << 3<expect>40
+        <test id = right-shift-sixteen><input>16 >> 2<expect>4
+        <test id = right-shift-hundred><input>100 >> 3<expect>12
 
 </category>
 
