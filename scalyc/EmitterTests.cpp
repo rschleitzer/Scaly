@@ -3595,11 +3595,6 @@ static bool testThrowStructWithMemberAccess() {
 static bool testRBMMBlockScopedCleanup() {
     const char* Name = "Pipeline: RBMM block-scoped cleanup behavior";
 
-    // TODO: This test requires Page.scaly to be compiled with the test
-    // Currently, page cleanup happens at function exit, not block exit.
-    // This test documents the current behavior and can be updated when
-    // block-scoped cleanup is implemented.
-
     // NOTE: Currently in Scaly's RBMM:
     // - All $ allocations in a function share a single LocalPage
     // - The page is allocated at function entry (if NeedsLocalPage is set)
