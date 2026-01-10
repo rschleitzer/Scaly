@@ -1,0 +1,14 @@
+; Scaly Compiler - Self-hosting compiler modules
+; This module contains the compiler components being ported from C++
+
+define compiler
+{
+    module Model
+    module Modeler
+    ; module Syntax  ; TODO: port from generated C++ code
+
+    function test() returns int
+    {
+        Modeler.test()
+    }
+}
