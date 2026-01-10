@@ -3430,15 +3430,22 @@ llvm::Expected<llvm::Value*> Emitter::emitMatch(const PlannedMatch &Match) {
 }
 
 llvm::Expected<llvm::Value*> Emitter::emitFor(const PlannedFor &For) {
-    // For now, implement a simple integer range loop: for i in N : body
-    // This iterates i from 0 to N-1
-
     if (For.Expr.empty()) {
         return llvm::make_error<llvm::StringError>(
             "For loop has no range expression",
             llvm::inconvertibleErrorCode()
         );
     }
+
+    // Dispatch to iterator or integer range loop
+    if (For.IsIteratorLoop) {
+        return emitForIterator(For);
+    }
+    return emitForIntegerRange(For);
+}
+
+llvm::Expected<llvm::Value*> Emitter::emitForIntegerRange(const PlannedFor &For) {
+    // Integer range loop: for i in N (iterates 0 to N-1)
 
     // Evaluate the range expression to get the end value
     auto EndValueOrErr = emitOperands(For.Expr);
@@ -3513,6 +3520,108 @@ llvm::Expected<llvm::Value*> Emitter::emitFor(const PlannedFor &For) {
     LocalVariables.erase(For.Identifier);
 
     // For loops don't produce a value
+    return nullptr;
+}
+
+llvm::Expected<llvm::Value*> Emitter::emitForIterator(const PlannedFor &For) {
+    // Iterator-based loop: for item in collection
+    // Uses the iterator protocol: get_iterator() and next()
+
+    // 1. Evaluate collection expression
+    auto CollectionOrErr = emitOperands(For.Expr);
+    if (!CollectionOrErr)
+        return CollectionOrErr.takeError();
+    llvm::Value *Collection = *CollectionOrErr;
+
+    // 2. Get the get_iterator function
+    llvm::Function *GetIterFn = lookupFunction(For.GetIteratorMethod);
+    if (!GetIterFn) {
+        return llvm::make_error<llvm::StringError>(
+            "get_iterator method not found: " + For.GetIteratorMethod,
+            llvm::inconvertibleErrorCode()
+        );
+    }
+
+    // 3. Call get_iterator() on collection
+    // Collection is passed by pointer (this parameter)
+    llvm::Value *CollectionPtr = Collection;
+    if (!Collection->getType()->isPointerTy()) {
+        // Collection is a value, store it and get pointer
+        auto *CollAlloca = Builder->CreateAlloca(Collection->getType(), nullptr, "coll.tmp");
+        Builder->CreateStore(Collection, CollAlloca);
+        CollectionPtr = CollAlloca;
+    }
+
+    // Check if get_iterator returns via sret
+    llvm::Value *Iterator;
+    if (GetIterFn->hasParamAttribute(0, llvm::Attribute::StructRet)) {
+        // Function uses sret - allocate space and pass as first arg
+        llvm::Type *IterType = mapType(For.IteratorType);
+        auto *IterAlloca = Builder->CreateAlloca(IterType, nullptr, "iter.alloca");
+        Builder->CreateCall(GetIterFn, {IterAlloca, CollectionPtr});
+        Iterator = IterAlloca;
+    } else {
+        // Function returns directly
+        Iterator = Builder->CreateCall(GetIterFn, {CollectionPtr}, "iter");
+        // Store iterator on stack for mutation by next()
+        auto *IterAlloca = Builder->CreateAlloca(Iterator->getType(), nullptr, "iter.alloca");
+        Builder->CreateStore(Iterator, IterAlloca);
+        Iterator = IterAlloca;
+    }
+
+    // 4. Get the next function
+    llvm::Function *NextFn = lookupFunction(For.NextMethod);
+    if (!NextFn) {
+        return llvm::make_error<llvm::StringError>(
+            "next method not found: " + For.NextMethod,
+            llvm::inconvertibleErrorCode()
+        );
+    }
+
+    // 5. Create basic blocks
+    llvm::BasicBlock *CondBlock = createBlock("for.cond");
+    llvm::BasicBlock *BodyBlock = createBlock("for.body");
+    llvm::BasicBlock *ExitBlock = createBlock("for.exit");
+
+    // Push loop context for break/continue
+    LoopStack.push_back({ExitBlock, CondBlock, BlockCleanupStack.size()});
+
+    // Jump to condition block
+    Builder->CreateBr(CondBlock);
+
+    // 6. Condition block: call next(), check if null
+    Builder->SetInsertPoint(CondBlock);
+
+    // Call next() with iterator pointer (procedures take this by pointer)
+    llvm::Value *NextResult = Builder->CreateCall(NextFn, {Iterator}, "next.result");
+
+    // Check if result is null
+    llvm::Value *IsNull = Builder->CreateIsNull(NextResult, "is.null");
+    Builder->CreateCondBr(IsNull, ExitBlock, BodyBlock);
+
+    // 7. Body block
+    Builder->SetInsertPoint(BodyBlock);
+
+    // Loop variable is exactly what next() returns (no auto-dereference)
+    LocalVariables[For.Identifier] = NextResult;
+
+    // Execute loop body
+    auto BodyResult = emitAction(For.Body);
+    if (!BodyResult) {
+        LoopStack.pop_back();
+        return BodyResult.takeError();
+    }
+
+    // Jump back to condition (if not already terminated by break)
+    if (!Builder->GetInsertBlock()->getTerminator()) {
+        Builder->CreateBr(CondBlock);
+    }
+
+    // 8. Exit block
+    Builder->SetInsertPoint(ExitBlock);
+    LocalVariables.erase(For.Identifier);
+    LoopStack.pop_back();
+
     return nullptr;
 }
 

@@ -105,15 +105,11 @@ define Page
         if next_object = null
             return
 
-        ; TODO: Replace with for loop when iterator support is implemented
-        var iter exclusive_pages.get_iterator()
-        var exclusive_page_ptr iter.next()
-        while exclusive_page_ptr <> null
+        for exclusive_page_ptr in exclusive_pages
         {
             let exclusive_page (*exclusive_page_ptr)
             exclusive_page.deallocate_extensions()
             free(exclusive_page as pointer[void])
-            set exclusive_page_ptr: iter.next()
         }
 
         var page next_page

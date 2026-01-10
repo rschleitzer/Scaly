@@ -269,6 +269,8 @@ private:
     llvm::Expected<llvm::Value*> emitChoose(const PlannedChoose &Choose);
     llvm::Expected<llvm::Value*> emitMatch(const PlannedMatch &Match);
     llvm::Expected<llvm::Value*> emitFor(const PlannedFor &For);
+    llvm::Expected<llvm::Value*> emitForIntegerRange(const PlannedFor &For);
+    llvm::Expected<llvm::Value*> emitForIterator(const PlannedFor &For);
     llvm::Expected<llvm::Value*> emitWhile(const PlannedWhile &While);
     llvm::Expected<llvm::Value*> emitTry(const PlannedTry &Try);
     llvm::Expected<llvm::Value*> emitSizeOf(const PlannedSizeOf &SizeOf);
