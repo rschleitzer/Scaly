@@ -10,6 +10,7 @@
 #include "ExpressionTests.h"
 #include "DefinitionTests.h"
 #include "ChooseTests.h"
+#include "ControlFlowTests.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/MemoryBuffer.h"
@@ -690,6 +691,9 @@ int main(int argc, char **argv) {
         std::cout << std::endl << std::flush;
         llvm::outs().flush();
         AllPassed &= scaly::runChooseTests();
+        std::cout << std::endl << std::flush;
+        llvm::outs().flush();
+        AllPassed &= scaly::runControlFlowTests();
         std::cout << std::endl << std::flush;
         llvm::outs().flush();
         AllPassed &= scaly::runModuleTests();

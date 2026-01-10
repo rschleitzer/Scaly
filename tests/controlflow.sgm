@@ -1,0 +1,130 @@
+<!DOCTYPE suite SYSTEM "../test.dtd">
+
+<suite id = controlflow-tests title = "Control Flow Tests">
+
+<category id = if-expressions title = "If Expressions">
+
+    <prose>If expressions evaluate a condition and return one of two values.
+
+    <tests id = if-basic title = "Basic If">
+        <prose>The if expression takes a boolean condition and two branches.
+        <test id = if-true><input>if true : 1 else 2<expect>1
+        <test id = if-false><input>if false : 1 else 2<expect>2
+        <test id = if-comparison><input>if 5 > 3 : 10 else 20<expect>10
+
+    <tests id = if-with-bindings title = "If with Bindings">
+        <prose>If expressions can use values from let bindings.
+        <test id = if-with-let program = program><input>let x 5
+if x > 3 : x * 2 else x<expect>10
+        <test id = if-max program = program><input>let a 7
+let b 3
+if a > b : a else b<expect>7
+
+</category>
+
+<category id = while-loops title = "While Loops">
+
+    <prose>While loops repeat as long as a condition is true.
+
+    <tests id = while-basic title = "Basic While">
+        <prose>A while loop evaluates its body repeatedly while the condition is true.
+        <test id = while-simple program = program><input>var x 0
+while x &#60; 3 : set x : x + 1
+x<expect>3
+        <test id = while-zero-iterations program = program><input>var x 10
+while x &#60; 5 : set x : x + 1
+x<expect>10
+
+    <tests id = while-accumulation title = "While with Accumulation">
+        <prose>While loops can accumulate values across iterations.
+        <test id = while-sum program = program><input>var sum 0
+var i 1
+while i &#60;= 3 : { set sum : sum + i: set i : i + 1 }
+sum<expect>6
+        <test id = while-factorial program = program><input>var result 1
+var n 5
+while n > 0 : { set result : result * n: set n : n - 1 }
+result<expect>120
+
+</category>
+
+<category id = for-loops title = "For Loops">
+
+    <prose>For loops iterate over a range of integers.
+
+    <tests id = for-basic title = "Basic For">
+        <prose>A for loop iterates from 0 to n-1 where n is the range expression.
+        <test id = for-count program = program><input>var count 0
+for i in 3 : set count : count + 1
+count<expect>3
+        <test id = for-zero-iterations program = program><input>var x 42
+for i in 0 : set x : 0
+x<expect>42
+
+    <tests id = for-accumulation title = "For with Accumulation">
+        <prose>For loops can accumulate values using the loop variable.
+        <test id = for-sum program = program><input>var sum 0
+for i in 5 : set sum : sum + i
+sum<expect>10
+        <test id = for-factorial program = program><input>var prod 1
+for i in 4 : set prod : prod * (i + 1)
+prod<expect>24
+
+</category>
+
+<category id = break-continue title = "Break and Continue">
+
+    <prose>Break exits a loop early, continue skips to the next iteration.
+
+    <tests id = break-statements title = "Break Statements">
+        <prose>Break exits the innermost enclosing loop.
+        <test id = break-in-for program = program><input>var sum 0
+for i in 10 : { if i = 3 : break else set sum : sum + i }
+sum<expect>3
+        <test id = break-in-while program = program><input>var x 0
+while x &#60; 100 : { set x : x + 1: if x = 5 : break }
+x<expect>5
+
+    <tests id = continue-statements title = "Continue Statements">
+        <prose>Continue skips the rest of the current iteration and continues with the next.
+        <test id = continue-in-for program = program><input>var sum 0
+for i in 6 : { if i % 2 = 1 : continue else set sum : sum + i }
+sum<expect>6
+        <test id = continue-in-while program = program><input>var sum 0
+var i 0
+while i &#60; 10 : { let current i: set i : i + 1: if current % 2 = 1 : continue else set sum : sum + current }
+sum<expect>20
+
+    <tests id = nested-loops title = "Nested Loops">
+        <prose>Break and continue affect only the innermost loop.
+        <test id = break-in-nested program = program><input>var count 0
+for i in 3 : { for j in 10 : { if j = 2 : break else set count : count + 1 } }
+count<expect>6
+        <test id = continue-in-nested program = program><input>var count 0
+for i in 3 : { for j in 5 : { if j % 2 = 1 : continue else set count : count + 1 } }
+count<expect>9
+
+</category>
+
+<category id = var-set title = "Mutable Variables">
+
+    <prose>Mutable variables can be modified with set statements.
+
+    <tests id = var-basic title = "Basic Var and Set">
+        <prose>Var creates a mutable variable, set modifies it.
+        <test id = var-simple program = program><input>var x 5
+x<expect>5
+        <test id = var-assign program = program><input>var x 5
+set x : 10
+x<expect>10
+        <test id = var-increment program = program><input>var x 3
+set x : x + 1
+x<expect>4
+        <test id = var-multiple program = program><input>var a 2
+var b 3
+set a : a * b
+a<expect>6
+
+</category>
+
+</suite>

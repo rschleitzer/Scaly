@@ -8,3 +8,4 @@ openjade -G -t sgml -d codegen/scaly.dsl scaly.sgm
 openjade -G -t sgml -d codegen/test-expressions.dsl tests/expressions.sgm
 openjade -G -t sgml -d codegen/test-definitions.dsl tests/definitions.sgm
 openjade -G -t sgml -d codegen/test-choose.dsl tests/choose.sgm
+openjade -G -t sgml -d codegen/test-controlflow.dsl tests/controlflow.sgm
