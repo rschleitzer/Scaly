@@ -62,6 +62,7 @@ public:
     llvm::Expected<double> jitExecuteFloat(const Plan &P);
     llvm::Expected<bool> jitExecuteBool(const Plan &P);
     llvm::Expected<const char*> jitExecuteString(const Plan &P);
+    llvm::Expected<int32_t> jitExecuteChar(const Plan &P);
 
     // JIT execution: execute a specific function by mangled name (for void functions)
     llvm::Error jitExecuteVoid(const Plan &P, llvm::StringRef MangledFunctionName);

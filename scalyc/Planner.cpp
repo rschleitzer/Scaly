@@ -24,6 +24,53 @@ static bool isOnPageLifetime(const Lifetime &Life) {
 }
 
 // ============================================================================
+// Helper: Decode UTF-8 string to single Unicode code point
+// Returns the code point, or -1 if invalid (empty, multiple code points, or malformed)
+// ============================================================================
+
+static int32_t decodeUtf8ToCodePoint(const std::string &Str) {
+    if (Str.empty()) return -1;
+
+    const unsigned char *s = reinterpret_cast<const unsigned char*>(Str.data());
+    size_t len = Str.size();
+    int32_t codePoint;
+    size_t charLen;
+
+    // Decode first UTF-8 character
+    if ((s[0] & 0x80) == 0) {
+        // ASCII: 0xxxxxxx
+        codePoint = s[0];
+        charLen = 1;
+    } else if ((s[0] & 0xE0) == 0xC0 && len >= 2) {
+        // 2-byte: 110xxxxx 10xxxxxx
+        if ((s[1] & 0xC0) != 0x80) return -1;
+        codePoint = ((s[0] & 0x1F) << 6) | (s[1] & 0x3F);
+        if (codePoint < 0x80) return -1;  // Overlong encoding
+        charLen = 2;
+    } else if ((s[0] & 0xF0) == 0xE0 && len >= 3) {
+        // 3-byte: 1110xxxx 10xxxxxx 10xxxxxx
+        if ((s[1] & 0xC0) != 0x80 || (s[2] & 0xC0) != 0x80) return -1;
+        codePoint = ((s[0] & 0x0F) << 12) | ((s[1] & 0x3F) << 6) | (s[2] & 0x3F);
+        if (codePoint < 0x800) return -1;  // Overlong encoding
+        charLen = 3;
+    } else if ((s[0] & 0xF8) == 0xF0 && len >= 4) {
+        // 4-byte: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+        if ((s[1] & 0xC0) != 0x80 || (s[2] & 0xC0) != 0x80 || (s[3] & 0xC0) != 0x80) return -1;
+        codePoint = ((s[0] & 0x07) << 18) | ((s[1] & 0x3F) << 12) |
+                    ((s[2] & 0x3F) << 6) | (s[3] & 0x3F);
+        if (codePoint < 0x10000 || codePoint > 0x10FFFF) return -1;  // Invalid range
+        charLen = 4;
+    } else {
+        return -1;  // Invalid UTF-8 start byte
+    }
+
+    // Ensure exactly one character (no trailing bytes)
+    if (charLen != len) return -1;
+
+    return codePoint;
+}
+
+// ============================================================================
 // Constructor
 // ============================================================================
 
@@ -8095,13 +8142,40 @@ llvm::Expected<PlannedBinding> Planner::planBinding(const Binding &Bind) {
             }
         }
     } else if (Result.BindingItem.ItemType && !Result.Operation.empty()) {
-        // Explicit type annotation - add constraint for checking
+        // Explicit type annotation
         const PlannedType &DeclaredType = *Result.BindingItem.ItemType;
-        const PlannedType &ExprType = Result.Operation.back().ResultType;
 
-        // Only add constraint if both types are present
-        if (!DeclaredType.Name.empty() && !ExprType.Name.empty()) {
-            addConstraint(DeclaredType, ExprType, Bind.Loc);
+        // String-to-char coercion: convert string literal to Unicode code point
+        // Must happen BEFORE constraint check so the types match
+        bool coerced = false;
+        if (DeclaredType.Name == "char") {
+            auto& Op = Result.Operation.back();
+            if (auto* Const = std::get_if<PlannedConstant>(&Op.Expr)) {
+                if (auto* StrConst = std::get_if<StringConstant>(Const)) {
+                    int32_t codePoint = decodeUtf8ToCodePoint(StrConst->Value);
+                    if (codePoint < 0) {
+                        return llvm::make_error<llvm::StringError>(
+                            "Cannot convert string to char: must be a single Unicode code point",
+                            llvm::inconvertibleErrorCode());
+                    }
+                    // Replace StringConstant with IntegerConstant
+                    IntegerConstant IntConst;
+                    IntConst.Loc = StrConst->Loc;
+                    IntConst.Value = codePoint;
+                    Op.Expr = IntConst;
+                    Op.ResultType.Name = "char";
+                    Op.ResultType.MangledName = "i";  // i32 mangling
+                    coerced = true;
+                }
+            }
+        }
+
+        // Add constraint for type checking (skip if we just coerced)
+        if (!coerced) {
+            const PlannedType &ExprType = Result.Operation.back().ResultType;
+            if (!DeclaredType.Name.empty() && !ExprType.Name.empty()) {
+                addConstraint(DeclaredType, ExprType, Bind.Loc);
+            }
         }
     }
 

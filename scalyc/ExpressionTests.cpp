@@ -94,6 +94,18 @@ static llvm::Expected<const char*> evalString(llvm::StringRef Source) {
     return E.jitExecuteString(*PlanResult);
 }
 
+// Helper to evaluate char expression (returns Unicode code point)
+static llvm::Expected<int32_t> evalChar(llvm::StringRef Source) {
+    auto PlanResult = compileToPlan(Source);
+    if (!PlanResult)
+        return PlanResult.takeError();
+
+    EmitterConfig Config;
+    Config.EmitDebugInfo = false;
+    Emitter E(Config);
+    return E.jitExecuteChar(*PlanResult);
+}
+
 } // anonymous namespace
 
 // Category: Literals
@@ -342,10 +354,10 @@ static void test_STRING_EMPTY() {
 }
 
 
-// Character Literals
+// Character Literals (string-to-char coercion)
 static void test_CHAR_A() {
     const char* Name = "CHAR-A";
-    auto Result = compileToPlan("`a`");
+    auto Result = evalChar("let c: char = \"a\"\nc");
     if (!Result) {
         std::string ErrMsg;
         llvm::raw_string_ostream OS(ErrMsg);
@@ -353,13 +365,17 @@ static void test_CHAR_A() {
         fail(Name, ErrMsg.c_str());
         return;
     }
-    // TODO: Add char JIT evaluation when implemented
+    if (*Result != 'a') {
+        std::string Msg = "expected 97 ('a'), got " + std::to_string(*Result);
+        fail(Name, Msg.c_str());
+        return;
+    }
     pass(Name);
 }
 
 static void test_CHAR_Z() {
     const char* Name = "CHAR-Z";
-    auto Result = compileToPlan("`Z`");
+    auto Result = evalChar("let c: char = \"Z\"\nc");
     if (!Result) {
         std::string ErrMsg;
         llvm::raw_string_ostream OS(ErrMsg);
@@ -367,7 +383,49 @@ static void test_CHAR_Z() {
         fail(Name, ErrMsg.c_str());
         return;
     }
-    // TODO: Add char JIT evaluation when implemented
+    if (*Result != 'Z') {
+        std::string Msg = "expected 90 ('Z'), got " + std::to_string(*Result);
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
+static void test_CHAR_UMLAUT() {
+    const char* Name = "CHAR-UMLAUT";
+    // ä is U+00E4 (228 in decimal), encoded as 0xC3 0xA4 in UTF-8
+    auto Result = evalChar("let c: char = \"ä\"\nc");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != 0xE4) {  // 228
+        std::string Msg = "expected 228 (ä), got " + std::to_string(*Result);
+        fail(Name, Msg.c_str());
+        return;
+    }
+    pass(Name);
+}
+
+static void test_CHAR_EMOJI() {
+    const char* Name = "CHAR-EMOJI";
+    // 🎉 is U+1F389 (127881 in decimal)
+    auto Result = evalChar("let c: char = \"🎉\"\nc");
+    if (!Result) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << Result.takeError();
+        fail(Name, ErrMsg.c_str());
+        return;
+    }
+    if (*Result != 0x1F389) {  // 127881
+        std::string Msg = "expected 127881 (🎉), got " + std::to_string(*Result);
+        fail(Name, Msg.c_str());
+        return;
+    }
     pass(Name);
 }
 
@@ -717,6 +775,8 @@ bool runExpressionTests() {
     std::cout << "    Character Literals" << std::endl;
     test_CHAR_A();
     test_CHAR_Z();
+    test_CHAR_UMLAUT();
+    test_CHAR_EMOJI();
 
     std::cout << "  Operations" << std::endl;
     std::cout << "    Prefix Functions" << std::endl;
