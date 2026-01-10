@@ -53,15 +53,14 @@
         <test id = prefix-add><input>+ 3<expect>3
 
     <tests id = operator-chains title = "Operator Chains">
-        <prose>When the context holds a value, operators chain left-to-right. Each operator takes the current value and the next operand,
-        producing a new value. There is no operator precedence built into the language itself. Operator precedence is built into the implementation
-        of the individual operators. The common arithmetic operators are built into the standard library.
+        <prose>When the context holds a value, operators combine with operands according to standard mathematical precedence.
+        Multiplicative operators (*, /, %, div, mod) bind tighter than additive operators (+, -).
+        Comparison and equality operators have lower precedence than arithmetic.
+        Operators of equal precedence associate left-to-right.
         <test id = simple-add><input>3 + 4<expect>7
         <test id = simple-subtract><input>10 - 3<expect>7
         <test id = simple-multiply><input>6 * 7<expect>42
-        <!-- TODO: Operator precedence differs from TS transpiler
         <test id = chain-with-precedence><input>3 + 4 * 2<expect>11
-        -->
         <test id = chain-left-to-right><input>20 - 5 - 3<expect>12
 
     <tests id = parentheses-grouping title = "Parentheses and Grouping">

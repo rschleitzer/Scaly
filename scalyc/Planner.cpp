@@ -1073,6 +1073,21 @@ bool Planner::isOperatorName(llvm::StringRef Name) {
            First == '~' || First == '[' || First == '(';
 }
 
+int Planner::getOperatorPrecedence(llvm::StringRef Op) {
+    // Higher number = binds tighter
+    if (Op == "||") return 1;
+    if (Op == "&&") return 2;
+    if (Op == "|") return 3;
+    if (Op == "^") return 4;
+    if (Op == "&") return 5;
+    if (Op == "=" || Op == "<>") return 6;
+    if (Op == "<" || Op == ">" || Op == "<=" || Op == ">=") return 7;
+    if (Op == "<<" || Op == ">>") return 8;
+    if (Op == "+" || Op == "-") return 9;
+    if (Op == "*" || Op == "/" || Op == "%" || Op == "div" || Op == "mod") return 10;
+    return 0;  // Unknown
+}
+
 std::optional<Planner::MethodMatch> Planner::lookupMethod(
     const PlannedType &StructType,
     llvm::StringRef MethodName,
@@ -3038,8 +3053,35 @@ llvm::Expected<PlannedOperand> Planner::collapseOperandSequence(
         if (auto* TypeExpr = std::get_if<PlannedType>(&Ops[I].Expr)) {
             if (isOperatorName(TypeExpr->Name) && I + 1 < Ops.size()) {
                 // Binary operator: left op right
-                PlannedOperand& Right = Ops[I + 1];
                 size_t RightConsumed = 1;
+
+                // Check for higher-precedence operators on the right
+                // E.g., for "3 + 4 * 2": when at +, see that * has higher precedence
+                int CurrentPrec = getOperatorPrecedence(TypeExpr->Name);
+                if (CurrentPrec > 0 && I + 2 < Ops.size()) {
+                    if (auto* NextOp = std::get_if<PlannedType>(&Ops[I + 2].Expr)) {
+                        if (isOperatorName(NextOp->Name)) {
+                            int NextPrec = getOperatorPrecedence(NextOp->Name);
+                            if (NextPrec > CurrentPrec) {
+                                // Higher precedence on right - collapse right side first
+                                std::vector<PlannedOperand> RightOps;
+                                for (size_t j = I + 1; j < Ops.size(); ++j) {
+                                    RightOps.push_back(std::move(Ops[j]));
+                                }
+                                auto CollapsedRight = collapseOperandSequence(std::move(RightOps));
+                                if (!CollapsedRight) {
+                                    return CollapsedRight.takeError();
+                                }
+                                // Replace Ops[I + 1] with the collapsed result
+                                Ops[I + 1] = std::move(*CollapsedRight);
+                                // Truncate Ops to remove the consumed elements
+                                Ops.resize(I + 2);
+                            }
+                        }
+                    }
+                }
+
+                PlannedOperand& Right = Ops[I + 1];
 
                 // Find the operator
                 auto OpMatch = findOperator(TypeExpr->Name, Left.ResultType, Right.ResultType);
