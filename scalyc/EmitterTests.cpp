@@ -3507,12 +3507,6 @@ static bool testRBMMEmptyConstructorWithoutParens() {
         return false;
     }
     pass("Baseline: Counter() with parens");
-
-    // TODO: Empty constructor without parens (Counter) is not currently supported
-    // because without a lifetime suffix ($ or #), there's no way to distinguish
-    // a type reference from a zero-arg constructor call
-    // The syntax Type$ or Type# (without parens) should work when RBMM is available
-
     pass(Name);
     return true;
 }
