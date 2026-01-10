@@ -3923,6 +3923,35 @@ static bool testGenericOptionNone() {
     return true;
 }
 
+static bool testOptionalTypeSugar() {
+    const char* Name = "Pipeline: T? sugar for Option[T]";
+
+    // T? is syntactic sugar for Option[T]
+    auto ResultOrErr = evalSimpleInt(
+        "define Option[T] union: (Some: T, None)\n"
+        "function unwrap(x: int?) returns int\n"
+        "    choose x: when v: Some: v else 0\n"
+        "unwrap(Option[int].Some(42))"
+    );
+
+    if (!ResultOrErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ResultOrErr.takeError();
+        fail(Name, ErrMsg.c_str());
+        return false;
+    }
+
+    if (*ResultOrErr != 42) {
+        std::string Msg = "expected 42, got " + std::to_string(*ResultOrErr);
+        fail(Name, Msg.c_str());
+        return false;
+    }
+
+    pass(Name);
+    return true;
+}
+
 static bool testGenericMethodOnStruct() {
     const char* Name = "Pipeline: generic method on Box[T]";
 
@@ -4452,6 +4481,7 @@ bool runEmitterTests() {
     testGenericPair();
     testGenericOptionSome();
     testGenericOptionNone();
+    testOptionalTypeSugar();
     testGenericMethodOnStruct();
     testGenericNestedTypes();
 

@@ -147,12 +147,27 @@ llvm::Expected<std::unique_ptr<Type>> Modeler::handleType(
 
     Lifetime Life = handleLifetime(Syntax.lifetime);
 
-    return std::make_unique<Type>(Type{
+    auto Result = std::make_unique<Type>(Type{
         Span{Syntax.Start, Syntax.End},
         std::move(Path),
         std::move(Generics),
         std::move(Life)
     });
+
+    // If optional (T?), wrap in Option[T]
+    if (Syntax.optional) {
+        std::vector<std::string> OptionPath = {"Option"};
+        auto InnerTypes = std::make_unique<std::vector<Type>>();
+        InnerTypes->push_back(std::move(*Result));
+        return std::make_unique<Type>(Type{
+            Span{Syntax.Start, Syntax.End},
+            std::move(OptionPath),
+            std::move(InnerTypes),
+            UnspecifiedLifetime{}
+        });
+    }
+
+    return Result;
 }
 
 Lifetime Modeler::handleLifetime(const LifetimeSyntax *Syntax) {
