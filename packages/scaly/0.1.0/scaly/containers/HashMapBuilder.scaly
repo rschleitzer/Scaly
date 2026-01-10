@@ -90,23 +90,25 @@ define HashMapBuilder[K, V]
         return false
     }
 
-    function get(this: HashMapBuilder[K, V], key: K) returns pointer[V]
+    function get(this: HashMapBuilder[K, V], key: K) returns ref[V]
     {
         if slots = null
             return null
 
-        let slot slots.get(key.hash() % slots.length)
-        var iterator slot.get_iterator()
+        let slot_ref slots.get(key.hash() % slots.length)
+        if slot_ref = null
+            return null
+        var iterator (*slot_ref).get_iterator()
         while let item iterator.next()
         {
-            if key.equals(item.value.key)
-                return &item.value.value
+            if key.equals((*item).value.key)
+                return (&(*item).value.value) as ref[V]
         }
 
         return null
     }
 
-    operator [](key: K) returns pointer[V]
+    operator [](key: K) returns ref[V]
     {
         return get(key)
     }
