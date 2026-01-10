@@ -4528,18 +4528,7 @@ llvm::Expected<llvm::Value*> Emitter::checkAndPropagateError(
     Builder->SetInsertPoint(ErrorBlock);
 
     if (CurrentFunctionCanThrow && CurrentRegion.ExceptionPage) {
-        // Current function can throw - propagate the error
-        // The error data is already on CalleeExceptionPage, but we need to copy it
-        // to our exception page (CurrentRegion.ExceptionPage) for proper lifetime
-
-        // TODO: For now, we assume the error is small enough to fit on our page
-        // and copy it. A more sophisticated approach would be to re-throw on
-        // our exception page.
-
-        // For now, just return with error status
-        // We need to construct a return value with the error tag and data
-
-        // Check if function uses sret
+        // Propagate error to caller
         bool HasSret = CurrentFunction && CurrentFunction->arg_size() > 0 &&
                        CurrentFunction->hasParamAttribute(0, llvm::Attribute::StructRet);
 
