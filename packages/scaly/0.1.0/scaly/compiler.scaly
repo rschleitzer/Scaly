@@ -5,7 +5,7 @@ define compiler
 {
     module Model
     module Modeler
-    ; module Syntax  ; TODO: port from generated C++ code
+    module Syntax  ; Generated from scaly.sgm
 
     function test() returns int
     {
