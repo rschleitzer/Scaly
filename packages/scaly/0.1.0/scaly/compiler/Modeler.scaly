@@ -3,8 +3,175 @@
 
 use scaly.containers.String
 use scaly.containers.Vector
-use scaly.compiler.Model
-use scaly.compiler.Syntax
+
+; Model types
+use scaly.compiler.Model.Span
+use scaly.compiler.Model.Constant
+use scaly.compiler.Model.BooleanConstant
+use scaly.compiler.Model.IntegerConstant
+use scaly.compiler.Model.HexConstant
+use scaly.compiler.Model.FloatingPointConstant
+use scaly.compiler.Model.StringConstant
+use scaly.compiler.Model.CharacterConstant
+use scaly.compiler.Model.FragmentConstant
+use scaly.compiler.Model.NullConstant
+use scaly.compiler.Model.UnspecifiedLifetime
+use scaly.compiler.Model.CallLifetime
+use scaly.compiler.Model.LocalLifetime
+use scaly.compiler.Model.ReferenceLifetime
+use scaly.compiler.Model.ThrownLifetime
+use scaly.compiler.Model.Lifetime
+use scaly.compiler.Model.Type
+use scaly.compiler.Model.Operand
+use scaly.compiler.Model.Component
+use scaly.compiler.Model.ObjectTuple
+use scaly.compiler.Model.Matrix
+use scaly.compiler.Model.Block
+use scaly.compiler.Model.Expression
+use scaly.compiler.Model.Action
+use scaly.compiler.Model.Binding
+use scaly.compiler.Model.Break
+use scaly.compiler.Model.Continue
+use scaly.compiler.Model.Return
+use scaly.compiler.Model.Throw
+use scaly.compiler.Model.Statement
+use scaly.compiler.Model.Item
+use scaly.compiler.Model.If
+use scaly.compiler.Model.Case
+use scaly.compiler.Model.Branch
+use scaly.compiler.Model.Match
+use scaly.compiler.Model.When
+use scaly.compiler.Model.Choose
+use scaly.compiler.Model.For
+use scaly.compiler.Model.While
+use scaly.compiler.Model.Try
+use scaly.compiler.Model.SizeOf
+use scaly.compiler.Model.AlignOf
+use scaly.compiler.Model.Is
+use scaly.compiler.Model.As
+use scaly.compiler.Model.Property
+use scaly.compiler.Model.Attribute
+use scaly.compiler.Model.Model
+use scaly.compiler.Model.ModelVariable
+use scaly.compiler.Model.GenericParameter
+use scaly.compiler.Model.Use
+use scaly.compiler.Model.ExternImpl
+use scaly.compiler.Model.InstructionImpl
+use scaly.compiler.Model.IntrinsicImpl
+use scaly.compiler.Model.Implementation
+use scaly.compiler.Model.Function
+use scaly.compiler.Model.Initializer
+use scaly.compiler.Model.DeInitializer
+use scaly.compiler.Model.Operator
+use scaly.compiler.Model.Variant
+use scaly.compiler.Model.StructMember
+use scaly.compiler.Model.Structure
+use scaly.compiler.Model.Union
+use scaly.compiler.Model.Namespace
+use scaly.compiler.Model.Definition
+use scaly.compiler.Model.Global
+use scaly.compiler.Model.Concept
+use scaly.compiler.Model.Member
+use scaly.compiler.Model.Module
+use scaly.compiler.Model.Program
+
+; Syntax types
+use scaly.compiler.Syntax.Literal
+use scaly.compiler.Syntax.StringLiteral
+use scaly.compiler.Syntax.CharacterLiteral
+use scaly.compiler.Syntax.FragmentLiteral
+use scaly.compiler.Syntax.IntegerLiteral
+use scaly.compiler.Syntax.BooleanLiteral
+use scaly.compiler.Syntax.FloatingPointLiteral
+use scaly.compiler.Syntax.HexLiteral
+use scaly.compiler.Syntax.LiteralSyntax
+use scaly.compiler.Syntax.LifetimeSyntax
+use scaly.compiler.Syntax.CallSyntax
+use scaly.compiler.Syntax.LocalSyntax
+use scaly.compiler.Syntax.ReferenceSyntax
+use scaly.compiler.Syntax.ThrownSyntax
+use scaly.compiler.Syntax.NameSyntax
+use scaly.compiler.Syntax.TypeSyntax
+use scaly.compiler.Syntax.GenericArgumentSyntax
+use scaly.compiler.Syntax.GenericArgumentsSyntax
+use scaly.compiler.Syntax.ExpressionSyntax
+use scaly.compiler.Syntax.OperandSyntax
+use scaly.compiler.Syntax.StatementSyntax
+use scaly.compiler.Syntax.CommandSyntax
+use scaly.compiler.Syntax.OperationSyntax
+use scaly.compiler.Syntax.LetSyntax
+use scaly.compiler.Syntax.VarSyntax
+use scaly.compiler.Syntax.MutableSyntax
+use scaly.compiler.Syntax.SetSyntax
+use scaly.compiler.Syntax.BreakSyntax
+use scaly.compiler.Syntax.ContinueSyntax
+use scaly.compiler.Syntax.ReturnSyntax
+use scaly.compiler.Syntax.ThrowSyntax
+use scaly.compiler.Syntax.BindingSyntax
+use scaly.compiler.Syntax.BindingAnnotationSyntax
+use scaly.compiler.Syntax.ObjectSyntax
+use scaly.compiler.Syntax.ComponentSyntax
+use scaly.compiler.Syntax.VectorSyntax
+use scaly.compiler.Syntax.ElementSyntax
+use scaly.compiler.Syntax.BlockSyntax
+use scaly.compiler.Syntax.IfSyntax
+use scaly.compiler.Syntax.ThenSyntax
+use scaly.compiler.Syntax.ElseSyntax
+use scaly.compiler.Syntax.MatchSyntax
+use scaly.compiler.Syntax.BranchSyntax
+use scaly.compiler.Syntax.CaseSyntax
+use scaly.compiler.Syntax.ChooseSyntax
+use scaly.compiler.Syntax.WhenSyntax
+use scaly.compiler.Syntax.ForSyntax
+use scaly.compiler.Syntax.WhileSyntax
+use scaly.compiler.Syntax.TrySyntax
+use scaly.compiler.Syntax.ConditionSyntax
+use scaly.compiler.Syntax.ActionSyntax
+use scaly.compiler.Syntax.SizeOfSyntax
+use scaly.compiler.Syntax.AlignOfSyntax
+use scaly.compiler.Syntax.IsSyntax
+use scaly.compiler.Syntax.AsSyntax
+use scaly.compiler.Syntax.ItemSyntax
+use scaly.compiler.Syntax.PropertySyntax
+use scaly.compiler.Syntax.FieldSyntax
+use scaly.compiler.Syntax.AttributeSyntax
+use scaly.compiler.Syntax.ModelSyntax
+use scaly.compiler.Syntax.UseSyntax
+use scaly.compiler.Syntax.GenericParameterSyntax
+use scaly.compiler.Syntax.GenericParametersSyntax
+use scaly.compiler.Syntax.ParametersSyntax
+use scaly.compiler.Syntax.ParameterSetSyntax
+use scaly.compiler.Syntax.RoutineSyntax
+use scaly.compiler.Syntax.NamedSyntax
+use scaly.compiler.Syntax.TargetSyntax
+use scaly.compiler.Syntax.ImplementationSyntax
+use scaly.compiler.Syntax.ExternSyntax
+use scaly.compiler.Syntax.InstructionSyntax
+use scaly.compiler.Syntax.IntrinsicSyntax
+use scaly.compiler.Syntax.FunctionSyntax
+use scaly.compiler.Syntax.ProcedureSyntax
+use scaly.compiler.Syntax.OperatorSyntax
+use scaly.compiler.Syntax.InitSyntax
+use scaly.compiler.Syntax.DeInitSyntax
+use scaly.compiler.Syntax.BodySyntax
+use scaly.compiler.Syntax.ReturnsSyntax
+use scaly.compiler.Syntax.ThrowsSyntax
+use scaly.compiler.Syntax.StructureSyntax
+use scaly.compiler.Syntax.ClassSyntax
+use scaly.compiler.Syntax.VariantSyntax
+use scaly.compiler.Syntax.UnionSyntax
+use scaly.compiler.Syntax.NamespaceSyntax
+use scaly.compiler.Syntax.ConstantSyntax
+use scaly.compiler.Syntax.ConceptSyntax
+use scaly.compiler.Syntax.DefinitionSyntax
+use scaly.compiler.Syntax.PrivateSyntax
+use scaly.compiler.Syntax.ExportSyntax
+use scaly.compiler.Syntax.SymbolSyntax
+use scaly.compiler.Syntax.DeclarationSyntax
+use scaly.compiler.Syntax.MemberSyntax
+use scaly.compiler.Syntax.ConstituentSyntax
+use scaly.compiler.Syntax.FileSyntax
+use scaly.compiler.Syntax.ProgramSyntax
 
 ; ============================================================================
 ; Modeler state
@@ -13,19 +180,42 @@ use scaly.compiler.Syntax
 define Modeler
 (
     file: String
-    package_search_paths: pointer[Vector[String]]
 )
 {
     init(file_name: String)
     {
         set file: file_name
-        set package_search_paths: null
     }
+}
 
-    procedure add_package_search_path(this: Modeler, path: String)
-    {
-        ; TODO: implement when Vector mutation is supported
-    }
+; ============================================================================
+; Literal/Constant handling
+; ============================================================================
+
+function make_literal_span(syntax: LiteralSyntax) returns Span
+    Span(syntax.start, syntax.end)
+
+function handle_literal(syntax: LiteralSyntax) returns Constant
+{
+    let loc make_literal_span(syntax)
+
+    choose syntax.literal
+        when str: StringLiteral
+            Constant.String(StringConstant(loc, str.value))
+        when chr: CharacterLiteral
+            Constant.Character(CharacterConstant(loc, chr.value))
+        when frag: FragmentLiteral
+            Constant.Fragment(FragmentConstant(loc, frag.value))
+        when int_lit: IntegerLiteral
+            Constant.Integer(IntegerConstant(loc, 0))
+        when bool_lit: BooleanLiteral
+            Constant.Boolean(BooleanConstant(loc, bool_lit.value))
+        when float_lit: FloatingPointLiteral
+            Constant.Float(FloatingPointConstant(loc, 0.0))
+        when hex_lit: HexLiteral
+            Constant.Hex(HexConstant(loc, 0))
+        else
+            Constant.Null(NullConstant(loc))
 }
 
 ; ============================================================================
@@ -37,18 +227,1271 @@ function handle_lifetime(syntax: pointer[LifetimeSyntax]) returns Lifetime
     if syntax = null
         return Lifetime.Unspecified(UnspecifiedLifetime())
 
+    let dummy_span Span(0, 0)
     let lifetime_syntax (*syntax)
     choose lifetime_syntax
-        when call: Call
-            Lifetime.Call(CallLifetime(Span(call.start, call.end)))
-        when local: Local
-            Lifetime.Local(LocalLifetime(Span(local.start, local.end)))
-        when ref: Reference
-            Lifetime.Reference(ReferenceLifetime(Span(ref.start, ref.end), ref.location))
-        when thrown: Thrown
-            Lifetime.Thrown(ThrownLifetime(Span(thrown.start, thrown.end)))
+        when call: CallSyntax
+            Lifetime.Call(CallLifetime(dummy_span))
+        when local: LocalSyntax
+            Lifetime.Local(LocalLifetime(dummy_span))
+        when ref: ReferenceSyntax
+            Lifetime.Reference(ReferenceLifetime(dummy_span, ref.location))
+        when thrown: ThrownSyntax
+            Lifetime.Thrown(ThrownLifetime(dummy_span))
         else
             Lifetime.Unspecified(UnspecifiedLifetime())
+}
+
+; ============================================================================
+; Type handling
+; ============================================================================
+
+function handle_type#(rp, syntax: TypeSyntax) returns pointer[Type]
+{
+    var path Vector[String]#(1)
+    path.put(0, syntax.name.name)
+
+    var generics: pointer[Vector[Type]] null
+    if syntax.generics <> null
+    {
+        let gen_args_syntax (*syntax.generics)
+        if gen_args_syntax.generics <> null
+        {
+            let gen_syns (*gen_args_syntax.generics)
+            var gen_types Vector[Type]#(gen_syns.length)
+            var gi: size_t 0
+            while gi < gen_syns.length
+            {
+                let ga_ptr gen_syns.get(gi)
+                if ga_ptr <> null
+                {
+                    let ga (*ga_ptr)
+                    let inner_type handle_type#(ga.type)
+                    if inner_type <> null
+                        gen_types.put(gi, *inner_type)
+                }
+                set gi: gi + 1
+            }
+            set generics: &gen_types
+        }
+    }
+
+    let life handle_lifetime(syntax.lifetime)
+
+    Type^rp(
+        Span(syntax.start, syntax.end),
+        &path,
+        generics,
+        life
+    )
+}
+
+; ============================================================================
+; Object/Tuple handling
+; ============================================================================
+
+function handle_object#(rp, syntax: ObjectSyntax) returns ObjectTuple
+{
+    var count: size_t 0
+    if syntax.components <> null
+        set count: (*syntax.components).length
+
+    var components Vector[Component]#(count)
+    if syntax.components <> null
+    {
+        let comps (*syntax.components)
+        var i: size_t 0
+        while i < comps.length
+        {
+            let comp_ptr comps.get(i)
+            if comp_ptr <> null
+            {
+                let comp_syntax (*comp_ptr)
+                let component handle_component#(comp_syntax)
+                components.put(i, component)
+            }
+            set i: i + 1
+        }
+    }
+    ObjectTuple(Span(syntax.start, syntax.end), &components)
+}
+
+function handle_component#(rp, syntax: ComponentSyntax) returns Component
+{
+    var name: pointer[String] null
+    var value: pointer[Vector[Operand]] null
+
+    if syntax.value <> null
+    {
+        let val_syntax (*syntax.value)
+        set value: handle_operands#(val_syntax.value)
+    }
+    else
+    {
+        set value: handle_operands#(syntax.operands)
+    }
+
+    Component(
+        Span(syntax.start, syntax.end),
+        name,
+        value,
+        null
+    )
+}
+
+; ============================================================================
+; Vector/Matrix handling
+; ============================================================================
+
+function handle_vector#(rp, syntax: VectorSyntax) returns Matrix
+{
+    var count: size_t 0
+    if syntax.elements <> null
+        set count: (*syntax.elements).length
+
+    var operations Vector[Vector[Operand]]#(count)
+    if syntax.elements <> null
+    {
+        let elems (*syntax.elements)
+        var i: size_t 0
+        while i < elems.length
+        {
+            let elem_ptr elems.get(i)
+            if elem_ptr <> null
+            {
+                let element (*elem_ptr)
+                let operands handle_operands#(element.operation)
+                if operands <> null
+                    operations.put(i, *operands)
+            }
+            set i: i + 1
+        }
+    }
+    let life handle_lifetime(syntax.lifetime)
+    Matrix(Span(syntax.start, syntax.end), &operations, life)
+}
+
+; ============================================================================
+; Block handling
+; ============================================================================
+
+function handle_block#(rp, syntax: BlockSyntax) returns Block
+{
+    let statements handle_statements#(syntax.statements)
+    Block(Span(syntax.start, syntax.end), statements)
+}
+
+; ============================================================================
+; Expression handling
+; ============================================================================
+
+function handle_expression#(rp, syntax: ExpressionSyntax) returns Expression
+{
+    choose syntax
+        when lit: LiteralSyntax
+            Expression.Constant(handle_literal(lit))
+        when name: NameSyntax
+        {
+            var path Vector[String]#(1)
+            path.put(0, name.name)
+            Expression.Type(Type(
+                Span(name.start, name.end),
+                &path,
+                null,
+                Lifetime.Unspecified(UnspecifiedLifetime())
+            ))
+        }
+        when obj: ObjectSyntax
+            Expression.ObjectTuple(handle_object#(obj))
+        when vec: VectorSyntax
+            Expression.Matrix(handle_vector#(vec))
+        when blk: BlockSyntax
+            Expression.Block(handle_block#(blk))
+        when if_syntax: IfSyntax
+            Expression.If(handle_if#(if_syntax))
+        when match_syntax: MatchSyntax
+            Expression.Match(handle_match#(match_syntax))
+        when choose_syntax: ChooseSyntax
+            Expression.Choose(handle_choose#(choose_syntax))
+        when for_syntax: ForSyntax
+            Expression.For(handle_for#(for_syntax))
+        when while_syntax: WhileSyntax
+            Expression.While(handle_while#(while_syntax))
+        when try_syntax: TrySyntax
+            Expression.Try(handle_try#(try_syntax))
+        when sizeof_syntax: SizeOfSyntax
+            Expression.SizeOf(handle_sizeof#(sizeof_syntax))
+        when alignof_syntax: AlignOfSyntax
+            Expression.AlignOf(handle_alignof#(alignof_syntax))
+        when is_syntax: IsSyntax
+            Expression.Is(handle_is#(is_syntax))
+        when as_syntax: AsSyntax
+            Expression.As(handle_as#(as_syntax))
+        else
+            Expression.Constant(Constant.Null(NullConstant(Span(0, 0))))
+}
+
+; ============================================================================
+; Control flow handling
+; ============================================================================
+
+function handle_if#(rp, syntax: IfSyntax) returns If
+{
+    let condition handle_operands#(syntax.condition)
+    let cons_stmt handle_command#(syntax.consequent.command)
+
+    var alternative: pointer[Statement] null
+    if syntax.alternative <> null
+    {
+        let else_syntax (*syntax.alternative)
+        let alt_stmt handle_command#(else_syntax.alternative)
+        set alternative: &alt_stmt
+    }
+
+    If(
+        Span(syntax.start, syntax.end),
+        condition,
+        null,
+        &cons_stmt,
+        alternative
+    )
+}
+
+function handle_match#(rp, syntax: MatchSyntax) returns Match
+{
+    let scrutinee handle_operands#(syntax.scrutinee)
+
+    var branch_count: size_t 0
+    if syntax.branches <> null
+        set branch_count: (*syntax.branches).length
+
+    var branches Vector[Branch]#(branch_count)
+    if syntax.branches <> null
+    {
+        let brs (*syntax.branches)
+        var i: size_t 0
+        while i < brs.length
+        {
+            let br_ptr brs.get(i)
+            if br_ptr <> null
+            {
+                let branch_syntax (*br_ptr)
+                let branch handle_branch#(branch_syntax)
+                branches.put(i, branch)
+            }
+            set i: i + 1
+        }
+    }
+
+    var alternative: pointer[Statement] null
+    if syntax.alternative <> null
+    {
+        let else_syntax (*syntax.alternative)
+        let alt_stmt handle_command#(else_syntax.alternative)
+        set alternative: &alt_stmt
+    }
+
+    Match(
+        Span(syntax.start, syntax.end),
+        scrutinee,
+        &branches,
+        alternative
+    )
+}
+
+function handle_branch#(rp, syntax: BranchSyntax) returns Branch
+{
+    var case_count: size_t 0
+    if syntax.cases <> null
+        set case_count: (*syntax.cases).length
+
+    var cases Vector[Case]#(case_count)
+    if syntax.cases <> null
+    {
+        let cs (*syntax.cases)
+        var i: size_t 0
+        while i < cs.length
+        {
+            let case_ptr cs.get(i)
+            if case_ptr <> null
+            {
+                let case_syntax (*case_ptr)
+                let case_ handle_case#(case_syntax)
+                cases.put(i, case_)
+            }
+            set i: i + 1
+        }
+    }
+
+    let stmt handle_statement#(syntax.consequent)
+    Branch(Span(syntax.start, syntax.end), &cases, &stmt)
+}
+
+function handle_case#(rp, syntax: CaseSyntax) returns Case
+{
+    let condition handle_operands#(syntax.condition)
+    Case(Span(syntax.start, syntax.end), condition)
+}
+
+function handle_choose#(rp, syntax: ChooseSyntax) returns Choose
+{
+    let condition handle_operands#(syntax.condition)
+
+    var case_count: size_t 0
+    if syntax.cases <> null
+        set case_count: (*syntax.cases).length
+
+    var cases Vector[When]#(case_count)
+    if syntax.cases <> null
+    {
+        let cs (*syntax.cases)
+        var i: size_t 0
+        while i < cs.length
+        {
+            let when_ptr cs.get(i)
+            if when_ptr <> null
+            {
+                let when_syntax (*when_ptr)
+                let when_ handle_when#(when_syntax)
+                cases.put(i, when_)
+            }
+            set i: i + 1
+        }
+    }
+
+    var alternative: pointer[Statement] null
+    if syntax.alternative <> null
+    {
+        let else_syntax (*syntax.alternative)
+        let alt_stmt handle_command#(else_syntax.alternative)
+        set alternative: &alt_stmt
+    }
+
+    Choose(
+        Span(syntax.start, syntax.end),
+        condition,
+        &cases,
+        alternative
+    )
+}
+
+function handle_when#(rp, syntax: WhenSyntax) returns When
+{
+    var variant_path Vector[String]#(1)
+    variant_path.put(0, syntax.variant.name)
+
+    let stmt handle_command#(syntax.command)
+
+    When(
+        Span(syntax.start, syntax.end),
+        syntax.name,
+        &variant_path,
+        &stmt
+    )
+}
+
+function handle_action#(rp, syntax: ActionSyntax) returns Action
+{
+    choose syntax
+        when op: OperationSyntax
+            Action(handle_operands#(op.operands), null)
+        when set_syntax: SetSyntax
+            Action(handle_operands#(set_syntax.source), handle_operands#(set_syntax.target))
+        else
+            Action(null, null)
+}
+
+function handle_for#(rp, syntax: ForSyntax) returns For
+{
+    let expr handle_operands#(syntax.operation)
+    let body handle_action#(syntax.action)
+
+    For(
+        Span(syntax.start, syntax.end),
+        syntax.variable,
+        expr,
+        body
+    )
+}
+
+function handle_while#(rp, syntax: WhileSyntax) returns While
+{
+    let cond handle_condition#(syntax.condition)
+    let body handle_action#(syntax.action)
+
+    While(
+        Span(syntax.start, syntax.end),
+        cond,
+        body
+    )
+}
+
+function handle_condition#(rp, syntax: ConditionSyntax) returns Binding
+{
+    choose syntax
+        when op: OperationSyntax
+        {
+            let operands handle_operands#(op.operands)
+            Binding(
+                Span(op.start, op.end),
+                "const",
+                Item(Span(op.start, op.end), false, null, null, null),
+                operands
+            )
+        }
+        when let_syntax: LetSyntax
+        {
+            let item handle_binding_item#(let_syntax.binding)
+            let operation handle_operands#(let_syntax.binding.operation)
+            Binding(
+                Span(let_syntax.start, let_syntax.end),
+                "const",
+                item,
+                operation
+            )
+        }
+        else
+            Binding(Span(0, 0), "const", Item(Span(0, 0), false, null, null, null), null)
+}
+
+function handle_try#(rp, syntax: TrySyntax) returns Try
+{
+    let cond handle_condition#(syntax.condition)
+
+    var catch_count: size_t 0
+    if syntax.cases <> null
+        set catch_count: (*syntax.cases).length
+
+    var catches Vector[When]#(catch_count)
+    if syntax.cases <> null
+    {
+        let cs (*syntax.cases)
+        var i: size_t 0
+        while i < cs.length
+        {
+            let when_ptr cs.get(i)
+            if when_ptr <> null
+            {
+                let when_syntax (*when_ptr)
+                let when_ handle_when#(when_syntax)
+                catches.put(i, when_)
+            }
+            set i: i + 1
+        }
+    }
+
+    var dropper: pointer[Statement] null
+    if syntax.dropper <> null
+    {
+        let else_syntax (*syntax.dropper)
+        let drop_stmt handle_command#(else_syntax.alternative)
+        set dropper: &drop_stmt
+    }
+
+    Try(
+        Span(syntax.start, syntax.end),
+        cond,
+        &catches,
+        dropper
+    )
+}
+
+; ============================================================================
+; Type operation handling
+; ============================================================================
+
+function handle_sizeof#(rp, syntax: SizeOfSyntax) returns SizeOf
+{
+    let sized_type handle_type#(syntax.type)
+    SizeOf(Span(syntax.start, syntax.end), *sized_type)
+}
+
+function handle_alignof#(rp, syntax: AlignOfSyntax) returns AlignOf
+{
+    let aligned_type handle_type#(syntax.type)
+    AlignOf(Span(syntax.start, syntax.end), *aligned_type)
+}
+
+function handle_is#(rp, syntax: IsSyntax) returns Is
+{
+    var name Vector[String]#(1)
+    name.put(0, syntax.name.name)
+    Is(Span(syntax.start, syntax.end), &name)
+}
+
+function handle_as#(rp, syntax: AsSyntax) returns As
+{
+    let target_type handle_type#(syntax.type)
+    As(Span(syntax.start, syntax.end), *target_type)
+}
+
+; ============================================================================
+; Operand handling
+; ============================================================================
+
+function handle_operand#(rp, syntax: OperandSyntax) returns Operand
+{
+    let expr handle_expression#(syntax.expression)
+    Operand(
+        Span(syntax.start, syntax.end),
+        expr,
+        null
+    )
+}
+
+function handle_operands#(rp, syntax: pointer[Vector[OperandSyntax]]) returns pointer[Vector[Operand]]
+{
+    if syntax = null
+        return null
+
+    let syn (*syntax)
+    var result Vector[Operand]#(syn.length)
+    var i: size_t 0
+    while i < syn.length
+    {
+        let op_ptr syn.get(i)
+        if op_ptr <> null
+        {
+            let operand_syntax (*op_ptr)
+            let operand handle_operand#(operand_syntax)
+            result.put(i, operand)
+        }
+        set i: i + 1
+    }
+    &result
+}
+
+; ============================================================================
+; Statement handling
+; ============================================================================
+
+function handle_binding_item#(rp, syntax: BindingSyntax) returns Item
+{
+    var item_type: pointer[Type] null
+    if syntax.annotation <> null
+    {
+        let annotation (*syntax.annotation)
+        choose annotation.spec
+            when type_syntax: TypeSyntax
+                set item_type: handle_type#(type_syntax)
+            else
+                set item_type: null
+    }
+
+    let name_copy String^rp(syntax.name)
+
+    Item(
+        Span(syntax.start, syntax.end),
+        false,
+        &name_copy,
+        item_type,
+        null
+    )
+}
+
+function handle_command#(rp, syntax: CommandSyntax) returns Statement
+{
+    choose syntax
+        when op: OperationSyntax
+        {
+            let operands handle_operands#(op.operands)
+            Statement.Action(Action(operands, null))
+        }
+        when let_syntax: LetSyntax
+        {
+            let item handle_binding_item#(let_syntax.binding)
+            let operation handle_operands#(let_syntax.binding.operation)
+            Statement.Binding(Binding(
+                Span(let_syntax.start, let_syntax.end),
+                "const",
+                item,
+                operation
+            ))
+        }
+        when var_syntax: VarSyntax
+        {
+            let item handle_binding_item#(var_syntax.binding)
+            let operation handle_operands#(var_syntax.binding.operation)
+            Statement.Binding(Binding(
+                Span(var_syntax.start, var_syntax.end),
+                "var",
+                item,
+                operation
+            ))
+        }
+        when mut_syntax: MutableSyntax
+        {
+            let item handle_binding_item#(mut_syntax.binding)
+            let operation handle_operands#(mut_syntax.binding.operation)
+            Statement.Binding(Binding(
+                Span(mut_syntax.start, mut_syntax.end),
+                "mutable",
+                item,
+                operation
+            ))
+        }
+        when set_syntax: SetSyntax
+        {
+            let target handle_operands#(set_syntax.target)
+            let source handle_operands#(set_syntax.source)
+            Statement.Action(Action(source, target))
+        }
+        when break_syntax: BreakSyntax
+        {
+            let result handle_operands#(break_syntax.result)
+            Statement.Break(Break(Span(break_syntax.start, break_syntax.end), result))
+        }
+        when continue_syntax: ContinueSyntax
+            Statement.Continue(Continue(Span(continue_syntax.start, continue_syntax.end)))
+        when return_syntax: ReturnSyntax
+        {
+            let result handle_operands#(return_syntax.result)
+            Statement.Return(Return(Span(return_syntax.start, return_syntax.end), result))
+        }
+        when throw_syntax: ThrowSyntax
+        {
+            let result handle_operands#(throw_syntax.result)
+            Statement.Throw(Throw(Span(throw_syntax.start, throw_syntax.end), result))
+        }
+        else
+            Statement.Action(Action(null, null))
+}
+
+function handle_statement#(rp, syntax: StatementSyntax) returns Statement
+    handle_command#(syntax.command)
+
+function handle_statements#(rp, syntax: pointer[Vector[StatementSyntax]]) returns pointer[Vector[Statement]]
+{
+    if syntax = null
+        return null
+
+    let stmts (*syntax)
+    var result Vector[Statement]#(stmts.length)
+    var i: size_t 0
+    while i < stmts.length
+    {
+        let stmt_ptr stmts.get(i)
+        if stmt_ptr <> null
+        {
+            let stmt_syntax (*stmt_ptr)
+            let stmt handle_statement#(stmt_syntax)
+            result.put(i, stmt)
+        }
+        set i: i + 1
+    }
+    &result
+}
+
+; ============================================================================
+; Item and Property handling
+; ============================================================================
+
+function handle_item#(rp, is_private: bool, syntax: ItemSyntax) returns Item
+{
+    var item_type: pointer[Type] null
+    if syntax.annotation <> null
+    {
+        let annotation (*syntax.annotation)
+        set item_type: handle_type#(annotation.type)
+    }
+
+    let name_copy String^rp(syntax.name)
+
+    Item(
+        Span(syntax.start, syntax.end),
+        is_private,
+        &name_copy,
+        item_type,
+        null
+    )
+}
+
+function handle_property#(rp, is_private: bool, syntax: PropertySyntax) returns Property
+{
+    let prop_type handle_type#(syntax.annotation.type)
+
+    var init: pointer[Vector[Operand]] null
+    if syntax.initializer <> null
+    {
+        let init_syntax (*syntax.initializer)
+        set init: handle_operands#(init_syntax.operands)
+    }
+
+    Property(
+        Span(syntax.start, syntax.end),
+        is_private,
+        syntax.name,
+        prop_type,
+        init,
+        null
+    )
+}
+
+; ============================================================================
+; Attribute handling
+; ============================================================================
+
+function handle_attribute#(rp, syntax: AttributeSyntax) returns Attribute
+{
+    let model_result handle_model#(syntax.model)
+
+    Attribute(
+        Span(syntax.start, syntax.end),
+        syntax.name,
+        &model_result
+    )
+}
+
+function handle_model#(rp, syntax: ModelSyntax) returns Model
+{
+    choose syntax
+        when lit: LiteralSyntax
+            Model.Constant(handle_literal(lit))
+        when name: NameSyntax
+            Model.Variable(ModelVariable(name.name))
+        when obj: ObjectSyntax
+        {
+            let tuple handle_object#(obj)
+            Model.ObjectTuple(&tuple)
+        }
+        when vec: VectorSyntax
+        {
+            let matrix handle_vector#(vec)
+            Model.Matrix(&matrix)
+        }
+        else
+            Model.Variable(ModelVariable(""))
+}
+
+; ============================================================================
+; Use handling
+; ============================================================================
+
+function handle_use#(rp, syntax: UseSyntax) returns Use
+{
+    var path Vector[String]#(1)
+    path.put(0, syntax.name.name)
+
+    Use(Span(syntax.start, syntax.end), &path)
+}
+
+; ============================================================================
+; Generic parameter handling
+; ============================================================================
+
+function handle_generic_parameter#(rp, syntax: GenericParameterSyntax) returns GenericParameter
+{
+    GenericParameter(
+        Span(syntax.start, syntax.end),
+        syntax.name,
+        null
+    )
+}
+
+; ============================================================================
+; Parameter handling
+; ============================================================================
+
+function handle_parameter_set#(rp, syntax: ParameterSetSyntax) returns pointer[Vector[Item]]
+{
+    choose syntax
+        when params: ParametersSyntax
+        {
+            if params.items = null
+                return null
+            let items (*params.items)
+            var result Vector[Item]#(items.length)
+            var i: size_t 0
+            while i < items.length
+            {
+                let item_ptr items.get(i)
+                if item_ptr <> null
+                {
+                    let item_syn (*item_ptr)
+                    let item handle_item#(false, item_syn)
+                    result.put(i, item)
+                }
+                set i: i + 1
+            }
+            &result
+        }
+        when type_syn: TypeSyntax
+        {
+            let type_result handle_type#(type_syn)
+            var result Vector[Item]#(1)
+            result.put(0, Item(
+                Span(type_syn.start, type_syn.end),
+                false,
+                null,
+                type_result,
+                null
+            ))
+            &result
+        }
+        else
+            null
+}
+
+; ============================================================================
+; Implementation handling
+; ============================================================================
+
+function handle_implementation#(rp, syntax: ImplementationSyntax) returns Implementation
+{
+    choose syntax
+        when act: ActionSyntax
+            Implementation.Action(handle_action#(act))
+        when ext: ExternSyntax
+            Implementation.Extern(ExternImpl(Span(ext.start, ext.end)))
+        when inst: InstructionSyntax
+            Implementation.Instruction(InstructionImpl(Span(inst.start, inst.end)))
+        when intr: IntrinsicSyntax
+            Implementation.Intrinsic(IntrinsicImpl(Span(intr.start, intr.end)))
+        else
+            Implementation.Action(Action(null, null))
+}
+
+; ============================================================================
+; Function building
+; ============================================================================
+
+function build_function#(rp, start: size_t, end_pos: size_t, syntax: TargetSyntax, is_private: bool, pure: bool) returns Function
+{
+    choose syntax
+        when named: NamedSyntax
+        {
+            var generic_params: pointer[Vector[GenericParameter]] null
+            var input: pointer[Vector[Item]] null
+
+            if named.routine.parameters <> null
+            {
+                let params (*named.routine.parameters)
+                set input: handle_parameter_set#(params)
+            }
+
+            var return_type: pointer[Type] null
+            if named.routine.returns_ <> null
+            {
+                let returns (*named.routine.returns_)
+                set return_type: handle_type#(returns.type)
+            }
+
+            var throws_type: pointer[Type] null
+            if named.routine.throws_ <> null
+            {
+                let throws (*named.routine.throws_)
+                set throws_type: handle_type#(throws.type)
+            }
+
+            let life handle_lifetime(named.routine.lifetime)
+            let impl handle_implementation#(named.routine.implementation)
+
+            Function(
+                Span(start, end_pos),
+                is_private,
+                pure,
+                named.name,
+                generic_params,
+                null,
+                input,
+                return_type,
+                throws_type,
+                life,
+                impl
+            )
+        }
+        else
+            Function(
+                Span(start, end_pos),
+                is_private,
+                pure,
+                "",
+                null,
+                null,
+                null,
+                null,
+                null,
+                Lifetime.Unspecified(UnspecifiedLifetime()),
+                Implementation.Action(Action(null, null))
+            )
+}
+
+; ============================================================================
+; Operator handling
+; ============================================================================
+
+function handle_operator#(rp, syntax: OperatorSyntax, is_private: bool) returns Operator
+{
+    choose syntax.target
+        when named: NamedSyntax
+        {
+            var input: pointer[Vector[Item]] null
+            if named.routine.parameters <> null
+            {
+                let params (*named.routine.parameters)
+                set input: handle_parameter_set#(params)
+            }
+
+            var return_type: pointer[Type] null
+            if named.routine.returns_ <> null
+            {
+                let returns (*named.routine.returns_)
+                set return_type: handle_type#(returns.type)
+            }
+
+            var throws_type: pointer[Type] null
+            if named.routine.throws_ <> null
+            {
+                let throws (*named.routine.throws_)
+                set throws_type: handle_type#(throws.type)
+            }
+
+            let impl handle_implementation#(named.routine.implementation)
+
+            Operator(
+                Span(syntax.start, syntax.end),
+                is_private,
+                named.name,
+                null,
+                input,
+                return_type,
+                throws_type,
+                impl
+            )
+        }
+        else
+            Operator(
+                Span(syntax.start, syntax.end),
+                is_private,
+                "",
+                null,
+                null,
+                null,
+                null,
+                Implementation.Action(Action(null, null))
+            )
+}
+
+; ============================================================================
+; Initializer handling
+; ============================================================================
+
+function handle_initializer#(rp, syntax: InitSyntax, is_private: bool) returns Initializer
+{
+    var input: pointer[Vector[Item]] null
+    if syntax.parameters <> null
+    {
+        let params (*syntax.parameters)
+        set input: handle_parameter_set#(params)
+    }
+
+    let act handle_action#(syntax.action)
+    let impl Implementation.Action(act)
+
+    Initializer(
+        Span(syntax.start, syntax.end),
+        is_private,
+        null,
+        input,
+        impl
+    )
+}
+
+function handle_deinitializer#(rp, syntax: DeInitSyntax) returns pointer[DeInitializer]
+{
+    let act handle_action#(syntax.action)
+    let impl Implementation.Action(act)
+
+    DeInitializer^rp(
+        Span(syntax.start, syntax.end),
+        impl
+    )
+}
+
+; ============================================================================
+; Variant handling (for unions)
+; ============================================================================
+
+function handle_variant#(rp, syntax: VariantSyntax) returns Variant
+{
+    var variant_type: pointer[Type] null
+    if syntax.annotation <> null
+    {
+        let annotation (*syntax.annotation)
+        set variant_type: handle_type#(annotation.type)
+    }
+
+    Variant(
+        Span(syntax.start, syntax.end),
+        syntax.name,
+        variant_type,
+        null
+    )
+}
+
+; ============================================================================
+; Structure handling
+; ============================================================================
+
+function handle_structure#(rp, syntax: StructureSyntax, name: String, is_private: bool) returns Structure
+{
+    ; Handle generic parameters
+    var generic_params: pointer[Vector[GenericParameter]] null
+
+    ; Handle fields/parts
+    var fields: pointer[Vector[Property]] null
+
+    ; Handle body
+    var uses: pointer[Vector[Use]] null
+    var funcs: pointer[Vector[Function]] null
+    var inits: pointer[Vector[Initializer]] null
+    var operators: pointer[Vector[Operator]] null
+    var deinit: pointer[DeInitializer] null
+
+    Structure(
+        Span(syntax.start, syntax.end),
+        is_private,
+        name,
+        generic_params,
+        null,
+        fields,
+        null,
+        uses,
+        funcs,
+        inits,
+        operators,
+        deinit,
+        null
+    )
+}
+
+; ============================================================================
+; Union handling
+; ============================================================================
+
+function handle_union#(rp, syntax: UnionSyntax, name: String, is_private: bool) returns Union
+{
+    ; Handle generic parameters
+    var generic_params: pointer[Vector[GenericParameter]] null
+
+    ; Handle variants
+    var variants Vector[Variant]#(0)
+    if syntax.variants <> null
+    {
+        let vars (*syntax.variants)
+        set variants: Vector[Variant]#(vars.length)
+        var i: size_t 0
+        while i < vars.length
+        {
+            let var_ptr vars.get(i)
+            if var_ptr <> null
+            {
+                let var_syntax (*var_ptr)
+                let variant handle_variant#(var_syntax)
+                variants.put(i, variant)
+            }
+            set i: i + 1
+        }
+    }
+
+    ; Handle body
+    var uses: pointer[Vector[Use]] null
+    var funcs: pointer[Vector[Function]] null
+    var operators: pointer[Vector[Operator]] null
+
+    Union(
+        Span(syntax.start, syntax.end),
+        is_private,
+        name,
+        generic_params,
+        &variants,
+        null,
+        uses,
+        funcs,
+        operators,
+        null
+    )
+}
+
+; ============================================================================
+; Namespace handling
+; ============================================================================
+
+function handle_namespace#(rp, syntax: NamespaceSyntax, name: String, is_private: bool) returns Namespace
+{
+    ; Handle members
+    var concepts: pointer[Vector[Concept]] null
+    var uses: pointer[Vector[Use]] null
+    var funcs: pointer[Vector[Function]] null
+    var operators: pointer[Vector[Operator]] null
+
+    Namespace(
+        Span(syntax.start, syntax.end),
+        is_private,
+        name,
+        concepts,
+        uses,
+        funcs,
+        operators,
+        null
+    )
+}
+
+; ============================================================================
+; Definition handling
+; ============================================================================
+
+function handle_definition#(rp, syntax: DefinitionSyntax, is_private: bool) returns Concept
+{
+    let name syntax.name
+
+    choose syntax.concept
+        when struct_syntax: StructureSyntax
+        {
+            let structure handle_structure#(struct_syntax, name, is_private)
+            Concept.Structure(structure)
+        }
+        when class_syntax: ClassSyntax
+        {
+            ; Classes treated as structures for now
+            let dummy_struct Structure(
+                Span(class_syntax.start, class_syntax.end),
+                is_private,
+                name,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+            )
+            Concept.Structure(dummy_struct)
+        }
+        when union_syntax: UnionSyntax
+        {
+            let union_ handle_union#(union_syntax, name, is_private)
+            Concept.Union(union_)
+        }
+        when namespace_syntax: NamespaceSyntax
+        {
+            let namespace_ handle_namespace#(namespace_syntax, name, is_private)
+            Concept.Namespace(namespace_)
+        }
+        else
+        {
+            ; Default to empty namespace
+            let default_ns Namespace(
+                Span(0, 0),
+                is_private,
+                name,
+                null,
+                null,
+                null,
+                null,
+                null
+            )
+            Concept.Namespace(default_ns)
+        }
+}
+
+; ============================================================================
+; Member handling
+; ============================================================================
+
+function handle_member#(rp, syntax: MemberSyntax) returns Member
+{
+    choose syntax.declaration
+        when def: DefinitionSyntax
+        {
+            let concept handle_definition#(def, false)
+            Member.Concept(concept)
+        }
+        when private_syntax: PrivateSyntax
+        {
+            ; Handle private member
+            let inner handle_declaration_as_member#(private_syntax.export, true)
+            inner
+        }
+        when func_syntax: FunctionSyntax
+        {
+            let func build_function#(func_syntax.start, func_syntax.end, func_syntax.target, false, true)
+            Member.Function(func)
+        }
+        when proc_syntax: ProcedureSyntax
+        {
+            let proc build_function#(proc_syntax.start, proc_syntax.end, proc_syntax.target, false, false)
+            Member.Function(proc)
+        }
+        when op_syntax: OperatorSyntax
+        {
+            let op handle_operator#(op_syntax, false)
+            Member.Operator(op)
+        }
+        else
+            Member.Concept(Concept.Namespace(Namespace(Span(0, 0), false, "", null, null, null, null, null)))
+}
+
+function handle_declaration_as_member#(rp, syntax: DeclarationSyntax, is_private: bool) returns Member
+{
+    choose syntax
+        when def: DefinitionSyntax
+        {
+            let concept handle_definition#(def, is_private)
+            Member.Concept(concept)
+        }
+        when func_syntax: FunctionSyntax
+        {
+            let func build_function#(func_syntax.start, func_syntax.end, func_syntax.target, is_private, true)
+            Member.Function(func)
+        }
+        when proc_syntax: ProcedureSyntax
+        {
+            let proc build_function#(proc_syntax.start, proc_syntax.end, proc_syntax.target, is_private, false)
+            Member.Function(proc)
+        }
+        when op_syntax: OperatorSyntax
+        {
+            let op handle_operator#(op_syntax, is_private)
+            Member.Operator(op)
+        }
+        else
+            Member.Concept(Concept.Namespace(Namespace(Span(0, 0), false, "", null, null, null, null, null)))
+}
+
+; ============================================================================
+; Module building
+; ============================================================================
+
+function build_module#(rp, file_name: String, name: String) returns Module
+{
+    Module(
+        false,
+        file_name,
+        name,
+        null,
+        null,
+        null
+    )
+}
+
+; ============================================================================
+; Program building
+; ============================================================================
+
+function build_program#(rp, modeler: Modeler) returns Program
+{
+    let file_name modeler.file
+    let main_module build_module#(file_name, file_name)
+
+    Program(
+        null,
+        main_module,
+        null
+    )
 }
 
 ; ============================================================================
@@ -57,6 +1500,7 @@ function handle_lifetime(syntax: pointer[LifetimeSyntax]) returns Lifetime
 
 function test() returns int
 {
-    ; Basic smoke test - just return success
+    let m Modeler("test.scaly")
+    let prog build_program#(m)
     0
 }
