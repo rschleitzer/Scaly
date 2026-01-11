@@ -3,9 +3,9 @@
 
 define compiler
 {
+    module Syntax  ; Generated from scaly.sgm - must come first, used by other modules
     module Model
     module Modeler
-    module Syntax  ; Generated from scaly.sgm
 
     function test() returns int
     {

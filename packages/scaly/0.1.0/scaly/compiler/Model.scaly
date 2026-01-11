@@ -364,7 +364,7 @@ define New
 (
     loc: Span
     new_type: Type
-    arguments: Tuple
+    arguments: ObjectTuple
 )
 
 ; ============================================================================
@@ -379,7 +379,7 @@ define Component
     attributes: pointer[Vector[Attribute]]
 )
 
-define Tuple
+define ObjectTuple
 (
     loc: Span
     components: pointer[Vector[Component]]
@@ -400,7 +400,7 @@ define Expression union
 (
     Constant: Constant
     Type: Type
-    Tuple: Tuple
+    ObjectTuple: ObjectTuple
     Matrix: Matrix
     Block: Block
     If: If
@@ -435,7 +435,7 @@ define Model union
 (
     Constant: Constant
     Variable: ModelVariable
-    Tuple: pointer[Tuple]
+    ObjectTuple: pointer[ObjectTuple]
     Matrix: pointer[Matrix]
 )
 
