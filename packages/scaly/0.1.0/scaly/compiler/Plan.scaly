@@ -1,0 +1,610 @@
+; Plan.scaly - Resolved/monomorphized model for code generation
+; The Plan is the "execution plan" - concrete types with generics resolved,
+; mangled names ready for LLVM emission, and provenance tracking for debug info.
+;
+; Ported from C++ Plan.h
+
+use scaly.containers.Vector
+use scaly.containers.String
+use scaly.compiler.Model.Span
+use scaly.compiler.Model.Lifetime
+use scaly.compiler.Model.Constant
+
+; ============================================================================
+; Type Inference Support
+; ============================================================================
+
+; Type variable - represents an unknown type during inference
+define TypeVariable
+(
+    id: size_t
+    debug_name: String      ; Optional: "T", "?1", etc. for error messages
+)
+
+; ============================================================================
+; Provenance Tracking (for debug info)
+; ============================================================================
+
+; Tracks where a generic instantiation came from
+define InstantiationInfo
+(
+    definition_loc: Span            ; Where the generic was defined
+    instantiation_loc: Span         ; Where it was instantiated
+    type_args: pointer[Vector[String]]  ; The concrete type arguments (readable)
+)
+
+; ============================================================================
+; Planned Types (resolved, concrete)
+; ============================================================================
+
+; A fully resolved type
+define PlannedType
+(
+    loc: Span
+    name: String                     ; Readable: "List.int"
+    mangled_name: String             ; Itanium: "_Z4ListIiE"
+    generics: pointer[Vector[PlannedType]]   ; Resolved generic args (if any)
+    life: Lifetime
+    origin: pointer[InstantiationInfo]  ; null if not from generic
+
+    ; For fixed-size array types: stores the size reference
+    array_size: String
+
+    ; For inference: may contain unresolved type variables
+    variable: pointer[TypeVariable]  ; non-null if this is a type variable
+)
+
+; ============================================================================
+; Type Inference Constraints
+; ============================================================================
+
+define EqualityConstraint
+(
+    left: PlannedType
+    right: PlannedType
+    loc: Span
+    file: String
+)
+
+define InstanceConstraint
+(
+    var: TypeVariable
+    trait_name: String
+    loc: Span
+)
+
+define TypeConstraint union
+(
+    Equality: EqualityConstraint
+    Instance: InstanceConstraint
+)
+
+; Type scheme for let-polymorphism
+define TypeScheme
+(
+    quantified: pointer[Vector[TypeVariable]]
+    scheme_type: pointer[PlannedType]
+)
+
+; ============================================================================
+; Planned Attributes and Items
+; ============================================================================
+
+define PlannedConstant
+(
+    value: Constant
+)
+
+define PlannedAttribute
+(
+    loc: Span
+    name: String
+    value: scaly.compiler.Model.Model
+)
+
+define PlannedItem
+(
+    loc: Span
+    private: bool
+    name: pointer[String]
+    item_type: pointer[PlannedType]
+    attributes: pointer[Vector[PlannedAttribute]]
+)
+
+; ============================================================================
+; Planned Properties and Variants
+; ============================================================================
+
+define PlannedProperty
+(
+    loc: Span
+    private: bool
+    name: String
+    mangled_name: String
+    prop_type: PlannedType
+    initializer: pointer[Vector[PlannedOperand]]
+    attributes: pointer[Vector[PlannedAttribute]]
+    offset: size_t      ; Byte offset in struct layout
+)
+
+define PlannedVariant
+(
+    loc: Span
+    name: String
+    mangled_name: String
+    var_type: pointer[PlannedType]
+    attributes: pointer[Vector[PlannedAttribute]]
+    tag: int            ; Discriminator value
+)
+
+; ============================================================================
+; Planned Statements
+; ============================================================================
+
+define PlannedAction
+(
+    source: pointer[Vector[PlannedOperand]]
+    target: pointer[Vector[PlannedOperand]]
+    result_type: PlannedType
+)
+
+define PlannedBinding
+(
+    loc: Span
+    binding_type: String    ; "const", "var", "mutable"
+    binding_item: PlannedItem
+    operation: pointer[Vector[PlannedOperand]]
+)
+
+define PlannedBreak
+(
+    loc: Span
+    result: pointer[Vector[PlannedOperand]]
+)
+
+define PlannedContinue
+(
+    loc: Span
+)
+
+define PlannedReturn
+(
+    loc: Span
+    result: pointer[Vector[PlannedOperand]]
+)
+
+define PlannedThrow
+(
+    loc: Span
+    result: pointer[Vector[PlannedOperand]]
+)
+
+define PlannedStatement union
+(
+    Action: PlannedAction
+    Binding: PlannedBinding
+    Break: PlannedBreak
+    Continue: PlannedContinue
+    Return: PlannedReturn
+    Throw: PlannedThrow
+)
+
+; ============================================================================
+; Planned Control Flow
+; ============================================================================
+
+define PlannedBlock
+(
+    loc: Span
+    statements: pointer[Vector[PlannedStatement]]
+    needs_local_page_cleanup: bool  ; True if this block contains $ allocations
+)
+
+define PlannedIf
+(
+    loc: Span
+    condition: pointer[Vector[PlannedOperand]]
+    prop: pointer[PlannedProperty]
+    consequent: pointer[PlannedStatement]
+    alternative: pointer[PlannedStatement]
+)
+
+define PlannedCase
+(
+    loc: Span
+    condition: pointer[Vector[PlannedOperand]]
+)
+
+define PlannedBranch
+(
+    loc: Span
+    cases: pointer[Vector[PlannedCase]]
+    consequent: pointer[PlannedStatement]
+)
+
+define PlannedMatch
+(
+    loc: Span
+    condition: pointer[Vector[PlannedOperand]]
+    branches: pointer[Vector[PlannedBranch]]
+    alternative: pointer[PlannedStatement]
+)
+
+define PlannedWhen
+(
+    loc: Span
+    name: String
+    variant_type: PlannedType
+    variant_index: size_t   ; Index in the union
+    consequent: pointer[PlannedStatement]
+)
+
+define PlannedChoose
+(
+    loc: Span
+    condition: pointer[Vector[PlannedOperand]]
+    cases: pointer[Vector[PlannedWhen]]
+    alternative: pointer[PlannedStatement]
+)
+
+define PlannedFor
+(
+    loc: Span
+    identifier: String
+    expr: pointer[Vector[PlannedOperand]]
+    body: PlannedAction
+
+    ; Iterator support fields
+    is_iterator_loop: bool          ; true if iterator-based, false if integer range
+    collection_type: PlannedType
+    iterator_type: PlannedType
+    element_type: PlannedType
+    get_iterator_method: String     ; Mangled name of get_iterator
+    next_method: String             ; Mangled name of next
+)
+
+define PlannedWhile
+(
+    loc: Span
+    cond: PlannedBinding
+    body: PlannedAction
+)
+
+define PlannedTry
+(
+    loc: Span
+    cond: PlannedBinding
+    catches: pointer[Vector[PlannedWhen]]
+    alternative: pointer[PlannedStatement]
+)
+
+define PlannedSizeOf
+(
+    loc: Span
+    sized_type: PlannedType
+    size: size_t            ; Computed size in bytes
+)
+
+define PlannedAlignOf
+(
+    loc: Span
+    aligned_type: PlannedType
+    alignment: size_t       ; Computed alignment in bytes
+)
+
+define PlannedIs
+(
+    loc: Span
+    test_type: PlannedType
+    variant_tag: size_t             ; Tag value to compare against
+    union_name: String              ; Name of the union type being tested
+    value: pointer[PlannedOperand]  ; The union value being tested
+    is_null_check: bool             ; true for "is null" checks
+)
+
+define PlannedAs
+(
+    loc: Span
+    target_type: PlannedType
+    value: pointer[PlannedOperand]
+)
+
+define PlannedVariantConstruction
+(
+    loc: Span
+    union_type: PlannedType
+    variant_name: String
+    variant_tag: size_t
+    value: pointer[PlannedOperand]
+)
+
+define PlannedCall
+(
+    loc: Span
+    name: String                ; Operator symbol or function name
+    mangled_name: String
+    is_intrinsic: bool
+    is_operator: bool
+    can_throw: bool
+    requires_page_param: bool   ; True if init# needs page parameter
+    args: pointer[Vector[PlannedOperand]]
+    result_type: PlannedType
+    life: Lifetime              ; For constructors: allocation lifetime
+)
+
+; ============================================================================
+; Planned Tuples and Matrices
+; ============================================================================
+
+define PlannedComponent
+(
+    loc: Span
+    name: pointer[String]
+    value: pointer[Vector[PlannedOperand]]
+    attributes: pointer[Vector[PlannedAttribute]]
+)
+
+define PlannedTuple
+(
+    loc: Span
+    components: pointer[Vector[PlannedComponent]]
+    tuple_type: PlannedType
+    is_region_alloc: bool
+    life: Lifetime
+    region_arg: pointer[PlannedOperand]     ; For ^name: the region pointer
+)
+
+define PlannedMatrix
+(
+    loc: Span
+    operations: pointer[Vector[Vector[PlannedOperand]]]
+    element_type: PlannedType
+)
+
+; ============================================================================
+; Planned Expressions and Operands
+; ============================================================================
+
+define PlannedVariable
+(
+    loc: Span
+    name: String
+    variable_type: PlannedType
+    is_mutable: bool
+)
+
+define PlannedGlobalRef
+(
+    loc: Span
+    name: String
+    mangled_name: String
+    global_type: PlannedType
+)
+
+define PlannedExpression union
+(
+    Constant: PlannedConstant
+    Type: PlannedType
+    Variable: PlannedVariable
+    GlobalRef: PlannedGlobalRef
+    Call: PlannedCall
+    Tuple: PlannedTuple
+    Matrix: PlannedMatrix
+    Block: PlannedBlock
+    If: PlannedIf
+    Match: PlannedMatch
+    Choose: PlannedChoose
+    For: PlannedFor
+    While: PlannedWhile
+    Try: PlannedTry
+    SizeOf: PlannedSizeOf
+    AlignOf: PlannedAlignOf
+    Is: PlannedIs
+    As: PlannedAs
+    VariantConstruction: PlannedVariantConstruction
+)
+
+define PlannedMemberAccess
+(
+    name: String
+    field_index: size_t
+    is_method: bool
+    is_union_value: bool
+    parent_type: PlannedType
+    result_type: PlannedType
+)
+
+define PlannedOperand
+(
+    loc: Span
+    expr: PlannedExpression
+    member_access: pointer[Vector[PlannedMemberAccess]]
+    result_type: PlannedType
+)
+
+; ============================================================================
+; Planned Functions and Operators
+; ============================================================================
+
+define PlannedExternImpl
+(
+    loc: Span
+)
+
+define PlannedInstructionImpl
+(
+    loc: Span
+)
+
+define PlannedIntrinsicImpl
+(
+    loc: Span
+)
+
+define PlannedImplementation union
+(
+    Action: PlannedAction
+    Extern: PlannedExternImpl
+    Instruction: PlannedInstructionImpl
+    Intrinsic: PlannedIntrinsicImpl
+)
+
+define PlannedFunction
+(
+    loc: Span
+    private: bool
+    pure: bool
+    name: String
+    mangled_name: String
+    page_parameter: pointer[String]
+    input: pointer[Vector[PlannedItem]]
+    returns: pointer[PlannedType]
+    throws: pointer[PlannedType]
+    life: Lifetime
+    impl: PlannedImplementation
+    origin: pointer[InstantiationInfo]
+    needs_local_page: bool
+    can_throw: bool
+    scheme: pointer[TypeScheme]
+)
+
+define PlannedInitializer
+(
+    loc: Span
+    private: bool
+    page_parameter: pointer[String]
+    mangled_name: String
+    input: pointer[Vector[PlannedItem]]
+    impl: PlannedImplementation
+)
+
+define PlannedDeInitializer
+(
+    loc: Span
+    mangled_name: String
+    impl: PlannedImplementation
+)
+
+define PlannedOperator
+(
+    loc: Span
+    private: bool
+    name: String
+    mangled_name: String
+    input: pointer[Vector[PlannedItem]]
+    returns: pointer[PlannedType]
+    throws: pointer[PlannedType]
+    impl: PlannedImplementation
+    origin: pointer[InstantiationInfo]
+    scheme: pointer[TypeScheme]
+)
+
+; ============================================================================
+; Planned Globals and Definitions
+; ============================================================================
+
+define PlannedGlobal
+(
+    loc: Span
+    name: String
+    mangled_name: String
+    global_type: PlannedType
+    value: pointer[Vector[PlannedOperand]]
+)
+
+define PlannedStructure
+(
+    loc: Span
+    private: bool
+    is_generic_placeholder: bool
+    name: String
+    mangled_name: String
+    properties: pointer[Vector[PlannedProperty]]
+    initializers: pointer[Vector[PlannedInitializer]]
+    deinitializer: pointer[PlannedDeInitializer]
+    methods: pointer[Vector[PlannedFunction]]
+    operators: pointer[Vector[PlannedOperator]]
+    size: size_t
+    alignment: size_t
+    origin: pointer[InstantiationInfo]
+)
+
+define PlannedUnion
+(
+    loc: Span
+    private: bool
+    name: String
+    mangled_name: String
+    variants: pointer[Vector[PlannedVariant]]
+    methods: pointer[Vector[PlannedFunction]]
+    operators: pointer[Vector[PlannedOperator]]
+    size: size_t
+    alignment: size_t
+    origin: pointer[InstantiationInfo]
+)
+
+define PlannedNamespace
+(
+    loc: Span
+    name: String
+    mangled_name: String
+    modules: pointer[Vector[PlannedModule]]
+    functions: pointer[Vector[PlannedFunction]]
+    operators: pointer[Vector[PlannedOperator]]
+    concepts: pointer[Vector[PlannedConcept]]
+)
+
+define PlannedDefinition union
+(
+    Structure: PlannedStructure
+    Union: PlannedUnion
+    Namespace: PlannedNamespace
+    Global: PlannedGlobal
+    Type: PlannedType       ; Type alias
+)
+
+define PlannedConcept
+(
+    loc: Span
+    name: String
+    mangled_name: String
+    attributes: pointer[Vector[PlannedAttribute]]
+    definition: PlannedDefinition
+    origin: pointer[InstantiationInfo]
+)
+
+; ============================================================================
+; Planned Module and Program
+; ============================================================================
+
+define PlannedModule
+(
+    file: String
+    name: String
+    modules: pointer[Vector[PlannedModule]]
+    concepts: pointer[Vector[PlannedConcept]]
+    functions: pointer[Vector[PlannedFunction]]
+    operators: pointer[Vector[PlannedOperator]]
+)
+
+; ============================================================================
+; The Complete Plan
+; ============================================================================
+
+define Plan
+(
+    main_module: PlannedModule
+    statements: pointer[Vector[PlannedStatement]]
+
+    ; All instantiated types/functions (for quick lookup during emission)
+    ; Note: In Scaly we'll use Vector pairs instead of maps for now
+    structures: pointer[Vector[PlannedStructure]]
+    unions: pointer[Vector[PlannedUnion]]
+    functions: pointer[Vector[PlannedFunction]]
+    globals: pointer[Vector[PlannedGlobal]]
+
+    ; Type inference state
+    next_type_var_id: size_t
+    constraints: pointer[Vector[TypeConstraint]]
+)
+

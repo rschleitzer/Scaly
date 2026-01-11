@@ -1,0 +1,3217 @@
+; Planner.scaly - Generic resolution, type inference, and name mangling
+; Transforms Model (with generics) -> Plan (concrete types, mangled names)
+;
+; Ported from C++ Planner.cpp
+
+use scaly.containers.Vector
+use scaly.containers.String
+use scaly.containers.StringBuilder
+use scaly.compiler.Model.Span
+use scaly.compiler.Model.Lifetime
+use scaly.compiler.Model.UnspecifiedLifetime
+use scaly.compiler.Model.Constant
+use scaly.compiler.Model.Module
+use scaly.compiler.Model.Program
+use scaly.compiler.Model.Concept
+use scaly.compiler.Model.Function
+use scaly.compiler.Model.Operator
+use scaly.compiler.Plan.PlannedType
+use scaly.compiler.Plan.PlannedItem
+use scaly.compiler.Plan.PlannedProperty
+use scaly.compiler.Plan.PlannedStructure
+use scaly.compiler.Plan.PlannedUnion
+use scaly.compiler.Plan.PlannedFunction
+use scaly.compiler.Plan.PlannedModule
+use scaly.compiler.Plan.PlannedGlobal
+use scaly.compiler.Plan.PlannedStatement
+use scaly.compiler.Plan.PlannedAction
+use scaly.compiler.Plan.PlannedBinding
+use scaly.compiler.Plan.PlannedBreak
+use scaly.compiler.Plan.PlannedContinue
+use scaly.compiler.Plan.PlannedReturn
+use scaly.compiler.Plan.PlannedThrow
+use scaly.compiler.Plan.PlannedOperand
+use scaly.compiler.Plan.PlannedAttribute
+use scaly.compiler.Plan.PlannedExpression
+use scaly.compiler.Plan.PlannedConstant
+use scaly.compiler.Plan.PlannedVariable
+use scaly.compiler.Plan.PlannedTuple
+use scaly.compiler.Plan.PlannedComponent
+use scaly.compiler.Plan.PlannedMatrix
+use scaly.compiler.Plan.PlannedBlock
+use scaly.compiler.Plan.PlannedIf
+use scaly.compiler.Plan.PlannedMatch
+use scaly.compiler.Plan.PlannedChoose
+use scaly.compiler.Plan.PlannedFor
+use scaly.compiler.Plan.PlannedWhile
+use scaly.compiler.Plan.PlannedTry
+use scaly.compiler.Plan.PlannedSizeOf
+use scaly.compiler.Plan.PlannedAlignOf
+use scaly.compiler.Plan.PlannedAs
+use scaly.compiler.Plan.PlannedVariant
+use scaly.compiler.Plan.PlannedImplementation
+use scaly.compiler.Plan.PlannedExternImpl
+use scaly.compiler.Plan.PlannedInstructionImpl
+use scaly.compiler.Plan.PlannedIntrinsicImpl
+use scaly.compiler.Plan.PlannedConcept
+use scaly.compiler.Plan.PlannedDefinition
+use scaly.compiler.Plan.PlannedNamespace
+use scaly.compiler.Plan.Plan
+
+; ============================================================================
+; LocalBinding - Information about a local variable
+; ============================================================================
+
+define LocalBinding
+(
+    binding_type: PlannedType
+    is_mutable: bool
+    is_on_page: bool    ; true if allocated with $, #, or ^name (not stack)
+)
+
+; ============================================================================
+; Scope - A lexical scope containing local variable bindings
+; ============================================================================
+
+define Scope
+(
+    ; For now we use simple parallel vectors for names and bindings
+    ; TODO: Use HashMap when available
+    names: pointer[Vector[String]]
+    bindings: pointer[Vector[LocalBinding]]
+)
+{
+    init#()
+    {
+        set names: Vector[String]#()
+        set bindings: Vector[LocalBinding]#()
+    }
+
+    function lookup(this, name: String) returns pointer[LocalBinding]
+    {
+        var i 0
+        for n in names
+        {
+            if n.equals(name)
+                return bindings.get(i)
+            set i: i + 1
+        }
+        null
+    }
+
+    procedure define(this, name: String, binding: LocalBinding)
+    {
+        names.put(names.length, name)
+        bindings.put(bindings.length, binding)
+    }
+}
+
+; ============================================================================
+; StructureContext - Active when planning methods/properties of a struct
+; ============================================================================
+
+define StructureContext
+(
+    name: String
+    properties: pointer[Vector[PlannedProperty]]
+    structure: pointer[PlannedStructure]
+)
+{
+    function is_active(this) returns bool
+        name.length > 0
+}
+
+; ============================================================================
+; NamespaceContext - Active when planning namespace members
+; ============================================================================
+
+define NamespaceContext
+(
+    name: String
+    modules: pointer[Vector[pointer[Module]]]
+)
+{
+    function is_active(this) returns bool
+        name.length > 0
+}
+
+; ============================================================================
+; Planner - Main planner structure
+; ============================================================================
+
+define Planner
+(
+    file: String
+
+    ; Symbol tables for resolution (flat cache, populated during planning)
+    ; TODO: Use HashMap when available
+    concept_names: pointer[Vector[String]]
+    concepts: pointer[Vector[pointer[Concept]]]
+
+    function_names: pointer[Vector[String]]
+    functions: pointer[Vector[Vector[pointer[Function]]]]
+
+    operator_names: pointer[Vector[String]]
+    operators: pointer[Vector[Vector[pointer[Operator]]]]
+
+    ; Instantiation cache - avoid duplicate monomorphization
+    instantiated_structure_names: pointer[Vector[String]]
+    instantiated_structures: pointer[Vector[PlannedStructure]]
+
+    instantiated_union_names: pointer[Vector[String]]
+    instantiated_unions: pointer[Vector[PlannedUnion]]
+
+    instantiated_function_names: pointer[Vector[String]]
+    instantiated_functions: pointer[Vector[PlannedFunction]]
+
+    ; Global constants cache
+    global_names: pointer[Vector[String]]
+    planned_globals: pointer[Vector[PlannedGlobal]]
+
+    ; Current generic substitution context
+    type_subst_names: pointer[Vector[String]]
+    type_substitutions: pointer[Vector[PlannedType]]
+
+    ; Scope stack for local variables
+    scopes: pointer[Vector[Scope]]
+
+    ; Planning context
+    structure_ctx: StructureContext
+    namespace_ctx: NamespaceContext
+
+    ; Track if current function uses $ allocations (needs local page)
+    current_function_uses_local_lifetime: bool
+
+    ; Current plan being built
+    current_plan: pointer[Plan]
+)
+{
+    init#(filename: String)
+    {
+        set file: filename
+        set concept_names: Vector[String]#()
+        set concepts: Vector[pointer[Concept]]#()
+        set function_names: Vector[String]#()
+        set functions: Vector[Vector[pointer[Function]]]#()
+        set operator_names: Vector[String]#()
+        set operators: Vector[Vector[pointer[Operator]]]#()
+        set instantiated_structure_names: Vector[String]#()
+        set instantiated_structures: Vector[PlannedStructure]#()
+        set instantiated_union_names: Vector[String]#()
+        set instantiated_unions: Vector[PlannedUnion]#()
+        set instantiated_function_names: Vector[String]#()
+        set instantiated_functions: Vector[PlannedFunction]#()
+        set global_names: Vector[String]#()
+        set planned_globals: Vector[PlannedGlobal]#()
+        set type_subst_names: Vector[String]#()
+        set type_substitutions: Vector[PlannedType]#()
+        set scopes: Vector[Scope]#()
+        set structure_ctx: StructureContext(String#(""), null, null)
+        set namespace_ctx: NamespaceContext(String#(""), null)
+        set current_function_uses_local_lifetime: false
+        set current_plan: null
+    }
+
+    ; ========================================================================
+    ; Scope Management
+    ; ========================================================================
+
+    procedure push_scope(this)
+    {
+        let scope Scope#()
+        scopes.put(scopes.length, scope)
+    }
+
+    procedure pop_scope(this)
+    {
+        ; Remove the last scope
+        ; TODO: proper pop() when Vector supports it
+        if scopes.length > 0
+            set scopes.length: scopes.length - 1
+    }
+
+    procedure define_local(this, name: String, binding_type: PlannedType, is_mutable: bool, is_on_page: bool)
+    {
+        if scopes.length > 0
+        {
+            let scope scopes.get(scopes.length - 1)
+            if scope <> null
+                scope.define(name, LocalBinding(binding_type, is_mutable, is_on_page))
+        }
+    }
+
+    function lookup_local(this, name: String) returns pointer[LocalBinding]
+    {
+        ; Search scopes from innermost to outermost
+        var i scopes.length
+        while i > 0
+        {
+            set i: i - 1
+            let scope scopes.get(i)
+            if scope <> null
+            {
+                let binding scope.lookup(name)
+                if binding <> null
+                    return binding
+            }
+        }
+        null
+    }
+
+    ; ========================================================================
+    ; Name Encoding (Itanium ABI)
+    ; ========================================================================
+
+    ; Encode a name with length prefix: "foo" -> "3foo"
+    function encode_name(name: String) returns String
+    {
+        let len name.length
+        let len_str size_to_string(len)
+        let result StringBuilder#()
+        result.append(len_str)
+        result.append(name)
+        result.to_string()
+    }
+
+    ; Encode a type for mangling
+    function encode_type(this, t: PlannedType) returns String
+    {
+        ; Built-in types use single-letter codes (Itanium ABI)
+        if t.name.equals(String#("void"))
+            return String#("v")
+        if t.name.equals(String#("bool"))
+            return String#("b")
+        if t.name.equals(String#("char"))
+            return String#("c")
+        if t.name.equals(String#("int"))
+            return String#("i")
+        if t.name.equals(String#("uint"))
+            return String#("j")
+        if t.name.equals(String#("long"))
+            return String#("l")
+        if t.name.equals(String#("ulong"))
+            return String#("m")
+        if t.name.equals(String#("float"))
+            return String#("f")
+        if t.name.equals(String#("double"))
+            return String#("d")
+        if t.name.equals(String#("size_t"))
+            return String#("m")  ; size_t -> unsigned long
+
+        ; Pointer types: pointer[T] -> P + encoded(T)
+        if t.name.equals(String#("pointer"))
+        {
+            if t.generics <> null
+            {
+                if t.generics.length > 0
+                {
+                    let inner t.generics.get(0)
+                    if inner <> null
+                    {
+                        let result StringBuilder#()
+                        result.append(String#("P"))
+                        result.append(encode_type(inner))
+                        return result.to_string()
+                    }
+                }
+            }
+        }
+
+        ; Ref types: ref[T] -> R + encoded(T)
+        if t.name.equals(String#("ref"))
+        {
+            if t.generics <> null
+            {
+                if t.generics.length > 0
+                {
+                    let inner t.generics.get(0)
+                    if inner <> null
+                    {
+                        let result StringBuilder#()
+                        result.append(String#("R"))
+                        result.append(encode_type(inner))
+                        return result.to_string()
+                    }
+                }
+            }
+        }
+
+        ; Generic types: Vector[int] -> 6VectorIiE
+        if t.generics <> null
+        {
+            if t.generics.length > 0
+            {
+                ; Extract base name if Name contains instantiation suffix
+                let base_name strip_suffix(t.name)
+                let result StringBuilder#()
+                result.append(encode_name(base_name))
+                result.append(String#("I"))
+                for arg in t.generics
+                {
+                    result.append(encode_type(arg))
+                }
+                result.append(String#("E"))
+                return result.to_string()
+            }
+        }
+
+        ; User-defined types: use length-prefixed name
+        ; Strip package prefix like "scaly.containers." for consistent naming
+        let normalized strip_package_prefix(t.name)
+        encode_name(normalized)
+    }
+
+    ; Mangle a type name
+    function mangle_type(this, t: PlannedType) returns String
+    {
+        let result StringBuilder#()
+        result.append(String#("_Z"))
+        result.append(encode_type(t))
+        result.to_string()
+    }
+
+    ; Mangle a structure/union name with generic args
+    function mangle_structure(this, name: String, generic_args: pointer[Vector[PlannedType]]) returns String
+    {
+        let result StringBuilder#()
+        result.append(String#("_Z"))
+
+        if generic_args = null
+        {
+            result.append(encode_name(name))
+            return result.to_string()
+        }
+
+        if generic_args.length = 0
+        {
+            result.append(encode_name(name))
+            return result.to_string()
+        }
+
+        ; Itanium ABI: Name + I + args + E
+        result.append(encode_name(name))
+        result.append(String#("I"))
+        for arg in generic_args
+        {
+            result.append(encode_type(arg))
+        }
+        result.append(String#("E"))
+        result.to_string()
+    }
+
+    ; Mangle a function name
+    function mangle_function(this, name: String, params: pointer[Vector[PlannedItem]], parent: pointer[PlannedType]) returns String
+    {
+        let result StringBuilder#()
+        result.append(String#("_Z"))
+
+        ; Nested name if inside a type
+        if parent <> null
+        {
+            result.append(String#("N"))
+            result.append(encode_type(parent))
+            result.append(encode_name(name))
+            result.append(String#("E"))
+        }
+        else
+        {
+            result.append(encode_name(name))
+        }
+
+        ; Parameter types (skip 'this' parameter for methods)
+        var has_explicit_params false
+        if params <> null
+        {
+            for param in params
+            {
+                if param.name <> null
+                {
+                    if param.name.equals(String#("this"))
+                        continue
+                }
+                if param.item_type <> null
+                {
+                    result.append(encode_type(param.item_type))
+                    set has_explicit_params: true
+                }
+            }
+        }
+
+        if has_explicit_params = false
+            result.append(String#("v"))  ; void parameters
+
+        result.to_string()
+    }
+
+    ; ========================================================================
+    ; Helper Functions
+    ; ========================================================================
+
+    ; Strip package prefix from qualified type names
+    ; e.g., "scaly.containers.String" -> "String"
+    function strip_package_prefix(name: String) returns String
+    {
+        if name.starts_with(String#("scaly."))
+        {
+            let last_dot name.last_index_of(String#("."))
+            if last_dot > 0
+                return name.substring(last_dot + 1, name.length)
+        }
+        name
+    }
+
+    ; Strip suffix after dot from type name
+    ; e.g., "Vector.char" -> "Vector"
+    function strip_suffix(name: String) returns String
+    {
+        let dot name.index_of(String#("."))
+        if dot > 0
+            return name.substring(0, dot)
+        name
+    }
+
+    ; Check if lifetime indicates page allocation
+    function is_on_page_lifetime(life: Lifetime) returns bool
+    {
+        ; Unspecified = stack allocation, everything else = page allocation
+        choose life
+            when Unspecified: u
+                false
+            else
+                true
+    }
+
+    ; Convert size_t to String
+    function size_to_string(n: size_t) returns String
+    {
+        ; Simple implementation for small numbers
+        if n = 0
+            return String#("0")
+
+        let result StringBuilder#()
+        var value n
+        var digits Vector[char]$()
+
+        while value > 0
+        {
+            let digit (value % 10) as char + 48  ; '0' = 48
+            digits.put(digits.length, digit)
+            set value: value / 10
+        }
+
+        ; Reverse digits
+        var i digits.length
+        while i > 0
+        {
+            set i: i - 1
+            let d digits.get(i)
+            if d <> null
+                result.append_char(d)
+        }
+
+        result.to_string()
+    }
+
+    ; ========================================================================
+    ; Concept Lookup
+    ; ========================================================================
+
+    ; Register a concept in the lookup table
+    procedure register_concept(this, name: String, concept: pointer[Concept])
+    {
+        concept_names.put(concept_names.length, name)
+        concepts.put(concepts.length, concept)
+    }
+
+    ; Lookup a concept by name
+    function lookup_concept(this, name: String) returns pointer[Concept]
+    {
+        var i 0
+        for n in concept_names
+        {
+            if n.equals(name)
+                return concepts.get(i)
+            set i: i + 1
+        }
+        null
+    }
+
+    ; ========================================================================
+    ; Type Substitution
+    ; ========================================================================
+
+    ; Register a type substitution (for generic instantiation)
+    procedure add_type_substitution(this, name: String, substituted_type: PlannedType)
+    {
+        type_subst_names.put(type_subst_names.length, name)
+        type_substitutions.put(type_substitutions.length, substituted_type)
+    }
+
+    ; Lookup a type substitution
+    function lookup_type_substitution(this, name: String) returns pointer[PlannedType]
+    {
+        var i 0
+        for n in type_subst_names
+        {
+            if n.equals(name)
+                return type_substitutions.get(i)
+            set i: i + 1
+        }
+        null
+    }
+
+    ; Clear type substitutions
+    procedure clear_type_substitutions(this)
+    {
+        set type_subst_names.length: 0
+        set type_substitutions.length: 0
+    }
+
+    ; ========================================================================
+    ; Instantiated Structure Cache
+    ; ========================================================================
+
+    ; Register an instantiated structure
+    procedure cache_structure(this, cache_key: String, structure: PlannedStructure)
+    {
+        instantiated_structure_names.put(instantiated_structure_names.length, cache_key)
+        instantiated_structures.put(instantiated_structures.length, structure)
+    }
+
+    ; Lookup a cached structure
+    function lookup_cached_structure(this, cache_key: String) returns pointer[PlannedStructure]
+    {
+        var i 0
+        for n in instantiated_structure_names
+        {
+            if n.equals(cache_key)
+                return instantiated_structures.get(i)
+            set i: i + 1
+        }
+        null
+    }
+
+    ; ========================================================================
+    ; Instantiated Union Cache
+    ; ========================================================================
+
+    ; Register an instantiated union
+    procedure cache_union(this, cache_key: String, union_type: PlannedUnion)
+    {
+        instantiated_union_names.put(instantiated_union_names.length, cache_key)
+        instantiated_unions.put(instantiated_unions.length, union_type)
+    }
+
+    ; Lookup a cached union
+    function lookup_cached_union(this, cache_key: String) returns pointer[PlannedUnion]
+    {
+        var i 0
+        for n in instantiated_union_names
+        {
+            if n.equals(cache_key)
+                return instantiated_unions.get(i)
+            set i: i + 1
+        }
+        null
+    }
+
+    ; ========================================================================
+    ; Instantiated Function Cache
+    ; ========================================================================
+
+    ; Register an instantiated function
+    procedure cache_function(this, cache_key: String, func: PlannedFunction)
+    {
+        instantiated_function_names.put(instantiated_function_names.length, cache_key)
+        instantiated_functions.put(instantiated_functions.length, func)
+    }
+
+    ; Lookup a cached function
+    function lookup_cached_function(this, cache_key: String) returns pointer[PlannedFunction]
+    {
+        var i 0
+        for n in instantiated_function_names
+        {
+            if n.equals(cache_key)
+                return instantiated_functions.get(i)
+            set i: i + 1
+        }
+        null
+    }
+
+    ; ========================================================================
+    ; Global Constants Cache
+    ; ========================================================================
+
+    ; Register a global constant
+    procedure cache_global(this, name: String, global: PlannedGlobal)
+    {
+        global_names.put(global_names.length, name)
+        planned_globals.put(planned_globals.length, global)
+    }
+
+    ; Lookup a cached global
+    function lookup_cached_global(this, name: String) returns pointer[PlannedGlobal]
+    {
+        var i 0
+        for n in global_names
+        {
+            if n.equals(name)
+                return planned_globals.get(i)
+            set i: i + 1
+        }
+        null
+    }
+
+    ; ========================================================================
+    ; Cache Key Generation
+    ; ========================================================================
+
+    ; Generate a cache key for a generic instantiation
+    ; e.g., "Vector" + [int] -> "Vector.int"
+    function generate_cache_key(base_name: String, args: pointer[Vector[PlannedType]]) returns String
+    {
+        let result StringBuilder#()
+        result.append(base_name)
+
+        if args <> null
+        {
+            for arg in args
+            {
+                result.append(String#("."))
+                result.append(strip_package_prefix(arg.name))
+            }
+        }
+
+        result.to_string()
+    }
+
+    ; ========================================================================
+    ; Type Checking Utilities
+    ; ========================================================================
+
+    ; Check if a type is a primitive type
+    function is_primitive_type(name: String) returns bool
+    {
+        if name.equals(String#("void"))
+            return true
+        if name.equals(String#("bool"))
+            return true
+        if name.equals(String#("char"))
+            return true
+        if name.equals(String#("int"))
+            return true
+        if name.equals(String#("uint"))
+            return true
+        if name.equals(String#("long"))
+            return true
+        if name.equals(String#("ulong"))
+            return true
+        if name.equals(String#("float"))
+            return true
+        if name.equals(String#("double"))
+            return true
+        if name.equals(String#("size_t"))
+            return true
+        if name.equals(String#("i8"))
+            return true
+        if name.equals(String#("i16"))
+            return true
+        if name.equals(String#("i32"))
+            return true
+        if name.equals(String#("i64"))
+            return true
+        if name.equals(String#("u8"))
+            return true
+        if name.equals(String#("u16"))
+            return true
+        if name.equals(String#("u32"))
+            return true
+        if name.equals(String#("u64"))
+            return true
+        false
+    }
+
+    ; Check if a type is a pointer type
+    function is_pointer_type(t: PlannedType) returns bool
+    {
+        if t.name.equals(String#("pointer"))
+        {
+            if t.generics <> null
+                return t.generics.length > 0
+        }
+        false
+    }
+
+    ; Check if a type is a ref type
+    function is_ref_type(t: PlannedType) returns bool
+    {
+        if t.name.equals(String#("ref"))
+        {
+            if t.generics <> null
+                return t.generics.length > 0
+        }
+        false
+    }
+
+    ; Check if a type is pointer-like (pointer or ref)
+    function is_pointer_like_type(t: PlannedType) returns bool
+    {
+        is_pointer_type(t) | is_ref_type(t)
+    }
+
+    ; Get inner type from pointer[T] or ref[T]
+    function get_inner_type(t: PlannedType) returns pointer[PlannedType]
+    {
+        if is_pointer_like_type(t)
+        {
+            if t.generics <> null
+            {
+                if t.generics.length > 0
+                    return t.generics.get(0)
+            }
+        }
+        null
+    }
+
+    ; Check if two types are equal
+    function types_equal(a: PlannedType, b: PlannedType) returns bool
+    {
+        ; Compare names first
+        if a.name.equals(b.name) = false
+            return false
+
+        ; Check generics
+        if a.generics = null
+        {
+            if b.generics = null
+                return true
+            return b.generics.length = 0
+        }
+
+        if b.generics = null
+            return a.generics.length = 0
+
+        if a.generics.length <> b.generics.length
+            return false
+
+        ; Compare each generic argument
+        var i 0
+        for arg_a in a.generics
+        {
+            let arg_b b.generics.get(i)
+            if arg_b = null
+                return false
+            if types_equal(arg_a, arg_b) = false
+                return false
+            set i: i + 1
+        }
+
+        true
+    }
+
+    ; ========================================================================
+    ; Type Resolution
+    ; ========================================================================
+
+    ; Build a readable type name from a path vector
+    ; e.g., ["scaly", "containers", "Vector"] -> "scaly.containers.Vector"
+    function build_type_name(path: pointer[Vector[String]]) returns String
+    {
+        if path = null
+            return String#("")
+
+        if path.length = 0
+            return String#("")
+
+        let result StringBuilder#()
+        var first true
+
+        for component in path
+        {
+            if first = false
+                result.append(String#("."))
+            result.append(component)
+            set first: false
+        }
+
+        result.to_string()
+    }
+
+    ; Resolve a Model.Type to a PlannedType
+    ; Returns null on error (simplified error handling for now)
+    function resolve_type(this, t: scaly.compiler.Model.Type, instantiation_loc: Span) returns pointer[PlannedType]
+    {
+        let result PlannedType#(
+            t.loc,                      ; loc
+            String#(""),                ; name (will be set)
+            String#(""),                ; mangled_name (will be set)
+            null,                       ; generics
+            t.life,                     ; life
+            null,                       ; origin
+            String#(""),                ; array_size
+            null                        ; variable
+        )
+
+        ; Build readable name from path
+        let name build_type_name(t.name)
+
+        ; Check for type parameter substitution
+        let subst lookup_type_substitution(name)
+        if subst <> null
+        {
+            ; Return substituted type with original location
+            set result.loc: t.loc
+            set result.name: subst.name
+            set result.mangled_name: subst.mangled_name
+            set result.generics: subst.generics
+            set result.life: subst.life
+            set result.origin: subst.origin
+            return result
+        }
+
+        set result.name: name
+
+        ; Resolve generic arguments if present
+        if t.generics <> null
+        {
+            if t.generics.length > 0
+            {
+                set result.generics: Vector[PlannedType]#()
+                for arg in t.generics
+                {
+                    let resolved_arg resolve_type(arg, instantiation_loc)
+                    if resolved_arg = null
+                        return null  ; Error propagation
+                    result.generics.put(result.generics.length, resolved_arg)
+                }
+            }
+        }
+
+        ; Handle intrinsic pointer type
+        if name.equals(String#("pointer"))
+        {
+            if result.generics <> null
+            {
+                if result.generics.length = 1
+                {
+                    ; pointer[T] - Itanium ABI uses P prefix
+                    let inner result.generics.get(0)
+                    if inner <> null
+                    {
+                        let mangled StringBuilder#()
+                        mangled.append(String#("P"))
+                        mangled.append(inner.mangled_name)
+                        set result.mangled_name: mangled.to_string()
+                        return result
+                    }
+                }
+            }
+            ; pointer without generics is an error
+            return null
+        }
+
+        ; Handle intrinsic ref type
+        if name.equals(String#("ref"))
+        {
+            if result.generics <> null
+            {
+                if result.generics.length = 1
+                {
+                    ; ref[T] - use R prefix
+                    let inner result.generics.get(0)
+                    if inner <> null
+                    {
+                        let mangled StringBuilder#()
+                        mangled.append(String#("R"))
+                        mangled.append(inner.mangled_name)
+                        set result.mangled_name: mangled.to_string()
+                        return result
+                    }
+                }
+            }
+            ; ref without generics is an error
+            return null
+        }
+
+        ; Check if this is a generic type that needs instantiation
+        let concept lookup_concept(name)
+        if concept <> null
+        {
+            ; Check if concept has generic parameters
+            if concept.parameters <> null
+            {
+                if concept.parameters.length > 0
+                {
+                    ; Need to instantiate the generic
+                    if result.generics = null
+                        return null  ; Generic used without type arguments
+                    if result.generics.length = 0
+                        return null
+
+                    ; Check arity
+                    if result.generics.length <> concept.parameters.length
+                        return null  ; Wrong number of type arguments
+
+                    ; Instantiate the generic
+                    return instantiate_generic(concept, result.generics, instantiation_loc)
+                }
+            }
+
+            ; Non-generic concept - just mangle the name
+            set result.mangled_name: encode_name(name)
+            return result
+        }
+
+        ; Generate mangled name for the type
+        if result.generics = null
+        {
+            set result.mangled_name: mangle_type(result)
+        }
+        else
+        {
+            if result.generics.length = 0
+                set result.mangled_name: mangle_type(result)
+            else
+                set result.mangled_name: mangle_structure(name, result.generics)
+        }
+
+        result
+    }
+
+    ; ========================================================================
+    ; Generic Instantiation
+    ; ========================================================================
+
+    ; Instantiate a generic type with concrete type arguments
+    ; Returns null on error
+    function instantiate_generic(this, generic: pointer[Concept], args: pointer[Vector[PlannedType]], instantiation_loc: Span) returns pointer[PlannedType]
+    {
+        if generic = null
+            return null
+        if args = null
+            return null
+
+        ; Check arity matches
+        if generic.parameters = null
+            return null
+        if args.length <> generic.parameters.length
+            return null
+
+        ; Generate cache key (e.g., "Vector.int" or "HashMap.String.int")
+        let cache_key generate_cache_key(generic.name, args)
+
+        ; Check cache for structures
+        let cached_struct lookup_cached_structure(cache_key)
+        if cached_struct <> null
+        {
+            let result PlannedType#(
+                instantiation_loc,
+                cache_key,
+                cached_struct.mangled_name,
+                args,
+                scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+                null,
+                String#(""),
+                null
+            )
+            return result
+        }
+
+        ; Check cache for unions
+        let cached_union lookup_cached_union(cache_key)
+        if cached_union <> null
+        {
+            let result PlannedType#(
+                instantiation_loc,
+                cache_key,
+                cached_union.mangled_name,
+                args,
+                scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+                null,
+                String#(""),
+                null
+            )
+            return result
+        }
+
+        ; Set up type substitutions for the instantiation
+        ; Save old substitutions
+        let old_subst_names type_subst_names
+        let old_substitutions type_substitutions
+        set type_subst_names: Vector[String]#()
+        set type_substitutions: Vector[PlannedType]#()
+
+        ; Add new substitutions
+        var i 0
+        for param in generic.parameters
+        {
+            let arg args.get(i)
+            if arg <> null
+                add_type_substitution(param.name, arg)
+            set i: i + 1
+        }
+
+        ; Create result type
+        let mangled mangle_structure(generic.name, args)
+        let result PlannedType#(
+            instantiation_loc,
+            cache_key,
+            mangled,
+            args,
+            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+            null,
+            String#(""),
+            null
+        )
+
+        ; TODO: Plan the specialized definition (structure/union/type alias)
+        ; For now, just insert a placeholder in the cache
+        ; The full planning will be done when we implement planStructure/planUnion
+
+        ; Restore old substitutions
+        set type_subst_names: old_subst_names
+        set type_substitutions: old_substitutions
+
+        result
+    }
+
+    ; ========================================================================
+    ; Constant Type Inference
+    ; ========================================================================
+
+    ; Infer the type of a constant
+    function infer_constant_type(c: Constant) returns PlannedType
+    {
+        let loc Span(0, 0)
+
+        choose c
+            when Boolean: b
+            {
+                PlannedType#(
+                    b.loc,
+                    String#("bool"),
+                    String#("b"),
+                    null,
+                    scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+                    null,
+                    String#(""),
+                    null
+                )
+            }
+            when Integer: i
+            {
+                PlannedType#(
+                    i.loc,
+                    String#("int"),
+                    String#("i"),
+                    null,
+                    scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+                    null,
+                    String#(""),
+                    null
+                )
+            }
+            when Hex: h
+            {
+                PlannedType#(
+                    h.loc,
+                    String#("size_t"),
+                    String#("m"),
+                    null,
+                    scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+                    null,
+                    String#(""),
+                    null
+                )
+            }
+            when Float: f
+            {
+                PlannedType#(
+                    f.loc,
+                    String#("float"),
+                    String#("f"),
+                    null,
+                    scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+                    null,
+                    String#(""),
+                    null
+                )
+            }
+            when String: s
+            {
+                ; String constants have type pointer[char]
+                let char_type PlannedType#(
+                    s.loc,
+                    String#("char"),
+                    String#("c"),
+                    null,
+                    scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+                    null,
+                    String#(""),
+                    null
+                )
+                let generics Vector[PlannedType]#()
+                generics.put(0, char_type)
+                PlannedType#(
+                    s.loc,
+                    String#("pointer"),
+                    String#("Pc"),
+                    generics,
+                    scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+                    null,
+                    String#(""),
+                    null
+                )
+            }
+            when Character: ch
+            {
+                PlannedType#(
+                    ch.loc,
+                    String#("char"),
+                    String#("c"),
+                    null,
+                    scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+                    null,
+                    String#(""),
+                    null
+                )
+            }
+            when Fragment: fr
+            {
+                ; Fragment constants are like strings
+                let char_type PlannedType#(
+                    fr.loc,
+                    String#("char"),
+                    String#("c"),
+                    null,
+                    scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+                    null,
+                    String#(""),
+                    null
+                )
+                let generics Vector[PlannedType]#()
+                generics.put(0, char_type)
+                PlannedType#(
+                    fr.loc,
+                    String#("pointer"),
+                    String#("Pc"),
+                    generics,
+                    scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+                    null,
+                    String#(""),
+                    null
+                )
+            }
+            when Null: n
+            {
+                ; Null has a special "null" type (untyped pointer)
+                PlannedType#(
+                    n.loc,
+                    String#("null"),
+                    String#("Pv"),
+                    null,
+                    scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+                    null,
+                    String#(""),
+                    null
+                )
+            }
+    }
+
+    ; ========================================================================
+    ; Type Creation Helpers
+    ; ========================================================================
+
+    ; Create a void type
+    function make_void_type() returns PlannedType
+    {
+        PlannedType#(
+            Span(0, 0),
+            String#("void"),
+            String#("v"),
+            null,
+            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+            null,
+            String#(""),
+            null
+        )
+    }
+
+    ; Create a bool type
+    function make_bool_type() returns PlannedType
+    {
+        PlannedType#(
+            Span(0, 0),
+            String#("bool"),
+            String#("b"),
+            null,
+            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+            null,
+            String#(""),
+            null
+        )
+    }
+
+    ; Create an int type
+    function make_int_type() returns PlannedType
+    {
+        PlannedType#(
+            Span(0, 0),
+            String#("int"),
+            String#("i"),
+            null,
+            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+            null,
+            String#(""),
+            null
+        )
+    }
+
+    ; Create a size_t type
+    function make_size_type() returns PlannedType
+    {
+        PlannedType#(
+            Span(0, 0),
+            String#("size_t"),
+            String#("m"),
+            null,
+            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+            null,
+            String#(""),
+            null
+        )
+    }
+
+    ; Create a char type
+    function make_char_type() returns PlannedType
+    {
+        PlannedType#(
+            Span(0, 0),
+            String#("char"),
+            String#("c"),
+            null,
+            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+            null,
+            String#(""),
+            null
+        )
+    }
+
+    ; Create a float type
+    function make_float_type() returns PlannedType
+    {
+        PlannedType#(
+            Span(0, 0),
+            String#("float"),
+            String#("f"),
+            null,
+            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+            null,
+            String#(""),
+            null
+        )
+    }
+
+    ; Create a pointer[T] type
+    function make_pointer_type(inner: PlannedType) returns PlannedType
+    {
+        let generics Vector[PlannedType]#()
+        generics.put(0, inner)
+
+        let mangled StringBuilder#()
+        mangled.append(String#("P"))
+        mangled.append(inner.mangled_name)
+
+        PlannedType#(
+            Span(0, 0),
+            String#("pointer"),
+            mangled.to_string(),
+            generics,
+            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+            null,
+            String#(""),
+            null
+        )
+    }
+
+    ; Create a ref[T] type
+    function make_ref_type(inner: PlannedType) returns PlannedType
+    {
+        let generics Vector[PlannedType]#()
+        generics.put(0, inner)
+
+        let mangled StringBuilder#()
+        mangled.append(String#("R"))
+        mangled.append(inner.mangled_name)
+
+        PlannedType#(
+            Span(0, 0),
+            String#("ref"),
+            mangled.to_string(),
+            generics,
+            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+            null,
+            String#(""),
+            null
+        )
+    }
+
+    ; ========================================================================
+    ; Item Planning
+    ; ========================================================================
+
+    ; Plan an Item (parameter/field with optional type)
+    ; Returns null on error
+    function plan_item(this, it: scaly.compiler.Model.Item) returns pointer[PlannedItem]
+    {
+        let result PlannedItem#(
+            it.loc,
+            it.private,
+            null,       ; name
+            null,       ; item_type
+            null        ; attributes
+        )
+
+        ; Copy name if present
+        if it.name <> null
+            set result.name: it.name
+
+        ; Resolve type if present
+        if it.item_type <> null
+        {
+            let resolved resolve_type(it.item_type, it.loc)
+            if resolved = null
+                return null
+            set result.item_type: resolved
+        }
+
+        ; Plan attributes
+        if it.attributes <> null
+        {
+            if it.attributes.length > 0
+            {
+                set result.attributes: Vector[PlannedAttribute]#()
+                for attr in it.attributes
+                {
+                    let planned_attr PlannedAttribute#(
+                        attr.loc,
+                        attr.name,
+                        attr.value
+                    )
+                    result.attributes.put(result.attributes.length, planned_attr)
+                }
+            }
+        }
+
+        result
+    }
+
+    ; ========================================================================
+    ; Property Planning
+    ; ========================================================================
+
+    ; Plan a Property
+    ; Returns null on error
+    function plan_property(this, prop: scaly.compiler.Model.Property) returns pointer[PlannedProperty]
+    {
+        ; Property must have a type
+        if prop.prop_type = null
+            return null
+
+        let resolved_type resolve_type(prop.prop_type, prop.loc)
+        if resolved_type = null
+            return null
+
+        let result PlannedProperty#(
+            prop.loc,
+            prop.private,
+            prop.name,
+            encode_name(prop.name),     ; mangled_name
+            resolved_type,
+            null,       ; initializer
+            null,       ; attributes
+            0           ; offset (computed later)
+        )
+
+        ; Plan initializer if present
+        if prop.initializer <> null
+        {
+            let planned_init plan_operands(prop.initializer)
+            if planned_init = null
+                return null
+            set result.initializer: planned_init
+        }
+
+        ; Plan attributes
+        if prop.attributes <> null
+        {
+            if prop.attributes.length > 0
+            {
+                set result.attributes: Vector[PlannedAttribute]#()
+                for attr in prop.attributes
+                {
+                    let planned_attr PlannedAttribute#(
+                        attr.loc,
+                        attr.name,
+                        attr.value
+                    )
+                    result.attributes.put(result.attributes.length, planned_attr)
+                }
+            }
+        }
+
+        result
+    }
+
+    ; ========================================================================
+    ; Variant Planning
+    ; ========================================================================
+
+    ; Plan a Variant (union case)
+    ; Returns null on error
+    function plan_variant(this, var: scaly.compiler.Model.Variant, tag: int) returns pointer[PlannedVariant]
+    {
+        let result PlannedVariant#(
+            var.loc,
+            var.name,
+            encode_name(var.name),      ; mangled_name
+            null,       ; var_type
+            null,       ; attributes
+            tag
+        )
+
+        ; Resolve type if present
+        if var.var_type <> null
+        {
+            let resolved resolve_type(var.var_type, var.loc)
+            if resolved = null
+                return null
+            set result.var_type: resolved
+        }
+
+        ; Plan attributes
+        if var.attributes <> null
+        {
+            if var.attributes.length > 0
+            {
+                set result.attributes: Vector[PlannedAttribute]#()
+                for attr in var.attributes
+                {
+                    let planned_attr PlannedAttribute#(
+                        attr.loc,
+                        attr.name,
+                        attr.value
+                    )
+                    result.attributes.put(result.attributes.length, planned_attr)
+                }
+            }
+        }
+
+        result
+    }
+
+    ; ========================================================================
+    ; Operand Planning
+    ; ========================================================================
+
+    ; Plan a list of operands
+    ; Returns null on error
+    function plan_operands(this, ops: pointer[Vector[scaly.compiler.Model.Operand]]) returns pointer[Vector[PlannedOperand]]
+    {
+        if ops = null
+            return null
+
+        let result Vector[PlannedOperand]#()
+
+        for op in ops
+        {
+            let planned plan_operand(op)
+            if planned = null
+                return null
+            result.put(result.length, planned)
+        }
+
+        result
+    }
+
+    ; Plan a single operand
+    ; Returns null on error
+    function plan_operand(this, op: scaly.compiler.Model.Operand) returns pointer[PlannedOperand]
+    {
+        ; Plan the expression
+        let planned_expr plan_expression(op.expr)
+        if planned_expr = null
+            return null
+
+        ; Compute result type from the expression
+        let result_type infer_expression_type(planned_expr)
+
+        let result PlannedOperand#(
+            op.loc,
+            planned_expr,
+            null,       ; member_access (TODO)
+            result_type
+        )
+
+        ; TODO: Handle member access chain
+        ; For now, we just plan the expression without member access
+
+        result
+    }
+
+    ; ========================================================================
+    ; Expression Planning
+    ; ========================================================================
+
+    ; Plan an expression
+    ; Returns null on error
+    function plan_expression(this, expr: scaly.compiler.Model.Expression) returns pointer[PlannedExpression]
+    {
+        choose expr
+            when Constant: c
+            {
+                ; Wrap constant in PlannedConstant
+                let result PlannedExpression.Constant(PlannedConstant(c))#
+                return result
+            }
+            when Type: t
+            {
+                ; Check for boolean literals (true/false parsed as Type names)
+                let name build_type_name(t.name)
+
+                if name.equals(String#("true"))
+                {
+                    let bool_const scaly.compiler.Model.Constant.Boolean(
+                        scaly.compiler.Model.BooleanConstant(t.loc, true)
+                    )
+                    let result PlannedExpression.Constant(PlannedConstant(bool_const))#
+                    return result
+                }
+
+                if name.equals(String#("false"))
+                {
+                    let bool_const scaly.compiler.Model.Constant.Boolean(
+                        scaly.compiler.Model.BooleanConstant(t.loc, false)
+                    )
+                    let result PlannedExpression.Constant(PlannedConstant(bool_const))#
+                    return result
+                }
+
+                if name.equals(String#("null"))
+                {
+                    let null_const scaly.compiler.Model.Constant.Null(
+                        scaly.compiler.Model.NullConstant(t.loc)
+                    )
+                    let result PlannedExpression.Constant(PlannedConstant(null_const))#
+                    return result
+                }
+
+                ; Check if it's a local variable reference
+                let local_bind lookup_local(name)
+                if local_bind <> null
+                {
+                    let var PlannedVariable#(
+                        t.loc,
+                        name,
+                        local_bind.binding_type,
+                        local_bind.is_mutable
+                    )
+                    let result PlannedExpression.Variable(var)#
+                    return result
+                }
+
+                ; Check if it's a property of current structure
+                if structure_ctx.is_active()
+                {
+                    if structure_ctx.properties <> null
+                    {
+                        for prop in structure_ctx.properties
+                        {
+                            if prop.name.equals(name)
+                            {
+                                ; Found property - need to access via 'this'
+                                ; For now, return a variable reference to 'this' and handle in operand
+                                let this_bind lookup_local(String#("this"))
+                                if this_bind <> null
+                                {
+                                    let var PlannedVariable#(
+                                        t.loc,
+                                        String#("this"),
+                                        this_bind.binding_type,
+                                        false
+                                    )
+                                    let result PlannedExpression.Variable(var)#
+                                    return result
+                                }
+                            }
+                        }
+                    }
+                }
+
+                ; Otherwise it's a type reference
+                let resolved resolve_type(t, t.loc)
+                if resolved = null
+                    return null
+                let result PlannedExpression.Type(resolved)#
+                return result
+            }
+            when Tuple: tup
+            {
+                let planned plan_tuple(tup)
+                if planned = null
+                    return null
+                let result PlannedExpression.Tuple(planned)#
+                return result
+            }
+            when Matrix: mat
+            {
+                let planned plan_matrix(mat)
+                if planned = null
+                    return null
+                let result PlannedExpression.Matrix(planned)#
+                return result
+            }
+            when Block: blk
+            {
+                let planned plan_block(blk)
+                if planned = null
+                    return null
+                let result PlannedExpression.Block(planned)#
+                return result
+            }
+            when If: if_expr
+            {
+                let planned plan_if(if_expr)
+                if planned = null
+                    return null
+                let result PlannedExpression.If(planned)#
+                return result
+            }
+            when Match: match_expr
+            {
+                let planned plan_match(match_expr)
+                if planned = null
+                    return null
+                let result PlannedExpression.Match(planned)#
+                return result
+            }
+            when Choose: choose_expr
+            {
+                let planned plan_choose(choose_expr)
+                if planned = null
+                    return null
+                let result PlannedExpression.Choose(planned)#
+                return result
+            }
+            when For: for_expr
+            {
+                let planned plan_for(for_expr)
+                if planned = null
+                    return null
+                let result PlannedExpression.For(planned)#
+                return result
+            }
+            when While: while_expr
+            {
+                let planned plan_while(while_expr)
+                if planned = null
+                    return null
+                let result PlannedExpression.While(planned)#
+                return result
+            }
+            when Try: try_expr
+            {
+                let planned plan_try(try_expr)
+                if planned = null
+                    return null
+                let result PlannedExpression.Try(planned)#
+                return result
+            }
+            when SizeOf: sizeof_expr
+            {
+                let resolved resolve_type(sizeof_expr.sized_type, sizeof_expr.loc)
+                if resolved = null
+                    return null
+                ; TODO: Compute actual size
+                let planned PlannedSizeOf#(sizeof_expr.loc, resolved, 0)
+                let result PlannedExpression.SizeOf(planned)#
+                return result
+            }
+            when AlignOf: alignof_expr
+            {
+                let resolved resolve_type(alignof_expr.aligned_type, alignof_expr.loc)
+                if resolved = null
+                    return null
+                ; TODO: Compute actual alignment
+                let planned PlannedAlignOf#(alignof_expr.loc, resolved, 0)
+                let result PlannedExpression.AlignOf(planned)#
+                return result
+            }
+            when Is: is_expr
+            {
+                ; TODO: Implement is expression planning
+                return null
+            }
+            when As: as_expr
+            {
+                let resolved resolve_type(as_expr.target_type, as_expr.loc)
+                if resolved = null
+                    return null
+                ; TODO: Plan the value being cast
+                let planned PlannedAs#(as_expr.loc, resolved, null)
+                let result PlannedExpression.As(planned)#
+                return result
+            }
+            when New: new_expr
+            {
+                ; TODO: Implement new expression planning
+                return null
+            }
+    }
+
+    ; Infer the type of a planned expression
+    function infer_expression_type(this, expr: pointer[PlannedExpression]) returns PlannedType
+    {
+        if expr = null
+            return make_void_type()
+
+        choose expr
+            when Constant: c
+                return infer_constant_type(c.value)
+            when Type: t
+                return t
+            when Variable: v
+                return v.variable_type
+            when GlobalRef: g
+                return g.global_type
+            when Call: call
+                return call.result_type
+            when Tuple: tup
+                return tup.tuple_type
+            when Matrix: mat
+                return mat.element_type
+            when Block: blk
+            {
+                ; Block type is type of last statement
+                ; For now return void
+                return make_void_type()
+            }
+            when If: if_expr
+            {
+                ; TODO: Infer from branches
+                return make_void_type()
+            }
+            when Match: match_expr
+            {
+                ; TODO: Infer from branches
+                return make_void_type()
+            }
+            when Choose: choose_expr
+            {
+                ; TODO: Infer from branches
+                return make_void_type()
+            }
+            when For: for_expr
+                return make_void_type()
+            when While: while_expr
+                return make_void_type()
+            when Try: try_expr
+            {
+                ; TODO: Infer from condition
+                return make_void_type()
+            }
+            when SizeOf: sizeof_expr
+                return make_size_type()
+            when AlignOf: alignof_expr
+                return make_size_type()
+            when Is: is_expr
+                return make_bool_type()
+            when As: as_expr
+                return as_expr.target_type
+            when VariantConstruction: vc
+                return vc.union_type
+    }
+
+    ; ========================================================================
+    ; Tuple Planning
+    ; ========================================================================
+
+    ; Plan a Tuple (object literal)
+    ; Returns null on error
+    function plan_tuple(this, tup: scaly.compiler.Model.Tuple) returns pointer[PlannedTuple]
+    {
+        let result PlannedTuple#(
+            tup.loc,
+            null,       ; components
+            make_void_type(),   ; tuple_type (TODO: infer)
+            false,      ; is_region_alloc
+            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+            null        ; region_arg
+        )
+
+        if tup.components <> null
+        {
+            if tup.components.length > 0
+            {
+                set result.components: Vector[PlannedComponent]#()
+                for comp in tup.components
+                {
+                    let planned_value plan_operands(comp.value)
+                    ; OK if null (empty component)
+
+                    let planned_comp PlannedComponent#(
+                        comp.loc,
+                        comp.name,
+                        planned_value,
+                        null    ; attributes (TODO)
+                    )
+                    result.components.put(result.components.length, planned_comp)
+                }
+            }
+        }
+
+        result
+    }
+
+    ; ========================================================================
+    ; Matrix Planning
+    ; ========================================================================
+
+    ; Plan a Matrix (array literal)
+    ; Returns null on error
+    function plan_matrix(this, mat: scaly.compiler.Model.Matrix) returns pointer[PlannedMatrix]
+    {
+        let result PlannedMatrix#(
+            mat.loc,
+            null,       ; operations
+            make_void_type()    ; element_type (TODO: infer)
+        )
+
+        if mat.operations <> null
+        {
+            if mat.operations.length > 0
+            {
+                set result.operations: Vector[Vector[PlannedOperand]]#()
+                for row in mat.operations
+                {
+                    let planned_row plan_operands(row)
+                    if planned_row <> null
+                        result.operations.put(result.operations.length, planned_row)
+                }
+
+                ; Infer element type from first element
+                if result.operations.length > 0
+                {
+                    let first_row result.operations.get(0)
+                    if first_row <> null
+                    {
+                        if first_row.length > 0
+                        {
+                            let first_elem first_row.get(0)
+                            if first_elem <> null
+                                set result.element_type: first_elem.result_type
+                        }
+                    }
+                }
+            }
+        }
+
+        result
+    }
+
+    ; ========================================================================
+    ; Block Planning
+    ; ========================================================================
+
+    ; Plan a Block
+    ; Returns null on error
+    function plan_block(this, blk: scaly.compiler.Model.Block) returns pointer[PlannedBlock]
+    {
+        push_scope()
+
+        let result PlannedBlock#(
+            blk.loc,
+            null,       ; statements
+            false       ; needs_local_page_cleanup
+        )
+
+        if blk.statements <> null
+        {
+            if blk.statements.length > 0
+            {
+                set result.statements: Vector[PlannedStatement]#()
+                for stmt in blk.statements
+                {
+                    let planned plan_statement(stmt)
+                    if planned <> null
+                        result.statements.put(result.statements.length, planned)
+                }
+            }
+        }
+
+        pop_scope()
+        result
+    }
+
+    ; ========================================================================
+    ; Control Flow Planning (stubs for now)
+    ; ========================================================================
+
+    ; Plan an If expression
+    function plan_if(this, if_expr: scaly.compiler.Model.If) returns pointer[PlannedIf]
+    {
+        let condition plan_operands(if_expr.condition)
+
+        let result PlannedIf#(
+            if_expr.loc,
+            condition,
+            null,       ; prop (TODO)
+            null,       ; consequent (TODO)
+            null        ; alternative (TODO)
+        )
+
+        result
+    }
+
+    ; Plan a Match expression
+    function plan_match(this, match_expr: scaly.compiler.Model.Match) returns pointer[PlannedMatch]
+    {
+        let condition plan_operands(match_expr.condition)
+
+        let result PlannedMatch#(
+            match_expr.loc,
+            condition,
+            null,       ; branches (TODO)
+            null        ; alternative (TODO)
+        )
+
+        result
+    }
+
+    ; Plan a Choose expression
+    function plan_choose(this, choose_expr: scaly.compiler.Model.Choose) returns pointer[PlannedChoose]
+    {
+        let condition plan_operands(choose_expr.condition)
+
+        let result PlannedChoose#(
+            choose_expr.loc,
+            condition,
+            null,       ; cases (TODO)
+            null        ; alternative (TODO)
+        )
+
+        result
+    }
+
+    ; Plan a For expression
+    function plan_for(this, for_expr: scaly.compiler.Model.For) returns pointer[PlannedFor]
+    {
+        push_scope()
+
+        let expr plan_operands(for_expr.expr)
+
+        ; Infer element type and define loop variable
+        var element_type make_int_type()  ; Default to int for range loops
+        if expr <> null
+        {
+            if expr.length > 0
+            {
+                let last_op expr.get(expr.length - 1)
+                if last_op <> null
+                {
+                    ; For collections, element type would come from get_iterator/next
+                    ; For now, just use the expression type
+                    set element_type: last_op.result_type
+                }
+            }
+        }
+
+        ; Define loop variable
+        define_local(for_expr.identifier, element_type, false, false)
+
+        ; Plan body
+        let body plan_action(for_expr.body)
+
+        pop_scope()
+
+        let result PlannedFor#(
+            for_expr.loc,
+            for_expr.identifier,
+            expr,
+            body,
+            false,      ; is_iterator_loop
+            make_void_type(),   ; collection_type
+            make_void_type(),   ; iterator_type
+            element_type,
+            String#(""),        ; get_iterator_method
+            String#("")         ; next_method
+        )
+
+        result
+    }
+
+    ; Plan a While expression
+    function plan_while(this, while_expr: scaly.compiler.Model.While) returns pointer[PlannedWhile]
+    {
+        push_scope()
+
+        let cond plan_binding(while_expr.cond)
+        let body plan_action(while_expr.body)
+
+        pop_scope()
+
+        let result PlannedWhile#(
+            while_expr.loc,
+            cond,
+            body
+        )
+
+        result
+    }
+
+    ; Plan a Try expression
+    function plan_try(this, try_expr: scaly.compiler.Model.Try) returns pointer[PlannedTry]
+    {
+        push_scope()
+
+        let cond plan_binding(try_expr.cond)
+
+        pop_scope()
+
+        let result PlannedTry#(
+            try_expr.loc,
+            cond,
+            null,       ; catches (TODO)
+            null        ; alternative (TODO)
+        )
+
+        result
+    }
+
+    ; ========================================================================
+    ; Action Planning
+    ; ========================================================================
+
+    ; Plan an Action (source -> target assignment)
+    function plan_action(this, act: scaly.compiler.Model.Action) returns pointer[PlannedAction]
+    {
+        let source plan_operands(act.source)
+        let target plan_operands(act.target)
+
+        ; Compute result type from source
+        var result_type make_void_type()
+        if source <> null
+        {
+            if source.length > 0
+            {
+                let last source.get(source.length - 1)
+                if last <> null
+                    set result_type: last.result_type
+            }
+        }
+
+        let result PlannedAction#(source, target, result_type)
+        result
+    }
+
+    ; ========================================================================
+    ; Binding Planning
+    ; ========================================================================
+
+    ; Plan a Binding (let/var declaration)
+    function plan_binding(this, bind: scaly.compiler.Model.Binding) returns pointer[PlannedBinding]
+    {
+        ; Plan the item
+        let item plan_item(bind.binding_item)
+        if item = null
+            return null
+
+        ; Plan the operation (initializer expression)
+        let operation plan_operands(bind.operation)
+
+        ; If item has no type, infer from operation
+        if item.item_type = null
+        {
+            if operation <> null
+            {
+                if operation.length > 0
+                {
+                    let last operation.get(operation.length - 1)
+                    if last <> null
+                        set item.item_type: last.result_type#
+                }
+            }
+        }
+
+        ; Determine if this is mutable
+        let is_mutable bind.binding_type.equals(String#("var"))
+
+        ; Determine if this is on page
+        var is_on_page false
+        if operation <> null
+        {
+            if operation.length > 0
+            {
+                let last operation.get(operation.length - 1)
+                if last <> null
+                    set is_on_page: is_on_page_lifetime(last.result_type.life)
+            }
+        }
+
+        ; Register in current scope
+        if item.name <> null
+        {
+            if item.item_type <> null
+                define_local(item.name, item.item_type, is_mutable, is_on_page)
+        }
+
+        let result PlannedBinding#(
+            bind.loc,
+            bind.binding_type,
+            item,
+            operation
+        )
+
+        result
+    }
+
+    ; ========================================================================
+    ; Statement Planning
+    ; ========================================================================
+
+    ; Plan a statement
+    ; Returns null on error
+    function plan_statement(this, stmt: scaly.compiler.Model.Statement) returns pointer[PlannedStatement]
+    {
+        choose stmt
+            when Action: act
+            {
+                let planned plan_action(act)
+                if planned = null
+                    return null
+                let result PlannedStatement.Action(planned)#
+                return result
+            }
+            when Binding: bind
+            {
+                let planned plan_binding(bind)
+                if planned = null
+                    return null
+                let result PlannedStatement.Binding(planned)#
+                return result
+            }
+            when Break: brk
+            {
+                let planned_result plan_operands(brk.result)
+                let planned PlannedBreak#(brk.loc, planned_result)
+                let result PlannedStatement.Break(planned)#
+                return result
+            }
+            when Continue: cont
+            {
+                let planned PlannedContinue#(cont.loc)
+                let result PlannedStatement.Continue(planned)#
+                return result
+            }
+            when Return: ret
+            {
+                let planned_result plan_operands(ret.result)
+                let planned PlannedReturn#(ret.loc, planned_result)
+                let result PlannedStatement.Return(planned)#
+                return result
+            }
+            when Throw: thr
+            {
+                let planned_result plan_operands(thr.result)
+                let planned PlannedThrow#(thr.loc, planned_result)
+                let result PlannedStatement.Throw(planned)#
+                return result
+            }
+    }
+
+    ; Plan a list of statements
+    ; Returns null on error
+    function plan_statements(this, stmts: pointer[Vector[scaly.compiler.Model.Statement]]) returns pointer[Vector[PlannedStatement]]
+    {
+        if stmts = null
+            return null
+
+        let result Vector[PlannedStatement]#()
+
+        for stmt in stmts
+        {
+            let planned plan_statement(stmt)
+            if planned = null
+                return null
+            result.put(result.length, planned)
+        }
+
+        result
+    }
+
+    ; ========================================================================
+    ; Implementation Planning
+    ; ========================================================================
+
+    ; Plan an implementation (function/operator body)
+    ; Returns null on error
+    function plan_implementation(this, impl: scaly.compiler.Model.Implementation) returns pointer[PlannedImplementation]
+    {
+        choose impl
+            when Action: act
+            {
+                let planned plan_action(act)
+                if planned = null
+                    return null
+                let result PlannedImplementation.Action(planned)#
+                return result
+            }
+            when Extern: ext
+            {
+                let planned PlannedExternImpl#(ext.loc)
+                let result PlannedImplementation.Extern(planned)#
+                return result
+            }
+            when Instruction: instr
+            {
+                let planned PlannedInstructionImpl#(instr.loc)
+                let result PlannedImplementation.Instruction(planned)#
+                return result
+            }
+            when Intrinsic: intrinsic
+            {
+                let planned PlannedIntrinsicImpl#(intrinsic.loc)
+                let result PlannedImplementation.Intrinsic(planned)#
+                return result
+            }
+    }
+
+    ; ========================================================================
+    ; Function Planning
+    ; ========================================================================
+
+    ; Plan a function
+    ; Returns null on error
+    function plan_function(this, func: scaly.compiler.Model.Function, parent: pointer[PlannedType]) returns pointer[PlannedFunction]
+    {
+        ; Save and reset tracking for $ allocations in function body
+        let saved_uses_local_lifetime current_function_uses_local_lifetime
+        set current_function_uses_local_lifetime: false
+
+        push_scope()
+
+        ; If function has page parameter, define it in scope
+        if func.page_parameter <> null
+        {
+            let page_ptr_type make_page_pointer_type()
+            define_local(func.page_parameter, page_ptr_type, false, true)
+        }
+
+        ; Plan input parameters
+        let input Vector[PlannedItem]#()
+        if func.input <> null
+        {
+            for param in func.input
+            {
+                let planned plan_item(param)
+                if planned = null
+                {
+                    pop_scope()
+                    set current_function_uses_local_lifetime: saved_uses_local_lifetime
+                    return null
+                }
+
+                ; Handle 'this' parameter: if no explicit type, use Parent type
+                if planned.name <> null
+                {
+                    if planned.name.equals(String#("this"))
+                    {
+                        if planned.item_type = null
+                        {
+                            if parent <> null
+                                set planned.item_type: parent
+                        }
+                    }
+                }
+
+                ; Define parameter in scope
+                if planned.name <> null
+                {
+                    if planned.item_type <> null
+                        define_local(planned.name, planned.item_type, false, false)
+                }
+
+                input.put(input.length, planned)
+            }
+        }
+
+        ; Plan return type
+        var returns_type pointer[PlannedType] null
+        if func.returns <> null
+        {
+            set returns_type: resolve_type(func.returns, func.loc)
+        }
+
+        ; Plan throws type
+        var throws_type pointer[PlannedType] null
+        if func.throws <> null
+        {
+            set throws_type: resolve_type(func.throws, func.loc)
+        }
+
+        ; Plan implementation
+        let impl plan_implementation(func.impl)
+        if impl = null
+        {
+            pop_scope()
+            set current_function_uses_local_lifetime: saved_uses_local_lifetime
+            return null
+        }
+
+        ; Generate mangled name
+        let mangled mangle_function(func.name, input, parent)
+
+        let result PlannedFunction#(
+            func.loc,
+            func.private,
+            func.pure,
+            func.name,
+            mangled,
+            func.page_parameter,
+            input,
+            returns_type,
+            throws_type,
+            func.life,
+            impl,
+            null,           ; origin
+            current_function_uses_local_lifetime,
+            throws_type <> null,
+            null            ; scheme
+        )
+
+        pop_scope()
+        set current_function_uses_local_lifetime: saved_uses_local_lifetime
+        result
+    }
+
+    ; Create a pointer[Page] type for page parameters
+    function make_page_pointer_type() returns PlannedType
+    {
+        let page_type PlannedType#(
+            Span(0, 0),
+            String#("scaly.memory.Page"),
+            String#("N4scaly6memory4PageE"),
+            null,
+            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+            null,
+            String#(""),
+            null
+        )
+
+        let generics Vector[PlannedType]#()
+        generics.put(0, page_type)
+
+        PlannedType#(
+            Span(0, 0),
+            String#("pointer"),
+            String#("PN4scaly6memory4PageE"),
+            generics,
+            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+            null,
+            String#(""),
+            null
+        )
+    }
+
+    ; ========================================================================
+    ; Operator Planning
+    ; ========================================================================
+
+    ; Plan an operator
+    ; Returns null on error
+    function plan_operator(this, op: scaly.compiler.Model.Operator, parent: pointer[PlannedType]) returns pointer[PlannedOperator]
+    {
+        push_scope()
+
+        ; Plan input parameters
+        let input Vector[PlannedItem]#()
+        if op.input <> null
+        {
+            for param in op.input
+            {
+                let planned plan_item(param)
+                if planned = null
+                {
+                    pop_scope()
+                    return null
+                }
+
+                ; Handle 'this' parameter
+                if planned.name <> null
+                {
+                    if planned.name.equals(String#("this"))
+                    {
+                        if planned.item_type = null
+                        {
+                            if parent <> null
+                                set planned.item_type: parent
+                        }
+                    }
+                }
+
+                ; Define parameter in scope
+                if planned.name <> null
+                {
+                    if planned.item_type <> null
+                        define_local(planned.name, planned.item_type, false, false)
+                }
+
+                input.put(input.length, planned)
+            }
+        }
+
+        ; Plan return type
+        var returns_type pointer[PlannedType] null
+        if op.returns <> null
+        {
+            set returns_type: resolve_type(op.returns, op.loc)
+        }
+
+        ; Plan throws type
+        var throws_type pointer[PlannedType] null
+        if op.throws <> null
+        {
+            set throws_type: resolve_type(op.throws, op.loc)
+        }
+
+        ; Plan implementation
+        let impl plan_implementation(op.impl)
+        if impl = null
+        {
+            pop_scope()
+            return null
+        }
+
+        ; Generate mangled name
+        let mangled mangle_function(op.name, input, parent)
+
+        let result PlannedOperator#(
+            op.loc,
+            op.private,
+            op.name,
+            mangled,
+            input,
+            returns_type,
+            throws_type,
+            impl,
+            null,   ; origin
+            null    ; scheme
+        )
+
+        pop_scope()
+        result
+    }
+
+    ; ========================================================================
+    ; Concept Planning
+    ; ========================================================================
+
+    ; Plan a concept
+    ; Returns null on error
+    function plan_concept(this, conc: scaly.compiler.Model.Concept) returns pointer[PlannedConcept]
+    {
+        ; Register in symbol table first (needed for recursive types)
+        register_concept(conc.name, conc)
+
+        ; For generic concepts, create a placeholder - don't fully plan
+        ; Generic concepts will be planned when instantiated with concrete types
+        if conc.parameters <> null
+        {
+            if conc.parameters.length > 0
+            {
+                let placeholder PlannedStructure#(
+                    conc.loc,
+                    false,          ; private
+                    true,           ; is_generic_placeholder
+                    conc.name,
+                    encode_name(conc.name),
+                    null, null, null, null, null,  ; properties, initializers, deinit, methods, operators
+                    0, 0,           ; size, alignment
+                    null            ; origin
+                )
+
+                let result PlannedConcept#(
+                    conc.loc,
+                    conc.name,
+                    encode_name(conc.name),
+                    null,           ; attributes
+                    PlannedDefinition.Structure(placeholder),
+                    null            ; origin
+                )
+                return result
+            }
+        }
+
+        ; Plan attributes
+        var attributes pointer[Vector[PlannedAttribute]] null
+        if conc.attributes <> null
+        {
+            if conc.attributes.length > 0
+            {
+                set attributes: Vector[PlannedAttribute]#()
+                for attr in conc.attributes
+                {
+                    let planned_attr PlannedAttribute#(
+                        attr.loc,
+                        attr.name,
+                        attr.value
+                    )
+                    attributes.put(attributes.length, planned_attr)
+                }
+            }
+        }
+
+        ; Plan the definition based on its kind
+        let def plan_definition(conc.def, conc.name)
+        if def = null
+            return null
+
+        let result PlannedConcept#(
+            conc.loc,
+            conc.name,
+            encode_name(conc.name),
+            attributes,
+            def,
+            null        ; origin
+        )
+
+        result
+    }
+
+    ; Plan a definition (Structure, Union, Namespace, Global, or Type alias)
+    ; Returns null on error
+    function plan_definition(this, def: scaly.compiler.Model.Definition, name: String) returns pointer[PlannedDefinition]
+    {
+        choose def
+            when Structure: struct
+            {
+                let planned plan_structure(struct, name)
+                if planned = null
+                    return null
+                let result PlannedDefinition.Structure(planned)#
+                return result
+            }
+            when Union: union_def
+            {
+                let planned plan_union(union_def, name)
+                if planned = null
+                    return null
+                let result PlannedDefinition.Union(planned)#
+                return result
+            }
+            when Namespace: ns
+            {
+                let planned plan_namespace(ns, name)
+                if planned = null
+                    return null
+                let result PlannedDefinition.Namespace(planned)#
+                return result
+            }
+            when Global: global
+            {
+                let planned plan_global(global, name)
+                if planned = null
+                    return null
+                let result PlannedDefinition.Global(planned)#
+                return result
+            }
+            when Type: type_alias
+            {
+                let resolved resolve_type(type_alias, type_alias.loc)
+                if resolved = null
+                    return null
+                let result PlannedDefinition.Type(resolved)#
+                return result
+            }
+            when Intrinsic: intrinsic
+            {
+                ; Intrinsic definition - create a minimal structure placeholder
+                let placeholder PlannedStructure#(
+                    intrinsic.loc,
+                    false,          ; private
+                    false,          ; is_generic_placeholder
+                    name,
+                    encode_name(name),
+                    null, null, null, null, null,
+                    0, 0, null
+                )
+                let result PlannedDefinition.Structure(placeholder)#
+                return result
+            }
+    }
+
+    ; ========================================================================
+    ; Structure Planning
+    ; ========================================================================
+
+    ; Plan a structure
+    ; Returns null on error
+    function plan_structure(this, struct: scaly.compiler.Model.Structure, name: String) returns pointer[PlannedStructure]
+    {
+        ; Set up structure context
+        let old_structure_ctx structure_ctx
+        set structure_ctx: StructureContext(name, null, null)
+
+        let mangled encode_name(name)
+
+        ; Create the structure type for 'this' references
+        let struct_type PlannedType#(
+            struct.loc,
+            name,
+            mangled,
+            null,
+            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+            null,
+            String#(""),
+            null
+        )
+
+        ; Plan properties
+        var properties pointer[Vector[PlannedProperty]] null
+        if struct.properties <> null
+        {
+            if struct.properties.length > 0
+            {
+                set properties: Vector[PlannedProperty]#()
+                set structure_ctx.properties: properties
+
+                for prop in struct.properties
+                {
+                    let planned plan_property(prop)
+                    if planned <> null
+                        properties.put(properties.length, planned)
+                }
+            }
+        }
+
+        ; Plan methods (functions)
+        var methods pointer[Vector[PlannedFunction]] null
+        if struct.members <> null
+        {
+            for member in struct.members
+            {
+                choose member
+                    when Function: func
+                    {
+                        let planned plan_function(func, struct_type)
+                        if planned <> null
+                        {
+                            if methods = null
+                                set methods: Vector[PlannedFunction]#()
+                            methods.put(methods.length, planned)
+                        }
+                    }
+                    when Operator: op
+                    {
+                        ; Skip operators for now
+                    }
+                    when Concept: conc
+                    {
+                        ; Skip nested concepts for now
+                    }
+            }
+        }
+
+        ; Plan operators
+        var operators pointer[Vector[PlannedOperator]] null
+        if struct.members <> null
+        {
+            for member in struct.members
+            {
+                choose member
+                    when Operator: op
+                    {
+                        let planned plan_operator(op, struct_type)
+                        if planned <> null
+                        {
+                            if operators = null
+                                set operators: Vector[PlannedOperator]#()
+                            operators.put(operators.length, planned)
+                        }
+                    }
+                    else
+                    {
+                        ; Skip non-operators
+                    }
+            }
+        }
+
+        ; Restore structure context
+        set structure_ctx: old_structure_ctx
+
+        let result PlannedStructure#(
+            struct.loc,
+            struct.private,
+            false,          ; is_generic_placeholder
+            name,
+            mangled,
+            properties,
+            null,           ; initializers (TODO)
+            null,           ; deinitializer (TODO)
+            methods,
+            operators,
+            0,              ; size (TODO: compute)
+            0,              ; alignment (TODO: compute)
+            null            ; origin
+        )
+
+        ; Cache the structure
+        cache_structure(name, result)
+
+        result
+    }
+
+    ; ========================================================================
+    ; Union Planning
+    ; ========================================================================
+
+    ; Plan a union
+    ; Returns null on error
+    function plan_union(this, union_def: scaly.compiler.Model.Union, name: String) returns pointer[PlannedUnion]
+    {
+        let mangled encode_name(name)
+
+        ; Create the union type for 'this' references
+        let union_type PlannedType#(
+            union_def.loc,
+            name,
+            mangled,
+            null,
+            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+            null,
+            String#(""),
+            null
+        )
+
+        ; Plan variants
+        var variants pointer[Vector[PlannedVariant]] null
+        if union_def.variants <> null
+        {
+            if union_def.variants.length > 0
+            {
+                set variants: Vector[PlannedVariant]#()
+                var tag 0
+                for var in union_def.variants
+                {
+                    let planned plan_variant(var, tag)
+                    if planned <> null
+                    {
+                        variants.put(variants.length, planned)
+                        set tag: tag + 1
+                    }
+                }
+            }
+        }
+
+        ; Plan methods
+        var methods pointer[Vector[PlannedFunction]] null
+        if union_def.members <> null
+        {
+            for member in union_def.members
+            {
+                choose member
+                    when Function: func
+                    {
+                        let planned plan_function(func, union_type)
+                        if planned <> null
+                        {
+                            if methods = null
+                                set methods: Vector[PlannedFunction]#()
+                            methods.put(methods.length, planned)
+                        }
+                    }
+                    else
+                    {
+                        ; Skip non-functions
+                    }
+            }
+        }
+
+        ; Plan operators
+        var operators pointer[Vector[PlannedOperator]] null
+        if union_def.members <> null
+        {
+            for member in union_def.members
+            {
+                choose member
+                    when Operator: op
+                    {
+                        let planned plan_operator(op, union_type)
+                        if planned <> null
+                        {
+                            if operators = null
+                                set operators: Vector[PlannedOperator]#()
+                            operators.put(operators.length, planned)
+                        }
+                    }
+                    else
+                    {
+                        ; Skip non-operators
+                    }
+            }
+        }
+
+        let result PlannedUnion#(
+            union_def.loc,
+            union_def.private,
+            name,
+            mangled,
+            variants,
+            methods,
+            operators,
+            0,              ; size (TODO: compute)
+            0,              ; alignment (TODO: compute)
+            null            ; origin
+        )
+
+        ; Cache the union
+        cache_union(name, result)
+
+        result
+    }
+
+    ; ========================================================================
+    ; Namespace Planning
+    ; ========================================================================
+
+    ; Plan a namespace
+    ; Returns null on error
+    function plan_namespace(this, ns: scaly.compiler.Model.Namespace, name: String) returns pointer[PlannedNamespace]
+    {
+        let mangled encode_name(name)
+
+        ; Plan sub-modules
+        var modules pointer[Vector[PlannedModule]] null
+        if ns.modules <> null
+        {
+            if ns.modules.length > 0
+            {
+                set modules: Vector[PlannedModule]#()
+                for mod in ns.modules
+                {
+                    let planned plan_module(mod)
+                    if planned <> null
+                        modules.put(modules.length, planned)
+                }
+            }
+        }
+
+        ; Plan functions
+        var functions pointer[Vector[PlannedFunction]] null
+        if ns.members <> null
+        {
+            for member in ns.members
+            {
+                choose member
+                    when Function: func
+                    {
+                        let planned plan_function(func, null)
+                        if planned <> null
+                        {
+                            if functions = null
+                                set functions: Vector[PlannedFunction]#()
+                            functions.put(functions.length, planned)
+                        }
+                    }
+                    else
+                    {
+                        ; Skip non-functions
+                    }
+            }
+        }
+
+        ; Plan operators
+        var operators pointer[Vector[PlannedOperator]] null
+        if ns.members <> null
+        {
+            for member in ns.members
+            {
+                choose member
+                    when Operator: op
+                    {
+                        let planned plan_operator(op, null)
+                        if planned <> null
+                        {
+                            if operators = null
+                                set operators: Vector[PlannedOperator]#()
+                            operators.put(operators.length, planned)
+                        }
+                    }
+                    else
+                    {
+                        ; Skip non-operators
+                    }
+            }
+        }
+
+        let result PlannedNamespace#(
+            ns.loc,
+            name,
+            mangled,
+            modules,
+            functions,
+            operators,
+            null            ; concepts (TODO)
+        )
+
+        result
+    }
+
+    ; ========================================================================
+    ; Global Planning
+    ; ========================================================================
+
+    ; Plan a global constant
+    ; Returns null on error
+    function plan_global(this, global: scaly.compiler.Model.Global, name: String) returns pointer[PlannedGlobal]
+    {
+        let mangled encode_name(name)
+
+        ; Resolve global type
+        let global_type resolve_type(global.global_type, global.loc)
+        if global_type = null
+            return null
+
+        ; Plan value expression
+        let value plan_operands(global.value)
+
+        let result PlannedGlobal#(
+            global.loc,
+            name,
+            mangled,
+            global_type,
+            value
+        )
+
+        ; Cache the global
+        cache_global(name, result)
+
+        result
+    }
+
+    ; ========================================================================
+    ; Module Planning
+    ; ========================================================================
+
+    ; Plan a module
+    ; Returns null on error
+    function plan_module(this, mod: scaly.compiler.Model.Module) returns pointer[PlannedModule]
+    {
+        ; Save and update current file for error messages
+        let old_file file
+        if mod.file.length > 0
+            set file: mod.file
+
+        let result PlannedModule#(
+            mod.file,
+            mod.name,
+            null,   ; modules
+            null,   ; concepts
+            null,   ; functions
+            null    ; operators
+        )
+
+        ; Plan sub-modules first (so their concepts are available)
+        if mod.modules <> null
+        {
+            if mod.modules.length > 0
+            {
+                set result.modules: Vector[PlannedModule]#()
+                for sub_mod in mod.modules
+                {
+                    let planned plan_module(sub_mod)
+                    if planned <> null
+                        result.modules.put(result.modules.length, planned)
+                }
+            }
+        }
+
+        ; Plan members (Package, Concept, Function, Operator)
+        if mod.members <> null
+        {
+            for member in mod.members
+            {
+                choose member
+                    when Package: pkg
+                    {
+                        ; Plan the package's root module if loaded
+                        if pkg.root <> null
+                        {
+                            let planned plan_module(pkg.root)
+                            if planned <> null
+                            {
+                                if result.modules = null
+                                    set result.modules: Vector[PlannedModule]#()
+                                result.modules.put(result.modules.length, planned)
+                            }
+                        }
+                    }
+                    when Concept: conc
+                    {
+                        let planned plan_concept(conc)
+                        if planned <> null
+                        {
+                            if result.concepts = null
+                                set result.concepts: Vector[PlannedConcept]#()
+                            result.concepts.put(result.concepts.length, planned)
+                        }
+                    }
+                    when Function: func
+                    {
+                        let planned plan_function(func, null)
+                        if planned <> null
+                        {
+                            if result.functions = null
+                                set result.functions: Vector[PlannedFunction]#()
+                            result.functions.put(result.functions.length, planned)
+
+                            ; Cache for emitter lookup
+                            cache_function(planned.mangled_name, planned)
+                        }
+                    }
+                    when Operator: op
+                    {
+                        let planned plan_operator(op, null)
+                        if planned <> null
+                        {
+                            if result.operators = null
+                                set result.operators: Vector[PlannedOperator]#()
+                            result.operators.put(result.operators.length, planned)
+                        }
+                    }
+            }
+        }
+
+        ; Restore old file
+        set file: old_file
+
+        result
+    }
+
+    ; ========================================================================
+    ; Program Planning
+    ; ========================================================================
+
+    ; Plan a complete program
+    ; Returns null on error
+    function plan_program(this, prog: scaly.compiler.Model.Program) returns pointer[Plan]
+    {
+        ; Plan the main module
+        let main_module plan_module(prog.main_module)
+        if main_module = null
+            return null
+
+        ; Plan top-level statements
+        let statements plan_statements(prog.statements)
+
+        let result Plan#(
+            main_module,
+            statements,
+            instantiated_structures,
+            instantiated_unions,
+            instantiated_functions,
+            planned_globals,
+            0,      ; next_type_var_id
+            null    ; constraints
+        )
+
+        result
+    }
+}
+
+; ============================================================================
+; Test function
+; ============================================================================
+
+function test() returns int
+{
+    ; Test name encoding
+    let name String#("test")
+    let encoded Planner.encode_name(name)
+    if encoded.equals(String#("4test")) = false
+        return 1
+
+    ; Test strip_package_prefix
+    let qualified String#("scaly.containers.String")
+    let stripped Planner.strip_package_prefix(qualified)
+    if stripped.equals(String#("String")) = false
+        return 2
+
+    ; Test strip_suffix
+    let with_suffix String#("Vector.char")
+    let base Planner.strip_suffix(with_suffix)
+    if base.equals(String#("Vector")) = false
+        return 3
+
+    ; Test size_to_string
+    let str42 Planner.size_to_string(42)
+    if str42.equals(String#("42")) = false
+        return 4
+
+    ; Test is_primitive_type
+    if Planner.is_primitive_type(String#("int")) = false
+        return 5
+    if Planner.is_primitive_type(String#("bool")) = false
+        return 6
+    if Planner.is_primitive_type(String#("Vector")) = true
+        return 7
+
+    ; Test generate_cache_key
+    let cache_key Planner.generate_cache_key(String#("Vector"), null)
+    if cache_key.equals(String#("Vector")) = false
+        return 8
+
+    ; Test build_type_name
+    let path Vector[String]$()
+    path.put(0, String#("scaly"))
+    path.put(1, String#("containers"))
+    path.put(2, String#("Vector"))
+    let type_name Planner.build_type_name(path)
+    if type_name.equals(String#("scaly.containers.Vector")) = false
+        return 9
+
+    ; Test make_int_type
+    let int_type Planner.make_int_type()
+    if int_type.name.equals(String#("int")) = false
+        return 10
+    if int_type.mangled_name.equals(String#("i")) = false
+        return 11
+
+    ; Test make_pointer_type
+    let char_type Planner.make_char_type()
+    let ptr_char Planner.make_pointer_type(char_type)
+    if ptr_char.name.equals(String#("pointer")) = false
+        return 12
+    if ptr_char.mangled_name.equals(String#("Pc")) = false
+        return 13
+
+    ; Test infer_constant_type for integer
+    let int_const scaly.compiler.Model.Constant.Integer(
+        scaly.compiler.Model.IntegerConstant(Span(0, 0), 42)
+    )
+    let int_inferred Planner.infer_constant_type(int_const)
+    if int_inferred.name.equals(String#("int")) = false
+        return 14
+
+    ; Test infer_constant_type for boolean
+    let bool_const scaly.compiler.Model.Constant.Boolean(
+        scaly.compiler.Model.BooleanConstant(Span(0, 0), true)
+    )
+    let bool_inferred Planner.infer_constant_type(bool_const)
+    if bool_inferred.name.equals(String#("bool")) = false
+        return 15
+
+    0
+}
+
