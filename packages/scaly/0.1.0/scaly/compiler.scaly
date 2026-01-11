@@ -6,6 +6,10 @@ define compiler
     module Syntax  ; Generated from scaly.sgm - must come first, used by other modules
     module Model
     module Modeler
+    module Plan
+    module Planner
+    module LLVM
+    module Emitter
 
     function test() returns int
     {
