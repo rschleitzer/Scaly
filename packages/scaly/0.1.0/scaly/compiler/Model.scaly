@@ -163,7 +163,7 @@ define Attribute
 define Item
 (
     loc: Span
-    private: bool
+    is_private: bool
     name: pointer[scaly.containers.String]
     item_type: pointer[Type]
     attributes: pointer[Vector[Attribute]]
@@ -193,7 +193,7 @@ define Action
 define Binding
 (
     loc: Span
-    binding_type: scaly.containers.String
+    binding_type: pointer[char]
     binding_item: Item
     operation: pointer[Vector[Operand]]
 )
@@ -244,7 +244,7 @@ define Block
 define Property
 (
     loc: Span
-    private: bool
+    is_private: bool
     name: scaly.containers.String
     prop_type: pointer[Type]
     initializer: pointer[Vector[Operand]]
@@ -473,14 +473,14 @@ define Implementation union
 define Function
 (
     loc: Span
-    private: bool
+    is_private: bool
     pure: bool
     name: scaly.containers.String
     parameters: pointer[Vector[GenericParameter]]
     page_parameter: pointer[scaly.containers.String]
     input: pointer[Vector[Item]]
-    returns: pointer[Type]
-    throws: pointer[Type]
+    return_type: pointer[Type]
+    throws_type: pointer[Type]
     life: Lifetime
     impl: Implementation
 )
@@ -488,7 +488,7 @@ define Function
 define Initializer
 (
     loc: Span
-    private: bool
+    is_private: bool
     page_parameter: pointer[scaly.containers.String]
     input: pointer[Vector[Item]]
     impl: Implementation
@@ -503,12 +503,12 @@ define DeInitializer
 define Operator
 (
     loc: Span
-    private: bool
+    is_private: bool
     name: scaly.containers.String
     parameters: pointer[Vector[GenericParameter]]
     input: pointer[Vector[Item]]
-    returns: pointer[Type]
-    throws: pointer[Type]
+    return_type: pointer[Type]
+    throws_type: pointer[Type]
     impl: Implementation
 )
 
@@ -551,7 +551,7 @@ define StructMember union
 define Structure
 (
     loc: Span
-    private: bool
+    is_private: bool
     properties: pointer[Vector[Property]]
     modules: pointer[Vector[Module]]
     uses: pointer[Vector[Vector[scaly.containers.String]]]
@@ -567,7 +567,7 @@ define Structure
 define Union
 (
     loc: Span
-    private: bool
+    is_private: bool
     variants: pointer[Vector[Variant]]
     members: pointer[Vector[StructMember]]
 )
@@ -639,7 +639,7 @@ define Member union
 
 define Module
 (
-    private: bool
+    is_private: bool
     file: scaly.containers.String
     name: scaly.containers.String
     modules: pointer[Vector[Module]]

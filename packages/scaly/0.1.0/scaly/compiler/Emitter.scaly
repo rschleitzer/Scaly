@@ -1,0 +1,2445 @@
+; Emitter.scaly - LLVM IR generation from Plan
+;
+; Generates LLVM IR using the LLVM-C API for both JIT execution (tests)
+; and AOT compilation.
+;
+; Ported from C++ Emitter.cpp
+
+use scaly.containers.Vector
+use scaly.containers.String
+use scaly.containers.StringBuilder
+use scaly.compiler.Model.Span
+use scaly.compiler.Model.Lifetime
+use scaly.compiler.Model.Constant
+use scaly.compiler.Plan.PlannedType
+use scaly.compiler.Plan.PlannedItem
+use scaly.compiler.Plan.PlannedProperty
+use scaly.compiler.Plan.PlannedVariant
+use scaly.compiler.Plan.PlannedStatement
+use scaly.compiler.Plan.PlannedAction
+use scaly.compiler.Plan.PlannedBinding
+use scaly.compiler.Plan.PlannedBreak
+use scaly.compiler.Plan.PlannedContinue
+use scaly.compiler.Plan.PlannedReturn
+use scaly.compiler.Plan.PlannedThrow
+use scaly.compiler.Plan.PlannedOperand
+use scaly.compiler.Plan.PlannedExpression
+use scaly.compiler.Plan.PlannedConstant
+use scaly.compiler.Plan.PlannedVariable
+use scaly.compiler.Plan.PlannedCall
+use scaly.compiler.Plan.PlannedTuple
+use scaly.compiler.Plan.PlannedMatrix
+use scaly.compiler.Plan.PlannedBlock
+use scaly.compiler.Plan.PlannedIf
+use scaly.compiler.Plan.PlannedMatch
+use scaly.compiler.Plan.PlannedChoose
+use scaly.compiler.Plan.PlannedFor
+use scaly.compiler.Plan.PlannedWhile
+use scaly.compiler.Plan.PlannedTry
+use scaly.compiler.Plan.PlannedSizeOf
+use scaly.compiler.Plan.PlannedAlignOf
+use scaly.compiler.Plan.PlannedIs
+use scaly.compiler.Plan.PlannedAs
+use scaly.compiler.Plan.PlannedGlobalRef
+use scaly.compiler.Plan.PlannedVariantConstruction
+use scaly.compiler.Plan.PlannedMemberAccess
+use scaly.compiler.Plan.PlannedComponent
+use scaly.compiler.Plan.PlannedFunction
+use scaly.compiler.Plan.PlannedOperator
+use scaly.compiler.Plan.PlannedStructure
+use scaly.compiler.Plan.PlannedUnion
+use scaly.compiler.Plan.PlannedModule
+use scaly.compiler.Plan.PlannedConcept
+use scaly.compiler.Plan.PlannedImplementation
+use scaly.compiler.Plan.Plan
+use scaly.compiler.LLVM.LLVMContextRef
+use scaly.compiler.LLVM.LLVMModuleRef
+use scaly.compiler.LLVM.LLVMBuilderRef
+use scaly.compiler.LLVM.LLVMTypeRef
+use scaly.compiler.LLVM.LLVMValueRef
+use scaly.compiler.LLVM.LLVMBasicBlockRef
+use scaly.compiler.LLVM.LLVMIntPredicate
+use scaly.compiler.LLVM.LLVMRealPredicate
+use scaly.compiler.LLVM.LLVMLinkage
+
+; ============================================================================
+; Intrinsic Type Info
+; ============================================================================
+
+; Information about an intrinsic type
+define IntrinsicTypeInfo
+(
+    llvm_type: LLVMTypeRef
+    size: size_t
+    alignment: size_t
+    is_signed: bool
+)
+
+; ============================================================================
+; Emitter Configuration
+; ============================================================================
+
+define EmitterConfig
+(
+    emit_debug_info: bool       ; Generate DWARF
+    optimize_for_size: bool
+    opt_level: int              ; 0 = none, 1-3 = increasing
+    target_triple: String       ; Empty = host
+    data_layout: String         ; Empty = default for target
+)
+{
+    init#()
+    {
+        set emit_debug_info: true
+        set optimize_for_size: false
+        set opt_level: 0
+        set target_triple: String#("")
+        set data_layout: String#("")
+    }
+}
+
+; ============================================================================
+; Loop Context - for break/continue handling
+; ============================================================================
+
+define LoopContext
+(
+    exit_block: LLVMBasicBlockRef       ; Target for 'break'
+    continue_block: LLVMBasicBlockRef   ; Target for 'continue'
+    cleanup_depth: size_t               ; BlockCleanupStack size at loop entry
+)
+
+; ============================================================================
+; Block Cleanup Context - for block-scoped RBMM cleanup
+; ============================================================================
+
+define BlockCleanupContext
+(
+    watermark: LLVMValueRef     ; BlockWatermark saved at block entry
+    needs_cleanup: bool         ; True if this block has $ allocations
+)
+
+; ============================================================================
+; Region Info - for lifetime/region management
+; ============================================================================
+
+define RegionInfo
+(
+    local_page: LLVMValueRef        ; Local ($) allocations
+    return_page: LLVMValueRef       ; Call (#) - passed by caller
+    exception_page: LLVMValueRef    ; Thrown (!) - passed by caller
+    ; Named regions (^name) would use a map, simplified for now
+    named_region_names: pointer[Vector[String]]
+    named_region_values: pointer[Vector[LLVMValueRef]]
+)
+{
+    init#()
+    {
+        set local_page: LLVMValueRef(null)
+        set return_page: LLVMValueRef(null)
+        set exception_page: LLVMValueRef(null)
+        set named_region_names: Vector[String]#()
+        set named_region_values: Vector[LLVMValueRef]#()
+    }
+
+    function lookup_named_region(this, name: String) returns LLVMValueRef
+    {
+        var i 0
+        for n in named_region_names
+        {
+            if n.equals(name)
+            {
+                let val named_region_values.get(i)
+                if val <> null
+                    return val
+            }
+            set i: i + 1
+        }
+        LLVMValueRef(null)
+    }
+
+    procedure add_named_region(this, name: String, value: LLVMValueRef)
+    {
+        named_region_names.put(named_region_names.length, name)
+        named_region_values.put(named_region_values.length, value)
+    }
+}
+
+; ============================================================================
+; Emitter
+; ============================================================================
+
+define Emitter
+(
+    config: EmitterConfig
+
+    ; LLVM handles
+    context: LLVMContextRef
+    module: LLVMModuleRef
+    builder: LLVMBuilderRef
+
+    ; Current plan being emitted
+    current_plan: pointer[Plan]
+
+    ; Type cache: name -> LLVM type (using parallel vectors)
+    type_cache_names: pointer[Vector[String]]
+    type_cache_types: pointer[Vector[LLVMTypeRef]]
+
+    ; Struct cache: name -> LLVM struct type
+    struct_cache_names: pointer[Vector[String]]
+    struct_cache_types: pointer[Vector[LLVMTypeRef]]
+
+    ; Function cache: mangled name -> LLVM function
+    function_cache_names: pointer[Vector[String]]
+    function_cache_funcs: pointer[Vector[LLVMValueRef]]
+
+    ; Intrinsic types
+    intrinsic_type_names: pointer[Vector[String]]
+    intrinsic_types: pointer[Vector[IntrinsicTypeInfo]]
+
+    ; Current function state
+    current_function: LLVMValueRef
+    current_block: LLVMBasicBlockRef
+    current_function_can_throw: bool
+
+    ; Local variables: name -> LLVM value
+    local_var_names: pointer[Vector[String]]
+    local_var_values: pointer[Vector[LLVMValueRef]]
+
+    ; Region/lifetime management
+    current_region: RegionInfo
+
+    ; Loop context stack for break/continue
+    loop_stack: pointer[Vector[LoopContext]]
+
+    ; Block cleanup context stack
+    block_cleanup_stack: pointer[Vector[BlockCleanupContext]]
+
+    ; RBMM runtime functions
+    page_type: LLVMTypeRef
+    page_allocate: LLVMValueRef
+    page_allocate_page: LLVMValueRef
+    page_deallocate_extensions: LLVMValueRef
+    page_save_watermark: LLVMValueRef
+    page_restore_watermark: LLVMValueRef
+)
+{
+    init#(cfg: EmitterConfig)
+    {
+        set config: cfg
+        set context: LLVMContextRef(null)
+        set module: LLVMModuleRef(null)
+        set builder: LLVMBuilderRef(null)
+        set current_plan: null
+        set type_cache_names: Vector[String]#()
+        set type_cache_types: Vector[LLVMTypeRef]#()
+        set struct_cache_names: Vector[String]#()
+        set struct_cache_types: Vector[LLVMTypeRef]#()
+        set function_cache_names: Vector[String]#()
+        set function_cache_funcs: Vector[LLVMValueRef]#()
+        set intrinsic_type_names: Vector[String]#()
+        set intrinsic_types: Vector[IntrinsicTypeInfo]#()
+        set current_function: LLVMValueRef(null)
+        set current_block: LLVMBasicBlockRef(null)
+        set current_function_can_throw: false
+        set local_var_names: Vector[String]#()
+        set local_var_values: Vector[LLVMValueRef]#()
+        set current_region: RegionInfo#()
+        set loop_stack: Vector[LoopContext]#()
+        set block_cleanup_stack: Vector[BlockCleanupContext]#()
+        set page_type: LLVMTypeRef(null)
+        set page_allocate: LLVMValueRef(null)
+        set page_allocate_page: LLVMValueRef(null)
+        set page_deallocate_extensions: LLVMValueRef(null)
+        set page_save_watermark: LLVMValueRef(null)
+        set page_restore_watermark: LLVMValueRef(null)
+    }
+
+    ; ========================================================================
+    ; Initialization
+    ; ========================================================================
+
+    ; Initialize the emitter (create LLVM context, builder, etc.)
+    procedure initialize(this, module_name: String)
+    {
+        ; Create LLVM context
+        set context: LLVMContextCreate()
+
+        ; Create module
+        set module: LLVMModuleCreateWithNameInContext(module_name.data, context)
+
+        ; Create builder
+        set builder: LLVMCreateBuilderInContext(context)
+
+        ; Initialize intrinsic types
+        init_intrinsic_types()
+    }
+
+    ; Initialize intrinsic type mappings
+    procedure init_intrinsic_types(this)
+    {
+        ; void
+        register_intrinsic_type(String#("void"), LLVMVoidTypeInContext(context), 0, 0, false)
+
+        ; bool (i1)
+        register_intrinsic_type(String#("bool"), LLVMInt1TypeInContext(context), 1, 1, false)
+
+        ; char (i8)
+        register_intrinsic_type(String#("char"), LLVMInt8TypeInContext(context), 1, 1, true)
+
+        ; Signed integers
+        register_intrinsic_type(String#("i8"), LLVMInt8TypeInContext(context), 1, 1, true)
+        register_intrinsic_type(String#("i16"), LLVMInt16TypeInContext(context), 2, 2, true)
+        register_intrinsic_type(String#("i32"), LLVMInt32TypeInContext(context), 4, 4, true)
+        register_intrinsic_type(String#("i64"), LLVMInt64TypeInContext(context), 8, 8, true)
+        register_intrinsic_type(String#("int"), LLVMInt32TypeInContext(context), 4, 4, true)
+
+        ; Unsigned integers
+        register_intrinsic_type(String#("u8"), LLVMInt8TypeInContext(context), 1, 1, false)
+        register_intrinsic_type(String#("u16"), LLVMInt16TypeInContext(context), 2, 2, false)
+        register_intrinsic_type(String#("u32"), LLVMInt32TypeInContext(context), 4, 4, false)
+        register_intrinsic_type(String#("u64"), LLVMInt64TypeInContext(context), 8, 8, false)
+        register_intrinsic_type(String#("uint"), LLVMInt32TypeInContext(context), 4, 4, false)
+        register_intrinsic_type(String#("size_t"), LLVMInt64TypeInContext(context), 8, 8, false)
+
+        ; Floating point
+        register_intrinsic_type(String#("float"), LLVMFloatTypeInContext(context), 4, 4, true)
+        register_intrinsic_type(String#("double"), LLVMDoubleTypeInContext(context), 8, 8, true)
+    }
+
+    procedure register_intrinsic_type(this, name: String, llvm_type: LLVMTypeRef, size: size_t, alignment: size_t, is_signed: bool)
+    {
+        intrinsic_type_names.put(intrinsic_type_names.length, name)
+        intrinsic_types.put(intrinsic_types.length, IntrinsicTypeInfo(llvm_type, size, alignment, is_signed))
+    }
+
+    ; Dispose of LLVM resources
+    procedure dispose(this)
+    {
+        if builder.handle <> null
+            LLVMDisposeBuilder(builder)
+
+        if module.handle <> null
+            LLVMDisposeModule(module)
+
+        if context.handle <> null
+            LLVMContextDispose(context)
+    }
+
+    ; ========================================================================
+    ; Type Cache
+    ; ========================================================================
+
+    function lookup_type_cache(this, name: String) returns LLVMTypeRef
+    {
+        var i 0
+        for n in type_cache_names
+        {
+            if n.equals(name)
+            {
+                let t type_cache_types.get(i)
+                if t <> null
+                    return t
+            }
+            set i: i + 1
+        }
+        LLVMTypeRef(null)
+    }
+
+    procedure cache_type(this, name: String, llvm_type: LLVMTypeRef)
+    {
+        type_cache_names.put(type_cache_names.length, name)
+        type_cache_types.put(type_cache_types.length, llvm_type)
+    }
+
+    ; ========================================================================
+    ; Struct Cache
+    ; ========================================================================
+
+    function lookup_struct_cache(this, name: String) returns LLVMTypeRef
+    {
+        var i 0
+        for n in struct_cache_names
+        {
+            if n.equals(name)
+            {
+                let t struct_cache_types.get(i)
+                if t <> null
+                    return t
+            }
+            set i: i + 1
+        }
+        LLVMTypeRef(null)
+    }
+
+    procedure cache_struct(this, name: String, llvm_type: LLVMTypeRef)
+    {
+        struct_cache_names.put(struct_cache_names.length, name)
+        struct_cache_types.put(struct_cache_types.length, llvm_type)
+    }
+
+    ; ========================================================================
+    ; Function Cache
+    ; ========================================================================
+
+    function lookup_function_cache(this, mangled_name: String) returns LLVMValueRef
+    {
+        var i 0
+        for n in function_cache_names
+        {
+            if n.equals(mangled_name)
+            {
+                let f function_cache_funcs.get(i)
+                if f <> null
+                    return f
+            }
+            set i: i + 1
+        }
+        LLVMValueRef(null)
+    }
+
+    procedure cache_function(this, mangled_name: String, llvm_func: LLVMValueRef)
+    {
+        function_cache_names.put(function_cache_names.length, mangled_name)
+        function_cache_funcs.put(function_cache_funcs.length, llvm_func)
+    }
+
+    ; ========================================================================
+    ; Local Variable Management
+    ; ========================================================================
+
+    function lookup_variable(this, name: String) returns LLVMValueRef
+    {
+        var i 0
+        for n in local_var_names
+        {
+            if n.equals(name)
+            {
+                let v local_var_values.get(i)
+                if v <> null
+                    return v
+            }
+            set i: i + 1
+        }
+        LLVMValueRef(null)
+    }
+
+    procedure define_variable(this, name: String, value: LLVMValueRef)
+    {
+        local_var_names.put(local_var_names.length, name)
+        local_var_values.put(local_var_values.length, value)
+    }
+
+    procedure clear_local_variables(this)
+    {
+        set local_var_names.length: 0
+        set local_var_values.length: 0
+    }
+
+    ; ========================================================================
+    ; Type Mapping
+    ; ========================================================================
+
+    ; Map a PlannedType to an LLVM type
+    function map_type(this, planned_type: PlannedType) returns LLVMTypeRef
+    {
+        ; Check type cache first
+        let cached lookup_type_cache(planned_type.name)
+        if cached.handle <> null
+            return cached
+
+        ; Check intrinsic types
+        let intrinsic map_intrinsic_type(planned_type.name)
+        if intrinsic.handle <> null
+            return intrinsic
+
+        ; Handle pointer types
+        if planned_type.name.equals(String#("pointer"))
+        {
+            ; Use opaque pointer (ptr) for LLVM 15+
+            let ptr_type LLVMPointerTypeInContext(context, 0)
+            cache_type(planned_type.mangled_name, ptr_type)
+            return ptr_type
+        }
+
+        ; Handle ref types (same as pointer at LLVM level)
+        if planned_type.name.equals(String#("ref"))
+        {
+            let ptr_type LLVMPointerTypeInContext(context, 0)
+            cache_type(planned_type.mangled_name, ptr_type)
+            return ptr_type
+        }
+
+        ; Look up struct type
+        let struct_type lookup_struct_cache(planned_type.name)
+        if struct_type.handle <> null
+            return struct_type
+
+        ; Try mangled name
+        let struct_type2 lookup_struct_cache(planned_type.mangled_name)
+        if struct_type2.handle <> null
+            return struct_type2
+
+        ; Create opaque struct as placeholder
+        let opaque LLVMStructCreateNamed(context, planned_type.mangled_name.data)
+        cache_struct(planned_type.name, opaque)
+        cache_struct(planned_type.mangled_name, opaque)
+        opaque
+    }
+
+    ; Map intrinsic type name to LLVM type
+    function map_intrinsic_type(this, name: String) returns LLVMTypeRef
+    {
+        var i 0
+        for n in intrinsic_type_names
+        {
+            if n.equals(name)
+            {
+                let info intrinsic_types.get(i)
+                if info <> null
+                    return info.llvm_type
+            }
+            set i: i + 1
+        }
+        LLVMTypeRef(null)
+    }
+
+    ; Check if a type name is an intrinsic type
+    function is_intrinsic_type(this, name: String) returns bool
+    {
+        for n in intrinsic_type_names
+        {
+            if n.equals(name)
+                return true
+        }
+        false
+    }
+
+    ; ========================================================================
+    ; Structure Type Emission
+    ; ========================================================================
+
+    ; Emit LLVM struct type for a PlannedStructure
+    function emit_struct_type(this, struct: PlannedStructure) returns LLVMTypeRef
+    {
+        ; Check cache first
+        let cached lookup_struct_cache(struct.name)
+        if cached.handle <> null
+            return cached
+
+        ; Create named struct
+        let llvm_struct LLVMStructCreateNamed(context, struct.mangled_name.data)
+        cache_struct(struct.name, llvm_struct)
+        cache_struct(struct.mangled_name, llvm_struct)
+
+        ; If no properties, it's an empty struct
+        if struct.properties = null
+            return llvm_struct
+
+        if struct.properties.length = 0
+            return llvm_struct
+
+        ; Collect element types
+        let element_count struct.properties.length
+        ; Allocate array for element types (would need proper array allocation)
+        ; For now, return the opaque struct - body will be set later
+        ; TODO: Implement proper struct body setting
+
+        llvm_struct
+    }
+
+    ; ========================================================================
+    ; Union Type Emission
+    ; ========================================================================
+
+    ; Emit LLVM type for a PlannedUnion (tagged union)
+    function emit_union_type(this, union_type: PlannedUnion) returns LLVMTypeRef
+    {
+        ; Check cache first
+        let cached lookup_struct_cache(union_type.name)
+        if cached.handle <> null
+            return cached
+
+        ; Create named struct for the union
+        ; Layout: { tag: i32, data: [max_variant_size x i8] }
+        let llvm_union LLVMStructCreateNamed(context, union_type.mangled_name.data)
+        cache_struct(union_type.name, llvm_union)
+        cache_struct(union_type.mangled_name, llvm_union)
+
+        ; TODO: Set struct body with tag and data fields
+
+        llvm_union
+    }
+
+    ; ========================================================================
+    ; Function Declaration
+    ; ========================================================================
+
+    ; Emit function declaration (signature only)
+    function emit_function_decl(this, func: PlannedFunction) returns LLVMValueRef
+    {
+        ; Check cache first
+        let cached lookup_function_cache(func.mangled_name)
+        if cached.handle <> null
+            return cached
+
+        ; Determine return type
+        var return_type LLVMVoidTypeInContext(context)
+        if func.returns <> null
+            set return_type: map_type(func.returns)
+
+        ; Count parameters
+        var param_count 0
+        if func.input <> null
+            set param_count: func.input.length
+
+        ; TODO: Build parameter types array and create function type
+        ; For now, create a simple function with no parameters
+
+        let func_type LLVMFunctionType(return_type, null, 0, 0)
+        let llvm_func LLVMAddFunction(module, func.mangled_name.data, func_type)
+
+        ; Set linkage
+        if func.private
+            LLVMSetLinkage(llvm_func, LLVMLinkage.Internal())
+        else
+            LLVMSetLinkage(llvm_func, LLVMLinkage.External())
+
+        ; Cache the function
+        cache_function(func.mangled_name, llvm_func)
+
+        llvm_func
+    }
+
+    ; ========================================================================
+    ; Constant Emission
+    ; ========================================================================
+
+    ; Emit a constant value
+    function emit_constant(this, const: PlannedConstant, result_type: PlannedType) returns LLVMValueRef
+    {
+        choose const.value
+            when Boolean: b
+            {
+                let llvm_type LLVMInt1TypeInContext(context)
+                if b.value
+                    return LLVMConstInt(llvm_type, 1, 0)
+                else
+                    return LLVMConstInt(llvm_type, 0, 0)
+            }
+            when Integer: i
+            {
+                let llvm_type LLVMInt32TypeInContext(context)
+                return LLVMConstInt(llvm_type, i.value as size_t, 1)
+            }
+            when Hex: h
+            {
+                let llvm_type LLVMInt64TypeInContext(context)
+                return LLVMConstInt(llvm_type, h.value, 0)
+            }
+            when Float: f
+            {
+                let llvm_type LLVMFloatTypeInContext(context)
+                return LLVMConstReal(llvm_type, f.value as double)
+            }
+            when String: s
+            {
+                return LLVMConstStringInContext(context, s.value.data, s.value.length as int, 0)
+            }
+            when Character: c
+            {
+                let llvm_type LLVMInt8TypeInContext(context)
+                ; Get first character
+                if c.value.length > 0
+                {
+                    let ch c.value.get_char(0)
+                    return LLVMConstInt(llvm_type, ch as size_t, 0)
+                }
+                return LLVMConstInt(llvm_type, 0, 0)
+            }
+            when Fragment: fr
+            {
+                return LLVMConstStringInContext(context, fr.value.data, fr.value.length as int, 0)
+            }
+            when Null: n
+            {
+                let ptr_type LLVMPointerTypeInContext(context, 0)
+                return LLVMConstPointerNull(ptr_type)
+            }
+    }
+
+    ; ========================================================================
+    ; Basic Block Creation
+    ; ========================================================================
+
+    ; Create a new basic block in the current function
+    function create_block(this, name: String) returns LLVMBasicBlockRef
+    {
+        LLVMAppendBasicBlockInContext(context, current_function, name.data)
+    }
+
+    ; ========================================================================
+    ; Main Emission Entry Point
+    ; ========================================================================
+
+    ; Emit a complete plan
+    function emit(this, plan: Plan, module_name: String) returns bool
+    {
+        initialize(module_name)
+        set current_plan: plan
+
+        ; Emit all structures
+        if plan.structures <> null
+        {
+            for struct in plan.structures
+                emit_struct_type(struct)
+        }
+
+        ; Emit all unions
+        if plan.unions <> null
+        {
+            for union_type in plan.unions
+                emit_union_type(union_type)
+        }
+
+        ; Emit function declarations first (for forward references)
+        if plan.functions <> null
+        {
+            for func in plan.functions
+                emit_function_decl(func)
+        }
+
+        ; TODO: Emit function bodies
+        ; TODO: Emit global variables
+        ; TODO: Emit main wrapper for top-level statements
+
+        true
+    }
+
+    ; ========================================================================
+    ; Module Output
+    ; ========================================================================
+
+    ; Print module IR to string (for debugging)
+    function print_module_to_string(this) returns pointer[char]
+    {
+        LLVMPrintModuleToString(module)
+    }
+
+    ; Write module IR to file
+    function write_module_to_file(this, filename: String) returns bool
+    {
+        var error_msg pointer[pointer[char]] null
+        let result LLVMPrintModuleToFile(module, filename.data, error_msg)
+        result = 0
+    }
+
+    ; Write bitcode to file
+    function write_bitcode_to_file(this, filename: String) returns bool
+    {
+        let result LLVMWriteBitcodeToFile(module, filename.data)
+        result = 0
+    }
+
+    ; Verify module
+    function verify_module(this) returns bool
+    {
+        var error_msg pointer[pointer[char]] null
+        let result LLVMVerifyModule(module, 0, error_msg)
+        result = 0
+    }
+
+    ; ========================================================================
+    ; Expression Emission
+    ; ========================================================================
+
+    ; Emit a sequence of operands (typically collapsed to single operand)
+    function emit_operands(this, ops: pointer[Vector[PlannedOperand]]) returns LLVMValueRef
+    {
+        if ops = null
+            return LLVMValueRef(null)
+
+        if ops.length = 0
+            return LLVMValueRef(null)
+
+        ; After collapseOperandSequence, we typically have a single collapsed operand
+        let first ops.get(0)
+        if first = null
+            return LLVMValueRef(null)
+
+        emit_operand(first)
+    }
+
+    ; Emit a single operand
+    function emit_operand(this, op: PlannedOperand) returns LLVMValueRef
+    {
+        var value LLVMValueRef(null)
+
+        ; Emit the expression
+        choose op.expr
+            when Constant: c
+            {
+                set value: emit_constant(c, op.result_type)
+            }
+            else
+            {
+                set value: emit_expression(op.expr)
+            }
+
+        ; Apply member access chain if present
+        if op.member_access <> null
+        {
+            if op.member_access.length > 0
+            {
+                ; TODO: Handle member access chain
+                ; For now, just return the base value
+            }
+        }
+
+        value
+    }
+
+    ; Emit an expression
+    function emit_expression(this, expr: PlannedExpression) returns LLVMValueRef
+    {
+        choose expr
+            when Constant: c
+            {
+                ; Use void type as placeholder when no type info available
+                let void_type PlannedType#(
+                    Span(0, 0),
+                    String#("void"),
+                    String#("v"),
+                    null,
+                    scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+                    null,
+                    String#(""),
+                    null
+                )
+                return emit_constant(c, void_type)
+            }
+            when Type: t
+            {
+                ; Type used as expression - error
+                return LLVMValueRef(null)
+            }
+            when Variable: v
+            {
+                return emit_variable(v)
+            }
+            when GlobalRef: g
+            {
+                return emit_global_ref(g)
+            }
+            when Call: c
+            {
+                return emit_call(c)
+            }
+            when Tuple: t
+            {
+                return emit_tuple(t)
+            }
+            when Matrix: m
+            {
+                return emit_matrix(m)
+            }
+            when Block: b
+            {
+                return emit_block(b)
+            }
+            when If: i
+            {
+                return emit_if(i)
+            }
+            when Match: m
+            {
+                return emit_match(m)
+            }
+            when Choose: c
+            {
+                return emit_choose(c)
+            }
+            when For: f
+            {
+                return emit_for(f)
+            }
+            when While: w
+            {
+                return emit_while(w)
+            }
+            when Try: t
+            {
+                return emit_try(t)
+            }
+            when SizeOf: s
+            {
+                return emit_sizeof(s)
+            }
+            when AlignOf: a
+            {
+                return emit_alignof(a)
+            }
+            when Is: i
+            {
+                return emit_is(i)
+            }
+            when As: a
+            {
+                return emit_as(a)
+            }
+            when VariantConstruction: vc
+            {
+                return emit_variant_construction(vc)
+            }
+    }
+
+    ; ========================================================================
+    ; Variable and Global Reference Emission
+    ; ========================================================================
+
+    ; Emit a variable reference
+    function emit_variable(this, var: PlannedVariable) returns LLVMValueRef
+    {
+        let var_ptr lookup_variable(var.name)
+        if var_ptr.handle = null
+            return LLVMValueRef(null)
+
+        if var.is_mutable
+        {
+            ; Mutable binding stored as pointer - load the value
+            let ty map_type(var.variable_type)
+            return LLVMBuildLoad2(builder, ty, var_ptr, var.name.data)
+        }
+        else
+        {
+            ; Immutable binding stored as value directly
+            return var_ptr
+        }
+    }
+
+    ; Emit a global reference
+    function emit_global_ref(this, global: PlannedGlobalRef) returns LLVMValueRef
+    {
+        let gv LLVMGetNamedGlobal(module, global.mangled_name.data)
+        if gv.handle = null
+            return LLVMValueRef(null)
+
+        ; Get pointer to first element
+        ; TODO: Create proper GEP for array access
+        gv
+    }
+
+    ; ========================================================================
+    ; Call Emission
+    ; ========================================================================
+
+    ; Emit a function/operator call
+    function emit_call(this, call: PlannedCall) returns LLVMValueRef
+    {
+        ; Check if this is an intrinsic operator
+        if call.is_intrinsic
+        {
+            if call.is_operator
+                return emit_intrinsic_operator(call)
+            else
+                return emit_intrinsic_function(call)
+        }
+
+        ; Look up the function
+        let func lookup_function_cache(call.mangled_name)
+        if func.handle = null
+        {
+            ; Try to find it in the module
+            let func2 LLVMGetNamedFunction(module, call.mangled_name.data)
+            if func2.handle = null
+                return LLVMValueRef(null)
+            set func: func2
+        }
+
+        ; Build arguments
+        ; For now, handle simple case without arguments
+        if call.args = null
+        {
+            let result_type map_type(call.result_type)
+            let func_type LLVMFunctionType(result_type, null, 0, 0)
+            return LLVMBuildCall2(builder, func_type, func, null, 0, String#("call").data)
+        }
+
+        if call.args.length = 0
+        {
+            let result_type map_type(call.result_type)
+            let func_type LLVMFunctionType(result_type, null, 0, 0)
+            return LLVMBuildCall2(builder, func_type, func, null, 0, String#("call").data)
+        }
+
+        ; TODO: Emit arguments and create proper call
+        ; For now, return null for calls with arguments
+        LLVMValueRef(null)
+    }
+
+    ; ========================================================================
+    ; Intrinsic Operator Emission
+    ; ========================================================================
+
+    ; Emit an intrinsic operator call
+    function emit_intrinsic_operator(this, call: PlannedCall) returns LLVMValueRef
+    {
+        if call.args = null
+            return LLVMValueRef(null)
+
+        let arg_count call.args.length
+
+        ; Unary operators
+        if arg_count = 1
+        {
+            let arg call.args.get(0)
+            if arg = null
+                return LLVMValueRef(null)
+            let operand emit_operand(arg)
+            return emit_intrinsic_unary_op(call.name, operand, call.result_type)
+        }
+
+        ; Binary operators
+        if arg_count = 2
+        {
+            let left_arg call.args.get(0)
+            let right_arg call.args.get(1)
+            if left_arg = null
+                return LLVMValueRef(null)
+            if right_arg = null
+                return LLVMValueRef(null)
+
+            let left emit_operand(left_arg)
+            let right emit_operand(right_arg)
+            return emit_intrinsic_binary_op(call.name, left, right, call.result_type)
+        }
+
+        LLVMValueRef(null)
+    }
+
+    ; Emit an intrinsic unary operator
+    function emit_intrinsic_unary_op(this, op_name: String, operand: LLVMValueRef, result_type: PlannedType) returns LLVMValueRef
+    {
+        let ty map_type(result_type)
+        let is_float is_floating_point_type(result_type)
+
+        ; Negation
+        if op_name.equals(String#("-"))
+        {
+            if is_float
+                return LLVMBuildFNeg(builder, operand, String#("fneg").data)
+            return LLVMBuildNeg(builder, operand, String#("neg").data)
+        }
+
+        ; Unary plus (identity)
+        if op_name.equals(String#("+"))
+            return operand
+
+        ; Logical not
+        if op_name.equals(String#("!"))
+            return LLVMBuildNot(builder, operand, String#("not").data)
+
+        ; Bitwise not
+        if op_name.equals(String#("~"))
+            return LLVMBuildNot(builder, operand, String#("bitnot").data)
+
+        ; Dereference
+        if op_name.equals(String#("*"))
+            return LLVMBuildLoad2(builder, ty, operand, String#("deref").data)
+
+        ; Address-of (operand should already be a pointer)
+        if op_name.equals(String#("&"))
+            return operand
+
+        LLVMValueRef(null)
+    }
+
+    ; Emit an intrinsic binary operator
+    function emit_intrinsic_binary_op(this, op_name: String, left: LLVMValueRef, right: LLVMValueRef, result_type: PlannedType) returns LLVMValueRef
+    {
+        let ty map_type(result_type)
+        let is_float is_floating_point_type(result_type)
+        let is_signed is_signed_type(result_type)
+
+        ; Addition
+        if op_name.equals(String#("+"))
+        {
+            if is_float
+                return LLVMBuildFAdd(builder, left, right, String#("fadd").data)
+            return LLVMBuildAdd(builder, left, right, String#("add").data)
+        }
+
+        ; Subtraction
+        if op_name.equals(String#("-"))
+        {
+            if is_float
+                return LLVMBuildFSub(builder, left, right, String#("fsub").data)
+            return LLVMBuildSub(builder, left, right, String#("sub").data)
+        }
+
+        ; Multiplication
+        if op_name.equals(String#("*"))
+        {
+            if is_float
+                return LLVMBuildFMul(builder, left, right, String#("fmul").data)
+            return LLVMBuildMul(builder, left, right, String#("mul").data)
+        }
+
+        ; Division
+        if op_name.equals(String#("/"))
+        {
+            if is_float
+                return LLVMBuildFDiv(builder, left, right, String#("fdiv").data)
+            if is_signed
+                return LLVMBuildSDiv(builder, left, right, String#("sdiv").data)
+            return LLVMBuildUDiv(builder, left, right, String#("udiv").data)
+        }
+
+        ; Modulo
+        if op_name.equals(String#("%"))
+        {
+            if is_float
+                return LLVMBuildFRem(builder, left, right, String#("frem").data)
+            if is_signed
+                return LLVMBuildSRem(builder, left, right, String#("srem").data)
+            return LLVMBuildURem(builder, left, right, String#("urem").data)
+        }
+
+        ; Bitwise AND
+        if op_name.equals(String#("&"))
+            return LLVMBuildAnd(builder, left, right, String#("and").data)
+
+        ; Bitwise OR
+        if op_name.equals(String#("|"))
+            return LLVMBuildOr(builder, left, right, String#("or").data)
+
+        ; Bitwise XOR
+        if op_name.equals(String#("^"))
+            return LLVMBuildXor(builder, left, right, String#("xor").data)
+
+        ; Left shift
+        if op_name.equals(String#("<<"))
+            return LLVMBuildShl(builder, left, right, String#("shl").data)
+
+        ; Right shift
+        if op_name.equals(String#(">>"))
+        {
+            if is_signed
+                return LLVMBuildAShr(builder, left, right, String#("ashr").data)
+            return LLVMBuildLShr(builder, left, right, String#("lshr").data)
+        }
+
+        ; Comparison operators
+        if op_name.equals(String#("="))
+        {
+            if is_float
+                return LLVMBuildFCmp(builder, LLVMRealPredicate.OEQ(), left, right, String#("eq").data)
+            return LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), left, right, String#("eq").data)
+        }
+
+        if op_name.equals(String#("<>"))
+        {
+            if is_float
+                return LLVMBuildFCmp(builder, LLVMRealPredicate.ONE(), left, right, String#("ne").data)
+            return LLVMBuildICmp(builder, LLVMIntPredicate.NE(), left, right, String#("ne").data)
+        }
+
+        if op_name.equals(String#("<"))
+        {
+            if is_float
+                return LLVMBuildFCmp(builder, LLVMRealPredicate.OLT(), left, right, String#("lt").data)
+            if is_signed
+                return LLVMBuildICmp(builder, LLVMIntPredicate.SLT(), left, right, String#("lt").data)
+            return LLVMBuildICmp(builder, LLVMIntPredicate.ULT(), left, right, String#("lt").data)
+        }
+
+        if op_name.equals(String#("<="))
+        {
+            if is_float
+                return LLVMBuildFCmp(builder, LLVMRealPredicate.OLE(), left, right, String#("le").data)
+            if is_signed
+                return LLVMBuildICmp(builder, LLVMIntPredicate.SLE(), left, right, String#("le").data)
+            return LLVMBuildICmp(builder, LLVMIntPredicate.ULE(), left, right, String#("le").data)
+        }
+
+        if op_name.equals(String#(">"))
+        {
+            if is_float
+                return LLVMBuildFCmp(builder, LLVMRealPredicate.OGT(), left, right, String#("gt").data)
+            if is_signed
+                return LLVMBuildICmp(builder, LLVMIntPredicate.SGT(), left, right, String#("gt").data)
+            return LLVMBuildICmp(builder, LLVMIntPredicate.UGT(), left, right, String#("gt").data)
+        }
+
+        if op_name.equals(String#(">="))
+        {
+            if is_float
+                return LLVMBuildFCmp(builder, LLVMRealPredicate.OGE(), left, right, String#("ge").data)
+            if is_signed
+                return LLVMBuildICmp(builder, LLVMIntPredicate.SGE(), left, right, String#("ge").data)
+            return LLVMBuildICmp(builder, LLVMIntPredicate.UGE(), left, right, String#("ge").data)
+        }
+
+        LLVMValueRef(null)
+    }
+
+    ; Emit an intrinsic function call
+    function emit_intrinsic_function(this, call: PlannedCall) returns LLVMValueRef
+    {
+        ; TODO: Handle intrinsic functions like abs, sqrt, etc.
+        LLVMValueRef(null)
+    }
+
+    ; ========================================================================
+    ; Type Helpers
+    ; ========================================================================
+
+    ; Check if type is floating point
+    function is_floating_point_type(this, t: PlannedType) returns bool
+    {
+        if t.name.equals(String#("float"))
+            return true
+        if t.name.equals(String#("double"))
+            return true
+        false
+    }
+
+    ; Check if type is signed
+    function is_signed_type(this, t: PlannedType) returns bool
+    {
+        ; Unsigned types start with 'u' or are size_t
+        if t.name.equals(String#("u8"))
+            return false
+        if t.name.equals(String#("u16"))
+            return false
+        if t.name.equals(String#("u32"))
+            return false
+        if t.name.equals(String#("u64"))
+            return false
+        if t.name.equals(String#("uint"))
+            return false
+        if t.name.equals(String#("size_t"))
+            return false
+        ; Everything else is signed by default
+        true
+    }
+
+    ; ========================================================================
+    ; Tuple and Matrix Emission
+    ; ========================================================================
+
+    ; Emit a tuple construction
+    function emit_tuple(this, tuple: PlannedTuple) returns LLVMValueRef
+    {
+        ; TODO: Implement proper tuple construction
+        ; For now, handle simple case of single-element tuple
+        if tuple.components = null
+            return LLVMValueRef(null)
+
+        if tuple.components.length = 0
+            return LLVMValueRef(null)
+
+        ; If single component with no name, just emit the value
+        if tuple.components.length = 1
+        {
+            let comp tuple.components.get(0)
+            if comp <> null
+            {
+                if comp.name = null
+                {
+                    return emit_operands(comp.value)
+                }
+            }
+        }
+
+        ; TODO: Construct actual struct for multi-component tuples
+        LLVMValueRef(null)
+    }
+
+    ; Emit a matrix (array literal)
+    function emit_matrix(this, matrix: PlannedMatrix) returns LLVMValueRef
+    {
+        ; TODO: Implement matrix/array construction
+        LLVMValueRef(null)
+    }
+
+    ; ========================================================================
+    ; Control Flow Emission
+    ; ========================================================================
+
+    ; Emit a block
+    function emit_block(this, block: PlannedBlock) returns LLVMValueRef
+    {
+        ; Push block cleanup context
+        push_block_cleanup(block.needs_local_page_cleanup)
+
+        var last_value LLVMValueRef(null)
+
+        if block.statements <> null
+        {
+            for stmt in block.statements
+            {
+                choose stmt
+                    when Action: action
+                    {
+                        let value emit_action(action)
+                        ; Only save value if it's not an assignment
+                        if action.target = null
+                            set last_value: value
+                        else
+                        {
+                            if action.target.length = 0
+                                set last_value: value
+                        }
+                    }
+                    when Return: ret
+                    {
+                        emit_return(ret)
+                        pop_block_cleanup(false)
+                        return LLVMValueRef(null)
+                    }
+                    else
+                    {
+                        emit_statement(stmt)
+                    }
+            }
+        }
+
+        ; Pop cleanup and emit cleanup if needed
+        pop_block_cleanup(true)
+
+        last_value
+    }
+
+    ; Emit an if expression
+    function emit_if(this, if_expr: PlannedIf) returns LLVMValueRef
+    {
+        ; Emit the condition
+        let cond_value emit_operands(if_expr.condition)
+        if cond_value.handle = null
+            return LLVMValueRef(null)
+
+        ; Ensure we have a boolean (i1) for the branch
+        var bool_cond cond_value
+        let cond_type LLVMTypeOf(cond_value)
+        let i1_type LLVMInt1TypeInContext(context)
+
+        ; If not i1, convert to boolean
+        if LLVMGetTypeKind(cond_type) <> LLVMGetTypeKind(i1_type)
+        {
+            ; Compare to 0
+            let zero LLVMConstInt(cond_type, 0, 0)
+            set bool_cond: LLVMBuildICmp(builder, LLVMIntPredicate.NE(), cond_value, zero, String#("if.tobool").data)
+        }
+
+        ; Create basic blocks
+        let then_block create_block(String#("if.then"))
+        var else_block LLVMBasicBlockRef(null)
+        if if_expr.alternative <> null
+            set else_block: create_block(String#("if.else"))
+        let merge_block create_block(String#("if.end"))
+
+        ; Branch based on condition
+        if else_block.handle <> null
+            LLVMBuildCondBr(builder, bool_cond, then_block, else_block)
+        else
+            LLVMBuildCondBr(builder, bool_cond, then_block, merge_block)
+
+        ; Emit then block
+        LLVMPositionBuilderAtEnd(builder, then_block)
+        var then_value LLVMValueRef(null)
+
+        if if_expr.consequent <> null
+        {
+            choose if_expr.consequent
+                when Action: action
+                {
+                    let value emit_action(action)
+                    if action.target = null
+                        set then_value: value
+                    else
+                    {
+                        if action.target.length = 0
+                            set then_value: value
+                    }
+                }
+                when Binding: binding
+                {
+                    emit_binding(binding)
+                }
+                when Return: ret
+                {
+                    emit_return(ret)
+                }
+                when Break: brk
+                {
+                    emit_break(brk)
+                }
+                when Continue: cont
+                {
+                    emit_continue(cont)
+                }
+                else
+                {
+                    emit_statement(if_expr.consequent)
+                }
+        }
+
+        ; Jump to merge block if not already terminated
+        let then_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
+        if then_term.handle = null
+            LLVMBuildBr(builder, merge_block)
+        let then_end_block LLVMGetInsertBlock(builder)
+
+        ; Emit else block if present
+        var else_value LLVMValueRef(null)
+        var else_end_block LLVMBasicBlockRef(null)
+
+        if else_block.handle <> null
+        {
+            LLVMPositionBuilderAtEnd(builder, else_block)
+
+            if if_expr.alternative <> null
+            {
+                choose if_expr.alternative
+                    when Action: action
+                    {
+                        let value emit_action(action)
+                        if action.target = null
+                            set else_value: value
+                        else
+                        {
+                            if action.target.length = 0
+                                set else_value: value
+                        }
+                    }
+                    when Binding: binding
+                    {
+                        emit_binding(binding)
+                    }
+                    when Return: ret
+                    {
+                        emit_return(ret)
+                    }
+                    when Break: brk
+                    {
+                        emit_break(brk)
+                    }
+                    when Continue: cont
+                    {
+                        emit_continue(cont)
+                    }
+                    else
+                    {
+                        emit_statement(if_expr.alternative)
+                    }
+            }
+
+            let else_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
+            if else_term.handle = null
+                LLVMBuildBr(builder, merge_block)
+            set else_end_block: LLVMGetInsertBlock(builder)
+        }
+
+        ; Continue at merge block
+        LLVMPositionBuilderAtEnd(builder, merge_block)
+
+        ; If both branches produce values of the same type, create a PHI node
+        if then_value.handle <> null
+        {
+            if else_value.handle <> null
+            {
+                let then_ty LLVMTypeOf(then_value)
+                let else_ty LLVMTypeOf(else_value)
+                ; TODO: Compare types and create PHI if same
+                ; For now, return then_value
+            }
+        }
+
+        ; Return the then value if only then branch has a value
+        if then_value.handle <> null
+        {
+            if if_expr.alternative = null
+                return then_value
+        }
+
+        LLVMValueRef(null)
+    }
+
+    ; Emit a match expression
+    function emit_match(this, match_expr: PlannedMatch) returns LLVMValueRef
+    {
+        ; Match is similar to if with multiple conditions
+        ; Emit condition
+        let cond_value emit_operands(match_expr.condition)
+        if cond_value.handle = null
+            return LLVMValueRef(null)
+
+        ; Create blocks
+        let merge_block create_block(String#("match.end"))
+        var default_block LLVMBasicBlockRef(null)
+        if match_expr.alternative <> null
+            set default_block: create_block(String#("match.else"))
+        else
+            set default_block: merge_block
+
+        ; Create switch instruction
+        let branch_count match_expr.branches.length as int
+        let switch_inst LLVMBuildSwitch(builder, cond_value, default_block, branch_count)
+
+        ; Process each branch
+        if match_expr.branches <> null
+        {
+            for branch in match_expr.branches
+            {
+                let case_block create_block(String#("match.case"))
+
+                ; Add cases to switch
+                if branch.cases <> null
+                {
+                    for case_cond in branch.cases
+                    {
+                        let case_value emit_operands(case_cond.condition)
+                        if case_value.handle <> null
+                            LLVMAddCase(switch_inst, case_value, case_block)
+                    }
+                }
+
+                ; Emit case body
+                LLVMPositionBuilderAtEnd(builder, case_block)
+                if branch.consequent <> null
+                {
+                    emit_statement(branch.consequent)
+                }
+
+                let case_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
+                if case_term.handle = null
+                    LLVMBuildBr(builder, merge_block)
+            }
+        }
+
+        ; Emit alternative if present
+        if match_expr.alternative <> null
+        {
+            LLVMPositionBuilderAtEnd(builder, default_block)
+            emit_statement(match_expr.alternative)
+            let alt_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
+            if alt_term.handle = null
+                LLVMBuildBr(builder, merge_block)
+        }
+
+        ; Continue at merge block
+        LLVMPositionBuilderAtEnd(builder, merge_block)
+
+        LLVMValueRef(null)
+    }
+
+    ; Emit a choose expression (pattern match on union)
+    function emit_choose(this, choose_expr: PlannedChoose) returns LLVMValueRef
+    {
+        ; Emit the condition (union value)
+        let union_value emit_operands(choose_expr.condition)
+        if union_value.handle = null
+            return LLVMValueRef(null)
+
+        ; Union layout: { i8 tag, [maxSize x i8] data }
+        ; Store union if not already a pointer
+        var union_ptr union_value
+        var union_type LLVMTypeOf(union_value)
+
+        ; If not a pointer, store to get address
+        let type_kind LLVMGetTypeKind(union_type)
+        ; PointerTypeKind = 14 in LLVM
+        if type_kind <> 14
+        {
+            set union_ptr: LLVMBuildAlloca(builder, union_type, String#("choose.union").data)
+            LLVMBuildStore(builder, union_value, union_ptr)
+        }
+
+        ; Load the tag (first field, i8)
+        let i8_ty LLVMInt8TypeInContext(context)
+        let tag_ptr LLVMBuildStructGEP2(builder, union_type, union_ptr, 0, String#("tag.ptr").data)
+        let tag LLVMBuildLoad2(builder, i8_ty, tag_ptr, String#("tag").data)
+
+        ; Create blocks
+        let merge_block create_block(String#("choose.end"))
+        let default_block create_block(String#("choose.else"))
+
+        ; Create switch instruction
+        let case_count choose_expr.cases.length as int
+        let switch_inst LLVMBuildSwitch(builder, tag, default_block, case_count)
+
+        ; Process each when case
+        if choose_expr.cases <> null
+        {
+            for when_case in choose_expr.cases
+            {
+                let case_block create_block(String#("choose.when"))
+                let tag_const LLVMConstInt(i8_ty, when_case.variant_index, 0)
+                LLVMAddCase(switch_inst, tag_const, case_block)
+
+                LLVMPositionBuilderAtEnd(builder, case_block)
+
+                ; Extract variant data and bind to variable
+                if when_case.name.length > 0
+                {
+                    let data_ptr LLVMBuildStructGEP2(builder, union_type, union_ptr, 1, String#("variant.data.ptr").data)
+                    let var_ty map_type(when_case.variant_type)
+                    let var_ptr LLVMBuildBitCast(builder, data_ptr, LLVMPointerTypeInContext(context, 0), String#("variant.data.cast").data)
+                    let var_value LLVMBuildLoad2(builder, var_ty, var_ptr, String#("variant.val").data)
+                    define_variable(when_case.name, var_value)
+                }
+
+                ; Emit consequent
+                if when_case.consequent <> null
+                {
+                    emit_statement(when_case.consequent)
+                }
+
+                let case_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
+                if case_term.handle = null
+                    LLVMBuildBr(builder, merge_block)
+            }
+        }
+
+        ; Emit alternative (else)
+        LLVMPositionBuilderAtEnd(builder, default_block)
+        if choose_expr.alternative <> null
+        {
+            emit_statement(choose_expr.alternative)
+        }
+        let alt_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
+        if alt_term.handle = null
+            LLVMBuildBr(builder, merge_block)
+
+        ; Continue at merge block
+        LLVMPositionBuilderAtEnd(builder, merge_block)
+
+        LLVMValueRef(null)
+    }
+
+    ; Emit a for loop
+    function emit_for(this, for_expr: PlannedFor) returns LLVMValueRef
+    {
+        ; Check if iterator-based or integer range loop
+        if for_expr.is_iterator_loop
+            return emit_for_iterator(for_expr)
+        emit_for_integer_range(for_expr)
+    }
+
+    ; Emit integer range for loop: for i in N (iterates 0 to N-1)
+    function emit_for_integer_range(this, for_expr: PlannedFor) returns LLVMValueRef
+    {
+        ; Evaluate the range expression to get the end value
+        let end_value emit_operands(for_expr.expr)
+        if end_value.handle = null
+            return LLVMValueRef(null)
+
+        let index_type LLVMTypeOf(end_value)
+
+        ; Create the loop counter (allocate on stack)
+        let loop_counter LLVMBuildAlloca(builder, index_type, String#("counter").data)
+
+        ; Initialize loop counter to 0
+        let zero LLVMConstInt(index_type, 0, 0)
+        LLVMBuildStore(builder, zero, loop_counter)
+
+        ; Create basic blocks
+        let cond_block create_block(String#("for.cond"))
+        let body_block create_block(String#("for.body"))
+        let incr_block create_block(String#("for.incr"))
+        let exit_block create_block(String#("for.exit"))
+
+        ; Push loop context for break/continue
+        push_loop(exit_block, incr_block)
+
+        ; Jump to condition block
+        LLVMBuildBr(builder, cond_block)
+
+        ; Emit condition block: i < end
+        LLVMPositionBuilderAtEnd(builder, cond_block)
+        let current_index LLVMBuildLoad2(builder, index_type, loop_counter, String#("i").data)
+        let cond LLVMBuildICmp(builder, LLVMIntPredicate.SLT(), current_index, end_value, String#("for.cmp").data)
+        LLVMBuildCondBr(builder, cond, body_block, exit_block)
+
+        ; Emit body block
+        LLVMPositionBuilderAtEnd(builder, body_block)
+
+        ; Load current index and bind as loop variable
+        let body_index LLVMBuildLoad2(builder, index_type, loop_counter, for_expr.identifier.data)
+        define_variable(for_expr.identifier, body_index)
+
+        ; Emit body
+        emit_action(for_expr.body)
+
+        ; Jump to increment block if not terminated
+        let body_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
+        if body_term.handle = null
+            LLVMBuildBr(builder, incr_block)
+
+        ; Emit increment block: i++
+        LLVMPositionBuilderAtEnd(builder, incr_block)
+        let incr_index LLVMBuildLoad2(builder, index_type, loop_counter, String#("i.load").data)
+        let one LLVMConstInt(index_type, 1, 0)
+        let next_index LLVMBuildAdd(builder, incr_index, one, String#("i.next").data)
+        LLVMBuildStore(builder, next_index, loop_counter)
+        LLVMBuildBr(builder, cond_block)
+
+        ; Pop loop context
+        pop_loop()
+
+        ; Continue at exit block
+        LLVMPositionBuilderAtEnd(builder, exit_block)
+
+        ; For loops don't produce a value
+        LLVMValueRef(null)
+    }
+
+    ; Emit iterator-based for loop
+    function emit_for_iterator(this, for_expr: PlannedFor) returns LLVMValueRef
+    {
+        ; Evaluate collection expression
+        let collection emit_operands(for_expr.expr)
+        if collection.handle = null
+            return LLVMValueRef(null)
+
+        ; Get collection pointer (if not already pointer)
+        var collection_ptr collection
+        let coll_type LLVMTypeOf(collection)
+        let type_kind LLVMGetTypeKind(coll_type)
+        if type_kind <> 14  ; Not pointer
+        {
+            set collection_ptr: LLVMBuildAlloca(builder, coll_type, String#("coll.tmp").data)
+            LLVMBuildStore(builder, collection, collection_ptr)
+        }
+
+        ; Look up get_iterator function
+        let get_iter_fn LLVMGetNamedFunction(module, for_expr.get_iterator_method.data)
+        if get_iter_fn.handle = null
+            return LLVMValueRef(null)
+
+        ; Call get_iterator() on collection
+        let iter_type map_type(for_expr.iterator_type)
+        let iter_alloca LLVMBuildAlloca(builder, iter_type, String#("iter.alloca").data)
+
+        ; TODO: Call get_iterator - need proper arg array
+
+        ; Look up next function
+        let next_fn LLVMGetNamedFunction(module, for_expr.next_method.data)
+        if next_fn.handle = null
+            return LLVMValueRef(null)
+
+        ; Create basic blocks
+        let cond_block create_block(String#("for.cond"))
+        let body_block create_block(String#("for.body"))
+        let exit_block create_block(String#("for.exit"))
+
+        ; Push loop context
+        push_loop(exit_block, cond_block)
+
+        ; Jump to condition block
+        LLVMBuildBr(builder, cond_block)
+
+        ; Condition block: call next(), check if null
+        LLVMPositionBuilderAtEnd(builder, cond_block)
+
+        ; TODO: Call next() with iterator pointer
+        ; let next_result LLVMBuildCall2(...)
+
+        ; For now, create unreachable exit condition
+        LLVMBuildBr(builder, exit_block)
+
+        ; Body block
+        LLVMPositionBuilderAtEnd(builder, body_block)
+
+        ; Execute loop body
+        emit_action(for_expr.body)
+
+        let body_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
+        if body_term.handle = null
+            LLVMBuildBr(builder, cond_block)
+
+        ; Exit block
+        LLVMPositionBuilderAtEnd(builder, exit_block)
+        pop_loop()
+
+        LLVMValueRef(null)
+    }
+
+    ; Emit a while loop
+    function emit_while(this, while_expr: PlannedWhile) returns LLVMValueRef
+    {
+        ; Create basic blocks
+        let cond_block create_block(String#("while.cond"))
+        let body_block create_block(String#("while.body"))
+        let exit_block create_block(String#("while.exit"))
+
+        ; Push loop context
+        push_loop(exit_block, cond_block)
+
+        ; Jump to condition block
+        LLVMBuildBr(builder, cond_block)
+
+        ; Emit condition block
+        LLVMPositionBuilderAtEnd(builder, cond_block)
+
+        ; Emit the condition binding's operation
+        let cond_value emit_operands(while_expr.cond.operation)
+        if cond_value.handle = null
+        {
+            pop_loop()
+            return LLVMValueRef(null)
+        }
+
+        ; Handle "while let" binding
+        if while_expr.cond.binding_item.name <> null
+        {
+            let name while_expr.cond.binding_item.name
+            if while_expr.cond.binding_type.equals(String#("var"))
+            {
+                let ty LLVMTypeOf(cond_value)
+                let alloca LLVMBuildAlloca(builder, ty, name.data)
+                LLVMBuildStore(builder, cond_value, alloca)
+                define_variable(name, alloca)
+            }
+            else
+            {
+                define_variable(name, cond_value)
+            }
+        }
+
+        ; Ensure we have a boolean for the branch
+        var bool_cond cond_value
+        let cond_type LLVMTypeOf(cond_value)
+        let i1_type LLVMInt1TypeInContext(context)
+
+        if LLVMGetTypeKind(cond_type) <> LLVMGetTypeKind(i1_type)
+        {
+            let zero LLVMConstInt(cond_type, 0, 0)
+            set bool_cond: LLVMBuildICmp(builder, LLVMIntPredicate.NE(), cond_value, zero, String#("while.tobool").data)
+        }
+
+        ; Branch: if true go to body, else exit
+        LLVMBuildCondBr(builder, bool_cond, body_block, exit_block)
+
+        ; Emit body block
+        LLVMPositionBuilderAtEnd(builder, body_block)
+        emit_action(while_expr.body)
+
+        ; Jump back to condition if not terminated
+        let body_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
+        if body_term.handle = null
+            LLVMBuildBr(builder, cond_block)
+
+        ; Pop loop context
+        pop_loop()
+
+        ; Continue at exit block
+        LLVMPositionBuilderAtEnd(builder, exit_block)
+
+        LLVMValueRef(null)
+    }
+
+    ; Emit a try expression
+    function emit_try(this, try_expr: PlannedTry) returns LLVMValueRef
+    {
+        ; Emit the binding's operation
+        let result_value emit_operands(try_expr.cond.operation)
+        if result_value.handle = null
+            return LLVMValueRef(null)
+
+        ; Get binding name if present
+        var has_binding false
+        if try_expr.cond.binding_item.name <> null
+            set has_binding: true
+
+        let result_type LLVMTypeOf(result_value)
+        let type_kind LLVMGetTypeKind(result_type)
+
+        ; If not a struct (union), just return it (no error possible)
+        ; StructTypeKind = 12
+        if type_kind <> 12
+        {
+            if has_binding
+            {
+                let name try_expr.cond.binding_item.name
+                define_variable(name, result_value)
+            }
+            return result_value
+        }
+
+        ; Store result to get pointer
+        let result_ptr LLVMBuildAlloca(builder, result_type, String#("try.result").data)
+        LLVMBuildStore(builder, result_value, result_ptr)
+
+        ; Load the tag (first field, i8)
+        let i8_ty LLVMInt8TypeInContext(context)
+        let tag_ptr LLVMBuildStructGEP2(builder, result_type, result_ptr, 0, String#("tag.ptr").data)
+        let tag LLVMBuildLoad2(builder, i8_ty, tag_ptr, String#("tag").data)
+
+        ; Create blocks
+        let ok_block create_block(String#("try.ok"))
+        let err_block create_block(String#("try.err"))
+        let merge_block create_block(String#("try.end"))
+
+        ; Check if tag is 0 (Ok)
+        let zero LLVMConstInt(i8_ty, 0, 0)
+        let is_ok LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), tag, zero, String#("is.ok").data)
+        LLVMBuildCondBr(builder, is_ok, ok_block, err_block)
+
+        ; Emit Ok block
+        LLVMPositionBuilderAtEnd(builder, ok_block)
+
+        ; Extract the Ok data
+        let i64_ty LLVMInt64TypeInContext(context)
+        let ok_data_ptr LLVMBuildStructGEP2(builder, result_type, result_ptr, 1, String#("ok.data.ptr").data)
+        let ok_value LLVMBuildLoad2(builder, i64_ty, ok_data_ptr, String#("ok.val").data)
+
+        ; Bind value if name present
+        if has_binding
+        {
+            let name try_expr.cond.binding_item.name
+            if try_expr.cond.binding_type.equals(String#("var"))
+            {
+                let alloca LLVMBuildAlloca(builder, i64_ty, name.data)
+                LLVMBuildStore(builder, ok_value, alloca)
+                define_variable(name, alloca)
+            }
+            else
+            {
+                define_variable(name, ok_value)
+            }
+        }
+
+        LLVMBuildBr(builder, merge_block)
+
+        ; Emit Err block
+        LLVMPositionBuilderAtEnd(builder, err_block)
+
+        ; Handle catches
+        if try_expr.catches <> null
+        {
+            for catch_case in try_expr.catches
+            {
+                ; TODO: Implement catch matching
+            }
+        }
+
+        ; Handle alternative
+        if try_expr.alternative <> null
+        {
+            emit_statement(try_expr.alternative)
+        }
+
+        let err_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
+        if err_term.handle = null
+            LLVMBuildBr(builder, merge_block)
+
+        ; Continue at merge block
+        LLVMPositionBuilderAtEnd(builder, merge_block)
+
+        ; Return ok_value (or PHI if both branches produce values)
+        ok_value
+    }
+
+    ; ========================================================================
+    ; Type Operation Emission
+    ; ========================================================================
+
+    ; Emit sizeof
+    function emit_sizeof(this, sizeof_expr: PlannedSizeOf) returns LLVMValueRef
+    {
+        let size sizeof_expr.size
+        let i64_type LLVMInt64TypeInContext(context)
+        LLVMConstInt(i64_type, size, 0)
+    }
+
+    ; Emit alignof
+    function emit_alignof(this, alignof_expr: PlannedAlignOf) returns LLVMValueRef
+    {
+        let alignment alignof_expr.alignment
+        let i64_type LLVMInt64TypeInContext(context)
+        LLVMConstInt(i64_type, alignment, 0)
+    }
+
+    ; Emit is expression (type test)
+    function emit_is(this, is_expr: PlannedIs) returns LLVMValueRef
+    {
+        ; TODO: Implement is expression emission
+        LLVMValueRef(null)
+    }
+
+    ; Emit as expression (type cast)
+    function emit_as(this, as_expr: PlannedAs) returns LLVMValueRef
+    {
+        ; TODO: Implement as expression emission
+        LLVMValueRef(null)
+    }
+
+    ; Emit variant construction
+    function emit_variant_construction(this, vc: PlannedVariantConstruction) returns LLVMValueRef
+    {
+        ; TODO: Implement variant construction emission
+        LLVMValueRef(null)
+    }
+
+    ; ========================================================================
+    ; Statement Emission
+    ; ========================================================================
+
+    ; Emit a statement
+    function emit_statement(this, stmt: PlannedStatement) returns bool
+    {
+        choose stmt
+            when Action: action
+            {
+                let result emit_action(action)
+                return result.handle <> null
+            }
+            when Binding: binding
+            {
+                return emit_binding(binding)
+            }
+            when Return: ret
+            {
+                return emit_return(ret)
+            }
+            when Throw: throw_stmt
+            {
+                return emit_throw(throw_stmt)
+            }
+            when Break: brk
+            {
+                return emit_break(brk)
+            }
+            when Continue: cont
+            {
+                return emit_continue(cont)
+            }
+    }
+
+    ; Emit an action (expression statement or assignment)
+    function emit_action(this, action: PlannedAction) returns LLVMValueRef
+    {
+        ; Emit source operands
+        let value emit_operands(action.source)
+        if value.handle = null
+            return LLVMValueRef(null)
+
+        ; If there are target operands, this is an assignment
+        if action.target <> null
+        {
+            if action.target.length > 0
+            {
+                ; Get the target - should be a variable reference for simple assignment
+                let target_op action.target.get(0)
+                if target_op = null
+                    return value
+
+                choose target_op.expr
+                    when Variable: var
+                    {
+                        ; Look up the variable's pointer
+                        let var_ptr lookup_variable(var.name)
+                        if var_ptr.handle = null
+                            return LLVMValueRef(null)
+
+                        ; Check for member access (e.g., this.x = value)
+                        if target_op.member_access <> null
+                        {
+                            if target_op.member_access.length > 0
+                            {
+                                ; TODO: Handle member access chain for assignment
+                                ; For now, use simple GEP-based field access
+                                return emit_member_assignment(var_ptr, var, target_op.member_access, value)
+                            }
+                        }
+
+                        ; Simple variable assignment
+                        if var.is_mutable = false
+                            return LLVMValueRef(null)  ; Cannot assign to immutable
+
+                        ; Store the value to the variable
+                        LLVMBuildStore(builder, value, var_ptr)
+                    }
+                    when Call: call
+                    {
+                        ; Handle dereference assignment like *ptr = value
+                        if call.name.equals(String#("*"))
+                        {
+                            if call.args <> null
+                            {
+                                if call.args.length = 1
+                                {
+                                    ; Emit the argument to get the pointer
+                                    let arg call.args.get(0)
+                                    if arg <> null
+                                    {
+                                        let ptr emit_operand(arg)
+                                        if ptr.handle <> null
+                                        {
+                                            ; Store to the dereferenced pointer
+                                            LLVMBuildStore(builder, value, ptr)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        ; Other assignment targets not yet supported
+                    }
+            }
+        }
+
+        value
+    }
+
+    ; Helper for member field assignment
+    function emit_member_assignment(this, var_ptr: LLVMValueRef, var: PlannedVariable, members: pointer[Vector[PlannedMemberAccess]], value: LLVMValueRef) returns LLVMValueRef
+    {
+        ; Get the struct type from the variable type
+        var current_ptr var_ptr
+        var current_type map_type(var.variable_type)
+
+        ; If variable is pointer[T], we need to load the pointer first
+        if var.variable_type.name.equals(String#("pointer"))
+        {
+            let ptr_type LLVMPointerTypeInContext(context, 0)
+            set current_ptr: LLVMBuildLoad2(builder, ptr_type, var_ptr, String#("ptr.load").data)
+
+            ; Get the inner type for struct access
+            if var.variable_type.generics <> null
+            {
+                if var.variable_type.generics.length > 0
+                {
+                    let inner_type var.variable_type.generics.get(0)
+                    if inner_type <> null
+                        set current_type: map_type(inner_type)
+                }
+            }
+        }
+
+        ; Navigate through member access chain
+        for member in members
+        {
+            let field_ptr LLVMBuildStructGEP2(builder, current_type, current_ptr, member.field_index as int, member.name.data)
+            set current_ptr: field_ptr
+            set current_type: map_type(member.result_type)
+        }
+
+        ; Store the value to the final field
+        LLVMBuildStore(builder, value, current_ptr)
+        value
+    }
+
+    ; Emit a binding (let/var declaration)
+    function emit_binding(this, binding: PlannedBinding) returns bool
+    {
+        var value LLVMValueRef(null)
+
+        ; Emit initialization expression if present
+        if binding.operation <> null
+        {
+            if binding.operation.length > 0
+            {
+                set value: emit_operands(binding.operation)
+                if value.handle = null
+                    return false
+            }
+        }
+
+        ; Create alloca for the binding
+        if binding.binding_item.name <> null
+        {
+            let name binding.binding_item.name
+
+            if value.handle <> null
+            {
+                ; Get the type from the value
+                let ty LLVMTypeOf(value)
+
+                if binding.binding_type.equals(String#("var"))
+                {
+                    ; Mutable binding: allocate on stack
+                    let alloca LLVMBuildAlloca(builder, ty, name.data)
+                    LLVMBuildStore(builder, value, alloca)
+                    define_variable(name, alloca)
+                }
+                else
+                {
+                    ; Immutable binding: just use the value directly
+                    define_variable(name, value)
+                }
+            }
+            else
+            {
+                ; No initialization - check for type annotation
+                if binding.binding_item.item_type <> null
+                {
+                    let item_type binding.binding_item.item_type
+                    let ty map_type(item_type)
+                    let alloca LLVMBuildAlloca(builder, ty, name.data)
+                    define_variable(name, alloca)
+                }
+                else
+                {
+                    return false  ; No init and no type annotation
+                }
+            }
+        }
+
+        true
+    }
+
+    ; Emit a return statement
+    function emit_return(this, ret: PlannedReturn) returns bool
+    {
+        ; Evaluate return value first (before cleanup)
+        var ret_val LLVMValueRef(null)
+        if ret.result <> null
+        {
+            if ret.result.length > 0
+            {
+                set ret_val: emit_operands(ret.result)
+            }
+        }
+
+        ; Emit block-scoped cleanups for all pending blocks
+        emit_block_cleanups(0)
+
+        ; Clean up local page before returning
+        if current_region.local_page.handle <> null
+        {
+            ; TODO: Check if page was used and call deallocate_extensions if needed
+            ; For now, simplified: just free the local page if it exists
+            let free_fn LLVMGetNamedFunction(module, String#("free").data)
+            if free_fn.handle <> null
+            {
+                ; Build array of args
+                ; TODO: Need proper arg array handling
+            }
+        }
+
+        ; Create the return instruction
+        if ret_val.handle <> null
+        {
+            LLVMBuildRet(builder, ret_val)
+        }
+        else
+        {
+            LLVMBuildRetVoid(builder)
+        }
+
+        true
+    }
+
+    ; Emit a throw statement
+    function emit_throw(this, throw_stmt: PlannedThrow) returns bool
+    {
+        ; Throw creates an error Result and returns it
+        ; Result layout: { i8 tag, [size x i8] data }
+        ; Tag 0 = Ok, Tag 1+ = error variants
+
+        if current_function.handle = null
+            return false
+
+        ; Get the return type - should be a Result type
+        let ret_ty LLVMGetReturnType(LLVMGetElementType(LLVMTypeOf(current_function)))
+
+        ; Allocate space for the Result
+        let result_ptr LLVMBuildAlloca(builder, ret_ty, String#("throw.result").data)
+
+        ; Set the tag to 1 (first error variant)
+        let i8_ty LLVMInt8TypeInContext(context)
+        let zero LLVMConstInt(LLVMInt32TypeInContext(context), 0, 0)
+        let tag_ptr LLVMBuildStructGEP2(builder, ret_ty, result_ptr, 0, String#("throw.tag.ptr").data)
+        let tag_val LLVMConstInt(i8_ty, 1, 0)
+        LLVMBuildStore(builder, tag_val, tag_ptr)
+
+        ; Evaluate the thrown value and store in the data portion
+        if throw_stmt.result <> null
+        {
+            if throw_stmt.result.length > 0
+            {
+                let thrown_value emit_operands(throw_stmt.result)
+                if thrown_value.handle <> null
+                {
+                    ; Get pointer to the data field (field 1)
+                    let data_ptr LLVMBuildStructGEP2(builder, ret_ty, result_ptr, 1, String#("throw.data.ptr").data)
+                    LLVMBuildStore(builder, thrown_value, data_ptr)
+                }
+            }
+        }
+
+        ; Emit block-scoped cleanups
+        emit_block_cleanups(0)
+
+        ; Load and return the result
+        let result LLVMBuildLoad2(builder, ret_ty, result_ptr, String#("throw.val").data)
+        LLVMBuildRet(builder, result)
+
+        true
+    }
+
+    ; Emit a break statement
+    function emit_break(this, brk: PlannedBreak) returns bool
+    {
+        if loop_stack.length = 0
+            return false  ; break outside of loop
+
+        ; Get the innermost loop context
+        let loop_ctx loop_stack.get(loop_stack.length - 1)
+        if loop_ctx = null
+            return false
+
+        ; Emit block-scoped cleanups back to the loop's entry depth
+        emit_block_cleanups(loop_ctx.cleanup_depth)
+
+        ; Jump to the exit block of the innermost loop
+        LLVMBuildBr(builder, loop_ctx.exit_block)
+
+        true
+    }
+
+    ; Emit a continue statement
+    function emit_continue(this, cont: PlannedContinue) returns bool
+    {
+        if loop_stack.length = 0
+            return false  ; continue outside of loop
+
+        ; Get the innermost loop context
+        let loop_ctx loop_stack.get(loop_stack.length - 1)
+        if loop_ctx = null
+            return false
+
+        ; Emit block-scoped cleanups back to the loop's entry depth
+        emit_block_cleanups(loop_ctx.cleanup_depth)
+
+        ; Jump to the continue block of the innermost loop
+        LLVMBuildBr(builder, loop_ctx.continue_block)
+
+        true
+    }
+
+    ; ========================================================================
+    ; Block Cleanup Helpers
+    ; ========================================================================
+
+    ; Emit cleanup for blocks from current depth down to target depth
+    procedure emit_block_cleanups(this, target_depth: size_t)
+    {
+        ; Emit restore_watermark for each block that needs cleanup,
+        ; from innermost to target_depth (not including target_depth)
+        if page_restore_watermark.handle = null
+            return
+
+        var i block_cleanup_stack.length
+        while i > target_depth
+        {
+            let cleanup block_cleanup_stack.get(i - 1)
+            if cleanup <> null
+            {
+                if cleanup.needs_cleanup
+                {
+                    if cleanup.watermark.handle <> null
+                    {
+                        if current_region.local_page.handle <> null
+                        {
+                            ; Call restore_watermark(local_page, watermark)
+                            ; TODO: Need proper call with args
+                        }
+                    }
+                }
+            }
+            set i: i - 1
+        }
+    }
+
+    ; Push a new block cleanup context
+    procedure push_block_cleanup(this, needs_cleanup: bool)
+    {
+        var watermark LLVMValueRef(null)
+        if needs_cleanup
+        {
+            if current_region.local_page.handle <> null
+            {
+                ; Save watermark: call Page_save_watermark(local_page)
+                ; TODO: Implement proper watermark saving
+            }
+        }
+        let ctx BlockCleanupContext(watermark, needs_cleanup)
+        block_cleanup_stack.put(block_cleanup_stack.length, ctx)
+    }
+
+    ; Pop a block cleanup context and optionally emit cleanup
+    procedure pop_block_cleanup(this, emit_cleanup: bool)
+    {
+        if block_cleanup_stack.length = 0
+            return
+
+        if emit_cleanup
+        {
+            let cleanup block_cleanup_stack.get(block_cleanup_stack.length - 1)
+            if cleanup <> null
+            {
+                if cleanup.needs_cleanup
+                {
+                    if cleanup.watermark.handle <> null
+                    {
+                        if current_region.local_page.handle <> null
+                        {
+                            ; Call restore_watermark
+                            ; TODO: Implement proper watermark restoration
+                        }
+                    }
+                }
+            }
+        }
+
+        ; Remove from stack (shrink length)
+        if block_cleanup_stack.length > 0
+            set block_cleanup_stack.length: block_cleanup_stack.length - 1
+    }
+
+    ; ========================================================================
+    ; Loop Stack Management
+    ; ========================================================================
+
+    ; Push a loop context onto the stack
+    procedure push_loop(this, exit_block: LLVMBasicBlockRef, continue_block: LLVMBasicBlockRef)
+    {
+        let ctx LoopContext(exit_block, continue_block, block_cleanup_stack.length)
+        loop_stack.put(loop_stack.length, ctx)
+    }
+
+    ; Pop a loop context from the stack
+    procedure pop_loop(this)
+    {
+        if loop_stack.length > 0
+            set loop_stack.length: loop_stack.length - 1
+    }
+}
+
+; ============================================================================
+; Test function
+; ============================================================================
+
+function test() returns int
+{
+    ; Test EmitterConfig initialization
+    let config EmitterConfig#()
+    if config.emit_debug_info = false
+        return 1
+    if config.opt_level <> 0
+        return 2
+
+    ; Test RegionInfo
+    let region RegionInfo#()
+    if region.local_page.handle <> null
+        return 3
+
+    0
+}
+

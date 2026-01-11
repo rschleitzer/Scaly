@@ -1,0 +1,452 @@
+; LLVM.scaly - FFI bindings to LLVM-C API
+;
+; This module provides Scaly bindings to LLVM's C API for code generation.
+; The LLVM-C API uses opaque pointer handles for all LLVM objects.
+;
+; Reference: https://llvm.org/doxygen/group__LLVMC.html
+
+use scaly.containers.String
+
+; ============================================================================
+; LLVM Opaque Handle Types
+; ============================================================================
+
+; These are opaque pointer types representing LLVM objects
+; In the LLVM-C API, these are typedefs to pointers to opaque structs
+
+define LLVMContextRef(handle: pointer[void])
+define LLVMModuleRef(handle: pointer[void])
+define LLVMBuilderRef(handle: pointer[void])
+define LLVMTypeRef(handle: pointer[void])
+define LLVMValueRef(handle: pointer[void])
+define LLVMBasicBlockRef(handle: pointer[void])
+define LLVMTargetRef(handle: pointer[void])
+define LLVMTargetMachineRef(handle: pointer[void])
+define LLVMTargetDataRef(handle: pointer[void])
+define LLVMPassManagerRef(handle: pointer[void])
+define LLVMMemoryBufferRef(handle: pointer[void])
+define LLVMDIBuilderRef(handle: pointer[void])
+define LLVMMetadataRef(handle: pointer[void])
+
+; ============================================================================
+; LLVM Enums
+; ============================================================================
+
+; LLVMIntPredicate - Integer comparison predicates
+define LLVMIntPredicate
+{
+    function EQ() returns int { 32 }      ; equal
+    function NE() returns int { 33 }      ; not equal
+    function UGT() returns int { 34 }     ; unsigned greater than
+    function UGE() returns int { 35 }     ; unsigned greater or equal
+    function ULT() returns int { 36 }     ; unsigned less than
+    function ULE() returns int { 37 }     ; unsigned less or equal
+    function SGT() returns int { 38 }     ; signed greater than
+    function SGE() returns int { 39 }     ; signed greater or equal
+    function SLT() returns int { 40 }     ; signed less than
+    function SLE() returns int { 41 }     ; signed less or equal
+}
+
+; LLVMRealPredicate - Floating point comparison predicates
+define LLVMRealPredicate
+{
+    function OEQ() returns int { 1 }      ; ordered and equal
+    function OGT() returns int { 2 }      ; ordered and greater than
+    function OGE() returns int { 3 }      ; ordered and greater or equal
+    function OLT() returns int { 4 }      ; ordered and less than
+    function OLE() returns int { 5 }      ; ordered and less or equal
+    function ONE() returns int { 6 }      ; ordered and not equal
+    function ORD() returns int { 7 }      ; ordered (no nans)
+    function UNO() returns int { 8 }      ; unordered (either is nan)
+    function UEQ() returns int { 9 }      ; unordered or equal
+    function UGT() returns int { 10 }     ; unordered or greater than
+    function UGE() returns int { 11 }     ; unordered or greater or equal
+    function ULT() returns int { 12 }     ; unordered or less than
+    function ULE() returns int { 13 }     ; unordered or less or equal
+    function UNE() returns int { 14 }     ; unordered or not equal
+}
+
+; LLVMLinkage - Linkage types
+define LLVMLinkage
+{
+    function External() returns int { 0 }
+    function AvailableExternally() returns int { 1 }
+    function LinkOnceAny() returns int { 2 }
+    function LinkOnceODR() returns int { 3 }
+    function WeakAny() returns int { 5 }
+    function WeakODR() returns int { 6 }
+    function Appending() returns int { 7 }
+    function Internal() returns int { 8 }
+    function Private() returns int { 9 }
+    function ExternalWeak() returns int { 12 }
+    function Common() returns int { 14 }
+}
+
+; LLVMCallConv - Calling conventions
+define LLVMCallConv
+{
+    function C() returns int { 0 }
+    function Fast() returns int { 8 }
+    function Cold() returns int { 9 }
+    function X86Stdcall() returns int { 64 }
+    function X86Fastcall() returns int { 65 }
+}
+
+; ============================================================================
+; Context Functions
+; ============================================================================
+
+; Create a new LLVM context
+function LLVMContextCreate() returns LLVMContextRef extern
+
+; Dispose of a context
+procedure LLVMContextDispose(context: LLVMContextRef) extern
+
+; Get the global context (not recommended for multi-threaded use)
+function LLVMGetGlobalContext() returns LLVMContextRef extern
+
+; ============================================================================
+; Module Functions
+; ============================================================================
+
+; Create a new module in a context
+function LLVMModuleCreateWithNameInContext(name: pointer[char], context: LLVMContextRef) returns LLVMModuleRef extern
+
+; Dispose of a module
+procedure LLVMDisposeModule(module: LLVMModuleRef) extern
+
+; Set the target triple for a module
+procedure LLVMSetTarget(module: LLVMModuleRef, triple: pointer[char]) extern
+
+; Set the data layout for a module
+procedure LLVMSetDataLayout(module: LLVMModuleRef, layout: pointer[char]) extern
+
+; Get string representation of module (caller must dispose with LLVMDisposeMessage)
+function LLVMPrintModuleToString(module: LLVMModuleRef) returns pointer[char] extern
+
+; Write module to file
+function LLVMPrintModuleToFile(module: LLVMModuleRef, filename: pointer[char], error_message: pointer[pointer[char]]) returns int extern
+
+; Write bitcode to file
+function LLVMWriteBitcodeToFile(module: LLVMModuleRef, path: pointer[char]) returns int extern
+
+; ============================================================================
+; Builder Functions
+; ============================================================================
+
+; Create a new instruction builder in a context
+function LLVMCreateBuilderInContext(context: LLVMContextRef) returns LLVMBuilderRef extern
+
+; Dispose of a builder
+procedure LLVMDisposeBuilder(builder: LLVMBuilderRef) extern
+
+; Position builder at end of a basic block
+procedure LLVMPositionBuilderAtEnd(builder: LLVMBuilderRef, block: LLVMBasicBlockRef) extern
+
+; Get the current insertion block
+function LLVMGetInsertBlock(builder: LLVMBuilderRef) returns LLVMBasicBlockRef extern
+
+; ============================================================================
+; Type Functions
+; ============================================================================
+
+; Void type
+function LLVMVoidTypeInContext(context: LLVMContextRef) returns LLVMTypeRef extern
+
+; Integer types
+function LLVMInt1TypeInContext(context: LLVMContextRef) returns LLVMTypeRef extern
+function LLVMInt8TypeInContext(context: LLVMContextRef) returns LLVMTypeRef extern
+function LLVMInt16TypeInContext(context: LLVMContextRef) returns LLVMTypeRef extern
+function LLVMInt32TypeInContext(context: LLVMContextRef) returns LLVMTypeRef extern
+function LLVMInt64TypeInContext(context: LLVMContextRef) returns LLVMTypeRef extern
+function LLVMIntTypeInContext(context: LLVMContextRef, num_bits: int) returns LLVMTypeRef extern
+
+; Floating point types
+function LLVMFloatTypeInContext(context: LLVMContextRef) returns LLVMTypeRef extern
+function LLVMDoubleTypeInContext(context: LLVMContextRef) returns LLVMTypeRef extern
+
+; Pointer type (opaque pointer in LLVM 15+)
+function LLVMPointerTypeInContext(context: LLVMContextRef, address_space: int) returns LLVMTypeRef extern
+
+; Legacy typed pointer (for older LLVM)
+function LLVMPointerType(element_type: LLVMTypeRef, address_space: int) returns LLVMTypeRef extern
+
+; Array type
+function LLVMArrayType(element_type: LLVMTypeRef, element_count: int) returns LLVMTypeRef extern
+function LLVMArrayType2(element_type: LLVMTypeRef, element_count: size_t) returns LLVMTypeRef extern
+
+; Struct types
+function LLVMStructTypeInContext(context: LLVMContextRef, element_types: pointer[LLVMTypeRef], element_count: int, packed: int) returns LLVMTypeRef extern
+function LLVMStructCreateNamed(context: LLVMContextRef, name: pointer[char]) returns LLVMTypeRef extern
+procedure LLVMStructSetBody(struct_type: LLVMTypeRef, element_types: pointer[LLVMTypeRef], element_count: int, packed: int) extern
+
+; Function type
+function LLVMFunctionType(return_type: LLVMTypeRef, param_types: pointer[LLVMTypeRef], param_count: int, is_var_arg: int) returns LLVMTypeRef extern
+
+; Type queries
+function LLVMGetTypeKind(type: LLVMTypeRef) returns int extern
+function LLVMTypeIsSized(type: LLVMTypeRef) returns int extern
+function LLVMGetElementType(type: LLVMTypeRef) returns LLVMTypeRef extern
+function LLVMGetReturnType(func_type: LLVMTypeRef) returns LLVMTypeRef extern
+function LLVMCountStructElementTypes(struct_type: LLVMTypeRef) returns int extern
+function LLVMGetStructElementTypes(struct_type: LLVMTypeRef, dest: pointer[LLVMTypeRef]) extern
+
+; ============================================================================
+; Function Functions
+; ============================================================================
+
+; Add a function to a module
+function LLVMAddFunction(module: LLVMModuleRef, name: pointer[char], function_type: LLVMTypeRef) returns LLVMValueRef extern
+
+; Get a function from a module by name
+function LLVMGetNamedFunction(module: LLVMModuleRef, name: pointer[char]) returns LLVMValueRef extern
+
+; Get function parameter
+function LLVMGetParam(func: LLVMValueRef, index: int) returns LLVMValueRef extern
+
+; Get number of parameters
+function LLVMCountParams(func: LLVMValueRef) returns int extern
+
+; Set linkage
+procedure LLVMSetLinkage(global: LLVMValueRef, linkage: int) extern
+
+; Set calling convention
+procedure LLVMSetFunctionCallConv(func: LLVMValueRef, cc: int) extern
+
+; ============================================================================
+; Basic Block Functions
+; ============================================================================
+
+; Append a basic block to a function
+function LLVMAppendBasicBlockInContext(context: LLVMContextRef, func: LLVMValueRef, name: pointer[char]) returns LLVMBasicBlockRef extern
+
+; Get the terminator instruction of a basic block
+function LLVMGetBasicBlockTerminator(block: LLVMBasicBlockRef) returns LLVMValueRef extern
+
+; ============================================================================
+; Constant Functions
+; ============================================================================
+
+; Integer constants
+function LLVMConstInt(int_type: LLVMTypeRef, value: size_t, sign_extend: int) returns LLVMValueRef extern
+function LLVMConstIntOfString(int_type: LLVMTypeRef, text: pointer[char], radix: int) returns LLVMValueRef extern
+
+; Floating point constants
+function LLVMConstReal(real_type: LLVMTypeRef, value: double) returns LLVMValueRef extern
+
+; Null pointer constant
+function LLVMConstNull(type: LLVMTypeRef) returns LLVMValueRef extern
+function LLVMConstPointerNull(type: LLVMTypeRef) returns LLVMValueRef extern
+
+; String constant
+function LLVMConstStringInContext(context: LLVMContextRef, str: pointer[char], length: int, dont_null_terminate: int) returns LLVMValueRef extern
+
+; Struct constant
+function LLVMConstStructInContext(context: LLVMContextRef, constant_vals: pointer[LLVMValueRef], count: int, packed: int) returns LLVMValueRef extern
+function LLVMConstNamedStruct(struct_type: LLVMTypeRef, constant_vals: pointer[LLVMValueRef], count: int) returns LLVMValueRef extern
+
+; Array constant
+function LLVMConstArray(element_type: LLVMTypeRef, constant_vals: pointer[LLVMValueRef], length: int) returns LLVMValueRef extern
+function LLVMConstArray2(element_type: LLVMTypeRef, constant_vals: pointer[LLVMValueRef], length: size_t) returns LLVMValueRef extern
+
+; Undefined value
+function LLVMGetUndef(type: LLVMTypeRef) returns LLVMValueRef extern
+
+; ============================================================================
+; Global Variable Functions
+; ============================================================================
+
+; Add a global variable
+function LLVMAddGlobal(module: LLVMModuleRef, type: LLVMTypeRef, name: pointer[char]) returns LLVMValueRef extern
+
+; Get a global variable by name
+function LLVMGetNamedGlobal(module: LLVMModuleRef, name: pointer[char]) returns LLVMValueRef extern
+
+; Set initializer for global
+procedure LLVMSetInitializer(global_var: LLVMValueRef, constant_val: LLVMValueRef) extern
+
+; Set global constant
+procedure LLVMSetGlobalConstant(global_var: LLVMValueRef, is_constant: int) extern
+
+; ============================================================================
+; Instruction Builder - Arithmetic
+; ============================================================================
+
+; Integer arithmetic
+function LLVMBuildAdd(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildNSWAdd(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildNUWAdd(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildSub(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildNSWSub(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildMul(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildNSWMul(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildSDiv(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildUDiv(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildSRem(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildURem(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildNeg(builder: LLVMBuilderRef, val: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
+
+; Floating point arithmetic
+function LLVMBuildFAdd(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildFSub(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildFMul(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildFDiv(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildFRem(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildFNeg(builder: LLVMBuilderRef, val: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
+
+; ============================================================================
+; Instruction Builder - Bitwise
+; ============================================================================
+
+function LLVMBuildShl(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildLShr(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildAShr(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildAnd(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildOr(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildXor(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildNot(builder: LLVMBuilderRef, val: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
+
+; ============================================================================
+; Instruction Builder - Comparison
+; ============================================================================
+
+function LLVMBuildICmp(builder: LLVMBuilderRef, op: int, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildFCmp(builder: LLVMBuilderRef, op: int, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
+
+; ============================================================================
+; Instruction Builder - Memory
+; ============================================================================
+
+function LLVMBuildAlloca(builder: LLVMBuilderRef, type: LLVMTypeRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildArrayAlloca(builder: LLVMBuilderRef, type: LLVMTypeRef, val: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildLoad2(builder: LLVMBuilderRef, type: LLVMTypeRef, ptr: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildStore(builder: LLVMBuilderRef, val: LLVMValueRef, ptr: LLVMValueRef) returns LLVMValueRef extern
+function LLVMBuildGEP2(builder: LLVMBuilderRef, type: LLVMTypeRef, ptr: LLVMValueRef, indices: pointer[LLVMValueRef], num_indices: int, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildStructGEP2(builder: LLVMBuilderRef, type: LLVMTypeRef, ptr: LLVMValueRef, idx: int, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildInBoundsGEP2(builder: LLVMBuilderRef, type: LLVMTypeRef, ptr: LLVMValueRef, indices: pointer[LLVMValueRef], num_indices: int, name: pointer[char]) returns LLVMValueRef extern
+
+; ============================================================================
+; Instruction Builder - Casts
+; ============================================================================
+
+function LLVMBuildTrunc(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildZExt(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildSExt(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildFPToUI(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildFPToSI(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildUIToFP(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildSIToFP(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildFPTrunc(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildFPExt(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildPtrToInt(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildIntToPtr(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildBitCast(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildPointerCast(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[char]) returns LLVMValueRef extern
+
+; ============================================================================
+; Instruction Builder - Control Flow
+; ============================================================================
+
+function LLVMBuildRet(builder: LLVMBuilderRef, val: LLVMValueRef) returns LLVMValueRef extern
+function LLVMBuildRetVoid(builder: LLVMBuilderRef) returns LLVMValueRef extern
+function LLVMBuildBr(builder: LLVMBuilderRef, dest: LLVMBasicBlockRef) returns LLVMValueRef extern
+function LLVMBuildCondBr(builder: LLVMBuilderRef, cond: LLVMValueRef, then_block: LLVMBasicBlockRef, else_block: LLVMBasicBlockRef) returns LLVMValueRef extern
+function LLVMBuildSwitch(builder: LLVMBuilderRef, val: LLVMValueRef, else_block: LLVMBasicBlockRef, num_cases: int) returns LLVMValueRef extern
+procedure LLVMAddCase(switch_val: LLVMValueRef, on_val: LLVMValueRef, dest: LLVMBasicBlockRef) extern
+function LLVMBuildUnreachable(builder: LLVMBuilderRef) returns LLVMValueRef extern
+
+; ============================================================================
+; Instruction Builder - Function Calls
+; ============================================================================
+
+function LLVMBuildCall2(builder: LLVMBuilderRef, func_type: LLVMTypeRef, func: LLVMValueRef, args: pointer[LLVMValueRef], num_args: int, name: pointer[char]) returns LLVMValueRef extern
+
+; ============================================================================
+; Instruction Builder - Misc
+; ============================================================================
+
+function LLVMBuildPhi(builder: LLVMBuilderRef, type: LLVMTypeRef, name: pointer[char]) returns LLVMValueRef extern
+procedure LLVMAddIncoming(phi: LLVMValueRef, incoming_values: pointer[LLVMValueRef], incoming_blocks: pointer[LLVMBasicBlockRef], count: int) extern
+function LLVMBuildSelect(builder: LLVMBuilderRef, cond: LLVMValueRef, then_val: LLVMValueRef, else_val: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildExtractValue(builder: LLVMBuilderRef, agg_val: LLVMValueRef, index: int, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildInsertValue(builder: LLVMBuilderRef, agg_val: LLVMValueRef, elt_val: LLVMValueRef, index: int, name: pointer[char]) returns LLVMValueRef extern
+
+; ============================================================================
+; Value Functions
+; ============================================================================
+
+; Get/set value name
+function LLVMGetValueName2(val: LLVMValueRef, length: pointer[size_t]) returns pointer[char] extern
+procedure LLVMSetValueName2(val: LLVMValueRef, name: pointer[char], name_len: size_t) extern
+
+; Get type of value
+function LLVMTypeOf(val: LLVMValueRef) returns LLVMTypeRef extern
+
+; Check if value is null
+function LLVMIsNull(val: LLVMValueRef) returns int extern
+
+; ============================================================================
+; Target Functions
+; ============================================================================
+
+; Initialize targets (call before using target machine)
+procedure LLVMInitializeAllTargetInfos() extern
+procedure LLVMInitializeAllTargets() extern
+procedure LLVMInitializeAllTargetMCs() extern
+procedure LLVMInitializeAllAsmParsers() extern
+procedure LLVMInitializeAllAsmPrinters() extern
+
+; Native target initialization
+procedure LLVMInitializeNativeTarget() extern
+procedure LLVMInitializeNativeAsmParser() extern
+procedure LLVMInitializeNativeAsmPrinter() extern
+
+; Get default target triple for the host
+function LLVMGetDefaultTargetTriple() returns pointer[char] extern
+
+; Get target from triple
+function LLVMGetTargetFromTriple(triple: pointer[char], target: pointer[LLVMTargetRef], error_message: pointer[pointer[char]]) returns int extern
+
+; Create target machine
+function LLVMCreateTargetMachine(target: LLVMTargetRef, triple: pointer[char], cpu: pointer[char], features: pointer[char], level: int, reloc: int, code_model: int) returns LLVMTargetMachineRef extern
+
+; Dispose target machine
+procedure LLVMDisposeTargetMachine(machine: LLVMTargetMachineRef) extern
+
+; Emit to file
+function LLVMTargetMachineEmitToFile(machine: LLVMTargetMachineRef, module: LLVMModuleRef, filename: pointer[char], codegen: int, error_message: pointer[pointer[char]]) returns int extern
+
+; ============================================================================
+; Memory Functions
+; ============================================================================
+
+; Free message allocated by LLVM
+procedure LLVMDisposeMessage(message: pointer[char]) extern
+
+; ============================================================================
+; Analysis/Verification
+; ============================================================================
+
+; Verify module (0 = success)
+function LLVMVerifyModule(module: LLVMModuleRef, action: int, out_message: pointer[pointer[char]]) returns int extern
+
+; Verify function (0 = success)
+function LLVMVerifyFunction(func: LLVMValueRef, action: int) returns int extern
+
+; ============================================================================
+; Pass Manager
+; ============================================================================
+
+; Create pass managers
+function LLVMCreatePassManager() returns LLVMPassManagerRef extern
+function LLVMCreateFunctionPassManagerForModule(module: LLVMModuleRef) returns LLVMPassManagerRef extern
+
+; Dispose pass manager
+procedure LLVMDisposePassManager(pm: LLVMPassManagerRef) extern
+
+; Run passes
+function LLVMRunPassManager(pm: LLVMPassManagerRef, module: LLVMModuleRef) returns int extern
+function LLVMInitializeFunctionPassManager(fpm: LLVMPassManagerRef) returns int extern
+function LLVMRunFunctionPassManager(fpm: LLVMPassManagerRef, func: LLVMValueRef) returns int extern
+function LLVMFinalizeFunctionPassManager(fpm: LLVMPassManagerRef) returns int extern
+
