@@ -1,3 +1,5 @@
+use scaly.memory.runtime
+
 define Array[T]
 (
     length: size_t
@@ -56,7 +58,7 @@ define Array[T]
         if new_length > vector.length
         {
             var own_page Page.get(this as pointer[void])
-            let data (T*)own_page.allocate(length * size, alignof T)
+            let data own_page.allocate(length * size, alignof T) as pointer[T]
             let bytes_to_copy vector.length * size
             if vector.length > 0
                 memcpy(data, vector.data, bytes_to_copy)

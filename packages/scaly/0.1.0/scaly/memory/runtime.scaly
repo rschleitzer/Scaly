@@ -9,3 +9,14 @@ function exit(code: int) extern
 ; I/O and string functions
 function strlen(s: pointer[const_char]) returns size_t extern
 function write(fd: int, buf: pointer[void], count: size_t) returns size_t extern
+function memset(dest: pointer[void], value: int, count: size_t) returns pointer[void] extern
+function memcpy(dest: pointer[void], src: pointer[void], count: size_t) returns pointer[void] extern
+
+; File I/O functions (stdio.h)
+function fopen(filename: pointer[const_char], mode: pointer[const_char]) returns pointer[void] extern
+function fclose(stream: pointer[void]) returns int extern
+function fread(ptr: pointer[void], size: size_t, count: size_t, stream: pointer[void]) returns size_t extern
+function fwrite(ptr: pointer[void], size: size_t, count: size_t, stream: pointer[void]) returns size_t extern
+function fseek(stream: pointer[void], offset: int, origin: int) returns int extern
+function ftell(stream: pointer[void]) returns int extern
+function rewind(stream: pointer[void]) extern

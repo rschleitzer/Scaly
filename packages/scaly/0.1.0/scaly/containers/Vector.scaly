@@ -1,4 +1,5 @@
 use scaly.memory.Page
+use scaly.memory.runtime
 
 define VectorIterator[T]
 (
@@ -48,7 +49,7 @@ define Vector[T]
         set length: len
         if len > 0
         {
-            set data: (T*)rp.allocate(len * sizeof T, alignof T)
+            set data: rp.allocate(len * sizeof T, alignof T) as pointer[T]
             memset(data, 0, len * sizeof T)
         }
         else
@@ -60,7 +61,7 @@ define Vector[T]
         set length: len
         if len > 0
         {
-            set data: (T*)rp.allocate(len * sizeof T, alignof T)
+            set data: rp.allocate(len * sizeof T, alignof T) as pointer[T]
             memcpy(data, arr, len * sizeof T)
         }
         else
@@ -72,7 +73,7 @@ define Vector[T]
         set length: other.length
         if length > 0
         {
-            set data: (T*)rp.allocate(length * sizeof T, alignof T)
+            set data: rp.allocate(length * sizeof T, alignof T) as pointer[T]
             memcpy(data, other.data, length * sizeof T)
         }
         else
@@ -84,7 +85,7 @@ define Vector[T]
         set length: array.length
         if length > 0
         {
-            set data: (T*)rp.allocate(length * sizeof T, alignof T)
+            set data: rp.allocate(length * sizeof T, alignof T) as pointer[T]
             let arr_vector array.vector
             memcpy(data, arr_vector.data, length * sizeof T)
         }
@@ -97,7 +98,7 @@ define Vector[T]
         set length: list.count()
         if length > 0
         {
-            set data: (T*) rp.allocate(length * sizeof T, alignof T)
+            set data: rp.allocate(length * sizeof T, alignof T) as pointer[T]
             var list_iterator list.get_iterator()
             var i: size_t length
             while let item list_iterator.next()
