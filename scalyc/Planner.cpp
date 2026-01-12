@@ -8484,69 +8484,74 @@ llvm::Expected<PlannedMatrix> Planner::planMatrix(const Matrix &Mat) {
 // ============================================================================
 
 llvm::Expected<PlannedStatement> Planner::planStatement(const Statement &Stmt) {
-    return std::visit([this](const auto &S) -> llvm::Expected<PlannedStatement> {
-        using T = std::decay_t<decltype(S)>;
+    // NOTE: Using explicit std::get_if checks instead of std::visit
+    // to reduce stack frame size during deep recursion.
+    // std::visit creates a single function with all branch code, causing large frames.
 
-        if constexpr (std::is_same_v<T, Action>) {
-            auto Planned = planAction(S);
-            if (!Planned) {
-                return Planned.takeError();
-            }
-            return PlannedStatement(std::move(*Planned));
+    if (auto* S = std::get_if<Action>(&Stmt)) {
+        auto Planned = planAction(*S);
+        if (!Planned) {
+            return Planned.takeError();
         }
-        else if constexpr (std::is_same_v<T, Binding>) {
-            auto Planned = planBinding(S);
-            if (!Planned) {
-                return Planned.takeError();
-            }
-            return PlannedStatement(std::move(*Planned));
+        return PlannedStatement(std::move(*Planned));
+    }
+
+    if (auto* S = std::get_if<Binding>(&Stmt)) {
+        auto Planned = planBinding(*S);
+        if (!Planned) {
+            return Planned.takeError();
         }
-        else if constexpr (std::is_same_v<T, Break>) {
-            PlannedBreak PB;
-            PB.Loc = S.Loc;
-            if (!S.Result.empty()) {
-                auto PlannedResult = planOperands(S.Result);
-                if (!PlannedResult) {
-                    return PlannedResult.takeError();
-                }
-                PB.Result = std::move(*PlannedResult);
-            }
-            return PlannedStatement(std::move(PB));
-        }
-        else if constexpr (std::is_same_v<T, Continue>) {
-            return PlannedStatement(PlannedContinue{S.Loc});
-        }
-        else if constexpr (std::is_same_v<T, Return>) {
-            PlannedReturn PR;
-            PR.Loc = S.Loc;
-            if (!S.Result.empty()) {
-                auto PlannedResult = planOperands(S.Result);
-                if (!PlannedResult) {
-                    return PlannedResult.takeError();
-                }
-                // Collapse operand sequence to create PlannedCall for operators
-                auto CollapsedResult = collapseOperandSequence(std::move(*PlannedResult));
-                if (!CollapsedResult) {
-                    return CollapsedResult.takeError();
-                }
-                PR.Result.push_back(std::move(*CollapsedResult));
-            }
-            return PlannedStatement(std::move(PR));
-        }
-        else if constexpr (std::is_same_v<T, Throw>) {
-            PlannedThrow PT;
-            PT.Loc = S.Loc;
-            auto PlannedResult = planOperands(S.Result);
+        return PlannedStatement(std::move(*Planned));
+    }
+
+    if (auto* S = std::get_if<Break>(&Stmt)) {
+        PlannedBreak PB;
+        PB.Loc = S->Loc;
+        if (!S->Result.empty()) {
+            auto PlannedResult = planOperands(S->Result);
             if (!PlannedResult) {
                 return PlannedResult.takeError();
             }
-            PT.Result = std::move(*PlannedResult);
-            return PlannedStatement(std::move(PT));
+            PB.Result = std::move(*PlannedResult);
         }
-        else {
-            return PlannedStatement(PlannedAction{});
+        return PlannedStatement(std::move(PB));
+    }
+
+    if (auto* S = std::get_if<Continue>(&Stmt)) {
+        return PlannedStatement(PlannedContinue{S->Loc});
+    }
+
+    if (auto* S = std::get_if<Return>(&Stmt)) {
+        PlannedReturn PR;
+        PR.Loc = S->Loc;
+        if (!S->Result.empty()) {
+            auto PlannedResult = planOperands(S->Result);
+            if (!PlannedResult) {
+                return PlannedResult.takeError();
+            }
+            // Collapse operand sequence to create PlannedCall for operators
+            auto CollapsedResult = collapseOperandSequence(std::move(*PlannedResult));
+            if (!CollapsedResult) {
+                return CollapsedResult.takeError();
+            }
+            PR.Result.push_back(std::move(*CollapsedResult));
         }
-    }, Stmt);
+        return PlannedStatement(std::move(PR));
+    }
+
+    if (auto* S = std::get_if<Throw>(&Stmt)) {
+        PlannedThrow PT;
+        PT.Loc = S->Loc;
+        auto PlannedResult = planOperands(S->Result);
+        if (!PlannedResult) {
+            return PlannedResult.takeError();
+        }
+        PT.Result = std::move(*PlannedResult);
+        return PlannedStatement(std::move(PT));
+    }
+
+    // Fallback for unknown statement types
+    return PlannedStatement(PlannedAction{});
 }
 
 llvm::Expected<std::vector<PlannedStatement>> Planner::planStatements(
@@ -8564,6 +8569,151 @@ llvm::Expected<std::vector<PlannedStatement>> Planner::planStatements(
     }
 
     return Result;
+}
+
+// ============================================================================
+// Iterative Processing Implementation
+// ============================================================================
+
+void Planner::pushWork(WorkItem Item) {
+    WorkQueue.push_back(std::move(Item));
+}
+
+llvm::Expected<std::vector<PlannedStatement>> Planner::planStatementsIterative(
+    const std::vector<Statement>& Stmts) {
+
+    // Result storage on heap to avoid stack growth
+    auto ResultPtr = std::make_unique<std::vector<PlannedStatement>>();
+    ResultPtr->reserve(Stmts.size());
+
+    // Process statements one at a time, using the work queue for nested structures
+    for (size_t i = 0; i < Stmts.size(); ++i) {
+        const Statement& Stmt = Stmts[i];
+
+        // Plan this statement - may add items to work queue for nested blocks
+        auto Planned = planStatement(Stmt);
+        if (!Planned) {
+            return Planned.takeError();
+        }
+        ResultPtr->push_back(std::move(*Planned));
+
+        // Process any queued work before continuing to next statement
+        // This handles nested blocks, if/else chains, etc. iteratively
+        auto QueueResult = processWorkQueue();
+        if (!QueueResult) {
+            return QueueResult.takeError();
+        }
+    }
+
+    return std::move(*ResultPtr);
+}
+
+llvm::Expected<bool> Planner::processWorkQueue() {
+    // Process work items until queue is empty
+    // Items are processed in LIFO order (stack) for proper nesting
+    while (!WorkQueue.empty()) {
+        WorkItem Item = std::move(WorkQueue.back());
+        WorkQueue.pop_back();
+
+        switch (Item.ItemKind) {
+        case WorkItem::Kind::PopScope:
+            popScope();
+            break;
+
+        case WorkItem::Kind::FinalizeBlock:
+            // Block statements have been planned, finalize the block
+            if (Item.BlockResult) {
+                // Capture scope info before popping
+                if (!ScopeInfoStack.empty()) {
+                    Item.BlockResult->NeedsLocalPageCleanup =
+                        ScopeInfoStack.back().HasLocalAllocations;
+                }
+            }
+            // Note: PopScope should be pushed before FinalizeBlock
+            break;
+
+        case WorkItem::Kind::PlanBlock: {
+            // Plan a block's statements
+            if (!Item.Blk || !Item.BlockResult) break;
+
+            pushScope();
+
+            // Push PopScope to run after statements are planned
+            WorkItem PopItem;
+            PopItem.ItemKind = WorkItem::Kind::PopScope;
+            pushWork(PopItem);
+
+            // Plan statements directly (they will queue their nested work)
+            auto PlannedStmts = planStatements(Item.Blk->Statements);
+            if (!PlannedStmts) {
+                popScope();  // Clean up on error
+                return PlannedStmts.takeError();
+            }
+            Item.BlockResult->Statements = std::move(*PlannedStmts);
+
+            // Capture cleanup flag
+            if (!ScopeInfoStack.empty()) {
+                Item.BlockResult->NeedsLocalPageCleanup =
+                    ScopeInfoStack.back().HasLocalAllocations;
+            }
+            break;
+        }
+
+        case WorkItem::Kind::PlanIfConsequent: {
+            if (!Item.IfExpr || !Item.IfResult) break;
+            if (Item.IfExpr->Consequent) {
+                auto Planned = planStatement(*Item.IfExpr->Consequent);
+                if (!Planned) {
+                    return Planned.takeError();
+                }
+                Item.IfResult->Consequent =
+                    std::make_unique<PlannedStatement>(std::move(*Planned));
+            }
+            break;
+        }
+
+        case WorkItem::Kind::PlanIfAlternative: {
+            if (!Item.IfExpr || !Item.IfResult) break;
+            if (Item.IfExpr->Alternative) {
+                auto Planned = planStatement(*Item.IfExpr->Alternative);
+                if (!Planned) {
+                    return Planned.takeError();
+                }
+                Item.IfResult->Alternative =
+                    std::make_unique<PlannedStatement>(std::move(*Planned));
+            }
+            break;
+        }
+
+        case WorkItem::Kind::PlanWhileBody: {
+            if (!Item.WhileExpr || !Item.WhileResult) break;
+            // While body is an Action, plan it directly
+            auto Planned = planAction(Item.WhileExpr->Body);
+            if (!Planned) {
+                return Planned.takeError();
+            }
+            Item.WhileResult->Body = std::move(*Planned);
+            break;
+        }
+
+        case WorkItem::Kind::PlanForBody: {
+            if (!Item.ForExpr || !Item.ForResult) break;
+            // For body is an Action, plan it directly
+            auto Planned = planAction(Item.ForExpr->Body);
+            if (!Planned) {
+                return Planned.takeError();
+            }
+            Item.ForResult->Body = std::move(*Planned);
+            break;
+        }
+
+        default:
+            // Other work item types not yet implemented
+            break;
+        }
+    }
+
+    return true;
 }
 
 llvm::Expected<PlannedAction> Planner::planAction(const Action &Act) {
@@ -8769,21 +8919,35 @@ llvm::Expected<PlannedBlock> Planner::planBlock(const Block &Blk) {
 // Control Flow Planning
 // ============================================================================
 
+// Helper to check if a Statement is an Action containing a single If expression
+static const If* extractIfFromStatement(const Statement& Stmt) {
+    const Action* Act = std::get_if<Action>(&Stmt);
+    if (!Act) return nullptr;
+
+    // Check if the action's source has a single operand that is an If expression
+    if (Act->Source.size() == 1 && Act->Target.empty()) {
+        const If* IfExpr = std::get_if<If>(&Act->Source[0].Expr);
+        return IfExpr;
+    }
+    return nullptr;
+}
+
 llvm::Expected<PlannedIf> Planner::planIf(const If &IfExpr) {
     PlannedIf Result;
     Result.Loc = IfExpr.Loc;
 
+    // Plan condition
     auto PlannedCond = planOperands(IfExpr.Condition);
     if (!PlannedCond) {
         return PlannedCond.takeError();
     }
-    // Collapse the operand sequence (handles operator chains like "i = 3")
     auto CollapsedCond = collapseOperandSequence(std::move(*PlannedCond));
     if (!CollapsedCond) {
         return CollapsedCond.takeError();
     }
     Result.Condition.push_back(std::move(*CollapsedCond));
 
+    // Plan property if present
     if (IfExpr.Prop) {
         auto PlannedProp = planProperty(*IfExpr.Prop);
         if (!PlannedProp) {
@@ -8792,6 +8956,7 @@ llvm::Expected<PlannedIf> Planner::planIf(const If &IfExpr) {
         Result.Prop = std::make_unique<PlannedProperty>(std::move(*PlannedProp));
     }
 
+    // Plan consequent
     if (IfExpr.Consequent) {
         auto PlannedCons = planStatement(*IfExpr.Consequent);
         if (!PlannedCons) {
@@ -8800,12 +8965,36 @@ llvm::Expected<PlannedIf> Planner::planIf(const If &IfExpr) {
         Result.Consequent = std::make_unique<PlannedStatement>(std::move(*PlannedCons));
     }
 
+    // Handle else-if pattern: when alternative is an Action containing just an If,
+    // directly call planIf to reduce the recursion depth by ~5 stack frames per else-if.
+    // Normal recursion: planIf → planStatement → planAction → planOperands → planOperand → planExpression → planIf
+    // Optimized: planIf → planIf (direct call)
     if (IfExpr.Alternative) {
-        auto PlannedAlt = planStatement(*IfExpr.Alternative);
-        if (!PlannedAlt) {
-            return PlannedAlt.takeError();
+        const If* NextIf = extractIfFromStatement(*IfExpr.Alternative);
+        if (NextIf) {
+            // Directly plan the nested If without going through intermediate functions
+            auto PlannedNextIf = planIf(*NextIf);
+            if (!PlannedNextIf) {
+                return PlannedNextIf.takeError();
+            }
+
+            // Wrap the PlannedIf in the same structure as normal processing would:
+            // Statement(Action(Operand(Expression(If))))
+            PlannedAction WrapperAction;
+            PlannedOperand IfOperand;
+            IfOperand.Loc = NextIf->Loc;
+            IfOperand.Expr = std::move(*PlannedNextIf);
+            IfOperand.ResultType = PlannedType{};  // If doesn't have a result type
+            WrapperAction.Source.push_back(std::move(IfOperand));
+            Result.Alternative = std::make_unique<PlannedStatement>(std::move(WrapperAction));
+        } else {
+            // Not an else-if, plan normally
+            auto PlannedAlt = planStatement(*IfExpr.Alternative);
+            if (!PlannedAlt) {
+                return PlannedAlt.takeError();
+            }
+            Result.Alternative = std::make_unique<PlannedStatement>(std::move(*PlannedAlt));
         }
-        Result.Alternative = std::make_unique<PlannedStatement>(std::move(*PlannedAlt));
     }
 
     return Result;
