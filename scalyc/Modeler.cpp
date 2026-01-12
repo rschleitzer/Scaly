@@ -1259,21 +1259,19 @@ llvm::Expected<Function> Modeler::buildFunction(size_t Start, size_t End,
                 Input = std::move(*Params);
             }
 
-            // If function# was used, extract the page parameter name from first param
+            // If function# was used, handle page parameter
+            // Two cases:
+            // 1. function#(page, other_params...) - first param has no type, it's explicit page name
+            // 2. function#(param: Type, ...) - first param has type, use implicit "rp" as page name
             if (T.routine.lifetime && std::holds_alternative<CallSyntax>(T.routine.lifetime->Value)) {
-                if (Input.empty()) {
-                    return makeInvalidInitLifetimeError(File,
-                        Span{Start, End},
-                        "function# requires a page parameter as first argument");
+                if (!Input.empty() && Input[0].Name && !Input[0].ItemType) {
+                    // First parameter has name but no type - it's the explicit page parameter
+                    PageParameter = *Input[0].Name;
+                    Input.erase(Input.begin());
+                } else {
+                    // No explicit page parameter - use implicit "rp"
+                    PageParameter = "rp";
                 }
-                // First parameter is the page name - extract and remove from Input
-                if (!Input[0].Name) {
-                    return makeInvalidInitLifetimeError(File,
-                        Span{Start, End},
-                        "function# page parameter must have a name");
-                }
-                PageParameter = *Input[0].Name;
-                Input.erase(Input.begin());
             }
 
             std::unique_ptr<Type> Returns;
