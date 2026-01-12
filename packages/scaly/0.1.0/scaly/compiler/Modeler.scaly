@@ -1,8 +1,12 @@
 ; Modeler.scaly - Syntax to semantic model transformation
-; Ported from C++ Modeler.cpp
+; Ported from retired proto-Scaly Modeler.scaly
+
+package scaly 0.1.0
 
 use scaly.containers.String
 use scaly.containers.Vector
+use scaly.containers.HashMap
+use scaly.containers.HashMapBuilder
 
 ; Model types
 use scaly.compiler.Model.Span
@@ -14,17 +18,16 @@ use scaly.compiler.Model.FloatingPointConstant
 use scaly.compiler.Model.StringConstant
 use scaly.compiler.Model.CharacterConstant
 use scaly.compiler.Model.FragmentConstant
-use scaly.compiler.Model.NullConstant
-use scaly.compiler.Model.UnspecifiedLifetime
-use scaly.compiler.Model.CallLifetime
-use scaly.compiler.Model.LocalLifetime
-use scaly.compiler.Model.ReferenceLifetime
-use scaly.compiler.Model.ThrownLifetime
+use scaly.compiler.Model.Unspecified
+use scaly.compiler.Model.Call
+use scaly.compiler.Model.Local
+use scaly.compiler.Model.Reference
+use scaly.compiler.Model.Thrown
 use scaly.compiler.Model.Lifetime
 use scaly.compiler.Model.Type
 use scaly.compiler.Model.Operand
 use scaly.compiler.Model.Component
-use scaly.compiler.Model.ObjectTuple
+use scaly.compiler.Model.Tuple
 use scaly.compiler.Model.Matrix
 use scaly.compiler.Model.Block
 use scaly.compiler.Model.Expression
@@ -46,34 +49,31 @@ use scaly.compiler.Model.For
 use scaly.compiler.Model.While
 use scaly.compiler.Model.Try
 use scaly.compiler.Model.SizeOf
-use scaly.compiler.Model.AlignOf
 use scaly.compiler.Model.Is
-use scaly.compiler.Model.As
 use scaly.compiler.Model.Property
 use scaly.compiler.Model.Attribute
 use scaly.compiler.Model.Model
-use scaly.compiler.Model.ModelVariable
 use scaly.compiler.Model.GenericParameter
 use scaly.compiler.Model.Use
-use scaly.compiler.Model.ExternImpl
-use scaly.compiler.Model.InstructionImpl
-use scaly.compiler.Model.IntrinsicImpl
+use scaly.compiler.Model.Extern
+use scaly.compiler.Model.Instruction
+use scaly.compiler.Model.Intrinsic
 use scaly.compiler.Model.Implementation
 use scaly.compiler.Model.Function
 use scaly.compiler.Model.Initializer
 use scaly.compiler.Model.DeInitializer
 use scaly.compiler.Model.Operator
 use scaly.compiler.Model.Variant
-use scaly.compiler.Model.StructMember
 use scaly.compiler.Model.Structure
 use scaly.compiler.Model.Union
 use scaly.compiler.Model.Namespace
-use scaly.compiler.Model.Definition
 use scaly.compiler.Model.Global
+use scaly.compiler.Model.Definition
 use scaly.compiler.Model.Concept
 use scaly.compiler.Model.Member
 use scaly.compiler.Model.Module
 use scaly.compiler.Model.Program
+use scaly.compiler.Model.Nameable
 
 ; Syntax types
 use scaly.compiler.Syntax.Literal
@@ -109,8 +109,10 @@ use scaly.compiler.Syntax.ReturnSyntax
 use scaly.compiler.Syntax.ThrowSyntax
 use scaly.compiler.Syntax.BindingSyntax
 use scaly.compiler.Syntax.BindingAnnotationSyntax
+use scaly.compiler.Syntax.BindingSpecSyntax
 use scaly.compiler.Syntax.ObjectSyntax
 use scaly.compiler.Syntax.ComponentSyntax
+use scaly.compiler.Syntax.ValueSyntax
 use scaly.compiler.Syntax.VectorSyntax
 use scaly.compiler.Syntax.ElementSyntax
 use scaly.compiler.Syntax.BlockSyntax
@@ -128,11 +130,10 @@ use scaly.compiler.Syntax.TrySyntax
 use scaly.compiler.Syntax.ConditionSyntax
 use scaly.compiler.Syntax.ActionSyntax
 use scaly.compiler.Syntax.SizeOfSyntax
-use scaly.compiler.Syntax.AlignOfSyntax
 use scaly.compiler.Syntax.IsSyntax
-use scaly.compiler.Syntax.AsSyntax
 use scaly.compiler.Syntax.ItemSyntax
 use scaly.compiler.Syntax.PropertySyntax
+use scaly.compiler.Syntax.PartSyntax
 use scaly.compiler.Syntax.FieldSyntax
 use scaly.compiler.Syntax.AttributeSyntax
 use scaly.compiler.Syntax.ModelSyntax
@@ -170,35 +171,18 @@ use scaly.compiler.Syntax.SymbolSyntax
 use scaly.compiler.Syntax.DeclarationSyntax
 use scaly.compiler.Syntax.MemberSyntax
 use scaly.compiler.Syntax.ConstituentSyntax
+use scaly.compiler.Syntax.ModuleSyntax
 use scaly.compiler.Syntax.FileSyntax
 use scaly.compiler.Syntax.ProgramSyntax
-
-; ============================================================================
-; Modeler state
-; ============================================================================
-
-define Modeler
-(
-    file: String
-)
-{
-    init(file_name: String)
-    {
-        set file: file_name
-    }
-}
+use scaly.compiler.Syntax.ExtensionSyntax
 
 ; ============================================================================
 ; Literal/Constant handling
 ; ============================================================================
 
-function make_literal_span(syntax: LiteralSyntax) returns Span
-    Span(syntax.start, syntax.end)
-
 function handle_literal(syntax: LiteralSyntax) returns Constant
 {
-    let loc make_literal_span(syntax)
-
+    let loc Span(syntax.start, syntax.end)
     choose syntax.literal
         when str: StringLiteral
             Constant.String(StringConstant(loc, str.value))
@@ -211,11 +195,11 @@ function handle_literal(syntax: LiteralSyntax) returns Constant
         when bool_lit: BooleanLiteral
             Constant.Boolean(BooleanConstant(loc, bool_lit.value))
         when float_lit: FloatingPointLiteral
-            Constant.Float(FloatingPointConstant(loc, 0.0))
+            Constant.FloatingPoint(FloatingPointConstant(loc, 0.0))
         when hex_lit: HexLiteral
             Constant.Hex(HexConstant(loc, 0))
         else
-            Constant.Null(NullConstant(loc))
+            Constant.Integer(IntegerConstant(loc, 0))
 }
 
 ; ============================================================================
@@ -225,31 +209,53 @@ function handle_literal(syntax: LiteralSyntax) returns Constant
 function handle_lifetime(syntax: pointer[LifetimeSyntax]) returns Lifetime
 {
     if syntax = null
-        return Lifetime.Unspecified(UnspecifiedLifetime())
+        return Lifetime.Unspecified(Unspecified())
 
-    let dummy_span Span(0, 0)
     let lifetime_syntax (*syntax)
     choose lifetime_syntax
         when call: CallSyntax
-            Lifetime.Call(CallLifetime(dummy_span))
+            Lifetime.Call(Call(Span(call.start, call.end)))
         when local: LocalSyntax
-            Lifetime.Local(LocalLifetime(dummy_span))
+            Lifetime.Local(Local(Span(local.start, local.end)))
         when ref: ReferenceSyntax
-            Lifetime.Reference(ReferenceLifetime(dummy_span, ref.location))
+            Lifetime.Reference(Reference(Span(ref.start, ref.end), ref.location))
         when thrown: ThrownSyntax
-            Lifetime.Thrown(ThrownLifetime(dummy_span))
+            Lifetime.Thrown(Thrown(Span(thrown.start, thrown.end)))
         else
-            Lifetime.Unspecified(UnspecifiedLifetime())
+            Lifetime.Unspecified(Unspecified())
 }
 
 ; ============================================================================
 ; Type handling
 ; ============================================================================
 
-function handle_type#(rp, syntax: TypeSyntax) returns pointer[Type]
+function handle_type#(syntax: TypeSyntax) returns pointer[Type]
 {
-    var path Vector[String]#(1)
+    ; Count extensions to determine path size
+    var ext_count: size_t 0
+    if syntax.name.extensions <> null
+        set ext_count: (*syntax.name.extensions).length
+
+    ; Create path with correct size
+    var path Vector[String]#(1 + ext_count)
     path.put(0, syntax.name.name)
+
+    ; Add extensions
+    if syntax.name.extensions <> null
+    {
+        let exts (*syntax.name.extensions)
+        var i: size_t 0
+        while i < exts.length
+        {
+            let ext_ptr exts.get(i)
+            if ext_ptr <> null
+            {
+                let ext (*ext_ptr)
+                path.put(1 + i, ext.name)
+            }
+            set i: i + 1
+        }
+    }
 
     var generics: pointer[Vector[Type]] null
     if syntax.generics <> null
@@ -277,20 +283,23 @@ function handle_type#(rp, syntax: TypeSyntax) returns pointer[Type]
     }
 
     let life handle_lifetime(syntax.lifetime)
+    Type#(Span(syntax.start, syntax.end), path, generics, life)
+}
 
-    Type^rp(
-        Span(syntax.start, syntax.end),
-        &path,
-        generics,
-        life
-    )
+function handle_binding_annotation#(annotation: BindingAnnotationSyntax) returns pointer[Type]
+{
+    choose annotation.spec
+        when type_syntax: TypeSyntax
+            handle_type#(type_syntax)
+        else
+            null
 }
 
 ; ============================================================================
 ; Object/Tuple handling
 ; ============================================================================
 
-function handle_object#(rp, syntax: ObjectSyntax) returns ObjectTuple
+function handle_object#(syntax: ObjectSyntax) returns Tuple
 {
     var count: size_t 0
     if syntax.components <> null
@@ -313,29 +322,43 @@ function handle_object#(rp, syntax: ObjectSyntax) returns ObjectTuple
             set i: i + 1
         }
     }
-    ObjectTuple(Span(syntax.start, syntax.end), &components)
+    Tuple(Span(syntax.start, syntax.end), components)
 }
 
-function handle_component#(rp, syntax: ComponentSyntax) returns Component
+function handle_component#(syntax: ComponentSyntax) returns Component
 {
     var name: pointer[String] null
-    var value: pointer[Vector[Operand]] null
+    var operands handle_operands#(syntax.operands)
 
     if syntax.value <> null
     {
         let val_syntax (*syntax.value)
-        set value: handle_operands#(val_syntax.value)
-    }
-    else
-    {
-        set value: handle_operands#(syntax.operands)
+        set operands: handle_operands#(val_syntax.value)
+
+        ; Extract name from operands if present
+        if syntax.operands <> null
+        {
+            let name_ops (*syntax.operands)
+            if name_ops.length > 0
+            {
+                let name_op_ptr name_ops.get(0)
+                if name_op_ptr <> null
+                {
+                    let name_op (*name_op_ptr)
+                    choose name_op.expression
+                        when type_expr: TypeSyntax
+                            set name: String#(type_expr.name.name)
+                        else {}
+                }
+            }
+        }
     }
 
     Component(
         Span(syntax.start, syntax.end),
         name,
-        value,
-        null
+        operands,
+        Vector[Attribute]#(0)
     )
 }
 
@@ -343,7 +366,7 @@ function handle_component#(rp, syntax: ComponentSyntax) returns Component
 ; Vector/Matrix handling
 ; ============================================================================
 
-function handle_vector#(rp, syntax: VectorSyntax) returns Matrix
+function handle_vector#(syntax: VectorSyntax) returns Matrix
 {
     var count: size_t 0
     if syntax.elements <> null
@@ -360,22 +383,20 @@ function handle_vector#(rp, syntax: VectorSyntax) returns Matrix
             if elem_ptr <> null
             {
                 let element (*elem_ptr)
-                let operands handle_operands#(element.operation)
-                if operands <> null
-                    operations.put(i, *operands)
+                let ops handle_operands#(element.operation)
+                operations.put(i, ops)
             }
             set i: i + 1
         }
     }
-    let life handle_lifetime(syntax.lifetime)
-    Matrix(Span(syntax.start, syntax.end), &operations, life)
+    Matrix(Span(syntax.start, syntax.end), operations)
 }
 
 ; ============================================================================
 ; Block handling
 ; ============================================================================
 
-function handle_block#(rp, syntax: BlockSyntax) returns Block
+function handle_block#(syntax: BlockSyntax) returns Block
 {
     let statements handle_statements#(syntax.statements)
     Block(Span(syntax.start, syntax.end), statements)
@@ -385,24 +406,47 @@ function handle_block#(rp, syntax: BlockSyntax) returns Block
 ; Expression handling
 ; ============================================================================
 
-function handle_expression#(rp, syntax: ExpressionSyntax) returns Expression
+function handle_expression#(syntax: ExpressionSyntax) returns Expression
 {
     choose syntax
         when lit: LiteralSyntax
             Expression.Constant(handle_literal(lit))
-        when name: NameSyntax
+        when name_syntax: NameSyntax
         {
-            var path Vector[String]#(1)
-            path.put(0, name.name)
+            ; Convert NameSyntax to Type expression
+            ; Count extensions to determine path size
+            var ext_count: size_t 0
+            if name_syntax.extensions <> null
+                set ext_count: (*name_syntax.extensions).length
+
+            var path Vector[String]#(1 + ext_count)
+            path.put(0, name_syntax.name)
+
+            if name_syntax.extensions <> null
+            {
+                let exts (*name_syntax.extensions)
+                var i: size_t 0
+                while i < exts.length
+                {
+                    let ext_ptr exts.get(i)
+                    if ext_ptr <> null
+                    {
+                        let ext (*ext_ptr)
+                        path.put(1 + i, ext.name)
+                    }
+                    set i: i + 1
+                }
+            }
+
             Expression.Type(Type(
-                Span(name.start, name.end),
-                &path,
+                Span(name_syntax.start, name_syntax.end),
+                path,
                 null,
-                Lifetime.Unspecified(UnspecifiedLifetime())
+                Lifetime.Unspecified(Unspecified())
             ))
         }
         when obj: ObjectSyntax
-            Expression.ObjectTuple(handle_object#(obj))
+            Expression.Tuple(handle_object#(obj))
         when vec: VectorSyntax
             Expression.Matrix(handle_vector#(vec))
         when blk: BlockSyntax
@@ -421,21 +465,17 @@ function handle_expression#(rp, syntax: ExpressionSyntax) returns Expression
             Expression.Try(handle_try#(try_syntax))
         when sizeof_syntax: SizeOfSyntax
             Expression.SizeOf(handle_sizeof#(sizeof_syntax))
-        when alignof_syntax: AlignOfSyntax
-            Expression.AlignOf(handle_alignof#(alignof_syntax))
         when is_syntax: IsSyntax
             Expression.Is(handle_is#(is_syntax))
-        when as_syntax: AsSyntax
-            Expression.As(handle_as#(as_syntax))
         else
-            Expression.Constant(Constant.Null(NullConstant(Span(0, 0))))
+            Expression.Constant(Constant.Integer(IntegerConstant(Span(0, 0), 0)))
 }
 
 ; ============================================================================
 ; Control flow handling
 ; ============================================================================
 
-function handle_if#(rp, syntax: IfSyntax) returns If
+function handle_if#(syntax: IfSyntax) returns If
 {
     let condition handle_operands#(syntax.condition)
     let cons_stmt handle_command#(syntax.consequent.command)
@@ -445,19 +485,19 @@ function handle_if#(rp, syntax: IfSyntax) returns If
     {
         let else_syntax (*syntax.alternative)
         let alt_stmt handle_command#(else_syntax.alternative)
-        set alternative: &alt_stmt
+        set alternative: Statement#(alt_stmt)
     }
 
     If(
         Span(syntax.start, syntax.end),
         condition,
         null,
-        &cons_stmt,
+        cons_stmt,
         alternative
     )
 }
 
-function handle_match#(rp, syntax: MatchSyntax) returns Match
+function handle_match#(syntax: MatchSyntax) returns Match
 {
     let scrutinee handle_operands#(syntax.scrutinee)
 
@@ -488,18 +528,18 @@ function handle_match#(rp, syntax: MatchSyntax) returns Match
     {
         let else_syntax (*syntax.alternative)
         let alt_stmt handle_command#(else_syntax.alternative)
-        set alternative: &alt_stmt
+        set alternative: Statement#(alt_stmt)
     }
 
     Match(
         Span(syntax.start, syntax.end),
         scrutinee,
-        &branches,
+        branches,
         alternative
     )
 }
 
-function handle_branch#(rp, syntax: BranchSyntax) returns Branch
+function handle_branch#(syntax: BranchSyntax) returns Branch
 {
     var case_count: size_t 0
     if syntax.cases <> null
@@ -524,16 +564,16 @@ function handle_branch#(rp, syntax: BranchSyntax) returns Branch
     }
 
     let stmt handle_statement#(syntax.consequent)
-    Branch(Span(syntax.start, syntax.end), &cases, &stmt)
+    Branch(Span(syntax.start, syntax.end), cases, stmt)
 }
 
-function handle_case#(rp, syntax: CaseSyntax) returns Case
+function handle_case#(syntax: CaseSyntax) returns Case
 {
     let condition handle_operands#(syntax.condition)
     Case(Span(syntax.start, syntax.end), condition)
 }
 
-function handle_choose#(rp, syntax: ChooseSyntax) returns Choose
+function handle_choose#(syntax: ChooseSyntax) returns Choose
 {
     let condition handle_operands#(syntax.condition)
 
@@ -564,44 +604,64 @@ function handle_choose#(rp, syntax: ChooseSyntax) returns Choose
     {
         let else_syntax (*syntax.alternative)
         let alt_stmt handle_command#(else_syntax.alternative)
-        set alternative: &alt_stmt
+        set alternative: Statement#(alt_stmt)
     }
 
     Choose(
         Span(syntax.start, syntax.end),
         condition,
-        &cases,
+        cases,
         alternative
     )
 }
 
-function handle_when#(rp, syntax: WhenSyntax) returns When
+function handle_when#(syntax: WhenSyntax) returns When
 {
-    var variant_path Vector[String]#(1)
+    ; Count extensions
+    var ext_count: size_t 0
+    if syntax.variant.extensions <> null
+        set ext_count: (*syntax.variant.extensions).length
+
+    var variant_path Vector[String]#(1 + ext_count)
     variant_path.put(0, syntax.variant.name)
 
-    let stmt handle_command#(syntax.command)
+    if syntax.variant.extensions <> null
+    {
+        let exts (*syntax.variant.extensions)
+        var i: size_t 0
+        while i < exts.length
+        {
+            let ext_ptr exts.get(i)
+            if ext_ptr <> null
+            {
+                let ext (*ext_ptr)
+                variant_path.put(1 + i, ext.name)
+            }
+            set i: i + 1
+        }
+    }
 
+    let stmt handle_command#(syntax.command)
     When(
         Span(syntax.start, syntax.end),
         syntax.name,
-        &variant_path,
-        &stmt
+        variant_path,
+        stmt
     )
 }
 
-function handle_action#(rp, syntax: ActionSyntax) returns Action
+function handle_action#(syntax: ActionSyntax) returns Action
 {
     choose syntax
         when op: OperationSyntax
-            Action(handle_operands#(op.operands), null)
+            Action(handle_operands#(op.operands), Vector[Operand]#(0))
         when set_syntax: SetSyntax
             Action(handle_operands#(set_syntax.source), handle_operands#(set_syntax.target))
         else
-            Action(null, null)
+            Action(Vector[Operand]#(0), Vector[Operand]#(0))
 }
 
-function handle_for#(rp, syntax: ForSyntax) returns For
+function handle_for#(syntax: ForSyntax) returns For
 {
     let expr handle_operands#(syntax.operation)
     let body handle_action#(syntax.action)
@@ -614,7 +674,7 @@ function handle_for#(rp, syntax: ForSyntax) returns For
     )
 }
 
-function handle_while#(rp, syntax: WhileSyntax) returns While
+function handle_while#(syntax: WhileSyntax) returns While
 {
     let cond handle_condition#(syntax.condition)
     let body handle_action#(syntax.action)
@@ -626,7 +686,7 @@ function handle_while#(rp, syntax: WhileSyntax) returns While
     )
 }
 
-function handle_condition#(rp, syntax: ConditionSyntax) returns Binding
+function handle_condition#(syntax: ConditionSyntax) returns Binding
 {
     choose syntax
         when op: OperationSyntax
@@ -635,7 +695,7 @@ function handle_condition#(rp, syntax: ConditionSyntax) returns Binding
             Binding(
                 Span(op.start, op.end),
                 "const",
-                Item(Span(op.start, op.end), false, null, null, null),
+                Item(Span(op.start, op.end), false, null, null, Vector[Attribute]#(0)),
                 operands
             )
         }
@@ -651,10 +711,10 @@ function handle_condition#(rp, syntax: ConditionSyntax) returns Binding
             )
         }
         else
-            Binding(Span(0, 0), "const", Item(Span(0, 0), false, null, null, null), null)
+            Binding(Span(0, 0), "const", Item(Span(0, 0), false, null, null, Vector[Attribute]#(0)), Vector[Operand]#(0))
 }
 
-function handle_try#(rp, syntax: TrySyntax) returns Try
+function handle_try#(syntax: TrySyntax) returns Try
 {
     let cond handle_condition#(syntax.condition)
 
@@ -685,13 +745,13 @@ function handle_try#(rp, syntax: TrySyntax) returns Try
     {
         let else_syntax (*syntax.dropper)
         let drop_stmt handle_command#(else_syntax.alternative)
-        set dropper: &drop_stmt
+        set dropper: Statement#(drop_stmt)
     }
 
     Try(
         Span(syntax.start, syntax.end),
         cond,
-        &catches,
+        catches,
         dropper
     )
 }
@@ -700,49 +760,74 @@ function handle_try#(rp, syntax: TrySyntax) returns Try
 ; Type operation handling
 ; ============================================================================
 
-function handle_sizeof#(rp, syntax: SizeOfSyntax) returns SizeOf
+function handle_sizeof#(syntax: SizeOfSyntax) returns SizeOf
 {
     let sized_type handle_type#(syntax.type)
     SizeOf(Span(syntax.start, syntax.end), *sized_type)
 }
 
-function handle_alignof#(rp, syntax: AlignOfSyntax) returns AlignOf
+function handle_is#(syntax: IsSyntax) returns Is
 {
-    let aligned_type handle_type#(syntax.type)
-    AlignOf(Span(syntax.start, syntax.end), *aligned_type)
-}
+    ; Count extensions
+    var ext_count: size_t 0
+    if syntax.name.extensions <> null
+        set ext_count: (*syntax.name.extensions).length
 
-function handle_is#(rp, syntax: IsSyntax) returns Is
-{
-    var name Vector[String]#(1)
+    var name Vector[String]#(1 + ext_count)
     name.put(0, syntax.name.name)
-    Is(Span(syntax.start, syntax.end), &name)
-}
 
-function handle_as#(rp, syntax: AsSyntax) returns As
-{
-    let target_type handle_type#(syntax.type)
-    As(Span(syntax.start, syntax.end), *target_type)
+    if syntax.name.extensions <> null
+    {
+        let exts (*syntax.name.extensions)
+        var i: size_t 0
+        while i < exts.length
+        {
+            let ext_ptr exts.get(i)
+            if ext_ptr <> null
+            {
+                let ext (*ext_ptr)
+                name.put(1 + i, ext.name)
+            }
+            set i: i + 1
+        }
+    }
+    Is(Span(syntax.start, syntax.end), name)
 }
 
 ; ============================================================================
 ; Operand handling
 ; ============================================================================
 
-function handle_operand#(rp, syntax: OperandSyntax) returns Operand
+function handle_operand#(syntax: OperandSyntax) returns Operand
 {
     let expr handle_expression#(syntax.expression)
-    Operand(
-        Span(syntax.start, syntax.end),
-        expr,
-        null
-    )
+
+    var member_access: pointer[Vector[String]] null
+    if syntax.members <> null
+    {
+        let members (*syntax.members)
+        var path Vector[String]#(members.length)
+        var i: size_t 0
+        while i < members.length
+        {
+            let member_ptr members.get(i)
+            if member_ptr <> null
+            {
+                let member (*member_ptr)
+                path.put(i, member.name.name)
+            }
+            set i: i + 1
+        }
+        set member_access: &path
+    }
+
+    Operand(Span(syntax.start, syntax.end), expr, member_access)
 }
 
-function handle_operands#(rp, syntax: pointer[Vector[OperandSyntax]]) returns pointer[Vector[Operand]]
+function handle_operands#(syntax: pointer[Vector[OperandSyntax]]) returns Vector[Operand]
 {
     if syntax = null
-        return null
+        return Vector[Operand]#(0)
 
     let syn (*syntax)
     var result Vector[Operand]#(syn.length)
@@ -758,44 +843,41 @@ function handle_operands#(rp, syntax: pointer[Vector[OperandSyntax]]) returns po
         }
         set i: i + 1
     }
-    &result
+    result
 }
+
+function handle_operation#(syntax: OperationSyntax) returns Vector[Operand]
+    handle_operands#(syntax.operands)
 
 ; ============================================================================
 ; Statement handling
 ; ============================================================================
 
-function handle_binding_item#(rp, syntax: BindingSyntax) returns Item
+function handle_binding_item#(syntax: BindingSyntax) returns Item
 {
     var item_type: pointer[Type] null
     if syntax.annotation <> null
     {
         let annotation (*syntax.annotation)
-        choose annotation.spec
-            when type_syntax: TypeSyntax
-                set item_type: handle_type#(type_syntax)
-            else
-                set item_type: null
+        set item_type: handle_binding_annotation#(annotation)
     }
-
-    let name_copy String^rp(syntax.name)
 
     Item(
         Span(syntax.start, syntax.end),
         false,
-        &name_copy,
+        String#(syntax.name),
         item_type,
-        null
+        Vector[Attribute]#(0)
     )
 }
 
-function handle_command#(rp, syntax: CommandSyntax) returns Statement
+function handle_command#(syntax: CommandSyntax) returns Statement
 {
     choose syntax
         when op: OperationSyntax
         {
             let operands handle_operands#(op.operands)
-            Statement.Action(Action(operands, null))
+            Statement.Action(Action(operands, Vector[Operand]#(0)))
         }
         when let_syntax: LetSyntax
         {
@@ -854,16 +936,16 @@ function handle_command#(rp, syntax: CommandSyntax) returns Statement
             Statement.Throw(Throw(Span(throw_syntax.start, throw_syntax.end), result))
         }
         else
-            Statement.Action(Action(null, null))
+            Statement.Action(Action(Vector[Operand]#(0), Vector[Operand]#(0)))
 }
 
-function handle_statement#(rp, syntax: StatementSyntax) returns Statement
+function handle_statement#(syntax: StatementSyntax) returns Statement
     handle_command#(syntax.command)
 
-function handle_statements#(rp, syntax: pointer[Vector[StatementSyntax]]) returns pointer[Vector[Statement]]
+function handle_statements#(syntax: pointer[Vector[StatementSyntax]]) returns Vector[Statement]
 {
     if syntax = null
-        return null
+        return Vector[Statement]#(0)
 
     let stmts (*syntax)
     var result Vector[Statement]#(stmts.length)
@@ -879,14 +961,14 @@ function handle_statements#(rp, syntax: pointer[Vector[StatementSyntax]]) return
         }
         set i: i + 1
     }
-    &result
+    result
 }
 
 ; ============================================================================
 ; Item and Property handling
 ; ============================================================================
 
-function handle_item#(rp, is_private: bool, syntax: ItemSyntax) returns Item
+function handle_item#(is_private: bool, syntax: ItemSyntax) returns Item
 {
     var item_type: pointer[Type] null
     if syntax.annotation <> null
@@ -895,18 +977,16 @@ function handle_item#(rp, is_private: bool, syntax: ItemSyntax) returns Item
         set item_type: handle_type#(annotation.type)
     }
 
-    let name_copy String^rp(syntax.name)
-
     Item(
         Span(syntax.start, syntax.end),
         is_private,
-        &name_copy,
+        String#(syntax.name),
         item_type,
-        null
+        Vector[Attribute]#(0)
     )
 }
 
-function handle_property#(rp, is_private: bool, syntax: PropertySyntax) returns Property
+function handle_property#(is_private: bool, syntax: PropertySyntax) returns Property
 {
     let prop_type handle_type#(syntax.annotation.type)
 
@@ -914,7 +994,8 @@ function handle_property#(rp, is_private: bool, syntax: PropertySyntax) returns 
     if syntax.initializer <> null
     {
         let init_syntax (*syntax.initializer)
-        set initializer: handle_operands#(init_syntax.operands)
+        let ops handle_operands#(init_syntax.operands)
+        set initializer: &ops
     }
 
     Property(
@@ -923,7 +1004,7 @@ function handle_property#(rp, is_private: bool, syntax: PropertySyntax) returns 
         syntax.name,
         prop_type,
         initializer,
-        null
+        Vector[Attribute]#(0)
     )
 }
 
@@ -931,60 +1012,75 @@ function handle_property#(rp, is_private: bool, syntax: PropertySyntax) returns 
 ; Attribute handling
 ; ============================================================================
 
-function handle_attribute#(rp, syntax: AttributeSyntax) returns Attribute
+function handle_attribute#(syntax: AttributeSyntax) returns Attribute
 {
     let model_result handle_model#(syntax.model)
 
     Attribute(
         Span(syntax.start, syntax.end),
         syntax.name,
-        &model_result
+        model_result
     )
 }
 
-function handle_model#(rp, syntax: ModelSyntax) returns Model
+function handle_model#(syntax: ModelSyntax) returns Model
 {
     choose syntax
         when lit: LiteralSyntax
             Model.Constant(handle_literal(lit))
         when name: NameSyntax
-            Model.Variable(ModelVariable(name.name))
+            Model.Variable(name.name)
         when obj: ObjectSyntax
-        {
-            let tuple handle_object#(obj)
-            Model.ObjectTuple(&tuple)
-        }
+            Model.Tuple(handle_object#(obj))
         when vec: VectorSyntax
-        {
-            let matrix handle_vector#(vec)
-            Model.Matrix(&matrix)
-        }
+            Model.Matrix(handle_vector#(vec))
         else
-            Model.Variable(ModelVariable(""))
+            Model.Variable("")
 }
 
 ; ============================================================================
 ; Use handling
 ; ============================================================================
 
-function handle_use#(rp, syntax: UseSyntax) returns Use
+function handle_use#(syntax: UseSyntax) returns Use
 {
-    var path Vector[String]#(1)
+    ; Count extensions
+    var ext_count: size_t 0
+    if syntax.name.extensions <> null
+        set ext_count: (*syntax.name.extensions).length
+
+    var path Vector[String]#(1 + ext_count)
     path.put(0, syntax.name.name)
 
-    Use(Span(syntax.start, syntax.end), &path)
+    if syntax.name.extensions <> null
+    {
+        let exts (*syntax.name.extensions)
+        var i: size_t 0
+        while i < exts.length
+        {
+            let ext_ptr exts.get(i)
+            if ext_ptr <> null
+            {
+                let ext (*ext_ptr)
+                path.put(1 + i, ext.name)
+            }
+            set i: i + 1
+        }
+    }
+
+    Use(Span(syntax.start, syntax.end), path)
 }
 
 ; ============================================================================
 ; Generic parameter handling
 ; ============================================================================
 
-function handle_generic_parameter#(rp, syntax: GenericParameterSyntax) returns GenericParameter
+function handle_generic_parameter#(syntax: GenericParameterSyntax) returns GenericParameter
 {
     GenericParameter(
         Span(syntax.start, syntax.end),
         syntax.name,
-        null
+        Vector[Attribute]#(0)
     )
 }
 
@@ -992,13 +1088,13 @@ function handle_generic_parameter#(rp, syntax: GenericParameterSyntax) returns G
 ; Parameter handling
 ; ============================================================================
 
-function handle_parameter_set#(rp, syntax: ParameterSetSyntax) returns pointer[Vector[Item]]
+function handle_parameter_set#(syntax: ParameterSetSyntax) returns Vector[Item]
 {
     choose syntax
         when params: ParametersSyntax
         {
             if params.items = null
-                return null
+                return Vector[Item]#(0)
             let items (*params.items)
             var result Vector[Item]#(items.length)
             var i: size_t 0
@@ -1013,7 +1109,7 @@ function handle_parameter_set#(rp, syntax: ParameterSetSyntax) returns pointer[V
                 }
                 set i: i + 1
             }
-            &result
+            result
         }
         when type_syn: TypeSyntax
         {
@@ -1024,45 +1120,43 @@ function handle_parameter_set#(rp, syntax: ParameterSetSyntax) returns pointer[V
                 false,
                 null,
                 type_result,
-                null
+                Vector[Attribute]#(0)
             ))
-            &result
+            result
         }
         else
-            null
+            Vector[Item]#(0)
 }
 
 ; ============================================================================
 ; Implementation handling
 ; ============================================================================
 
-function handle_implementation#(rp, syntax: ImplementationSyntax) returns Implementation
+function handle_implementation#(syntax: ImplementationSyntax) returns Implementation
 {
     choose syntax
         when act: ActionSyntax
             Implementation.Action(handle_action#(act))
         when ext: ExternSyntax
-            Implementation.Extern(ExternImpl(Span(ext.start, ext.end)))
+            Implementation.Extern(Extern(Span(ext.start, ext.end)))
         when inst: InstructionSyntax
-            Implementation.Instruction(InstructionImpl(Span(inst.start, inst.end)))
+            Implementation.Instruction(Instruction(Span(inst.start, inst.end)))
         when intr: IntrinsicSyntax
-            Implementation.Intrinsic(IntrinsicImpl(Span(intr.start, intr.end)))
+            Implementation.Intrinsic(Intrinsic(Span(intr.start, intr.end)))
         else
-            Implementation.Action(Action(null, null))
+            Implementation.Action(Action(Vector[Operand]#(0), Vector[Operand]#(0)))
 }
 
 ; ============================================================================
 ; Function building
 ; ============================================================================
 
-function build_function#(rp, start: size_t, end_pos: size_t, syntax: TargetSyntax, is_private: bool, pure: bool) returns Function
+function build_function#(start: size_t, end_pos: size_t, syntax: TargetSyntax, is_private: bool, pure: bool) returns Function
 {
     choose syntax
         when named: NamedSyntax
         {
-            var generic_params: pointer[Vector[GenericParameter]] null
-            var input: pointer[Vector[Item]] null
-
+            var input Vector[Item]#(0)
             if named.routine.parameters <> null
             {
                 let params (*named.routine.parameters)
@@ -1091,8 +1185,6 @@ function build_function#(rp, start: size_t, end_pos: size_t, syntax: TargetSynta
                 is_private,
                 pure,
                 named.name,
-                generic_params,
-                null,
                 input,
                 return_type,
                 throws_type,
@@ -1106,13 +1198,11 @@ function build_function#(rp, start: size_t, end_pos: size_t, syntax: TargetSynta
                 is_private,
                 pure,
                 "",
+                Vector[Item]#(0),
                 null,
                 null,
-                null,
-                null,
-                null,
-                Lifetime.Unspecified(UnspecifiedLifetime()),
-                Implementation.Action(Action(null, null))
+                Lifetime.Unspecified(Unspecified()),
+                Implementation.Action(Action(Vector[Operand]#(0), Vector[Operand]#(0)))
             )
 }
 
@@ -1120,12 +1210,12 @@ function build_function#(rp, start: size_t, end_pos: size_t, syntax: TargetSynta
 ; Operator handling
 ; ============================================================================
 
-function handle_operator#(rp, syntax: OperatorSyntax, is_private: bool) returns Operator
+function handle_operator#(syntax: OperatorSyntax, is_private: bool) returns Operator
 {
     choose syntax.target
         when named: NamedSyntax
         {
-            var input: pointer[Vector[Item]] null
+            var input Vector[Item]#(0)
             if named.routine.parameters <> null
             {
                 let params (*named.routine.parameters)
@@ -1152,7 +1242,42 @@ function handle_operator#(rp, syntax: OperatorSyntax, is_private: bool) returns 
                 Span(syntax.start, syntax.end),
                 is_private,
                 named.name,
-                null,
+                input,
+                return_type,
+                throws_type,
+                impl
+            )
+        }
+        when routine: RoutineSyntax
+        {
+            ; Handle index operator []
+            var input Vector[Item]#(0)
+            if routine.parameters <> null
+            {
+                let params (*routine.parameters)
+                set input: handle_parameter_set#(params)
+            }
+
+            var return_type: pointer[Type] null
+            if routine.returns_ <> null
+            {
+                let returns_syntax (*routine.returns_)
+                set return_type: handle_type#(returns_syntax.type)
+            }
+
+            var throws_type: pointer[Type] null
+            if routine.throws_ <> null
+            {
+                let throws_syntax (*routine.throws_)
+                set throws_type: handle_type#(throws_syntax.type)
+            }
+
+            let impl handle_implementation#(routine.implementation)
+
+            Operator(
+                Span(syntax.start, syntax.end),
+                is_private,
+                "[]",
                 input,
                 return_type,
                 throws_type,
@@ -1164,11 +1289,10 @@ function handle_operator#(rp, syntax: OperatorSyntax, is_private: bool) returns 
                 Span(syntax.start, syntax.end),
                 is_private,
                 "",
+                Vector[Item]#(0),
                 null,
                 null,
-                null,
-                null,
-                Implementation.Action(Action(null, null))
+                Implementation.Action(Action(Vector[Operand]#(0), Vector[Operand]#(0)))
             )
 }
 
@@ -1176,9 +1300,9 @@ function handle_operator#(rp, syntax: OperatorSyntax, is_private: bool) returns 
 ; Initializer handling
 ; ============================================================================
 
-function handle_initializer#(rp, syntax: InitSyntax, is_private: bool) returns Initializer
+function handle_initializer#(syntax: InitSyntax, is_private: bool) returns Initializer
 {
-    var input: pointer[Vector[Item]] null
+    var input Vector[Item]#(0)
     if syntax.parameters <> null
     {
         let params (*syntax.parameters)
@@ -1191,18 +1315,17 @@ function handle_initializer#(rp, syntax: InitSyntax, is_private: bool) returns I
     Initializer(
         Span(syntax.start, syntax.end),
         is_private,
-        null,
         input,
         impl
     )
 }
 
-function handle_deinitializer#(rp, syntax: DeInitSyntax) returns pointer[DeInitializer]
+function handle_deinitializer#(syntax: DeInitSyntax) returns pointer[DeInitializer]
 {
     let act handle_action#(syntax.action)
     let impl Implementation.Action(act)
 
-    DeInitializer^rp(
+    DeInitializer#(
         Span(syntax.start, syntax.end),
         impl
     )
@@ -1212,7 +1335,7 @@ function handle_deinitializer#(rp, syntax: DeInitSyntax) returns pointer[DeIniti
 ; Variant handling (for unions)
 ; ============================================================================
 
-function handle_variant#(rp, syntax: VariantSyntax) returns Variant
+function handle_variant#(syntax: VariantSyntax) returns Variant
 {
     var variant_type: pointer[Type] null
     if syntax.annotation <> null
@@ -1225,69 +1348,301 @@ function handle_variant#(rp, syntax: VariantSyntax) returns Variant
         Span(syntax.start, syntax.end),
         syntax.name,
         variant_type,
-        null
+        Vector[Attribute]#(0)
     )
 }
 
 ; ============================================================================
-; Structure handling
+; Class/Structure handling
 ; ============================================================================
 
-function handle_structure#(rp, syntax: StructureSyntax, name: String, is_private: bool) returns Structure
+function handle_class#(name: String, path: String, syntax: ClassSyntax, is_private: bool) returns Structure
 {
-    ; Handle generic parameters
-    var generic_params: pointer[Vector[GenericParameter]] null
+    var symbols_builder HashMapBuilder[String, Nameable]$()
 
-    ; Handle fields/parts
-    var fields: pointer[Vector[Property]] null
+    ; Handle parts (fields/properties)
+    var property_count: size_t 0
+    if syntax.structure.parts <> null
+        set property_count: (*syntax.structure.parts).length
 
-    ; Handle body
-    var uses: pointer[Vector[Use]] null
-    var funcs: pointer[Vector[Function]] null
-    var inits: pointer[Vector[Initializer]] null
-    var operators: pointer[Vector[Operator]] null
+    var properties Vector[Property]#(property_count)
+    if syntax.structure.parts <> null
+    {
+        let parts (*syntax.structure.parts)
+        var i: size_t 0
+        while i < parts.length
+        {
+            let part_ptr parts.get(i)
+            if part_ptr <> null
+            {
+                let part (*part_ptr)
+                choose part
+                    when field: FieldSyntax
+                    {
+                        let property handle_property#(true, field.property)
+                        symbols_builder.add(property.name, Nameable.Property(property))
+                        properties.put(i, property)
+                    }
+                    when prop: PropertySyntax
+                    {
+                        let property handle_property#(false, prop)
+                        symbols_builder.add(property.name, Nameable.Property(property))
+                        properties.put(i, property)
+                    }
+                    else {}
+            }
+            set i: i + 1
+        }
+    }
+
+    ; Handle body (inits, deinit, functions, etc.)
+    var modules Vector[Module]#(0)
+    var uses Vector[Use]#(0)
+    var initializers Vector[Initializer]#(0)
+    var members Vector[Member]#(0)
     var deinitializer: pointer[DeInitializer] null
+
+    if syntax.body <> null
+    {
+        let body (*syntax.body)
+
+        ; Handle uses
+        if body.uses <> null
+        {
+            let use_syns (*body.uses)
+            set uses: Vector[Use]#(use_syns.length)
+            var i: size_t 0
+            while i < use_syns.length
+            {
+                let use_ptr use_syns.get(i)
+                if use_ptr <> null
+                {
+                    let use_syntax (*use_ptr)
+                    let use_ handle_use#(use_syntax)
+                    uses.put(i, use_)
+                }
+                set i: i + 1
+            }
+        }
+
+        ; Handle inits
+        if body.inits <> null
+        {
+            let init_syns (*body.inits)
+            set initializers: Vector[Initializer]#(init_syns.length)
+            var i: size_t 0
+            while i < init_syns.length
+            {
+                let init_ptr init_syns.get(i)
+                if init_ptr <> null
+                {
+                    let init_syntax (*init_ptr)
+                    let init_ handle_initializer#(init_syntax, false)
+                    initializers.put(i, init_)
+                }
+                set i: i + 1
+            }
+        }
+
+        ; Handle deinit
+        if body.deInit <> null
+        {
+            let deinit_syntax (*body.deInit)
+            set deinitializer: handle_deinitializer#(deinit_syntax)
+        }
+
+        ; Handle members
+        if body.members <> null
+        {
+            let member_syns (*body.members)
+            set members: Vector[Member]#(member_syns.length)
+            var i: size_t 0
+            while i < member_syns.length
+            {
+                let member_ptr member_syns.get(i)
+                if member_ptr <> null
+                {
+                    let member_syntax (*member_ptr)
+                    let member handle_constituent#(path, member_syntax, &symbols_builder)
+                    members.put(i, member)
+                }
+                set i: i + 1
+            }
+        }
+    }
+
+    let symbols HashMap[String, Nameable]#(symbols_builder)
 
     Structure(
         Span(syntax.start, syntax.end),
         is_private,
-        name,
-        generic_params,
-        null,
-        fields,
-        null,
+        properties,
+        modules,
         uses,
-        funcs,
-        inits,
-        operators,
+        initializers,
         deinitializer,
-        null
+        members,
+        symbols
     )
+}
+
+function handle_constituent#(path: String, syntax: MemberSyntax, symbols_builder: pointer[HashMapBuilder[String, Nameable]]) returns Member
+{
+    choose syntax.constituent
+        when def: DefinitionSyntax
+        {
+            let concept handle_definition#(path, def, false)
+            (*symbols_builder).add(concept.name, Nameable.Concept(concept))
+            Member.Concept(concept)
+        }
+        when func: FunctionSyntax
+        {
+            let function build_function#(func.start, func.end, func.target, false, true)
+            Member.Function(function)
+        }
+        when proc: ProcedureSyntax
+        {
+            let procedure build_function#(proc.start, proc.end, proc.target, false, false)
+            Member.Function(procedure)
+        }
+        when op: OperatorSyntax
+        {
+            let operator_ handle_operator#(op, false)
+            (*symbols_builder).add(operator_.name, Nameable.Operator(operator_))
+            Member.Operator(operator_)
+        }
+        when mod: ModuleSyntax
+        {
+            ; Modules are handled separately
+            Member.Package(Vector[Module]#(0))
+        }
+        else
+            Member.Package(Vector[Module]#(0))
+}
+
+; ============================================================================
+; Namespace handling
+; ============================================================================
+
+function handle_namespace#(name: String, path: String, syntax: NamespaceSyntax, is_private: bool) returns Namespace
+{
+    var symbols_builder HashMapBuilder[String, Nameable]$()
+    var modules Vector[Module]#(0)
+    var members Vector[Member]#(0)
+
+    if syntax.declarations <> null
+    {
+        let decl_syns (*syntax.declarations)
+        set members: Vector[Member]#(decl_syns.length)
+        var i: size_t 0
+        while i < decl_syns.length
+        {
+            let decl_ptr decl_syns.get(i)
+            if decl_ptr <> null
+            {
+                let decl_syntax (*decl_ptr)
+                let member handle_declaration#(path, decl_syntax, &symbols_builder)
+                members.put(i, member)
+            }
+            set i: i + 1
+        }
+    }
+
+    let symbols HashMap[String, Nameable]#(symbols_builder)
+
+    Namespace(
+        Span(syntax.start, syntax.end),
+        modules,
+        members,
+        symbols
+    )
+}
+
+function handle_declaration#(path: String, syntax: DeclarationSyntax, symbols_builder: pointer[HashMapBuilder[String, Nameable]]) returns Member
+{
+    choose syntax.symbol
+        when private_syntax: PrivateSyntax
+            handle_export#(path, private_syntax.export_, true, symbols_builder)
+        when def: DefinitionSyntax
+        {
+            let concept handle_definition#(path, def, false)
+            (*symbols_builder).add(concept.name, Nameable.Concept(concept))
+            Member.Concept(concept)
+        }
+        when func: FunctionSyntax
+        {
+            let function build_function#(func.start, func.end, func.target, false, true)
+            Member.Function(function)
+        }
+        when proc: ProcedureSyntax
+        {
+            let procedure build_function#(proc.start, proc.end, proc.target, false, false)
+            Member.Function(procedure)
+        }
+        when op: OperatorSyntax
+        {
+            let operator_ handle_operator#(op, false)
+            (*symbols_builder).add(operator_.name, Nameable.Operator(operator_))
+            Member.Operator(operator_)
+        }
+        when mod: ModuleSyntax
+            Member.Package(Vector[Module]#(0))
+        else
+            Member.Package(Vector[Module]#(0))
+}
+
+function handle_export#(path: String, syntax: ExportSyntax, is_private: bool, symbols_builder: pointer[HashMapBuilder[String, Nameable]]) returns Member
+{
+    choose syntax
+        when def: DefinitionSyntax
+        {
+            let concept handle_definition#(path, def, is_private)
+            (*symbols_builder).add(concept.name, Nameable.Concept(concept))
+            Member.Concept(concept)
+        }
+        when func: FunctionSyntax
+        {
+            let function build_function#(func.start, func.end, func.target, is_private, true)
+            Member.Function(function)
+        }
+        when op: OperatorSyntax
+        {
+            let operator_ handle_operator#(op, is_private)
+            (*symbols_builder).add(operator_.name, Nameable.Operator(operator_))
+            Member.Operator(operator_)
+        }
+        when mod: ModuleSyntax
+            Member.Package(Vector[Module]#(0))
+        else
+            Member.Package(Vector[Module]#(0))
 }
 
 ; ============================================================================
 ; Union handling
 ; ============================================================================
 
-function handle_union#(rp, syntax: UnionSyntax, name: String, is_private: bool) returns Union
+function handle_union#(name: String, path: String, syntax: UnionSyntax, is_private: bool) returns Union
 {
-    ; Handle generic parameters
-    var generic_params: pointer[Vector[GenericParameter]] null
+    var symbols_builder HashMapBuilder[String, Nameable]$()
 
     ; Handle variants
-    var variants Vector[Variant]#(0)
+    var variant_count: size_t 0
+    if syntax.variants <> null
+        set variant_count: (*syntax.variants).length
+
+    var variants Vector[Variant]#(variant_count)
     if syntax.variants <> null
     {
-        let vars (*syntax.variants)
-        set variants: Vector[Variant]#(vars.length)
+        let var_syns (*syntax.variants)
         var i: size_t 0
-        while i < vars.length
+        while i < var_syns.length
         {
-            let var_ptr vars.get(i)
+            let var_ptr var_syns.get(i)
             if var_ptr <> null
             {
                 let var_syntax (*var_ptr)
                 let variant handle_variant#(var_syntax)
+                symbols_builder.add(variant.name, Nameable.Variant(variant))
                 variants.put(i, variant)
             }
             set i: i + 1
@@ -1295,45 +1650,37 @@ function handle_union#(rp, syntax: UnionSyntax, name: String, is_private: bool) 
     }
 
     ; Handle body
-    var uses: pointer[Vector[Use]] null
-    var funcs: pointer[Vector[Function]] null
-    var operators: pointer[Vector[Operator]] null
+    var members Vector[Member]#(0)
+    if syntax.body <> null
+    {
+        let body (*syntax.body)
+        if body.members <> null
+        {
+            let member_syns (*body.members)
+            set members: Vector[Member]#(member_syns.length)
+            var i: size_t 0
+            while i < member_syns.length
+            {
+                let member_ptr member_syns.get(i)
+                if member_ptr <> null
+                {
+                    let member_syntax (*member_ptr)
+                    let member handle_constituent#(path, member_syntax, &symbols_builder)
+                    members.put(i, member)
+                }
+                set i: i + 1
+            }
+        }
+    }
+
+    let symbols HashMap[String, Nameable]#(symbols_builder)
 
     Union(
         Span(syntax.start, syntax.end),
         is_private,
-        name,
-        generic_params,
-        &variants,
-        null,
-        uses,
-        funcs,
-        operators,
-        null
-    )
-}
-
-; ============================================================================
-; Namespace handling
-; ============================================================================
-
-function handle_namespace#(rp, syntax: NamespaceSyntax, name: String, is_private: bool) returns Namespace
-{
-    ; Handle members
-    var concepts: pointer[Vector[Concept]] null
-    var uses: pointer[Vector[Use]] null
-    var funcs: pointer[Vector[Function]] null
-    var operators: pointer[Vector[Operator]] null
-
-    Namespace(
-        Span(syntax.start, syntax.end),
-        is_private,
-        name,
-        concepts,
-        uses,
-        funcs,
-        operators,
-        null
+        variants,
+        members,
+        symbols
     )
 }
 
@@ -1341,13 +1688,13 @@ function handle_namespace#(rp, syntax: NamespaceSyntax, name: String, is_private
 ; Definition handling
 ; ============================================================================
 
-function handle_definition#(rp, syntax: DefinitionSyntax, is_private: bool) returns Concept
+function handle_definition#(path: String, syntax: DefinitionSyntax, is_private: bool) returns Concept
 {
     let name syntax.name
     let loc Span(syntax.start, syntax.end)
 
     ; Handle generic parameters
-    var parameters: pointer[Vector[GenericParameter]] null
+    var parameters Vector[GenericParameter]#(0)
     if syntax.parameters <> null
     {
         let params_syntax (*syntax.parameters)
@@ -1358,16 +1705,20 @@ function handle_definition#(rp, syntax: DefinitionSyntax, is_private: bool) retu
             var i: size_t 0
             while i < param_vec.length
             {
-                let param_syntax param_vec.get(i)
-                let param handle_generic_parameter#(*param_syntax)
-                (*parameters).put(i, param)
+                let param_ptr param_vec.get(i)
+                if param_ptr <> null
+                {
+                    let param_syntax (*param_ptr)
+                    let param handle_generic_parameter#(param_syntax)
+                    parameters.put(i, param)
+                }
                 set i: i + 1
             }
         }
     }
 
     ; Handle attributes
-    var attributes: pointer[Vector[Attribute]] null
+    var attributes Vector[Attribute]#(0)
     if syntax.attributes <> null
     {
         let attr_vec (*syntax.attributes)
@@ -1375,147 +1726,117 @@ function handle_definition#(rp, syntax: DefinitionSyntax, is_private: bool) retu
         var i: size_t 0
         while i < attr_vec.length
         {
-            let attr_syntax attr_vec.get(i)
-            let attr handle_attribute#(*attr_syntax)
-            (*attributes).put(i, attr)
+            let attr_ptr attr_vec.get(i)
+            if attr_ptr <> null
+            {
+                let attr_syntax (*attr_ptr)
+                let attr handle_attribute#(attr_syntax)
+                attributes.put(i, attr)
+            }
             set i: i + 1
         }
     }
 
     ; Create the Definition variant based on concept type
     let definition choose syntax.concept_
-        when struct_syntax: StructureSyntax
-        {
-            let structure handle_structure#(struct_syntax, name, is_private)
-            Definition.Structure(structure)
-        }
         when class_syntax: ClassSyntax
         {
-            ; Classes treated as structures for now
-            let dummy_struct Structure(
-                Span(class_syntax.start, class_syntax.end),
-                is_private,
-                name,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
-            )
-            Definition.Structure(dummy_struct)
-        }
-        when union_syntax: UnionSyntax
-        {
-            let union_ handle_union#(union_syntax, name, is_private)
-            Definition.Union(union_)
+            let structure handle_class#(name, path, class_syntax, is_private)
+            Definition.Structure(structure)
         }
         when namespace_syntax: NamespaceSyntax
         {
-            let namespace_ handle_namespace#(namespace_syntax, name, is_private)
+            let namespace_ handle_namespace#(name, path, namespace_syntax, is_private)
             Definition.Namespace(namespace_)
         }
-        else
+        when union_syntax: UnionSyntax
         {
-            ; Default to empty namespace
-            let default_ns Namespace(
-                Span(0, 0),
-                is_private,
-                name,
-                null,
-                null,
-                null,
-                null,
-                null
-            )
-            Definition.Namespace(default_ns)
+            let union_ handle_union#(name, path, union_syntax, is_private)
+            Definition.Union(union_)
         }
+        when constant_syntax: ConstantSyntax
+        {
+            if constant_syntax.operation = null
+            {
+                ; Type alias
+                let type_ref handle_type#(constant_syntax.type)
+                Definition.Type(*type_ref)
+            }
+            else
+            {
+                ; Global constant
+                let operation handle_operands#(constant_syntax.operation)
+                let const_type handle_type#(constant_syntax.type)
+                Definition.Global(Global(loc, *const_type, operation))
+            }
+        }
+        when intrinsic_syntax: IntrinsicSyntax
+            Definition.Intrinsic(Intrinsic(Span(intrinsic_syntax.start, intrinsic_syntax.end)))
+        else
+            Definition.Intrinsic(Intrinsic(loc))
 
-    ; Create the Concept with all fields
     Concept(loc, name, parameters, attributes, definition)
-}
-
-; ============================================================================
-; Member handling
-; ============================================================================
-
-function handle_member#(rp, syntax: MemberSyntax) returns Member
-{
-    choose syntax.declaration
-        when def: DefinitionSyntax
-        {
-            let concept handle_definition#(def, false)
-            Member.Concept(concept)
-        }
-        when private_syntax: PrivateSyntax
-        {
-            ; Handle private member
-            let inner handle_declaration_as_member#(private_syntax.export, true)
-            inner
-        }
-        when func_syntax: FunctionSyntax
-        {
-            let func build_function#(func_syntax.start, func_syntax.end, func_syntax.target, false, true)
-            Member.Function(func)
-        }
-        when proc_syntax: ProcedureSyntax
-        {
-            let proc build_function#(proc_syntax.start, proc_syntax.end, proc_syntax.target, false, false)
-            Member.Function(proc)
-        }
-        when op_syntax: OperatorSyntax
-        {
-            let op handle_operator#(op_syntax, false)
-            Member.Operator(op)
-        }
-        else
-            Member.Concept(Concept.Namespace(Namespace(Span(0, 0), false, "", null, null, null, null, null)))
-}
-
-function handle_declaration_as_member#(rp, syntax: DeclarationSyntax, is_private: bool) returns Member
-{
-    choose syntax
-        when def: DefinitionSyntax
-        {
-            let concept handle_definition#(def, is_private)
-            Member.Concept(concept)
-        }
-        when func_syntax: FunctionSyntax
-        {
-            let func build_function#(func_syntax.start, func_syntax.end, func_syntax.target, is_private, true)
-            Member.Function(func)
-        }
-        when proc_syntax: ProcedureSyntax
-        {
-            let proc build_function#(proc_syntax.start, proc_syntax.end, proc_syntax.target, is_private, false)
-            Member.Function(proc)
-        }
-        when op_syntax: OperatorSyntax
-        {
-            let op handle_operator#(op_syntax, is_private)
-            Member.Operator(op)
-        }
-        else
-            Member.Concept(Concept.Namespace(Namespace(Span(0, 0), false, "", null, null, null, null, null)))
 }
 
 ; ============================================================================
 ; Module building
 ; ============================================================================
 
-function build_module#(rp, file_name: String, name: String) returns Module
+function build_module#(path: String, file_name: String, name: String, syntax: FileSyntax, is_private: bool) returns Module
 {
+    var symbols_builder HashMapBuilder[String, Nameable]$()
+
+    ; Handle uses
+    var uses Vector[Use]#(0)
+    if syntax.uses <> null
+    {
+        let use_syns (*syntax.uses)
+        set uses: Vector[Use]#(use_syns.length)
+        var i: size_t 0
+        while i < use_syns.length
+        {
+            let use_ptr use_syns.get(i)
+            if use_ptr <> null
+            {
+                let use_syntax (*use_ptr)
+                let use_ handle_use#(use_syntax)
+                uses.put(i, use_)
+            }
+            set i: i + 1
+        }
+    }
+
+    ; Handle declarations
+    var modules Vector[Module]#(0)
+    var members Vector[Member]#(0)
+    if syntax.declarations <> null
+    {
+        let decl_syns (*syntax.declarations)
+        set members: Vector[Member]#(decl_syns.length)
+        var i: size_t 0
+        while i < decl_syns.length
+        {
+            let decl_ptr decl_syns.get(i)
+            if decl_ptr <> null
+            {
+                let decl_syntax (*decl_ptr)
+                let member handle_declaration#(path, decl_syntax, &symbols_builder)
+                members.put(i, member)
+            }
+            set i: i + 1
+        }
+    }
+
+    let symbols HashMap[String, Nameable]#(symbols_builder)
+
     Module(
-        false,
+        is_private,
         file_name,
         name,
-        null,
-        null,
-        null
+        modules,
+        uses,
+        members,
+        symbols
     )
 }
 
@@ -1523,15 +1844,22 @@ function build_module#(rp, file_name: String, name: String) returns Module
 ; Program building
 ; ============================================================================
 
-function build_program#(rp, modeler: Modeler) returns Program
+function build_program#(file_name: String, program_name: String, syntax: ProgramSyntax) returns Program
 {
-    let file_name modeler.file
-    let main_module build_module#(file_name, file_name)
+    ; Handle packages
+    var packages Vector[Module]#(0)
+
+    ; Build main module
+    let path ""
+    let main_module build_module#(path, file_name, program_name, syntax.file, false)
+
+    ; Handle top-level statements
+    let statements handle_statements#(syntax.statements)
 
     Program(
-        null,
+        packages,
         main_module,
-        null
+        statements
     )
 }
 
@@ -1540,8 +1868,4 @@ function build_program#(rp, modeler: Modeler) returns Program
 ; ============================================================================
 
 function test() returns int
-{
-    let m Modeler("test.scaly")
-    let prog build_program#(m)
     0
-}
