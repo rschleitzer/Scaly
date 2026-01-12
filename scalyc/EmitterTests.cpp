@@ -50,11 +50,8 @@ static bool testJitIntegerConstant() {
     // Create emitter and execute
     EmitterConfig Config;
     Config.EmitDebugInfo = false;  // No debug info for tests
-    llvm::errs() << "  Creating Emitter\n"; llvm::errs().flush();
     Emitter E(Config);
-    llvm::errs() << "  Calling jitExecuteInt\n"; llvm::errs().flush();
     auto ResultOrErr = E.jitExecuteInt(P);
-    llvm::errs() << "  jitExecuteInt done\n"; llvm::errs().flush();
     if (!ResultOrErr) {
         std::string ErrMsg;
         llvm::raw_string_ostream OS(ErrMsg);
@@ -96,22 +93,16 @@ static bool testJitBooleanTrue() {
 
     EmitterConfig Config;
     Config.EmitDebugInfo = false;
-    llvm::errs() << "  BoolTest: Creating Emitter\n"; llvm::errs().flush();
     Emitter E(Config);
-    llvm::errs() << "  BoolTest: Calling jitExecuteBool\n"; llvm::errs().flush();
     auto ResultOrErr = E.jitExecuteBool(P);
-    llvm::errs() << "  BoolTest: jitExecuteBool done\n"; llvm::errs().flush();
     if (!ResultOrErr) {
-        llvm::errs() << "  BoolTest: ERROR\n"; llvm::errs().flush();
         std::string ErrMsg;
         llvm::raw_string_ostream OS(ErrMsg);
         OS << ResultOrErr.takeError();
         fail(Name, ErrMsg.c_str());
         return false;
     }
-    llvm::errs() << "  BoolTest: Getting result\n"; llvm::errs().flush();
     bool Result = *ResultOrErr;
-    llvm::errs() << "  BoolTest: Result = " << Result << "\n"; llvm::errs().flush();
     if (!Result) {
         fail(Name, "expected true, got false");
         return false;
@@ -2390,7 +2381,6 @@ static bool testStackArrayWithTypeAnnotation() {
 
 static bool testGenericBoxInt() {
     const char* Name = "Pipeline: generic Box[int] instantiation";
-    llvm::errs() << "  Starting testGenericBoxInt\n"; llvm::errs().flush();
 
     // First test: just creation, no member access
     auto SimpleResult = evalSimpleInt(
@@ -2406,7 +2396,6 @@ static bool testGenericBoxInt() {
         return false;
     }
     pass("Baseline: generic Box creation");
-    llvm::errs() << "  Box creation works, now testing member access\n"; llvm::errs().flush();
 
     // Simple generic struct with one type parameter
     auto ResultOrErr = evalSimpleInt(
@@ -2414,7 +2403,6 @@ static bool testGenericBoxInt() {
         "let b Box[int](42)\n"
         "b.value"
     );
-    llvm::errs() << "  Finished evalSimpleInt\n"; llvm::errs().flush();
 
     if (!ResultOrErr) {
         std::string ErrMsg;

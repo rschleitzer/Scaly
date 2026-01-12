@@ -176,10 +176,21 @@ const Module* Planner::loadIntraPackageModule(llvm::StringRef BasePath, llvm::St
     llvm::SmallString<256> ModulePath(BasePath);
     llvm::sys::path::append(ModulePath, ModuleName.str() + ".scaly");
 
+    // Check if we've already loaded this module (prevent infinite recursion)
+    std::string PathKey = ModulePath.str().str();
+    auto CacheIt = LoadedModulePaths.find(PathKey);
+    if (CacheIt != LoadedModulePaths.end()) {
+        return CacheIt->second;  // Return cached module (or nullptr if load failed before)
+    }
+
     // Check if the file exists
     if (!llvm::sys::fs::exists(ModulePath)) {
+        LoadedModulePaths[PathKey] = nullptr;  // Cache the failure
         return nullptr;
     }
+
+    // Mark as loading in progress (prevents circular loading)
+    LoadedModulePaths[PathKey] = nullptr;
 
     // Read and parse the module file
     auto BufOrErr = llvm::MemoryBuffer::getFile(ModulePath);
@@ -211,6 +222,7 @@ const Module* Planner::loadIntraPackageModule(llvm::StringRef BasePath, llvm::St
 
     // Get the module pointer from the stored Program
     const Module* LoadedMod = &OnDemandPackages.back()->MainModule;
+    LoadedModulePaths[PathKey] = LoadedMod;  // Cache the loaded module
     return LoadedMod;
 }
 
@@ -4801,6 +4813,43 @@ const Concept* Planner::lookupConcept(llvm::StringRef Name) {
         }
     }
 
+    // 4. Fallback: Try to load sibling modules based on use statements and main module's file path
+    // This handles cases where we're compiling a single file like Modeler.scaly with
+    // "use scaly.compiler.Syntax.LiteralSyntax" - we try to load Syntax.scaly from the same directory
+    if (!ModuleStack.empty()) {
+        const Module* MainMod = ModuleStack.front();
+        if (!MainMod->File.empty()) {
+            llvm::SmallString<256> BasePath(MainMod->File);
+            llvm::sys::path::remove_filename(BasePath);
+
+            // Check if any use statement's second-to-last element names a sibling module
+            for (const auto& Use : MainMod->Uses) {
+                if (!Use.Path.empty() && Use.Path.back() == Name && Use.Path.size() >= 2) {
+                    // Second-to-last element is the module name (e.g., "Syntax" in scaly.compiler.Syntax.LiteralSyntax)
+                    std::string ModuleName = Use.Path[Use.Path.size() - 2];
+
+                    // Try to load this module as a sibling
+                    if (const Module* Loaded = loadIntraPackageModule(BasePath.str(), ModuleName)) {
+                        // Cache ALL concepts from the loaded module at once (prevents recursive lookup)
+                        const Concept* Found = nullptr;
+                        for (const auto& Member : Loaded->Members) {
+                            if (auto* Conc = std::get_if<Concept>(&Member)) {
+                                Concepts[Conc->Name] = Conc;  // Cache every concept
+                                if (Conc->Name == Name) {
+                                    Found = Conc;
+                                }
+                            }
+                        }
+                        AccessedPackageModules.push_back(Loaded);
+                        if (Found) {
+                            return Found;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     return nullptr;
 }
 
@@ -4937,6 +4986,17 @@ llvm::Expected<PlannedType> Planner::resolveType(const Type &T, Span Instantiati
         if (std::get_if<Structure>(&Conc->Def)) {
             // Plan the structure if it's a sibling concept that hasn't been planned yet
             if (InstantiatedStructures.find(Name) == InstantiatedStructures.end()) {
+                auto PlannedConc = planConcept(*Conc);
+                if (!PlannedConc) {
+                    llvm::consumeError(PlannedConc.takeError());
+                }
+            }
+            Result.MangledName = encodeName(Name);
+            return Result;
+        }
+        else if (std::get_if<Union>(&Conc->Def)) {
+            // Plan the union if it's a sibling concept that hasn't been planned yet
+            if (InstantiatedUnions.find(Name) == InstantiatedUnions.end()) {
                 auto PlannedConc = planConcept(*Conc);
                 if (!PlannedConc) {
                     llvm::consumeError(PlannedConc.takeError());
@@ -5348,13 +5408,29 @@ llvm::Expected<PlannedVariant> Planner::planVariant(const Variant &Var, int Tag)
 // ============================================================================
 
 llvm::Expected<PlannedOperand> Planner::planOperand(const Operand &Op) {
+    // Track recursion depth to prevent stack overflow
+    ++PlanningDepth;
+    if (PlanningDepth > MaxPlanningDepth) {
+        --PlanningDepth;
+        return makePlannerNotImplementedError(File, Op.Loc,
+            "expression too deeply nested (exceeds " + std::to_string(MaxPlanningDepth) +
+            " levels) - try increasing stack size with ulimit -s unlimited");
+    }
+    // RAII guard to decrement depth on all exit paths
+    struct DepthGuard {
+        size_t& Depth;
+        ~DepthGuard() { --Depth; }
+    } Guard{PlanningDepth};
+
     PlannedOperand Result;
     Result.Loc = Op.Loc;
 
     // Check for variable member access encoded as Type path (e.g., p.x parsed as Type(["p", "x"]))
     // This happens when the parser treats dotted names as type paths
+    // NOTE: Use heap allocation for modified expression to reduce stack frame size
+    // during deep recursion (planOperand -> planExpression -> planTuple -> planOperands -> planOperand)
     std::vector<Type> ImplicitMemberAccess;
-    Operand ModifiedOp = Op;
+    std::unique_ptr<Expression> ModifiedExpr;  // Only allocated if expression needs modification
 
     if (auto* TypeExpr = std::get_if<Type>(&Op.Expr)) {
         if (TypeExpr->Name.size() > 1 && (!TypeExpr->Generics || TypeExpr->Generics->empty())) {
@@ -5368,7 +5444,7 @@ llvm::Expected<PlannedOperand> Planner::planOperand(const Operand &Op) {
                 SingleType.Name = {TypeExpr->Name[0]};
                 SingleType.Generics = nullptr;
                 SingleType.Life = TypeExpr->Life;
-                ModifiedOp.Expr = SingleType;
+                ModifiedExpr = std::make_unique<Expression>(SingleType);
 
                 // Collect remaining path elements as implicit member access
                 for (size_t i = 1; i < TypeExpr->Name.size(); ++i) {
@@ -5386,7 +5462,7 @@ llvm::Expected<PlannedOperand> Planner::planOperand(const Operand &Op) {
                 ThisTypeExpr.Name = {"this"};
                 ThisTypeExpr.Generics = nullptr;
                 ThisTypeExpr.Life = TypeExpr->Life;
-                ModifiedOp.Expr = ThisTypeExpr;
+                ModifiedExpr = std::make_unique<Expression>(ThisTypeExpr);
 
                 // Add all path elements as implicit member access
                 for (size_t i = 0; i < TypeExpr->Name.size(); ++i) {
@@ -5575,7 +5651,7 @@ llvm::Expected<PlannedOperand> Planner::planOperand(const Operand &Op) {
                                 ThisTypeExpr.Name = {"this"};
                                 ThisTypeExpr.Generics = nullptr;
                                 ThisTypeExpr.Life = TypeExpr->Life;
-                                ModifiedOp.Expr = ThisTypeExpr;
+                                ModifiedExpr = std::make_unique<Expression>(ThisTypeExpr);
 
                                 // Add the property as implicit member access
                                 Type PropType;
@@ -5593,8 +5669,9 @@ llvm::Expected<PlannedOperand> Planner::planOperand(const Operand &Op) {
         }
     }
 
-    // Plan the expression
-    auto PlannedExpr = planExpression(ModifiedOp.Expr);
+    // Plan the expression (use modified expression if set, otherwise original)
+    const Expression& ExprToPlan = ModifiedExpr ? *ModifiedExpr : Op.Expr;
+    auto PlannedExpr = planExpression(ExprToPlan);
     if (!PlannedExpr) {
         return PlannedExpr.takeError();
     }
@@ -5641,7 +5718,9 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
     // This handles the new grammar where generic arguments are parsed as Vector
     // e.g., HashMap[String, int]$() becomes: Name + Vector + Lifetime + Tuple
     // We combine Name + Vector into Type with generics, then attach Lifetime
-    std::vector<Operand> ProcessedOps;
+    // NOTE: Use heap allocation to reduce stack frame size during deep recursion
+    auto ProcessedOpsPtr = std::make_unique<std::vector<Operand>>();
+    std::vector<Operand>& ProcessedOps = *ProcessedOpsPtr;
     ProcessedOps.reserve(Ops.size());
 
     for (size_t i = 0; i < Ops.size(); ++i) {
@@ -6747,8 +6826,13 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                     }
                                 }
 
-                                // Plan the namespace function
-                                auto PlannedFunc = planFunction(*NSFunction, nullptr);
+                                // Create parent type for proper namespace function mangling
+                                PlannedType NamespaceParent;
+                                NamespaceParent.Name = Conc->Name;
+                                NamespaceParent.MangledName = encodeName(Conc->Name);
+
+                                // Plan the namespace function with namespace as parent
+                                auto PlannedFunc = planFunction(*NSFunction, &NamespaceParent);
                                 if (!PlannedFunc) {
                                     return PlannedFunc.takeError();
                                 }
@@ -7908,266 +7992,285 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
 }
 
 llvm::Expected<PlannedExpression> Planner::planExpression(const Expression &Expr) {
-    return std::visit([this](const auto &E) -> llvm::Expected<PlannedExpression> {
-        using T = std::decay_t<decltype(E)>;
+    // NOTE: Using explicit std::get_if checks instead of std::visit
+    // to reduce stack frame size during deep recursion.
+    // std::visit creates a single function with all branch code, causing ~160KB frames.
+    // With get_if, each branch has its own scope and locals are released sooner.
 
-        if constexpr (std::is_same_v<T, Constant>) {
-            return PlannedConstant(E);
-        }
-        else if constexpr (std::is_same_v<T, Type>) {
-            // Check for boolean literals first (true/false are parsed as Type names)
-            if (E.Name.size() == 1 && (!E.Generics || E.Generics->empty())) {
-                const std::string &Name = E.Name[0];
-                if (Name == "true") {
-                    return PlannedConstant(BooleanConstant{E.Loc, true});
+    if (auto* E = std::get_if<Constant>(&Expr)) {
+        return PlannedConstant(*E);
+    }
+
+    if (auto* E = std::get_if<Type>(&Expr)) {
+        // Check for boolean literals first (true/false are parsed as Type names)
+        if (E->Name.size() == 1 && (!E->Generics || E->Generics->empty())) {
+            const std::string &Name = E->Name[0];
+            if (Name == "true") {
+                return PlannedConstant(BooleanConstant{E->Loc, true});
+            }
+            if (Name == "false") {
+                return PlannedConstant(BooleanConstant{E->Loc, false});
+            }
+            if (Name == "null") {
+                return PlannedConstant(NullConstant{E->Loc});
+            }
+
+            // Check if it's a local variable reference
+            auto LocalBind = lookupLocalBinding(Name);
+            if (LocalBind) {
+                PlannedVariable Var;
+                Var.Loc = E->Loc;
+                Var.Name = Name;
+                Var.VariableType = LocalBind->Type;
+                Var.IsMutable = LocalBind->IsMutable;
+                // Note: 'this' is stored as pointer[T] in scope - keep it that way
+                // Type compatibility will handle pointer[T] -> T conversion when needed
+                return PlannedExpression(Var);
+            }
+
+            // Check if it's a structure property access (when inside a method via 'this')
+            if (CurrentStructureProperties) {
+                auto ThisType = lookupLocal("this");
+                std::string BaseStructName = CurrentStructureName;
+                size_t DotPos = BaseStructName.find('.');
+                if (DotPos != std::string::npos) {
+                    BaseStructName = BaseStructName.substr(0, DotPos);
                 }
-                if (Name == "false") {
-                    return PlannedConstant(BooleanConstant{E.Loc, false});
+                std::string ThisTypeName = ThisType ? ThisType->Name : "";
+                if (ThisType && ThisType->Name == "pointer" && !ThisType->Generics.empty()) {
+                    ThisTypeName = ThisType->Generics[0].Name;
                 }
-                if (Name == "null") {
-                    return PlannedConstant(NullConstant{E.Loc});
-                }
+                if (ThisType && (ThisTypeName == CurrentStructureName || ThisTypeName == BaseStructName)) {
+                    for (const auto &Prop : *CurrentStructureProperties) {
+                        if (Prop.Name == Name) {
+                            // Property found - create an Operand that represents this.property
+                            // and plan it through planOperand which handles member access properly
+                            Operand PropOp;
+                            PropOp.Loc = E->Loc;
+                            Type ThisTypeExpr;
+                            ThisTypeExpr.Loc = E->Loc;
+                            ThisTypeExpr.Name = {"this"};
+                            ThisTypeExpr.Generics = nullptr;
+                            ThisTypeExpr.Life = UnspecifiedLifetime{};
+                            PropOp.Expr = ThisTypeExpr;
 
-                // Check if it's a local variable reference
-                auto LocalBind = lookupLocalBinding(Name);
-                if (LocalBind) {
-                    PlannedVariable Var;
-                    Var.Loc = E.Loc;
-                    Var.Name = Name;
-                    Var.VariableType = LocalBind->Type;
-                    Var.IsMutable = LocalBind->IsMutable;
-                    // Note: 'this' is stored as pointer[T] in scope - keep it that way
-                    // Type compatibility will handle pointer[T] -> T conversion when needed
-                    return PlannedExpression(Var);
-                }
+                            // Add property as member access
+                            auto MemberList = std::make_shared<std::vector<Type>>();
+                            Type MemberType;
+                            MemberType.Loc = E->Loc;
+                            MemberType.Name = {Name};
+                            MemberType.Generics = nullptr;
+                            MemberType.Life = UnspecifiedLifetime{};
+                            MemberList->push_back(MemberType);
+                            PropOp.MemberAccess = MemberList;
 
-                // Check if it's a structure property access (when inside a method via 'this')
-                if (CurrentStructureProperties) {
-                    auto ThisType = lookupLocal("this");
-                    std::string BaseStructName = CurrentStructureName;
-                    size_t DotPos = BaseStructName.find('.');
-                    if (DotPos != std::string::npos) {
-                        BaseStructName = BaseStructName.substr(0, DotPos);
-                    }
-                    std::string ThisTypeName = ThisType ? ThisType->Name : "";
-                    if (ThisType && ThisType->Name == "pointer" && !ThisType->Generics.empty()) {
-                        ThisTypeName = ThisType->Generics[0].Name;
-                    }
-                    if (ThisType && (ThisTypeName == CurrentStructureName || ThisTypeName == BaseStructName)) {
-                        for (const auto &Prop : *CurrentStructureProperties) {
-                            if (Prop.Name == Name) {
-                                // Property found - create an Operand that represents this.property
-                                // and plan it through planOperand which handles member access properly
-                                Operand PropOp;
-                                PropOp.Loc = E.Loc;
-                                Type ThisTypeExpr;
-                                ThisTypeExpr.Loc = E.Loc;
-                                ThisTypeExpr.Name = {"this"};
-                                ThisTypeExpr.Generics = nullptr;
-                                ThisTypeExpr.Life = UnspecifiedLifetime{};
-                                PropOp.Expr = ThisTypeExpr;
-
-                                // Add property as member access
-                                auto MemberList = std::make_shared<std::vector<Type>>();
-                                Type MemberType;
-                                MemberType.Loc = E.Loc;
-                                MemberType.Name = {Name};
-                                MemberType.Generics = nullptr;
-                                MemberType.Life = UnspecifiedLifetime{};
-                                MemberList->push_back(MemberType);
-                                PropOp.MemberAccess = MemberList;
-
-                                auto PlannedOp = planOperand(PropOp);
-                                if (!PlannedOp) {
-                                    return PlannedOp.takeError();
-                                }
-                                return PlannedOp->Expr;
+                            auto PlannedOp = planOperand(PropOp);
+                            if (!PlannedOp) {
+                                return PlannedOp.takeError();
                             }
+                            return PlannedOp->Expr;
                         }
                     }
                 }
             }
+        }
 
-            // This could be a type reference (not a variable)
-            auto Resolved = resolveNameOrVariable(E);
-            if (!Resolved) {
-                return Resolved.takeError();
-            }
-            return PlannedExpression(*Resolved);
+        // This could be a type reference (not a variable)
+        auto Resolved = resolveNameOrVariable(*E);
+        if (!Resolved) {
+            return Resolved.takeError();
         }
-        else if constexpr (std::is_same_v<T, Tuple>) {
-            auto Planned = planTuple(E);
-            if (!Planned) {
-                return Planned.takeError();
-            }
-            return PlannedExpression(std::move(*Planned));
-        }
-        else if constexpr (std::is_same_v<T, Matrix>) {
-            auto Planned = planMatrix(E);
-            if (!Planned) {
-                return Planned.takeError();
-            }
-            return PlannedExpression(std::move(*Planned));
-        }
-        else if constexpr (std::is_same_v<T, Block>) {
-            auto Planned = planBlock(E);
-            if (!Planned) {
-                return Planned.takeError();
-            }
-            return PlannedExpression(std::move(*Planned));
-        }
-        else if constexpr (std::is_same_v<T, If>) {
-            auto Planned = planIf(E);
-            if (!Planned) {
-                return Planned.takeError();
-            }
-            return PlannedExpression(std::move(*Planned));
-        }
-        else if constexpr (std::is_same_v<T, Match>) {
-            auto Planned = planMatch(E);
-            if (!Planned) {
-                return Planned.takeError();
-            }
-            return PlannedExpression(std::move(*Planned));
-        }
-        else if constexpr (std::is_same_v<T, Choose>) {
-            auto Planned = planChoose(E);
-            if (!Planned) {
-                return Planned.takeError();
-            }
-            return PlannedExpression(std::move(*Planned));
-        }
-        else if constexpr (std::is_same_v<T, For>) {
-            auto Planned = planFor(E);
-            if (!Planned) {
-                return Planned.takeError();
-            }
-            return PlannedExpression(std::move(*Planned));
-        }
-        else if constexpr (std::is_same_v<T, While>) {
-            auto Planned = planWhile(E);
-            if (!Planned) {
-                return Planned.takeError();
-            }
-            return PlannedExpression(std::move(*Planned));
-        }
-        else if constexpr (std::is_same_v<T, Try>) {
-            auto Planned = planTry(E);
-            if (!Planned) {
-                return Planned.takeError();
-            }
-            return PlannedExpression(std::move(*Planned));
-        }
-        else if constexpr (std::is_same_v<T, SizeOf>) {
-            PlannedSizeOf PSO;
-            PSO.Loc = E.Loc;
-            auto Resolved = resolveType(E.SizedType, E.Loc);
-            if (!Resolved) {
-                return Resolved.takeError();
-            }
-            PSO.SizedType = std::move(*Resolved);
+        return PlannedExpression(*Resolved);
+    }
 
-            // Compute size based on type
-            const std::string &TypeName = PSO.SizedType.Name;
-            if (TypeName == "bool" || TypeName == "i1") {
-                PSO.Size = 1;
-            } else if (TypeName == "i8" || TypeName == "u8" || TypeName == "char") {
-                PSO.Size = 1;
-            } else if (TypeName == "i16" || TypeName == "u16") {
-                PSO.Size = 2;
-            } else if (TypeName == "i32" || TypeName == "u32" || TypeName == "float" || TypeName == "f32") {
-                PSO.Size = 4;
-            } else if (TypeName == "i64" || TypeName == "u64" || TypeName == "int" || TypeName == "uint" ||
-                       TypeName == "double" || TypeName == "f64" || TypeName == "size_t" || TypeName == "ptr") {
-                PSO.Size = 8;
+    if (auto* E = std::get_if<Tuple>(&Expr)) {
+        auto Planned = planTuple(*E);
+        if (!Planned) {
+            return Planned.takeError();
+        }
+        return PlannedExpression(std::move(*Planned));
+    }
+
+    if (auto* E = std::get_if<Matrix>(&Expr)) {
+        auto Planned = planMatrix(*E);
+        if (!Planned) {
+            return Planned.takeError();
+        }
+        return PlannedExpression(std::move(*Planned));
+    }
+
+    if (auto* E = std::get_if<Block>(&Expr)) {
+        auto Planned = planBlock(*E);
+        if (!Planned) {
+            return Planned.takeError();
+        }
+        return PlannedExpression(std::move(*Planned));
+    }
+
+    if (auto* E = std::get_if<If>(&Expr)) {
+        auto Planned = planIf(*E);
+        if (!Planned) {
+            return Planned.takeError();
+        }
+        return PlannedExpression(std::move(*Planned));
+    }
+
+    if (auto* E = std::get_if<Match>(&Expr)) {
+        auto Planned = planMatch(*E);
+        if (!Planned) {
+            return Planned.takeError();
+        }
+        return PlannedExpression(std::move(*Planned));
+    }
+
+    if (auto* E = std::get_if<Choose>(&Expr)) {
+        auto Planned = planChoose(*E);
+        if (!Planned) {
+            return Planned.takeError();
+        }
+        return PlannedExpression(std::move(*Planned));
+    }
+
+    if (auto* E = std::get_if<For>(&Expr)) {
+        auto Planned = planFor(*E);
+        if (!Planned) {
+            return Planned.takeError();
+        }
+        return PlannedExpression(std::move(*Planned));
+    }
+
+    if (auto* E = std::get_if<While>(&Expr)) {
+        auto Planned = planWhile(*E);
+        if (!Planned) {
+            return Planned.takeError();
+        }
+        return PlannedExpression(std::move(*Planned));
+    }
+
+    if (auto* E = std::get_if<Try>(&Expr)) {
+        auto Planned = planTry(*E);
+        if (!Planned) {
+            return Planned.takeError();
+        }
+        return PlannedExpression(std::move(*Planned));
+    }
+
+    if (auto* E = std::get_if<SizeOf>(&Expr)) {
+        PlannedSizeOf PSO;
+        PSO.Loc = E->Loc;
+        auto Resolved = resolveType(E->SizedType, E->Loc);
+        if (!Resolved) {
+            return Resolved.takeError();
+        }
+        PSO.SizedType = std::move(*Resolved);
+
+        // Compute size based on type
+        const std::string &TypeName = PSO.SizedType.Name;
+        if (TypeName == "bool" || TypeName == "i1") {
+            PSO.Size = 1;
+        } else if (TypeName == "i8" || TypeName == "u8" || TypeName == "char") {
+            PSO.Size = 1;
+        } else if (TypeName == "i16" || TypeName == "u16") {
+            PSO.Size = 2;
+        } else if (TypeName == "i32" || TypeName == "u32" || TypeName == "float" || TypeName == "f32") {
+            PSO.Size = 4;
+        } else if (TypeName == "i64" || TypeName == "u64" || TypeName == "int" || TypeName == "uint" ||
+                   TypeName == "double" || TypeName == "f64" || TypeName == "size_t" || TypeName == "ptr") {
+            PSO.Size = 8;
+        } else {
+            // For structures and other types, look up in caches
+            auto StructIt = InstantiatedStructures.find(PSO.SizedType.MangledName);
+            if (StructIt != InstantiatedStructures.end()) {
+                PSO.Size = StructIt->second.Size;
             } else {
-                // For structures and other types, look up in caches
-                auto StructIt = InstantiatedStructures.find(PSO.SizedType.MangledName);
-                if (StructIt != InstantiatedStructures.end()) {
-                    PSO.Size = StructIt->second.Size;
+                auto UnionIt = InstantiatedUnions.find(PSO.SizedType.MangledName);
+                if (UnionIt != InstantiatedUnions.end()) {
+                    PSO.Size = UnionIt->second.Size;
                 } else {
-                    auto UnionIt = InstantiatedUnions.find(PSO.SizedType.MangledName);
-                    if (UnionIt != InstantiatedUnions.end()) {
-                        PSO.Size = UnionIt->second.Size;
-                    } else {
-                        PSO.Size = 0;  // Unknown type size
-                    }
+                    PSO.Size = 0;  // Unknown type size
                 }
             }
-            return PlannedExpression(std::move(PSO));
         }
-        else if constexpr (std::is_same_v<T, AlignOf>) {
-            PlannedAlignOf PAO;
-            PAO.Loc = E.Loc;
-            auto Resolved = resolveType(E.AlignedType, E.Loc);
-            if (!Resolved) {
-                return Resolved.takeError();
-            }
-            PAO.AlignedType = std::move(*Resolved);
+        return PlannedExpression(std::move(PSO));
+    }
 
-            // Compute alignment based on type
-            const std::string &TypeName = PAO.AlignedType.Name;
-            if (TypeName == "bool" || TypeName == "i1") {
-                PAO.Alignment = 1;
-            } else if (TypeName == "i8" || TypeName == "u8" || TypeName == "char") {
-                PAO.Alignment = 1;
-            } else if (TypeName == "i16" || TypeName == "u16") {
-                PAO.Alignment = 2;
-            } else if (TypeName == "i32" || TypeName == "u32" || TypeName == "float" || TypeName == "f32") {
-                PAO.Alignment = 4;
-            } else if (TypeName == "i64" || TypeName == "u64" || TypeName == "int" || TypeName == "uint" ||
-                       TypeName == "double" || TypeName == "f64" || TypeName == "size_t" || TypeName == "ptr") {
-                PAO.Alignment = 8;
+    if (auto* E = std::get_if<AlignOf>(&Expr)) {
+        PlannedAlignOf PAO;
+        PAO.Loc = E->Loc;
+        auto Resolved = resolveType(E->AlignedType, E->Loc);
+        if (!Resolved) {
+            return Resolved.takeError();
+        }
+        PAO.AlignedType = std::move(*Resolved);
+
+        // Compute alignment based on type
+        const std::string &TypeName = PAO.AlignedType.Name;
+        if (TypeName == "bool" || TypeName == "i1") {
+            PAO.Alignment = 1;
+        } else if (TypeName == "i8" || TypeName == "u8" || TypeName == "char") {
+            PAO.Alignment = 1;
+        } else if (TypeName == "i16" || TypeName == "u16") {
+            PAO.Alignment = 2;
+        } else if (TypeName == "i32" || TypeName == "u32" || TypeName == "float" || TypeName == "f32") {
+            PAO.Alignment = 4;
+        } else if (TypeName == "i64" || TypeName == "u64" || TypeName == "int" || TypeName == "uint" ||
+                   TypeName == "double" || TypeName == "f64" || TypeName == "size_t" || TypeName == "ptr") {
+            PAO.Alignment = 8;
+        } else {
+            // For structures and other types, look up in caches
+            auto StructIt = InstantiatedStructures.find(PAO.AlignedType.MangledName);
+            if (StructIt != InstantiatedStructures.end()) {
+                PAO.Alignment = StructIt->second.Alignment;
             } else {
-                // For structures and other types, look up in caches
-                auto StructIt = InstantiatedStructures.find(PAO.AlignedType.MangledName);
-                if (StructIt != InstantiatedStructures.end()) {
-                    PAO.Alignment = StructIt->second.Alignment;
+                auto UnionIt = InstantiatedUnions.find(PAO.AlignedType.MangledName);
+                if (UnionIt != InstantiatedUnions.end()) {
+                    PAO.Alignment = UnionIt->second.Alignment;
                 } else {
-                    auto UnionIt = InstantiatedUnions.find(PAO.AlignedType.MangledName);
-                    if (UnionIt != InstantiatedUnions.end()) {
-                        PAO.Alignment = UnionIt->second.Alignment;
-                    } else {
-                        PAO.Alignment = 1;  // Unknown type alignment defaults to 1
-                    }
+                    PAO.Alignment = 1;  // Unknown type alignment defaults to 1
                 }
             }
-            return PlannedExpression(std::move(PAO));
         }
-        else if constexpr (std::is_same_v<T, Is>) {
-            PlannedIs PI;
-            PI.Loc = E.Loc;
-            // Check for "is null" - null check on optional types
-            if (E.Name.size() == 1 && E.Name[0] == "null") {
-                PI.IsNullCheck = true;
-                // TestType not used for null checks
-                return PlannedExpression(std::move(PI));
-            }
-            // Is has Name (vector<string>), not TestType
-            auto Resolved = resolveTypePath(E.Name, E.Loc);
-            if (!Resolved) {
-                return Resolved.takeError();
-            }
-            PI.TestType = std::move(*Resolved);
+        return PlannedExpression(std::move(PAO));
+    }
+
+    if (auto* E = std::get_if<Is>(&Expr)) {
+        PlannedIs PI;
+        PI.Loc = E->Loc;
+        // Check for "is null" - null check on optional types
+        if (E->Name.size() == 1 && E->Name[0] == "null") {
+            PI.IsNullCheck = true;
+            // TestType not used for null checks
             return PlannedExpression(std::move(PI));
         }
-        else if constexpr (std::is_same_v<T, As>) {
-            PlannedAs PA;
-            PA.Loc = E.Loc;
-            // Resolve the target type
-            auto Resolved = resolveType(E.TargetType, E.Loc);
-            if (!Resolved) {
-                return Resolved.takeError();
-            }
-            PA.TargetType = std::move(*Resolved);
-            // Note: Value will be populated later when combining with context
-            return PlannedExpression(std::move(PA));
+        // Is has Name (vector<string>), not TestType
+        auto Resolved = resolveTypePath(E->Name, E->Loc);
+        if (!Resolved) {
+            return Resolved.takeError();
         }
-        else {
-            // Shouldn't reach here
-            return PlannedExpression(PlannedConstant{});
+        PI.TestType = std::move(*Resolved);
+        return PlannedExpression(std::move(PI));
+    }
+
+    if (auto* E = std::get_if<As>(&Expr)) {
+        PlannedAs PA;
+        PA.Loc = E->Loc;
+        // Resolve the target type
+        auto Resolved = resolveType(E->TargetType, E->Loc);
+        if (!Resolved) {
+            return Resolved.takeError();
         }
-    }, Expr);
+        PA.TargetType = std::move(*Resolved);
+        // Note: Value will be populated later when combining with context
+        return PlannedExpression(std::move(PA));
+    }
+
+    if (auto* E = std::get_if<New>(&Expr)) {
+        // Handle New expression - for now just return a placeholder
+        return PlannedExpression(PlannedConstant{});
+    }
+
+    // Shouldn't reach here - all variants should be handled
+    return PlannedExpression(PlannedConstant{});
 }
 
 // ============================================================================
@@ -8175,7 +8278,9 @@ llvm::Expected<PlannedExpression> Planner::planExpression(const Expression &Expr
 // ============================================================================
 
 llvm::Expected<PlannedTuple> Planner::planTuple(const Tuple &Tup) {
-    PlannedTuple Result;
+    // NOTE: Use heap allocation for Result to reduce stack frame size during deep recursion
+    auto ResultPtr = std::make_unique<PlannedTuple>();
+    PlannedTuple& Result = *ResultPtr;
     Result.Loc = Tup.Loc;
 
     for (const auto &Comp : Tup.Components) {
@@ -8249,7 +8354,7 @@ llvm::Expected<PlannedTuple> Planner::planTuple(const Tuple &Tup) {
         Result.TupleType.MangledName = MangledName;
     }
 
-    return Result;
+    return std::move(Result);
 }
 
 llvm::Expected<PlannedMatrix> Planner::planMatrix(const Matrix &Mat) {
@@ -8664,7 +8769,14 @@ llvm::Expected<PlannedChoose> Planner::planChoose(const Choose &ChooseExpr) {
     const PlannedUnion *CondUnion = nullptr;
     if (!Result.Condition.empty()) {
         const auto &ResultType = Result.Condition[0].ResultType;
-        auto UnionIt = InstantiatedUnions.find(ResultType.Name);
+
+        // If the condition is a pointer type, use the element type (auto-deref for choose)
+        std::string LookupName = ResultType.Name;
+        if (ResultType.Name == "pointer" && !ResultType.Generics.empty()) {
+            LookupName = ResultType.Generics[0].Name;
+        }
+
+        auto UnionIt = InstantiatedUnions.find(LookupName);
         if (UnionIt != InstantiatedUnions.end()) {
             CondUnion = &UnionIt->second;
         }
@@ -8678,18 +8790,30 @@ llvm::Expected<PlannedChoose> Planner::planChoose(const Choose &ChooseExpr) {
         PW.Name = Case.Name;
         PW.VariantIndex = 0;  // Default
 
-        // Get the variant name from the path
-        std::string VariantName;
+        // Get the variant type from the path (VariantPath contains type names, not variant names)
+        std::string VariantTypeName;
         if (!Case.VariantPath.empty()) {
-            VariantName = Case.VariantPath.back();
+            VariantTypeName = Case.VariantPath.back();
         }
 
         // Look up the variant in the union to get its tag
-        if (CondUnion && !VariantName.empty()) {
+        // We compare by TYPE name since Scaly syntax uses "when x: TypeName"
+        if (CondUnion && !VariantTypeName.empty()) {
             for (size_t i = 0; i < CondUnion->Variants.size(); ++i) {
-                if (CondUnion->Variants[i].Name == VariantName) {
+                // Check if variant's type matches the type name from the when clause
+                bool TypeMatch = false;
+                if (CondUnion->Variants[i].VarType) {
+                    // Compare the type name (stripping package prefix if needed)
+                    std::string VarTypeName = CondUnion->Variants[i].VarType->Name;
+                    TypeMatch = (VarTypeName == VariantTypeName ||
+                                 stripPackagePrefix(VarTypeName) == VariantTypeName ||
+                                 VarTypeName == stripPackagePrefix(VariantTypeName));
+                }
+                // Also try matching by variant name as fallback (for Result[T,E] style)
+                bool NameMatch = (CondUnion->Variants[i].Name == VariantTypeName);
+
+                if (TypeMatch || NameMatch) {
                     PW.VariantIndex = CondUnion->Variants[i].Tag;
-                    // Also get the variant's type for the binding variable
                     if (CondUnion->Variants[i].VarType) {
                         PW.VariantType = *CondUnion->Variants[i].VarType;
                     }
@@ -8872,18 +8996,29 @@ llvm::Expected<PlannedTry> Planner::planTry(const Try &TryExpr) {
         PW.Name = Catch.Name;
         PW.VariantIndex = 0;  // Default
 
-        // Get the variant name from the path
-        std::string VariantName;
+        // Get the variant type from the path (VariantPath contains type names, not variant names)
+        std::string VariantTypeName;
         if (!Catch.VariantPath.empty()) {
-            VariantName = Catch.VariantPath.back();
+            VariantTypeName = Catch.VariantPath.back();
         }
 
         // Look up the variant in the union to get its tag
-        if (CondUnion && !VariantName.empty()) {
+        // We compare by TYPE name since Scaly syntax uses "when x: TypeName"
+        if (CondUnion && !VariantTypeName.empty()) {
             for (size_t i = 0; i < CondUnion->Variants.size(); ++i) {
-                if (CondUnion->Variants[i].Name == VariantName) {
+                // Check if variant's type matches the type name from the when clause
+                bool TypeMatch = false;
+                if (CondUnion->Variants[i].VarType) {
+                    std::string VarTypeName = CondUnion->Variants[i].VarType->Name;
+                    TypeMatch = (VarTypeName == VariantTypeName ||
+                                 stripPackagePrefix(VarTypeName) == VariantTypeName ||
+                                 VarTypeName == stripPackagePrefix(VariantTypeName));
+                }
+                // Also try matching by variant name as fallback
+                bool NameMatch = (CondUnion->Variants[i].Name == VariantTypeName);
+
+                if (TypeMatch || NameMatch) {
                     PW.VariantIndex = CondUnion->Variants[i].Tag;
-                    // Also get the variant's type for the catch variable
                     if (CondUnion->Variants[i].VarType) {
                         PW.VariantType = *CondUnion->Variants[i].VarType;
                     }
@@ -9585,6 +9720,21 @@ llvm::Expected<PlannedUnion> Planner::planUnion(
 
     // Compute union layout
     computeUnionLayout(Result);
+
+    // CRITICAL: Update cache with variants BEFORE planning methods
+    // This ensures that if methods use `choose this`, they can find the variant tags
+    if (!GenericArgs.empty()) {
+        std::string CacheKey = Name.str();
+        for (const auto &Arg : GenericArgs) {
+            CacheKey += ".";
+            CacheKey += stripPackagePrefix(Arg.Name);
+        }
+        // Update existing placeholder with variants (keep same MangledName)
+        auto It = InstantiatedUnions.find(CacheKey);
+        if (It != InstantiatedUnions.end() && It->second.Variants.empty()) {
+            It->second.Variants = Result.Variants;
+        }
+    }
 
     // Create parent type for method mangling
     PlannedType ParentType;

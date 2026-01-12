@@ -172,8 +172,6 @@ static bool testLexerModule() {
 
     // The function is named "test" in the scalyc namespace
     // It calls lexer.test() to run the actual tests
-    llvm::outs() << "DEBUG: Looking for function 'test'...\n";
-    llvm::outs().flush();
     auto ResultOrErr = runPackageTestFunction(ScalycPackagePath, "test");
 
     if (!ResultOrErr) {
