@@ -850,6 +850,13 @@ bool Planner::typesCompatible(const PlannedType &ParamType, const PlannedType &A
         }
     }
 
+    // Allow any pointer[T] to be passed where pointer[void] is expected
+    // This matches C semantics where any pointer can be implicitly cast to void*
+    if (ParamType.Name == "pointer" && ArgType.Name == "pointer" &&
+        !ParamType.Generics.empty() && ParamType.Generics[0].Name == "void") {
+        return true;
+    }
+
     // Allow string literals (pointer[i8]) to be passed where String is expected
     // But only as a FALLBACK if no pointer[const_char] initializer is found
     // The Emitter will wrap the C-string in a String constructor
@@ -1753,6 +1760,10 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                             std::vector<PlannedProperty>* OldStructureProperties = CurrentStructureProperties;
                             PlannedStructure* OldStructure = CurrentStructure;
 
+                            // Save and clear scopes to prevent caller's local variables from leaking
+                            std::vector<std::map<std::string, LocalBinding>> OldScopes;
+                            std::swap(Scopes, OldScopes);
+
                             // Set up context for planning
                             auto &MutableStruct = InstantiatedStructures[LookupName];
                             CurrentStructureName = MutableStruct.Name;
@@ -1763,6 +1774,7 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                             auto PlannedMethod = planFunction(*Func, &ParentType);
 
                             // Restore state
+                            std::swap(Scopes, OldScopes);
                             File = OldFile;
                             CurrentStructureName = OldStructureName;
                             CurrentStructureProperties = OldStructureProperties;
@@ -1891,7 +1903,8 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
 
         bool AllMatch = true;
         for (size_t i = 0; i < ArgTypes.size(); ++i) {
-            if (!typesEqual(Candidate.ParameterTypes[i], ArgTypes[i])) {
+            // Use typesCompatible to allow pointer coercion (e.g., pointer[T] -> pointer[void])
+            if (!typesCompatible(Candidate.ParameterTypes[i], ArgTypes[i])) {
                 AllMatch = false;
                 break;
             }
@@ -2317,19 +2330,8 @@ std::optional<Planner::InitializerMatch> Planner::findInitializer(
                     // Found a match - need to actually plan the initializer
                     // so that the Emitter can find it
 
-                    // Create parent type for initializer planning
-                    PlannedType ParentType = StructType;
-
-                    // Plan the initializer
-                    auto PlannedInit = planInitializer(Init, ParentType);
-                    if (!PlannedInit) {
-                        llvm::consumeError(PlannedInit.takeError());
-                        TypeSubstitutions = OldSubst;
-                        return std::nullopt;
-                    }
-
-                    // Add the planned initializer to the structure in cache
-                    // Find or create the structure entry
+                    // Find or create the structure entry in cache first
+                    // We need the structure entry to set up CurrentStructureProperties
                     std::string CacheKey = LookupName;
                     if (!StructType.Generics.empty()) {
                         CacheKey = StructType.Name;
@@ -2340,6 +2342,48 @@ std::optional<Planner::InitializerMatch> Planner::findInitializer(
                         MutableStruct.Name = StructType.Name;
                         MutableStruct.MangledName = StructType.MangledName;
                     }
+
+                    // Build full structure name including generic args for property lookup
+                    std::string FullStructureName = BaseName;
+                    if (!StructType.Generics.empty()) {
+                        FullStructureName += ".";
+                        for (size_t i = 0; i < StructType.Generics.size(); ++i) {
+                            if (i > 0) FullStructureName += ".";
+                            FullStructureName += stripPackagePrefix(StructType.Generics[i].Name);
+                        }
+                    }
+
+                    // Save and set up structure context
+                    std::string OldStructureName = CurrentStructureName;
+                    std::vector<PlannedProperty>* OldStructureProperties = CurrentStructureProperties;
+                    PlannedStructure* OldStructure = CurrentStructure;
+                    CurrentStructureName = FullStructureName;
+                    CurrentStructureProperties = &MutableStruct.Properties;
+                    CurrentStructure = &MutableStruct;
+
+                    // Save and clear scopes to prevent caller's local variables from leaking
+                    // into the initializer being planned for a generic type
+                    std::vector<std::map<std::string, LocalBinding>> OldScopes;
+                    std::swap(Scopes, OldScopes);
+
+                    // Create parent type for initializer planning
+                    PlannedType ParentType = StructType;
+
+                    // Plan the initializer
+                    auto PlannedInit = planInitializer(Init, ParentType);
+
+                    // Restore scopes and structure context
+                    std::swap(Scopes, OldScopes);
+                    CurrentStructureName = OldStructureName;
+                    CurrentStructureProperties = OldStructureProperties;
+                    CurrentStructure = OldStructure;
+
+                    if (!PlannedInit) {
+                        llvm::consumeError(PlannedInit.takeError());
+                        TypeSubstitutions = OldSubst;
+                        return std::nullopt;
+                    }
+
                     MutableStruct.Initializers.push_back(std::move(*PlannedInit));
 
                     TypeSubstitutions = OldSubst;
@@ -2474,6 +2518,81 @@ std::optional<Planner::OperatorMatch> Planner::findSubscriptOperator(
                         ParamItems.push_back(IdxItem);
                     }
                     Match.MangledName = mangleOperator("[]", ParamItems, &ContainerType);
+
+                    // Check if operator needs to be planned for this generic instantiation
+                    // Similar to lookupMethod, we need to plan on demand
+                    if (!Conc->Parameters.empty() && !ContainerType.Generics.empty()) {
+                        // Check if operator is already registered
+                        bool AlreadyPlanned = InstantiatedFunctions.find(Match.MangledName) !=
+                                              InstantiatedFunctions.end();
+                        if (!AlreadyPlanned) {
+                            // Find the structure in cache and plan the operator
+                            auto StructIt = InstantiatedStructures.find(ContainerType.Name);
+                            if (StructIt != InstantiatedStructures.end()) {
+                                auto &MutableStruct = StructIt->second;
+
+                                // Set up context for planning
+                                std::map<std::string, PlannedType> OldSubst = TypeSubstitutions;
+                                std::string OldStructureName = CurrentStructureName;
+                                std::vector<PlannedProperty>* OldStructureProperties = CurrentStructureProperties;
+                                PlannedStructure* OldStructure = CurrentStructure;
+
+                                // Save and clear scopes to prevent caller's local variables from leaking
+                                std::vector<std::map<std::string, LocalBinding>> OldScopes;
+                                std::swap(Scopes, OldScopes);
+
+                                for (size_t I = 0; I < Conc->Parameters.size() &&
+                                                  I < ContainerType.Generics.size(); ++I) {
+                                    TypeSubstitutions[Conc->Parameters[I].Name] =
+                                        ContainerType.Generics[I];
+                                }
+
+                                // Build full structure name including generic args
+                                std::string FullStructureName = BaseName;
+                                FullStructureName += ".";
+                                for (size_t i = 0; i < ContainerType.Generics.size(); ++i) {
+                                    if (i > 0) FullStructureName += ".";
+                                    FullStructureName += stripPackagePrefix(ContainerType.Generics[i].Name);
+                                }
+
+                                CurrentStructureName = FullStructureName;
+                                CurrentStructureProperties = &MutableStruct.Properties;
+                                CurrentStructure = &MutableStruct;
+
+                                // Create parent type for operator planning
+                                PlannedType ParentType;
+                                ParentType.Name = ContainerType.Name;
+                                ParentType.Generics = ContainerType.Generics;
+                                ParentType.MangledName = MutableStruct.MangledName;
+
+                                // Plan the operator
+                                auto PlannedOp = planOperator(*Op, &ParentType);
+
+                                // Restore context
+                                std::swap(Scopes, OldScopes);
+                                TypeSubstitutions = OldSubst;
+                                CurrentStructureName = OldStructureName;
+                                CurrentStructureProperties = OldStructureProperties;
+                                CurrentStructure = OldStructure;
+
+                                if (PlannedOp) {
+                                    // Convert PlannedOperator to PlannedFunction for registration
+                                    PlannedFunction OpFunc;
+                                    OpFunc.Loc = PlannedOp->Loc;
+                                    OpFunc.Name = PlannedOp->Name;
+                                    OpFunc.MangledName = PlannedOp->MangledName;
+                                    OpFunc.Input = PlannedOp->Input;
+                                    OpFunc.Returns = PlannedOp->Returns;
+                                    OpFunc.Impl = PlannedOp->Impl;
+                                    OpFunc.Pure = true;
+
+                                    // Register operator as function
+                                    InstantiatedFunctions[PlannedOp->MangledName] = OpFunc;
+                                    MutableStruct.Operators.push_back(std::move(*PlannedOp));
+                                }
+                            }
+                        }
+                    }
 
                     return Match;
                 }
@@ -2911,6 +3030,14 @@ llvm::Expected<PlannedType> Planner::resolveFunctionCall(
     for (size_t I = 0; I < ArgTypes.size(); ++I) {
         if (I > 0) ArgTypesStr += ", ";
         ArgTypesStr += ArgTypes[I].Name;
+        if (!ArgTypes[I].Generics.empty()) {
+            ArgTypesStr += "[";
+            for (size_t J = 0; J < ArgTypes[I].Generics.size(); ++J) {
+                if (J > 0) ArgTypesStr += ",";
+                ArgTypesStr += ArgTypes[I].Generics[J].Name;
+            }
+            ArgTypesStr += "]";
+        }
     }
     return makePlannerNotImplementedError(File, Loc,
         ("no matching overload for function: " + Name + "(" + ArgTypesStr + ")").str());
@@ -5279,6 +5406,9 @@ llvm::Expected<PlannedType> Planner::instantiateGeneric(
             return Planned.takeError();
         }
         Planned->Origin = Origin;
+        // Update Name to include generic args for property lookup
+        // (planStructure uses the base name for mangling but we need the full name for lookups)
+        Planned->Name = CacheKey;
         InstantiatedStructures[CacheKey] = std::move(*Planned);
         Success = true;
     }
@@ -5298,6 +5428,8 @@ llvm::Expected<PlannedType> Planner::instantiateGeneric(
             return Planned.takeError();
         }
         Planned->Origin = Origin;
+        // Update Name to include generic args for property lookup
+        Planned->Name = CacheKey;
         InstantiatedUnions[CacheKey] = std::move(*Planned);
         Success = true;
     }
@@ -7720,6 +7852,20 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             }
                         }
 
+                        // Fallback: when not in a struct or namespace context, still try to match
+                        // a function by looking it up and matching argument count
+                        if (!MatchedFunc) {
+                            auto Candidates = lookupFunction(FuncName);
+                            for (const Function* Func : Candidates) {
+                                // Match by parameter count (no 'this' for non-method calls)
+                                if (Func->Parameters.empty() &&
+                                    Func->Input.size() == ArgTypes.size()) {
+                                    MatchedFunc = Func;
+                                    break;
+                                }
+                            }
+                        }
+
                         // Build PlannedItems for mangling
                         // Use the matched function's declared parameter types, not argument types
                         // This ensures correct mangling when integer literals are passed
@@ -7797,6 +7943,14 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                 ParentType.MangledName = StructIt->second.MangledName;
                                 // Don't set Generics here - we use MangledName directly in mangleFunction
                                 MangledName = mangleFunction(FuncName, ParamItems, &ParentType);
+                                // Check if method needs to be planned for generic instantiation
+                                if (InstantiatedFunctions.find(MangledName) == InstantiatedFunctions.end()) {
+                                    // Plan the sibling method on demand
+                                    auto DeferredResult = planDeferredMethod(StructIt->second, FuncName);
+                                    if (!DeferredResult) {
+                                        llvm::consumeError(DeferredResult.takeError());
+                                    }
+                                }
                             } else {
                                 // Fallback for non-generic structures
                                 std::string BaseName = CurrentStructureName;
@@ -9965,9 +10119,13 @@ llvm::Expected<PlannedStructure> Planner::planStructure(
     ParentType.MangledName = Result.MangledName;
 
     // Build full structure name including generic args for property lookup
-    // Strip package prefixes for consistent comparison with cache key names
+    // The Name parameter may already include generic args (e.g., "Array.char" from CacheKey)
+    // so we only add them if they're not already present
     std::string FullStructureName = Name.str();
-    if (!GenericArgs.empty()) {
+    bool NameHasGenericArgs = !GenericArgs.empty() &&
+        Name.find('.') != std::string::npos &&
+        Name.rfind('.') != 0;  // Has a dot but not at the start
+    if (!GenericArgs.empty() && !NameHasGenericArgs) {
         FullStructureName += ".";
         for (size_t i = 0; i < GenericArgs.size(); ++i) {
             if (i > 0) FullStructureName += ".";
@@ -10197,11 +10355,17 @@ llvm::Expected<PlannedFunction*> Planner::planDeferredMethod(
     std::vector<PlannedProperty>* OldStructureProperties = CurrentStructureProperties;
     PlannedStructure* OldStructure = CurrentStructure;
 
+    // Save and clear scopes to prevent caller's local variables from leaking
+    // into the method being planned for a generic type
+    std::vector<std::map<std::string, LocalBinding>> OldScopes;
+    std::swap(Scopes, OldScopes);
+
     // Set up context for planning
     TypeSubstitutions = Deferred.TypeSubstitutions;
     File = Deferred.File;
 
-    // Build full structure name
+    // Use Struct.Name as the full structure name - it already includes generic args
+    // (e.g., "Array.char") from the CacheKey when the structure was instantiated
     std::string FullStructureName = Struct.Name;
 
     // Set current structure context
@@ -10219,6 +10383,7 @@ llvm::Expected<PlannedFunction*> Planner::planDeferredMethod(
     auto PlannedMethod = planFunction(*OriginalFunc, &ParentType);
 
     // Restore state
+    std::swap(Scopes, OldScopes);
     TypeSubstitutions = OldSubst;
     File = OldFile;
     CurrentStructureName = OldStructureName;
@@ -10280,6 +10445,10 @@ llvm::Expected<PlannedFunction*> Planner::planDeferredMethod(
     std::map<std::string, PlannedType> OldSubst = TypeSubstitutions;
     std::string OldFile = File;
 
+    // Save and clear scopes to prevent caller's local variables from leaking
+    std::vector<std::map<std::string, LocalBinding>> OldScopes;
+    std::swap(Scopes, OldScopes);
+
     // Set up context for planning
     TypeSubstitutions = Deferred.TypeSubstitutions;
     File = Deferred.File;
@@ -10294,6 +10463,7 @@ llvm::Expected<PlannedFunction*> Planner::planDeferredMethod(
     auto PlannedMethod = planFunction(*OriginalFunc, &ParentType);
 
     // Restore state
+    std::swap(Scopes, OldScopes);
     TypeSubstitutions = OldSubst;
     File = OldFile;
 

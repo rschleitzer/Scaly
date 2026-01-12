@@ -1,4 +1,5 @@
 use scaly.memory.Page
+use scaly.memory.runtime
 
 define PACKED_SIZE: int 9
 
