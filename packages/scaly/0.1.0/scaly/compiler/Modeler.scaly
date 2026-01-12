@@ -910,11 +910,11 @@ function handle_property#(rp, is_private: bool, syntax: PropertySyntax) returns 
 {
     let prop_type handle_type#(syntax.annotation.type)
 
-    var init: pointer[Vector[Operand]] null
+    var initializer: pointer[Vector[Operand]] null
     if syntax.initializer <> null
     {
         let init_syntax (*syntax.initializer)
-        set init: handle_operands#(init_syntax.operands)
+        set initializer: handle_operands#(init_syntax.operands)
     }
 
     Property(
@@ -922,7 +922,7 @@ function handle_property#(rp, is_private: bool, syntax: PropertySyntax) returns 
         is_private,
         syntax.name,
         prop_type,
-        init,
+        initializer,
         null
     )
 }
@@ -1072,15 +1072,15 @@ function build_function#(rp, start: size_t, end_pos: size_t, syntax: TargetSynta
             var return_type: pointer[Type] null
             if named.routine.returns_ <> null
             {
-                let returns (*named.routine.returns_)
-                set return_type: handle_type#(returns.type)
+                let returns_syntax (*named.routine.returns_)
+                set return_type: handle_type#(returns_syntax.type)
             }
 
             var throws_type: pointer[Type] null
             if named.routine.throws_ <> null
             {
-                let throws (*named.routine.throws_)
-                set throws_type: handle_type#(throws.type)
+                let throws_syntax (*named.routine.throws_)
+                set throws_type: handle_type#(throws_syntax.type)
             }
 
             let life handle_lifetime(named.routine.lifetime)
@@ -1135,15 +1135,15 @@ function handle_operator#(rp, syntax: OperatorSyntax, is_private: bool) returns 
             var return_type: pointer[Type] null
             if named.routine.returns_ <> null
             {
-                let returns (*named.routine.returns_)
-                set return_type: handle_type#(returns.type)
+                let returns_syntax (*named.routine.returns_)
+                set return_type: handle_type#(returns_syntax.type)
             }
 
             var throws_type: pointer[Type] null
             if named.routine.throws_ <> null
             {
-                let throws (*named.routine.throws_)
-                set throws_type: handle_type#(throws.type)
+                let throws_syntax (*named.routine.throws_)
+                set throws_type: handle_type#(throws_syntax.type)
             }
 
             let impl handle_implementation#(named.routine.implementation)
@@ -1246,7 +1246,7 @@ function handle_structure#(rp, syntax: StructureSyntax, name: String, is_private
     var funcs: pointer[Vector[Function]] null
     var inits: pointer[Vector[Initializer]] null
     var operators: pointer[Vector[Operator]] null
-    var deinit: pointer[DeInitializer] null
+    var deinitializer: pointer[DeInitializer] null
 
     Structure(
         Span(syntax.start, syntax.end),
@@ -1260,7 +1260,7 @@ function handle_structure#(rp, syntax: StructureSyntax, name: String, is_private
         funcs,
         inits,
         operators,
-        deinit,
+        deinitializer,
         null
     )
 }
@@ -1344,12 +1344,50 @@ function handle_namespace#(rp, syntax: NamespaceSyntax, name: String, is_private
 function handle_definition#(rp, syntax: DefinitionSyntax, is_private: bool) returns Concept
 {
     let name syntax.name
+    let loc Span(syntax.start, syntax.end)
 
-    choose syntax.concept
+    ; Handle generic parameters
+    var parameters: pointer[Vector[GenericParameter]] null
+    if syntax.parameters <> null
+    {
+        let params_syntax (*syntax.parameters)
+        if params_syntax.parameters <> null
+        {
+            let param_vec (*params_syntax.parameters)
+            set parameters: Vector[GenericParameter]#(param_vec.length)
+            var i: size_t 0
+            while i < param_vec.length
+            {
+                let param_syntax param_vec.get(i)
+                let param handle_generic_parameter#(*param_syntax)
+                (*parameters).put(i, param)
+                set i: i + 1
+            }
+        }
+    }
+
+    ; Handle attributes
+    var attributes: pointer[Vector[Attribute]] null
+    if syntax.attributes <> null
+    {
+        let attr_vec (*syntax.attributes)
+        set attributes: Vector[Attribute]#(attr_vec.length)
+        var i: size_t 0
+        while i < attr_vec.length
+        {
+            let attr_syntax attr_vec.get(i)
+            let attr handle_attribute#(*attr_syntax)
+            (*attributes).put(i, attr)
+            set i: i + 1
+        }
+    }
+
+    ; Create the Definition variant based on concept type
+    let definition choose syntax.concept_
         when struct_syntax: StructureSyntax
         {
             let structure handle_structure#(struct_syntax, name, is_private)
-            Concept.Structure(structure)
+            Definition.Structure(structure)
         }
         when class_syntax: ClassSyntax
         {
@@ -1369,17 +1407,17 @@ function handle_definition#(rp, syntax: DefinitionSyntax, is_private: bool) retu
                 null,
                 null
             )
-            Concept.Structure(dummy_struct)
+            Definition.Structure(dummy_struct)
         }
         when union_syntax: UnionSyntax
         {
             let union_ handle_union#(union_syntax, name, is_private)
-            Concept.Union(union_)
+            Definition.Union(union_)
         }
         when namespace_syntax: NamespaceSyntax
         {
             let namespace_ handle_namespace#(namespace_syntax, name, is_private)
-            Concept.Namespace(namespace_)
+            Definition.Namespace(namespace_)
         }
         else
         {
@@ -1394,8 +1432,11 @@ function handle_definition#(rp, syntax: DefinitionSyntax, is_private: bool) retu
                 null,
                 null
             )
-            Concept.Namespace(default_ns)
+            Definition.Namespace(default_ns)
         }
+
+    ; Create the Concept with all fields
+    Concept(loc, name, parameters, attributes, definition)
 }
 
 ; ============================================================================

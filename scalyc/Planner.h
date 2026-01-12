@@ -46,6 +46,9 @@ private:
     // On-demand loaded packages (owns the Program objects)
     std::vector<std::unique_ptr<Program>> OnDemandPackages;
 
+    // Cache of loaded module paths (to prevent infinite recursion)
+    std::map<std::string, const Module*> LoadedModulePaths;
+
     // Modules accessed via on-demand loading (for sibling concept lookup)
     // When we find Page in scaly.memory.Page, we cache the Page module
     // so later lookups for PAGE_SIZE can find it as a sibling
@@ -134,6 +137,13 @@ private:
 
     // Track if current function uses $ allocations (needs local page)
     bool CurrentFunctionUsesLocalLifetime = false;
+
+    // Recursion depth tracking for stack overflow prevention
+    // Note: Each planning frame is ~200KB due to std::variant and locals
+    // Max depth of 200 requires ~40MB stack - use ulimit -s unlimited for large files
+    size_t PlanningDepth = 0;
+    static constexpr size_t MaxPlanningDepth = 300;  // Conservative limit
+    size_t MaxDepthSeen = 0;  // For debugging
 
     // Track per-scope $ allocations for block-scoped cleanup
     struct ScopeInfo {
