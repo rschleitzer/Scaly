@@ -5304,6 +5304,9 @@ llvm::Error Emitter::jitExecuteVoid(const Plan &P, llvm::StringRef MangledFuncti
     PageAllocate = nullptr;
     PageDeallocateExtensions = nullptr;
     PageType = nullptr;
+    BlockWatermarkType = nullptr;
+    PageSaveWatermark = nullptr;
+    PageRestoreWatermark = nullptr;
 
     // Check if Page is in the Plan
     bool PageInPlan = P.Structures.find("Page") != P.Structures.end();
@@ -5484,6 +5487,7 @@ llvm::Error Emitter::jitExecuteVoid(const Plan &P, llvm::StringRef MangledFuncti
     // Recreate context for future use
     Context = std::make_unique<llvm::LLVMContext>();
     Builder = std::make_unique<llvm::IRBuilder<>>(*Context);
+    initIntrinsicTypes();
 
     return llvm::Error::success();
 }
@@ -5510,6 +5514,9 @@ llvm::Expected<int64_t> Emitter::jitExecuteIntFunction(const Plan &P, llvm::Stri
     PageAllocate = nullptr;
     PageDeallocateExtensions = nullptr;
     PageType = nullptr;
+    BlockWatermarkType = nullptr;
+    PageSaveWatermark = nullptr;
+    PageRestoreWatermark = nullptr;
 
     // Check if Page is in the Plan
     bool PageInPlan = P.Structures.find("Page") != P.Structures.end();
@@ -5697,6 +5704,10 @@ llvm::Expected<int64_t> Emitter::jitExecuteIntFunction(const Plan &P, llvm::Stri
     Context = std::make_unique<llvm::LLVMContext>();
     Builder = std::make_unique<llvm::IRBuilder<>>(*Context);
 
+    // Re-initialize intrinsic types for the new context
+    // (IntrinsicTypes contained pointers to types from the old context)
+    initIntrinsicTypes();
+
     return Result;
 }
 
@@ -5721,6 +5732,9 @@ void Emitter::dumpIR(const Plan &P) {
     PageAllocate = nullptr;
     PageDeallocateExtensions = nullptr;
     PageType = nullptr;
+    BlockWatermarkType = nullptr;
+    PageSaveWatermark = nullptr;
+    PageRestoreWatermark = nullptr;
 
     // Check if Page is in the Plan
     bool PageInPlan = P.Structures.find("Page") != P.Structures.end();

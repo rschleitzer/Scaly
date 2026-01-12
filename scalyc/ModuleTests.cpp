@@ -194,6 +194,98 @@ static bool testLexerModule() {
 }
 
 // ============================================================================
+// Optimized Test Runner - compiles package once, runs multiple tests
+// ============================================================================
+
+// Compile a package once and run multiple test functions
+static bool runPackageTests(
+    llvm::StringRef PackagePath,
+    const std::vector<std::pair<const char*, const char*>>& Tests  // {Name, FunctionName}
+) {
+    auto BufOrErr = llvm::MemoryBuffer::getFile(PackagePath);
+    if (!BufOrErr) {
+        for (const auto& Test : Tests) {
+            fail(Test.first, ("Cannot open file: " + PackagePath.str()).c_str());
+        }
+        return false;
+    }
+
+    Parser P((*BufOrErr)->getBuffer());
+    auto ParseResult = P.parseProgram();
+    if (!ParseResult) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ParseResult.takeError();
+        for (const auto& Test : Tests) {
+            fail(Test.first, ErrMsg.c_str());
+        }
+        return false;
+    }
+
+    Modeler M(PackagePath);
+    auto ModelResult = M.buildProgram(*ParseResult);
+    if (!ModelResult) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ModelResult.takeError();
+        for (const auto& Test : Tests) {
+            fail(Test.first, ErrMsg.c_str());
+        }
+        return false;
+    }
+
+    Planner Pl(PackagePath);
+    auto PlanResult = Pl.plan(*ModelResult);
+    if (!PlanResult) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << PlanResult.takeError();
+        for (const auto& Test : Tests) {
+            fail(Test.first, ErrMsg.c_str());
+        }
+        return false;
+    }
+
+    EmitterConfig Config;
+    Config.EmitDebugInfo = false;
+    Emitter E(Config);
+
+    bool AllPassed = true;
+    for (const auto& Test : Tests) {
+        // Look up the mangled name from the plan
+        std::string MangledName;
+        for (const auto &[name, Func] : PlanResult->Functions) {
+            if (Func.Name == Test.second) {
+                MangledName = Func.MangledName;
+                break;
+            }
+        }
+
+        if (MangledName.empty()) {
+            fail(Test.first, ("Function not found: " + std::string(Test.second)).c_str());
+            AllPassed = false;
+            continue;
+        }
+
+        auto Result = E.jitExecuteIntFunction(*PlanResult, MangledName);
+        if (!Result) {
+            std::string ErrMsg;
+            llvm::raw_string_ostream OS(ErrMsg);
+            OS << Result.takeError();
+            fail(Test.first, ErrMsg.c_str());
+            AllPassed = false;
+        } else if (*Result != 0) {
+            std::string Msg = "test returned error code " + std::to_string(*Result);
+            fail(Test.first, Msg.c_str());
+            AllPassed = false;
+        } else {
+            pass(Test.first);
+        }
+    }
+    return AllPassed;
+}
+
+// ============================================================================
 // Main Test Runner
 // ============================================================================
 
@@ -204,21 +296,19 @@ bool runModuleTests() {
     TestsPassed = 0;
     TestsFailed = 0;
 
-    // Memory module tests
-    llvm::outs() << "  Memory module tests:\n";
-    testMemoryModule();
+    // Compile scaly package once and run all its tests
+    llvm::outs() << "  Scaly package tests:\n";
+    runPackageTests(ScalyPackagePath, {
+        {"Module: memory.test()", "memory.test"},
+        {"Module: containers.test()", "containers.test"},
+        {"Module: io.test()", "io.test"},
+    });
 
-    // Container module tests
-    llvm::outs() << "  Container module tests:\n";
-    testContainersModule();
-
-    // IO module tests
-    llvm::outs() << "  IO module tests:\n";
-    testIoModule();
-
-    // Scalyc lexer module tests
-    llvm::outs() << "  Lexer module tests:\n";
-    testLexerModule();
+    // Compile scalyc package once and run its tests
+    llvm::outs() << "  Scalyc package tests:\n";
+    runPackageTests(ScalycPackagePath, {
+        {"Module: scalyc lexer test()", "test"},
+    });
 
     llvm::outs() << "\nModule tests: " << TestsPassed << " passed, "
                  << TestsFailed << " failed\n";
