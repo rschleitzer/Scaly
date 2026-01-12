@@ -258,10 +258,18 @@ private:
 
     llvm::Expected<PlannedStructure> planStructure(const Structure &Struct,
                                                     llvm::StringRef Name,
-                                                    const std::vector<PlannedType> &GenericArgs);
+                                                    const std::vector<PlannedType> &GenericArgs,
+                                                    bool lazy = false);
     llvm::Expected<PlannedUnion> planUnion(const Union &Un,
                                             llvm::StringRef Name,
-                                            const std::vector<PlannedType> &GenericArgs);
+                                            const std::vector<PlannedType> &GenericArgs,
+                                            bool lazy = false);
+
+    // On-demand method planning for lazy instantiation
+    llvm::Expected<PlannedFunction*> planDeferredMethod(PlannedStructure &Struct,
+                                                         const std::string &MethodName);
+    llvm::Expected<PlannedFunction*> planDeferredMethod(PlannedUnion &Un,
+                                                         const std::string &MethodName);
     llvm::Expected<PlannedNamespace> planNamespace(const Namespace &NS,
                                                     llvm::StringRef Name);
 

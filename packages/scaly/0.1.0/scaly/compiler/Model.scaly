@@ -1,228 +1,93 @@
 ; Model.scaly - Semantic model types for Scaly compiler
-;
-; Ported from C++ Model.h. Uses full paths like scaly.containers.String
-; to test the fix for nested generics with qualified type names.
+; Ported from retired proto-Scaly Model.scaly
 
 use scaly.containers.Vector
+use scaly.containers.HashMap
+use scaly.containers.String
 
-; ============================================================================
-; Span represents a source location range
-; ============================================================================
+; Source location
+define Span(start: size_t, end: size_t)
 
-define Span
-(
-    start: size_t
-    end: size_t
-)
-
-; ============================================================================
-; Version for package versioning (semantic versioning)
-; ============================================================================
-
-define Version
-(
-    major: int
-    minor: int
-    patch: int
-)
-
-; ============================================================================
 ; Constants
-; ============================================================================
+define BooleanConstant(span: Span, value: bool)
+define IntegerConstant(span: Span, value: size_t)
+define HexConstant(span: Span, value: size_t)
+define FloatingPointConstant(span: Span, value: double)
+define StringConstant(span: Span, value: String)
+define CharacterConstant(span: Span, value: String)
+define FragmentConstant(span: Span, value: String)
 
-define BooleanConstant
-(
-    loc: Span
-    value: bool
-)
-
-define IntegerConstant
-(
-    loc: Span
-    value: int
-)
-
-define HexConstant
-(
-    loc: Span
-    value: size_t
-)
-
-define FloatingPointConstant
-(
-    loc: Span
-    value: float
-)
-
-define StringConstant
-(
-    loc: Span
-    value: scaly.containers.String
-)
-
-define CharacterConstant
-(
-    loc: Span
-    value: scaly.containers.String
-)
-
-define FragmentConstant
-(
-    loc: Span
-    value: scaly.containers.String
-)
-
-define NullConstant
-(
-    loc: Span
-)
-
-define Constant union
-(
+define Constant union (
     Boolean: BooleanConstant
     Integer: IntegerConstant
     Hex: HexConstant
-    Float: FloatingPointConstant
+    FloatingPoint: FloatingPointConstant
     String: StringConstant
     Character: CharacterConstant
     Fragment: FragmentConstant
-    Null: NullConstant
 )
 
-; ============================================================================
-; Lifetimes
-; ============================================================================
-
-define UnspecifiedLifetime ()
-
-define CallLifetime
+; Tuple component
+define Component
 (
-    loc: Span
+    span: Span
+    name: String?
+    value: Vector[Operand]
+    attributes: Vector[Attribute]
 )
 
-define LocalLifetime
-(
-    loc: Span
+define Tuple(span: Span, components: Vector[Component])
+define Matrix(span: Span, operations: Vector[Vector[Operand]])
+define Block(span: Span, statements: Vector[Statement])
+
+; Lifetime variants
+define Unspecified()
+define Call(span: Span)
+define Local(span: Span)
+define Reference(span: Span, location: String)
+define Thrown(span: Span)
+
+define Lifetime union (
+    Unspecified: Unspecified
+    Call: Call
+    Local: Local
+    Reference: Reference
+    Thrown: Thrown
 )
 
-define ReferenceLifetime
-(
-    loc: Span
-    location: scaly.containers.String
-)
-
-define ThrownLifetime
-(
-    loc: Span
-)
-
-define Lifetime union
-(
-    Unspecified: UnspecifiedLifetime
-    Call: CallLifetime
-    Local: LocalLifetime
-    Reference: ReferenceLifetime
-    Thrown: ThrownLifetime
-)
-
-; ============================================================================
-; Type represents a type reference
-; ============================================================================
-
-define Type
-(
-    loc: Span
-    name: pointer[Vector[scaly.containers.String]]
-    generics: pointer[Vector[Type]]
-    life: Lifetime
-)
-
-; ============================================================================
-; Attributes and Model values
-; ============================================================================
-
-define ModelVariable
-(
-    name: scaly.containers.String
-)
-
-; Forward declarations for recursive types
-; Model is a variant that can contain Constant, ModelVariable, Tuple, or Matrix
-
-define Attribute
-(
-    loc: Span
-    name: scaly.containers.String
-    value: pointer[Model]
-)
-
-; ============================================================================
-; Items and Parameters
-; ============================================================================
-
-define Item
-(
-    loc: Span
-    is_private: bool
-    name: pointer[scaly.containers.String]
-    item_type: pointer[Type]
-    attributes: pointer[Vector[Attribute]]
-)
-
-; ============================================================================
-; Generic Parameters
-; ============================================================================
-
-define GenericParameter
-(
-    loc: Span
-    name: scaly.containers.String
-    attributes: pointer[Vector[Attribute]]
-)
-
-; ============================================================================
-; Actions and Statements
-; ============================================================================
-
+; Action for assignments and side-effects
 define Action
 (
-    source: pointer[Vector[Operand]]
-    target: pointer[Vector[Operand]]
+    source: Vector[Operand]
+    target: Vector[Operand]
 )
 
+; Item for parameters and bindings
+define Item
+(
+    span: Span
+    private_: bool
+    name: String?
+    type: Type?
+    attributes: Vector[Attribute]
+)
+
+; Binding for let/var/set statements
 define Binding
 (
-    loc: Span
-    binding_type: pointer[char]
-    binding_item: Item
-    operation: pointer[Vector[Operand]]
+    span: Span
+    binding_type: String
+    item: Item
+    operation: Vector[Operand]
 )
 
-define Break
-(
-    loc: Span
-    result: pointer[Vector[Operand]]
-)
+; Control flow statements
+define Break(span: Span, result: Vector[Operand])
+define Continue(span: Span)
+define Return(span: Span, result: Vector[Operand])
+define Throw(span: Span, result: Vector[Operand])
 
-define Continue
-(
-    loc: Span
-)
-
-define Return
-(
-    loc: Span
-    result: pointer[Vector[Operand]]
-)
-
-define Throw
-(
-    loc: Span
-    result: pointer[Vector[Operand]]
-)
-
-define Statement union
-(
+define Statement union (
     Action: Action
     Binding: Binding
     Break: Break
@@ -231,176 +96,111 @@ define Statement union
     Throw: Throw
 )
 
-define Block
+; Type reference
+define Type
 (
-    loc: Span
-    statements: pointer[Vector[Statement]]
+    span: Span
+    name: Vector[String]
+    generics: Vector[Type]?
+    lifetime: Lifetime
 )
 
-; ============================================================================
-; Properties and Variants
-; ============================================================================
-
+; Property for structure fields
 define Property
 (
-    loc: Span
-    is_private: bool
-    name: scaly.containers.String
-    prop_type: pointer[Type]
-    initializer: pointer[Vector[Operand]]
-    attributes: pointer[Vector[Attribute]]
+    span: Span
+    private_: bool
+    name: String
+    type: Type?
+    initializer: Vector[Operand]?
+    attributes: Vector[Attribute]
 )
 
-define Variant
-(
-    loc: Span
-    name: scaly.containers.String
-    var_type: pointer[Type]
-    attributes: pointer[Vector[Attribute]]
-)
-
-; ============================================================================
-; Control Flow
-; ============================================================================
-
+; If expression
 define If
 (
-    loc: Span
-    condition: pointer[Vector[Operand]]
-    prop: pointer[Property]
-    consequent: pointer[Statement]
-    alternative: pointer[Statement]
+    span: Span
+    condition: Vector[Operand]
+    property: Property?
+    consequent: Statement
+    alternative: Statement?
 )
 
-define Case
-(
-    loc: Span
-    condition: pointer[Vector[Operand]]
-)
+; Pattern matching
+define Case(span: Span, condition: Vector[Operand])
 
 define Branch
 (
-    loc: Span
-    cases: pointer[Vector[Case]]
-    consequent: pointer[Statement]
+    span: Span
+    cases: Vector[Case]
+    consequent: Statement
 )
 
 define Match
 (
-    loc: Span
-    condition: pointer[Vector[Operand]]
-    branches: pointer[Vector[Branch]]
-    alternative: pointer[Statement]
+    span: Span
+    condition: Vector[Operand]
+    branches: Vector[Branch]
+    alternative: Statement?
 )
 
 define When
 (
-    loc: Span
-    name: scaly.containers.String
-    variant_path: pointer[Vector[scaly.containers.String]]
-    consequent: pointer[Statement]
+    span: Span
+    name: String
+    variant: Vector[String]
+    consequent: Statement
 )
 
 define Choose
 (
-    loc: Span
-    condition: pointer[Vector[Operand]]
-    cases: pointer[Vector[When]]
-    alternative: pointer[Statement]
+    span: Span
+    condition: Vector[Operand]
+    cases: Vector[When]
+    alternative: Statement?
 )
 
+; Loops
 define For
 (
-    loc: Span
-    identifier: scaly.containers.String
-    expr: pointer[Vector[Operand]]
-    body: Action
+    span: Span
+    identifier: String
+    expression: Vector[Operand]
+    action: Action
 )
 
 define While
 (
-    loc: Span
-    cond: Binding
-    body: Action
+    span: Span
+    condition: Binding
+    action: Action
 )
 
+; Error handling
 define Try
 (
-    loc: Span
-    cond: Binding
-    catches: pointer[Vector[When]]
-    alternative: pointer[Statement]
+    span: Span
+    binding: Binding
+    catches: Vector[When]
+    alternative: Statement?
 )
 
-; ============================================================================
-; Type Operations
-; ============================================================================
-
-define SizeOf
-(
-    loc: Span
-    sized_type: Type
-)
-
-define AlignOf
-(
-    loc: Span
-    aligned_type: Type
-)
-
-define Is
-(
-    loc: Span
-    name: pointer[Vector[scaly.containers.String]]
-)
-
-define As
-(
-    loc: Span
-    target_type: Type
-)
+; Type operations
+define SizeOf(span: Span, type: Type)
+define Is(span: Span, name: Vector[String])
 
 define New
 (
-    loc: Span
-    new_type: Type
-    arguments: ObjectTuple
+    span: Span
+    type: Type
+    arguments: Tuple
 )
 
-; ============================================================================
-; Tuple and Matrix (Object and Vector literals)
-; ============================================================================
-
-define Component
-(
-    loc: Span
-    name: pointer[scaly.containers.String]
-    value: pointer[Vector[Operand]]
-    attributes: pointer[Vector[Attribute]]
-)
-
-define ObjectTuple
-(
-    loc: Span
-    components: pointer[Vector[Component]]
-)
-
-define Matrix
-(
-    loc: Span
-    operations: pointer[Vector[Vector[Operand]]]
-    life: Lifetime
-)
-
-; ============================================================================
-; Expression - the main expression type
-; ============================================================================
-
-define Expression union
-(
+; Expression union
+define Expression union (
     Constant: Constant
     Type: Type
-    ObjectTuple: ObjectTuple
+    Tuple: Tuple
     Matrix: Matrix
     Block: Block
     If: If
@@ -410,186 +210,136 @@ define Expression union
     While: While
     Try: Try
     SizeOf: SizeOf
-    AlignOf: AlignOf
     Is: Is
-    As: As
     New: New
 )
 
-; ============================================================================
-; Operand wraps an expression with optional member access
-; ============================================================================
-
+; Operand wraps expression with optional member access
 define Operand
 (
-    loc: Span
-    expr: Expression
-    member_access: pointer[Vector[Type]]
+    span: Span
+    expression: Expression
+    member_access: Vector[String]?
 )
 
-; ============================================================================
-; Model - variant for attribute values (uses Tuple and Matrix)
-; ============================================================================
-
-define Model union
-(
-    Constant: Constant
-    Variable: ModelVariable
-    ObjectTuple: pointer[ObjectTuple]
-    Matrix: pointer[Matrix]
-)
-
-; ============================================================================
 ; Implementation variants
-; ============================================================================
+define Extern(span: Span)
+define Instruction(span: Span)
+define Intrinsic(span: Span)
 
-define ExternImpl
-(
-    loc: Span
-)
-
-define InstructionImpl
-(
-    loc: Span
-)
-
-define IntrinsicImpl
-(
-    loc: Span
-)
-
-define Implementation union
-(
+define Implementation union (
     Action: Action
-    Extern: ExternImpl
-    Instruction: InstructionImpl
-    Intrinsic: IntrinsicImpl
+    Extern: Extern
+    Instruction: Instruction
+    Intrinsic: Intrinsic
 )
 
-; ============================================================================
-; Functions and Operators
-; ============================================================================
-
+; Function definition
 define Function
 (
-    loc: Span
-    is_private: bool
+    span: Span
+    private_: bool
     pure: bool
-    name: scaly.containers.String
-    parameters: pointer[Vector[GenericParameter]]
-    page_parameter: pointer[scaly.containers.String]
-    input: pointer[Vector[Item]]
-    return_type: pointer[Type]
-    throws_type: pointer[Type]
-    life: Lifetime
-    impl: Implementation
+    name: String
+    input: Vector[Item]
+    returns_: Type?
+    throws_: Type?
+    lifetime: Lifetime
+    implementation: Implementation
 )
 
+; Model for attribute values
+define Model union (
+    Constant: Constant
+    Variable: String
+    Tuple: Tuple
+    Matrix: Matrix
+)
+
+; Attribute
+define Attribute
+(
+    span: Span
+    name: String
+    model: Model
+)
+
+; Initializer
 define Initializer
 (
-    loc: Span
-    is_private: bool
-    page_parameter: pointer[scaly.containers.String]
-    input: pointer[Vector[Item]]
-    impl: Implementation
+    span: Span
+    private_: bool
+    input: Vector[Item]
+    implementation: Implementation
 )
 
-define DeInitializer
-(
-    loc: Span
-    impl: Implementation
-)
+define DeInitializer(span: Span, implementation: Implementation)
 
+; Operator
 define Operator
 (
-    loc: Span
-    is_private: bool
-    name: scaly.containers.String
-    parameters: pointer[Vector[GenericParameter]]
-    input: pointer[Vector[Item]]
-    return_type: pointer[Type]
-    throws_type: pointer[Type]
-    impl: Implementation
+    span: Span
+    private_: bool
+    name: String
+    input: Vector[Item]
+    returns_: Type?
+    throws_: Type?
+    implementation: Implementation
 )
 
-; ============================================================================
-; Use statement
-; ============================================================================
-
-define Use
-(
-    loc: Span
-    path: pointer[Vector[scaly.containers.String]]
-)
-
-; ============================================================================
-; Global constant
-; ============================================================================
-
-define Global
-(
-    loc: Span
-    global_type: Type
-    value: pointer[Vector[Operand]]
-)
-
-; ============================================================================
-; Structure Members
-; ============================================================================
-
-define StructMember union
-(
-    Concept: pointer[Concept]
-    Operator: Operator
-    Function: Function
-)
-
-; ============================================================================
-; Structure definition
-; ============================================================================
-
+; Structure with symbol table
 define Structure
 (
-    loc: Span
-    is_private: bool
-    properties: pointer[Vector[Property]]
-    modules: pointer[Vector[Module]]
-    uses: pointer[Vector[Vector[scaly.containers.String]]]
-    initializers: pointer[Vector[Initializer]]
-    deinitializer: pointer[DeInitializer]
-    members: pointer[Vector[StructMember]]
+    span: Span
+    private_: bool
+    properties: Vector[Property]
+    modules: Vector[Module]
+    uses: Vector[Use]
+    initializers: Vector[Initializer]
+    deinitializer: DeInitializer?
+    members: Vector[Member]
+    symbols: HashMap[String, Nameable]
 )
 
-; ============================================================================
-; Union definition
-; ============================================================================
+; Variant for unions
+define Variant
+(
+    span: Span
+    name: String
+    type: Type?
+    attributes: Vector[Attribute]
+)
 
+; Union with symbol table
 define Union
 (
-    loc: Span
-    is_private: bool
-    variants: pointer[Vector[Variant]]
-    members: pointer[Vector[StructMember]]
+    span: Span
+    private_: bool
+    variants: Vector[Variant]
+    members: Vector[Member]
+    symbols: HashMap[String, Nameable]
 )
 
-; ============================================================================
-; Namespace definition
-; ============================================================================
-
+; Namespace with symbol table
 define Namespace
 (
-    loc: Span
-    modules: pointer[Vector[Module]]
-    members: pointer[Vector[StructMember]]
+    span: Span
+    modules: Vector[Module]
+    members: Vector[Member]
+    symbols: HashMap[String, Nameable]
 )
 
-; ============================================================================
-; Definition - represents a type definition
-; ============================================================================
-
-define Definition union
+; Global constant
+define Global
 (
-    Intrinsic: IntrinsicImpl
+    span: Span
+    type: Type
+    value: Vector[Operand]
+)
+
+; Definition union
+define Definition union (
+    Intrinsic: Intrinsic
     Global: Global
     Namespace: Namespace
     Structure: Structure
@@ -597,63 +347,63 @@ define Definition union
     Type: Type
 )
 
-; ============================================================================
-; Concept wraps a definition with generics
-; ============================================================================
+; Use statement
+define Use(span: Span, path: Vector[String])
 
+; Generic parameter
+define GenericParameter
+(
+    span: Span
+    name: String
+    attributes: Vector[Attribute]
+)
+
+; Concept wraps definition with generics
 define Concept
 (
-    loc: Span
-    name: scaly.containers.String
-    parameters: pointer[Vector[GenericParameter]]
-    attributes: pointer[Vector[Attribute]]
-    def: Definition
+    span: Span
+    name: String
+    parameters: Vector[GenericParameter]
+    attributes: Vector[Attribute]
+    definition: Definition
 )
 
-; ============================================================================
-; Package represents an external package dependency with version
-; ============================================================================
-
-define Package
+; Module with symbol table
+define Module
 (
-    name: scaly.containers.String
-    version: Version
-    root: pointer[Module]
+    private_: bool
+    file: String
+    name: String
+    modules: Vector[Module]
+    uses: Vector[Use]
+    members: Vector[Member]
+    symbols: HashMap[String, Nameable]
 )
 
-; ============================================================================
-; Member can be a package, concept, operator, or function
-; ============================================================================
+; Program
+define Program
+(
+    packages: Vector[Module]
+    module_: Module
+    statements: Vector[Statement]
+)
 
+; Member union
 define Member union
 (
-    Package: Package
+    Package: Vector[Module]
     Concept: Concept
     Operator: Operator
     Function: Function
 )
 
-; ============================================================================
-; Module represents a compiled module
-; ============================================================================
-
-define Module
+; Nameable for symbol table lookup
+define Nameable union
 (
-    is_private: bool
-    file: scaly.containers.String
-    name: scaly.containers.String
-    modules: pointer[Vector[Module]]
-    uses: pointer[Vector[Use]]
-    members: pointer[Vector[Member]]
-)
-
-; ============================================================================
-; Program represents a complete program
-; ============================================================================
-
-define Program
-(
-    packages: pointer[Vector[Package]]
-    main_module: Module
-    statements: pointer[Vector[Statement]]
+    Package: Vector[Module]
+    Concept: Concept
+    Operator: Operator
+    Functions: Vector[Function]
+    Property: Property
+    Variant: Variant
 )
