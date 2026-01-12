@@ -8,7 +8,7 @@ use scaly.containers.String
 use scaly.containers.StringBuilder
 use scaly.compiler.Model.Span
 use scaly.compiler.Model.Lifetime
-use scaly.compiler.Model.UnspecifiedLifetime
+use scaly.compiler.Model.Unspecified
 use scaly.compiler.Model.Constant
 use scaly.compiler.Model.Module
 use scaly.compiler.Model.Program
@@ -843,11 +843,11 @@ define Planner
     function resolve_type(this, t: scaly.compiler.Model.Type, instantiation_loc: Span) returns pointer[PlannedType]
     {
         let result PlannedType#(
-            t.loc,                      ; loc
+            t.span,                     ; loc
             String#(""),                ; name (will be set)
             String#(""),                ; mangled_name (will be set)
             null,                       ; generics
-            t.life,                     ; life
+            t.lifetime,                 ; life
             null,                       ; origin
             String#(""),                ; array_size
             null                        ; variable
@@ -861,7 +861,7 @@ define Planner
         if subst <> null
         {
             ; Return substituted type with original location
-            set result.loc: t.loc
+            set result.loc: t.span
             set result.name: subst.name
             set result.mangled_name: subst.mangled_name
             set result.generics: subst.generics
@@ -1010,7 +1010,7 @@ define Planner
                 cache_key,
                 cached_struct.mangled_name,
                 args,
-                scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+                scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
                 null,
                 String#(""),
                 null
@@ -1027,7 +1027,7 @@ define Planner
                 cache_key,
                 cached_union.mangled_name,
                 args,
-                scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+                scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
                 null,
                 String#(""),
                 null
@@ -1059,7 +1059,7 @@ define Planner
             cache_key,
             mangled,
             args,
-            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
             null,
             String#(""),
             null
@@ -1089,11 +1089,11 @@ define Planner
             when Boolean: b
             {
                 PlannedType#(
-                    b.loc,
+                    b.span,
                     String#("bool"),
                     String#("b"),
                     null,
-                    scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+                    scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
                     null,
                     String#(""),
                     null
@@ -1102,11 +1102,11 @@ define Planner
             when Integer: i
             {
                 PlannedType#(
-                    i.loc,
+                    i.span,
                     String#("int"),
                     String#("i"),
                     null,
-                    scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+                    scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
                     null,
                     String#(""),
                     null
@@ -1115,24 +1115,24 @@ define Planner
             when Hex: h
             {
                 PlannedType#(
-                    h.loc,
+                    h.span,
                     String#("size_t"),
                     String#("m"),
                     null,
-                    scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+                    scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
                     null,
                     String#(""),
                     null
                 )
             }
-            when Float: f
+            when FloatingPoint: f
             {
                 PlannedType#(
-                    f.loc,
+                    f.span,
                     String#("float"),
                     String#("f"),
                     null,
-                    scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+                    scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
                     null,
                     String#(""),
                     null
@@ -1142,11 +1142,11 @@ define Planner
             {
                 ; String constants have type pointer[char]
                 let char_type PlannedType#(
-                    s.loc,
+                    s.span,
                     String#("char"),
                     String#("c"),
                     null,
-                    scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+                    scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
                     null,
                     String#(""),
                     null
@@ -1154,11 +1154,11 @@ define Planner
                 let generics Vector[PlannedType]#()
                 generics.put(0, char_type)
                 PlannedType#(
-                    s.loc,
+                    s.span,
                     String#("pointer"),
                     String#("Pc"),
                     generics,
-                    scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+                    scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
                     null,
                     String#(""),
                     null
@@ -1167,11 +1167,11 @@ define Planner
             when Character: ch
             {
                 PlannedType#(
-                    ch.loc,
+                    ch.span,
                     String#("char"),
                     String#("c"),
                     null,
-                    scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+                    scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
                     null,
                     String#(""),
                     null
@@ -1181,11 +1181,11 @@ define Planner
             {
                 ; Fragment constants are like strings
                 let char_type PlannedType#(
-                    fr.loc,
+                    fr.span,
                     String#("char"),
                     String#("c"),
                     null,
-                    scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+                    scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
                     null,
                     String#(""),
                     null
@@ -1193,25 +1193,11 @@ define Planner
                 let generics Vector[PlannedType]#()
                 generics.put(0, char_type)
                 PlannedType#(
-                    fr.loc,
+                    fr.span,
                     String#("pointer"),
                     String#("Pc"),
                     generics,
-                    scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
-                    null,
-                    String#(""),
-                    null
-                )
-            }
-            when Null: n
-            {
-                ; Null has a special "null" type (untyped pointer)
-                PlannedType#(
-                    n.loc,
-                    String#("null"),
-                    String#("Pv"),
-                    null,
-                    scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+                    scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
                     null,
                     String#(""),
                     null
@@ -1231,7 +1217,7 @@ define Planner
             String#("void"),
             String#("v"),
             null,
-            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
             null,
             String#(""),
             null
@@ -1246,7 +1232,7 @@ define Planner
             String#("bool"),
             String#("b"),
             null,
-            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
             null,
             String#(""),
             null
@@ -1261,7 +1247,7 @@ define Planner
             String#("int"),
             String#("i"),
             null,
-            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
             null,
             String#(""),
             null
@@ -1276,7 +1262,7 @@ define Planner
             String#("size_t"),
             String#("m"),
             null,
-            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
             null,
             String#(""),
             null
@@ -1291,7 +1277,7 @@ define Planner
             String#("char"),
             String#("c"),
             null,
-            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
             null,
             String#(""),
             null
@@ -1306,7 +1292,7 @@ define Planner
             String#("float"),
             String#("f"),
             null,
-            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
             null,
             String#(""),
             null
@@ -1328,7 +1314,7 @@ define Planner
             String#("pointer"),
             mangled.to_string(),
             generics,
-            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
             null,
             String#(""),
             null
@@ -1350,7 +1336,7 @@ define Planner
             String#("ref"),
             mangled.to_string(),
             generics,
-            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
             null,
             String#(""),
             null
@@ -1366,8 +1352,8 @@ define Planner
     function plan_item(this, it: scaly.compiler.Model.Item) returns pointer[PlannedItem]
     {
         let result PlannedItem#(
-            it.loc,
-            it.private,
+            it.span,
+            it.private_,
             null,       ; name
             null,       ; item_type
             null        ; attributes
@@ -1378,9 +1364,9 @@ define Planner
             set result.name: it.name
 
         ; Resolve type if present
-        if it.item_type <> null
+        if it.type <> null
         {
-            let resolved resolve_type(it.item_type, it.loc)
+            let resolved resolve_type(it.type, it.span)
             if resolved = null
                 return null
             set result.item_type: resolved
@@ -1395,9 +1381,9 @@ define Planner
                 for attr in it.attributes
                 {
                     let planned_attr PlannedAttribute#(
-                        attr.loc,
+                        attr.span,
                         attr.name,
-                        attr.value
+                        attr.model
                     )
                     result.attributes.put(result.attributes.length, planned_attr)
                 }
@@ -1416,16 +1402,16 @@ define Planner
     function plan_property(this, prop: scaly.compiler.Model.Property) returns pointer[PlannedProperty]
     {
         ; Property must have a type
-        if prop.prop_type = null
+        if prop.type = null
             return null
 
-        let resolved_type resolve_type(prop.prop_type, prop.loc)
+        let resolved_type resolve_type(prop.type, prop.span)
         if resolved_type = null
             return null
 
         let result PlannedProperty#(
-            prop.loc,
-            prop.private,
+            prop.span,
+            prop.private_,
             prop.name,
             encode_name(prop.name),     ; mangled_name
             resolved_type,
@@ -1452,9 +1438,9 @@ define Planner
                 for attr in prop.attributes
                 {
                     let planned_attr PlannedAttribute#(
-                        attr.loc,
+                        attr.span,
                         attr.name,
-                        attr.value
+                        attr.model
                     )
                     result.attributes.put(result.attributes.length, planned_attr)
                 }
@@ -1473,7 +1459,7 @@ define Planner
     function plan_variant(this, var: scaly.compiler.Model.Variant, tag: int) returns pointer[PlannedVariant]
     {
         let result PlannedVariant#(
-            var.loc,
+            var.span,
             var.name,
             encode_name(var.name),      ; mangled_name
             null,       ; var_type
@@ -1482,9 +1468,9 @@ define Planner
         )
 
         ; Resolve type if present
-        if var.var_type <> null
+        if var.type <> null
         {
-            let resolved resolve_type(var.var_type, var.loc)
+            let resolved resolve_type(var.type, var.span)
             if resolved = null
                 return null
             set result.var_type: resolved
@@ -1499,9 +1485,9 @@ define Planner
                 for attr in var.attributes
                 {
                     let planned_attr PlannedAttribute#(
-                        attr.loc,
+                        attr.span,
                         attr.name,
-                        attr.value
+                        attr.model
                     )
                     result.attributes.put(result.attributes.length, planned_attr)
                 }
@@ -1540,7 +1526,7 @@ define Planner
     function plan_operand(this, op: scaly.compiler.Model.Operand) returns pointer[PlannedOperand]
     {
         ; Plan the expression
-        let planned_expr plan_expression(op.expr)
+        let planned_expr plan_expression(op.expression)
         if planned_expr = null
             return null
 
@@ -1548,7 +1534,7 @@ define Planner
         let result_type infer_expression_type(planned_expr)
 
         let result PlannedOperand#(
-            op.loc,
+            op.span,
             planned_expr,
             null,       ; member_access (TODO)
             result_type
@@ -1583,7 +1569,7 @@ define Planner
                 if name.equals(String#("true"))
                 {
                     let bool_const scaly.compiler.Model.Constant.Boolean(
-                        scaly.compiler.Model.BooleanConstant(t.loc, true)
+                        scaly.compiler.Model.BooleanConstant(t.span, true)
                     )
                     let result PlannedExpression.Constant(PlannedConstant(bool_const))#
                     return result
@@ -1592,18 +1578,27 @@ define Planner
                 if name.equals(String#("false"))
                 {
                     let bool_const scaly.compiler.Model.Constant.Boolean(
-                        scaly.compiler.Model.BooleanConstant(t.loc, false)
+                        scaly.compiler.Model.BooleanConstant(t.span, false)
                     )
                     let result PlannedExpression.Constant(PlannedConstant(bool_const))#
                     return result
                 }
 
+                ; null is handled as a special type, not a constant
                 if name.equals(String#("null"))
                 {
-                    let null_const scaly.compiler.Model.Constant.Null(
-                        scaly.compiler.Model.NullConstant(t.loc)
+                    ; Create a null type (pointer[void])
+                    let null_type PlannedType#(
+                        t.span,
+                        String#("null"),
+                        String#("Pv"),
+                        null,
+                        scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
+                        null,
+                        String#(""),
+                        null
                     )
-                    let result PlannedExpression.Constant(PlannedConstant(null_const))#
+                    let result PlannedExpression.Type(null_type)#
                     return result
                 }
 
@@ -1612,7 +1607,7 @@ define Planner
                 if local_bind <> null
                 {
                     let var PlannedVariable#(
-                        t.loc,
+                        t.span,
                         name,
                         local_bind.binding_type,
                         local_bind.is_mutable
@@ -1636,7 +1631,7 @@ define Planner
                                 if this_bind <> null
                                 {
                                     let var PlannedVariable#(
-                                        t.loc,
+                                        t.span,
                                         String#("this"),
                                         this_bind.binding_type,
                                         false
@@ -1650,7 +1645,7 @@ define Planner
                 }
 
                 ; Otherwise it's a type reference
-                let resolved resolve_type(t, t.loc)
+                let resolved resolve_type(t, t.span)
                 if resolved = null
                     return null
                 let result PlannedExpression.Type(resolved)#
@@ -1730,38 +1725,18 @@ define Planner
             }
             when SizeOf: sizeof_expr
             {
-                let resolved resolve_type(sizeof_expr.sized_type, sizeof_expr.loc)
+                let resolved resolve_type(sizeof_expr.type, sizeof_expr.span)
                 if resolved = null
                     return null
                 ; TODO: Compute actual size
-                let planned PlannedSizeOf#(sizeof_expr.loc, resolved, 0)
+                let planned PlannedSizeOf#(sizeof_expr.span, resolved, 0)
                 let result PlannedExpression.SizeOf(planned)#
-                return result
-            }
-            when AlignOf: alignof_expr
-            {
-                let resolved resolve_type(alignof_expr.aligned_type, alignof_expr.loc)
-                if resolved = null
-                    return null
-                ; TODO: Compute actual alignment
-                let planned PlannedAlignOf#(alignof_expr.loc, resolved, 0)
-                let result PlannedExpression.AlignOf(planned)#
                 return result
             }
             when Is: is_expr
             {
                 ; TODO: Implement is expression planning
                 return null
-            }
-            when As: as_expr
-            {
-                let resolved resolve_type(as_expr.target_type, as_expr.loc)
-                if resolved = null
-                    return null
-                ; TODO: Plan the value being cast
-                let planned PlannedAs#(as_expr.loc, resolved, null)
-                let result PlannedExpression.As(planned)#
-                return result
             }
             when New: new_expr
             {
@@ -1823,12 +1798,8 @@ define Planner
             }
             when SizeOf: sizeof_expr
                 return make_size_type()
-            when AlignOf: alignof_expr
-                return make_size_type()
             when Is: is_expr
                 return make_bool_type()
-            when As: as_expr
-                return as_expr.target_type
             when VariantConstruction: vc
                 return vc.union_type
     }
@@ -1842,11 +1813,11 @@ define Planner
     function plan_tuple(this, tup: scaly.compiler.Model.Tuple) returns pointer[PlannedTuple]
     {
         let result PlannedTuple#(
-            tup.loc,
+            tup.span,
             null,       ; components
             make_void_type(),   ; tuple_type (TODO: infer)
             false,      ; is_region_alloc
-            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
             null        ; region_arg
         )
 
@@ -1861,7 +1832,7 @@ define Planner
                     ; OK if null (empty component)
 
                     let planned_comp PlannedComponent#(
-                        comp.loc,
+                        comp.span,
                         comp.name,
                         planned_value,
                         null    ; attributes (TODO)
@@ -1883,7 +1854,7 @@ define Planner
     function plan_matrix(this, mat: scaly.compiler.Model.Matrix) returns pointer[PlannedMatrix]
     {
         let result PlannedMatrix#(
-            mat.loc,
+            mat.span,
             null,       ; operations
             make_void_type()    ; element_type (TODO: infer)
         )
@@ -1931,7 +1902,7 @@ define Planner
         push_scope()
 
         let result PlannedBlock#(
-            blk.loc,
+            blk.span,
             null,       ; statements
             false       ; needs_local_page_cleanup
         )
@@ -1964,7 +1935,7 @@ define Planner
         let condition plan_operands(if_expr.condition)
 
         let result PlannedIf#(
-            if_expr.loc,
+            if_expr.span,
             condition,
             null,       ; prop (TODO)
             null,       ; consequent (TODO)
@@ -1980,7 +1951,7 @@ define Planner
         let condition plan_operands(match_expr.condition)
 
         let result PlannedMatch#(
-            match_expr.loc,
+            match_expr.span,
             condition,
             null,       ; branches (TODO)
             null        ; alternative (TODO)
@@ -1995,7 +1966,7 @@ define Planner
         let condition plan_operands(choose_expr.condition)
 
         let result PlannedChoose#(
-            choose_expr.loc,
+            choose_expr.span,
             condition,
             null,       ; cases (TODO)
             null        ; alternative (TODO)
@@ -2009,7 +1980,7 @@ define Planner
     {
         push_scope()
 
-        let expr plan_operands(for_expr.expr)
+        let expr plan_operands(for_expr.expression)
 
         ; Infer element type and define loop variable
         var element_type make_int_type()  ; Default to int for range loops
@@ -2031,12 +2002,12 @@ define Planner
         define_local(for_expr.identifier, element_type, false, false)
 
         ; Plan body
-        let body plan_action(for_expr.body)
+        let body plan_action(for_expr.action)
 
         pop_scope()
 
         let result PlannedFor#(
-            for_expr.loc,
+            for_expr.span,
             for_expr.identifier,
             expr,
             body,
@@ -2056,13 +2027,13 @@ define Planner
     {
         push_scope()
 
-        let cond plan_binding(while_expr.cond)
-        let body plan_action(while_expr.body)
+        let cond plan_binding(while_expr.condition)
+        let body plan_action(while_expr.action)
 
         pop_scope()
 
         let result PlannedWhile#(
-            while_expr.loc,
+            while_expr.span,
             cond,
             body
         )
@@ -2075,12 +2046,12 @@ define Planner
     {
         push_scope()
 
-        let cond plan_binding(try_expr.cond)
+        let cond plan_binding(try_expr.binding)
 
         pop_scope()
 
         let result PlannedTry#(
-            try_expr.loc,
+            try_expr.span,
             cond,
             null,       ; catches (TODO)
             null        ; alternative (TODO)
@@ -2123,7 +2094,7 @@ define Planner
     function plan_binding(this, bind: scaly.compiler.Model.Binding) returns pointer[PlannedBinding]
     {
         ; Plan the item
-        let item plan_item(bind.binding_item)
+        let item plan_item(bind.item)
         if item = null
             return null
 
@@ -2167,7 +2138,7 @@ define Planner
         }
 
         let result PlannedBinding#(
-            bind.loc,
+            bind.span,
             bind.binding_type,
             item,
             operation
@@ -2204,27 +2175,27 @@ define Planner
             when Break: brk
             {
                 let planned_result plan_operands(brk.result)
-                let planned PlannedBreak#(brk.loc, planned_result)
+                let planned PlannedBreak#(brk.span, planned_result)
                 let result PlannedStatement.Break(planned)#
                 return result
             }
             when Continue: cont
             {
-                let planned PlannedContinue#(cont.loc)
+                let planned PlannedContinue#(cont.span)
                 let result PlannedStatement.Continue(planned)#
                 return result
             }
             when Return: ret
             {
                 let planned_result plan_operands(ret.result)
-                let planned PlannedReturn#(ret.loc, planned_result)
+                let planned PlannedReturn#(ret.span, planned_result)
                 let result PlannedStatement.Return(planned)#
                 return result
             }
             when Throw: thr
             {
                 let planned_result plan_operands(thr.result)
-                let planned PlannedThrow#(thr.loc, planned_result)
+                let planned PlannedThrow#(thr.span, planned_result)
                 let result PlannedStatement.Throw(planned)#
                 return result
             }
@@ -2269,19 +2240,19 @@ define Planner
             }
             when Extern: ext
             {
-                let planned PlannedExternImpl#(ext.loc)
+                let planned PlannedExternImpl#(ext.span)
                 let result PlannedImplementation.Extern(planned)#
                 return result
             }
             when Instruction: instr
             {
-                let planned PlannedInstructionImpl#(instr.loc)
+                let planned PlannedInstructionImpl#(instr.span)
                 let result PlannedImplementation.Instruction(planned)#
                 return result
             }
             when Intrinsic: intrinsic
             {
-                let planned PlannedIntrinsicImpl#(intrinsic.loc)
+                let planned PlannedIntrinsicImpl#(intrinsic.span)
                 let result PlannedImplementation.Intrinsic(planned)#
                 return result
             }
@@ -2301,12 +2272,18 @@ define Planner
 
         push_scope()
 
-        ; If function has page parameter, define it in scope
-        if func.page_parameter <> null
-        {
-            let page_ptr_type make_page_pointer_type()
-            define_local(func.page_parameter, page_ptr_type, false, true)
-        }
+        ; Check if function has Call lifetime (needs implicit page parameter)
+        ; The page parameter is now derived from the lifetime field
+        choose func.lifetime
+            when Call: call_life
+            {
+                let page_ptr_type make_page_pointer_type()
+                define_local(String#("rp"), page_ptr_type, false, true)
+            }
+            else
+            {
+                ; No page parameter needed
+            }
 
         ; Plan input parameters
         let input Vector[PlannedItem]#()
@@ -2348,20 +2325,20 @@ define Planner
 
         ; Plan return type
         var returns_type pointer[PlannedType] null
-        if func.returns <> null
+        if func.returns_ <> null
         {
-            set returns_type: resolve_type(func.returns, func.loc)
+            set returns_type: resolve_type(func.returns_, func.span)
         }
 
         ; Plan throws type
         var throws_type pointer[PlannedType] null
-        if func.throws <> null
+        if func.throws_ <> null
         {
-            set throws_type: resolve_type(func.throws, func.loc)
+            set throws_type: resolve_type(func.throws_, func.span)
         }
 
         ; Plan implementation
-        let impl plan_implementation(func.impl)
+        let impl plan_implementation(func.implementation)
         if impl = null
         {
             pop_scope()
@@ -2373,16 +2350,16 @@ define Planner
         let mangled mangle_function(func.name, input, parent)
 
         let result PlannedFunction#(
-            func.loc,
-            func.private,
+            func.span,
+            func.private_,
             func.pure,
             func.name,
             mangled,
-            func.page_parameter,
+            null,           ; page_parameter (derived from lifetime)
             input,
             returns_type,
             throws_type,
-            func.life,
+            func.lifetime,
             impl,
             null,           ; origin
             current_function_uses_local_lifetime,
@@ -2403,7 +2380,7 @@ define Planner
             String#("scaly.memory.Page"),
             String#("N4scaly6memory4PageE"),
             null,
-            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
             null,
             String#(""),
             null
@@ -2417,7 +2394,7 @@ define Planner
             String#("pointer"),
             String#("PN4scaly6memory4PageE"),
             generics,
-            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
             null,
             String#(""),
             null
@@ -2473,20 +2450,20 @@ define Planner
 
         ; Plan return type
         var returns_type pointer[PlannedType] null
-        if op.returns <> null
+        if op.returns_ <> null
         {
-            set returns_type: resolve_type(op.returns, op.loc)
+            set returns_type: resolve_type(op.returns_, op.span)
         }
 
         ; Plan throws type
         var throws_type pointer[PlannedType] null
-        if op.throws <> null
+        if op.throws_ <> null
         {
-            set throws_type: resolve_type(op.throws, op.loc)
+            set throws_type: resolve_type(op.throws_, op.span)
         }
 
         ; Plan implementation
-        let impl plan_implementation(op.impl)
+        let impl plan_implementation(op.implementation)
         if impl = null
         {
             pop_scope()
@@ -2497,8 +2474,8 @@ define Planner
         let mangled mangle_function(op.name, input, parent)
 
         let result PlannedOperator#(
-            op.loc,
-            op.private,
+            op.span,
+            op.private_,
             op.name,
             mangled,
             input,
@@ -2531,7 +2508,7 @@ define Planner
             if conc.parameters.length > 0
             {
                 let placeholder PlannedStructure#(
-                    conc.loc,
+                    conc.span,
                     false,          ; private
                     true,           ; is_generic_placeholder
                     conc.name,
@@ -2542,7 +2519,7 @@ define Planner
                 )
 
                 let result PlannedConcept#(
-                    conc.loc,
+                    conc.span,
                     conc.name,
                     encode_name(conc.name),
                     null,           ; attributes
@@ -2563,9 +2540,9 @@ define Planner
                 for attr in conc.attributes
                 {
                     let planned_attr PlannedAttribute#(
-                        attr.loc,
+                        attr.span,
                         attr.name,
-                        attr.value
+                        attr.model
                     )
                     attributes.put(attributes.length, planned_attr)
                 }
@@ -2573,12 +2550,12 @@ define Planner
         }
 
         ; Plan the definition based on its kind
-        let def plan_definition(conc.def, conc.name)
+        let def plan_definition(conc.definition, conc.name)
         if def = null
             return null
 
         let result PlannedConcept#(
-            conc.loc,
+            conc.span,
             conc.name,
             encode_name(conc.name),
             attributes,
@@ -2628,7 +2605,7 @@ define Planner
             }
             when Type: type_alias
             {
-                let resolved resolve_type(type_alias, type_alias.loc)
+                let resolved resolve_type(type_alias, type_alias.span)
                 if resolved = null
                     return null
                 let result PlannedDefinition.Type(resolved)#
@@ -2638,7 +2615,7 @@ define Planner
             {
                 ; Intrinsic definition - create a minimal structure placeholder
                 let placeholder PlannedStructure#(
-                    intrinsic.loc,
+                    intrinsic.span,
                     false,          ; private
                     false,          ; is_generic_placeholder
                     name,
@@ -2667,11 +2644,11 @@ define Planner
 
         ; Create the structure type for 'this' references
         let struct_type PlannedType#(
-            struct.loc,
+            struct.span,
             name,
             mangled,
             null,
-            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
             null,
             String#(""),
             null
@@ -2751,8 +2728,8 @@ define Planner
         set structure_ctx: old_structure_ctx
 
         let result PlannedStructure#(
-            struct.loc,
-            struct.private,
+            struct.span,
+            struct.private_,
             false,          ; is_generic_placeholder
             name,
             mangled,
@@ -2784,11 +2761,11 @@ define Planner
 
         ; Create the union type for 'this' references
         let union_type PlannedType#(
-            union_def.loc,
+            union_def.span,
             name,
             mangled,
             null,
-            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
             null,
             String#(""),
             null
@@ -2863,8 +2840,8 @@ define Planner
         }
 
         let result PlannedUnion#(
-            union_def.loc,
-            union_def.private,
+            union_def.span,
+            union_def.private_,
             name,
             mangled,
             variants,
@@ -2956,7 +2933,7 @@ define Planner
         }
 
         let result PlannedNamespace#(
-            ns.loc,
+            ns.span,
             name,
             mangled,
             modules,
@@ -2979,7 +2956,7 @@ define Planner
         let mangled encode_name(name)
 
         ; Resolve global type
-        let global_type resolve_type(global.global_type, global.loc)
+        let global_type resolve_type(global.type, global.span)
         if global_type = null
             return null
 
@@ -2987,7 +2964,7 @@ define Planner
         let value plan_operands(global.value)
 
         let result PlannedGlobal#(
-            global.loc,
+            global.span,
             name,
             mangled,
             global_type,
@@ -3108,7 +3085,7 @@ define Planner
     function plan_program(this, prog: scaly.compiler.Model.Program) returns pointer[Plan]
     {
         ; Plan the main module
-        let main_module plan_module(prog.main_module)
+        let main_module plan_module(prog.module_)
         if main_module = null
             return null
 
