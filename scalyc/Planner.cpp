@@ -1531,28 +1531,33 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
 
         // Try lazy instantiation if no candidates found and deferred info exists
         if (Candidates.empty() && Struct->DeferredInfo) {
-            auto &MutableStruct = InstantiatedStructures[LookupName];
-            auto DeferredResult = planDeferredMethod(MutableStruct, std::string(MethodName));
-            if (!DeferredResult) {
-                llvm::consumeError(DeferredResult.takeError());
-            } else if (*DeferredResult) {
-                const auto &Method = **DeferredResult;
-                MethodMatch Match;
-                Match.Method = nullptr;
-                Match.MangledName = Method.MangledName;
-                Match.RequiresPageParam = Method.PageParameter.has_value();
-                if (Method.Returns) {
-                    Match.ReturnType = *Method.Returns;
-                } else {
-                    Match.ReturnType.Name = "void";
-                    Match.ReturnType.Loc = Loc;
-                }
-                for (size_t i = 1; i < Method.Input.size(); ++i) {
-                    if (Method.Input[i].ItemType) {
-                        Match.ParameterTypes.push_back(*Method.Input[i].ItemType);
+            auto MutableIt = InstantiatedStructures.find(LookupName);
+            if (MutableIt != InstantiatedStructures.end()) {
+                auto &MutableStruct = MutableIt->second;
+                auto DeferredResult = planDeferredMethod(MutableStruct, std::string(MethodName));
+                if (!DeferredResult) {
+                    llvm::consumeError(DeferredResult.takeError());
+                } else if (*DeferredResult) {
+                    const auto &Method = **DeferredResult;
+                    MethodMatch Match;
+                    Match.Method = nullptr;
+                    Match.MangledName = Method.MangledName;
+                    Match.RequiresPageParam = Method.PageParameter.has_value();
+                    if (Method.Returns) {
+                        Match.ReturnType = *Method.Returns;
+                    } else {
+                        Match.ReturnType.Name = "void";
+                        Match.ReturnType.Loc = Loc;
                     }
+                    for (size_t i = 1; i < Method.Input.size(); ++i) {
+                        if (Method.Input[i].ItemType) {
+                            Match.ParameterTypes.push_back(*Method.Input[i].ItemType);
+                        }
+                    }
+                    Candidates.push_back(std::move(Match));
+                } else {
+                    // llvm::errs() << "DEBUG lookupMethod: planDeferredMethod returned nullptr\n";
                 }
-                Candidates.push_back(std::move(Match));
             }
         }
     }
@@ -1736,8 +1741,49 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                             Match.ReturnType.Name = "void";
                             Match.ReturnType.Loc = Loc;
                         }
-                        TypeSubstitutions = OldSubst;  // Restore substitutions
-                        Candidates.push_back(std::move(Match));
+
+                        // If this is a generic type and the method isn't already registered,
+                        // we need to plan and register it in InstantiatedFunctions
+                        bool MethodAlreadyPlanned = InstantiatedFunctions.find(Match.MangledName) != InstantiatedFunctions.end();
+                        if (!Conc->Parameters.empty() && Struct && !MethodAlreadyPlanned) {
+                            // Need to plan this method now since it wasn't lazily instantiated
+                            // Save current state
+                            std::string OldFile = File;
+                            std::string OldStructureName = CurrentStructureName;
+                            std::vector<PlannedProperty>* OldStructureProperties = CurrentStructureProperties;
+                            PlannedStructure* OldStructure = CurrentStructure;
+
+                            // Set up context for planning
+                            auto &MutableStruct = InstantiatedStructures[LookupName];
+                            CurrentStructureName = MutableStruct.Name;
+                            CurrentStructureProperties = &MutableStruct.Properties;
+                            CurrentStructure = &MutableStruct;
+
+                            // Plan the method
+                            auto PlannedMethod = planFunction(*Func, &ParentType);
+
+                            // Restore state
+                            File = OldFile;
+                            CurrentStructureName = OldStructureName;
+                            CurrentStructureProperties = OldStructureProperties;
+                            CurrentStructure = OldStructure;
+
+                            if (PlannedMethod) {
+                                // Register method in InstantiatedFunctions for the Emitter to find
+                                InstantiatedFunctions[PlannedMethod->MangledName] = *PlannedMethod;
+                                // Add to struct's Methods
+                                MutableStruct.Methods.push_back(std::move(*PlannedMethod));
+                                TypeSubstitutions = OldSubst;
+                                Candidates.push_back(std::move(Match));
+                            } else {
+                                // Planning failed - print error and don't add to candidates
+                                llvm::errs() << toString(PlannedMethod.takeError()) << "\n";
+                                TypeSubstitutions = OldSubst;
+                            }
+                        } else {
+                            TypeSubstitutions = OldSubst;  // Restore substitutions
+                            Candidates.push_back(std::move(Match));
+                        }
                     }
                 }
             }
@@ -2167,9 +2213,48 @@ std::optional<Planner::InitializerMatch> Planner::findInitializer(
         StructIt = InstantiatedStructures.find(StructType.MangledName);
     }
 
-    // If struct is not in cache OR has no initializers, look up the original Concept
-    if (StructIt == InstantiatedStructures.end() ||
-        StructIt->second.Initializers.empty()) {
+    // First, try to find a match in the cache if struct is there with initializers
+    if (StructIt != InstantiatedStructures.end() &&
+        !StructIt->second.Initializers.empty()) {
+        const PlannedStructure &Struct = StructIt->second;
+
+        // Search for matching initializer in the cached PlannedStructure
+        for (const auto &Init : Struct.Initializers) {
+            // Check if parameter count matches
+            if (Init.Input.size() != ArgTypes.size()) {
+                continue;
+            }
+
+            // Check if all parameter types match
+            bool AllMatch = true;
+            for (size_t i = 0; i < ArgTypes.size(); ++i) {
+                if (!Init.Input[i].ItemType) {
+                    // Parameter has no type - treat as match
+                    continue;
+                }
+                if (!typesCompatible(*Init.Input[i].ItemType, ArgTypes[i])) {
+                    AllMatch = false;
+                    break;
+                }
+            }
+
+            // DEBUG: llvm::errs() << "DEBUG findInitializer: cached AllMatch=" << AllMatch << "\n";
+            if (AllMatch) {
+                // DEBUG: llvm::errs() << "DEBUG findInitializer: returning cache match\n";
+                InitializerMatch Match;
+                Match.Init = &Init;
+                Match.MangledName = Init.MangledName;
+                Match.StructType = StructType;
+                Match.RequiresPageParam = Init.PageParameter.has_value();
+                return Match;
+            }
+        }
+        // Cache search didn't find a match - fall through to Concept lookup
+        // DEBUG: llvm::errs() << "DEBUG findInitializer: no cache match, falling through to Concept lookup\n";
+    }
+
+    // Look up the original Concept to find/plan a matching initializer
+    {
         // Extract base name - handle both package prefixes and generic suffixes
         // "scaly.containers.String" -> "String"
         // "Vector.int" -> "Vector"
@@ -2201,7 +2286,9 @@ std::optional<Planner::InitializerMatch> Planner::findInitializer(
 
             // Check each original initializer
             for (const auto &Init : OrigStruct.Initializers) {
+                // DEBUG: llvm::errs() << "DEBUG findInitializer: checking init with " << Init.Input.size() << " params\n";
                 if (Init.Input.size() != ArgTypes.size()) {
+                    // DEBUG: llvm::errs() << "DEBUG findInitializer: size mismatch, skipping\n";
                     continue;
                 }
 
@@ -2226,44 +2313,42 @@ std::optional<Planner::InitializerMatch> Planner::findInitializer(
                 }
 
                 if (AllMatch) {
-                    // Found a match - generate the mangled name
-                    // Note: TypeSubstitutions still has the generic substitutions set up
+                    // DEBUG: llvm::errs() << "DEBUG findInitializer: AllMatch=true, planning initializer\n";
+                    // Found a match - need to actually plan the initializer
+                    // so that the Emitter can find it
 
-                    // Mangle constructor name: _ZN<qualified-name>C1E<params>
-                    // StructType.MangledName is like "_Z6VectorIiE" - strip the _Z prefix
-                    std::string StructName = StructType.MangledName;
-                    if (StructName.substr(0, 2) == "_Z") {
-                        StructName = StructName.substr(2);
-                    }
-                    std::string MangledName = "_ZN" + StructName + "C1E";
+                    // Create parent type for initializer planning
+                    PlannedType ParentType = StructType;
 
-                    // If init# was used, include page parameter first
-                    if (Init.PageParameter) {
-                        MangledName += "PN4scaly6memory4PageE";  // pointer[scaly.memory.Page]
+                    // Plan the initializer
+                    auto PlannedInit = planInitializer(Init, ParentType);
+                    if (!PlannedInit) {
+                        llvm::consumeError(PlannedInit.takeError());
+                        TypeSubstitutions = OldSubst;
+                        return std::nullopt;
                     }
 
-                    // Mangle parameters - need to use parameter types, not argument types
-                    // Use encodeType to get the mangling without _Z prefix
-                    for (size_t i = 0; i < ArgTypes.size(); ++i) {
-                        if (Init.Input[i].ItemType) {
-                            auto ParamTypeResult = resolveType(*Init.Input[i].ItemType, Init.Loc);
-                            if (ParamTypeResult) {
-                                MangledName += encodeType(*ParamTypeResult);
-                            } else {
-                                llvm::consumeError(ParamTypeResult.takeError());
-                                MangledName += encodeType(ArgTypes[i]);
-                            }
-                        } else {
-                            MangledName += encodeType(ArgTypes[i]);
-                        }
+                    // Add the planned initializer to the structure in cache
+                    // Find or create the structure entry
+                    std::string CacheKey = LookupName;
+                    if (!StructType.Generics.empty()) {
+                        CacheKey = StructType.Name;
                     }
+                    auto &MutableStruct = InstantiatedStructures[CacheKey];
+                    if (MutableStruct.Name.empty()) {
+                        // Create minimal structure entry if it doesn't exist
+                        MutableStruct.Name = StructType.Name;
+                        MutableStruct.MangledName = StructType.MangledName;
+                    }
+                    MutableStruct.Initializers.push_back(std::move(*PlannedInit));
 
                     TypeSubstitutions = OldSubst;
 
+                    // Return match pointing to the newly planned initializer
                     InitializerMatch Match;
-                    Match.Init = nullptr;  // We don't have a PlannedInitializer yet
+                    Match.Init = &MutableStruct.Initializers.back();
                     Match.StructType = StructType;
-                    Match.MangledName = MangledName;
+                    Match.MangledName = MutableStruct.Initializers.back().MangledName;
                     Match.RequiresPageParam = Init.PageParameter.has_value();
                     return Match;
                 }
@@ -2273,42 +2358,6 @@ std::optional<Planner::InitializerMatch> Planner::findInitializer(
         }
         return std::nullopt;
     }
-
-    // At this point, StructIt is valid and has initializers
-    const PlannedStructure &Struct = StructIt->second;
-
-    // Search for matching initializer in the cached PlannedStructure
-    for (const auto &Init : Struct.Initializers) {
-        // Check if parameter count matches
-        if (Init.Input.size() != ArgTypes.size()) {
-            continue;
-        }
-
-        // Check if all parameter types match
-        bool AllMatch = true;
-        for (size_t i = 0; i < ArgTypes.size(); ++i) {
-            if (!Init.Input[i].ItemType) {
-                // Parameter has no type - treat as match
-                continue;
-            }
-            if (!typesCompatible(*Init.Input[i].ItemType, ArgTypes[i])) {
-                AllMatch = false;
-                break;
-            }
-        }
-
-        if (AllMatch) {
-            InitializerMatch Match;
-            Match.Init = &Init;
-            Match.MangledName = Init.MangledName;
-            Match.StructType = StructType;
-            Match.RequiresPageParam = Init.PageParameter.has_value();
-            return Match;
-        }
-    }
-
-    // llvm::errs() << "DEBUG findInitializer: no match found\n";
-    return std::nullopt;
 }
 
 std::optional<Planner::OperatorMatch> Planner::findSubscriptOperator(
