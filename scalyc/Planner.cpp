@@ -1262,6 +1262,30 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                 return Match;
             }
         }
+
+        // Try lazy instantiation if method not found and deferred info exists
+        if (Struct->DeferredInfo) {
+            // Need non-const access to plan the method
+            auto &MutableStruct = InstantiatedStructures[StructType.Name];
+            auto DeferredResult = planDeferredMethod(MutableStruct, std::string(MethodName));
+            if (!DeferredResult) {
+                // Error during deferred planning - consume and log
+                llvm::consumeError(DeferredResult.takeError());
+            } else if (*DeferredResult) {
+                const auto &Method = **DeferredResult;
+                MethodMatch Match;
+                Match.Method = nullptr;
+                Match.MangledName = Method.MangledName;
+                Match.RequiresPageParam = Method.PageParameter.has_value();
+                if (Method.Returns) {
+                    Match.ReturnType = *Method.Returns;
+                } else {
+                    Match.ReturnType.Name = "void";
+                    Match.ReturnType.Loc = Loc;
+                }
+                return Match;
+            }
+        }
     }
 
     // Also check unions - unions can have methods too
@@ -1279,6 +1303,30 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
     if (Union) {
         for (const auto &Method : Union->Methods) {
             if (Method.Name == MethodName) {
+                MethodMatch Match;
+                Match.Method = nullptr;
+                Match.MangledName = Method.MangledName;
+                Match.RequiresPageParam = Method.PageParameter.has_value();
+                if (Method.Returns) {
+                    Match.ReturnType = *Method.Returns;
+                } else {
+                    Match.ReturnType.Name = "void";
+                    Match.ReturnType.Loc = Loc;
+                }
+                return Match;
+            }
+        }
+
+        // Try lazy instantiation if method not found and deferred info exists
+        if (Union->DeferredInfo) {
+            // Need non-const access to plan the method
+            auto &MutableUnion = InstantiatedUnions[StructType.Name];
+            auto DeferredResult = planDeferredMethod(MutableUnion, std::string(MethodName));
+            if (!DeferredResult) {
+                // Error during deferred planning - consume and log
+                llvm::consumeError(DeferredResult.takeError());
+            } else if (*DeferredResult) {
+                const auto &Method = **DeferredResult;
                 MethodMatch Match;
                 Match.Method = nullptr;
                 Match.MangledName = Method.MangledName;
@@ -1480,6 +1528,33 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                 Candidates.push_back(std::move(Match));
             }
         }
+
+        // Try lazy instantiation if no candidates found and deferred info exists
+        if (Candidates.empty() && Struct->DeferredInfo) {
+            auto &MutableStruct = InstantiatedStructures[LookupName];
+            auto DeferredResult = planDeferredMethod(MutableStruct, std::string(MethodName));
+            if (!DeferredResult) {
+                llvm::consumeError(DeferredResult.takeError());
+            } else if (*DeferredResult) {
+                const auto &Method = **DeferredResult;
+                MethodMatch Match;
+                Match.Method = nullptr;
+                Match.MangledName = Method.MangledName;
+                Match.RequiresPageParam = Method.PageParameter.has_value();
+                if (Method.Returns) {
+                    Match.ReturnType = *Method.Returns;
+                } else {
+                    Match.ReturnType.Name = "void";
+                    Match.ReturnType.Loc = Loc;
+                }
+                for (size_t i = 1; i < Method.Input.size(); ++i) {
+                    if (Method.Input[i].ItemType) {
+                        Match.ParameterTypes.push_back(*Method.Input[i].ItemType);
+                    }
+                }
+                Candidates.push_back(std::move(Match));
+            }
+        }
     }
 
     // Also check unions - unions can have methods too
@@ -1508,6 +1583,33 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                     Match.ReturnType.Loc = Loc;
                 }
                 // Collect parameter types (skip 'this')
+                for (size_t i = 1; i < Method.Input.size(); ++i) {
+                    if (Method.Input[i].ItemType) {
+                        Match.ParameterTypes.push_back(*Method.Input[i].ItemType);
+                    }
+                }
+                Candidates.push_back(std::move(Match));
+            }
+        }
+
+        // Try lazy instantiation if no candidates found and deferred info exists
+        if (Candidates.empty() && Union->DeferredInfo) {
+            auto &MutableUnion = InstantiatedUnions[LookupName];
+            auto DeferredResult = planDeferredMethod(MutableUnion, std::string(MethodName));
+            if (!DeferredResult) {
+                llvm::consumeError(DeferredResult.takeError());
+            } else if (*DeferredResult) {
+                const auto &Method = **DeferredResult;
+                MethodMatch Match;
+                Match.Method = nullptr;
+                Match.MangledName = Method.MangledName;
+                Match.RequiresPageParam = Method.PageParameter.has_value();
+                if (Method.Returns) {
+                    Match.ReturnType = *Method.Returns;
+                } else {
+                    Match.ReturnType.Name = "void";
+                    Match.ReturnType.Loc = Loc;
+                }
                 for (size_t i = 1; i < Method.Input.size(); ++i) {
                     if (Method.Input[i].ItemType) {
                         Match.ParameterTypes.push_back(*Method.Input[i].ItemType);
@@ -5107,6 +5209,9 @@ llvm::Expected<PlannedType> Planner::instantiateGeneric(
     Result.Origin = Origin;
 
     // Plan based on definition type
+    // Use lazy=true to defer method planning until methods are actually called.
+    // This breaks circular dependencies like HashMap[String, Nameable] where
+    // Nameable references Module which contains HashMap[String, Nameable].
     bool Success = false;
     if (auto *Struct = std::get_if<Structure>(&Generic.Def)) {
         // Insert placeholder BEFORE planning to handle self-referencing types
@@ -5117,7 +5222,7 @@ llvm::Expected<PlannedType> Planner::instantiateGeneric(
         Result.MangledName = Placeholder.MangledName;
         InstantiatedStructures[CacheKey] = std::move(Placeholder);
 
-        auto Planned = planStructure(*Struct, Generic.Name, Args);
+        auto Planned = planStructure(*Struct, Generic.Name, Args, true /* lazy */);
         if (!Planned) {
             InstantiatedStructures.erase(CacheKey);  // Remove placeholder on error
             TypeSubstitutions = OldSubst;
@@ -5136,7 +5241,7 @@ llvm::Expected<PlannedType> Planner::instantiateGeneric(
         Result.MangledName = Placeholder.MangledName;
         InstantiatedUnions[CacheKey] = std::move(Placeholder);
 
-        auto Planned = planUnion(*Un, Generic.Name, Args);
+        auto Planned = planUnion(*Un, Generic.Name, Args, true /* lazy */);
         if (!Planned) {
             InstantiatedUnions.erase(CacheKey);  // Remove placeholder on error
             TypeSubstitutions = OldSubst;
@@ -9568,7 +9673,8 @@ llvm::Expected<PlannedDeInitializer> Planner::planDeInitializer(
 
 llvm::Expected<PlannedStructure> Planner::planStructure(
     const Structure &Struct, llvm::StringRef Name,
-    const std::vector<PlannedType> &GenericArgs) {
+    const std::vector<PlannedType> &GenericArgs,
+    bool lazy) {
     PlannedStructure Result;
     Result.Loc = Struct.Loc;
     Result.Private = Struct.Private;
@@ -9591,6 +9697,28 @@ llvm::Expected<PlannedStructure> Planner::planStructure(
 
     // Compute struct layout
     computeStructLayout(Result);
+
+    // Add provenance if this is an instantiation
+    if (!GenericArgs.empty()) {
+        Result.Origin = std::make_shared<InstantiationInfo>();
+        Result.Origin->DefinitionLoc = Struct.Loc;
+        for (const auto &Arg : GenericArgs) {
+            Result.Origin->TypeArgs.push_back(getReadableName(Arg));
+        }
+    }
+
+    // For lazy instantiation: store deferred info and return early
+    // Methods will be planned on-demand when they are actually called
+    if (lazy) {
+        auto Deferred = std::make_shared<DeferredStructureInfo>();
+        Deferred->OriginalStruct = &Struct;
+        Deferred->GenericArgs = GenericArgs;
+        Deferred->TypeSubstitutions = TypeSubstitutions;
+        Deferred->File = File;
+        Result.DeferredInfo = Deferred;
+        TypeSubstitutions = OldSubst;
+        return Result;
+    }
 
     // Create parent type for method mangling
     PlannedType ParentType;
@@ -9678,15 +9806,6 @@ llvm::Expected<PlannedStructure> Planner::planStructure(
     CurrentStructureProperties = OldStructureProperties;
     CurrentStructure = OldStructure;
 
-    // Add provenance if this is an instantiation
-    if (!GenericArgs.empty()) {
-        Result.Origin = std::make_shared<InstantiationInfo>();
-        Result.Origin->DefinitionLoc = Struct.Loc;
-        for (const auto &Arg : GenericArgs) {
-            Result.Origin->TypeArgs.push_back(getReadableName(Arg));
-        }
-    }
-
     return Result;
 }
 
@@ -9696,7 +9815,8 @@ llvm::Expected<PlannedStructure> Planner::planStructure(
 
 llvm::Expected<PlannedUnion> Planner::planUnion(
     const Union &Un, llvm::StringRef Name,
-    const std::vector<PlannedType> &GenericArgs) {
+    const std::vector<PlannedType> &GenericArgs,
+    bool lazy) {
 
     PlannedUnion Result;
     Result.Loc = Un.Loc;
@@ -9736,6 +9856,28 @@ llvm::Expected<PlannedUnion> Planner::planUnion(
         }
     }
 
+    // Add provenance
+    if (!GenericArgs.empty()) {
+        Result.Origin = std::make_shared<InstantiationInfo>();
+        Result.Origin->DefinitionLoc = Un.Loc;
+        for (const auto &Arg : GenericArgs) {
+            Result.Origin->TypeArgs.push_back(getReadableName(Arg));
+        }
+    }
+
+    // For lazy instantiation: store deferred info and return early
+    // Methods will be planned on-demand when they are actually called
+    if (lazy) {
+        auto Deferred = std::make_shared<DeferredUnionInfo>();
+        Deferred->OriginalUnion = &Un;
+        Deferred->GenericArgs = GenericArgs;
+        Deferred->TypeSubstitutions = TypeSubstitutions;
+        Deferred->File = File;
+        Result.DeferredInfo = Deferred;
+        TypeSubstitutions = OldSubst;
+        return Result;
+    }
+
     // Create parent type for method mangling
     PlannedType ParentType;
     ParentType.Name = Name.str();
@@ -9767,16 +9909,169 @@ llvm::Expected<PlannedUnion> Planner::planUnion(
     // Restore substitutions
     TypeSubstitutions = OldSubst;
 
-    // Add provenance
-    if (!GenericArgs.empty()) {
-        Result.Origin = std::make_shared<InstantiationInfo>();
-        Result.Origin->DefinitionLoc = Un.Loc;
-        for (const auto &Arg : GenericArgs) {
-            Result.Origin->TypeArgs.push_back(getReadableName(Arg));
+    return Result;
+}
+
+// ============================================================================
+// Deferred Method Planning (for lazy instantiation)
+// ============================================================================
+
+llvm::Expected<PlannedFunction*> Planner::planDeferredMethod(
+    PlannedStructure &Struct, const std::string &MethodName) {
+
+    // Check if deferred info exists
+    if (!Struct.DeferredInfo) {
+        return nullptr;  // Not a lazily instantiated structure
+    }
+
+    auto &Deferred = *Struct.DeferredInfo;
+
+    // Check if already planned
+    if (Deferred.PlannedMethods.count(MethodName)) {
+        // Find and return the already-planned method
+        for (auto &Method : Struct.Methods) {
+            if (Method.Name == MethodName) {
+                return &Method;
+            }
+        }
+        return nullptr;
+    }
+
+    // Find the method in the original structure
+    const Function* OriginalFunc = nullptr;
+    for (const auto &Member : Deferred.OriginalStruct->Members) {
+        if (auto *Func = std::get_if<Function>(&Member)) {
+            if (Func->Name == MethodName) {
+                OriginalFunc = Func;
+                break;
+            }
         }
     }
 
-    return Result;
+    if (!OriginalFunc) {
+        return nullptr;  // Method not found in original
+    }
+
+    // Save current state
+    std::map<std::string, PlannedType> OldSubst = TypeSubstitutions;
+    std::string OldFile = File;
+    std::string OldStructureName = CurrentStructureName;
+    std::vector<PlannedProperty>* OldStructureProperties = CurrentStructureProperties;
+    PlannedStructure* OldStructure = CurrentStructure;
+
+    // Set up context for planning
+    TypeSubstitutions = Deferred.TypeSubstitutions;
+    File = Deferred.File;
+
+    // Build full structure name
+    std::string FullStructureName = Struct.Name;
+
+    // Set current structure context
+    CurrentStructureName = FullStructureName;
+    CurrentStructureProperties = &Struct.Properties;
+    CurrentStructure = &Struct;
+
+    // Create parent type for method mangling
+    PlannedType ParentType;
+    ParentType.Name = Struct.Name;
+    ParentType.Generics = Deferred.GenericArgs;
+    ParentType.MangledName = Struct.MangledName;
+
+    // Plan the method
+    auto PlannedMethod = planFunction(*OriginalFunc, &ParentType);
+
+    // Restore state
+    TypeSubstitutions = OldSubst;
+    File = OldFile;
+    CurrentStructureName = OldStructureName;
+    CurrentStructureProperties = OldStructureProperties;
+    CurrentStructure = OldStructure;
+
+    if (!PlannedMethod) {
+        return PlannedMethod.takeError();
+    }
+
+    // Register method in InstantiatedFunctions for the Emitter to find
+    InstantiatedFunctions[PlannedMethod->MangledName] = *PlannedMethod;
+
+    // Mark as planned
+    Deferred.PlannedMethods.insert(MethodName);
+
+    // Add to Methods vector and return pointer
+    Struct.Methods.push_back(std::move(*PlannedMethod));
+    return &Struct.Methods.back();
+}
+
+llvm::Expected<PlannedFunction*> Planner::planDeferredMethod(
+    PlannedUnion &Un, const std::string &MethodName) {
+
+    // Check if deferred info exists
+    if (!Un.DeferredInfo) {
+        return nullptr;  // Not a lazily instantiated union
+    }
+
+    auto &Deferred = *Un.DeferredInfo;
+
+    // Check if already planned
+    if (Deferred.PlannedMethods.count(MethodName)) {
+        // Find and return the already-planned method
+        for (auto &Method : Un.Methods) {
+            if (Method.Name == MethodName) {
+                return &Method;
+            }
+        }
+        return nullptr;
+    }
+
+    // Find the method in the original union
+    const Function* OriginalFunc = nullptr;
+    for (const auto &Member : Deferred.OriginalUnion->Members) {
+        if (auto *Func = std::get_if<Function>(&Member)) {
+            if (Func->Name == MethodName) {
+                OriginalFunc = Func;
+                break;
+            }
+        }
+    }
+
+    if (!OriginalFunc) {
+        return nullptr;  // Method not found in original
+    }
+
+    // Save current state
+    std::map<std::string, PlannedType> OldSubst = TypeSubstitutions;
+    std::string OldFile = File;
+
+    // Set up context for planning
+    TypeSubstitutions = Deferred.TypeSubstitutions;
+    File = Deferred.File;
+
+    // Create parent type for method mangling
+    PlannedType ParentType;
+    ParentType.Name = Un.Name;
+    ParentType.Generics = Deferred.GenericArgs;
+    ParentType.MangledName = Un.MangledName;
+
+    // Plan the method
+    auto PlannedMethod = planFunction(*OriginalFunc, &ParentType);
+
+    // Restore state
+    TypeSubstitutions = OldSubst;
+    File = OldFile;
+
+    if (!PlannedMethod) {
+        return PlannedMethod.takeError();
+    }
+
+    // Register method in InstantiatedFunctions for the Emitter to find
+    InstantiatedFunctions[PlannedMethod->MangledName] = *PlannedMethod;
+
+    // Mark as planned
+    Deferred.PlannedMethods.insert(MethodName);
+
+    // Add to Methods vector and return pointer
+    Un.Methods.push_back(std::move(*PlannedMethod));
+    return &Un.Methods.back();
 }
 
 // ============================================================================

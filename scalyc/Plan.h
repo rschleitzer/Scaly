@@ -541,6 +541,24 @@ struct PlannedGlobal {
     std::vector<PlannedOperand> Value;
 };
 
+// Deferred instantiation info for lazy generic method planning
+// Stores everything needed to instantiate methods on-demand
+struct DeferredStructureInfo {
+    const Structure* OriginalStruct;           // Pointer to Model::Structure
+    std::vector<PlannedType> GenericArgs;      // Resolved type arguments
+    std::map<std::string, PlannedType> TypeSubstitutions;  // Type param substitutions
+    std::string File;                          // Source file for error reporting
+    std::set<std::string> PlannedMethods;      // Methods already instantiated
+};
+
+struct DeferredUnionInfo {
+    const Union* OriginalUnion;                // Pointer to Model::Union
+    std::vector<PlannedType> GenericArgs;      // Resolved type arguments
+    std::map<std::string, PlannedType> TypeSubstitutions;  // Type param substitutions
+    std::string File;                          // Source file for error reporting
+    std::set<std::string> PlannedMethods;      // Methods already instantiated
+};
+
 struct PlannedStructure {
     Span Loc;
     bool Private = false;
@@ -555,6 +573,9 @@ struct PlannedStructure {
     size_t Size = 0;       // Total size in bytes
     size_t Alignment = 0;  // Required alignment
     std::shared_ptr<InstantiationInfo> Origin;
+
+    // For lazy instantiation: if non-null, methods are instantiated on-demand
+    std::shared_ptr<DeferredStructureInfo> DeferredInfo;
 };
 
 struct PlannedUnion {
@@ -568,6 +589,9 @@ struct PlannedUnion {
     size_t Size;       // Max variant size + tag
     size_t Alignment;
     std::shared_ptr<InstantiationInfo> Origin;
+
+    // For lazy instantiation: if non-null, methods are instantiated on-demand
+    std::shared_ptr<DeferredUnionInfo> DeferredInfo;
 };
 
 struct PlannedNamespace {
