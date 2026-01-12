@@ -8,8 +8,21 @@
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
+#include <chrono>
+#include <vector>
+#include <algorithm>
 
 namespace scaly {
+
+// Timing data for tests
+static std::vector<std::pair<const char*, int64_t>> TestTimings;
+
+#define TIMED_TEST(testFunc) do { \
+    auto _start = std::chrono::high_resolution_clock::now(); \
+    testFunc(); \
+    auto _end = std::chrono::high_resolution_clock::now(); \
+    TestTimings.push_back({#testFunc, std::chrono::duration_cast<std::chrono::milliseconds>(_end - _start).count()}); \
+} while(0)
 
 static int TestsPassed = 0;
 static int TestsFailed = 0;
@@ -458,41 +471,6 @@ static llvm::Expected<Plan> compileToPlan(llvm::StringRef Source) {
 
     Planner Pl("test.scaly");
     return Pl.plan(*ModelResult);
-}
-
-// Helper: compile with scaly package loaded (for RBMM tests)
-static llvm::Expected<Plan> compileWithPackagesToPlan(llvm::StringRef Source) {
-    // Prepend package declaration and use statement
-    std::string FullSource = "package scaly 0.1.0\n"
-                             "use scaly.memory.Page\n\n";
-    FullSource += Source.str();
-
-    Parser P(FullSource);
-    auto ParseResult = P.parseProgram();
-    if (!ParseResult)
-        return ParseResult.takeError();
-
-    // Use path relative to build directory so package resolution works
-    Modeler M("../../packages/scaly/0.1.0/test.scaly");
-    auto ModelResult = M.buildProgram(*ParseResult);
-    if (!ModelResult)
-        return ModelResult.takeError();
-
-    Planner Pl("../../packages/scaly/0.1.0/test.scaly");
-    return Pl.plan(*ModelResult);
-}
-
-// Helper: run pipeline with packages to JIT int result
-static llvm::Expected<int64_t> evalIntWithPackages(llvm::StringRef Source) {
-    auto PlanResult = compileWithPackagesToPlan(Source);
-    if (!PlanResult)
-        return PlanResult.takeError();
-
-    EmitterConfig Config;
-    Config.EmitDebugInfo = false;
-    Emitter E(Config);
-
-    return E.jitExecuteInt(*PlanResult);
 }
 
 // Helper: run pipeline to JIT int result
@@ -2028,70 +2006,9 @@ static bool testRBMMByValueReturn() {
     return true;
 }
 
-static bool testRBMMLocalPageAllocation() {
-    const char* Name = "Pipeline: RBMM local page ($) allocation";
-
-    // Test that $ lifetime allocates on local page
-    // Syntax: Type$(args) - lifetime comes before parameters
-    auto ResultOrErr = evalIntWithPackages(
-        "define Point: (x: int, y: int)\n"
-        "function test_local_alloc() returns int {\n"
-        "    let p Point$(10, 32)\n"  // Allocate on local page
-        "    (*p).x + (*p).y\n"       // Dereference to get values
-        "}\n"
-        "test_local_alloc()"
-    );
-    if (!ResultOrErr) {
-        std::string ErrMsg;
-        llvm::raw_string_ostream OS(ErrMsg);
-        OS << ResultOrErr.takeError();
-        fail(Name, ErrMsg.c_str());
-        return false;
-    }
-
-    if (*ResultOrErr != 42) {
-        std::string Msg = "expected 42, got " + std::to_string(*ResultOrErr);
-        fail(Name, Msg.c_str());
-        return false;
-    }
-
-    pass(Name);
-    return true;
-}
-
-static bool testRBMMCallerPageAllocation() {
-    const char* Name = "Pipeline: RBMM caller page (#) allocation";
-
-    // Test that # lifetime allocates on caller's page and can be returned
-    // Syntax: Type#(args) - lifetime comes before parameters
-    auto ResultOrErr = evalIntWithPackages(
-        "define Point: (x: int, y: int)\n"
-        "function make_point() returns pointer[Point] {\n"
-        "    Point#(10, 32)\n"  // Allocate on caller's page
-        "}\n"
-        "function test_caller_alloc() returns int {\n"
-        "    let p make_point()\n"
-        "    (*p).x + (*p).y\n"
-        "}\n"
-        "test_caller_alloc()"
-    );
-    if (!ResultOrErr) {
-        std::string ErrMsg;
-        llvm::raw_string_ostream OS(ErrMsg);
-        OS << ResultOrErr.takeError();
-        fail(Name, ErrMsg.c_str());
-        return false;
-    }
-
-    if (*ResultOrErr != 42) {
-        std::string Msg = "expected 42, got " + std::to_string(*ResultOrErr);
-        fail(Name, Msg.c_str());
-        return false;
-    }
-
-    pass(Name);
-    return true;
-}
+// Note: testRBMMLocalPageAllocation and testRBMMCallerPageAllocation removed
+// These features ($ and # lifetime allocations) are thoroughly tested by
+// the Module tests which run the actual scaly runtime (memory, containers, io).
 
 static bool testRBMMEmptyConstructorWithoutParens() {
     const char* Name = "Pipeline: empty constructor without parens (stack alloc)";
@@ -2662,154 +2579,162 @@ bool runEmitterTests() {
 
     TestsPassed = 0;
     TestsFailed = 0;
+    TestTimings.clear();
 
     // Direct Plan -> JIT tests
     llvm::outs() << "  Direct JIT tests:\n";
     llvm::outs().flush();
-    testJitIntegerConstant();
-    testJitBooleanTrue();
-    testJitBooleanFalse();
-    testJitNegativeInteger();
-    testJitAddition();
-    testJitSubtraction();
-    testJitMultiplication();
-    testJitDivision();
-    testJitModulo();
+    TIMED_TEST(testJitIntegerConstant);
+    TIMED_TEST(testJitBooleanTrue);
+    TIMED_TEST(testJitBooleanFalse);
+    TIMED_TEST(testJitNegativeInteger);
+    TIMED_TEST(testJitAddition);
+    TIMED_TEST(testJitSubtraction);
+    TIMED_TEST(testJitMultiplication);
+    TIMED_TEST(testJitDivision);
+    TIMED_TEST(testJitModulo);
 
     // Full pipeline tests (Source -> Parse -> Model -> Plan -> JIT)
     // Note: Most basic operator tests moved to literate tests (tests/expressions.sgm)
     llvm::outs() << "  Full pipeline tests:\n";
-    testPipelineParentheses();
+    TIMED_TEST(testPipelineParentheses);
 
     // Variable bindings (immutable let)
     llvm::outs() << "  Variable binding tests:\n";
-    testPipelineLetSimple();
-    testPipelineLetWithOp();
-    testPipelineLetNested();
-    testPipelineLetMultiply();
+    TIMED_TEST(testPipelineLetSimple);
+    TIMED_TEST(testPipelineLetWithOp);
+    TIMED_TEST(testPipelineLetNested);
+    TIMED_TEST(testPipelineLetMultiply);
 
     // Note: var/set, while, if, for, break/continue tests moved to literate tests (tests/controlflow.sgm)
 
     // Match expressions
     llvm::outs() << "  Match expression tests:\n";
-    testPipelineMatchSingleCase();
-    testPipelineMatchElse();
-    testPipelineMatchWithVar();
-    testPipelineMatchFirstCase();
+    TIMED_TEST(testPipelineMatchSingleCase);
+    TIMED_TEST(testPipelineMatchElse);
+    TIMED_TEST(testPipelineMatchWithVar);
+    TIMED_TEST(testPipelineMatchFirstCase);
 
     // Try expressions
     llvm::outs() << "  Try expression tests:\n";
-    testPipelineTrySimpleValue();
-    testPipelineTryWithBinding();
-    testPipelineTryExpression();
+    TIMED_TEST(testPipelineTrySimpleValue);
+    TIMED_TEST(testPipelineTryWithBinding);
+    TIMED_TEST(testPipelineTryExpression);
 
     // Throw statements
     llvm::outs() << "  Throw statement tests:\n";
-    testThrowInFunction();
+    TIMED_TEST(testThrowInFunction);
 
     // Choose expressions
     llvm::outs() << "  Choose expression tests:\n";
-    testChooseMatchesError();
-    testChooseWithDataBinding();
-    testChooseElseFallback();
-    testChooseMultipleCases();
-    testChooseOnStructField();
-    testChooseOnVariantConstruction();
+    TIMED_TEST(testChooseMatchesError);
+    TIMED_TEST(testChooseWithDataBinding);
+    TIMED_TEST(testChooseElseFallback);
+    TIMED_TEST(testChooseMultipleCases);
+    TIMED_TEST(testChooseOnStructField);
+    TIMED_TEST(testChooseOnVariantConstruction);
 
     // Is expressions
     llvm::outs() << "  Is expression tests:\n";
-    testIsExpressionMatchesError();
-    testIsExpressionNoMatchOk();
-    testIsExpressionWithIf();
-    testIsExpressionNotMatching();
+    TIMED_TEST(testIsExpressionMatchesError);
+    TIMED_TEST(testIsExpressionNoMatchOk);
+    TIMED_TEST(testIsExpressionWithIf);
+    TIMED_TEST(testIsExpressionNotMatching);
     // Note: Variant construction tests moved to literate tests (tests/choose.sgm)
 
     // SizeOf expressions
     llvm::outs() << "  SizeOf expression tests:\n";
-    testPipelineSizeOfInt();
-    testPipelineSizeOfBool();
-    testPipelineSizeOfI32();
-    testPipelineSizeOfPtr();
+    TIMED_TEST(testPipelineSizeOfInt);
+    TIMED_TEST(testPipelineSizeOfBool);
+    TIMED_TEST(testPipelineSizeOfI32);
+    TIMED_TEST(testPipelineSizeOfPtr);
 
     // AlignOf expressions
     llvm::outs() << "  AlignOf expression tests:\n";
-    testPipelineAlignOfInt();
-    testPipelineAlignOfI32();
-    testPipelineAlignOfI16();
-    testPipelineAlignOfBool();
+    TIMED_TEST(testPipelineAlignOfInt);
+    TIMED_TEST(testPipelineAlignOfI32);
+    TIMED_TEST(testPipelineAlignOfI16);
+    TIMED_TEST(testPipelineAlignOfBool);
 
     // Extern function tests
     llvm::outs() << "  Extern function tests:\n";
-    testExternStrlen();
-    testExternSqrt();
+    TIMED_TEST(testExternStrlen);
+    TIMED_TEST(testExternSqrt);
 
     llvm::outs() << "  Grouped expression tests:\n";
-    testPipelineGroupedSimple();
-    testPipelineGroupedAdd();
-    testPipelineNestedGrouped();
-    testPipelineComplexGrouped();
+    TIMED_TEST(testPipelineGroupedSimple);
+    TIMED_TEST(testPipelineGroupedAdd);
+    TIMED_TEST(testPipelineNestedGrouped);
+    TIMED_TEST(testPipelineComplexGrouped);
 
     llvm::outs() << "  Pointer dereference tests:\n";
-    testPointerDerefCompiles();
-    testPointerDerefSimple();
-    testPointerDerefMemberAccess();
+    TIMED_TEST(testPointerDerefCompiles);
+    TIMED_TEST(testPointerDerefSimple);
+    TIMED_TEST(testPointerDerefMemberAccess);
 
     llvm::outs() << "  Null literal tests:\n";
-    testNullLiteralCompiles();
-    testNullInFunction();
-    testNullComparison();
+    TIMED_TEST(testNullLiteralCompiles);
+    TIMED_TEST(testNullInFunction);
+    TIMED_TEST(testNullComparison);
 
     llvm::outs() << "  Member access tests:\n";
-    testPipelineMemberAccessSimple();
-    testPipelineMemberAccessSecondField();
-    testPipelineMemberAccessVariableOnly();
-    testPipelineMemberAccessWithBinding();
-    testPipelineMemberAccessMultiply();
+    TIMED_TEST(testPipelineMemberAccessSimple);
+    TIMED_TEST(testPipelineMemberAccessSecondField);
+    TIMED_TEST(testPipelineMemberAccessVariableOnly);
+    TIMED_TEST(testPipelineMemberAccessWithBinding);
+    TIMED_TEST(testPipelineMemberAccessMultiply);
 
     llvm::outs() << "  Method call tests:\n";
-    testPipelineMethodCallSimple();
-    testPipelineMethodCallSum();
-    testPipelineMethodCallWithArgs();
+    TIMED_TEST(testPipelineMethodCallSimple);
+    TIMED_TEST(testPipelineMethodCallSum);
+    TIMED_TEST(testPipelineMethodCallWithArgs);
 
     llvm::outs() << "  Initializer tests:\n";
-    testPipelineInitializerSimple();
-    testPipelineInitializerWithParams();
-    testPipelineInitializerWithComputation();
+    TIMED_TEST(testPipelineInitializerSimple);
+    TIMED_TEST(testPipelineInitializerWithParams);
+    TIMED_TEST(testPipelineInitializerWithComputation);
 
     llvm::outs() << "  Deinitializer tests:\n";
-    testPipelineDeinitializerSimple();
-    testPipelineDeinitializerWithInit();
+    TIMED_TEST(testPipelineDeinitializerSimple);
+    TIMED_TEST(testPipelineDeinitializerWithInit);
 
     llvm::outs() << "  Function call tests:\n";
-    testPipelineFunctionCallSimple();
-    testPipelineFunctionCallWithArgs();
-    testPipelineFunctionCallChained();
-    testPipelineFunctionCallWithExpression();
+    TIMED_TEST(testPipelineFunctionCallSimple);
+    TIMED_TEST(testPipelineFunctionCallWithArgs);
+    TIMED_TEST(testPipelineFunctionCallChained);
+    TIMED_TEST(testPipelineFunctionCallWithExpression);
 
     llvm::outs() << "  RBMM tests:\n";
-    testRBMMLocalLifetimeForbidden();
-    testRBMMByValueReturn();
-    testRBMMLocalPageAllocation();
-    testRBMMCallerPageAllocation();
-    testRBMMEmptyConstructorWithoutParens();
-    testRBMMThrownLifetime();
-    testThrowStructWithMemberAccess();
-    testRBMMBlockScopedCleanup();
-    testRBMMReferenceLifetimeRequiresPagePointer();
+    TIMED_TEST(testRBMMLocalLifetimeForbidden);
+    TIMED_TEST(testRBMMByValueReturn);
+    // Note: $ and # allocation tests removed - covered by Module tests
+    TIMED_TEST(testRBMMEmptyConstructorWithoutParens);
+    TIMED_TEST(testRBMMThrownLifetime);
+    TIMED_TEST(testThrowStructWithMemberAccess);
+    TIMED_TEST(testRBMMBlockScopedCleanup);
+    TIMED_TEST(testRBMMReferenceLifetimeRequiresPagePointer);
 
     // Static array constant tests
     llvm::outs() << "  Static array tests:\n";
-    testStaticArrayConstant();
-    testStackArrayDeclaration();
-    testStackArrayWithTypeAnnotation();
+    TIMED_TEST(testStaticArrayConstant);
+    TIMED_TEST(testStackArrayDeclaration);
+    TIMED_TEST(testStackArrayWithTypeAnnotation);
 
     llvm::outs() << "  Generic type tests:\n";
-    testGenericBoxInt();
-    testGenericBoxBool();
-    testGenericPair();
+    TIMED_TEST(testGenericBoxInt);
+    TIMED_TEST(testGenericBoxBool);
+    TIMED_TEST(testGenericPair);
     // Note: Generic Option and Optional tests moved to literate tests (tests/choose.sgm)
-    testGenericMethodOnStruct();
-    testGenericNestedTypes();
+    TIMED_TEST(testGenericMethodOnStruct);
+    TIMED_TEST(testGenericNestedTypes);
+
+    // Sort by time descending and print top 10 slowest
+    std::sort(TestTimings.begin(), TestTimings.end(),
+              [](const auto& a, const auto& b) { return a.second > b.second; });
+    llvm::outs() << "\n  Slowest tests:\n";
+    for (size_t i = 0; i < std::min(TestTimings.size(), size_t(10)); ++i) {
+        llvm::outs() << "    " << TestTimings[i].second << "ms: " << TestTimings[i].first << "\n";
+    }
 
     llvm::outs() << "\nEmitter tests: " << TestsPassed << " passed, "
                  << TestsFailed << " failed\n";

@@ -17,6 +17,7 @@
 #include "llvm/Support/Path.h"
 #include "llvm/Support/Program.h"
 #include "llvm/Support/raw_ostream.h"
+#include <chrono>
 #include <iostream>
 
 using namespace llvm;
@@ -677,26 +678,57 @@ int main(int argc, char **argv) {
 
     if (RunTests) {
         bool AllPassed = true;
+        auto start = std::chrono::high_resolution_clock::now();
+        auto checkpoint = start;
+
         AllPassed &= scaly::runLexerTests();
+        auto now = std::chrono::high_resolution_clock::now();
+        llvm::outs() << "  [Lexer: " << std::chrono::duration_cast<std::chrono::milliseconds>(now - checkpoint).count() << "ms]\n";
+        checkpoint = now;
         std::cout << std::endl << std::flush;
         llvm::outs().flush();
+
         AllPassed &= scaly::runEmitterTests();
+        now = std::chrono::high_resolution_clock::now();
+        llvm::outs() << "  [Emitter: " << std::chrono::duration_cast<std::chrono::milliseconds>(now - checkpoint).count() << "ms]\n";
+        checkpoint = now;
         std::cout << std::endl << std::flush;
         llvm::outs().flush();
+
         // Generated literate tests
         AllPassed &= scaly::runExpressionTests();
+        now = std::chrono::high_resolution_clock::now();
+        llvm::outs() << "  [Expression: " << std::chrono::duration_cast<std::chrono::milliseconds>(now - checkpoint).count() << "ms]\n";
+        checkpoint = now;
         std::cout << std::endl << std::flush;
         llvm::outs().flush();
+
         AllPassed &= scaly::runDefinitionTests();
+        now = std::chrono::high_resolution_clock::now();
+        llvm::outs() << "  [Definition: " << std::chrono::duration_cast<std::chrono::milliseconds>(now - checkpoint).count() << "ms]\n";
+        checkpoint = now;
         std::cout << std::endl << std::flush;
         llvm::outs().flush();
+
         AllPassed &= scaly::runChooseTests();
+        now = std::chrono::high_resolution_clock::now();
+        llvm::outs() << "  [Choose: " << std::chrono::duration_cast<std::chrono::milliseconds>(now - checkpoint).count() << "ms]\n";
+        checkpoint = now;
         std::cout << std::endl << std::flush;
         llvm::outs().flush();
+
         AllPassed &= scaly::runControlFlowTests();
+        now = std::chrono::high_resolution_clock::now();
+        llvm::outs() << "  [ControlFlow: " << std::chrono::duration_cast<std::chrono::milliseconds>(now - checkpoint).count() << "ms]\n";
+        checkpoint = now;
         std::cout << std::endl << std::flush;
         llvm::outs().flush();
+
         AllPassed &= scaly::runModuleTests();
+        now = std::chrono::high_resolution_clock::now();
+        llvm::outs() << "  [Module: " << std::chrono::duration_cast<std::chrono::milliseconds>(now - checkpoint).count() << "ms]\n";
+
+        llvm::outs() << "\nTotal: " << std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count() << "ms\n";
         return AllPassed ? 0 : 1;
     }
 
