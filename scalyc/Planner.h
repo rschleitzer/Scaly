@@ -151,6 +151,81 @@ private:
     };
     std::vector<ScopeInfo> ScopeInfoStack;
 
+    // ========== Iterative Processing Infrastructure ==========
+    // Work queue for converting recursive planning to iterative processing.
+    // This prevents stack overflow on deeply nested code.
+
+    // Result storage location for deferred work items
+    struct ResultSlot {
+        enum class Kind {
+            StatementVec,      // Append to std::vector<PlannedStatement>*
+            Statement,         // Store in PlannedStatement*
+            Block,             // Store in PlannedBlock*
+            If,                // Store in PlannedIf*
+            Match,             // Store in PlannedMatch*
+            Choose,            // Store in PlannedChoose*
+            For,               // Store in PlannedFor*
+            While,             // Store in PlannedWhile*
+        };
+        Kind SlotKind;
+        void* Storage;
+        size_t Index = 0;  // For vector slots
+    };
+
+    // A pending work item for iterative processing
+    struct WorkItem {
+        enum class Kind {
+            PlanStatementList,   // Plan a list of statements
+            PlanSingleStatement, // Plan one statement
+            PlanBlock,           // Plan a block
+            PlanIfConsequent,    // Plan if consequent
+            PlanIfAlternative,   // Plan if alternative
+            PlanMatchBranch,     // Plan match branch
+            PlanChooseWhen,      // Plan choose when branch
+            PlanForBody,         // Plan for loop body
+            PlanWhileBody,       // Plan while loop body
+            PopScope,            // Pop a scope after block processing
+            FinalizeBlock,       // Finalize block after statements planned
+            FinalizeIf,          // Finalize if after branches planned
+        };
+        Kind ItemKind;
+
+        // Input data (depending on ItemKind)
+        const std::vector<Statement>* Statements = nullptr;
+        const Statement* Stmt = nullptr;
+        const Block* Blk = nullptr;
+        const If* IfExpr = nullptr;
+        const Match* MatchExpr = nullptr;
+        const Choose* ChooseExpr = nullptr;
+        const For* ForExpr = nullptr;
+        const While* WhileExpr = nullptr;
+        size_t Index = 0;  // Current position in list processing
+
+        // Output location
+        ResultSlot Result;
+
+        // Context for continuation (what to do after this item completes)
+        PlannedBlock* BlockResult = nullptr;
+        PlannedIf* IfResult = nullptr;
+        PlannedMatch* MatchResult = nullptr;
+        PlannedChoose* ChooseResult = nullptr;
+        PlannedFor* ForResult = nullptr;
+        PlannedWhile* WhileResult = nullptr;
+    };
+
+    // Work queue for iterative processing
+    std::vector<WorkItem> WorkQueue;
+
+    // Process work items iteratively until queue is empty
+    llvm::Expected<bool> processWorkQueue();
+
+    // Push a work item onto the queue
+    void pushWork(WorkItem Item);
+
+    // Helper to plan statements iteratively (entry point for iterative mode)
+    llvm::Expected<std::vector<PlannedStatement>> planStatementsIterative(
+        const std::vector<Statement>& Stmts);
+
     // ========== Type Inference State ==========
 
     // Current plan being built (for constraint collection)

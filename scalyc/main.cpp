@@ -18,6 +18,20 @@
 #include "llvm/Support/Program.h"
 #include "llvm/Support/raw_ostream.h"
 #include <iostream>
+#include <sys/resource.h>  // For setrlimit
+
+// Increase stack size for deeply nested code
+// The planner uses recursive descent which requires larger stack for complex files
+static void ensureAdequateStackSize() {
+    const rlim_t kStackSize = 16 * 1024 * 1024;  // 16 MB
+    struct rlimit rl;
+    if (getrlimit(RLIMIT_STACK, &rl) == 0) {
+        if (rl.rlim_cur < kStackSize) {
+            rl.rlim_cur = kStackSize;
+            setrlimit(RLIMIT_STACK, &rl);
+        }
+    }
+}
 
 using namespace llvm;
 
@@ -672,6 +686,9 @@ static int buildFile(StringRef Filename, StringRef OutputPath) {
 }
 
 int main(int argc, char **argv) {
+    // Ensure adequate stack size for recursive descent through deeply nested code
+    ensureAdequateStackSize();
+
     cl::HideUnrelatedOptions(ScalyCategory);
     cl::ParseCommandLineOptions(argc, argv, "Scaly Compiler\n");
 
