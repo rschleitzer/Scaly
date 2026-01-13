@@ -12,5 +12,22 @@ define compiler
     module Emitter
 
     function test() returns int
-        0  ; TODO: call submodule tests once cross-module calls work
+    {
+        ; Test Modeler module
+        var result Modeler.test()
+        if result <> 0
+            return result - 100
+
+        ; Test Planner module
+        set result: Planner.test()
+        if result <> 0
+            return result - 200
+
+        ; Test Emitter module
+        set result: Emitter.test()
+        if result <> 0
+            return result - 300
+
+        0
+    }
 }

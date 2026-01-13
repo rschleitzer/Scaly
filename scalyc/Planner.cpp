@@ -868,6 +868,20 @@ bool Planner::typesCompatible(const PlannedType &ParamType, const PlannedType &A
     //     }
     // }
 
+    // Allow null (typed as pointer[void]) to be assigned to Option types
+    // This handles: var x: Option[T] null  or  var x: ref[T]? null
+    // where null is the None case of the Option type (with NPO, it's just a null pointer)
+    if (ParamType.Name == "Option" && ArgType.Name == "pointer" &&
+        !ArgType.Generics.empty() && ArgType.Generics[0].Name == "void") {
+        return true;
+    }
+
+    // Also handle instantiated Option types with flattened names like "Option.ref.T"
+    if (ParamType.Name.substr(0, 7) == "Option." && ArgType.Name == "pointer" &&
+        !ArgType.Generics.empty() && ArgType.Generics[0].Name == "void") {
+        return true;
+    }
+
     return false;
 }
 
@@ -11277,6 +11291,21 @@ llvm::Expected<Substitution> unify(const TypeOrVariable &Left,
         // Special case: compatible integer types unify with each other
         // This allows integer literals (typed as 'int') to be used where size_t, u64, etc. are expected
         if (areCompatibleIntegerTypes(LeftType->Name, RightType->Name)) {
+            return Substitution{};
+        }
+
+        // Special case: null (typed as pointer[void]) unifies with Option types
+        // This allows: var x: Option[T] null  or  var x: ref[T]? null
+        // where null represents the None case (with NPO, it's just a null pointer)
+        if ((LeftType->Name == "Option" || LeftType->Name.substr(0, 7) == "Option.") &&
+            RightType->Name == "pointer" && !RightType->Generics.empty() &&
+            RightType->Generics[0].Name == "void") {
+            return Substitution{};
+        }
+        // Also check the reverse case
+        if ((RightType->Name == "Option" || RightType->Name.substr(0, 7) == "Option.") &&
+            LeftType->Name == "pointer" && !LeftType->Generics.empty() &&
+            LeftType->Generics[0].Name == "void") {
             return Substitution{};
         }
 

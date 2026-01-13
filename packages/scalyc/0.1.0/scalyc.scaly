@@ -8,5 +8,22 @@ define scalyc {
     module compiler
 
     function test() returns int
-        0  ; TODO: call module tests once sibling calls work
+    {
+        ; Test lexer module
+        var result lexer.test()
+        if result <> 0
+            return result - 1000
+
+        ; Test parser module
+        set result: parser.test()
+        if result <> 0
+            return result - 2000
+
+        ; Test compiler module
+        set result: compiler.test()
+        if result <> 0
+            return result - 3000
+
+        0
+    }
 }

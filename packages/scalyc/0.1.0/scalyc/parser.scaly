@@ -5773,3 +5773,41 @@ define Parser
         lexer.is_at_end()
 }
 
+function test() returns int
+{
+    ; Test 1: Parse a simple literal
+    var parser Parser#(String#("42"))
+    choose parser.parse_literal#()
+        when error: ParserError
+            return 1
+        when literal: LiteralSyntax
+        {
+            if ~parser.is_at_end()
+                return 2
+        }
+
+    ; Test 2: Parse an identifier expression
+    set parser: Parser#(String#("foo"))
+    choose parser.parse_name#()
+        when error: ParserError
+            return 3
+        when name: NameSyntax
+        {
+            if ~parser.is_at_end()
+                return 4
+        }
+
+    ; Test 3: Parse a function definition
+    set parser: Parser#(String#("function hello() returns int 42"))
+    choose parser.parse_function#()
+        when error: ParserError
+            return 5
+        when func: FunctionSyntax
+        {
+            if ~parser.is_at_end()
+                return 6
+        }
+
+    0
+}
+
