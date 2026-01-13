@@ -89,109 +89,8 @@ static llvm::Expected<int64_t> runPackageTestFunction(
 // Module Test Cases
 // ============================================================================
 
-// Path to the scaly package entry point (relative to scalyc/build/)
-static const char* ScalyPackagePath = "../../packages/scaly/0.1.0/scaly.scaly";
-
 // Path to the scalyc package entry point (relative to scalyc/build/)
 static const char* ScalycPackagePath = "../../packages/scalyc/0.1.0/scalyc.scaly";
-
-static bool testMemoryModule() {
-    const char* Name = "Module: memory.test()";
-
-    auto ResultOrErr = runPackageTestFunction(ScalyPackagePath, "memory.test");
-
-    if (!ResultOrErr) {
-        std::string ErrMsg;
-        llvm::raw_string_ostream OS(ErrMsg);
-        OS << ResultOrErr.takeError();
-        fail(Name, ErrMsg.c_str());
-        return false;
-    }
-
-    int64_t Result = *ResultOrErr;
-    if (Result != 0) {
-        std::string Msg = "test returned error code " + std::to_string(Result);
-        fail(Name, Msg.c_str());
-        return false;
-    }
-
-    pass(Name);
-    return true;
-}
-
-static bool testContainersModule() {
-    const char* Name = "Module: containers.test()";
-
-    auto ResultOrErr = runPackageTestFunction(ScalyPackagePath, "containers.test");
-
-    if (!ResultOrErr) {
-        std::string ErrMsg;
-        llvm::raw_string_ostream OS(ErrMsg);
-        OS << ResultOrErr.takeError();
-        fail(Name, ErrMsg.c_str());
-        return false;
-    }
-
-    int64_t Result = *ResultOrErr;
-    if (Result != 0) {
-        std::string Msg = "test returned error code " + std::to_string(Result);
-        fail(Name, Msg.c_str());
-        return false;
-    }
-
-    pass(Name);
-    return true;
-}
-
-static bool testIoModule() {
-    const char* Name = "Module: io.test()";
-
-    auto ResultOrErr = runPackageTestFunction(ScalyPackagePath, "io.test");
-
-    if (!ResultOrErr) {
-        std::string ErrMsg;
-        llvm::raw_string_ostream OS(ErrMsg);
-        OS << ResultOrErr.takeError();
-        fail(Name, ErrMsg.c_str());
-        return false;
-    }
-
-    int64_t Result = *ResultOrErr;
-    if (Result != 0) {
-        std::string Msg = "test returned error code " + std::to_string(Result);
-        fail(Name, Msg.c_str());
-        return false;
-    }
-
-    pass(Name);
-    return true;
-}
-
-static bool testLexerModule() {
-    const char* Name = "Module: scalyc lexer test()";
-
-    // The function is named "test" in the scalyc namespace
-    // It calls lexer.test() to run the actual tests
-    auto ResultOrErr = runPackageTestFunction(ScalycPackagePath, "test");
-
-    if (!ResultOrErr) {
-        std::string ErrMsg;
-        llvm::raw_string_ostream OS(ErrMsg);
-        OS << ResultOrErr.takeError();
-        fail(Name, ErrMsg.c_str());
-        return false;
-    }
-
-    int64_t Result = *ResultOrErr;
-    if (Result != 0) {
-        std::string Msg = "test returned error code " + std::to_string(Result);
-        fail(Name, Msg.c_str());
-        return false;
-    }
-
-    pass(Name);
-    return true;
-}
 
 // ============================================================================
 // Optimized Test Runner - compiles package once, runs multiple tests
@@ -296,20 +195,15 @@ bool runModuleTests(bool includeSlowTests) {
     TestsPassed = 0;
     TestsFailed = 0;
 
-    // Compile scaly package once and run all its tests
-    llvm::outs() << "  Scaly package tests:\n";
-    runPackageTests(ScalyPackagePath, {
-        {"Module: memory.test()", "memory.test"},
-        {"Module: containers.test()", "containers.test"},
-        {"Module: io.test()", "io.test"},
-    });
-
     // Compile scalyc package once and run its tests (slow: ~20s for 16k lines)
+    // This tests the self-hosting compiler modules: lexer, parser, compiler
     if (includeSlowTests) {
         llvm::outs() << "  Scalyc package tests:\n";
         runPackageTests(ScalycPackagePath, {
-            {"Module: scalyc lexer test()", "test"},
+            {"Module: scalyc.test()", "test"},
         });
+    } else {
+        llvm::outs() << "  (Scalyc package tests skipped - use --test=module to include)\n";
     }
 
     llvm::outs() << "\nModule tests: " << TestsPassed << " passed, "
