@@ -1121,6 +1121,17 @@ std::vector<const Function*> Planner::lookupFunction(llvm::StringRef Name) {
         }
     }
 
+    // If we're inside a namespace (define block), search its sibling functions
+    if (CurrentNamespace) {
+        for (const auto& Member : CurrentNamespace->Members) {
+            if (auto* Func = std::get_if<Function>(&Member)) {
+                if (Func->Name == Name) {
+                    Result.push_back(Func);
+                }
+            }
+        }
+    }
+
     // Search sibling programs (for multi-file compilation)
     if (Result.empty()) {
         for (const auto& Sibling : SiblingPrograms) {
