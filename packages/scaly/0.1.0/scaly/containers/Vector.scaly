@@ -22,7 +22,7 @@ define VectorIterator[T]
             return null
 
         set position: position + 1
-        return vector.get(position - 1)
+        return vector.get_ptr(position - 1)
     }
 }
 
@@ -111,7 +111,15 @@ define Vector[T]
             set data: null
     }
 
-    function get(this: Vector[T], i: size_t) returns pointer[T]
+    function get(this: Vector[T], i: size_t) returns ref[T]?
+    {
+        if i >= length
+            return null
+        data + i
+    }
+
+    ; Internal helper returning raw pointer for container implementations
+    function get_ptr(this: Vector[T], i: size_t) returns pointer[T]
     {
         if i >= length
             return null
@@ -126,7 +134,7 @@ define Vector[T]
         true
     }
 
-    operator [](i: size_t) returns pointer[T]
+    operator [](i: size_t) returns ref[T]?
     {
         if i >= length
             return null
