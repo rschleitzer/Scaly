@@ -9710,6 +9710,21 @@ llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
         }
     }
 
+    // Compute mangled name early to enable cache lookup
+    // For extern functions, use the unmangled C name for linking
+    bool IsExtern = std::holds_alternative<ExternImpl>(Func.Impl);
+    std::string EarlyMangledName = IsExtern ? Func.Name : mangleFunction(Func.Name, Result.Input, Parent);
+
+    // Check cache - if this function was already planned, return the cached version
+    auto CacheIt = InstantiatedFunctions.find(EarlyMangledName);
+    if (CacheIt != InstantiatedFunctions.end()) {
+        // Cache hit - restore state and return cached result
+        popScope();
+        FunctionsBeingPlanned.erase(&Func);
+        CurrentFunctionUsesLocalLifetime = SavedUsesLocalLifetime;
+        return CacheIt->second;
+    }
+
     // Plan return type
     if (Func.Returns) {
         auto ResolvedReturn = resolveType(*Func.Returns, Func.Loc);
@@ -9777,13 +9792,11 @@ llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
     // Restore saved flag (allows outer function to continue tracking its own $ allocations)
     CurrentFunctionUsesLocalLifetime = SavedUsesLocalLifetime;
 
-    // Generate mangled name
-    // For extern functions, use the unmangled C name for linking
-    if (std::holds_alternative<PlannedExternImpl>(Result.Impl)) {
-        Result.MangledName = Func.Name;
-    } else {
-        Result.MangledName = mangleFunction(Func.Name, Result.Input, Parent);
-    }
+    // Use the mangled name we computed earlier for cache lookup
+    Result.MangledName = EarlyMangledName;
+
+    // Add to cache for future lookups
+    InstantiatedFunctions[EarlyMangledName] = Result;
 
     FunctionsBeingPlanned.erase(&Func);
     return Result;
