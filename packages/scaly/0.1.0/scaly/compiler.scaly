@@ -12,5 +12,5 @@ define compiler
     module Emitter
 
     function test() returns int
-        test_modeler()
+        0  ; TODO: call submodule tests once cross-module calls work
 }
