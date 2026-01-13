@@ -26,6 +26,19 @@ The current approach builds the compiler in **idiomatic C++** with **LLVM code g
 - **JIT testing**: Test cases defined in XML are compiled and executed via JIT during development
 - **Long-term bootstrapping**: Self-hosting is a goal but not a near-term constraint on implementation choices
 
+### Self-Hosting Roadmap
+
+The C++ compiler pipeline is **feature-complete** (Lexer → Parser → Modeler → Planner → Emitter → LLVM). Path to self-hosting:
+
+| Phase | Goal | Key Tasks |
+|-------|------|-----------|
+| 1 | Validate AOT | Compile+run standalone program, verify linking, test RBMM |
+| 2 | Complete stdlib | HashMap[K,V] (critical), String, File I/O, Result[T,E] |
+| 3 | Port to Scaly | Lexer → Parser → Modeler → Planner → Emitter (use LLVM C API) |
+| 4 | Bootstrap | C++ compiles Scaly compiler → stage1 compiles itself → verify stage2 = stage1 |
+
+**Next tasks:** (1) Test AOT: `./scalyc/build/scalyc -o hello hello.scaly` (2) Implement HashMap[K,V] (3) Add LLVM C API bindings (4) Port Lexer.cpp to Scaly
+
 ### LLVM Coding Guidelines
 
 Follow the [LLVM Programmer's Manual](https://llvm.org/docs/ProgrammersManual.html) conventions. These idioms align well with Scaly's design and will ease eventual self-hosting:
@@ -578,7 +591,7 @@ Options:
 - `Plan.h` - Resolved model (concrete types, mangled names)
 - `PlannerError.h/cpp` - Errors for planning phase
 - `Planner.h/cpp` - Model → Plan (inference, monomorphization, mangling)
-- `Emitter.h/cpp` - Plan → LLVM IR generation (future)
+- `Emitter.h/cpp` - Plan → LLVM IR generation, JIT execution, AOT compilation
 - `Tests.h/cpp` - Generated from scaly.sgm
 
 ### Compiler Pipeline Architecture
@@ -1117,7 +1130,7 @@ brew install llvm@18 cmake openjade
 │   ├── Plan.h                # Resolved model (concrete, mangled)
 │   ├── PlannerError.h / PlannerError.cpp
 │   ├── Planner.h / Planner.cpp
-│   ├── Emitter.h / Emitter.cpp  # Future: LLVM IR generation
+│   ├── Emitter.h / Emitter.cpp  # LLVM IR generation, JIT, AOT
 │   ├── LexerTests.cpp
 │   ├── ParserTests.cpp
 │   └── build/            # CMake build directory
