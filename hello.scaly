@@ -1,10 +1,12 @@
-; Hello World test program for Scaly AOT compilation
-package scaly 0.1.0
+; Hello World - standalone AOT compilation test
+; Usage: ./scalyc/build/scalyc -o hello hello.scaly && ./hello
 
-use scaly.io.Console
+function strlen(s: pointer[const_char]) returns size_t extern
+function write(fd: int, buf: pointer[void], count: size_t) returns size_t extern
 
 function main() returns int
 {
-    Console.println("Hello, World!")
+    let msg "Hello, World!\n"
+    write(1, msg as pointer[void], strlen(msg))
     0
 }
