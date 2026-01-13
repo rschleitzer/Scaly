@@ -289,7 +289,7 @@ static bool runPackageTests(
 // Main Test Runner
 // ============================================================================
 
-bool runModuleTests() {
+bool runModuleTests(bool includeSlowTests) {
     llvm::outs() << "Running Module tests...\n";
     llvm::outs().flush();
 
@@ -304,11 +304,13 @@ bool runModuleTests() {
         {"Module: io.test()", "io.test"},
     });
 
-    // Compile scalyc package once and run its tests
-    llvm::outs() << "  Scalyc package tests:\n";
-    runPackageTests(ScalycPackagePath, {
-        {"Module: scalyc lexer test()", "test"},
-    });
+    // Compile scalyc package once and run its tests (slow: ~20s for 16k lines)
+    if (includeSlowTests) {
+        llvm::outs() << "  Scalyc package tests:\n";
+        runPackageTests(ScalycPackagePath, {
+            {"Module: scalyc lexer test()", "test"},
+        });
+    }
 
     llvm::outs() << "\nModule tests: " << TestsPassed << " passed, "
                  << TestsFailed << " failed\n";

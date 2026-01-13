@@ -576,6 +576,7 @@ Options:
   -I<path>        Add package search path
   --no-stdlib     Disable implicit stdlib (for bare-metal/embedded)
   --test          Run compiled-in test suite
+  --slow-tests    Include slow tests (scalyc package, ~20s)
   --test=<name>   Run specific test
   -v              Verbose output
 ```
@@ -1044,8 +1045,11 @@ fi
 # Build only (after code generation)
 cd scalyc/build && make
 
-# Run tests only
+# Run tests only (fast, ~1s)
 ./scalyc/build/scalyc --test
+
+# Run tests including slow tests (~20s, compiles scalyc package)
+./scalyc/build/scalyc --test --slow-tests
 
 # Run specific test
 ./scalyc/build/scalyc --test=arithmetic
