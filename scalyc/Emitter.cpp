@@ -271,9 +271,9 @@ llvm::Expected<std::unique_ptr<llvm::Module>> Emitter::emit(const Plan &P,
 
     // Set target triple
     if (Config.TargetTriple.empty()) {
-        Module->setTargetTriple(llvm::sys::getDefaultTargetTriple());
+        Module->setTargetTriple(llvm::Triple(llvm::sys::getDefaultTargetTriple()));
     } else {
-        Module->setTargetTriple(Config.TargetTriple);
+        Module->setTargetTriple(llvm::Triple(Config.TargetTriple));
     }
 
     // Initialize debug info
@@ -422,7 +422,7 @@ llvm::Error Emitter::emitObjectFile(const Plan &P,
     std::string TargetTriple = Config.TargetTriple.empty()
         ? llvm::sys::getDefaultTargetTriple()
         : Config.TargetTriple;
-    TheModule->setTargetTriple(TargetTriple);
+    TheModule->setTargetTriple(llvm::Triple(TargetTriple));
 
     // Look up the target
     std::string Error;
@@ -5004,7 +5004,7 @@ llvm::Expected<uint64_t> Emitter::jitExecuteRaw(const Plan &P, llvm::Type *Expec
 
     // Create fresh module for JIT
     Module = std::make_unique<llvm::Module>("jit_module", *Context);
-    Module->setTargetTriple(llvm::sys::getDefaultTargetTriple());
+    Module->setTargetTriple(llvm::Triple(llvm::sys::getDefaultTargetTriple()));
 
     // Clear caches
     TypeCache.clear();
@@ -5289,7 +5289,7 @@ llvm::Error Emitter::jitExecuteVoid(const Plan &P, llvm::StringRef MangledFuncti
 
     // Create fresh module for JIT
     Module = std::make_unique<llvm::Module>("jit_module", *Context);
-    Module->setTargetTriple(llvm::sys::getDefaultTargetTriple());
+    Module->setTargetTriple(llvm::Triple(llvm::sys::getDefaultTargetTriple()));
 
     // Clear caches
     TypeCache.clear();
@@ -5499,7 +5499,7 @@ llvm::Expected<int64_t> Emitter::jitExecuteIntFunction(const Plan &P, llvm::Stri
 
     // Create fresh module for JIT
     Module = std::make_unique<llvm::Module>("jit_module", *Context);
-    Module->setTargetTriple(llvm::sys::getDefaultTargetTriple());
+    Module->setTargetTriple(llvm::Triple(llvm::sys::getDefaultTargetTriple()));
 
     // Clear caches
     TypeCache.clear();
@@ -5717,7 +5717,7 @@ void Emitter::dumpIR(const Plan &P) {
 
     // Create fresh module for IR dump
     Module = std::make_unique<llvm::Module>("ir_dump_module", *Context);
-    Module->setTargetTriple(llvm::sys::getDefaultTargetTriple());
+    Module->setTargetTriple(llvm::Triple(llvm::sys::getDefaultTargetTriple()));
 
     // Clear caches
     TypeCache.clear();
