@@ -84,7 +84,7 @@ define Scope
         set bindings: HashMapBuilder[String, LocalBinding]#()
     }
 
-    function lookup(this, name: String) returns pointer[LocalBinding]
+    function lookup(this, name: String) returns ref[LocalBinding]?
     {
         bindings[name]
     }
@@ -208,7 +208,7 @@ define Planner
         }
     }
 
-    function lookup_local(this, name: String) returns pointer[LocalBinding]
+    function lookup_local(this, name: String) returns ref[LocalBinding]?
     {
         ; Search scopes from innermost to outermost
         var i scopes.length
@@ -491,7 +491,7 @@ define Planner
     }
 
     ; Lookup a concept by name
-    function lookup_concept(this, name: String) returns pointer[Concept]
+    function lookup_concept(this, name: String) returns ref[pointer[Concept]]?
     {
         concepts[name]
     }
@@ -507,7 +507,7 @@ define Planner
     }
 
     ; Lookup a type substitution
-    function lookup_type_substitution(this, name: String) returns pointer[PlannedType]
+    function lookup_type_substitution(this, name: String) returns ref[PlannedType]?
     {
         type_substitutions[name]
     }
@@ -530,7 +530,7 @@ define Planner
     }
 
     ; Lookup a cached structure
-    function lookup_cached_structure(this, cache_key: String) returns pointer[PlannedStructure]
+    function lookup_cached_structure(this, cache_key: String) returns ref[PlannedStructure]?
     {
         instantiated_structures[cache_key]
     }
@@ -546,7 +546,7 @@ define Planner
     }
 
     ; Lookup a cached union
-    function lookup_cached_union(this, cache_key: String) returns pointer[PlannedUnion]
+    function lookup_cached_union(this, cache_key: String) returns ref[PlannedUnion]?
     {
         instantiated_unions[cache_key]
     }
@@ -562,7 +562,7 @@ define Planner
     }
 
     ; Lookup a cached function
-    function lookup_cached_function(this, cache_key: String) returns pointer[PlannedFunction]
+    function lookup_cached_function(this, cache_key: String) returns ref[PlannedFunction]?
     {
         instantiated_functions[cache_key]
     }
@@ -578,7 +578,7 @@ define Planner
     }
 
     ; Lookup a cached global
-    function lookup_cached_global(this, name: String) returns pointer[PlannedGlobal]
+    function lookup_cached_global(this, name: String) returns ref[PlannedGlobal]?
     {
         planned_globals[name]
     }
@@ -681,7 +681,7 @@ define Planner
     }
 
     ; Get inner type from pointer[T] or ref[T]
-    function get_inner_type(t: PlannedType) returns pointer[PlannedType]
+    function get_inner_type(t: PlannedType) returns ref[PlannedType]?
     {
         if is_pointer_like_type(t)
         {
