@@ -7827,31 +7827,17 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             }
                         }
                         // Check if this is a sibling function in the same namespace (define block)
+                        // Search directly in CurrentNamespace->Members (not via lookupFunction,
+                        // since namespace functions are not on the ModuleStack)
                         if (!IsSiblingMethod && !CurrentNamespaceName.empty() && CurrentNamespace) {
-                            auto Candidates = lookupFunction(FuncName);
-                            for (const Function* Func : Candidates) {
-                                // Check if this function has matching parameter count (no 'this')
-                                if (Func->Parameters.empty() &&
-                                    Func->Input.size() == ArgTypes.size()) {
-                                    // Verify the function is actually in the current namespace
-                                    // by checking if it's in CurrentNamespace->Members
-                                    bool InNamespace = false;
-                                    for (const auto& Member : CurrentNamespace->Members) {
-                                        if (auto* NSFunc = std::get_if<Function>(&Member)) {
-                                            if (NSFunc == Func) {
-                                                InNamespace = true;
-                                                break;
-                                            }
-                                        }
-                                    }
-                                    if (InNamespace) {
+                            for (const auto& Member : CurrentNamespace->Members) {
+                                if (auto* Func = std::get_if<Function>(&Member)) {
+                                    if (Func->Name == FuncName &&
+                                        Func->Parameters.empty() &&
+                                        Func->Input.size() == ArgTypes.size()) {
                                         IsNamespaceSibling = true;
                                         MatchedFunc = Func;
                                         break;
-                                    }
-                                    // If not in namespace, still use as MatchedFunc but not as namespace sibling
-                                    if (!MatchedFunc) {
-                                        MatchedFunc = Func;
                                     }
                                 }
                             }
