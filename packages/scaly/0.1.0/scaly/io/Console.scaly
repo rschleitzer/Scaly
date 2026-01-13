@@ -13,7 +13,9 @@ define Console
 
     function println(message: pointer[const_char])
     {
-        print(message)
+        ; Inline print logic until sibling function calls work
+        var len strlen(message)
+        write(STDOUT_FD, message as pointer[void], len)
         write(STDOUT_FD, "\n" as pointer[void], 1 as size_t)
     }
 }
