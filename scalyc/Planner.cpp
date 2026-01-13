@@ -1278,7 +1278,15 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
         // Try lazy instantiation if method not found and deferred info exists
         if (Struct->DeferredInfo) {
             // Need non-const access to plan the method
-            auto &MutableStruct = InstantiatedStructures[StructType.Name];
+            // Try MangledName first (primary key), then fall back to Name
+            auto StructIt2 = InstantiatedStructures.find(StructType.MangledName);
+            if (StructIt2 == InstantiatedStructures.end()) {
+                StructIt2 = InstantiatedStructures.find(StructType.Name);
+            }
+            if (StructIt2 == InstantiatedStructures.end()) {
+                return std::nullopt;  // Structure not found
+            }
+            auto &MutableStruct = StructIt2->second;
             auto DeferredResult = planDeferredMethod(MutableStruct, std::string(MethodName));
             if (!DeferredResult) {
                 // Error during deferred planning - consume and log
@@ -1480,10 +1488,6 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
     const std::vector<PlannedType> &ArgTypes,
     Span Loc) {
 
-    // Debug: uncomment to trace method lookups
-    // llvm::errs() << "DEBUG lookupMethod(with args): StructType.Name='" << StructType.Name
-    //              << "' MethodName='" << MethodName << "'\n";
-
     // Collect all method candidates
     std::vector<MethodMatch> Candidates;
 
@@ -1611,28 +1615,35 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
 
         // Try lazy instantiation if no candidates found and deferred info exists
         if (Candidates.empty() && Union->DeferredInfo) {
-            auto &MutableUnion = InstantiatedUnions[LookupName];
-            auto DeferredResult = planDeferredMethod(MutableUnion, std::string(MethodName));
-            if (!DeferredResult) {
-                llvm::consumeError(DeferredResult.takeError());
-            } else if (*DeferredResult) {
-                const auto &Method = **DeferredResult;
-                MethodMatch Match;
-                Match.Method = nullptr;
-                Match.MangledName = Method.MangledName;
-                Match.RequiresPageParam = Method.PageParameter.has_value();
-                if (Method.Returns) {
-                    Match.ReturnType = *Method.Returns;
-                } else {
-                    Match.ReturnType.Name = "void";
-                    Match.ReturnType.Loc = Loc;
-                }
-                for (size_t i = 1; i < Method.Input.size(); ++i) {
-                    if (Method.Input[i].ItemType) {
-                        Match.ParameterTypes.push_back(*Method.Input[i].ItemType);
+            // Look up the union by MangledName first (primary key), then fall back to Name
+            auto UnionIt2 = InstantiatedUnions.find(StructType.MangledName);
+            if (UnionIt2 == InstantiatedUnions.end()) {
+                UnionIt2 = InstantiatedUnions.find(LookupName);
+            }
+            if (UnionIt2 != InstantiatedUnions.end()) {
+                auto &MutableUnion = UnionIt2->second;
+                auto DeferredResult = planDeferredMethod(MutableUnion, std::string(MethodName));
+                if (!DeferredResult) {
+                    llvm::consumeError(DeferredResult.takeError());
+                } else if (*DeferredResult) {
+                    const auto &Method = **DeferredResult;
+                    MethodMatch Match;
+                    Match.Method = nullptr;
+                    Match.MangledName = Method.MangledName;
+                    Match.RequiresPageParam = Method.PageParameter.has_value();
+                    if (Method.Returns) {
+                        Match.ReturnType = *Method.Returns;
+                    } else {
+                        Match.ReturnType.Name = "void";
+                        Match.ReturnType.Loc = Loc;
                     }
+                    for (size_t i = 1; i < Method.Input.size(); ++i) {
+                        if (Method.Input[i].ItemType) {
+                            Match.ParameterTypes.push_back(*Method.Input[i].ItemType);
+                        }
+                    }
+                    Candidates.push_back(std::move(Match));
                 }
-                Candidates.push_back(std::move(Match));
             }
         }
     }
@@ -1717,8 +1728,17 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                         PlannedType ParentType;
                         ParentType.Name = StructType.Name;
                         ParentType.Generics = StructType.Generics;
-                        ParentType.MangledName = Struct ? Struct->MangledName :
-                            (StructType.MangledName.empty() ? StructType.Name : StructType.MangledName);
+                        // Compute MangledName: prefer Struct's, then StructType's, then compute from generics
+                        if (Struct) {
+                            ParentType.MangledName = Struct->MangledName;
+                        } else if (!StructType.MangledName.empty()) {
+                            ParentType.MangledName = StructType.MangledName;
+                        } else if (!StructType.Generics.empty()) {
+                            // Compute mangled name from base name and generic args
+                            ParentType.MangledName = mangleStructure(StructType.Name, StructType.Generics);
+                        } else {
+                            ParentType.MangledName = StructType.Name;
+                        }
 
                         std::vector<PlannedItem> Params;
                         for (const auto &Inp : Func->Input) {
@@ -1770,7 +1790,16 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                             std::swap(Scopes, OldScopes);
 
                             // Set up context for planning
-                            auto &MutableStruct = InstantiatedStructures[LookupName];
+                            // Look up the struct by MangledName first (primary key), then fall back to Name
+                            auto StructIt2 = InstantiatedStructures.find(StructType.MangledName);
+                            if (StructIt2 == InstantiatedStructures.end()) {
+                                StructIt2 = InstantiatedStructures.find(LookupName);
+                            }
+                            if (StructIt2 == InstantiatedStructures.end()) {
+                                TypeSubstitutions = OldSubst;  // Restore and continue
+                                continue;
+                            }
+                            auto &MutableStruct = StructIt2->second;
                             CurrentStructureName = MutableStruct.Name;
                             CurrentStructureProperties = &MutableStruct.Properties;
                             CurrentStructure = &MutableStruct;
@@ -1858,8 +1887,17 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                         PlannedType ParentType;
                         ParentType.Name = StructType.Name;
                         ParentType.Generics = StructType.Generics;
-                        ParentType.MangledName = Union ? Union->MangledName :
-                            (StructType.MangledName.empty() ? StructType.Name : StructType.MangledName);
+                        // Compute MangledName: prefer Union's, then StructType's, then compute from generics
+                        if (Union) {
+                            ParentType.MangledName = Union->MangledName;
+                        } else if (!StructType.MangledName.empty()) {
+                            ParentType.MangledName = StructType.MangledName;
+                        } else if (!StructType.Generics.empty()) {
+                            // Compute mangled name from base name and generic args
+                            ParentType.MangledName = mangleStructure(StructType.Name, StructType.Generics);
+                        } else {
+                            ParentType.MangledName = StructType.Name;
+                        }
 
                         std::vector<PlannedItem> Params;
                         for (const auto &Inp : Func->Input) {
@@ -2337,9 +2375,10 @@ std::optional<Planner::InitializerMatch> Planner::findInitializer(
 
                     // Find or create the structure entry in cache first
                     // We need the structure entry to set up CurrentStructureProperties
+                    // For generics, use MangledName as cache key
                     std::string CacheKey = LookupName;
                     if (!StructType.Generics.empty()) {
-                        CacheKey = StructType.Name;
+                        CacheKey = StructType.MangledName;
                     }
                     auto &MutableStruct = InstantiatedStructures[CacheKey];
                     if (MutableStruct.Name.empty()) {
@@ -2413,8 +2452,11 @@ std::optional<Planner::OperatorMatch> Planner::findSubscriptOperator(
     const PlannedType &ContainerType, const PlannedType &IndexType, Span Loc) {
 
     // First, ensure the container type is instantiated if it's a generic type
-    // This triggers planStructure which will create the operators
-    auto StructIt = InstantiatedStructures.find(ContainerType.Name);
+    // This triggers planStructure which will create the operators (try MangledName first)
+    auto StructIt = InstantiatedStructures.find(ContainerType.MangledName);
+    if (StructIt == InstantiatedStructures.end()) {
+        StructIt = InstantiatedStructures.find(ContainerType.Name);
+    }
     if (StructIt == InstantiatedStructures.end()) {
         // Try to find and instantiate the structure
         std::string BaseName = ContainerType.Name;
@@ -2531,8 +2573,11 @@ std::optional<Planner::OperatorMatch> Planner::findSubscriptOperator(
                         bool AlreadyPlanned = InstantiatedFunctions.find(Match.MangledName) !=
                                               InstantiatedFunctions.end();
                         if (!AlreadyPlanned) {
-                            // Find the structure in cache and plan the operator
-                            auto StructIt = InstantiatedStructures.find(ContainerType.Name);
+                            // Find the structure in cache and plan the operator (try MangledName first)
+                            auto StructIt = InstantiatedStructures.find(ContainerType.MangledName);
+                            if (StructIt == InstantiatedStructures.end()) {
+                                StructIt = InstantiatedStructures.find(ContainerType.Name);
+                            }
                             if (StructIt != InstantiatedStructures.end()) {
                                 auto &MutableStruct = StructIt->second;
 
@@ -2872,19 +2917,29 @@ llvm::Expected<PlannedType> Planner::resolveFunctionCall(
             continue;
         }
 
-        if (Func->Input.size() != ArgTypes.size()) {
+        // Check if first parameter is 'this' (method) and adjust expected arity
+        bool HasThisParam = !Func->Input.empty() && Func->Input[0].Name &&
+                            *Func->Input[0].Name == "this";
+        size_t ExpectedArgs = Func->Input.size();
+        if (HasThisParam) {
+            ExpectedArgs--;  // 'this' is implicit, not passed as argument
+        }
+
+        if (ExpectedArgs != ArgTypes.size()) {
             continue;
         }
 
-        // Check parameter types match
+        // Check parameter types match (skip 'this' parameter for methods)
         bool AllMatch = true;
+        size_t ParamOffset = HasThisParam ? 1 : 0;
         for (size_t I = 0; I < ArgTypes.size(); ++I) {
-            if (!Func->Input[I].ItemType) {
+            size_t ParamIdx = I + ParamOffset;
+            if (!Func->Input[ParamIdx].ItemType) {
                 // Parameter has no type annotation - match any type
                 continue;
             }
 
-            auto ParamTypeResult = resolveType(*Func->Input[I].ItemType, Loc);
+            auto ParamTypeResult = resolveType(*Func->Input[ParamIdx].ItemType, Loc);
             if (!ParamTypeResult) {
                 // Skip if we can't resolve the parameter type
                 llvm::consumeError(ParamTypeResult.takeError());
@@ -2909,7 +2964,36 @@ llvm::Expected<PlannedType> Planner::resolveFunctionCall(
         // This handles functions from sibling files
         // Skip planning if the function is currently being planned (recursive call)
         if (FunctionsBeingPlanned.count(BestMatch) == 0) {
-            auto Planned = planFunction(*BestMatch, nullptr);
+            // Determine parent type for method calls
+            // If we're inside a structure and this is a method from that structure's concept,
+            // we need to pass the parent type for proper mangling
+            PlannedType *ParentPtr = nullptr;
+            PlannedType ParentType;
+            if (CurrentStructure) {
+                // Check if this method is from the current structure's concept
+                std::string BaseName = CurrentStructure->Name;
+                const Concept* Conc = lookupConcept(BaseName);
+                if (Conc) {
+                    if (auto* Struct = std::get_if<Structure>(&Conc->Def)) {
+                        for (const auto& Member : Struct->Members) {
+                            if (auto* Func = std::get_if<Function>(&Member)) {
+                                if (Func == BestMatch) {
+                                    // This is a method on the current structure - use parent type
+                                    ParentType.Name = CurrentStructure->Name;
+                                    ParentType.MangledName = CurrentStructure->MangledName;
+                                    // Copy generics from DeferredInfo if available
+                                    if (CurrentStructure->DeferredInfo) {
+                                        ParentType.Generics = CurrentStructure->DeferredInfo->GenericArgs;
+                                    }
+                                    ParentPtr = &ParentType;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            auto Planned = planFunction(*BestMatch, ParentPtr);
             if (Planned) {
                 // Add to InstantiatedFunctions if not already present
                 if (InstantiatedFunctions.find(Planned->MangledName) == InstantiatedFunctions.end()) {
@@ -3052,8 +3136,11 @@ llvm::Expected<PlannedType> Planner::resolveOperatorCall(
     llvm::StringRef Name, Span Loc,
     const PlannedType &Left, const PlannedType &Right) {
 
-    // First, check if the left type is a structure with this operator
-    auto StructIt = InstantiatedStructures.find(Left.Name);
+    // First, check if the left type is a structure with this operator (try MangledName first)
+    auto StructIt = InstantiatedStructures.find(Left.MangledName);
+    if (StructIt == InstantiatedStructures.end()) {
+        StructIt = InstantiatedStructures.find(Left.Name);
+    }
     if (StructIt != InstantiatedStructures.end()) {
         for (const auto &Op : StructIt->second.Operators) {
             if (Op.Name == Name) {
@@ -3077,8 +3164,11 @@ llvm::Expected<PlannedType> Planner::resolveOperatorCall(
         }
     }
 
-    // Check unions as well
-    auto UnionIt = InstantiatedUnions.find(Left.Name);
+    // Check unions as well (try MangledName first, then Name)
+    auto UnionIt = InstantiatedUnions.find(Left.MangledName);
+    if (UnionIt == InstantiatedUnions.end()) {
+        UnionIt = InstantiatedUnions.find(Left.Name);
+    }
     if (UnionIt != InstantiatedUnions.end()) {
         for (const auto &Op : UnionIt->second.Operators) {
             if (Op.Name == Name) {
@@ -3864,8 +3954,11 @@ llvm::Expected<PlannedOperand> Planner::collapseOperandSequence(
             NewIs.Value = std::make_shared<PlannedOperand>(std::move(Left));
             NewIs.UnionName = NewIs.Value->ResultType.Name;
 
-            // Look up the union to get the variant tag
-            auto UnionIt = InstantiatedUnions.find(NewIs.UnionName);
+            // Look up the union to get the variant tag (try MangledName first)
+            auto UnionIt = InstantiatedUnions.find(NewIs.Value->ResultType.MangledName);
+            if (UnionIt == InstantiatedUnions.end()) {
+                UnionIt = InstantiatedUnions.find(NewIs.UnionName);
+            }
             if (UnionIt != InstantiatedUnions.end()) {
                 const auto &Union = UnionIt->second;
                 // Find the variant matching the TestType name
@@ -5441,22 +5534,18 @@ llvm::Expected<PlannedType> Planner::instantiateGeneric(
                                       Generic.Parameters.size(), Args.size());
     }
 
-    // 2. Generate cache key (e.g., "List.int" or "Map.string.int")
-    // Strip package prefixes like "scaly.containers." for consistent cache keys
-    std::string CacheKey = Generic.Name;
-    for (const auto &Arg : Args) {
-        CacheKey += ".";
-        CacheKey += stripPackagePrefix(Arg.Name);
-    }
+    // 2. Generate cache key using MangledName for uniqueness
+    // This preserves nested generic structure (e.g., Option[ref[Slot[T]]])
+    std::string CacheKey = mangleStructure(Generic.Name, Args);
 
     // 3. Check cache for structures
     auto StructCacheIt = InstantiatedStructures.find(CacheKey);
     if (StructCacheIt != InstantiatedStructures.end()) {
         PlannedType Result;
         Result.Loc = InstantiationLoc;
-        Result.Name = CacheKey;
-        Result.MangledName = StructCacheIt->second.MangledName;
-        Result.Generics = Args;
+        Result.Name = Generic.Name;  // Base name, not flattened
+        Result.MangledName = CacheKey;
+        Result.Generics = Args;  // Preserves nested structure
         return Result;
     }
 
@@ -5465,9 +5554,9 @@ llvm::Expected<PlannedType> Planner::instantiateGeneric(
     if (UnionCacheIt != InstantiatedUnions.end()) {
         PlannedType Result;
         Result.Loc = InstantiationLoc;
-        Result.Name = CacheKey;
-        Result.MangledName = UnionCacheIt->second.MangledName;
-        Result.Generics = Args;
+        Result.Name = Generic.Name;  // Base name, not flattened
+        Result.MangledName = CacheKey;
+        Result.Generics = Args;  // Preserves nested structure
         return Result;
     }
 
@@ -5485,8 +5574,9 @@ llvm::Expected<PlannedType> Planner::instantiateGeneric(
     // 5. Plan the specialized version based on definition kind
     PlannedType Result;
     Result.Loc = InstantiationLoc;
-    Result.Name = CacheKey;
-    Result.Generics = Args;
+    Result.Name = Generic.Name;  // Base name, not flattened
+    Result.MangledName = CacheKey;  // CacheKey is already the MangledName
+    Result.Generics = Args;  // Preserves nested structure
 
     // Create provenance info for debug tracking
     auto Origin = std::make_shared<InstantiationInfo>();
@@ -5506,9 +5596,8 @@ llvm::Expected<PlannedType> Planner::instantiateGeneric(
         // Insert placeholder BEFORE planning to handle self-referencing types
         // like Node[T] containing pointer[Node[T]]
         PlannedStructure Placeholder;
-        Placeholder.Name = CacheKey;
-        Placeholder.MangledName = mangleStructure(Generic.Name, Args);
-        Result.MangledName = Placeholder.MangledName;
+        Placeholder.Name = Generic.Name;  // Base name
+        Placeholder.MangledName = CacheKey;
         InstantiatedStructures[CacheKey] = std::move(Placeholder);
 
         auto Planned = planStructure(*Struct, Generic.Name, Args, true /* lazy */);
@@ -5519,18 +5608,15 @@ llvm::Expected<PlannedType> Planner::instantiateGeneric(
             return Planned.takeError();
         }
         Planned->Origin = Origin;
-        // Update Name to include generic args for property lookup
-        // (planStructure uses the base name for mangling but we need the full name for lookups)
-        Planned->Name = CacheKey;
+        // Keep base name - lookups use MangledName now
         InstantiatedStructures[CacheKey] = std::move(*Planned);
         Success = true;
     }
     else if (auto *Un = std::get_if<Union>(&Generic.Def)) {
         // Insert placeholder BEFORE planning for self-referencing unions
         PlannedUnion Placeholder;
-        Placeholder.Name = CacheKey;
-        Placeholder.MangledName = mangleStructure(Generic.Name, Args);
-        Result.MangledName = Placeholder.MangledName;
+        Placeholder.Name = Generic.Name;  // Base name
+        Placeholder.MangledName = CacheKey;
         InstantiatedUnions[CacheKey] = std::move(Placeholder);
 
         auto Planned = planUnion(*Un, Generic.Name, Args, true /* lazy */);
@@ -5541,8 +5627,7 @@ llvm::Expected<PlannedType> Planner::instantiateGeneric(
             return Planned.takeError();
         }
         Planned->Origin = Origin;
-        // Update Name to include generic args for property lookup
-        Planned->Name = CacheKey;
+        // Keep base name - lookups use MangledName now
         InstantiatedUnions[CacheKey] = std::move(*Planned);
         Success = true;
     }
@@ -6898,8 +6983,8 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                         }
                         PlannedType UnionType = std::move(*ResolvedUnion);
 
-                        // Look up the instantiated union
-                        auto UnionIt = InstantiatedUnions.find(UnionType.Name);
+                        // Look up the instantiated union (use MangledName as key)
+                        auto UnionIt = InstantiatedUnions.find(UnionType.MangledName);
                         if (UnionIt != InstantiatedUnions.end()) {
                             const PlannedUnion& Union = UnionIt->second;
 
@@ -7799,8 +7884,8 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                         }
                         PlannedType UnionType = std::move(*ResolvedUnion);
 
-                        // Look up the instantiated union
-                        auto UnionIt = InstantiatedUnions.find(UnionType.Name);
+                        // Look up the instantiated union (use MangledName as key)
+                        auto UnionIt = InstantiatedUnions.find(UnionType.MangledName);
                         if (UnionIt != InstantiatedUnions.end()) {
                             const PlannedUnion& Union = UnionIt->second;
 
@@ -8032,20 +8117,30 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             // Extern C functions use unmangled name
                             MangledName = FuncName;
                         } else if (IsSiblingMethod) {
-                            // Look up the current structure to get its mangled name
-                            auto StructIt = InstantiatedStructures.find(CurrentStructureName);
-                            if (StructIt != InstantiatedStructures.end()) {
+                            // Look up the current structure - use CurrentStructure directly if available,
+                            // otherwise try MangledName-based lookup
+                            PlannedStructure* FoundStruct = nullptr;
+                            if (CurrentStructure) {
+                                FoundStruct = CurrentStructure;
+                            } else {
+                                // Try to find by MangledName
+                                auto StructIt = InstantiatedStructures.find(CurrentStructureName);
+                                if (StructIt != InstantiatedStructures.end()) {
+                                    FoundStruct = &StructIt->second;
+                                }
+                            }
+                            if (FoundStruct) {
                                 // Use the instantiated structure's mangled name directly
                                 // The MangledName already encodes generic type arguments correctly
                                 PlannedType ParentType;
-                                ParentType.Name = StructIt->second.Name;
-                                ParentType.MangledName = StructIt->second.MangledName;
+                                ParentType.Name = FoundStruct->Name;
+                                ParentType.MangledName = FoundStruct->MangledName;
                                 // Don't set Generics here - we use MangledName directly in mangleFunction
                                 MangledName = mangleFunction(FuncName, ParamItems, &ParentType);
                                 // Check if method needs to be planned for generic instantiation
                                 if (InstantiatedFunctions.find(MangledName) == InstantiatedFunctions.end()) {
                                     // Plan the sibling method on demand
-                                    auto DeferredResult = planDeferredMethod(StructIt->second, FuncName);
+                                    auto DeferredResult = planDeferredMethod(*FoundStruct, FuncName);
                                     if (!DeferredResult) {
                                         llvm::consumeError(DeferredResult.takeError());
                                     }
@@ -9367,12 +9462,17 @@ llvm::Expected<PlannedChoose> Planner::planChoose(const Choose &ChooseExpr) {
         const auto &ResultType = Result.Condition[0].ResultType;
 
         // If the condition is a pointer type, use the element type (auto-deref for choose)
-        std::string LookupName = ResultType.Name;
+        std::string LookupName = ResultType.MangledName;  // Try MangledName first
+        std::string FallbackName = ResultType.Name;
         if (ResultType.Name == "pointer" && !ResultType.Generics.empty()) {
-            LookupName = ResultType.Generics[0].Name;
+            LookupName = ResultType.Generics[0].MangledName;
+            FallbackName = ResultType.Generics[0].Name;
         }
 
         auto UnionIt = InstantiatedUnions.find(LookupName);
+        if (UnionIt == InstantiatedUnions.end()) {
+            UnionIt = InstantiatedUnions.find(FallbackName);
+        }
         if (UnionIt != InstantiatedUnions.end()) {
             CondUnion = &UnionIt->second;
         }
@@ -9580,7 +9680,10 @@ llvm::Expected<PlannedTry> Planner::planTry(const Try &TryExpr) {
     const PlannedUnion *CondUnion = nullptr;
     if (!Result.Cond.Operation.empty()) {
         const auto &ResultType = Result.Cond.Operation[0].ResultType;
-        auto UnionIt = InstantiatedUnions.find(ResultType.Name);
+        auto UnionIt = InstantiatedUnions.find(ResultType.MangledName);
+        if (UnionIt == InstantiatedUnions.end()) {
+            UnionIt = InstantiatedUnions.find(ResultType.Name);
+        }
         if (UnionIt != InstantiatedUnions.end()) {
             CondUnion = &UnionIt->second;
         }
@@ -10476,9 +10579,16 @@ llvm::Expected<PlannedFunction*> Planner::planDeferredMethod(
     TypeSubstitutions = Deferred.TypeSubstitutions;
     File = Deferred.File;
 
-    // Use Struct.Name as the full structure name - it already includes generic args
-    // (e.g., "Array.char") from the CacheKey when the structure was instantiated
+    // Build full structure name from base name and generic args
+    // Struct.Name is now just the base name (e.g., "Array"), we need to add generic args
     std::string FullStructureName = Struct.Name;
+    if (!Deferred.GenericArgs.empty()) {
+        FullStructureName += ".";
+        for (size_t i = 0; i < Deferred.GenericArgs.size(); ++i) {
+            if (i > 0) FullStructureName += ".";
+            FullStructureName += stripPackagePrefix(Deferred.GenericArgs[i].Name);
+        }
+    }
 
     // Set current structure context
     CurrentStructureName = FullStructureName;
