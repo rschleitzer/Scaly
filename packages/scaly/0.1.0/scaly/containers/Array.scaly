@@ -73,14 +73,14 @@ define Array[T]
         set length: length + items.length
     }
 
-    function get(this: Array[T], i: size_t) returns pointer[T]
+    function get(this: Array[T], i: size_t) returns ref[T]?
     {
         if i >= length
             return null
         vector.data + i
     }
 
-    operator [](this: Array[T], i: size_t) returns pointer[T]
+    operator [](this: Array[T], i: size_t) returns ref[T]?
     {
         if length < i + 1
             return null

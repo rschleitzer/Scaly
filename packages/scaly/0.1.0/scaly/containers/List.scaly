@@ -3,7 +3,7 @@ define List[T]
     head: pointer[Node[T]] (null)
 )
 {
-    function get_head(this: List[T]) returns pointer[T]
+    function get_head(this: List[T]) returns ref[T]?
     {
         if head = null
             return null

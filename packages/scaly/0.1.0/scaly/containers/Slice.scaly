@@ -13,7 +13,7 @@ define Slice[T](data: pointer[T], length: size_t)
     }
 
     ; Get element at index (returns None if out of bounds)
-    function get(this, index: size_t) returns pointer[T]
+    function get(this, index: size_t) returns ref[T]?
     {
         if index >= length
             return null
@@ -21,7 +21,7 @@ define Slice[T](data: pointer[T], length: size_t)
     }
 
     ; Indexed access
-    operator [](index: size_t) returns pointer[T]
+    operator [](index: size_t) returns ref[T]?
     {
         if index >= length
             return null
