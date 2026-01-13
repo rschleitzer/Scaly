@@ -1867,5 +1867,5 @@ function build_program#(file_name: String, program_name: String, syntax: Program
 ; Test function
 ; ============================================================================
 
-function test() returns int
+function test_modeler() returns int
     0
