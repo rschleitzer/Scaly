@@ -7,9 +7,18 @@ define scaly
     ; Test entry point that calls all module tests
     function test() returns int
     {
-        var result io.test()
+        var result memory.test()
         if result <> 0
-            return result
+            return result - 100
+
+        set result: containers.test()
+        if result <> 0
+            return result - 200
+
+        set result: io.test()
+        if result <> 0
+            return result - 300
+
         0
     }
 }
