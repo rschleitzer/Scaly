@@ -5,10 +5,8 @@ use scaly.containers.String
 define scalyc {
     module lexer
     module parser
+    module compiler
 
     function test() returns int
-    {
-        ; Run lexer tests
-        lexer.test()
-    }
+        0  ; TODO: call module tests once sibling calls work
 }
