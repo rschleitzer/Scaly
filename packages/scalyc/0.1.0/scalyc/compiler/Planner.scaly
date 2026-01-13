@@ -760,7 +760,7 @@ define Planner
 
     ; Resolve a Model.Type to a PlannedType
     ; Returns null on error (simplified error handling for now)
-    function resolve_type(this, t: scaly.compiler.Model.Type, instantiation_loc: Span) returns pointer[PlannedType]
+    function resolve_type(this, t: scaly.compiler.Model.Type, instantiation_loc: Span) returns ref[PlannedType]?
     {
         let result PlannedType#(
             t.span,                     ; loc
@@ -905,7 +905,7 @@ define Planner
 
     ; Instantiate a generic type with concrete type arguments
     ; Returns null on error
-    function instantiate_generic(this, generic: pointer[Concept], args: pointer[Vector[PlannedType]], instantiation_loc: Span) returns pointer[PlannedType]
+    function instantiate_generic(this, generic: pointer[Concept], args: pointer[Vector[PlannedType]], instantiation_loc: Span) returns ref[PlannedType]?
     {
         if generic = null
             return null
@@ -1266,7 +1266,7 @@ define Planner
 
     ; Plan an Item (parameter/field with optional type)
     ; Returns null on error
-    function plan_item(this, it: scaly.compiler.Model.Item) returns pointer[PlannedItem]
+    function plan_item(this, it: scaly.compiler.Model.Item) returns ref[PlannedItem]?
     {
         let result PlannedItem#(
             it.span,
@@ -1316,7 +1316,7 @@ define Planner
 
     ; Plan a Property
     ; Returns null on error
-    function plan_property(this, prop: scaly.compiler.Model.Property) returns pointer[PlannedProperty]
+    function plan_property(this, prop: scaly.compiler.Model.Property) returns ref[PlannedProperty]?
     {
         ; Property must have a type
         if prop.type = null
@@ -1373,7 +1373,7 @@ define Planner
 
     ; Plan a Variant (union case)
     ; Returns null on error
-    function plan_variant(this, var: scaly.compiler.Model.Variant, tag: int) returns pointer[PlannedVariant]
+    function plan_variant(this, var: scaly.compiler.Model.Variant, tag: int) returns ref[PlannedVariant]?
     {
         let result PlannedVariant#(
             var.span,
@@ -1420,7 +1420,7 @@ define Planner
 
     ; Plan a list of operands
     ; Returns null on error
-    function plan_operands(this, ops: pointer[Vector[scaly.compiler.Model.Operand]]) returns pointer[Vector[PlannedOperand]]
+    function plan_operands(this, ops: pointer[Vector[scaly.compiler.Model.Operand]]) returns ref[Vector[PlannedOperand]]?
     {
         if ops = null
             return null
@@ -1440,7 +1440,7 @@ define Planner
 
     ; Plan a single operand
     ; Returns null on error
-    function plan_operand(this, op: scaly.compiler.Model.Operand) returns pointer[PlannedOperand]
+    function plan_operand(this, op: scaly.compiler.Model.Operand) returns ref[PlannedOperand]?
     {
         ; Plan the expression
         let planned_expr plan_expression(op.expression)
@@ -1469,7 +1469,7 @@ define Planner
 
     ; Plan an expression
     ; Returns null on error
-    function plan_expression(this, expr: scaly.compiler.Model.Expression) returns pointer[PlannedExpression]
+    function plan_expression(this, expr: scaly.compiler.Model.Expression) returns ref[PlannedExpression]?
     {
         choose expr
             when Constant: c
@@ -1727,7 +1727,7 @@ define Planner
 
     ; Plan a Tuple (object literal)
     ; Returns null on error
-    function plan_tuple(this, tup: scaly.compiler.Model.Tuple) returns pointer[PlannedTuple]
+    function plan_tuple(this, tup: scaly.compiler.Model.Tuple) returns ref[PlannedTuple]?
     {
         let result PlannedTuple#(
             tup.span,
@@ -1768,7 +1768,7 @@ define Planner
 
     ; Plan a Matrix (array literal)
     ; Returns null on error
-    function plan_matrix(this, mat: scaly.compiler.Model.Matrix) returns pointer[PlannedMatrix]
+    function plan_matrix(this, mat: scaly.compiler.Model.Matrix) returns ref[PlannedMatrix]?
     {
         let result PlannedMatrix#(
             mat.span,
@@ -1814,7 +1814,7 @@ define Planner
 
     ; Plan a Block
     ; Returns null on error
-    function plan_block(this, blk: scaly.compiler.Model.Block) returns pointer[PlannedBlock]
+    function plan_block(this, blk: scaly.compiler.Model.Block) returns ref[PlannedBlock]?
     {
         push_scope()
 
@@ -1847,7 +1847,7 @@ define Planner
     ; ========================================================================
 
     ; Plan an If expression
-    function plan_if(this, if_expr: scaly.compiler.Model.If) returns pointer[PlannedIf]
+    function plan_if(this, if_expr: scaly.compiler.Model.If) returns ref[PlannedIf]?
     {
         let condition plan_operands(if_expr.condition)
 
@@ -1863,7 +1863,7 @@ define Planner
     }
 
     ; Plan a Match expression
-    function plan_match(this, match_expr: scaly.compiler.Model.Match) returns pointer[PlannedMatch]
+    function plan_match(this, match_expr: scaly.compiler.Model.Match) returns ref[PlannedMatch]?
     {
         let condition plan_operands(match_expr.condition)
 
@@ -1878,7 +1878,7 @@ define Planner
     }
 
     ; Plan a Choose expression
-    function plan_choose(this, choose_expr: scaly.compiler.Model.Choose) returns pointer[PlannedChoose]
+    function plan_choose(this, choose_expr: scaly.compiler.Model.Choose) returns ref[PlannedChoose]?
     {
         let condition plan_operands(choose_expr.condition)
 
@@ -1893,7 +1893,7 @@ define Planner
     }
 
     ; Plan a For expression
-    function plan_for(this, for_expr: scaly.compiler.Model.For) returns pointer[PlannedFor]
+    function plan_for(this, for_expr: scaly.compiler.Model.For) returns ref[PlannedFor]?
     {
         push_scope()
 
@@ -1940,7 +1940,7 @@ define Planner
     }
 
     ; Plan a While expression
-    function plan_while(this, while_expr: scaly.compiler.Model.While) returns pointer[PlannedWhile]
+    function plan_while(this, while_expr: scaly.compiler.Model.While) returns ref[PlannedWhile]?
     {
         push_scope()
 
@@ -1959,7 +1959,7 @@ define Planner
     }
 
     ; Plan a Try expression
-    function plan_try(this, try_expr: scaly.compiler.Model.Try) returns pointer[PlannedTry]
+    function plan_try(this, try_expr: scaly.compiler.Model.Try) returns ref[PlannedTry]?
     {
         push_scope()
 
@@ -1982,7 +1982,7 @@ define Planner
     ; ========================================================================
 
     ; Plan an Action (source -> target assignment)
-    function plan_action(this, act: scaly.compiler.Model.Action) returns pointer[PlannedAction]
+    function plan_action(this, act: scaly.compiler.Model.Action) returns ref[PlannedAction]?
     {
         let source plan_operands(act.source)
         let target plan_operands(act.target)
@@ -2008,7 +2008,7 @@ define Planner
     ; ========================================================================
 
     ; Plan a Binding (let/var declaration)
-    function plan_binding(this, bind: scaly.compiler.Model.Binding) returns pointer[PlannedBinding]
+    function plan_binding(this, bind: scaly.compiler.Model.Binding) returns ref[PlannedBinding]?
     {
         ; Plan the item
         let item plan_item(bind.item)
@@ -2070,7 +2070,7 @@ define Planner
 
     ; Plan a statement
     ; Returns null on error
-    function plan_statement(this, stmt: scaly.compiler.Model.Statement) returns pointer[PlannedStatement]
+    function plan_statement(this, stmt: scaly.compiler.Model.Statement) returns ref[PlannedStatement]?
     {
         choose stmt
             when Action: act
@@ -2120,7 +2120,7 @@ define Planner
 
     ; Plan a list of statements
     ; Returns null on error
-    function plan_statements(this, stmts: pointer[Vector[scaly.compiler.Model.Statement]]) returns pointer[Vector[PlannedStatement]]
+    function plan_statements(this, stmts: pointer[Vector[scaly.compiler.Model.Statement]]) returns ref[Vector[PlannedStatement]]?
     {
         if stmts = null
             return null
@@ -2144,7 +2144,7 @@ define Planner
 
     ; Plan an implementation (function/operator body)
     ; Returns null on error
-    function plan_implementation(this, impl: scaly.compiler.Model.Implementation) returns pointer[PlannedImplementation]
+    function plan_implementation(this, impl: scaly.compiler.Model.Implementation) returns ref[PlannedImplementation]?
     {
         choose impl
             when Action: act
@@ -2181,7 +2181,7 @@ define Planner
 
     ; Plan a function
     ; Returns null on error
-    function plan_function(this, func: scaly.compiler.Model.Function, parent: pointer[PlannedType]) returns pointer[PlannedFunction]
+    function plan_function(this, func: scaly.compiler.Model.Function, parent: pointer[PlannedType]) returns ref[PlannedFunction]?
     {
         ; Save and reset tracking for $ allocations in function body
         let saved_uses_local_lifetime current_function_uses_local_lifetime
@@ -2324,7 +2324,7 @@ define Planner
 
     ; Plan an operator
     ; Returns null on error
-    function plan_operator(this, op: scaly.compiler.Model.Operator, parent: pointer[PlannedType]) returns pointer[PlannedOperator]
+    function plan_operator(this, op: scaly.compiler.Model.Operator, parent: pointer[PlannedType]) returns ref[PlannedOperator]?
     {
         push_scope()
 
@@ -2413,7 +2413,7 @@ define Planner
 
     ; Plan a concept
     ; Returns null on error
-    function plan_concept(this, conc: scaly.compiler.Model.Concept) returns pointer[PlannedConcept]
+    function plan_concept(this, conc: scaly.compiler.Model.Concept) returns ref[PlannedConcept]?
     {
         ; Register in symbol table first (needed for recursive types)
         register_concept(conc.name, conc)
@@ -2485,7 +2485,7 @@ define Planner
 
     ; Plan a definition (Structure, Union, Namespace, Global, or Type alias)
     ; Returns null on error
-    function plan_definition(this, def: scaly.compiler.Model.Definition, name: String) returns pointer[PlannedDefinition]
+    function plan_definition(this, def: scaly.compiler.Model.Definition, name: String) returns ref[PlannedDefinition]?
     {
         choose def
             when Structure: struct
@@ -2551,7 +2551,7 @@ define Planner
 
     ; Plan a structure
     ; Returns null on error
-    function plan_structure(this, struct: scaly.compiler.Model.Structure, name: String) returns pointer[PlannedStructure]
+    function plan_structure(this, struct: scaly.compiler.Model.Structure, name: String) returns ref[PlannedStructure]?
     {
         ; Set up structure context
         let old_structure_ctx structure_ctx
@@ -2672,7 +2672,7 @@ define Planner
 
     ; Plan a union
     ; Returns null on error
-    function plan_union(this, union_def: scaly.compiler.Model.Union, name: String) returns pointer[PlannedUnion]
+    function plan_union(this, union_def: scaly.compiler.Model.Union, name: String) returns ref[PlannedUnion]?
     {
         let mangled encode_name(name)
 
@@ -2781,7 +2781,7 @@ define Planner
 
     ; Plan a namespace
     ; Returns null on error
-    function plan_namespace(this, ns: scaly.compiler.Model.Namespace, name: String) returns pointer[PlannedNamespace]
+    function plan_namespace(this, ns: scaly.compiler.Model.Namespace, name: String) returns ref[PlannedNamespace]?
     {
         let mangled encode_name(name)
 
@@ -2868,7 +2868,7 @@ define Planner
 
     ; Plan a global constant
     ; Returns null on error
-    function plan_global(this, global: scaly.compiler.Model.Global, name: String) returns pointer[PlannedGlobal]
+    function plan_global(this, global: scaly.compiler.Model.Global, name: String) returns ref[PlannedGlobal]?
     {
         let mangled encode_name(name)
 
@@ -2900,7 +2900,7 @@ define Planner
 
     ; Plan a module
     ; Returns null on error
-    function plan_module(this, mod: scaly.compiler.Model.Module) returns pointer[PlannedModule]
+    function plan_module(this, mod: scaly.compiler.Model.Module) returns ref[PlannedModule]?
     {
         ; Save and update current file for error messages
         let old_file file
@@ -2999,7 +2999,7 @@ define Planner
 
     ; Plan a complete program
     ; Returns null on error
-    function plan_program(this, prog: scaly.compiler.Model.Program) returns pointer[Plan]
+    function plan_program(this, prog: scaly.compiler.Model.Program) returns ref[Plan]?
     {
         ; Plan the main module
         let main_module plan_module(prog.module_)
