@@ -30,7 +30,7 @@ define InstantiationInfo
 (
     definition_loc: Span            ; Where the generic was defined
     instantiation_loc: Span         ; Where it was instantiated
-    type_args: pointer[Vector[String]]  ; The concrete type arguments (readable)
+    type_args: ref[Vector[String]]?  ; The concrete type arguments (readable)
 )
 
 ; ============================================================================
@@ -43,15 +43,15 @@ define PlannedType
     loc: Span
     name: String                     ; Readable: "List.int"
     mangled_name: String             ; Itanium: "_Z4ListIiE"
-    generics: pointer[Vector[PlannedType]]   ; Resolved generic args (if any)
+    generics: ref[Vector[PlannedType]]?   ; Resolved generic args (if any)
     life: Lifetime
-    origin: pointer[InstantiationInfo]  ; null if not from generic
+    origin: ref[InstantiationInfo]?  ; null if not from generic
 
     ; For fixed-size array types: stores the size reference
     array_size: String
 
     ; For inference: may contain unresolved type variables
-    variable: pointer[TypeVariable]  ; non-null if this is a type variable
+    variable: ref[TypeVariable]?  ; non-null if this is a type variable
 )
 
 ; ============================================================================
@@ -82,8 +82,8 @@ define TypeConstraint union
 ; Type scheme for let-polymorphism
 define TypeScheme
 (
-    quantified: pointer[Vector[TypeVariable]]
-    scheme_type: pointer[PlannedType]
+    quantified: ref[Vector[TypeVariable]]?
+    scheme_type: ref[PlannedType]?
 )
 
 ; ============================================================================
@@ -106,9 +106,9 @@ define PlannedItem
 (
     loc: Span
     private: bool
-    name: pointer[String]
-    item_type: pointer[PlannedType]
-    attributes: pointer[Vector[PlannedAttribute]]
+    name: ref[String]?
+    item_type: ref[PlannedType]?
+    attributes: ref[Vector[PlannedAttribute]]?
 )
 
 ; ============================================================================
@@ -122,8 +122,8 @@ define PlannedProperty
     name: String
     mangled_name: String
     prop_type: PlannedType
-    initializer: pointer[Vector[PlannedOperand]]
-    attributes: pointer[Vector[PlannedAttribute]]
+    initializer: ref[Vector[PlannedOperand]]?
+    attributes: ref[Vector[PlannedAttribute]]?
     offset: size_t      ; Byte offset in struct layout
 )
 
@@ -132,8 +132,8 @@ define PlannedVariant
     loc: Span
     name: String
     mangled_name: String
-    var_type: pointer[PlannedType]
-    attributes: pointer[Vector[PlannedAttribute]]
+    var_type: ref[PlannedType]?
+    attributes: ref[Vector[PlannedAttribute]]?
     tag: int            ; Discriminator value
 )
 
@@ -143,8 +143,8 @@ define PlannedVariant
 
 define PlannedAction
 (
-    source: pointer[Vector[PlannedOperand]]
-    target: pointer[Vector[PlannedOperand]]
+    source: ref[Vector[PlannedOperand]]?
+    target: ref[Vector[PlannedOperand]]?
     result_type: PlannedType
 )
 
@@ -153,13 +153,13 @@ define PlannedBinding
     loc: Span
     binding_type: String    ; "const", "var", "mutable"
     binding_item: PlannedItem
-    operation: pointer[Vector[PlannedOperand]]
+    operation: ref[Vector[PlannedOperand]]?
 )
 
 define PlannedBreak
 (
     loc: Span
-    result: pointer[Vector[PlannedOperand]]
+    result: ref[Vector[PlannedOperand]]?
 )
 
 define PlannedContinue
@@ -170,13 +170,13 @@ define PlannedContinue
 define PlannedReturn
 (
     loc: Span
-    result: pointer[Vector[PlannedOperand]]
+    result: ref[Vector[PlannedOperand]]?
 )
 
 define PlannedThrow
 (
     loc: Span
-    result: pointer[Vector[PlannedOperand]]
+    result: ref[Vector[PlannedOperand]]?
 )
 
 define PlannedStatement union
@@ -196,38 +196,38 @@ define PlannedStatement union
 define PlannedBlock
 (
     loc: Span
-    statements: pointer[Vector[PlannedStatement]]
+    statements: ref[Vector[PlannedStatement]]?
     needs_local_page_cleanup: bool  ; True if this block contains $ allocations
 )
 
 define PlannedIf
 (
     loc: Span
-    condition: pointer[Vector[PlannedOperand]]
-    prop: pointer[PlannedProperty]
-    consequent: pointer[PlannedStatement]
-    alternative: pointer[PlannedStatement]
+    condition: ref[Vector[PlannedOperand]]?
+    prop: ref[PlannedProperty]?
+    consequent: ref[PlannedStatement]?
+    alternative: ref[PlannedStatement]?
 )
 
 define PlannedCase
 (
     loc: Span
-    condition: pointer[Vector[PlannedOperand]]
+    condition: ref[Vector[PlannedOperand]]?
 )
 
 define PlannedBranch
 (
     loc: Span
-    cases: pointer[Vector[PlannedCase]]
-    consequent: pointer[PlannedStatement]
+    cases: ref[Vector[PlannedCase]]?
+    consequent: ref[PlannedStatement]?
 )
 
 define PlannedMatch
 (
     loc: Span
-    condition: pointer[Vector[PlannedOperand]]
-    branches: pointer[Vector[PlannedBranch]]
-    alternative: pointer[PlannedStatement]
+    condition: ref[Vector[PlannedOperand]]?
+    branches: ref[Vector[PlannedBranch]]?
+    alternative: ref[PlannedStatement]?
 )
 
 define PlannedWhen
@@ -236,22 +236,22 @@ define PlannedWhen
     name: String
     variant_type: PlannedType
     variant_index: size_t   ; Index in the union
-    consequent: pointer[PlannedStatement]
+    consequent: ref[PlannedStatement]?
 )
 
 define PlannedChoose
 (
     loc: Span
-    condition: pointer[Vector[PlannedOperand]]
-    cases: pointer[Vector[PlannedWhen]]
-    alternative: pointer[PlannedStatement]
+    condition: ref[Vector[PlannedOperand]]?
+    cases: ref[Vector[PlannedWhen]]?
+    alternative: ref[PlannedStatement]?
 )
 
 define PlannedFor
 (
     loc: Span
     identifier: String
-    expr: pointer[Vector[PlannedOperand]]
+    expr: ref[Vector[PlannedOperand]]?
     body: PlannedAction
 
     ; Iterator support fields
@@ -274,8 +274,8 @@ define PlannedTry
 (
     loc: Span
     cond: PlannedBinding
-    catches: pointer[Vector[PlannedWhen]]
-    alternative: pointer[PlannedStatement]
+    catches: ref[Vector[PlannedWhen]]?
+    alternative: ref[PlannedStatement]?
 )
 
 define PlannedSizeOf
@@ -298,7 +298,7 @@ define PlannedIs
     test_type: PlannedType
     variant_tag: size_t             ; Tag value to compare against
     union_name: String              ; Name of the union type being tested
-    value: pointer[PlannedOperand]  ; The union value being tested
+    value: ref[PlannedOperand]?  ; The union value being tested
     is_null_check: bool             ; true for "is null" checks
 )
 
@@ -306,7 +306,7 @@ define PlannedAs
 (
     loc: Span
     target_type: PlannedType
-    value: pointer[PlannedOperand]
+    value: ref[PlannedOperand]?
 )
 
 define PlannedVariantConstruction
@@ -315,7 +315,7 @@ define PlannedVariantConstruction
     union_type: PlannedType
     variant_name: String
     variant_tag: size_t
-    value: pointer[PlannedOperand]
+    value: ref[PlannedOperand]?
 )
 
 define PlannedCall
@@ -327,7 +327,7 @@ define PlannedCall
     is_operator: bool
     can_throw: bool
     requires_page_param: bool   ; True if init# needs page parameter
-    args: pointer[Vector[PlannedOperand]]
+    args: ref[Vector[PlannedOperand]]?
     result_type: PlannedType
     life: Lifetime              ; For constructors: allocation lifetime
 )
@@ -339,25 +339,25 @@ define PlannedCall
 define PlannedComponent
 (
     loc: Span
-    name: pointer[String]
-    value: pointer[Vector[PlannedOperand]]
-    attributes: pointer[Vector[PlannedAttribute]]
+    name: ref[String]?
+    value: ref[Vector[PlannedOperand]]?
+    attributes: ref[Vector[PlannedAttribute]]?
 )
 
 define PlannedTuple
 (
     loc: Span
-    components: pointer[Vector[PlannedComponent]]
+    components: ref[Vector[PlannedComponent]]?
     tuple_type: PlannedType
     is_region_alloc: bool
     life: Lifetime
-    region_arg: pointer[PlannedOperand]     ; For ^name: the region pointer
+    region_arg: ref[PlannedOperand]?     ; For ^name: the region pointer
 )
 
 define PlannedMatrix
 (
     loc: Span
-    operations: pointer[Vector[Vector[PlannedOperand]]]
+    operations: ref[Vector[Vector[PlannedOperand]]]?
     element_type: PlannedType
 )
 
@@ -418,7 +418,7 @@ define PlannedOperand
 (
     loc: Span
     expr: PlannedExpression
-    member_access: pointer[Vector[PlannedMemberAccess]]
+    member_access: ref[Vector[PlannedMemberAccess]]?
     result_type: PlannedType
 )
 
@@ -456,25 +456,25 @@ define PlannedFunction
     pure: bool
     name: String
     mangled_name: String
-    page_parameter: pointer[String]
-    input: pointer[Vector[PlannedItem]]
-    returns: pointer[PlannedType]
-    throws: pointer[PlannedType]
+    page_parameter: ref[String]?
+    input: ref[Vector[PlannedItem]]?
+    returns: ref[PlannedType]?
+    throws: ref[PlannedType]?
     life: Lifetime
     impl: PlannedImplementation
-    origin: pointer[InstantiationInfo]
+    origin: ref[InstantiationInfo]?
     needs_local_page: bool
     can_throw: bool
-    scheme: pointer[TypeScheme]
+    scheme: ref[TypeScheme]?
 )
 
 define PlannedInitializer
 (
     loc: Span
     private: bool
-    page_parameter: pointer[String]
+    page_parameter: ref[String]?
     mangled_name: String
-    input: pointer[Vector[PlannedItem]]
+    input: ref[Vector[PlannedItem]]?
     impl: PlannedImplementation
 )
 
@@ -491,12 +491,12 @@ define PlannedOperator
     private: bool
     name: String
     mangled_name: String
-    input: pointer[Vector[PlannedItem]]
-    returns: pointer[PlannedType]
-    throws: pointer[PlannedType]
+    input: ref[Vector[PlannedItem]]?
+    returns: ref[PlannedType]?
+    throws: ref[PlannedType]?
     impl: PlannedImplementation
-    origin: pointer[InstantiationInfo]
-    scheme: pointer[TypeScheme]
+    origin: ref[InstantiationInfo]?
+    scheme: ref[TypeScheme]?
 )
 
 ; ============================================================================
@@ -509,7 +509,7 @@ define PlannedGlobal
     name: String
     mangled_name: String
     global_type: PlannedType
-    value: pointer[Vector[PlannedOperand]]
+    value: ref[Vector[PlannedOperand]]?
 )
 
 define PlannedStructure
@@ -519,14 +519,14 @@ define PlannedStructure
     is_generic_placeholder: bool
     name: String
     mangled_name: String
-    properties: pointer[Vector[PlannedProperty]]
-    initializers: pointer[Vector[PlannedInitializer]]
-    deinitializer: pointer[PlannedDeInitializer]
-    methods: pointer[Vector[PlannedFunction]]
-    operators: pointer[Vector[PlannedOperator]]
+    properties: ref[Vector[PlannedProperty]]?
+    initializers: ref[Vector[PlannedInitializer]]?
+    deinitializer: ref[PlannedDeInitializer]?
+    methods: ref[Vector[PlannedFunction]]?
+    operators: ref[Vector[PlannedOperator]]?
     size: size_t
     alignment: size_t
-    origin: pointer[InstantiationInfo]
+    origin: ref[InstantiationInfo]?
 )
 
 define PlannedUnion
@@ -535,12 +535,12 @@ define PlannedUnion
     private: bool
     name: String
     mangled_name: String
-    variants: pointer[Vector[PlannedVariant]]
-    methods: pointer[Vector[PlannedFunction]]
-    operators: pointer[Vector[PlannedOperator]]
+    variants: ref[Vector[PlannedVariant]]?
+    methods: ref[Vector[PlannedFunction]]?
+    operators: ref[Vector[PlannedOperator]]?
     size: size_t
     alignment: size_t
-    origin: pointer[InstantiationInfo]
+    origin: ref[InstantiationInfo]?
 )
 
 define PlannedNamespace
@@ -548,10 +548,10 @@ define PlannedNamespace
     loc: Span
     name: String
     mangled_name: String
-    modules: pointer[Vector[PlannedModule]]
-    functions: pointer[Vector[PlannedFunction]]
-    operators: pointer[Vector[PlannedOperator]]
-    concepts: pointer[Vector[PlannedConcept]]
+    modules: ref[Vector[PlannedModule]]?
+    functions: ref[Vector[PlannedFunction]]?
+    operators: ref[Vector[PlannedOperator]]?
+    concepts: ref[Vector[PlannedConcept]]?
 )
 
 define PlannedDefinition union
@@ -568,9 +568,9 @@ define PlannedConcept
     loc: Span
     name: String
     mangled_name: String
-    attributes: pointer[Vector[PlannedAttribute]]
+    attributes: ref[Vector[PlannedAttribute]]?
     definition: PlannedDefinition
-    origin: pointer[InstantiationInfo]
+    origin: ref[InstantiationInfo]?
 )
 
 ; ============================================================================
@@ -581,10 +581,10 @@ define PlannedModule
 (
     file: String
     name: String
-    modules: pointer[Vector[PlannedModule]]
-    concepts: pointer[Vector[PlannedConcept]]
-    functions: pointer[Vector[PlannedFunction]]
-    operators: pointer[Vector[PlannedOperator]]
+    modules: ref[Vector[PlannedModule]]?
+    concepts: ref[Vector[PlannedConcept]]?
+    functions: ref[Vector[PlannedFunction]]?
+    operators: ref[Vector[PlannedOperator]]?
 )
 
 ; ============================================================================
@@ -594,17 +594,17 @@ define PlannedModule
 define Plan
 (
     main_module: PlannedModule
-    statements: pointer[Vector[PlannedStatement]]
+    statements: ref[Vector[PlannedStatement]]?
 
     ; All instantiated types/functions (for quick lookup during emission)
     ; Note: In Scaly we'll use Vector pairs instead of maps for now
-    structures: pointer[Vector[PlannedStructure]]
-    unions: pointer[Vector[PlannedUnion]]
-    functions: pointer[Vector[PlannedFunction]]
-    globals: pointer[Vector[PlannedGlobal]]
+    structures: ref[Vector[PlannedStructure]]?
+    unions: ref[Vector[PlannedUnion]]?
+    functions: ref[Vector[PlannedFunction]]?
+    globals: ref[Vector[PlannedGlobal]]?
 
     ; Type inference state
     next_type_var_id: size_t
-    constraints: pointer[Vector[TypeConstraint]]
+    constraints: ref[Vector[TypeConstraint]]?
 )
 
