@@ -383,10 +383,7 @@ define cli
     ; Test function
     function test() returns int
     {
-        ; Test 1: Parse empty args (just program name)
-        ; We can't easily test this without mocking argv
-
-        ; Test 2: Check Options initialization
+        ; Test 1: Check Options initialization
         var opts Options$()
         if opts.has_input()
             return -1
@@ -397,7 +394,65 @@ define cli
         if opts.show_help
             return -4
 
+        ; Test 2: Test extract_program_name
+        var path1 String$("/path/to/hello.scaly")
+        var name1 extract_program_name$(path1)
+        if name1.equals(String$("hello")) = false
+            return -10
+
+        var path2 String$("simple.scaly")
+        var name2 extract_program_name$(path2)
+        if name2.equals(String$("simple")) = false
+            return -11
+
+        ; Test 3: Test pipeline on a minimal program
+        var result test_pipeline$()
+        if result <> 0
+            return result - 100
+
         ; All tests passed
+        0
+    }
+
+    ; Test the compilation pipeline on a minimal program
+    function test_pipeline#() returns int
+    {
+        ; Minimal valid Scaly program
+        var source String$("function test_func() returns int { 42 }")
+
+        ; Stage 1: Parse
+        var p parser.Parser$(source)
+        var syntax: parser.ProgramSyntax
+        choose p.parse_program$()
+            when error: parser.ParserError
+            {
+                return -1  ; Parse failed
+            }
+            when value: parser.ProgramSyntax
+            {
+                set syntax: value
+            }
+
+        ; Stage 2: Build model
+        var file_name String$("test.scaly")
+        var program_name String$("test")
+        let model Modeler.build_program#(file_name, program_name, syntax)
+
+        ; Stage 3: Plan
+        var planner Planner.Planner$(file_name)
+        let plan planner.plan_program(model)
+        if plan = null
+            return -3  ; Planning failed
+
+        ; Stage 4: Emit (just verify it doesn't crash)
+        var config EmitterConfig$()
+        set config.emit_debug_info: false
+        var emitter Emitter.Emitter$(config)
+        let emit_result emitter.emit(plan, program_name)
+        if emit_result = false
+            return -4  ; Emission failed
+
+        ; All pipeline stages passed
         0
     }
 }
