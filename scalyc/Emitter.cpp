@@ -828,11 +828,14 @@ llvm::Function *Emitter::emitFunctionDecl(const PlannedFunction &Func) {
     // Create function type
     auto *FuncTy = llvm::FunctionType::get(LLVMReturnTy, ParamTypes, /*isVarArg=*/false);
 
+    // Use unmangled "main" for the entry point so the linker can find it
+    std::string FuncName = (Func.Name == "main") ? "main" : Func.MangledName;
+
     // Create function
     auto *LLVMFunc = llvm::Function::Create(
         FuncTy,
         llvm::GlobalValue::ExternalLinkage,
-        Func.MangledName,
+        FuncName,
         *Module
     );
 
