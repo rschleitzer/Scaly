@@ -6,6 +6,7 @@ define scalyc {
     module lexer
     module parser
     module compiler
+    module cli
 
     function test() returns int
     {
@@ -23,6 +24,11 @@ define scalyc {
         set result: compiler.test()
         if result <> 0
             return result - 3000
+
+        ; Test cli module
+        set result: cli.test()
+        if result <> 0
+            return result - 4000
 
         0
     }
