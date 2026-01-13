@@ -1,0 +1,10 @@
+; Hello World test program for Scaly AOT compilation
+package scaly 0.1.0
+
+use scaly.io.Console
+
+function main() returns int
+{
+    Console.println("Hello, World!")
+    0
+}
