@@ -129,8 +129,8 @@ define RegionInfo
     return_page: LLVMValueRef       ; Call (#) - passed by caller
     exception_page: LLVMValueRef    ; Thrown (!) - passed by caller
     ; Named regions (^name) would use a map, simplified for now
-    named_region_names: pointer[Vector[String]]
-    named_region_values: pointer[Vector[LLVMValueRef]]
+    named_region_names: ref[Vector[String]]?
+    named_region_values: ref[Vector[LLVMValueRef]]?
 )
 {
     init#()
@@ -179,23 +179,23 @@ define Emitter
     builder: LLVMBuilderRef
 
     ; Current plan being emitted
-    current_plan: pointer[Plan]
+    current_plan: ref[Plan]?
 
     ; Type cache: name -> LLVM type (using parallel vectors)
-    type_cache_names: pointer[Vector[String]]
-    type_cache_types: pointer[Vector[LLVMTypeRef]]
+    type_cache_names: ref[Vector[String]]?
+    type_cache_types: ref[Vector[LLVMTypeRef]]?
 
     ; Struct cache: name -> LLVM struct type
-    struct_cache_names: pointer[Vector[String]]
-    struct_cache_types: pointer[Vector[LLVMTypeRef]]
+    struct_cache_names: ref[Vector[String]]?
+    struct_cache_types: ref[Vector[LLVMTypeRef]]?
 
     ; Function cache: mangled name -> LLVM function
-    function_cache_names: pointer[Vector[String]]
-    function_cache_funcs: pointer[Vector[LLVMValueRef]]
+    function_cache_names: ref[Vector[String]]?
+    function_cache_funcs: ref[Vector[LLVMValueRef]]?
 
     ; Intrinsic types
-    intrinsic_type_names: pointer[Vector[String]]
-    intrinsic_types: pointer[Vector[IntrinsicTypeInfo]]
+    intrinsic_type_names: ref[Vector[String]]?
+    intrinsic_types: ref[Vector[IntrinsicTypeInfo]]?
 
     ; Current function state
     current_function: LLVMValueRef
@@ -203,17 +203,17 @@ define Emitter
     current_function_can_throw: bool
 
     ; Local variables: name -> LLVM value
-    local_var_names: pointer[Vector[String]]
-    local_var_values: pointer[Vector[LLVMValueRef]]
+    local_var_names: ref[Vector[String]]?
+    local_var_values: ref[Vector[LLVMValueRef]]?
 
     ; Region/lifetime management
     current_region: RegionInfo
 
     ; Loop context stack for break/continue
-    loop_stack: pointer[Vector[LoopContext]]
+    loop_stack: ref[Vector[LoopContext]]?
 
     ; Block cleanup context stack
-    block_cleanup_stack: pointer[Vector[BlockCleanupContext]]
+    block_cleanup_stack: ref[Vector[BlockCleanupContext]]?
 
     ; RBMM runtime functions
     page_type: LLVMTypeRef
@@ -754,7 +754,7 @@ define Emitter
     ; ========================================================================
 
     ; Emit a sequence of operands (typically collapsed to single operand)
-    function emit_operands(this, ops: pointer[Vector[PlannedOperand]]) returns LLVMValueRef
+    function emit_operands(this, ops: ref[Vector[PlannedOperand]]?) returns LLVMValueRef
     {
         if ops = null
             return LLVMValueRef(null)
@@ -2097,7 +2097,7 @@ define Emitter
     }
 
     ; Helper for member field assignment
-    function emit_member_assignment(this, var_ptr: LLVMValueRef, var: PlannedVariable, members: pointer[Vector[PlannedMemberAccess]], value: LLVMValueRef) returns LLVMValueRef
+    function emit_member_assignment(this, var_ptr: LLVMValueRef, var: PlannedVariable, members: ref[Vector[PlannedMemberAccess]]?, value: LLVMValueRef) returns LLVMValueRef
     {
         ; Get the struct type from the variable type
         var current_ptr var_ptr

@@ -206,7 +206,7 @@ function handle_literal(syntax: LiteralSyntax) returns Constant
 ; Lifetime handling
 ; ============================================================================
 
-function handle_lifetime(syntax: pointer[LifetimeSyntax]) returns Lifetime
+function handle_lifetime(syntax: ref[LifetimeSyntax]?) returns Lifetime
 {
     if syntax = null
         return Lifetime.Unspecified(Unspecified())
@@ -229,7 +229,7 @@ function handle_lifetime(syntax: pointer[LifetimeSyntax]) returns Lifetime
 ; Type handling
 ; ============================================================================
 
-function handle_type#(syntax: TypeSyntax) returns pointer[Type]
+function handle_type#(syntax: TypeSyntax) returns ref[Type]?
 {
     ; Count extensions to determine path size
     var ext_count: size_t 0
@@ -257,7 +257,7 @@ function handle_type#(syntax: TypeSyntax) returns pointer[Type]
         }
     }
 
-    var generics: pointer[Vector[Type]] null
+    var generics: ref[Vector[Type]]? null
     if syntax.generics <> null
     {
         let gen_args_syntax (*syntax.generics)
@@ -286,7 +286,7 @@ function handle_type#(syntax: TypeSyntax) returns pointer[Type]
     Type#(Span(syntax.start, syntax.end), path, generics, life)
 }
 
-function handle_binding_annotation#(annotation: BindingAnnotationSyntax) returns pointer[Type]
+function handle_binding_annotation#(annotation: BindingAnnotationSyntax) returns ref[Type]?
 {
     choose annotation.spec
         when type_syntax: TypeSyntax
@@ -327,7 +327,7 @@ function handle_object#(syntax: ObjectSyntax) returns Tuple
 
 function handle_component#(syntax: ComponentSyntax) returns Component
 {
-    var name: pointer[String] null
+    var name: ref[String]? null
     var operands handle_operands#(syntax.operands)
 
     if syntax.value <> null
@@ -480,7 +480,7 @@ function handle_if#(syntax: IfSyntax) returns If
     let condition handle_operands#(syntax.condition)
     let cons_stmt handle_command#(syntax.consequent.command)
 
-    var alternative: pointer[Statement] null
+    var alternative: ref[Statement]? null
     if syntax.alternative <> null
     {
         let else_syntax (*syntax.alternative)
@@ -523,7 +523,7 @@ function handle_match#(syntax: MatchSyntax) returns Match
         }
     }
 
-    var alternative: pointer[Statement] null
+    var alternative: ref[Statement]? null
     if syntax.alternative <> null
     {
         let else_syntax (*syntax.alternative)
@@ -599,7 +599,7 @@ function handle_choose#(syntax: ChooseSyntax) returns Choose
         }
     }
 
-    var alternative: pointer[Statement] null
+    var alternative: ref[Statement]? null
     if syntax.alternative <> null
     {
         let else_syntax (*syntax.alternative)
@@ -740,7 +740,7 @@ function handle_try#(syntax: TrySyntax) returns Try
         }
     }
 
-    var dropper: pointer[Statement] null
+    var dropper: ref[Statement]? null
     if syntax.dropper <> null
     {
         let else_syntax (*syntax.dropper)
@@ -802,7 +802,7 @@ function handle_operand#(syntax: OperandSyntax) returns Operand
 {
     let expr handle_expression#(syntax.expression)
 
-    var member_access: pointer[Vector[String]] null
+    var member_access: ref[Vector[String]]? null
     if syntax.members <> null
     {
         let members (*syntax.members)
@@ -824,7 +824,7 @@ function handle_operand#(syntax: OperandSyntax) returns Operand
     Operand(Span(syntax.start, syntax.end), expr, member_access)
 }
 
-function handle_operands#(syntax: pointer[Vector[OperandSyntax]]) returns Vector[Operand]
+function handle_operands#(syntax: ref[Vector[OperandSyntax]]?) returns Vector[Operand]
 {
     if syntax = null
         return Vector[Operand]#(0)
@@ -855,7 +855,7 @@ function handle_operation#(syntax: OperationSyntax) returns Vector[Operand]
 
 function handle_binding_item#(syntax: BindingSyntax) returns Item
 {
-    var item_type: pointer[Type] null
+    var item_type: ref[Type]? null
     if syntax.annotation <> null
     {
         let annotation (*syntax.annotation)
@@ -942,7 +942,7 @@ function handle_command#(syntax: CommandSyntax) returns Statement
 function handle_statement#(syntax: StatementSyntax) returns Statement
     handle_command#(syntax.command)
 
-function handle_statements#(syntax: pointer[Vector[StatementSyntax]]) returns Vector[Statement]
+function handle_statements#(syntax: ref[Vector[StatementSyntax]]?) returns Vector[Statement]
 {
     if syntax = null
         return Vector[Statement]#(0)
@@ -970,7 +970,7 @@ function handle_statements#(syntax: pointer[Vector[StatementSyntax]]) returns Ve
 
 function handle_item#(is_private: bool, syntax: ItemSyntax) returns Item
 {
-    var item_type: pointer[Type] null
+    var item_type: ref[Type]? null
     if syntax.annotation <> null
     {
         let annotation (*syntax.annotation)
@@ -990,7 +990,7 @@ function handle_property#(is_private: bool, syntax: PropertySyntax) returns Prop
 {
     let prop_type handle_type#(syntax.annotation.type)
 
-    var initializer: pointer[Vector[Operand]] null
+    var initializer: ref[Vector[Operand]]? null
     if syntax.initializer <> null
     {
         let init_syntax (*syntax.initializer)
@@ -1163,14 +1163,14 @@ function build_function#(start: size_t, end_pos: size_t, syntax: TargetSyntax, i
                 set input: handle_parameter_set#(params)
             }
 
-            var return_type: pointer[Type] null
+            var return_type: ref[Type]? null
             if named.routine.returns_ <> null
             {
                 let returns_syntax (*named.routine.returns_)
                 set return_type: handle_type#(returns_syntax.type)
             }
 
-            var throws_type: pointer[Type] null
+            var throws_type: ref[Type]? null
             if named.routine.throws_ <> null
             {
                 let throws_syntax (*named.routine.throws_)
@@ -1222,14 +1222,14 @@ function handle_operator#(syntax: OperatorSyntax, is_private: bool) returns Oper
                 set input: handle_parameter_set#(params)
             }
 
-            var return_type: pointer[Type] null
+            var return_type: ref[Type]? null
             if named.routine.returns_ <> null
             {
                 let returns_syntax (*named.routine.returns_)
                 set return_type: handle_type#(returns_syntax.type)
             }
 
-            var throws_type: pointer[Type] null
+            var throws_type: ref[Type]? null
             if named.routine.throws_ <> null
             {
                 let throws_syntax (*named.routine.throws_)
@@ -1258,14 +1258,14 @@ function handle_operator#(syntax: OperatorSyntax, is_private: bool) returns Oper
                 set input: handle_parameter_set#(params)
             }
 
-            var return_type: pointer[Type] null
+            var return_type: ref[Type]? null
             if routine.returns_ <> null
             {
                 let returns_syntax (*routine.returns_)
                 set return_type: handle_type#(returns_syntax.type)
             }
 
-            var throws_type: pointer[Type] null
+            var throws_type: ref[Type]? null
             if routine.throws_ <> null
             {
                 let throws_syntax (*routine.throws_)
@@ -1320,7 +1320,7 @@ function handle_initializer#(syntax: InitSyntax, is_private: bool) returns Initi
     )
 }
 
-function handle_deinitializer#(syntax: DeInitSyntax) returns pointer[DeInitializer]
+function handle_deinitializer#(syntax: DeInitSyntax) returns ref[DeInitializer]?
 {
     let act handle_action#(syntax.action)
     let impl Implementation.Action(act)
@@ -1337,7 +1337,7 @@ function handle_deinitializer#(syntax: DeInitSyntax) returns pointer[DeInitializ
 
 function handle_variant#(syntax: VariantSyntax) returns Variant
 {
-    var variant_type: pointer[Type] null
+    var variant_type: ref[Type]? null
     if syntax.annotation <> null
     {
         let annotation (*syntax.annotation)
@@ -1400,7 +1400,7 @@ function handle_class#(name: String, path: String, syntax: ClassSyntax, is_priva
     var uses Vector[Use]#(0)
     var initializers Vector[Initializer]#(0)
     var members Vector[Member]#(0)
-    var deinitializer: pointer[DeInitializer] null
+    var deinitializer: ref[DeInitializer]? null
 
     if syntax.body <> null
     {
@@ -1486,7 +1486,7 @@ function handle_class#(name: String, path: String, syntax: ClassSyntax, is_priva
     )
 }
 
-function handle_constituent#(path: String, syntax: MemberSyntax, symbols_builder: pointer[HashMapBuilder[String, Nameable]]) returns Member
+function handle_constituent#(path: String, syntax: MemberSyntax, symbols_builder: ref[HashMapBuilder[String, Nameable]]?) returns Member
 {
     choose syntax.constituent
         when def: DefinitionSyntax
@@ -1558,7 +1558,7 @@ function handle_namespace#(name: String, path: String, syntax: NamespaceSyntax, 
     )
 }
 
-function handle_declaration#(path: String, syntax: DeclarationSyntax, symbols_builder: pointer[HashMapBuilder[String, Nameable]]) returns Member
+function handle_declaration#(path: String, syntax: DeclarationSyntax, symbols_builder: ref[HashMapBuilder[String, Nameable]]?) returns Member
 {
     choose syntax.symbol
         when private_syntax: PrivateSyntax
@@ -1591,7 +1591,7 @@ function handle_declaration#(path: String, syntax: DeclarationSyntax, symbols_bu
             Member.Package(Vector[Module]#(0))
 }
 
-function handle_export#(path: String, syntax: ExportSyntax, is_private: bool, symbols_builder: pointer[HashMapBuilder[String, Nameable]]) returns Member
+function handle_export#(path: String, syntax: ExportSyntax, is_private: bool, symbols_builder: ref[HashMapBuilder[String, Nameable]]?) returns Member
 {
     choose syntax
         when def: DefinitionSyntax
