@@ -17,9 +17,13 @@ define HashSet[T]
         while i < length
         {
             var array Array[T]$()
-            var list_iterator ListIterator[Slot[T]](hash_set_builder.slots.get(i).head)
-            while let item list_iterator.next()
-                array.add(item.value)
+            let slot_opt hash_set_builder.slots.get(i)
+            if slot_opt <> null
+            {
+                var list_iterator ListIterator[Slot[T]](slot_opt.head)
+                while let item list_iterator.next()
+                    array.add(item.value)
+            }
             if array.length > 0
                 slots.put(i, Vector[T]^rp(*array))
 
@@ -35,12 +39,18 @@ define HashSet[T]
         let hash value.hash()
         let slot_number hash % slots.length
         let slot slots.get(slot_number)
+        if slot = null
+            return false
         let length slot.length
         var i: size_t 0
         while i < length
         {
-            if value.equals(*slot.get(i))
-                return true
+            let item slot.get(i)
+            if item <> null
+            {
+                if value.equals(*item)
+                    return true
+            }
 
             set i: i + 1
         }

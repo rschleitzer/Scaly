@@ -1,0 +1,55 @@
+; Option[T] - Optional value type with null pointer optimization (NPO)
+;
+; Option[T] is represented as a pointer internally:
+;   None = null pointer
+;   Some(value) = non-null pointer to value
+;
+; This makes Option[pointer[X]] zero-cost: same representation as pointer[X]
+
+define Option[T] union
+(
+    Some: T
+    None
+)
+{
+    ; Check if this Option contains a value
+    function is_some(this: Option[T]) returns bool
+    {
+        choose this
+            when v: Some
+                true
+            else
+                false
+    }
+
+    ; Check if this Option is empty
+    function is_none(this: Option[T]) returns bool
+    {
+        choose this
+            when v: Some
+                false
+            else
+                true
+    }
+
+    ; Get the value, returning default if None
+    function unwrap_or(this: Option[T], default: T) returns T
+    {
+        choose this
+            when v: Some
+                v
+            else
+                default
+    }
+
+    ; Map a function over the contained value
+    ; Returns None if this is None, otherwise returns Some(f(value))
+    ; function map[U](this: Option[T], f: function(T) returns U) returns Option[U]
+    ; {
+    ;     choose this
+    ;         when v: Some
+    ;             Option[U].Some(f(v))
+    ;         else
+    ;             Option[U].None
+    ; }
+}

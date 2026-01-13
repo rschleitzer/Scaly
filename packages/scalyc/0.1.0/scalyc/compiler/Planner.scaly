@@ -4,6 +4,7 @@
 ; Ported from C++ Planner.cpp
 
 use scaly.containers.Vector
+use scaly.containers.HashMapBuilder
 use scaly.containers.String
 use scaly.containers.StringBuilder
 use scaly.compiler.Model.Span
@@ -75,34 +76,22 @@ define LocalBinding
 
 define Scope
 (
-    ; For now we use simple parallel vectors for names and bindings
-    ; TODO: Use HashMap when available
-    names: pointer[Vector[String]]
-    bindings: pointer[Vector[LocalBinding]]
+    bindings: pointer[HashMapBuilder[String, LocalBinding]]
 )
 {
     init#()
     {
-        set names: Vector[String]#()
-        set bindings: Vector[LocalBinding]#()
+        set bindings: HashMapBuilder[String, LocalBinding]#()
     }
 
     function lookup(this, name: String) returns pointer[LocalBinding]
     {
-        var i 0
-        for n in names
-        {
-            if n.equals(name)
-                return bindings.get(i)
-            set i: i + 1
-        }
-        null
+        bindings[name]
     }
 
     procedure define(this, name: String, binding: LocalBinding)
     {
-        names.put(names.length, name)
-        bindings.put(bindings.length, binding)
+        bindings.add(name, binding)
     }
 }
 
@@ -144,33 +133,20 @@ define Planner
     file: String
 
     ; Symbol tables for resolution (flat cache, populated during planning)
-    ; TODO: Use HashMap when available
-    concept_names: pointer[Vector[String]]
-    concepts: pointer[Vector[pointer[Concept]]]
+    concepts: pointer[HashMapBuilder[String, pointer[Concept]]]
+    functions: pointer[HashMapBuilder[String, Vector[pointer[Function]]]]
+    operators: pointer[HashMapBuilder[String, Vector[pointer[Operator]]]]
 
-    function_names: pointer[Vector[String]]
-    functions: pointer[Vector[Vector[pointer[Function]]]]
-
-    operator_names: pointer[Vector[String]]
-    operators: pointer[Vector[Vector[pointer[Operator]]]]
-
-    ; Instantiation cache - avoid duplicate monomorphization
-    instantiated_structure_names: pointer[Vector[String]]
-    instantiated_structures: pointer[Vector[PlannedStructure]]
-
-    instantiated_union_names: pointer[Vector[String]]
-    instantiated_unions: pointer[Vector[PlannedUnion]]
-
-    instantiated_function_names: pointer[Vector[String]]
-    instantiated_functions: pointer[Vector[PlannedFunction]]
+    ; Instantiation cache - avoid duplicate monomorphization (O(1) lookups)
+    instantiated_structures: pointer[HashMapBuilder[String, PlannedStructure]]
+    instantiated_unions: pointer[HashMapBuilder[String, PlannedUnion]]
+    instantiated_functions: pointer[HashMapBuilder[String, PlannedFunction]]
 
     ; Global constants cache
-    global_names: pointer[Vector[String]]
-    planned_globals: pointer[Vector[PlannedGlobal]]
+    planned_globals: pointer[HashMapBuilder[String, PlannedGlobal]]
 
     ; Current generic substitution context
-    type_subst_names: pointer[Vector[String]]
-    type_substitutions: pointer[Vector[PlannedType]]
+    type_substitutions: pointer[HashMapBuilder[String, PlannedType]]
 
     ; Scope stack for local variables
     scopes: pointer[Vector[Scope]]
@@ -189,22 +165,14 @@ define Planner
     init#(filename: String)
     {
         set file: filename
-        set concept_names: Vector[String]#()
-        set concepts: Vector[pointer[Concept]]#()
-        set function_names: Vector[String]#()
-        set functions: Vector[Vector[pointer[Function]]]#()
-        set operator_names: Vector[String]#()
-        set operators: Vector[Vector[pointer[Operator]]]#()
-        set instantiated_structure_names: Vector[String]#()
-        set instantiated_structures: Vector[PlannedStructure]#()
-        set instantiated_union_names: Vector[String]#()
-        set instantiated_unions: Vector[PlannedUnion]#()
-        set instantiated_function_names: Vector[String]#()
-        set instantiated_functions: Vector[PlannedFunction]#()
-        set global_names: Vector[String]#()
-        set planned_globals: Vector[PlannedGlobal]#()
-        set type_subst_names: Vector[String]#()
-        set type_substitutions: Vector[PlannedType]#()
+        set concepts: HashMapBuilder[String, pointer[Concept]]#()
+        set functions: HashMapBuilder[String, Vector[pointer[Function]]]#()
+        set operators: HashMapBuilder[String, Vector[pointer[Operator]]]#()
+        set instantiated_structures: HashMapBuilder[String, PlannedStructure]#()
+        set instantiated_unions: HashMapBuilder[String, PlannedUnion]#()
+        set instantiated_functions: HashMapBuilder[String, PlannedFunction]#()
+        set planned_globals: HashMapBuilder[String, PlannedGlobal]#()
+        set type_substitutions: HashMapBuilder[String, PlannedType]#()
         set scopes: Vector[Scope]#()
         set structure_ctx: StructureContext(String#(""), null, null)
         set namespace_ctx: NamespaceContext(String#(""), null)
@@ -513,154 +481,106 @@ define Planner
     }
 
     ; ========================================================================
-    ; Concept Lookup
+    ; Concept Lookup (O(1) with HashMapBuilder)
     ; ========================================================================
 
     ; Register a concept in the lookup table
     procedure register_concept(this, name: String, concept: pointer[Concept])
     {
-        concept_names.put(concept_names.length, name)
-        concepts.put(concepts.length, concept)
+        concepts.add(name, concept)
     }
 
     ; Lookup a concept by name
     function lookup_concept(this, name: String) returns pointer[Concept]
     {
-        var i 0
-        for n in concept_names
-        {
-            if n.equals(name)
-                return concepts.get(i)
-            set i: i + 1
-        }
-        null
+        concepts[name]
     }
 
     ; ========================================================================
-    ; Type Substitution
+    ; Type Substitution (O(1) with HashMapBuilder)
     ; ========================================================================
 
     ; Register a type substitution (for generic instantiation)
     procedure add_type_substitution(this, name: String, substituted_type: PlannedType)
     {
-        type_subst_names.put(type_subst_names.length, name)
-        type_substitutions.put(type_substitutions.length, substituted_type)
+        type_substitutions.add(name, substituted_type)
     }
 
     ; Lookup a type substitution
     function lookup_type_substitution(this, name: String) returns pointer[PlannedType]
     {
-        var i 0
-        for n in type_subst_names
-        {
-            if n.equals(name)
-                return type_substitutions.get(i)
-            set i: i + 1
-        }
-        null
+        type_substitutions[name]
     }
 
     ; Clear type substitutions
     procedure clear_type_substitutions(this)
     {
-        set type_subst_names.length: 0
-        set type_substitutions.length: 0
+        ; Reinitialize with empty HashMapBuilder
+        set type_substitutions: HashMapBuilder[String, PlannedType]#()
     }
 
     ; ========================================================================
-    ; Instantiated Structure Cache
+    ; Instantiated Structure Cache (O(1) with HashMapBuilder)
     ; ========================================================================
 
     ; Register an instantiated structure
     procedure cache_structure(this, cache_key: String, structure: PlannedStructure)
     {
-        instantiated_structure_names.put(instantiated_structure_names.length, cache_key)
-        instantiated_structures.put(instantiated_structures.length, structure)
+        instantiated_structures.add(cache_key, structure)
     }
 
     ; Lookup a cached structure
     function lookup_cached_structure(this, cache_key: String) returns pointer[PlannedStructure]
     {
-        var i 0
-        for n in instantiated_structure_names
-        {
-            if n.equals(cache_key)
-                return instantiated_structures.get(i)
-            set i: i + 1
-        }
-        null
+        instantiated_structures[cache_key]
     }
 
     ; ========================================================================
-    ; Instantiated Union Cache
+    ; Instantiated Union Cache (O(1) with HashMapBuilder)
     ; ========================================================================
 
     ; Register an instantiated union
     procedure cache_union(this, cache_key: String, union_type: PlannedUnion)
     {
-        instantiated_union_names.put(instantiated_union_names.length, cache_key)
-        instantiated_unions.put(instantiated_unions.length, union_type)
+        instantiated_unions.add(cache_key, union_type)
     }
 
     ; Lookup a cached union
     function lookup_cached_union(this, cache_key: String) returns pointer[PlannedUnion]
     {
-        var i 0
-        for n in instantiated_union_names
-        {
-            if n.equals(cache_key)
-                return instantiated_unions.get(i)
-            set i: i + 1
-        }
-        null
+        instantiated_unions[cache_key]
     }
 
     ; ========================================================================
-    ; Instantiated Function Cache
+    ; Instantiated Function Cache (O(1) with HashMapBuilder)
     ; ========================================================================
 
     ; Register an instantiated function
     procedure cache_function(this, cache_key: String, func: PlannedFunction)
     {
-        instantiated_function_names.put(instantiated_function_names.length, cache_key)
-        instantiated_functions.put(instantiated_functions.length, func)
+        instantiated_functions.add(cache_key, func)
     }
 
     ; Lookup a cached function
     function lookup_cached_function(this, cache_key: String) returns pointer[PlannedFunction]
     {
-        var i 0
-        for n in instantiated_function_names
-        {
-            if n.equals(cache_key)
-                return instantiated_functions.get(i)
-            set i: i + 1
-        }
-        null
+        instantiated_functions[cache_key]
     }
 
     ; ========================================================================
-    ; Global Constants Cache
+    ; Global Constants Cache (O(1) with HashMapBuilder)
     ; ========================================================================
 
     ; Register a global constant
     procedure cache_global(this, name: String, global: PlannedGlobal)
     {
-        global_names.put(global_names.length, name)
-        planned_globals.put(planned_globals.length, global)
+        planned_globals.add(name, global)
     }
 
     ; Lookup a cached global
     function lookup_cached_global(this, name: String) returns pointer[PlannedGlobal]
     {
-        var i 0
-        for n in global_names
-        {
-            if n.equals(name)
-                return planned_globals.get(i)
-            set i: i + 1
-        }
-        null
+        planned_globals[name]
     }
 
     ; ========================================================================
@@ -1036,11 +956,9 @@ define Planner
         }
 
         ; Set up type substitutions for the instantiation
-        ; Save old substitutions
-        let old_subst_names type_subst_names
+        ; Save old substitutions and create fresh map
         let old_substitutions type_substitutions
-        set type_subst_names: Vector[String]#()
-        set type_substitutions: Vector[PlannedType]#()
+        set type_substitutions: HashMapBuilder[String, PlannedType]#()
 
         ; Add new substitutions
         var i 0
@@ -1070,7 +988,6 @@ define Planner
         ; The full planning will be done when we implement planStructure/planUnion
 
         ; Restore old substitutions
-        set type_subst_names: old_subst_names
         set type_substitutions: old_substitutions
 
         result

@@ -13,7 +13,7 @@ define VectorIterator[T]
         set position: 0
     }
 
-    function next(this: VectorIterator[T]) returns ref[T]
+    function next(this: VectorIterator[T]) returns pointer[T]
     {
         if vector = null
             return null
@@ -111,12 +111,11 @@ define Vector[T]
             set data: null
     }
 
-    function get(this: Vector[T], i: size_t) returns ref[T]
+    function get(this: Vector[T], i: size_t) returns pointer[T]
     {
         if i >= length
             return null
-        ; Cast pointer arithmetic result to ref - safe as long as vector lives
-        (data + i) as ref[T]
+        data + i
     }
 
     function put(this: Vector[T], i: size_t, item: T) returns bool
@@ -127,12 +126,11 @@ define Vector[T]
         true
     }
 
-    operator [](i: size_t) returns ref[T]
+    operator [](i: size_t) returns pointer[T]
     {
         if i >= length
             return null
-        ; Cast pointer arithmetic result to ref - safe as long as vector lives
-        (data + i) as ref[T]
+        data + i
     }
 
     function get_iterator(this: Vector[T]) returns VectorIterator[T]
