@@ -117,7 +117,8 @@ define StructureContext
 define NamespaceContext
 (
     name: String
-    modules: ref[Vector[ref[Module]?]]?
+    namespace: ref[scaly.compiler.Model.Namespace]?   ; Reference to the namespace for sibling lookups
+    modules: ref[Vector[ref[Module]?]]?              ; Sub-modules for module.function() calls
 )
 {
     function is_active(this) returns bool
@@ -141,6 +142,9 @@ define Planner
     instantiated_structures: ref[HashMapBuilder[String, PlannedStructure]]?
     instantiated_unions: ref[HashMapBuilder[String, PlannedUnion]]?
     instantiated_functions: ref[HashMapBuilder[String, PlannedFunction]]?
+
+    ; Track functions currently being planned to prevent infinite recursion
+    functions_being_planned: ref[HashSetBuilder[String]]?
 
     ; Global constants cache
     planned_globals: ref[HashMapBuilder[String, PlannedGlobal]]?
@@ -171,11 +175,12 @@ define Planner
         set instantiated_structures: HashMapBuilder[String, PlannedStructure]#()
         set instantiated_unions: HashMapBuilder[String, PlannedUnion]#()
         set instantiated_functions: HashMapBuilder[String, PlannedFunction]#()
+        set functions_being_planned: HashSetBuilder[String]#()
         set planned_globals: HashMapBuilder[String, PlannedGlobal]#()
         set type_substitutions: HashMapBuilder[String, PlannedType]#()
         set scopes: Vector[Scope]#()
         set structure_ctx: StructureContext(String#(""), null, null)
-        set namespace_ctx: NamespaceContext(String#(""), null)
+        set namespace_ctx: NamespaceContext(String#(""), null, null)
         set current_function_uses_local_lifetime: false
         set current_plan: null
     }
@@ -529,10 +534,23 @@ define Planner
         instantiated_structures.add(cache_key, structure)
     }
 
-    ; Lookup a cached structure
+    ; Lookup a cached structure by key
     function lookup_cached_structure(this, cache_key: String) returns ref[PlannedStructure]?
     {
         instantiated_structures[cache_key]
+    }
+
+    ; Lookup a structure by PlannedType (tries MangledName first, then Name)
+    ; This pattern is used in C++ for method/operator resolution on generic types
+    function lookup_structure_by_type(this, planned_type: PlannedType) returns ref[PlannedStructure]?
+    {
+        ; Try MangledName first (primary key for generics)
+        let by_mangled instantiated_structures[planned_type.mangled_name]
+        if by_mangled <> null
+            return by_mangled
+
+        ; Fall back to Name
+        instantiated_structures[planned_type.name]
     }
 
     ; ========================================================================
@@ -545,10 +563,22 @@ define Planner
         instantiated_unions.add(cache_key, union_type)
     }
 
-    ; Lookup a cached union
+    ; Lookup a cached union by key
     function lookup_cached_union(this, cache_key: String) returns ref[PlannedUnion]?
     {
         instantiated_unions[cache_key]
+    }
+
+    ; Lookup a union by PlannedType (tries MangledName first, then Name)
+    function lookup_union_by_type(this, planned_type: PlannedType) returns ref[PlannedUnion]?
+    {
+        ; Try MangledName first (primary key for generics)
+        let by_mangled instantiated_unions[planned_type.mangled_name]
+        if by_mangled <> null
+            return by_mangled
+
+        ; Fall back to Name
+        instantiated_unions[planned_type.name]
     }
 
     ; ========================================================================
@@ -565,6 +595,79 @@ define Planner
     function lookup_cached_function(this, cache_key: String) returns ref[PlannedFunction]?
     {
         instantiated_functions[cache_key]
+    }
+
+    ; Lookup a sibling function in the current namespace
+    ; This allows functions within a namespace to call each other
+    function lookup_namespace_sibling_function(this, name: String, arg_count: int) returns ref[scaly.compiler.Model.Function]?
+    {
+        if namespace_ctx.is_active() = false
+            return null
+        if namespace_ctx.namespace = null
+            return null
+        if namespace_ctx.namespace.members = null
+            return null
+
+        ; Search namespace members for matching function
+        for member in namespace_ctx.namespace.members
+        {
+            choose member
+                when Function: func
+                {
+                    if func.name.equals(name)
+                    {
+                        ; Match by argument count (excluding 'this' for methods)
+                        var input_count 0
+                        if func.input <> null
+                            set input_count: func.input.length as int
+                        if input_count = arg_count
+                            return func
+                    }
+                }
+                else
+                {
+                    ; Skip non-functions
+                }
+        }
+        null
+    }
+
+    ; Lookup a function in a sibling module (for module.function() calls)
+    function lookup_module_function(this, module_name: String, func_name: String) returns ref[scaly.compiler.Model.Function]?
+    {
+        if namespace_ctx.is_active() = false
+            return null
+        if namespace_ctx.modules = null
+            return null
+
+        ; Find the module by name
+        for mod in namespace_ctx.modules
+        {
+            if mod <> null
+            {
+                if mod.name.equals(module_name)
+                {
+                    ; Search module members for the function
+                    if mod.members <> null
+                    {
+                        for member in mod.members
+                        {
+                            choose member
+                                when Function: func
+                                {
+                                    if func.name.equals(func_name)
+                                        return func
+                                }
+                                else
+                                {
+                                    ; Skip non-functions
+                                }
+                        }
+                    }
+                }
+            }
+        }
+        null
     }
 
     ; ========================================================================
@@ -728,6 +831,106 @@ define Planner
         }
 
         true
+    }
+
+    ; Check if arg_type can be assigned to param_type
+    ; This is more permissive than types_equal and handles:
+    ; - NPO: null (pointer[void]) can be assigned to Option types
+    ; - Integer compatibility: int literals can be used where size_t is expected
+    function types_compatible(param_type: PlannedType, arg_type: PlannedType) returns bool
+    {
+        ; Exact match
+        if types_equal(param_type, arg_type)
+            return true
+
+        ; NPO: Allow null (pointer[void]) to be assigned to Option types
+        ; This handles: var x: Option[T] null  or  var x: ref[T]? null
+        ; where null represents the None case (with NPO, it's just a null pointer)
+        if param_type.name.equals(String#("Option"))
+        {
+            if arg_type.name.equals(String#("pointer"))
+            {
+                if arg_type.generics <> null
+                {
+                    if arg_type.generics.length > 0
+                    {
+                        let inner arg_type.generics.get(0)
+                        if inner <> null
+                        {
+                            if inner.name.equals(String#("void"))
+                                return true
+                        }
+                    }
+                }
+            }
+            ; Also handle null type directly
+            if arg_type.name.equals(String#("null"))
+                return true
+        }
+
+        ; Also check if param_type is an Option instantiation (e.g., "Option.ref.T")
+        if param_type.name.starts_with(String#("Option."))
+        {
+            if arg_type.name.equals(String#("pointer"))
+            {
+                if arg_type.generics <> null
+                {
+                    if arg_type.generics.length > 0
+                    {
+                        let inner arg_type.generics.get(0)
+                        if inner <> null
+                        {
+                            if inner.name.equals(String#("void"))
+                                return true
+                        }
+                    }
+                }
+            }
+            if arg_type.name.equals(String#("null"))
+                return true
+        }
+
+        ; Integer compatibility: allow int to be used where size_t/u64/i64 etc. are expected
+        ; This is common in C interop and array indexing
+        if is_integer_type(param_type.name)
+        {
+            if is_integer_type(arg_type.name)
+                return true
+        }
+
+        false
+    }
+
+    ; Check if a type name represents an integer type
+    function is_integer_type(name: String) returns bool
+    {
+        if name.equals(String#("int"))
+            return true
+        if name.equals(String#("uint"))
+            return true
+        if name.equals(String#("long"))
+            return true
+        if name.equals(String#("ulong"))
+            return true
+        if name.equals(String#("size_t"))
+            return true
+        if name.equals(String#("i8"))
+            return true
+        if name.equals(String#("i16"))
+            return true
+        if name.equals(String#("i32"))
+            return true
+        if name.equals(String#("i64"))
+            return true
+        if name.equals(String#("u8"))
+            return true
+        if name.equals(String#("u16"))
+            return true
+        if name.equals(String#("u32"))
+            return true
+        if name.equals(String#("u64"))
+            return true
+        false
     }
 
     ; ========================================================================
@@ -2202,7 +2405,7 @@ define Planner
                 ; No page parameter needed
             }
 
-        ; Plan input parameters
+        ; Plan input parameters first (needed for mangled name computation)
         let input Vector[PlannedItem]#()
         if func.input <> null
         {
@@ -2240,11 +2443,43 @@ define Planner
             }
         }
 
+        ; Compute mangled name early for caching and recursion prevention
+        let early_mangled mangle_function(func.name, input, parent)
+
+        ; Check if this function is currently being planned (recursive call prevention)
+        if (*functions_being_planned).contains(early_mangled)
+        {
+            ; Already being planned - return cached version if available
+            let cached (*instantiated_functions).get(early_mangled)
+            pop_scope()
+            set current_function_uses_local_lifetime: saved_uses_local_lifetime
+            return cached
+        }
+
+        ; Check cache - if this function was already planned, return cached version
+        let cached (*instantiated_functions).get(early_mangled)
+        if cached <> null
+        {
+            pop_scope()
+            set current_function_uses_local_lifetime: saved_uses_local_lifetime
+            return cached
+        }
+
+        ; Mark function as being planned (prevents infinite recursion)
+        (*functions_being_planned).add(early_mangled)
+
         ; Plan return type
         var returns_type ref[PlannedType]? null
         if func.returns_ <> null
         {
             set returns_type: resolve_type(func.returns_, func.span)
+            if returns_type = null
+            {
+                (*functions_being_planned).remove(early_mangled)
+                pop_scope()
+                set current_function_uses_local_lifetime: saved_uses_local_lifetime
+                return null
+            }
         }
 
         ; Plan throws type
@@ -2252,26 +2487,31 @@ define Planner
         if func.throws_ <> null
         {
             set throws_type: resolve_type(func.throws_, func.span)
+            if throws_type = null
+            {
+                (*functions_being_planned).remove(early_mangled)
+                pop_scope()
+                set current_function_uses_local_lifetime: saved_uses_local_lifetime
+                return null
+            }
         }
 
         ; Plan implementation
         let impl plan_implementation(func.implementation)
         if impl = null
         {
+            (*functions_being_planned).remove(early_mangled)
             pop_scope()
             set current_function_uses_local_lifetime: saved_uses_local_lifetime
             return null
         }
-
-        ; Generate mangled name
-        let mangled mangle_function(func.name, input, parent)
 
         let result PlannedFunction#(
             func.span,
             func.private_,
             func.pure,
             func.name,
-            mangled,
+            early_mangled,
             null,           ; page_parameter (derived from lifetime)
             input,
             returns_type,
@@ -2283,6 +2523,12 @@ define Planner
             throws_type <> null,
             null            ; scheme
         )
+
+        ; Add to cache for future lookups
+        (*instantiated_functions).add(early_mangled, result)
+
+        ; Remove from being-planned set
+        (*functions_being_planned).remove(early_mangled)
 
         pop_scope()
         set current_function_uses_local_lifetime: saved_uses_local_lifetime
@@ -2785,23 +3031,48 @@ define Planner
     {
         let mangled encode_name(name)
 
-        ; Plan sub-modules
+        ; Create parent type for function/operator mangling (namespace prefix)
+        let parent_type PlannedType#(
+            ns.span,
+            name,
+            mangled,
+            null,
+            scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
+            null,
+            String#(""),
+            null
+        )
+
+        ; Save old namespace context for sibling function calls
+        let old_namespace_ctx namespace_ctx
+
+        ; Set up namespace context for sibling lookups
+        set namespace_ctx: NamespaceContext(name, ns, null)
+
+        ; Plan sub-modules first (so their concepts are available)
+        ; Store module references for sibling module.function() calls
         var modules ref[Vector[PlannedModule]]? null
+        var ns_modules ref[Vector[ref[Module]?]]? null
         if ns.modules <> null
         {
             if ns.modules.length > 0
             {
                 set modules: Vector[PlannedModule]#()
+                set ns_modules: Vector[ref[Module]?]#()
                 for mod in ns.modules
                 {
+                    ; Store module reference for sibling lookup
+                    ns_modules.put(ns_modules.length, mod)
                     let planned plan_module(mod)
                     if planned <> null
                         modules.put(modules.length, planned)
                 }
+                ; Update namespace context with module references
+                set namespace_ctx.modules: ns_modules
             }
         }
 
-        ; Plan functions
+        ; Plan functions with parent type for proper mangling
         var functions ref[Vector[PlannedFunction]]? null
         if ns.members <> null
         {
@@ -2810,12 +3081,15 @@ define Planner
                 choose member
                     when Function: func
                     {
-                        let planned plan_function(func, null)
+                        let planned plan_function(func, &parent_type)
                         if planned <> null
                         {
                             if functions = null
                                 set functions: Vector[PlannedFunction]#()
                             functions.put(functions.length, planned)
+
+                            ; Cache for emitter lookup
+                            cache_function(planned.mangled_name, planned)
                         }
                     }
                     else
@@ -2825,7 +3099,7 @@ define Planner
             }
         }
 
-        ; Plan operators
+        ; Plan operators with parent type for proper mangling
         var operators ref[Vector[PlannedOperator]]? null
         if ns.members <> null
         {
@@ -2834,7 +3108,7 @@ define Planner
                 choose member
                     when Operator: op
                     {
-                        let planned plan_operator(op, null)
+                        let planned plan_operator(op, &parent_type)
                         if planned <> null
                         {
                             if operators = null
@@ -2848,6 +3122,9 @@ define Planner
                     }
             }
         }
+
+        ; Restore old namespace context
+        set namespace_ctx: old_namespace_ctx
 
         let result PlannedNamespace#(
             ns.span,
