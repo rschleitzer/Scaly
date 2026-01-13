@@ -89,7 +89,8 @@ static llvm::Expected<int64_t> runPackageTestFunction(
 // Module Test Cases
 // ============================================================================
 
-// Path to the scalyc package entry point (relative to scalyc/build/)
+// Paths to package entry points (relative to scalyc/build/)
+static const char* ScalyPackagePath = "../../packages/scaly/0.1.0/scaly.scaly";
 static const char* ScalycPackagePath = "../../packages/scalyc/0.1.0/scalyc.scaly";
 
 // ============================================================================
@@ -195,15 +196,22 @@ bool runModuleTests(bool includeSlowTests) {
     TestsPassed = 0;
     TestsFailed = 0;
 
+    // Compile scaly package and run its tests
+    // This tests the stdlib: memory, containers, io
+    llvm::outs() << "  Scaly package tests:\n";
+    runPackageTests(ScalyPackagePath, {
+        {"Module: scaly.test()", "scaly.test"},
+    });
+
     // Compile scalyc package once and run its tests (slow: ~20s for 16k lines)
     // This tests the self-hosting compiler modules: lexer, parser, compiler
     if (includeSlowTests) {
         llvm::outs() << "  Scalyc package tests:\n";
         runPackageTests(ScalycPackagePath, {
-            {"Module: scalyc.test()", "test"},
+            {"Module: scalyc.test()", "scalyc.test"},
         });
     } else {
-        llvm::outs() << "  (Scalyc package tests skipped - use --test=module to include)\n";
+        llvm::outs() << "  (Scalyc package tests skipped - use --slow-tests to include)\n";
     }
 
     llvm::outs() << "\nModule tests: " << TestsPassed << " passed, "
