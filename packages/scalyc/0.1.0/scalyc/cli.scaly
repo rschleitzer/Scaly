@@ -1,0 +1,272 @@
+; cli.scaly - Command-line interface for the Scaly compiler
+;
+; This module handles argument parsing and drives the compilation pipeline.
+
+use scaly.containers.String
+use scaly.containers.Vector
+use scaly.io.File
+use scaly.io.Console
+
+; ============================================================================
+; Command-line options
+; ============================================================================
+
+define Options
+(
+    input_file: String
+    output_file: String
+    verbose: bool
+    emit_ir: bool           ; -S: emit LLVM IR
+    compile_only: bool      ; -c: compile only, no link
+    lex_only: bool          ; --lex: just tokenize
+    parse_only: bool        ; --parse: just parse
+    model_only: bool        ; --model: just build model
+    plan_only: bool         ; --plan: just run planner
+    show_help: bool
+    error_message: String
+)
+{
+    init#()
+    {
+        set input_file: String()
+        set output_file: String()
+        set verbose: false
+        set emit_ir: false
+        set compile_only: false
+        set lex_only: false
+        set parse_only: false
+        set model_only: false
+        set plan_only: false
+        set show_help: false
+        set error_message: String()
+    }
+
+    function has_error(this) returns bool
+        error_message.get_length() > 0
+
+    function has_input(this) returns bool
+        input_file.get_length() > 0
+}
+
+; ============================================================================
+; Argument parsing
+; ============================================================================
+
+define cli
+{
+    ; Parse command-line arguments
+    ; argc: argument count
+    ; argv: argument vector (C-style array of char pointers)
+    function parse_args#(argc: int, argv: pointer[pointer[char]]) returns Options
+    {
+        var opts Options#()
+
+        var i 1  ; Skip program name (argv[0])
+        while i < argc
+        {
+            let arg_ptr *(argv + i)
+            var arg String$(arg_ptr)
+
+            if arg.starts_with(String$("-"))
+            {
+                ; Option flag
+                if arg.equals(String$("-h")) | arg.equals(String$("--help"))
+                {
+                    set opts.show_help: true
+                }
+                else if arg.equals(String$("-v")) | arg.equals(String$("--verbose"))
+                {
+                    set opts.verbose: true
+                }
+                else if arg.equals(String$("-S"))
+                {
+                    set opts.emit_ir: true
+                }
+                else if arg.equals(String$("-c"))
+                {
+                    set opts.compile_only: true
+                }
+                else if arg.equals(String$("--lex"))
+                {
+                    set opts.lex_only: true
+                }
+                else if arg.equals(String$("--parse"))
+                {
+                    set opts.parse_only: true
+                }
+                else if arg.equals(String$("--model"))
+                {
+                    set opts.model_only: true
+                }
+                else if arg.equals(String$("--plan"))
+                {
+                    set opts.plan_only: true
+                }
+                else if arg.equals(String$("-o"))
+                {
+                    ; Output file - next argument is the filename
+                    set i: i + 1
+                    if i < argc
+                    {
+                        let out_ptr *(argv + i)
+                        set opts.output_file: String#(out_ptr)
+                    }
+                    else
+                    {
+                        set opts.error_message: String#("-o requires a filename")
+                    }
+                }
+                else
+                {
+                    ; Unknown option
+                    set opts.error_message: String#("Unknown option: ")
+                    ; TODO: append arg to error message
+                }
+            }
+            else
+            {
+                ; Input file
+                if opts.has_input()
+                {
+                    set opts.error_message: String#("Multiple input files not yet supported")
+                }
+                else
+                {
+                    set opts.input_file: String#(arg_ptr)
+                }
+            }
+
+            set i: i + 1
+        }
+
+        opts
+    }
+
+    ; Print usage information
+    function print_usage()
+    {
+        Console.println("Usage: scalyc [options] <input file>")
+        Console.println("")
+        Console.println("Options:")
+        Console.println("  -h, --help     Show this help message")
+        Console.println("  -v, --verbose  Verbose output")
+        Console.println("  -o <file>      Output file")
+        Console.println("  -S             Emit LLVM IR")
+        Console.println("  -c             Compile only (no link)")
+        Console.println("  --lex          Lex input and print tokens")
+        Console.println("  --parse        Parse input and validate syntax")
+        Console.println("  --model        Build semantic model")
+        Console.println("  --plan         Run planner (type resolution)")
+    }
+
+    ; Run the compiler with parsed options
+    ; Returns 0 on success, non-zero on error
+    function run#(opts: Options) returns int
+    {
+        if opts.show_help
+        {
+            print_usage()
+            return 0
+        }
+
+        if opts.has_error()
+        {
+            Console.println("Error: ")
+            ; TODO: print error message
+            return 1
+        }
+
+        if opts.has_input() = false
+        {
+            Console.println("Error: No input file specified")
+            print_usage()
+            return 1
+        }
+
+        if opts.verbose
+        {
+            Console.println("Compiling: ")
+            ; TODO: print input file
+        }
+
+        ; Read the source file
+        var source File.read_to_string$(opts.input_file)
+        if source.get_length() = 0
+        {
+            Console.println("Error: Could not read input file")
+            return 1
+        }
+
+        if opts.verbose
+        {
+            Console.println("Read source file successfully")
+        }
+
+        ; TODO: Run the compilation pipeline
+        ; 1. Lexer - tokenize source
+        ; 2. Parser - build AST
+        ; 3. Modeler - build semantic model
+        ; 4. Planner - resolve types, mangle names
+        ; 5. Emitter - generate LLVM IR / object code
+
+        if opts.lex_only
+        {
+            ; TODO: Run lexer and print tokens
+            Console.println("Lexer output not yet implemented")
+            return 0
+        }
+
+        if opts.parse_only
+        {
+            ; TODO: Run parser
+            Console.println("Parser output not yet implemented")
+            return 0
+        }
+
+        if opts.model_only
+        {
+            ; TODO: Run modeler
+            Console.println("Model output not yet implemented")
+            return 0
+        }
+
+        if opts.plan_only
+        {
+            ; TODO: Run planner
+            Console.println("Planner output not yet implemented")
+            return 0
+        }
+
+        ; Full compilation
+        Console.println("Full compilation not yet implemented")
+        0
+    }
+
+    ; Main entry point
+    function main(argc: int, argv: pointer[pointer[char]]) returns int
+    {
+        var opts parse_args$(argc, argv)
+        run$(opts)
+    }
+
+    ; Test function
+    function test() returns int
+    {
+        ; Test 1: Parse empty args (just program name)
+        ; We can't easily test this without mocking argv
+
+        ; Test 2: Check Options initialization
+        var opts Options$()
+        if opts.has_input()
+            return -1
+        if opts.has_error()
+            return -2
+        if opts.verbose
+            return -3
+        if opts.show_help
+            return -4
+
+        ; All tests passed
+        0
+    }
+}
