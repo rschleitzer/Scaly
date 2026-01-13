@@ -410,7 +410,58 @@ define cli
         if result <> 0
             return result - 100
 
+        ; Test 4: Test pipeline on hello.scaly from disk
+        set result: test_hello_scaly$()
+        if result <> 0
+            return result - 200
+
         ; All tests passed
+        0
+    }
+
+    ; Test compiling hello.scaly from disk
+    function test_hello_scaly#() returns int
+    {
+        ; Path to hello.scaly (relative to scalyc/build where tests run)
+        var file_path String$("../../hello.scaly")
+
+        ; Read the file
+        var source File.read_to_string$(file_path)
+        if source.get_length() = 0
+            return -1  ; Could not read file
+
+        ; Stage 1: Parse
+        var p parser.Parser$(source)
+        var syntax: parser.ProgramSyntax
+        choose p.parse_program$()
+            when error: parser.ParserError
+            {
+                return -2  ; Parse failed
+            }
+            when value: parser.ProgramSyntax
+            {
+                set syntax: value
+            }
+
+        ; Stage 2: Build model
+        var program_name String$("hello")
+        let model Modeler.build_program#(file_path, program_name, syntax)
+
+        ; Stage 3: Plan
+        var planner Planner.Planner$(file_path)
+        let plan planner.plan_program(model)
+        if plan = null
+            return -3  ; Planning failed
+
+        ; Stage 4: Emit
+        var config EmitterConfig$()
+        set config.emit_debug_info: false
+        var emitter Emitter.Emitter$(config)
+        let emit_result emitter.emit(plan, program_name)
+        if emit_result = false
+            return -4  ; Emission failed
+
+        ; Successfully compiled hello.scaly!
         0
     }
 
