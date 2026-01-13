@@ -59,7 +59,7 @@ define NameSyntax
     start: size_t
     end: size_t
     name: String
-    extensions: pointer[Vector[ExtensionSyntax]]
+    extensions: ref[Vector[ExtensionSyntax]]?
 )
 
 define TypeSyntax
@@ -67,9 +67,9 @@ define TypeSyntax
     start: size_t
     end: size_t
     name: NameSyntax
-    generics: pointer[GenericArgumentsSyntax]
-    optional: pointer[OptionalSyntax]
-    lifetime: pointer[LifetimeSyntax]
+    generics: ref[GenericArgumentsSyntax]?
+    optional: ref[OptionalSyntax]?
+    lifetime: ref[LifetimeSyntax]?
 )
 
 define AsSyntax
@@ -104,23 +104,23 @@ define BlockSyntax
 (
     start: size_t
     end: size_t
-    uses: pointer[Vector[UseSyntax]]
-    statements: pointer[Vector[StatementSyntax]]
+    uses: ref[Vector[UseSyntax]]?
+    statements: ref[Vector[StatementSyntax]]?
 )
 
 define SetSyntax
 (
     start: size_t
     end: size_t
-    target: pointer[Vector[OperandSyntax]]
-    source: pointer[Vector[OperandSyntax]]
+    target: ref[Vector[OperandSyntax]]?
+    source: ref[Vector[OperandSyntax]]?
 )
 
 define OperationSyntax
 (
     start: size_t
     end: size_t
-    operands: pointer[Vector[OperandSyntax]]
+    operands: ref[Vector[OperandSyntax]]?
 )
 
 define ActionSyntax union (
@@ -133,7 +133,7 @@ define RepeatSyntax
 (
     start: size_t
     end: size_t
-    name: pointer[LabelSyntax]
+    name: ref[LabelSyntax]?
     action: ActionSyntax
 )
 
@@ -149,9 +149,9 @@ define ForSyntax
     start: size_t
     end: size_t
     variable: String
-    annotation: pointer[TypeAnnotationSyntax]
-    operation: pointer[Vector[OperandSyntax]]
-    name: pointer[LabelSyntax]
+    annotation: ref[TypeAnnotationSyntax]?
+    operation: ref[Vector[OperandSyntax]]?
+    name: ref[LabelSyntax]?
     action: ActionSyntax
 )
 
@@ -159,7 +159,7 @@ define LambdaSyntax
 (
     start: size_t
     end: size_t
-    input: pointer[Vector[OperandSyntax]]
+    input: ref[Vector[OperandSyntax]]?
     block: ActionSyntax
 )
 
@@ -167,14 +167,14 @@ define ThrowSyntax
 (
     start: size_t
     end: size_t
-    result: pointer[Vector[OperandSyntax]]
+    result: ref[Vector[OperandSyntax]]?
 )
 
 define ReturnSyntax
 (
     start: size_t
     end: size_t
-    result: pointer[Vector[OperandSyntax]]
+    result: ref[Vector[OperandSyntax]]?
 )
 
 define LoopSyntax
@@ -188,15 +188,15 @@ define BreakSyntax
 (
     start: size_t
     end: size_t
-    name: pointer[LoopSyntax]
-    result: pointer[Vector[OperandSyntax]]
+    name: ref[LoopSyntax]?
+    result: ref[Vector[OperandSyntax]]?
 )
 
 define ContinueSyntax
 (
     start: size_t
     end: size_t
-    name: pointer[LoopSyntax]
+    name: ref[LoopSyntax]?
 )
 
 define TypeAnnotationSyntax
@@ -212,8 +212,8 @@ define PropertySyntax
     end: size_t
     name: String
     annotation: TypeAnnotationSyntax
-    initializer: pointer[InitializerSyntax]
-    attributes: pointer[Vector[AttributeSyntax]]
+    initializer: ref[InitializerSyntax]?
+    attributes: ref[Vector[AttributeSyntax]]?
 )
 
 define FieldSyntax
@@ -232,14 +232,14 @@ define StructureSyntax
 (
     start: size_t
     end: size_t
-    parts: pointer[Vector[PartSyntax]]
+    parts: ref[Vector[PartSyntax]]?
 )
 
 define ArraySyntax
 (
     start: size_t
     end: size_t
-    members: pointer[Vector[TypeSyntax]]
+    members: ref[Vector[TypeSyntax]]?
 )
 
 define BindingSpecSyntax union (
@@ -260,8 +260,8 @@ define BindingSyntax
     start: size_t
     end: size_t
     name: String
-    annotation: pointer[BindingAnnotationSyntax]
-    operation: pointer[Vector[OperandSyntax]]
+    annotation: ref[BindingAnnotationSyntax]?
+    operation: ref[Vector[OperandSyntax]]?
 )
 
 define MutableSyntax
@@ -316,17 +316,17 @@ define TrySyntax
     start: size_t
     end: size_t
     condition: ConditionSyntax
-    cases: pointer[Vector[WhenSyntax]]
-    dropper: pointer[ElseSyntax]
+    cases: ref[Vector[WhenSyntax]]?
+    dropper: ref[ElseSyntax]?
 )
 
 define ChooseSyntax
 (
     start: size_t
     end: size_t
-    condition: pointer[Vector[OperandSyntax]]
-    cases: pointer[Vector[WhenSyntax]]
-    alternative: pointer[ElseSyntax]
+    condition: ref[Vector[OperandSyntax]]?
+    cases: ref[Vector[WhenSyntax]]?
+    alternative: ref[ElseSyntax]?
 )
 
 define WhileSyntax
@@ -334,7 +334,7 @@ define WhileSyntax
     start: size_t
     end: size_t
     condition: ConditionSyntax
-    name: pointer[LabelSyntax]
+    name: ref[LabelSyntax]?
     action: ActionSyntax
 )
 
@@ -349,14 +349,14 @@ define CaseSyntax
 (
     start: size_t
     end: size_t
-    condition: pointer[Vector[OperandSyntax]]
+    condition: ref[Vector[OperandSyntax]]?
 )
 
 define BranchSyntax
 (
     start: size_t
     end: size_t
-    cases: pointer[Vector[CaseSyntax]]
+    cases: ref[Vector[CaseSyntax]]?
     consequent: StatementSyntax
 )
 
@@ -364,9 +364,9 @@ define MatchSyntax
 (
     start: size_t
     end: size_t
-    scrutinee: pointer[Vector[OperandSyntax]]
-    branches: pointer[Vector[BranchSyntax]]
-    alternative: pointer[ElseSyntax]
+    scrutinee: ref[Vector[OperandSyntax]]?
+    branches: ref[Vector[BranchSyntax]]?
+    alternative: ref[ElseSyntax]?
 )
 
 define ElseSyntax
@@ -387,49 +387,49 @@ define IfSyntax
 (
     start: size_t
     end: size_t
-    condition: pointer[Vector[OperandSyntax]]
+    condition: ref[Vector[OperandSyntax]]?
     consequent: ThenSyntax
-    alternative: pointer[ElseSyntax]
+    alternative: ref[ElseSyntax]?
 )
 
 define ElementSyntax
 (
     start: size_t
     end: size_t
-    operation: pointer[Vector[OperandSyntax]]
-    attributes: pointer[Vector[AttributeSyntax]]
+    operation: ref[Vector[OperandSyntax]]?
+    attributes: ref[Vector[AttributeSyntax]]?
 )
 
 define VectorSyntax
 (
     start: size_t
     end: size_t
-    elements: pointer[Vector[ElementSyntax]]
-    lifetime: pointer[LifetimeSyntax]
+    elements: ref[Vector[ElementSyntax]]?
+    lifetime: ref[LifetimeSyntax]?
 )
 
 define ValueSyntax
 (
     start: size_t
     end: size_t
-    value: pointer[Vector[OperandSyntax]]
-    attributes: pointer[Vector[AttributeSyntax]]
+    value: ref[Vector[OperandSyntax]]?
+    attributes: ref[Vector[AttributeSyntax]]?
 )
 
 define ComponentSyntax
 (
     start: size_t
     end: size_t
-    operands: pointer[Vector[OperandSyntax]]
-    attributes: pointer[Vector[AttributeSyntax]]
-    value: pointer[ValueSyntax]
+    operands: ref[Vector[OperandSyntax]]?
+    attributes: ref[Vector[AttributeSyntax]]?
+    value: ref[ValueSyntax]?
 )
 
 define ObjectSyntax
 (
     start: size_t
     end: size_t
-    components: pointer[Vector[ComponentSyntax]]
+    components: ref[Vector[ComponentSyntax]]?
 )
 
 define LiteralSyntax
@@ -472,14 +472,14 @@ define OperandSyntax
     start: size_t
     end: size_t
     expression: ExpressionSyntax
-    members: pointer[Vector[MemberAccessSyntax]]
+    members: ref[Vector[MemberAccessSyntax]]?
 )
 
 define InitializerSyntax
 (
     start: size_t
     end: size_t
-    operands: pointer[Vector[OperandSyntax]]
+    operands: ref[Vector[OperandSyntax]]?
 )
 
 define VersionSyntax
@@ -495,7 +495,7 @@ define PackageSyntax
     start: size_t
     end: size_t
     name: NameSyntax
-    version: pointer[VersionSyntax]
+    version: ref[VersionSyntax]?
 )
 
 define ModuleSyntax
@@ -526,7 +526,7 @@ define MacroSyntax
     end: size_t
     name: String
     model: ModelSyntax
-    rule: pointer[Vector[OperandSyntax]]
+    rule: ref[Vector[OperandSyntax]]?
 )
 
 define ExtendSyntax
@@ -540,7 +540,7 @@ define ExtendsSyntax
 (
     start: size_t
     end: size_t
-    extensions: pointer[Vector[ExtendSyntax]]
+    extensions: ref[Vector[ExtendSyntax]]?
 )
 
 define IntrinsicSyntax
@@ -572,12 +572,12 @@ define RoutineSyntax
 (
     start: size_t
     end: size_t
-    generics: pointer[GenericArgumentsSyntax]
-    lifetime: pointer[LifetimeSyntax]
-    parameters: pointer[ParameterSetSyntax]
-    attributes: pointer[Vector[AttributeSyntax]]
-    returns_: pointer[ReturnsSyntax]
-    throws_: pointer[ThrowsSyntax]
+    generics: ref[GenericArgumentsSyntax]?
+    lifetime: ref[LifetimeSyntax]?
+    parameters: ref[ParameterSetSyntax]?
+    attributes: ref[Vector[AttributeSyntax]]?
+    returns_: ref[ReturnsSyntax]?
+    throws_: ref[ThrowsSyntax]?
     implementation: ImplementationSyntax
 )
 
@@ -626,8 +626,8 @@ define InitSyntax
 (
     start: size_t
     end: size_t
-    lifetime: pointer[LifetimeSyntax]
-    parameters: pointer[ParameterSetSyntax]
+    lifetime: ref[LifetimeSyntax]?
+    parameters: ref[ParameterSetSyntax]?
     action: ActionSyntax
 )
 
@@ -642,10 +642,10 @@ define TraitSyntax
     start: size_t
     end: size_t
     name: NameSyntax
-    extension: pointer[ExtendsSyntax]
-    attributes: pointer[Vector[AttributeSyntax]]
-    uses: pointer[Vector[UseSyntax]]
-    functions: pointer[Vector[MethodSyntax]]
+    extension: ref[ExtendsSyntax]?
+    attributes: ref[Vector[AttributeSyntax]]?
+    uses: ref[Vector[UseSyntax]]?
+    functions: ref[Vector[MethodSyntax]]?
 )
 
 define ImplementSyntax
@@ -653,9 +653,9 @@ define ImplementSyntax
     start: size_t
     end: size_t
     type: TypeSyntax
-    attributes: pointer[Vector[AttributeSyntax]]
-    uses: pointer[Vector[UseSyntax]]
-    methods: pointer[Vector[MethodSyntax]]
+    attributes: ref[Vector[AttributeSyntax]]?
+    uses: ref[Vector[UseSyntax]]?
+    methods: ref[Vector[MethodSyntax]]?
 )
 
 define UseSyntax
@@ -670,7 +670,7 @@ define ThrowsSyntax
     start: size_t
     end: size_t
     type: TypeSyntax
-    attributes: pointer[Vector[AttributeSyntax]]
+    attributes: ref[Vector[AttributeSyntax]]?
 )
 
 define ReturnsSyntax
@@ -678,7 +678,7 @@ define ReturnsSyntax
     start: size_t
     end: size_t
     type: TypeSyntax
-    attributes: pointer[Vector[AttributeSyntax]]
+    attributes: ref[Vector[AttributeSyntax]]?
 )
 
 define ItemSyntax
@@ -686,15 +686,15 @@ define ItemSyntax
     start: size_t
     end: size_t
     name: String
-    annotation: pointer[TypeAnnotationSyntax]
-    attributes: pointer[Vector[AttributeSyntax]]
+    annotation: ref[TypeAnnotationSyntax]?
+    attributes: ref[Vector[AttributeSyntax]]?
 )
 
 define ParametersSyntax
 (
     start: size_t
     end: size_t
-    items: pointer[Vector[ItemSyntax]]
+    items: ref[Vector[ItemSyntax]]?
 )
 
 define ParameterSetSyntax union (
@@ -719,17 +719,17 @@ define GenericArgumentsSyntax
 (
     start: size_t
     end: size_t
-    generics: pointer[Vector[GenericArgumentSyntax]]
+    generics: ref[Vector[GenericArgumentSyntax]]?
 )
 
 define DelegateSyntax
 (
     start: size_t
     end: size_t
-    parameters: pointer[ParameterSetSyntax]
-    attributes: pointer[Vector[AttributeSyntax]]
-    result: pointer[ReturnsSyntax]
-    error: pointer[ThrowsSyntax]
+    parameters: ref[ParameterSetSyntax]?
+    attributes: ref[Vector[AttributeSyntax]]?
+    result: ref[ReturnsSyntax]?
+    error: ref[ThrowsSyntax]?
 )
 
 define ConstantSyntax
@@ -737,7 +737,7 @@ define ConstantSyntax
     start: size_t
     end: size_t
     type: TypeSyntax
-    operation: pointer[Vector[OperandSyntax]]
+    operation: ref[Vector[OperandSyntax]]?
 )
 
 define VariantSyntax
@@ -745,34 +745,34 @@ define VariantSyntax
     start: size_t
     end: size_t
     name: String
-    attributes: pointer[Vector[AttributeSyntax]]
-    annotation: pointer[TypeAnnotationSyntax]
+    attributes: ref[Vector[AttributeSyntax]]?
+    annotation: ref[TypeAnnotationSyntax]?
 )
 
 define UnionSyntax
 (
     start: size_t
     end: size_t
-    variants: pointer[Vector[VariantSyntax]]
-    body: pointer[BodySyntax]
+    variants: ref[Vector[VariantSyntax]]?
+    body: ref[BodySyntax]?
 )
 
 define NamespaceSyntax
 (
     start: size_t
     end: size_t
-    uses: pointer[Vector[UseSyntax]]
-    declarations: pointer[Vector[DeclarationSyntax]]
+    uses: ref[Vector[UseSyntax]]?
+    declarations: ref[Vector[DeclarationSyntax]]?
 )
 
 define BodySyntax
 (
     start: size_t
     end: size_t
-    uses: pointer[Vector[UseSyntax]]
-    inits: pointer[Vector[InitSyntax]]
-    deInit: pointer[DeInitSyntax]
-    members: pointer[Vector[MemberSyntax]]
+    uses: ref[Vector[UseSyntax]]?
+    inits: ref[Vector[InitSyntax]]?
+    deInit: ref[DeInitSyntax]?
+    members: ref[Vector[MemberSyntax]]?
 )
 
 define ClassSyntax
@@ -780,7 +780,7 @@ define ClassSyntax
     start: size_t
     end: size_t
     structure: StructureSyntax
-    body: pointer[BodySyntax]
+    body: ref[BodySyntax]?
 )
 
 define ConceptSyntax union (
@@ -797,14 +797,14 @@ define GenericParameterSyntax
     start: size_t
     end: size_t
     name: String
-    attributes: pointer[Vector[AttributeSyntax]]
+    attributes: ref[Vector[AttributeSyntax]]?
 )
 
 define GenericParametersSyntax
 (
     start: size_t
     end: size_t
-    parameters: pointer[Vector[GenericParameterSyntax]]
+    parameters: ref[Vector[GenericParameterSyntax]]?
 )
 
 define DefinitionSyntax
@@ -812,8 +812,8 @@ define DefinitionSyntax
     start: size_t
     end: size_t
     name: String
-    parameters: pointer[GenericParametersSyntax]
-    attributes: pointer[Vector[AttributeSyntax]]
+    parameters: ref[GenericParametersSyntax]?
+    attributes: ref[Vector[AttributeSyntax]]?
     concept_: ConceptSyntax
 )
 
@@ -871,9 +871,9 @@ define FileSyntax
 (
     start: size_t
     end: size_t
-    packages: pointer[Vector[PackageSyntax]]
-    uses: pointer[Vector[UseSyntax]]
-    declarations: pointer[Vector[DeclarationSyntax]]
+    packages: ref[Vector[PackageSyntax]]?
+    uses: ref[Vector[UseSyntax]]?
+    declarations: ref[Vector[DeclarationSyntax]]?
 )
 
 define ProgramSyntax
@@ -881,7 +881,7 @@ define ProgramSyntax
     start: size_t
     end: size_t
     file: FileSyntax
-    statements: pointer[Vector[StatementSyntax]]
+    statements: ref[Vector[StatementSyntax]]?
 )
 
 use scaly.memory.Page
@@ -891,20 +891,20 @@ use scaly.containers.HashSet
 use scaly.containers.HashSetBuilder
 
 ; Character constants for punctuation (char literals use double-quote + type annotation)
-let CHAR_LPAREN: char = "("
-let CHAR_RPAREN: char = ")"
-let CHAR_LBRACKET: char = "["
-let CHAR_RBRACKET: char = "]"
-let CHAR_LBRACE: char = "{"
-let CHAR_RBRACE: char = "}"
-let CHAR_COMMA: char = ","
-let CHAR_DOT: char = "."
-let CHAR_EXCL: char = "!"
-let CHAR_QUESTION: char = "?"
-let CHAR_HASH: char = "#"
-let CHAR_DOLLAR: char = "$"
-let CHAR_CARET: char = "^"
-let CHAR_BACKSLASH: char = "\\"
+let CHAR_LPAREN: char "("
+let CHAR_RPAREN: char ")"
+let CHAR_LBRACKET: char "["
+let CHAR_RBRACKET: char "]"
+let CHAR_LBRACE: char "{"
+let CHAR_RBRACE: char "}"
+let CHAR_COMMA: char ","
+let CHAR_DOT: char "."
+let CHAR_EXCL: char "!"
+let CHAR_QUESTION: char "?"
+let CHAR_HASH: char "#"
+let CHAR_DOLLAR: char "$"
+let CHAR_CARET: char "^"
+let CHAR_BACKSLASH: char "\\"
 
 ; Lexer import (uses its own char constants)
 module lexer
@@ -1012,7 +1012,7 @@ define Parser
                 set file: success
 
         let statements_start lexer.position
-        var statements: pointer[Vector[StatementSyntax]] null
+        var statements: ref[Vector[StatementSyntax]]? null
         choose parse_statement_list#()
             when error: ParserError
             {
@@ -1021,7 +1021,7 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[StatementSyntax]]
+            when success: ref[Vector[StatementSyntax]]?
                 set statements: success
 
         let end lexer.position
@@ -1034,7 +1034,7 @@ define Parser
         let start lexer.previous_position
 
         let packages_start lexer.position
-        var packages: pointer[Vector[PackageSyntax]] null
+        var packages: ref[Vector[PackageSyntax]]? null
         choose parse_package_list#()
             when error: ParserError
             {
@@ -1043,11 +1043,11 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[PackageSyntax]]
+            when success: ref[Vector[PackageSyntax]]?
                 set packages: success
 
         let uses_start lexer.position
-        var uses: pointer[Vector[UseSyntax]] null
+        var uses: ref[Vector[UseSyntax]]? null
         choose parse_use_list#()
             when error: ParserError
             {
@@ -1056,11 +1056,11 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[UseSyntax]]
+            when success: ref[Vector[UseSyntax]]?
                 set uses: success
 
         let declarations_start lexer.position
-        var declarations: pointer[Vector[DeclarationSyntax]] null
+        var declarations: ref[Vector[DeclarationSyntax]]? null
         choose parse_declaration_list#()
             when error: ParserError
             {
@@ -1069,7 +1069,7 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[DeclarationSyntax]]
+            when success: ref[Vector[DeclarationSyntax]]?
                 set declarations: success
 
         let end lexer.position
@@ -1077,7 +1077,7 @@ define Parser
         FileSyntax(start, end, packages, uses, declarations)
     }
 
-    function parse_declaration_list#(rp, this: Parser) returns pointer[Vector[DeclarationSyntax]] throws ParserError
+    function parse_declaration_list#(rp, this: Parser) returns ref[Vector[DeclarationSyntax]]? throws ParserError
     {
         var list List[DeclarationSyntax]$()
         while true
@@ -1276,7 +1276,7 @@ define Parser
         throw ParserError.Different(DifferentSyntax())
     }
 
-    function parse_member_list#(rp, this: Parser) returns pointer[Vector[MemberSyntax]] throws ParserError
+    function parse_member_list#(rp, this: Parser) returns ref[Vector[MemberSyntax]]? throws ParserError
     {
         var list List[MemberSyntax]$()
         while true
@@ -1416,7 +1416,7 @@ define Parser
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected identifier")))
 
         let parameters_start lexer.position
-        var parameters: pointer[GenericParametersSyntax] null
+        var parameters: ref[GenericParametersSyntax]? null
         choose parse_genericparameters#()
             when error: ParserError
             {
@@ -1431,7 +1431,7 @@ define Parser
         lexer.parse_colon#()
 
         let attributes_start lexer.position
-        var attributes: pointer[Vector[AttributeSyntax]] null
+        var attributes: ref[Vector[AttributeSyntax]]? null
         choose parse_attribute_list#()
             when error: ParserError
             {
@@ -1440,7 +1440,7 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[AttributeSyntax]]
+            when success: ref[Vector[AttributeSyntax]]?
                 set attributes: success
 
         let concept__start lexer.position
@@ -1470,7 +1470,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 
         let parameters_start lexer.position
-        var parameters: pointer[Vector[GenericParameterSyntax]]
+        var parameters: ref[Vector[GenericParameterSyntax]]?
         choose parse_genericparameter_list#()
             when error: ParserError
             {
@@ -1480,7 +1480,7 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[GenericParameterSyntax]]
+            when success: ref[Vector[GenericParameterSyntax]]?
                 set parameters: success
 
         if ~lexer.parse_punctuation#(CHAR_RBRACKET)
@@ -1491,7 +1491,7 @@ define Parser
         GenericParametersSyntax(start, end, parameters)
     }
 
-    function parse_genericparameter_list#(rp, this: Parser) returns pointer[Vector[GenericParameterSyntax]] throws ParserError
+    function parse_genericparameter_list#(rp, this: Parser) returns ref[Vector[GenericParameterSyntax]]? throws ParserError
     {
         var list List[GenericParameterSyntax]$()
         while true
@@ -1524,7 +1524,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 
         let attributes_start lexer.position
-        var attributes: pointer[Vector[AttributeSyntax]] null
+        var attributes: ref[Vector[AttributeSyntax]]? null
         choose parse_attribute_list#()
             when error: ParserError
             {
@@ -1533,7 +1533,7 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[AttributeSyntax]]
+            when success: ref[Vector[AttributeSyntax]]?
                 set attributes: success
 
         lexer.parse_punctuation#(CHAR_COMMA)
@@ -1623,7 +1623,7 @@ define Parser
         lexer.parse_colon#()
 
         let body_start lexer.position
-        var body: pointer[BodySyntax] null
+        var body: ref[BodySyntax]? null
         choose parse_body#()
             when error: ParserError
             {
@@ -1650,7 +1650,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 
         let uses_start lexer.position
-        var uses: pointer[Vector[UseSyntax]] null
+        var uses: ref[Vector[UseSyntax]]? null
         choose parse_use_list#()
             when error: ParserError
             {
@@ -1659,11 +1659,11 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[UseSyntax]]
+            when success: ref[Vector[UseSyntax]]?
                 set uses: success
 
         let inits_start lexer.position
-        var inits: pointer[Vector[InitSyntax]] null
+        var inits: ref[Vector[InitSyntax]]? null
         choose parse_init_list#()
             when error: ParserError
             {
@@ -1672,11 +1672,11 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[InitSyntax]]
+            when success: ref[Vector[InitSyntax]]?
                 set inits: success
 
         let deInit_start lexer.position
-        var deInit: pointer[DeInitSyntax] null
+        var deInit: ref[DeInitSyntax]? null
         choose parse_deinit#()
             when error: ParserError
             {
@@ -1689,7 +1689,7 @@ define Parser
                 set deInit: success
 
         let members_start lexer.position
-        var members: pointer[Vector[MemberSyntax]] null
+        var members: ref[Vector[MemberSyntax]]? null
         choose parse_member_list#()
             when error: ParserError
             {
@@ -1698,7 +1698,7 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[MemberSyntax]]
+            when success: ref[Vector[MemberSyntax]]?
                 set members: success
 
         if ~lexer.parse_punctuation#(CHAR_RBRACE)
@@ -1719,7 +1719,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 
         let uses_start lexer.position
-        var uses: pointer[Vector[UseSyntax]] null
+        var uses: ref[Vector[UseSyntax]]? null
         choose parse_use_list#()
             when error: ParserError
             {
@@ -1728,11 +1728,11 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[UseSyntax]]
+            when success: ref[Vector[UseSyntax]]?
                 set uses: success
 
         let declarations_start lexer.position
-        var declarations: pointer[Vector[DeclarationSyntax]] null
+        var declarations: ref[Vector[DeclarationSyntax]]? null
         choose parse_declaration_list#()
             when error: ParserError
             {
@@ -1741,7 +1741,7 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[DeclarationSyntax]]
+            when success: ref[Vector[DeclarationSyntax]]?
                 set declarations: success
 
         if ~lexer.parse_punctuation#(CHAR_RBRACE)
@@ -1767,7 +1767,7 @@ define Parser
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected '('")))
 
         let variants_start lexer.position
-        var variants: pointer[Vector[VariantSyntax]]
+        var variants: ref[Vector[VariantSyntax]]?
         choose parse_variant_list#()
             when error: ParserError
             {
@@ -1777,7 +1777,7 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[VariantSyntax]]
+            when success: ref[Vector[VariantSyntax]]?
                 set variants: success
 
         if ~lexer.parse_punctuation#(CHAR_RPAREN)
@@ -1786,7 +1786,7 @@ define Parser
         lexer.parse_colon#()
 
         let body_start lexer.position
-        var body: pointer[BodySyntax] null
+        var body: ref[BodySyntax]? null
         choose parse_body#()
             when error: ParserError
             {
@@ -1805,7 +1805,7 @@ define Parser
         UnionSyntax(start, end, variants, body)
     }
 
-    function parse_variant_list#(rp, this: Parser) returns pointer[Vector[VariantSyntax]] throws ParserError
+    function parse_variant_list#(rp, this: Parser) returns ref[Vector[VariantSyntax]]? throws ParserError
     {
         var list List[VariantSyntax]$()
         while true
@@ -1838,7 +1838,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 
         let attributes_start lexer.position
-        var attributes: pointer[Vector[AttributeSyntax]] null
+        var attributes: ref[Vector[AttributeSyntax]]? null
         choose parse_attribute_list#()
             when error: ParserError
             {
@@ -1847,11 +1847,11 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[AttributeSyntax]]
+            when success: ref[Vector[AttributeSyntax]]?
                 set attributes: success
 
         let annotation_start lexer.position
-        var annotation: pointer[TypeAnnotationSyntax] null
+        var annotation: ref[TypeAnnotationSyntax]? null
         choose parse_typeannotation#()
             when error: ParserError
             {
@@ -1885,7 +1885,7 @@ define Parser
                 set type: success
 
         let operation_start lexer.position
-        var operation: pointer[Vector[OperandSyntax]] null
+        var operation: ref[Vector[OperandSyntax]]? null
         choose parse_operand_list#()
             when error: ParserError
             {
@@ -1894,7 +1894,7 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[OperandSyntax]]
+            when success: ref[Vector[OperandSyntax]]?
                 set operation: success
 
         lexer.parse_colon#()
@@ -1912,7 +1912,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 
         let parameters_start lexer.position
-        var parameters: pointer[ParameterSetSyntax] null
+        var parameters: ref[ParameterSetSyntax]? null
         choose parse_parameterset#()
             when error: ParserError
             {
@@ -1925,7 +1925,7 @@ define Parser
                 set parameters: success
 
         let attributes_start lexer.position
-        var attributes: pointer[Vector[AttributeSyntax]] null
+        var attributes: ref[Vector[AttributeSyntax]]? null
         choose parse_attribute_list#()
             when error: ParserError
             {
@@ -1934,11 +1934,11 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[AttributeSyntax]]
+            when success: ref[Vector[AttributeSyntax]]?
                 set attributes: success
 
         let result_start lexer.position
-        var result: pointer[ReturnsSyntax] null
+        var result: ref[ReturnsSyntax]? null
         choose parse_returns#()
             when error: ParserError
             {
@@ -1951,7 +1951,7 @@ define Parser
                 set result: success
 
         let error_start lexer.position
-        var error: pointer[ThrowsSyntax] null
+        var error: ref[ThrowsSyntax]? null
         choose parse_throws#()
             when error: ParserError
             {
@@ -1976,7 +1976,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 
         let generics_start lexer.position
-        var generics: pointer[Vector[GenericArgumentSyntax]] null
+        var generics: ref[Vector[GenericArgumentSyntax]]? null
         choose parse_genericargument_list#()
             when error: ParserError
             {
@@ -1985,7 +1985,7 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[GenericArgumentSyntax]]
+            when success: ref[Vector[GenericArgumentSyntax]]?
                 set generics: success
 
         if ~lexer.parse_punctuation#(CHAR_RBRACKET)
@@ -1996,7 +1996,7 @@ define Parser
         GenericArgumentsSyntax(start, end, generics)
     }
 
-    function parse_genericargument_list#(rp, this: Parser) returns pointer[Vector[GenericArgumentSyntax]] throws ParserError
+    function parse_genericargument_list#(rp, this: Parser) returns ref[Vector[GenericArgumentSyntax]]? throws ParserError
     {
         var list List[GenericArgumentSyntax]$()
         while true
@@ -2084,7 +2084,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 
         let items_start lexer.position
-        var items: pointer[Vector[ItemSyntax]] null
+        var items: ref[Vector[ItemSyntax]]? null
         choose parse_item_list#()
             when error: ParserError
             {
@@ -2093,7 +2093,7 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[ItemSyntax]]
+            when success: ref[Vector[ItemSyntax]]?
                 set items: success
 
         if ~lexer.parse_punctuation#(CHAR_RPAREN)
@@ -2104,7 +2104,7 @@ define Parser
         ParametersSyntax(start, end, items)
     }
 
-    function parse_item_list#(rp, this: Parser) returns pointer[Vector[ItemSyntax]] throws ParserError
+    function parse_item_list#(rp, this: Parser) returns ref[Vector[ItemSyntax]]? throws ParserError
     {
         var list List[ItemSyntax]$()
         while true
@@ -2137,7 +2137,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 
         let annotation_start lexer.position
-        var annotation: pointer[TypeAnnotationSyntax] null
+        var annotation: ref[TypeAnnotationSyntax]? null
         choose parse_typeannotation#()
             when error: ParserError
             {
@@ -2154,7 +2154,7 @@ define Parser
         lexer.parse_colon#()
 
         let attributes_start lexer.position
-        var attributes: pointer[Vector[AttributeSyntax]] null
+        var attributes: ref[Vector[AttributeSyntax]]? null
         choose parse_attribute_list#()
             when error: ParserError
             {
@@ -2163,7 +2163,7 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[AttributeSyntax]]
+            when success: ref[Vector[AttributeSyntax]]?
                 set attributes: success
 
         lexer.parse_colon#()
@@ -2195,7 +2195,7 @@ define Parser
                 set type: success
 
         let attributes_start lexer.position
-        var attributes: pointer[Vector[AttributeSyntax]] null
+        var attributes: ref[Vector[AttributeSyntax]]? null
         choose parse_attribute_list#()
             when error: ParserError
             {
@@ -2204,7 +2204,7 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[AttributeSyntax]]
+            when success: ref[Vector[AttributeSyntax]]?
                 set attributes: success
 
         let end lexer.position
@@ -2234,7 +2234,7 @@ define Parser
                 set type: success
 
         let attributes_start lexer.position
-        var attributes: pointer[Vector[AttributeSyntax]] null
+        var attributes: ref[Vector[AttributeSyntax]]? null
         choose parse_attribute_list#()
             when error: ParserError
             {
@@ -2243,7 +2243,7 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[AttributeSyntax]]
+            when success: ref[Vector[AttributeSyntax]]?
                 set attributes: success
 
         let end lexer.position
@@ -2251,7 +2251,7 @@ define Parser
         ThrowsSyntax(start, end, type, attributes)
     }
 
-    function parse_use_list#(rp, this: Parser) returns pointer[Vector[UseSyntax]] throws ParserError
+    function parse_use_list#(rp, this: Parser) returns ref[Vector[UseSyntax]]? throws ParserError
     {
         var list List[UseSyntax]$()
         while true
@@ -2325,7 +2325,7 @@ define Parser
                 set type: success
 
         let attributes_start lexer.position
-        var attributes: pointer[Vector[AttributeSyntax]] null
+        var attributes: ref[Vector[AttributeSyntax]]? null
         choose parse_attribute_list#()
             when error: ParserError
             {
@@ -2334,7 +2334,7 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[AttributeSyntax]]
+            when success: ref[Vector[AttributeSyntax]]?
                 set attributes: success
 
         lexer.parse_colon#()
@@ -2343,7 +2343,7 @@ define Parser
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected '{'")))
 
         let uses_start lexer.position
-        var uses: pointer[Vector[UseSyntax]] null
+        var uses: ref[Vector[UseSyntax]]? null
         choose parse_use_list#()
             when error: ParserError
             {
@@ -2352,11 +2352,11 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[UseSyntax]]
+            when success: ref[Vector[UseSyntax]]?
                 set uses: success
 
         let methods_start lexer.position
-        var methods: pointer[Vector[MethodSyntax]] null
+        var methods: ref[Vector[MethodSyntax]]? null
         choose parse_method_list#()
             when error: ParserError
             {
@@ -2365,7 +2365,7 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[MethodSyntax]]
+            when success: ref[Vector[MethodSyntax]]?
                 set methods: success
 
         if ~lexer.parse_punctuation#(CHAR_RBRACE)
@@ -2400,7 +2400,7 @@ define Parser
                 set name: success
 
         let extension_start lexer.position
-        var extension: pointer[ExtendsSyntax] null
+        var extension: ref[ExtendsSyntax]? null
         choose parse_extends#()
             when error: ParserError
             {
@@ -2413,7 +2413,7 @@ define Parser
                 set extension: success
 
         let attributes_start lexer.position
-        var attributes: pointer[Vector[AttributeSyntax]] null
+        var attributes: ref[Vector[AttributeSyntax]]? null
         choose parse_attribute_list#()
             when error: ParserError
             {
@@ -2422,14 +2422,14 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[AttributeSyntax]]
+            when success: ref[Vector[AttributeSyntax]]?
                 set attributes: success
 
         if ~lexer.parse_punctuation#(CHAR_LBRACE)
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected '{'")))
 
         let uses_start lexer.position
-        var uses: pointer[Vector[UseSyntax]] null
+        var uses: ref[Vector[UseSyntax]]? null
         choose parse_use_list#()
             when error: ParserError
             {
@@ -2438,11 +2438,11 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[UseSyntax]]
+            when success: ref[Vector[UseSyntax]]?
                 set uses: success
 
         let functions_start lexer.position
-        var functions: pointer[Vector[MethodSyntax]] null
+        var functions: ref[Vector[MethodSyntax]]? null
         choose parse_method_list#()
             when error: ParserError
             {
@@ -2451,7 +2451,7 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[MethodSyntax]]
+            when success: ref[Vector[MethodSyntax]]?
                 set functions: success
 
         if ~lexer.parse_punctuation#(CHAR_RBRACE)
@@ -2464,7 +2464,7 @@ define Parser
         TraitSyntax(start, end, name, extension, attributes, uses, functions)
     }
 
-    function parse_method_list#(rp, this: Parser) returns pointer[Vector[MethodSyntax]] throws ParserError
+    function parse_method_list#(rp, this: Parser) returns ref[Vector[MethodSyntax]]? throws ParserError
     {
         var list List[MethodSyntax]$()
         while true
@@ -2523,7 +2523,7 @@ define Parser
         throw ParserError.Different(DifferentSyntax())
     }
 
-    function parse_init_list#(rp, this: Parser) returns pointer[Vector[InitSyntax]] throws ParserError
+    function parse_init_list#(rp, this: Parser) returns ref[Vector[InitSyntax]]? throws ParserError
     {
         var list List[InitSyntax]$()
         while true
@@ -2555,7 +2555,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 
         let lifetime_start lexer.position
-        var lifetime: pointer[LifetimeSyntax] null
+        var lifetime: ref[LifetimeSyntax]? null
         choose parse_lifetime#()
             when error: ParserError
             {
@@ -2568,7 +2568,7 @@ define Parser
                 set lifetime: success
 
         let parameters_start lexer.position
-        var parameters: pointer[ParameterSetSyntax] null
+        var parameters: ref[ParameterSetSyntax]? null
         choose parse_parameterset#()
             when error: ParserError
             {
@@ -2768,7 +2768,7 @@ define Parser
         let start lexer.previous_position
 
         let generics_start lexer.position
-        var generics: pointer[GenericArgumentsSyntax] null
+        var generics: ref[GenericArgumentsSyntax]? null
         choose parse_genericarguments#()
             when error: ParserError
             {
@@ -2781,7 +2781,7 @@ define Parser
                 set generics: success
 
         let lifetime_start lexer.position
-        var lifetime: pointer[LifetimeSyntax] null
+        var lifetime: ref[LifetimeSyntax]? null
         choose parse_lifetime#()
             when error: ParserError
             {
@@ -2794,7 +2794,7 @@ define Parser
                 set lifetime: success
 
         let parameters_start lexer.position
-        var parameters: pointer[ParameterSetSyntax] null
+        var parameters: ref[ParameterSetSyntax]? null
         choose parse_parameterset#()
             when error: ParserError
             {
@@ -2807,7 +2807,7 @@ define Parser
                 set parameters: success
 
         let attributes_start lexer.position
-        var attributes: pointer[Vector[AttributeSyntax]] null
+        var attributes: ref[Vector[AttributeSyntax]]? null
         choose parse_attribute_list#()
             when error: ParserError
             {
@@ -2816,11 +2816,11 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[AttributeSyntax]]
+            when success: ref[Vector[AttributeSyntax]]?
                 set attributes: success
 
         let returns__start lexer.position
-        var returns_: pointer[ReturnsSyntax] null
+        var returns_: ref[ReturnsSyntax]? null
         choose parse_returns#()
             when error: ParserError
             {
@@ -2835,7 +2835,7 @@ define Parser
         lexer.parse_colon#()
 
         let throws__start lexer.position
-        var throws_: pointer[ThrowsSyntax] null
+        var throws_: ref[ThrowsSyntax]? null
         choose parse_throws#()
             when error: ParserError
             {
@@ -2961,7 +2961,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 
         let extensions_start lexer.position
-        var extensions: pointer[Vector[ExtendSyntax]] null
+        var extensions: ref[Vector[ExtendSyntax]]? null
         choose parse_extend_list#()
             when error: ParserError
             {
@@ -2970,7 +2970,7 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[ExtendSyntax]]
+            when success: ref[Vector[ExtendSyntax]]?
                 set extensions: success
 
         let end lexer.position
@@ -2978,7 +2978,7 @@ define Parser
         ExtendsSyntax(start, end, extensions)
     }
 
-    function parse_extend_list#(rp, this: Parser) returns pointer[Vector[ExtendSyntax]] throws ParserError
+    function parse_extend_list#(rp, this: Parser) returns ref[Vector[ExtendSyntax]]? throws ParserError
     {
         var list List[ExtendSyntax]$()
         while true
@@ -3047,7 +3047,7 @@ define Parser
                 set model: success
 
         let rule_start lexer.position
-        var rule: pointer[Vector[OperandSyntax]]
+        var rule: ref[Vector[OperandSyntax]]?
         choose parse_operand_list#()
             when error: ParserError
             {
@@ -3057,7 +3057,7 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[OperandSyntax]]
+            when success: ref[Vector[OperandSyntax]]?
                 set rule: success
 
         let end lexer.position
@@ -3065,7 +3065,7 @@ define Parser
         MacroSyntax(start, end, name, model, rule)
     }
 
-    function parse_attribute_list#(rp, this: Parser) returns pointer[Vector[AttributeSyntax]] throws ParserError
+    function parse_attribute_list#(rp, this: Parser) returns ref[Vector[AttributeSyntax]]? throws ParserError
     {
         var list List[AttributeSyntax]$()
         while true
@@ -3181,7 +3181,7 @@ define Parser
         ModuleSyntax(start, end, name)
     }
 
-    function parse_package_list#(rp, this: Parser) returns pointer[Vector[PackageSyntax]] throws ParserError
+    function parse_package_list#(rp, this: Parser) returns ref[Vector[PackageSyntax]]? throws ParserError
     {
         var list List[PackageSyntax]$()
         while true
@@ -3227,7 +3227,7 @@ define Parser
                 set name: success
 
         let version_start lexer.position
-        var version: pointer[VersionSyntax] null
+        var version: ref[VersionSyntax]? null
         choose parse_version#()
             when error: ParserError
             {
@@ -3280,7 +3280,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 
         let operands_start lexer.position
-        var operands: pointer[Vector[OperandSyntax]]
+        var operands: ref[Vector[OperandSyntax]]?
         choose parse_operand_list#()
             when error: ParserError
             {
@@ -3290,7 +3290,7 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[OperandSyntax]]
+            when success: ref[Vector[OperandSyntax]]?
                 set operands: success
 
         if ~lexer.parse_punctuation#(CHAR_RPAREN)
@@ -3301,7 +3301,7 @@ define Parser
         InitializerSyntax(start, end, operands)
     }
 
-    function parse_operand_list#(rp, this: Parser) returns pointer[Vector[OperandSyntax]] throws ParserError
+    function parse_operand_list#(rp, this: Parser) returns ref[Vector[OperandSyntax]]? throws ParserError
     {
         var list List[OperandSyntax]$()
         while true
@@ -3338,7 +3338,7 @@ define Parser
                 set expression: success
 
         let members_start lexer.position
-        var members: pointer[Vector[MemberAccessSyntax]] null
+        var members: ref[Vector[MemberAccessSyntax]]? null
         choose parse_memberaccess_list#()
             when error: ParserError
             {
@@ -3347,7 +3347,7 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[MemberAccessSyntax]]
+            when success: ref[Vector[MemberAccessSyntax]]?
                 set members: success
 
         let end lexer.position
@@ -3355,7 +3355,7 @@ define Parser
         OperandSyntax(start, end, expression, members)
     }
 
-    function parse_memberaccess_list#(rp, this: Parser) returns pointer[Vector[MemberAccessSyntax]] throws ParserError
+    function parse_memberaccess_list#(rp, this: Parser) returns ref[Vector[MemberAccessSyntax]]? throws ParserError
     {
         var list List[MemberAccessSyntax]$()
         while true
@@ -3614,7 +3614,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 
         let components_start lexer.position
-        var components: pointer[Vector[ComponentSyntax]] null
+        var components: ref[Vector[ComponentSyntax]]? null
         choose parse_component_list#()
             when error: ParserError
             {
@@ -3623,7 +3623,7 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[ComponentSyntax]]
+            when success: ref[Vector[ComponentSyntax]]?
                 set components: success
 
         if ~lexer.parse_punctuation#(CHAR_RPAREN)
@@ -3634,7 +3634,7 @@ define Parser
         ObjectSyntax(start, end, components)
     }
 
-    function parse_component_list#(rp, this: Parser) returns pointer[Vector[ComponentSyntax]] throws ParserError
+    function parse_component_list#(rp, this: Parser) returns ref[Vector[ComponentSyntax]]? throws ParserError
     {
         var list List[ComponentSyntax]$()
         while true
@@ -3663,15 +3663,15 @@ define Parser
         let start lexer.previous_position
 
         let operands_start lexer.position
-        var operands: pointer[Vector[OperandSyntax]]
+        var operands: ref[Vector[OperandSyntax]]?
         choose parse_operand_list#()
             when error: ParserError
                 throw error
-            when success: pointer[Vector[OperandSyntax]]
+            when success: ref[Vector[OperandSyntax]]?
                 set operands: success
 
         let attributes_start lexer.position
-        var attributes: pointer[Vector[AttributeSyntax]] null
+        var attributes: ref[Vector[AttributeSyntax]]? null
         choose parse_attribute_list#()
             when error: ParserError
             {
@@ -3680,11 +3680,11 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[AttributeSyntax]]
+            when success: ref[Vector[AttributeSyntax]]?
                 set attributes: success
 
         let value_start lexer.position
-        var value: pointer[ValueSyntax] null
+        var value: ref[ValueSyntax]? null
         choose parse_value#()
             when error: ParserError
             {
@@ -3711,7 +3711,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 
         let value_start lexer.position
-        var value: pointer[Vector[OperandSyntax]]
+        var value: ref[Vector[OperandSyntax]]?
         choose parse_operand_list#()
             when error: ParserError
             {
@@ -3721,11 +3721,11 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[OperandSyntax]]
+            when success: ref[Vector[OperandSyntax]]?
                 set value: success
 
         let attributes_start lexer.position
-        var attributes: pointer[Vector[AttributeSyntax]] null
+        var attributes: ref[Vector[AttributeSyntax]]? null
         choose parse_attribute_list#()
             when error: ParserError
             {
@@ -3734,7 +3734,7 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[AttributeSyntax]]
+            when success: ref[Vector[AttributeSyntax]]?
                 set attributes: success
 
         let end lexer.position
@@ -3750,7 +3750,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 
         let elements_start lexer.position
-        var elements: pointer[Vector[ElementSyntax]]
+        var elements: ref[Vector[ElementSyntax]]?
         choose parse_element_list#()
             when error: ParserError
             {
@@ -3760,14 +3760,14 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[ElementSyntax]]
+            when success: ref[Vector[ElementSyntax]]?
                 set elements: success
 
         if ~lexer.parse_punctuation#(CHAR_RBRACKET)
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected ']'")))
 
         let lifetime_start lexer.position
-        var lifetime: pointer[LifetimeSyntax] null
+        var lifetime: ref[LifetimeSyntax]? null
         choose parse_lifetime#()
             when error: ParserError
             {
@@ -3784,7 +3784,7 @@ define Parser
         VectorSyntax(start, end, elements, lifetime)
     }
 
-    function parse_element_list#(rp, this: Parser) returns pointer[Vector[ElementSyntax]] throws ParserError
+    function parse_element_list#(rp, this: Parser) returns ref[Vector[ElementSyntax]]? throws ParserError
     {
         var list List[ElementSyntax]$()
         while true
@@ -3813,15 +3813,15 @@ define Parser
         let start lexer.previous_position
 
         let operation_start lexer.position
-        var operation: pointer[Vector[OperandSyntax]]
+        var operation: ref[Vector[OperandSyntax]]?
         choose parse_operand_list#()
             when error: ParserError
                 throw error
-            when success: pointer[Vector[OperandSyntax]]
+            when success: ref[Vector[OperandSyntax]]?
                 set operation: success
 
         let attributes_start lexer.position
-        var attributes: pointer[Vector[AttributeSyntax]] null
+        var attributes: ref[Vector[AttributeSyntax]]? null
         choose parse_attribute_list#()
             when error: ParserError
             {
@@ -3830,7 +3830,7 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[AttributeSyntax]]
+            when success: ref[Vector[AttributeSyntax]]?
                 set attributes: success
 
         lexer.parse_punctuation#(CHAR_COMMA)
@@ -3848,7 +3848,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 
         let condition_start lexer.position
-        var condition: pointer[Vector[OperandSyntax]]
+        var condition: ref[Vector[OperandSyntax]]?
         choose parse_operand_list#()
             when error: ParserError
             {
@@ -3858,7 +3858,7 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[OperandSyntax]]
+            when success: ref[Vector[OperandSyntax]]?
                 set condition: success
 
         if ~lexer.parse_colon#()
@@ -3879,7 +3879,7 @@ define Parser
                 set consequent: success
 
         let alternative_start lexer.position
-        var alternative: pointer[ElseSyntax] null
+        var alternative: ref[ElseSyntax]? null
         choose parse_else#()
             when error: ParserError
             {
@@ -3951,7 +3951,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 
         let scrutinee_start lexer.position
-        var scrutinee: pointer[Vector[OperandSyntax]]
+        var scrutinee: ref[Vector[OperandSyntax]]?
         choose parse_operand_list#()
             when error: ParserError
             {
@@ -3961,14 +3961,14 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[OperandSyntax]]
+            when success: ref[Vector[OperandSyntax]]?
                 set scrutinee: success
 
         if ~lexer.parse_colon#()
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected colon or newline")))
 
         let branches_start lexer.position
-        var branches: pointer[Vector[BranchSyntax]]
+        var branches: ref[Vector[BranchSyntax]]?
         choose parse_branch_list#()
             when error: ParserError
             {
@@ -3978,11 +3978,11 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[BranchSyntax]]
+            when success: ref[Vector[BranchSyntax]]?
                 set branches: success
 
         let alternative_start lexer.position
-        var alternative: pointer[ElseSyntax] null
+        var alternative: ref[ElseSyntax]? null
         choose parse_else#()
             when error: ParserError
             {
@@ -3999,7 +3999,7 @@ define Parser
         MatchSyntax(start, end, scrutinee, branches, alternative)
     }
 
-    function parse_branch_list#(rp, this: Parser) returns pointer[Vector[BranchSyntax]] throws ParserError
+    function parse_branch_list#(rp, this: Parser) returns ref[Vector[BranchSyntax]]? throws ParserError
     {
         var list List[BranchSyntax]$()
         while true
@@ -4028,11 +4028,11 @@ define Parser
         let start lexer.previous_position
 
         let cases_start lexer.position
-        var cases: pointer[Vector[CaseSyntax]]
+        var cases: ref[Vector[CaseSyntax]]?
         choose parse_case_list#()
             when error: ParserError
                 throw error
-            when success: pointer[Vector[CaseSyntax]]
+            when success: ref[Vector[CaseSyntax]]?
                 set cases: success
 
         if ~lexer.parse_colon#()
@@ -4057,7 +4057,7 @@ define Parser
         BranchSyntax(start, end, cases, consequent)
     }
 
-    function parse_case_list#(rp, this: Parser) returns pointer[Vector[CaseSyntax]] throws ParserError
+    function parse_case_list#(rp, this: Parser) returns ref[Vector[CaseSyntax]]? throws ParserError
     {
         var list List[CaseSyntax]$()
         while true
@@ -4089,7 +4089,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 
         let condition_start lexer.position
-        var condition: pointer[Vector[OperandSyntax]]
+        var condition: ref[Vector[OperandSyntax]]?
         choose parse_operand_list#()
             when error: ParserError
             {
@@ -4099,7 +4099,7 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[OperandSyntax]]
+            when success: ref[Vector[OperandSyntax]]?
                 set condition: success
 
         let end lexer.position
@@ -4107,7 +4107,7 @@ define Parser
         CaseSyntax(start, end, condition)
     }
 
-    function parse_statement_list#(rp, this: Parser) returns pointer[Vector[StatementSyntax]] throws ParserError
+    function parse_statement_list#(rp, this: Parser) returns ref[Vector[StatementSyntax]]? throws ParserError
     {
         var list List[StatementSyntax]$()
         while true
@@ -4175,7 +4175,7 @@ define Parser
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected colon or newline")))
 
         let name_start lexer.position
-        var name: pointer[LabelSyntax] null
+        var name: ref[LabelSyntax]? null
         choose parse_label#()
             when error: ParserError
             {
@@ -4214,7 +4214,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 
         let condition_start lexer.position
-        var condition: pointer[Vector[OperandSyntax]]
+        var condition: ref[Vector[OperandSyntax]]?
         choose parse_operand_list#()
             when error: ParserError
             {
@@ -4224,14 +4224,14 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[OperandSyntax]]
+            when success: ref[Vector[OperandSyntax]]?
                 set condition: success
 
         if ~lexer.parse_colon#()
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected colon or newline")))
 
         let cases_start lexer.position
-        var cases: pointer[Vector[WhenSyntax]] null
+        var cases: ref[Vector[WhenSyntax]]? null
         choose parse_when_list#()
             when error: ParserError
             {
@@ -4240,11 +4240,11 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[WhenSyntax]]
+            when success: ref[Vector[WhenSyntax]]?
                 set cases: success
 
         let alternative_start lexer.position
-        var alternative: pointer[ElseSyntax] null
+        var alternative: ref[ElseSyntax]? null
         choose parse_else#()
             when error: ParserError
             {
@@ -4286,7 +4286,7 @@ define Parser
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected colon or newline")))
 
         let cases_start lexer.position
-        var cases: pointer[Vector[WhenSyntax]] null
+        var cases: ref[Vector[WhenSyntax]]? null
         choose parse_when_list#()
             when error: ParserError
             {
@@ -4295,11 +4295,11 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[WhenSyntax]]
+            when success: ref[Vector[WhenSyntax]]?
                 set cases: success
 
         let dropper_start lexer.position
-        var dropper: pointer[ElseSyntax] null
+        var dropper: ref[ElseSyntax]? null
         choose parse_else#()
             when error: ParserError
             {
@@ -4341,7 +4341,7 @@ define Parser
         throw ParserError.Different(DifferentSyntax())
     }
 
-    function parse_when_list#(rp, this: Parser) returns pointer[Vector[WhenSyntax]] throws ParserError
+    function parse_when_list#(rp, this: Parser) returns ref[Vector[WhenSyntax]]? throws ParserError
     {
         var list List[WhenSyntax]$()
         while true
@@ -4598,7 +4598,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 
         let annotation_start lexer.position
-        var annotation: pointer[BindingAnnotationSyntax] null
+        var annotation: ref[BindingAnnotationSyntax]? null
         choose parse_bindingannotation#()
             when error: ParserError
             {
@@ -4611,7 +4611,7 @@ define Parser
                 set annotation: success
 
         let operation_start lexer.position
-        var operation: pointer[Vector[OperandSyntax]] null
+        var operation: ref[Vector[OperandSyntax]]? null
         choose parse_operand_list#()
             when error: ParserError
             {
@@ -4620,7 +4620,7 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[OperandSyntax]]
+            when success: ref[Vector[OperandSyntax]]?
                 set operation: success
 
         let end lexer.position
@@ -4654,7 +4654,7 @@ define Parser
         BindingAnnotationSyntax(start, end, spec)
     }
 
-    function parse_bindingspec_list#(rp, this: Parser) returns pointer[Vector[BindingSpecSyntax]] throws ParserError
+    function parse_bindingspec_list#(rp, this: Parser) returns ref[Vector[BindingSpecSyntax]]? throws ParserError
     {
         var list List[BindingSpecSyntax]$()
         while true
@@ -4721,7 +4721,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 
         let members_start lexer.position
-        var members: pointer[Vector[TypeSyntax]] null
+        var members: ref[Vector[TypeSyntax]]? null
         choose parse_type_list#()
             when error: ParserError
             {
@@ -4730,7 +4730,7 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[TypeSyntax]]
+            when success: ref[Vector[TypeSyntax]]?
                 set members: success
 
         if ~lexer.parse_punctuation#(CHAR_RBRACKET)
@@ -4749,7 +4749,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 
         let parts_start lexer.position
-        var parts: pointer[Vector[PartSyntax]] null
+        var parts: ref[Vector[PartSyntax]]? null
         choose parse_part_list#()
             when error: ParserError
             {
@@ -4758,7 +4758,7 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[PartSyntax]]
+            when success: ref[Vector[PartSyntax]]?
                 set parts: success
 
         if ~lexer.parse_punctuation#(CHAR_RPAREN)
@@ -4769,7 +4769,7 @@ define Parser
         StructureSyntax(start, end, parts)
     }
 
-    function parse_part_list#(rp, this: Parser) returns pointer[Vector[PartSyntax]] throws ParserError
+    function parse_part_list#(rp, this: Parser) returns ref[Vector[PartSyntax]]? throws ParserError
     {
         var list List[PartSyntax]$()
         while true
@@ -4844,7 +4844,7 @@ define Parser
         FieldSyntax(start, end, property)
     }
 
-    function parse_property_list#(rp, this: Parser) returns pointer[Vector[PropertySyntax]] throws ParserError
+    function parse_property_list#(rp, this: Parser) returns ref[Vector[PropertySyntax]]? throws ParserError
     {
         var list List[PropertySyntax]$()
         while true
@@ -4891,7 +4891,7 @@ define Parser
                 set annotation: success
 
         let initializer_start lexer.position
-        var initializer: pointer[InitializerSyntax] null
+        var initializer: ref[InitializerSyntax]? null
         choose parse_initializer#()
             when error: ParserError
             {
@@ -4908,7 +4908,7 @@ define Parser
         lexer.parse_colon#()
 
         let attributes_start lexer.position
-        var attributes: pointer[Vector[AttributeSyntax]] null
+        var attributes: ref[Vector[AttributeSyntax]]? null
         choose parse_attribute_list#()
             when error: ParserError
             {
@@ -4917,7 +4917,7 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[AttributeSyntax]]
+            when success: ref[Vector[AttributeSyntax]]?
                 set attributes: success
 
         lexer.parse_colon#()
@@ -4961,7 +4961,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 
         let name_start lexer.position
-        var name: pointer[LoopSyntax] null
+        var name: ref[LoopSyntax]? null
         choose parse_loop#()
             when error: ParserError
             {
@@ -4988,7 +4988,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 
         let name_start lexer.position
-        var name: pointer[LoopSyntax] null
+        var name: ref[LoopSyntax]? null
         choose parse_loop#()
             when error: ParserError
             {
@@ -5001,7 +5001,7 @@ define Parser
                 set name: success
 
         let result_start lexer.position
-        var result: pointer[Vector[OperandSyntax]] null
+        var result: ref[Vector[OperandSyntax]]? null
         choose parse_operand_list#()
             when error: ParserError
             {
@@ -5010,7 +5010,7 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[OperandSyntax]]
+            when success: ref[Vector[OperandSyntax]]?
                 set result: success
 
         lexer.parse_colon#()
@@ -5044,7 +5044,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 
         let result_start lexer.position
-        var result: pointer[Vector[OperandSyntax]] null
+        var result: ref[Vector[OperandSyntax]]? null
         choose parse_operand_list#()
             when error: ParserError
             {
@@ -5053,7 +5053,7 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[OperandSyntax]]
+            when success: ref[Vector[OperandSyntax]]?
                 set result: success
 
         let end lexer.position
@@ -5069,7 +5069,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 
         let result_start lexer.position
-        var result: pointer[Vector[OperandSyntax]] null
+        var result: ref[Vector[OperandSyntax]]? null
         choose parse_operand_list#()
             when error: ParserError
             {
@@ -5078,7 +5078,7 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[OperandSyntax]]
+            when success: ref[Vector[OperandSyntax]]?
                 set result: success
 
         let end lexer.position
@@ -5094,7 +5094,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 
         let input_start lexer.position
-        var input: pointer[Vector[OperandSyntax]]
+        var input: ref[Vector[OperandSyntax]]?
         choose parse_operand_list#()
             when error: ParserError
             {
@@ -5104,7 +5104,7 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[OperandSyntax]]
+            when success: ref[Vector[OperandSyntax]]?
                 set input: success
 
         if ~lexer.parse_colon#()
@@ -5141,7 +5141,7 @@ define Parser
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected identifier")))
 
         let annotation_start lexer.position
-        var annotation: pointer[TypeAnnotationSyntax] null
+        var annotation: ref[TypeAnnotationSyntax]? null
         choose parse_typeannotation#()
             when error: ParserError
             {
@@ -5157,7 +5157,7 @@ define Parser
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected 'in'")))
 
         let operation_start lexer.position
-        var operation: pointer[Vector[OperandSyntax]]
+        var operation: ref[Vector[OperandSyntax]]?
         choose parse_operand_list#()
             when error: ParserError
             {
@@ -5167,14 +5167,14 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[OperandSyntax]]
+            when success: ref[Vector[OperandSyntax]]?
                 set operation: success
 
         if ~lexer.parse_colon#()
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected colon or newline")))
 
         let name_start lexer.position
-        var name: pointer[LabelSyntax] null
+        var name: ref[LabelSyntax]? null
         choose parse_label#()
             when error: ParserError
             {
@@ -5231,7 +5231,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 
         let name_start lexer.position
-        var name: pointer[LabelSyntax] null
+        var name: ref[LabelSyntax]? null
         choose parse_label#()
             when error: ParserError
             {
@@ -5262,7 +5262,7 @@ define Parser
         RepeatSyntax(start, end, name, action)
     }
 
-    function parse_action_list#(rp, this: Parser) returns pointer[Vector[ActionSyntax]] throws ParserError
+    function parse_action_list#(rp, this: Parser) returns ref[Vector[ActionSyntax]]? throws ParserError
     {
         var list List[ActionSyntax]$()
         while true
@@ -5326,11 +5326,11 @@ define Parser
         let start lexer.previous_position
 
         let operands_start lexer.position
-        var operands: pointer[Vector[OperandSyntax]]
+        var operands: ref[Vector[OperandSyntax]]?
         choose parse_operand_list#()
             when error: ParserError
                 throw error
-            when success: pointer[Vector[OperandSyntax]]
+            when success: ref[Vector[OperandSyntax]]?
                 set operands: success
 
         let end lexer.position
@@ -5346,7 +5346,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 
         let target_start lexer.position
-        var target: pointer[Vector[OperandSyntax]]
+        var target: ref[Vector[OperandSyntax]]?
         choose parse_operand_list#()
             when error: ParserError
             {
@@ -5356,14 +5356,14 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[OperandSyntax]]
+            when success: ref[Vector[OperandSyntax]]?
                 set target: success
 
         if ~lexer.parse_colon#()
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected colon or newline")))
 
         let source_start lexer.position
-        var source: pointer[Vector[OperandSyntax]]
+        var source: ref[Vector[OperandSyntax]]?
         choose parse_operand_list#()
             when error: ParserError
             {
@@ -5373,7 +5373,7 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[OperandSyntax]]
+            when success: ref[Vector[OperandSyntax]]?
                 set source: success
 
         let end lexer.position
@@ -5389,7 +5389,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 
         let uses_start lexer.position
-        var uses: pointer[Vector[UseSyntax]] null
+        var uses: ref[Vector[UseSyntax]]? null
         choose parse_use_list#()
             when error: ParserError
             {
@@ -5398,11 +5398,11 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[UseSyntax]]
+            when success: ref[Vector[UseSyntax]]?
                 set uses: success
 
         let statements_start lexer.position
-        var statements: pointer[Vector[StatementSyntax]] null
+        var statements: ref[Vector[StatementSyntax]]? null
         choose parse_statement_list#()
             when error: ParserError
             {
@@ -5411,7 +5411,7 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[StatementSyntax]]
+            when success: ref[Vector[StatementSyntax]]?
                 set statements: success
 
         if ~lexer.parse_punctuation#(CHAR_RBRACE)
@@ -5526,7 +5526,7 @@ define Parser
         AsSyntax(start, end, type)
     }
 
-    function parse_type_list#(rp, this: Parser) returns pointer[Vector[TypeSyntax]] throws ParserError
+    function parse_type_list#(rp, this: Parser) returns ref[Vector[TypeSyntax]]? throws ParserError
     {
         var list List[TypeSyntax]$()
         while true
@@ -5563,7 +5563,7 @@ define Parser
                 set name: success
 
         let generics_start lexer.position
-        var generics: pointer[GenericArgumentsSyntax] null
+        var generics: ref[GenericArgumentsSyntax]? null
         choose parse_genericarguments#()
             when error: ParserError
             {
@@ -5576,7 +5576,7 @@ define Parser
                 set generics: success
 
         let optional_start lexer.position
-        var optional: pointer[OptionalSyntax] null
+        var optional: ref[OptionalSyntax]? null
         choose parse_optional#()
             when error: ParserError
             {
@@ -5589,7 +5589,7 @@ define Parser
                 set optional: success
 
         let lifetime_start lexer.position
-        var lifetime: pointer[LifetimeSyntax] null
+        var lifetime: ref[LifetimeSyntax]? null
         choose parse_lifetime#()
             when error: ParserError
             {
@@ -5615,7 +5615,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 
         let extensions_start lexer.position
-        var extensions: pointer[Vector[ExtensionSyntax]] null
+        var extensions: ref[Vector[ExtensionSyntax]]? null
         choose parse_extension_list#()
             when error: ParserError
             {
@@ -5624,7 +5624,7 @@ define Parser
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: pointer[Vector[ExtensionSyntax]]
+            when success: ref[Vector[ExtensionSyntax]]?
                 set extensions: success
 
         let end lexer.position
@@ -5632,7 +5632,7 @@ define Parser
         NameSyntax(start, end, name, extensions)
     }
 
-    function parse_extension_list#(rp, this: Parser) returns pointer[Vector[ExtensionSyntax]] throws ParserError
+    function parse_extension_list#(rp, this: Parser) returns ref[Vector[ExtensionSyntax]]? throws ParserError
     {
         var list List[ExtensionSyntax]$()
         while true

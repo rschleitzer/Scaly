@@ -34,11 +34,11 @@ define "(id syntax-node)"Syntax
     "(property content)": "
                         (case (type content)
                             (("syntax") ($
-                                (if (or (optional? content) (multiple? content)) "pointer[" "")
+                                (if (or (optional? content) (multiple? content)) "ref[" "")
                                 (if (multiple? content) "Vector[" "")
                                 (link content)"Syntax"
                                 (if (multiple? content) "]" "")
-                                (if (or (optional? content) (multiple? content)) "]" "")))
+                                (if (or (optional? content) (multiple? content)) "]?" "")))
                             (("identifier" "attribute") "String")
                             (("literal") "Literal")
                             (("keyword" "punctuation" "colon") "bool")
