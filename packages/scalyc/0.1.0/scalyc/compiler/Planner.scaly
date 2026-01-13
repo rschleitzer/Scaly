@@ -76,7 +76,7 @@ define LocalBinding
 
 define Scope
 (
-    bindings: pointer[HashMapBuilder[String, LocalBinding]]
+    bindings: ref[HashMapBuilder[String, LocalBinding]]?
 )
 {
     init#()
@@ -102,8 +102,8 @@ define Scope
 define StructureContext
 (
     name: String
-    properties: pointer[Vector[PlannedProperty]]
-    structure: pointer[PlannedStructure]
+    properties: ref[Vector[PlannedProperty]]?
+    structure: ref[PlannedStructure]?
 )
 {
     function is_active(this) returns bool
@@ -117,7 +117,7 @@ define StructureContext
 define NamespaceContext
 (
     name: String
-    modules: pointer[Vector[pointer[Module]]]
+    modules: ref[Vector[ref[Module]?]]?
 )
 {
     function is_active(this) returns bool
@@ -133,23 +133,23 @@ define Planner
     file: String
 
     ; Symbol tables for resolution (flat cache, populated during planning)
-    concepts: pointer[HashMapBuilder[String, pointer[Concept]]]
-    functions: pointer[HashMapBuilder[String, Vector[pointer[Function]]]]
-    operators: pointer[HashMapBuilder[String, Vector[pointer[Operator]]]]
+    concepts: ref[HashMapBuilder[String, ref[Concept]?]]?
+    functions: ref[HashMapBuilder[String, Vector[ref[Function]?]]]?
+    operators: ref[HashMapBuilder[String, Vector[ref[Operator]?]]]?
 
     ; Instantiation cache - avoid duplicate monomorphization (O(1) lookups)
-    instantiated_structures: pointer[HashMapBuilder[String, PlannedStructure]]
-    instantiated_unions: pointer[HashMapBuilder[String, PlannedUnion]]
-    instantiated_functions: pointer[HashMapBuilder[String, PlannedFunction]]
+    instantiated_structures: ref[HashMapBuilder[String, PlannedStructure]]?
+    instantiated_unions: ref[HashMapBuilder[String, PlannedUnion]]?
+    instantiated_functions: ref[HashMapBuilder[String, PlannedFunction]]?
 
     ; Global constants cache
-    planned_globals: pointer[HashMapBuilder[String, PlannedGlobal]]
+    planned_globals: ref[HashMapBuilder[String, PlannedGlobal]]?
 
     ; Current generic substitution context
-    type_substitutions: pointer[HashMapBuilder[String, PlannedType]]
+    type_substitutions: ref[HashMapBuilder[String, PlannedType]]?
 
     ; Scope stack for local variables
-    scopes: pointer[Vector[Scope]]
+    scopes: ref[Vector[Scope]]?
 
     ; Planning context
     structure_ctx: StructureContext
@@ -159,15 +159,15 @@ define Planner
     current_function_uses_local_lifetime: bool
 
     ; Current plan being built
-    current_plan: pointer[Plan]
+    current_plan: ref[Plan]?
 )
 {
     init#(filename: String)
     {
         set file: filename
-        set concepts: HashMapBuilder[String, pointer[Concept]]#()
-        set functions: HashMapBuilder[String, Vector[pointer[Function]]]#()
-        set operators: HashMapBuilder[String, Vector[pointer[Operator]]]#()
+        set concepts: HashMapBuilder[String, ref[Concept]?]#()
+        set functions: HashMapBuilder[String, Vector[ref[Function]?]]#()
+        set operators: HashMapBuilder[String, Vector[ref[Operator]?]]#()
         set instantiated_structures: HashMapBuilder[String, PlannedStructure]#()
         set instantiated_unions: HashMapBuilder[String, PlannedUnion]#()
         set instantiated_functions: HashMapBuilder[String, PlannedFunction]#()
@@ -491,7 +491,7 @@ define Planner
     }
 
     ; Lookup a concept by name
-    function lookup_concept(this, name: String) returns ref[pointer[Concept]]?
+    function lookup_concept(this, name: String) returns ref[ref[Concept]?]?
     {
         concepts[name]
     }

@@ -52,9 +52,9 @@ define "(id syntax-node)"Syntax
                         (case (type content)
                             (("syntax") ($
                                 (if (multiple? content)
-                                    ($ "pointer[Vector["(link content)"Syntax]]")
+                                    ($ "ref[Vector["(link content)"Syntax]]?")
                                     (if (optional? content)
-                                        ($ "pointer["(link content)"Syntax]")
+                                        ($ "ref["(link content)"Syntax]?")
                                         ($ (link content)"Syntax")))))
                             (("identifier" "attribute") "String")
                             (("literal") "Literal")

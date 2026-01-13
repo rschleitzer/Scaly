@@ -75,7 +75,7 @@ define NameSyntax
     start: size_t
     end: size_t
     name: String
-    extensions: pointer[Vector[ExtensionSyntax]]
+    extensions: ref[Vector[ExtensionSyntax]]?
 )
 
 define TypeSyntax
@@ -83,9 +83,9 @@ define TypeSyntax
     start: size_t
     end: size_t
     name: NameSyntax
-    generics: pointer[GenericArgumentsSyntax]
-    optional: pointer[OptionalSyntax]
-    lifetime: pointer[LifetimeSyntax]
+    generics: ref[GenericArgumentsSyntax]?
+    optional: ref[OptionalSyntax]?
+    lifetime: ref[LifetimeSyntax]?
 )
 
 define AsSyntax
@@ -120,23 +120,23 @@ define BlockSyntax
 (
     start: size_t
     end: size_t
-    uses: pointer[Vector[UseSyntax]]
-    statements: pointer[Vector[StatementSyntax]]
+    uses: ref[Vector[UseSyntax]]?
+    statements: ref[Vector[StatementSyntax]]?
 )
 
 define SetSyntax
 (
     start: size_t
     end: size_t
-    target: pointer[Vector[OperandSyntax]]
-    source: pointer[Vector[OperandSyntax]]
+    target: ref[Vector[OperandSyntax]]?
+    source: ref[Vector[OperandSyntax]]?
 )
 
 define OperationSyntax
 (
     start: size_t
     end: size_t
-    operands: pointer[Vector[OperandSyntax]]
+    operands: ref[Vector[OperandSyntax]]?
 )
 
 define ActionSyntax union (
@@ -149,7 +149,7 @@ define RepeatSyntax
 (
     start: size_t
     end: size_t
-    name: pointer[LabelSyntax]
+    name: ref[LabelSyntax]?
     action: ActionSyntax
 )
 
@@ -165,9 +165,9 @@ define ForSyntax
     start: size_t
     end: size_t
     variable: String
-    annotation: pointer[TypeAnnotationSyntax]
-    operation: pointer[Vector[OperandSyntax]]
-    name: pointer[LabelSyntax]
+    annotation: ref[TypeAnnotationSyntax]?
+    operation: ref[Vector[OperandSyntax]]?
+    name: ref[LabelSyntax]?
     action: ActionSyntax
 )
 
@@ -175,7 +175,7 @@ define LambdaSyntax
 (
     start: size_t
     end: size_t
-    input: pointer[Vector[OperandSyntax]]
+    input: ref[Vector[OperandSyntax]]?
     block: ActionSyntax
 )
 
@@ -183,14 +183,14 @@ define ThrowSyntax
 (
     start: size_t
     end: size_t
-    result: pointer[Vector[OperandSyntax]]
+    result: ref[Vector[OperandSyntax]]?
 )
 
 define ReturnSyntax
 (
     start: size_t
     end: size_t
-    result: pointer[Vector[OperandSyntax]]
+    result: ref[Vector[OperandSyntax]]?
 )
 
 define LoopSyntax
@@ -204,15 +204,15 @@ define BreakSyntax
 (
     start: size_t
     end: size_t
-    name: pointer[LoopSyntax]
-    result: pointer[Vector[OperandSyntax]]
+    name: ref[LoopSyntax]?
+    result: ref[Vector[OperandSyntax]]?
 )
 
 define ContinueSyntax
 (
     start: size_t
     end: size_t
-    name: pointer[LoopSyntax]
+    name: ref[LoopSyntax]?
 )
 
 define TypeAnnotationSyntax
@@ -228,8 +228,8 @@ define PropertySyntax
     end: size_t
     name: String
     annotation: TypeAnnotationSyntax
-    initializer: pointer[InitializerSyntax]
-    attributes: pointer[Vector[AttributeSyntax]]
+    initializer: ref[InitializerSyntax]?
+    attributes: ref[Vector[AttributeSyntax]]?
 )
 
 define FieldSyntax
@@ -248,14 +248,14 @@ define StructureSyntax
 (
     start: size_t
     end: size_t
-    parts: pointer[Vector[PartSyntax]]
+    parts: ref[Vector[PartSyntax]]?
 )
 
 define ArraySyntax
 (
     start: size_t
     end: size_t
-    members: pointer[Vector[TypeSyntax]]
+    members: ref[Vector[TypeSyntax]]?
 )
 
 define BindingSpecSyntax union (
@@ -276,8 +276,8 @@ define BindingSyntax
     start: size_t
     end: size_t
     name: String
-    annotation: pointer[BindingAnnotationSyntax]
-    operation: pointer[Vector[OperandSyntax]]
+    annotation: ref[BindingAnnotationSyntax]?
+    operation: ref[Vector[OperandSyntax]]?
 )
 
 define MutableSyntax
@@ -332,17 +332,17 @@ define TrySyntax
     start: size_t
     end: size_t
     condition: ConditionSyntax
-    cases: pointer[Vector[WhenSyntax]]
-    dropper: pointer[ElseSyntax]
+    cases: ref[Vector[WhenSyntax]]?
+    dropper: ref[ElseSyntax]?
 )
 
 define ChooseSyntax
 (
     start: size_t
     end: size_t
-    condition: pointer[Vector[OperandSyntax]]
-    cases: pointer[Vector[WhenSyntax]]
-    alternative: pointer[ElseSyntax]
+    condition: ref[Vector[OperandSyntax]]?
+    cases: ref[Vector[WhenSyntax]]?
+    alternative: ref[ElseSyntax]?
 )
 
 define WhileSyntax
@@ -350,7 +350,7 @@ define WhileSyntax
     start: size_t
     end: size_t
     condition: ConditionSyntax
-    name: pointer[LabelSyntax]
+    name: ref[LabelSyntax]?
     action: ActionSyntax
 )
 
@@ -365,14 +365,14 @@ define CaseSyntax
 (
     start: size_t
     end: size_t
-    condition: pointer[Vector[OperandSyntax]]
+    condition: ref[Vector[OperandSyntax]]?
 )
 
 define BranchSyntax
 (
     start: size_t
     end: size_t
-    cases: pointer[Vector[CaseSyntax]]
+    cases: ref[Vector[CaseSyntax]]?
     consequent: StatementSyntax
 )
 
@@ -380,9 +380,9 @@ define MatchSyntax
 (
     start: size_t
     end: size_t
-    scrutinee: pointer[Vector[OperandSyntax]]
-    branches: pointer[Vector[BranchSyntax]]
-    alternative: pointer[ElseSyntax]
+    scrutinee: ref[Vector[OperandSyntax]]?
+    branches: ref[Vector[BranchSyntax]]?
+    alternative: ref[ElseSyntax]?
 )
 
 define ElseSyntax
@@ -403,49 +403,49 @@ define IfSyntax
 (
     start: size_t
     end: size_t
-    condition: pointer[Vector[OperandSyntax]]
+    condition: ref[Vector[OperandSyntax]]?
     consequent: ThenSyntax
-    alternative: pointer[ElseSyntax]
+    alternative: ref[ElseSyntax]?
 )
 
 define ElementSyntax
 (
     start: size_t
     end: size_t
-    operation: pointer[Vector[OperandSyntax]]
-    attributes: pointer[Vector[AttributeSyntax]]
+    operation: ref[Vector[OperandSyntax]]?
+    attributes: ref[Vector[AttributeSyntax]]?
 )
 
 define VectorSyntax
 (
     start: size_t
     end: size_t
-    elements: pointer[Vector[ElementSyntax]]
-    lifetime: pointer[LifetimeSyntax]
+    elements: ref[Vector[ElementSyntax]]?
+    lifetime: ref[LifetimeSyntax]?
 )
 
 define ValueSyntax
 (
     start: size_t
     end: size_t
-    value: pointer[Vector[OperandSyntax]]
-    attributes: pointer[Vector[AttributeSyntax]]
+    value: ref[Vector[OperandSyntax]]?
+    attributes: ref[Vector[AttributeSyntax]]?
 )
 
 define ComponentSyntax
 (
     start: size_t
     end: size_t
-    operands: pointer[Vector[OperandSyntax]]
-    attributes: pointer[Vector[AttributeSyntax]]
-    value: pointer[ValueSyntax]
+    operands: ref[Vector[OperandSyntax]]?
+    attributes: ref[Vector[AttributeSyntax]]?
+    value: ref[ValueSyntax]?
 )
 
 define ObjectSyntax
 (
     start: size_t
     end: size_t
-    components: pointer[Vector[ComponentSyntax]]
+    components: ref[Vector[ComponentSyntax]]?
 )
 
 define LiteralSyntax
@@ -488,14 +488,14 @@ define OperandSyntax
     start: size_t
     end: size_t
     expression: ExpressionSyntax
-    members: pointer[Vector[MemberAccessSyntax]]
+    members: ref[Vector[MemberAccessSyntax]]?
 )
 
 define InitializerSyntax
 (
     start: size_t
     end: size_t
-    operands: pointer[Vector[OperandSyntax]]
+    operands: ref[Vector[OperandSyntax]]?
 )
 
 define VersionSyntax
@@ -511,7 +511,7 @@ define PackageSyntax
     start: size_t
     end: size_t
     name: NameSyntax
-    version: pointer[VersionSyntax]
+    version: ref[VersionSyntax]?
 )
 
 define ModuleSyntax
@@ -542,7 +542,7 @@ define MacroSyntax
     end: size_t
     name: String
     model: ModelSyntax
-    rule: pointer[Vector[OperandSyntax]]
+    rule: ref[Vector[OperandSyntax]]?
 )
 
 define ExtendSyntax
@@ -556,7 +556,7 @@ define ExtendsSyntax
 (
     start: size_t
     end: size_t
-    extensions: pointer[Vector[ExtendSyntax]]
+    extensions: ref[Vector[ExtendSyntax]]?
 )
 
 define IntrinsicSyntax
@@ -588,12 +588,12 @@ define RoutineSyntax
 (
     start: size_t
     end: size_t
-    generics: pointer[GenericArgumentsSyntax]
-    lifetime: pointer[LifetimeSyntax]
-    parameters: pointer[ParameterSetSyntax]
-    attributes: pointer[Vector[AttributeSyntax]]
-    returns_: pointer[ReturnsSyntax]
-    throws_: pointer[ThrowsSyntax]
+    generics: ref[GenericArgumentsSyntax]?
+    lifetime: ref[LifetimeSyntax]?
+    parameters: ref[ParameterSetSyntax]?
+    attributes: ref[Vector[AttributeSyntax]]?
+    returns_: ref[ReturnsSyntax]?
+    throws_: ref[ThrowsSyntax]?
     implementation: ImplementationSyntax
 )
 
@@ -642,8 +642,8 @@ define InitSyntax
 (
     start: size_t
     end: size_t
-    lifetime: pointer[LifetimeSyntax]
-    parameters: pointer[ParameterSetSyntax]
+    lifetime: ref[LifetimeSyntax]?
+    parameters: ref[ParameterSetSyntax]?
     action: ActionSyntax
 )
 
@@ -658,10 +658,10 @@ define TraitSyntax
     start: size_t
     end: size_t
     name: NameSyntax
-    extension: pointer[ExtendsSyntax]
-    attributes: pointer[Vector[AttributeSyntax]]
-    uses: pointer[Vector[UseSyntax]]
-    functions: pointer[Vector[MethodSyntax]]
+    extension: ref[ExtendsSyntax]?
+    attributes: ref[Vector[AttributeSyntax]]?
+    uses: ref[Vector[UseSyntax]]?
+    functions: ref[Vector[MethodSyntax]]?
 )
 
 define ImplementSyntax
@@ -669,9 +669,9 @@ define ImplementSyntax
     start: size_t
     end: size_t
     type: TypeSyntax
-    attributes: pointer[Vector[AttributeSyntax]]
-    uses: pointer[Vector[UseSyntax]]
-    methods: pointer[Vector[MethodSyntax]]
+    attributes: ref[Vector[AttributeSyntax]]?
+    uses: ref[Vector[UseSyntax]]?
+    methods: ref[Vector[MethodSyntax]]?
 )
 
 define UseSyntax
@@ -686,7 +686,7 @@ define ThrowsSyntax
     start: size_t
     end: size_t
     type: TypeSyntax
-    attributes: pointer[Vector[AttributeSyntax]]
+    attributes: ref[Vector[AttributeSyntax]]?
 )
 
 define ReturnsSyntax
@@ -694,7 +694,7 @@ define ReturnsSyntax
     start: size_t
     end: size_t
     type: TypeSyntax
-    attributes: pointer[Vector[AttributeSyntax]]
+    attributes: ref[Vector[AttributeSyntax]]?
 )
 
 define ItemSyntax
@@ -702,15 +702,15 @@ define ItemSyntax
     start: size_t
     end: size_t
     name: String
-    annotation: pointer[TypeAnnotationSyntax]
-    attributes: pointer[Vector[AttributeSyntax]]
+    annotation: ref[TypeAnnotationSyntax]?
+    attributes: ref[Vector[AttributeSyntax]]?
 )
 
 define ParametersSyntax
 (
     start: size_t
     end: size_t
-    items: pointer[Vector[ItemSyntax]]
+    items: ref[Vector[ItemSyntax]]?
 )
 
 define ParameterSetSyntax union (
@@ -735,17 +735,17 @@ define GenericArgumentsSyntax
 (
     start: size_t
     end: size_t
-    generics: pointer[Vector[GenericArgumentSyntax]]
+    generics: ref[Vector[GenericArgumentSyntax]]?
 )
 
 define DelegateSyntax
 (
     start: size_t
     end: size_t
-    parameters: pointer[ParameterSetSyntax]
-    attributes: pointer[Vector[AttributeSyntax]]
-    result: pointer[ReturnsSyntax]
-    error: pointer[ThrowsSyntax]
+    parameters: ref[ParameterSetSyntax]?
+    attributes: ref[Vector[AttributeSyntax]]?
+    result: ref[ReturnsSyntax]?
+    error: ref[ThrowsSyntax]?
 )
 
 define ConstantSyntax
@@ -753,7 +753,7 @@ define ConstantSyntax
     start: size_t
     end: size_t
     type: TypeSyntax
-    operation: pointer[Vector[OperandSyntax]]
+    operation: ref[Vector[OperandSyntax]]?
 )
 
 define VariantSyntax
@@ -761,34 +761,34 @@ define VariantSyntax
     start: size_t
     end: size_t
     name: String
-    attributes: pointer[Vector[AttributeSyntax]]
-    annotation: pointer[TypeAnnotationSyntax]
+    attributes: ref[Vector[AttributeSyntax]]?
+    annotation: ref[TypeAnnotationSyntax]?
 )
 
 define UnionSyntax
 (
     start: size_t
     end: size_t
-    variants: pointer[Vector[VariantSyntax]]
-    body: pointer[BodySyntax]
+    variants: ref[Vector[VariantSyntax]]?
+    body: ref[BodySyntax]?
 )
 
 define NamespaceSyntax
 (
     start: size_t
     end: size_t
-    uses: pointer[Vector[UseSyntax]]
-    declarations: pointer[Vector[DeclarationSyntax]]
+    uses: ref[Vector[UseSyntax]]?
+    declarations: ref[Vector[DeclarationSyntax]]?
 )
 
 define BodySyntax
 (
     start: size_t
     end: size_t
-    uses: pointer[Vector[UseSyntax]]
-    inits: pointer[Vector[InitSyntax]]
-    deInit: pointer[DeInitSyntax]
-    members: pointer[Vector[MemberSyntax]]
+    uses: ref[Vector[UseSyntax]]?
+    inits: ref[Vector[InitSyntax]]?
+    deInit: ref[DeInitSyntax]?
+    members: ref[Vector[MemberSyntax]]?
 )
 
 define ClassSyntax
@@ -796,7 +796,7 @@ define ClassSyntax
     start: size_t
     end: size_t
     structure: StructureSyntax
-    body: pointer[BodySyntax]
+    body: ref[BodySyntax]?
 )
 
 define ConceptSyntax union (
@@ -813,14 +813,14 @@ define GenericParameterSyntax
     start: size_t
     end: size_t
     name: String
-    attributes: pointer[Vector[AttributeSyntax]]
+    attributes: ref[Vector[AttributeSyntax]]?
 )
 
 define GenericParametersSyntax
 (
     start: size_t
     end: size_t
-    parameters: pointer[Vector[GenericParameterSyntax]]
+    parameters: ref[Vector[GenericParameterSyntax]]?
 )
 
 define DefinitionSyntax
@@ -828,8 +828,8 @@ define DefinitionSyntax
     start: size_t
     end: size_t
     name: String
-    parameters: pointer[GenericParametersSyntax]
-    attributes: pointer[Vector[AttributeSyntax]]
+    parameters: ref[GenericParametersSyntax]?
+    attributes: ref[Vector[AttributeSyntax]]?
     concept_: ConceptSyntax
 )
 
@@ -887,9 +887,9 @@ define FileSyntax
 (
     start: size_t
     end: size_t
-    packages: pointer[Vector[PackageSyntax]]
-    uses: pointer[Vector[UseSyntax]]
-    declarations: pointer[Vector[DeclarationSyntax]]
+    packages: ref[Vector[PackageSyntax]]?
+    uses: ref[Vector[UseSyntax]]?
+    declarations: ref[Vector[DeclarationSyntax]]?
 )
 
 define ProgramSyntax
@@ -897,5 +897,5 @@ define ProgramSyntax
     start: size_t
     end: size_t
     file: FileSyntax
-    statements: pointer[Vector[StatementSyntax]]
+    statements: ref[Vector[StatementSyntax]]?
 )
