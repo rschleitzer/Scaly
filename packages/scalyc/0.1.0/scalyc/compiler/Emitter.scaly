@@ -597,7 +597,13 @@ define Emitter
         ; For now, create a simple function with no parameters
 
         let func_type LLVMFunctionType(return_type, null, 0, 0)
-        let llvm_func LLVMAddFunction(module, func.mangled_name.data, func_type)
+
+        ; Use unmangled "main" for linker compatibility (C entry point)
+        var func_name func.mangled_name
+        if func.name.equals(String#("main"))
+            set func_name: String#("main")
+
+        let llvm_func LLVMAddFunction(module, func_name.data, func_type)
 
         ; Set linkage
         if func.private
