@@ -2241,14 +2241,14 @@ define Planner
         }
 
         ; Plan return type
-        var returns_type pointer[PlannedType] null
+        var returns_type ref[PlannedType]? null
         if func.returns_ <> null
         {
             set returns_type: resolve_type(func.returns_, func.span)
         }
 
         ; Plan throws type
-        var throws_type pointer[PlannedType] null
+        var throws_type ref[PlannedType]? null
         if func.throws_ <> null
         {
             set throws_type: resolve_type(func.throws_, func.span)
@@ -2366,14 +2366,14 @@ define Planner
         }
 
         ; Plan return type
-        var returns_type pointer[PlannedType] null
+        var returns_type ref[PlannedType]? null
         if op.returns_ <> null
         {
             set returns_type: resolve_type(op.returns_, op.span)
         }
 
         ; Plan throws type
-        var throws_type pointer[PlannedType] null
+        var throws_type ref[PlannedType]? null
         if op.throws_ <> null
         {
             set throws_type: resolve_type(op.throws_, op.span)
@@ -2448,7 +2448,7 @@ define Planner
         }
 
         ; Plan attributes
-        var attributes pointer[Vector[PlannedAttribute]] null
+        var attributes ref[Vector[PlannedAttribute]]? null
         if conc.attributes <> null
         {
             if conc.attributes.length > 0
@@ -2572,7 +2572,7 @@ define Planner
         )
 
         ; Plan properties
-        var properties pointer[Vector[PlannedProperty]] null
+        var properties ref[Vector[PlannedProperty]]? null
         if struct.properties <> null
         {
             if struct.properties.length > 0
@@ -2590,7 +2590,7 @@ define Planner
         }
 
         ; Plan methods (functions)
-        var methods pointer[Vector[PlannedFunction]] null
+        var methods ref[Vector[PlannedFunction]]? null
         if struct.members <> null
         {
             for member in struct.members
@@ -2618,7 +2618,7 @@ define Planner
         }
 
         ; Plan operators
-        var operators pointer[Vector[PlannedOperator]] null
+        var operators ref[Vector[PlannedOperator]]? null
         if struct.members <> null
         {
             for member in struct.members
@@ -2689,7 +2689,7 @@ define Planner
         )
 
         ; Plan variants
-        var variants pointer[Vector[PlannedVariant]] null
+        var variants ref[Vector[PlannedVariant]]? null
         if union_def.variants <> null
         {
             if union_def.variants.length > 0
@@ -2709,7 +2709,7 @@ define Planner
         }
 
         ; Plan methods
-        var methods pointer[Vector[PlannedFunction]] null
+        var methods ref[Vector[PlannedFunction]]? null
         if union_def.members <> null
         {
             for member in union_def.members
@@ -2733,7 +2733,7 @@ define Planner
         }
 
         ; Plan operators
-        var operators pointer[Vector[PlannedOperator]] null
+        var operators ref[Vector[PlannedOperator]]? null
         if union_def.members <> null
         {
             for member in union_def.members
@@ -2786,7 +2786,7 @@ define Planner
         let mangled encode_name(name)
 
         ; Plan sub-modules
-        var modules pointer[Vector[PlannedModule]] null
+        var modules ref[Vector[PlannedModule]]? null
         if ns.modules <> null
         {
             if ns.modules.length > 0
@@ -2802,7 +2802,7 @@ define Planner
         }
 
         ; Plan functions
-        var functions pointer[Vector[PlannedFunction]] null
+        var functions ref[Vector[PlannedFunction]]? null
         if ns.members <> null
         {
             for member in ns.members
@@ -2826,7 +2826,7 @@ define Planner
         }
 
         ; Plan operators
-        var operators pointer[Vector[PlannedOperator]] null
+        var operators ref[Vector[PlannedOperator]]? null
         if ns.members <> null
         {
             for member in ns.members
