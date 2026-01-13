@@ -3234,6 +3234,114 @@ std::optional<PlannedType> Planner::getPointerElementType(const PlannedType &Ptr
         return PtrType.Generics[0];
     }
 
+    // Check if this is Option[pointer[T]] or Option[ref[T]] (with NPO, can be dereferenced)
+    // Option[ref[T]] is represented as ref[T]? in source, and with NPO is just a pointer
+    if (PtrType.Name == "Option" && !PtrType.Generics.empty()) {
+        const auto &Inner = PtrType.Generics[0];
+        if ((Inner.Name == "pointer" || Inner.Name == "ref") && !Inner.Generics.empty()) {
+            // Option[pointer[T]] or Option[ref[T]] -> dereference yields T
+            return Inner.Generics[0];
+        }
+    }
+
+    // Handle instantiated Option types with name like "Option.ref", "Option.pointer",
+    // or "Option.ref.BuilderList.Slot.KeyValuePair" (nested generics flattened into name)
+    // After generic instantiation, Option[ref[BuilderList[Slot[KeyValuePair[K,V]]]]]
+    // becomes {Name: "Option.ref.BuilderList.Slot.KeyValuePair", Generics: [K, V]}
+    if (PtrType.Name.substr(0, 10) == "Option.ref") {
+        std::string Rest = PtrType.Name.substr(10); // Remove "Option.ref"
+        if (Rest.empty()) {
+            // Option.ref with Generics - inner type is the first generic
+            if (!PtrType.Generics.empty()) {
+                return PtrType.Generics[0];
+            }
+            return std::nullopt;
+        }
+        if (Rest[0] == '.') {
+            Rest = Rest.substr(1); // Remove leading "."
+        }
+
+        // Rest is now "BuilderList.Slot.KeyValuePair" - we need to extract just "BuilderList"
+        // and reconstruct the proper nested generic structure
+        // First component is the base type, remaining components are nested generics
+        std::vector<std::string> Parts;
+        size_t Pos;
+        std::string Remaining = Rest;
+        while ((Pos = Remaining.find('.')) != std::string::npos) {
+            Parts.push_back(Remaining.substr(0, Pos));
+            Remaining = Remaining.substr(Pos + 1);
+        }
+        Parts.push_back(Remaining);
+
+        if (Parts.empty()) {
+            return std::nullopt;
+        }
+
+        // Build the type from innermost to outermost
+        // For "BuilderList.Slot.KeyValuePair" with Generics [K, V]:
+        // - Start with KeyValuePair[K, V]
+        // - Wrap in Slot[KeyValuePair[K, V]]
+        // - Wrap in BuilderList[Slot[KeyValuePair[K, V]]]
+        PlannedType InnerType;
+        InnerType.Name = Parts.back();
+        InnerType.MangledName = Parts.back();
+        InnerType.Generics = PtrType.Generics; // Innermost gets the explicit generics
+
+        // Wrap from second-to-last back to first
+        for (int i = Parts.size() - 2; i >= 0; --i) {
+            PlannedType WrapperType;
+            WrapperType.Name = Parts[i];
+            WrapperType.MangledName = Parts[i];
+            WrapperType.Generics.push_back(InnerType);
+            InnerType = WrapperType;
+        }
+
+        return InnerType;
+    }
+    if (PtrType.Name.substr(0, 14) == "Option.pointer") {
+        // Same logic for Option.pointer
+        std::string Rest = PtrType.Name.substr(14);
+        if (Rest.empty()) {
+            if (!PtrType.Generics.empty()) {
+                return PtrType.Generics[0];
+            }
+            return std::nullopt;
+        }
+        if (Rest[0] == '.') {
+            Rest = Rest.substr(1);
+        }
+
+        // Parse the flattened name back into nested generics
+        std::vector<std::string> Parts;
+        size_t Pos;
+        std::string Remaining = Rest;
+        while ((Pos = Remaining.find('.')) != std::string::npos) {
+            Parts.push_back(Remaining.substr(0, Pos));
+            Remaining = Remaining.substr(Pos + 1);
+        }
+        Parts.push_back(Remaining);
+
+        if (Parts.empty()) {
+            return std::nullopt;
+        }
+
+        PlannedType InnerType;
+        InnerType.Name = Parts.back();
+        InnerType.MangledName = Parts.back();
+        InnerType.Generics = PtrType.Generics;
+
+        // Wrap from second-to-last back to first
+        for (int i = Parts.size() - 2; i >= 0; --i) {
+            PlannedType WrapperType;
+            WrapperType.Name = Parts[i];
+            WrapperType.MangledName = Parts[i];
+            WrapperType.Generics.push_back(InnerType);
+            InnerType = WrapperType;
+        }
+
+        return InnerType;
+    }
+
     // Check for pointer[T] in name form (e.g., from unresolved types)
     if (PtrType.Name.substr(0, 8) == "pointer[") {
         // This shouldn't happen after resolution, but handle it gracefully

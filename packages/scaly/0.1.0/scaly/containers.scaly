@@ -21,6 +21,7 @@ define containers
     module StringIterator
     module StringBuilder
     module Result
+    module Option
 
     function test_vector() returns int
     {
@@ -380,6 +381,9 @@ define containers
         set result: test_result()
         if result <> 0
             return result
+        set result: test_option()
+        if result <> 0
+            return result
         set result: test_string_operations()
         if result <> 0
             return result
@@ -446,6 +450,36 @@ define containers
             return -218
         if s.index_of("o" as char, 5) <> 8
             return -219
+
+        0
+    }
+
+    function test_option() returns int
+    {
+        ; Test Option.Some construction
+        let some_val Option[int].Some(42)
+        if some_val.is_some() = false
+            return -300
+        if some_val.is_none()
+            return -301
+
+        ; Test Option.None construction
+        let none_val Option[int].None
+        if none_val.is_none() = false
+            return -302
+        if none_val.is_some()
+            return -303
+
+        ; Test unwrap_or
+        if some_val.unwrap_or(0) <> 42
+            return -304
+        if none_val.unwrap_or(99) <> 99
+            return -305
+
+        ; Test with pointer type (should use NPO directly)
+        let some_ptr Option[pointer[int]].Some(null)
+        if some_ptr.is_some() = false
+            return -306
 
         0
     }

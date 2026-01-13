@@ -73,18 +73,18 @@ define Array[T]
         set length: length + items.length
     }
 
-    function get(this: Array[T], i: size_t) returns ref[T]
+    function get(this: Array[T], i: size_t) returns pointer[T]
     {
         if i >= length
             return null
-        (vector.data + i) as ref[T]
+        vector.data + i
     }
 
-    operator [](this: Array[T], i: size_t) returns ref[T]
+    operator [](this: Array[T], i: size_t) returns pointer[T]
     {
         if length < i + 1
             return null
-        (vector.data + i) as ref[T]
+        vector.data + i
     }
 
     function reallocate(this: Array[T])

@@ -9,22 +9,22 @@ define HashMapIterator[K, V]
         set slot_iterator: VectorIterator[Vector[KeyValuePair[K, V]]](hash_map.slots)
         let first_slot slot_iterator.next()
         if first_slot <> null
-            set element_iterator: VectorIterator[KeyValuePair[K, V]](*first_slot)
+            set element_iterator: VectorIterator[KeyValuePair[K, V]](first_slot)
     }
 
-    function next(this: HashMapIterator[K, V]) returns ref[V]
+    function next(this: HashMapIterator[K, V]) returns pointer[V]
     {
         while true
         {
             let ret element_iterator.next()
             if ret <> null
-                return (&(*ret).value) as ref[V]
+                return &ret.value
 
             let next_slot slot_iterator.next()
             if next_slot = null
                 return null
 
-            set element_iterator: VectorIterator[KeyValuePair[K, V]](*next_slot)
+            set element_iterator: VectorIterator[KeyValuePair[K, V]](next_slot)
         }
     }
 }
@@ -48,9 +48,13 @@ define HashMap[K, V]
         while i < length
         {
             var array Array[KeyValuePair[K, V]]$()
-            var list_iterator ListIterator[Slot[KeyValuePair[K, V]]](hash_map_builder.slots.get(i).head)
-            while let item list_iterator.next()
-                array.add(item.value)
+            let slot_opt hash_map_builder.slots.get(i)
+            if slot_opt <> null
+            {
+                var list_iterator ListIterator[Slot[KeyValuePair[K, V]]](slot_opt.head)
+                while let item list_iterator.next()
+                    array.add(item.value)
+            }
             if array.length > 0
                 slots.put(i, Vector[KeyValuePair[K, V]]^rp(*array))
 
@@ -76,7 +80,7 @@ define HashMap[K, V]
             let item slot.get(i)
             if item <> null
             {
-                if key.equals((*item).key)
+                if key.equals(item.key)
                     return true
             }
 
@@ -86,12 +90,12 @@ define HashMap[K, V]
         return false
     }
 
-    operator [](key: K) returns ref[V]
+    operator [](key: K) returns pointer[V]
     {
         return get(key)
     }
 
-    function get(this: HashMap[K, V], key: K) returns ref[V]
+    function get(this: HashMap[K, V], key: K) returns pointer[V]
     {
         if slots = null
             return null
@@ -109,8 +113,8 @@ define HashMap[K, V]
             let item slot.get(i)
             if item <> null
             {
-                if key.equals((*item).key)
-                    return (&(*item).value) as ref[V]
+                if key.equals(item.key)
+                    return &item.value
             }
 
             set i: i + 1

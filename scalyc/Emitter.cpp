@@ -547,10 +547,31 @@ llvm::Type *Emitter::mapType(const PlannedType &Type) {
     }
 
     // For Option[T]: null pointer optimization (null = None, non-null = Some)
+    // NPO only applies when the inner type is pointer or ref
     if (Type.Name == "Option" && !Type.Generics.empty()) {
-        auto *PtrTy = llvm::PointerType::get(*Context, 0);
-        TypeCache[Type.MangledName] = PtrTy;
-        return PtrTy;
+        const PlannedType &InnerType = Type.Generics[0];
+        bool IsPointerLike = InnerType.Name == "pointer" || InnerType.Name == "ref" ||
+                             (InnerType.Name.size() >= 8 && InnerType.Name.substr(0, 8) == "pointer.") ||
+                             (InnerType.Name.size() >= 4 && InnerType.Name.substr(0, 4) == "ref.");
+        if (IsPointerLike) {
+            auto *PtrTy = llvm::PointerType::get(*Context, 0);
+            TypeCache[Type.MangledName] = PtrTy;
+            return PtrTy;
+        }
+    }
+    // Handle instantiated Option types where the inner type is baked into the name
+    // e.g., "Option.ref" with Generics=[int] or "Option.ref.int" with Generics=[]
+    if (Type.Name.size() > 7 && Type.Name.substr(0, 7) == "Option.") {
+        // Check if this is Option over a pointer-like type (ref or pointer)
+        // Name format: "Option.ref" or "Option.pointer" or "Option.ref.int"
+        std::string_view NameView = Type.Name;
+        std::string_view Inner = NameView.substr(7); // After "Option."
+        if (Inner.substr(0, 3) == "ref" || Inner.substr(0, 7) == "pointer") {
+            // Option[ref[T]] or Option[pointer[T]] - use NPO (single pointer)
+            auto *PtrTy = llvm::PointerType::get(*Context, 0);
+            TypeCache[Type.MangledName] = PtrTy;
+            return PtrTy;
+        }
     }
 
     // Check if this type is a struct in the Plan that hasn't been emitted yet
@@ -647,6 +668,33 @@ llvm::StructType *Emitter::emitUnionType(const PlannedUnion &Union) {
     // Check cache
     if (auto It = StructCache.find(Union.MangledName); It != StructCache.end()) {
         return It->second;
+    }
+
+    // NPO (Null Pointer Optimization) for Option types:
+    // Option[ref[T]] and Option[pointer[T]] are represented as a single pointer
+    // (null = None, non-null = Some). Don't create a struct for these.
+    // Instead, return a "fake" struct that will be bypassed by mapType's NPO check.
+    // Actually, we need to handle this in mapType - here we just skip creating the struct.
+    if (Union.Name == "Option" || Union.Name.substr(0, 7) == "Option.") {
+        // Check if this is Option over a pointer-like type
+        bool HasPointerVariant = false;
+        for (const auto &Var : Union.Variants) {
+            if (Var.VarType) {
+                const std::string &VarTypeName = Var.VarType->Name;
+                if (VarTypeName == "ref" || VarTypeName == "pointer" ||
+                    VarTypeName.substr(0, 4) == "ref." || VarTypeName.substr(0, 8) == "pointer.") {
+                    HasPointerVariant = true;
+                    break;
+                }
+            }
+        }
+        if (HasPointerVariant) {
+            // Don't create a struct - mapType will return pointer type for this
+            // Create a minimal placeholder that won't be used
+            auto *PtrTy = llvm::StructType::create(*Context, {llvm::PointerType::get(*Context, 0)}, Union.MangledName + "_NPO");
+            // Don't cache this - we want mapType's NPO check to handle it
+            return PtrTy;
+        }
     }
 
     // Tagged union layout: { i8 tag, [maxSize x i8] data }
@@ -3116,11 +3164,41 @@ llvm::Expected<llvm::Value*> Emitter::emitChoose(const PlannedChoose &Choose) {
     const PlannedType &CondType = Choose.Condition[0].ResultType;
 
     // Handle Option with NPO (Null Pointer Optimization)
-    // Option types are represented as a single pointer: null = None, non-null = Some
-    bool IsOption = CondType.Name == "Option" ||
-                    (CondType.Name.size() > 7 && CondType.Name.substr(0, 7) == "Option.");
-    if (IsOption && !CondType.Generics.empty()) {
-        return emitChooseNPO(Choose, UnionValue);
+    // NPO only applies when the inner type is pointer or ref - then Option is a single pointer
+    // (null = None, non-null = Some). For value types like Option[int], use regular tagged union.
+    // Note: For methods, CondType may be pointer[Option[T]] since 'this' is a pointer
+    const PlannedType *OptionType = &CondType;
+    bool CondIsPointer = false;
+    if ((CondType.Name == "pointer" || CondType.Name == "ref") && !CondType.Generics.empty()) {
+        OptionType = &CondType.Generics[0];
+        CondIsPointer = true;
+    }
+
+    bool IsOption = OptionType->Name == "Option" ||
+                    (OptionType->Name.size() > 7 && OptionType->Name.substr(0, 7) == "Option.");
+    if (IsOption && !OptionType->Generics.empty()) {
+        const PlannedType &InnerType = OptionType->Generics[0];
+        bool IsPointerLike = InnerType.Name == "pointer" || InnerType.Name == "ref" ||
+                             (InnerType.Name.size() >= 8 && InnerType.Name.substr(0, 8) == "pointer.") ||
+                             (InnerType.Name.size() >= 4 && InnerType.Name.substr(0, 4) == "ref.");
+        if (IsPointerLike) {
+            // If CondType was pointer[Option[...]], we need to load the Option value first
+            if (CondIsPointer) {
+                UnionValue = Builder->CreateLoad(llvm::PointerType::get(*Context, 0), UnionValue, "option.load");
+            }
+            return emitChooseNPO(Choose, UnionValue);
+        }
+    }
+    // Also handle instantiated Option names like "Option.ref", "Option.pointer"
+    if (OptionType->Name.size() > 7 && OptionType->Name.substr(0, 7) == "Option.") {
+        std::string_view Inner = std::string_view(OptionType->Name).substr(7);
+        if (Inner.substr(0, 3) == "ref" || Inner.substr(0, 7) == "pointer") {
+            // If CondType was pointer[Option[...]], we need to load the Option value first
+            if (CondIsPointer) {
+                UnionValue = Builder->CreateLoad(llvm::PointerType::get(*Context, 0), UnionValue, "option.load");
+            }
+            return emitChooseNPO(Choose, UnionValue);
+        }
     }
 
     // Union layout is { i8 tag, [maxSize x i8] data }
@@ -4150,11 +4228,48 @@ llvm::Expected<llvm::Value*> Emitter::emitIs(const PlannedIs &Is) {
 
     llvm::Value *Value = *UnionValueOrErr;
 
-    // Handle "is null" for optional types (NPO - null pointer optimization)
+    // Handle "is null" for optional types
     if (Is.IsNullCheck) {
-        // For Option[T] with NPO, the value is a pointer - null means None
-        llvm::Value *IsNull = Builder->CreateIsNull(Value, "is.null");
-        return IsNull;
+        // Check if this is an Option type and if it uses NPO
+        const PlannedType &ValueType = Is.Value->ResultType;
+        const PlannedType *OptionType = &ValueType;
+        bool ValueIsPointer = false;
+        if ((ValueType.Name == "pointer" || ValueType.Name == "ref") && !ValueType.Generics.empty()) {
+            OptionType = &ValueType.Generics[0];
+            ValueIsPointer = true;
+        }
+
+        bool IsOption = OptionType->Name == "Option" ||
+                        (OptionType->Name.size() > 7 && OptionType->Name.substr(0, 7) == "Option.");
+        bool UsesNPO = false;
+        if (IsOption && !OptionType->Generics.empty()) {
+            const PlannedType &InnerType = OptionType->Generics[0];
+            UsesNPO = InnerType.Name == "pointer" || InnerType.Name == "ref" ||
+                      (InnerType.Name.size() >= 8 && InnerType.Name.substr(0, 8) == "pointer.") ||
+                      (InnerType.Name.size() >= 4 && InnerType.Name.substr(0, 4) == "ref.");
+        }
+        // Also check instantiated names like "Option.ref", "Option.pointer"
+        if (!UsesNPO && OptionType->Name.size() > 7 && OptionType->Name.substr(0, 7) == "Option.") {
+            std::string_view Inner = std::string_view(OptionType->Name).substr(7);
+            UsesNPO = Inner.substr(0, 3) == "ref" || Inner.substr(0, 7) == "pointer";
+        }
+
+        if (UsesNPO) {
+            // For Option[pointer[T]] with NPO, the value is a pointer - null means None
+            if (ValueIsPointer) {
+                // Load the Option value from the pointer
+                Value = Builder->CreateLoad(llvm::PointerType::get(*Context, 0), Value, "option.val");
+            }
+            llvm::Value *IsNull = Builder->CreateIsNull(Value, "is.null");
+            return IsNull;
+        } else {
+            // For non-NPO Option[T] (e.g., Option[int]), check if tag == 1 (None)
+            // None is typically tag 1 (second variant after Some)
+            PlannedIs NoneIs = Is;
+            NoneIs.IsNullCheck = false;
+            NoneIs.VariantTag = 1;  // None's tag
+            return emitIsWithValue(Value, *OptionType, NoneIs);
+        }
     }
 
     const PlannedType &UnionType = Is.Value->ResultType;
@@ -4337,11 +4452,25 @@ llvm::Expected<llvm::Value*> Emitter::emitAs(const PlannedAs &As) {
 llvm::Expected<llvm::Value*> Emitter::emitVariantConstruction(
     const PlannedVariantConstruction &Construct) {
     // Handle Option with NPO (Null Pointer Optimization)
-    // Option types are represented as a single pointer: null = None, non-null = Some
+    // NPO only applies when the inner type is pointer or ref
     // UnionType.Name may be "Option" (without generics) or "Option.int" (with generics)
     bool IsOption = Construct.UnionType.Name == "Option" ||
                     Construct.UnionType.Name.substr(0, 7) == "Option.";
+    bool UseNPO = false;
     if (IsOption && !Construct.UnionType.Generics.empty()) {
+        const PlannedType &InnerType = Construct.UnionType.Generics[0];
+        UseNPO = InnerType.Name == "pointer" || InnerType.Name == "ref" ||
+                 (InnerType.Name.size() >= 8 && InnerType.Name.substr(0, 8) == "pointer.") ||
+                 (InnerType.Name.size() >= 4 && InnerType.Name.substr(0, 4) == "ref.");
+    }
+    // Also handle instantiated Option names like "Option.ref", "Option.pointer"
+    if (!UseNPO && Construct.UnionType.Name.size() > 7 &&
+        Construct.UnionType.Name.substr(0, 7) == "Option.") {
+        std::string_view Inner = std::string_view(Construct.UnionType.Name).substr(7);
+        UseNPO = Inner.substr(0, 3) == "ref" || Inner.substr(0, 7) == "pointer";
+    }
+
+    if (UseNPO) {
         auto *PtrTy = llvm::PointerType::get(*Context, 0);
 
         if (Construct.VariantName == "None") {
