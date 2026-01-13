@@ -339,7 +339,7 @@ define Planner
     }
 
     ; Mangle a structure/union name with generic args
-    function mangle_structure(this, name: String, generic_args: pointer[Vector[PlannedType]]) returns String
+    function mangle_structure(this, name: String, generic_args: ref[Vector[PlannedType]]?) returns String
     {
         let result StringBuilder#()
         result.append(String#("_Z"))
@@ -368,7 +368,7 @@ define Planner
     }
 
     ; Mangle a function name
-    function mangle_function(this, name: String, params: pointer[Vector[PlannedItem]], parent: pointer[PlannedType]) returns String
+    function mangle_function(this, name: String, params: ref[Vector[PlannedItem]]?, parent: ref[PlannedType]?) returns String
     {
         let result StringBuilder#()
         result.append(String#("_Z"))
@@ -485,7 +485,7 @@ define Planner
     ; ========================================================================
 
     ; Register a concept in the lookup table
-    procedure register_concept(this, name: String, concept: pointer[Concept])
+    procedure register_concept(this, name: String, concept: ref[Concept]?)
     {
         concepts.add(name, concept)
     }
@@ -589,7 +589,7 @@ define Planner
 
     ; Generate a cache key for a generic instantiation
     ; e.g., "Vector" + [int] -> "Vector.int"
-    function generate_cache_key(base_name: String, args: pointer[Vector[PlannedType]]) returns String
+    function generate_cache_key(base_name: String, args: ref[Vector[PlannedType]]?) returns String
     {
         let result StringBuilder#()
         result.append(base_name)
@@ -736,7 +736,7 @@ define Planner
 
     ; Build a readable type name from a path vector
     ; e.g., ["scaly", "containers", "Vector"] -> "scaly.containers.Vector"
-    function build_type_name(path: pointer[Vector[String]]) returns String
+    function build_type_name(path: ref[Vector[String]]?) returns String
     {
         if path = null
             return String#("")
@@ -905,7 +905,7 @@ define Planner
 
     ; Instantiate a generic type with concrete type arguments
     ; Returns null on error
-    function instantiate_generic(this, generic: pointer[Concept], args: pointer[Vector[PlannedType]], instantiation_loc: Span) returns ref[PlannedType]?
+    function instantiate_generic(this, generic: ref[Concept]?, args: ref[Vector[PlannedType]]?, instantiation_loc: Span) returns ref[PlannedType]?
     {
         if generic = null
             return null
@@ -1420,7 +1420,7 @@ define Planner
 
     ; Plan a list of operands
     ; Returns null on error
-    function plan_operands(this, ops: pointer[Vector[scaly.compiler.Model.Operand]]) returns ref[Vector[PlannedOperand]]?
+    function plan_operands(this, ops: ref[Vector[scaly.compiler.Model.Operand]]?) returns ref[Vector[PlannedOperand]]?
     {
         if ops = null
             return null
@@ -1663,7 +1663,7 @@ define Planner
     }
 
     ; Infer the type of a planned expression
-    function infer_expression_type(this, expr: pointer[PlannedExpression]) returns PlannedType
+    function infer_expression_type(this, expr: ref[PlannedExpression]?) returns PlannedType
     {
         if expr = null
             return make_void_type()
@@ -2120,7 +2120,7 @@ define Planner
 
     ; Plan a list of statements
     ; Returns null on error
-    function plan_statements(this, stmts: pointer[Vector[scaly.compiler.Model.Statement]]) returns ref[Vector[PlannedStatement]]?
+    function plan_statements(this, stmts: ref[Vector[scaly.compiler.Model.Statement]]?) returns ref[Vector[PlannedStatement]]?
     {
         if stmts = null
             return null
@@ -2181,7 +2181,7 @@ define Planner
 
     ; Plan a function
     ; Returns null on error
-    function plan_function(this, func: scaly.compiler.Model.Function, parent: pointer[PlannedType]) returns ref[PlannedFunction]?
+    function plan_function(this, func: scaly.compiler.Model.Function, parent: ref[PlannedType]?) returns ref[PlannedFunction]?
     {
         ; Save and reset tracking for $ allocations in function body
         let saved_uses_local_lifetime current_function_uses_local_lifetime
@@ -2324,7 +2324,7 @@ define Planner
 
     ; Plan an operator
     ; Returns null on error
-    function plan_operator(this, op: scaly.compiler.Model.Operator, parent: pointer[PlannedType]) returns ref[PlannedOperator]?
+    function plan_operator(this, op: scaly.compiler.Model.Operator, parent: ref[PlannedType]?) returns ref[PlannedOperator]?
     {
         push_scope()
 
