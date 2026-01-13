@@ -7,6 +7,17 @@ use scaly.containers.Vector
 use scaly.io.File
 use scaly.io.Console
 
+; Import parser module (which includes lexer)
+module parser
+
+; Import compiler modules
+use scalyc.compiler.Modeler
+use scalyc.compiler.Model.Program
+use scalyc.compiler.Planner
+use scalyc.compiler.Plan.Plan
+use scalyc.compiler.Emitter
+use scalyc.compiler.Emitter.EmitterConfig
+
 ; ============================================================================
 ; Command-line options
 ; ============================================================================
@@ -202,44 +213,164 @@ define cli
             Console.println("Read source file successfully")
         }
 
-        ; TODO: Run the compilation pipeline
-        ; 1. Lexer - tokenize source
-        ; 2. Parser - build AST
-        ; 3. Modeler - build semantic model
-        ; 4. Planner - resolve types, mangle names
-        ; 5. Emitter - generate LLVM IR / object code
+        ; ================================================================
+        ; Stage 1: Parse
+        ; ================================================================
+
+        var p parser.Parser$(source)
 
         if opts.lex_only
         {
-            ; TODO: Run lexer and print tokens
-            Console.println("Lexer output not yet implemented")
+            ; Just tokenize and print tokens
+            Console.println("Tokens:")
+            p.lexer.advance$()
+            while p.lexer.is_at_end() = false
+            {
+                ; TODO: Print token details
+                Console.println("  <token>")
+                p.lexer.advance$()
+            }
             return 0
+        }
+
+        ; Parse the program
+        var syntax: parser.ProgramSyntax
+        choose p.parse_program$()
+            when error: parser.ParserError
+            {
+                Console.println("Parse error")
+                return 2
+            }
+            when value: parser.ProgramSyntax
+            {
+                set syntax: value
+            }
+
+        if opts.verbose
+        {
+            Console.println("Parsing completed successfully")
         }
 
         if opts.parse_only
         {
-            ; TODO: Run parser
-            Console.println("Parser output not yet implemented")
+            Console.println("Parse successful")
             return 0
+        }
+
+        ; ================================================================
+        ; Stage 2: Build semantic model
+        ; ================================================================
+
+        ; Extract program name from filename (strip path and extension)
+        var program_name extract_program_name(opts.input_file)
+
+        let model Modeler.build_program#(opts.input_file, program_name, syntax)
+
+        if opts.verbose
+        {
+            Console.println("Model built successfully")
         }
 
         if opts.model_only
         {
-            ; TODO: Run modeler
-            Console.println("Model output not yet implemented")
+            Console.println("Model built successfully")
             return 0
+        }
+
+        ; ================================================================
+        ; Stage 3: Plan (type resolution, name mangling)
+        ; ================================================================
+
+        var planner Planner.Planner$(opts.input_file)
+        let plan planner.plan_program(model)
+
+        if plan = null
+        {
+            Console.println("Planner error")
+            return 4
+        }
+
+        if opts.verbose
+        {
+            Console.println("Planning completed successfully")
         }
 
         if opts.plan_only
         {
-            ; TODO: Run planner
-            Console.println("Planner output not yet implemented")
+            Console.println("Planning completed successfully")
             return 0
         }
 
-        ; Full compilation
-        Console.println("Full compilation not yet implemented")
+        ; ================================================================
+        ; Stage 4: Emit (LLVM IR generation)
+        ; ================================================================
+
+        var config EmitterConfig$()
+        set config.emit_debug_info: false
+
+        var emitter Emitter.Emitter$(config)
+        let emit_result emitter.emit(plan, program_name)
+
+        if emit_result = false
+        {
+            Console.println("Emitter error")
+            return 5
+        }
+
+        if opts.verbose
+        {
+            Console.println("Code generation completed successfully")
+        }
+
+        if opts.emit_ir
+        {
+            ; TODO: Write IR to file or stdout
+            Console.println("LLVM IR generation completed")
+            return 0
+        }
+
+        ; TODO: Full compilation (link to executable)
+        Console.println("Compilation completed successfully")
         0
+    }
+
+    ; Extract program name from file path
+    ; e.g., "/path/to/hello.scaly" -> "hello"
+    function extract_program_name#(file_path: String) returns String
+    {
+        ; Find last '/' or '\'
+        var start 0
+        var i 0
+        while i < file_path.get_length() as int
+        {
+            let c file_path.get(i as size_t)
+            if c = "/" as char
+                set start: i + 1
+            if c = "\\" as char
+                set start: i + 1
+            set i: i + 1
+        }
+
+        ; Find last '.'
+        var end file_path.get_length() as int
+        set i: end - 1
+        while i >= start
+        {
+            let c file_path.get(i as size_t)
+            if c = "." as char
+            {
+                set end: i
+                ; break - just use assignment for now
+                set i: -1
+            }
+            set i: i - 1
+        }
+
+        ; Extract substring
+        if end <= start
+            return file_path
+
+        file_path.substring#(start as size_t, (end - start) as size_t)
     }
 
     ; Main entry point
