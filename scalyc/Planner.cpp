@@ -2365,9 +2365,7 @@ std::optional<Planner::InitializerMatch> Planner::findInitializer(
 
             // Check each original initializer
             for (const auto &Init : OrigStruct.Initializers) {
-                // DEBUG: llvm::errs() << "DEBUG findInitializer: checking init with " << Init.Input.size() << " params\n";
                 if (Init.Input.size() != ArgTypes.size()) {
-                    // DEBUG: llvm::errs() << "DEBUG findInitializer: size mismatch, skipping\n";
                     continue;
                 }
 
