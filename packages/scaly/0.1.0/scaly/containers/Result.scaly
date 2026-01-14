@@ -11,7 +11,7 @@ define Result[T, E] union
     function is_ok(this: Result[T, E]) returns bool
     {
         choose this
-            when ok: Ok
+            when Ok: ok
                 return true
             else
                 return false
@@ -21,7 +21,7 @@ define Result[T, E] union
     function is_error(this: Result[T, E]) returns bool
     {
         choose this
-            when err: Error
+            when Error: err
                 return true
             else
                 return false
@@ -32,7 +32,7 @@ define Result[T, E] union
     function unwrap(this: Result[T, E]) returns T
     {
         choose this
-            when ok: Ok
+            when Ok: ok
                 return ok
     }
 
@@ -41,7 +41,7 @@ define Result[T, E] union
     function unwrap_error(this: Result[T, E]) returns E
     {
         choose this
-            when err: Error
+            when Error: err
                 return err
     }
 
@@ -49,7 +49,7 @@ define Result[T, E] union
     function unwrap_or(this: Result[T, E], default: T) returns T
     {
         choose this
-            when ok: Ok
+            when Ok: ok
                 return ok
             else
                 return default

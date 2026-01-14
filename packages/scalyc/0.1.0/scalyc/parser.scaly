@@ -306,8 +306,8 @@ define WhenSyntax
 (
     start: size_t
     end: size_t
+    variant: String
     name: String
-    variant: NameSyntax
     command: CommandSyntax
 )
 
@@ -1000,12 +1000,12 @@ define Parser
     function parse_literal_token#(rp, this: Parser) returns Literal throws ParserError
     {
         choose lexer.token
-            when empty: Empty
+            when Empty: empty
                 lexer.advance#()
             else {}
 
         choose lexer.token
-            when literal: Literal
+            when Literal: literal
             {
                 let ret literal.value
                 lexer.empty()
@@ -1022,22 +1022,22 @@ define Parser
         let file_start lexer.position
         var file: FileSyntax
         choose parse_file#()
-            when _err: Error
+            when Error: _err
                 throw _err
-            when success: Success
+            when Success: success
                 set file: success
 
         let statements_start lexer.position
         var statements: ref[Vector[StatementSyntax]]? null
         choose parse_statement_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set statements: success
 
         let end lexer.position
@@ -1052,40 +1052,40 @@ define Parser
         let packages_start lexer.position
         var packages: ref[Vector[PackageSyntax]]? null
         choose parse_package_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set packages: success
 
         let uses_start lexer.position
         var uses: ref[Vector[UseSyntax]]? null
         choose parse_use_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set uses: success
 
         let declarations_start lexer.position
         var declarations: ref[Vector[DeclarationSyntax]]? null
         choose parse_declaration_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set declarations: success
 
         let end lexer.position
@@ -1099,12 +1099,12 @@ define Parser
         while true
         {
             choose parse_declaration#()
-                when _err: Error
+                when Error: _err
                 {
                     choose _err
-                        when i: Invalid
+                        when Invalid: i
                             throw ParserError.Invalid(i)
-                        when d: Different
+                        when Different: d
                         {
                             if list.head = null
                                 throw ParserError.Different(d)
@@ -1112,7 +1112,7 @@ define Parser
                                 return Vector[DeclarationSyntax]#(list)
                         }
                 }
-                when node: Success
+                when Success: node
                     list.add$(node)
         }
     }
@@ -1124,9 +1124,9 @@ define Parser
         let symbol_start lexer.position
         var symbol: SymbolSyntax
         choose parse_symbol#()
-            when _err: Error
+            when Error: _err
                 throw _err
-            when success: Success
+            when Success: success
                 set symbol: success
 
         lexer.parse_colon#()
@@ -1139,74 +1139,74 @@ define Parser
     function parse_symbol#(rp, this: Parser) returns SymbolSyntax throws ParserError
     {
         choose parse_private#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return SymbolSyntax.Private(node)
         choose parse_definition#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return SymbolSyntax.Definition(node)
         choose parse_function#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return SymbolSyntax.Function(node)
         choose parse_operator#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return SymbolSyntax.Operator(node)
         choose parse_trait#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return SymbolSyntax.Trait(node)
         choose parse_macro#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return SymbolSyntax.Macro(node)
         choose parse_module#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return SymbolSyntax.Module(node)
         throw ParserError.Different(DifferentSyntax())
     }
@@ -1221,15 +1221,15 @@ define Parser
         let export__start lexer.position
         var export_: ExportSyntax
         choose parse_export#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(export__start, lexer.position, String#("expected Export")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set export_: success
 
         let end lexer.position
@@ -1240,54 +1240,54 @@ define Parser
     function parse_export#(rp, this: Parser) returns ExportSyntax throws ParserError
     {
         choose parse_definition#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ExportSyntax.Definition(node)
         choose parse_function#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ExportSyntax.Function(node)
         choose parse_operator#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ExportSyntax.Operator(node)
         choose parse_trait#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ExportSyntax.Trait(node)
         choose parse_module#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ExportSyntax.Module(node)
         throw ParserError.Different(DifferentSyntax())
     }
@@ -1298,12 +1298,12 @@ define Parser
         while true
         {
             choose parse_member#()
-                when _err: Error
+                when Error: _err
                 {
                     choose _err
-                        when i: Invalid
+                        when Invalid: i
                             throw ParserError.Invalid(i)
-                        when d: Different
+                        when Different: d
                         {
                             if list.head = null
                                 throw ParserError.Different(d)
@@ -1311,7 +1311,7 @@ define Parser
                                 return Vector[MemberSyntax]#(list)
                         }
                 }
-                when node: Success
+                when Success: node
                     list.add$(node)
         }
     }
@@ -1323,9 +1323,9 @@ define Parser
         let constituent_start lexer.position
         var constituent: ConstituentSyntax
         choose parse_constituent#()
-            when _err: Error
+            when Error: _err
                 throw _err
-            when success: Success
+            when Success: success
                 set constituent: success
 
         lexer.parse_colon#()
@@ -1338,84 +1338,84 @@ define Parser
     function parse_constituent#(rp, this: Parser) returns ConstituentSyntax throws ParserError
     {
         choose parse_definition#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ConstituentSyntax.Definition(node)
         choose parse_function#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ConstituentSyntax.Function(node)
         choose parse_procedure#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ConstituentSyntax.Procedure(node)
         choose parse_operator#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ConstituentSyntax.Operator(node)
         choose parse_implement#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ConstituentSyntax.Implement(node)
         choose parse_trait#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ConstituentSyntax.Trait(node)
         choose parse_macro#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ConstituentSyntax.Macro(node)
         choose parse_module#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ConstituentSyntax.Module(node)
         throw ParserError.Different(DifferentSyntax())
     }
@@ -1434,14 +1434,14 @@ define Parser
         let parameters_start lexer.position
         var parameters: ref[GenericParametersSyntax]? null
         choose parse_genericparameters#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set parameters: success
 
         lexer.parse_colon#()
@@ -1449,28 +1449,28 @@ define Parser
         let attributes_start lexer.position
         var attributes: ref[Vector[AttributeSyntax]]? null
         choose parse_attribute_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set attributes: success
 
         let concept__start lexer.position
         var concept_: ConceptSyntax
         choose parse_concept#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(concept__start, lexer.position, String#("expected Concept")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set concept_: success
 
         let end lexer.position
@@ -1488,15 +1488,15 @@ define Parser
         let parameters_start lexer.position
         var parameters: ref[Vector[GenericParameterSyntax]]?
         choose parse_genericparameter_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(parameters_start, lexer.position, String#("expected GenericParameter")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set parameters: success
 
         if ~lexer.parse_punctuation#(ParserConstants.CHAR_RBRACKET())
@@ -1513,12 +1513,12 @@ define Parser
         while true
         {
             choose parse_genericparameter#()
-                when _err: Error
+                when Error: _err
                 {
                     choose _err
-                        when i: Invalid
+                        when Invalid: i
                             throw ParserError.Invalid(i)
-                        when d: Different
+                        when Different: d
                         {
                             if list.head = null
                                 throw ParserError.Different(d)
@@ -1526,7 +1526,7 @@ define Parser
                                 return Vector[GenericParameterSyntax]#(list)
                         }
                 }
-                when node: Success
+                when Success: node
                     list.add$(node)
         }
     }
@@ -1542,14 +1542,14 @@ define Parser
         let attributes_start lexer.position
         var attributes: ref[Vector[AttributeSyntax]]? null
         choose parse_attribute_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set attributes: success
 
         lexer.parse_punctuation#(ParserConstants.CHAR_COMMA())
@@ -1562,64 +1562,64 @@ define Parser
     function parse_concept#(rp, this: Parser) returns ConceptSyntax throws ParserError
     {
         choose parse_class#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ConceptSyntax.Class(node)
         choose parse_namespace#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ConceptSyntax.Namespace(node)
         choose parse_union#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ConceptSyntax.Union(node)
         choose parse_constant#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ConceptSyntax.Constant(node)
         choose parse_delegate#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ConceptSyntax.Delegate(node)
         choose parse_intrinsic#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ConceptSyntax.Intrinsic(node)
         throw ParserError.Different(DifferentSyntax())
     }
@@ -1631,9 +1631,9 @@ define Parser
         let structure_start lexer.position
         var structure: StructureSyntax
         choose parse_structure#()
-            when _err: Error
+            when Error: _err
                 throw _err
-            when success: Success
+            when Success: success
                 set structure: success
 
         lexer.parse_colon#()
@@ -1641,14 +1641,14 @@ define Parser
         let body_start lexer.position
         var body: ref[BodySyntax]? null
         choose parse_body#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set body: success
 
         lexer.parse_colon#()
@@ -1668,53 +1668,53 @@ define Parser
         let uses_start lexer.position
         var uses: ref[Vector[UseSyntax]]? null
         choose parse_use_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set uses: success
 
         let inits_start lexer.position
         var inits: ref[Vector[InitSyntax]]? null
         choose parse_init_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set inits: success
 
         let deInit_start lexer.position
         var deInit: ref[DeInitSyntax]? null
         choose parse_deinit#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set deInit: success
 
         let members_start lexer.position
         var members: ref[Vector[MemberSyntax]]? null
         choose parse_member_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set members: success
 
         if ~lexer.parse_punctuation#(ParserConstants.CHAR_RBRACE())
@@ -1737,27 +1737,27 @@ define Parser
         let uses_start lexer.position
         var uses: ref[Vector[UseSyntax]]? null
         choose parse_use_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set uses: success
 
         let declarations_start lexer.position
         var declarations: ref[Vector[DeclarationSyntax]]? null
         choose parse_declaration_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set declarations: success
 
         if ~lexer.parse_punctuation#(ParserConstants.CHAR_RBRACE())
@@ -1785,15 +1785,15 @@ define Parser
         let variants_start lexer.position
         var variants: ref[Vector[VariantSyntax]]?
         choose parse_variant_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(variants_start, lexer.position, String#("expected Variant")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set variants: success
 
         if ~lexer.parse_punctuation#(ParserConstants.CHAR_RPAREN())
@@ -1804,14 +1804,14 @@ define Parser
         let body_start lexer.position
         var body: ref[BodySyntax]? null
         choose parse_body#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set body: success
 
         lexer.parse_colon#()
@@ -1827,12 +1827,12 @@ define Parser
         while true
         {
             choose parse_variant#()
-                when _err: Error
+                when Error: _err
                 {
                     choose _err
-                        when i: Invalid
+                        when Invalid: i
                             throw ParserError.Invalid(i)
-                        when d: Different
+                        when Different: d
                         {
                             if list.head = null
                                 throw ParserError.Different(d)
@@ -1840,7 +1840,7 @@ define Parser
                                 return Vector[VariantSyntax]#(list)
                         }
                 }
-                when node: Success
+                when Success: node
                     list.add$(node)
         }
     }
@@ -1856,27 +1856,27 @@ define Parser
         let attributes_start lexer.position
         var attributes: ref[Vector[AttributeSyntax]]? null
         choose parse_attribute_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set attributes: success
 
         let annotation_start lexer.position
         var annotation: ref[TypeAnnotationSyntax]? null
         choose parse_typeannotation#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set annotation: success
 
         lexer.parse_punctuation#(ParserConstants.CHAR_COMMA())
@@ -1895,22 +1895,22 @@ define Parser
         let type_start lexer.position
         var type: TypeSyntax
         choose parse_type#()
-            when _err: Error
+            when Error: _err
                 throw _err
-            when success: Success
+            when Success: success
                 set type: success
 
         let operation_start lexer.position
         var operation: ref[Vector[OperandSyntax]]? null
         choose parse_operand_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set operation: success
 
         lexer.parse_colon#()
@@ -1930,53 +1930,53 @@ define Parser
         let parameters_start lexer.position
         var parameters: ref[ParameterSetSyntax]? null
         choose parse_parameterset#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set parameters: success
 
         let attributes_start lexer.position
         var attributes: ref[Vector[AttributeSyntax]]? null
         choose parse_attribute_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set attributes: success
 
         let result_start lexer.position
         var result: ref[ReturnsSyntax]? null
         choose parse_returns#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set result: success
 
         let error_start lexer.position
         var error: ref[ThrowsSyntax]? null
         choose parse_throws#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set error: success
 
         let end lexer.position
@@ -1994,14 +1994,14 @@ define Parser
         let generics_start lexer.position
         var generics: ref[Vector[GenericArgumentSyntax]]? null
         choose parse_genericargument_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set generics: success
 
         if ~lexer.parse_punctuation#(ParserConstants.CHAR_RBRACKET())
@@ -2018,12 +2018,12 @@ define Parser
         while true
         {
             choose parse_genericargument#()
-                when _err: Error
+                when Error: _err
                 {
                     choose _err
-                        when i: Invalid
+                        when Invalid: i
                             throw ParserError.Invalid(i)
-                        when d: Different
+                        when Different: d
                         {
                             if list.head = null
                                 throw ParserError.Different(d)
@@ -2031,7 +2031,7 @@ define Parser
                                 return Vector[GenericArgumentSyntax]#(list)
                         }
                 }
-                when node: Success
+                when Success: node
                     list.add$(node)
         }
     }
@@ -2043,9 +2043,9 @@ define Parser
         let type_start lexer.position
         var type: TypeSyntax
         choose parse_type#()
-            when _err: Error
+            when Error: _err
                 throw _err
-            when success: Success
+            when Success: success
                 set type: success
 
         lexer.parse_punctuation#(ParserConstants.CHAR_COMMA())
@@ -2070,24 +2070,24 @@ define Parser
     function parse_parameterset#(rp, this: Parser) returns ParameterSetSyntax throws ParserError
     {
         choose parse_parameters#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ParameterSetSyntax.Parameters(node)
         choose parse_type#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ParameterSetSyntax.Type(node)
         throw ParserError.Different(DifferentSyntax())
     }
@@ -2102,14 +2102,14 @@ define Parser
         let items_start lexer.position
         var items: ref[Vector[ItemSyntax]]? null
         choose parse_item_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set items: success
 
         if ~lexer.parse_punctuation#(ParserConstants.CHAR_RPAREN())
@@ -2126,12 +2126,12 @@ define Parser
         while true
         {
             choose parse_item#()
-                when _err: Error
+                when Error: _err
                 {
                     choose _err
-                        when i: Invalid
+                        when Invalid: i
                             throw ParserError.Invalid(i)
-                        when d: Different
+                        when Different: d
                         {
                             if list.head = null
                                 throw ParserError.Different(d)
@@ -2139,7 +2139,7 @@ define Parser
                                 return Vector[ItemSyntax]#(list)
                         }
                 }
-                when node: Success
+                when Success: node
                     list.add$(node)
         }
     }
@@ -2155,14 +2155,14 @@ define Parser
         let annotation_start lexer.position
         var annotation: ref[TypeAnnotationSyntax]? null
         choose parse_typeannotation#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set annotation: success
 
         lexer.parse_punctuation#(ParserConstants.CHAR_COMMA())
@@ -2172,14 +2172,14 @@ define Parser
         let attributes_start lexer.position
         var attributes: ref[Vector[AttributeSyntax]]? null
         choose parse_attribute_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set attributes: success
 
         lexer.parse_colon#()
@@ -2199,28 +2199,28 @@ define Parser
         let type_start lexer.position
         var type: TypeSyntax
         choose parse_type#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(type_start, lexer.position, String#("expected Type")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set type: success
 
         let attributes_start lexer.position
         var attributes: ref[Vector[AttributeSyntax]]? null
         choose parse_attribute_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set attributes: success
 
         let end lexer.position
@@ -2238,28 +2238,28 @@ define Parser
         let type_start lexer.position
         var type: TypeSyntax
         choose parse_type#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(type_start, lexer.position, String#("expected Type")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set type: success
 
         let attributes_start lexer.position
         var attributes: ref[Vector[AttributeSyntax]]? null
         choose parse_attribute_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set attributes: success
 
         let end lexer.position
@@ -2273,12 +2273,12 @@ define Parser
         while true
         {
             choose parse_use#()
-                when _err: Error
+                when Error: _err
                 {
                     choose _err
-                        when i: Invalid
+                        when Invalid: i
                             throw ParserError.Invalid(i)
-                        when d: Different
+                        when Different: d
                         {
                             if list.head = null
                                 throw ParserError.Different(d)
@@ -2286,7 +2286,7 @@ define Parser
                                 return Vector[UseSyntax]#(list)
                         }
                 }
-                when node: Success
+                when Success: node
                     list.add$(node)
         }
     }
@@ -2301,15 +2301,15 @@ define Parser
         let name_start lexer.position
         var name: NameSyntax
         choose parse_name#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(name_start, lexer.position, String#("expected Name")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set name: success
 
         lexer.parse_colon#()
@@ -2329,28 +2329,28 @@ define Parser
         let type_start lexer.position
         var type: TypeSyntax
         choose parse_type#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(type_start, lexer.position, String#("expected Type")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set type: success
 
         let attributes_start lexer.position
         var attributes: ref[Vector[AttributeSyntax]]? null
         choose parse_attribute_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set attributes: success
 
         lexer.parse_colon#()
@@ -2361,27 +2361,27 @@ define Parser
         let uses_start lexer.position
         var uses: ref[Vector[UseSyntax]]? null
         choose parse_use_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set uses: success
 
         let methods_start lexer.position
         var methods: ref[Vector[MethodSyntax]]? null
         choose parse_method_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set methods: success
 
         if ~lexer.parse_punctuation#(ParserConstants.CHAR_RBRACE())
@@ -2404,41 +2404,41 @@ define Parser
         let name_start lexer.position
         var name: NameSyntax
         choose parse_name#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(name_start, lexer.position, String#("expected Name")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set name: success
 
         let extension_start lexer.position
         var extension: ref[ExtendsSyntax]? null
         choose parse_extends#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set extension: success
 
         let attributes_start lexer.position
         var attributes: ref[Vector[AttributeSyntax]]? null
         choose parse_attribute_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set attributes: success
 
         if ~lexer.parse_punctuation#(ParserConstants.CHAR_LBRACE())
@@ -2447,27 +2447,27 @@ define Parser
         let uses_start lexer.position
         var uses: ref[Vector[UseSyntax]]? null
         choose parse_use_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set uses: success
 
         let functions_start lexer.position
         var functions: ref[Vector[MethodSyntax]]? null
         choose parse_method_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set functions: success
 
         if ~lexer.parse_punctuation#(ParserConstants.CHAR_RBRACE())
@@ -2486,12 +2486,12 @@ define Parser
         while true
         {
             choose parse_method#()
-                when _err: Error
+                when Error: _err
                 {
                     choose _err
-                        when i: Invalid
+                        when Invalid: i
                             throw ParserError.Invalid(i)
-                        when d: Different
+                        when Different: d
                         {
                             if list.head = null
                                 throw ParserError.Different(d)
@@ -2499,7 +2499,7 @@ define Parser
                                 return Vector[MethodSyntax]#(list)
                         }
                 }
-                when node: Success
+                when Success: node
                     list.add$(node)
         }
     }
@@ -2507,34 +2507,34 @@ define Parser
     function parse_method#(rp, this: Parser) returns MethodSyntax throws ParserError
     {
         choose parse_function#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return MethodSyntax.Function(node)
         choose parse_procedure#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return MethodSyntax.Procedure(node)
         choose parse_operator#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return MethodSyntax.Operator(node)
         throw ParserError.Different(DifferentSyntax())
     }
@@ -2545,12 +2545,12 @@ define Parser
         while true
         {
             choose parse_init#()
-                when _err: Error
+                when Error: _err
                 {
                     choose _err
-                        when i: Invalid
+                        when Invalid: i
                             throw ParserError.Invalid(i)
-                        when d: Different
+                        when Different: d
                         {
                             if list.head = null
                                 throw ParserError.Different(d)
@@ -2558,7 +2558,7 @@ define Parser
                                 return Vector[InitSyntax]#(list)
                         }
                 }
-                when node: Success
+                when Success: node
                     list.add$(node)
         }
     }
@@ -2573,27 +2573,27 @@ define Parser
         let lifetime_start lexer.position
         var lifetime: ref[LifetimeSyntax]? null
         choose parse_lifetime#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set lifetime: success
 
         let parameters_start lexer.position
         var parameters: ref[ParameterSetSyntax]? null
         choose parse_parameterset#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set parameters: success
 
         lexer.parse_colon#()
@@ -2601,15 +2601,15 @@ define Parser
         let action_start lexer.position
         var action: ActionSyntax
         choose parse_action#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(action_start, lexer.position, String#("expected Action")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set action: success
 
         lexer.parse_colon#()
@@ -2631,15 +2631,15 @@ define Parser
         let action_start lexer.position
         var action: ActionSyntax
         choose parse_action#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(action_start, lexer.position, String#("expected Action")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set action: success
 
         lexer.parse_colon#()
@@ -2659,15 +2659,15 @@ define Parser
         let target_start lexer.position
         var target: TargetSyntax
         choose parse_target#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(target_start, lexer.position, String#("expected Target")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set target: success
 
         let end lexer.position
@@ -2685,15 +2685,15 @@ define Parser
         let target_start lexer.position
         var target: TargetSyntax
         choose parse_target#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(target_start, lexer.position, String#("expected Target")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set target: success
 
         let end lexer.position
@@ -2711,15 +2711,15 @@ define Parser
         let target_start lexer.position
         var target: TargetSyntax
         choose parse_target#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(target_start, lexer.position, String#("expected Target")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set target: success
 
         let end lexer.position
@@ -2730,24 +2730,24 @@ define Parser
     function parse_target#(rp, this: Parser) returns TargetSyntax throws ParserError
     {
         choose parse_named#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return TargetSyntax.Named(node)
         choose parse_routine#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return TargetSyntax.Routine(node)
         throw ParserError.Different(DifferentSyntax())
     }
@@ -2763,15 +2763,15 @@ define Parser
         let routine_start lexer.position
         var routine: RoutineSyntax
         choose parse_routine#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(routine_start, lexer.position, String#("expected Routine")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set routine: success
 
         let end lexer.position
@@ -2786,66 +2786,66 @@ define Parser
         let generics_start lexer.position
         var generics: ref[GenericArgumentsSyntax]? null
         choose parse_genericarguments#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set generics: success
 
         let lifetime_start lexer.position
         var lifetime: ref[LifetimeSyntax]? null
         choose parse_lifetime#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set lifetime: success
 
         let parameters_start lexer.position
         var parameters: ref[ParameterSetSyntax]? null
         choose parse_parameterset#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set parameters: success
 
         let attributes_start lexer.position
         var attributes: ref[Vector[AttributeSyntax]]? null
         choose parse_attribute_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set attributes: success
 
         let returns__start lexer.position
         var returns_: ref[ReturnsSyntax]? null
         choose parse_returns#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set returns_: success
 
         lexer.parse_colon#()
@@ -2853,14 +2853,14 @@ define Parser
         let throws__start lexer.position
         var throws_: ref[ThrowsSyntax]? null
         choose parse_throws#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set throws_: success
 
         lexer.parse_colon#()
@@ -2868,15 +2868,15 @@ define Parser
         let implementation_start lexer.position
         var implementation: ImplementationSyntax
         choose parse_implementation#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(implementation_start, lexer.position, String#("expected Implementation")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set implementation: success
 
         let end lexer.position
@@ -2887,44 +2887,44 @@ define Parser
     function parse_implementation#(rp, this: Parser) returns ImplementationSyntax throws ParserError
     {
         choose parse_action#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ImplementationSyntax.Action(node)
         choose parse_extern#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ImplementationSyntax.Extern(node)
         choose parse_instruction#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ImplementationSyntax.Instruction(node)
         choose parse_intrinsic#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ImplementationSyntax.Intrinsic(node)
         throw ParserError.Different(DifferentSyntax())
     }
@@ -2979,14 +2979,14 @@ define Parser
         let extensions_start lexer.position
         var extensions: ref[Vector[ExtendSyntax]]? null
         choose parse_extend_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set extensions: success
 
         let end lexer.position
@@ -3000,12 +3000,12 @@ define Parser
         while true
         {
             choose parse_extend#()
-                when _err: Error
+                when Error: _err
                 {
                     choose _err
-                        when i: Invalid
+                        when Invalid: i
                             throw ParserError.Invalid(i)
-                        when d: Different
+                        when Different: d
                         {
                             if list.head = null
                                 throw ParserError.Different(d)
@@ -3013,7 +3013,7 @@ define Parser
                                 return Vector[ExtendSyntax]#(list)
                         }
                 }
-                when node: Success
+                when Success: node
                     list.add$(node)
         }
     }
@@ -3025,9 +3025,9 @@ define Parser
         let type_start lexer.position
         var type: TypeSyntax
         choose parse_type#()
-            when _err: Error
+            when Error: _err
                 throw _err
-            when success: Success
+            when Success: success
                 set type: success
 
         lexer.parse_punctuation#(ParserConstants.CHAR_COMMA())
@@ -3051,29 +3051,29 @@ define Parser
         let model_start lexer.position
         var model: ModelSyntax
         choose parse_model#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(model_start, lexer.position, String#("expected Model")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set model: success
 
         let rule_start lexer.position
         var rule: ref[Vector[OperandSyntax]]?
         choose parse_operand_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(rule_start, lexer.position, String#("expected Operand")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set rule: success
 
         let end lexer.position
@@ -3087,12 +3087,12 @@ define Parser
         while true
         {
             choose parse_attribute#()
-                when _err: Error
+                when Error: _err
                 {
                     choose _err
-                        when i: Invalid
+                        when Invalid: i
                             throw ParserError.Invalid(i)
-                        when d: Different
+                        when Different: d
                         {
                             if list.head = null
                                 throw ParserError.Different(d)
@@ -3100,7 +3100,7 @@ define Parser
                                 return Vector[AttributeSyntax]#(list)
                         }
                 }
-                when node: Success
+                when Success: node
                     list.add$(node)
         }
     }
@@ -3116,15 +3116,15 @@ define Parser
         let model_start lexer.position
         var model: ModelSyntax
         choose parse_model#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(model_start, lexer.position, String#("expected Model")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set model: success
 
         lexer.parse_colon#()
@@ -3137,44 +3137,44 @@ define Parser
     function parse_model#(rp, this: Parser) returns ModelSyntax throws ParserError
     {
         choose parse_literal#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ModelSyntax.Literal(node)
         choose parse_name#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ModelSyntax.Name(node)
         choose parse_object#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ModelSyntax.Object(node)
         choose parse_vector#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ModelSyntax.Vector(node)
         throw ParserError.Different(DifferentSyntax())
     }
@@ -3203,12 +3203,12 @@ define Parser
         while true
         {
             choose parse_package#()
-                when _err: Error
+                when Error: _err
                 {
                     choose _err
-                        when i: Invalid
+                        when Invalid: i
                             throw ParserError.Invalid(i)
-                        when d: Different
+                        when Different: d
                         {
                             if list.head = null
                                 throw ParserError.Different(d)
@@ -3216,7 +3216,7 @@ define Parser
                                 return Vector[PackageSyntax]#(list)
                         }
                 }
-                when node: Success
+                when Success: node
                     list.add$(node)
         }
     }
@@ -3231,28 +3231,28 @@ define Parser
         let name_start lexer.position
         var name: NameSyntax
         choose parse_name#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(name_start, lexer.position, String#("expected Name")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set name: success
 
         let version_start lexer.position
         var version: ref[VersionSyntax]? null
         choose parse_version#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set version: success
 
         lexer.parse_colon#()
@@ -3268,9 +3268,9 @@ define Parser
 
         var majorMinor: Literal
         choose parse_literal_token#()
-            when _err: Error
+            when Error: _err
                 throw _err
-            when success: Success
+            when Success: success
                 set majorMinor: success
 
         if ~lexer.parse_punctuation#(ParserConstants.CHAR_DOT())
@@ -3278,9 +3278,9 @@ define Parser
 
         var patch: Literal
         choose parse_literal_token#()
-            when _err: Error
+            when Error: _err
                 throw _err
-            when success: Success
+            when Success: success
                 set patch: success
 
         let end lexer.position
@@ -3298,15 +3298,15 @@ define Parser
         let operands_start lexer.position
         var operands: ref[Vector[OperandSyntax]]?
         choose parse_operand_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(operands_start, lexer.position, String#("expected Operand")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set operands: success
 
         if ~lexer.parse_punctuation#(ParserConstants.CHAR_RPAREN())
@@ -3323,12 +3323,12 @@ define Parser
         while true
         {
             choose parse_operand#()
-                when _err: Error
+                when Error: _err
                 {
                     choose _err
-                        when i: Invalid
+                        when Invalid: i
                             throw ParserError.Invalid(i)
-                        when d: Different
+                        when Different: d
                         {
                             if list.head = null
                                 throw ParserError.Different(d)
@@ -3336,7 +3336,7 @@ define Parser
                                 return Vector[OperandSyntax]#(list)
                         }
                 }
-                when node: Success
+                when Success: node
                     list.add$(node)
         }
     }
@@ -3348,22 +3348,22 @@ define Parser
         let expression_start lexer.position
         var expression: ExpressionSyntax
         choose parse_expression#()
-            when _err: Error
+            when Error: _err
                 throw _err
-            when success: Success
+            when Success: success
                 set expression: success
 
         let members_start lexer.position
         var members: ref[Vector[MemberAccessSyntax]]? null
         choose parse_memberaccess_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set members: success
 
         let end lexer.position
@@ -3377,12 +3377,12 @@ define Parser
         while true
         {
             choose parse_memberaccess#()
-                when _err: Error
+                when Error: _err
                 {
                     choose _err
-                        when i: Invalid
+                        when Invalid: i
                             throw ParserError.Invalid(i)
-                        when d: Different
+                        when Different: d
                         {
                             if list.head = null
                                 throw ParserError.Different(d)
@@ -3390,7 +3390,7 @@ define Parser
                                 return Vector[MemberAccessSyntax]#(list)
                         }
                 }
-                when node: Success
+                when Success: node
                     list.add$(node)
         }
     }
@@ -3405,15 +3405,15 @@ define Parser
         let name_start lexer.position
         var name: NameSyntax
         choose parse_name#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(name_start, lexer.position, String#("expected Name")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set name: success
 
         let end lexer.position
@@ -3424,184 +3424,184 @@ define Parser
     function parse_expression#(rp, this: Parser) returns ExpressionSyntax throws ParserError
     {
         choose parse_literal#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ExpressionSyntax.Literal(node)
         choose parse_name#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ExpressionSyntax.Name(node)
         choose parse_object#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ExpressionSyntax.Object(node)
         choose parse_vector#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ExpressionSyntax.Vector(node)
         choose parse_block#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ExpressionSyntax.Block(node)
         choose parse_if#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ExpressionSyntax.If(node)
         choose parse_match#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ExpressionSyntax.Match(node)
         choose parse_lambda#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ExpressionSyntax.Lambda(node)
         choose parse_for#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ExpressionSyntax.For(node)
         choose parse_while#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ExpressionSyntax.While(node)
         choose parse_choose#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ExpressionSyntax.Choose(node)
         choose parse_try#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ExpressionSyntax.Try(node)
         choose parse_repeat#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ExpressionSyntax.Repeat(node)
         choose parse_sizeof#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ExpressionSyntax.SizeOf(node)
         choose parse_alignof#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ExpressionSyntax.AlignOf(node)
         choose parse_is#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ExpressionSyntax.Is(node)
         choose parse_as#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ExpressionSyntax.As(node)
         choose parse_lifetime#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ExpressionSyntax.Lifetime(node)
         throw ParserError.Different(DifferentSyntax())
     }
@@ -3612,9 +3612,9 @@ define Parser
 
         var literal: Literal
         choose parse_literal_token#()
-            when _err: Error
+            when Error: _err
                 throw _err
-            when success: Success
+            when Success: success
                 set literal: success
 
         let end lexer.position
@@ -3632,14 +3632,14 @@ define Parser
         let components_start lexer.position
         var components: ref[Vector[ComponentSyntax]]? null
         choose parse_component_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set components: success
 
         if ~lexer.parse_punctuation#(ParserConstants.CHAR_RPAREN())
@@ -3656,12 +3656,12 @@ define Parser
         while true
         {
             choose parse_component#()
-                when _err: Error
+                when Error: _err
                 {
                     choose _err
-                        when i: Invalid
+                        when Invalid: i
                             throw ParserError.Invalid(i)
-                        when d: Different
+                        when Different: d
                         {
                             if list.head = null
                                 throw ParserError.Different(d)
@@ -3669,7 +3669,7 @@ define Parser
                                 return Vector[ComponentSyntax]#(list)
                         }
                 }
-                when node: Success
+                when Success: node
                     list.add$(node)
         }
     }
@@ -3681,35 +3681,35 @@ define Parser
         let operands_start lexer.position
         var operands: ref[Vector[OperandSyntax]]?
         choose parse_operand_list#()
-            when _err: Error
+            when Error: _err
                 throw _err
-            when success: Success
+            when Success: success
                 set operands: success
 
         let attributes_start lexer.position
         var attributes: ref[Vector[AttributeSyntax]]? null
         choose parse_attribute_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set attributes: success
 
         let value_start lexer.position
         var value: ref[ValueSyntax]? null
         choose parse_value#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set value: success
 
         lexer.parse_punctuation#(ParserConstants.CHAR_COMMA())
@@ -3729,28 +3729,28 @@ define Parser
         let value_start lexer.position
         var value: ref[Vector[OperandSyntax]]?
         choose parse_operand_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(value_start, lexer.position, String#("expected Operand")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set value: success
 
         let attributes_start lexer.position
         var attributes: ref[Vector[AttributeSyntax]]? null
         choose parse_attribute_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set attributes: success
 
         let end lexer.position
@@ -3768,15 +3768,15 @@ define Parser
         let elements_start lexer.position
         var elements: ref[Vector[ElementSyntax]]?
         choose parse_element_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(elements_start, lexer.position, String#("expected Element")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set elements: success
 
         if ~lexer.parse_punctuation#(ParserConstants.CHAR_RBRACKET())
@@ -3785,14 +3785,14 @@ define Parser
         let lifetime_start lexer.position
         var lifetime: ref[LifetimeSyntax]? null
         choose parse_lifetime#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set lifetime: success
 
         let end lexer.position
@@ -3806,12 +3806,12 @@ define Parser
         while true
         {
             choose parse_element#()
-                when _err: Error
+                when Error: _err
                 {
                     choose _err
-                        when i: Invalid
+                        when Invalid: i
                             throw ParserError.Invalid(i)
-                        when d: Different
+                        when Different: d
                         {
                             if list.head = null
                                 throw ParserError.Different(d)
@@ -3819,7 +3819,7 @@ define Parser
                                 return Vector[ElementSyntax]#(list)
                         }
                 }
-                when node: Success
+                when Success: node
                     list.add$(node)
         }
     }
@@ -3831,22 +3831,22 @@ define Parser
         let operation_start lexer.position
         var operation: ref[Vector[OperandSyntax]]?
         choose parse_operand_list#()
-            when _err: Error
+            when Error: _err
                 throw _err
-            when success: Success
+            when Success: success
                 set operation: success
 
         let attributes_start lexer.position
         var attributes: ref[Vector[AttributeSyntax]]? null
         choose parse_attribute_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set attributes: success
 
         lexer.parse_punctuation#(ParserConstants.CHAR_COMMA())
@@ -3866,15 +3866,15 @@ define Parser
         let condition_start lexer.position
         var condition: ref[Vector[OperandSyntax]]?
         choose parse_operand_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(condition_start, lexer.position, String#("expected Operand")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set condition: success
 
         if ~lexer.parse_colon#()
@@ -3883,28 +3883,28 @@ define Parser
         let consequent_start lexer.position
         var consequent: ThenSyntax
         choose parse_then#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(consequent_start, lexer.position, String#("expected Then")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set consequent: success
 
         let alternative_start lexer.position
         var alternative: ref[ElseSyntax]? null
         choose parse_else#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set alternative: success
 
         let end lexer.position
@@ -3919,9 +3919,9 @@ define Parser
         let command_start lexer.position
         var command: CommandSyntax
         choose parse_command#()
-            when _err: Error
+            when Error: _err
                 throw _err
-            when success: Success
+            when Success: success
                 set command: success
 
         lexer.parse_colon#()
@@ -3943,15 +3943,15 @@ define Parser
         let alternative_start lexer.position
         var alternative: CommandSyntax
         choose parse_command#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(alternative_start, lexer.position, String#("expected Command")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set alternative: success
 
         let end lexer.position
@@ -3969,15 +3969,15 @@ define Parser
         let scrutinee_start lexer.position
         var scrutinee: ref[Vector[OperandSyntax]]?
         choose parse_operand_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(scrutinee_start, lexer.position, String#("expected Operand")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set scrutinee: success
 
         if ~lexer.parse_colon#()
@@ -3986,28 +3986,28 @@ define Parser
         let branches_start lexer.position
         var branches: ref[Vector[BranchSyntax]]?
         choose parse_branch_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(branches_start, lexer.position, String#("expected Branch")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set branches: success
 
         let alternative_start lexer.position
         var alternative: ref[ElseSyntax]? null
         choose parse_else#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set alternative: success
 
         let end lexer.position
@@ -4021,12 +4021,12 @@ define Parser
         while true
         {
             choose parse_branch#()
-                when _err: Error
+                when Error: _err
                 {
                     choose _err
-                        when i: Invalid
+                        when Invalid: i
                             throw ParserError.Invalid(i)
-                        when d: Different
+                        when Different: d
                         {
                             if list.head = null
                                 throw ParserError.Different(d)
@@ -4034,7 +4034,7 @@ define Parser
                                 return Vector[BranchSyntax]#(list)
                         }
                 }
-                when node: Success
+                when Success: node
                     list.add$(node)
         }
     }
@@ -4046,9 +4046,9 @@ define Parser
         let cases_start lexer.position
         var cases: ref[Vector[CaseSyntax]]?
         choose parse_case_list#()
-            when _err: Error
+            when Error: _err
                 throw _err
-            when success: Success
+            when Success: success
                 set cases: success
 
         if ~lexer.parse_colon#()
@@ -4057,15 +4057,15 @@ define Parser
         let consequent_start lexer.position
         var consequent: StatementSyntax
         choose parse_statement#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(consequent_start, lexer.position, String#("expected Statement")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set consequent: success
 
         let end lexer.position
@@ -4079,12 +4079,12 @@ define Parser
         while true
         {
             choose parse_case#()
-                when _err: Error
+                when Error: _err
                 {
                     choose _err
-                        when i: Invalid
+                        when Invalid: i
                             throw ParserError.Invalid(i)
-                        when d: Different
+                        when Different: d
                         {
                             if list.head = null
                                 throw ParserError.Different(d)
@@ -4092,7 +4092,7 @@ define Parser
                                 return Vector[CaseSyntax]#(list)
                         }
                 }
-                when node: Success
+                when Success: node
                     list.add$(node)
         }
     }
@@ -4107,15 +4107,15 @@ define Parser
         let condition_start lexer.position
         var condition: ref[Vector[OperandSyntax]]?
         choose parse_operand_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(condition_start, lexer.position, String#("expected Operand")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set condition: success
 
         let end lexer.position
@@ -4129,12 +4129,12 @@ define Parser
         while true
         {
             choose parse_statement#()
-                when _err: Error
+                when Error: _err
                 {
                     choose _err
-                        when i: Invalid
+                        when Invalid: i
                             throw ParserError.Invalid(i)
-                        when d: Different
+                        when Different: d
                         {
                             if list.head = null
                                 throw ParserError.Different(d)
@@ -4142,7 +4142,7 @@ define Parser
                                 return Vector[StatementSyntax]#(list)
                         }
                 }
-                when node: Success
+                when Success: node
                     list.add$(node)
         }
     }
@@ -4154,9 +4154,9 @@ define Parser
         let command_start lexer.position
         var command: CommandSyntax
         choose parse_command#()
-            when _err: Error
+            when Error: _err
                 throw _err
-            when success: Success
+            when Success: success
                 set command: success
 
         lexer.parse_colon#()
@@ -4176,15 +4176,15 @@ define Parser
         let condition_start lexer.position
         var condition: ConditionSyntax
         choose parse_condition#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(condition_start, lexer.position, String#("expected Condition")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set condition: success
 
         if ~lexer.parse_colon#()
@@ -4193,28 +4193,28 @@ define Parser
         let name_start lexer.position
         var name: ref[LabelSyntax]? null
         choose parse_label#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set name: success
 
         let action_start lexer.position
         var action: ActionSyntax
         choose parse_action#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(action_start, lexer.position, String#("expected Action")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set action: success
 
         let end lexer.position
@@ -4232,15 +4232,15 @@ define Parser
         let condition_start lexer.position
         var condition: ref[Vector[OperandSyntax]]?
         choose parse_operand_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(condition_start, lexer.position, String#("expected Operand")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set condition: success
 
         if ~lexer.parse_colon#()
@@ -4249,27 +4249,27 @@ define Parser
         let cases_start lexer.position
         var cases: ref[Vector[WhenSyntax]]? null
         choose parse_when_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set cases: success
 
         let alternative_start lexer.position
         var alternative: ref[ElseSyntax]? null
         choose parse_else#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set alternative: success
 
         let end lexer.position
@@ -4287,15 +4287,15 @@ define Parser
         let condition_start lexer.position
         var condition: ConditionSyntax
         choose parse_condition#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(condition_start, lexer.position, String#("expected Condition")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set condition: success
 
         if ~lexer.parse_colon#()
@@ -4304,27 +4304,27 @@ define Parser
         let cases_start lexer.position
         var cases: ref[Vector[WhenSyntax]]? null
         choose parse_when_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set cases: success
 
         let dropper_start lexer.position
         var dropper: ref[ElseSyntax]? null
         choose parse_else#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set dropper: success
 
         let end lexer.position
@@ -4335,24 +4335,24 @@ define Parser
     function parse_condition#(rp, this: Parser) returns ConditionSyntax throws ParserError
     {
         choose parse_operation#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ConditionSyntax.Operation(node)
         choose parse_let#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ConditionSyntax.Let(node)
         throw ParserError.Different(DifferentSyntax())
     }
@@ -4363,12 +4363,12 @@ define Parser
         while true
         {
             choose parse_when#()
-                when _err: Error
+                when Error: _err
                 {
                     choose _err
-                        when i: Invalid
+                        when Invalid: i
                             throw ParserError.Invalid(i)
-                        when d: Different
+                        when Different: d
                         {
                             if list.head = null
                                 throw ParserError.Different(d)
@@ -4376,7 +4376,7 @@ define Parser
                                 return Vector[WhenSyntax]#(list)
                         }
                 }
-                when node: Success
+                when Success: node
                     list.add$(node)
         }
     }
@@ -4388,141 +4388,131 @@ define Parser
         if ~lexer.parse_keyword#(String#("when"))
             throw ParserError.Different(DifferentSyntax())
 
-        let name lexer.parse_identifier#(keywords)
-        if name.length() = 0
+        let variant lexer.parse_identifier#(keywords)
+        if variant.length() = 0
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected identifier")))
 
         if ~lexer.parse_colon#()
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected colon or newline")))
 
-        let variant_start lexer.position
-        var variant: NameSyntax
-        choose parse_name#()
-            when _err: Error
-            {
-                choose _err
-                    when d: Different
-                        throw ParserError.Invalid(InvalidSyntax(variant_start, lexer.position, String#("expected Name")))
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
-            }
-            when success: Success
-                set variant: success
+        let name lexer.parse_identifier#(keywords)
+        if name.length() = 0
+            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected identifier")))
 
         lexer.parse_colon#()
 
         let command_start lexer.position
         var command: CommandSyntax
         choose parse_command#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(command_start, lexer.position, String#("expected Command")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set command: success
 
         lexer.parse_colon#()
 
         let end lexer.position
 
-        WhenSyntax(start, end, name, variant, command)
+        WhenSyntax(start, end, variant, name, command)
     }
 
     function parse_command#(rp, this: Parser) returns CommandSyntax throws ParserError
     {
         choose parse_operation#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return CommandSyntax.Operation(node)
         choose parse_let#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return CommandSyntax.Let(node)
         choose parse_var#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return CommandSyntax.Var(node)
         choose parse_mutable#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return CommandSyntax.Mutable(node)
         choose parse_set#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return CommandSyntax.Set(node)
         choose parse_continue#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return CommandSyntax.Continue(node)
         choose parse_break#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return CommandSyntax.Break(node)
         choose parse_return#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return CommandSyntax.Return(node)
         choose parse_throw#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return CommandSyntax.Throw(node)
         throw ParserError.Different(DifferentSyntax())
     }
@@ -4537,15 +4527,15 @@ define Parser
         let binding_start lexer.position
         var binding: BindingSyntax
         choose parse_binding#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(binding_start, lexer.position, String#("expected Binding")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set binding: success
 
         let end lexer.position
@@ -4563,15 +4553,15 @@ define Parser
         let binding_start lexer.position
         var binding: BindingSyntax
         choose parse_binding#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(binding_start, lexer.position, String#("expected Binding")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set binding: success
 
         let end lexer.position
@@ -4589,15 +4579,15 @@ define Parser
         let binding_start lexer.position
         var binding: BindingSyntax
         choose parse_binding#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(binding_start, lexer.position, String#("expected Binding")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set binding: success
 
         let end lexer.position
@@ -4616,27 +4606,27 @@ define Parser
         let annotation_start lexer.position
         var annotation: ref[BindingAnnotationSyntax]? null
         choose parse_bindingannotation#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set annotation: success
 
         let operation_start lexer.position
         var operation: ref[Vector[OperandSyntax]]? null
         choose parse_operand_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set operation: success
 
         let end lexer.position
@@ -4654,15 +4644,15 @@ define Parser
         let spec_start lexer.position
         var spec: BindingSpecSyntax
         choose parse_bindingspec#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(spec_start, lexer.position, String#("expected BindingSpec")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set spec: success
 
         let end lexer.position
@@ -4676,12 +4666,12 @@ define Parser
         while true
         {
             choose parse_bindingspec#()
-                when _err: Error
+                when Error: _err
                 {
                     choose _err
-                        when i: Invalid
+                        when Invalid: i
                             throw ParserError.Invalid(i)
-                        when d: Different
+                        when Different: d
                         {
                             if list.head = null
                                 throw ParserError.Different(d)
@@ -4689,7 +4679,7 @@ define Parser
                                 return Vector[BindingSpecSyntax]#(list)
                         }
                 }
-                when node: Success
+                when Success: node
                     list.add$(node)
         }
     }
@@ -4697,34 +4687,34 @@ define Parser
     function parse_bindingspec#(rp, this: Parser) returns BindingSpecSyntax throws ParserError
     {
         choose parse_structure#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return BindingSpecSyntax.Structure(node)
         choose parse_type#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return BindingSpecSyntax.Type(node)
         choose parse_array#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return BindingSpecSyntax.Array(node)
         throw ParserError.Different(DifferentSyntax())
     }
@@ -4739,14 +4729,14 @@ define Parser
         let members_start lexer.position
         var members: ref[Vector[TypeSyntax]]? null
         choose parse_type_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set members: success
 
         if ~lexer.parse_punctuation#(ParserConstants.CHAR_RBRACKET())
@@ -4767,14 +4757,14 @@ define Parser
         let parts_start lexer.position
         var parts: ref[Vector[PartSyntax]]? null
         choose parse_part_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set parts: success
 
         if ~lexer.parse_punctuation#(ParserConstants.CHAR_RPAREN())
@@ -4791,12 +4781,12 @@ define Parser
         while true
         {
             choose parse_part#()
-                when _err: Error
+                when Error: _err
                 {
                     choose _err
-                        when i: Invalid
+                        when Invalid: i
                             throw ParserError.Invalid(i)
-                        when d: Different
+                        when Different: d
                         {
                             if list.head = null
                                 throw ParserError.Different(d)
@@ -4804,7 +4794,7 @@ define Parser
                                 return Vector[PartSyntax]#(list)
                         }
                 }
-                when node: Success
+                when Success: node
                     list.add$(node)
         }
     }
@@ -4812,24 +4802,24 @@ define Parser
     function parse_part#(rp, this: Parser) returns PartSyntax throws ParserError
     {
         choose parse_field#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return PartSyntax.Field(node)
         choose parse_property#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return PartSyntax.Property(node)
         throw ParserError.Different(DifferentSyntax())
     }
@@ -4844,15 +4834,15 @@ define Parser
         let property_start lexer.position
         var property: PropertySyntax
         choose parse_property#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(property_start, lexer.position, String#("expected Property")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set property: success
 
         let end lexer.position
@@ -4866,12 +4856,12 @@ define Parser
         while true
         {
             choose parse_property#()
-                when _err: Error
+                when Error: _err
                 {
                     choose _err
-                        when i: Invalid
+                        when Invalid: i
                             throw ParserError.Invalid(i)
-                        when d: Different
+                        when Different: d
                         {
                             if list.head = null
                                 throw ParserError.Different(d)
@@ -4879,7 +4869,7 @@ define Parser
                                 return Vector[PropertySyntax]#(list)
                         }
                 }
-                when node: Success
+                when Success: node
                     list.add$(node)
         }
     }
@@ -4895,28 +4885,28 @@ define Parser
         let annotation_start lexer.position
         var annotation: TypeAnnotationSyntax
         choose parse_typeannotation#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(annotation_start, lexer.position, String#("expected TypeAnnotation")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set annotation: success
 
         let initializer_start lexer.position
         var initializer: ref[InitializerSyntax]? null
         choose parse_initializer#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set initializer: success
 
         lexer.parse_punctuation#(ParserConstants.CHAR_COMMA())
@@ -4926,14 +4916,14 @@ define Parser
         let attributes_start lexer.position
         var attributes: ref[Vector[AttributeSyntax]]? null
         choose parse_attribute_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set attributes: success
 
         lexer.parse_colon#()
@@ -4953,15 +4943,15 @@ define Parser
         let type_start lexer.position
         var type: TypeSyntax
         choose parse_type#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(type_start, lexer.position, String#("expected Type")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set type: success
 
         let end lexer.position
@@ -4979,14 +4969,14 @@ define Parser
         let name_start lexer.position
         var name: ref[LoopSyntax]? null
         choose parse_loop#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set name: success
 
         lexer.parse_colon#()
@@ -5006,27 +4996,27 @@ define Parser
         let name_start lexer.position
         var name: ref[LoopSyntax]? null
         choose parse_loop#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set name: success
 
         let result_start lexer.position
         var result: ref[Vector[OperandSyntax]]? null
         choose parse_operand_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set result: success
 
         lexer.parse_colon#()
@@ -5062,14 +5052,14 @@ define Parser
         let result_start lexer.position
         var result: ref[Vector[OperandSyntax]]? null
         choose parse_operand_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set result: success
 
         let end lexer.position
@@ -5087,14 +5077,14 @@ define Parser
         let result_start lexer.position
         var result: ref[Vector[OperandSyntax]]? null
         choose parse_operand_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set result: success
 
         let end lexer.position
@@ -5112,15 +5102,15 @@ define Parser
         let input_start lexer.position
         var input: ref[Vector[OperandSyntax]]?
         choose parse_operand_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(input_start, lexer.position, String#("expected Operand")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set input: success
 
         if ~lexer.parse_colon#()
@@ -5129,15 +5119,15 @@ define Parser
         let block_start lexer.position
         var block: ActionSyntax
         choose parse_action#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(block_start, lexer.position, String#("expected Action")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set block: success
 
         let end lexer.position
@@ -5159,14 +5149,14 @@ define Parser
         let annotation_start lexer.position
         var annotation: ref[TypeAnnotationSyntax]? null
         choose parse_typeannotation#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set annotation: success
 
         if ~lexer.parse_keyword#(String#("in"))
@@ -5175,15 +5165,15 @@ define Parser
         let operation_start lexer.position
         var operation: ref[Vector[OperandSyntax]]?
         choose parse_operand_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(operation_start, lexer.position, String#("expected Operand")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set operation: success
 
         if ~lexer.parse_colon#()
@@ -5192,28 +5182,28 @@ define Parser
         let name_start lexer.position
         var name: ref[LabelSyntax]? null
         choose parse_label#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set name: success
 
         let action_start lexer.position
         var action: ActionSyntax
         choose parse_action#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(action_start, lexer.position, String#("expected Action")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set action: success
 
         let end lexer.position
@@ -5249,28 +5239,28 @@ define Parser
         let name_start lexer.position
         var name: ref[LabelSyntax]? null
         choose parse_label#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set name: success
 
         let action_start lexer.position
         var action: ActionSyntax
         choose parse_action#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(action_start, lexer.position, String#("expected Action")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set action: success
 
         let end lexer.position
@@ -5284,12 +5274,12 @@ define Parser
         while true
         {
             choose parse_action#()
-                when _err: Error
+                when Error: _err
                 {
                     choose _err
-                        when i: Invalid
+                        when Invalid: i
                             throw ParserError.Invalid(i)
-                        when d: Different
+                        when Different: d
                         {
                             if list.head = null
                                 throw ParserError.Different(d)
@@ -5297,7 +5287,7 @@ define Parser
                                 return Vector[ActionSyntax]#(list)
                         }
                 }
-                when node: Success
+                when Success: node
                     list.add$(node)
         }
     }
@@ -5305,34 +5295,34 @@ define Parser
     function parse_action#(rp, this: Parser) returns ActionSyntax throws ParserError
     {
         choose parse_operation#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ActionSyntax.Operation(node)
         choose parse_set#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ActionSyntax.Set(node)
         choose parse_block#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return ActionSyntax.Block(node)
         throw ParserError.Different(DifferentSyntax())
     }
@@ -5344,9 +5334,9 @@ define Parser
         let operands_start lexer.position
         var operands: ref[Vector[OperandSyntax]]?
         choose parse_operand_list#()
-            when _err: Error
+            when Error: _err
                 throw _err
-            when success: Success
+            when Success: success
                 set operands: success
 
         let end lexer.position
@@ -5364,15 +5354,15 @@ define Parser
         let target_start lexer.position
         var target: ref[Vector[OperandSyntax]]?
         choose parse_operand_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(target_start, lexer.position, String#("expected Operand")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set target: success
 
         if ~lexer.parse_colon#()
@@ -5381,15 +5371,15 @@ define Parser
         let source_start lexer.position
         var source: ref[Vector[OperandSyntax]]?
         choose parse_operand_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(source_start, lexer.position, String#("expected Operand")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set source: success
 
         let end lexer.position
@@ -5407,27 +5397,27 @@ define Parser
         let uses_start lexer.position
         var uses: ref[Vector[UseSyntax]]? null
         choose parse_use_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set uses: success
 
         let statements_start lexer.position
         var statements: ref[Vector[StatementSyntax]]? null
         choose parse_statement_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set statements: success
 
         if ~lexer.parse_punctuation#(ParserConstants.CHAR_RBRACE())
@@ -5448,15 +5438,15 @@ define Parser
         let type_start lexer.position
         var type: TypeSyntax
         choose parse_type#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(type_start, lexer.position, String#("expected Type")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set type: success
 
         let end lexer.position
@@ -5474,15 +5464,15 @@ define Parser
         let type_start lexer.position
         var type: TypeSyntax
         choose parse_type#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(type_start, lexer.position, String#("expected Type")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set type: success
 
         let end lexer.position
@@ -5500,15 +5490,15 @@ define Parser
         let name_start lexer.position
         var name: NameSyntax
         choose parse_name#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(name_start, lexer.position, String#("expected Name")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set name: success
 
         let end lexer.position
@@ -5526,15 +5516,15 @@ define Parser
         let type_start lexer.position
         var type: TypeSyntax
         choose parse_type#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(type_start, lexer.position, String#("expected Type")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set type: success
 
         let end lexer.position
@@ -5548,12 +5538,12 @@ define Parser
         while true
         {
             choose parse_type#()
-                when _err: Error
+                when Error: _err
                 {
                     choose _err
-                        when i: Invalid
+                        when Invalid: i
                             throw ParserError.Invalid(i)
-                        when d: Different
+                        when Different: d
                         {
                             if list.head = null
                                 throw ParserError.Different(d)
@@ -5561,7 +5551,7 @@ define Parser
                                 return Vector[TypeSyntax]#(list)
                         }
                 }
-                when node: Success
+                when Success: node
                     list.add$(node)
         }
     }
@@ -5573,48 +5563,48 @@ define Parser
         let name_start lexer.position
         var name: NameSyntax
         choose parse_name#()
-            when _err: Error
+            when Error: _err
                 throw _err
-            when success: Success
+            when Success: success
                 set name: success
 
         let generics_start lexer.position
         var generics: ref[GenericArgumentsSyntax]? null
         choose parse_genericarguments#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set generics: success
 
         let optional_start lexer.position
         var optional: ref[OptionalSyntax]? null
         choose parse_optional#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set optional: success
 
         let lifetime_start lexer.position
         var lifetime: ref[LifetimeSyntax]? null
         choose parse_lifetime#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set lifetime: success
 
         let end lexer.position
@@ -5633,14 +5623,14 @@ define Parser
         let extensions_start lexer.position
         var extensions: ref[Vector[ExtensionSyntax]]? null
         choose parse_extension_list#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set extensions: success
 
         let end lexer.position
@@ -5654,12 +5644,12 @@ define Parser
         while true
         {
             choose parse_extension#()
-                when _err: Error
+                when Error: _err
                 {
                     choose _err
-                        when i: Invalid
+                        when Invalid: i
                             throw ParserError.Invalid(i)
-                        when d: Different
+                        when Different: d
                         {
                             if list.head = null
                                 throw ParserError.Different(d)
@@ -5667,7 +5657,7 @@ define Parser
                                 return Vector[ExtensionSyntax]#(list)
                         }
                 }
-                when node: Success
+                when Success: node
                     list.add$(node)
         }
     }
@@ -5691,44 +5681,44 @@ define Parser
     function parse_lifetime#(rp, this: Parser) returns LifetimeSyntax throws ParserError
     {
         choose parse_call#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return LifetimeSyntax.Call(node)
         choose parse_local#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return LifetimeSyntax.Local(node)
         choose parse_reference#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return LifetimeSyntax.Reference(node)
         choose parse_thrown#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return LifetimeSyntax.Thrown(node)
         throw ParserError.Different(DifferentSyntax())
     }
@@ -5794,9 +5784,9 @@ function test() returns int
     ; Test 1: Parse a simple literal
     var parser Parser#(String#("42"))
     choose parser.parse_literal#()
-        when _err: Error
+        when Error: _err
             return 1
-        when literal: Success
+        when Success: literal
         {
             if ~parser.is_at_end()
                 return 2
@@ -5805,9 +5795,9 @@ function test() returns int
     ; Test 2: Parse an identifier expression
     set parser: Parser#(String#("foo"))
     choose parser.parse_name#()
-        when _err: Error
+        when Error: _err
             return 3
-        when name: Success
+        when Success: name
         {
             if ~parser.is_at_end()
                 return 4
@@ -5816,9 +5806,9 @@ function test() returns int
     ; Test 3: Parse a function definition
     set parser: Parser#(String#("function hello() returns int 42"))
     choose parser.parse_function#()
-        when _err: Error
+        when Error: _err
             return 5
-        when func: Success
+        when Success: func
         {
             if ~parser.is_at_end()
                 return 6

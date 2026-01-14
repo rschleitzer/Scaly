@@ -2399,16 +2399,16 @@ llvm::Expected<WhenSyntax> Parser::parseWhen() {
     if (!Lex.parseKeyword("when"))
         return different();
 
-    llvm::StringRef Name = Lex.peekIdentifier();
-    if (Name.empty() || Keywords.count(Name))
+    llvm::StringRef Variant = Lex.peekIdentifier();
+    if (Variant.empty() || Keywords.count(Variant))
         return invalid(Start, Lex.position(), "expected identifier");
     Lex.parseIdentifier();  // Consume the identifier
 
     if (!Lex.parseColon())
         return invalid(Start, Lex.position(), "expected colon or newline");
 
-    llvm::StringRef Variant = Lex.peekIdentifier();
-    if (Variant.empty() || Keywords.count(Variant))
+    llvm::StringRef Name = Lex.peekIdentifier();
+    if (Name.empty() || Keywords.count(Name))
         return invalid(Start, Lex.position(), "expected identifier");
     Lex.parseIdentifier();  // Consume the identifier
 
@@ -2423,7 +2423,7 @@ llvm::Expected<WhenSyntax> Parser::parseWhen() {
 
     size_t End = Lex.position();
 
-    return WhenSyntax{Start, End, Name, Variant, Command};
+    return WhenSyntax{Start, End, Variant, Name, Command};
 
 }
 

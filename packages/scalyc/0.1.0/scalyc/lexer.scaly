@@ -379,7 +379,7 @@ define Lexer
     function parse_keyword#(rp, this: Lexer, keyword: String) returns bool
     {
         choose token
-            when id: Identifier
+            when Identifier: id
             {
                 if id.name.equals(keyword)
                 {
@@ -393,7 +393,7 @@ define Lexer
     function parse_identifier#(rp, this: Lexer) returns String
     {
         choose token
-            when id: Identifier
+            when Identifier: id
             {
                 let name id.name
                 advance#()
@@ -405,7 +405,7 @@ define Lexer
     function parse_punctuation#(rp, this: Lexer, c: char) returns bool
     {
         choose token
-            when p: Punctuation
+            when Punctuation: p
             {
                 if p.sign = c
                 {
@@ -419,7 +419,7 @@ define Lexer
     function parse_colon#(rp, this: Lexer) returns bool
     {
         choose token
-            when c: Colon
+            when Colon: c
             {
                 advance#()
                 return true
@@ -430,7 +430,7 @@ define Lexer
     function parse_attribute#(rp, this: Lexer) returns String
     {
         choose token
-            when a: Attribute
+            when Attribute: a
             {
                 let name a.name
                 advance#()
@@ -557,7 +557,7 @@ function test_lexer_creation() returns int
 
     ; Check initial token is Empty
     choose lexer.token
-        when e: Empty
+        when Empty: e
         {
             free(rp as pointer[void])
             return 0
