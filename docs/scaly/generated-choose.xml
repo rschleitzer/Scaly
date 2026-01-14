@@ -21,13 +21,13 @@
           <tbody>
             <row>
               <entry><programlisting>define Option union(Some: int, None)
-choose Option.Some(7): when v: Some: v else 0</programlisting></entry>
+choose Option.Some(7): when Some: v: v else 0</programlisting></entry>
               <entry><literal>7
         </literal></entry>
             </row>
             <row>
               <entry><programlisting>define Option union(Some: int, None)
-choose Option.None: when v: Some: v else 0</programlisting></entry>
+choose Option.None: when Some: v: v else 0</programlisting></entry>
               <entry><literal>0
 
     </literal></entry>
@@ -53,7 +53,7 @@ choose Option.None: when v: Some: v else 0</programlisting></entry>
           <tbody>
             <row>
               <entry><programlisting>define Result union(Ok: int, Err: int)
-choose Result.Ok(42): when x: Ok: x + 1 else 0</programlisting></entry>
+choose Result.Ok(42): when Ok: x: x + 1 else 0</programlisting></entry>
               <entry><literal>43
 
     </literal></entry>
@@ -79,13 +79,13 @@ choose Result.Ok(42): when x: Ok: x + 1 else 0</programlisting></entry>
           <tbody>
             <row>
               <entry><programlisting>define Result union(Ok: int, Err: int)
-choose Result.Ok(10): when x: Ok: x when e: Err: e + 100</programlisting></entry>
+choose Result.Ok(10): when Ok: x: x when Err: e: e + 100</programlisting></entry>
               <entry><literal>10
         </literal></entry>
             </row>
             <row>
               <entry><programlisting>define Result union(Ok: int, Err: int)
-choose Result.Err(5): when x: Ok: x when e: Err: e + 100</programlisting></entry>
+choose Result.Err(5): when Ok: x: x when Err: e: e + 100</programlisting></entry>
               <entry><literal>105
 </literal></entry>
             </row>
@@ -149,7 +149,7 @@ check(Option[int].Some(42))</programlisting></entry>
           <tbody>
             <row>
               <entry><programlisting>define Option[T] union: (Some: T, None)
-function unwrap(x: int?) returns int: choose x: when v: Some: v else 0
+function unwrap(x: int?) returns int: choose x: when Some: v: v else 0
 unwrap(Option[int].Some(42))</programlisting></entry>
               <entry><literal>42
 
@@ -176,13 +176,13 @@ unwrap(Option[int].Some(42))</programlisting></entry>
           <tbody>
             <row>
               <entry><programlisting>define Option[T] union: (Some: T, None)
-choose Option[int].Some(42): when v: Some: v else 0</programlisting></entry>
+choose Option[int].Some(42): when Some: v: v else 0</programlisting></entry>
               <entry><literal>42
         </literal></entry>
             </row>
             <row>
               <entry><programlisting>define Option[T] union: (Some: T, None)
-choose Option[int].None: when v: Some: v else -1</programlisting></entry>
+choose Option[int].None: when Some: v: v else -1</programlisting></entry>
               <entry><literal>-1
 </literal></entry>
             </row>
@@ -212,13 +212,13 @@ choose Option[int].None: when v: Some: v else -1</programlisting></entry>
           <tbody>
             <row>
               <entry><programlisting>define Result union: (Ok: int, Error: int)
-choose Result.Ok(42): when x: Ok: x else 0</programlisting></entry>
+choose Result.Ok(42): when Ok: x: x else 0</programlisting></entry>
               <entry><literal>42
         </literal></entry>
             </row>
             <row>
               <entry><programlisting>define Result union: (Ok: int, Error: int)
-choose Result.Error(100): when e: Error: e else 0</programlisting></entry>
+choose Result.Error(100): when Error: e: e else 0</programlisting></entry>
               <entry><literal>100
 
     </literal></entry>
