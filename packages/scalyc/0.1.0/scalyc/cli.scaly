@@ -241,12 +241,12 @@ define cli
         ; Parse the program
         var syntax: parser.ProgramSyntax
         choose p.parse_program$()
-            when error: parser.ParserError
+            when error: ParserError
             {
                 Console.println("Parse error")
                 return 2
             }
-            when value: parser.ProgramSyntax
+            when value: ProgramSyntax
             {
                 set syntax: value
             }
@@ -439,11 +439,11 @@ define cli
         var p parser.Parser$(source)
         var syntax: parser.ProgramSyntax
         choose p.parse_program$()
-            when error: parser.ParserError
+            when error: ParserError
             {
                 return -2  ; Parse failed
             }
-            when value: parser.ProgramSyntax
+            when value: ProgramSyntax
             {
                 set syntax: value
             }
@@ -480,11 +480,11 @@ define cli
         var p parser.Parser$(source)
         var syntax: parser.ProgramSyntax
         choose p.parse_program$()
-            when error: parser.ParserError
+            when error: ParserError
             {
                 return -1  ; Parse failed
             }
-            when value: parser.ProgramSyntax
+            when value: ProgramSyntax
             {
                 set syntax: value
             }

@@ -1,0 +1,10 @@
+; main.scaly - Entry point for the self-hosted Scaly compiler
+;
+; This file provides the main() function that bridges to the CLI module.
+; Compile: ./scalyc -o scalyc packages/scalyc/0.1.0/main.scaly
+
+package scaly 0.1.0
+package scalyc 0.1.0
+
+function main(argc: int, argv: pointer[pointer[char]]) returns int
+    scalyc.cli.main(argc, argv)
