@@ -2,21 +2,26 @@
 ;
 ; This module handles argument parsing and drives the compilation pipeline.
 
+; Standard library imports
 use scaly.containers.String
 use scaly.containers.Vector
 use scaly.io.File
 use scaly.io.Console
 
-; Import parser module (which includes lexer)
-module parser
-
-; Import compiler modules
+; Compiler module imports
 use scalyc.compiler.Modeler
 use scalyc.compiler.Model.Program
 use scalyc.compiler.Planner
 use scalyc.compiler.Plan.Plan
 use scalyc.compiler.Emitter
 use scalyc.compiler.Emitter.EmitterConfig
+
+; ============================================================================
+; Module declarations
+; ============================================================================
+
+; Parser module (which includes lexer)
+module parser
 
 ; ============================================================================
 ; Command-line options
@@ -37,7 +42,7 @@ define Options
     error_message: String
 )
 {
-    init#()
+    init()
     {
         set input_file: String()
         set output_file: String()

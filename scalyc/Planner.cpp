@@ -1248,15 +1248,18 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
     llvm::StringRef MethodName,
     Span Loc) {
 
+    // Auto-dereference pointer[T] and ref[T] types for method lookup
+    PlannedType LookupType = StructType.getInnerTypeIfPointerLike();
+
     const PlannedStructure *Struct = nullptr;
 
     // Look up the struct in the instantiation cache
-    auto StructIt = InstantiatedStructures.find(StructType.Name);
+    auto StructIt = InstantiatedStructures.find(LookupType.Name);
     if (StructIt != InstantiatedStructures.end()) {
         Struct = &StructIt->second;
     } else {
         // Also try the mangled name
-        StructIt = InstantiatedStructures.find(StructType.MangledName);
+        StructIt = InstantiatedStructures.find(LookupType.MangledName);
         if (StructIt != InstantiatedStructures.end()) {
             Struct = &StructIt->second;
         }
@@ -1265,8 +1268,8 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
     // If not found in cache, check if we're currently planning this structure
     // This handles methods calling other methods during structure planning
     if (!Struct && CurrentStructure &&
-        (CurrentStructure->Name == StructType.Name ||
-         CurrentStructure->MangledName == StructType.MangledName)) {
+        (CurrentStructure->Name == LookupType.Name ||
+         CurrentStructure->MangledName == LookupType.MangledName)) {
         Struct = CurrentStructure;
     }
 
@@ -1293,9 +1296,9 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
         if (Struct->DeferredInfo) {
             // Need non-const access to plan the method
             // Try MangledName first (primary key), then fall back to Name
-            auto StructIt2 = InstantiatedStructures.find(StructType.MangledName);
+            auto StructIt2 = InstantiatedStructures.find(LookupType.MangledName);
             if (StructIt2 == InstantiatedStructures.end()) {
-                StructIt2 = InstantiatedStructures.find(StructType.Name);
+                StructIt2 = InstantiatedStructures.find(LookupType.Name);
             }
             if (StructIt2 == InstantiatedStructures.end()) {
                 return std::nullopt;  // Structure not found
@@ -1324,11 +1327,11 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
 
     // Also check unions - unions can have methods too
     const PlannedUnion *Union = nullptr;
-    auto UnionIt = InstantiatedUnions.find(StructType.Name);
+    auto UnionIt = InstantiatedUnions.find(LookupType.Name);
     if (UnionIt != InstantiatedUnions.end()) {
         Union = &UnionIt->second;
     } else {
-        UnionIt = InstantiatedUnions.find(StructType.MangledName);
+        UnionIt = InstantiatedUnions.find(LookupType.MangledName);
         if (UnionIt != InstantiatedUnions.end()) {
             Union = &UnionIt->second;
         }
@@ -1354,7 +1357,7 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
         // Try lazy instantiation if method not found and deferred info exists
         if (Union->DeferredInfo) {
             // Need non-const access to plan the method
-            auto &MutableUnion = InstantiatedUnions[StructType.Name];
+            auto &MutableUnion = InstantiatedUnions[LookupType.Name];
             auto DeferredResult = planDeferredMethod(MutableUnion, std::string(MethodName));
             if (!DeferredResult) {
                 // Error during deferred planning - consume and log
@@ -1380,7 +1383,7 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
     // This handles forward references to methods not yet planned,
     // and methods on sibling types that aren't instantiated yet
     // Extract base name from instantiated type (e.g., "Array.char" -> "Array")
-    std::string BaseName = StructType.Name;
+    std::string BaseName = LookupType.Name;
     size_t DotPos = BaseName.find('.');
     if (DotPos != std::string::npos) {
         BaseName = BaseName.substr(0, DotPos);
@@ -1432,26 +1435,26 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                         // Set up type substitutions for the struct's type parameters
                         // This is needed when resolving parameter/return types that use T
                         std::map<std::string, PlannedType> OldSubst = TypeSubstitutions;
-                        if (!Conc->Parameters.empty() && !StructType.Generics.empty()) {
-                            for (size_t I = 0; I < Conc->Parameters.size() && I < StructType.Generics.size(); ++I) {
-                                TypeSubstitutions[Conc->Parameters[I].Name] = StructType.Generics[I];
+                        if (!Conc->Parameters.empty() && !LookupType.Generics.empty()) {
+                            for (size_t I = 0; I < Conc->Parameters.size() && I < LookupType.Generics.size(); ++I) {
+                                TypeSubstitutions[Conc->Parameters[I].Name] = LookupType.Generics[I];
                             }
                         }
 
                         // Compute mangled name
                         PlannedType ParentType;
-                        ParentType.Name = StructType.Name;
-                        ParentType.Generics = StructType.Generics;  // Preserve generics for correct mangling
+                        ParentType.Name = LookupType.Name;
+                        ParentType.Generics = LookupType.Generics;  // Preserve generics for correct mangling
                         // Use Struct's mangled name if available, otherwise compute it
                         if (Struct) {
                             ParentType.MangledName = Struct->MangledName;
-                        } else if (!StructType.MangledName.empty()) {
-                            ParentType.MangledName = StructType.MangledName;
-                        } else if (!StructType.Generics.empty()) {
+                        } else if (!LookupType.MangledName.empty()) {
+                            ParentType.MangledName = LookupType.MangledName;
+                        } else if (!LookupType.Generics.empty()) {
                             // Compute mangled name with generics
-                            ParentType.MangledName = mangleStructure(BaseName, StructType.Generics);
+                            ParentType.MangledName = mangleStructure(BaseName, LookupType.Generics);
                         } else {
-                            ParentType.MangledName = encodeName(StructType.Name);
+                            ParentType.MangledName = encodeName(LookupType.Name);
                         }
                         std::vector<PlannedItem> Params;
                         for (const auto &Inp : Func->Input) {
@@ -1502,6 +1505,9 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
     const std::vector<PlannedType> &ArgTypes,
     Span Loc) {
 
+    // Auto-dereference pointer[T] and ref[T] types for method lookup
+    PlannedType LookupType = StructType.getInnerTypeIfPointerLike();
+
     // Collect all method candidates
     std::vector<MethodMatch> Candidates;
 
@@ -1510,7 +1516,7 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
     // Look up the struct in the instantiation cache
     // Handle fully qualified type names like "scaly.containers.String"
     // But preserve generic instantiation names like "List.char"
-    std::string LookupName = StructType.Name;
+    std::string LookupName = LookupType.Name;
     if (LookupName.rfind("scaly.", 0) == 0) {
         // Strip package prefix to get just the type name
         size_t LastDotForLookup = LookupName.rfind('.');
@@ -1522,7 +1528,7 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
     if (StructIt != InstantiatedStructures.end()) {
         Struct = &StructIt->second;
     } else {
-        StructIt = InstantiatedStructures.find(StructType.MangledName);
+        StructIt = InstantiatedStructures.find(LookupType.MangledName);
         if (StructIt != InstantiatedStructures.end()) {
             Struct = &StructIt->second;
         }
@@ -1530,8 +1536,8 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
 
     // Check currently planning structure
     if (!Struct && CurrentStructure &&
-        (CurrentStructure->Name == StructType.Name ||
-         CurrentStructure->MangledName == StructType.MangledName)) {
+        (CurrentStructure->Name == LookupType.Name ||
+         CurrentStructure->MangledName == LookupType.MangledName)) {
         Struct = CurrentStructure;
     }
 
@@ -1598,7 +1604,7 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
     if (UnionIt != InstantiatedUnions.end()) {
         Union = &UnionIt->second;
     } else {
-        UnionIt = InstantiatedUnions.find(StructType.MangledName);
+        UnionIt = InstantiatedUnions.find(LookupType.MangledName);
         if (UnionIt != InstantiatedUnions.end()) {
             Union = &UnionIt->second;
         }
@@ -1630,7 +1636,7 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
         // Try lazy instantiation if no candidates found and deferred info exists
         if (Candidates.empty() && Union->DeferredInfo) {
             // Look up the union by MangledName first (primary key), then fall back to Name
-            auto UnionIt2 = InstantiatedUnions.find(StructType.MangledName);
+            auto UnionIt2 = InstantiatedUnions.find(LookupType.MangledName);
             if (UnionIt2 == InstantiatedUnions.end()) {
                 UnionIt2 = InstantiatedUnions.find(LookupName);
             }
@@ -1665,7 +1671,7 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
     // Also collect from Model's Concept
     // Extract the actual type name from fully qualified paths like "scaly.containers.String"
     // But for generic instantiation names like "List.char", extract just the base type name
-    std::string BaseName = StructType.Name;
+    std::string BaseName = LookupType.Name;
     if (BaseName.rfind("scaly.", 0) == 0) {
         // Strip package prefix to get just the type name
         size_t LastDot = BaseName.rfind('.');
@@ -1732,26 +1738,26 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                         // Set up type substitutions for the struct's type parameters
                         // This is needed when resolving parameter/return types that use T
                         std::map<std::string, PlannedType> OldSubst = TypeSubstitutions;
-                        if (!Conc->Parameters.empty() && !StructType.Generics.empty()) {
-                            for (size_t I = 0; I < Conc->Parameters.size() && I < StructType.Generics.size(); ++I) {
-                                TypeSubstitutions[Conc->Parameters[I].Name] = StructType.Generics[I];
+                        if (!Conc->Parameters.empty() && !LookupType.Generics.empty()) {
+                            for (size_t I = 0; I < Conc->Parameters.size() && I < LookupType.Generics.size(); ++I) {
+                                TypeSubstitutions[Conc->Parameters[I].Name] = LookupType.Generics[I];
                             }
                         }
 
                         // Compute mangled name
                         PlannedType ParentType;
-                        ParentType.Name = StructType.Name;
-                        ParentType.Generics = StructType.Generics;
-                        // Compute MangledName: prefer Struct's, then StructType's, then compute from generics
+                        ParentType.Name = LookupType.Name;
+                        ParentType.Generics = LookupType.Generics;
+                        // Compute MangledName: prefer Struct's, then LookupType's, then compute from generics
                         if (Struct) {
                             ParentType.MangledName = Struct->MangledName;
-                        } else if (!StructType.MangledName.empty()) {
-                            ParentType.MangledName = StructType.MangledName;
-                        } else if (!StructType.Generics.empty()) {
+                        } else if (!LookupType.MangledName.empty()) {
+                            ParentType.MangledName = LookupType.MangledName;
+                        } else if (!LookupType.Generics.empty()) {
                             // Compute mangled name from base name and generic args
-                            ParentType.MangledName = mangleStructure(StructType.Name, StructType.Generics);
+                            ParentType.MangledName = mangleStructure(LookupType.Name, LookupType.Generics);
                         } else {
-                            ParentType.MangledName = StructType.Name;
+                            ParentType.MangledName = LookupType.Name;
                         }
 
                         std::vector<PlannedItem> Params;
@@ -1805,7 +1811,7 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
 
                             // Set up context for planning
                             // Look up the struct by MangledName first (primary key), then fall back to Name
-                            auto StructIt2 = InstantiatedStructures.find(StructType.MangledName);
+                            auto StructIt2 = InstantiatedStructures.find(LookupType.MangledName);
                             if (StructIt2 == InstantiatedStructures.end()) {
                                 StructIt2 = InstantiatedStructures.find(LookupName);
                             }
@@ -1892,25 +1898,25 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                         Match.RequiresPageParam = Func->PageParameter.has_value();
 
                         std::map<std::string, PlannedType> OldSubst = TypeSubstitutions;
-                        if (!Conc->Parameters.empty() && !StructType.Generics.empty()) {
-                            for (size_t I = 0; I < Conc->Parameters.size() && I < StructType.Generics.size(); ++I) {
-                                TypeSubstitutions[Conc->Parameters[I].Name] = StructType.Generics[I];
+                        if (!Conc->Parameters.empty() && !LookupType.Generics.empty()) {
+                            for (size_t I = 0; I < Conc->Parameters.size() && I < LookupType.Generics.size(); ++I) {
+                                TypeSubstitutions[Conc->Parameters[I].Name] = LookupType.Generics[I];
                             }
                         }
 
                         PlannedType ParentType;
-                        ParentType.Name = StructType.Name;
-                        ParentType.Generics = StructType.Generics;
-                        // Compute MangledName: prefer Union's, then StructType's, then compute from generics
+                        ParentType.Name = LookupType.Name;
+                        ParentType.Generics = LookupType.Generics;
+                        // Compute MangledName: prefer Union's, then LookupType's, then compute from generics
                         if (Union) {
                             ParentType.MangledName = Union->MangledName;
-                        } else if (!StructType.MangledName.empty()) {
-                            ParentType.MangledName = StructType.MangledName;
-                        } else if (!StructType.Generics.empty()) {
+                        } else if (!LookupType.MangledName.empty()) {
+                            ParentType.MangledName = LookupType.MangledName;
+                        } else if (!LookupType.Generics.empty()) {
                             // Compute mangled name from base name and generic args
-                            ParentType.MangledName = mangleStructure(StructType.Name, StructType.Generics);
+                            ParentType.MangledName = mangleStructure(LookupType.Name, LookupType.Generics);
                         } else {
-                            ParentType.MangledName = StructType.Name;
+                            ParentType.MangledName = LookupType.Name;
                         }
 
                         std::vector<PlannedItem> Params;
@@ -2327,19 +2333,23 @@ std::optional<Planner::InitializerMatch> Planner::findInitializer(
     {
         // Extract base name - handle both package prefixes and generic suffixes
         // "scaly.containers.String" -> "String"
-        // "Vector.int" -> "Vector"
+        // "parser.Parser" -> "Parser"
+        // "Vector.int" -> "Vector" (generic with type args)
         std::string BaseName = StructType.Name;
-        if (BaseName.rfind("scaly.", 0) == 0) {
-            // Package-qualified name - extract the type name (last component)
-            size_t LastDot = BaseName.rfind('.');
-            if (LastDot != std::string::npos) {
-                BaseName = BaseName.substr(LastDot + 1);
-            }
-        } else {
+        if (!StructType.Generics.empty()) {
             // Generic instantiation name - extract the base type (first component)
+            // "Vector.int" -> "Vector"
             size_t FirstDot = BaseName.find('.');
             if (FirstDot != std::string::npos) {
                 BaseName = BaseName.substr(0, FirstDot);
+            }
+        } else {
+            // Qualified name (package or module) - extract the type name (last component)
+            // "scaly.containers.String" -> "String"
+            // "parser.Parser" -> "Parser"
+            size_t LastDot = BaseName.rfind('.');
+            if (LastDot != std::string::npos) {
+                BaseName = BaseName.substr(LastDot + 1);
             }
         }
 
@@ -2977,7 +2987,10 @@ llvm::Expected<PlannedType> Planner::resolveFunctionCall(
         // Plan the function if it's not already in InstantiatedFunctions
         // This handles functions from sibling files
         // Skip planning if the function is currently being planned (recursive call)
-        if (FunctionsBeingPlanned.count(BestMatch) == 0) {
+        // OPTIMIZATION: Skip eager planning for non-generic functions to avoid deep recursion
+        // The function will be planned later when its containing concept is processed
+        if (FunctionsBeingPlanned.count(BestMatch) == 0 && !BestMatch->Parameters.empty()) {
+            // Only eagerly plan generic functions - they need instantiation
             // Determine parent type for method calls
             // If we're inside a structure and this is a method from that structure's concept,
             // we need to pass the parent type for proper mangling
@@ -3773,8 +3786,53 @@ llvm::Expected<PlannedOperand> Planner::collapseOperandSequence(
             }
 
             // Next element is a regular operand (not a prefix operator)
-            PrefixOperand = std::move(Ops[1]);
-            ConsumedOps = 2; // prefix operator + its operand
+            // But if there are more operands forming pointer arithmetic, collapse them first
+            // e.g., for *(argv + i), we need to compute argv + i first, then dereference
+            // However, we should stop at comparison/logical operators which have lower precedence
+            if (Ops.size() > 2) {
+                // Check if there's an arithmetic operator after Ops[1]
+                bool HasArithmeticOp = false;
+                if (auto* NextOp = std::get_if<PlannedType>(&Ops[2].Expr)) {
+                    // Only collapse high-precedence operators (arithmetic, bitwise)
+                    // Stop at comparison (<, >, <=, >=, =, <>) and logical (|, &, or, and)
+                    std::string op = NextOp->Name;
+                    HasArithmeticOp = (op == "+" || op == "-" || op == "/" || op == "%" ||
+                                       op == "<<" || op == ">>" || op == "^" || op == "~");
+                    // Note: * is ambiguous (multiply vs deref), but in position 2 it's multiply
+                    if (op == "*" && Ops.size() > 3) HasArithmeticOp = true;
+                }
+                if (HasArithmeticOp) {
+                    // Find where the arithmetic expression ends (before comparison/logical)
+                    size_t EndPos = Ops.size();
+                    for (size_t i = 4; i < Ops.size(); i += 2) {  // Check every operator position
+                        if (auto* OpType = std::get_if<PlannedType>(&Ops[i].Expr)) {
+                            std::string op = OpType->Name;
+                            // Stop at comparison/logical operators
+                            if (op == "<" || op == ">" || op == "<=" || op == ">=" ||
+                                op == "=" || op == "<>" || op == "|" || op == "&" ||
+                                op == "or" || op == "and") {
+                                EndPos = i;  // Stop before this operator
+                                break;
+                            }
+                        }
+                    }
+                    // Collapse operands from 1 to EndPos
+                    std::vector<PlannedOperand> RestOps(Ops.begin() + 1, Ops.begin() + EndPos);
+                    auto CollapsedRest = collapseOperandSequence(std::move(RestOps));
+                    if (!CollapsedRest) {
+                        return CollapsedRest.takeError();
+                    }
+                    PrefixOperand = std::move(*CollapsedRest);
+                    ConsumedOps = EndPos;
+                } else {
+                    // Just take the next operand
+                    PrefixOperand = std::move(Ops[1]);
+                    ConsumedOps = 2;
+                }
+            } else {
+                PrefixOperand = std::move(Ops[1]);
+                ConsumedOps = 2; // prefix operator + its operand
+            }
 
             // Create PlannedCall for prefix operator
             PlannedCall Call;
@@ -4043,8 +4101,14 @@ llvm::Expected<PlannedType> Planner::resolveMemberAccess(
     PlannedType Current = BaseType;
 
     for (const auto& MemberName : Members) {
+        // Auto-unwrap optional types: Option[T] -> T
+        PlannedType UnwrappedType = Current;
+        if (UnwrappedType.Name == "Option" && !UnwrappedType.Generics.empty()) {
+            UnwrappedType = UnwrappedType.Generics[0];
+        }
+
         // Handle pointer types by dereferencing to inner type (auto-deref)
-        PlannedType LookupType = Current.getInnerTypeIfPointerLike();
+        PlannedType LookupType = UnwrappedType.getInnerTypeIfPointerLike();
 
         // Extract base name from type
         // For generic instantiations: "Box.int" -> "Box" (first part before generic args)
@@ -4268,8 +4332,14 @@ llvm::Expected<std::vector<PlannedMemberAccess>> Planner::resolveMemberAccessCha
     PlannedType Current = BaseType;
 
     for (const auto& MemberName : Members) {
+        // Auto-unwrap optional types: Option[T] -> T
+        PlannedType UnwrappedType = Current;
+        if (UnwrappedType.Name == "Option" && !UnwrappedType.Generics.empty()) {
+            UnwrappedType = UnwrappedType.Generics[0];
+        }
+
         // Handle pointer types by dereferencing to inner type (auto-deref)
-        PlannedType LookupType = Current.getInnerTypeIfPointerLike();
+        PlannedType LookupType = UnwrappedType.getInnerTypeIfPointerLike();
 
         // Extract base name from type
         // For generic instantiations: "Box.int" -> "Box" (first part before generic args)
@@ -5240,13 +5310,24 @@ const Concept* Planner::lookupConcept(llvm::StringRef Name) {
                                         // Look in namespace's modules for the target concept
                                         for (const auto& SubMod : NS->Modules) {
                                             if (SubMod.Name == Name) {
+                                                // Load module on demand if it's a stub
+                                                const Module* TargetMod = &SubMod;
+                                                if (SubMod.Members.empty() && !CurrentMod->File.empty()) {
+                                                    llvm::SmallString<256> BasePath(CurrentMod->File);
+                                                    llvm::sys::path::remove_filename(BasePath);
+                                                    llvm::sys::path::append(BasePath, Conc->Name);
+                                                    if (const Module* Loaded = loadIntraPackageModule(BasePath.str(), SubMod.Name)) {
+                                                        TargetMod = Loaded;
+                                                    }
+                                                }
+
                                                 // Cache the sub-module for sibling lookup
                                                 if (std::find(AccessedPackageModules.begin(),
                                                               AccessedPackageModules.end(),
-                                                              &SubMod) == AccessedPackageModules.end()) {
-                                                    AccessedPackageModules.push_back(&SubMod);
+                                                              TargetMod) == AccessedPackageModules.end()) {
+                                                    AccessedPackageModules.push_back(TargetMod);
                                                 }
-                                                for (const auto& SubMember : SubMod.Members) {
+                                                for (const auto& SubMember : TargetMod->Members) {
                                                     if (auto* SubConc = std::get_if<Concept>(&SubMember)) {
                                                         if (SubConc->Name == Name) {
                                                             Concepts[Name.str()] = SubConc;
@@ -5400,6 +5481,18 @@ llvm::Expected<PlannedType> Planner::resolveType(const Type &T, Span Instantiati
         return makeGenericArityError(File, T.Loc, Name, 1, 0);
     }
 
+    // Handle ref[T] - non-owning reference type
+    if (Name == "ref" && Result.Generics.size() == 1) {
+        // ref[T] - use R prefix for mangling
+        Result.MangledName = "R" + Result.Generics[0].MangledName;
+        return Result;
+    }
+
+    // Handle ref without generics - this is an error
+    if (Name == "ref" && Result.Generics.empty()) {
+        return makeGenericArityError(File, T.Loc, Name, 1, 0);
+    }
+
     // Handle fixed-size array types: char[]N, int[]N, etc.
     // When a primitive type has a "generic argument", it's actually an array size
     // Convert char[]9 to pointer[char] for stack array access
@@ -5467,6 +5560,60 @@ llvm::Expected<PlannedType> Planner::resolveType(const Type &T, Span Instantiati
     // Check if this type refers to a generic Concept that needs instantiation
     // Use lookupConcept for cross-module resolution
     const Concept *Conc = lookupConcept(Name);
+
+    // If not found and name contains a dot, try module-qualified lookup
+    // e.g., "parser.Parser" -> look up "Parser" in the "parser" module
+    if (!Conc && T.Name.size() > 1) {
+        // The last element is the type name, the rest is the module path
+        const std::string& TypeName = T.Name.back();
+
+        // Look for the module in the module stack
+        // First, try to find a module with the first element name
+        const std::string& ModuleName = T.Name[0];
+
+        // Search for module in the module stack
+        for (auto It = ModuleStack.rbegin(); It != ModuleStack.rend(); ++It) {
+            const Module* Mod = *It;
+
+            // Check sub-modules
+            for (const auto& SubMod : Mod->Modules) {
+                if (SubMod.Name == ModuleName) {
+                    // Found the module, now look for the type
+                    // Handle multi-level paths by traversing nested modules
+                    const Module* TargetMod = &SubMod;
+                    for (size_t i = 1; i < T.Name.size() - 1; ++i) {
+                        bool Found = false;
+                        for (const auto& NestedMod : TargetMod->Modules) {
+                            if (NestedMod.Name == T.Name[i]) {
+                                TargetMod = &NestedMod;
+                                Found = true;
+                                break;
+                            }
+                        }
+                        if (!Found) {
+                            TargetMod = nullptr;
+                            break;
+                        }
+                    }
+
+                    if (TargetMod) {
+                        // Look for the concept in the target module
+                        for (const auto& Member : TargetMod->Members) {
+                            if (auto* ModConc = std::get_if<Concept>(&Member)) {
+                                if (ModConc->Name == TypeName) {
+                                    Conc = ModConc;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (Conc) break;
+                }
+            }
+            if (Conc) break;
+        }
+    }
+
     if (Conc) {
         // If concept has generic parameters, we need to instantiate
         if (!Conc->Parameters.empty()) {
@@ -6727,6 +6874,109 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
             }
         }
 
+        // Check for use-imported namespace function call pattern (e.g., cli.main())
+        // where "cli" comes from "use scalyc.cli"
+        if (i + 1 < ProcessedOps.size()) {
+            const auto &NextOp = ProcessedOps[i + 1];
+            if (auto* TypeExpr = std::get_if<Type>(&Op.Expr)) {
+                if (TypeExpr->Name.size() == 2 && (!TypeExpr->Generics || TypeExpr->Generics->empty()) &&
+                    std::holds_alternative<Tuple>(NextOp.Expr)) {
+                    const std::string& AliasName = TypeExpr->Name[0];
+                    const std::string& FuncName = TypeExpr->Name[1];
+
+                    // Search Use statements in the module stack
+                    const Function* UseFunc = nullptr;
+                    for (auto It = ModuleStack.rbegin(); It != ModuleStack.rend() && !UseFunc; ++It) {
+                        const Module* Mod = *It;
+                        for (const auto& Use : Mod->Uses) {
+                            // Check if the Use path ends with the alias name
+                            if (!Use.Path.empty() && Use.Path.back() == AliasName) {
+                                // Found a matching use import - resolve the namespace
+                                const Concept* UseConcept = lookupConcept(AliasName);
+                                if (UseConcept) {
+                                    // Look for the function in the namespace
+                                    if (auto* NS = std::get_if<Namespace>(&UseConcept->Def)) {
+                                        for (const auto& Member : NS->Members) {
+                                            if (auto* Func = std::get_if<Function>(&Member)) {
+                                                if (Func->Name == FuncName) {
+                                                    UseFunc = Func;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                if (UseFunc) break;
+                            }
+                        }
+                    }
+
+                    if (UseFunc) {
+                        // Plan the arguments
+                        Operand ArgsOp = NextOp;
+                        ArgsOp.MemberAccess = nullptr;
+                        auto PlannedArgs = planOperand(ArgsOp);
+                        if (!PlannedArgs) {
+                            return PlannedArgs.takeError();
+                        }
+
+                        // Plan the function
+                        auto PlannedFunc = planFunction(*UseFunc, nullptr);
+                        if (!PlannedFunc) {
+                            return PlannedFunc.takeError();
+                        }
+
+                        // Create the function call
+                        PlannedCall Call;
+                        Call.Loc = Op.Loc;
+                        Call.Name = UseFunc->Name;
+                        Call.MangledName = PlannedFunc->MangledName;
+                        Call.IsIntrinsic = false;
+                        Call.IsOperator = false;
+                        if (PlannedFunc->Returns) {
+                            Call.ResultType = *PlannedFunc->Returns;
+                        }
+
+                        // Build args from tuple
+                        Call.Args = std::make_shared<std::vector<PlannedOperand>>();
+                        if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedArgs->Expr)) {
+                            for (auto& Comp : TupleExpr->Components) {
+                                for (auto& ValOp : Comp.Value) {
+                                    Call.Args->push_back(std::move(ValOp));
+                                }
+                            }
+                        }
+
+                        // Create operand with the call
+                        PlannedOperand CallOp;
+                        CallOp.Loc = Op.Loc;
+                        CallOp.Expr = std::move(Call);
+                        if (PlannedFunc->Returns) {
+                            CallOp.ResultType = *PlannedFunc->Returns;
+                        }
+
+                        // Apply any member access on the result
+                        if (NextOp.MemberAccess && !NextOp.MemberAccess->empty()) {
+                            auto MemberChain = resolveMemberAccessChain(CallOp.ResultType,
+                                                                         *NextOp.MemberAccess, NextOp.Loc);
+                            if (!MemberChain) {
+                                return MemberChain.takeError();
+                            }
+                            CallOp.MemberAccess = std::make_shared<std::vector<PlannedMemberAccess>>(
+                                std::move(*MemberChain));
+                            if (!CallOp.MemberAccess->empty()) {
+                                CallOp.ResultType = CallOp.MemberAccess->back().ResultType;
+                            }
+                        }
+
+                        Result.push_back(std::move(CallOp));
+                        i++;  // Skip the tuple operand
+                        continue;
+                    }
+                }
+            }
+        }
+
         // Check for method call pattern on any operand with member access
         // e.g., (*page).reset() where (*page) is a grouped dereference expression
         if (i + 1 < ProcessedOps.size()) {
@@ -7452,6 +7702,29 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                 // If qualified name lookup fails, try just the last component (for use statements)
                 if (!Conc && TypeExpr->Name.size() > 1) {
                     Conc = lookupConcept(TypeExpr->Name.back());
+                }
+                // If still not found, try module-qualified lookup (e.g., parser.Parser)
+                if (!Conc && TypeExpr->Name.size() > 1) {
+                    const std::string& ModuleName = TypeExpr->Name[0];
+                    const std::string& TypeName = TypeExpr->Name.back();
+                    // Search for module in the module stack
+                    for (auto It = ModuleStack.rbegin(); !Conc && It != ModuleStack.rend(); ++It) {
+                        const Module* Mod = *It;
+                        for (const auto& SubMod : Mod->Modules) {
+                            if (SubMod.Name == ModuleName) {
+                                // Found the module, look for the concept
+                                for (const auto& Member : SubMod.Members) {
+                                    if (auto* ModConc = std::get_if<Concept>(&Member)) {
+                                        if (ModConc->Name == TypeName) {
+                                            Conc = ModConc;
+                                            break;
+                                        }
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                    }
                 }
                 if (Conc && std::holds_alternative<Structure>(Conc->Def)) {
                         // Check if next op is a tuple (constructor args)
@@ -9173,8 +9446,24 @@ llvm::Expected<PlannedBinding> Planner::planBinding(const Binding &Bind) {
     Result.Loc = Bind.Loc;
     Result.BindingType = Bind.BindingType;
 
+    // Filter out control flow statements that were incorrectly parsed into the binding's operation
+    // This is a workaround for a parser bug where `var i 1 \n while ...` puts the while in the binding
+    std::vector<Operand> FilteredOps;
+    for (const auto& Op : Bind.Operation) {
+        // Skip control flow expressions that shouldn't be in a binding's value
+        if (std::holds_alternative<While>(Op.Expr) ||
+            std::holds_alternative<For>(Op.Expr) ||
+            std::holds_alternative<If>(Op.Expr) ||
+            std::holds_alternative<Match>(Op.Expr) ||
+            std::holds_alternative<Choose>(Op.Expr) ||
+            std::holds_alternative<Try>(Op.Expr)) {
+            continue;  // Skip - this should be a separate statement
+        }
+        FilteredOps.push_back(Op);
+    }
+
     // Plan the initializer operands first (needed for type inference)
-    auto PlannedOp = planOperands(Bind.Operation);
+    auto PlannedOp = planOperands(FilteredOps);
     if (!PlannedOp) {
         return PlannedOp.takeError();
     }
@@ -9591,21 +9880,32 @@ llvm::Expected<PlannedFor> Planner::planFor(const For &ForExpr) {
     // 1. Integer range: for i in N (iterates 0 to N-1)
     // 2. Iterator-based: for item in collection (uses get_iterator/next protocol)
     if (!Result.Expr.empty()) {
-        const auto &CollType = Result.Expr.back().ResultType;
+        PlannedType CollType = Result.Expr.back().ResultType;
+
+        // Auto-unwrap optional types: Option[T] -> T
+        // This allows iterating over ref[Vector[String]]? without explicit unwrapping
+        if (CollType.Name == "Option" && !CollType.Generics.empty()) {
+            CollType = CollType.Generics[0];
+        }
+
+        // Auto-dereference pointer/ref types for iteration
+        // ref[Vector[T]] -> Vector[T], pointer[Vector[T]] -> Vector[T]
+        PlannedType IterType = CollType.getInnerTypeIfPointerLike();
+
         Result.CollectionType = CollType;
 
         // Check if this is an integer range loop
-        if (CollType.Name == "int" || CollType.Name == "int8" ||
-            CollType.Name == "int16" || CollType.Name == "int32" ||
-            CollType.Name == "int64" || CollType.Name == "size_t" ||
-            CollType.Name == "uint8" || CollType.Name == "uint16" ||
-            CollType.Name == "uint32" || CollType.Name == "uint64") {
+        if (IterType.Name == "int" || IterType.Name == "int8" ||
+            IterType.Name == "int16" || IterType.Name == "int32" ||
+            IterType.Name == "int64" || IterType.Name == "size_t" ||
+            IterType.Name == "uint8" || IterType.Name == "uint16" ||
+            IterType.Name == "uint32" || IterType.Name == "uint64") {
             // Integer range loop: for i in N
             Result.IsIteratorLoop = false;
-            Result.ElementType = CollType;
+            Result.ElementType = IterType;
         } else {
-            // Try iterator protocol
-            auto IterMethod = lookupMethod(CollType, "get_iterator", ForExpr.Loc);
+            // Try iterator protocol on the dereferenced type
+            auto IterMethod = lookupMethod(IterType, "get_iterator", ForExpr.Loc);
             if (IterMethod) {
                 Result.IsIteratorLoop = true;
                 Result.IteratorType = IterMethod->ReturnType;
@@ -9629,10 +9929,10 @@ llvm::Expected<PlannedFor> Planner::planFor(const For &ForExpr) {
             } else {
                 // No get_iterator - fallback to first generic arg (for pointer[T] etc.)
                 Result.IsIteratorLoop = false;
-                if (!CollType.Generics.empty()) {
-                    Result.ElementType = CollType.Generics[0];
+                if (!IterType.Generics.empty()) {
+                    Result.ElementType = IterType.Generics[0];
                 } else {
-                    Result.ElementType = CollType;
+                    Result.ElementType = IterType;
                 }
             }
         }
@@ -9656,14 +9956,15 @@ llvm::Expected<PlannedWhile> Planner::planWhile(const While &WhileExpr) {
     PlannedWhile Result;
     Result.Loc = WhileExpr.Loc;
 
-    pushScope();
-
+    // Plan the condition BEFORE pushing scope - condition uses enclosing scope
     auto PlannedCond = planBinding(WhileExpr.Cond);
     if (!PlannedCond) {
-        popScope();
         return PlannedCond.takeError();
     }
     Result.Cond = std::move(*PlannedCond);
+
+    // Push scope for the body only - body variables shouldn't leak out
+    pushScope();
 
     auto PlannedBody = planAction(WhileExpr.Body);
     if (!PlannedBody) {

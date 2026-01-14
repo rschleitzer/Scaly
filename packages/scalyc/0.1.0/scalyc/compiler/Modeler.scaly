@@ -617,29 +617,9 @@ function handle_choose#(syntax: ChooseSyntax) returns Choose
 
 function handle_when#(syntax: WhenSyntax) returns When
 {
-    ; Count extensions
-    var ext_count: size_t 0
-    if syntax.variant.extensions <> null
-        set ext_count: (*syntax.variant.extensions).length
-
-    var variant_path Vector[String]#(1 + ext_count)
-    variant_path.put(0, syntax.variant.name)
-
-    if syntax.variant.extensions <> null
-    {
-        let exts (*syntax.variant.extensions)
-        var i: size_t 0
-        while i < exts.length
-        {
-            let ext_ptr exts.get(i)
-            if ext_ptr <> null
-            {
-                let ext (*ext_ptr)
-                variant_path.put(1 + i, ext.name)
-            }
-            set i: i + 1
-        }
-    }
+    ; Variant is now just a simple identifier (String)
+    var variant_path Vector[String]#(1)
+    variant_path.put(0, syntax.variant)
 
     let stmt handle_command#(syntax.command)
     When(

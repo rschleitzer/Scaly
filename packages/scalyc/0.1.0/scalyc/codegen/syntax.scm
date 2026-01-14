@@ -7,6 +7,11 @@
 
 use scaly.containers.String
 use scaly.containers.Vector
+use scaly.memory.Page
+use scaly.containers.Array
+use scaly.containers.List
+use scaly.containers.HashSet
+use scaly.containers.HashSetBuilder
 
 ; Parser error types
 define DifferentSyntax()

@@ -2407,10 +2407,10 @@ llvm::Expected<WhenSyntax> Parser::parseWhen() {
     if (!Lex.parseColon())
         return invalid(Start, Lex.position(), "expected colon or newline");
 
-    auto VariantOrErr = parseName();
-    if (!VariantOrErr)
-        return invalid(Start, Lex.position(), "expected Name");
-    auto Variant = std::move(*VariantOrErr);
+    llvm::StringRef Variant = Lex.peekIdentifier();
+    if (Variant.empty() || Keywords.count(Variant))
+        return invalid(Start, Lex.position(), "expected identifier");
+    Lex.parseIdentifier();  // Consume the identifier
 
     Lex.parseColon();
 
