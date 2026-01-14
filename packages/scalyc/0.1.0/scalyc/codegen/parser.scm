@@ -91,12 +91,12 @@ define Parser
     function parse_literal_token#(rp, this: Parser) returns Literal throws ParserError
     {
         choose lexer.token
-            when empty: Empty
+            when Empty: empty
                 lexer.advance#()
             else {}
 
         choose lexer.token
-            when literal: Literal
+            when Literal: literal
             {
                 let ret literal.value
                 lexer.empty()
@@ -115,12 +115,12 @@ define Parser
         while true
         {
             choose parse_"(downcase-string (id syntax))"#()
-                when _err: Error
+                when Error: _err
                 {
                     choose _err
-                        when i: Invalid
+                        when Invalid: i
                             throw ParserError.Invalid(i)
-                        when d: Different
+                        when Different: d
                         {
                             if list.head = null
                                 throw ParserError.Different(d)
@@ -128,7 +128,7 @@ define Parser
                                 return Vector["(id syntax)"Syntax]#(list)
                         }
                 }
-                when node: Success
+                when Success: node
                     list.add$(node)
         }
     }
@@ -141,14 +141,14 @@ define Parser
             ($
                 (apply-to-children-of syntax (lambda (content) ($
 "        choose parse_"(downcase-string (link content))"#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
-                    when d: Different {}
+                    when Different: d {}
             }
-            when node: Success
+            when Success: node
                 return "(id syntax)"Syntax."(link content)"(node)
 "
                 )))
@@ -172,14 +172,14 @@ define Parser
         let " prop "_start lexer.position
         var " prop ": ref[" (if (multiple? content) ($ "Vector[" (link content) "Syntax]") ($ (link content) "Syntax")) "]? null
         choose parse_"(downcase-string (link content))(if (multiple? content) "_list" "")"#()
-            when _err: Error
+            when Error: _err
             {
                 choose _err
-                    when d: Different {}
-                    when i: Invalid
+                    when Different: d {}
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
-            when success: Success
+            when Success: success
                 set " prop ": success
 "
                                 )
@@ -189,7 +189,7 @@ define Parser
         let " prop "_start lexer.position
         var " prop ": " type-name "
         choose parse_"(downcase-string (link content))(if (multiple? content) "_list" "")"#()
-            when _err: Error
+            when Error: _err
 "
                                     (if (equal? 1 (child-number content))
                                         "                throw _err
@@ -197,15 +197,15 @@ define Parser
                                         ($
 "            {
                 choose _err
-                    when d: Different
+                    when Different: d
                         throw ParserError.Invalid(InvalidSyntax(" prop "_start, lexer.position, String#(\"expected "(link content)"\")))
-                    when i: Invalid
+                    when Invalid: i
                         throw ParserError.Invalid(i)
             }
 "
                                         )
                                     )
-"            when success: Success
+"            when Success: success
                 set " prop ": success
 "
                                 )
@@ -217,9 +217,9 @@ define Parser
 "
         var " prop ": Literal
         choose parse_literal_token#()
-            when _err: Error
+            when Error: _err
                 throw _err
-            when success: Success
+            when Success: success
                 set " prop ": success
 "
                             ))
@@ -340,9 +340,9 @@ function test() returns int
     ; Test 1: Parse a simple literal
     var parser Parser#(String#(\"42\"))
     choose parser.parse_literal#()
-        when _err: Error
+        when Error: _err
             return 1
-        when literal: Success
+        when Success: literal
         {
             if ~parser.is_at_end()
                 return 2
@@ -351,9 +351,9 @@ function test() returns int
     ; Test 2: Parse an identifier expression
     set parser: Parser#(String#(\"foo\"))
     choose parser.parse_name#()
-        when _err: Error
+        when Error: _err
             return 3
-        when name: Success
+        when Success: name
         {
             if ~parser.is_at_end()
                 return 4
@@ -362,9 +362,9 @@ function test() returns int
     ; Test 3: Parse a function definition
     set parser: Parser#(String#(\"function hello() returns int 42\"))
     choose parser.parse_function#()
-        when _err: Error
+        when Error: _err
             return 5
-        when func: Success
+        when Success: func
         {
             if ~parser.is_at_end()
                 return 6

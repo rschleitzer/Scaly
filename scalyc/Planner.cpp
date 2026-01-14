@@ -9796,7 +9796,7 @@ llvm::Expected<PlannedChoose> Planner::planChoose(const Choose &ChooseExpr) {
         }
 
         // Look up the variant in the union to get its tag
-        // We compare by TYPE name since Scaly syntax uses "when x: TypeName"
+        // We compare by TYPE name since Scaly syntax uses "when TypeName: x"
         if (CondUnion && !VariantTypeName.empty()) {
             for (size_t i = 0; i < CondUnion->Variants.size(); ++i) {
                 // Check if variant's type matches the type name from the when clause
@@ -10017,7 +10017,7 @@ llvm::Expected<PlannedTry> Planner::planTry(const Try &TryExpr) {
         }
 
         // Look up the variant in the union to get its tag
-        // We compare by TYPE name since Scaly syntax uses "when x: TypeName"
+        // We compare by TYPE name since Scaly syntax uses "when TypeName: x"
         if (CondUnion && !VariantTypeName.empty()) {
             for (size_t i = 0; i < CondUnion->Variants.size(); ++i) {
                 // Check if variant's type matches the type name from the when clause

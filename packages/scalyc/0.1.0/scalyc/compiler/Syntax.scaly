@@ -317,8 +317,8 @@ define WhenSyntax
 (
     start: size_t
     end: size_t
-    name: String
     variant: String
+    name: String
     command: CommandSyntax
 )
 

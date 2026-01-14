@@ -801,7 +801,7 @@ static bool testThrowInFunction() {
     auto ResultOrErr = evalInt(
         "define Result union: (Ok: int, Error: int)\n"
         "function fail() returns Result throws int { throw 42 }\n"
-        "try let r = fail(): when e: Error: e else 0"
+        "try let r = fail(): when Error: e: e else 0"
     );
 
     if (!ResultOrErr) {
@@ -832,7 +832,7 @@ static bool testChooseMatchesError() {
     auto ResultOrErr = evalInt(
         "define Result union: (Ok: int, Error: int)\n"
         "function fail() returns Result throws int { throw 42 }\n"
-        "choose fail(): when x: Ok: x when e: Error: e else 0"
+        "choose fail(): when Ok: x: x when Error: e: e else 0"
     );
 
     if (!ResultOrErr) {
@@ -861,7 +861,7 @@ static bool testChooseWithDataBinding() {
     auto ResultOrErr = evalInt(
         "define Result union: (Ok: int, Error: int)\n"
         "function fail() returns Result throws int { throw 10 }\n"
-        "choose fail(): when x: Ok: x when val: Error: val * 2 else 0"
+        "choose fail(): when Ok: x: x when Error: val: val * 2 else 0"
     );
 
     if (!ResultOrErr) {
@@ -891,7 +891,7 @@ static bool testChooseElseFallback() {
     auto ResultOrErr = evalInt(
         "define Result union: (Ok: int, Error: int)\n"
         "function fail() returns Result throws int { throw 5 }\n"
-        "choose fail(): when x: Ok: x else 77"
+        "choose fail(): when Ok: x: x else 77"
     );
 
     if (!ResultOrErr) {
@@ -920,7 +920,7 @@ static bool testChooseMultipleCases() {
     auto ResultOrErr = evalInt(
         "define Triple union: (A: int, B: int, C: int)\n"
         "function makeB() returns Triple throws int { throw 33 }\n"
-        "choose makeB(): when a: A: a when b: B: b + 1 when c: C: c else 0"
+        "choose makeB(): when A: a: a when B: b: b + 1 when C: c: c else 0"
     );
 
     if (!ResultOrErr) {
@@ -950,7 +950,7 @@ static bool testChooseOnStructField() {
         "define Option union: (Some: int, None)\n"
         "define Container(value: Option)\n"
         "let c Container(Option.Some(42))\n"
-        "choose c.value: when v: Some: v else 0"
+        "choose c.value: when Some: v: v else 0"
     );
 
     if (!ResultOrErr) {
@@ -977,7 +977,7 @@ static bool testChooseOnVariantConstruction() {
     // Test choose directly on a variant construction (not through a variable)
     auto ResultOrErr = evalInt(
         "define Option union: (Some: int, None)\n"
-        "choose Option.Some(7): when v: Some: v else 0"
+        "choose Option.Some(7): when Some: v: v else 0"
     );
 
     if (!ResultOrErr) {
@@ -2055,7 +2055,7 @@ static bool testRBMMThrownLifetime() {
     auto ResultOrErr = evalInt(
         "define Result union: (Ok: int, Error: int)\n"
         "function fail() returns Result throws int { throw 42 }\n"
-        "try let r = fail(): when e: Error: e else 0"
+        "try let r = fail(): when Error: e: e else 0"
     );
 
     if (!ResultOrErr) {
@@ -2088,7 +2088,7 @@ static bool testThrowStructWithMemberAccess() {
         "function fail() returns Result throws Error {\n"
         "    throw Error!(42)\n"
         "}\n"
-        "choose fail(): when e: Err: e.code when x: Ok: x else 0\n"
+        "choose fail(): when Err: e: e.code when Ok: x: x else 0\n"
     );
 
     if (!ResultOrErr) {

@@ -372,8 +372,8 @@ struct CommandSyntax {
 struct WhenSyntax {
     size_t Start;
     size_t End;
-    llvm::StringRef name;
     llvm::StringRef variant;
+    llvm::StringRef name;
     CommandSyntax command;
 };
 
