@@ -736,12 +736,7 @@ llvm::Expected<Match> Modeler::handleMatch(const MatchSyntax &Syntax) {
 
 llvm::Expected<When> Modeler::handleWhen(const WhenSyntax &Syntax) {
     std::vector<std::string> VariantPath;
-    VariantPath.push_back(std::string(Syntax.variant.name));
-    if (Syntax.variant.extensions) {
-        for (const auto &E : *Syntax.variant.extensions) {
-            VariantPath.push_back(std::string(E.name));
-        }
-    }
+    VariantPath.push_back(std::string(Syntax.variant));
 
     auto Cons = handleCommand(Syntax.command);
     if (!Cons)

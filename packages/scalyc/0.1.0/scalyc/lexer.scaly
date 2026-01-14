@@ -64,6 +64,9 @@ define Lexer
     function is_at_end(this: Lexer) returns bool
         current >= source.length()
 
+    procedure empty(this: Lexer)
+        set token: Token.Empty(EmptyToken())
+
     procedure advance#(rp, this: Lexer)
     {
         set previous_position: position
@@ -422,6 +425,18 @@ define Lexer
                 return true
             }
         false
+    }
+
+    function parse_attribute#(rp, this: Lexer) returns String
+    {
+        choose token
+            when a: Attribute
+            {
+                let name a.name
+                advance#()
+                return name
+            }
+        String()
     }
 }
 

@@ -2,50 +2,62 @@
 ;; Generate Scaly Parser from scaly.sgm
 
 ;; Helper to generate char constant name from punctuation value
+;; Returns function call syntax like ParserConstants.CHAR_LPAREN()
 (define (punct-const-name value)
     (case value
-        (("(") "CHAR_LPAREN")
-        ((")") "CHAR_RPAREN")
-        (("[") "CHAR_LBRACKET")
-        (("]") "CHAR_RBRACKET")
-        (("{") "CHAR_LBRACE")
-        (("}") "CHAR_RBRACE")
-        ((",") "CHAR_COMMA")
-        ((".") "CHAR_DOT")
-        (("!") "CHAR_EXCL")
-        (("?") "CHAR_QUESTION")
-        (("#") "CHAR_HASH")
-        (("$") "CHAR_DOLLAR")
-        (("^") "CHAR_CARET")
-        (("\\") "CHAR_BACKSLASH")
-        (else ($ "CHAR_" value))))
+        (("(") "ParserConstants.CHAR_LPAREN()")
+        ((")") "ParserConstants.CHAR_RPAREN()")
+        (("[") "ParserConstants.CHAR_LBRACKET()")
+        (("]") "ParserConstants.CHAR_RBRACKET()")
+        (("{") "ParserConstants.CHAR_LBRACE()")
+        (("}") "ParserConstants.CHAR_RBRACE()")
+        ((",") "ParserConstants.CHAR_COMMA()")
+        ((".") "ParserConstants.CHAR_DOT()")
+        (("!") "ParserConstants.CHAR_EXCL()")
+        (("?") "ParserConstants.CHAR_QUESTION()")
+        (("#") "ParserConstants.CHAR_HASH()")
+        (("$") "ParserConstants.CHAR_DOLLAR()")
+        (("^") "ParserConstants.CHAR_CARET()")
+        (("\\\\") "ParserConstants.CHAR_BACKSLASH()")
+        (else ($ "ParserConstants.CHAR_" value "()"))))
 
 (define (generate-parser-scaly) ($
 "
-use scaly.memory.Page
-use scaly.containers.Array
-use scaly.containers.List
-use scaly.containers.HashSet
-use scaly.containers.HashSetBuilder
-
-; Character constants for punctuation (char literals use double-quote + type annotation)
-let CHAR_LPAREN: char \"(\"
-let CHAR_RPAREN: char \")\"
-let CHAR_LBRACKET: char \"[\"
-let CHAR_RBRACKET: char \"]\"
-let CHAR_LBRACE: char \"{\"
-let CHAR_RBRACE: char \"}\"
-let CHAR_COMMA: char \",\"
-let CHAR_DOT: char \".\"
-let CHAR_EXCL: char \"!\"
-let CHAR_QUESTION: char \"?\"
-let CHAR_HASH: char \"#\"
-let CHAR_DOLLAR: char \"$\"
-let CHAR_CARET: char \"^\"
-let CHAR_BACKSLASH: char \"\\\\\"
-
 ; Lexer import (uses its own char constants)
 module lexer
+
+; Character constants for punctuation (char literals use double-quote + type annotation)
+define ParserConstants
+{
+    function CHAR_LPAREN() returns char
+        \"(\" as char
+    function CHAR_RPAREN() returns char
+        \")\" as char
+    function CHAR_LBRACKET() returns char
+        \"[\" as char
+    function CHAR_RBRACKET() returns char
+        \"]\" as char
+    function CHAR_LBRACE() returns char
+        \"{\" as char
+    function CHAR_RBRACE() returns char
+        \"}\" as char
+    function CHAR_COMMA() returns char
+        \",\" as char
+    function CHAR_DOT() returns char
+        \".\" as char
+    function CHAR_EXCL() returns char
+        \"!\" as char
+    function CHAR_QUESTION() returns char
+        \"?\" as char
+    function CHAR_HASH() returns char
+        \"#\" as char
+    function CHAR_DOLLAR() returns char
+        \"$\" as char
+    function CHAR_CARET() returns char
+        \"^\" as char
+    function CHAR_BACKSLASH() returns char
+        \"\\\\\" as char
+}
 
 define Parser
 (
@@ -103,9 +115,9 @@ define Parser
         while true
         {
             choose parse_"(downcase-string (id syntax))"#()
-                when error: ParserError
+                when _err: Error
                 {
-                    choose error
+                    choose _err
                         when i: Invalid
                             throw ParserError.Invalid(i)
                         when d: Different
@@ -116,7 +128,7 @@ define Parser
                                 return Vector["(id syntax)"Syntax]#(list)
                         }
                 }
-                when node: "(id syntax)"Syntax
+                when node: Success
                     list.add$(node)
         }
     }
@@ -129,14 +141,14 @@ define Parser
             ($
                 (apply-to-children-of syntax (lambda (content) ($
 "        choose parse_"(downcase-string (link content))"#()
-            when error: ParserError
+            when _err: Error
             {
-                choose error
+                choose _err
                     when i: Invalid
                         throw ParserError.Invalid(i)
                     when d: Different {}
             }
-            when node: "(link content)"Syntax
+            when node: Success
                 return "(id syntax)"Syntax."(link content)"(node)
 "
                 )))
@@ -160,14 +172,14 @@ define Parser
         let " prop "_start lexer.position
         var " prop ": ref[" (if (multiple? content) ($ "Vector[" (link content) "Syntax]") ($ (link content) "Syntax")) "]? null
         choose parse_"(downcase-string (link content))(if (multiple? content) "_list" "")"#()
-            when error: ParserError
+            when _err: Error
             {
-                choose error
+                choose _err
                     when d: Different {}
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
-            when success: " type-name "
+            when success: Success
                 set " prop ": success
 "
                                 )
@@ -177,14 +189,14 @@ define Parser
         let " prop "_start lexer.position
         var " prop ": " type-name "
         choose parse_"(downcase-string (link content))(if (multiple? content) "_list" "")"#()
-            when error: ParserError
+            when _err: Error
 "
                                     (if (equal? 1 (child-number content))
-                                        "                throw error
+                                        "                throw _err
 "
                                         ($
 "            {
-                choose error
+                choose _err
                     when d: Different
                         throw ParserError.Invalid(InvalidSyntax(" prop "_start, lexer.position, String#(\"expected "(link content)"\")))
                     when i: Invalid
@@ -193,7 +205,7 @@ define Parser
 "
                                         )
                                     )
-"            when success: " type-name "
+"            when success: Success
                 set " prop ": success
 "
                                 )
@@ -205,9 +217,9 @@ define Parser
 "
         var " prop ": Literal
         choose parse_literal_token#()
-            when error: ParserError
-                throw error
-            when success: Literal
+            when _err: Error
+                throw _err
+            when success: Success
                 set " prop ": success
 "
                             ))
@@ -328,9 +340,9 @@ function test() returns int
     ; Test 1: Parse a simple literal
     var parser Parser#(String#(\"42\"))
     choose parser.parse_literal#()
-        when error: ParserError
+        when _err: Error
             return 1
-        when literal: LiteralSyntax
+        when literal: Success
         {
             if ~parser.is_at_end()
                 return 2
@@ -339,9 +351,9 @@ function test() returns int
     ; Test 2: Parse an identifier expression
     set parser: Parser#(String#(\"foo\"))
     choose parser.parse_name#()
-        when error: ParserError
+        when _err: Error
             return 3
-        when name: NameSyntax
+        when name: Success
         {
             if ~parser.is_at_end()
                 return 4
@@ -350,9 +362,9 @@ function test() returns int
     ; Test 3: Parse a function definition
     set parser: Parser#(String#(\"function hello() returns int 42\"))
     choose parser.parse_function#()
-        when error: ParserError
+        when _err: Error
             return 5
-        when func: FunctionSyntax
+        when func: Success
         {
             if ~parser.is_at_end()
                 return 6

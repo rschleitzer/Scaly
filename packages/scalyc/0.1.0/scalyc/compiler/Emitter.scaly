@@ -88,13 +88,13 @@ define EmitterConfig
     data_layout: String         ; Empty = default for target
 )
 {
-    init#()
+    init()
     {
         set emit_debug_info: true
         set optimize_for_size: false
         set opt_level: 0
-        set target_triple: String#("")
-        set data_layout: String#("")
+        set target_triple: String()
+        set data_layout: String()
     }
 }
 
@@ -133,13 +133,13 @@ define RegionInfo
     named_region_values: ref[Vector[LLVMValueRef]]?
 )
 {
-    init#()
+    init#(page: pointer[Page])
     {
         set local_page: LLVMValueRef(null)
         set return_page: LLVMValueRef(null)
         set exception_page: LLVMValueRef(null)
-        set named_region_names: Vector[String]#()
-        set named_region_values: Vector[LLVMValueRef]#()
+        set named_region_names: Vector[String]^page()
+        set named_region_values: Vector[LLVMValueRef]^page()
     }
 
     function lookup_named_region(this, name: String) returns LLVMValueRef
@@ -224,29 +224,29 @@ define Emitter
     page_restore_watermark: LLVMValueRef
 )
 {
-    init#(cfg: EmitterConfig)
+    init#(page: pointer[Page], cfg: EmitterConfig)
     {
         set config: cfg
         set context: LLVMContextRef(null)
         set module: LLVMModuleRef(null)
         set builder: LLVMBuilderRef(null)
         set current_plan: null
-        set type_cache_names: Vector[String]#()
-        set type_cache_types: Vector[LLVMTypeRef]#()
-        set struct_cache_names: Vector[String]#()
-        set struct_cache_types: Vector[LLVMTypeRef]#()
-        set function_cache_names: Vector[String]#()
-        set function_cache_funcs: Vector[LLVMValueRef]#()
-        set intrinsic_type_names: Vector[String]#()
-        set intrinsic_types: Vector[IntrinsicTypeInfo]#()
+        set type_cache_names: Vector[String]^page()
+        set type_cache_types: Vector[LLVMTypeRef]^page()
+        set struct_cache_names: Vector[String]^page()
+        set struct_cache_types: Vector[LLVMTypeRef]^page()
+        set function_cache_names: Vector[String]^page()
+        set function_cache_funcs: Vector[LLVMValueRef]^page()
+        set intrinsic_type_names: Vector[String]^page()
+        set intrinsic_types: Vector[IntrinsicTypeInfo]^page()
         set current_function: LLVMValueRef(null)
         set current_block: LLVMBasicBlockRef(null)
         set current_function_can_throw: false
-        set local_var_names: Vector[String]#()
-        set local_var_values: Vector[LLVMValueRef]#()
-        set current_region: RegionInfo#()
-        set loop_stack: Vector[LoopContext]#()
-        set block_cleanup_stack: Vector[BlockCleanupContext]#()
+        set local_var_names: Vector[String]^page()
+        set local_var_values: Vector[LLVMValueRef]^page()
+        set current_region: RegionInfo^page(page)
+        set loop_stack: Vector[LoopContext]^page()
+        set block_cleanup_stack: Vector[BlockCleanupContext]^page()
         set page_type: LLVMTypeRef(null)
         set page_allocate: LLVMValueRef(null)
         set page_allocate_page: LLVMValueRef(null)
