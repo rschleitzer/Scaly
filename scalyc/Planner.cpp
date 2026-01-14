@@ -3785,21 +3785,22 @@ llvm::Expected<PlannedOperand> Planner::collapseOperandSequence(
             }
 
             // Next element is a regular operand (not a prefix operator)
-            // But if there are more operands forming pointer arithmetic, collapse them first
-            // e.g., for *(argv + i), we need to compute argv + i first, then dereference
-            // However, we should stop at comparison/logical operators which have lower precedence
-            if (Ops.size() > 2) {
+            // Only collapse arithmetic operators if Ops[1] is a grouped expression (Tuple)
+            // e.g., for *(argv + i), the (argv + i) is already a Tuple, so collapse it
+            // But for *buffer + x, don't collapse - the * only applies to buffer
+            // Check if Ops[1] is a grouped expression that contains arithmetic
+            bool IsGroupedExpr = std::holds_alternative<PlannedTuple>(Ops[1].Expr);
+            if (IsGroupedExpr && Ops.size() > 2) {
+                // The grouped expression is already collapsed, just use it
+                PrefixOperand = std::move(Ops[1]);
+                ConsumedOps = 2;
+            } else if (Ops.size() > 2) {
                 // Check if there's an arithmetic operator after Ops[1]
+                // BUT only collapse if Ops[1] itself is a grouped expression
+                // For ungrouped expressions like *buffer + x, don't collapse
                 bool HasArithmeticOp = false;
-                if (auto* NextOp = std::get_if<PlannedType>(&Ops[2].Expr)) {
-                    // Only collapse high-precedence operators (arithmetic, bitwise)
-                    // Stop at comparison (<, >, <=, >=, =, <>) and logical (|, &, or, and)
-                    std::string op = NextOp->Name;
-                    HasArithmeticOp = (op == "+" || op == "-" || op == "/" || op == "%" ||
-                                       op == "<<" || op == ">>" || op == "^" || op == "~");
-                    // Note: * is ambiguous (multiply vs deref), but in position 2 it's multiply
-                    if (op == "*" && Ops.size() > 3) HasArithmeticOp = true;
-                }
+                // Removed: arithmetic collapsing for ungrouped prefix expressions
+                // This was causing *buffer + x to be parsed as *(buffer + x)
                 if (HasArithmeticOp) {
                     // Find where the arithmetic expression ends (before comparison/logical)
                     size_t EndPos = Ops.size();
