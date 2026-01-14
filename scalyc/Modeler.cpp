@@ -735,6 +735,8 @@ llvm::Expected<Match> Modeler::handleMatch(const MatchSyntax &Syntax) {
 }
 
 llvm::Expected<When> Modeler::handleWhen(const WhenSyntax &Syntax) {
+    // Syntax.variant = variant type name (e.g., "Some" in "when Some: v")
+    // Syntax.name = binding name (e.g., "v" in "when Some: v")
     std::vector<std::string> VariantPath;
     VariantPath.push_back(std::string(Syntax.variant));
 
