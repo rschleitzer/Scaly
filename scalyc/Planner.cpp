@@ -957,7 +957,8 @@ const Function* Planner::lookupPackageFunction(const std::vector<std::string>& P
 
     // Check if first element is a loaded package
     auto PkgIt = LoadedPackages.find(Path[0]);
-    if (PkgIt == LoadedPackages.end()) return nullptr;
+    if (PkgIt == LoadedPackages.end())
+        return nullptr;
 
     // Navigate through the package module hierarchy
     const Module* CurrentMod = PkgIt->second;
@@ -1040,9 +1041,8 @@ const Function* Planner::lookupPackageFunction(const std::vector<std::string>& P
             }
         }
 
-        if (!Found) {
+        if (!Found)
             return nullptr;
-        }
     }
 
     // Look for the function in the final module/namespace
@@ -1050,9 +1050,8 @@ const Function* Planner::lookupPackageFunction(const std::vector<std::string>& P
     if (CurrentNS) {
         for (const auto& Member : CurrentNS->Members) {
             if (auto* Func = std::get_if<Function>(&Member)) {
-                if (Func->Name == FuncName) {
+                if (Func->Name == FuncName)
                     return Func;
-                }
             }
         }
     } else {
