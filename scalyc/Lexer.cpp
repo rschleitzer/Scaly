@@ -110,13 +110,28 @@ void Lexer::advance() {
 }
 
 Token Lexer::scanLineFeed() {
+    // We just saw a \n, advance past it
+    readCharacter();
+
     while (true) {
-        readCharacter();
         skipWhitespace(false);
         if (Current_ == nullptr) {
             return ColonToken{};
         }
         if (*Current_ == '\n') {
+            readCharacter();  // consume the newline
+            continue;
+        }
+        // Skip comments and continue collapsing linefeeds
+        // Note: handleSingleLineComment consumes the trailing \n
+        if (*Current_ == ';') {
+            readCharacter();
+            if (Current_ != nullptr && *Current_ == '*') {
+                readCharacter();
+                handleMultiLineComment();
+            } else {
+                handleSingleLineComment();
+            }
             continue;
         }
         return ColonToken{};

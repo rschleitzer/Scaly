@@ -248,7 +248,13 @@ static int modelFile(StringRef Filename) {
     if (Verbose) {
         outs() << "Model built: " << Filename << "\n";
         outs() << "  Main module: " << ModelResult->MainModule.Name << "\n";
+        outs() << "  Members: " << ModelResult->MainModule.Members.size() << "\n";
         outs() << "  Statements: " << ModelResult->Statements.size() << "\n";
+        for (const auto& Member : ModelResult->MainModule.Members) {
+            if (auto* Conc = std::get_if<scaly::Concept>(&Member)) {
+                outs() << "    Concept: " << Conc->Name << "\n";
+            }
+        }
     }
     return 0;
 }
