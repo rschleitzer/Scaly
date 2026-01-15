@@ -246,9 +246,9 @@ define cli
                 Console.println("Parse error")
                 return 2
             }
-            when value: ProgramSyntax
+            when value: program
             {
-                set syntax: value
+                set syntax: program
             }
 
         if opts.verbose
@@ -443,9 +443,9 @@ define cli
             {
                 return -2  ; Parse failed
             }
-            when value: ProgramSyntax
+            when value: program
             {
-                set syntax: value
+                set syntax: program
             }
 
         ; Stage 2: Build model
@@ -484,9 +484,9 @@ define cli
             {
                 return -1  ; Parse failed
             }
-            when value: ProgramSyntax
+            when value: program
             {
-                set syntax: value
+                set syntax: program
             }
 
         ; Stage 2: Build model

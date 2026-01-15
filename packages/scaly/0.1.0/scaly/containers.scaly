@@ -26,11 +26,11 @@ define containers
     function test_vector() returns int
     {
         var vector Vector[int]$(2)
-        set *vector.get(0): 1
+        set *(vector.get(0)): 1
         vector.put(1, 2)
         if *(vector.get(0)) <> 1
             return -1
-        if *(*vector)[1] <> 2
+        if *(vector[1]) <> 2
             return -2
         0
     }

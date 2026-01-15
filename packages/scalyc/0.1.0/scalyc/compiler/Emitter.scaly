@@ -62,6 +62,80 @@ use scaly.compiler.LLVM.LLVMIntPredicate
 use scaly.compiler.LLVM.LLVMRealPredicate
 use scaly.compiler.LLVM.LLVMLinkage
 
+; LLVM functions
+use scaly.compiler.LLVM.LLVMAddCase
+use scaly.compiler.LLVM.LLVMAddFunction
+use scaly.compiler.LLVM.LLVMAppendBasicBlockInContext
+use scaly.compiler.LLVM.LLVMBuildAShr
+use scaly.compiler.LLVM.LLVMBuildAdd
+use scaly.compiler.LLVM.LLVMBuildAlloca
+use scaly.compiler.LLVM.LLVMBuildAnd
+use scaly.compiler.LLVM.LLVMBuildBitCast
+use scaly.compiler.LLVM.LLVMBuildBr
+use scaly.compiler.LLVM.LLVMBuildCall2
+use scaly.compiler.LLVM.LLVMBuildCondBr
+use scaly.compiler.LLVM.LLVMBuildFAdd
+use scaly.compiler.LLVM.LLVMBuildFCmp
+use scaly.compiler.LLVM.LLVMBuildFDiv
+use scaly.compiler.LLVM.LLVMBuildFMul
+use scaly.compiler.LLVM.LLVMBuildFNeg
+use scaly.compiler.LLVM.LLVMBuildFRem
+use scaly.compiler.LLVM.LLVMBuildFSub
+use scaly.compiler.LLVM.LLVMBuildICmp
+use scaly.compiler.LLVM.LLVMBuildLShr
+use scaly.compiler.LLVM.LLVMBuildLoad2
+use scaly.compiler.LLVM.LLVMBuildMul
+use scaly.compiler.LLVM.LLVMBuildNeg
+use scaly.compiler.LLVM.LLVMBuildNot
+use scaly.compiler.LLVM.LLVMBuildOr
+use scaly.compiler.LLVM.LLVMBuildRet
+use scaly.compiler.LLVM.LLVMBuildRetVoid
+use scaly.compiler.LLVM.LLVMBuildSDiv
+use scaly.compiler.LLVM.LLVMBuildSRem
+use scaly.compiler.LLVM.LLVMBuildShl
+use scaly.compiler.LLVM.LLVMBuildStore
+use scaly.compiler.LLVM.LLVMBuildStructGEP2
+use scaly.compiler.LLVM.LLVMBuildSub
+use scaly.compiler.LLVM.LLVMBuildSwitch
+use scaly.compiler.LLVM.LLVMBuildUDiv
+use scaly.compiler.LLVM.LLVMBuildURem
+use scaly.compiler.LLVM.LLVMBuildXor
+use scaly.compiler.LLVM.LLVMConstInt
+use scaly.compiler.LLVM.LLVMConstPointerNull
+use scaly.compiler.LLVM.LLVMConstReal
+use scaly.compiler.LLVM.LLVMConstStringInContext
+use scaly.compiler.LLVM.LLVMContextCreate
+use scaly.compiler.LLVM.LLVMContextDispose
+use scaly.compiler.LLVM.LLVMCreateBuilderInContext
+use scaly.compiler.LLVM.LLVMDisposeBuilder
+use scaly.compiler.LLVM.LLVMDisposeModule
+use scaly.compiler.LLVM.LLVMDoubleTypeInContext
+use scaly.compiler.LLVM.LLVMFloatTypeInContext
+use scaly.compiler.LLVM.LLVMFunctionType
+use scaly.compiler.LLVM.LLVMGetBasicBlockTerminator
+use scaly.compiler.LLVM.LLVMGetElementType
+use scaly.compiler.LLVM.LLVMGetInsertBlock
+use scaly.compiler.LLVM.LLVMGetNamedFunction
+use scaly.compiler.LLVM.LLVMGetNamedGlobal
+use scaly.compiler.LLVM.LLVMGetReturnType
+use scaly.compiler.LLVM.LLVMGetTypeKind
+use scaly.compiler.LLVM.LLVMInt16TypeInContext
+use scaly.compiler.LLVM.LLVMInt1TypeInContext
+use scaly.compiler.LLVM.LLVMInt32TypeInContext
+use scaly.compiler.LLVM.LLVMInt64TypeInContext
+use scaly.compiler.LLVM.LLVMInt8TypeInContext
+use scaly.compiler.LLVM.LLVMModuleCreateWithNameInContext
+use scaly.compiler.LLVM.LLVMPointerTypeInContext
+use scaly.compiler.LLVM.LLVMPositionBuilderAtEnd
+use scaly.compiler.LLVM.LLVMPrintModuleToFile
+use scaly.compiler.LLVM.LLVMPrintModuleToString
+use scaly.compiler.LLVM.LLVMSetLinkage
+use scaly.compiler.LLVM.LLVMStructCreateNamed
+use scaly.compiler.LLVM.LLVMTypeOf
+use scaly.compiler.LLVM.LLVMVerifyModule
+use scaly.compiler.LLVM.LLVMVoidTypeInContext
+use scaly.compiler.LLVM.LLVMWriteBitcodeToFile
+
 ; ============================================================================
 ; Intrinsic Type Info
 ; ============================================================================
@@ -244,7 +318,7 @@ define Emitter
         set current_function_can_throw: false
         set local_var_names: Vector[String]^page()
         set local_var_values: Vector[LLVMValueRef]^page()
-        set current_region: RegionInfo^page(page)
+        set current_region: RegionInfo^page()
         set loop_stack: Vector[LoopContext]^page()
         set block_cleanup_stack: Vector[BlockCleanupContext]^page()
         set page_type: LLVMTypeRef(null)
@@ -584,9 +658,9 @@ define Emitter
             return cached
 
         ; Determine return type
-        var return_type LLVMVoidTypeInContext(context)
-        if func.returns <> null
-            set return_type: map_type(func.returns)
+        var llvm_return_type LLVMVoidTypeInContext(context)
+        if func.return_type <> null
+            set llvm_return_type: map_type(func.return_type.unwrap())
 
         ; Count parameters
         var param_count 0
@@ -596,7 +670,7 @@ define Emitter
         ; TODO: Build parameter types array and create function type
         ; For now, create a simple function with no parameters
 
-        let func_type LLVMFunctionType(return_type, null, 0, 0)
+        let func_type LLVMFunctionType(llvm_return_type, null as pointer[LLVMTypeRef], 0, 0)
 
         ; Use unmangled "main" for linker compatibility (C entry point)
         var func_name func.mangled_name
@@ -606,7 +680,7 @@ define Emitter
         let llvm_func LLVMAddFunction(llvm_module, func_name.data, func_type)
 
         ; Set linkage
-        if func.private
+        if func.is_private
             LLVMSetLinkage(llvm_func, LLVMLinkage.Internal())
         else
             LLVMSetLinkage(llvm_func, LLVMLinkage.External())
@@ -643,10 +717,11 @@ define Emitter
                 let llvm_type LLVMInt64TypeInContext(context)
                 return LLVMConstInt(llvm_type, h.value, 0)
             }
-            when Float: f
+            when FloatingPoint: fp
             {
-                let llvm_type LLVMFloatTypeInContext(context)
-                return LLVMConstReal(llvm_type, f.value as double)
+                let llvm_type LLVMDoubleTypeInContext(context)
+                ; TODO: Parse string to double - for now use 0.0
+                return LLVMConstReal(llvm_type, 0.0)
             }
             when String: s
             {
@@ -656,9 +731,9 @@ define Emitter
             {
                 let llvm_type LLVMInt8TypeInContext(context)
                 ; Get first character
-                if c.value.length > 0
+                if c.value.get_length() > 0
                 {
-                    let ch c.value.get_char(0)
+                    let ch c.value.get(0)
                     return LLVMConstInt(llvm_type, ch as size_t, 0)
                 }
                 return LLVMConstInt(llvm_type, 0, 0)
@@ -735,8 +810,7 @@ define Emitter
     ; Write module IR to file
     function write_module_to_file(this, filename: String) returns bool
     {
-        var error_msg pointer[pointer[char]] null
-        let result LLVMPrintModuleToFile(llvm_module, filename.data, error_msg)
+        let result LLVMPrintModuleToFile(llvm_module, filename.data, null as pointer[pointer[char]])
         result = 0
     }
 
@@ -750,8 +824,7 @@ define Emitter
     ; Verify module
     function verify_module(this) returns bool
     {
-        var error_msg pointer[pointer[char]] null
-        let result LLVMVerifyModule(llvm_module, 0, error_msg)
+        let result LLVMVerifyModule(llvm_module, 0, null as pointer[pointer[char]])
         result = 0
     }
 
@@ -773,7 +846,7 @@ define Emitter
         if first = null
             return LLVMValueRef(null)
 
-        emit_operand(first)
+        emit_operand(first.unwrap())
     }
 
     ; Emit a single operand
@@ -904,17 +977,17 @@ define Emitter
     ; ========================================================================
 
     ; Emit a variable reference
-    function emit_variable(this, var: PlannedVariable) returns LLVMValueRef
+    function emit_variable(this, variable: PlannedVariable) returns LLVMValueRef
     {
-        let var_ptr lookup_variable(var.name)
+        let var_ptr lookup_variable(variable.name)
         if var_ptr.handle = null
             return LLVMValueRef(null)
 
-        if var.is_mutable
+        if variable.is_mutable
         {
             ; Mutable binding stored as pointer - load the value
-            let ty map_type(var.variable_type)
-            return LLVMBuildLoad2(builder, ty, var_ptr, var.name.data)
+            let ty map_type(variable.variable_type)
+            return LLVMBuildLoad2(builder, ty, var_ptr, variable.name.data)
         }
         else
         {
@@ -967,15 +1040,15 @@ define Emitter
         if call.args = null
         {
             let result_type map_type(call.result_type)
-            let func_type LLVMFunctionType(result_type, null, 0, 0)
-            return LLVMBuildCall2(builder, func_type, func, null, 0, String#("call").data)
+            let func_type LLVMFunctionType(result_type, null as pointer[LLVMTypeRef], 0, 0)
+            return LLVMBuildCall2(builder, func_type, func, null as pointer[LLVMValueRef], 0, String#("call").data)
         }
 
         if call.args.length = 0
         {
             let result_type map_type(call.result_type)
-            let func_type LLVMFunctionType(result_type, null, 0, 0)
-            return LLVMBuildCall2(builder, func_type, func, null, 0, String#("call").data)
+            let func_type LLVMFunctionType(result_type, null as pointer[LLVMTypeRef], 0, 0)
+            return LLVMBuildCall2(builder, func_type, func, null as pointer[LLVMValueRef], 0, String#("call").data)
         }
 
         ; TODO: Emit arguments and create proper call
@@ -1001,7 +1074,7 @@ define Emitter
             let arg call.args.get(0)
             if arg = null
                 return LLVMValueRef(null)
-            let operand emit_operand(arg)
+            let operand emit_operand(arg.unwrap())
             return emit_intrinsic_unary_op(call.name, operand, call.result_type)
         }
 
@@ -1015,8 +1088,8 @@ define Emitter
             if right_arg = null
                 return LLVMValueRef(null)
 
-            let left emit_operand(left_arg)
-            let right emit_operand(right_arg)
+            let left emit_operand(left_arg.unwrap())
+            let right emit_operand(right_arg.unwrap())
             return emit_intrinsic_binary_op(call.name, left, right, call.result_type)
         }
 
@@ -1355,41 +1428,13 @@ define Emitter
         LLVMPositionBuilderAtEnd(builder, then_block)
         var then_value LLVMValueRef(null)
 
-        if if_expr.consequent <> null
-        {
-            choose if_expr.consequent
-                when Action: action
-                {
-                    let value emit_action(action)
-                    if action.target = null
-                        set then_value: value
-                    else
-                    {
-                        if action.target.length = 0
-                            set then_value: value
-                    }
-                }
-                when Binding: binding
-                {
-                    emit_binding(binding)
-                }
-                when Return: ret
-                {
-                    emit_return(ret)
-                }
-                when Break: brk
-                {
-                    emit_break(brk)
-                }
-                when Continue: cont
-                {
-                    emit_continue(cont)
-                }
-                else
-                {
-                    emit_statement(if_expr.consequent)
-                }
-        }
+        choose if_expr.consequent
+            when Some: stmt_ref
+            {
+                ; Use emit_statement which handles all statement types
+                emit_statement(*stmt_ref)
+            }
+            else { }
 
         ; Jump to merge block if not already terminated
         let then_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
@@ -1405,41 +1450,12 @@ define Emitter
         {
             LLVMPositionBuilderAtEnd(builder, else_block)
 
-            if if_expr.alternative <> null
-            {
-                choose if_expr.alternative
-                    when Action: action
-                    {
-                        let value emit_action(action)
-                        if action.target = null
-                            set else_value: value
-                        else
-                        {
-                            if action.target.length = 0
-                                set else_value: value
-                        }
-                    }
-                    when Binding: binding
-                    {
-                        emit_binding(binding)
-                    }
-                    when Return: ret
-                    {
-                        emit_return(ret)
-                    }
-                    when Break: brk
-                    {
-                        emit_break(brk)
-                    }
-                    when Continue: cont
-                    {
-                        emit_continue(cont)
-                    }
-                    else
-                    {
-                        emit_statement(if_expr.alternative)
-                    }
-            }
+            choose if_expr.alternative
+                when Some: stmt_ref
+                {
+                    emit_statement(*stmt_ref)
+                }
+                else { }
 
             let else_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
             if else_term.handle = null
@@ -1513,10 +1529,12 @@ define Emitter
 
                 ; Emit case body
                 LLVMPositionBuilderAtEnd(builder, case_block)
-                if branch.consequent <> null
-                {
-                    emit_statement(branch.consequent)
-                }
+                choose branch.consequent
+                    when Some: stmt_ref
+                    {
+                        emit_statement(*stmt_ref)
+                    }
+                    else { }
 
                 let case_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
                 if case_term.handle = null
@@ -1525,14 +1543,16 @@ define Emitter
         }
 
         ; Emit alternative if present
-        if match_expr.alternative <> null
-        {
-            LLVMPositionBuilderAtEnd(builder, default_block)
-            emit_statement(match_expr.alternative)
-            let alt_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
-            if alt_term.handle = null
-                LLVMBuildBr(builder, merge_block)
-        }
+        choose match_expr.alternative
+            when Some: stmt_ref
+            {
+                LLVMPositionBuilderAtEnd(builder, default_block)
+                emit_statement(*stmt_ref)
+                let alt_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
+                if alt_term.handle = null
+                    LLVMBuildBr(builder, merge_block)
+            }
+            else { }
 
         ; Continue at merge block
         LLVMPositionBuilderAtEnd(builder, merge_block)
@@ -1597,10 +1617,12 @@ define Emitter
                 }
 
                 ; Emit consequent
-                if when_case.consequent <> null
-                {
-                    emit_statement(when_case.consequent)
-                }
+                choose when_case.consequent
+                    when Some: stmt_ref
+                    {
+                        emit_statement(*stmt_ref)
+                    }
+                    else { }
 
                 let case_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
                 if case_term.handle = null
@@ -1610,10 +1632,12 @@ define Emitter
 
         ; Emit alternative (else)
         LLVMPositionBuilderAtEnd(builder, default_block)
-        if choose_expr.alternative <> null
-        {
-            emit_statement(choose_expr.alternative)
-        }
+        choose choose_expr.alternative
+            when Some: stmt_ref
+            {
+                emit_statement(*stmt_ref)
+            }
+            else { }
         let alt_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
         if alt_term.handle = null
             LLVMBuildBr(builder, merge_block)
@@ -1798,21 +1822,22 @@ define Emitter
         }
 
         ; Handle "while let" binding
-        if while_expr.cond.binding_item.name <> null
-        {
-            let name while_expr.cond.binding_item.name
-            if while_expr.cond.binding_type.equals(String#("var"))
+        choose while_expr.cond.binding_item.name
+            when Some: name
             {
-                let ty LLVMTypeOf(cond_value)
-                let alloca LLVMBuildAlloca(builder, ty, name.data)
-                LLVMBuildStore(builder, cond_value, alloca)
-                define_variable(name, alloca)
+                if while_expr.cond.binding_type.equals(String#("var"))
+                {
+                    let ty LLVMTypeOf(cond_value)
+                    let alloca LLVMBuildAlloca(builder, ty, name.data)
+                    LLVMBuildStore(builder, cond_value, alloca)
+                    define_variable(name, alloca)
+                }
+                else
+                {
+                    define_variable(name, cond_value)
+                }
             }
-            else
-            {
-                define_variable(name, cond_value)
-            }
-        }
+            else { }
 
         ; Ensure we have a boolean for the branch
         var bool_cond cond_value
@@ -1854,11 +1879,6 @@ define Emitter
         if result_value.handle = null
             return LLVMValueRef(null)
 
-        ; Get binding name if present
-        var has_binding false
-        if try_expr.cond.binding_item.name <> null
-            set has_binding: true
-
         let result_type LLVMTypeOf(result_value)
         let type_kind LLVMGetTypeKind(result_type)
 
@@ -1866,11 +1886,12 @@ define Emitter
         ; StructTypeKind = 12
         if type_kind <> 12
         {
-            if has_binding
-            {
-                let name try_expr.cond.binding_item.name
-                define_variable(name, result_value)
-            }
+            choose try_expr.cond.binding_item.name
+                when Some: name
+                {
+                    define_variable(name, result_value)
+                }
+                else { }
             return result_value
         }
 
@@ -1902,20 +1923,21 @@ define Emitter
         let ok_value LLVMBuildLoad2(builder, i64_ty, ok_data_ptr, String#("ok.val").data)
 
         ; Bind value if name present
-        if has_binding
-        {
-            let name try_expr.cond.binding_item.name
-            if try_expr.cond.binding_type.equals(String#("var"))
+        choose try_expr.cond.binding_item.name
+            when Some: name
             {
-                let alloca LLVMBuildAlloca(builder, i64_ty, name.data)
-                LLVMBuildStore(builder, ok_value, alloca)
-                define_variable(name, alloca)
+                if try_expr.cond.binding_type.equals(String#("var"))
+                {
+                    let alloca LLVMBuildAlloca(builder, i64_ty, name.data)
+                    LLVMBuildStore(builder, ok_value, alloca)
+                    define_variable(name, alloca)
+                }
+                else
+                {
+                    define_variable(name, ok_value)
+                }
             }
-            else
-            {
-                define_variable(name, ok_value)
-            }
-        }
+            else { }
 
         LLVMBuildBr(builder, merge_block)
 
@@ -1932,10 +1954,12 @@ define Emitter
         }
 
         ; Handle alternative
-        if try_expr.alternative <> null
-        {
-            emit_statement(try_expr.alternative)
-        }
+        choose try_expr.alternative
+            when Some: stmt_ref
+            {
+                emit_statement(*stmt_ref)
+            }
+            else { }
 
         let err_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
         if err_term.handle = null
@@ -2043,10 +2067,10 @@ define Emitter
                     return value
 
                 choose target_op.expr
-                    when Variable: var
+                    when Variable: variable
                     {
                         ; Look up the variable's pointer
-                        let var_ptr lookup_variable(var.name)
+                        let var_ptr lookup_variable(variable.name)
                         if var_ptr.handle = null
                             return LLVMValueRef(null)
 
@@ -2057,12 +2081,12 @@ define Emitter
                             {
                                 ; TODO: Handle member access chain for assignment
                                 ; For now, use simple GEP-based field access
-                                return emit_member_assignment(var_ptr, var, target_op.member_access, value)
+                                return emit_member_assignment(var_ptr, variable, target_op.member_access, value)
                             }
                         }
 
                         ; Simple variable assignment
-                        if var.is_mutable = false
+                        if variable.is_mutable = false
                             return LLVMValueRef(null)  ; Cannot assign to immutable
 
                         ; Store the value to the variable
@@ -2078,16 +2102,17 @@ define Emitter
                                 if call.args.length = 1
                                 {
                                     ; Emit the argument to get the pointer
-                                    let arg call.args.get(0)
-                                    if arg <> null
-                                    {
-                                        let ptr emit_operand(arg)
-                                        if ptr.handle <> null
+                                    choose call.args.get(0)
+                                        when Some: arg
                                         {
-                                            ; Store to the dereferenced pointer
-                                            LLVMBuildStore(builder, value, ptr)
+                                            let ptr emit_operand(*arg)
+                                            if ptr.handle <> null
+                                            {
+                                                ; Store to the dereferenced pointer
+                                                LLVMBuildStore(builder, value, ptr)
+                                            }
                                         }
-                                    }
+                                        else { }
                                 }
                             }
                         }
@@ -2103,26 +2128,29 @@ define Emitter
     }
 
     ; Helper for member field assignment
-    function emit_member_assignment(this, var_ptr: LLVMValueRef, var: PlannedVariable, members: ref[Vector[PlannedMemberAccess]]?, value: LLVMValueRef) returns LLVMValueRef
+    function emit_member_assignment(this, var_ptr: LLVMValueRef, planned_var: PlannedVariable, members: ref[Vector[PlannedMemberAccess]]?, value: LLVMValueRef) returns LLVMValueRef
     {
         ; Get the struct type from the variable type
         var current_ptr var_ptr
-        var current_type map_type(var.variable_type)
+        var current_type map_type(planned_var.variable_type)
 
         ; If variable is pointer[T], we need to load the pointer first
-        if var.variable_type.name.equals(String#("pointer"))
+        if planned_var.variable_type.name.equals(String#("pointer"))
         {
             let ptr_type LLVMPointerTypeInContext(context, 0)
             set current_ptr: LLVMBuildLoad2(builder, ptr_type, var_ptr, String#("ptr.load").data)
 
             ; Get the inner type for struct access
-            if var.variable_type.generics <> null
+            if planned_var.variable_type.generics <> null
             {
-                if var.variable_type.generics.length > 0
+                if planned_var.variable_type.generics.length > 0
                 {
-                    let inner_type var.variable_type.generics.get(0)
-                    if inner_type <> null
-                        set current_type: map_type(inner_type)
+                    choose planned_var.variable_type.generics.get(0)
+                        when Some: inner_type
+                        {
+                            set current_type: map_type(*inner_type)
+                        }
+                        else { }
                 }
             }
         }
@@ -2157,44 +2185,44 @@ define Emitter
         }
 
         ; Create alloca for the binding
-        if binding.binding_item.name <> null
-        {
-            let name binding.binding_item.name
-
-            if value.handle <> null
+        choose binding.binding_item.name
+            when Some: name
             {
-                ; Get the type from the value
-                let ty LLVMTypeOf(value)
-
-                if binding.binding_type.equals(String#("var"))
+                if value.handle <> null
                 {
-                    ; Mutable binding: allocate on stack
-                    let alloca LLVMBuildAlloca(builder, ty, name.data)
-                    LLVMBuildStore(builder, value, alloca)
-                    define_variable(name, alloca)
+                    ; Get the type from the value
+                    let ty LLVMTypeOf(value)
+
+                    if binding.binding_type.equals(String#("var"))
+                    {
+                        ; Mutable binding: allocate on stack
+                        let alloca LLVMBuildAlloca(builder, ty, name.data)
+                        LLVMBuildStore(builder, value, alloca)
+                        define_variable(name, alloca)
+                    }
+                    else
+                    {
+                        ; Immutable binding: just use the value directly
+                        define_variable(name, value)
+                    }
                 }
                 else
                 {
-                    ; Immutable binding: just use the value directly
-                    define_variable(name, value)
+                    ; No initialization - check for type annotation
+                    choose binding.binding_item.item_type
+                        when Some: item_type
+                        {
+                            let ty map_type(*item_type)
+                            let alloca LLVMBuildAlloca(builder, ty, name.data)
+                            define_variable(name, alloca)
+                        }
+                        else
+                        {
+                            return false  ; No init and no type annotation
+                        }
                 }
             }
-            else
-            {
-                ; No initialization - check for type annotation
-                if binding.binding_item.item_type <> null
-                {
-                    let item_type binding.binding_item.item_type
-                    let ty map_type(item_type)
-                    let alloca LLVMBuildAlloca(builder, ty, name.data)
-                    define_variable(name, alloca)
-                }
-                else
-                {
-                    return false  ; No init and no type annotation
-                }
-            }
-        }
+            else { }
 
         true
     }

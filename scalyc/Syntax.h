@@ -810,7 +810,7 @@ struct MemberSyntax {
 };
 
 struct ExportSyntax {
-    std::variant<DefinitionSyntax, FunctionSyntax, OperatorSyntax, TraitSyntax, ModuleSyntax> Value;
+    std::variant<DefinitionSyntax, FunctionSyntax, ProcedureSyntax, OperatorSyntax, TraitSyntax, ModuleSyntax> Value;
 };
 
 struct PrivateSyntax {
@@ -820,7 +820,7 @@ struct PrivateSyntax {
 };
 
 struct SymbolSyntax {
-    std::variant<PrivateSyntax, DefinitionSyntax, FunctionSyntax, OperatorSyntax, TraitSyntax, MacroSyntax, ModuleSyntax> Value;
+    std::variant<PrivateSyntax, DefinitionSyntax, FunctionSyntax, ProcedureSyntax, OperatorSyntax, TraitSyntax, MacroSyntax, ModuleSyntax> Value;
 };
 
 struct DeclarationSyntax {

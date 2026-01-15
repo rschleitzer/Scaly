@@ -19,6 +19,7 @@
     <content link = Private
     <content link = Definition
     <content link = Function
+    <content link = Procedure
     <content link = Operator
     <content link = Trait
     <content link = Macro
@@ -31,6 +32,7 @@
 <syntax id = Export                                abstract
     <content link = Definition
     <content link = Function
+    <content link = Procedure
     <content link = Operator
     <content link = Trait
     <content link = Module
