@@ -13,6 +13,7 @@
 #include "llvm/ExecutionEngine/Orc/ThreadSafeModule.h"
 #include "llvm/ExecutionEngine/Orc/ExecutionUtils.h"
 #include <cstring>
+#include <set>
 
 namespace scaly {
 
@@ -1152,6 +1153,44 @@ llvm::Error Emitter::emitFunctionBody(const PlannedFunction &Func,
                 if (ExpectedRetTy->isStructTy() && ActualTy->isPointerTy()) {
                     // Returning pointer but function expects struct by value
                     ReturnValue = Builder->CreateLoad(ExpectedRetTy, ReturnValue, "ret.load");
+                } else if (ExpectedRetTy->isPointerTy() && ActualTy->isStructTy()) {
+                    // Returning struct but function expects pointer
+                    // Allocate the struct on the return page (if available) or stack
+                    llvm::Value *StructPtr;
+                    if (CurrentRegion.ReturnPage) {
+                        // Allocate on return page
+                        auto &DL = Module->getDataLayout();
+                        uint64_t Size = DL.getTypeAllocSize(ActualTy);
+                        uint64_t Align = DL.getABITypeAlign(ActualTy).value();
+                        StructPtr = Builder->CreateCall(PageAllocate,
+                            {CurrentRegion.ReturnPage,
+                             llvm::ConstantInt::get(llvm::Type::getInt64Ty(*Context), Size),
+                             llvm::ConstantInt::get(llvm::Type::getInt64Ty(*Context), Align)},
+                            "ret.alloc");
+                    } else {
+                        // Fall back to stack allocation
+                        StructPtr = Builder->CreateAlloca(ActualTy, nullptr, "ret.alloca");
+                    }
+                    Builder->CreateStore(ReturnValue, StructPtr);
+                    ReturnValue = StructPtr;
+                } else if (ExpectedRetTy->isPointerTy() && ActualTy->isArrayTy()) {
+                    // Returning array but function expects pointer
+                    // Allocate the array on the return page (if available) or stack
+                    llvm::Value *ArrayPtr;
+                    if (CurrentRegion.ReturnPage) {
+                        auto &DL = Module->getDataLayout();
+                        uint64_t Size = DL.getTypeAllocSize(ActualTy);
+                        uint64_t Align = DL.getABITypeAlign(ActualTy).value();
+                        ArrayPtr = Builder->CreateCall(PageAllocate,
+                            {CurrentRegion.ReturnPage,
+                             llvm::ConstantInt::get(llvm::Type::getInt64Ty(*Context), Size),
+                             llvm::ConstantInt::get(llvm::Type::getInt64Ty(*Context), Align)},
+                            "ret.alloc");
+                    } else {
+                        ArrayPtr = Builder->CreateAlloca(ActualTy, nullptr, "ret.alloca");
+                    }
+                    Builder->CreateStore(ReturnValue, ArrayPtr);
+                    ReturnValue = ArrayPtr;
                 } else if ((ExpectedRetTy->isIntegerTy() || ExpectedRetTy->isFloatTy() ||
                             ExpectedRetTy->isDoubleTy()) && ActualTy->isPointerTy()) {
                     // Returning pointer but function expects primitive type
@@ -1971,15 +2010,39 @@ llvm::Error Emitter::emitReturn(const PlannedReturn &Return) {
                     }
                 } else if (ExpectedRetTy->isPointerTy() && ActualTy->isStructTy()) {
                     // Returning struct but function expects pointer
-                    // Find the pointer field
-                    llvm::StructType *StructTy = llvm::cast<llvm::StructType>(ActualTy);
-                    for (unsigned i = 0; i < StructTy->getNumElements(); ++i) {
-                        llvm::Type *FieldTy = StructTy->getElementType(i);
-                        if (FieldTy->isPointerTy()) {
-                            RetVal = Builder->CreateExtractValue(RetVal, {i}, "ret.extract");
-                            break;
-                        }
+                    // Allocate the struct on the return page (if available) or stack
+                    llvm::Value *StructPtr;
+                    if (CurrentRegion.ReturnPage) {
+                        auto &DL = Module->getDataLayout();
+                        uint64_t Size = DL.getTypeAllocSize(ActualTy);
+                        uint64_t Align = DL.getABITypeAlign(ActualTy).value();
+                        StructPtr = Builder->CreateCall(PageAllocate,
+                            {CurrentRegion.ReturnPage,
+                             llvm::ConstantInt::get(llvm::Type::getInt64Ty(*Context), Size),
+                             llvm::ConstantInt::get(llvm::Type::getInt64Ty(*Context), Align)},
+                            "ret.alloc");
+                    } else {
+                        StructPtr = Builder->CreateAlloca(ActualTy, nullptr, "ret.alloca");
                     }
+                    Builder->CreateStore(RetVal, StructPtr);
+                    RetVal = StructPtr;
+                } else if (ExpectedRetTy->isPointerTy() && ActualTy->isArrayTy()) {
+                    // Returning array but function expects pointer
+                    llvm::Value *ArrayPtr;
+                    if (CurrentRegion.ReturnPage) {
+                        auto &DL = Module->getDataLayout();
+                        uint64_t Size = DL.getTypeAllocSize(ActualTy);
+                        uint64_t Align = DL.getABITypeAlign(ActualTy).value();
+                        ArrayPtr = Builder->CreateCall(PageAllocate,
+                            {CurrentRegion.ReturnPage,
+                             llvm::ConstantInt::get(llvm::Type::getInt64Ty(*Context), Size),
+                             llvm::ConstantInt::get(llvm::Type::getInt64Ty(*Context), Align)},
+                            "ret.alloc");
+                    } else {
+                        ArrayPtr = Builder->CreateAlloca(ActualTy, nullptr, "ret.alloca");
+                    }
+                    Builder->CreateStore(RetVal, ArrayPtr);
+                    RetVal = ArrayPtr;
                 } else if (ExpectedRetTy->isStructTy() && ActualTy->isPointerTy()) {
                     // Returning pointer but function expects struct by value
                     // Load the struct from the pointer
@@ -2708,7 +2771,11 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
         if (std::holds_alternative<LocalLifetime>(Call.Life)) {
             FuncPageArg = CurrentRegion.LocalPage;
         } else if (std::holds_alternative<CallLifetime>(Call.Life)) {
+            // Use ReturnPage (caller's rp) if available, otherwise fall back to LocalPage
             FuncPageArg = CurrentRegion.ReturnPage;
+            if (!FuncPageArg) {
+                FuncPageArg = CurrentRegion.LocalPage;
+            }
         } else if (std::holds_alternative<ReferenceLifetime>(Call.Life)) {
             // For ^name, the page is already in Args[0]
             if (!Args.empty()) {
@@ -3385,9 +3452,35 @@ llvm::Expected<llvm::Value*> Emitter::emitIf(const PlannedIf &If) {
 
     // If both branches produce values of the same type, create a PHI node
     if (ThenValue && ElseValue && ThenValue->getType() == ElseValue->getType()) {
-        llvm::PHINode *PHI = Builder->CreatePHI(ThenValue->getType(), 2, "if.value");
-        PHI->addIncoming(ThenValue, ThenEndBlock);
-        PHI->addIncoming(ElseValue, ElseEndBlock);
+        llvm::Type *ValueType = ThenValue->getType();
+
+        // Don't create PHI for void type
+        if (ValueType->isVoidTy()) {
+            return nullptr;
+        }
+
+        // Collect incoming values with their actual end blocks
+        std::vector<std::pair<llvm::Value*, llvm::BasicBlock*>> IncomingValues;
+        IncomingValues.push_back({ThenValue, ThenEndBlock});
+        IncomingValues.push_back({ElseValue, ElseEndBlock});
+
+        // Collect all blocks that have entries
+        std::set<llvm::BasicBlock*> CoveredBlocks;
+        for (const auto &[Val, Block] : IncomingValues) {
+            CoveredBlocks.insert(Block);
+        }
+
+        // Add undef entries for any predecessor blocks not covered
+        for (llvm::BasicBlock *Pred : llvm::predecessors(MergeBlock)) {
+            if (CoveredBlocks.find(Pred) == CoveredBlocks.end()) {
+                IncomingValues.push_back({llvm::UndefValue::get(ValueType), Pred});
+            }
+        }
+
+        llvm::PHINode *PHI = Builder->CreatePHI(ValueType, IncomingValues.size(), "if.value");
+        for (const auto &[Val, Block] : IncomingValues) {
+            PHI->addIncoming(Val, Block);
+        }
         return PHI;
     }
 
@@ -3616,6 +3709,12 @@ llvm::Expected<llvm::Value*> Emitter::emitChoose(const PlannedChoose &Choose) {
     // Create PHI node if branches produce values
     if (!IncomingValues.empty()) {
         llvm::Type *ValueType = IncomingValues[0].first->getType();
+
+        // Don't create PHI for void type
+        if (ValueType->isVoidTy()) {
+            return nullptr;
+        }
+
         bool AllSameType = true;
         for (const auto &[Val, Block] : IncomingValues) {
             if (Val->getType() != ValueType) {
@@ -3625,6 +3724,19 @@ llvm::Expected<llvm::Value*> Emitter::emitChoose(const PlannedChoose &Choose) {
         }
 
         if (AllSameType) {
+            // Collect all blocks that have entries
+            std::set<llvm::BasicBlock*> CoveredBlocks;
+            for (const auto &[Val, Block] : IncomingValues) {
+                CoveredBlocks.insert(Block);
+            }
+
+            // Add undef entries for any predecessor blocks not covered
+            for (llvm::BasicBlock *Pred : llvm::predecessors(MergeBlock)) {
+                if (CoveredBlocks.find(Pred) == CoveredBlocks.end()) {
+                    IncomingValues.push_back({llvm::UndefValue::get(ValueType), Pred});
+                }
+            }
+
             llvm::PHINode *PHI = Builder->CreatePHI(ValueType, IncomingValues.size(), "choose.value");
             for (const auto &[Val, Block] : IncomingValues) {
                 PHI->addIncoming(Val, Block);
@@ -3737,6 +3849,25 @@ llvm::Expected<llvm::Value*> Emitter::emitChooseNPO(
     // Create PHI if we have values
     if (!IncomingValues.empty()) {
         llvm::Type *ValueType = IncomingValues[0].first->getType();
+
+        // Don't create PHI for void type
+        if (ValueType->isVoidTy()) {
+            return nullptr;
+        }
+
+        // Collect all blocks that have entries
+        std::set<llvm::BasicBlock*> CoveredBlocks;
+        for (const auto &[Val, Block] : IncomingValues) {
+            CoveredBlocks.insert(Block);
+        }
+
+        // Add undef entries for any predecessor blocks not covered
+        for (llvm::BasicBlock *Pred : llvm::predecessors(MergeBlock)) {
+            if (CoveredBlocks.find(Pred) == CoveredBlocks.end()) {
+                IncomingValues.push_back({llvm::UndefValue::get(ValueType), Pred});
+            }
+        }
+
         llvm::PHINode *PHI = Builder->CreatePHI(ValueType, IncomingValues.size(), "choose.value");
         for (const auto &[Val, Block] : IncomingValues) {
             PHI->addIncoming(Val, Block);

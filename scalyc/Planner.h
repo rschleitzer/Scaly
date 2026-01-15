@@ -255,7 +255,8 @@ private:
     // Mangle a function name
     std::string mangleFunction(llvm::StringRef Name,
                                const std::vector<PlannedItem> &Params,
-                               const PlannedType *Parent = nullptr);
+                               const PlannedType *Parent = nullptr,
+                               bool hasPageParam = false);
 
     // Mangle an operator name
     std::string mangleOperator(llvm::StringRef Name,
