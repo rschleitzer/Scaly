@@ -1486,10 +1486,14 @@ llvm::Expected<llvm::Value*> Emitter::emitAction(const PlannedAction &Action) {
                 }
 
                 // Navigate through member access chain
-                for (const auto &Member : *TargetOp.MemberAccess) {
+                const auto &MemberChain = *TargetOp.MemberAccess;
+                for (size_t i = 0; i < MemberChain.size(); ++i) {
+                    const auto &Member = MemberChain[i];
+                    bool isLastMember = (i == MemberChain.size() - 1);
+
                     if (!CurrentType->isStructTy()) {
                         return llvm::make_error<llvm::StringError>(
-                            "Cannot access member on non-struct type: need to dereference pointer field first",
+                            "Cannot access member on non-struct type in assignment",
                             llvm::inconvertibleErrorCode()
                         );
                     }
@@ -1498,6 +1502,22 @@ llvm::Expected<llvm::Value*> Emitter::emitAction(const PlannedAction &Action) {
                     // Get the field type for the next iteration
                     CurrentType = llvm::cast<llvm::StructType>(CurrentType)
                                       ->getElementType(Member.FieldIndex);
+
+                    // If the LLVM type is a pointer and there are MORE accesses after this,
+                    // we need to load through it and get the pointed-to struct type
+                    // This handles pointer[T], ref[T], and Option[ref[T]] cases
+                    if (!isLastMember && CurrentType->isPointerTy()) {
+                        // Use getInnerTypeForMethodLookup which unwraps Option, ref, and pointer
+                        PlannedType InnerType = Member.ResultType.getInnerTypeForMethodLookup();
+                        llvm::Type *InnerStructType = lookupStructType(InnerType);
+                        if (InnerStructType) {
+                            // Load the pointer value
+                            CurrentPtr = Builder->CreateLoad(CurrentType, CurrentPtr, Member.Name + ".deref");
+                            CurrentType = InnerStructType;
+                        }
+                        // If we can't find the struct type, just continue - the next iteration
+                        // will catch the error if there's a real problem
+                    }
                 }
 
                 // Store the value to the field
@@ -1586,10 +1606,14 @@ llvm::Expected<llvm::Value*> Emitter::emitAction(const PlannedAction &Action) {
                     llvm::Type *CurrentType = StructType;
 
                     if (TargetOp.MemberAccess && !TargetOp.MemberAccess->empty()) {
-                        for (const auto &Member : *TargetOp.MemberAccess) {
+                        const auto &MemberChain = *TargetOp.MemberAccess;
+                        for (size_t i = 0; i < MemberChain.size(); ++i) {
+                            const auto &Member = MemberChain[i];
+                            bool isLastMember = (i == MemberChain.size() - 1);
+
                             if (!CurrentType->isStructTy()) {
                                 return llvm::make_error<llvm::StringError>(
-                                    "Cannot access member on non-struct type",
+                                    "Cannot access member on non-struct type in dereference assignment",
                                     llvm::inconvertibleErrorCode()
                                 );
                             }
@@ -1597,6 +1621,22 @@ llvm::Expected<llvm::Value*> Emitter::emitAction(const PlannedAction &Action) {
                                                                    Member.FieldIndex, Member.Name);
                             CurrentType = llvm::cast<llvm::StructType>(CurrentType)
                                               ->getElementType(Member.FieldIndex);
+
+                            // If the LLVM type is a pointer and there are MORE accesses after this,
+                            // we need to load through it and get the pointed-to struct type
+                            // This handles pointer[T], ref[T], and Option[ref[T]] cases
+                            if (!isLastMember && CurrentType->isPointerTy()) {
+                                // Use getInnerTypeForMethodLookup which unwraps Option, ref, and pointer
+                                PlannedType InnerType = Member.ResultType.getInnerTypeForMethodLookup();
+                                llvm::Type *InnerStructType = lookupStructType(InnerType);
+                                if (InnerStructType) {
+                                    // Load the pointer value
+                                    CurrentPtr = Builder->CreateLoad(CurrentType, CurrentPtr, Member.Name + ".deref");
+                                    CurrentType = InnerStructType;
+                                }
+                                // If we can't find the struct type, just continue - the next iteration
+                                // will catch the error if there's a real problem
+                            }
                         }
                     }
 
