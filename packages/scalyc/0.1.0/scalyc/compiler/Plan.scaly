@@ -6,9 +6,9 @@
 
 use scaly.containers.Vector
 use scaly.containers.String
-use scaly.compiler.Model.Span
-use scaly.compiler.Model.Lifetime
-use scaly.compiler.Model.Constant
+use scalyc.compiler.Model.Span
+use scalyc.compiler.Model.Lifetime
+use scalyc.compiler.Model.Constant
 
 ; ============================================================================
 ; Type Inference Support
@@ -68,7 +68,7 @@ define EqualityConstraint
 
 define InstanceConstraint
 (
-    var: TypeVariable
+    type_var: TypeVariable
     trait_name: String
     loc: Span
 )
@@ -105,7 +105,7 @@ define PlannedAttribute
 define PlannedItem
 (
     loc: Span
-    private: bool
+    is_private: bool
     name: ref[String]?
     item_type: ref[PlannedType]?
     attributes: ref[Vector[PlannedAttribute]]?
@@ -118,7 +118,7 @@ define PlannedItem
 define PlannedProperty
 (
     loc: Span
-    private: bool
+    is_private: bool
     name: String
     mangled_name: String
     prop_type: PlannedType
@@ -452,14 +452,14 @@ define PlannedImplementation union
 define PlannedFunction
 (
     loc: Span
-    private: bool
+    is_private: bool
     pure: bool
     name: String
     mangled_name: String
     page_parameter: ref[String]?
     input: ref[Vector[PlannedItem]]?
-    returns: ref[PlannedType]?
-    throws: ref[PlannedType]?
+    return_type: ref[PlannedType]?
+    throws_type: ref[PlannedType]?
     life: Lifetime
     impl: PlannedImplementation
     origin: ref[InstantiationInfo]?
@@ -471,7 +471,7 @@ define PlannedFunction
 define PlannedInitializer
 (
     loc: Span
-    private: bool
+    is_private: bool
     page_parameter: ref[String]?
     mangled_name: String
     input: ref[Vector[PlannedItem]]?
@@ -488,12 +488,12 @@ define PlannedDeInitializer
 define PlannedOperator
 (
     loc: Span
-    private: bool
+    is_private: bool
     name: String
     mangled_name: String
     input: ref[Vector[PlannedItem]]?
-    returns: ref[PlannedType]?
-    throws: ref[PlannedType]?
+    return_type: ref[PlannedType]?
+    throws_type: ref[PlannedType]?
     impl: PlannedImplementation
     origin: ref[InstantiationInfo]?
     scheme: ref[TypeScheme]?
@@ -515,7 +515,7 @@ define PlannedGlobal
 define PlannedStructure
 (
     loc: Span
-    private: bool
+    is_private: bool
     is_generic_placeholder: bool
     name: String
     mangled_name: String
@@ -532,7 +532,7 @@ define PlannedStructure
 define PlannedUnion
 (
     loc: Span
-    private: bool
+    is_private: bool
     name: String
     mangled_name: String
     variants: ref[Vector[PlannedVariant]]?
