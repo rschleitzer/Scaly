@@ -601,7 +601,8 @@ std::string Planner::mangleStructure(llvm::StringRef Name,
 // Mangle a function name
 std::string Planner::mangleFunction(llvm::StringRef Name,
                                      const std::vector<PlannedItem> &Params,
-                                     const PlannedType *Parent) {
+                                     const PlannedType *Parent,
+                                     bool hasPageParam) {
     std::string Result = "_Z";
 
     // Nested name if inside a type
@@ -617,6 +618,14 @@ std::string Planner::mangleFunction(llvm::StringRef Name,
     // Parameter types
     // Skip 'this' parameter for methods - Itanium ABI treats it as implicit
     bool HasExplicitParams = false;
+
+    // If function# was used, include the page parameter first
+    if (hasPageParam) {
+        // Page is pointer[Page] - encode as pointer to Page struct
+        Result += "PN4scaly6memory4PageE";  // pointer to scaly::memory::Page
+        HasExplicitParams = true;
+    }
+
     for (const auto &Param : Params) {
         if (Param.Name && *Param.Name == "this") {
             continue;  // Skip 'this' in mangled name
@@ -1540,7 +1549,7 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                             }
                             Params.push_back(Item);
                         }
-                        Match.MangledName = mangleFunction(Func->Name, Params, &ParentType);
+                        Match.MangledName = mangleFunction(Func->Name, Params, &ParentType, Func->PageParameter.has_value());
 
                         // Resolve return type
                         if (Func->Returns) {
@@ -1885,7 +1894,7 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                             }
                             Params.push_back(Item);
                         }
-                        Match.MangledName = mangleFunction(Func->Name, Params, &ParentType);
+                        Match.MangledName = mangleFunction(Func->Name, Params, &ParentType, Func->PageParameter.has_value());
 
                         // Resolve return type
                         if (Func->Returns) {
@@ -2051,7 +2060,7 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                             }
                             Params.push_back(Item);
                         }
-                        Match.MangledName = mangleFunction(Func->Name, Params, &ParentType);
+                        Match.MangledName = mangleFunction(Func->Name, Params, &ParentType, Func->PageParameter.has_value());
 
                         if (Func->Returns) {
                             auto Resolved = resolveType(*Func->Returns, Loc);
@@ -6806,8 +6815,30 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                 if (TypeExpr->Name.size() >= 2 && (!TypeExpr->Generics || TypeExpr->Generics->empty())) {
                     // Check if first element is a local variable or a property
                     auto BindInfo = checkLocalOrProperty(TypeExpr->Name[0]);
-                    if ((BindInfo.IsLocal || BindInfo.IsProperty) && std::holds_alternative<Tuple>(NextOp.Expr)) {
-                        // This is variable.member...method(args)
+
+                    // Check for: variable.method(args) OR variable.method#(args)
+                    // In the second case, NextOp is a Lifetime and args are in ProcessedOps[i + 2]
+                    bool HasArgsDirectly = std::holds_alternative<Tuple>(NextOp.Expr);
+                    bool HasLifetimeThenArgs = false;
+                    Lifetime MethodLifetime = UnspecifiedLifetime{};
+                    size_t ArgsIndex = i + 1;
+
+                    if (!HasArgsDirectly) {
+                        // Check if NextOp is a lifetime marker (Type with empty name and non-Unspecified lifetime)
+                        if (auto* LifeType = std::get_if<Type>(&NextOp.Expr)) {
+                            if (LifeType->Name.empty() && !std::holds_alternative<UnspecifiedLifetime>(LifeType->Life)) {
+                                // There's a lifetime marker - check if args follow
+                                if (i + 2 < ProcessedOps.size() && std::holds_alternative<Tuple>(ProcessedOps[i + 2].Expr)) {
+                                    HasLifetimeThenArgs = true;
+                                    MethodLifetime = LifeType->Life;
+                                    ArgsIndex = i + 2;
+                                }
+                            }
+                        }
+                    }
+
+                    if ((BindInfo.IsLocal || BindInfo.IsProperty) && (HasArgsDirectly || HasLifetimeThenArgs)) {
+                        // This is variable.member...method(args) or variable.member...method#(args)
                         // Last element of path is the method name
                         std::string MethodName = TypeExpr->Name.back();
 
@@ -6831,7 +6862,7 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                         }
 
                         // Plan the arguments first to get their types for overload resolution
-                        Operand ArgsOp = NextOp;
+                        Operand ArgsOp = ProcessedOps[ArgsIndex];
                         ArgsOp.MemberAccess = nullptr;
                         auto PlannedArgs = planOperand(ArgsOp);
                         if (!PlannedArgs) {
@@ -6844,8 +6875,6 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                         auto ArgTypes = extractArgTypes(*PlannedArgs);
                         auto MethodMatch = lookupMethod(LookupType, MethodName, ArgTypes, Op.Loc);
                         if (MethodMatch) {
-                            llvm::errs() << "DEBUG planOperand: creating call for '" << MethodName
-                                         << "' MethodMatch->CanThrow=" << MethodMatch->CanThrow << "\n";
                             // Create method call with instance as first argument
                             PlannedCall Call;
                             Call.Loc = Op.Loc;
@@ -6861,11 +6890,13 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             Call.Args = std::make_shared<std::vector<PlannedOperand>>();
 
                             // Handle function# page parameter for method calls
+                            // Use MethodLifetime if we detected a lifetime marker between method and args
+                            const Lifetime& CallLifeRef = HasLifetimeThenArgs ? MethodLifetime : TypeExpr->Life;
                             if (MethodMatch->RequiresPageParam) {
                                 Call.RequiresPageParam = true;
-                                Call.Life = TypeExpr->Life;
+                                Call.Life = CallLifeRef;
 
-                                if (auto* RefLife = std::get_if<ReferenceLifetime>(&TypeExpr->Life)) {
+                                if (auto* RefLife = std::get_if<ReferenceLifetime>(&CallLifeRef)) {
                                     // ^name - pass explicit page as first argument
                                     // Special case: ^this generates Page.get(this)
                                     if (RefLife->Location == "this") {
@@ -6900,8 +6931,8 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                 // For # lifetime, Emitter uses ReturnPage (rp)
                                 // For $ lifetime, Emitter uses LocalPage
                                 // Both need LocalPage as fallback if ReturnPage is not available
-                                else if (std::holds_alternative<LocalLifetime>(TypeExpr->Life) ||
-                                         std::holds_alternative<CallLifetime>(TypeExpr->Life)) {
+                                else if (std::holds_alternative<LocalLifetime>(CallLifeRef) ||
+                                         std::holds_alternative<CallLifetime>(CallLifeRef)) {
                                     // Track that we need local page allocation
                                     CurrentFunctionUsesLocalLifetime = true;
                                     if (!ScopeInfoStack.empty()) {
@@ -6915,7 +6946,7 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             }
                             // If the Type has a ReferenceLifetime but method doesn't have PageParameter,
                             // still pass the region (for legacy/init calls)
-                            else if (auto* RefLife = std::get_if<ReferenceLifetime>(&TypeExpr->Life)) {
+                            else if (auto* RefLife = std::get_if<ReferenceLifetime>(&CallLifeRef)) {
                                 // Special case: ^this generates Page.get(this)
                                 if (RefLife->Location == "this") {
                                     auto PageGetResult = generatePageGetThis(RefLife->Loc);
@@ -6966,13 +6997,15 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             CallOp.ResultType = MethodMatch->ReturnType;
 
                             // Handle chained method calls: expr.method1().method2().method3()
-                            auto ChainResult = processChainedMethodCalls(std::move(CallOp), ProcessedOps, i + 1);
+                            // Start from ArgsIndex (which accounts for optional lifetime operand)
+                            auto ChainResult = processChainedMethodCalls(std::move(CallOp), ProcessedOps, ArgsIndex);
                             if (!ChainResult) {
                                 return ChainResult.takeError();
                             }
 
                             Result.push_back(std::move(ChainResult->CallOp));
-                            i += 1 + ChainResult->ConsumedOperands;  // Skip consumed tuples
+                            // Skip consumed operands: ArgsIndex - i + any additional consumed by chaining
+                            i = ArgsIndex + ChainResult->ConsumedOperands;
                             continue;
                         }
                         // If method not found, fall through to normal processing
@@ -7265,9 +7298,31 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
         // e.g., (*page).reset() where (*page) is a grouped dereference expression
         if (i + 1 < ProcessedOps.size()) {
             const auto &NextOp = ProcessedOps[i + 1];
-            // Check if current op has member access and next is a tuple (args)
+
+            // Check for: obj.method(args) OR obj.method#(args)
+            // In the second case, NextOp is a Lifetime and args are in ProcessedOps[i + 2]
+            bool HasArgsDirectlyMemberAccess = std::holds_alternative<Tuple>(NextOp.Expr);
+            bool HasLifetimeThenArgsMemberAccess = false;
+            Lifetime MethodAccessLifetime = UnspecifiedLifetime{};
+            size_t MethodArgsIndex = i + 1;
+
+            if (!HasArgsDirectlyMemberAccess && Op.MemberAccess && !Op.MemberAccess->empty()) {
+                // Check if NextOp is a lifetime marker (Type with empty name and non-Unspecified lifetime)
+                if (auto* LifeType = std::get_if<Type>(&NextOp.Expr)) {
+                    if (LifeType->Name.empty() && !std::holds_alternative<UnspecifiedLifetime>(LifeType->Life)) {
+                        // There's a lifetime marker - check if args follow
+                        if (i + 2 < ProcessedOps.size() && std::holds_alternative<Tuple>(ProcessedOps[i + 2].Expr)) {
+                            HasLifetimeThenArgsMemberAccess = true;
+                            MethodAccessLifetime = LifeType->Life;
+                            MethodArgsIndex = i + 2;
+                        }
+                    }
+                }
+            }
+
+            // Check if current op has member access and (next is tuple OR there's lifetime + tuple)
             if (Op.MemberAccess && !Op.MemberAccess->empty() &&
-                std::holds_alternative<Tuple>(NextOp.Expr)) {
+                (HasArgsDirectlyMemberAccess || HasLifetimeThenArgsMemberAccess)) {
                 // The last member in the access chain might be a method name
                 const Type& MethodType = Op.MemberAccess->back();
                 std::string MethodName = MethodType.Name.empty() ? "" : MethodType.Name[0];
@@ -7292,7 +7347,7 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                 }
 
                 // Plan the arguments first to get their types for overload resolution
-                Operand ArgsOp = NextOp;
+                Operand ArgsOp = ProcessedOps[MethodArgsIndex];
                 ArgsOp.MemberAccess = nullptr;
                 auto PlannedArgs = planOperand(ArgsOp);
                 if (!PlannedArgs) {
@@ -7318,11 +7373,13 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                     Call.Args = std::make_shared<std::vector<PlannedOperand>>();
 
                     // Handle function# page parameter for method calls
+                    // Use MethodAccessLifetime if we detected a lifetime marker between method and args
+                    const Lifetime& MethodCallLifeRef = HasLifetimeThenArgsMemberAccess ? MethodAccessLifetime : MethodType.Life;
                     if (MethodMatch->RequiresPageParam) {
                         Call.RequiresPageParam = true;
-                        Call.Life = MethodType.Life;
+                        Call.Life = MethodCallLifeRef;
 
-                        if (auto* RefLife = std::get_if<ReferenceLifetime>(&MethodType.Life)) {
+                        if (auto* RefLife = std::get_if<ReferenceLifetime>(&MethodCallLifeRef)) {
                             // ^name - pass explicit page as first argument
                             // Special case: ^this generates Page.get(this)
                             if (RefLife->Location == "this") {
@@ -7356,8 +7413,8 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                         // For # lifetime, Emitter uses ReturnPage (rp)
                         // For $ lifetime, Emitter uses LocalPage
                         // Both need LocalPage as fallback if ReturnPage is not available
-                        else if (std::holds_alternative<LocalLifetime>(MethodType.Life) ||
-                                 std::holds_alternative<CallLifetime>(MethodType.Life)) {
+                        else if (std::holds_alternative<LocalLifetime>(MethodCallLifeRef) ||
+                                 std::holds_alternative<CallLifetime>(MethodCallLifeRef)) {
                             // Track that we need local page allocation
                             CurrentFunctionUsesLocalLifetime = true;
                             if (!ScopeInfoStack.empty()) {
@@ -7371,7 +7428,7 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                     }
                     // If the method Type has a ReferenceLifetime but method doesn't have PageParameter,
                     // still pass the region (for legacy/init calls)
-                    else if (auto* RefLife = std::get_if<ReferenceLifetime>(&MethodType.Life)) {
+                    else if (auto* RefLife = std::get_if<ReferenceLifetime>(&MethodCallLifeRef)) {
                         // Special case: ^this generates Page.get(this)
                         if (RefLife->Location == "this") {
                             auto PageGetResult = generatePageGetThis(RefLife->Loc);
@@ -7421,13 +7478,15 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                     CallOp.ResultType = MethodMatch->ReturnType;
 
                     // Handle chained method calls: expr.method1().method2().method3()
-                    auto ChainResult = processChainedMethodCalls(std::move(CallOp), ProcessedOps, i + 1);
+                    // Start from MethodArgsIndex (which accounts for optional lifetime operand)
+                    auto ChainResult = processChainedMethodCalls(std::move(CallOp), ProcessedOps, MethodArgsIndex);
                     if (!ChainResult) {
                         return ChainResult.takeError();
                     }
 
                     Result.push_back(std::move(ChainResult->CallOp));
-                    i += 1 + ChainResult->ConsumedOperands;  // Skip consumed tuples
+                    // Skip consumed operands: MethodArgsIndex - i + any additional consumed by chaining
+                    i = MethodArgsIndex + ChainResult->ConsumedOperands;
                     continue;
                 }
                 // If method not found, fall through to normal processing
@@ -7695,7 +7754,7 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                     // Look up the type as a Concept
                     const Concept* Conc = lookupConcept(TypeName);
                     if (TypeName == "Page") {
-                        llvm::errs() << "DEBUG static method: Conc=" << (Conc ? "found" : "null") << "\n";
+                        llvm::errs() << "DEBUG static method Page: Conc=" << (Conc ? "found" : "null") << "\n";
                         if (Conc) {
                             llvm::errs() << "  Conc->Name=" << Conc->Name << "\n";
                             llvm::errs() << "  Conc->Def.index()=" << Conc->Def.index() << " (Structure=1)\n";
@@ -8565,18 +8624,40 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
         }
 
         // Check for function call pattern: function_name followed by Tuple
-        // e.g., seven() or add(3, 4)
+        // e.g., seven() or add(3, 4) or function#() with lifetime
         if (i + 1 < ProcessedOps.size()) {
             const auto &NextOp = ProcessedOps[i + 1];
             if (auto* TypeExpr = std::get_if<Type>(&Op.Expr)) {
                 if (TypeExpr->Name.size() == 1 && (!TypeExpr->Generics || TypeExpr->Generics->empty())) {
                     const std::string& FuncName = TypeExpr->Name[0];
+
+                    // Check for: function(args) OR function#(args)
+                    // In the second case, NextOp is a Lifetime and args are in ProcessedOps[i + 2]
+                    bool HasFuncArgsDirectly = std::holds_alternative<Tuple>(NextOp.Expr);
+                    bool HasFuncLifetimeThenArgs = false;
+                    Lifetime FuncCallLifetime = TypeExpr->Life;
+                    size_t FuncArgsIndex = i + 1;
+
+                    if (!HasFuncArgsDirectly && isFunction(FuncName)) {
+                        // Check if NextOp is a lifetime marker (Type with empty name and non-Unspecified lifetime)
+                        if (auto* LifeType = std::get_if<Type>(&NextOp.Expr)) {
+                            if (LifeType->Name.empty() && !std::holds_alternative<UnspecifiedLifetime>(LifeType->Life)) {
+                                // There's a lifetime marker - check if args follow
+                                if (i + 2 < ProcessedOps.size() && std::holds_alternative<Tuple>(ProcessedOps[i + 2].Expr)) {
+                                    HasFuncLifetimeThenArgs = true;
+                                    FuncCallLifetime = LifeType->Life;
+                                    FuncArgsIndex = i + 2;
+                                }
+                            }
+                        }
+                    }
+
                     // Check if it's a known function (not a struct/concept)
-                    if (isFunction(FuncName) && std::holds_alternative<Tuple>(NextOp.Expr)) {
-                        // This is function(args) - create a function call
+                    if (isFunction(FuncName) && (HasFuncArgsDirectly || HasFuncLifetimeThenArgs)) {
+                        // This is function(args) or function#(args) - create a function call
 
                         // Plan the arguments tuple
-                        Operand ArgsOp = NextOp;
+                        Operand ArgsOp = ProcessedOps[FuncArgsIndex];
                         ArgsOp.MemberAccess = nullptr;
                         auto PlannedArgs = planOperand(ArgsOp);
                         if (!PlannedArgs) {
@@ -8779,7 +8860,7 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                 ParentType.Name = FoundStruct->Name;
                                 ParentType.MangledName = FoundStruct->MangledName;
                                 // Don't set Generics here - we use MangledName directly in mangleFunction
-                                MangledName = mangleFunction(FuncName, ParamItems, &ParentType);
+                                MangledName = mangleFunction(FuncName, ParamItems, &ParentType, MatchedFunc && MatchedFunc->PageParameter.has_value());
                                 // Check if method needs to be planned for generic instantiation
                                 if (InstantiatedFunctions.find(MangledName) == InstantiatedFunctions.end()) {
                                     // Plan the sibling method on demand
@@ -8798,16 +8879,16 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                 PlannedType ParentType;
                                 ParentType.Name = BaseName;
                                 ParentType.MangledName = encodeName(BaseName);
-                                MangledName = mangleFunction(FuncName, ParamItems, &ParentType);
+                                MangledName = mangleFunction(FuncName, ParamItems, &ParentType, MatchedFunc && MatchedFunc->PageParameter.has_value());
                             }
                         } else if (IsNamespaceSibling) {
                             // Sibling function in the same namespace - use namespace prefix
                             PlannedType ParentType;
                             ParentType.Name = CurrentNamespaceName;
                             ParentType.MangledName = encodeName(CurrentNamespaceName);
-                            MangledName = mangleFunction(FuncName, ParamItems, &ParentType);
+                            MangledName = mangleFunction(FuncName, ParamItems, &ParentType, MatchedFunc && MatchedFunc->PageParameter.has_value());
                         } else {
-                            MangledName = mangleFunction(FuncName, ParamItems, nullptr);
+                            MangledName = mangleFunction(FuncName, ParamItems, nullptr, MatchedFunc && MatchedFunc->PageParameter.has_value());
                         }
 
                         // Create the function call
@@ -8830,12 +8911,13 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                         Call.Args = std::make_shared<std::vector<PlannedOperand>>();
 
                         // Handle function# page parameter
+                        // Use FuncCallLifetime which holds either TypeExpr->Life or the lifetime from the next operand
                         if (MatchedFunc && MatchedFunc->PageParameter) {
                             // Function requires a page parameter - check call site lifetime
                             Call.RequiresPageParam = true;
-                            Call.Life = TypeExpr->Life;
+                            Call.Life = FuncCallLifetime;
 
-                            if (auto* RefLife = std::get_if<ReferenceLifetime>(&TypeExpr->Life)) {
+                            if (auto* RefLife = std::get_if<ReferenceLifetime>(&FuncCallLifetime)) {
                                 // ^name - pass explicit page as first argument
                                 // Special case: ^this generates Page.get(this)
                                 if (RefLife->Location == "this") {
@@ -8870,8 +8952,8 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             // For # lifetime, Emitter uses ReturnPage (rp)
                             // For $ lifetime, Emitter uses LocalPage
                             // Both need LocalPage as fallback if ReturnPage is not available
-                            else if (std::holds_alternative<LocalLifetime>(TypeExpr->Life) ||
-                                     std::holds_alternative<CallLifetime>(TypeExpr->Life)) {
+                            else if (std::holds_alternative<LocalLifetime>(FuncCallLifetime) ||
+                                     std::holds_alternative<CallLifetime>(FuncCallLifetime)) {
                                 // Track that we need local page allocation
                                 CurrentFunctionUsesLocalLifetime = true;
                                 if (!ScopeInfoStack.empty()) {
@@ -9023,7 +9105,7 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                         }
 
                         Result.push_back(std::move(CallOperand));
-                        i++;  // Skip the tuple operand
+                        i = FuncArgsIndex;  // Skip to args operand (may skip lifetime marker too)
                         continue;
                     }
                 }
@@ -10218,12 +10300,13 @@ llvm::Expected<PlannedChoose> Planner::planChoose(const Choose &ChooseExpr) {
 
     // Get the result type from the condition to look up the union
     const PlannedUnion *CondUnion = nullptr;
+    std::string LookupName, FallbackName;
     if (!Result.Condition.empty()) {
         const auto &ResultType = Result.Condition[0].ResultType;
 
         // If the condition is a pointer type, use the element type (auto-deref for choose)
-        std::string LookupName = ResultType.MangledName;  // Try MangledName first
-        std::string FallbackName = ResultType.Name;
+        LookupName = ResultType.MangledName;  // Try MangledName first
+        FallbackName = ResultType.Name;
         if (ResultType.Name == "pointer" && !ResultType.Generics.empty()) {
             LookupName = ResultType.Generics[0].MangledName;
             FallbackName = ResultType.Generics[0].Name;
@@ -10232,6 +10315,16 @@ llvm::Expected<PlannedChoose> Planner::planChoose(const Choose &ChooseExpr) {
         auto UnionIt = InstantiatedUnions.find(LookupName);
         if (UnionIt == InstantiatedUnions.end()) {
             UnionIt = InstantiatedUnions.find(FallbackName);
+        }
+        if (UnionIt == InstantiatedUnions.end()) {
+            // Try searching for a key containing FallbackName
+            for (const auto &[Key, Val] : InstantiatedUnions) {
+                if (Key.find(FallbackName) != std::string::npos) {
+                    llvm::errs() << "DEBUG choose: found potential match Key='" << Key << "' for FallbackName='" << FallbackName << "'\n";
+                    UnionIt = InstantiatedUnions.find(Key);
+                    break;
+                }
+            }
         }
         if (UnionIt != InstantiatedUnions.end()) {
             CondUnion = &UnionIt->second;
@@ -10255,7 +10348,8 @@ llvm::Expected<PlannedChoose> Planner::planChoose(const Choose &ChooseExpr) {
         // Look up the variant in the union to get its tag
         // We compare by TYPE name since Scaly syntax uses "when TypeName: x"
         llvm::errs() << "DEBUG choose InstUnion: VariantTypeName='" << VariantTypeName
-                     << "' CondUnion=" << (CondUnion ? "yes" : "no") << "\n";
+                     << "' CondUnion=" << (CondUnion ? "yes" : "no")
+                     << " LookupName='" << LookupName << "' FallbackName='" << FallbackName << "'\n";
         if (CondUnion && !VariantTypeName.empty()) {
             for (size_t i = 0; i < CondUnion->Variants.size(); ++i) {
                 // Check if variant's type matches the type name from the when clause
@@ -10779,7 +10873,7 @@ llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
     // Compute mangled name early to enable cache lookup
     // For extern functions, use the unmangled C name for linking
     bool IsExtern = std::holds_alternative<ExternImpl>(Func.Impl);
-    std::string EarlyMangledName = IsExtern ? Func.Name : mangleFunction(Func.Name, Result.Input, Parent);
+    std::string EarlyMangledName = IsExtern ? Func.Name : mangleFunction(Func.Name, Result.Input, Parent, Func.PageParameter.has_value());
 
     // Check cache - if this function was already planned, return the cached version
     auto CacheIt = InstantiatedFunctions.find(EarlyMangledName);
