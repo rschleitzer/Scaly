@@ -3409,12 +3409,26 @@ std::optional<PlannedType> Planner::getPointerElementType(const PlannedType &Ptr
     // or "Option.ref.BuilderList.Slot.KeyValuePair" (nested generics flattened into name)
     // After generic instantiation, Option[ref[BuilderList[Slot[KeyValuePair[K,V]]]]]
     // becomes {Name: "Option.ref.BuilderList.Slot.KeyValuePair", Generics: [K, V]}
-    if (PtrType.Name.substr(0, 10) == "Option.ref") {
+    if (PtrType.Name.size() >= 10 && PtrType.Name.substr(0, 10) == "Option.ref") {
         std::string Rest = PtrType.Name.substr(10); // Remove "Option.ref"
         if (Rest.empty()) {
             // Option.ref with Generics - inner type is the first generic
             if (!PtrType.Generics.empty()) {
                 return PtrType.Generics[0];
+            }
+            // Option.ref without Generics - try to look up the instantiated union
+            // by MangledName to recover the inner type
+            if (!PtrType.MangledName.empty()) {
+                auto UnionIt = InstantiatedUnions.find(PtrType.MangledName);
+                if (UnionIt != InstantiatedUnions.end()) {
+                    const auto &Union = UnionIt->second;
+                    // The Some variant should have the inner type
+                    for (const auto &Variant : Union.Variants) {
+                        if (Variant.Name == "Some" && Variant.VarType) {
+                            return *Variant.VarType;
+                        }
+                    }
+                }
             }
             return std::nullopt;
         }
@@ -3459,12 +3473,24 @@ std::optional<PlannedType> Planner::getPointerElementType(const PlannedType &Ptr
 
         return InnerType;
     }
-    if (PtrType.Name.substr(0, 14) == "Option.pointer") {
+    if (PtrType.Name.size() >= 14 && PtrType.Name.substr(0, 14) == "Option.pointer") {
         // Same logic for Option.pointer
         std::string Rest = PtrType.Name.substr(14);
         if (Rest.empty()) {
             if (!PtrType.Generics.empty()) {
                 return PtrType.Generics[0];
+            }
+            // Option.pointer without Generics - try to look up the instantiated union
+            if (!PtrType.MangledName.empty()) {
+                auto UnionIt = InstantiatedUnions.find(PtrType.MangledName);
+                if (UnionIt != InstantiatedUnions.end()) {
+                    const auto &Union = UnionIt->second;
+                    for (const auto &Variant : Union.Variants) {
+                        if (Variant.Name == "Some" && Variant.VarType) {
+                            return *Variant.VarType;
+                        }
+                    }
+                }
             }
             return std::nullopt;
         }
