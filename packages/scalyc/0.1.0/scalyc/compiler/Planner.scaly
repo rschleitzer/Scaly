@@ -7,57 +7,57 @@ use scaly.containers.Vector
 use scaly.containers.HashMapBuilder
 use scaly.containers.String
 use scaly.containers.StringBuilder
-use scaly.compiler.Model.Span
-use scaly.compiler.Model.Lifetime
-use scaly.compiler.Model.Unspecified
-use scaly.compiler.Model.Constant
-use scaly.compiler.Model.Module
-use scaly.compiler.Model.Program
-use scaly.compiler.Model.Concept
-use scaly.compiler.Model.Function
-use scaly.compiler.Model.Operator
-use scaly.compiler.Plan.PlannedType
-use scaly.compiler.Plan.PlannedItem
-use scaly.compiler.Plan.PlannedProperty
-use scaly.compiler.Plan.PlannedStructure
-use scaly.compiler.Plan.PlannedUnion
-use scaly.compiler.Plan.PlannedFunction
-use scaly.compiler.Plan.PlannedModule
-use scaly.compiler.Plan.PlannedGlobal
-use scaly.compiler.Plan.PlannedStatement
-use scaly.compiler.Plan.PlannedAction
-use scaly.compiler.Plan.PlannedBinding
-use scaly.compiler.Plan.PlannedBreak
-use scaly.compiler.Plan.PlannedContinue
-use scaly.compiler.Plan.PlannedReturn
-use scaly.compiler.Plan.PlannedThrow
-use scaly.compiler.Plan.PlannedOperand
-use scaly.compiler.Plan.PlannedAttribute
-use scaly.compiler.Plan.PlannedExpression
-use scaly.compiler.Plan.PlannedConstant
-use scaly.compiler.Plan.PlannedVariable
-use scaly.compiler.Plan.PlannedTuple
-use scaly.compiler.Plan.PlannedComponent
-use scaly.compiler.Plan.PlannedMatrix
-use scaly.compiler.Plan.PlannedBlock
-use scaly.compiler.Plan.PlannedIf
-use scaly.compiler.Plan.PlannedMatch
-use scaly.compiler.Plan.PlannedChoose
-use scaly.compiler.Plan.PlannedFor
-use scaly.compiler.Plan.PlannedWhile
-use scaly.compiler.Plan.PlannedTry
-use scaly.compiler.Plan.PlannedSizeOf
-use scaly.compiler.Plan.PlannedAlignOf
-use scaly.compiler.Plan.PlannedAs
-use scaly.compiler.Plan.PlannedVariant
-use scaly.compiler.Plan.PlannedImplementation
-use scaly.compiler.Plan.PlannedExternImpl
-use scaly.compiler.Plan.PlannedInstructionImpl
-use scaly.compiler.Plan.PlannedIntrinsicImpl
-use scaly.compiler.Plan.PlannedConcept
-use scaly.compiler.Plan.PlannedDefinition
-use scaly.compiler.Plan.PlannedNamespace
-use scaly.compiler.Plan.Plan
+use scalyc.compiler.Model.Span
+use scalyc.compiler.Model.Lifetime
+use scalyc.compiler.Model.Unspecified
+use scalyc.compiler.Model.Constant
+use scalyc.compiler.Model.Module
+use scalyc.compiler.Model.Program
+use scalyc.compiler.Model.Concept
+use scalyc.compiler.Model.Function
+use scalyc.compiler.Model.Operator
+use scalyc.compiler.Plan.PlannedType
+use scalyc.compiler.Plan.PlannedItem
+use scalyc.compiler.Plan.PlannedProperty
+use scalyc.compiler.Plan.PlannedStructure
+use scalyc.compiler.Plan.PlannedUnion
+use scalyc.compiler.Plan.PlannedFunction
+use scalyc.compiler.Plan.PlannedModule
+use scalyc.compiler.Plan.PlannedGlobal
+use scalyc.compiler.Plan.PlannedStatement
+use scalyc.compiler.Plan.PlannedAction
+use scalyc.compiler.Plan.PlannedBinding
+use scalyc.compiler.Plan.PlannedBreak
+use scalyc.compiler.Plan.PlannedContinue
+use scalyc.compiler.Plan.PlannedReturn
+use scalyc.compiler.Plan.PlannedThrow
+use scalyc.compiler.Plan.PlannedOperand
+use scalyc.compiler.Plan.PlannedAttribute
+use scalyc.compiler.Plan.PlannedExpression
+use scalyc.compiler.Plan.PlannedConstant
+use scalyc.compiler.Plan.PlannedVariable
+use scalyc.compiler.Plan.PlannedTuple
+use scalyc.compiler.Plan.PlannedComponent
+use scalyc.compiler.Plan.PlannedMatrix
+use scalyc.compiler.Plan.PlannedBlock
+use scalyc.compiler.Plan.PlannedIf
+use scalyc.compiler.Plan.PlannedMatch
+use scalyc.compiler.Plan.PlannedChoose
+use scalyc.compiler.Plan.PlannedFor
+use scalyc.compiler.Plan.PlannedWhile
+use scalyc.compiler.Plan.PlannedTry
+use scalyc.compiler.Plan.PlannedSizeOf
+use scalyc.compiler.Plan.PlannedAlignOf
+use scalyc.compiler.Plan.PlannedAs
+use scalyc.compiler.Plan.PlannedVariant
+use scalyc.compiler.Plan.PlannedImplementation
+use scalyc.compiler.Plan.PlannedExternImpl
+use scalyc.compiler.Plan.PlannedInstructionImpl
+use scalyc.compiler.Plan.PlannedIntrinsicImpl
+use scalyc.compiler.Plan.PlannedConcept
+use scalyc.compiler.Plan.PlannedDefinition
+use scalyc.compiler.Plan.PlannedNamespace
+use scalyc.compiler.Plan.Plan
 
 ; ============================================================================
 ; LocalBinding - Information about a local variable
@@ -78,22 +78,6 @@ define Scope
 (
     bindings: ref[HashMapBuilder[String, LocalBinding]]?
 )
-{
-    init#()
-    {
-        set bindings: HashMapBuilder[String, LocalBinding]#()
-    }
-
-    function lookup(this, name: String) returns ref[LocalBinding]?
-    {
-        bindings[name]
-    }
-
-    procedure define(this, name: String, binding: LocalBinding)
-    {
-        bindings.add(name, binding)
-    }
-}
 
 ; ============================================================================
 ; StructureContext - Active when planning methods/properties of a struct
@@ -166,18 +150,18 @@ define Planner
     current_plan: ref[Plan]?
 )
 {
-    init#(filename: String)
+    init(filename: String)
     {
         set file: filename
-        set concepts: HashMapBuilder[String, ref[Concept]?]#()
-        set functions: HashMapBuilder[String, Vector[ref[Function]?]]#()
-        set operators: HashMapBuilder[String, Vector[ref[Operator]?]]#()
-        set instantiated_structures: HashMapBuilder[String, PlannedStructure]#()
-        set instantiated_unions: HashMapBuilder[String, PlannedUnion]#()
-        set instantiated_functions: HashMapBuilder[String, PlannedFunction]#()
-        set functions_being_planned: HashSetBuilder[String]#()
-        set planned_globals: HashMapBuilder[String, PlannedGlobal]#()
-        set type_substitutions: HashMapBuilder[String, PlannedType]#()
+        set concepts: HashMapBuilder#()
+        set functions: HashMapBuilder#()
+        set operators: HashMapBuilder#()
+        set instantiated_structures: HashMapBuilder#()
+        set instantiated_unions: HashMapBuilder#()
+        set instantiated_functions: HashMapBuilder#()
+        set functions_being_planned: HashSetBuilder#()
+        set planned_globals: HashMapBuilder#()
+        set type_substitutions: HashMapBuilder#()
         set scopes: Vector[Scope]#()
         set structure_ctx: StructureContext(String#(""), null, null)
         set namespace_ctx: NamespaceContext(String#(""), null, null)
@@ -191,7 +175,7 @@ define Planner
 
     procedure push_scope(this)
     {
-        let scope Scope#()
+        let scope Scope(null)
         scopes.put(scopes.length, scope)
     }
 
@@ -203,13 +187,16 @@ define Planner
             set scopes.length: scopes.length - 1
     }
 
-    procedure define_local(this, name: String, binding_type: PlannedType, is_mutable: bool, is_on_page: bool)
+    procedure bind_local(this, name: String, binding_type: PlannedType, is_mutable: bool, is_on_page: bool)
     {
         if scopes.length > 0
         {
             let scope scopes.get(scopes.length - 1)
             if scope <> null
-                scope.define(name, LocalBinding(binding_type, is_mutable, is_on_page))
+            {
+                if scope.bindings <> null
+                    scope.bindings.add(name, LocalBinding(binding_type, is_mutable, is_on_page))
+            }
         }
     }
 
@@ -223,9 +210,12 @@ define Planner
             let scope scopes.get(i)
             if scope <> null
             {
-                let binding scope.lookup(name)
-                if binding <> null
-                    return binding
+                if scope.bindings <> null
+                {
+                    let binding scope.bindings[name]
+                    if binding <> null
+                        return binding
+                }
             }
         }
         null
@@ -243,7 +233,7 @@ define Planner
         let result StringBuilder#()
         result.append(len_str)
         result.append(name)
-        result.to_string()
+        result.to_string#()
     }
 
     ; Encode a type for mangling
@@ -278,14 +268,14 @@ define Planner
             {
                 if t.generics.length > 0
                 {
-                    let inner t.generics.get(0)
-                    if inner <> null
-                    {
-                        let result StringBuilder#()
-                        result.append(String#("P"))
-                        result.append(encode_type(inner))
-                        return result.to_string()
-                    }
+                    choose t.generics.get(0)
+                        when Some: inner_ref
+                        {
+                            let result StringBuilder#()
+                            result.append(String#("P"))
+                            result.append(encode_type(*inner_ref))
+                            return result.to_string#()
+                        }
                 }
             }
         }
@@ -297,14 +287,14 @@ define Planner
             {
                 if t.generics.length > 0
                 {
-                    let inner t.generics.get(0)
-                    if inner <> null
-                    {
-                        let result StringBuilder#()
-                        result.append(String#("R"))
-                        result.append(encode_type(inner))
-                        return result.to_string()
-                    }
+                    choose t.generics.get(0)
+                        when Some: inner_ref
+                        {
+                            let result StringBuilder#()
+                            result.append(String#("R"))
+                            result.append(encode_type(*inner_ref))
+                            return result.to_string#()
+                        }
                 }
             }
         }
@@ -324,7 +314,7 @@ define Planner
                     result.append(encode_type(arg))
                 }
                 result.append(String#("E"))
-                return result.to_string()
+                return result.to_string#()
             }
         }
 
@@ -340,7 +330,7 @@ define Planner
         let result StringBuilder#()
         result.append(String#("_Z"))
         result.append(encode_type(t))
-        result.to_string()
+        result.to_string#()
     }
 
     ; Mangle a structure/union name with generic args
@@ -352,13 +342,13 @@ define Planner
         if generic_args = null
         {
             result.append(encode_name(name))
-            return result.to_string()
+            return result.to_string#()
         }
 
         if generic_args.length = 0
         {
             result.append(encode_name(name))
-            return result.to_string()
+            return result.to_string#()
         }
 
         ; Itanium ABI: Name + I + args + E
@@ -369,11 +359,11 @@ define Planner
             result.append(encode_type(arg))
         }
         result.append(String#("E"))
-        result.to_string()
+        result.to_string#()
     }
 
     ; Mangle a function name
-    function mangle_function(this, name: String, params: ref[Vector[PlannedItem]]?, parent: ref[PlannedType]?) returns String
+    function mangle_function(this, name: String, params: Vector[PlannedItem], parent: pointer[PlannedType]) returns String
     {
         let result StringBuilder#()
         result.append(String#("_Z"))
@@ -382,7 +372,7 @@ define Planner
         if parent <> null
         {
             result.append(String#("N"))
-            result.append(encode_type(parent))
+            result.append(encode_type(*parent))
             result.append(encode_name(name))
             result.append(String#("E"))
         }
@@ -393,27 +383,25 @@ define Planner
 
         ; Parameter types (skip 'this' parameter for methods)
         var has_explicit_params false
-        if params <> null
+        for param in params
         {
-            for param in params
+            if param.name <> null
             {
-                if param.name <> null
+                if param.name.unwrap_or(String#("")).equals(String#("this"))
+                    continue
+            }
+            choose param.item_type
+                when Some: type_ref
                 {
-                    if param.name.equals(String#("this"))
-                        continue
-                }
-                if param.item_type <> null
-                {
-                    result.append(encode_type(param.item_type))
+                    result.append(encode_type(*type_ref))
                     set has_explicit_params: true
                 }
-            }
         }
 
         if has_explicit_params = false
             result.append(String#("v"))  ; void parameters
 
-        result.to_string()
+        result.to_string#()
     }
 
     ; ========================================================================
@@ -426,7 +414,7 @@ define Planner
     {
         if name.starts_with(String#("scaly."))
         {
-            let last_dot name.last_index_of(String#("."))
+            let last_dot name.last_index_of("." as char)
             if last_dot > 0
                 return name.substring(last_dot + 1, name.length)
         }
@@ -437,7 +425,7 @@ define Planner
     ; e.g., "Vector.char" -> "Vector"
     function strip_suffix(name: String) returns String
     {
-        let dot name.index_of(String#("."))
+        let dot name.index_of("." as char)
         if dot > 0
             return name.substring(0, dot)
         name
@@ -479,10 +467,10 @@ define Planner
             set i: i - 1
             let d digits.get(i)
             if d <> null
-                result.append_char(d)
+                result.append(*d)
         }
 
-        result.to_string()
+        result.to_string#()
     }
 
     ; ========================================================================
@@ -490,7 +478,7 @@ define Planner
     ; ========================================================================
 
     ; Register a concept in the lookup table
-    procedure register_concept(this, name: String, concept: ref[Concept]?)
+    procedure register_concept(this, name: String, concept: pointer[Concept])
     {
         concepts.add(name, concept)
     }
@@ -521,7 +509,7 @@ define Planner
     procedure clear_type_substitutions(this)
     {
         ; Reinitialize with empty HashMapBuilder
-        set type_substitutions: HashMapBuilder[String, PlannedType]#()
+        set type_substitutions: HashMapBuilder#()
     }
 
     ; ========================================================================
@@ -641,8 +629,9 @@ define Planner
             return null
 
         ; Find the module by name
-        for mod in namespace_ctx.modules
+        for mod_ptr in namespace_ctx.modules
         {
+            let mod *mod_ptr  ; Dereference pointer to get Option[ref[Module]]
             if mod <> null
             {
                 if mod.name.equals(module_name)
@@ -650,8 +639,9 @@ define Planner
                     ; Search module members for the function
                     if mod.members <> null
                     {
-                        for member in mod.members
+                        for member_ptr in mod.members
                         {
+                            let member *member_ptr
                             choose member
                                 when Function: func
                                 {
@@ -706,7 +696,7 @@ define Planner
             }
         }
 
-        result.to_string()
+        result.to_string#()
     }
 
     ; ========================================================================
@@ -820,12 +810,12 @@ define Planner
 
         ; Compare each generic argument
         var i 0
-        for arg_a in a.generics
+        for arg_a_ptr in a.generics
         {
-            let arg_b b.generics.get(i)
-            if arg_b = null
+            let arg_b_opt b.generics.get(i)
+            if arg_b_opt = null
                 return false
-            if types_equal(arg_a, arg_b) = false
+            if types_equal(*arg_a_ptr, *arg_b_opt) = false
                 return false
             set i: i + 1
         }
@@ -854,12 +844,12 @@ define Planner
                 {
                     if arg_type.generics.length > 0
                     {
-                        let inner arg_type.generics.get(0)
-                        if inner <> null
-                        {
-                            if inner.name.equals(String#("void"))
-                                return true
-                        }
+                        choose arg_type.generics.get(0)
+                            when Some: inner_ref
+                            {
+                                if (*inner_ref).name.equals(String#("void"))
+                                    return true
+                            }
                     }
                 }
             }
@@ -877,12 +867,12 @@ define Planner
                 {
                     if arg_type.generics.length > 0
                     {
-                        let inner arg_type.generics.get(0)
-                        if inner <> null
-                        {
-                            if inner.name.equals(String#("void"))
-                                return true
-                        }
+                        choose arg_type.generics.get(0)
+                            when Some: inner_ref
+                            {
+                                if (*inner_ref).name.equals(String#("void"))
+                                    return true
+                            }
                     }
                 }
             }
@@ -939,26 +929,24 @@ define Planner
 
     ; Build a readable type name from a path vector
     ; e.g., ["scaly", "containers", "Vector"] -> "scaly.containers.Vector"
-    function build_type_name(path: ref[Vector[String]]?) returns String
+    function build_type_name(path: Vector[String]) returns String
     {
-        if path = null
-            return String#("")
-
         if path.length = 0
             return String#("")
 
         let result StringBuilder#()
         var first true
 
-        for component in path
+        for component_ptr in path
         {
+            let component *component_ptr
             if first = false
                 result.append(String#("."))
             result.append(component)
             set first: false
         }
 
-        result.to_string()
+        result.to_string#()
     }
 
     ; Resolve a Model.Type to a PlannedType
@@ -1019,15 +1007,15 @@ define Planner
                 if result.generics.length = 1
                 {
                     ; pointer[T] - Itanium ABI uses P prefix
-                    let inner result.generics.get(0)
-                    if inner <> null
-                    {
-                        let mangled StringBuilder#()
-                        mangled.append(String#("P"))
-                        mangled.append(inner.mangled_name)
-                        set result.mangled_name: mangled.to_string()
-                        return result
-                    }
+                    choose result.generics.get(0)
+                        when Some: inner_ref
+                        {
+                            let mangled StringBuilder#()
+                            mangled.append(String#("P"))
+                            mangled.append((*inner_ref).mangled_name)
+                            set result.mangled_name: mangled.to_string#()
+                            return result
+                        }
                 }
             }
             ; pointer without generics is an error
@@ -1042,15 +1030,15 @@ define Planner
                 if result.generics.length = 1
                 {
                     ; ref[T] - use R prefix
-                    let inner result.generics.get(0)
-                    if inner <> null
-                    {
-                        let mangled StringBuilder#()
-                        mangled.append(String#("R"))
-                        mangled.append(inner.mangled_name)
-                        set result.mangled_name: mangled.to_string()
-                        return result
-                    }
+                    choose result.generics.get(0)
+                        when Some: inner_ref
+                        {
+                            let mangled StringBuilder#()
+                            mangled.append(String#("R"))
+                            mangled.append((*inner_ref).mangled_name)
+                            set result.mangled_name: mangled.to_string#()
+                            return result
+                        }
                 }
             }
             ; ref without generics is an error
@@ -1058,32 +1046,36 @@ define Planner
         }
 
         ; Check if this is a generic type that needs instantiation
-        let concept lookup_concept(name)
-        if concept <> null
+        let concept_ref lookup_concept(name)
+        if concept_ref <> null
         {
-            ; Check if concept has generic parameters
-            if concept.parameters <> null
+            let concept *concept_ref  ; Dereference outer ref to get ref[Concept]?
+            if concept <> null
             {
-                if concept.parameters.length > 0
+                ; Check if concept has generic parameters
+                if concept.parameters <> null
                 {
-                    ; Need to instantiate the generic
-                    if result.generics = null
-                        return null  ; Generic used without type arguments
-                    if result.generics.length = 0
-                        return null
+                    if concept.parameters.length > 0
+                    {
+                        ; Need to instantiate the generic
+                        if result.generics = null
+                            return null  ; Generic used without type arguments
+                        if result.generics.length = 0
+                            return null
 
-                    ; Check arity
-                    if result.generics.length <> concept.parameters.length
-                        return null  ; Wrong number of type arguments
+                        ; Check arity
+                        if result.generics.length <> concept.parameters.length
+                            return null  ; Wrong number of type arguments
 
-                    ; Instantiate the generic
-                    return instantiate_generic(concept, result.generics, instantiation_loc)
+                        ; Instantiate the generic
+                        return instantiate_generic(concept, result.generics, instantiation_loc)
+                    }
                 }
-            }
 
-            ; Non-generic concept - just mangle the name
-            set result.mangled_name: encode_name(name)
-            return result
+                ; Non-generic concept - just mangle the name
+                set result.mangled_name: encode_name(name)
+                return result
+            }
         }
 
         ; Generate mangled name for the type
@@ -1161,15 +1153,16 @@ define Planner
         ; Set up type substitutions for the instantiation
         ; Save old substitutions and create fresh map
         let old_substitutions type_substitutions
-        set type_substitutions: HashMapBuilder[String, PlannedType]#()
+        set type_substitutions: HashMapBuilder#()
 
         ; Add new substitutions
         var i 0
-        for param in generic.parameters
+        for param_ptr in generic.parameters
         {
+            let param *param_ptr
             let arg args.get(i)
             if arg <> null
-                add_type_substitution(param.name, arg)
+                add_type_substitution(param.name, *arg)
             set i: i + 1
         }
 
@@ -1432,7 +1425,7 @@ define Planner
         PlannedType#(
             Span(0, 0),
             String#("pointer"),
-            mangled.to_string(),
+            mangled.to_string#(),
             generics,
             scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
             null,
@@ -1454,7 +1447,7 @@ define Planner
         PlannedType#(
             Span(0, 0),
             String#("ref"),
-            mangled.to_string(),
+            mangled.to_string#(),
             generics,
             scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
             null,
@@ -1484,13 +1477,14 @@ define Planner
             set result.name: it.name
 
         ; Resolve type if present
-        if it.type <> null
-        {
-            let resolved resolve_type(it.type, it.span)
-            if resolved = null
-                return null
-            set result.item_type: resolved
-        }
+        choose it.type
+            when Some: typ
+            {
+                let resolved resolve_type(typ, it.span)
+                if resolved = null
+                    return null
+                set result.item_type: resolved
+            }
 
         ; Plan attributes
         if it.attributes <> null
@@ -1522,52 +1516,56 @@ define Planner
     function plan_property(this, prop: scaly.compiler.Model.Property) returns ref[PlannedProperty]?
     {
         ; Property must have a type
-        if prop.type = null
-            return null
-
-        let resolved_type resolve_type(prop.type, prop.span)
-        if resolved_type = null
-            return null
-
-        let result PlannedProperty#(
-            prop.span,
-            prop.private_,
-            prop.name,
-            encode_name(prop.name),     ; mangled_name
-            resolved_type,
-            null,       ; initializer
-            null,       ; attributes
-            0           ; offset (computed later)
-        )
-
-        ; Plan initializer if present
-        if prop.initializer <> null
-        {
-            let planned_init plan_operands(prop.initializer)
-            if planned_init = null
-                return null
-            set result.initializer: planned_init
-        }
-
-        ; Plan attributes
-        if prop.attributes <> null
-        {
-            if prop.attributes.length > 0
+        choose prop.type
+            when Some: typ
             {
-                set result.attributes: Vector[PlannedAttribute]#()
-                for attr in prop.attributes
-                {
-                    let planned_attr PlannedAttribute#(
-                        attr.span,
-                        attr.name,
-                        attr.model
-                    )
-                    result.attributes.put(result.attributes.length, planned_attr)
-                }
-            }
-        }
+                let resolved_type resolve_type(typ, prop.span)
+                if resolved_type = null
+                    return null
 
-        result
+                let result PlannedProperty#(
+                    prop.span,
+                    prop.private_,
+                    prop.name,
+                    encode_name(prop.name),     ; mangled_name
+                    resolved_type,
+                    null,       ; initializer
+                    null,       ; attributes
+                    0           ; offset (computed later)
+                )
+
+                ; Plan initializer if present
+                choose prop.initializer
+                    when Some: init_ops
+                    {
+                        let planned_init plan_operands(init_ops)
+                        if planned_init = null
+                            return null
+                        set result.initializer: planned_init
+                    }
+
+                ; Plan attributes
+                if prop.attributes <> null
+                {
+                    if prop.attributes.length > 0
+                    {
+                        set result.attributes: Vector[PlannedAttribute]#()
+                        for attr in prop.attributes
+                        {
+                            let planned_attr PlannedAttribute#(
+                                attr.span,
+                                attr.name,
+                                attr.model
+                            )
+                            result.attributes.put(result.attributes.length, planned_attr)
+                        }
+                    }
+                }
+
+                result
+            }
+            else
+                null
     }
 
     ; ========================================================================
@@ -1576,33 +1574,34 @@ define Planner
 
     ; Plan a Variant (union case)
     ; Returns null on error
-    function plan_variant(this, var: scaly.compiler.Model.Variant, tag: int) returns ref[PlannedVariant]?
+    function plan_variant(this, v: scaly.compiler.Model.Variant, tag: int) returns ref[PlannedVariant]?
     {
         let result PlannedVariant#(
-            var.span,
-            var.name,
-            encode_name(var.name),      ; mangled_name
+            v.span,
+            v.name,
+            encode_name(v.name),      ; mangled_name
             null,       ; var_type
             null,       ; attributes
             tag
         )
 
         ; Resolve type if present
-        if var.type <> null
-        {
-            let resolved resolve_type(var.type, var.span)
-            if resolved = null
-                return null
-            set result.var_type: resolved
-        }
+        choose v.type
+            when Some: typ
+            {
+                let resolved resolve_type(typ, v.span)
+                if resolved = null
+                    return null
+                set result.var_type: resolved
+            }
 
         ; Plan attributes
-        if var.attributes <> null
+        if v.attributes <> null
         {
-            if var.attributes.length > 0
+            if v.attributes.length > 0
             {
                 set result.attributes: Vector[PlannedAttribute]#()
-                for attr in var.attributes
+                for attr in v.attributes
                 {
                     let planned_attr PlannedAttribute#(
                         attr.span,
@@ -1623,11 +1622,8 @@ define Planner
 
     ; Plan a list of operands
     ; Returns null on error
-    function plan_operands(this, ops: ref[Vector[scaly.compiler.Model.Operand]]?) returns ref[Vector[PlannedOperand]]?
+    function plan_operands(this, ops: Vector[scaly.compiler.Model.Operand]) returns ref[Vector[PlannedOperand]]?
     {
-        if ops = null
-            return null
-
         let result Vector[PlannedOperand]#()
 
         for op in ops
@@ -1726,13 +1722,13 @@ define Planner
                 let local_bind lookup_local(name)
                 if local_bind <> null
                 {
-                    let var PlannedVariable#(
+                    let planned_var PlannedVariable#(
                         t.span,
                         name,
                         local_bind.binding_type,
                         local_bind.is_mutable
                     )
-                    let result PlannedExpression.Variable(var)#
+                    let result PlannedExpression.Variable(planned_var)#
                     return result
                 }
 
@@ -1750,13 +1746,13 @@ define Planner
                                 let this_bind lookup_local(String#("this"))
                                 if this_bind <> null
                                 {
-                                    let var PlannedVariable#(
+                                    let planned_var PlannedVariable#(
                                         t.span,
                                         String#("this"),
                                         this_bind.binding_type,
                                         false
                                     )
-                                    let result PlannedExpression.Variable(var)#
+                                    let result PlannedExpression.Variable(planned_var)#
                                     return result
                                 }
                             }
@@ -1871,9 +1867,13 @@ define Planner
         if expr = null
             return make_void_type()
 
-        choose expr
+        let e *expr  ; Dereference to get PlannedExpression
+        choose e
             when Constant: c
-                return infer_constant_type(c.value)
+            {
+                let const_val: Constant c.value
+                return infer_constant_type(const_val)
+            }
             when Type: t
                 return t
             when Variable: v
@@ -1994,16 +1994,16 @@ define Planner
                 ; Infer element type from first element
                 if result.operations.length > 0
                 {
-                    let first_row result.operations.get(0)
-                    if first_row <> null
-                    {
-                        if first_row.length > 0
+                    choose result.operations.get(0)
+                        when Some: first_row_ref
                         {
-                            let first_elem first_row.get(0)
-                            if first_elem <> null
-                                set result.element_type: first_elem.result_type
+                            if (*first_row_ref).length > 0
+                            {
+                                choose (*first_row_ref).get(0)
+                                    when Some: first_elem_ref
+                                        set result.element_type: (*first_elem_ref).result_type
+                            }
                         }
-                    }
                 }
             }
         }
@@ -2095,6 +2095,20 @@ define Planner
         result
     }
 
+    ; Helper to infer element type for a for-loop expression
+    function infer_element_type_for(this, expr: ref[Vector[PlannedOperand]]?) returns PlannedType
+    {
+        if expr = null
+            return make_int_type()
+        if expr.length = 0
+            return make_int_type()
+        choose expr.get(expr.length - 1)
+            when Some: last_op
+                (*last_op).result_type
+            else
+                make_int_type()
+    }
+
     ; Plan a For expression
     function plan_for(this, for_expr: scaly.compiler.Model.For) returns ref[PlannedFor]?
     {
@@ -2103,23 +2117,8 @@ define Planner
         let expr plan_operands(for_expr.expression)
 
         ; Infer element type and define loop variable
-        var element_type make_int_type()  ; Default to int for range loops
-        if expr <> null
-        {
-            if expr.length > 0
-            {
-                let last_op expr.get(expr.length - 1)
-                if last_op <> null
-                {
-                    ; For collections, element type would come from get_iterator/next
-                    ; For now, just use the expression type
-                    set element_type: last_op.result_type
-                }
-            }
-        }
-
-        ; Define loop variable
-        define_local(for_expr.identifier, element_type, false, false)
+        let inferred_type infer_element_type_for(expr)
+        bind_local(for_expr.identifier, inferred_type, false, false)
 
         ; Plan body
         let body plan_action(for_expr.action)
@@ -2134,7 +2133,7 @@ define Planner
             false,      ; is_iterator_loop
             make_void_type(),   ; collection_type
             make_void_type(),   ; iterator_type
-            element_type,
+            inferred_type,
             String#(""),        ; get_iterator_method
             String#("")         ; next_method
         )
@@ -2244,18 +2243,20 @@ define Planner
         {
             if operation.length > 0
             {
-                let last operation.get(operation.length - 1)
-                if last <> null
-                    set is_on_page: is_on_page_lifetime(last.result_type.life)
+                choose operation.get(operation.length - 1)
+                    when Some: last
+                        set is_on_page: is_on_page_lifetime((*last).result_type.life)
             }
         }
 
         ; Register in current scope
-        if item.name <> null
-        {
-            if item.item_type <> null
-                define_local(item.name, item.item_type, is_mutable, is_on_page)
-        }
+        choose item.name
+            when Some: name_ref
+            {
+                choose item.item_type
+                    when Some: type_ref
+                        bind_local(*name_ref, *type_ref, is_mutable, is_on_page)
+            }
 
         let result PlannedBinding#(
             bind.span,
@@ -2323,9 +2324,9 @@ define Planner
 
     ; Plan a list of statements
     ; Returns null on error
-    function plan_statements(this, stmts: ref[Vector[scaly.compiler.Model.Statement]]?) returns ref[Vector[PlannedStatement]]?
+    function plan_statements(this, stmts: Vector[scaly.compiler.Model.Statement]) returns ref[Vector[PlannedStatement]]?
     {
-        if stmts = null
+        if stmts.length = 0
             return null
 
         let result Vector[PlannedStatement]#()
@@ -2370,9 +2371,9 @@ define Planner
                 let result PlannedImplementation.Instruction(planned)#
                 return result
             }
-            when Intrinsic: intrinsic
+            when Intrinsic: intr
             {
-                let planned PlannedIntrinsicImpl#(intrinsic.span)
+                let planned PlannedIntrinsicImpl#(intr.span)
                 let result PlannedImplementation.Intrinsic(planned)#
                 return result
             }
@@ -2384,7 +2385,7 @@ define Planner
 
     ; Plan a function
     ; Returns null on error
-    function plan_function(this, func: scaly.compiler.Model.Function, parent: ref[PlannedType]?) returns ref[PlannedFunction]?
+    function plan_function(this, func: scaly.compiler.Model.Function, parent: pointer[PlannedType]) returns ref[PlannedFunction]?
     {
         ; Save and reset tracking for $ allocations in function body
         let saved_uses_local_lifetime current_function_uses_local_lifetime
@@ -2398,7 +2399,7 @@ define Planner
             when Call: call_life
             {
                 let page_ptr_type make_page_pointer_type()
-                define_local(String#("rp"), page_ptr_type, false, true)
+                bind_local(String#("rp"), page_ptr_type, false, true)
             }
             else
             {
@@ -2433,11 +2434,13 @@ define Planner
                 }
 
                 ; Define parameter in scope
-                if planned.name <> null
-                {
-                    if planned.item_type <> null
-                        define_local(planned.name, planned.item_type, false, false)
-                }
+                choose planned.name
+                    when Some: name_ref
+                    {
+                        choose planned.item_type
+                            when Some: type_ref
+                                bind_local(*name_ref, *type_ref, false, false)
+                    }
 
                 input.put(input.length, planned)
             }
@@ -2469,38 +2472,40 @@ define Planner
         (*functions_being_planned).add(early_mangled)
 
         ; Plan return type
-        var returns_type ref[PlannedType]? null
-        if func.returns_ <> null
-        {
-            set returns_type: resolve_type(func.returns_, func.span)
-            if returns_type = null
+        var ret_type ref[PlannedType] null
+        choose func.returns_
+            when Some: ret
             {
-                (*functions_being_planned).remove(early_mangled)
-                pop_scope()
-                set current_function_uses_local_lifetime: saved_uses_local_lifetime
-                return null
+                set ret_type: resolve_type(ret, func.span)
+                if ret_type = null
+                {
+                    ; HashSetBuilder doesn't support remove - cache lookup handles reentry
+                    pop_scope()
+                    set current_function_uses_local_lifetime: saved_uses_local_lifetime
+                    return null
+                }
             }
-        }
 
         ; Plan throws type
-        var throws_type ref[PlannedType]? null
-        if func.throws_ <> null
-        {
-            set throws_type: resolve_type(func.throws_, func.span)
-            if throws_type = null
+        var thrown_type ref[PlannedType] null
+        choose func.throws_
+            when Some: thr
             {
-                (*functions_being_planned).remove(early_mangled)
-                pop_scope()
-                set current_function_uses_local_lifetime: saved_uses_local_lifetime
-                return null
+                set thrown_type: resolve_type(thr, func.span)
+                if thrown_type = null
+                {
+                    ; HashSetBuilder doesn't support remove - cache lookup handles reentry
+                    pop_scope()
+                    set current_function_uses_local_lifetime: saved_uses_local_lifetime
+                    return null
+                }
             }
-        }
 
         ; Plan implementation
         let impl plan_implementation(func.implementation)
         if impl = null
         {
-            (*functions_being_planned).remove(early_mangled)
+            ; HashSetBuilder doesn't support remove - cache lookup handles reentry
             pop_scope()
             set current_function_uses_local_lifetime: saved_uses_local_lifetime
             return null
@@ -2514,13 +2519,13 @@ define Planner
             early_mangled,
             null,           ; page_parameter (derived from lifetime)
             input,
-            returns_type,
-            throws_type,
+            ret_type,
+            thrown_type,
             func.lifetime,
             impl,
             null,           ; origin
             current_function_uses_local_lifetime,
-            throws_type <> null,
+            thrown_type <> null,
             null            ; scheme
         )
 
@@ -2528,7 +2533,7 @@ define Planner
         (*instantiated_functions).add(early_mangled, result)
 
         ; Remove from being-planned set
-        (*functions_being_planned).remove(early_mangled)
+        ; HashSetBuilder doesn't support remove - cache lookup handles reentry
 
         pop_scope()
         set current_function_uses_local_lifetime: saved_uses_local_lifetime
@@ -2570,7 +2575,7 @@ define Planner
 
     ; Plan an operator
     ; Returns null on error
-    function plan_operator(this, op: scaly.compiler.Model.Operator, parent: ref[PlannedType]?) returns ref[PlannedOperator]?
+    function plan_operator(this, op: scaly.compiler.Model.Operator, parent: pointer[PlannedType]) returns ref[PlannedOperator]?
     {
         push_scope()
 
@@ -2601,29 +2606,29 @@ define Planner
                 }
 
                 ; Define parameter in scope
-                if planned.name <> null
-                {
-                    if planned.item_type <> null
-                        define_local(planned.name, planned.item_type, false, false)
-                }
+                choose planned.name
+                    when Some: name_ref
+                    {
+                        choose planned.item_type
+                            when Some: type_ref
+                                bind_local(*name_ref, *type_ref, false, false)
+                    }
 
                 input.put(input.length, planned)
             }
         }
 
         ; Plan return type
-        var returns_type ref[PlannedType]? null
-        if op.returns_ <> null
-        {
-            set returns_type: resolve_type(op.returns_, op.span)
-        }
+        var ret_type ref[PlannedType] null
+        choose op.returns_
+            when Some: ret
+                set ret_type: resolve_type(ret, op.span)
 
         ; Plan throws type
-        var throws_type ref[PlannedType]? null
-        if op.throws_ <> null
-        {
-            set throws_type: resolve_type(op.throws_, op.span)
-        }
+        var thrown_type ref[PlannedType] null
+        choose op.throws_
+            when Some: thr
+                set thrown_type: resolve_type(thr, op.span)
 
         ; Plan implementation
         let impl plan_implementation(op.implementation)
@@ -2642,8 +2647,8 @@ define Planner
             op.name,
             mangled,
             input,
-            returns_type,
-            throws_type,
+            ret_type,
+            thrown_type,
             impl,
             null,   ; origin
             null    ; scheme
@@ -2662,7 +2667,7 @@ define Planner
     function plan_concept(this, conc: scaly.compiler.Model.Concept) returns ref[PlannedConcept]?
     {
         ; Register in symbol table first (needed for recursive types)
-        register_concept(conc.name, conc)
+        register_concept(conc.name, &conc)
 
         ; For generic concepts, create a placeholder - don't fully plan
         ; Generic concepts will be planned when instantiated with concrete types
@@ -2694,23 +2699,7 @@ define Planner
         }
 
         ; Plan attributes
-        var attributes ref[Vector[PlannedAttribute]]? null
-        if conc.attributes <> null
-        {
-            if conc.attributes.length > 0
-            {
-                set attributes: Vector[PlannedAttribute]#()
-                for attr in conc.attributes
-                {
-                    let planned_attr PlannedAttribute#(
-                        attr.span,
-                        attr.name,
-                        attr.model
-                    )
-                    attributes.put(attributes.length, planned_attr)
-                }
-            }
-        }
+        let planned_attrs plan_attributes(conc.attributes)
 
         ; Plan the definition based on its kind
         let def plan_definition(conc.definition, conc.name)
@@ -2774,11 +2763,11 @@ define Planner
                 let result PlannedDefinition.Type(resolved)#
                 return result
             }
-            when Intrinsic: intrinsic
+            when Intrinsic: intr
             {
                 ; Intrinsic definition - create a minimal structure placeholder
                 let placeholder PlannedStructure#(
-                    intrinsic.span,
+                    intr.span,
                     false,          ; private
                     false,          ; is_generic_placeholder
                     name,
@@ -2818,26 +2807,24 @@ define Planner
         )
 
         ; Plan properties
-        var properties ref[Vector[PlannedProperty]]? null
-        if struct.properties <> null
+        var properties: ref[Vector[PlannedProperty]]? null
+        if struct.properties.length > 0
         {
-            if struct.properties.length > 0
-            {
-                set properties: Vector[PlannedProperty]#()
-                set structure_ctx.properties: properties
+            let props Vector[PlannedProperty]#()
+            set properties: props
+            set structure_ctx.properties: props
 
-                for prop in struct.properties
-                {
-                    let planned plan_property(prop)
-                    if planned <> null
-                        properties.put(properties.length, planned)
-                }
+            for prop in struct.properties
+            {
+                let planned plan_property(prop)
+                if planned <> null
+                    props.put(props.length, planned)
             }
         }
 
         ; Plan methods (functions)
-        var methods ref[Vector[PlannedFunction]]? null
-        if struct.members <> null
+        var methods: ref[Vector[PlannedFunction]]? null
+        if struct.members.length > 0
         {
             for member in struct.members
             {
@@ -2848,8 +2835,13 @@ define Planner
                         if planned <> null
                         {
                             if methods = null
-                                set methods: Vector[PlannedFunction]#()
-                            methods.put(methods.length, planned)
+                            {
+                                let meths Vector[PlannedFunction]#()
+                                set methods: meths
+                            }
+                            choose methods
+                                when Some: m
+                                    m.put(m.length, planned)
                         }
                     }
                     when Operator: op
@@ -2864,8 +2856,8 @@ define Planner
         }
 
         ; Plan operators
-        var operators ref[Vector[PlannedOperator]]? null
-        if struct.members <> null
+        var operators: ref[Vector[PlannedOperator]]? null
+        if struct.members.length > 0
         {
             for member in struct.members
             {
@@ -2876,8 +2868,13 @@ define Planner
                         if planned <> null
                         {
                             if operators = null
-                                set operators: Vector[PlannedOperator]#()
-                            operators.put(operators.length, planned)
+                            {
+                                let ops Vector[PlannedOperator]#()
+                                set operators: ops
+                            }
+                            choose operators
+                                when Some: o
+                                    o.put(o.length, planned)
                         }
                     }
                     else
@@ -2935,28 +2932,26 @@ define Planner
         )
 
         ; Plan variants
-        var variants ref[Vector[PlannedVariant]]? null
-        if union_def.variants <> null
+        var variants: ref[Vector[PlannedVariant]]? null
+        if union_def.variants.length > 0
         {
-            if union_def.variants.length > 0
+            let vars Vector[PlannedVariant]#()
+            set variants: vars
+            var tag 0
+            for v in union_def.variants
             {
-                set variants: Vector[PlannedVariant]#()
-                var tag 0
-                for var in union_def.variants
+                let planned plan_variant(v, tag)
+                if planned <> null
                 {
-                    let planned plan_variant(var, tag)
-                    if planned <> null
-                    {
-                        variants.put(variants.length, planned)
-                        set tag: tag + 1
-                    }
+                    vars.put(vars.length, planned)
+                    set tag: tag + 1
                 }
             }
         }
 
         ; Plan methods
-        var methods ref[Vector[PlannedFunction]]? null
-        if union_def.members <> null
+        var methods: ref[Vector[PlannedFunction]]? null
+        if union_def.members.length > 0
         {
             for member in union_def.members
             {
@@ -2967,8 +2962,13 @@ define Planner
                         if planned <> null
                         {
                             if methods = null
-                                set methods: Vector[PlannedFunction]#()
-                            methods.put(methods.length, planned)
+                            {
+                                let meths Vector[PlannedFunction]#()
+                                set methods: meths
+                            }
+                            choose methods
+                                when Some: m
+                                    m.put(m.length, planned)
                         }
                     }
                     else
@@ -2979,8 +2979,8 @@ define Planner
         }
 
         ; Plan operators
-        var operators ref[Vector[PlannedOperator]]? null
-        if union_def.members <> null
+        var operators: ref[Vector[PlannedOperator]]? null
+        if union_def.members.length > 0
         {
             for member in union_def.members
             {
@@ -2991,8 +2991,13 @@ define Planner
                         if planned <> null
                         {
                             if operators = null
-                                set operators: Vector[PlannedOperator]#()
-                            operators.put(operators.length, planned)
+                            {
+                                let ops Vector[PlannedOperator]#()
+                                set operators: ops
+                            }
+                            choose operators
+                                when Some: o
+                                    o.put(o.length, planned)
                         }
                     }
                     else
@@ -3051,30 +3056,29 @@ define Planner
 
         ; Plan sub-modules first (so their concepts are available)
         ; Store module references for sibling module.function() calls
-        var modules ref[Vector[PlannedModule]]? null
-        var ns_modules ref[Vector[ref[Module]?]]? null
-        if ns.modules <> null
+        var modules: ref[Vector[PlannedModule]]? null
+        var ns_modules: ref[Vector[ref[Module]]]? null
+        if ns.modules.length > 0
         {
-            if ns.modules.length > 0
+            let mods Vector[PlannedModule]#()
+            let ns_mods Vector[ref[Module]]#()
+            set modules: mods
+            set ns_modules: ns_mods
+            for mod in ns.modules
             {
-                set modules: Vector[PlannedModule]#()
-                set ns_modules: Vector[ref[Module]?]#()
-                for mod in ns.modules
-                {
-                    ; Store module reference for sibling lookup
-                    ns_modules.put(ns_modules.length, mod)
-                    let planned plan_module(mod)
-                    if planned <> null
-                        modules.put(modules.length, planned)
-                }
-                ; Update namespace context with module references
-                set namespace_ctx.modules: ns_modules
+                ; Store module reference for sibling lookup
+                ns_mods.put(ns_mods.length, mod)
+                let planned plan_module(mod)
+                if planned <> null
+                    mods.put(mods.length, planned)
             }
+            ; Update namespace context with module references
+            set namespace_ctx.modules: ns_modules
         }
 
         ; Plan functions with parent type for proper mangling
-        var functions ref[Vector[PlannedFunction]]? null
-        if ns.members <> null
+        var functions: ref[Vector[PlannedFunction]]? null
+        if ns.members.length > 0
         {
             for member in ns.members
             {
@@ -3082,15 +3086,23 @@ define Planner
                     when Function: func
                     {
                         let planned plan_function(func, &parent_type)
-                        if planned <> null
-                        {
-                            if functions = null
-                                set functions: Vector[PlannedFunction]#()
-                            functions.put(functions.length, planned)
+                        choose planned
+                            when Some: p_ref
+                            {
+                                if functions = null
+                                {
+                                    let funcs Vector[PlannedFunction]#()
+                                    set functions: funcs
+                                }
+                                choose functions
+                                    when Some: f
+                                    {
+                                        f.put(f.length, p_ref)
 
-                            ; Cache for emitter lookup
-                            cache_function(planned.mangled_name, planned)
-                        }
+                                        ; Cache for emitter lookup
+                                        cache_function((*p_ref).mangled_name, *p_ref)
+                                    }
+                            }
                     }
                     else
                     {
@@ -3100,8 +3112,8 @@ define Planner
         }
 
         ; Plan operators with parent type for proper mangling
-        var operators ref[Vector[PlannedOperator]]? null
-        if ns.members <> null
+        var operators: ref[Vector[PlannedOperator]]? null
+        if ns.members.length > 0
         {
             for member in ns.members
             {
@@ -3112,8 +3124,13 @@ define Planner
                         if planned <> null
                         {
                             if operators = null
-                                set operators: Vector[PlannedOperator]#()
-                            operators.put(operators.length, planned)
+                            {
+                                let ops Vector[PlannedOperator]#()
+                                set operators: ops
+                            }
+                            choose operators
+                                when Some: o
+                                    o.put(o.length, planned)
                         }
                     }
                     else
@@ -3214,52 +3231,54 @@ define Planner
             for member in mod.members
             {
                 choose member
-                    when Package: pkg
+                    when Package: pkg_modules
                     {
-                        ; Plan the package's root module if loaded
-                        if pkg.root <> null
+                        ; Plan the package's modules
+                        for pkg_mod in pkg_modules
                         {
-                            let planned plan_module(pkg.root)
-                            if planned <> null
-                            {
-                                if result.modules = null
-                                    set result.modules: Vector[PlannedModule]#()
-                                result.modules.put(result.modules.length, planned)
-                            }
+                            choose plan_module(pkg_mod)
+                                when Some: p_ref
+                                {
+                                    if result.modules = null
+                                        set result.modules: Vector[PlannedModule]#()
+                                    result.modules.put(result.modules.length, p_ref)
+                                }
                         }
                     }
                     when Concept: conc
                     {
-                        let planned plan_concept(conc)
-                        if planned <> null
-                        {
-                            if result.concepts = null
-                                set result.concepts: Vector[PlannedConcept]#()
-                            result.concepts.put(result.concepts.length, planned)
-                        }
+                        choose plan_concept(conc)
+                            when Some: p_ref
+                            {
+                                if result.concepts = null
+                                    set result.concepts: Vector[PlannedConcept]#()
+                                result.concepts.put(result.concepts.length, p_ref)
+                            }
                     }
                     when Function: func
                     {
-                        let planned plan_function(func, null)
-                        if planned <> null
-                        {
-                            if result.functions = null
-                                set result.functions: Vector[PlannedFunction]#()
-                            result.functions.put(result.functions.length, planned)
+                        let null_type_ptr: pointer[PlannedType] null
+                        choose plan_function(func, null_type_ptr)
+                            when Some: p_ref
+                            {
+                                if result.functions = null
+                                    set result.functions: Vector[PlannedFunction]#()
+                                result.functions.put(result.functions.length, p_ref)
 
-                            ; Cache for emitter lookup
-                            cache_function(planned.mangled_name, planned)
-                        }
+                                ; Cache for emitter lookup
+                                cache_function((*p_ref).mangled_name, *p_ref)
+                            }
                     }
                     when Operator: op
                     {
-                        let planned plan_operator(op, null)
-                        if planned <> null
-                        {
-                            if result.operators = null
-                                set result.operators: Vector[PlannedOperator]#()
-                            result.operators.put(result.operators.length, planned)
-                        }
+                        let null_type_ptr: pointer[PlannedType] null
+                        choose plan_operator(op, null_type_ptr)
+                            when Some: p_ref
+                            {
+                                if result.operators = null
+                                    set result.operators: Vector[PlannedOperator]#()
+                                result.operators.put(result.operators.length, p_ref)
+                            }
                     }
             }
         }
