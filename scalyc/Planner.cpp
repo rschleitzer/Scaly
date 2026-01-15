@@ -6625,9 +6625,21 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
     for (size_t i = 0; i < Ops.size(); ++i) {
         const Operand& Op = Ops[i];
 
-        // Check for Type (name only, no generics) followed by Matrix (generic arguments)
+        // Check for Type (name only, no generics, no member access) followed by Matrix (generic arguments)
+        // Skip if there's member access - that's an expression like scope.bindings[name], not a generic type
+        // Also skip if the Type name has multiple components - that's a dotted path, not a type with generics
+        // Also skip if the Type name is a local variable - that's array subscript access, not a generic type
         if (auto* TypeExpr = std::get_if<Type>(&Op.Expr)) {
+            // Check if this is a local variable or property (subscript access, not generic)
+            bool IsLocalOrProperty = false;
+            if (TypeExpr->Name.size() == 1 && !TypeExpr->Name[0].empty()) {
+                auto LocalInfo = checkLocalOrProperty(TypeExpr->Name[0]);
+                IsLocalOrProperty = LocalInfo.IsLocal || LocalInfo.IsProperty;
+            }
             if (!TypeExpr->Name.empty() && (!TypeExpr->Generics || TypeExpr->Generics->empty()) &&
+                (!Op.MemberAccess || Op.MemberAccess->empty()) &&
+                TypeExpr->Name.size() == 1 &&  // Only single-component names can be generic types
+                !IsLocalOrProperty &&  // Skip if it's a local variable (subscript access)
                 i + 1 < Ops.size()) {
                 const Operand& NextOp = Ops[i + 1];
                 if (auto* MatrixExpr = std::get_if<Matrix>(&NextOp.Expr)) {
@@ -6887,14 +6899,16 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                 }
                                 // For # lifetime, Emitter uses ReturnPage (rp)
                                 // For $ lifetime, Emitter uses LocalPage
-                                else if (std::holds_alternative<LocalLifetime>(TypeExpr->Life)) {
+                                // Both need LocalPage as fallback if ReturnPage is not available
+                                else if (std::holds_alternative<LocalLifetime>(TypeExpr->Life) ||
+                                         std::holds_alternative<CallLifetime>(TypeExpr->Life)) {
                                     // Track that we need local page allocation
                                     CurrentFunctionUsesLocalLifetime = true;
                                     if (!ScopeInfoStack.empty()) {
                                         ScopeInfoStack.back().HasLocalAllocations = true;
                                     }
                                 }
-                                else if (!std::holds_alternative<CallLifetime>(TypeExpr->Life)) {
+                                else {
                                     return makePlannerNotImplementedError(File, Op.Loc,
                                         "method# '" + MethodName + "' must be called with #, $, or ^page syntax");
                                 }
@@ -7341,14 +7355,16 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                         }
                         // For # lifetime, Emitter uses ReturnPage (rp)
                         // For $ lifetime, Emitter uses LocalPage
-                        else if (std::holds_alternative<LocalLifetime>(MethodType.Life)) {
+                        // Both need LocalPage as fallback if ReturnPage is not available
+                        else if (std::holds_alternative<LocalLifetime>(MethodType.Life) ||
+                                 std::holds_alternative<CallLifetime>(MethodType.Life)) {
                             // Track that we need local page allocation
                             CurrentFunctionUsesLocalLifetime = true;
                             if (!ScopeInfoStack.empty()) {
                                 ScopeInfoStack.back().HasLocalAllocations = true;
                             }
                         }
-                        else if (!std::holds_alternative<CallLifetime>(MethodType.Life)) {
+                        else {
                             return makePlannerNotImplementedError(File, Op.Loc,
                                 "method# '" + MethodName + "' must be called with #, $, or ^page syntax");
                         }
@@ -7444,6 +7460,10 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                         }
 
                         if (FoundVariant) {
+                            llvm::errs() << "DEBUG variantConstruct: Union=" << UnionName
+                                         << " Variant=" << VariantName
+                                         << " Tag=" << FoundVariant->Tag
+                                         << " TotalVariants=" << Union.Variants.size() << "\n";
                             // Plan the tuple argument
                             Operand ArgsOp = NextOp;
                             ArgsOp.MemberAccess = nullptr;
@@ -7788,14 +7808,15 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                             Call.Args->push_back(std::move(RegionArg));
                                         }
                                     }
-                                    else if (std::holds_alternative<LocalLifetime>(TypeExpr->Life)) {
-                                        // $ - track that we need local page allocation
+                                    else if (std::holds_alternative<LocalLifetime>(TypeExpr->Life) ||
+                                             std::holds_alternative<CallLifetime>(TypeExpr->Life)) {
+                                        // $ or # - track that we need local page allocation (local page as fallback for #)
                                         CurrentFunctionUsesLocalLifetime = true;
                                         if (!ScopeInfoStack.empty()) {
                                             ScopeInfoStack.back().HasLocalAllocations = true;
                                         }
                                     }
-                                    else if (!std::holds_alternative<CallLifetime>(TypeExpr->Life)) {
+                                    else {
                                         return makePlannerNotImplementedError(File, Op.Loc,
                                             "function# '" + MethodName + "' must be called with #, $, or ^page syntax");
                                     }
@@ -7929,14 +7950,15 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                             Call.Args->push_back(std::move(RegionArg));
                                         }
                                     }
-                                    else if (std::holds_alternative<LocalLifetime>(TypeExpr->Life)) {
-                                        // $ - track that we need local page allocation
+                                    else if (std::holds_alternative<LocalLifetime>(TypeExpr->Life) ||
+                                             std::holds_alternative<CallLifetime>(TypeExpr->Life)) {
+                                        // $ or # - track that we need local page allocation (local page as fallback for #)
                                         CurrentFunctionUsesLocalLifetime = true;
                                         if (!ScopeInfoStack.empty()) {
                                             ScopeInfoStack.back().HasLocalAllocations = true;
                                         }
                                     }
-                                    else if (!std::holds_alternative<CallLifetime>(TypeExpr->Life)) {
+                                    else {
                                         return makePlannerNotImplementedError(File, Op.Loc,
                                             "function# '" + MethodName + "' must be called with #, $, or ^page syntax");
                                     }
@@ -8098,7 +8120,10 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                                      !InitMatch->RequiresPageParam;
 
                                 // Track if this function/scope uses local lifetime allocations
-                                if (std::holds_alternative<LocalLifetime>(TypeExpr->Life)) {
+                                // Both LocalLifetime ($) and CallLifetime (#) need a page
+                                // For CallLifetime, if no return page is available, we fall back to local page
+                                if (std::holds_alternative<LocalLifetime>(TypeExpr->Life) ||
+                                    std::holds_alternative<CallLifetime>(TypeExpr->Life)) {
                                     CurrentFunctionUsesLocalLifetime = true;
                                     if (!ScopeInfoStack.empty()) {
                                         ScopeInfoStack.back().HasLocalAllocations = true;
@@ -8229,7 +8254,10 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                 bool IsRegionAlloc = !std::holds_alternative<UnspecifiedLifetime>(TypeExpr->Life);
 
                                 // Track if this function/scope uses local lifetime allocations
-                                if (std::holds_alternative<LocalLifetime>(TypeExpr->Life)) {
+                                // Both LocalLifetime ($) and CallLifetime (#) need a page
+                                // For CallLifetime, if no return page is available, we fall back to local page
+                                if (std::holds_alternative<LocalLifetime>(TypeExpr->Life) ||
+                                    std::holds_alternative<CallLifetime>(TypeExpr->Life)) {
                                     CurrentFunctionUsesLocalLifetime = true;
                                     if (!ScopeInfoStack.empty()) {
                                         ScopeInfoStack.back().HasLocalAllocations = true;
@@ -8350,7 +8378,10 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                 bool IsRegionAlloc = true;  // We already checked lifetime is not Unspecified
 
                                 // Track if this function/scope uses local lifetime allocations
-                                if (std::holds_alternative<LocalLifetime>(TypeExpr->Life)) {
+                                // Both LocalLifetime ($) and CallLifetime (#) need a page
+                                // For CallLifetime, if no return page is available, we fall back to local page
+                                if (std::holds_alternative<LocalLifetime>(TypeExpr->Life) ||
+                                    std::holds_alternative<CallLifetime>(TypeExpr->Life)) {
                                     CurrentFunctionUsesLocalLifetime = true;
                                     if (!ScopeInfoStack.empty()) {
                                         ScopeInfoStack.back().HasLocalAllocations = true;
@@ -8413,7 +8444,10 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                 EmptyTuple.Life = TypeExpr->Life;
 
                                 // Track if this function/scope uses local lifetime allocations
-                                if (std::holds_alternative<LocalLifetime>(TypeExpr->Life)) {
+                                // Both LocalLifetime ($) and CallLifetime (#) need a page
+                                // For CallLifetime, if no return page is available, we fall back to local page
+                                if (std::holds_alternative<LocalLifetime>(TypeExpr->Life) ||
+                                    std::holds_alternative<CallLifetime>(TypeExpr->Life)) {
                                     CurrentFunctionUsesLocalLifetime = true;
                                     if (!ScopeInfoStack.empty()) {
                                         ScopeInfoStack.back().HasLocalAllocations = true;
@@ -8835,15 +8869,16 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             }
                             // For # lifetime, Emitter uses ReturnPage (rp)
                             // For $ lifetime, Emitter uses LocalPage
-                            // For unspecified, error - function# must be called with #, $, or ^name
-                            else if (std::holds_alternative<LocalLifetime>(TypeExpr->Life)) {
+                            // Both need LocalPage as fallback if ReturnPage is not available
+                            else if (std::holds_alternative<LocalLifetime>(TypeExpr->Life) ||
+                                     std::holds_alternative<CallLifetime>(TypeExpr->Life)) {
                                 // Track that we need local page allocation
                                 CurrentFunctionUsesLocalLifetime = true;
                                 if (!ScopeInfoStack.empty()) {
                                     ScopeInfoStack.back().HasLocalAllocations = true;
                                 }
                             }
-                            else if (!std::holds_alternative<CallLifetime>(TypeExpr->Life)) {
+                            else {
                                 return makePlannerNotImplementedError(File, Op.Loc,
                                     "function# '" + FuncName + "' must be called with #, $, or ^page syntax");
                             }
@@ -10264,7 +10299,18 @@ llvm::Expected<PlannedChoose> Planner::planChoose(const Choose &ChooseExpr) {
                          << "' VariantTypeName='" << VariantTypeName << "'\n";
 
             // Try to find the union definition in Model via lookupConcept
-            if (const Concept* CondConc = lookupConcept(CondTypeName)) {
+            // First try the full name, then try just the last component (simple name)
+            const Concept* CondConc = lookupConcept(CondTypeName);
+            if (!CondConc) {
+                // Try stripping package prefix (e.g., "scaly.compiler.Model.Implementation" -> "Implementation")
+                size_t lastDot = CondTypeName.rfind('.');
+                if (lastDot != std::string::npos) {
+                    std::string SimpleName = CondTypeName.substr(lastDot + 1);
+                    llvm::errs() << "DEBUG choose fallback: trying SimpleName='" << SimpleName << "'\n";
+                    CondConc = lookupConcept(SimpleName);
+                }
+            }
+            if (CondConc) {
                 llvm::errs() << "DEBUG choose fallback: found Concept for '" << CondTypeName << "'\n";
                 if (const Union* Un = std::get_if<Union>(&CondConc->Def)) {
                     llvm::errs() << "DEBUG choose fallback: is Union with " << Un->Variants.size() << " variants\n";
@@ -10275,6 +10321,8 @@ llvm::Expected<PlannedChoose> Planner::planChoose(const Choose &ChooseExpr) {
                     for (size_t i = 0; i < Un->Variants.size(); ++i) {
                         if (Un->Variants[i].Name == VariantTypeName) {
                             PW.VariantIndex = i;
+                            llvm::errs() << "DEBUG choose fallback MATCH: i=" << i
+                                         << " VariantTypeName='" << VariantTypeName << "'\n";
                             if (Un->Variants[i].VarType) {
                                 // Resolve the variant's type
                                 auto ResolvedVarType = resolveType(*Un->Variants[i].VarType, Case.Loc);
@@ -10629,7 +10677,6 @@ llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
     // without corrupting the outer function's NeedsLocalPage flag
     bool SavedUsesLocalLifetime = CurrentFunctionUsesLocalLifetime;
     CurrentFunctionUsesLocalLifetime = false;
-
     pushScope();
 
     // If function# was used, define the page parameter in scope
