@@ -103,6 +103,21 @@ struct PlannedType {
         }
         return *this;
     }
+
+    // Helper: unwrap Option[T], ref[T], and pointer[T] to get the underlying type
+    // Used for method lookup where we need to auto-deref through all wrappers
+    PlannedType getInnerTypeForMethodLookup() const {
+        PlannedType Result = *this;
+        // Unwrap Option[T] -> T
+        if (Result.Name == "Option" && !Result.Generics.empty()) {
+            Result = Result.Generics[0];
+        }
+        // Unwrap pointer[T] or ref[T] -> T
+        if ((Result.Name == "pointer" || Result.Name == "ref") && !Result.Generics.empty()) {
+            Result = Result.Generics[0];
+        }
+        return Result;
+    }
 };
 
 // ============================================================================
@@ -445,6 +460,7 @@ struct PlannedMemberAccess {
     std::string Name;        // Field name
     size_t FieldIndex;       // Index in struct layout
     bool IsMethod = false;   // True if this is a method reference
+    bool IsZeroArgMethodCall = false;  // True if auto-calling a zero-arg method
     bool IsUnionValue = false; // True if extracting .value from a union
     PlannedType ParentType;  // Type of the struct/union being accessed
     PlannedType ResultType;  // Type after this access

@@ -231,6 +231,10 @@ private:
     // Current plan being built (for constraint collection)
     Plan* CurrentPlan = nullptr;
 
+    // Expected type context for generic type inference in set statements
+    // When set, allows generic types to infer their type arguments from the target
+    std::optional<PlannedType> ExpectedTypeContext;
+
     // Create a fresh type variable
     PlannedType freshTypeVar(const std::string &DebugName = "");
 
