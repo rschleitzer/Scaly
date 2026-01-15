@@ -716,6 +716,16 @@ void Planner::popScope() {
 
 void Planner::defineLocal(llvm::StringRef Name, const PlannedType &Type, bool IsMutable, bool IsOnPage) {
     if (!Scopes.empty()) {
+        // Debug: print binding being stored
+        if (Type.Name == "pointer") {
+            llvm::errs() << "DEBUG defineLocal: " << Name.str()
+                         << " type=" << Type.Name
+                         << " generics.size=" << Type.Generics.size();
+            if (!Type.Generics.empty()) {
+                llvm::errs() << " generics[0]=" << Type.Generics[0].Name;
+            }
+            llvm::errs() << "\n";
+        }
         Scopes.back()[Name.str()] = LocalBinding{Type, IsMutable, IsOnPage};
     }
 }
@@ -725,6 +735,17 @@ std::optional<PlannedType> Planner::lookupLocal(llvm::StringRef Name) {
     for (auto It = Scopes.rbegin(); It != Scopes.rend(); ++It) {
         auto Found = It->find(Name.str());
         if (Found != It->end()) {
+            // Debug: print binding being retrieved
+            const auto& Type = Found->second.Type;
+            if (Type.Name == "pointer") {
+                llvm::errs() << "DEBUG lookupLocal: " << Name.str()
+                             << " type=" << Type.Name
+                             << " generics.size=" << Type.Generics.size();
+                if (!Type.Generics.empty()) {
+                    llvm::errs() << " generics[0]=" << Type.Generics[0].Name;
+                }
+                llvm::errs() << "\n";
+            }
             return Found->second.Type;
         }
     }
@@ -1248,6 +1269,8 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
     Span Loc) {
 
     // Auto-dereference pointer[T] and ref[T] types for method lookup
+    // Note: We do NOT unwrap Option here - Option methods like is_some should be found first.
+    // If method not found on Option, we'll try unwrapping Option at the end.
     PlannedType LookupType = StructType.getInnerTypeIfPointerLike();
 
     const PlannedStructure *Struct = nullptr;
@@ -1495,6 +1518,15 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
         }
     }
 
+    // Fallback: If the type is Option[T], try unwrapping Option and looking up on T
+    // This handles cases like scopes.get(i) where scopes: ref[Vector[Scope]]?
+    // (which is Option[ref[Vector[Scope]]]) and we want to call get() on Vector
+    if (LookupType.Name == "Option" && !LookupType.Generics.empty()) {
+        PlannedType InnerType = LookupType.Generics[0].getInnerTypeIfPointerLike();
+        // Recursively try lookup on the unwrapped type
+        return lookupMethod(InnerType, MethodName, Loc);
+    }
+
     return std::nullopt;
 }
 
@@ -1505,6 +1537,8 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
     Span Loc) {
 
     // Auto-dereference pointer[T] and ref[T] types for method lookup
+    // Note: We do NOT unwrap Option here - Option methods like is_some should be found first.
+    // If method not found on Option, we'll try unwrapping Option at the end.
     PlannedType LookupType = StructType.getInnerTypeIfPointerLike();
 
     // Collect all method candidates
@@ -1982,6 +2016,15 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
         return Candidates[0];
     }
 
+    // Fallback: If the type is Option[T], try unwrapping Option and looking up on T
+    // This handles cases like scopes.get(i) where scopes: ref[Vector[Scope]]?
+    // (which is Option[ref[Vector[Scope]]]) and we want to call get() on Vector
+    if (LookupType.Name == "Option" && !LookupType.Generics.empty()) {
+        PlannedType InnerType = LookupType.Generics[0].getInnerTypeIfPointerLike();
+        // Recursively try lookup on the unwrapped type
+        return lookupMethod(InnerType, MethodName, ArgTypes, Loc);
+    }
+
     return std::nullopt;
 }
 
@@ -2274,18 +2317,22 @@ std::optional<Planner::InitializerMatch> Planner::findInitializer(
     const std::vector<PlannedType> &ArgTypes) {
 
     // Look up the struct in the instantiation cache
-    // Handle fully qualified type names like "scaly.containers.String"
+    // Handle fully qualified type names like "scaly.containers.String" or "Planner.Planner"
     std::string LookupName = StructType.Name;
-    if (LookupName.rfind("scaly.", 0) == 0) {
-        size_t LastDot = LookupName.rfind('.');
-        if (LastDot != std::string::npos) {
-            LookupName = LookupName.substr(LastDot + 1);
-        }
+    // Strip any module/package prefix to get just the type name
+    size_t LastDot = LookupName.rfind('.');
+    if (LastDot != std::string::npos) {
+        LookupName = LookupName.substr(LastDot + 1);
     }
+
     auto StructIt = InstantiatedStructures.find(LookupName);
     if (StructIt == InstantiatedStructures.end()) {
         // Also try the mangled name
         StructIt = InstantiatedStructures.find(StructType.MangledName);
+    }
+    if (StructIt == InstantiatedStructures.end()) {
+        // Also try the full qualified name
+        StructIt = InstantiatedStructures.find(StructType.Name);
     }
 
     // First, try to find a match in the cache if struct is there with initializers
@@ -4269,12 +4316,33 @@ llvm::Expected<PlannedType> Planner::resolveMemberAccess(
             }
             if (Found) continue;
 
-            // Check methods
+            // Check methods - for zero-argument methods (only 'this'), auto-call and return result type
             for (const auto& Member : Struct->Members) {
                 if (auto* Func = std::get_if<Function>(&Member)) {
                     if (Func->Name == MemberName) {
-                        // Method reference - for now, return void
-                        // (proper handling would return a function type)
+                        // Check if this is a zero-argument method (only 'this' parameter)
+                        bool isZeroArg = Func->Input.size() == 1 &&
+                            Func->Input[0].Name && *Func->Input[0].Name == "this";
+
+                        if (isZeroArg && Func->Returns) {
+                            // Auto-call the method and return its return type
+                            // Set up type substitutions if this is a generic type
+                            std::map<std::string, PlannedType> OldSubst = TypeSubstitutions;
+                            if (!Conc->Parameters.empty() && !LookupType.Generics.empty()) {
+                                for (size_t I = 0; I < Conc->Parameters.size() && I < LookupType.Generics.size(); ++I) {
+                                    TypeSubstitutions[Conc->Parameters[I].Name] = LookupType.Generics[I];
+                                }
+                            }
+                            auto Resolved = resolveType(*Func->Returns, Loc);
+                            TypeSubstitutions = OldSubst;
+                            if (Resolved) {
+                                Current = std::move(*Resolved);
+                                Found = true;
+                                break;
+                            }
+                        }
+
+                        // Multi-argument method or no return type - return function reference
                         PlannedType MethodType;
                         MethodType.Loc = Loc;
                         MethodType.Name = "function";
@@ -4325,6 +4393,16 @@ llvm::Expected<std::vector<PlannedMemberAccess>> Planner::resolveMemberAccessCha
     std::vector<PlannedMemberAccess> Result;
     if (Members.empty()) {
         return Result;
+    }
+
+    // Debug: print base type info for member access on 'name'
+    if (!Members.empty() && Members[0] == "name") {
+        llvm::errs() << "DEBUG resolveMemberAccessChain looking for 'name': BaseType=" << BaseType.Name
+                     << " generics.size=" << BaseType.Generics.size();
+        if (!BaseType.Generics.empty()) {
+            llvm::errs() << " generics[0]=" << BaseType.Generics[0].Name;
+        }
+        llvm::errs() << "\n";
     }
 
     PlannedType Current = BaseType;
@@ -4522,12 +4600,40 @@ llvm::Expected<std::vector<PlannedMemberAccess>> Planner::resolveMemberAccessCha
             TypeSubstitutions = OldSubst;
             if (Found) continue;
 
-            // Check methods
+            // Check methods - for zero-argument methods (only 'this'), auto-call and return result type
             for (const auto& Member : Struct->Members) {
                 if (auto* Func = std::get_if<Function>(&Member)) {
                     if (Func->Name == MemberName) {
-                        // Method reference - return a "method" type
-                        // The actual call will be resolved later
+                        // Check if this is a zero-argument method (only 'this' parameter)
+                        bool isZeroArg = Func->Input.size() == 1 &&
+                            Func->Input[0].Name && *Func->Input[0].Name == "this";
+
+                        if (isZeroArg && Func->Returns) {
+                            // Auto-call the method and return its return type
+                            std::map<std::string, PlannedType> OldSubstMethod = TypeSubstitutions;
+                            if (!Conc->Parameters.empty() && !LookupType.Generics.empty()) {
+                                for (size_t I = 0; I < Conc->Parameters.size() && I < LookupType.Generics.size(); ++I) {
+                                    TypeSubstitutions[Conc->Parameters[I].Name] = LookupType.Generics[I];
+                                }
+                            }
+                            auto Resolved = resolveType(*Func->Returns, Loc);
+                            TypeSubstitutions = OldSubstMethod;
+                            if (Resolved) {
+                                PlannedMemberAccess Access;
+                                Access.Name = MemberName;
+                                Access.FieldIndex = SIZE_MAX;
+                                Access.IsMethod = true;
+                                Access.IsZeroArgMethodCall = true;
+                                Access.ParentType = LookupType;
+                                Access.ResultType = std::move(*Resolved);
+                                Result.push_back(std::move(Access));
+                                Current = Result.back().ResultType;
+                                Found = true;
+                                break;
+                            }
+                        }
+
+                        // Multi-argument method or no return type - return function reference
                         PlannedMemberAccess Access;
                         Access.Name = MemberName;
                         Access.FieldIndex = SIZE_MAX;  // Special marker for methods
@@ -5616,9 +5722,19 @@ llvm::Expected<PlannedType> Planner::resolveType(const Type &T, Span Instantiati
         // If concept has generic parameters, we need to instantiate
         if (!Conc->Parameters.empty()) {
             if (Result.Generics.empty()) {
-                // Generic type used without type arguments
-                return makeGenericArityError(File, T.Loc, Name,
-                    Conc->Parameters.size(), 0);
+                // Try to infer generic arguments from ExpectedTypeContext
+                // This handles: set field: GenericType#()
+                // where field has type ref[GenericType[K, V]]? - infer K, V
+                if (ExpectedTypeContext &&
+                    ExpectedTypeContext->Name == Name &&
+                    !ExpectedTypeContext->Generics.empty() &&
+                    ExpectedTypeContext->Generics.size() == Conc->Parameters.size()) {
+                    Result.Generics = ExpectedTypeContext->Generics;
+                } else {
+                    // Generic type used without type arguments
+                    return makeGenericArityError(File, T.Loc, Name,
+                        Conc->Parameters.size(), 0);
+                }
             }
 
             // Instantiate the generic
@@ -9401,18 +9517,10 @@ llvm::Expected<bool> Planner::processWorkQueue() {
 llvm::Expected<PlannedAction> Planner::planAction(const Action &Act) {
     PlannedAction Result;
 
-    auto PlannedSource = planOperands(Act.Source);
-    if (!PlannedSource) {
-        return PlannedSource.takeError();
-    }
-
-    // Collapse operand sequence to create PlannedCall structures for operators
-    auto CollapsedSource = collapseOperandSequence(std::move(*PlannedSource));
-    if (!CollapsedSource) {
-        return CollapsedSource.takeError();
-    }
-    Result.Source.push_back(std::move(*CollapsedSource));
-
+    // Plan target FIRST to enable type inference for generic constructors
+    // Example: set concepts: HashMapBuilder#()
+    // The target type (ref[HashMapBuilder[String, ref[Concept]?]]?) provides
+    // the generic arguments that HashMapBuilder needs
     auto PlannedTarget = planOperands(Act.Target);
     if (!PlannedTarget) {
         return PlannedTarget.takeError();
@@ -9427,7 +9535,35 @@ llvm::Expected<PlannedAction> Planner::planAction(const Action &Act) {
             return CollapsedTarget.takeError();
         }
         Result.Target.push_back(std::move(*CollapsedTarget));
+
+        // Set expected type context for source planning
+        // This enables generic type inference: if source is HashMapBuilder#()
+        // and target is ref[HashMapBuilder[K,V]]?, infer K,V from target
+        const PlannedType* InnerType = &Result.Target[0].ResultType;
+        // Unwrap Option[T] → T, ref[T] → T, pointer[T] → T to get the inner expected type
+        // Example: Option[ref[HashMapBuilder[K,V]]] → HashMapBuilder[K,V]
+        while (InnerType && !InnerType->Generics.empty() &&
+               (InnerType->Name == "Option" || InnerType->Name == "ref" ||
+                InnerType->Name == "pointer")) {
+            InnerType = &InnerType->Generics[0];
+        }
+        if (InnerType) {
+            ExpectedTypeContext = *InnerType;
+        }
     }
+
+    auto PlannedSource = planOperands(Act.Source);
+    ExpectedTypeContext = std::nullopt;  // Clear after planning source
+    if (!PlannedSource) {
+        return PlannedSource.takeError();
+    }
+
+    // Collapse operand sequence to create PlannedCall structures for operators
+    auto CollapsedSource = collapseOperandSequence(std::move(*PlannedSource));
+    if (!CollapsedSource) {
+        return CollapsedSource.takeError();
+    }
+    Result.Source.push_back(std::move(*CollapsedSource));
 
     // Compute the result type of the source operation sequence
     auto SeqType = resolveOperationSequence(Result.Source);
@@ -11295,6 +11431,189 @@ llvm::Expected<PlannedModule> Planner::planModule(const Module &Mod) {
 
     // Push module onto stack for cross-module resolution
     ModuleStack.push_back(&Mod);
+
+    // Process use statements to make imported types available under short names
+    // e.g., "use scaly.compiler.Plan.PlannedItem" makes "PlannedItem" resolve to that concept
+    for (const auto &U : Mod.Uses) {
+        if (U.Path.size() >= 2) {
+            // Build the full qualified name from the path
+            std::string FullName;
+            for (size_t i = 0; i < U.Path.size(); ++i) {
+                if (i > 0) FullName += ".";
+                FullName += U.Path[i];
+            }
+            // Short name is the last component
+            const std::string &ShortName = U.Path.back();
+            llvm::errs() << "  Use: " << FullName << " (short: " << ShortName << ")\n";
+
+            // Try to load the concept using the full qualified name
+            const Concept *Conc = lookupConcept(FullName);
+            if (!Conc) {
+                // Try loading the package on demand
+                // For scalyc.compiler.Plan.PlannedItem:
+                //   Path[0] = "scalyc" (package name)
+                //   Path[1] = "compiler" (module in scalyc namespace)
+                //   Path[2] = "Plan" (module in compiler namespace)
+                //   Path[3] = "PlannedItem" (concept we want)
+                const Module* PkgMod = loadPackageOnDemand(U.Path[0]);
+                llvm::errs() << "    PkgMod: " << (PkgMod ? "found" : "null") << "\n";
+                if (PkgMod) {
+                    llvm::errs() << "    PkgMod->Members.size(): " << PkgMod->Members.size() << "\n";
+                    // Look for the namespace concept with the package name
+                    const Namespace* CurrentNS = nullptr;
+                    for (const auto& Member : PkgMod->Members) {
+                        if (auto* PkgConc = std::get_if<Concept>(&Member)) {
+                            llvm::errs() << "      Concept: " << PkgConc->Name << "\n";
+                            if (PkgConc->Name == U.Path[0]) {
+                                if (auto* NS = std::get_if<Namespace>(&PkgConc->Def)) {
+                                    llvm::errs() << "        -> is namespace!\n";
+                                    CurrentNS = NS;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    // Navigate through the namespace modules
+                    const Module* CurrentMod = nullptr;
+                    if (CurrentNS && U.Path.size() > 2) {
+                        llvm::errs() << "    CurrentNS has " << CurrentNS->Modules.size() << " modules\n";
+                        llvm::errs() << "    Looking for module '" << U.Path[1] << "'\n";
+                        // Find the first module (e.g., "compiler")
+                        for (const auto& NsMod : CurrentNS->Modules) {
+                            llvm::errs() << "      Module: " << NsMod.Name << "\n";
+                            if (NsMod.Name == U.Path[1]) {
+                                CurrentMod = &NsMod;
+                                break;
+                            }
+                        }
+
+                        // Navigate through remaining path components (except the last one)
+                        for (size_t i = 2; CurrentMod && i < U.Path.size() - 1; ++i) {
+                            llvm::errs() << "    Nav step " << i << ": looking for '" << U.Path[i] << "' in module '" << CurrentMod->Name << "'\n";
+                            const Module* NextMod = nullptr;
+                            // Check sub-modules
+                            llvm::errs() << "      Sub-modules (" << CurrentMod->Modules.size() << "):\n";
+                            for (const auto& SubMod : CurrentMod->Modules) {
+                                llvm::errs() << "        - " << SubMod.Name << "\n";
+                                if (SubMod.Name == U.Path[i]) {
+                                    NextMod = &SubMod;
+                                    break;
+                                }
+                            }
+                            // Also check members for namespace concepts
+                            if (!NextMod) {
+                                llvm::errs() << "      Checking members (" << CurrentMod->Members.size() << "):\n";
+                                for (const auto& Member : CurrentMod->Members) {
+                                    if (auto* MemberConc = std::get_if<Concept>(&Member)) {
+                                        llvm::errs() << "        Concept: " << MemberConc->Name << "\n";
+                                        if (MemberConc->Name == U.Path[i]) {
+                                            if (auto* MemberNS = std::get_if<Namespace>(&MemberConc->Def)) {
+                                                llvm::errs() << "          -> namespace with " << MemberNS->Modules.size() << " modules\n";
+                                                for (const auto& NsMod : MemberNS->Modules) {
+                                                    llvm::errs() << "            Module: " << NsMod.Name << "\n";
+                                                    if (NsMod.Name == U.Path[i]) {
+                                                        NextMod = &NsMod;
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        } else {
+                                            // Check if this concept contains a namespace with our target as a module
+                                            if (auto* MemberNS = std::get_if<Namespace>(&MemberConc->Def)) {
+                                                llvm::errs() << "          -> checking namespace modules\n";
+                                                for (const auto& NsMod : MemberNS->Modules) {
+                                                    llvm::errs() << "            Module: '" << NsMod.Name << "' vs '" << U.Path[i] << "' -> " << (NsMod.Name == U.Path[i] ? "MATCH" : "no match") << "\n";
+                                                    if (NsMod.Name == U.Path[i]) {
+                                                        llvm::errs() << "              Setting NextMod!\n";
+                                                        NextMod = &NsMod;
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    if (NextMod) break;
+                                }
+                            }
+                            CurrentMod = NextMod;
+                        }
+                    }
+
+                    // Look for the concept in the final module
+                    llvm::errs() << "    Final: CurrentMod=" << (CurrentMod ? CurrentMod->Name : "null") << "\n";
+                    if (CurrentMod) {
+                        // Add module to AccessedPackageModules for future lookups
+                        if (std::find(AccessedPackageModules.begin(),
+                                      AccessedPackageModules.end(),
+                                      CurrentMod) == AccessedPackageModules.end()) {
+                            AccessedPackageModules.push_back(CurrentMod);
+                            llvm::errs() << "    Added module '" << CurrentMod->Name << "' to AccessedPackageModules\n";
+                        }
+
+                        llvm::errs() << "    Looking for concept '" << ShortName << "' in " << CurrentMod->Members.size() << " members\n";
+                        for (const auto& Member : CurrentMod->Members) {
+                            if (auto* MemberConc = std::get_if<Concept>(&Member)) {
+                                llvm::errs() << "      Concept: " << MemberConc->Name << "\n";
+                                if (MemberConc->Name == ShortName) {
+                                    Conc = MemberConc;
+                                    break;
+                                }
+                            }
+                        }
+
+                        // If not found directly, check if there's a namespace concept with the module's name
+                        // that contains a sub-module with the target concept
+                        // This handles: scaly.containers.Vector where Vector is in containers namespace's modules
+                        if (!Conc) {
+                            for (const auto& Member : CurrentMod->Members) {
+                                if (auto* MemberConc = std::get_if<Concept>(&Member)) {
+                                    if (MemberConc->Name == CurrentMod->Name) {
+                                        if (auto* MemberNS = std::get_if<Namespace>(&MemberConc->Def)) {
+                                            llvm::errs() << "    Found namespace '" << MemberConc->Name << "' with " << MemberNS->Modules.size() << " modules\n";
+                                            // Look for sub-module with ShortName
+                                            for (const auto& NsMod : MemberNS->Modules) {
+                                                llvm::errs() << "      Sub-module: " << NsMod.Name << "\n";
+                                                if (NsMod.Name == ShortName) {
+                                                    // Found the sub-module, look for the concept inside
+                                                    llvm::errs() << "      -> found! Looking in " << NsMod.Members.size() << " members\n";
+                                                    // Add this sub-module to AccessedPackageModules
+                                                    if (std::find(AccessedPackageModules.begin(),
+                                                                  AccessedPackageModules.end(),
+                                                                  &NsMod) == AccessedPackageModules.end()) {
+                                                        AccessedPackageModules.push_back(&NsMod);
+                                                        llvm::errs() << "    Added sub-module '" << NsMod.Name << "' to AccessedPackageModules\n";
+                                                    }
+                                                    for (const auto& SubMember : NsMod.Members) {
+                                                        if (auto* SubConc = std::get_if<Concept>(&SubMember)) {
+                                                            llvm::errs() << "        Concept: " << SubConc->Name << "\n";
+                                                            if (SubConc->Name == ShortName) {
+                                                                Conc = SubConc;
+                                                                break;
+                                                            }
+                                                        }
+                                                    }
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // Cache under the short name so future lookups find it
+            if (Conc) {
+                Concepts[ShortName] = Conc;
+                llvm::errs() << "    -> cached as '" << ShortName << "'\n";
+            } else {
+                llvm::errs() << "    -> NOT FOUND (but module was added to AccessedPackageModules)\n";
+            }
+        }
+    }
 
     // Plan sub-modules first (so their concepts are available)
     for (const auto &SubMod : Mod.Modules) {

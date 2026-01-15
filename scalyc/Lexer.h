@@ -66,6 +66,7 @@ public:
     size_t position() const { return Position_; }
     size_t previousPosition() const { return PreviousPosition_; }
     bool isAtEnd() const { return Current_ == nullptr; }
+    llvm::StringRef source() const { return Source_; }
 
     // Parser helpers
     bool parseKeyword(llvm::StringRef Keyword);
