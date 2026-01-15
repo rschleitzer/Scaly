@@ -542,7 +542,7 @@ void Lexer::handleSingleLineComment() {
             return;
         }
         if (*Current_ == '\n') {
-            readCharacter();
+            // Don't consume the newline - leave it for scanLineFeed to generate ColonToken
             return;
         }
         readCharacter();

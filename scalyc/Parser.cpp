@@ -250,6 +250,14 @@ llvm::Expected<SymbolSyntax> Parser::parseSymbol() {
             FirstRealError = std::move(ErrMsg);
     }
     {
+        auto Result = parseProcedure();
+        if (Result)
+            return SymbolSyntax{std::move(*Result)};
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
+    }
+    {
         auto Result = parseOperator();
         if (Result)
             return SymbolSyntax{std::move(*Result)};
@@ -320,6 +328,14 @@ llvm::Expected<ExportSyntax> Parser::parseExport() {
     }
     {
         auto Result = parseFunction();
+        if (Result)
+            return ExportSyntax{std::move(*Result)};
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
+    }
+    {
+        auto Result = parseProcedure();
         if (Result)
             return ExportSyntax{std::move(*Result)};
         std::string ErrMsg = llvm::toString(Result.takeError());

@@ -603,6 +603,8 @@ llvm::Type *Emitter::mapType(const PlannedType &Type) {
 
     // Unknown type - should have been planned (programming error)
     // Return opaque pointer as fallback
+    llvm::errs() << "DEBUG mapType: fallback to ptr for Name='" << Type.Name
+                 << "' MangledName='" << Type.MangledName << "'\n";
     return llvm::PointerType::get(*Context, 0);
 }
 
@@ -831,11 +833,39 @@ llvm::Function *Emitter::emitFunctionDecl(const PlannedFunction &Func) {
     bool UseSret = false;
     if (Func.Returns) {
         ReturnLLVMType = mapType(*Func.Returns);
-        // Use sret for non-primitive types (structs, unions)
-        if (ReturnLLVMType->isStructTy() || ReturnLLVMType->isArrayTy()) {
-            UseSret = true;
-            ParamTypes.push_back(llvm::PointerType::get(*Context, 0));
-        }
+    }
+
+    // If function throws, wrap return type in a Result union: { i8 tag, data }
+    // tag=0 means success (value), tag=1 means error
+    if (Func.Throws) {
+        llvm::Type *ValueTy = ReturnLLVMType ? ReturnLLVMType : llvm::Type::getVoidTy(*Context);
+        llvm::Type *ErrorTy = mapType(*Func.Throws);
+
+        // Data is a byte array large enough for either value or error
+        // (union semantics - same memory can hold either type)
+        uint64_t ValueSize = ValueTy->isVoidTy() ? 0 : Module->getDataLayout().getTypeAllocSize(ValueTy);
+        uint64_t ErrorSize = Module->getDataLayout().getTypeAllocSize(ErrorTy);
+        uint64_t DataSize = std::max(ValueSize, ErrorSize);
+        if (DataSize == 0) DataSize = 1;  // Minimum size for empty unions
+
+        llvm::Type *I8Ty = llvm::Type::getInt8Ty(*Context);
+        llvm::ArrayType *DataTy = llvm::ArrayType::get(I8Ty, DataSize);
+
+        // Create the Result struct type: { i8 tag, [N x i8] data }
+        std::string ResultName = "_ZResult_" + Func.MangledName;
+        llvm::StructType *ResultTy = llvm::StructType::create(
+            *Context, {I8Ty, DataTy}, ResultName, false);
+
+        ReturnLLVMType = ResultTy;
+        llvm::errs() << "DEBUG emitFunctionDecl: Created Result type for throwing function '"
+                     << Func.Name << "' ValueSize=" << ValueSize
+                     << " ErrorSize=" << ErrorSize << "\n";
+    }
+
+    // Use sret for non-primitive types (structs, unions)
+    if (ReturnLLVMType && (ReturnLLVMType->isStructTy() || ReturnLLVMType->isArrayTy())) {
+        UseSret = true;
+        ParamTypes.push_back(llvm::PointerType::get(*Context, 0));
     }
 
     // If function# was used, add page parameter
@@ -1459,7 +1489,7 @@ llvm::Expected<llvm::Value*> Emitter::emitAction(const PlannedAction &Action) {
                 for (const auto &Member : *TargetOp.MemberAccess) {
                     if (!CurrentType->isStructTy()) {
                         return llvm::make_error<llvm::StringError>(
-                            "Cannot access member on non-struct type",
+                            "Cannot access member on non-struct type: need to dereference pointer field first",
                             llvm::inconvertibleErrorCode()
                         );
                     }
@@ -1675,11 +1705,16 @@ llvm::Expected<llvm::Value*> Emitter::emitAction(const PlannedAction &Action) {
 llvm::Error Emitter::emitBinding(const PlannedBinding &Binding) {
     llvm::Value *Value = nullptr;
 
+    std::string BindingName = Binding.BindingItem.Name ? *Binding.BindingItem.Name : "<unnamed>";
+    llvm::errs() << "DEBUG emitBinding: emitting '" << BindingName << "'\n";
+
     // Emit initialization expression if present
     if (!Binding.Operation.empty()) {
         auto ValueOrErr = emitOperands(Binding.Operation);
-        if (!ValueOrErr)
+        if (!ValueOrErr) {
+            llvm::errs() << "DEBUG emitBinding: emitOperands failed for '" << BindingName << "'\n";
             return ValueOrErr.takeError();
+        }
 
         Value = *ValueOrErr;
         if (!Value) {
@@ -1936,6 +1971,11 @@ llvm::Error Emitter::emitThrow(const PlannedThrow &Throw) {
         // Direct return: check return type
         llvm::Type *RetTy = CurrentFunction->getReturnType();
         if (!RetTy->isStructTy()) {
+            std::string TyStr;
+            llvm::raw_string_ostream OS(TyStr);
+            RetTy->print(OS);
+            llvm::errs() << "DEBUG throw error: function '" << CurrentFunction->getName()
+                         << "' has RetTy=" << OS.str() << "\n";
             return llvm::make_error<llvm::StringError>(
                 "throw in function that doesn't return a Result type",
                 llvm::inconvertibleErrorCode()
@@ -2107,6 +2147,65 @@ llvm::Expected<llvm::Value*> Emitter::emitOperand(const PlannedOperand &Op) {
 
         // Now apply member accesses - but handle pointer returns from extractvalue
         for (const auto &Access : *Op.MemberAccess) {
+            // Handle zero-arg method calls (e.g., string.length, list.get_iterator)
+            if (Access.IsZeroArgMethodCall) {
+                // Look up the method and call it with current value as 'this'
+                std::string MethodName = Access.ParentType.Name + "." + Access.Name;
+                std::string MangledMethodName = "_Z" + std::to_string(Access.ParentType.Name.size()) +
+                                                Access.ParentType.Name + std::to_string(Access.Name.size()) +
+                                                Access.Name + "E";
+
+                llvm::Function *MethodFunc = nullptr;
+                // Try to find in current module first
+                if (Module) {
+                    MethodFunc = Module->getFunction(MangledMethodName);
+                }
+                // Try function cache if not in module
+                if (!MethodFunc) {
+                    if (auto It = FunctionCache.find(MangledMethodName); It != FunctionCache.end()) {
+                        MethodFunc = It->second;
+                    }
+                }
+                // Try to find by readable name
+                if (!MethodFunc && Module) {
+                    for (auto &F : *Module) {
+                        if (F.getName().contains(Access.Name)) {
+                            // Check if this function takes the right type as first arg
+                            if (F.arg_size() >= 1) {
+                                MethodFunc = &F;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (MethodFunc) {
+                    // Call the method with Value as 'this'
+                    // For by-value 'this', the struct is passed directly
+                    // For by-ref 'this', we need to pass a pointer
+                    llvm::Value *ThisArg = Value;
+
+                    // Check if function expects a pointer for this
+                    if (MethodFunc->arg_size() > 0) {
+                        llvm::Type *ExpectedThisType = MethodFunc->getArg(0)->getType();
+                        if (ExpectedThisType->isPointerTy() && !Value->getType()->isPointerTy()) {
+                            // Need to store to temp alloca and pass pointer
+                            llvm::AllocaInst *TempAlloca = Builder->CreateAlloca(Value->getType(), nullptr, "this.tmp");
+                            Builder->CreateStore(Value, TempAlloca);
+                            ThisArg = TempAlloca;
+                        }
+                    }
+
+                    Value = Builder->CreateCall(MethodFunc, {ThisArg}, Access.Name + ".result");
+                    continue;
+                } else {
+                    return llvm::make_error<llvm::StringError>(
+                        "Cannot find method '" + Access.Name + "' on type '" + Access.ParentType.Name + "'",
+                        llvm::inconvertibleErrorCode()
+                    );
+                }
+            }
+
             // Check if Value is still a pointer (e.g., when extracting a pointer field)
             if (Value->getType()->isPointerTy()) {
                 // Need to load the struct first - use ParentType (the struct being accessed)
@@ -2117,6 +2216,12 @@ llvm::Expected<llvm::Value*> Emitter::emitOperand(const PlannedOperand &Op) {
                         llvm::inconvertibleErrorCode()
                     );
                 }
+                llvm::errs() << "DEBUG member access: loading from ptr for field '" << Access.Name
+                             << "' ParentType='" << Access.ParentType.Name << "'";
+                std::string StTyStr;
+                llvm::raw_string_ostream OS(StTyStr);
+                StructTy->print(OS);
+                llvm::errs() << " StructTy=" << OS.str() << "\n";
                 Value = Builder->CreateLoad(StructTy, Value, "deref");
             }
 
@@ -2149,10 +2254,28 @@ llvm::Expected<llvm::Value*> Emitter::emitOperand(const PlannedOperand &Op) {
             // Ensure Value is an aggregate type before extracting
             llvm::Type *ValTy = Value->getType();
             if (!ValTy->isAggregateType()) {
+                std::string TypeStr;
+                llvm::raw_string_ostream OS(TypeStr);
+                ValTy->print(OS);
+                llvm::errs() << "DEBUG member access error: field='" << Access.Name
+                             << "' idx=" << Access.FieldIndex
+                             << " ValTy=" << OS.str() << "\n";
                 return llvm::make_error<llvm::StringError>(
                     "Cannot apply member access '" + Access.Name + "' to non-aggregate type",
                     llvm::inconvertibleErrorCode()
                 );
+            }
+
+            // Additional validation for struct types
+            if (auto *STy = llvm::dyn_cast<llvm::StructType>(ValTy)) {
+                if (Access.FieldIndex >= STy->getNumElements()) {
+                    return llvm::make_error<llvm::StringError>(
+                        "Field index " + std::to_string(Access.FieldIndex) +
+                        " out of bounds for member access '" + Access.Name +
+                        "' (struct has " + std::to_string(STy->getNumElements()) + " elements)",
+                        llvm::inconvertibleErrorCode()
+                    );
+                }
             }
 
             // Use extractvalue for struct field access
@@ -2174,6 +2297,8 @@ llvm::Expected<llvm::Value*> Emitter::emitExpression(const PlannedExpression &Ex
         } else if constexpr (std::is_same_v<T, PlannedType>) {
             // Type used as expression value - this shouldn't normally occur
             // sizeof is handled via PlannedSizeOf, constructors via PlannedCall
+            llvm::errs() << "DEBUG emitExpression: PlannedType used as value: Name=" << E.Name
+                << ", MangledName=" << E.MangledName << ", offset=" << E.Loc.Start << "\n";
             return llvm::make_error<llvm::StringError>(
                 "Type '" + E.Name + "' cannot be used as a value (offset " +
                     std::to_string(E.Loc.Start) + ")",
@@ -2183,6 +2308,12 @@ llvm::Expected<llvm::Value*> Emitter::emitExpression(const PlannedExpression &Ex
             // Variable reference - look up and load
             llvm::Value *VarPtr = lookupVariable(E.Name);
             if (!VarPtr) {
+                llvm::errs() << "DEBUG undefined variable: '" << E.Name
+                             << "' in function '" << CurrentFunction->getName() << "'\n";
+                llvm::errs() << "DEBUG LocalVariables contains:\n";
+                for (const auto& [name, val] : LocalVariables) {
+                    llvm::errs() << "  - '" << name << "'\n";
+                }
                 return llvm::make_error<llvm::StringError>(
                     "Undefined variable: " + E.Name,
                     llvm::inconvertibleErrorCode()
@@ -2947,8 +3078,31 @@ llvm::Expected<llvm::Value*> Emitter::emitBlock(const PlannedBlock &Block) {
     }
     BlockCleanupStack.push_back(Cleanup);
 
+    llvm::errs() << "DEBUG emitBlock: " << Block.Statements.size() << " statements in block\n";
+
     llvm::Value *LastValue = nullptr;
+    size_t StmtIdx = 0;
     for (const auto &Stmt : Block.Statements) {
+        llvm::errs() << "DEBUG emitBlock: processing statement " << StmtIdx++ << " of type ";
+        std::visit([](const auto &S) {
+            using T = std::decay_t<decltype(S)>;
+            if constexpr (std::is_same_v<T, PlannedAction>) {
+                llvm::errs() << "PlannedAction";
+            } else if constexpr (std::is_same_v<T, PlannedBinding>) {
+                llvm::errs() << "PlannedBinding(" << (S.BindingItem.Name ? *S.BindingItem.Name : "?") << ")";
+            } else if constexpr (std::is_same_v<T, PlannedReturn>) {
+                llvm::errs() << "PlannedReturn";
+            } else if constexpr (std::is_same_v<T, PlannedThrow>) {
+                llvm::errs() << "PlannedThrow";
+            } else if constexpr (std::is_same_v<T, PlannedBreak>) {
+                llvm::errs() << "PlannedBreak";
+            } else if constexpr (std::is_same_v<T, PlannedContinue>) {
+                llvm::errs() << "PlannedContinue";
+            } else {
+                llvm::errs() << "Unknown";
+            }
+        }, Stmt);
+        llvm::errs() << "\n";
         // For PlannedAction, capture the result value (the block's result is the last value)
         if (auto *Action = std::get_if<PlannedAction>(&Stmt)) {
             auto ValueOrErr = emitAction(*Action);
@@ -2989,6 +3143,24 @@ llvm::Expected<llvm::Value*> Emitter::emitBlock(const PlannedBlock &Block) {
 
 llvm::Expected<llvm::Value*> Emitter::emitIf(const PlannedIf &If) {
     // Emit the condition
+    llvm::errs() << "DEBUG emitIf: hasConsequent=" << (If.Consequent ? "yes" : "no")
+                 << " hasAlternative=" << (If.Alternative ? "yes" : "no") << "\n";
+    if (If.Consequent) {
+        std::visit([](const auto &S) {
+            using T = std::decay_t<decltype(S)>;
+            llvm::errs() << "DEBUG emitIf consequent type: ";
+            if constexpr (std::is_same_v<T, PlannedAction>) {
+                llvm::errs() << "PlannedAction\n";
+            } else if constexpr (std::is_same_v<T, PlannedBinding>) {
+                llvm::errs() << "PlannedBinding(" << (S.BindingItem.Name ? *S.BindingItem.Name : "?") << ")\n";
+            } else if constexpr (std::is_same_v<T, PlannedReturn>) {
+                llvm::errs() << "PlannedReturn\n";
+            } else {
+                llvm::errs() << "Other\n";
+            }
+        }, *If.Consequent);
+    }
+
     if (If.Condition.empty()) {
         return llvm::make_error<llvm::StringError>(
             "If statement has no condition",

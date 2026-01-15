@@ -133,7 +133,7 @@ make
 The language grammar is defined in SGML and processed with DSSSL to generate parser code:
 
 ```
-scaly.sgm  →  ./mkl.sh (openjade + DSSSL)  →  scalyc/Parser.cpp
+scaly.sgm  →  ./mkp (openjade + DSSSL)  →  scalyc/Parser.cpp
                                             →  scalyc/Syntax.h
 ```
 
@@ -191,7 +191,7 @@ tests/*.sgm  →  codegen  →  scalyc/Tests.cpp (executable tests)
 
 **Codegen script:**
 ```bash
-./mkl.sh   # Regenerates Parser.cpp, Syntax.h, Tests.cpp, docs/*.xml
+./mkp   # Regenerates Parser.cpp, Syntax.h, Tests.cpp, docs/*.xml
 ```
 
 This runs `openjade -G -t sgml -d codegen/scaly.dsl scaly.sgm`
@@ -1021,7 +1021,7 @@ Main build script that orchestrates the full workflow:
 set -e
 
 # Regenerate from spec
-./mkl.sh
+./mkp
 
 # Build compiler
 cd scalyc
@@ -1040,7 +1040,7 @@ fi
 
 ```bash
 # Regenerate code from specification only
-./mkl.sh   # Generates Parser.cpp, Tests.cpp, docs/*.xml
+./mkp   # Generates Parser.cpp, Tests.cpp, docs/*.xml
 
 # Build only (after code generation)
 cd scalyc/build && make
@@ -1055,12 +1055,12 @@ cd scalyc/build && make
 ./scalyc/build/scalyc --test=arithmetic
 ```
 
-### mkl.sh
+### mkp
 
-Runs `openjade -G -t sgml -d codegen/scaly.dsl scaly.sgm` to generate:
-- `scalyc/Parser.cpp` - Generated parser
-- `scalyc/Tests.cpp` - Generated test code
-- `docs/*.xml` - DocBook chapters
+Runs openjade to generate parser and test code from SGML grammar:
+- `scalyc/Parser.cpp` - Generated parser from `scaly.sgm`
+- `scalyc/Syntax.h` - Generated AST types from `scaly.sgm`
+- Test files from `tests/*.sgm` (expressions, definitions, choose, controlflow)
 
 ### Dependencies
 
@@ -1120,7 +1120,7 @@ brew install llvm@18 cmake openjade
 │   ├── definitions.sgm   # Structures, unions, namespaces
 │   └── choose.sgm        # Pattern matching
 ├── build.sh              # Main build script (codegen + compile)
-├── mkl.sh                # Codegen only (generates Parser.cpp, Tests.cpp, docs/)
+├── mkp                   # Codegen script (generates Parser.cpp, Syntax.h, test files)
 ├── stdlib.scaly          # Standard library (operators, functions)
 ├── scalyc/               # C++ compiler (CMake project)
 │   ├── CMakeLists.txt

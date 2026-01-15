@@ -113,22 +113,22 @@ function LLVMGetGlobalContext() returns LLVMContextRef extern
 function LLVMModuleCreateWithNameInContext(name: pointer[char], context: LLVMContextRef) returns LLVMModuleRef extern
 
 ; Dispose of a module
-procedure LLVMDisposeModule(module: LLVMModuleRef) extern
+procedure LLVMDisposeModule(mod: LLVMModuleRef) extern
 
 ; Set the target triple for a module
-procedure LLVMSetTarget(module: LLVMModuleRef, triple: pointer[char]) extern
+procedure LLVMSetTarget(mod: LLVMModuleRef, triple: pointer[char]) extern
 
 ; Set the data layout for a module
-procedure LLVMSetDataLayout(module: LLVMModuleRef, layout: pointer[char]) extern
+procedure LLVMSetDataLayout(mod: LLVMModuleRef, layout: pointer[char]) extern
 
 ; Get string representation of module (caller must dispose with LLVMDisposeMessage)
-function LLVMPrintModuleToString(module: LLVMModuleRef) returns pointer[char] extern
+function LLVMPrintModuleToString(mod: LLVMModuleRef) returns pointer[char] extern
 
 ; Write module to file
-function LLVMPrintModuleToFile(module: LLVMModuleRef, filename: pointer[char], error_message: pointer[pointer[char]]) returns int extern
+function LLVMPrintModuleToFile(mod: LLVMModuleRef, filename: pointer[char], error_message: pointer[pointer[char]]) returns int extern
 
 ; Write bitcode to file
-function LLVMWriteBitcodeToFile(module: LLVMModuleRef, path: pointer[char]) returns int extern
+function LLVMWriteBitcodeToFile(mod: LLVMModuleRef, path: pointer[char]) returns int extern
 
 ; ============================================================================
 ; Builder Functions
@@ -196,10 +196,10 @@ function LLVMGetStructElementTypes(struct_type: LLVMTypeRef, dest: pointer[LLVMT
 ; ============================================================================
 
 ; Add a function to a module
-function LLVMAddFunction(module: LLVMModuleRef, name: pointer[char], function_type: LLVMTypeRef) returns LLVMValueRef extern
+function LLVMAddFunction(mod: LLVMModuleRef, name: pointer[char], function_type: LLVMTypeRef) returns LLVMValueRef extern
 
 ; Get a function from a module by name
-function LLVMGetNamedFunction(module: LLVMModuleRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMGetNamedFunction(mod: LLVMModuleRef, name: pointer[char]) returns LLVMValueRef extern
 
 ; Get function parameter
 function LLVMGetParam(func: LLVMValueRef, index: int) returns LLVMValueRef extern
@@ -257,10 +257,10 @@ function LLVMGetUndef(type: LLVMTypeRef) returns LLVMValueRef extern
 ; ============================================================================
 
 ; Add a global variable
-function LLVMAddGlobal(module: LLVMModuleRef, type: LLVMTypeRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMAddGlobal(mod: LLVMModuleRef, type: LLVMTypeRef, name: pointer[char]) returns LLVMValueRef extern
 
 ; Get a global variable by name
-function LLVMGetNamedGlobal(module: LLVMModuleRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMGetNamedGlobal(mod: LLVMModuleRef, name: pointer[char]) returns LLVMValueRef extern
 
 ; Set initializer for global
 procedure LLVMSetInitializer(global_var: LLVMValueRef, constant_val: LLVMValueRef) extern
@@ -414,7 +414,7 @@ function LLVMCreateTargetMachine(target: LLVMTargetRef, triple: pointer[char], c
 procedure LLVMDisposeTargetMachine(machine: LLVMTargetMachineRef) extern
 
 ; Emit to file
-function LLVMTargetMachineEmitToFile(machine: LLVMTargetMachineRef, module: LLVMModuleRef, filename: pointer[char], codegen: int, error_message: pointer[pointer[char]]) returns int extern
+function LLVMTargetMachineEmitToFile(machine: LLVMTargetMachineRef, mod: LLVMModuleRef, filename: pointer[char], codegen: int, error_message: pointer[pointer[char]]) returns int extern
 
 ; ============================================================================
 ; Memory Functions
@@ -428,7 +428,7 @@ procedure LLVMDisposeMessage(message: pointer[char]) extern
 ; ============================================================================
 
 ; Verify module (0 = success)
-function LLVMVerifyModule(module: LLVMModuleRef, action: int, out_message: pointer[pointer[char]]) returns int extern
+function LLVMVerifyModule(mod: LLVMModuleRef, action: int, out_message: pointer[pointer[char]]) returns int extern
 
 ; Verify function (0 = success)
 function LLVMVerifyFunction(func: LLVMValueRef, action: int) returns int extern
@@ -439,13 +439,13 @@ function LLVMVerifyFunction(func: LLVMValueRef, action: int) returns int extern
 
 ; Create pass managers
 function LLVMCreatePassManager() returns LLVMPassManagerRef extern
-function LLVMCreateFunctionPassManagerForModule(module: LLVMModuleRef) returns LLVMPassManagerRef extern
+function LLVMCreateFunctionPassManagerForModule(mod: LLVMModuleRef) returns LLVMPassManagerRef extern
 
 ; Dispose pass manager
 procedure LLVMDisposePassManager(pm: LLVMPassManagerRef) extern
 
 ; Run passes
-function LLVMRunPassManager(pm: LLVMPassManagerRef, module: LLVMModuleRef) returns int extern
+function LLVMRunPassManager(pm: LLVMPassManagerRef, mod: LLVMModuleRef) returns int extern
 function LLVMInitializeFunctionPassManager(fpm: LLVMPassManagerRef) returns int extern
 function LLVMRunFunctionPassManager(fpm: LLVMPassManagerRef, func: LLVMValueRef) returns int extern
 function LLVMFinalizeFunctionPassManager(fpm: LLVMPassManagerRef) returns int extern

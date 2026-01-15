@@ -1541,6 +1541,14 @@ llvm::Expected<Structure> Modeler::handleClass(llvm::StringRef Name,
                                                 llvm::StringRef Path,
                                                 const ClassSyntax &Syntax,
                                                 bool Private) {
+    if (Name == "Emitter" || Name == "Page") {
+        llvm::errs() << "DEBUG handleClass " << Name << ": body=" << (Syntax.body ? "yes" : "no")
+                     << " parts=" << (Syntax.structure.parts ? Syntax.structure.parts->size() : 0)
+                     << " file=" << File << "\n";
+        if (Syntax.body && Syntax.body->members) {
+            llvm::errs() << "  body->members.size=" << Syntax.body->members->size() << "\n";
+        }
+    }
     std::vector<Property> Props;
     std::map<std::string, std::shared_ptr<Nameable>> Symbols;
 
@@ -1582,6 +1590,10 @@ llvm::Expected<Structure> Modeler::handleClass(llvm::StringRef Name,
         Deinitializer = std::move(Body->Deinitializer);
         Members = std::move(Body->Members);
         Symbols = std::move(Body->Symbols);
+
+        if (Name == "Page") {
+            llvm::errs() << "DEBUG handleClass Page after body: Members.size=" << Members.size() << "\n";
+        }
     }
 
     return Structure{
@@ -1685,6 +1697,11 @@ llvm::Expected<Namespace> Modeler::handleNamespace(llvm::StringRef Name,
                             if (Func) {
                                 Members.push_back(std::move(*Func));
                             }
+                        } else if constexpr (std::is_same_v<ET, ProcedureSyntax>) {
+                            auto Func = buildFunction(E.Start, E.End, E.target, true, false);
+                            if (Func) {
+                                Members.push_back(std::move(*Func));
+                            }
                         } else if constexpr (std::is_same_v<ET, OperatorSyntax>) {
                             auto Op = handleOperator(E, true);
                             if (Op) {
@@ -1706,6 +1723,11 @@ llvm::Expected<Namespace> Modeler::handleNamespace(llvm::StringRef Name,
                     }
                 } else if constexpr (std::is_same_v<ST, FunctionSyntax>) {
                     auto Func = buildFunction(S.Start, S.End, S.target, false, true);
+                    if (Func) {
+                        Members.push_back(std::move(*Func));
+                    }
+                } else if constexpr (std::is_same_v<ST, ProcedureSyntax>) {
+                    auto Func = buildFunction(S.Start, S.End, S.target, false, false);
                     if (Func) {
                         Members.push_back(std::move(*Func));
                     }
@@ -1828,6 +1850,10 @@ llvm::Expected<Module> Modeler::buildReferencedModule(llvm::StringRef Path,
     }
     FilePath += ".scaly";
 
+    if (Name == "Emitter") {
+        llvm::errs() << "DEBUG buildReferencedModule: loading " << FilePath << "\n";
+    }
+
     // Read the file
     auto BufOrErr = llvm::MemoryBuffer::getFile(FilePath);
     if (!BufOrErr) {
@@ -1843,6 +1869,29 @@ llvm::Expected<Module> Modeler::buildReferencedModule(llvm::StringRef Path,
         return llvm::make_error<llvm::StringError>(
             FilePath.str().str() + ": " + llvm::toString(FileResult.takeError()),
             llvm::inconvertibleErrorCode());
+    }
+
+    if (Name == "Emitter" || Name == "Page") {
+        llvm::errs() << "DEBUG buildReferencedModule: parsed " << FilePath
+                     << ", decls=" << (FileResult->declarations ? FileResult->declarations->size() : 0) << "\n";
+        // Check each declaration for the class
+        if (FileResult->declarations) {
+            for (const auto &D : *FileResult->declarations) {
+                if (auto *DefSyn = std::get_if<DefinitionSyntax>(&D.symbol.Value)) {
+                    llvm::errs() << "  Declaration: " << DefSyn->name << "\n";
+                    if (DefSyn->name == Name) {
+                        if (auto *ClassPtr = std::get_if<ClassSyntax>(&DefSyn->concept_.Value)) {
+                            llvm::errs() << "DEBUG buildReferencedModule: found " << Name << " class, body="
+                                         << (ClassPtr->body ? "yes" : "no");
+                            if (ClassPtr->body && ClassPtr->body->members) {
+                                llvm::errs() << " members=" << ClassPtr->body->members->size();
+                            }
+                            llvm::errs() << "\n";
+                        }
+                    }
+                }
+            }
+        }
     }
 
     // Build the module
@@ -1901,6 +1950,13 @@ llvm::Expected<Module> Modeler::buildModule(llvm::StringRef Path,
                             } else {
                                 Err = Func.takeError();
                             }
+                        } else if constexpr (std::is_same_v<ET, ProcedureSyntax>) {
+                            auto Func = buildFunction(E.Start, E.End, E.target, true, false);
+                            if (Func) {
+                                Members.push_back(std::move(*Func));
+                            } else {
+                                Err = Func.takeError();
+                            }
                         } else if constexpr (std::is_same_v<ET, OperatorSyntax>) {
                             auto Op = handleOperator(E, true);
                             if (Op) {
@@ -1926,6 +1982,13 @@ llvm::Expected<Module> Modeler::buildModule(llvm::StringRef Path,
                     }
                 } else if constexpr (std::is_same_v<ST, FunctionSyntax>) {
                     auto Func = buildFunction(S.Start, S.End, S.target, false, true);
+                    if (Func) {
+                        Members.push_back(std::move(*Func));
+                    } else {
+                        Err = Func.takeError();
+                    }
+                } else if constexpr (std::is_same_v<ST, ProcedureSyntax>) {
+                    auto Func = buildFunction(S.Start, S.End, S.target, false, false);
                     if (Func) {
                         Members.push_back(std::move(*Func));
                     } else {

@@ -383,6 +383,7 @@ struct PlannedCall {
     bool RequiresPageParam = false;  // True if init# - initializer needs page parameter
     std::shared_ptr<std::vector<PlannedOperand>> Args;  // Arguments (shared_ptr to break cycle)
     PlannedType ResultType;     // Return type
+    std::shared_ptr<PlannedType> ThrowsType;  // Exception type (if CanThrow is true)
     Lifetime Life;              // For constructors: allocation lifetime ($, #, ^name, or none=stack)
 };
 

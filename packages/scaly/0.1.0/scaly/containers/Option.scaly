@@ -32,6 +32,11 @@ define Option[T] union
                 true
     }
 
+    ; Get the value, assuming Option is Some
+    ; Caller should check is_some() first or use unwrap_or()
+    ; WARNING: Behavior undefined if called on None!
+    function unwrap(this: Option[T]) returns T intrinsic
+
     ; Get the value, returning default if None
     function unwrap_or(this: Option[T], default: T) returns T
     {

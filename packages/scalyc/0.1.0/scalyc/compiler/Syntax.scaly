@@ -854,6 +854,7 @@ define MemberSyntax
 define ExportSyntax union (
     Definition: DefinitionSyntax
     Function: FunctionSyntax
+    Procedure: ProcedureSyntax
     Operator: OperatorSyntax
     Trait: TraitSyntax
     Module: ModuleSyntax
@@ -870,6 +871,7 @@ define SymbolSyntax union (
     Private: PrivateSyntax
     Definition: DefinitionSyntax
     Function: FunctionSyntax
+    Procedure: ProcedureSyntax
     Operator: OperatorSyntax
     Trait: TraitSyntax
     Macro: MacroSyntax
