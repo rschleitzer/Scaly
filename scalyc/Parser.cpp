@@ -12,9 +12,36 @@ llvm::Error different() {
         "different syntax", llvm::inconvertibleErrorCode());
 }
 
-llvm::Error invalid(size_t Start, size_t End, llvm::StringRef Message) {
+std::pair<size_t, size_t> calculateLineCol(llvm::StringRef Source, size_t Offset) {
+    size_t Line = 1, Col = 1;
+    for (size_t I = 0; I < Offset && I < Source.size(); ++I) {
+        if (Source[I] == '\n') { ++Line; Col = 1; }
+        else ++Col;
+    }
+    return {Line, Col};
+}
+
+std::string buildHintLine(llvm::StringRef Source, size_t Start, size_t End) {
+    if (Source.empty() || Start >= Source.size()) return "";
+    size_t LineStart = Start;
+    while (LineStart > 0 && Source[LineStart - 1] != '\n') --LineStart;
+    size_t LineEnd = Start;
+    while (LineEnd < Source.size() && Source[LineEnd] != '\n') ++LineEnd;
+    std::string Line = "    " + Source.slice(LineStart, LineEnd).str() + "\n    ";
+    for (size_t I = LineStart; I < LineEnd; ++I) {
+        if (I >= Start && I < End) Line += '^';
+        else if (Source[I] == '\t') Line += '\t';
+        else Line += ' ';
+    }
+    return Line;
+}
+
+llvm::Error invalid(const Lexer& Lex, size_t Start, size_t End, llvm::StringRef Message) {
+    auto [Line, Col] = calculateLineCol(Lex.source(), Start);
+    std::string Msg = std::to_string(Line) + ":" + std::to_string(Col) + ": " + Message.str();
+    Msg += "\n" + buildHintLine(Lex.source(), Start, End);
     return llvm::make_error<llvm::StringError>(
-        Message, llvm::inconvertibleErrorCode());
+        Msg, llvm::inconvertibleErrorCode());
 }
 } // anonymous namespace
 
@@ -101,6 +128,11 @@ llvm::Expected<ProgramSyntax> Parser::parseProgram() {
         auto ParseResult = parseStatementList();
         if (ParseResult)
             Statements = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     size_t End = Lex.position();
@@ -117,6 +149,11 @@ llvm::Expected<FileSyntax> Parser::parseFile() {
         auto ParseResult = parsePackageList();
         if (ParseResult)
             Packages = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     std::vector<UseSyntax>* Uses = nullptr;
@@ -124,6 +161,11 @@ llvm::Expected<FileSyntax> Parser::parseFile() {
         auto ParseResult = parseUseList();
         if (ParseResult)
             Uses = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     std::vector<DeclarationSyntax>* Declarations = nullptr;
@@ -131,6 +173,11 @@ llvm::Expected<FileSyntax> Parser::parseFile() {
         auto ParseResult = parseDeclarationList();
         if (ParseResult)
             Declarations = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     size_t End = Lex.position();
@@ -144,11 +191,16 @@ llvm::Expected<std::vector<DeclarationSyntax>*> Parser::parseDeclarationList() {
     while (true) {
         auto NodeOrErr = parseDeclaration();
         if (!NodeOrErr) {
+            // Check if this is 'different' (no more items) vs real error
+            std::string ErrMsg = llvm::toString(NodeOrErr.takeError());
+            if (ErrMsg != "different syntax") {
+                delete List;
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+            }
             if (List->empty()) {
                 delete List;
-                return NodeOrErr.takeError();
+                return different();
             }
-            llvm::consumeError(NodeOrErr.takeError());
             return List;
         }
         List->push_back(std::move(*NodeOrErr));
@@ -172,48 +224,65 @@ llvm::Expected<DeclarationSyntax> Parser::parseDeclaration() {
 }
 
 llvm::Expected<SymbolSyntax> Parser::parseSymbol() {
+    std::string FirstRealError;
     {
         auto Result = parsePrivate();
         if (Result)
             return SymbolSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseDefinition();
         if (Result)
             return SymbolSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseFunction();
         if (Result)
             return SymbolSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseOperator();
         if (Result)
             return SymbolSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseTrait();
         if (Result)
             return SymbolSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseMacro();
         if (Result)
             return SymbolSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseModule();
         if (Result)
             return SymbolSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
+    if (!FirstRealError.empty())
+        return llvm::make_error<llvm::StringError>(FirstRealError, llvm::inconvertibleErrorCode());
     return different();
 
 }
@@ -225,8 +294,12 @@ llvm::Expected<PrivateSyntax> Parser::parsePrivate() {
         return different();
 
     auto Export_OrErr = parseExport();
-    if (!Export_OrErr)
-        return invalid(Start, Lex.position(), "expected Export");
+    if (!Export_OrErr) {
+        std::string ErrMsg = llvm::toString(Export_OrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Export");
+    }
     auto Export_ = std::move(*Export_OrErr);
 
     size_t End = Lex.position();
@@ -236,36 +309,49 @@ llvm::Expected<PrivateSyntax> Parser::parsePrivate() {
 }
 
 llvm::Expected<ExportSyntax> Parser::parseExport() {
+    std::string FirstRealError;
     {
         auto Result = parseDefinition();
         if (Result)
             return ExportSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseFunction();
         if (Result)
             return ExportSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseOperator();
         if (Result)
             return ExportSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseTrait();
         if (Result)
             return ExportSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseModule();
         if (Result)
             return ExportSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
+    if (!FirstRealError.empty())
+        return llvm::make_error<llvm::StringError>(FirstRealError, llvm::inconvertibleErrorCode());
     return different();
 
 }
@@ -275,11 +361,16 @@ llvm::Expected<std::vector<MemberSyntax>*> Parser::parseMemberList() {
     while (true) {
         auto NodeOrErr = parseMember();
         if (!NodeOrErr) {
+            // Check if this is 'different' (no more items) vs real error
+            std::string ErrMsg = llvm::toString(NodeOrErr.takeError());
+            if (ErrMsg != "different syntax") {
+                delete List;
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+            }
             if (List->empty()) {
                 delete List;
-                return NodeOrErr.takeError();
+                return different();
             }
-            llvm::consumeError(NodeOrErr.takeError());
             return List;
         }
         List->push_back(std::move(*NodeOrErr));
@@ -303,54 +394,73 @@ llvm::Expected<MemberSyntax> Parser::parseMember() {
 }
 
 llvm::Expected<ConstituentSyntax> Parser::parseConstituent() {
+    std::string FirstRealError;
     {
         auto Result = parseDefinition();
         if (Result)
             return ConstituentSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseFunction();
         if (Result)
             return ConstituentSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseProcedure();
         if (Result)
             return ConstituentSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseOperator();
         if (Result)
             return ConstituentSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseImplement();
         if (Result)
             return ConstituentSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseTrait();
         if (Result)
             return ConstituentSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseMacro();
         if (Result)
             return ConstituentSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseModule();
         if (Result)
             return ConstituentSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
+    if (!FirstRealError.empty())
+        return llvm::make_error<llvm::StringError>(FirstRealError, llvm::inconvertibleErrorCode());
     return different();
 
 }
@@ -362,8 +472,12 @@ llvm::Expected<DefinitionSyntax> Parser::parseDefinition() {
         return different();
 
     llvm::StringRef Name = Lex.peekIdentifier();
-    if (Name.empty() || Keywords.count(Name))
-        return invalid(Start, Lex.position(), "expected identifier");
+    if (Name.empty())
+        return invalid(Lex, Start, Lex.position(), "expected identifier");
+    if (Keywords.count(Name)) {
+        std::string Msg = "'" + Name.str() + "' is a reserved keyword";
+        return invalid(Lex, Start, Lex.position(), Msg);
+    }
     Lex.parseIdentifier();  // Consume the identifier
 
     GenericParametersSyntax* Parameters = nullptr;
@@ -382,11 +496,20 @@ llvm::Expected<DefinitionSyntax> Parser::parseDefinition() {
         auto ParseResult = parseAttributeList();
         if (ParseResult)
             Attributes = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     auto Concept_OrErr = parseConcept();
-    if (!Concept_OrErr)
-        return invalid(Start, Lex.position(), "expected Concept");
+    if (!Concept_OrErr) {
+        std::string ErrMsg = llvm::toString(Concept_OrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Concept");
+    }
     auto Concept_ = std::move(*Concept_OrErr);
 
     size_t End = Lex.position();
@@ -402,12 +525,16 @@ llvm::Expected<GenericParametersSyntax> Parser::parseGenericParameters() {
         return different();
 
     auto ParametersOrErr = parseGenericParameterList();
-    if (!ParametersOrErr)
-        return invalid(Start, Lex.position(), "expected GenericParameter");
+    if (!ParametersOrErr) {
+        std::string ErrMsg = llvm::toString(ParametersOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected GenericParameter");
+    }
     auto *Parameters = *ParametersOrErr;
 
     if (!Lex.parsePunctuation(']'))
-        return invalid(Start, Lex.position(), "expected ']'");
+        return invalid(Lex, Start, Lex.position(), "expected ']'");
 
     size_t End = Lex.position();
 
@@ -420,11 +547,16 @@ llvm::Expected<std::vector<GenericParameterSyntax>*> Parser::parseGenericParamet
     while (true) {
         auto NodeOrErr = parseGenericParameter();
         if (!NodeOrErr) {
+            // Check if this is 'different' (no more items) vs real error
+            std::string ErrMsg = llvm::toString(NodeOrErr.takeError());
+            if (ErrMsg != "different syntax") {
+                delete List;
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+            }
             if (List->empty()) {
                 delete List;
-                return NodeOrErr.takeError();
+                return different();
             }
-            llvm::consumeError(NodeOrErr.takeError());
             return List;
         }
         List->push_back(std::move(*NodeOrErr));
@@ -444,6 +576,11 @@ llvm::Expected<GenericParameterSyntax> Parser::parseGenericParameter() {
         auto ParseResult = parseAttributeList();
         if (ParseResult)
             Attributes = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     Lex.parsePunctuation(',');
@@ -455,42 +592,57 @@ llvm::Expected<GenericParameterSyntax> Parser::parseGenericParameter() {
 }
 
 llvm::Expected<ConceptSyntax> Parser::parseConcept() {
+    std::string FirstRealError;
     {
         auto Result = parseClass();
         if (Result)
             return ConceptSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseNamespace();
         if (Result)
             return ConceptSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseUnion();
         if (Result)
             return ConceptSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseConstant();
         if (Result)
             return ConceptSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseDelegate();
         if (Result)
             return ConceptSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseIntrinsic();
         if (Result)
             return ConceptSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
+    if (!FirstRealError.empty())
+        return llvm::make_error<llvm::StringError>(FirstRealError, llvm::inconvertibleErrorCode());
     return different();
 
 }
@@ -533,6 +685,11 @@ llvm::Expected<BodySyntax> Parser::parseBody() {
         auto ParseResult = parseUseList();
         if (ParseResult)
             Uses = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     std::vector<InitSyntax>* Inits = nullptr;
@@ -540,6 +697,11 @@ llvm::Expected<BodySyntax> Parser::parseBody() {
         auto ParseResult = parseInitList();
         if (ParseResult)
             Inits = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     DeInitSyntax* DeInit = nullptr;
@@ -556,10 +718,15 @@ llvm::Expected<BodySyntax> Parser::parseBody() {
         auto ParseResult = parseMemberList();
         if (ParseResult)
             Members = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     if (!Lex.parsePunctuation('}'))
-        return invalid(Start, Lex.position(), "expected '}'");
+        return invalid(Lex, Start, Lex.position(), "expected '}'");
 
     Lex.parseColon();
 
@@ -580,6 +747,11 @@ llvm::Expected<NamespaceSyntax> Parser::parseNamespace() {
         auto ParseResult = parseUseList();
         if (ParseResult)
             Uses = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     std::vector<DeclarationSyntax>* Declarations = nullptr;
@@ -587,10 +759,15 @@ llvm::Expected<NamespaceSyntax> Parser::parseNamespace() {
         auto ParseResult = parseDeclarationList();
         if (ParseResult)
             Declarations = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     if (!Lex.parsePunctuation('}'))
-        return invalid(Start, Lex.position(), "expected '}'");
+        return invalid(Lex, Start, Lex.position(), "expected '}'");
 
     Lex.parseColon();
 
@@ -609,15 +786,19 @@ llvm::Expected<UnionSyntax> Parser::parseUnion() {
     Lex.parseColon();
 
     if (!Lex.parsePunctuation('('))
-        return invalid(Start, Lex.position(), "expected '('");
+        return invalid(Lex, Start, Lex.position(), "expected '('");
 
     auto VariantsOrErr = parseVariantList();
-    if (!VariantsOrErr)
-        return invalid(Start, Lex.position(), "expected Variant");
+    if (!VariantsOrErr) {
+        std::string ErrMsg = llvm::toString(VariantsOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Variant");
+    }
     auto *Variants = *VariantsOrErr;
 
     if (!Lex.parsePunctuation(')'))
-        return invalid(Start, Lex.position(), "expected ')'");
+        return invalid(Lex, Start, Lex.position(), "expected ')'");
 
     Lex.parseColon();
 
@@ -643,11 +824,16 @@ llvm::Expected<std::vector<VariantSyntax>*> Parser::parseVariantList() {
     while (true) {
         auto NodeOrErr = parseVariant();
         if (!NodeOrErr) {
+            // Check if this is 'different' (no more items) vs real error
+            std::string ErrMsg = llvm::toString(NodeOrErr.takeError());
+            if (ErrMsg != "different syntax") {
+                delete List;
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+            }
             if (List->empty()) {
                 delete List;
-                return NodeOrErr.takeError();
+                return different();
             }
-            llvm::consumeError(NodeOrErr.takeError());
             return List;
         }
         List->push_back(std::move(*NodeOrErr));
@@ -667,6 +853,11 @@ llvm::Expected<VariantSyntax> Parser::parseVariant() {
         auto ParseResult = parseAttributeList();
         if (ParseResult)
             Attributes = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     TypeAnnotationSyntax* Annotation = nullptr;
@@ -701,6 +892,11 @@ llvm::Expected<ConstantSyntax> Parser::parseConstant() {
         auto ParseResult = parseOperandList();
         if (ParseResult)
             Operation = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     Lex.parseColon();
@@ -731,6 +927,11 @@ llvm::Expected<DelegateSyntax> Parser::parseDelegate() {
         auto ParseResult = parseAttributeList();
         if (ParseResult)
             Attributes = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     ReturnsSyntax* Result = nullptr;
@@ -768,10 +969,15 @@ llvm::Expected<GenericArgumentsSyntax> Parser::parseGenericArguments() {
         auto ParseResult = parseGenericArgumentList();
         if (ParseResult)
             Generics = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     if (!Lex.parsePunctuation(']'))
-        return invalid(Start, Lex.position(), "expected ']'");
+        return invalid(Lex, Start, Lex.position(), "expected ']'");
 
     size_t End = Lex.position();
 
@@ -784,11 +990,16 @@ llvm::Expected<std::vector<GenericArgumentSyntax>*> Parser::parseGenericArgument
     while (true) {
         auto NodeOrErr = parseGenericArgument();
         if (!NodeOrErr) {
+            // Check if this is 'different' (no more items) vs real error
+            std::string ErrMsg = llvm::toString(NodeOrErr.takeError());
+            if (ErrMsg != "different syntax") {
+                delete List;
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+            }
             if (List->empty()) {
                 delete List;
-                return NodeOrErr.takeError();
+                return different();
             }
-            llvm::consumeError(NodeOrErr.takeError());
             return List;
         }
         List->push_back(std::move(*NodeOrErr));
@@ -824,18 +1035,25 @@ llvm::Expected<OptionalSyntax> Parser::parseOptional() {
 }
 
 llvm::Expected<ParameterSetSyntax> Parser::parseParameterSet() {
+    std::string FirstRealError;
     {
         auto Result = parseParameters();
         if (Result)
             return ParameterSetSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseType();
         if (Result)
             return ParameterSetSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
+    if (!FirstRealError.empty())
+        return llvm::make_error<llvm::StringError>(FirstRealError, llvm::inconvertibleErrorCode());
     return different();
 
 }
@@ -851,10 +1069,15 @@ llvm::Expected<ParametersSyntax> Parser::parseParameters() {
         auto ParseResult = parseItemList();
         if (ParseResult)
             Items = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     if (!Lex.parsePunctuation(')'))
-        return invalid(Start, Lex.position(), "expected ')'");
+        return invalid(Lex, Start, Lex.position(), "expected ')'");
 
     size_t End = Lex.position();
 
@@ -867,11 +1090,16 @@ llvm::Expected<std::vector<ItemSyntax>*> Parser::parseItemList() {
     while (true) {
         auto NodeOrErr = parseItem();
         if (!NodeOrErr) {
+            // Check if this is 'different' (no more items) vs real error
+            std::string ErrMsg = llvm::toString(NodeOrErr.takeError());
+            if (ErrMsg != "different syntax") {
+                delete List;
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+            }
             if (List->empty()) {
                 delete List;
-                return NodeOrErr.takeError();
+                return different();
             }
-            llvm::consumeError(NodeOrErr.takeError());
             return List;
         }
         List->push_back(std::move(*NodeOrErr));
@@ -904,6 +1132,11 @@ llvm::Expected<ItemSyntax> Parser::parseItem() {
         auto ParseResult = parseAttributeList();
         if (ParseResult)
             Attributes = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     Lex.parseColon();
@@ -921,8 +1154,12 @@ llvm::Expected<ReturnsSyntax> Parser::parseReturns() {
         return different();
 
     auto TypeOrErr = parseType();
-    if (!TypeOrErr)
-        return invalid(Start, Lex.position(), "expected Type");
+    if (!TypeOrErr) {
+        std::string ErrMsg = llvm::toString(TypeOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Type");
+    }
     auto Type = std::move(*TypeOrErr);
 
     std::vector<AttributeSyntax>* Attributes = nullptr;
@@ -930,6 +1167,11 @@ llvm::Expected<ReturnsSyntax> Parser::parseReturns() {
         auto ParseResult = parseAttributeList();
         if (ParseResult)
             Attributes = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     size_t End = Lex.position();
@@ -945,8 +1187,12 @@ llvm::Expected<ThrowsSyntax> Parser::parseThrows() {
         return different();
 
     auto TypeOrErr = parseType();
-    if (!TypeOrErr)
-        return invalid(Start, Lex.position(), "expected Type");
+    if (!TypeOrErr) {
+        std::string ErrMsg = llvm::toString(TypeOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Type");
+    }
     auto Type = std::move(*TypeOrErr);
 
     std::vector<AttributeSyntax>* Attributes = nullptr;
@@ -954,6 +1200,11 @@ llvm::Expected<ThrowsSyntax> Parser::parseThrows() {
         auto ParseResult = parseAttributeList();
         if (ParseResult)
             Attributes = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     size_t End = Lex.position();
@@ -967,11 +1218,16 @@ llvm::Expected<std::vector<UseSyntax>*> Parser::parseUseList() {
     while (true) {
         auto NodeOrErr = parseUse();
         if (!NodeOrErr) {
+            // Check if this is 'different' (no more items) vs real error
+            std::string ErrMsg = llvm::toString(NodeOrErr.takeError());
+            if (ErrMsg != "different syntax") {
+                delete List;
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+            }
             if (List->empty()) {
                 delete List;
-                return NodeOrErr.takeError();
+                return different();
             }
-            llvm::consumeError(NodeOrErr.takeError());
             return List;
         }
         List->push_back(std::move(*NodeOrErr));
@@ -985,8 +1241,12 @@ llvm::Expected<UseSyntax> Parser::parseUse() {
         return different();
 
     auto NameOrErr = parseName();
-    if (!NameOrErr)
-        return invalid(Start, Lex.position(), "expected Name");
+    if (!NameOrErr) {
+        std::string ErrMsg = llvm::toString(NameOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Name");
+    }
     auto Name = std::move(*NameOrErr);
 
     Lex.parseColon();
@@ -1004,8 +1264,12 @@ llvm::Expected<ImplementSyntax> Parser::parseImplement() {
         return different();
 
     auto TypeOrErr = parseType();
-    if (!TypeOrErr)
-        return invalid(Start, Lex.position(), "expected Type");
+    if (!TypeOrErr) {
+        std::string ErrMsg = llvm::toString(TypeOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Type");
+    }
     auto Type = std::move(*TypeOrErr);
 
     std::vector<AttributeSyntax>* Attributes = nullptr;
@@ -1013,18 +1277,28 @@ llvm::Expected<ImplementSyntax> Parser::parseImplement() {
         auto ParseResult = parseAttributeList();
         if (ParseResult)
             Attributes = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     Lex.parseColon();
 
     if (!Lex.parsePunctuation('{'))
-        return invalid(Start, Lex.position(), "expected '{'");
+        return invalid(Lex, Start, Lex.position(), "expected '{'");
 
     std::vector<UseSyntax>* Uses = nullptr;
     {
         auto ParseResult = parseUseList();
         if (ParseResult)
             Uses = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     std::vector<MethodSyntax>* Methods = nullptr;
@@ -1032,10 +1306,15 @@ llvm::Expected<ImplementSyntax> Parser::parseImplement() {
         auto ParseResult = parseMethodList();
         if (ParseResult)
             Methods = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     if (!Lex.parsePunctuation('}'))
-        return invalid(Start, Lex.position(), "expected '}'");
+        return invalid(Lex, Start, Lex.position(), "expected '}'");
 
     Lex.parseColon();
 
@@ -1052,8 +1331,12 @@ llvm::Expected<TraitSyntax> Parser::parseTrait() {
         return different();
 
     auto NameOrErr = parseName();
-    if (!NameOrErr)
-        return invalid(Start, Lex.position(), "expected Name");
+    if (!NameOrErr) {
+        std::string ErrMsg = llvm::toString(NameOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Name");
+    }
     auto Name = std::move(*NameOrErr);
 
     ExtendsSyntax* Extension = nullptr;
@@ -1070,16 +1353,26 @@ llvm::Expected<TraitSyntax> Parser::parseTrait() {
         auto ParseResult = parseAttributeList();
         if (ParseResult)
             Attributes = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     if (!Lex.parsePunctuation('{'))
-        return invalid(Start, Lex.position(), "expected '{'");
+        return invalid(Lex, Start, Lex.position(), "expected '{'");
 
     std::vector<UseSyntax>* Uses = nullptr;
     {
         auto ParseResult = parseUseList();
         if (ParseResult)
             Uses = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     std::vector<MethodSyntax>* Functions = nullptr;
@@ -1087,10 +1380,15 @@ llvm::Expected<TraitSyntax> Parser::parseTrait() {
         auto ParseResult = parseMethodList();
         if (ParseResult)
             Functions = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     if (!Lex.parsePunctuation('}'))
-        return invalid(Start, Lex.position(), "expected '}'");
+        return invalid(Lex, Start, Lex.position(), "expected '}'");
 
     Lex.parseColon();
 
@@ -1105,11 +1403,16 @@ llvm::Expected<std::vector<MethodSyntax>*> Parser::parseMethodList() {
     while (true) {
         auto NodeOrErr = parseMethod();
         if (!NodeOrErr) {
+            // Check if this is 'different' (no more items) vs real error
+            std::string ErrMsg = llvm::toString(NodeOrErr.takeError());
+            if (ErrMsg != "different syntax") {
+                delete List;
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+            }
             if (List->empty()) {
                 delete List;
-                return NodeOrErr.takeError();
+                return different();
             }
-            llvm::consumeError(NodeOrErr.takeError());
             return List;
         }
         List->push_back(std::move(*NodeOrErr));
@@ -1117,24 +1420,33 @@ llvm::Expected<std::vector<MethodSyntax>*> Parser::parseMethodList() {
 }
 
 llvm::Expected<MethodSyntax> Parser::parseMethod() {
+    std::string FirstRealError;
     {
         auto Result = parseFunction();
         if (Result)
             return MethodSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseProcedure();
         if (Result)
             return MethodSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseOperator();
         if (Result)
             return MethodSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
+    if (!FirstRealError.empty())
+        return llvm::make_error<llvm::StringError>(FirstRealError, llvm::inconvertibleErrorCode());
     return different();
 
 }
@@ -1144,11 +1456,16 @@ llvm::Expected<std::vector<InitSyntax>*> Parser::parseInitList() {
     while (true) {
         auto NodeOrErr = parseInit();
         if (!NodeOrErr) {
+            // Check if this is 'different' (no more items) vs real error
+            std::string ErrMsg = llvm::toString(NodeOrErr.takeError());
+            if (ErrMsg != "different syntax") {
+                delete List;
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+            }
             if (List->empty()) {
                 delete List;
-                return NodeOrErr.takeError();
+                return different();
             }
-            llvm::consumeError(NodeOrErr.takeError());
             return List;
         }
         List->push_back(std::move(*NodeOrErr));
@@ -1182,8 +1499,12 @@ llvm::Expected<InitSyntax> Parser::parseInit() {
     Lex.parseColon();
 
     auto ActionOrErr = parseAction();
-    if (!ActionOrErr)
-        return invalid(Start, Lex.position(), "expected Action");
+    if (!ActionOrErr) {
+        std::string ErrMsg = llvm::toString(ActionOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Action");
+    }
     auto Action = std::move(*ActionOrErr);
 
     Lex.parseColon();
@@ -1203,8 +1524,12 @@ llvm::Expected<DeInitSyntax> Parser::parseDeInit() {
     Lex.parseColon();
 
     auto ActionOrErr = parseAction();
-    if (!ActionOrErr)
-        return invalid(Start, Lex.position(), "expected Action");
+    if (!ActionOrErr) {
+        std::string ErrMsg = llvm::toString(ActionOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Action");
+    }
     auto Action = std::move(*ActionOrErr);
 
     Lex.parseColon();
@@ -1222,8 +1547,12 @@ llvm::Expected<FunctionSyntax> Parser::parseFunction() {
         return different();
 
     auto TargetOrErr = parseTarget();
-    if (!TargetOrErr)
-        return invalid(Start, Lex.position(), "expected Target");
+    if (!TargetOrErr) {
+        std::string ErrMsg = llvm::toString(TargetOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Target");
+    }
     auto Target = std::move(*TargetOrErr);
 
     size_t End = Lex.position();
@@ -1239,8 +1568,12 @@ llvm::Expected<ProcedureSyntax> Parser::parseProcedure() {
         return different();
 
     auto TargetOrErr = parseTarget();
-    if (!TargetOrErr)
-        return invalid(Start, Lex.position(), "expected Target");
+    if (!TargetOrErr) {
+        std::string ErrMsg = llvm::toString(TargetOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Target");
+    }
     auto Target = std::move(*TargetOrErr);
 
     size_t End = Lex.position();
@@ -1256,8 +1589,12 @@ llvm::Expected<OperatorSyntax> Parser::parseOperator() {
         return different();
 
     auto TargetOrErr = parseTarget();
-    if (!TargetOrErr)
-        return invalid(Start, Lex.position(), "expected Target");
+    if (!TargetOrErr) {
+        std::string ErrMsg = llvm::toString(TargetOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Target");
+    }
     auto Target = std::move(*TargetOrErr);
 
     size_t End = Lex.position();
@@ -1267,18 +1604,25 @@ llvm::Expected<OperatorSyntax> Parser::parseOperator() {
 }
 
 llvm::Expected<TargetSyntax> Parser::parseTarget() {
+    std::string FirstRealError;
     {
         auto Result = parseNamed();
         if (Result)
             return TargetSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseRoutine();
         if (Result)
             return TargetSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
+    if (!FirstRealError.empty())
+        return llvm::make_error<llvm::StringError>(FirstRealError, llvm::inconvertibleErrorCode());
     return different();
 
 }
@@ -1292,8 +1636,12 @@ llvm::Expected<NamedSyntax> Parser::parseNamed() {
     Lex.parseIdentifier();  // Consume the identifier
 
     auto RoutineOrErr = parseRoutine();
-    if (!RoutineOrErr)
-        return invalid(Start, Lex.position(), "expected Routine");
+    if (!RoutineOrErr) {
+        std::string ErrMsg = llvm::toString(RoutineOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Routine");
+    }
     auto Routine = std::move(*RoutineOrErr);
 
     size_t End = Lex.position();
@@ -1337,6 +1685,11 @@ llvm::Expected<RoutineSyntax> Parser::parseRoutine() {
         auto ParseResult = parseAttributeList();
         if (ParseResult)
             Attributes = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     ReturnsSyntax* Returns_ = nullptr;
@@ -1362,8 +1715,12 @@ llvm::Expected<RoutineSyntax> Parser::parseRoutine() {
     Lex.parseColon();
 
     auto ImplementationOrErr = parseImplementation();
-    if (!ImplementationOrErr)
-        return invalid(Start, Lex.position(), "expected Implementation");
+    if (!ImplementationOrErr) {
+        std::string ErrMsg = llvm::toString(ImplementationOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Implementation");
+    }
     auto Implementation = std::move(*ImplementationOrErr);
 
     size_t End = Lex.position();
@@ -1373,30 +1730,41 @@ llvm::Expected<RoutineSyntax> Parser::parseRoutine() {
 }
 
 llvm::Expected<ImplementationSyntax> Parser::parseImplementation() {
+    std::string FirstRealError;
     {
         auto Result = parseAction();
         if (Result)
             return ImplementationSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseExtern();
         if (Result)
             return ImplementationSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseInstruction();
         if (Result)
             return ImplementationSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseIntrinsic();
         if (Result)
             return ImplementationSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
+    if (!FirstRealError.empty())
+        return llvm::make_error<llvm::StringError>(FirstRealError, llvm::inconvertibleErrorCode());
     return different();
 
 }
@@ -1452,6 +1820,11 @@ llvm::Expected<ExtendsSyntax> Parser::parseExtends() {
         auto ParseResult = parseExtendList();
         if (ParseResult)
             Extensions = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     size_t End = Lex.position();
@@ -1465,11 +1838,16 @@ llvm::Expected<std::vector<ExtendSyntax>*> Parser::parseExtendList() {
     while (true) {
         auto NodeOrErr = parseExtend();
         if (!NodeOrErr) {
+            // Check if this is 'different' (no more items) vs real error
+            std::string ErrMsg = llvm::toString(NodeOrErr.takeError());
+            if (ErrMsg != "different syntax") {
+                delete List;
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+            }
             if (List->empty()) {
                 delete List;
-                return NodeOrErr.takeError();
+                return different();
             }
-            llvm::consumeError(NodeOrErr.takeError());
             return List;
         }
         List->push_back(std::move(*NodeOrErr));
@@ -1499,18 +1877,30 @@ llvm::Expected<MacroSyntax> Parser::parseMacro() {
         return different();
 
     llvm::StringRef Name = Lex.peekIdentifier();
-    if (Name.empty() || Keywords.count(Name))
-        return invalid(Start, Lex.position(), "expected identifier");
+    if (Name.empty())
+        return invalid(Lex, Start, Lex.position(), "expected identifier");
+    if (Keywords.count(Name)) {
+        std::string Msg = "'" + Name.str() + "' is a reserved keyword";
+        return invalid(Lex, Start, Lex.position(), Msg);
+    }
     Lex.parseIdentifier();  // Consume the identifier
 
     auto ModelOrErr = parseModel();
-    if (!ModelOrErr)
-        return invalid(Start, Lex.position(), "expected Model");
+    if (!ModelOrErr) {
+        std::string ErrMsg = llvm::toString(ModelOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Model");
+    }
     auto Model = std::move(*ModelOrErr);
 
     auto RuleOrErr = parseOperandList();
-    if (!RuleOrErr)
-        return invalid(Start, Lex.position(), "expected Operand");
+    if (!RuleOrErr) {
+        std::string ErrMsg = llvm::toString(RuleOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Operand");
+    }
     auto *Rule = *RuleOrErr;
 
     size_t End = Lex.position();
@@ -1524,11 +1914,16 @@ llvm::Expected<std::vector<AttributeSyntax>*> Parser::parseAttributeList() {
     while (true) {
         auto NodeOrErr = parseAttribute();
         if (!NodeOrErr) {
+            // Check if this is 'different' (no more items) vs real error
+            std::string ErrMsg = llvm::toString(NodeOrErr.takeError());
+            if (ErrMsg != "different syntax") {
+                delete List;
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+            }
             if (List->empty()) {
                 delete List;
-                return NodeOrErr.takeError();
+                return different();
             }
-            llvm::consumeError(NodeOrErr.takeError());
             return List;
         }
         List->push_back(std::move(*NodeOrErr));
@@ -1543,8 +1938,12 @@ llvm::Expected<AttributeSyntax> Parser::parseAttribute() {
         return different();
 
     auto ModelOrErr = parseModel();
-    if (!ModelOrErr)
-        return invalid(Start, Lex.position(), "expected Model");
+    if (!ModelOrErr) {
+        std::string ErrMsg = llvm::toString(ModelOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Model");
+    }
     auto Model = std::move(*ModelOrErr);
 
     Lex.parseColon();
@@ -1556,30 +1955,41 @@ llvm::Expected<AttributeSyntax> Parser::parseAttribute() {
 }
 
 llvm::Expected<ModelSyntax> Parser::parseModel() {
+    std::string FirstRealError;
     {
         auto Result = parseLiteral();
         if (Result)
             return ModelSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseName();
         if (Result)
             return ModelSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseObject();
         if (Result)
             return ModelSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseVector();
         if (Result)
             return ModelSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
+    if (!FirstRealError.empty())
+        return llvm::make_error<llvm::StringError>(FirstRealError, llvm::inconvertibleErrorCode());
     return different();
 
 }
@@ -1591,8 +2001,12 @@ llvm::Expected<ModuleSyntax> Parser::parseModule() {
         return different();
 
     llvm::StringRef Name = Lex.peekIdentifier();
-    if (Name.empty() || Keywords.count(Name))
-        return invalid(Start, Lex.position(), "expected identifier");
+    if (Name.empty())
+        return invalid(Lex, Start, Lex.position(), "expected identifier");
+    if (Keywords.count(Name)) {
+        std::string Msg = "'" + Name.str() + "' is a reserved keyword";
+        return invalid(Lex, Start, Lex.position(), Msg);
+    }
     Lex.parseIdentifier();  // Consume the identifier
 
     Lex.parseColon();
@@ -1608,11 +2022,16 @@ llvm::Expected<std::vector<PackageSyntax>*> Parser::parsePackageList() {
     while (true) {
         auto NodeOrErr = parsePackage();
         if (!NodeOrErr) {
+            // Check if this is 'different' (no more items) vs real error
+            std::string ErrMsg = llvm::toString(NodeOrErr.takeError());
+            if (ErrMsg != "different syntax") {
+                delete List;
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+            }
             if (List->empty()) {
                 delete List;
-                return NodeOrErr.takeError();
+                return different();
             }
-            llvm::consumeError(NodeOrErr.takeError());
             return List;
         }
         List->push_back(std::move(*NodeOrErr));
@@ -1626,8 +2045,12 @@ llvm::Expected<PackageSyntax> Parser::parsePackage() {
         return different();
 
     auto NameOrErr = parseName();
-    if (!NameOrErr)
-        return invalid(Start, Lex.position(), "expected Name");
+    if (!NameOrErr) {
+        std::string ErrMsg = llvm::toString(NameOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Name");
+    }
     auto Name = std::move(*NameOrErr);
 
     VersionSyntax* Version = nullptr;
@@ -1656,7 +2079,7 @@ llvm::Expected<VersionSyntax> Parser::parseVersion() {
     auto MajorMinor = std::move(*MajorMinorOrErr);
 
     if (!Lex.parsePunctuation('.'))
-        return invalid(Start, Lex.position(), "expected '.'");
+        return invalid(Lex, Start, Lex.position(), "expected '.'");
 
     auto PatchOrErr = parseLiteralToken();
     if (!PatchOrErr)
@@ -1676,12 +2099,16 @@ llvm::Expected<InitializerSyntax> Parser::parseInitializer() {
         return different();
 
     auto OperandsOrErr = parseOperandList();
-    if (!OperandsOrErr)
-        return invalid(Start, Lex.position(), "expected Operand");
+    if (!OperandsOrErr) {
+        std::string ErrMsg = llvm::toString(OperandsOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Operand");
+    }
     auto *Operands = *OperandsOrErr;
 
     if (!Lex.parsePunctuation(')'))
-        return invalid(Start, Lex.position(), "expected ')'");
+        return invalid(Lex, Start, Lex.position(), "expected ')'");
 
     size_t End = Lex.position();
 
@@ -1694,11 +2121,16 @@ llvm::Expected<std::vector<OperandSyntax>*> Parser::parseOperandList() {
     while (true) {
         auto NodeOrErr = parseOperand();
         if (!NodeOrErr) {
+            // Check if this is 'different' (no more items) vs real error
+            std::string ErrMsg = llvm::toString(NodeOrErr.takeError());
+            if (ErrMsg != "different syntax") {
+                delete List;
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+            }
             if (List->empty()) {
                 delete List;
-                return NodeOrErr.takeError();
+                return different();
             }
-            llvm::consumeError(NodeOrErr.takeError());
             return List;
         }
         List->push_back(std::move(*NodeOrErr));
@@ -1718,6 +2150,11 @@ llvm::Expected<OperandSyntax> Parser::parseOperand() {
         auto ParseResult = parseMemberAccessList();
         if (ParseResult)
             Members = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     size_t End = Lex.position();
@@ -1731,11 +2168,16 @@ llvm::Expected<std::vector<MemberAccessSyntax>*> Parser::parseMemberAccessList()
     while (true) {
         auto NodeOrErr = parseMemberAccess();
         if (!NodeOrErr) {
+            // Check if this is 'different' (no more items) vs real error
+            std::string ErrMsg = llvm::toString(NodeOrErr.takeError());
+            if (ErrMsg != "different syntax") {
+                delete List;
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+            }
             if (List->empty()) {
                 delete List;
-                return NodeOrErr.takeError();
+                return different();
             }
-            llvm::consumeError(NodeOrErr.takeError());
             return List;
         }
         List->push_back(std::move(*NodeOrErr));
@@ -1749,8 +2191,12 @@ llvm::Expected<MemberAccessSyntax> Parser::parseMemberAccess() {
         return different();
 
     auto NameOrErr = parseName();
-    if (!NameOrErr)
-        return invalid(Start, Lex.position(), "expected Name");
+    if (!NameOrErr) {
+        std::string ErrMsg = llvm::toString(NameOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Name");
+    }
     auto Name = std::move(*NameOrErr);
 
     size_t End = Lex.position();
@@ -1760,114 +2206,153 @@ llvm::Expected<MemberAccessSyntax> Parser::parseMemberAccess() {
 }
 
 llvm::Expected<ExpressionSyntax> Parser::parseExpression() {
+    std::string FirstRealError;
     {
         auto Result = parseLiteral();
         if (Result)
             return ExpressionSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseName();
         if (Result)
             return ExpressionSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseObject();
         if (Result)
             return ExpressionSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseVector();
         if (Result)
             return ExpressionSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseBlock();
         if (Result)
             return ExpressionSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseIf();
         if (Result)
             return ExpressionSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseMatch();
         if (Result)
             return ExpressionSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseLambda();
         if (Result)
             return ExpressionSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseFor();
         if (Result)
             return ExpressionSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseWhile();
         if (Result)
             return ExpressionSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseChoose();
         if (Result)
             return ExpressionSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseTry();
         if (Result)
             return ExpressionSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseRepeat();
         if (Result)
             return ExpressionSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseSizeOf();
         if (Result)
             return ExpressionSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseAlignOf();
         if (Result)
             return ExpressionSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseIs();
         if (Result)
             return ExpressionSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseAs();
         if (Result)
             return ExpressionSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseLifetime();
         if (Result)
             return ExpressionSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
+    if (!FirstRealError.empty())
+        return llvm::make_error<llvm::StringError>(FirstRealError, llvm::inconvertibleErrorCode());
     return different();
 
 }
@@ -1897,10 +2382,15 @@ llvm::Expected<ObjectSyntax> Parser::parseObject() {
         auto ParseResult = parseComponentList();
         if (ParseResult)
             Components = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     if (!Lex.parsePunctuation(')'))
-        return invalid(Start, Lex.position(), "expected ')'");
+        return invalid(Lex, Start, Lex.position(), "expected ')'");
 
     size_t End = Lex.position();
 
@@ -1913,11 +2403,16 @@ llvm::Expected<std::vector<ComponentSyntax>*> Parser::parseComponentList() {
     while (true) {
         auto NodeOrErr = parseComponent();
         if (!NodeOrErr) {
+            // Check if this is 'different' (no more items) vs real error
+            std::string ErrMsg = llvm::toString(NodeOrErr.takeError());
+            if (ErrMsg != "different syntax") {
+                delete List;
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+            }
             if (List->empty()) {
                 delete List;
-                return NodeOrErr.takeError();
+                return different();
             }
-            llvm::consumeError(NodeOrErr.takeError());
             return List;
         }
         List->push_back(std::move(*NodeOrErr));
@@ -1937,6 +2432,11 @@ llvm::Expected<ComponentSyntax> Parser::parseComponent() {
         auto ParseResult = parseAttributeList();
         if (ParseResult)
             Attributes = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     ValueSyntax* Value = nullptr;
@@ -1963,8 +2463,12 @@ llvm::Expected<ValueSyntax> Parser::parseValue() {
         return different();
 
     auto ValueOrErr = parseOperandList();
-    if (!ValueOrErr)
-        return invalid(Start, Lex.position(), "expected Operand");
+    if (!ValueOrErr) {
+        std::string ErrMsg = llvm::toString(ValueOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Operand");
+    }
     auto *Value = *ValueOrErr;
 
     std::vector<AttributeSyntax>* Attributes = nullptr;
@@ -1972,6 +2476,11 @@ llvm::Expected<ValueSyntax> Parser::parseValue() {
         auto ParseResult = parseAttributeList();
         if (ParseResult)
             Attributes = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     size_t End = Lex.position();
@@ -1987,12 +2496,16 @@ llvm::Expected<VectorSyntax> Parser::parseVector() {
         return different();
 
     auto ElementsOrErr = parseElementList();
-    if (!ElementsOrErr)
-        return invalid(Start, Lex.position(), "expected Element");
+    if (!ElementsOrErr) {
+        std::string ErrMsg = llvm::toString(ElementsOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Element");
+    }
     auto *Elements = *ElementsOrErr;
 
     if (!Lex.parsePunctuation(']'))
-        return invalid(Start, Lex.position(), "expected ']'");
+        return invalid(Lex, Start, Lex.position(), "expected ']'");
 
     LifetimeSyntax* Lifetime = nullptr;
     {
@@ -2014,11 +2527,16 @@ llvm::Expected<std::vector<ElementSyntax>*> Parser::parseElementList() {
     while (true) {
         auto NodeOrErr = parseElement();
         if (!NodeOrErr) {
+            // Check if this is 'different' (no more items) vs real error
+            std::string ErrMsg = llvm::toString(NodeOrErr.takeError());
+            if (ErrMsg != "different syntax") {
+                delete List;
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+            }
             if (List->empty()) {
                 delete List;
-                return NodeOrErr.takeError();
+                return different();
             }
-            llvm::consumeError(NodeOrErr.takeError());
             return List;
         }
         List->push_back(std::move(*NodeOrErr));
@@ -2038,6 +2556,11 @@ llvm::Expected<ElementSyntax> Parser::parseElement() {
         auto ParseResult = parseAttributeList();
         if (ParseResult)
             Attributes = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     Lex.parsePunctuation(',');
@@ -2055,16 +2578,24 @@ llvm::Expected<IfSyntax> Parser::parseIf() {
         return different();
 
     auto ConditionOrErr = parseOperandList();
-    if (!ConditionOrErr)
-        return invalid(Start, Lex.position(), "expected Operand");
+    if (!ConditionOrErr) {
+        std::string ErrMsg = llvm::toString(ConditionOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Operand");
+    }
     auto *Condition = *ConditionOrErr;
 
     if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+        return invalid(Lex, Start, Lex.position(), "expected colon or newline");
 
     auto ConsequentOrErr = parseThen();
-    if (!ConsequentOrErr)
-        return invalid(Start, Lex.position(), "expected Then");
+    if (!ConsequentOrErr) {
+        std::string ErrMsg = llvm::toString(ConsequentOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Then");
+    }
     auto Consequent = std::move(*ConsequentOrErr);
 
     ElseSyntax* Alternative = nullptr;
@@ -2107,8 +2638,12 @@ llvm::Expected<ElseSyntax> Parser::parseElse() {
     Lex.parseColon();
 
     auto AlternativeOrErr = parseCommand();
-    if (!AlternativeOrErr)
-        return invalid(Start, Lex.position(), "expected Command");
+    if (!AlternativeOrErr) {
+        std::string ErrMsg = llvm::toString(AlternativeOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Command");
+    }
     auto Alternative = std::move(*AlternativeOrErr);
 
     size_t End = Lex.position();
@@ -2124,16 +2659,24 @@ llvm::Expected<MatchSyntax> Parser::parseMatch() {
         return different();
 
     auto ScrutineeOrErr = parseOperandList();
-    if (!ScrutineeOrErr)
-        return invalid(Start, Lex.position(), "expected Operand");
+    if (!ScrutineeOrErr) {
+        std::string ErrMsg = llvm::toString(ScrutineeOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Operand");
+    }
     auto *Scrutinee = *ScrutineeOrErr;
 
     if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+        return invalid(Lex, Start, Lex.position(), "expected colon or newline");
 
     auto BranchesOrErr = parseBranchList();
-    if (!BranchesOrErr)
-        return invalid(Start, Lex.position(), "expected Branch");
+    if (!BranchesOrErr) {
+        std::string ErrMsg = llvm::toString(BranchesOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Branch");
+    }
     auto *Branches = *BranchesOrErr;
 
     ElseSyntax* Alternative = nullptr;
@@ -2156,11 +2699,16 @@ llvm::Expected<std::vector<BranchSyntax>*> Parser::parseBranchList() {
     while (true) {
         auto NodeOrErr = parseBranch();
         if (!NodeOrErr) {
+            // Check if this is 'different' (no more items) vs real error
+            std::string ErrMsg = llvm::toString(NodeOrErr.takeError());
+            if (ErrMsg != "different syntax") {
+                delete List;
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+            }
             if (List->empty()) {
                 delete List;
-                return NodeOrErr.takeError();
+                return different();
             }
-            llvm::consumeError(NodeOrErr.takeError());
             return List;
         }
         List->push_back(std::move(*NodeOrErr));
@@ -2176,11 +2724,15 @@ llvm::Expected<BranchSyntax> Parser::parseBranch() {
     auto *Cases = *CasesOrErr;
 
     if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+        return invalid(Lex, Start, Lex.position(), "expected colon or newline");
 
     auto ConsequentOrErr = parseStatement();
-    if (!ConsequentOrErr)
-        return invalid(Start, Lex.position(), "expected Statement");
+    if (!ConsequentOrErr) {
+        std::string ErrMsg = llvm::toString(ConsequentOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Statement");
+    }
     auto Consequent = std::move(*ConsequentOrErr);
 
     size_t End = Lex.position();
@@ -2194,11 +2746,16 @@ llvm::Expected<std::vector<CaseSyntax>*> Parser::parseCaseList() {
     while (true) {
         auto NodeOrErr = parseCase();
         if (!NodeOrErr) {
+            // Check if this is 'different' (no more items) vs real error
+            std::string ErrMsg = llvm::toString(NodeOrErr.takeError());
+            if (ErrMsg != "different syntax") {
+                delete List;
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+            }
             if (List->empty()) {
                 delete List;
-                return NodeOrErr.takeError();
+                return different();
             }
-            llvm::consumeError(NodeOrErr.takeError());
             return List;
         }
         List->push_back(std::move(*NodeOrErr));
@@ -2212,8 +2769,12 @@ llvm::Expected<CaseSyntax> Parser::parseCase() {
         return different();
 
     auto ConditionOrErr = parseOperandList();
-    if (!ConditionOrErr)
-        return invalid(Start, Lex.position(), "expected Operand");
+    if (!ConditionOrErr) {
+        std::string ErrMsg = llvm::toString(ConditionOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Operand");
+    }
     auto *Condition = *ConditionOrErr;
 
     size_t End = Lex.position();
@@ -2227,11 +2788,16 @@ llvm::Expected<std::vector<StatementSyntax>*> Parser::parseStatementList() {
     while (true) {
         auto NodeOrErr = parseStatement();
         if (!NodeOrErr) {
+            // Check if this is 'different' (no more items) vs real error
+            std::string ErrMsg = llvm::toString(NodeOrErr.takeError());
+            if (ErrMsg != "different syntax") {
+                delete List;
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+            }
             if (List->empty()) {
                 delete List;
-                return NodeOrErr.takeError();
+                return different();
             }
-            llvm::consumeError(NodeOrErr.takeError());
             return List;
         }
         List->push_back(std::move(*NodeOrErr));
@@ -2261,12 +2827,16 @@ llvm::Expected<WhileSyntax> Parser::parseWhile() {
         return different();
 
     auto ConditionOrErr = parseCondition();
-    if (!ConditionOrErr)
-        return invalid(Start, Lex.position(), "expected Condition");
+    if (!ConditionOrErr) {
+        std::string ErrMsg = llvm::toString(ConditionOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Condition");
+    }
     auto Condition = std::move(*ConditionOrErr);
 
     if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+        return invalid(Lex, Start, Lex.position(), "expected colon or newline");
 
     LabelSyntax* Name = nullptr;
     {
@@ -2278,8 +2848,12 @@ llvm::Expected<WhileSyntax> Parser::parseWhile() {
     }
 
     auto ActionOrErr = parseAction();
-    if (!ActionOrErr)
-        return invalid(Start, Lex.position(), "expected Action");
+    if (!ActionOrErr) {
+        std::string ErrMsg = llvm::toString(ActionOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Action");
+    }
     auto Action = std::move(*ActionOrErr);
 
     size_t End = Lex.position();
@@ -2295,18 +2869,27 @@ llvm::Expected<ChooseSyntax> Parser::parseChoose() {
         return different();
 
     auto ConditionOrErr = parseOperandList();
-    if (!ConditionOrErr)
-        return invalid(Start, Lex.position(), "expected Operand");
+    if (!ConditionOrErr) {
+        std::string ErrMsg = llvm::toString(ConditionOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Operand");
+    }
     auto *Condition = *ConditionOrErr;
 
     if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+        return invalid(Lex, Start, Lex.position(), "expected colon or newline");
 
     std::vector<WhenSyntax>* Cases = nullptr;
     {
         auto ParseResult = parseWhenList();
         if (ParseResult)
             Cases = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     ElseSyntax* Alternative = nullptr;
@@ -2331,18 +2914,27 @@ llvm::Expected<TrySyntax> Parser::parseTry() {
         return different();
 
     auto ConditionOrErr = parseCondition();
-    if (!ConditionOrErr)
-        return invalid(Start, Lex.position(), "expected Condition");
+    if (!ConditionOrErr) {
+        std::string ErrMsg = llvm::toString(ConditionOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Condition");
+    }
     auto Condition = std::move(*ConditionOrErr);
 
     if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+        return invalid(Lex, Start, Lex.position(), "expected colon or newline");
 
     std::vector<WhenSyntax>* Cases = nullptr;
     {
         auto ParseResult = parseWhenList();
         if (ParseResult)
             Cases = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     ElseSyntax* Dropper = nullptr;
@@ -2361,18 +2953,25 @@ llvm::Expected<TrySyntax> Parser::parseTry() {
 }
 
 llvm::Expected<ConditionSyntax> Parser::parseCondition() {
+    std::string FirstRealError;
     {
         auto Result = parseOperation();
         if (Result)
             return ConditionSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseLet();
         if (Result)
             return ConditionSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
+    if (!FirstRealError.empty())
+        return llvm::make_error<llvm::StringError>(FirstRealError, llvm::inconvertibleErrorCode());
     return different();
 
 }
@@ -2382,11 +2981,16 @@ llvm::Expected<std::vector<WhenSyntax>*> Parser::parseWhenList() {
     while (true) {
         auto NodeOrErr = parseWhen();
         if (!NodeOrErr) {
+            // Check if this is 'different' (no more items) vs real error
+            std::string ErrMsg = llvm::toString(NodeOrErr.takeError());
+            if (ErrMsg != "different syntax") {
+                delete List;
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+            }
             if (List->empty()) {
                 delete List;
-                return NodeOrErr.takeError();
+                return different();
             }
-            llvm::consumeError(NodeOrErr.takeError());
             return List;
         }
         List->push_back(std::move(*NodeOrErr));
@@ -2400,23 +3004,35 @@ llvm::Expected<WhenSyntax> Parser::parseWhen() {
         return different();
 
     llvm::StringRef Variant = Lex.peekIdentifier();
-    if (Variant.empty() || Keywords.count(Variant))
-        return invalid(Start, Lex.position(), "expected identifier");
+    if (Variant.empty())
+        return invalid(Lex, Start, Lex.position(), "expected identifier");
+    if (Keywords.count(Variant)) {
+        std::string Msg = "'" + Variant.str() + "' is a reserved keyword";
+        return invalid(Lex, Start, Lex.position(), Msg);
+    }
     Lex.parseIdentifier();  // Consume the identifier
 
     if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+        return invalid(Lex, Start, Lex.position(), "expected colon or newline");
 
     llvm::StringRef Name = Lex.peekIdentifier();
-    if (Name.empty() || Keywords.count(Name))
-        return invalid(Start, Lex.position(), "expected identifier");
+    if (Name.empty())
+        return invalid(Lex, Start, Lex.position(), "expected identifier");
+    if (Keywords.count(Name)) {
+        std::string Msg = "'" + Name.str() + "' is a reserved keyword";
+        return invalid(Lex, Start, Lex.position(), Msg);
+    }
     Lex.parseIdentifier();  // Consume the identifier
 
     Lex.parseColon();
 
     auto CommandOrErr = parseCommand();
-    if (!CommandOrErr)
-        return invalid(Start, Lex.position(), "expected Command");
+    if (!CommandOrErr) {
+        std::string ErrMsg = llvm::toString(CommandOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Command");
+    }
     auto Command = std::move(*CommandOrErr);
 
     Lex.parseColon();
@@ -2428,60 +3044,81 @@ llvm::Expected<WhenSyntax> Parser::parseWhen() {
 }
 
 llvm::Expected<CommandSyntax> Parser::parseCommand() {
+    std::string FirstRealError;
     {
         auto Result = parseOperation();
         if (Result)
             return CommandSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseLet();
         if (Result)
             return CommandSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseVar();
         if (Result)
             return CommandSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseMutable();
         if (Result)
             return CommandSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseSet();
         if (Result)
             return CommandSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseContinue();
         if (Result)
             return CommandSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseBreak();
         if (Result)
             return CommandSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseReturn();
         if (Result)
             return CommandSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseThrow();
         if (Result)
             return CommandSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
+    if (!FirstRealError.empty())
+        return llvm::make_error<llvm::StringError>(FirstRealError, llvm::inconvertibleErrorCode());
     return different();
 
 }
@@ -2493,8 +3130,12 @@ llvm::Expected<LetSyntax> Parser::parseLet() {
         return different();
 
     auto BindingOrErr = parseBinding();
-    if (!BindingOrErr)
-        return invalid(Start, Lex.position(), "expected Binding");
+    if (!BindingOrErr) {
+        std::string ErrMsg = llvm::toString(BindingOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Binding");
+    }
     auto Binding = std::move(*BindingOrErr);
 
     size_t End = Lex.position();
@@ -2510,8 +3151,12 @@ llvm::Expected<VarSyntax> Parser::parseVar() {
         return different();
 
     auto BindingOrErr = parseBinding();
-    if (!BindingOrErr)
-        return invalid(Start, Lex.position(), "expected Binding");
+    if (!BindingOrErr) {
+        std::string ErrMsg = llvm::toString(BindingOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Binding");
+    }
     auto Binding = std::move(*BindingOrErr);
 
     size_t End = Lex.position();
@@ -2527,8 +3172,12 @@ llvm::Expected<MutableSyntax> Parser::parseMutable() {
         return different();
 
     auto BindingOrErr = parseBinding();
-    if (!BindingOrErr)
-        return invalid(Start, Lex.position(), "expected Binding");
+    if (!BindingOrErr) {
+        std::string ErrMsg = llvm::toString(BindingOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Binding");
+    }
     auto Binding = std::move(*BindingOrErr);
 
     size_t End = Lex.position();
@@ -2559,6 +3208,11 @@ llvm::Expected<BindingSyntax> Parser::parseBinding() {
         auto ParseResult = parseOperandList();
         if (ParseResult)
             Operation = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     size_t End = Lex.position();
@@ -2574,8 +3228,12 @@ llvm::Expected<BindingAnnotationSyntax> Parser::parseBindingAnnotation() {
         return different();
 
     auto SpecOrErr = parseBindingSpec();
-    if (!SpecOrErr)
-        return invalid(Start, Lex.position(), "expected BindingSpec");
+    if (!SpecOrErr) {
+        std::string ErrMsg = llvm::toString(SpecOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected BindingSpec");
+    }
     auto Spec = std::move(*SpecOrErr);
 
     size_t End = Lex.position();
@@ -2589,11 +3247,16 @@ llvm::Expected<std::vector<BindingSpecSyntax>*> Parser::parseBindingSpecList() {
     while (true) {
         auto NodeOrErr = parseBindingSpec();
         if (!NodeOrErr) {
+            // Check if this is 'different' (no more items) vs real error
+            std::string ErrMsg = llvm::toString(NodeOrErr.takeError());
+            if (ErrMsg != "different syntax") {
+                delete List;
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+            }
             if (List->empty()) {
                 delete List;
-                return NodeOrErr.takeError();
+                return different();
             }
-            llvm::consumeError(NodeOrErr.takeError());
             return List;
         }
         List->push_back(std::move(*NodeOrErr));
@@ -2601,24 +3264,33 @@ llvm::Expected<std::vector<BindingSpecSyntax>*> Parser::parseBindingSpecList() {
 }
 
 llvm::Expected<BindingSpecSyntax> Parser::parseBindingSpec() {
+    std::string FirstRealError;
     {
         auto Result = parseStructure();
         if (Result)
             return BindingSpecSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseType();
         if (Result)
             return BindingSpecSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseArray();
         if (Result)
             return BindingSpecSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
+    if (!FirstRealError.empty())
+        return llvm::make_error<llvm::StringError>(FirstRealError, llvm::inconvertibleErrorCode());
     return different();
 
 }
@@ -2634,10 +3306,15 @@ llvm::Expected<ArraySyntax> Parser::parseArray() {
         auto ParseResult = parseTypeList();
         if (ParseResult)
             Members = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     if (!Lex.parsePunctuation(']'))
-        return invalid(Start, Lex.position(), "expected ']'");
+        return invalid(Lex, Start, Lex.position(), "expected ']'");
 
     size_t End = Lex.position();
 
@@ -2656,10 +3333,15 @@ llvm::Expected<StructureSyntax> Parser::parseStructure() {
         auto ParseResult = parsePartList();
         if (ParseResult)
             Parts = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     if (!Lex.parsePunctuation(')'))
-        return invalid(Start, Lex.position(), "expected ')'");
+        return invalid(Lex, Start, Lex.position(), "expected ')'");
 
     size_t End = Lex.position();
 
@@ -2672,11 +3354,16 @@ llvm::Expected<std::vector<PartSyntax>*> Parser::parsePartList() {
     while (true) {
         auto NodeOrErr = parsePart();
         if (!NodeOrErr) {
+            // Check if this is 'different' (no more items) vs real error
+            std::string ErrMsg = llvm::toString(NodeOrErr.takeError());
+            if (ErrMsg != "different syntax") {
+                delete List;
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+            }
             if (List->empty()) {
                 delete List;
-                return NodeOrErr.takeError();
+                return different();
             }
-            llvm::consumeError(NodeOrErr.takeError());
             return List;
         }
         List->push_back(std::move(*NodeOrErr));
@@ -2684,18 +3371,25 @@ llvm::Expected<std::vector<PartSyntax>*> Parser::parsePartList() {
 }
 
 llvm::Expected<PartSyntax> Parser::parsePart() {
+    std::string FirstRealError;
     {
         auto Result = parseField();
         if (Result)
             return PartSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseProperty();
         if (Result)
             return PartSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
+    if (!FirstRealError.empty())
+        return llvm::make_error<llvm::StringError>(FirstRealError, llvm::inconvertibleErrorCode());
     return different();
 
 }
@@ -2707,8 +3401,12 @@ llvm::Expected<FieldSyntax> Parser::parseField() {
         return different();
 
     auto PropertyOrErr = parseProperty();
-    if (!PropertyOrErr)
-        return invalid(Start, Lex.position(), "expected Property");
+    if (!PropertyOrErr) {
+        std::string ErrMsg = llvm::toString(PropertyOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Property");
+    }
     auto Property = std::move(*PropertyOrErr);
 
     size_t End = Lex.position();
@@ -2722,11 +3420,16 @@ llvm::Expected<std::vector<PropertySyntax>*> Parser::parsePropertyList() {
     while (true) {
         auto NodeOrErr = parseProperty();
         if (!NodeOrErr) {
+            // Check if this is 'different' (no more items) vs real error
+            std::string ErrMsg = llvm::toString(NodeOrErr.takeError());
+            if (ErrMsg != "different syntax") {
+                delete List;
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+            }
             if (List->empty()) {
                 delete List;
-                return NodeOrErr.takeError();
+                return different();
             }
-            llvm::consumeError(NodeOrErr.takeError());
             return List;
         }
         List->push_back(std::move(*NodeOrErr));
@@ -2742,8 +3445,12 @@ llvm::Expected<PropertySyntax> Parser::parseProperty() {
     Lex.parseIdentifier();  // Consume the identifier
 
     auto AnnotationOrErr = parseTypeAnnotation();
-    if (!AnnotationOrErr)
-        return invalid(Start, Lex.position(), "expected TypeAnnotation");
+    if (!AnnotationOrErr) {
+        std::string ErrMsg = llvm::toString(AnnotationOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected TypeAnnotation");
+    }
     auto Annotation = std::move(*AnnotationOrErr);
 
     InitializerSyntax* Initializer = nullptr;
@@ -2764,6 +3471,11 @@ llvm::Expected<PropertySyntax> Parser::parseProperty() {
         auto ParseResult = parseAttributeList();
         if (ParseResult)
             Attributes = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     Lex.parseColon();
@@ -2781,8 +3493,12 @@ llvm::Expected<TypeAnnotationSyntax> Parser::parseTypeAnnotation() {
         return different();
 
     auto TypeOrErr = parseType();
-    if (!TypeOrErr)
-        return invalid(Start, Lex.position(), "expected Type");
+    if (!TypeOrErr) {
+        std::string ErrMsg = llvm::toString(TypeOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Type");
+    }
     auto Type = std::move(*TypeOrErr);
 
     size_t End = Lex.position();
@@ -2834,6 +3550,11 @@ llvm::Expected<BreakSyntax> Parser::parseBreak() {
         auto ParseResult = parseOperandList();
         if (ParseResult)
             Result = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     Lex.parseColon();
@@ -2851,8 +3572,12 @@ llvm::Expected<LoopSyntax> Parser::parseLoop() {
         return different();
 
     llvm::StringRef Name = Lex.peekIdentifier();
-    if (Name.empty() || Keywords.count(Name))
-        return invalid(Start, Lex.position(), "expected identifier");
+    if (Name.empty())
+        return invalid(Lex, Start, Lex.position(), "expected identifier");
+    if (Keywords.count(Name)) {
+        std::string Msg = "'" + Name.str() + "' is a reserved keyword";
+        return invalid(Lex, Start, Lex.position(), Msg);
+    }
     Lex.parseIdentifier();  // Consume the identifier
 
     size_t End = Lex.position();
@@ -2872,6 +3597,11 @@ llvm::Expected<ReturnSyntax> Parser::parseReturn() {
         auto ParseResult = parseOperandList();
         if (ParseResult)
             Result = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     size_t End = Lex.position();
@@ -2891,6 +3621,11 @@ llvm::Expected<ThrowSyntax> Parser::parseThrow() {
         auto ParseResult = parseOperandList();
         if (ParseResult)
             Result = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     size_t End = Lex.position();
@@ -2906,16 +3641,24 @@ llvm::Expected<LambdaSyntax> Parser::parseLambda() {
         return different();
 
     auto InputOrErr = parseOperandList();
-    if (!InputOrErr)
-        return invalid(Start, Lex.position(), "expected Operand");
+    if (!InputOrErr) {
+        std::string ErrMsg = llvm::toString(InputOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Operand");
+    }
     auto *Input = *InputOrErr;
 
     if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+        return invalid(Lex, Start, Lex.position(), "expected colon or newline");
 
     auto BlockOrErr = parseAction();
-    if (!BlockOrErr)
-        return invalid(Start, Lex.position(), "expected Action");
+    if (!BlockOrErr) {
+        std::string ErrMsg = llvm::toString(BlockOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Action");
+    }
     auto Block = std::move(*BlockOrErr);
 
     size_t End = Lex.position();
@@ -2931,8 +3674,12 @@ llvm::Expected<ForSyntax> Parser::parseFor() {
         return different();
 
     llvm::StringRef Variable = Lex.peekIdentifier();
-    if (Variable.empty() || Keywords.count(Variable))
-        return invalid(Start, Lex.position(), "expected identifier");
+    if (Variable.empty())
+        return invalid(Lex, Start, Lex.position(), "expected identifier");
+    if (Keywords.count(Variable)) {
+        std::string Msg = "'" + Variable.str() + "' is a reserved keyword";
+        return invalid(Lex, Start, Lex.position(), Msg);
+    }
     Lex.parseIdentifier();  // Consume the identifier
 
     TypeAnnotationSyntax* Annotation = nullptr;
@@ -2945,15 +3692,19 @@ llvm::Expected<ForSyntax> Parser::parseFor() {
     }
 
     if (!Lex.parseKeyword("in"))
-        return invalid(Start, Lex.position(), "expected 'in'");
+        return invalid(Lex, Start, Lex.position(), "expected 'in'");
 
     auto OperationOrErr = parseOperandList();
-    if (!OperationOrErr)
-        return invalid(Start, Lex.position(), "expected Operand");
+    if (!OperationOrErr) {
+        std::string ErrMsg = llvm::toString(OperationOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Operand");
+    }
     auto *Operation = *OperationOrErr;
 
     if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+        return invalid(Lex, Start, Lex.position(), "expected colon or newline");
 
     LabelSyntax* Name = nullptr;
     {
@@ -2965,8 +3716,12 @@ llvm::Expected<ForSyntax> Parser::parseFor() {
     }
 
     auto ActionOrErr = parseAction();
-    if (!ActionOrErr)
-        return invalid(Start, Lex.position(), "expected Action");
+    if (!ActionOrErr) {
+        std::string ErrMsg = llvm::toString(ActionOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Action");
+    }
     auto Action = std::move(*ActionOrErr);
 
     size_t End = Lex.position();
@@ -2982,8 +3737,12 @@ llvm::Expected<LabelSyntax> Parser::parseLabel() {
         return different();
 
     llvm::StringRef Name = Lex.peekIdentifier();
-    if (Name.empty() || Keywords.count(Name))
-        return invalid(Start, Lex.position(), "expected identifier");
+    if (Name.empty())
+        return invalid(Lex, Start, Lex.position(), "expected identifier");
+    if (Keywords.count(Name)) {
+        std::string Msg = "'" + Name.str() + "' is a reserved keyword";
+        return invalid(Lex, Start, Lex.position(), Msg);
+    }
     Lex.parseIdentifier();  // Consume the identifier
 
     Lex.parseColon();
@@ -3010,8 +3769,12 @@ llvm::Expected<RepeatSyntax> Parser::parseRepeat() {
     }
 
     auto ActionOrErr = parseAction();
-    if (!ActionOrErr)
-        return invalid(Start, Lex.position(), "expected Action");
+    if (!ActionOrErr) {
+        std::string ErrMsg = llvm::toString(ActionOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Action");
+    }
     auto Action = std::move(*ActionOrErr);
 
     size_t End = Lex.position();
@@ -3025,11 +3788,16 @@ llvm::Expected<std::vector<ActionSyntax>*> Parser::parseActionList() {
     while (true) {
         auto NodeOrErr = parseAction();
         if (!NodeOrErr) {
+            // Check if this is 'different' (no more items) vs real error
+            std::string ErrMsg = llvm::toString(NodeOrErr.takeError());
+            if (ErrMsg != "different syntax") {
+                delete List;
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+            }
             if (List->empty()) {
                 delete List;
-                return NodeOrErr.takeError();
+                return different();
             }
-            llvm::consumeError(NodeOrErr.takeError());
             return List;
         }
         List->push_back(std::move(*NodeOrErr));
@@ -3037,24 +3805,33 @@ llvm::Expected<std::vector<ActionSyntax>*> Parser::parseActionList() {
 }
 
 llvm::Expected<ActionSyntax> Parser::parseAction() {
+    std::string FirstRealError;
     {
         auto Result = parseOperation();
         if (Result)
             return ActionSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseSet();
         if (Result)
             return ActionSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseBlock();
         if (Result)
             return ActionSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
+    if (!FirstRealError.empty())
+        return llvm::make_error<llvm::StringError>(FirstRealError, llvm::inconvertibleErrorCode());
     return different();
 
 }
@@ -3080,16 +3857,24 @@ llvm::Expected<SetSyntax> Parser::parseSet() {
         return different();
 
     auto TargetOrErr = parseOperandList();
-    if (!TargetOrErr)
-        return invalid(Start, Lex.position(), "expected Operand");
+    if (!TargetOrErr) {
+        std::string ErrMsg = llvm::toString(TargetOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Operand");
+    }
     auto *Target = *TargetOrErr;
 
     if (!Lex.parseColon())
-        return invalid(Start, Lex.position(), "expected colon or newline");
+        return invalid(Lex, Start, Lex.position(), "expected colon or newline");
 
     auto SourceOrErr = parseOperandList();
-    if (!SourceOrErr)
-        return invalid(Start, Lex.position(), "expected Operand");
+    if (!SourceOrErr) {
+        std::string ErrMsg = llvm::toString(SourceOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Operand");
+    }
     auto *Source = *SourceOrErr;
 
     size_t End = Lex.position();
@@ -3109,6 +3894,11 @@ llvm::Expected<BlockSyntax> Parser::parseBlock() {
         auto ParseResult = parseUseList();
         if (ParseResult)
             Uses = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     std::vector<StatementSyntax>* Statements = nullptr;
@@ -3116,10 +3906,15 @@ llvm::Expected<BlockSyntax> Parser::parseBlock() {
         auto ParseResult = parseStatementList();
         if (ParseResult)
             Statements = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     if (!Lex.parsePunctuation('}'))
-        return invalid(Start, Lex.position(), "expected '}'");
+        return invalid(Lex, Start, Lex.position(), "expected '}'");
 
     size_t End = Lex.position();
 
@@ -3134,8 +3929,12 @@ llvm::Expected<SizeOfSyntax> Parser::parseSizeOf() {
         return different();
 
     auto TypeOrErr = parseType();
-    if (!TypeOrErr)
-        return invalid(Start, Lex.position(), "expected Type");
+    if (!TypeOrErr) {
+        std::string ErrMsg = llvm::toString(TypeOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Type");
+    }
     auto Type = std::move(*TypeOrErr);
 
     size_t End = Lex.position();
@@ -3151,8 +3950,12 @@ llvm::Expected<AlignOfSyntax> Parser::parseAlignOf() {
         return different();
 
     auto TypeOrErr = parseType();
-    if (!TypeOrErr)
-        return invalid(Start, Lex.position(), "expected Type");
+    if (!TypeOrErr) {
+        std::string ErrMsg = llvm::toString(TypeOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Type");
+    }
     auto Type = std::move(*TypeOrErr);
 
     size_t End = Lex.position();
@@ -3168,8 +3971,12 @@ llvm::Expected<IsSyntax> Parser::parseIs() {
         return different();
 
     auto NameOrErr = parseName();
-    if (!NameOrErr)
-        return invalid(Start, Lex.position(), "expected Name");
+    if (!NameOrErr) {
+        std::string ErrMsg = llvm::toString(NameOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Name");
+    }
     auto Name = std::move(*NameOrErr);
 
     size_t End = Lex.position();
@@ -3185,8 +3992,12 @@ llvm::Expected<AsSyntax> Parser::parseAs() {
         return different();
 
     auto TypeOrErr = parseType();
-    if (!TypeOrErr)
-        return invalid(Start, Lex.position(), "expected Type");
+    if (!TypeOrErr) {
+        std::string ErrMsg = llvm::toString(TypeOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Type");
+    }
     auto Type = std::move(*TypeOrErr);
 
     size_t End = Lex.position();
@@ -3200,11 +4011,16 @@ llvm::Expected<std::vector<TypeSyntax>*> Parser::parseTypeList() {
     while (true) {
         auto NodeOrErr = parseType();
         if (!NodeOrErr) {
+            // Check if this is 'different' (no more items) vs real error
+            std::string ErrMsg = llvm::toString(NodeOrErr.takeError());
+            if (ErrMsg != "different syntax") {
+                delete List;
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+            }
             if (List->empty()) {
                 delete List;
-                return NodeOrErr.takeError();
+                return different();
             }
-            llvm::consumeError(NodeOrErr.takeError());
             return List;
         }
         List->push_back(std::move(*NodeOrErr));
@@ -3265,6 +4081,11 @@ llvm::Expected<NameSyntax> Parser::parseName() {
         auto ParseResult = parseExtensionList();
         if (ParseResult)
             Extensions = *ParseResult;
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != "different syntax")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }
     }
 
     size_t End = Lex.position();
@@ -3278,11 +4099,16 @@ llvm::Expected<std::vector<ExtensionSyntax>*> Parser::parseExtensionList() {
     while (true) {
         auto NodeOrErr = parseExtension();
         if (!NodeOrErr) {
+            // Check if this is 'different' (no more items) vs real error
+            std::string ErrMsg = llvm::toString(NodeOrErr.takeError());
+            if (ErrMsg != "different syntax") {
+                delete List;
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+            }
             if (List->empty()) {
                 delete List;
-                return NodeOrErr.takeError();
+                return different();
             }
-            llvm::consumeError(NodeOrErr.takeError());
             return List;
         }
         List->push_back(std::move(*NodeOrErr));
@@ -3296,8 +4122,12 @@ llvm::Expected<ExtensionSyntax> Parser::parseExtension() {
         return different();
 
     llvm::StringRef Name = Lex.peekIdentifier();
-    if (Name.empty() || Keywords.count(Name))
-        return invalid(Start, Lex.position(), "expected identifier");
+    if (Name.empty())
+        return invalid(Lex, Start, Lex.position(), "expected identifier");
+    if (Keywords.count(Name)) {
+        std::string Msg = "'" + Name.str() + "' is a reserved keyword";
+        return invalid(Lex, Start, Lex.position(), Msg);
+    }
     Lex.parseIdentifier();  // Consume the identifier
 
     size_t End = Lex.position();
@@ -3307,30 +4137,41 @@ llvm::Expected<ExtensionSyntax> Parser::parseExtension() {
 }
 
 llvm::Expected<LifetimeSyntax> Parser::parseLifetime() {
+    std::string FirstRealError;
     {
         auto Result = parseCall();
         if (Result)
             return LifetimeSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseLocal();
         if (Result)
             return LifetimeSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseReference();
         if (Result)
             return LifetimeSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
     {
         auto Result = parseThrown();
         if (Result)
             return LifetimeSyntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
+    if (!FirstRealError.empty())
+        return llvm::make_error<llvm::StringError>(FirstRealError, llvm::inconvertibleErrorCode());
     return different();
 
 }
@@ -3366,8 +4207,12 @@ llvm::Expected<ReferenceSyntax> Parser::parseReference() {
         return different();
 
     llvm::StringRef Location = Lex.peekIdentifier();
-    if (Location.empty() || Keywords.count(Location))
-        return invalid(Start, Lex.position(), "expected identifier");
+    if (Location.empty())
+        return invalid(Lex, Start, Lex.position(), "expected identifier");
+    if (Keywords.count(Location)) {
+        std::string Msg = "'" + Location.str() + "' is a reserved keyword";
+        return invalid(Lex, Start, Lex.position(), Msg);
+    }
     Lex.parseIdentifier();  // Consume the identifier
 
     size_t End = Lex.position();

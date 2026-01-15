@@ -68,9 +68,36 @@ llvm::Error different() {
         \"different syntax\", llvm::inconvertibleErrorCode());
 }
 
-llvm::Error invalid(size_t Start, size_t End, llvm::StringRef Message) {
+std::pair<size_t, size_t> calculateLineCol(llvm::StringRef Source, size_t Offset) {
+    size_t Line = 1, Col = 1;
+    for (size_t I = 0; I < Offset && I < Source.size(); ++I) {
+        if (Source[I] == '\\n') { ++Line; Col = 1; }
+        else ++Col;
+    }
+    return {Line, Col};
+}
+
+std::string buildHintLine(llvm::StringRef Source, size_t Start, size_t End) {
+    if (Source.empty() || Start >= Source.size()) return \"\";
+    size_t LineStart = Start;
+    while (LineStart > 0 && Source[LineStart - 1] != '\\n') --LineStart;
+    size_t LineEnd = Start;
+    while (LineEnd < Source.size() && Source[LineEnd] != '\\n') ++LineEnd;
+    std::string Line = \"    \" + Source.slice(LineStart, LineEnd).str() + \"\\n    \";
+    for (size_t I = LineStart; I < LineEnd; ++I) {
+        if (I >= Start && I < End) Line += '^';
+        else if (Source[I] == '\\t') Line += '\\t';
+        else Line += ' ';
+    }
+    return Line;
+}
+
+llvm::Error invalid(const Lexer& Lex, size_t Start, size_t End, llvm::StringRef Message) {
+    auto [Line, Col] = calculateLineCol(Lex.source(), Start);
+    std::string Msg = std::to_string(Line) + \":\" + std::to_string(Col) + \": \" + Message.str();
+    Msg += \"\\n\" + buildHintLine(Lex.source(), Start, End);
     return llvm::make_error<llvm::StringError>(
-        Message, llvm::inconvertibleErrorCode());
+        Msg, llvm::inconvertibleErrorCode());
 }
 } // anonymous namespace
 
@@ -109,11 +136,16 @@ llvm::Expected<std::vector<"(id syntax)"Syntax>*> Parser::parse"(id syntax)"List
     while (true) {
         auto NodeOrErr = parse"(id syntax)"();
         if (!NodeOrErr) {
+            // Check if this is 'different' (no more items) vs real error
+            std::string ErrMsg = llvm::toString(NodeOrErr.takeError());
+            if (ErrMsg != \"different syntax\") {
+                delete List;
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+            }
             if (List->empty()) {
                 delete List;
-                return NodeOrErr.takeError();
+                return different();
             }
-            llvm::consumeError(NodeOrErr.takeError());
             return List;
         }
         List->push_back(std::move(*NodeOrErr));
@@ -125,15 +157,20 @@ llvm::Expected<"(id syntax)"Syntax> Parser::parse"(id syntax)"() {
 "       (if (abstract? syntax)
             ;; Abstract syntax - try each alternative
             ($
-                (apply-to-children-of syntax (lambda (content) ($
+"    std::string FirstRealError;
+"               (apply-to-children-of syntax (lambda (content) ($
 "    {
         auto Result = parse"(link content)"();
         if (Result)
             return "(id syntax)"Syntax{std::move(*Result)};
-        llvm::consumeError(Result.takeError());
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != \"different syntax\" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
     }
 "               )))
-"    return different();
+"    if (!FirstRealError.empty())
+        return llvm::make_error<llvm::StringError>(FirstRealError, llvm::inconvertibleErrorCode());
+    return different();
 "           )
             ;; Concrete syntax - parse each field
             ($
@@ -149,7 +186,14 @@ llvm::Expected<"(id syntax)"Syntax> Parser::parse"(id syntax)"() {
         auto ParseResult = parse"(link content)(if (multiple? content) "List" "")"();
         if (ParseResult)
             "(string-firstchar-upcase (property content))" = "(if (multiple? content) "*ParseResult" ($ "new "(link content)"Syntax(std::move(*ParseResult))"))";"
-                                    (if (multiple? content) "" "
+                                    (if (multiple? content)
+                                        "
+        else {
+            std::string ErrMsg = llvm::toString(ParseResult.takeError());
+            if (ErrMsg != \"different syntax\")
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        }"
+                                        "
         else
             llvm::consumeError(ParseResult.takeError());")
 "
@@ -163,8 +207,12 @@ llvm::Expected<"(id syntax)"Syntax> Parser::parse"(id syntax)"() {
                                     (if (equal? 1 (child-number content))
                                         ($ "
         return "(string-firstchar-upcase (property content))"OrErr.takeError();")
-                                        ($ "
-        return invalid(Start, Lex.position(), \"expected "(link content)"\");")
+                                        ($ " {
+        std::string ErrMsg = llvm::toString("(string-firstchar-upcase (property content))"OrErr.takeError());
+        if (ErrMsg != \"different syntax\")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), \"expected "(link content)"\");
+    }")
                                     )
 "
     auto "(if (multiple? content) "*" "")(string-firstchar-upcase (property content))" = "(if (multiple? content) "" "std::move(")"*"(string-firstchar-upcase (property content))"OrErr"(if (multiple? content) "" ")")";"
@@ -189,7 +237,7 @@ llvm::Expected<"(id syntax)"Syntax> Parser::parse"(id syntax)"() {
                                     "
         return different();"
                                     ($ "
-        return invalid(Start, Lex.position(), \"expected '"(id (element-with-id (link content)))"'\");")
+        return invalid(Lex, Start, Lex.position(), \"expected '"(id (element-with-id (link content)))"'\");")
                                 )
 "
 "                           )
@@ -209,7 +257,7 @@ llvm::Expected<"(id syntax)"Syntax> Parser::parse"(id syntax)"() {
                                         "
         return different();"
                                         ($ "
-        return invalid(Start, Lex.position(), \"expected '"(value (element-with-id (link content)))"'\");")
+        return invalid(Lex, Start, Lex.position(), \"expected '"(value (element-with-id (link content)))"'\");")
                                     )
 "
 "                               )
@@ -230,24 +278,34 @@ llvm::Expected<"(id syntax)"Syntax> Parser::parse"(id syntax)"() {
                                         "
         return different();"
                                         "
-        return invalid(Start, Lex.position(), \"expected colon or newline\");")
+        return invalid(Lex, Start, Lex.position(), \"expected colon or newline\");")
 "
 "                               )
                             )
                         )
                         (("identifier")
-                            ($
+                            (if (equal? 1 (child-number content))
+                                ;; First element - return different() for both empty and keyword
+                                ($
 "
     llvm::StringRef "(string-firstchar-upcase (property content))" = Lex.peekIdentifier();
-    if ("(string-firstchar-upcase (property content))".empty() || Keywords.count("(string-firstchar-upcase (property content))"))"
-                                (if (equal? 1 (child-number content))
-                                    "
-        return different();"
-                                    "
-        return invalid(Start, Lex.position(), \"expected identifier\");")
-"
+    if ("(string-firstchar-upcase (property content))".empty() || Keywords.count("(string-firstchar-upcase (property content))"))
+        return different();
     Lex.parseIdentifier();  // Consume the identifier
-"                           )
+"                               )
+                                ;; Not first element - give specific error for keyword
+                                ($
+"
+    llvm::StringRef "(string-firstchar-upcase (property content))" = Lex.peekIdentifier();
+    if ("(string-firstchar-upcase (property content))".empty())
+        return invalid(Lex, Start, Lex.position(), \"expected identifier\");
+    if (Keywords.count("(string-firstchar-upcase (property content))")) {
+        std::string Msg = \"'\" + "(string-firstchar-upcase (property content))".str() + \"' is a reserved keyword\";
+        return invalid(Lex, Start, Lex.position(), Msg);
+    }
+    Lex.parseIdentifier();  // Consume the identifier
+"                               )
+                            )
                         )
                         (("attribute")
                             ($
@@ -258,7 +316,7 @@ llvm::Expected<"(id syntax)"Syntax> Parser::parse"(id syntax)"() {
                                     "
         return different();"
                                     "
-        return invalid(Start, Lex.position(), \"expected attribute\");")
+        return invalid(Lex, Start, Lex.position(), \"expected attribute\");")
 "
 "                           )
                         )
