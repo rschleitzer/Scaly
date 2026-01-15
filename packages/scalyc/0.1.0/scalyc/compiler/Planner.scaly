@@ -1674,7 +1674,7 @@ define Planner
             when Constant: c
             {
                 ; Wrap constant in PlannedConstant
-                let result PlannedExpression.Constant(PlannedConstant(c))#
+                let result PlannedExpression.Constant#(PlannedConstant(c))
                 return result
             }
             when Type: t
@@ -1687,7 +1687,7 @@ define Planner
                     let bool_const scaly.compiler.Model.Constant.Boolean(
                         scaly.compiler.Model.BooleanConstant(t.span, true)
                     )
-                    let result PlannedExpression.Constant(PlannedConstant(bool_const))#
+                    let result PlannedExpression.Constant#(PlannedConstant(bool_const))
                     return result
                 }
 
@@ -1696,7 +1696,7 @@ define Planner
                     let bool_const scaly.compiler.Model.Constant.Boolean(
                         scaly.compiler.Model.BooleanConstant(t.span, false)
                     )
-                    let result PlannedExpression.Constant(PlannedConstant(bool_const))#
+                    let result PlannedExpression.Constant#(PlannedConstant(bool_const))
                     return result
                 }
 
@@ -1714,7 +1714,7 @@ define Planner
                         String#(""),
                         null
                     )
-                    let result PlannedExpression.Type(null_type)#
+                    let result PlannedExpression.Type#(null_type)
                     return result
                 }
 
@@ -1728,7 +1728,7 @@ define Planner
                         local_bind.binding_type,
                         local_bind.is_mutable
                     )
-                    let result PlannedExpression.Variable(planned_var)#
+                    let result PlannedExpression.Variable#(planned_var)
                     return result
                 }
 
@@ -1752,7 +1752,7 @@ define Planner
                                         this_bind.binding_type,
                                         false
                                     )
-                                    let result PlannedExpression.Variable(planned_var)#
+                                    let result PlannedExpression.Variable#(planned_var)
                                     return result
                                 }
                             }
@@ -1764,7 +1764,7 @@ define Planner
                 let resolved resolve_type(t, t.span)
                 if resolved = null
                     return null
-                let result PlannedExpression.Type(resolved)#
+                let result PlannedExpression.Type#(resolved)
                 return result
             }
             when Tuple: tup
@@ -1772,7 +1772,7 @@ define Planner
                 let planned plan_tuple(tup)
                 if planned = null
                     return null
-                let result PlannedExpression.Tuple(planned)#
+                let result PlannedExpression.Tuple#(planned)
                 return result
             }
             when Matrix: mat
@@ -1780,7 +1780,7 @@ define Planner
                 let planned plan_matrix(mat)
                 if planned = null
                     return null
-                let result PlannedExpression.Matrix(planned)#
+                let result PlannedExpression.Matrix#(planned)
                 return result
             }
             when Block: blk
@@ -1788,7 +1788,7 @@ define Planner
                 let planned plan_block(blk)
                 if planned = null
                     return null
-                let result PlannedExpression.Block(planned)#
+                let result PlannedExpression.Block#(planned)
                 return result
             }
             when If: if_expr
@@ -1796,7 +1796,7 @@ define Planner
                 let planned plan_if(if_expr)
                 if planned = null
                     return null
-                let result PlannedExpression.If(planned)#
+                let result PlannedExpression.If#(planned)
                 return result
             }
             when Match: match_expr
@@ -1804,7 +1804,7 @@ define Planner
                 let planned plan_match(match_expr)
                 if planned = null
                     return null
-                let result PlannedExpression.Match(planned)#
+                let result PlannedExpression.Match#(planned)
                 return result
             }
             when Choose: choose_expr
@@ -1812,7 +1812,7 @@ define Planner
                 let planned plan_choose(choose_expr)
                 if planned = null
                     return null
-                let result PlannedExpression.Choose(planned)#
+                let result PlannedExpression.Choose#(planned)
                 return result
             }
             when For: for_expr
@@ -1820,7 +1820,7 @@ define Planner
                 let planned plan_for(for_expr)
                 if planned = null
                     return null
-                let result PlannedExpression.For(planned)#
+                let result PlannedExpression.For#(planned)
                 return result
             }
             when While: while_expr
@@ -1828,7 +1828,7 @@ define Planner
                 let planned plan_while(while_expr)
                 if planned = null
                     return null
-                let result PlannedExpression.While(planned)#
+                let result PlannedExpression.While#(planned)
                 return result
             }
             when Try: try_expr
@@ -1836,7 +1836,7 @@ define Planner
                 let planned plan_try(try_expr)
                 if planned = null
                     return null
-                let result PlannedExpression.Try(planned)#
+                let result PlannedExpression.Try#(planned)
                 return result
             }
             when SizeOf: sizeof_expr
@@ -1846,7 +1846,7 @@ define Planner
                     return null
                 ; TODO: Compute actual size
                 let planned PlannedSizeOf#(sizeof_expr.span, resolved, 0)
-                let result PlannedExpression.SizeOf(planned)#
+                let result PlannedExpression.SizeOf#(planned)
                 return result
             }
             when Is: is_expr
@@ -2282,7 +2282,7 @@ define Planner
                 let planned plan_action(act)
                 if planned = null
                     return null
-                let result PlannedStatement.Action(planned)#
+                let result PlannedStatement.Action#(planned)
                 return result
             }
             when Binding: bind
@@ -2290,34 +2290,34 @@ define Planner
                 let planned plan_binding(bind)
                 if planned = null
                     return null
-                let result PlannedStatement.Binding(planned)#
+                let result PlannedStatement.Binding#(planned)
                 return result
             }
             when Break: brk
             {
                 let planned_result plan_operands(brk.result)
                 let planned PlannedBreak#(brk.span, planned_result)
-                let result PlannedStatement.Break(planned)#
+                let result PlannedStatement.Break#(planned)
                 return result
             }
             when Continue: cont
             {
                 let planned PlannedContinue#(cont.span)
-                let result PlannedStatement.Continue(planned)#
+                let result PlannedStatement.Continue#(planned)
                 return result
             }
             when Return: ret
             {
                 let planned_result plan_operands(ret.result)
                 let planned PlannedReturn#(ret.span, planned_result)
-                let result PlannedStatement.Return(planned)#
+                let result PlannedStatement.Return#(planned)
                 return result
             }
             when Throw: thr
             {
                 let planned_result plan_operands(thr.result)
                 let planned PlannedThrow#(thr.span, planned_result)
-                let result PlannedStatement.Throw(planned)#
+                let result PlannedStatement.Throw#(planned)
                 return result
             }
     }
@@ -2356,25 +2356,25 @@ define Planner
                 let planned plan_action(act)
                 if planned = null
                     return null
-                let result PlannedImplementation.Action(planned)#
+                let result PlannedImplementation.Action#(planned)
                 return result
             }
             when Extern: ext
             {
                 let planned PlannedExternImpl#(ext.span)
-                let result PlannedImplementation.Extern(planned)#
+                let result PlannedImplementation.Extern#(planned)
                 return result
             }
             when Instruction: instr
             {
                 let planned PlannedInstructionImpl#(instr.span)
-                let result PlannedImplementation.Instruction(planned)#
+                let result PlannedImplementation.Instruction#(planned)
                 return result
             }
             when Intrinsic: intr
             {
                 let planned PlannedIntrinsicImpl#(intr.span)
-                let result PlannedImplementation.Intrinsic(planned)#
+                let result PlannedImplementation.Intrinsic#(planned)
                 return result
             }
     }
@@ -2710,7 +2710,7 @@ define Planner
             conc.span,
             conc.name,
             encode_name(conc.name),
-            attributes,
+            planned_attrs,
             def,
             null        ; origin
         )
@@ -2728,7 +2728,7 @@ define Planner
                 let planned plan_structure(struct, name)
                 if planned = null
                     return null
-                let result PlannedDefinition.Structure(planned)#
+                let result PlannedDefinition.Structure#(planned)
                 return result
             }
             when Union: union_def
@@ -2736,7 +2736,7 @@ define Planner
                 let planned plan_union(union_def, name)
                 if planned = null
                     return null
-                let result PlannedDefinition.Union(planned)#
+                let result PlannedDefinition.Union#(planned)
                 return result
             }
             when Namespace: ns
@@ -2744,7 +2744,7 @@ define Planner
                 let planned plan_namespace(ns, name)
                 if planned = null
                     return null
-                let result PlannedDefinition.Namespace(planned)#
+                let result PlannedDefinition.Namespace#(planned)
                 return result
             }
             when Global: global
@@ -2752,7 +2752,7 @@ define Planner
                 let planned plan_global(global, name)
                 if planned = null
                     return null
-                let result PlannedDefinition.Global(planned)#
+                let result PlannedDefinition.Global#(planned)
                 return result
             }
             when Type: type_alias
@@ -2760,7 +2760,7 @@ define Planner
                 let resolved resolve_type(type_alias, type_alias.span)
                 if resolved = null
                     return null
-                let result PlannedDefinition.Type(resolved)#
+                let result PlannedDefinition.Type#(resolved)
                 return result
             }
             when Intrinsic: intr
@@ -2775,7 +2775,7 @@ define Planner
                     null, null, null, null, null,
                     0, 0, null
                 )
-                let result PlannedDefinition.Structure(placeholder)#
+                let result PlannedDefinition.Structure#(placeholder)
                 return result
             }
     }

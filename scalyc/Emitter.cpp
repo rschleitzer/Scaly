@@ -632,6 +632,14 @@ llvm::StructType *Emitter::lookupStructType(llvm::StringRef Name, llvm::StringRe
     if (auto It = StructCache.find("_Z" + MangledName.str()); It != StructCache.end()) {
         return It->second;
     }
+    // Try without _Z prefix if MangledName starts with _Z
+    if (MangledName.starts_with("_Z")) {
+        std::string WithoutPrefix = MangledName.substr(2).str();
+        if (auto It = StructCache.find(WithoutPrefix); It != StructCache.end()) {
+            return It->second;
+        }
+    }
+
     return nullptr;
 }
 
@@ -1472,9 +1480,24 @@ llvm::Expected<llvm::Value*> Emitter::emitAction(const PlannedAction &Action) {
                     if (VarPtr->getType()->isPointerTy()) {
                         // Get the struct type from cache using the variable type
                         // For 'this' which is pointer[T], use the inner type T
-                        PlannedType LookupType = Var->VariableType.getInnerTypeIfPointer();
+                        PlannedType LookupType = Var->VariableType;
+                        if (Var->VariableType.isPointer()) {
+                            LookupType = Var->VariableType.getInnerTypeIfPointer();
+                        }
+                        // Handle NPO Option types: Option[ref[T]] or Option[pointer[T]]
+                        // With NPO, these are represented as a single pointer (null = None, non-null = Some)
+                        else if (Var->VariableType.Name == "Option" && !Var->VariableType.Generics.empty()) {
+                            const PlannedType &Inner = Var->VariableType.Generics[0];
+                            if (Inner.isPointerLike()) {
+                                // NPO: load the pointer (it's stored directly as a pointer)
+                                llvm::Type *PtrType = llvm::PointerType::get(*Context, 0);
+                                CurrentPtr = Builder->CreateLoad(PtrType, VarPtr, "option.load");
+                                // Get the inner-inner type (T from ref[T] or pointer[T])
+                                LookupType = Inner.getInnerTypeIfPointerLike();
+                            }
+                        }
                         CurrentType = lookupStructType(LookupType);
-                        CurrentPtr = VarPtr;  // 'this' is already a pointer
+                        if (!CurrentPtr) CurrentPtr = VarPtr;  // 'this' is already a pointer
                     }
                 }
 
@@ -2601,6 +2624,17 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
         std::vector<llvm::Value*> InitArgs;
         InitArgs.push_back(StructPtr);
 
+        llvm::errs() << "DEBUG emitCall init: Name=" << Call.Name
+                     << " RequiresPageParam=" << Call.RequiresPageParam
+                     << " Life=" << std::visit([](auto &&arg) -> std::string {
+                         using T = std::decay_t<decltype(arg)>;
+                         if constexpr (std::is_same_v<T, UnspecifiedLifetime>) return "Unspecified";
+                         else if constexpr (std::is_same_v<T, LocalLifetime>) return "Local";
+                         else if constexpr (std::is_same_v<T, CallLifetime>) return "Call";
+                         else if constexpr (std::is_same_v<T, ReferenceLifetime>) return "Reference";
+                         else return "Unknown";
+                     }, Call.Life) << "\n";
+
         // If init# was used, pass the page as second argument
         if (Call.RequiresPageParam) {
             llvm::Value *PageArg = nullptr;
@@ -2608,6 +2642,10 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
                 PageArg = CurrentRegion.LocalPage;
             } else if (std::holds_alternative<CallLifetime>(Call.Life)) {
                 PageArg = CurrentRegion.ReturnPage;
+                // Fallback: use local page if ReturnPage not available
+                if (!PageArg && CurrentRegion.LocalPage) {
+                    PageArg = CurrentRegion.LocalPage;
+                }
             } else if (std::holds_alternative<ReferenceLifetime>(Call.Life)) {
                 // For ^name, the page is already in Args[0]
                 if (!Args.empty()) {
@@ -2616,6 +2654,10 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
             }
             if (PageArg) {
                 InitArgs.push_back(PageArg);
+            } else {
+                llvm::errs() << "DEBUG emitCall init: PageArg is null! LocalPage="
+                             << (CurrentRegion.LocalPage ? "yes" : "no")
+                             << " ReturnPage=" << (CurrentRegion.ReturnPage ? "yes" : "no") << "\n";
             }
         }
 
@@ -3438,6 +3480,14 @@ llvm::Expected<llvm::Value*> Emitter::emitChoose(const PlannedChoose &Choose) {
         } else {
             // Fallback: get the type via mapType
             UnionType = mapType(LookupType);
+            // If mapType returned a pointer, we need to get the underlying struct type
+            if (UnionType->isPointerTy()) {
+                // Try looking up by the condition type's mangled name
+                auto InnerCacheIt = StructCache.find(CondType.MangledName);
+                if (InnerCacheIt != StructCache.end()) {
+                    UnionType = InnerCacheIt->second;
+                }
+            }
         }
     } else {
         // The union value might have an anonymous struct type (from extractvalue)
@@ -4909,13 +4959,14 @@ llvm::Expected<llvm::Value*> Emitter::emitTuple(const PlannedTuple &Tuple) {
     }
 
     // Store provided component values
-    for (size_t i = 0; i < ComponentValues.size(); ++i) {
+    // Skip if tuple type has no elements (empty struct like Unspecified)
+    unsigned NumStructFields = TupleTy->getNumElements();
+    for (size_t i = 0; i < ComponentValues.size() && i < NumStructFields; ++i) {
         llvm::Value *FieldPtr = Builder->CreateStructGEP(TupleTy, TuplePtr, i, "tuple.field");
         Builder->CreateStore(ComponentValues[i], FieldPtr);
     }
 
     // Initialize remaining fields with null/zero values (for struct constructors with defaults)
-    unsigned NumStructFields = TupleTy->getNumElements();
     for (size_t i = ComponentValues.size(); i < NumStructFields; ++i) {
         llvm::Type *FieldTy = TupleTy->getElementType(i);
         llvm::Value *DefaultVal;
