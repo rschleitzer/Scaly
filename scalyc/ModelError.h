@@ -19,6 +19,15 @@ struct Position {
 // Calculate position from offset in source text
 Position calculatePosition(llvm::StringRef Text, size_t Offset);
 
+// Build hint lines showing source code with carets pointing to error location
+std::string buildHintLines(llvm::StringRef Text, size_t Start, size_t End);
+
+// Format error header: "file:line:column: error: "
+std::string formatErrorHeader(llvm::StringRef File, llvm::StringRef Text, size_t Offset);
+
+// Read file contents (returns empty string on failure)
+std::string readFileForError(llvm::StringRef Path);
+
 // IO-related errors
 struct FileModelError {
     std::string Path;
