@@ -716,16 +716,6 @@ void Planner::popScope() {
 
 void Planner::defineLocal(llvm::StringRef Name, const PlannedType &Type, bool IsMutable, bool IsOnPage) {
     if (!Scopes.empty()) {
-        // Debug: print binding being stored
-        if (Type.Name == "pointer") {
-            llvm::errs() << "DEBUG defineLocal: " << Name.str()
-                         << " type=" << Type.Name
-                         << " generics.size=" << Type.Generics.size();
-            if (!Type.Generics.empty()) {
-                llvm::errs() << " generics[0]=" << Type.Generics[0].Name;
-            }
-            llvm::errs() << "\n";
-        }
         Scopes.back()[Name.str()] = LocalBinding{Type, IsMutable, IsOnPage};
     }
 }
@@ -735,17 +725,6 @@ std::optional<PlannedType> Planner::lookupLocal(llvm::StringRef Name) {
     for (auto It = Scopes.rbegin(); It != Scopes.rend(); ++It) {
         auto Found = It->find(Name.str());
         if (Found != It->end()) {
-            // Debug: print binding being retrieved
-            const auto& Type = Found->second.Type;
-            if (Type.Name == "pointer") {
-                llvm::errs() << "DEBUG lookupLocal: " << Name.str()
-                             << " type=" << Type.Name
-                             << " generics.size=" << Type.Generics.size();
-                if (!Type.Generics.empty()) {
-                    llvm::errs() << " generics[0]=" << Type.Generics[0].Name;
-                }
-                llvm::errs() << "\n";
-            }
             return Found->second.Type;
         }
     }
@@ -1276,7 +1255,24 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
     const PlannedStructure *Struct = nullptr;
 
     // Look up the struct in the instantiation cache
-    auto StructIt = InstantiatedStructures.find(LookupType.Name);
+    // Handle fully qualified type names like "scaly.containers.String" or "scalyc.compiler.Emitter.Emitter"
+    std::string LookupName = LookupType.Name;
+    if (LookupName.rfind("scaly.", 0) == 0 || LookupName.rfind("scalyc.", 0) == 0) {
+        size_t LastDotForLookup = LookupName.rfind('.');
+        if (LastDotForLookup != std::string::npos) {
+            LookupName = LookupName.substr(LastDotForLookup + 1);
+        }
+    }
+    // Also handle module-qualified names like "Emitter.Emitter" (module.type)
+    auto StructIt = InstantiatedStructures.find(LookupName);
+    if (StructIt == InstantiatedStructures.end() && LookupName.find('.') != std::string::npos) {
+        size_t LastDot = LookupName.rfind('.');
+        std::string TypeOnly = LookupName.substr(LastDot + 1);
+        StructIt = InstantiatedStructures.find(TypeOnly);
+        if (StructIt != InstantiatedStructures.end()) {
+            LookupName = TypeOnly;
+        }
+    }
     if (StructIt != InstantiatedStructures.end()) {
         Struct = &StructIt->second;
     } else {
@@ -1547,17 +1543,28 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
     const PlannedStructure *Struct = nullptr;
 
     // Look up the struct in the instantiation cache
-    // Handle fully qualified type names like "scaly.containers.String"
+    // Handle fully qualified type names like "scaly.containers.String" or "scalyc.compiler.Emitter.Emitter"
     // But preserve generic instantiation names like "List.char"
     std::string LookupName = LookupType.Name;
-    if (LookupName.rfind("scaly.", 0) == 0) {
+    if (LookupName.rfind("scaly.", 0) == 0 || LookupName.rfind("scalyc.", 0) == 0) {
         // Strip package prefix to get just the type name
         size_t LastDotForLookup = LookupName.rfind('.');
         if (LastDotForLookup != std::string::npos) {
             LookupName = LookupName.substr(LastDotForLookup + 1);
         }
     }
+    // Also handle module-qualified names like "Emitter.Emitter" (module.type)
+    // where both happen to have the same name
     auto StructIt = InstantiatedStructures.find(LookupName);
+    if (StructIt == InstantiatedStructures.end() && LookupName.find('.') != std::string::npos) {
+        // Try the last component only
+        size_t LastDot = LookupName.rfind('.');
+        std::string TypeOnly = LookupName.substr(LastDot + 1);
+        StructIt = InstantiatedStructures.find(TypeOnly);
+        if (StructIt != InstantiatedStructures.end()) {
+            LookupName = TypeOnly;
+        }
+    }
     if (StructIt != InstantiatedStructures.end()) {
         Struct = &StructIt->second;
     } else {
@@ -4419,16 +4426,6 @@ llvm::Expected<std::vector<PlannedMemberAccess>> Planner::resolveMemberAccessCha
     std::vector<PlannedMemberAccess> Result;
     if (Members.empty()) {
         return Result;
-    }
-
-    // Debug: print base type info for member access on 'name'
-    if (!Members.empty() && Members[0] == "name") {
-        llvm::errs() << "DEBUG resolveMemberAccessChain looking for 'name': BaseType=" << BaseType.Name
-                     << " generics.size=" << BaseType.Generics.size();
-        if (!BaseType.Generics.empty()) {
-            llvm::errs() << " generics[0]=" << BaseType.Generics[0].Name;
-        }
-        llvm::errs() << "\n";
     }
 
     PlannedType Current = BaseType;
@@ -7865,6 +7862,22 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             }
                         }
                     }
+                    // Also check AccessedPackageModules (from use statements)
+                    if (!Conc) {
+                        for (const Module* AccMod : AccessedPackageModules) {
+                            if (AccMod->Name == ModuleName) {
+                                for (const auto& Member : AccMod->Members) {
+                                    if (auto* ModConc = std::get_if<Concept>(&Member)) {
+                                        if (ModConc->Name == TypeName) {
+                                            Conc = ModConc;
+                                            break;
+                                        }
+                                    }
+                                }
+                                if (Conc) break;
+                            }
+                        }
+                    }
                 }
                 if (Conc && std::holds_alternative<Structure>(Conc->Def)) {
                         // Check if next op is a tuple (constructor args)
@@ -7957,7 +7970,7 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                 }
                                 // For $ and # lifetimes, Emitter uses CurrentRegion.LocalPage or ReturnPage
 
-                                // Set result type: pointer[StructType] for page alloc, StructType for stack
+                                    // Set result type: pointer[StructType] for page alloc, StructType for stack
                                 PlannedType ResultType = StructType;
                                 if (IsRegionAlloc) {
                                     ResultType.Name = "pointer";
@@ -11470,7 +11483,6 @@ llvm::Expected<PlannedModule> Planner::planModule(const Module &Mod) {
             }
             // Short name is the last component
             const std::string &ShortName = U.Path.back();
-            llvm::errs() << "  Use: " << FullName << " (short: " << ShortName << ")\n";
 
             // Try to load the concept using the full qualified name
             const Concept *Conc = lookupConcept(FullName);
@@ -11482,17 +11494,13 @@ llvm::Expected<PlannedModule> Planner::planModule(const Module &Mod) {
                 //   Path[2] = "Plan" (module in compiler namespace)
                 //   Path[3] = "PlannedItem" (concept we want)
                 const Module* PkgMod = loadPackageOnDemand(U.Path[0]);
-                llvm::errs() << "    PkgMod: " << (PkgMod ? "found" : "null") << "\n";
                 if (PkgMod) {
-                    llvm::errs() << "    PkgMod->Members.size(): " << PkgMod->Members.size() << "\n";
                     // Look for the namespace concept with the package name
                     const Namespace* CurrentNS = nullptr;
                     for (const auto& Member : PkgMod->Members) {
                         if (auto* PkgConc = std::get_if<Concept>(&Member)) {
-                            llvm::errs() << "      Concept: " << PkgConc->Name << "\n";
                             if (PkgConc->Name == U.Path[0]) {
                                 if (auto* NS = std::get_if<Namespace>(&PkgConc->Def)) {
-                                    llvm::errs() << "        -> is namespace!\n";
                                     CurrentNS = NS;
                                     break;
                                 }
@@ -11503,11 +11511,8 @@ llvm::Expected<PlannedModule> Planner::planModule(const Module &Mod) {
                     // Navigate through the namespace modules
                     const Module* CurrentMod = nullptr;
                     if (CurrentNS && U.Path.size() > 2) {
-                        llvm::errs() << "    CurrentNS has " << CurrentNS->Modules.size() << " modules\n";
-                        llvm::errs() << "    Looking for module '" << U.Path[1] << "'\n";
                         // Find the first module (e.g., "compiler")
                         for (const auto& NsMod : CurrentNS->Modules) {
-                            llvm::errs() << "      Module: " << NsMod.Name << "\n";
                             if (NsMod.Name == U.Path[1]) {
                                 CurrentMod = &NsMod;
                                 break;
@@ -11516,12 +11521,9 @@ llvm::Expected<PlannedModule> Planner::planModule(const Module &Mod) {
 
                         // Navigate through remaining path components (except the last one)
                         for (size_t i = 2; CurrentMod && i < U.Path.size() - 1; ++i) {
-                            llvm::errs() << "    Nav step " << i << ": looking for '" << U.Path[i] << "' in module '" << CurrentMod->Name << "'\n";
                             const Module* NextMod = nullptr;
                             // Check sub-modules
-                            llvm::errs() << "      Sub-modules (" << CurrentMod->Modules.size() << "):\n";
                             for (const auto& SubMod : CurrentMod->Modules) {
-                                llvm::errs() << "        - " << SubMod.Name << "\n";
                                 if (SubMod.Name == U.Path[i]) {
                                     NextMod = &SubMod;
                                     break;
@@ -11529,15 +11531,11 @@ llvm::Expected<PlannedModule> Planner::planModule(const Module &Mod) {
                             }
                             // Also check members for namespace concepts
                             if (!NextMod) {
-                                llvm::errs() << "      Checking members (" << CurrentMod->Members.size() << "):\n";
                                 for (const auto& Member : CurrentMod->Members) {
                                     if (auto* MemberConc = std::get_if<Concept>(&Member)) {
-                                        llvm::errs() << "        Concept: " << MemberConc->Name << "\n";
                                         if (MemberConc->Name == U.Path[i]) {
                                             if (auto* MemberNS = std::get_if<Namespace>(&MemberConc->Def)) {
-                                                llvm::errs() << "          -> namespace with " << MemberNS->Modules.size() << " modules\n";
                                                 for (const auto& NsMod : MemberNS->Modules) {
-                                                    llvm::errs() << "            Module: " << NsMod.Name << "\n";
                                                     if (NsMod.Name == U.Path[i]) {
                                                         NextMod = &NsMod;
                                                         break;
@@ -11547,11 +11545,8 @@ llvm::Expected<PlannedModule> Planner::planModule(const Module &Mod) {
                                         } else {
                                             // Check if this concept contains a namespace with our target as a module
                                             if (auto* MemberNS = std::get_if<Namespace>(&MemberConc->Def)) {
-                                                llvm::errs() << "          -> checking namespace modules\n";
                                                 for (const auto& NsMod : MemberNS->Modules) {
-                                                    llvm::errs() << "            Module: '" << NsMod.Name << "' vs '" << U.Path[i] << "' -> " << (NsMod.Name == U.Path[i] ? "MATCH" : "no match") << "\n";
                                                     if (NsMod.Name == U.Path[i]) {
-                                                        llvm::errs() << "              Setting NextMod!\n";
                                                         NextMod = &NsMod;
                                                         break;
                                                     }
@@ -11567,20 +11562,16 @@ llvm::Expected<PlannedModule> Planner::planModule(const Module &Mod) {
                     }
 
                     // Look for the concept in the final module
-                    llvm::errs() << "    Final: CurrentMod=" << (CurrentMod ? CurrentMod->Name : "null") << "\n";
                     if (CurrentMod) {
                         // Add module to AccessedPackageModules for future lookups
                         if (std::find(AccessedPackageModules.begin(),
                                       AccessedPackageModules.end(),
                                       CurrentMod) == AccessedPackageModules.end()) {
                             AccessedPackageModules.push_back(CurrentMod);
-                            llvm::errs() << "    Added module '" << CurrentMod->Name << "' to AccessedPackageModules\n";
                         }
 
-                        llvm::errs() << "    Looking for concept '" << ShortName << "' in " << CurrentMod->Members.size() << " members\n";
                         for (const auto& Member : CurrentMod->Members) {
                             if (auto* MemberConc = std::get_if<Concept>(&Member)) {
-                                llvm::errs() << "      Concept: " << MemberConc->Name << "\n";
                                 if (MemberConc->Name == ShortName) {
                                     Conc = MemberConc;
                                     break;
@@ -11596,23 +11587,18 @@ llvm::Expected<PlannedModule> Planner::planModule(const Module &Mod) {
                                 if (auto* MemberConc = std::get_if<Concept>(&Member)) {
                                     if (MemberConc->Name == CurrentMod->Name) {
                                         if (auto* MemberNS = std::get_if<Namespace>(&MemberConc->Def)) {
-                                            llvm::errs() << "    Found namespace '" << MemberConc->Name << "' with " << MemberNS->Modules.size() << " modules\n";
                                             // Look for sub-module with ShortName
                                             for (const auto& NsMod : MemberNS->Modules) {
-                                                llvm::errs() << "      Sub-module: " << NsMod.Name << "\n";
                                                 if (NsMod.Name == ShortName) {
                                                     // Found the sub-module, look for the concept inside
-                                                    llvm::errs() << "      -> found! Looking in " << NsMod.Members.size() << " members\n";
                                                     // Add this sub-module to AccessedPackageModules
                                                     if (std::find(AccessedPackageModules.begin(),
                                                                   AccessedPackageModules.end(),
                                                                   &NsMod) == AccessedPackageModules.end()) {
                                                         AccessedPackageModules.push_back(&NsMod);
-                                                        llvm::errs() << "    Added sub-module '" << NsMod.Name << "' to AccessedPackageModules\n";
                                                     }
                                                     for (const auto& SubMember : NsMod.Members) {
                                                         if (auto* SubConc = std::get_if<Concept>(&SubMember)) {
-                                                            llvm::errs() << "        Concept: " << SubConc->Name << "\n";
                                                             if (SubConc->Name == ShortName) {
                                                                 Conc = SubConc;
                                                                 break;
@@ -11634,9 +11620,6 @@ llvm::Expected<PlannedModule> Planner::planModule(const Module &Mod) {
             // Cache under the short name so future lookups find it
             if (Conc) {
                 Concepts[ShortName] = Conc;
-                llvm::errs() << "    -> cached as '" << ShortName << "'\n";
-            } else {
-                llvm::errs() << "    -> NOT FOUND (but module was added to AccessedPackageModules)\n";
             }
         }
     }

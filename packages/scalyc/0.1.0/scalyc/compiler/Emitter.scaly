@@ -175,7 +175,7 @@ define Emitter
 
     ; LLVM handles
     context: LLVMContextRef
-    module: LLVMModuleRef
+    llvm_module: LLVMModuleRef
     builder: LLVMBuilderRef
 
     ; Current plan being emitted
@@ -228,7 +228,7 @@ define Emitter
     {
         set config: cfg
         set context: LLVMContextRef(null)
-        set module: LLVMModuleRef(null)
+        set llvm_module: LLVMModuleRef(null)
         set builder: LLVMBuilderRef(null)
         set current_plan: null
         set type_cache_names: Vector[String]^page()
@@ -266,7 +266,7 @@ define Emitter
         set context: LLVMContextCreate()
 
         ; Create module
-        set module: LLVMModuleCreateWithNameInContext(module_name.data, context)
+        set llvm_module: LLVMModuleCreateWithNameInContext(module_name.data, context)
 
         ; Create builder
         set builder: LLVMCreateBuilderInContext(context)
@@ -319,8 +319,8 @@ define Emitter
         if builder.handle <> null
             LLVMDisposeBuilder(builder)
 
-        if module.handle <> null
-            LLVMDisposeModule(module)
+        if llvm_module.handle <> null
+            LLVMDisposeModule(llvm_module)
 
         if context.handle <> null
             LLVMContextDispose(context)
@@ -449,9 +449,9 @@ define Emitter
             return cached
 
         ; Check intrinsic types
-        let intrinsic map_intrinsic_type(planned_type.name)
-        if intrinsic.handle <> null
-            return intrinsic
+        let intr_type map_intrinsic_type(planned_type.name)
+        if intr_type.handle <> null
+            return intr_type
 
         ; Handle pointer types
         if planned_type.name.equals(String#("pointer"))
@@ -603,7 +603,7 @@ define Emitter
         if func.name.equals(String#("main"))
             set func_name: String#("main")
 
-        let llvm_func LLVMAddFunction(module, func_name.data, func_type)
+        let llvm_func LLVMAddFunction(llvm_module, func_name.data, func_type)
 
         ; Set linkage
         if func.private
@@ -729,21 +729,21 @@ define Emitter
     ; Print module IR to string (for debugging)
     function print_module_to_string(this) returns pointer[char]
     {
-        LLVMPrintModuleToString(module)
+        LLVMPrintModuleToString(llvm_module)
     }
 
     ; Write module IR to file
     function write_module_to_file(this, filename: String) returns bool
     {
         var error_msg pointer[pointer[char]] null
-        let result LLVMPrintModuleToFile(module, filename.data, error_msg)
+        let result LLVMPrintModuleToFile(llvm_module, filename.data, error_msg)
         result = 0
     }
 
     ; Write bitcode to file
     function write_bitcode_to_file(this, filename: String) returns bool
     {
-        let result LLVMWriteBitcodeToFile(module, filename.data)
+        let result LLVMWriteBitcodeToFile(llvm_module, filename.data)
         result = 0
     }
 
@@ -751,7 +751,7 @@ define Emitter
     function verify_module(this) returns bool
     {
         var error_msg pointer[pointer[char]] null
-        let result LLVMVerifyModule(module, 0, error_msg)
+        let result LLVMVerifyModule(llvm_module, 0, error_msg)
         result = 0
     }
 
@@ -926,7 +926,7 @@ define Emitter
     ; Emit a global reference
     function emit_global_ref(this, global: PlannedGlobalRef) returns LLVMValueRef
     {
-        let gv LLVMGetNamedGlobal(module, global.mangled_name.data)
+        let gv LLVMGetNamedGlobal(llvm_module, global.mangled_name.data)
         if gv.handle = null
             return LLVMValueRef(null)
 
@@ -956,7 +956,7 @@ define Emitter
         if func.handle = null
         {
             ; Try to find it in the module
-            let func2 LLVMGetNamedFunction(module, call.mangled_name.data)
+            let func2 LLVMGetNamedFunction(llvm_module, call.mangled_name.data)
             if func2.handle = null
                 return LLVMValueRef(null)
             set func: func2
@@ -1720,7 +1720,7 @@ define Emitter
         }
 
         ; Look up get_iterator function
-        let get_iter_fn LLVMGetNamedFunction(module, for_expr.get_iterator_method.data)
+        let get_iter_fn LLVMGetNamedFunction(llvm_module, for_expr.get_iterator_method.data)
         if get_iter_fn.handle = null
             return LLVMValueRef(null)
 
@@ -1731,7 +1731,7 @@ define Emitter
         ; TODO: Call get_iterator - need proper arg array
 
         ; Look up next function
-        let next_fn LLVMGetNamedFunction(module, for_expr.next_method.data)
+        let next_fn LLVMGetNamedFunction(llvm_module, for_expr.next_method.data)
         if next_fn.handle = null
             return LLVMValueRef(null)
 
@@ -2220,7 +2220,7 @@ define Emitter
         {
             ; TODO: Check if page was used and call deallocate_extensions if needed
             ; For now, simplified: just free the local page if it exists
-            let free_fn LLVMGetNamedFunction(module, String#("free").data)
+            let free_fn LLVMGetNamedFunction(llvm_module, String#("free").data)
             if free_fn.handle <> null
             {
                 ; Build array of args
