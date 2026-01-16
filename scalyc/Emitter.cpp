@@ -7,6 +7,7 @@
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/DynamicLibrary.h"
 #include "llvm/Target/TargetMachine.h"
 #include "llvm/MC/TargetRegistry.h"
 #include "llvm/TargetParser/Host.h"
@@ -14,6 +15,9 @@
 #include "llvm/ExecutionEngine/Orc/ExecutionUtils.h"
 #include <cstring>
 #include <set>
+
+// Flag to track if LLVM library has been loaded for JIT symbol resolution
+static bool LLVMLibraryLoaded = false;
 
 namespace scaly {
 
@@ -52,6 +56,30 @@ Emitter::Emitter(const EmitterConfig &Cfg) : Config(Cfg) {
         llvm::InitializeNativeTargetAsmPrinter();
         llvm::InitializeNativeTargetAsmParser();
         LLVMInitialized = true;
+    }
+
+    // Load LLVM shared library to make C API symbols available for JIT
+    // This is needed when JIT-compiling Scaly code that uses LLVM bindings
+    if (!LLVMLibraryLoaded) {
+        // Try common LLVM library paths
+        const char* LLVMLibPaths[] = {
+            // macOS Homebrew
+            "/opt/homebrew/lib/libLLVM.dylib",
+            "/usr/local/lib/libLLVM.dylib",
+            // Linux
+            "/usr/lib/llvm-18/lib/libLLVM.so",
+            "/usr/lib/libLLVM-18.so",
+            "/usr/lib/libLLVM.so",
+            nullptr
+        };
+
+        for (const char** Path = LLVMLibPaths; *Path; ++Path) {
+            std::string ErrMsg;
+            if (!llvm::sys::DynamicLibrary::LoadLibraryPermanently(*Path, &ErrMsg)) {
+                LLVMLibraryLoaded = true;
+                break;
+            }
+        }
     }
 
     Context = std::make_unique<llvm::LLVMContext>();
