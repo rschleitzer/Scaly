@@ -7,6 +7,7 @@
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
 #include <map>
+#include <optional>
 #include <set>
 #include <string>
 #include <vector>
@@ -19,6 +20,9 @@ public:
 
     // Add package search path (from -I flag)
     void addPackageSearchPath(llvm::StringRef Path);
+
+    // Enable/disable automatic prelude loading (default: enabled)
+    void setEnablePrelude(bool Enable);
 
     // Main entry point - build a program from syntax
     llvm::Expected<Program> buildProgram(const ProgramSyntax &Syntax);
@@ -35,6 +39,10 @@ private:
     std::vector<std::string> PackageSearchPaths;
     std::set<std::string> LoadingPackages;  // For circular dependency detection
     std::map<std::string, Package> ResolvedPackages;  // Cache of resolved packages
+    bool EnablePrelude = true;  // Auto-load prelude unless disabled
+
+    // Load prelude module if enabled and available
+    llvm::Expected<std::optional<Module>> loadPrelude();
 
     // Package resolution with multi-path search (recursive for transitive deps)
     llvm::Expected<Module> resolvePackage(llvm::StringRef Name, const Version &Ver);

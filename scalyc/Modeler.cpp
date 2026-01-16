@@ -101,6 +101,72 @@ void Modeler::addPackageSearchPath(llvm::StringRef Path) {
     PackageSearchPaths.push_back(Path.str());
 }
 
+void Modeler::setEnablePrelude(bool Enable) {
+    EnablePrelude = Enable;
+}
+
+llvm::Expected<std::optional<Module>> Modeler::loadPrelude() {
+    // Search for prelude.scaly in package search paths
+    static const char* PreludePaths[] = {
+        "packages/scaly/0.1.0/scaly/prelude.scaly",
+        "/usr/share/scaly/packages/scaly/0.1.0/scaly/prelude.scaly"
+    };
+
+    std::string PreludePath;
+
+    // First try relative to current working directory
+    for (const char* Path : PreludePaths) {
+        if (llvm::sys::fs::exists(Path)) {
+            PreludePath = Path;
+            break;
+        }
+    }
+
+    // Then try package search paths
+    if (PreludePath.empty()) {
+        for (const auto& SearchPath : PackageSearchPaths) {
+            llvm::SmallString<256> FullPath(SearchPath);
+            llvm::sys::path::append(FullPath, "scaly/0.1.0/scaly/prelude.scaly");
+            if (llvm::sys::fs::exists(FullPath)) {
+                PreludePath = std::string(FullPath);
+                break;
+            }
+        }
+    }
+
+    // No prelude found - that's OK, just return empty
+    if (PreludePath.empty()) {
+        return std::nullopt;
+    }
+
+    // Load and parse the prelude file
+    auto BufOrErr = llvm::MemoryBuffer::getFile(PreludePath);
+    if (!BufOrErr) {
+        // Can't read file - not a fatal error, just skip prelude
+        return std::nullopt;
+    }
+
+    Parser PreludeParser((*BufOrErr)->getBuffer());
+    auto ParseResult = PreludeParser.parseProgram();
+    if (!ParseResult) {
+        // Parse error in prelude - this is a real error
+        return ParseResult.takeError();
+    }
+
+    // Get directory for module building
+    llvm::SmallString<256> PreludeDir(PreludePath);
+    llvm::sys::path::remove_filename(PreludeDir);
+
+    // Build the prelude as a module
+    auto PreludeModule = buildModule(PreludeDir.str(), PreludePath, "prelude",
+                                      ParseResult->file, false);
+    if (!PreludeModule) {
+        return PreludeModule.takeError();
+    }
+
+    return std::optional<Module>(std::move(*PreludeModule));
+}
+
 // Name to Type conversion (for expressions - no generics attached)
 Type Modeler::nameToType(const NameSyntax &Syntax) {
     std::vector<std::string> Path;
@@ -2242,6 +2308,21 @@ llvm::Expected<Program> Modeler::buildProgram(const ProgramSyntax &Syntax) {
     auto MainModule = buildModule(BasePath.str(), File, "", Syntax.file, false);
     if (!MainModule)
         return MainModule.takeError();
+
+    // Load prelude if enabled - merge its members into the main module
+    if (EnablePrelude) {
+        auto PreludeOrErr = loadPrelude();
+        if (!PreludeOrErr)
+            return PreludeOrErr.takeError();
+
+        if (*PreludeOrErr) {
+            // Prepend prelude members to main module (so user can shadow them)
+            auto& Prelude = **PreludeOrErr;
+            MainModule->Members.insert(MainModule->Members.begin(),
+                                        Prelude.Members.begin(),
+                                        Prelude.Members.end());
+        }
+    }
 
     auto Stmts = handleStatements(Syntax.statements);
     if (!Stmts)

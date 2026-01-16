@@ -132,6 +132,11 @@ static cl::opt<bool> EnableLTO(
     cl::desc("Enable Link Time Optimization"),
     cl::cat(ScalyCategory));
 
+static cl::opt<bool> NoPrelude(
+    "no-prelude",
+    cl::desc("Disable implicit prelude loading"),
+    cl::cat(ScalyCategory));
+
 // Print a token in readable format
 static void printToken(const scaly::Token &Tok) {
     std::visit([](auto &&arg) {
@@ -234,6 +239,7 @@ static int modelFile(StringRef Filename) {
     }
 
     scaly::Modeler Modeler(Filename);
+    Modeler.setEnablePrelude(!NoPrelude);
     for (const auto &P : IncludePaths) {
         Modeler.addPackageSearchPath(P);
     }
@@ -277,6 +283,7 @@ static int planFile(StringRef Filename) {
     }
 
     scaly::Modeler Modeler(Filename);
+    Modeler.setEnablePrelude(!NoPrelude);
     for (const auto &P : IncludePaths) {
         Modeler.addPackageSearchPath(P);
     }
@@ -339,6 +346,7 @@ static int compileFile(StringRef Filename, StringRef OutputPath) {
     }
 
     scaly::Modeler Modeler(Filename);
+    Modeler.setEnablePrelude(!NoPrelude);
     for (const auto &P : IncludePaths) {
         Modeler.addPackageSearchPath(P);
     }
@@ -397,6 +405,7 @@ static int emitLLVMFile(StringRef Filename, StringRef OutputPath) {
     }
 
     scaly::Modeler Modeler(Filename);
+    Modeler.setEnablePrelude(!NoPrelude);
     for (const auto &P : IncludePaths) {
         Modeler.addPackageSearchPath(P);
     }
@@ -465,6 +474,7 @@ static int runFile(StringRef Filename, StringRef FunctionName) {
     }
 
     scaly::Modeler Modeler(Filename);
+    Modeler.setEnablePrelude(!NoPrelude);
     for (const auto &P : IncludePaths) {
         Modeler.addPackageSearchPath(P);
     }
@@ -616,6 +626,7 @@ static int compileToBitcode(StringRef Filename, StringRef OutputPath) {
     }
 
     scaly::Modeler Modeler(Filename);
+    Modeler.setEnablePrelude(!NoPrelude);
     for (const auto &P : IncludePaths) {
         Modeler.addPackageSearchPath(P);
     }
