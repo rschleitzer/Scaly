@@ -3518,6 +3518,30 @@ llvm::Expected<llvm::Value*> Emitter::emitBlock(const PlannedBlock &Block) {
             // After return, block has terminated, so LastValue doesn't matter
             BlockCleanupStack.pop_back();
             return nullptr;
+        } else if (auto *Throw = std::get_if<PlannedThrow>(&Stmt)) {
+            // Throw emits return - block terminates
+            if (auto Err = emitThrow(*Throw)) {
+                BlockCleanupStack.pop_back();
+                return std::move(Err);
+            }
+            BlockCleanupStack.pop_back();
+            return nullptr;
+        } else if (auto *Break = std::get_if<PlannedBreak>(&Stmt)) {
+            // Break emits branch - block terminates
+            if (auto Err = emitBreak(*Break)) {
+                BlockCleanupStack.pop_back();
+                return std::move(Err);
+            }
+            BlockCleanupStack.pop_back();
+            return nullptr;
+        } else if (auto *Continue = std::get_if<PlannedContinue>(&Stmt)) {
+            // Continue emits branch - block terminates
+            if (auto Err = emitContinue(*Continue)) {
+                BlockCleanupStack.pop_back();
+                return std::move(Err);
+            }
+            BlockCleanupStack.pop_back();
+            return nullptr;
         } else {
             if (auto Err = emitStatement(Stmt)) {
                 BlockCleanupStack.pop_back();
@@ -4009,12 +4033,20 @@ llvm::Expected<llvm::Value*> Emitter::emitChoose(const PlannedChoose &Choose) {
         Builder->CreateBr(MergeBlock);
     }
 
-    // Continue at merge block
-    Builder->SetInsertPoint(MergeBlock);
+    // Continue at merge block only if it's reachable
+    // If no paths lead to the merge block, all paths terminated (return/throw)
+    // In that case, mark the block unreachable and don't continue emitting there
+    if (MergeBlock->hasNPredecessorsOrMore(1)) {
+        Builder->SetInsertPoint(MergeBlock);
 
-    // Load result from alloca if we have one
-    if (ResultAlloca) {
-        return Builder->CreateLoad(ResultType, ResultAlloca, "choose.value");
+        // Load result from alloca if we have one
+        if (ResultAlloca) {
+            return Builder->CreateLoad(ResultType, ResultAlloca, "choose.value");
+        }
+    } else {
+        // Block is unreachable - add unreachable terminator
+        Builder->SetInsertPoint(MergeBlock);
+        Builder->CreateUnreachable();
     }
 
     return nullptr;
@@ -4165,12 +4197,18 @@ llvm::Expected<llvm::Value*> Emitter::emitChooseNPO(
         Builder->CreateBr(MergeBlock);
     }
 
-    // Merge block
-    Builder->SetInsertPoint(MergeBlock);
+    // Continue at merge block only if it's reachable
+    if (MergeBlock->hasNPredecessorsOrMore(1)) {
+        Builder->SetInsertPoint(MergeBlock);
 
-    // Load result if we stored one
-    if (ResultAlloca && (HasSomeValue || HasNoneValue)) {
-        return Builder->CreateLoad(ResultType, ResultAlloca, "choose.value");
+        // Load result if we stored one
+        if (ResultAlloca && (HasSomeValue || HasNoneValue)) {
+            return Builder->CreateLoad(ResultType, ResultAlloca, "choose.value");
+        }
+    } else {
+        // Block is unreachable - add unreachable terminator
+        Builder->SetInsertPoint(MergeBlock);
+        Builder->CreateUnreachable();
     }
 
     return nullptr;
