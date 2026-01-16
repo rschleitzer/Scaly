@@ -1149,17 +1149,10 @@ std::vector<const Function*> Planner::lookupFunction(llvm::StringRef Name) {
         }
     }
 
-    // If we're inside a namespace (define block), also search its sibling functions
-    // This allows calling sibling functions like test_slice() from test() within the same namespace
-    if (!CurrentNamespaceName.empty() && CurrentNamespace) {
-        for (const auto& Member : CurrentNamespace->Members) {
-            if (auto* Func = std::get_if<Function>(&Member)) {
-                if (Func->Name == Name) {
-                    Result.push_back(Func);
-                }
-            }
-        }
-    }
+    // NOTE: Namespace sibling function lookup is handled separately
+    // in planFunctionCall (around line 7846) with additional verification.
+    // Adding it here causes issues - functions get found but may be
+    // incorrectly resolved without proper context.
 
     // Search sibling programs (for multi-file compilation)
     if (Result.empty()) {
