@@ -61,13 +61,22 @@ Emitter::Emitter(const EmitterConfig &Cfg) : Config(Cfg) {
     // Load LLVM shared library to make C API symbols available for JIT
     // This is needed when JIT-compiling Scaly code that uses LLVM bindings
     if (!LLVMLibraryLoaded) {
-        // Try common LLVM library paths
+        // Try LLVM library paths - CMake-detected path first, then fallbacks
         const char* LLVMLibPaths[] = {
-            // macOS Homebrew
+#ifdef LLVM_SHARED_LIB_PATH
+            // Path detected by CMake at build time (most reliable)
+            LLVM_SHARED_LIB_PATH,
+#endif
+            // macOS Homebrew fallbacks
+            "/opt/homebrew/opt/llvm@18/lib/libLLVM.dylib",
+            "/opt/homebrew/opt/llvm/lib/libLLVM.dylib",
             "/opt/homebrew/lib/libLLVM.dylib",
+            "/usr/local/opt/llvm/lib/libLLVM.dylib",
             "/usr/local/lib/libLLVM.dylib",
-            // Linux
+            // Linux fallbacks
             "/usr/lib/llvm-18/lib/libLLVM.so",
+            "/usr/lib/llvm-18/lib/libLLVM-18.so",
+            "/usr/lib/x86_64-linux-gnu/libLLVM-18.so",
             "/usr/lib/libLLVM-18.so",
             "/usr/lib/libLLVM.so",
             nullptr
