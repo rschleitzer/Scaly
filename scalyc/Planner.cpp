@@ -851,10 +851,16 @@ bool Planner::typesCompatible(const PlannedType &ParamType, const PlannedType &A
 
     // Allow string literals (pointer[i8]) to be passed where pointer[const_char] is expected
     // This handles C-string function parameters like strlen, String(rp, c_string), etc.
+    // Also allow pointer[char] to be passed where pointer[const_char] is expected
     if (ParamType.Name == "pointer" && ArgType.Name == "pointer" &&
         !ParamType.Generics.empty() && !ArgType.Generics.empty()) {
+        // pointer[i8] <-> pointer[const_char]
         if ((ParamType.Generics[0].Name == "const_char" && ArgType.Generics[0].Name == "i8") ||
             (ParamType.Generics[0].Name == "i8" && ArgType.Generics[0].Name == "const_char")) {
+            return true;
+        }
+        // pointer[char] -> pointer[const_char] (char is mutable, const_char is immutable)
+        if (ParamType.Generics[0].Name == "const_char" && ArgType.Generics[0].Name == "char") {
             return true;
         }
     }
@@ -2436,6 +2442,19 @@ std::optional<Planner::InitializerMatch> Planner::findInitializer(
         !StructIt->second.Initializers.empty()) {
         const PlannedStructure &Struct = StructIt->second;
 
+        // Debug: show what we're looking for
+        if (StructType.Name.find("String") != std::string::npos) {
+            llvm::errs() << "DEBUG findInitializer String: ArgTypes=[";
+            for (size_t i = 0; i < ArgTypes.size(); ++i) {
+                if (i > 0) llvm::errs() << ", ";
+                llvm::errs() << ArgTypes[i].Name;
+                if (!ArgTypes[i].Generics.empty()) {
+                    llvm::errs() << "[" << ArgTypes[i].Generics[0].Name << "]";
+                }
+            }
+            llvm::errs() << "]\n";
+        }
+
         // Search for matching initializer in the cached PlannedStructure
         for (const auto &Init : Struct.Initializers) {
             // Check if parameter count matches
@@ -2456,9 +2475,14 @@ std::optional<Planner::InitializerMatch> Planner::findInitializer(
                 }
             }
 
-            // DEBUG: llvm::errs() << "DEBUG findInitializer: cached AllMatch=" << AllMatch << "\n";
+            if (StructType.Name.find("String") != std::string::npos) {
+                llvm::errs() << "DEBUG findInitializer String: AllMatch=" << AllMatch
+                             << " Init=" << Init.MangledName << "\n";
+            }
             if (AllMatch) {
-                // DEBUG: llvm::errs() << "DEBUG findInitializer: returning cache match\n";
+                if (StructType.Name.find("String") != std::string::npos) {
+                    llvm::errs() << "DEBUG findInitializer String: RETURNING " << Init.MangledName << "\n";
+                }
                 InitializerMatch Match;
                 Match.Init = &Init;
                 Match.MangledName = Init.MangledName;
@@ -7233,10 +7257,20 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             return PlannedArgs.takeError();
                         }
 
-                        // Plan the function
-                        auto PlannedFunc = planFunction(*UseFunc, nullptr);
+                        // Create parent type for proper namespace function mangling
+                        PlannedType NamespaceParent;
+                        NamespaceParent.Name = AliasName;
+                        NamespaceParent.MangledName = encodeName(AliasName);
+
+                        // Plan the function with namespace as parent
+                        auto PlannedFunc = planFunction(*UseFunc, &NamespaceParent);
                         if (!PlannedFunc) {
                             return PlannedFunc.takeError();
+                        }
+
+                        // Add to InstantiatedFunctions if not already present
+                        if (InstantiatedFunctions.find(PlannedFunc->MangledName) == InstantiatedFunctions.end()) {
+                            InstantiatedFunctions[PlannedFunc->MangledName] = *PlannedFunc;
                         }
 
                         // Create the function call
@@ -7256,6 +7290,46 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
 
                         // Build args from tuple
                         Call.Args = std::make_shared<std::vector<PlannedOperand>>();
+
+                        // Handle function# page parameter for use-imported namespace function calls
+                        if (PlannedFunc->PageParameter) {
+                            Call.RequiresPageParam = true;
+                            Call.Life = TypeExpr->Life;
+
+                            if (auto* RefLife = std::get_if<ReferenceLifetime>(&TypeExpr->Life)) {
+                                // ^name - pass explicit page as first argument
+                                if (RefLife->Location == "this") {
+                                    auto PageGetResult = generatePageGetThis(RefLife->Loc);
+                                    if (!PageGetResult) {
+                                        return PageGetResult.takeError();
+                                    }
+                                    Call.Args->push_back(std::move(*PageGetResult));
+                                } else {
+                                    auto RegionBinding = lookupLocalBinding(RefLife->Location);
+                                    if (!RegionBinding) {
+                                        return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
+                                    }
+                                    PlannedOperand RegionArg;
+                                    RegionArg.Loc = RefLife->Loc;
+                                    RegionArg.ResultType = RegionBinding->Type;
+                                    RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, RegionBinding->IsMutable};
+                                    Call.Args->push_back(std::move(RegionArg));
+                                }
+                            }
+                            else if (std::holds_alternative<LocalLifetime>(TypeExpr->Life) ||
+                                     std::holds_alternative<CallLifetime>(TypeExpr->Life)) {
+                                // $ or # - track that we need local page allocation (local page as fallback for #)
+                                CurrentFunctionUsesLocalLifetime = true;
+                                if (!ScopeInfoStack.empty()) {
+                                    ScopeInfoStack.back().HasLocalAllocations = true;
+                                }
+                            }
+                            else {
+                                return makePlannerNotImplementedError(File, Op.Loc,
+                                    "function# '" + FuncName + "' must be called with #, $, or ^page syntax");
+                            }
+                        }
+
                         if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedArgs->Expr)) {
                             for (auto& Comp : TupleExpr->Components) {
                                 for (auto& ValOp : Comp.Value) {
@@ -10431,25 +10505,32 @@ llvm::Expected<PlannedChoose> Planner::planChoose(const Choose &ChooseExpr) {
             }
         }
 
-        // Handle throwing function calls with "error" and "value" variants
+        // Handle throwing function calls with error/value variants
+        // Supports multiple naming conventions:
+        //   Error result: "error", "Error", "err"
+        //   Success result: "value", "Success", "Ok", "ok"
         if (PW.VariantType.Name.empty() && IsThrowingCall) {
-            if (VariantTypeName == "error") {
+            bool IsErrorVariant = (VariantTypeName == "error" || VariantTypeName == "Error" ||
+                                   VariantTypeName == "err");
+            bool IsValueVariant = (VariantTypeName == "value" || VariantTypeName == "Success" ||
+                                   VariantTypeName == "Ok" || VariantTypeName == "ok");
+            if (IsErrorVariant) {
                 // Error variant uses the throws type
-                PW.VariantIndex = 0;  // error is first variant
+                PW.VariantIndex = 1;  // Error is second variant in Result[T, E]
                 if (ThrowsType) {
                     PW.VariantType = *ThrowsType;
                     llvm::errs() << "DEBUG choose: throwing call error variant -> type '"
-                                 << PW.VariantType.Name << "'\n";
+                                 << PW.VariantType.Name << "' VariantIndex=" << PW.VariantIndex << "\n";
                 } else {
                     PW.VariantType.Name = "void";
                     PW.VariantType.Loc = Case.Loc;
                 }
-            } else if (VariantTypeName == "value") {
+            } else if (IsValueVariant) {
                 // Value variant uses the return type
-                PW.VariantIndex = 1;  // value is second variant
+                PW.VariantIndex = 0;  // Ok is first variant in Result[T, E]
                 PW.VariantType = ValueType;
                 llvm::errs() << "DEBUG choose: throwing call value variant -> type '"
-                             << PW.VariantType.Name << "'\n";
+                             << PW.VariantType.Name << "' VariantIndex=" << PW.VariantIndex << "\n";
             }
         }
 
@@ -10480,6 +10561,8 @@ llvm::Expected<PlannedChoose> Planner::planChoose(const Choose &ChooseExpr) {
             PW.Consequent = std::make_unique<PlannedStatement>(std::move(*PlannedCons));
         }
 
+        llvm::errs() << "DEBUG planChoose: adding case Name='" << PW.Name
+                     << "' VariantIndex=" << PW.VariantIndex << "\n";
         Result.Cases.push_back(std::move(PW));
     }
 

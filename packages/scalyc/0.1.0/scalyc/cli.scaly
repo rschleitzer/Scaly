@@ -267,7 +267,7 @@ define cli
         ; ================================================================
 
         ; Extract program name from filename (strip path and extension)
-        var program_name extract_program_name(opts.input_file)
+        var program_name cli.extract_program_name#(opts.input_file)
 
         let model Modeler.build_program#(opts.input_file, program_name, syntax)
 
@@ -375,14 +375,14 @@ define cli
         if end <= start
             return file_path
 
-        file_path.substring#(start as size_t, (end - start) as size_t)
+        file_path.substring(rp, start as size_t, (end - start) as size_t)
     }
 
     ; Main entry point
     function main(argc: int, argv: pointer[pointer[char]]) returns int
     {
-        var opts parse_args$(argc, argv)
-        run$(opts)
+        var opts cli.parse_args$(argc, argv)
+        return cli.run$(opts)
     }
 
     ; Test function
@@ -401,22 +401,22 @@ define cli
 
         ; Test 2: Test extract_program_name
         var path1 String$("/path/to/hello.scaly")
-        var name1 extract_program_name$(path1)
+        var name1 cli.extract_program_name$(path1)
         if name1.equals(String$("hello")) = false
             return -10
 
         var path2 String$("simple.scaly")
-        var name2 extract_program_name$(path2)
+        var name2 cli.extract_program_name$(path2)
         if name2.equals(String$("simple")) = false
             return -11
 
         ; Test 3: Test pipeline on a minimal program
-        var result test_pipeline$()
+        var result cli.test_pipeline$()
         if result <> 0
             return result - 100
 
         ; Test 4: Test pipeline on hello.scaly from disk
-        set result: test_hello_scaly$()
+        set result: cli.test_hello_scaly$()
         if result <> 0
             return result - 200
 

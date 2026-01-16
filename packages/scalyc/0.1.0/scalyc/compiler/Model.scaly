@@ -16,6 +16,7 @@ define FloatingPointConstant(span: Span, value: double)
 define StringConstant(span: Span, value: String)
 define CharacterConstant(span: Span, value: String)
 define FragmentConstant(span: Span, value: String)
+define NullConstant(span: Span)
 
 define Constant union (
     Boolean: BooleanConstant
@@ -25,6 +26,7 @@ define Constant union (
     String: StringConstant
     Character: CharacterConstant
     Fragment: FragmentConstant
+    Null: NullConstant
 )
 
 ; Tuple component

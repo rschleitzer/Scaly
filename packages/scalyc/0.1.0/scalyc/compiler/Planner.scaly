@@ -305,7 +305,7 @@ define Planner
             if t.generics.length > 0
             {
                 ; Extract base name if Name contains instantiation suffix
-                let base_name strip_suffix(t.name)
+                let base_name strip_suffix#(t.name)
                 let result StringBuilder#()
                 result.append(encode_name(base_name))
                 result.append(String#("I"))
@@ -320,7 +320,7 @@ define Planner
 
         ; User-defined types: use length-prefixed name
         ; Strip package prefix like "scaly.containers." for consistent naming
-        let normalized strip_package_prefix(t.name)
+        let normalized strip_package_prefix#(t.name)
         encode_name(normalized)
     }
 
@@ -410,24 +410,24 @@ define Planner
 
     ; Strip package prefix from qualified type names
     ; e.g., "scaly.containers.String" -> "String"
-    function strip_package_prefix(name: String) returns String
+    function strip_package_prefix#(rp, name: String) returns String
     {
         if name.starts_with(String#("scaly."))
         {
             let last_dot name.last_index_of("." as char)
             if last_dot > 0
-                return name.substring(last_dot + 1, name.length)
+                return name.substring(rp, last_dot + 1, name.length)
         }
         name
     }
 
     ; Strip suffix after dot from type name
     ; e.g., "Vector.char" -> "Vector"
-    function strip_suffix(name: String) returns String
+    function strip_suffix#(rp, name: String) returns String
     {
         let dot name.index_of("." as char)
         if dot > 0
-            return name.substring(0, dot)
+            return name.substring(rp, 0, dot)
         name
     }
 
@@ -692,7 +692,7 @@ define Planner
             for arg in args
             {
                 result.append(String#("."))
-                result.append(strip_package_prefix(arg.name))
+                result.append(strip_package_prefix#(arg.name))
             }
         }
 
@@ -3334,13 +3334,13 @@ function test() returns int
 
     ; Test strip_package_prefix
     let qualified String#("scaly.containers.String")
-    let stripped Planner.strip_package_prefix(qualified)
+    let stripped Planner.strip_package_prefix#(qualified)
     if stripped.equals(String#("String")) = false
         return 2
 
     ; Test strip_suffix
     let with_suffix String#("Vector.char")
-    let base Planner.strip_suffix(with_suffix)
+    let base Planner.strip_suffix#(with_suffix)
     if base.equals(String#("Vector")) = false
         return 3
 
