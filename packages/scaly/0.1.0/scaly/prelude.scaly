@@ -1,0 +1,14 @@
+; Scaly Prelude - automatically loaded unless --no-prelude is specified
+; Provides common functions for scripting and REPL use
+
+function println(msg: pointer[i8]) returns int
+{
+    puts(msg)
+}
+
+function print(msg: pointer[i8]) returns int
+{
+    puts(msg)
+}
+
+function puts(s: pointer[i8]) returns int extern
