@@ -117,6 +117,7 @@ private:
     // Current function state (during emission)
     llvm::Function *CurrentFunction = nullptr;
     llvm::BasicBlock *CurrentBlock = nullptr;
+    llvm::Instruction *AllocaInsertPt = nullptr;  // Insertion point for allocas in entry block
     std::map<std::string, llvm::Value*> LocalVariables;
     bool CurrentFunctionCanThrow = false;  // True if current function has Throws annotation
 
@@ -337,6 +338,10 @@ private:
     // ========================================================================
     // Utility
     // ========================================================================
+
+    // Create an alloca in the entry block of the current function
+    // This ensures allocas don't grow the stack inside loops
+    llvm::AllocaInst *createEntryBlockAlloca(llvm::Type *Ty, llvm::StringRef Name = "");
 
     // Create a basic block in current function
     llvm::BasicBlock *createBlock(llvm::StringRef Name);
