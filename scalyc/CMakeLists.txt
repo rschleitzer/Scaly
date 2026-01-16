@@ -18,6 +18,16 @@ include_directories(${LLVM_INCLUDE_DIRS})
 separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
 add_definitions(${LLVM_DEFINITIONS_LIST})
 
+# Pass LLVM library directory to code for runtime loading
+# This ensures JIT can find LLVM C API symbols on all platforms
+if(APPLE)
+    set(LLVM_SHARED_LIB "${LLVM_LIBRARY_DIR}/libLLVM.dylib")
+else()
+    set(LLVM_SHARED_LIB "${LLVM_LIBRARY_DIR}/libLLVM.so")
+endif()
+message(STATUS "LLVM shared library: ${LLVM_SHARED_LIB}")
+add_definitions(-DLLVM_SHARED_LIB_PATH="${LLVM_SHARED_LIB}")
+
 # Source files
 set(SOURCES
     main.cpp
