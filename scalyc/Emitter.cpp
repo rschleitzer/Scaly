@@ -409,6 +409,33 @@ llvm::Expected<std::unique_ptr<llvm::Module>> Emitter::emit(const Plan &P,
             }
         }
     }
+    // Also emit method and operator bodies from unions (e.g., Option.unwrap)
+    for (const auto &[name, Union] : P.Unions) {
+        for (const auto &Method : Union.Methods) {
+            if (auto *LLVMFunc = FunctionCache[Method.MangledName]) {
+                if (auto Err = emitFunctionBody(Method, LLVMFunc))
+                    return std::move(Err);
+            }
+        }
+        for (const auto &Op : Union.Operators) {
+            if (auto *LLVMFunc = FunctionCache[Op.MangledName]) {
+                PlannedFunction OpFunc;
+                OpFunc.Loc = Op.Loc;
+                OpFunc.Private = Op.Private;
+                OpFunc.Pure = true;
+                OpFunc.Name = Op.Name;
+                OpFunc.MangledName = Op.MangledName;
+                OpFunc.Input = Op.Input;
+                OpFunc.Returns = Op.Returns;
+                OpFunc.Throws = Op.Throws;
+                OpFunc.Impl = Op.Impl;
+                OpFunc.Origin = Op.Origin;
+                OpFunc.Scheme = Op.Scheme;
+                if (auto Err = emitFunctionBody(OpFunc, LLVMFunc))
+                    return std::move(Err);
+            }
+        }
+    }
 
     // Phase 4: Emit top-level statements (program entry)
     if (!P.Statements.empty()) {
@@ -5814,6 +5841,33 @@ llvm::Expected<uint64_t> Emitter::jitExecuteRaw(const Plan &P, llvm::Type *Expec
             }
         }
     }
+    // Also emit method and operator bodies from unions (e.g., Option.unwrap)
+    for (const auto &[name, Union] : P.Unions) {
+        for (const auto &Method : Union.Methods) {
+            if (auto *LLVMFunc = FunctionCache[Method.MangledName]) {
+                if (auto Err = emitFunctionBody(Method, LLVMFunc))
+                    return std::move(Err);
+            }
+        }
+        for (const auto &Op : Union.Operators) {
+            if (auto *LLVMFunc = FunctionCache[Op.MangledName]) {
+                PlannedFunction OpFunc;
+                OpFunc.Loc = Op.Loc;
+                OpFunc.Private = Op.Private;
+                OpFunc.Pure = true;
+                OpFunc.Name = Op.Name;
+                OpFunc.MangledName = Op.MangledName;
+                OpFunc.Input = Op.Input;
+                OpFunc.Returns = Op.Returns;
+                OpFunc.Throws = Op.Throws;
+                OpFunc.Impl = Op.Impl;
+                OpFunc.Origin = Op.Origin;
+                OpFunc.Scheme = Op.Scheme;
+                if (auto Err = emitFunctionBody(OpFunc, LLVMFunc))
+                    return std::move(Err);
+            }
+        }
+    }
 
     // Create JIT wrapper function
     auto *Wrapper = createJITWrapper(ExpectedType);
@@ -6047,6 +6101,27 @@ llvm::Error Emitter::jitExecuteVoid(const Plan &P, llvm::StringRef MangledFuncti
             emitDeInitializerDecl(Struct, *Struct.Deinitializer);
         }
     }
+    // Also emit method and operator declarations from unions (e.g., Option.unwrap)
+    for (const auto &[name, Union] : P.Unions) {
+        for (const auto &Method : Union.Methods) {
+            emitFunctionDecl(Method);
+        }
+        for (const auto &Op : Union.Operators) {
+            PlannedFunction OpFunc;
+            OpFunc.Loc = Op.Loc;
+            OpFunc.Private = Op.Private;
+            OpFunc.Pure = true;
+            OpFunc.Name = Op.Name;
+            OpFunc.MangledName = Op.MangledName;
+            OpFunc.Input = Op.Input;
+            OpFunc.Returns = Op.Returns;
+            OpFunc.Throws = Op.Throws;
+            OpFunc.Impl = Op.Impl;
+            OpFunc.Origin = Op.Origin;
+            OpFunc.Scheme = Op.Scheme;
+            emitFunctionDecl(OpFunc);
+        }
+    }
 
 
     // Set up RBMM function pointers if Page is in the Plan
@@ -6102,6 +6177,33 @@ llvm::Error Emitter::jitExecuteVoid(const Plan &P, llvm::StringRef MangledFuncti
         if (Struct.Deinitializer) {
             if (auto *LLVMFunc = FunctionCache[Struct.Deinitializer->MangledName]) {
                 if (auto Err = emitDeInitializerBody(Struct, *Struct.Deinitializer, LLVMFunc))
+                    return Err;
+            }
+        }
+    }
+    // Also emit method and operator bodies from unions (e.g., Option.unwrap)
+    for (const auto &[name, Union] : P.Unions) {
+        for (const auto &Method : Union.Methods) {
+            if (auto *LLVMFunc = FunctionCache[Method.MangledName]) {
+                if (auto Err = emitFunctionBody(Method, LLVMFunc))
+                    return Err;
+            }
+        }
+        for (const auto &Op : Union.Operators) {
+            if (auto *LLVMFunc = FunctionCache[Op.MangledName]) {
+                PlannedFunction OpFunc;
+                OpFunc.Loc = Op.Loc;
+                OpFunc.Private = Op.Private;
+                OpFunc.Pure = true;
+                OpFunc.Name = Op.Name;
+                OpFunc.MangledName = Op.MangledName;
+                OpFunc.Input = Op.Input;
+                OpFunc.Returns = Op.Returns;
+                OpFunc.Throws = Op.Throws;
+                OpFunc.Impl = Op.Impl;
+                OpFunc.Origin = Op.Origin;
+                OpFunc.Scheme = Op.Scheme;
+                if (auto Err = emitFunctionBody(OpFunc, LLVMFunc))
                     return Err;
             }
         }
@@ -6257,6 +6359,27 @@ llvm::Expected<int64_t> Emitter::jitExecuteIntFunction(const Plan &P, llvm::Stri
             emitDeInitializerDecl(Struct, *Struct.Deinitializer);
         }
     }
+    // Also emit method and operator declarations from unions (e.g., Option.unwrap)
+    for (const auto &[name, Union] : P.Unions) {
+        for (const auto &Method : Union.Methods) {
+            emitFunctionDecl(Method);
+        }
+        for (const auto &Op : Union.Operators) {
+            PlannedFunction OpFunc;
+            OpFunc.Loc = Op.Loc;
+            OpFunc.Private = Op.Private;
+            OpFunc.Pure = true;
+            OpFunc.Name = Op.Name;
+            OpFunc.MangledName = Op.MangledName;
+            OpFunc.Input = Op.Input;
+            OpFunc.Returns = Op.Returns;
+            OpFunc.Throws = Op.Throws;
+            OpFunc.Impl = Op.Impl;
+            OpFunc.Origin = Op.Origin;
+            OpFunc.Scheme = Op.Scheme;
+            emitFunctionDecl(OpFunc);
+        }
+    }
 
 
     // Set up RBMM function pointers if Page is in the Plan
@@ -6312,6 +6435,33 @@ llvm::Expected<int64_t> Emitter::jitExecuteIntFunction(const Plan &P, llvm::Stri
         if (Struct.Deinitializer) {
             if (auto *LLVMFunc = FunctionCache[Struct.Deinitializer->MangledName]) {
                 if (auto Err = emitDeInitializerBody(Struct, *Struct.Deinitializer, LLVMFunc))
+                    return Err;
+            }
+        }
+    }
+    // Also emit method and operator bodies from unions (e.g., Option.unwrap)
+    for (const auto &[name, Union] : P.Unions) {
+        for (const auto &Method : Union.Methods) {
+            if (auto *LLVMFunc = FunctionCache[Method.MangledName]) {
+                if (auto Err = emitFunctionBody(Method, LLVMFunc))
+                    return Err;
+            }
+        }
+        for (const auto &Op : Union.Operators) {
+            if (auto *LLVMFunc = FunctionCache[Op.MangledName]) {
+                PlannedFunction OpFunc;
+                OpFunc.Loc = Op.Loc;
+                OpFunc.Private = Op.Private;
+                OpFunc.Pure = true;
+                OpFunc.Name = Op.Name;
+                OpFunc.MangledName = Op.MangledName;
+                OpFunc.Input = Op.Input;
+                OpFunc.Returns = Op.Returns;
+                OpFunc.Throws = Op.Throws;
+                OpFunc.Impl = Op.Impl;
+                OpFunc.Origin = Op.Origin;
+                OpFunc.Scheme = Op.Scheme;
+                if (auto Err = emitFunctionBody(OpFunc, LLVMFunc))
                     return Err;
             }
         }
@@ -6533,6 +6683,35 @@ void Emitter::dumpIR(const Plan &P) {
             auto &DeInit = *Struct.Deinitializer;
             if (auto *LLVMFunc = FunctionCache[DeInit.MangledName]) {
                 if (auto Err = emitDeInitializerBody(Struct, DeInit, LLVMFunc)) {
+                    llvm::consumeError(std::move(Err));
+                }
+            }
+        }
+    }
+    // Also emit method and operator bodies from unions (e.g., Option.unwrap)
+    for (const auto &[name, Union] : P.Unions) {
+        for (const auto &Method : Union.Methods) {
+            if (auto *LLVMFunc = FunctionCache[Method.MangledName]) {
+                if (auto Err = emitFunctionBody(Method, LLVMFunc)) {
+                    llvm::consumeError(std::move(Err));
+                }
+            }
+        }
+        for (const auto &Op : Union.Operators) {
+            if (auto *LLVMFunc = FunctionCache[Op.MangledName]) {
+                PlannedFunction OpFunc;
+                OpFunc.Loc = Op.Loc;
+                OpFunc.Private = Op.Private;
+                OpFunc.Pure = true;
+                OpFunc.Name = Op.Name;
+                OpFunc.MangledName = Op.MangledName;
+                OpFunc.Input = Op.Input;
+                OpFunc.Returns = Op.Returns;
+                OpFunc.Throws = Op.Throws;
+                OpFunc.Impl = Op.Impl;
+                OpFunc.Origin = Op.Origin;
+                OpFunc.Scheme = Op.Scheme;
+                if (auto Err = emitFunctionBody(OpFunc, LLVMFunc)) {
                     llvm::consumeError(std::move(Err));
                 }
             }
