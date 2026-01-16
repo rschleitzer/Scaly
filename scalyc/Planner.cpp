@@ -1354,6 +1354,7 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                 Match.RequiresPageParam = Method.PageParameter.has_value();
                 Match.CanThrow = Method.CanThrow;
                 Match.ThrowsType = Method.Throws;
+                Match.IsIntrinsic = std::holds_alternative<PlannedIntrinsicImpl>(Method.Impl);
                 if (Method.Returns) {
                     Match.ReturnType = *Method.Returns;
                 } else {
@@ -1421,6 +1422,7 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                 Match.RequiresPageParam = Method.PageParameter.has_value();
                 Match.CanThrow = Method.CanThrow;
                 Match.ThrowsType = Method.Throws;
+                Match.IsIntrinsic = std::holds_alternative<PlannedIntrinsicImpl>(Method.Impl);
                 if (Method.Returns) {
                     Match.ReturnType = *Method.Returns;
                 } else {
@@ -1447,6 +1449,7 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                 Match.RequiresPageParam = Method.PageParameter.has_value();
                 Match.CanThrow = Method.CanThrow;
                 Match.ThrowsType = Method.Throws;
+                Match.IsIntrinsic = std::holds_alternative<PlannedIntrinsicImpl>(Method.Impl);
                 if (Method.Returns) {
                     Match.ReturnType = *Method.Returns;
                 } else {
@@ -1660,14 +1663,17 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
     if (Struct) {
         for (const auto &Method : Struct->Methods) {
             if (Method.Name == MethodName) {
+                bool isIntrinsicImpl = std::holds_alternative<PlannedIntrinsicImpl>(Method.Impl);
                 llvm::errs() << "DEBUG lookupMethod(overload): found '" << MethodName
-                             << "' in Struct->Methods, Method.CanThrow=" << Method.CanThrow << "\n";
+                             << "' in Struct->Methods, Method.CanThrow=" << Method.CanThrow
+                             << " IsIntrinsic=" << isIntrinsicImpl << "\n";
                 MethodMatch Match;
                 Match.Method = nullptr;
                 Match.MangledName = Method.MangledName;
                 Match.RequiresPageParam = Method.PageParameter.has_value();
                 Match.CanThrow = Method.CanThrow;
                 Match.ThrowsType = Method.Throws;
+                Match.IsIntrinsic = isIntrinsicImpl;
                 if (Method.Returns) {
                     Match.ReturnType = *Method.Returns;
                 } else {
@@ -1698,6 +1704,7 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                     Match.Method = nullptr;
                     Match.MangledName = Method.MangledName;
                     Match.RequiresPageParam = Method.PageParameter.has_value();
+                    Match.IsIntrinsic = std::holds_alternative<PlannedIntrinsicImpl>(Method.Impl);
                     if (Method.Returns) {
                         Match.ReturnType = *Method.Returns;
                     } else {
@@ -1732,10 +1739,14 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
     if (Union) {
         for (const auto &Method : Union->Methods) {
             if (Method.Name == MethodName) {
+                bool isIntrinsicImpl = std::holds_alternative<PlannedIntrinsicImpl>(Method.Impl);
+                llvm::errs() << "DEBUG lookupMethod(overload): found '" << MethodName
+                             << "' in Union->Methods, IsIntrinsic=" << isIntrinsicImpl << "\n";
                 MethodMatch Match;
                 Match.Method = nullptr;
                 Match.MangledName = Method.MangledName;
                 Match.RequiresPageParam = Method.PageParameter.has_value();
+                Match.IsIntrinsic = isIntrinsicImpl;
                 if (Method.Returns) {
                     Match.ReturnType = *Method.Returns;
                 } else {
@@ -1770,6 +1781,7 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                     Match.Method = nullptr;
                     Match.MangledName = Method.MangledName;
                     Match.RequiresPageParam = Method.PageParameter.has_value();
+                    Match.IsIntrinsic = std::holds_alternative<PlannedIntrinsicImpl>(Method.Impl);
                     if (Method.Returns) {
                         Match.ReturnType = *Method.Returns;
                     } else {
@@ -2329,7 +2341,7 @@ llvm::Expected<Planner::MethodCallResult> Planner::processChainedMethodCalls(
                     ChainedCall.Loc = ChainedArgsOp.Loc;
                     ChainedCall.Name = ChainedMethodName;
                     ChainedCall.MangledName = ChainedMethodMatch->MangledName;
-                    ChainedCall.IsIntrinsic = false;
+                    ChainedCall.IsIntrinsic = ChainedMethodMatch->IsIntrinsic;
                     ChainedCall.IsOperator = false;
                     ChainedCall.CanThrow = ChainedMethodMatch->CanThrow;
                     ChainedCall.ThrowsType = ChainedMethodMatch->ThrowsType;
@@ -6904,7 +6916,7 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             Call.Loc = Op.Loc;
                             Call.Name = MethodName;
                             Call.MangledName = MethodMatch->MangledName;
-                            Call.IsIntrinsic = false;  // Methods are not intrinsic
+                            Call.IsIntrinsic = MethodMatch->IsIntrinsic;
                             Call.IsOperator = false;
                             Call.CanThrow = MethodMatch->CanThrow;
                             Call.ThrowsType = MethodMatch->ThrowsType;
@@ -7437,7 +7449,7 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                     Call.Loc = Op.Loc;
                     Call.Name = MethodName;
                     Call.MangledName = MethodMatch->MangledName;
-                    Call.IsIntrinsic = false;
+                    Call.IsIntrinsic = MethodMatch->IsIntrinsic;
                     Call.IsOperator = false;
                     Call.CanThrow = MethodMatch->CanThrow;
                     Call.ThrowsType = MethodMatch->ThrowsType;
@@ -9128,7 +9140,7 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                             MethodCall.Loc = MethodArgsOp.Loc;
                                             MethodCall.Name = MethodName;
                                             MethodCall.MangledName = MethodMatch->MangledName;
-                                            MethodCall.IsIntrinsic = false;
+                                            MethodCall.IsIntrinsic = MethodMatch->IsIntrinsic;
                                             MethodCall.IsOperator = false;
                                             MethodCall.CanThrow = MethodMatch->CanThrow;
                                             MethodCall.ThrowsType = MethodMatch->ThrowsType;

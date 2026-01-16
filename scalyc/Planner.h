@@ -472,6 +472,7 @@ private:
         std::vector<PlannedType> ParameterTypes;  // For overload resolution
         bool RequiresPageParam = false;  // True if function# - method needs page parameter
         bool CanThrow = false;  // True if method can throw
+        bool IsIntrinsic = false;  // True if method is intrinsic (emitted inline)
         std::shared_ptr<PlannedType> ThrowsType;  // Exception type if CanThrow is true
     };
     std::optional<MethodMatch> lookupMethod(
