@@ -25,3 +25,4 @@ output/
 # Retired code build artifacts
 retired/*/obj/
 retired/*/target/
+scalyc_native
