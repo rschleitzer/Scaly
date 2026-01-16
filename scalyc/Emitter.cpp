@@ -1060,6 +1060,12 @@ llvm::Error Emitter::emitFunctionBody(const PlannedFunction &Func,
     auto *EntryBB = llvm::BasicBlock::Create(*Context, "entry", LLVMFunc);
     Builder->SetInsertPoint(EntryBB);
 
+    // Create a dummy instruction as an alloca insertion point marker
+    // All allocas will be inserted after this to ensure they're in the entry block
+    AllocaInsertPt = new llvm::BitCastInst(
+        llvm::Constant::getNullValue(llvm::Type::getInt32Ty(*Context)),
+        llvm::Type::getInt32Ty(*Context), "alloca.point", EntryBB);
+
     // Set up current function state
     CurrentFunction = LLVMFunc;
     CurrentBlock = EntryBB;
@@ -1235,7 +1241,7 @@ llvm::Error Emitter::emitFunctionBody(const PlannedFunction &Func,
                             "ret.alloc");
                     } else {
                         // Fall back to stack allocation
-                        StructPtr = Builder->CreateAlloca(ActualTy, nullptr, "ret.alloca");
+                        StructPtr = createEntryBlockAlloca(ActualTy, "ret.alloca");
                     }
                     Builder->CreateStore(ReturnValue, StructPtr);
                     ReturnValue = StructPtr;
@@ -1253,7 +1259,7 @@ llvm::Error Emitter::emitFunctionBody(const PlannedFunction &Func,
                              llvm::ConstantInt::get(llvm::Type::getInt64Ty(*Context), Align)},
                             "ret.alloc");
                     } else {
-                        ArrayPtr = Builder->CreateAlloca(ActualTy, nullptr, "ret.alloca");
+                        ArrayPtr = createEntryBlockAlloca(ActualTy, "ret.alloca");
                     }
                     Builder->CreateStore(ReturnValue, ArrayPtr);
                     ReturnValue = ArrayPtr;
@@ -1379,6 +1385,11 @@ llvm::Error Emitter::emitInitializerBody(const PlannedStructure &Struct,
     auto *EntryBB = llvm::BasicBlock::Create(*Context, "entry", LLVMFunc);
     Builder->SetInsertPoint(EntryBB);
 
+    // Create a dummy instruction as an alloca insertion point marker
+    AllocaInsertPt = new llvm::BitCastInst(
+        llvm::Constant::getNullValue(llvm::Type::getInt32Ty(*Context)),
+        llvm::Type::getInt32Ty(*Context), "alloca.point", EntryBB);
+
     // Set up current function state
     CurrentFunction = LLVMFunc;
     CurrentBlock = EntryBB;
@@ -1483,6 +1494,11 @@ llvm::Error Emitter::emitDeInitializerBody(const PlannedStructure &Struct,
     // Create entry block
     auto *EntryBB = llvm::BasicBlock::Create(*Context, "entry", LLVMFunc);
     Builder->SetInsertPoint(EntryBB);
+
+    // Create a dummy instruction as an alloca insertion point marker
+    AllocaInsertPt = new llvm::BitCastInst(
+        llvm::Constant::getNullValue(llvm::Type::getInt32Ty(*Context)),
+        llvm::Type::getInt32Ty(*Context), "alloca.point", EntryBB);
 
     // Set up current function state
     CurrentFunction = LLVMFunc;
@@ -1906,7 +1922,7 @@ llvm::Error Emitter::emitBinding(const PlannedBinding &Binding) {
             llvm::Type *Ty = Value->getType();
             if (Binding.BindingType == "var" || Binding.BindingType == "mutable") {
                 // Mutable binding: allocate on stack
-                auto *Alloca = Builder->CreateAlloca(Ty, nullptr, *Binding.BindingItem.Name);
+                auto *Alloca = createEntryBlockAlloca(Ty, *Binding.BindingItem.Name);
                 Builder->CreateStore(Value, Alloca);
                 LocalVariables[*Binding.BindingItem.Name] = Alloca;
             } else {
@@ -1936,7 +1952,7 @@ llvm::Error Emitter::emitBinding(const PlannedBinding &Binding) {
                 // Allocate [ArraySize x ElementType] on the stack
                 llvm::Type *ElemTy = mapType(ItemType.Generics[0]);
                 llvm::ArrayType *ArrTy = llvm::ArrayType::get(ElemTy, ArraySizeVal);
-                auto *ArrayAlloca = Builder->CreateAlloca(ArrTy, nullptr, *Binding.BindingItem.Name + ".arr");
+                auto *ArrayAlloca = createEntryBlockAlloca(ArrTy, *Binding.BindingItem.Name + ".arr");
                 // Get pointer to the first element (array decay semantics)
                 llvm::Value *Indices[] = {
                     llvm::ConstantInt::get(llvm::Type::getInt64Ty(*Context), 0),
@@ -1946,14 +1962,13 @@ llvm::Error Emitter::emitBinding(const PlannedBinding &Binding) {
                                                                 *Binding.BindingItem.Name + ".ptr");
                 // Store the pointer in an alloca so mutable variable access works correctly
                 // (mutable variables are accessed via load from their alloca)
-                auto *PtrAlloca = Builder->CreateAlloca(Builder->getPtrTy(), nullptr,
-                                                         *Binding.BindingItem.Name);
+                auto *PtrAlloca = createEntryBlockAlloca(Builder->getPtrTy(), *Binding.BindingItem.Name);
                 Builder->CreateStore(FirstElemPtr, PtrAlloca);
                 LocalVariables[*Binding.BindingItem.Name] = PtrAlloca;
             } else {
                 // Regular type - map and allocate
                 llvm::Type *Ty = mapType(ItemType);
-                auto *Alloca = Builder->CreateAlloca(Ty, nullptr, *Binding.BindingItem.Name);
+                auto *Alloca = createEntryBlockAlloca(Ty, *Binding.BindingItem.Name);
                 LocalVariables[*Binding.BindingItem.Name] = Alloca;
             }
         } else {
@@ -2095,7 +2110,7 @@ llvm::Error Emitter::emitReturn(const PlannedReturn &Return) {
                              llvm::ConstantInt::get(llvm::Type::getInt64Ty(*Context), Align)},
                             "ret.alloc");
                     } else {
-                        StructPtr = Builder->CreateAlloca(ActualTy, nullptr, "ret.alloca");
+                        StructPtr = createEntryBlockAlloca(ActualTy, "ret.alloca");
                     }
                     Builder->CreateStore(RetVal, StructPtr);
                     RetVal = StructPtr;
@@ -2112,7 +2127,7 @@ llvm::Error Emitter::emitReturn(const PlannedReturn &Return) {
                              llvm::ConstantInt::get(llvm::Type::getInt64Ty(*Context), Align)},
                             "ret.alloc");
                     } else {
-                        ArrayPtr = Builder->CreateAlloca(ActualTy, nullptr, "ret.alloca");
+                        ArrayPtr = createEntryBlockAlloca(ActualTy, "ret.alloca");
                     }
                     Builder->CreateStore(RetVal, ArrayPtr);
                     RetVal = ArrayPtr;
@@ -2182,7 +2197,7 @@ llvm::Error Emitter::emitThrow(const PlannedThrow &Throw) {
         }
         ResultTy = llvm::cast<llvm::StructType>(RetTy);
         // Allocate space for the Result
-        ResultPtr = Builder->CreateAlloca(ResultTy, nullptr, "throw.result");
+        ResultPtr = createEntryBlockAlloca(ResultTy, "throw.result");
     }
 
     // Set the tag to 1 (first error variant)
@@ -2389,7 +2404,7 @@ llvm::Expected<llvm::Value*> Emitter::emitOperand(const PlannedOperand &Op) {
                         llvm::Type *ExpectedThisType = MethodFunc->getArg(0)->getType();
                         if (ExpectedThisType->isPointerTy() && !Value->getType()->isPointerTy()) {
                             // Need to store to temp alloca and pass pointer
-                            llvm::AllocaInst *TempAlloca = Builder->CreateAlloca(Value->getType(), nullptr, "this.tmp");
+                            llvm::AllocaInst *TempAlloca = createEntryBlockAlloca(Value->getType(), "this.tmp");
                             Builder->CreateStore(Value, TempAlloca);
                             ThisArg = TempAlloca;
                         }
@@ -2432,7 +2447,7 @@ llvm::Expected<llvm::Value*> Emitter::emitOperand(const PlannedOperand &Op) {
                 llvm::Type *ResultTy = mapType(Access.ResultType);
 
                 // Store the union value to an alloca
-                llvm::AllocaInst *UnionPtr = Builder->CreateAlloca(UnionTy, nullptr, "union.tmp");
+                llvm::AllocaInst *UnionPtr = createEntryBlockAlloca(UnionTy, "union.tmp");
                 Builder->CreateStore(Value, UnionPtr);
 
                 // Get pointer to field 1 (the data field)
@@ -2731,7 +2746,7 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
                 } else {
                     // The value was loaded - we need to store it and return the address
                     // This happens when address-of is applied to an expression result
-                    auto *Alloca = Builder->CreateAlloca(Operand->getType(), nullptr, "addr.tmp");
+                    auto *Alloca = createEntryBlockAlloca(Operand->getType(), "addr.tmp");
                     Builder->CreateStore(Operand, Alloca);
                     return Alloca;
                 }
@@ -2889,12 +2904,12 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
                 StructPtr = Builder->CreateCall(PageAllocate, {Page, Size, Align}, "struct.region");
             } else {
                 // Fallback to stack if page not available
-                StructPtr = Builder->CreateAlloca(StructTy, nullptr, "struct.init");
+                StructPtr = createEntryBlockAlloca(StructTy, "struct.init");
                 IsRegionAlloc = false;  // Adjust for return logic
             }
         } else {
             // Stack allocation (no lifetime suffix)
-            StructPtr = Builder->CreateAlloca(StructTy, nullptr, "struct.init");
+            StructPtr = createEntryBlockAlloca(StructTy, "struct.init");
         }
 
         // Prepare arguments: struct pointer first, then page if init#, then other args
@@ -2960,7 +2975,7 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
 
             if (ParamTy->isPointerTy() && ArgVal->getType()->isStructTy()) {
                 // Create alloca and store for struct arguments
-                auto *Alloca = Builder->CreateAlloca(ArgVal->getType(), nullptr, "init.arg.tmp");
+                auto *Alloca = createEntryBlockAlloca(ArgVal->getType(), "init.arg.tmp");
                 Builder->CreateStore(ArgVal, Alloca);
                 InitArgs.push_back(Alloca);
             } else {
@@ -3037,7 +3052,7 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
         }
 
         // Allocate space for the return value
-        llvm::Value *RetPtr = Builder->CreateAlloca(RetTy, nullptr, "sret.result");
+        llvm::Value *RetPtr = createEntryBlockAlloca(RetTy, "sret.result");
 
         // Build argument list: sret pointer first
         std::vector<llvm::Value*> CallArgs;
@@ -3072,7 +3087,7 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
             llvm::Type *ParamTy = FuncTy->getParamType(i - FuncArgsOffset + FirstUserArg);
 
             if (ParamTy->isPointerTy() && ArgVal->getType()->isStructTy()) {
-                auto *Alloca = Builder->CreateAlloca(ArgVal->getType(), nullptr, "sret.arg.tmp");
+                auto *Alloca = createEntryBlockAlloca(ArgVal->getType(), "sret.arg.tmp");
                 Builder->CreateStore(ArgVal, Alloca);
                 CallArgs.push_back(Alloca);
             } else {
@@ -3172,8 +3187,8 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
         llvm::Type *ArgTy = ArgVal->getType();
 
         if (ParamTy->isPointerTy() && ArgTy->isStructTy()) {
-            // Create alloca at the current position and store the value
-            auto *Alloca = Builder->CreateAlloca(ArgTy, nullptr, "arg.tmp");
+            // Create alloca at entry block and store the value
+            auto *Alloca = createEntryBlockAlloca(ArgTy, "arg.tmp");
             Builder->CreateStore(ArgVal, Alloca);
             AdjustedArgs.push_back(Alloca);
         } else if (ParamTy->isIntegerTy() && ArgTy->isIntegerTy() && ParamTy != ArgTy) {
@@ -3466,7 +3481,7 @@ llvm::Expected<llvm::Value*> Emitter::emitBlock(const PlannedBlock &Block) {
                           PageSaveWatermark && !PageSaveWatermark->isDeclaration();
     if (Cleanup.NeedsCleanup) {
         // Allocate space for BlockWatermark on stack
-        Cleanup.Watermark = Builder->CreateAlloca(BlockWatermarkType, nullptr, "block.watermark");
+        Cleanup.Watermark = createEntryBlockAlloca(BlockWatermarkType, "block.watermark");
         // Call save_watermark(page, &watermark) - stores watermark in the alloca
         Builder->CreateCall(PageSaveWatermark, {CurrentRegion.LocalPage, Cleanup.Watermark});
     }
@@ -3877,7 +3892,7 @@ llvm::Expected<llvm::Value*> Emitter::emitChoose(const PlannedChoose &Choose) {
         }
 
         // Store the union value to get a pointer
-        UnionPtr = Builder->CreateAlloca(UnionType, nullptr, "choose.union");
+        UnionPtr = createEntryBlockAlloca(UnionType, "choose.union");
         Builder->CreateStore(UnionValue, UnionPtr);
     }
 
@@ -3966,9 +3981,7 @@ llvm::Expected<llvm::Value*> Emitter::emitChoose(const PlannedChoose &Choose) {
             if (ValueDominates) {
                 if (!ResultAlloca) {
                     // Create alloca at function entry for proper domination
-                    llvm::BasicBlock &EntryBlock = Builder->GetInsertBlock()->getParent()->getEntryBlock();
-                    llvm::IRBuilder<> TmpBuilder(&EntryBlock, EntryBlock.begin());
-                    ResultAlloca = TmpBuilder.CreateAlloca(CaseValue->getType(), nullptr, "choose.result");
+                    ResultAlloca = createEntryBlockAlloca(CaseValue->getType(), "choose.result");
                     ResultType = CaseValue->getType();
                 }
                 Builder->CreateStore(CaseValue, ResultAlloca);
@@ -4017,9 +4030,7 @@ llvm::Expected<llvm::Value*> Emitter::emitChoose(const PlannedChoose &Choose) {
         if (ElseValueDominates) {
             if (!ResultAlloca) {
                 // Create alloca at function entry for proper domination
-                llvm::BasicBlock &EntryBlock = Builder->GetInsertBlock()->getParent()->getEntryBlock();
-                llvm::IRBuilder<> TmpBuilder(&EntryBlock, EntryBlock.begin());
-                ResultAlloca = TmpBuilder.CreateAlloca(ElseValue->getType(), nullptr, "choose.result");
+                ResultAlloca = createEntryBlockAlloca(ElseValue->getType(), "choose.result");
                 ResultType = ElseValue->getType();
             }
             Builder->CreateStore(ElseValue, ResultAlloca);
@@ -4121,9 +4132,7 @@ llvm::Expected<llvm::Value*> Emitter::emitChooseNPO(
                 }
                 if (ValueDominates) {
                     ResultType = SomeValue->getType();
-                    llvm::BasicBlock *EntryBlock = &CurrentFunction->getEntryBlock();
-                    llvm::IRBuilder<> TmpBuilder(EntryBlock, EntryBlock->getFirstInsertionPt());
-                    ResultAlloca = TmpBuilder.CreateAlloca(ResultType, nullptr, "choose.result");
+                    ResultAlloca = createEntryBlockAlloca(ResultType, "choose.result");
                     Builder->CreateStore(SomeValue, ResultAlloca);
                     HasSomeValue = true;
                 }
@@ -4155,9 +4164,7 @@ llvm::Expected<llvm::Value*> Emitter::emitChooseNPO(
                 if (ValueDominates) {
                     if (!ResultAlloca) {
                         ResultType = NoneValue->getType();
-                        llvm::BasicBlock *EntryBlock = &CurrentFunction->getEntryBlock();
-                        llvm::IRBuilder<> TmpBuilder(EntryBlock, EntryBlock->getFirstInsertionPt());
-                        ResultAlloca = TmpBuilder.CreateAlloca(ResultType, nullptr, "choose.result");
+                        ResultAlloca = createEntryBlockAlloca(ResultType, "choose.result");
                     }
                     Builder->CreateStore(NoneValue, ResultAlloca);
                     HasNoneValue = true;
@@ -4182,9 +4189,7 @@ llvm::Expected<llvm::Value*> Emitter::emitChooseNPO(
                 if (ValueDominates) {
                     if (!ResultAlloca) {
                         ResultType = NoneValue->getType();
-                        llvm::BasicBlock *EntryBlock = &CurrentFunction->getEntryBlock();
-                        llvm::IRBuilder<> TmpBuilder(EntryBlock, EntryBlock->getFirstInsertionPt());
-                        ResultAlloca = TmpBuilder.CreateAlloca(ResultType, nullptr, "choose.result");
+                        ResultAlloca = createEntryBlockAlloca(ResultType, "choose.result");
                     }
                     Builder->CreateStore(NoneValue, ResultAlloca);
                     HasNoneValue = true;
@@ -4397,9 +4402,9 @@ llvm::Expected<llvm::Value*> Emitter::emitForIntegerRange(const PlannedFor &For)
         );
     }
 
-    // Create the loop counter (allocate on stack for incrementing)
+    // Create the loop counter in entry block (allocate on stack for incrementing)
     llvm::Type *IndexType = EndValue->getType();
-    llvm::AllocaInst *LoopCounter = Builder->CreateAlloca(IndexType, nullptr, For.Identifier + ".counter");
+    llvm::AllocaInst *LoopCounter = createEntryBlockAlloca(IndexType, For.Identifier + ".counter");
 
     // Initialize loop counter to 0
     Builder->CreateStore(llvm::ConstantInt::get(IndexType, 0), LoopCounter);
@@ -4484,7 +4489,7 @@ llvm::Expected<llvm::Value*> Emitter::emitForIterator(const PlannedFor &For) {
     llvm::Value *CollectionPtr = Collection;
     if (!Collection->getType()->isPointerTy()) {
         // Collection is a value, store it and get pointer
-        auto *CollAlloca = Builder->CreateAlloca(Collection->getType(), nullptr, "coll.tmp");
+        auto *CollAlloca = createEntryBlockAlloca(Collection->getType(), "coll.tmp");
         Builder->CreateStore(Collection, CollAlloca);
         CollectionPtr = CollAlloca;
     }
@@ -4494,14 +4499,14 @@ llvm::Expected<llvm::Value*> Emitter::emitForIterator(const PlannedFor &For) {
     if (GetIterFn->hasParamAttribute(0, llvm::Attribute::StructRet)) {
         // Function uses sret - allocate space and pass as first arg
         llvm::Type *IterType = mapType(For.IteratorType);
-        auto *IterAlloca = Builder->CreateAlloca(IterType, nullptr, "iter.alloca");
+        auto *IterAlloca = createEntryBlockAlloca(IterType, "iter.alloca");
         Builder->CreateCall(GetIterFn, {IterAlloca, CollectionPtr});
         Iterator = IterAlloca;
     } else {
         // Function returns directly
         Iterator = Builder->CreateCall(GetIterFn, {CollectionPtr}, "iter");
         // Store iterator on stack for mutation by next()
-        auto *IterAlloca = Builder->CreateAlloca(Iterator->getType(), nullptr, "iter.alloca");
+        auto *IterAlloca = createEntryBlockAlloca(Iterator->getType(), "iter.alloca");
         Builder->CreateStore(Iterator, IterAlloca);
         Iterator = IterAlloca;
     }
@@ -4613,10 +4618,7 @@ llvm::Expected<llvm::Value*> Emitter::emitWhile(const PlannedWhile &While) {
             // Mutable binding: allocate on stack and store
             if (!BindingAlloca) {
                 // Create alloca in entry block for proper LLVM form
-                llvm::IRBuilder<> EntryBuilder(&CurrentFunction->getEntryBlock(),
-                                                CurrentFunction->getEntryBlock().begin());
-                BindingAlloca = EntryBuilder.CreateAlloca(CondValue->getType(), nullptr,
-                                                          *While.Cond.BindingItem.Name);
+                BindingAlloca = createEntryBlockAlloca(CondValue->getType(), *While.Cond.BindingItem.Name);
             }
             Builder->CreateStore(CondValue, BindingAlloca);
             LocalVariables[*While.Cond.BindingItem.Name] = BindingAlloca;
@@ -4727,7 +4729,7 @@ llvm::Expected<llvm::Value*> Emitter::emitTry(const PlannedTry &Try) {
         // Need to determine the actual struct type - for now assume it's stored
     } else {
         // Store the result to get a pointer
-        ResultPtr = Builder->CreateAlloca(ResultType, nullptr, "try.result");
+        ResultPtr = createEntryBlockAlloca(ResultType, "try.result");
         Builder->CreateStore(ResultValue, ResultPtr);
     }
 
@@ -4761,7 +4763,7 @@ llvm::Expected<llvm::Value*> Emitter::emitTry(const PlannedTry &Try) {
     // Bind the value if there's a name
     if (!BindingName.empty()) {
         if (IsMutable) {
-            llvm::AllocaInst *Alloca = Builder->CreateAlloca(I64Ty, nullptr, BindingName);
+            llvm::AllocaInst *Alloca = createEntryBlockAlloca(I64Ty, BindingName);
             Builder->CreateStore(OkValue, Alloca);
             LocalVariables[BindingName] = Alloca;
         } else {
@@ -5047,7 +5049,7 @@ llvm::Expected<llvm::Value*> Emitter::emitIsWithValue(
         }
     } else {
         // Store the union value to get a pointer
-        UnionPtr = Builder->CreateAlloca(LLVMUnionType, nullptr, "is.union");
+        UnionPtr = createEntryBlockAlloca(LLVMUnionType, "is.union");
         Builder->CreateStore(UnionValue, UnionPtr);
     }
 
@@ -5215,7 +5217,7 @@ llvm::Expected<llvm::Value*> Emitter::emitVariantConstruction(
             llvm::Type *ValueTy = Value->getType();
 
             // Allocate space for the value on the stack
-            llvm::Value *ValuePtr = Builder->CreateAlloca(ValueTy, nullptr, "option.some");
+            llvm::Value *ValuePtr = createEntryBlockAlloca(ValueTy, "option.some");
             Builder->CreateStore(Value, ValuePtr);
 
             return ValuePtr;
@@ -5245,7 +5247,7 @@ llvm::Expected<llvm::Value*> Emitter::emitVariantConstruction(
     llvm::StructType *UnionTy = CacheIt->second;
 
     // Allocate space for the union
-    llvm::Value *UnionPtr = Builder->CreateAlloca(UnionTy, nullptr, "variant.ptr");
+    llvm::Value *UnionPtr = createEntryBlockAlloca(UnionTy, "variant.ptr");
 
     // Store the tag (field 0)
     llvm::Type *I8Ty = llvm::Type::getInt8Ty(*Context);
@@ -5418,11 +5420,11 @@ llvm::Expected<llvm::Value*> Emitter::emitTuple(const PlannedTuple &Tuple) {
             TuplePtr = Builder->CreateCall(PageAllocate, {Page, Size, Align}, "tuple.region");
         } else {
             // Fallback to stack if page not available
-            TuplePtr = Builder->CreateAlloca(TupleTy, nullptr, "tuple");
+            TuplePtr = createEntryBlockAlloca(TupleTy, "tuple");
         }
     } else {
         // Stack allocation (no lifetime suffix)
-        TuplePtr = Builder->CreateAlloca(TupleTy, nullptr, "tuple");
+        TuplePtr = createEntryBlockAlloca(TupleTy, "tuple");
     }
 
     // Store provided component values
@@ -5509,7 +5511,7 @@ llvm::Expected<llvm::Value*> Emitter::emitMatrix(const PlannedMatrix &Matrix) {
         llvm::ArrayType *ArrTy = llvm::ArrayType::get(ElemTy, ElementValues.size());
 
         // Allocate and populate the array
-        llvm::Value *ArrPtr = Builder->CreateAlloca(ArrTy, nullptr, "array");
+        llvm::Value *ArrPtr = createEntryBlockAlloca(ArrTy, "array");
 
         for (size_t i = 0; i < ElementValues.size(); ++i) {
             llvm::Value *Indices[] = {
@@ -5563,7 +5565,7 @@ llvm::Expected<llvm::Value*> Emitter::emitMatrix(const PlannedMatrix &Matrix) {
         llvm::ArrayType *MatrixTy = llvm::ArrayType::get(RowTy, NumRows);
 
         // Allocate and populate the matrix
-        llvm::Value *MatrixPtr = Builder->CreateAlloca(MatrixTy, nullptr, "matrix");
+        llvm::Value *MatrixPtr = createEntryBlockAlloca(MatrixTy, "matrix");
 
         for (size_t i = 0; i < NumRows; ++i) {
             for (size_t j = 0; j < NumCols; ++j) {
@@ -5598,6 +5600,23 @@ size_t Emitter::getTypeAlignment(llvm::Type *Ty) {
         return 0;
     auto &DL = Module->getDataLayout();
     return DL.getABITypeAlign(Ty).value();
+}
+
+llvm::AllocaInst *Emitter::createEntryBlockAlloca(llvm::Type *Ty, llvm::StringRef Name) {
+    // Create an alloca in the entry block of the current function
+    // This ensures allocas don't grow the stack inside loops
+    llvm::IRBuilder<> TmpBuilder(&CurrentFunction->getEntryBlock(),
+                                  CurrentFunction->getEntryBlock().begin());
+    if (AllocaInsertPt) {
+        // Insert after the alloca insertion point marker
+        if (auto *NextNode = AllocaInsertPt->getNextNode()) {
+            TmpBuilder.SetInsertPoint(NextNode);
+        } else {
+            // Marker is at end of block, insert at end of entry block
+            TmpBuilder.SetInsertPoint(&CurrentFunction->getEntryBlock());
+        }
+    }
+    return TmpBuilder.CreateAlloca(Ty, nullptr, Name);
 }
 
 llvm::BasicBlock *Emitter::createBlock(llvm::StringRef Name) {
@@ -5711,7 +5730,7 @@ llvm::Value *Emitter::allocate(llvm::Type *Ty, Lifetime Life, llvm::StringRef Na
 
     // If no page available (UnspecifiedLifetime or no region set up), use stack allocation
     if (!Page) {
-        return Builder->CreateAlloca(Ty, nullptr, Name);
+        return createEntryBlockAlloca(Ty, Name);
     }
 
     // Calculate size and alignment
@@ -5782,6 +5801,11 @@ llvm::Error Emitter::emitMainWrapper(const Plan &P) {
     // Create entry block
     auto *EntryBB = llvm::BasicBlock::Create(*Context, "entry", MainFunc);
     Builder->SetInsertPoint(EntryBB);
+
+    // Create a dummy instruction as an alloca insertion point marker
+    AllocaInsertPt = new llvm::BitCastInst(
+        llvm::Constant::getNullValue(llvm::Type::getInt32Ty(*Context)),
+        llvm::Type::getInt32Ty(*Context), "alloca.point", EntryBB);
 
     // Set up current function state
     CurrentFunction = MainFunc;
@@ -6019,6 +6043,13 @@ llvm::Expected<uint64_t> Emitter::jitExecuteRaw(const Plan &P, llvm::Type *Expec
     auto *Wrapper = createJITWrapper(ExpectedType);
     CurrentFunction = Wrapper;
     LocalVariables.clear();
+
+    // Set up alloca insertion point for the JIT wrapper
+    // Insert the marker at the beginning of the entry block
+    auto &EntryBlock = Wrapper->getEntryBlock();
+    AllocaInsertPt = new llvm::BitCastInst(
+        llvm::Constant::getNullValue(llvm::Type::getInt32Ty(*Context)),
+        llvm::Type::getInt32Ty(*Context), "alloca.point", &EntryBlock);
 
     // Emit top-level statements into wrapper
     llvm::Value *LastValue = nullptr;
