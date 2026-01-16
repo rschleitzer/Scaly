@@ -2535,7 +2535,11 @@ llvm::Expected<llvm::Value*> Emitter::emitExpression(const PlannedExpression &Ex
             }
             if (E.IsMutable) {
                 // Mutable binding stored as pointer - load the value
-                llvm::Type *Ty = mapType(E.VariableType);
+                // Get type from the alloca itself, not from VariableType
+                // This handles the case where the variable stores a pointer
+                // (e.g., String$() returns pointer but VariableType is String)
+                auto *Alloca = llvm::dyn_cast<llvm::AllocaInst>(VarPtr);
+                llvm::Type *Ty = Alloca ? Alloca->getAllocatedType() : mapType(E.VariableType);
                 return Builder->CreateLoad(Ty, VarPtr, E.Name);
             } else {
                 // Immutable binding stored as value directly
@@ -2903,9 +2907,21 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
                 auto *Align = llvm::ConstantInt::get(I64Ty, TypeAlign);
                 StructPtr = Builder->CreateCall(PageAllocate, {Page, Size, Align}, "struct.region");
             } else {
-                // Fallback to stack if page not available
-                StructPtr = createEntryBlockAlloca(StructTy, "struct.init");
-                IsRegionAlloc = false;  // Adjust for return logic
+                // Try to allocate local page on demand for $ lifetime
+                if (std::holds_alternative<LocalLifetime>(Call.Life) && PageAllocatePage) {
+                    CurrentRegion.LocalPage = Builder->CreateCall(PageAllocatePage, {}, "local_page.ondemand");
+                    Page = CurrentRegion.LocalPage;
+                    auto *I64Ty = llvm::Type::getInt64Ty(*Context);
+                    size_t TypeSize = getTypeSize(StructTy);
+                    size_t TypeAlign = getTypeAlignment(StructTy);
+                    auto *Size = llvm::ConstantInt::get(I64Ty, TypeSize);
+                    auto *Align = llvm::ConstantInt::get(I64Ty, TypeAlign);
+                    StructPtr = Builder->CreateCall(PageAllocate, {Page, Size, Align}, "struct.region");
+                } else {
+                    // Fallback to stack if page not available
+                    StructPtr = createEntryBlockAlloca(StructTy, "struct.init");
+                    IsRegionAlloc = false;  // Adjust for return logic
+                }
             }
         } else {
             // Stack allocation (no lifetime suffix)
