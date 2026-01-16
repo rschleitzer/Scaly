@@ -1,12 +1,1 @@
-; Hello World - AOT compilation test using scaly package
-; Usage: ./scalyc/build/scalyc -o hello hello.scaly && ./hello
-
-package scaly 0.1.0
-
-use scaly.io.Console
-
-function main() returns int
-{
-    Console.println("Hello, World!")
-    0
-}
+println "Hello World!"
