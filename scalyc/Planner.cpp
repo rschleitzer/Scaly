@@ -7160,8 +7160,17 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                     return PlannedArgs.takeError();
                                 }
 
-                                // Plan the function
-                                auto PlannedFunc = planFunction(*PkgFunc, nullptr);
+                                // Build parent type for the namespace containing the function
+                                // For scalyc.cli.main, we need cli as the parent
+                                PlannedType NamespaceParent;
+                                if (TypeExpr->Name.size() >= 2) {
+                                    // The parent is the second-to-last element (e.g., "cli" in "scalyc.cli.main")
+                                    NamespaceParent.Name = TypeExpr->Name[TypeExpr->Name.size() - 2];
+                                    NamespaceParent.MangledName = encodeName(NamespaceParent.Name);
+                                }
+
+                                // Plan the function with namespace as parent
+                                auto PlannedFunc = planFunction(*PkgFunc, TypeExpr->Name.size() >= 2 ? &NamespaceParent : nullptr);
                                 if (!PlannedFunc) {
                                     return PlannedFunc.takeError();
                                 }
