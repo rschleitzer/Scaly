@@ -1026,6 +1026,8 @@ llvm::Error Emitter::emitFunctionBody(const PlannedFunction &Func,
         LocalVariables[*Func.PageParameter] = &*ArgIt;
         // Use this as the return page for # allocations within this function
         CurrentRegion.ReturnPage = &*ArgIt;
+        llvm::errs() << "DEBUG emitFunctionBody: Set ReturnPage for '" << Func.Name
+                     << "' PageParameter='" << *Func.PageParameter << "'\n";
         ArgIt++;
         ArgIdx++;
     }
@@ -1316,6 +1318,9 @@ llvm::Error Emitter::emitInitializerBody(const PlannedStructure &Struct,
     CurrentBlock = EntryBB;
     LocalVariables.clear();
 
+    // Reset region state for this initializer
+    CurrentRegion = RegionInfo{};
+
     // Bind parameters to names
     auto ArgIt = LLVMFunc->arg_begin();
 
@@ -1327,6 +1332,8 @@ llvm::Error Emitter::emitInitializerBody(const PlannedStructure &Struct,
     // If init# was used, second arg is the page pointer
     if (Init.PageParameter) {
         LocalVariables[*Init.PageParameter] = &*ArgIt;
+        // Use this as the return page for # allocations within this initializer
+        CurrentRegion.ReturnPage = &*ArgIt;
         ++ArgIt;
     }
 
@@ -2513,6 +2520,11 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
     // Look up the function first to know parameter types
     auto *Func = lookupFunction(Call.MangledName);
 
+    // Check if this is an initializer call (constructor)
+    // Initializers have mangled names like _ZN<type>C1E<params>
+    bool IsInitializerCall = Call.MangledName.find("C1E") != std::string::npos &&
+                             Call.MangledName.rfind("_ZN", 0) == 0;
+
     // Emit arguments, optimizing dereference-to-pointer conversions
     std::vector<llvm::Value*> Args;
     if (Call.Args) {
@@ -2525,6 +2537,15 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
             ParamOffset = 1;  // Skip sret param when matching args to params
         }
 
+        // For initializer calls, account for 'this' and possibly 'page' params
+        // when matching Call.Args indices to function parameter indices
+        if (IsInitializerCall && Func) {
+            ParamOffset += 1;  // Skip 'this' param
+            if (Call.RequiresPageParam) {
+                ParamOffset += 1;  // Skip 'page' param for init#
+            }
+        }
+
         for (size_t i = 0; i < Call.Args->size(); ++i) {
             const auto &Arg = (*Call.Args)[i];
 
@@ -2532,8 +2553,30 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
             // function expects a pointer - if so, pass the pointer directly
             // instead of loading the struct and creating a copy
             bool PassedPointerDirectly = false;
+            // Debug: trace argument handling for String calls
+            if (Call.MangledName.find("String") != std::string::npos &&
+                Call.MangledName.find("C1E") != std::string::npos) {
+                llvm::errs() << "DEBUG String init: " << Call.MangledName
+                             << " IsInitializerCall=" << IsInitializerCall
+                             << " arg " << i << " ParamOffset=" << ParamOffset
+                             << " RequiresPageParam=" << Call.RequiresPageParam
+                             << " Func=" << (Func ? Func->getName().str() : "null")
+                             << " FuncTy=" << (FuncTy ? "yes" : "no")
+                             << " NumParams=" << (FuncTy ? std::to_string(FuncTy->getNumParams()) : "n/a")
+                             << "\n";
+            }
             if (FuncTy && i + ParamOffset < FuncTy->getNumParams()) {
                 llvm::Type *ParamTy = FuncTy->getParamType(i + ParamOffset);
+                // Debug: trace parameter type checking for init calls
+                if (Call.MangledName.find("String") != std::string::npos &&
+                    Call.MangledName.find("C1E") != std::string::npos) {
+                    llvm::errs() << "DEBUG String init param: " << Call.MangledName
+                                 << " arg " << i << " ParamOffset=" << ParamOffset
+                                 << " ParamIdx=" << (i + ParamOffset)
+                                 << " ParamTy=";
+                    ParamTy->print(llvm::errs());
+                    llvm::errs() << " isPtr=" << ParamTy->isPointerTy() << "\n";
+                }
                 if (ParamTy->isPointerTy()) {
                     // Check if argument is a dereference call directly
                     if (auto *DerefCall = std::get_if<PlannedCall>(&Arg.Expr)) {
@@ -2575,12 +2618,25 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
                 if (!ArgVal)
                     return ArgVal.takeError();
                 Args.push_back(*ArgVal);
+            } else if (Call.MangledName.find("String") != std::string::npos &&
+                       Call.MangledName.find("C1E") != std::string::npos) {
+                llvm::errs() << "DEBUG String init: PassedPointerDirectly=true for arg " << i
+                             << " in call " << Call.MangledName << "\n";
             }
         }
     }
 
     // Handle intrinsic operators
     if (Call.IsIntrinsic && Call.IsOperator) {
+        // Debug: trace unary operator result type
+        if (Args.size() == 1 && Call.Name == "*") {
+            llvm::errs() << "DEBUG emitCall deref: ResultType.Name='" << Call.ResultType.Name
+                         << "' MangledName='" << Call.ResultType.MangledName << "'";
+            if (!Call.ResultType.Generics.empty()) {
+                llvm::errs() << " Generics[0].Name='" << Call.ResultType.Generics[0].Name << "'";
+            }
+            llvm::errs() << "\n";
+        }
         if (Args.size() == 2) {
             // Binary operator
             return emitIntrinsicOp(Call.Name, Args[0], Args[1], Call.ResultType);
@@ -2606,12 +2662,7 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
         }
     }
 
-    // Check if this is an initializer call (constructor)
-    // Initializers have mangled names like _ZN<type>C1E<params>
-    bool IsInitializer = Call.MangledName.find("C1E") != std::string::npos &&
-                         Call.MangledName.rfind("_ZN", 0) == 0;
-
-    if (IsInitializer) {
+    if (IsInitializerCall) {
         // Look up the initializer function
         auto *InitFunc = lookupFunction(Call.MangledName);
         if (!InitFunc) {
@@ -2715,12 +2766,22 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
                     PageArg = Args[0];
                 }
             }
+
+            // If we still don't have a page, allocate one on demand
+            // This handles cases like String#() inside a non-function# function
+            if (!PageArg) {
+                if (PageAllocatePage) {
+                    CurrentRegion.LocalPage = Builder->CreateCall(PageAllocatePage, {}, "local_page.ondemand");
+                    PageArg = CurrentRegion.LocalPage;
+                    llvm::errs() << "DEBUG emitCall init: Allocated on-demand local page\n";
+                } else {
+                    llvm::errs() << "DEBUG emitCall init: PageArg is null and no Page.allocate_page! LocalPage="
+                                 << (CurrentRegion.LocalPage ? "yes" : "no")
+                                 << " ReturnPage=" << (CurrentRegion.ReturnPage ? "yes" : "no") << "\n";
+                }
+            }
             if (PageArg) {
                 InitArgs.push_back(PageArg);
-            } else {
-                llvm::errs() << "DEBUG emitCall init: PageArg is null! LocalPage="
-                             << (CurrentRegion.LocalPage ? "yes" : "no")
-                             << " ReturnPage=" << (CurrentRegion.ReturnPage ? "yes" : "no") << "\n";
             }
         }
 
@@ -2767,6 +2828,12 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
     // For CallLifetime (#), pass ReturnPage. For ReferenceLifetime (^name), Args[0] has it.
     size_t FuncArgsOffset = 0;  // Skip Args[0] if it's an explicit page
     llvm::Value *FuncPageArg = nullptr;
+    if (Call.MangledName.find("read_to_string") != std::string::npos) {
+        llvm::errs() << "DEBUG read_to_string: RequiresPageParam=" << Call.RequiresPageParam
+                     << " Life.index()=" << Call.Life.index()
+                     << " LocalPage=" << (CurrentRegion.LocalPage ? "set" : "null")
+                     << " ReturnPage=" << (CurrentRegion.ReturnPage ? "set" : "null") << "\n";
+    }
     if (Call.RequiresPageParam) {
         if (std::holds_alternative<LocalLifetime>(Call.Life)) {
             FuncPageArg = CurrentRegion.LocalPage;
@@ -2782,6 +2849,13 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
                 FuncPageArg = Args[0];
                 FuncArgsOffset = 1;  // Skip the page in the regular args
             }
+        }
+
+        // If we still don't have a page, allocate one on demand
+        // This handles cases like func#() inside a non-function# function
+        if (!FuncPageArg && PageAllocatePage) {
+            CurrentRegion.LocalPage = Builder->CreateCall(PageAllocatePage, {}, "local_page.ondemand");
+            FuncPageArg = CurrentRegion.LocalPage;
         }
     }
 
@@ -3158,6 +3232,14 @@ llvm::Expected<llvm::Value*> Emitter::emitIntrinsicUnaryOp(
                 llvm::inconvertibleErrorCode()
             );
         }
+        llvm::errs() << "DEBUG deref: ResultType.Name='" << ResultType.Name
+                     << "' MangledName='" << ResultType.MangledName << "'";
+        if (!ResultType.Generics.empty()) {
+            llvm::errs() << " Generics[0].Name='" << ResultType.Generics[0].Name << "'";
+        }
+        llvm::errs() << " Ty=";
+        Ty->print(llvm::errs());
+        llvm::errs() << "\n";
         auto *Result = Builder->CreateLoad(Ty, Operand, "deref");
         return Result;
     }
@@ -3510,10 +3592,19 @@ llvm::Expected<llvm::Value*> Emitter::emitChoose(const PlannedChoose &Choose) {
     // Get the planned union type for proper LLVM type lookup
     const PlannedType &CondType = Choose.Condition[0].ResultType;
 
+    // Check if the condition is a throwing function call
+    // Throwing calls return a Result[T, E] wrapper, NOT the value type
+    // So we should NOT use Option NPO for them even if the value type is Option
+    bool IsThrowingCall = false;
+    if (auto *Call = std::get_if<PlannedCall>(&Choose.Condition[0].Expr)) {
+        IsThrowingCall = Call->CanThrow;
+    }
+
     // Handle Option with NPO (Null Pointer Optimization)
     // NPO only applies when the inner type is pointer or ref - then Option is a single pointer
     // (null = None, non-null = Some). For value types like Option[int], use regular tagged union.
     // Note: For methods, CondType may be pointer[Option[T]] since 'this' is a pointer
+    // IMPORTANT: Do NOT use NPO for throwing function calls - they return Result[T, E], not Option
     const PlannedType *OptionType = &CondType;
     bool CondIsPointer = false;
     if ((CondType.Name == "pointer" || CondType.Name == "ref") && !CondType.Generics.empty()) {
@@ -3521,8 +3612,9 @@ llvm::Expected<llvm::Value*> Emitter::emitChoose(const PlannedChoose &Choose) {
         CondIsPointer = true;
     }
 
-    bool IsOption = OptionType->Name == "Option" ||
-                    (OptionType->Name.size() > 7 && OptionType->Name.substr(0, 7) == "Option.");
+    bool IsOption = !IsThrowingCall &&
+                    (OptionType->Name == "Option" ||
+                     (OptionType->Name.size() > 7 && OptionType->Name.substr(0, 7) == "Option."));
     if (IsOption && !OptionType->Generics.empty()) {
         const PlannedType &InnerType = OptionType->Generics[0];
         bool IsPointerLike = InnerType.Name == "pointer" || InnerType.Name == "ref" ||
@@ -3537,7 +3629,8 @@ llvm::Expected<llvm::Value*> Emitter::emitChoose(const PlannedChoose &Choose) {
         }
     }
     // Also handle instantiated Option names like "Option.ref", "Option.pointer"
-    if (OptionType->Name.size() > 7 && OptionType->Name.substr(0, 7) == "Option.") {
+    // But NOT for throwing calls - they return Result, not Option
+    if (!IsThrowingCall && OptionType->Name.size() > 7 && OptionType->Name.substr(0, 7) == "Option.") {
         std::string_view Inner = std::string_view(OptionType->Name).substr(7);
         if (Inner.substr(0, 3) == "ref" || Inner.substr(0, 7) == "pointer") {
             // If CondType was pointer[Option[...]], we need to load the Option value first
@@ -3614,13 +3707,17 @@ llvm::Expected<llvm::Value*> Emitter::emitChoose(const PlannedChoose &Choose) {
     // Create switch instruction
     llvm::SwitchInst *Switch = Builder->CreateSwitch(Tag, DefaultBlock, Choose.Cases.size());
 
-    // Track values and source blocks for PHI node
-    std::vector<std::pair<llvm::Value*, llvm::BasicBlock*>> IncomingValues;
+    // Use an alloca for result values to avoid domination issues with nested control flow
+    // Values from nested if/choose might be PHIs that don't dominate the merge block edges
+    llvm::AllocaInst *ResultAlloca = nullptr;
+    llvm::Type *ResultType = nullptr;
 
     // Process each when case
     for (const auto &When : Choose.Cases) {
         llvm::BasicBlock *CaseBlock = createBlock("choose.when." + When.Name);
         // Use the variant's tag from the planned union
+        llvm::errs() << "DEBUG emitChoose: When.Name='" << When.Name
+                     << "' VariantIndex=" << When.VariantIndex << "\n";
         Switch->addCase(
             llvm::cast<llvm::ConstantInt>(llvm::ConstantInt::get(I8Ty, When.VariantIndex)),
             CaseBlock
@@ -3659,15 +3756,40 @@ llvm::Expected<llvm::Value*> Emitter::emitChoose(const PlannedChoose &Choose) {
             } else if (auto *Binding = std::get_if<PlannedBinding>(When.Consequent.get())) {
                 if (auto Err = emitBinding(*Binding))
                     return std::move(Err);
+            } else {
+                // Handle other statement types (throw, return, break, continue)
+                if (auto Err = emitStatement(*When.Consequent))
+                    return std::move(Err);
+            }
+        }
+
+        // Store case value to alloca to avoid domination issues
+        // Check that the value dominates the current block before storing
+        llvm::BasicBlock *CurrentBlock = Builder->GetInsertBlock();
+        bool CanUseValue = CaseValue && !CaseValue->getType()->isVoidTy() &&
+                           !CurrentBlock->getTerminator();
+        if (CanUseValue) {
+            bool ValueDominates = true;
+            if (auto *Inst = llvm::dyn_cast<llvm::Instruction>(CaseValue)) {
+                llvm::BasicBlock *ValueBlock = Inst->getParent();
+                // Only store if the value is in the current block
+                // Values from nested control flow (inner choose) may not dominate
+                ValueDominates = (ValueBlock == CurrentBlock);
+            }
+            if (ValueDominates) {
+                if (!ResultAlloca) {
+                    // Create alloca at function entry for proper domination
+                    llvm::BasicBlock &EntryBlock = Builder->GetInsertBlock()->getParent()->getEntryBlock();
+                    llvm::IRBuilder<> TmpBuilder(&EntryBlock, EntryBlock.begin());
+                    ResultAlloca = TmpBuilder.CreateAlloca(CaseValue->getType(), nullptr, "choose.result");
+                    ResultType = CaseValue->getType();
+                }
+                Builder->CreateStore(CaseValue, ResultAlloca);
             }
         }
 
         if (!Builder->GetInsertBlock()->getTerminator()) {
             Builder->CreateBr(MergeBlock);
-        }
-
-        if (CaseValue) {
-            IncomingValues.push_back({CaseValue, Builder->GetInsertBlock()});
         }
     }
 
@@ -3686,63 +3808,50 @@ llvm::Expected<llvm::Value*> Emitter::emitChoose(const PlannedChoose &Choose) {
         } else if (auto *Binding = std::get_if<PlannedBinding>(Choose.Alternative.get())) {
             if (auto Err = emitBinding(*Binding))
                 return std::move(Err);
+        } else {
+            // Handle other statement types (throw, return, break, continue)
+            if (auto Err = emitStatement(*Choose.Alternative))
+                return std::move(Err);
         }
+    }
+
+    // Store else value to alloca if we have one
+    // Check that the value dominates the current block before storing
+    llvm::BasicBlock *ElseCurrentBlock = Builder->GetInsertBlock();
+    bool CanUseElseValue = ElseValue && !ElseValue->getType()->isVoidTy() &&
+                           !ElseCurrentBlock->getTerminator();
+    if (CanUseElseValue) {
+        bool ElseValueDominates = true;
+        if (auto *Inst = llvm::dyn_cast<llvm::Instruction>(ElseValue)) {
+            llvm::BasicBlock *ValueBlock = Inst->getParent();
+            // Only store if the value is in the current block
+            ElseValueDominates = (ValueBlock == ElseCurrentBlock);
+        }
+        if (ElseValueDominates) {
+            if (!ResultAlloca) {
+                // Create alloca at function entry for proper domination
+                llvm::BasicBlock &EntryBlock = Builder->GetInsertBlock()->getParent()->getEntryBlock();
+                llvm::IRBuilder<> TmpBuilder(&EntryBlock, EntryBlock.begin());
+                ResultAlloca = TmpBuilder.CreateAlloca(ElseValue->getType(), nullptr, "choose.result");
+                ResultType = ElseValue->getType();
+            }
+            Builder->CreateStore(ElseValue, ResultAlloca);
+        }
+    } else if (ResultAlloca && !ElseValue) {
+        // If when clauses produce values but no else was given, store undef for the default path
+        Builder->CreateStore(llvm::UndefValue::get(ResultType), ResultAlloca);
     }
 
     if (!Builder->GetInsertBlock()->getTerminator()) {
         Builder->CreateBr(MergeBlock);
     }
 
-    // If when clauses produce values but no else was given, use undef for the default path
-    if (!IncomingValues.empty() && !ElseValue) {
-        llvm::Type *ValueType = IncomingValues[0].first->getType();
-        ElseValue = llvm::UndefValue::get(ValueType);
-    }
-
-    if (ElseValue) {
-        IncomingValues.push_back({ElseValue, DefaultBlock});
-    }
-
     // Continue at merge block
     Builder->SetInsertPoint(MergeBlock);
 
-    // Create PHI node if branches produce values
-    if (!IncomingValues.empty()) {
-        llvm::Type *ValueType = IncomingValues[0].first->getType();
-
-        // Don't create PHI for void type
-        if (ValueType->isVoidTy()) {
-            return nullptr;
-        }
-
-        bool AllSameType = true;
-        for (const auto &[Val, Block] : IncomingValues) {
-            if (Val->getType() != ValueType) {
-                AllSameType = false;
-                break;
-            }
-        }
-
-        if (AllSameType) {
-            // Collect all blocks that have entries
-            std::set<llvm::BasicBlock*> CoveredBlocks;
-            for (const auto &[Val, Block] : IncomingValues) {
-                CoveredBlocks.insert(Block);
-            }
-
-            // Add undef entries for any predecessor blocks not covered
-            for (llvm::BasicBlock *Pred : llvm::predecessors(MergeBlock)) {
-                if (CoveredBlocks.find(Pred) == CoveredBlocks.end()) {
-                    IncomingValues.push_back({llvm::UndefValue::get(ValueType), Pred});
-                }
-            }
-
-            llvm::PHINode *PHI = Builder->CreatePHI(ValueType, IncomingValues.size(), "choose.value");
-            for (const auto &[Val, Block] : IncomingValues) {
-                PHI->addIncoming(Val, Block);
-            }
-            return PHI;
-        }
+    // Load result from alloca if we have one
+    if (ResultAlloca) {
+        return Builder->CreateLoad(ResultType, ResultAlloca, "choose.value");
     }
 
     return nullptr;
@@ -3766,9 +3875,6 @@ llvm::Expected<llvm::Value*> Emitter::emitChooseNPO(
     llvm::Value *IsNull = Builder->CreateIsNull(OptionPtr, "is.none");
     Builder->CreateCondBr(IsNull, NoneBlock, SomeBlock);
 
-    // Track values for PHI node
-    std::vector<std::pair<llvm::Value*, llvm::BasicBlock*>> IncomingValues;
-
     // Find Some and None cases
     const PlannedWhen *SomeCase = nullptr;
     const PlannedWhen *NoneCase = nullptr;
@@ -3782,6 +3888,13 @@ llvm::Expected<llvm::Value*> Emitter::emitChooseNPO(
         }
     }
 
+    // Use alloca-based result storage to handle complex control flow in actions
+    // This avoids PHI domination issues when actions have nested if statements
+    llvm::AllocaInst *ResultAlloca = nullptr;
+    llvm::Type *ResultType = nullptr;
+    bool HasSomeValue = false;
+    bool HasNoneValue = false;
+
     // Emit Some case
     Builder->SetInsertPoint(SomeBlock);
     if (SomeCase && !SomeCase->Name.empty()) {
@@ -3790,14 +3903,35 @@ llvm::Expected<llvm::Value*> Emitter::emitChooseNPO(
         LocalVariables[SomeCase->Name] = Value;
     }
 
-    llvm::Value *SomeValue = nullptr;
     if (SomeCase && SomeCase->Consequent) {
         if (auto *Action = std::get_if<PlannedAction>(SomeCase->Consequent.get())) {
             auto ValueOrErr = emitAction(*Action);
             if (!ValueOrErr)
                 return ValueOrErr.takeError();
-            if (Action->Target.empty()) {
-                SomeValue = *ValueOrErr;
+            llvm::Value *SomeValue = *ValueOrErr;
+            llvm::BasicBlock *CurrentBlock = Builder->GetInsertBlock();
+            // Only use value if current block is not terminated and value is usable
+            // A value is usable if it's in the current block or dominates it
+            bool CanUseValue = SomeValue && !SomeValue->getType()->isVoidTy() &&
+                               Action->Target.empty() && !CurrentBlock->getTerminator();
+            if (CanUseValue) {
+                // Check if value dominates current block
+                // If value is an instruction, its parent must dominate current block
+                bool ValueDominates = true;
+                if (auto *Inst = llvm::dyn_cast<llvm::Instruction>(SomeValue)) {
+                    llvm::BasicBlock *ValueBlock = Inst->getParent();
+                    // Simple check: value block == current block, or we're in the same function
+                    // and there's no complex control flow
+                    ValueDominates = (ValueBlock == CurrentBlock);
+                }
+                if (ValueDominates) {
+                    ResultType = SomeValue->getType();
+                    llvm::BasicBlock *EntryBlock = &CurrentFunction->getEntryBlock();
+                    llvm::IRBuilder<> TmpBuilder(EntryBlock, EntryBlock->getFirstInsertionPt());
+                    ResultAlloca = TmpBuilder.CreateAlloca(ResultType, nullptr, "choose.result");
+                    Builder->CreateStore(SomeValue, ResultAlloca);
+                    HasSomeValue = true;
+                }
             }
         }
     }
@@ -3805,22 +3939,34 @@ llvm::Expected<llvm::Value*> Emitter::emitChooseNPO(
     if (!Builder->GetInsertBlock()->getTerminator()) {
         Builder->CreateBr(MergeBlock);
     }
-    llvm::BasicBlock *SomeEndBlock = Builder->GetInsertBlock();
-    if (SomeValue) {
-        IncomingValues.push_back({SomeValue, SomeEndBlock});
-    }
 
     // Emit None case
     Builder->SetInsertPoint(NoneBlock);
-    llvm::Value *NoneValue = nullptr;
 
     if (NoneCase && NoneCase->Consequent) {
         if (auto *Action = std::get_if<PlannedAction>(NoneCase->Consequent.get())) {
             auto ValueOrErr = emitAction(*Action);
             if (!ValueOrErr)
                 return ValueOrErr.takeError();
-            if (Action->Target.empty()) {
-                NoneValue = *ValueOrErr;
+            llvm::Value *NoneValue = *ValueOrErr;
+            llvm::BasicBlock *CurrentBlock = Builder->GetInsertBlock();
+            bool CanUseValue = NoneValue && !NoneValue->getType()->isVoidTy() &&
+                               Action->Target.empty() && !CurrentBlock->getTerminator();
+            if (CanUseValue) {
+                bool ValueDominates = true;
+                if (auto *Inst = llvm::dyn_cast<llvm::Instruction>(NoneValue)) {
+                    ValueDominates = (Inst->getParent() == CurrentBlock);
+                }
+                if (ValueDominates) {
+                    if (!ResultAlloca) {
+                        ResultType = NoneValue->getType();
+                        llvm::BasicBlock *EntryBlock = &CurrentFunction->getEntryBlock();
+                        llvm::IRBuilder<> TmpBuilder(EntryBlock, EntryBlock->getFirstInsertionPt());
+                        ResultAlloca = TmpBuilder.CreateAlloca(ResultType, nullptr, "choose.result");
+                    }
+                    Builder->CreateStore(NoneValue, ResultAlloca);
+                    HasNoneValue = true;
+                }
             }
         }
     } else if (Choose.Alternative) {
@@ -3829,8 +3975,25 @@ llvm::Expected<llvm::Value*> Emitter::emitChooseNPO(
             auto ValueOrErr = emitAction(*Action);
             if (!ValueOrErr)
                 return ValueOrErr.takeError();
-            if (Action->Target.empty()) {
-                NoneValue = *ValueOrErr;
+            llvm::Value *NoneValue = *ValueOrErr;
+            llvm::BasicBlock *CurrentBlock = Builder->GetInsertBlock();
+            bool CanUseValue = NoneValue && !NoneValue->getType()->isVoidTy() &&
+                               Action->Target.empty() && !CurrentBlock->getTerminator();
+            if (CanUseValue) {
+                bool ValueDominates = true;
+                if (auto *Inst = llvm::dyn_cast<llvm::Instruction>(NoneValue)) {
+                    ValueDominates = (Inst->getParent() == CurrentBlock);
+                }
+                if (ValueDominates) {
+                    if (!ResultAlloca) {
+                        ResultType = NoneValue->getType();
+                        llvm::BasicBlock *EntryBlock = &CurrentFunction->getEntryBlock();
+                        llvm::IRBuilder<> TmpBuilder(EntryBlock, EntryBlock->getFirstInsertionPt());
+                        ResultAlloca = TmpBuilder.CreateAlloca(ResultType, nullptr, "choose.result");
+                    }
+                    Builder->CreateStore(NoneValue, ResultAlloca);
+                    HasNoneValue = true;
+                }
             }
         }
     }
@@ -3838,41 +4001,13 @@ llvm::Expected<llvm::Value*> Emitter::emitChooseNPO(
     if (!Builder->GetInsertBlock()->getTerminator()) {
         Builder->CreateBr(MergeBlock);
     }
-    llvm::BasicBlock *NoneEndBlock = Builder->GetInsertBlock();
-    if (NoneValue) {
-        IncomingValues.push_back({NoneValue, NoneEndBlock});
-    }
 
     // Merge block
     Builder->SetInsertPoint(MergeBlock);
 
-    // Create PHI if we have values
-    if (!IncomingValues.empty()) {
-        llvm::Type *ValueType = IncomingValues[0].first->getType();
-
-        // Don't create PHI for void type
-        if (ValueType->isVoidTy()) {
-            return nullptr;
-        }
-
-        // Collect all blocks that have entries
-        std::set<llvm::BasicBlock*> CoveredBlocks;
-        for (const auto &[Val, Block] : IncomingValues) {
-            CoveredBlocks.insert(Block);
-        }
-
-        // Add undef entries for any predecessor blocks not covered
-        for (llvm::BasicBlock *Pred : llvm::predecessors(MergeBlock)) {
-            if (CoveredBlocks.find(Pred) == CoveredBlocks.end()) {
-                IncomingValues.push_back({llvm::UndefValue::get(ValueType), Pred});
-            }
-        }
-
-        llvm::PHINode *PHI = Builder->CreatePHI(ValueType, IncomingValues.size(), "choose.value");
-        for (const auto &[Val, Block] : IncomingValues) {
-            PHI->addIncoming(Val, Block);
-        }
-        return PHI;
+    // Load result if we stored one
+    if (ResultAlloca && (HasSomeValue || HasNoneValue)) {
+        return Builder->CreateLoad(ResultType, ResultAlloca, "choose.value");
     }
 
     return nullptr;
