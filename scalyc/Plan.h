@@ -685,6 +685,31 @@ struct Plan {
 };
 
 // ============================================================================
+// Plan Merging (for multi-package JIT)
+// ============================================================================
+
+// Merge multiple plans into one, combining all types and functions.
+// Later plans take precedence for duplicate keys.
+inline void mergePlans(Plan &Target, const Plan &Source) {
+    // Merge structures
+    for (const auto &[Name, Struct] : Source.Structures) {
+        Target.Structures[Name] = Struct;
+    }
+    // Merge unions
+    for (const auto &[Name, Union] : Source.Unions) {
+        Target.Unions[Name] = Union;
+    }
+    // Merge functions
+    for (const auto &[Name, Func] : Source.Functions) {
+        Target.Functions[Name] = Func;
+    }
+    // Merge globals
+    for (const auto &[Name, Global] : Source.Globals) {
+        Target.Globals[Name] = Global;
+    }
+}
+
+// ============================================================================
 // Type Inference Utilities
 // ============================================================================
 

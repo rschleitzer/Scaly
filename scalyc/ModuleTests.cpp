@@ -146,6 +146,24 @@ static bool runPackageTests(
         return false;
     }
 
+    // DEBUG: Print plan statistics
+    size_t totalMethods = 0;
+    size_t totalOps = 0;
+    size_t totalInits = 0;
+    for (const auto &[name, Struct] : PlanResult->Structures) {
+        totalMethods += Struct.Methods.size();
+        totalOps += Struct.Operators.size();
+        totalInits += Struct.Initializers.size();
+    }
+    llvm::outs() << "    Plan stats for " << PackagePath << ":\n";
+    llvm::outs() << "      Structures: " << PlanResult->Structures.size() << "\n";
+    llvm::outs() << "      Unions: " << PlanResult->Unions.size() << "\n";
+    llvm::outs() << "      Functions: " << PlanResult->Functions.size() << "\n";
+    llvm::outs() << "      Total struct methods: " << totalMethods << "\n";
+    llvm::outs() << "      Total struct operators: " << totalOps << "\n";
+    llvm::outs() << "      Total struct initializers: " << totalInits << "\n";
+    llvm::outs().flush();
+
     EmitterConfig Config;
     Config.EmitDebugInfo = false;
     Emitter E(Config);
@@ -185,6 +203,111 @@ static bool runPackageTests(
     return AllPassed;
 }
 
+// Compile multiple packages together and run test functions
+// Dependencies are compiled first so their types/functions are available
+static bool runMultiPackageTests(
+    const std::vector<llvm::StringRef>& PackagePaths,  // First = dependencies, Last = main
+    const std::vector<std::pair<const char*, const char*>>& Tests  // {Name, FunctionName}
+) {
+    if (PackagePaths.empty()) {
+        for (const auto& Test : Tests) {
+            fail(Test.first, "No packages to compile");
+        }
+        return false;
+    }
+
+    // Create merged plan
+    Plan MergedPlan;
+
+    // Compile each package and merge into the combined plan
+    for (const auto& PackagePath : PackagePaths) {
+        auto BufOrErr = llvm::MemoryBuffer::getFile(PackagePath);
+        if (!BufOrErr) {
+            for (const auto& Test : Tests) {
+                fail(Test.first, ("Cannot open file: " + PackagePath.str()).c_str());
+            }
+            return false;
+        }
+
+        Parser P((*BufOrErr)->getBuffer());
+        auto ParseResult = P.parseProgram();
+        if (!ParseResult) {
+            std::string ErrMsg;
+            llvm::raw_string_ostream OS(ErrMsg);
+            OS << ParseResult.takeError();
+            for (const auto& Test : Tests) {
+                fail(Test.first, ErrMsg.c_str());
+            }
+            return false;
+        }
+
+        Modeler M(PackagePath);
+        auto ModelResult = M.buildProgram(*ParseResult);
+        if (!ModelResult) {
+            std::string ErrMsg;
+            llvm::raw_string_ostream OS(ErrMsg);
+            OS << ModelResult.takeError();
+            for (const auto& Test : Tests) {
+                fail(Test.first, ErrMsg.c_str());
+            }
+            return false;
+        }
+
+        Planner Pl(PackagePath);
+        auto PlanResult = Pl.plan(*ModelResult);
+        if (!PlanResult) {
+            std::string ErrMsg;
+            llvm::raw_string_ostream OS(ErrMsg);
+            OS << PlanResult.takeError();
+            for (const auto& Test : Tests) {
+                fail(Test.first, ErrMsg.c_str());
+            }
+            return false;
+        }
+
+        // Merge this package's plan into the combined plan
+        mergePlans(MergedPlan, *PlanResult);
+    }
+
+    EmitterConfig Config;
+    Config.EmitDebugInfo = false;
+    Emitter E(Config);
+
+    bool AllPassed = true;
+    for (const auto& Test : Tests) {
+        // Look up the mangled name from the merged plan
+        std::string MangledName;
+        for (const auto &[name, Func] : MergedPlan.Functions) {
+            if (Func.Name == Test.second) {
+                MangledName = Func.MangledName;
+                break;
+            }
+        }
+
+        if (MangledName.empty()) {
+            fail(Test.first, ("Function not found: " + std::string(Test.second)).c_str());
+            AllPassed = false;
+            continue;
+        }
+
+        auto Result = E.jitExecuteIntFunction(MergedPlan, MangledName);
+        if (!Result) {
+            std::string ErrMsg;
+            llvm::raw_string_ostream OS(ErrMsg);
+            OS << Result.takeError();
+            fail(Test.first, ErrMsg.c_str());
+            AllPassed = false;
+        } else if (*Result != 0) {
+            std::string Msg = "test returned error code " + std::to_string(*Result);
+            fail(Test.first, Msg.c_str());
+            AllPassed = false;
+        } else {
+            pass(Test.first);
+        }
+    }
+    return AllPassed;
+}
+
 // ============================================================================
 // Main Test Runner
 // ============================================================================
@@ -203,8 +326,9 @@ bool runModuleTests(bool includeSlowTests) {
         {"Module: scaly.test()", "scaly.test"},
     });
 
-    // Compile scalyc package once and run its tests (slow: ~20s for 16k lines)
+    // Compile scalyc package and run its tests (slow: ~20s for 16k lines)
     // This tests the self-hosting compiler modules: lexer, parser, compiler
+    // Note: scalyc declares "package scaly 0.1.0", so the Modeler loads scaly automatically
     if (includeSlowTests) {
         llvm::outs() << "  Scalyc package tests:\n";
         runPackageTests(ScalycPackagePath, {
