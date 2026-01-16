@@ -930,9 +930,6 @@ llvm::Function *Emitter::emitFunctionDecl(const PlannedFunction &Func) {
             *Context, {I8Ty, DataTy}, ResultName, false);
 
         ReturnLLVMType = ResultTy;
-        llvm::errs() << "DEBUG emitFunctionDecl: Created Result type for throwing function '"
-                     << Func.Name << "' ValueSize=" << ValueSize
-                     << " ErrorSize=" << ErrorSize << "\n";
     }
 
     // Use sret for non-primitive types (structs, unions)
@@ -1096,8 +1093,6 @@ llvm::Error Emitter::emitFunctionBody(const PlannedFunction &Func,
         LocalVariables[*Func.PageParameter] = &*ArgIt;
         // Use this as the return page for # allocations within this function
         CurrentRegion.ReturnPage = &*ArgIt;
-        llvm::errs() << "DEBUG emitFunctionBody: Set ReturnPage for '" << Func.Name
-                     << "' PageParameter='" << *Func.PageParameter << "'\n";
         ArgIt++;
         ArgIdx++;
     }
@@ -1897,13 +1892,10 @@ llvm::Error Emitter::emitBinding(const PlannedBinding &Binding) {
     llvm::Value *Value = nullptr;
 
     std::string BindingName = Binding.BindingItem.Name ? *Binding.BindingItem.Name : "<unnamed>";
-    llvm::errs() << "DEBUG emitBinding: emitting '" << BindingName << "'\n";
-
     // Emit initialization expression if present
     if (!Binding.Operation.empty()) {
         auto ValueOrErr = emitOperands(Binding.Operation);
         if (!ValueOrErr) {
-            llvm::errs() << "DEBUG emitBinding: emitOperands failed for '" << BindingName << "'\n";
             return ValueOrErr.takeError();
         }
 
@@ -2511,8 +2503,6 @@ llvm::Expected<llvm::Value*> Emitter::emitExpression(const PlannedExpression &Ex
         } else if constexpr (std::is_same_v<T, PlannedType>) {
             // Type used as expression value - this shouldn't normally occur
             // sizeof is handled via PlannedSizeOf, constructors via PlannedCall
-            llvm::errs() << "DEBUG emitExpression: PlannedType used as value: Name=" << E.Name
-                << ", MangledName=" << E.MangledName << ", offset=" << E.Loc.Start << "\n";
             return llvm::make_error<llvm::StringError>(
                 "Type '" + E.Name + "' cannot be used as a value (offset " +
                     std::to_string(E.Loc.Start) + ")",
@@ -2522,12 +2512,6 @@ llvm::Expected<llvm::Value*> Emitter::emitExpression(const PlannedExpression &Ex
             // Variable reference - look up and load
             llvm::Value *VarPtr = lookupVariable(E.Name);
             if (!VarPtr) {
-                llvm::errs() << "DEBUG undefined variable: '" << E.Name
-                             << "' in function '" << CurrentFunction->getName() << "'\n";
-                llvm::errs() << "DEBUG LocalVariables contains:\n";
-                for (const auto& [name, val] : LocalVariables) {
-                    llvm::errs() << "  - '" << name << "'\n";
-                }
                 return llvm::make_error<llvm::StringError>(
                     "Undefined variable: " + E.Name,
                     llvm::inconvertibleErrorCode()
@@ -2598,18 +2582,6 @@ llvm::Expected<llvm::Value*> Emitter::emitExpression(const PlannedExpression &Ex
 }
 
 llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
-    // Debug intrinsic calls
-    if (Call.IsIntrinsic) {
-        llvm::errs() << "DEBUG emitCall INTRINSIC: Name=" << Call.Name
-                     << " MangledName=" << Call.MangledName
-                     << " IsOperator=" << Call.IsOperator << "\n";
-    }
-    // Also debug unwrap calls specifically
-    if (Call.Name == "unwrap") {
-        llvm::errs() << "DEBUG emitCall UNWRAP: IsIntrinsic=" << Call.IsIntrinsic
-                     << " MangledName=" << Call.MangledName << "\n";
-    }
-
     // Look up the function first to know parameter types
     auto *Func = lookupFunction(Call.MangledName);
 
@@ -3487,31 +3459,8 @@ llvm::Expected<llvm::Value*> Emitter::emitBlock(const PlannedBlock &Block) {
     }
     BlockCleanupStack.push_back(Cleanup);
 
-    llvm::errs() << "DEBUG emitBlock: " << Block.Statements.size() << " statements in block\n";
-
     llvm::Value *LastValue = nullptr;
-    size_t StmtIdx = 0;
     for (const auto &Stmt : Block.Statements) {
-        llvm::errs() << "DEBUG emitBlock: processing statement " << StmtIdx++ << " of type ";
-        std::visit([](const auto &S) {
-            using T = std::decay_t<decltype(S)>;
-            if constexpr (std::is_same_v<T, PlannedAction>) {
-                llvm::errs() << "PlannedAction";
-            } else if constexpr (std::is_same_v<T, PlannedBinding>) {
-                llvm::errs() << "PlannedBinding(" << (S.BindingItem.Name ? *S.BindingItem.Name : "?") << ")";
-            } else if constexpr (std::is_same_v<T, PlannedReturn>) {
-                llvm::errs() << "PlannedReturn";
-            } else if constexpr (std::is_same_v<T, PlannedThrow>) {
-                llvm::errs() << "PlannedThrow";
-            } else if constexpr (std::is_same_v<T, PlannedBreak>) {
-                llvm::errs() << "PlannedBreak";
-            } else if constexpr (std::is_same_v<T, PlannedContinue>) {
-                llvm::errs() << "PlannedContinue";
-            } else {
-                llvm::errs() << "Unknown";
-            }
-        }, Stmt);
-        llvm::errs() << "\n";
         // For PlannedAction, capture the result value (the block's result is the last value)
         if (auto *Action = std::get_if<PlannedAction>(&Stmt)) {
             auto ValueOrErr = emitAction(*Action);
@@ -3576,24 +3525,6 @@ llvm::Expected<llvm::Value*> Emitter::emitBlock(const PlannedBlock &Block) {
 
 llvm::Expected<llvm::Value*> Emitter::emitIf(const PlannedIf &If) {
     // Emit the condition
-    llvm::errs() << "DEBUG emitIf: hasConsequent=" << (If.Consequent ? "yes" : "no")
-                 << " hasAlternative=" << (If.Alternative ? "yes" : "no") << "\n";
-    if (If.Consequent) {
-        std::visit([](const auto &S) {
-            using T = std::decay_t<decltype(S)>;
-            llvm::errs() << "DEBUG emitIf consequent type: ";
-            if constexpr (std::is_same_v<T, PlannedAction>) {
-                llvm::errs() << "PlannedAction\n";
-            } else if constexpr (std::is_same_v<T, PlannedBinding>) {
-                llvm::errs() << "PlannedBinding(" << (S.BindingItem.Name ? *S.BindingItem.Name : "?") << ")\n";
-            } else if constexpr (std::is_same_v<T, PlannedReturn>) {
-                llvm::errs() << "PlannedReturn\n";
-            } else {
-                llvm::errs() << "Other\n";
-            }
-        }, *If.Consequent);
-    }
-
     if (If.Condition.empty()) {
         return llvm::make_error<llvm::StringError>(
             "If statement has no condition",

@@ -8733,6 +8733,10 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                     Lifetime FuncCallLifetime = TypeExpr->Life;
                     size_t FuncArgsIndex = i + 1;
 
+                    // Check for single argument without parentheses: println "Hello"
+                    // NextOp must be a value expression, not an operator or tuple
+                    bool HasSingleArgWithoutParens = false;
+
                     if (!HasFuncArgsDirectly && isFunction(FuncName)) {
                         // Check if NextOp is a lifetime marker (Type with empty name and non-Unspecified lifetime)
                         if (auto* LifeType = std::get_if<Type>(&NextOp.Expr)) {
@@ -8743,30 +8747,62 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                     FuncCallLifetime = LifeType->Life;
                                     FuncArgsIndex = i + 2;
                                 }
+                            } else if (!LifeType->Name.empty() && !isOperatorName(LifeType->Name[0])) {
+                                // NextOp is a non-operator Type - could be single arg without parens
+                                HasSingleArgWithoutParens = true;
                             }
+                        } else if (std::holds_alternative<Constant>(NextOp.Expr)) {
+                            // NextOp is a constant - single arg without parens
+                            HasSingleArgWithoutParens = true;
                         }
                     }
 
                     // Check if it's a known function (not a struct/concept)
-                    if (isFunction(FuncName) && (HasFuncArgsDirectly || HasFuncLifetimeThenArgs)) {
-                        // This is function(args) or function#(args) - create a function call
+                    if (isFunction(FuncName) && (HasFuncArgsDirectly || HasFuncLifetimeThenArgs || HasSingleArgWithoutParens)) {
+                        // This is function(args) or function#(args) or function arg - create a function call
 
-                        // Plan the arguments tuple
-                        Operand ArgsOp = ProcessedOps[FuncArgsIndex];
-                        ArgsOp.MemberAccess = nullptr;
-                        auto PlannedArgs = planOperand(ArgsOp);
-                        if (!PlannedArgs) {
-                            return PlannedArgs.takeError();
-                        }
-
-                        // Extract argument types from the planned tuple
+                        // Plan the arguments
+                        PlannedOperand PlannedArgsValue;
                         std::vector<PlannedType> ArgTypes;
-                        if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedArgs->Expr)) {
-                            for (const auto &Comp : TupleExpr->Components) {
-                                if (!Comp.Value.empty()) {
-                                    ArgTypes.push_back(Comp.Value.back().ResultType);
+
+                        if (HasSingleArgWithoutParens) {
+                            // Single argument without parentheses: plan the single operand
+                            Operand SingleArgOp = ProcessedOps[FuncArgsIndex];
+                            SingleArgOp.MemberAccess = nullptr;
+                            auto PlannedSingleArg = planOperand(SingleArgOp);
+                            if (!PlannedSingleArg) {
+                                return PlannedSingleArg.takeError();
+                            }
+
+                            // Extract the argument type
+                            ArgTypes.push_back(PlannedSingleArg->ResultType);
+
+                            // Create a synthetic PlannedTuple with one component
+                            PlannedTuple SyntheticTuple;
+                            PlannedComponent Comp;
+                            Comp.Value.push_back(std::move(*PlannedSingleArg));
+                            SyntheticTuple.Components.push_back(std::move(Comp));
+
+                            PlannedArgsValue.Loc = SingleArgOp.Loc;
+                            PlannedArgsValue.Expr = std::move(SyntheticTuple);
+                        } else {
+                            // Normal tuple case
+                            Operand ArgsOp = ProcessedOps[FuncArgsIndex];
+                            ArgsOp.MemberAccess = nullptr;
+                            auto PlannedArgs = planOperand(ArgsOp);
+                            if (!PlannedArgs) {
+                                return PlannedArgs.takeError();
+                            }
+
+                            // Extract argument types from the planned tuple
+                            if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedArgs->Expr)) {
+                                for (const auto &Comp : TupleExpr->Components) {
+                                    if (!Comp.Value.empty()) {
+                                        ArgTypes.push_back(Comp.Value.back().ResultType);
+                                    }
                                 }
                             }
+                            PlannedArgsValue = std::move(*PlannedArgs);
                         }
 
                         // Resolve the function call to get return type and match function
@@ -9088,7 +9124,7 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             Call.Args->push_back(std::move(ThisOp));
                         }
 
-                        if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedArgs->Expr)) {
+                        if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedArgsValue.Expr)) {
                             for (auto &Comp : TupleExpr->Components) {
                                 if (!Comp.Value.empty()) {
                                     Call.Args->push_back(std::move(Comp.Value.back()));
