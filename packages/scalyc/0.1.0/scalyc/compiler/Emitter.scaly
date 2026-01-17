@@ -1040,14 +1040,14 @@ define Emitter
         {
             let result_type map_type(call.result_type)
             let func_type LLVMFunctionType(result_type, null as pointer[LLVMTypeRef], 0, 0)
-            return LLVMBuildCall2(builder, func_type, func, null as pointer[LLVMValueRef], 0, String#("call").c_data())
+            return LLVMBuildCall2(builder, func_type, func, null as pointer[LLVMValueRef], 0, "call")
         }
 
         if call.args.length = 0
         {
             let result_type map_type(call.result_type)
             let func_type LLVMFunctionType(result_type, null as pointer[LLVMTypeRef], 0, 0)
-            return LLVMBuildCall2(builder, func_type, func, null as pointer[LLVMValueRef], 0, String#("call").c_data())
+            return LLVMBuildCall2(builder, func_type, func, null as pointer[LLVMValueRef], 0, "call")
         }
 
         ; TODO: Emit arguments and create proper call
@@ -1105,8 +1105,8 @@ define Emitter
         if op_name.equals(String#("-"))
         {
             if is_float
-                return LLVMBuildFNeg(builder, operand, String#("fneg").c_data())
-            return LLVMBuildNeg(builder, operand, String#("neg").c_data())
+                return LLVMBuildFNeg(builder, operand, "fneg")
+            return LLVMBuildNeg(builder, operand, "neg")
         }
 
         ; Unary plus (identity)
@@ -1115,15 +1115,15 @@ define Emitter
 
         ; Logical not
         if op_name.equals(String#("!"))
-            return LLVMBuildNot(builder, operand, String#("not").c_data())
+            return LLVMBuildNot(builder, operand, "not")
 
         ; Bitwise not
         if op_name.equals(String#("~"))
-            return LLVMBuildNot(builder, operand, String#("bitnot").c_data())
+            return LLVMBuildNot(builder, operand, "bitnot")
 
         ; Dereference
         if op_name.equals(String#("*"))
-            return LLVMBuildLoad2(builder, ty, operand, String#("deref").c_data())
+            return LLVMBuildLoad2(builder, ty, operand, "deref")
 
         ; Address-of (operand should already be a pointer)
         if op_name.equals(String#("&"))
@@ -1143,119 +1143,119 @@ define Emitter
         if op_name.equals(String#("+"))
         {
             if is_float
-                return LLVMBuildFAdd(builder, left, right, String#("fadd").c_data())
-            return LLVMBuildAdd(builder, left, right, String#("add").c_data())
+                return LLVMBuildFAdd(builder, left, right, "fadd")
+            return LLVMBuildAdd(builder, left, right, "add")
         }
 
         ; Subtraction
         if op_name.equals(String#("-"))
         {
             if is_float
-                return LLVMBuildFSub(builder, left, right, String#("fsub").c_data())
-            return LLVMBuildSub(builder, left, right, String#("sub").c_data())
+                return LLVMBuildFSub(builder, left, right, "fsub")
+            return LLVMBuildSub(builder, left, right, "sub")
         }
 
         ; Multiplication
         if op_name.equals(String#("*"))
         {
             if is_float
-                return LLVMBuildFMul(builder, left, right, String#("fmul").c_data())
-            return LLVMBuildMul(builder, left, right, String#("mul").c_data())
+                return LLVMBuildFMul(builder, left, right, "fmul")
+            return LLVMBuildMul(builder, left, right, "mul")
         }
 
         ; Division
         if op_name.equals(String#("/"))
         {
             if is_float
-                return LLVMBuildFDiv(builder, left, right, String#("fdiv").c_data())
+                return LLVMBuildFDiv(builder, left, right, "fdiv")
             if is_signed
-                return LLVMBuildSDiv(builder, left, right, String#("sdiv").c_data())
-            return LLVMBuildUDiv(builder, left, right, String#("udiv").c_data())
+                return LLVMBuildSDiv(builder, left, right, "sdiv")
+            return LLVMBuildUDiv(builder, left, right, "udiv")
         }
 
         ; Modulo
         if op_name.equals(String#("%"))
         {
             if is_float
-                return LLVMBuildFRem(builder, left, right, String#("frem").c_data())
+                return LLVMBuildFRem(builder, left, right, "frem")
             if is_signed
-                return LLVMBuildSRem(builder, left, right, String#("srem").c_data())
-            return LLVMBuildURem(builder, left, right, String#("urem").c_data())
+                return LLVMBuildSRem(builder, left, right, "srem")
+            return LLVMBuildURem(builder, left, right, "urem")
         }
 
         ; Bitwise AND
         if op_name.equals(String#("&"))
-            return LLVMBuildAnd(builder, left, right, String#("and").c_data())
+            return LLVMBuildAnd(builder, left, right, "and")
 
         ; Bitwise OR
         if op_name.equals(String#("|"))
-            return LLVMBuildOr(builder, left, right, String#("or").c_data())
+            return LLVMBuildOr(builder, left, right, "or")
 
         ; Bitwise XOR
         if op_name.equals(String#("^"))
-            return LLVMBuildXor(builder, left, right, String#("xor").c_data())
+            return LLVMBuildXor(builder, left, right, "xor")
 
         ; Left shift
         if op_name.equals(String#("<<"))
-            return LLVMBuildShl(builder, left, right, String#("shl").c_data())
+            return LLVMBuildShl(builder, left, right, "shl")
 
         ; Right shift
         if op_name.equals(String#(">>"))
         {
             if is_signed
-                return LLVMBuildAShr(builder, left, right, String#("ashr").c_data())
-            return LLVMBuildLShr(builder, left, right, String#("lshr").c_data())
+                return LLVMBuildAShr(builder, left, right, "ashr")
+            return LLVMBuildLShr(builder, left, right, "lshr")
         }
 
         ; Comparison operators
         if op_name.equals(String#("="))
         {
             if is_float
-                return LLVMBuildFCmp(builder, LLVMRealPredicate.OEQ(), left, right, String#("eq").c_data())
-            return LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), left, right, String#("eq").c_data())
+                return LLVMBuildFCmp(builder, LLVMRealPredicate.OEQ(), left, right, "eq")
+            return LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), left, right, "eq")
         }
 
         if op_name.equals(String#("<>"))
         {
             if is_float
-                return LLVMBuildFCmp(builder, LLVMRealPredicate.ONE(), left, right, String#("ne").c_data())
-            return LLVMBuildICmp(builder, LLVMIntPredicate.NE(), left, right, String#("ne").c_data())
+                return LLVMBuildFCmp(builder, LLVMRealPredicate.ONE(), left, right, "ne")
+            return LLVMBuildICmp(builder, LLVMIntPredicate.NE(), left, right, "ne")
         }
 
         if op_name.equals(String#("<"))
         {
             if is_float
-                return LLVMBuildFCmp(builder, LLVMRealPredicate.OLT(), left, right, String#("lt").c_data())
+                return LLVMBuildFCmp(builder, LLVMRealPredicate.OLT(), left, right, "lt")
             if is_signed
-                return LLVMBuildICmp(builder, LLVMIntPredicate.SLT(), left, right, String#("lt").c_data())
-            return LLVMBuildICmp(builder, LLVMIntPredicate.ULT(), left, right, String#("lt").c_data())
+                return LLVMBuildICmp(builder, LLVMIntPredicate.SLT(), left, right, "lt")
+            return LLVMBuildICmp(builder, LLVMIntPredicate.ULT(), left, right, "lt")
         }
 
         if op_name.equals(String#("<="))
         {
             if is_float
-                return LLVMBuildFCmp(builder, LLVMRealPredicate.OLE(), left, right, String#("le").c_data())
+                return LLVMBuildFCmp(builder, LLVMRealPredicate.OLE(), left, right, "le")
             if is_signed
-                return LLVMBuildICmp(builder, LLVMIntPredicate.SLE(), left, right, String#("le").c_data())
-            return LLVMBuildICmp(builder, LLVMIntPredicate.ULE(), left, right, String#("le").c_data())
+                return LLVMBuildICmp(builder, LLVMIntPredicate.SLE(), left, right, "le")
+            return LLVMBuildICmp(builder, LLVMIntPredicate.ULE(), left, right, "le")
         }
 
         if op_name.equals(String#(">"))
         {
             if is_float
-                return LLVMBuildFCmp(builder, LLVMRealPredicate.OGT(), left, right, String#("gt").c_data())
+                return LLVMBuildFCmp(builder, LLVMRealPredicate.OGT(), left, right, "gt")
             if is_signed
-                return LLVMBuildICmp(builder, LLVMIntPredicate.SGT(), left, right, String#("gt").c_data())
-            return LLVMBuildICmp(builder, LLVMIntPredicate.UGT(), left, right, String#("gt").c_data())
+                return LLVMBuildICmp(builder, LLVMIntPredicate.SGT(), left, right, "gt")
+            return LLVMBuildICmp(builder, LLVMIntPredicate.UGT(), left, right, "gt")
         }
 
         if op_name.equals(String#(">="))
         {
             if is_float
-                return LLVMBuildFCmp(builder, LLVMRealPredicate.OGE(), left, right, String#("ge").c_data())
+                return LLVMBuildFCmp(builder, LLVMRealPredicate.OGE(), left, right, "ge")
             if is_signed
-                return LLVMBuildICmp(builder, LLVMIntPredicate.SGE(), left, right, String#("ge").c_data())
-            return LLVMBuildICmp(builder, LLVMIntPredicate.UGE(), left, right, String#("ge").c_data())
+                return LLVMBuildICmp(builder, LLVMIntPredicate.SGE(), left, right, "ge")
+            return LLVMBuildICmp(builder, LLVMIntPredicate.UGE(), left, right, "ge")
         }
 
         LLVMValueRef(null)
@@ -1407,7 +1407,7 @@ define Emitter
         {
             ; Compare to 0
             let zero LLVMConstInt(cond_type, 0, 0)
-            set bool_cond: LLVMBuildICmp(builder, LLVMIntPredicate.NE(), cond_value, zero, String#("if.tobool").c_data())
+            set bool_cond: LLVMBuildICmp(builder, LLVMIntPredicate.NE(), cond_value, zero, "if.tobool")
         }
 
         ; Create basic blocks
@@ -1577,14 +1577,14 @@ define Emitter
         ; PointerTypeKind = 14 in LLVM
         if type_kind <> 14
         {
-            set union_ptr: LLVMBuildAlloca(builder, union_type, String#("choose.union").c_data())
+            set union_ptr: LLVMBuildAlloca(builder, union_type, "choose.union")
             LLVMBuildStore(builder, union_value, union_ptr)
         }
 
         ; Load the tag (first field, i8)
         let i8_ty LLVMInt8TypeInContext(context)
-        let tag_ptr LLVMBuildStructGEP2(builder, union_type, union_ptr, 0, String#("tag.ptr").c_data())
-        let tag LLVMBuildLoad2(builder, i8_ty, tag_ptr, String#("tag").c_data())
+        let tag_ptr LLVMBuildStructGEP2(builder, union_type, union_ptr, 0, "tag.ptr")
+        let tag LLVMBuildLoad2(builder, i8_ty, tag_ptr, "tag")
 
         ; Create blocks
         let merge_block create_block(String#("choose.end"))
@@ -1608,10 +1608,10 @@ define Emitter
                 ; Extract variant data and bind to variable
                 if when_case.name.length > 0
                 {
-                    let data_ptr LLVMBuildStructGEP2(builder, union_type, union_ptr, 1, String#("variant.c_data().ptr").c_data())
+                    let data_ptr LLVMBuildStructGEP2(builder, union_type, union_ptr, 1, "variant.c_data().ptr")
                     let var_ty map_type(when_case.variant_type)
-                    let var_ptr LLVMBuildBitCast(builder, data_ptr, LLVMPointerTypeInContext(context, 0), String#("variant.c_data().cast").c_data())
-                    let var_value LLVMBuildLoad2(builder, var_ty, var_ptr, String#("variant.val").c_data())
+                    let var_ptr LLVMBuildBitCast(builder, data_ptr, LLVMPointerTypeInContext(context, 0), "variant.c_data().cast")
+                    let var_value LLVMBuildLoad2(builder, var_ty, var_ptr, "variant.val")
                     define_variable(when_case.name, var_value)
                 }
 
@@ -1667,7 +1667,7 @@ define Emitter
         let index_type LLVMTypeOf(end_value)
 
         ; Create the loop counter (allocate on stack)
-        let loop_counter LLVMBuildAlloca(builder, index_type, String#("counter").c_data())
+        let loop_counter LLVMBuildAlloca(builder, index_type, "counter")
 
         ; Initialize loop counter to 0
         let zero LLVMConstInt(index_type, 0, 0)
@@ -1687,8 +1687,8 @@ define Emitter
 
         ; Emit condition block: i < end
         LLVMPositionBuilderAtEnd(builder, cond_block)
-        let current_index LLVMBuildLoad2(builder, index_type, loop_counter, String#("i").c_data())
-        let cond LLVMBuildICmp(builder, LLVMIntPredicate.SLT(), current_index, end_value, String#("for.cmp").c_data())
+        let current_index LLVMBuildLoad2(builder, index_type, loop_counter, "i")
+        let cond LLVMBuildICmp(builder, LLVMIntPredicate.SLT(), current_index, end_value, "for.cmp")
         LLVMBuildCondBr(builder, cond, body_block, exit_block)
 
         ; Emit body block
@@ -1708,9 +1708,9 @@ define Emitter
 
         ; Emit increment block: i++
         LLVMPositionBuilderAtEnd(builder, incr_block)
-        let incr_index LLVMBuildLoad2(builder, index_type, loop_counter, String#("i.load").c_data())
+        let incr_index LLVMBuildLoad2(builder, index_type, loop_counter, "i.load")
         let one LLVMConstInt(index_type, 1, 0)
-        let next_index LLVMBuildAdd(builder, incr_index, one, String#("i.next").c_data())
+        let next_index LLVMBuildAdd(builder, incr_index, one, "i.next")
         LLVMBuildStore(builder, next_index, loop_counter)
         LLVMBuildBr(builder, cond_block)
 
@@ -1738,7 +1738,7 @@ define Emitter
         let type_kind LLVMGetTypeKind(coll_type)
         if type_kind <> 14  ; Not pointer
         {
-            set collection_ptr: LLVMBuildAlloca(builder, coll_type, String#("coll.tmp").c_data())
+            set collection_ptr: LLVMBuildAlloca(builder, coll_type, "coll.tmp")
             LLVMBuildStore(builder, collection, collection_ptr)
         }
 
@@ -1749,7 +1749,7 @@ define Emitter
 
         ; Call get_iterator() on collection
         let iter_type map_type(for_expr.iterator_type)
-        let iter_alloca LLVMBuildAlloca(builder, iter_type, String#("iter.alloca").c_data())
+        let iter_alloca LLVMBuildAlloca(builder, iter_type, "iter.alloca")
 
         ; TODO: Call get_iterator - need proper arg array
 
@@ -1846,7 +1846,7 @@ define Emitter
         if LLVMGetTypeKind(cond_type) <> LLVMGetTypeKind(i1_type)
         {
             let zero LLVMConstInt(cond_type, 0, 0)
-            set bool_cond: LLVMBuildICmp(builder, LLVMIntPredicate.NE(), cond_value, zero, String#("while.tobool").c_data())
+            set bool_cond: LLVMBuildICmp(builder, LLVMIntPredicate.NE(), cond_value, zero, "while.tobool")
         }
 
         ; Branch: if true go to body, else exit
@@ -1895,13 +1895,13 @@ define Emitter
         }
 
         ; Store result to get pointer
-        let result_ptr LLVMBuildAlloca(builder, result_type, String#("try.result").c_data())
+        let result_ptr LLVMBuildAlloca(builder, result_type, "try.result")
         LLVMBuildStore(builder, result_value, result_ptr)
 
         ; Load the tag (first field, i8)
         let i8_ty LLVMInt8TypeInContext(context)
-        let tag_ptr LLVMBuildStructGEP2(builder, result_type, result_ptr, 0, String#("tag.ptr").c_data())
-        let tag LLVMBuildLoad2(builder, i8_ty, tag_ptr, String#("tag").c_data())
+        let tag_ptr LLVMBuildStructGEP2(builder, result_type, result_ptr, 0, "tag.ptr")
+        let tag LLVMBuildLoad2(builder, i8_ty, tag_ptr, "tag")
 
         ; Create blocks
         let ok_block create_block(String#("try.ok"))
@@ -1910,7 +1910,7 @@ define Emitter
 
         ; Check if tag is 0 (Ok)
         let zero LLVMConstInt(i8_ty, 0, 0)
-        let is_ok LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), tag, zero, String#("is.ok").c_data())
+        let is_ok LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), tag, zero, "is.ok")
         LLVMBuildCondBr(builder, is_ok, ok_block, err_block)
 
         ; Emit Ok block
@@ -1918,8 +1918,8 @@ define Emitter
 
         ; Extract the Ok data
         let i64_ty LLVMInt64TypeInContext(context)
-        let ok_data_ptr LLVMBuildStructGEP2(builder, result_type, result_ptr, 1, String#("ok.c_data().ptr").c_data())
-        let ok_value LLVMBuildLoad2(builder, i64_ty, ok_data_ptr, String#("ok.val").c_data())
+        let ok_data_ptr LLVMBuildStructGEP2(builder, result_type, result_ptr, 1, "ok.c_data().ptr")
+        let ok_value LLVMBuildLoad2(builder, i64_ty, ok_data_ptr, "ok.val")
 
         ; Bind value if name present
         choose try_expr.cond.binding_item.name
@@ -2137,7 +2137,7 @@ define Emitter
         if planned_var.variable_type.name.equals(String#("pointer"))
         {
             let ptr_type LLVMPointerTypeInContext(context, 0)
-            set current_ptr: LLVMBuildLoad2(builder, ptr_type, var_ptr, String#("ptr.load").c_data())
+            set current_ptr: LLVMBuildLoad2(builder, ptr_type, var_ptr, "ptr.load")
 
             ; Get the inner type for struct access
             if planned_var.variable_type.generics <> null
@@ -2247,7 +2247,7 @@ define Emitter
         {
             ; TODO: Check if page was used and call deallocate_extensions if needed
             ; For now, simplified: just free the local page if it exists
-            let free_fn LLVMGetNamedFunction(llvm_module, String#("free").c_data())
+            let free_fn LLVMGetNamedFunction(llvm_module, "free")
             if free_fn.handle <> null
             {
                 ; Build array of args
@@ -2282,12 +2282,12 @@ define Emitter
         let ret_ty LLVMGetReturnType(LLVMGetElementType(LLVMTypeOf(current_function)))
 
         ; Allocate space for the Result
-        let result_ptr LLVMBuildAlloca(builder, ret_ty, String#("throw.result").c_data())
+        let result_ptr LLVMBuildAlloca(builder, ret_ty, "throw.result")
 
         ; Set the tag to 1 (first error variant)
         let i8_ty LLVMInt8TypeInContext(context)
         let zero LLVMConstInt(LLVMInt32TypeInContext(context), 0, 0)
-        let tag_ptr LLVMBuildStructGEP2(builder, ret_ty, result_ptr, 0, String#("throw.tag.ptr").c_data())
+        let tag_ptr LLVMBuildStructGEP2(builder, ret_ty, result_ptr, 0, "throw.tag.ptr")
         let tag_val LLVMConstInt(i8_ty, 1, 0)
         LLVMBuildStore(builder, tag_val, tag_ptr)
 
@@ -2300,7 +2300,7 @@ define Emitter
                 if thrown_value.handle <> null
                 {
                     ; Get pointer to the data field (field 1)
-                    let data_ptr LLVMBuildStructGEP2(builder, ret_ty, result_ptr, 1, String#("throw.c_data().ptr").c_data())
+                    let data_ptr LLVMBuildStructGEP2(builder, ret_ty, result_ptr, 1, "throw.c_data().ptr")
                     LLVMBuildStore(builder, thrown_value, data_ptr)
                 }
             }
@@ -2310,7 +2310,7 @@ define Emitter
         emit_block_cleanups(0)
 
         ; Load and return the result
-        let result LLVMBuildLoad2(builder, ret_ty, result_ptr, String#("throw.val").c_data())
+        let result LLVMBuildLoad2(builder, ret_ty, result_ptr, "throw.val")
         LLVMBuildRet(builder, result)
 
         true
