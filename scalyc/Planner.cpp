@@ -4250,6 +4250,84 @@ llvm::Expected<PlannedOperand> Planner::collapseOperandSequence(
             continue;
         }
 
+        // Handle method call: Left has function type with method member access, Ops[I] is argument tuple
+        // Pattern: (expr).method(args) where (expr).method has ResultType="function"
+        if (Left.ResultType.Name == "function" && Left.MemberAccess && !Left.MemberAccess->empty()) {
+            const auto& LastAccess = Left.MemberAccess->back();
+            if (LastAccess.IsMethod && !LastAccess.IsZeroArgMethodCall) {
+                // This is a method reference with pending arguments
+                // Check if current operand is a tuple (argument list)
+                if (auto* TupleExpr = std::get_if<PlannedTuple>(&Ops[I].Expr)) {
+                    // Create the method call
+                    std::string MethodName = LastAccess.Name;
+                    PlannedType InstanceType = LastAccess.ParentType;
+
+                    // Build the instance operand (Left without the method access)
+                    PlannedOperand InstanceOp = Left;
+                    InstanceOp.MemberAccess = std::make_shared<std::vector<PlannedMemberAccess>>();
+                    for (size_t j = 0; j + 1 < Left.MemberAccess->size(); ++j) {
+                        InstanceOp.MemberAccess->push_back((*Left.MemberAccess)[j]);
+                    }
+                    if (InstanceOp.MemberAccess->empty()) {
+                        InstanceOp.MemberAccess = nullptr;
+                    } else {
+                        InstanceOp.ResultType = InstanceOp.MemberAccess->back().ResultType;
+                    }
+                    // If there were no other accesses, use the original expr's inferred type before method
+                    if (!InstanceOp.MemberAccess && Left.MemberAccess->size() == 1) {
+                        // The Left.Expr is a Tuple, need to get the type of what it evaluates to
+                        // The parent type of the method access is what we need
+                        InstanceOp.ResultType = LastAccess.ParentType;
+                    }
+
+                    // Extract argument types for overload resolution
+                    std::vector<PlannedType> ArgTypes;
+                    for (const auto& Comp : TupleExpr->Components) {
+                        if (!Comp.Value.empty()) {
+                            ArgTypes.push_back(Comp.Value.back().ResultType);
+                        }
+                    }
+
+                    // Look up the method
+                    PlannedType LookupType = InstanceType.getInnerTypeIfPointerLike();
+                    auto MethodMatch = lookupMethod(LookupType, MethodName, ArgTypes, Left.Loc);
+                    if (MethodMatch) {
+                        // Create PlannedCall
+                        PlannedCall Call;
+                        Call.Loc = Left.Loc;
+                        Call.Name = MethodName;
+                        Call.MangledName = MethodMatch->MangledName;
+                        Call.IsIntrinsic = MethodMatch->IsIntrinsic;
+                        Call.IsOperator = false;
+                        Call.CanThrow = MethodMatch->CanThrow;
+                        Call.ThrowsType = MethodMatch->ThrowsType;
+                        Call.ResultType = MethodMatch->ReturnType;
+
+                        // Build args: [instance, ...tuple_args]
+                        Call.Args = std::make_shared<std::vector<PlannedOperand>>();
+                        Call.Args->push_back(std::move(InstanceOp));
+
+                        // Add tuple elements as additional arguments
+                        for (auto& Comp : const_cast<PlannedTuple*>(TupleExpr)->Components) {
+                            if (!Comp.Value.empty()) {
+                                Call.Args->push_back(std::move(Comp.Value.back()));
+                            }
+                        }
+
+                        // Create new left operand with the call
+                        PlannedOperand NewLeft;
+                        NewLeft.Loc = Left.Loc;
+                        NewLeft.ResultType = Call.ResultType;
+                        NewLeft.Expr = std::move(Call);
+
+                        Left = std::move(NewLeft);
+                        I++;
+                        continue;
+                    }
+                }
+            }
+        }
+
         // Non-operator: use as new left
         Left = std::move(Ops[I]);
         I++;
@@ -8670,8 +8748,10 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                     FuncCallLifetime = LifeType->Life;
                                     FuncArgsIndex = i + 2;
                                 }
-                            } else if (!LifeType->Name.empty() && !isOperatorName(LifeType->Name[0])) {
-                                // NextOp is a non-operator Type - could be single arg without parens
+                            } else if (!LifeType->Name.empty() && !isOperatorName(LifeType->Name[0]) &&
+                                       std::holds_alternative<UnspecifiedLifetime>(LifeType->Life)) {
+                                // NextOp is a non-operator Type with no lifetime suffix - single arg without parens
+                                // Exclude constructor patterns like String#(...) or Vector$(...)
                                 HasSingleArgWithoutParens = true;
                             }
                         } else if (std::holds_alternative<Constant>(NextOp.Expr)) {
@@ -10163,10 +10243,12 @@ llvm::Expected<PlannedIf> Planner::planIf(const If &IfExpr) {
     if (!PlannedCond) {
         return PlannedCond.takeError();
     }
+
     auto CollapsedCond = collapseOperandSequence(std::move(*PlannedCond));
     if (!CollapsedCond) {
         return CollapsedCond.takeError();
     }
+
     Result.Condition.push_back(std::move(*CollapsedCond));
 
     // Plan property if present
