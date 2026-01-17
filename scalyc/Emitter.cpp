@@ -668,8 +668,6 @@ llvm::Type *Emitter::mapType(const PlannedType &Type) {
 
     // Unknown type - should have been planned (programming error)
     // Return opaque pointer as fallback
-    llvm::errs() << "DEBUG mapType: fallback to ptr for Name='" << Type.Name
-                 << "' MangledName='" << Type.MangledName << "'\n";
     return llvm::PointerType::get(*Context, 0);
 }
 
@@ -1297,8 +1295,6 @@ llvm::Function *Emitter::emitInitializerDecl(const PlannedStructure &Struct,
     // Get the struct type
     llvm::Type *StructTy = StructCache[Struct.MangledName];
     if (!StructTy) {
-        llvm::errs() << "DEBUG INIT: Missing struct type for initializer: " << Init.MangledName
-                     << " (struct: " << Struct.MangledName << ")\n";
         return nullptr;
     }
 
@@ -2180,8 +2176,6 @@ llvm::Error Emitter::emitThrow(const PlannedThrow &Throw) {
             std::string TyStr;
             llvm::raw_string_ostream OS(TyStr);
             RetTy->print(OS);
-            llvm::errs() << "DEBUG throw error: function '" << CurrentFunction->getName()
-                         << "' has RetTy=" << OS.str() << "\n";
             return llvm::make_error<llvm::StringError>(
                 "throw in function that doesn't return a Result type",
                 llvm::inconvertibleErrorCode()
@@ -2422,12 +2416,6 @@ llvm::Expected<llvm::Value*> Emitter::emitOperand(const PlannedOperand &Op) {
                         llvm::inconvertibleErrorCode()
                     );
                 }
-                llvm::errs() << "DEBUG member access: loading from ptr for field '" << Access.Name
-                             << "' ParentType='" << Access.ParentType.Name << "'";
-                std::string StTyStr;
-                llvm::raw_string_ostream OS(StTyStr);
-                StructTy->print(OS);
-                llvm::errs() << " StructTy=" << OS.str() << "\n";
                 Value = Builder->CreateLoad(StructTy, Value, "deref");
             }
 
@@ -2463,9 +2451,6 @@ llvm::Expected<llvm::Value*> Emitter::emitOperand(const PlannedOperand &Op) {
                 std::string TypeStr;
                 llvm::raw_string_ostream OS(TypeStr);
                 ValTy->print(OS);
-                llvm::errs() << "DEBUG member access error: field='" << Access.Name
-                             << "' idx=" << Access.FieldIndex
-                             << " ValTy=" << OS.str() << "\n";
                 return llvm::make_error<llvm::StringError>(
                     "Cannot apply member access '" + Access.Name + "' to non-aggregate type",
                     llvm::inconvertibleErrorCode()
@@ -2618,30 +2603,8 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
             // function expects a pointer - if so, pass the pointer directly
             // instead of loading the struct and creating a copy
             bool PassedPointerDirectly = false;
-            // Debug: trace argument handling for String calls
-            if (Call.MangledName.find("String") != std::string::npos &&
-                Call.MangledName.find("C1E") != std::string::npos) {
-                llvm::errs() << "DEBUG String init: " << Call.MangledName
-                             << " IsInitializerCall=" << IsInitializerCall
-                             << " arg " << i << " ParamOffset=" << ParamOffset
-                             << " RequiresPageParam=" << Call.RequiresPageParam
-                             << " Func=" << (Func ? Func->getName().str() : "null")
-                             << " FuncTy=" << (FuncTy ? "yes" : "no")
-                             << " NumParams=" << (FuncTy ? std::to_string(FuncTy->getNumParams()) : "n/a")
-                             << "\n";
-            }
             if (FuncTy && i + ParamOffset < FuncTy->getNumParams()) {
                 llvm::Type *ParamTy = FuncTy->getParamType(i + ParamOffset);
-                // Debug: trace parameter type checking for init calls
-                if (Call.MangledName.find("String") != std::string::npos &&
-                    Call.MangledName.find("C1E") != std::string::npos) {
-                    llvm::errs() << "DEBUG String init param: " << Call.MangledName
-                                 << " arg " << i << " ParamOffset=" << ParamOffset
-                                 << " ParamIdx=" << (i + ParamOffset)
-                                 << " ParamTy=";
-                    ParamTy->print(llvm::errs());
-                    llvm::errs() << " isPtr=" << ParamTy->isPointerTy() << "\n";
-                }
                 if (ParamTy->isPointerTy()) {
                     // Check if argument is a dereference call directly
                     if (auto *DerefCall = std::get_if<PlannedCall>(&Arg.Expr)) {
@@ -2685,23 +2648,12 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
                 Args.push_back(*ArgVal);
             } else if (Call.MangledName.find("String") != std::string::npos &&
                        Call.MangledName.find("C1E") != std::string::npos) {
-                llvm::errs() << "DEBUG String init: PassedPointerDirectly=true for arg " << i
-                             << " in call " << Call.MangledName << "\n";
             }
         }
     }
 
     // Handle intrinsic operators
     if (Call.IsIntrinsic && Call.IsOperator) {
-        // Debug: trace unary operator result type
-        if (Args.size() == 1 && Call.Name == "*") {
-            llvm::errs() << "DEBUG emitCall deref: ResultType.Name='" << Call.ResultType.Name
-                         << "' MangledName='" << Call.ResultType.MangledName << "'";
-            if (!Call.ResultType.Generics.empty()) {
-                llvm::errs() << " Generics[0].Name='" << Call.ResultType.Generics[0].Name << "'";
-            }
-            llvm::errs() << "\n";
-        }
         if (Args.size() == 2) {
             // Binary operator
             return emitIntrinsicOp(Call.Name, Args[0], Args[1], Call.ResultType);
@@ -2730,9 +2682,6 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
     // Handle intrinsic methods (non-operators)
     if (Call.IsIntrinsic && !Call.IsOperator) {
         // Debug log
-        llvm::errs() << "DEBUG INTRINSIC METHOD: " << Call.Name
-                     << " MangledName=" << Call.MangledName
-                     << " Args.size=" << Args.size() << "\n";
 
         // Handle Option::unwrap - extract payload from union
         if (Call.Name == "unwrap" && Args.size() == 1) {
@@ -2773,8 +2722,6 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
             // Extract the union type's mangled name (everything up to and including E)
             std::string UnionMangledName = "_Z" + MangledName.substr(3, unwrapPos - 2);
 
-            llvm::errs() << "DEBUG unwrap: extracting union type from " << MangledName
-                         << " -> " << UnionMangledName << " ResultTy isPtr=" << ResultTy->isPointerTy() << "\n";
 
             // Look up the union type in StructCache (union types are stored there)
             // If not found, it means this is an NPO (Null Pointer Optimization) Option
@@ -2783,7 +2730,6 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
             if (StructIt != StructCache.end()) {
                 // Regular union - extract payload from struct
                 llvm::StructType *UnionTy = StructIt->second;
-                llvm::errs() << "DEBUG unwrap: found union struct type in StructCache\n";
 
                 // Union has structure: { i8 tag, [N x i8] payload }
                 // GEP to payload area (index 1)
@@ -2801,7 +2747,6 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
                 // NPO Option - Args[0] is a pointer to the Option storage location
                 // For Option[ref[T]], the storage contains a pointer (T*), so Args[0] is T**
                 // We need to load from it to get T*
-                llvm::errs() << "DEBUG unwrap: NPO Option, loading pointer from storage\n";
                 return Builder->CreateLoad(ResultTy, OptionValue, "unwrap.npo");
             }
         }
@@ -2888,17 +2833,6 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
         std::vector<llvm::Value*> InitArgs;
         InitArgs.push_back(StructPtr);
 
-        llvm::errs() << "DEBUG emitCall init: Name=" << Call.Name
-                     << " RequiresPageParam=" << Call.RequiresPageParam
-                     << " Life=" << std::visit([](auto &&arg) -> std::string {
-                         using T = std::decay_t<decltype(arg)>;
-                         if constexpr (std::is_same_v<T, UnspecifiedLifetime>) return "Unspecified";
-                         else if constexpr (std::is_same_v<T, LocalLifetime>) return "Local";
-                         else if constexpr (std::is_same_v<T, CallLifetime>) return "Call";
-                         else if constexpr (std::is_same_v<T, ReferenceLifetime>) return "Reference";
-                         else return "Unknown";
-                     }, Call.Life) << "\n";
-
         // If init# was used, pass the page as second argument
         if (Call.RequiresPageParam) {
             llvm::Value *PageArg = nullptr;
@@ -2923,11 +2857,7 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
                 if (PageAllocatePage) {
                     CurrentRegion.LocalPage = Builder->CreateCall(PageAllocatePage, {}, "local_page.ondemand");
                     PageArg = CurrentRegion.LocalPage;
-                    llvm::errs() << "DEBUG emitCall init: Allocated on-demand local page\n";
                 } else {
-                    llvm::errs() << "DEBUG emitCall init: PageArg is null and no Page.allocate_page! LocalPage="
-                                 << (CurrentRegion.LocalPage ? "yes" : "no")
-                                 << " ReturnPage=" << (CurrentRegion.ReturnPage ? "yes" : "no") << "\n";
                 }
             }
             if (PageArg) {
@@ -2979,10 +2909,6 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
     size_t FuncArgsOffset = 0;  // Skip Args[0] if it's an explicit page
     llvm::Value *FuncPageArg = nullptr;
     if (Call.MangledName.find("read_to_string") != std::string::npos) {
-        llvm::errs() << "DEBUG read_to_string: RequiresPageParam=" << Call.RequiresPageParam
-                     << " Life.index()=" << Call.Life.index()
-                     << " LocalPage=" << (CurrentRegion.LocalPage ? "set" : "null")
-                     << " ReturnPage=" << (CurrentRegion.ReturnPage ? "set" : "null") << "\n";
     }
     if (Call.RequiresPageParam) {
         if (std::holds_alternative<LocalLifetime>(Call.Life)) {
@@ -3382,14 +3308,6 @@ llvm::Expected<llvm::Value*> Emitter::emitIntrinsicUnaryOp(
                 llvm::inconvertibleErrorCode()
             );
         }
-        llvm::errs() << "DEBUG deref: ResultType.Name='" << ResultType.Name
-                     << "' MangledName='" << ResultType.MangledName << "'";
-        if (!ResultType.Generics.empty()) {
-            llvm::errs() << " Generics[0].Name='" << ResultType.Generics[0].Name << "'";
-        }
-        llvm::errs() << " Ty=";
-        Ty->print(llvm::errs());
-        llvm::errs() << "\n";
         auto *Result = Builder->CreateLoad(Ty, Operand, "deref");
         return Result;
     }
@@ -3563,8 +3481,12 @@ llvm::Expected<llvm::Value*> Emitter::emitIf(const PlannedIf &If) {
                 "if.tobool"
             );
         } else {
+            std::string TypeStr;
+            llvm::raw_string_ostream OS(TypeStr);
+            CondValue->getType()->print(OS);
             return llvm::make_error<llvm::StringError>(
-                "If condition must be boolean or integer",
+                "If condition must be boolean or integer, got type: " + TypeStr +
+                " at offset " + std::to_string(If.Loc.Start),
                 llvm::inconvertibleErrorCode()
             );
         }
@@ -3849,8 +3771,6 @@ llvm::Expected<llvm::Value*> Emitter::emitChoose(const PlannedChoose &Choose) {
     for (const auto &When : Choose.Cases) {
         llvm::BasicBlock *CaseBlock = createBlock("choose.when." + When.Name);
         // Use the variant's tag from the planned union
-        llvm::errs() << "DEBUG emitChoose: When.Name='" << When.Name
-                     << "' VariantIndex=" << When.VariantIndex << "\n";
         Switch->addCase(
             llvm::cast<llvm::ConstantInt>(llvm::ConstantInt::get(I8Ty, When.VariantIndex)),
             CaseBlock
@@ -6392,10 +6312,6 @@ llvm::Error Emitter::jitExecuteVoid(const Plan &P, llvm::StringRef MangledFuncti
 }
 
 llvm::Expected<int64_t> Emitter::jitExecuteIntFunction(const Plan &P, llvm::StringRef MangledFunctionName) {
-    llvm::errs() << "DEBUG JIT jitExecuteIntFunction: Starting for " << MangledFunctionName << "\n";
-    llvm::errs() << "DEBUG JIT: Plan has " << P.Functions.size() << " functions, "
-                 << P.Structures.size() << " structures, "
-                 << P.Unions.size() << " unions\n";
 
     // Store current plan for type lookups
     CurrentPlan = &P;
@@ -6428,25 +6344,21 @@ llvm::Expected<int64_t> Emitter::jitExecuteIntFunction(const Plan &P, llvm::Stri
     }
 
     // Emit type declarations
-    llvm::errs() << "DEBUG JIT: Emitting struct types (" << P.Structures.size() << ")...\n";
     llvm::errs().flush();
     for (const auto &[name, Struct] : P.Structures) {
         emitStructType(Struct);
     }
-    llvm::errs() << "DEBUG JIT: Emitting union types (" << P.Unions.size() << ")...\n";
     llvm::errs().flush();
     for (const auto &[name, Union] : P.Unions) {
         emitUnionType(Union);
     }
 
     // Emit global constants
-    llvm::errs() << "DEBUG JIT: Emitting globals (" << P.Globals.size() << ")...\n";
     llvm::errs().flush();
     for (const auto &[name, Global] : P.Globals) {
         emitGlobal(Global);
     }
 
-    llvm::errs() << "DEBUG JIT: Emitting function declarations...\n";
     llvm::errs().flush();
     // Emit function declarations with debug tracking
     size_t declCount = 0, skipCount = 0;
@@ -6456,7 +6368,6 @@ llvm::Expected<int64_t> Emitter::jitExecuteIntFunction(const Plan &P, llvm::Stri
         if (FunctionCache.size() > before) declCount++;
         else skipCount++;
     }
-    llvm::errs() << "DEBUG DECL: Functions: " << declCount << " declared, " << skipCount << " skipped\n";
 
     // Also emit method, operator, initializer, and deinitializer declarations from structures
     declCount = 0; skipCount = 0;
@@ -6491,8 +6402,6 @@ llvm::Expected<int64_t> Emitter::jitExecuteIntFunction(const Plan &P, llvm::Stri
             emitDeInitializerDecl(Struct, *Struct.Deinitializer);
         }
     }
-    llvm::errs() << "DEBUG DECL: Struct methods: " << declCount << " declared, " << skipCount << " skipped\n";
-    llvm::errs() << "DEBUG DECL: Struct initializers: " << initDeclCount << " declared\n";
 
     // Also emit method and operator declarations from unions (e.g., Option.unwrap)
     declCount = 0; skipCount = 0;
@@ -6519,8 +6428,6 @@ llvm::Expected<int64_t> Emitter::jitExecuteIntFunction(const Plan &P, llvm::Stri
             emitFunctionDecl(OpFunc);
         }
     }
-    llvm::errs() << "DEBUG DECL: Union methods: " << declCount << " declared, " << skipCount << " skipped\n";
-    llvm::errs() << "DEBUG DECL: Total FunctionCache: " << FunctionCache.size() << " entries\n";
 
     // Set up RBMM function pointers if Page is in the Plan
     if (PageInPlan) {
@@ -6533,7 +6440,6 @@ llvm::Expected<int64_t> Emitter::jitExecuteIntFunction(const Plan &P, llvm::Stri
         }
     }
 
-    llvm::errs() << "DEBUG JIT: Emitting function bodies...\n";
     llvm::errs().flush();
     // Emit function bodies - track how many are emitted vs skipped
     size_t bodyEmitCount = 0, bodySkipExtern = 0, bodySkipIntrinsic = 0, bodySkipAlreadyDone = 0, bodyNotInCache = 0;
@@ -6552,15 +6458,11 @@ llvm::Expected<int64_t> Emitter::jitExecuteIntFunction(const Plan &P, llvm::Stri
             // Debug Option::unwrap skip reasons
             if (Func.MangledName.find("OptionI") != std::string::npos &&
                 Func.MangledName.find("unwrap") != std::string::npos) {
-                llvm::errs() << "DEBUG OPTION SKIP CHECK: " << Func.MangledName
-                             << " isExtern=" << isExtern << " isIntrinsic=" << isIntrinsic
-                             << " alreadyDone=" << alreadyDone << "\n";
             }
             if (isExtern) {
                 bodySkipExtern++;
                 // Print first few extern names for debugging
                 if (bodySkipExtern <= 5) {
-                    llvm::errs() << "DEBUG BODY: Extern function: " << Func.MangledName << "\n";
                 }
             }
             else if (isIntrinsic) bodySkipIntrinsic++;
@@ -6569,17 +6471,10 @@ llvm::Expected<int64_t> Emitter::jitExecuteIntFunction(const Plan &P, llvm::Stri
                 bodyEmitCount++;
                 // Print the test functions specifically
                 if (Func.MangledName.find("4test") != std::string::npos) {
-                    llvm::errs() << "DEBUG BODY: Emitting test function: " << Func.MangledName << "\n";
                 }
                 // Print Option unwrap functions
                 if (Func.MangledName.find("OptionI") != std::string::npos &&
                     Func.MangledName.find("unwrap") != std::string::npos) {
-                    llvm::errs() << "DEBUG BODY EMIT OPTION: " << Func.MangledName
-                                 << " isDecl=" << LLVMFunc->isDeclaration()
-                                 << " ImplType=" << (std::holds_alternative<PlannedAction>(Func.Impl) ? "Action" :
-                                                    std::holds_alternative<PlannedExternImpl>(Func.Impl) ? "Extern" :
-                                                    std::holds_alternative<PlannedIntrinsicImpl>(Func.Impl) ? "Intrinsic" : "Other")
-                                 << "\n";
                 }
             }
             if (auto Err = emitFunctionBody(Func, LLVMFunc))
@@ -6588,14 +6483,6 @@ llvm::Expected<int64_t> Emitter::jitExecuteIntFunction(const Plan &P, llvm::Stri
             bodyNotInCache++;
         }
     }
-    llvm::errs() << "DEBUG BODY: Functions: " << bodyEmitCount << " emitted, "
-                 << bodySkipExtern << " extern, " << bodySkipIntrinsic << " intrinsic, "
-                 << bodySkipAlreadyDone << " already done, "
-                 << bodyNotInCache << " not in cache\n";
-    llvm::errs() << "DEBUG IMPL: " << implAction << " PlannedAction, "
-                 << implExtern << " PlannedExternImpl, "
-                 << implIntrinsic << " PlannedIntrinsicImpl, "
-                 << implInstruction << " PlannedInstructionImpl\n";
 
     // Also emit method, operator, initializer, and deinitializer bodies from structures
     size_t initBodyEmit = 0, initBodySkip = 0, initNotInCache = 0;
@@ -6631,9 +6518,6 @@ llvm::Expected<int64_t> Emitter::jitExecuteIntFunction(const Plan &P, llvm::Stri
                 bool alreadyDone = !LLVMFunc->isDeclaration();
                 if (isExtern || isIntrinsic || alreadyDone) {
                     initBodySkip++;
-                    llvm::errs() << "DEBUG INIT SKIP: " << Init.MangledName
-                                 << " extern=" << isExtern << " intrinsic=" << isIntrinsic
-                                 << " alreadyDone=" << alreadyDone << "\n";
                 } else {
                     initBodyEmit++;
                 }
@@ -6650,8 +6534,6 @@ llvm::Expected<int64_t> Emitter::jitExecuteIntFunction(const Plan &P, llvm::Stri
             }
         }
     }
-    llvm::errs() << "DEBUG BODY: Initializers: " << initBodyEmit << " emitted, "
-                 << initBodySkip << " skipped, " << initNotInCache << " not in cache\n";
 
     // Also emit method and operator bodies from unions (e.g., Option.unwrap)
     for (const auto &[name, Union] : P.Unions) {
@@ -6687,12 +6569,9 @@ llvm::Expected<int64_t> Emitter::jitExecuteIntFunction(const Plan &P, llvm::Stri
         if (Func->isDeclaration()) {
             stillDeclarations++;
             if (stillDeclarations <= 10) {
-                llvm::errs() << "DEBUG DECL ONLY: " << name << " (no body)\n";
             }
         }
     }
-    llvm::errs() << "DEBUG: " << stillDeclarations << " functions still have no body (out of "
-                 << FunctionCache.size() << " total)\n";
 
     // Check for functions in Module that aren't in FunctionCache (added during emission)
     size_t extraFuncs = 0, extraDecls = 0;
@@ -6701,13 +6580,9 @@ llvm::Expected<int64_t> Emitter::jitExecuteIntFunction(const Plan &P, llvm::Stri
             extraFuncs++;
             if (F.isDeclaration()) extraDecls++;
             if (extraFuncs <= 10) {
-                llvm::errs() << "DEBUG EXTRA FUNC: " << F.getName()
-                             << " isDecl=" << F.isDeclaration() << "\n";
             }
         }
     }
-    llvm::errs() << "DEBUG: " << extraFuncs << " extra functions in Module (not in FunctionCache), "
-                 << extraDecls << " are declarations\n";
 
     // Check for specific failing symbols (without Darwin prefix)
     const char* checkSymbols[] = {
@@ -6718,9 +6593,6 @@ llvm::Expected<int64_t> Emitter::jitExecuteIntFunction(const Plan &P, llvm::Stri
     };
     for (const char* sym : checkSymbols) {
         auto it = FunctionCache.find(sym);
-        llvm::errs() << "DEBUG CHECK: " << sym << " -> "
-                     << (it != FunctionCache.end() ? (it->second->isDeclaration() ? "DECL" : "BODY") : "NOT FOUND")
-                     << "\n";
     }
 
     // Check for declarations that should have bodies (not extern/libc)
@@ -6739,22 +6611,16 @@ llvm::Expected<int64_t> Emitter::jitExecuteIntFunction(const Plan &P, llvm::Stri
                 Name != "exit" && Name != "abort" && Name != "sqrt" && Name != "pow") {
                 internalDecls++;
                 if (internalDecls <= 10) {
-                    llvm::errs() << "DEBUG INTERNAL DECL: " << Name << "\n";
                 }
             }
         }
     }
-    llvm::errs() << "DEBUG: " << internalDecls << " internal declarations (should have bodies but don't)\n";
 
     // Check if the missing Option::unwrap functions are in the plan
     for (const auto &[name, Func] : P.Functions) {
         if (Func.MangledName.find("OptionI") != std::string::npos &&
             Func.MangledName.find("unwrap") != std::string::npos) {
             auto it = FunctionCache.find(Func.MangledName);
-            llvm::errs() << "DEBUG OPTION UNWRAP: " << Func.MangledName
-                         << " InPlan=yes InCache=" << (it != FunctionCache.end() ? "yes" : "no")
-                         << " HasBody=" << (it != FunctionCache.end() && !it->second->isDeclaration() ? "yes" : "no")
-                         << "\n";
         }
     }
     for (const auto &[name, Struct] : P.Structures) {
@@ -6762,10 +6628,6 @@ llvm::Expected<int64_t> Emitter::jitExecuteIntFunction(const Plan &P, llvm::Stri
             if (Method.MangledName.find("OptionI") != std::string::npos &&
                 Method.MangledName.find("unwrap") != std::string::npos) {
                 auto it = FunctionCache.find(Method.MangledName);
-                llvm::errs() << "DEBUG OPTION UNWRAP METHOD: " << Method.MangledName
-                             << " InPlan=yes InCache=" << (it != FunctionCache.end() ? "yes" : "no")
-                             << " HasBody=" << (it != FunctionCache.end() && !it->second->isDeclaration() ? "yes" : "no")
-                             << "\n";
             }
         }
     }
@@ -6783,12 +6645,6 @@ llvm::Expected<int64_t> Emitter::jitExecuteIntFunction(const Plan &P, llvm::Stri
         totalUnionMethods += Union.Methods.size();
         totalUnionOps += Union.Operators.size();
     }
-    llvm::errs() << "DEBUG JIT: FunctionCache has " << FunctionCache.size() << " entries after body emission\n";
-    llvm::errs() << "DEBUG JIT: Plan totals: " << P.Functions.size() << " functions, "
-                 << totalMethods << " methods, " << totalOps << " operators, "
-                 << totalInits << " initializers, " << totalDeinits << " deinitializers\n";
-    llvm::errs() << "DEBUG JIT: Union totals: " << totalUnionMethods << " methods, "
-                 << totalUnionOps << " operators\n";
 
     // Find the target function
     llvm::Function *TargetFunc = FunctionCache[MangledFunctionName.str()];
@@ -6849,25 +6705,21 @@ llvm::Expected<int64_t> Emitter::jitExecuteIntFunction(const Plan &P, llvm::Stri
     MainJD.addGenerator(std::move(*ProcessSymbolsGenerator));
 
     // Add module to JIT
-    llvm::errs() << "DEBUG JIT: Adding module to JIT...\n";
     llvm::errs().flush();
     auto TSM = llvm::orc::ThreadSafeModule(std::move(Module), std::move(Context));
     if (auto Err = JIT->addIRModule(std::move(TSM)))
         return Err;
 
     // Look up and execute the wrapper function
-    llvm::errs() << "DEBUG JIT: Looking up __scaly_jit_main...\n";
     llvm::errs().flush();
     auto SymOrErr = JIT->lookup("__scaly_jit_main");
     if (!SymOrErr)
         return SymOrErr.takeError();
 
     // Execute the wrapper (which calls the target function) and get the result
-    llvm::errs() << "DEBUG JIT: Executing function...\n";
     llvm::errs().flush();
     auto *MainFn = SymOrErr->toPtr<int64_t(*)()>();
     int64_t Result = MainFn();
-    llvm::errs() << "DEBUG JIT: Function returned " << Result << "\n";
     llvm::errs().flush();
 
     // Recreate context for future use
