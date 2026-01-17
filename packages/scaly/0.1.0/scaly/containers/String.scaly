@@ -3,7 +3,7 @@ use scaly.memory.runtime
 
 define PACKED_SIZE: int 9
 
-define String (data: pointer[char](null))
+define String (data: pointer[u8](null))
 {
     ; Empty string - no page needed
     init()
@@ -13,96 +13,96 @@ define String (data: pointer[char](null))
 
     init#(page, length: size_t)
     {
-        var length_array: char[PACKED_SIZE]
+        var length_array: u8[PACKED_SIZE]
         var rest length
 
         var counter: size_t 0
-        while rest >= 0x80
+        while rest >= (0x80 as size_t)
         {
-            set *(length_array + counter): (rest as char) | 0x80
-            set rest: rest >> 7
-            set counter: counter + 1
+            set *(length_array + counter): (rest as u8) | (0x80 as u8)
+            set rest: rest >> (7 as size_t)
+            set counter: counter + (1 as size_t)
         }
 
-        set *(length_array + counter): rest as char
-        let overall_length counter + 1 + length
-        set data: page.allocate(overall_length, 1) as pointer[char]
-        memcpy(data, length_array, counter + 1)
+        set *(length_array + counter): rest as u8
+        let overall_length counter + (1 as size_t) + length
+        set data: page.allocate(overall_length, 1) as pointer[u8]
+        memcpy(data, length_array, counter + (1 as size_t))
     }
 
     init#(page, other: pointer[const_char], length: size_t)
     {
-        if length = 0
+        if length = (0 as size_t)
         {
             set data: null
             return
         }
 
-        var length_array: char[PACKED_SIZE]
+        var length_array: u8[PACKED_SIZE]
         var rest length
 
         var counter: size_t 0
-        while rest >= 0x80
+        while rest >= (0x80 as size_t)
         {
-            set *(length_array + counter): (rest as char) | 0x80
-            set rest: rest >> 7
-            set counter: counter + 1
+            set *(length_array + counter): (rest as u8) | (0x80 as u8)
+            set rest: rest >> (7 as size_t)
+            set counter: counter + (1 as size_t)
         }
 
-        set *(length_array + counter): rest as char
-        let overall_length counter + 1 + length
-        set data: page.allocate(overall_length, 1) as pointer[char]
-        memcpy(data, length_array, counter + 1)
-        memcpy((data + counter + 1) as pointer[void], other, length)
+        set *(length_array + counter): rest as u8
+        let overall_length counter + (1 as size_t) + length
+        set data: page.allocate(overall_length, 1) as pointer[u8]
+        memcpy(data, length_array, counter + (1 as size_t))
+        memcpy((data + counter + (1 as size_t)) as pointer[void], other, length)
     }
 
     init#(page, other: Vector[char])
     {
         ; Delegate to String(page, pointer, length)
-        var length_array: char[PACKED_SIZE]
+        var length_array: u8[PACKED_SIZE]
         var rest other.length
 
         var counter: size_t 0
-        while rest >= 0x80
+        while rest >= (0x80 as size_t)
         {
-            set *(length_array + counter): (rest as char) | 0x80
-            set rest: rest >> 7
-            set counter: counter + 1
+            set *(length_array + counter): (rest as u8) | (0x80 as u8)
+            set rest: rest >> (7 as size_t)
+            set counter: counter + (1 as size_t)
         }
 
-        set *(length_array + counter): rest as char
-        let overall_length counter + 1 + other.length
-        set data: page.allocate(overall_length, 1) as pointer[char]
-        memcpy(data, length_array, counter + 1)
+        set *(length_array + counter): rest as u8
+        let overall_length counter + (1 as size_t) + other.length
+        set data: page.allocate(overall_length, 1) as pointer[u8]
+        memcpy(data, length_array, counter + (1 as size_t))
         if other.length > 0
-            memcpy((data + counter + 1) as pointer[void], other.data, other.length)
+            memcpy((data + counter + (1 as size_t)) as pointer[void], other.data, other.length)
     }
 
     init#(page, c_string: pointer[const_char])
     {
         let length strlen(c_string)
-        if length = 0
+        if length = (0 as size_t)
         {
             set data: null
             return
         }
 
-        var length_array: char[PACKED_SIZE]
+        var length_array: u8[PACKED_SIZE]
         var rest length
 
         var counter: size_t 0
-        while rest >= 0x80
+        while rest >= (0x80 as size_t)
         {
-            set *(length_array + counter): (rest as char) | 0x80
-            set rest: rest >> 7
-            set counter: counter + 1
+            set *(length_array + counter): (rest as u8) | (0x80 as u8)
+            set rest: rest >> (7 as size_t)
+            set counter: counter + (1 as size_t)
         }
 
-        set *(length_array + counter): rest as char
-        let overall_length counter + 1 + length
-        set data: page.allocate(overall_length, 1) as pointer[char]
-        memcpy(data, length_array, counter + 1)
-        memcpy((data + counter + 1) as pointer[void], c_string, length)
+        set *(length_array + counter): rest as u8
+        let overall_length counter + (1 as size_t) + length
+        set data: page.allocate(overall_length, 1) as pointer[u8]
+        memcpy(data, length_array, counter + (1 as size_t))
+        memcpy((data + counter + (1 as size_t)) as pointer[void], c_string, length)
     }
 
     init#(page, other: String)
@@ -114,83 +114,87 @@ define String (data: pointer[char](null))
         }
 
         var length: size_t 0
-        var bit_count 0
+        var bit_count: size_t 0
         var index 0
         while true
         {
-            if bit_count = PACKED_SIZE * 7
+            if bit_count = (PACKED_SIZE * 7) as size_t
                 ; Bad string length
                 exit(12)
 
             let byte *(other.data + index)
-            set length: length | ((byte & 0x7F) as size_t) << bit_count
-            if (byte & 0x80) = 0
+            set length: length | ((byte & (0x7F as u8)) as size_t) << bit_count
+            if (byte & (0x80 as u8)) = (0 as u8)
                 break;
 
-            set bit_count: bit_count + 7
-            set index: index + 1
+            set bit_count: bit_count + (7 as size_t)
+            set index: index + (1 as size_t)
         }
-        var overall_length index + 1 + length
-        set data: page.allocate(overall_length, 1) as pointer[char]
+        var overall_length index + (1 as size_t) + length
+        set data: page.allocate(overall_length, 1) as pointer[u8]
         memcpy(data, other.data, overall_length)
     }
 
-    init#(page, character: char)
+    init#(page, character: u8)
     {
-        set data: page.allocate(2, 1) as pointer[char]
+        set data: page.allocate(2, 1) as pointer[u8]
         set *data: 1
         set *(data + 1): character
     }
 
-    function get_buffer(this: String) returns pointer[char]
+    function get_buffer(this: String) returns pointer[u8]
     {
         if data = null
             return null
 
         var length: size_t 0
-        var bit_count 0
+        var bit_count: size_t 0
         var index: size_t 0
         while true
         {
-            if bit_count = PACKED_SIZE * 7
+            if bit_count = (PACKED_SIZE * 7) as size_t
                 exit(11)
 
-            var byte: char *(data + index)
-            set length: length | ((byte & 0x7F) as size_t) << bit_count
-            if (byte & 0x80) == 0
+            var byte: u8 *(data + index)
+            set length: length | ((byte & (0x7F as u8)) as size_t) << bit_count
+            if (byte & (0x80 as u8)) = (0 as u8)
                 break
-            set bit_count: bit_count + 7
-            set index: index + 1
+            set bit_count: bit_count + (7 as size_t)
+            set index: index + (1 as size_t)
         }
 
-        data + index + 1
+        data + index + (1 as size_t)
     }
+
+    ; Returns raw buffer pointer for C interop (cast of get_buffer)
+    function c_data(this: String) returns pointer[const_char]
+        get_buffer() as pointer[const_char]
 
     function to_c_string#(page, this: String) returns pointer[const_char]
     {
         var length: size_t 0
-        var bit_count 0
+        var bit_count: size_t 0
         var index: size_t 0
         if data <> null
         {
             while true
             {
-                if bit_count = PACKED_SIZE * 7
+                if bit_count = (PACKED_SIZE * 7) as size_t
                     exit(11)
 
-                var byte: char *(data + index)
-                set length: length | ((byte & 0x7F) as size_t) << bit_count
-                if (byte & 0x80) == 0
+                var byte: u8 *(data + index)
+                set length: length | ((byte & (0x7F as u8)) as size_t) << bit_count
+                if (byte & (0x80 as u8)) = (0 as u8)
                     break
-                set bit_count: bit_count + 7
-                set index: index + 1
+                set bit_count: bit_count + (7 as size_t)
+                set index: index + (1 as size_t)
             }
         }
 
-        var dest page.allocate(length + 1, 1)
+        var dest page.allocate(length + (1 as size_t), (1 as size_t))
         if data <> null
-            memcpy(dest, data + index + 1, length)
-        set *(dest as pointer[char] + index + length): 0
+            memcpy(dest, data + index + (1 as size_t), length)
+        set *(dest as pointer[u8] + index + length): (0 as u8)
 
         dest as pointer[const_char]
     }
@@ -201,24 +205,24 @@ define String (data: pointer[char](null))
             return 0
 
         var result: size_t 0
-        var bit_count 0
+        var bit_count: size_t 0
         var index: size_t 0
         while true
         {
-            if bit_count = PACKED_SIZE * 7
+            if bit_count = (PACKED_SIZE * 7) as size_t
                 exit(11)
 
-            var byte: char *(data + index)
-            set result: result | (((byte & 0x7F) as size_t)) << bit_count
-            if (byte & 0x80) == 0
+            var byte: u8 *(data + index)
+            set result: result | (((byte & (0x7F as u8)) as size_t)) << bit_count
+            if (byte & (0x80 as u8)) = (0 as u8)
                 break
-            set bit_count: bit_count + 7
-            set index: index + 1
+            set bit_count: bit_count + (7 as size_t)
+            set index: index + (1 as size_t)
         }
         result
     }
 
-    function get(this: String, index: size_t) returns char
+    function get(this: String, index: size_t) returns u8
     {
         let buffer get_buffer()
         *(buffer + index)
@@ -236,18 +240,18 @@ define String (data: pointer[char](null))
         var index: size_t 0
         if data <> null
         {
-            var bit_count 0
+            var bit_count: size_t 0
             while true
             {
-                if bit_count = PACKED_SIZE * 7
+                if bit_count = (PACKED_SIZE * 7) as size_t
                     exit(11)
 
-                var byte: char *(data + index)
-                set length: length | (((byte & 0x7F) as size_t)) << bit_count
-                if (byte & 0x80) == 0
+                var byte: u8 *(data + index)
+                set length: length | (((byte & (0x7F as u8)) as size_t)) << bit_count
+                if (byte & (0x80 as u8)) = (0 as u8)
                     break
-                set bit_count: bit_count + 7
-                set index: index + 1
+                set bit_count: bit_count + (7 as size_t)
+                set index: index + (1 as size_t)
             }
         }
 
@@ -257,7 +261,7 @@ define String (data: pointer[char](null))
         if data = null
             return true
 
-        memcmp(data + index + 1, other.data + index + 1, length) = 0
+        memcmp(data + index + (1 as size_t), other.data + index + (1 as size_t), length) = 0
     }
 
     function equals(this: String, other: pointer[const_char]) returns bool
@@ -266,18 +270,18 @@ define String (data: pointer[char](null))
         var index: size_t 0
         if data <> null
         {
-            var bit_count 0
+            var bit_count: size_t 0
             while true
             {
-                if bit_count = PACKED_SIZE * 7
+                if bit_count = (PACKED_SIZE * 7) as size_t
                     exit(13)
 
-                var byte: char *(data + index)
-                set length: length | (((byte & 0x7F) as size_t)) << bit_count
-                if (byte & 0x80) == 0
+                var byte: u8 *(data + index)
+                set length: length | (((byte & (0x7F as u8)) as size_t)) << bit_count
+                if (byte & (0x80 as u8)) = (0 as u8)
                     break
-                set bit_count: bit_count + 7
-                set index: index + 1
+                set bit_count: bit_count + (7 as size_t)
+                set index: index + (1 as size_t)
             }
         }
 
@@ -287,85 +291,85 @@ define String (data: pointer[char](null))
         if data = null
             return true
 
-        memcmp(data + index + 1, other, length) = 0
+        memcmp(data + index + (1 as size_t), other, length) = 0
     }
 
     function equals (this: String, other: Vector[char]) returns bool
     {
         var length: size_t 0
-        var bit_count 0
+        var bit_count: size_t 0
         var index: size_t 0
         while true
         {
-            if bit_count = PACKED_SIZE * 7
+            if bit_count = (PACKED_SIZE * 7) as size_t
                 exit(11)
 
-            var byte: char *(data + index)
-            set length: length | (((byte & 0x7F) as size_t)) << bit_count
-            if (byte & 0x80) == 0
+            var byte: u8 *(data + index)
+            set length: length | (((byte & (0x7F as u8)) as size_t)) << bit_count
+            if (byte & (0x80 as u8)) = (0 as u8)
                 break
-            set bit_count: bit_count + 7
-            set index: index + 1
+            set bit_count: bit_count + (7 as size_t)
+            set index: index + (1 as size_t)
         }
 
         if length <> other.length
             return false
 
-        memcmp(data + index + 1, other.data, length) = 0
+        memcmp(data + index + (1 as size_t), other.data, length) = 0
     }
 
     function hash(this: String) returns size_t
     {
         var length: size_t 0
-        var bit_count 0
+        var bit_count: size_t 0
         var index: size_t 0
         while true
         {
-            if bit_count = PACKED_SIZE * 7
+            if bit_count = (PACKED_SIZE * 7) as size_t
                 exit(11)
 
-            var byte: char *(data + index)
-            set length: length | (((byte & 0x7F) as size_t)) << bit_count
-            if (byte & 0x80) == 0
+            var byte: u8 *(data + index)
+            set length: length | (((byte & (0x7F as u8)) as size_t)) << bit_count
+            if (byte & (0x80 as u8)) = (0 as u8)
                 break
-            set bit_count: bit_count + 7
-            set index: index + 1
+            set bit_count: bit_count + (7 as size_t)
+            set index: index + (1 as size_t)
         }
 
-        hashing.hash(data + index + 1, length)
+        hashing.hash(data + index + (1 as size_t), length)
     }
 
     function get_iterator(this: String) returns StringIterator
         StringIterator(this)
 
     ; Get a non-owning slice view of the string data
-    function as_slice(this: String) returns Slice[char]
+    function as_slice(this: String) returns Slice[u8]
     {
         if data = null
-            return Slice[char]()
+            return Slice[u8]()
 
         ; Decode length and find where actual chars start
         var string_length: size_t 0
-        var bit_count 0
+        var bit_count: size_t 0
         var index: size_t 0
         while true
         {
-            if bit_count = PACKED_SIZE * 7
+            if bit_count = (PACKED_SIZE * 7) as size_t
                 exit(11)
 
-            var byte: char *(data + index)
-            set string_length: string_length | (((byte & 0x7F) as size_t)) << bit_count
-            if (byte & 0x80) == 0
+            var byte: u8 *(data + index)
+            set string_length: string_length | (((byte & (0x7F as u8)) as size_t)) << bit_count
+            if (byte & (0x80 as u8)) = (0 as u8)
                 break
-            set bit_count: bit_count + 7
-            set index: index + 1
+            set bit_count: bit_count + (7 as size_t)
+            set index: index + (1 as size_t)
         }
 
-        Slice[char](data + index + 1, string_length)
+        Slice[u8](data + index + (1 as size_t), string_length)
     }
 
     ; Check if string contains a character
-    function contains(this: String, c: char) returns bool
+    function contains(this: String, c: u8) returns bool
     {
         let buf get_buffer()
         if buf = null
@@ -462,7 +466,7 @@ define String (data: pointer[char](null))
     }
 
     ; Find first occurrence of character, returns -1 if not found
-    function index_of(this: String, c: char) returns int
+    function index_of(this: String, c: u8) returns int
     {
         let buf get_buffer()
         if buf = null
@@ -479,7 +483,7 @@ define String (data: pointer[char](null))
     }
 
     ; Find first occurrence of character starting at offset, returns -1 if not found
-    function index_of(this: String, c: char, start: size_t) returns int
+    function index_of(this: String, c: u8, start: size_t) returns int
     {
         let buf get_buffer()
         if buf = null
@@ -498,7 +502,7 @@ define String (data: pointer[char](null))
     }
 
     ; Find last occurrence of character, returns -1 if not found
-    function last_index_of(this: String, c: char) returns int
+    function last_index_of(this: String, c: u8) returns int
     {
         let buf get_buffer()
         if buf = null

@@ -36,6 +36,31 @@ define operators
     operator <=(left: i32, right: i32) returns bool intrinsic
     operator >=(left: i32, right: i32) returns bool intrinsic
 
+    ; Unsigned 64-bit integer arithmetic (u64/size_t)
+    operator +(left: size_t, right: size_t) returns size_t intrinsic
+    operator -(left: size_t, right: size_t) returns size_t intrinsic
+    operator *(left: size_t, right: size_t) returns size_t intrinsic
+    operator /(left: size_t, right: size_t) returns size_t intrinsic
+    operator %(left: size_t, right: size_t) returns size_t intrinsic
+
+    ; Unsigned 64-bit integer comparison
+    operator =(left: size_t, right: size_t) returns bool intrinsic
+    operator <>(left: size_t, right: size_t) returns bool intrinsic
+    operator <(left: size_t, right: size_t) returns bool intrinsic
+    operator >(left: size_t, right: size_t) returns bool intrinsic
+    operator <=(left: size_t, right: size_t) returns bool intrinsic
+    operator >=(left: size_t, right: size_t) returns bool intrinsic
+
+    ; Bit shift operators (size_t)
+    operator <<(left: size_t, right: size_t) returns size_t intrinsic
+    operator >>(left: size_t, right: size_t) returns size_t intrinsic
+
+    ; Bitwise operators (size_t)
+    operator &(left: size_t, right: size_t) returns size_t intrinsic
+    operator |(left: size_t, right: size_t) returns size_t intrinsic
+    operator ^(left: size_t, right: size_t) returns size_t intrinsic
+    operator ~(value: size_t) returns size_t intrinsic
+
     ; Floating point arithmetic (f64)
     operator +(left: f64, right: f64) returns f64 intrinsic
     operator -(left: f64, right: f64) returns f64 intrinsic
@@ -52,6 +77,25 @@ define operators
     operator >(left: f64, right: f64) returns bool intrinsic
     operator <=(left: f64, right: f64) returns bool intrinsic
     operator >=(left: f64, right: f64) returns bool intrinsic
+
+    ; 8-bit unsigned integer arithmetic
+    operator +(left: u8, right: u8) returns u8 intrinsic
+    operator -(left: u8, right: u8) returns u8 intrinsic
+    operator *(left: u8, right: u8) returns u8 intrinsic
+    operator /(left: u8, right: u8) returns u8 intrinsic
+
+    ; 8-bit unsigned integer comparison
+    operator =(left: u8, right: u8) returns bool intrinsic
+    operator <>(left: u8, right: u8) returns bool intrinsic
+    operator <(left: u8, right: u8) returns bool intrinsic
+    operator >(left: u8, right: u8) returns bool intrinsic
+    operator <=(left: u8, right: u8) returns bool intrinsic
+    operator >=(left: u8, right: u8) returns bool intrinsic
+
+    ; 8-bit unsigned bitwise operators
+    operator &(left: u8, right: u8) returns u8 intrinsic
+    operator |(left: u8, right: u8) returns u8 intrinsic
+    operator ^(left: u8, right: u8) returns u8 intrinsic
 
     ; Boolean operators
     operator &(left: bool, right: bool) returns bool intrinsic

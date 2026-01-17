@@ -110,25 +110,25 @@ function LLVMGetGlobalContext() returns LLVMContextRef extern
 ; ============================================================================
 
 ; Create a new module in a context
-function LLVMModuleCreateWithNameInContext(name: pointer[char], context: LLVMContextRef) returns LLVMModuleRef extern
+function LLVMModuleCreateWithNameInContext(name: pointer[const_char], context: LLVMContextRef) returns LLVMModuleRef extern
 
 ; Dispose of a module
 procedure LLVMDisposeModule(mod: LLVMModuleRef) extern
 
 ; Set the target triple for a module
-procedure LLVMSetTarget(mod: LLVMModuleRef, triple: pointer[char]) extern
+procedure LLVMSetTarget(mod: LLVMModuleRef, triple: pointer[const_char]) extern
 
 ; Set the data layout for a module
-procedure LLVMSetDataLayout(mod: LLVMModuleRef, layout: pointer[char]) extern
+procedure LLVMSetDataLayout(mod: LLVMModuleRef, layout: pointer[const_char]) extern
 
 ; Get string representation of module (caller must dispose with LLVMDisposeMessage)
 function LLVMPrintModuleToString(mod: LLVMModuleRef) returns pointer[char] extern
 
 ; Write module to file
-function LLVMPrintModuleToFile(mod: LLVMModuleRef, filename: pointer[char], error_message: pointer[pointer[char]]) returns int extern
+function LLVMPrintModuleToFile(mod: LLVMModuleRef, filename: pointer[const_char], error_message: pointer[pointer[char]]) returns int extern
 
 ; Write bitcode to file
-function LLVMWriteBitcodeToFile(mod: LLVMModuleRef, path: pointer[char]) returns int extern
+function LLVMWriteBitcodeToFile(mod: LLVMModuleRef, path: pointer[const_char]) returns int extern
 
 ; ============================================================================
 ; Builder Functions
@@ -177,7 +177,7 @@ function LLVMArrayType2(element_type: LLVMTypeRef, element_count: size_t) return
 
 ; Struct types
 function LLVMStructTypeInContext(context: LLVMContextRef, element_types: pointer[LLVMTypeRef], element_count: int, packed: int) returns LLVMTypeRef extern
-function LLVMStructCreateNamed(context: LLVMContextRef, name: pointer[char]) returns LLVMTypeRef extern
+function LLVMStructCreateNamed(context: LLVMContextRef, name: pointer[const_char]) returns LLVMTypeRef extern
 procedure LLVMStructSetBody(struct_type: LLVMTypeRef, element_types: pointer[LLVMTypeRef], element_count: int, packed: int) extern
 
 ; Function type
@@ -196,10 +196,10 @@ function LLVMGetStructElementTypes(struct_type: LLVMTypeRef, dest: pointer[LLVMT
 ; ============================================================================
 
 ; Add a function to a module
-function LLVMAddFunction(mod: LLVMModuleRef, name: pointer[char], function_type: LLVMTypeRef) returns LLVMValueRef extern
+function LLVMAddFunction(mod: LLVMModuleRef, name: pointer[const_char], function_type: LLVMTypeRef) returns LLVMValueRef extern
 
 ; Get a function from a module by name
-function LLVMGetNamedFunction(mod: LLVMModuleRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMGetNamedFunction(mod: LLVMModuleRef, name: pointer[const_char]) returns LLVMValueRef extern
 
 ; Get function parameter
 function LLVMGetParam(func: LLVMValueRef, index: int) returns LLVMValueRef extern
@@ -218,7 +218,7 @@ procedure LLVMSetFunctionCallConv(func: LLVMValueRef, cc: int) extern
 ; ============================================================================
 
 ; Append a basic block to a function
-function LLVMAppendBasicBlockInContext(context: LLVMContextRef, func: LLVMValueRef, name: pointer[char]) returns LLVMBasicBlockRef extern
+function LLVMAppendBasicBlockInContext(context: LLVMContextRef, func: LLVMValueRef, name: pointer[const_char]) returns LLVMBasicBlockRef extern
 
 ; Get the terminator instruction of a basic block
 function LLVMGetBasicBlockTerminator(block: LLVMBasicBlockRef) returns LLVMValueRef extern
@@ -229,7 +229,7 @@ function LLVMGetBasicBlockTerminator(block: LLVMBasicBlockRef) returns LLVMValue
 
 ; Integer constants
 function LLVMConstInt(int_type: LLVMTypeRef, value: size_t, sign_extend: int) returns LLVMValueRef extern
-function LLVMConstIntOfString(int_type: LLVMTypeRef, text: pointer[char], radix: int) returns LLVMValueRef extern
+function LLVMConstIntOfString(int_type: LLVMTypeRef, text: pointer[const_char], radix: int) returns LLVMValueRef extern
 
 ; Floating point constants
 function LLVMConstReal(real_type: LLVMTypeRef, value: double) returns LLVMValueRef extern
@@ -239,7 +239,7 @@ function LLVMConstNull(type: LLVMTypeRef) returns LLVMValueRef extern
 function LLVMConstPointerNull(type: LLVMTypeRef) returns LLVMValueRef extern
 
 ; String constant
-function LLVMConstStringInContext(context: LLVMContextRef, str: pointer[char], length: int, dont_null_terminate: int) returns LLVMValueRef extern
+function LLVMConstStringInContext(context: LLVMContextRef, str: pointer[const_char], length: int, dont_null_terminate: int) returns LLVMValueRef extern
 
 ; Struct constant
 function LLVMConstStructInContext(context: LLVMContextRef, constant_vals: pointer[LLVMValueRef], count: int, packed: int) returns LLVMValueRef extern
@@ -257,10 +257,10 @@ function LLVMGetUndef(type: LLVMTypeRef) returns LLVMValueRef extern
 ; ============================================================================
 
 ; Add a global variable
-function LLVMAddGlobal(mod: LLVMModuleRef, type: LLVMTypeRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMAddGlobal(mod: LLVMModuleRef, type: LLVMTypeRef, name: pointer[const_char]) returns LLVMValueRef extern
 
 ; Get a global variable by name
-function LLVMGetNamedGlobal(mod: LLVMModuleRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMGetNamedGlobal(mod: LLVMModuleRef, name: pointer[const_char]) returns LLVMValueRef extern
 
 ; Set initializer for global
 procedure LLVMSetInitializer(global_var: LLVMValueRef, constant_val: LLVMValueRef) extern
@@ -273,75 +273,75 @@ procedure LLVMSetGlobalConstant(global_var: LLVMValueRef, is_constant: int) exte
 ; ============================================================================
 
 ; Integer arithmetic
-function LLVMBuildAdd(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildNSWAdd(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildNUWAdd(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildSub(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildNSWSub(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildMul(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildNSWMul(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildSDiv(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildUDiv(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildSRem(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildURem(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildNeg(builder: LLVMBuilderRef, val: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildAdd(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildNSWAdd(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildNUWAdd(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildSub(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildNSWSub(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildMul(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildNSWMul(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildSDiv(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildUDiv(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildSRem(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildURem(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildNeg(builder: LLVMBuilderRef, val: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
 
 ; Floating point arithmetic
-function LLVMBuildFAdd(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildFSub(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildFMul(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildFDiv(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildFRem(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildFNeg(builder: LLVMBuilderRef, val: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildFAdd(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildFSub(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildFMul(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildFDiv(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildFRem(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildFNeg(builder: LLVMBuilderRef, val: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
 
 ; ============================================================================
 ; Instruction Builder - Bitwise
 ; ============================================================================
 
-function LLVMBuildShl(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildLShr(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildAShr(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildAnd(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildOr(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildXor(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildNot(builder: LLVMBuilderRef, val: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildShl(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildLShr(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildAShr(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildAnd(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildOr(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildXor(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildNot(builder: LLVMBuilderRef, val: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
 
 ; ============================================================================
 ; Instruction Builder - Comparison
 ; ============================================================================
 
-function LLVMBuildICmp(builder: LLVMBuilderRef, op: int, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildFCmp(builder: LLVMBuilderRef, op: int, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildICmp(builder: LLVMBuilderRef, op: int, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildFCmp(builder: LLVMBuilderRef, op: int, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
 
 ; ============================================================================
 ; Instruction Builder - Memory
 ; ============================================================================
 
-function LLVMBuildAlloca(builder: LLVMBuilderRef, type: LLVMTypeRef, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildArrayAlloca(builder: LLVMBuilderRef, type: LLVMTypeRef, val: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildLoad2(builder: LLVMBuilderRef, type: LLVMTypeRef, ptr: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildAlloca(builder: LLVMBuilderRef, type: LLVMTypeRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildArrayAlloca(builder: LLVMBuilderRef, type: LLVMTypeRef, val: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildLoad2(builder: LLVMBuilderRef, type: LLVMTypeRef, ptr: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
 function LLVMBuildStore(builder: LLVMBuilderRef, val: LLVMValueRef, ptr: LLVMValueRef) returns LLVMValueRef extern
-function LLVMBuildGEP2(builder: LLVMBuilderRef, type: LLVMTypeRef, ptr: LLVMValueRef, indices: pointer[LLVMValueRef], num_indices: int, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildStructGEP2(builder: LLVMBuilderRef, type: LLVMTypeRef, ptr: LLVMValueRef, idx: int, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildInBoundsGEP2(builder: LLVMBuilderRef, type: LLVMTypeRef, ptr: LLVMValueRef, indices: pointer[LLVMValueRef], num_indices: int, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildGEP2(builder: LLVMBuilderRef, type: LLVMTypeRef, ptr: LLVMValueRef, indices: pointer[LLVMValueRef], num_indices: int, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildStructGEP2(builder: LLVMBuilderRef, type: LLVMTypeRef, ptr: LLVMValueRef, idx: int, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildInBoundsGEP2(builder: LLVMBuilderRef, type: LLVMTypeRef, ptr: LLVMValueRef, indices: pointer[LLVMValueRef], num_indices: int, name: pointer[const_char]) returns LLVMValueRef extern
 
 ; ============================================================================
 ; Instruction Builder - Casts
 ; ============================================================================
 
-function LLVMBuildTrunc(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildZExt(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildSExt(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildFPToUI(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildFPToSI(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildUIToFP(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildSIToFP(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildFPTrunc(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildFPExt(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildPtrToInt(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildIntToPtr(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildBitCast(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildPointerCast(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildTrunc(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildZExt(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildSExt(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildFPToUI(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildFPToSI(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildUIToFP(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildSIToFP(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildFPTrunc(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildFPExt(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildPtrToInt(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildIntToPtr(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildBitCast(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildPointerCast(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[const_char]) returns LLVMValueRef extern
 
 ; ============================================================================
 ; Instruction Builder - Control Flow
@@ -359,17 +359,17 @@ function LLVMBuildUnreachable(builder: LLVMBuilderRef) returns LLVMValueRef exte
 ; Instruction Builder - Function Calls
 ; ============================================================================
 
-function LLVMBuildCall2(builder: LLVMBuilderRef, func_type: LLVMTypeRef, func: LLVMValueRef, args: pointer[LLVMValueRef], num_args: int, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildCall2(builder: LLVMBuilderRef, func_type: LLVMTypeRef, func: LLVMValueRef, args: pointer[LLVMValueRef], num_args: int, name: pointer[const_char]) returns LLVMValueRef extern
 
 ; ============================================================================
 ; Instruction Builder - Misc
 ; ============================================================================
 
-function LLVMBuildPhi(builder: LLVMBuilderRef, type: LLVMTypeRef, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildPhi(builder: LLVMBuilderRef, type: LLVMTypeRef, name: pointer[const_char]) returns LLVMValueRef extern
 procedure LLVMAddIncoming(phi: LLVMValueRef, incoming_values: pointer[LLVMValueRef], incoming_blocks: pointer[LLVMBasicBlockRef], count: int) extern
-function LLVMBuildSelect(builder: LLVMBuilderRef, cond: LLVMValueRef, then_val: LLVMValueRef, else_val: LLVMValueRef, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildExtractValue(builder: LLVMBuilderRef, agg_val: LLVMValueRef, index: int, name: pointer[char]) returns LLVMValueRef extern
-function LLVMBuildInsertValue(builder: LLVMBuilderRef, agg_val: LLVMValueRef, elt_val: LLVMValueRef, index: int, name: pointer[char]) returns LLVMValueRef extern
+function LLVMBuildSelect(builder: LLVMBuilderRef, cond: LLVMValueRef, then_val: LLVMValueRef, else_val: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildExtractValue(builder: LLVMBuilderRef, agg_val: LLVMValueRef, index: int, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildInsertValue(builder: LLVMBuilderRef, agg_val: LLVMValueRef, elt_val: LLVMValueRef, index: int, name: pointer[const_char]) returns LLVMValueRef extern
 
 ; ============================================================================
 ; Value Functions
@@ -377,7 +377,7 @@ function LLVMBuildInsertValue(builder: LLVMBuilderRef, agg_val: LLVMValueRef, el
 
 ; Get/set value name
 function LLVMGetValueName2(val: LLVMValueRef, length: pointer[size_t]) returns pointer[char] extern
-procedure LLVMSetValueName2(val: LLVMValueRef, name: pointer[char], name_len: size_t) extern
+procedure LLVMSetValueName2(val: LLVMValueRef, name: pointer[const_char], name_len: size_t) extern
 
 ; Get type of value
 function LLVMTypeOf(val: LLVMValueRef) returns LLVMTypeRef extern
@@ -405,16 +405,16 @@ procedure LLVMInitializeNativeAsmPrinter() extern
 function LLVMGetDefaultTargetTriple() returns pointer[char] extern
 
 ; Get target from triple
-function LLVMGetTargetFromTriple(triple: pointer[char], target: pointer[LLVMTargetRef], error_message: pointer[pointer[char]]) returns int extern
+function LLVMGetTargetFromTriple(triple: pointer[const_char], target: pointer[LLVMTargetRef], error_message: pointer[pointer[char]]) returns int extern
 
 ; Create target machine
-function LLVMCreateTargetMachine(target: LLVMTargetRef, triple: pointer[char], cpu: pointer[char], features: pointer[char], level: int, reloc: int, code_model: int) returns LLVMTargetMachineRef extern
+function LLVMCreateTargetMachine(target: LLVMTargetRef, triple: pointer[const_char], cpu: pointer[const_char], features: pointer[const_char], level: int, reloc: int, code_model: int) returns LLVMTargetMachineRef extern
 
 ; Dispose target machine
 procedure LLVMDisposeTargetMachine(machine: LLVMTargetMachineRef) extern
 
 ; Emit to file
-function LLVMTargetMachineEmitToFile(machine: LLVMTargetMachineRef, mod: LLVMModuleRef, filename: pointer[char], codegen: int, error_message: pointer[pointer[char]]) returns int extern
+function LLVMTargetMachineEmitToFile(machine: LLVMTargetMachineRef, mod: LLVMModuleRef, filename: pointer[const_char], codegen: int, error_message: pointer[pointer[char]]) returns int extern
 
 ; ============================================================================
 ; Memory Functions
