@@ -13,8 +13,13 @@ define compiler
 
     function test() returns int
     {
+        ; Test Modeler module
+        var result Modeler.test()
+        if result <> 0
+            return result
+
         ; Test Planner module
-        var result Planner.test()
+        set result: Planner.test()
         if result <> 0
             return result - 100
 

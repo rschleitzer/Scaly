@@ -1661,6 +1661,12 @@ llvm::Expected<llvm::Value*> Emitter::emitAction(const PlannedAction &Action) {
                 }
 
                 // Store the value to the field
+                // If Value is a pointer but the target field is a struct (not a pointer),
+                // we need to load the struct value first. This happens when assigning from
+                // an init parameter (passed by pointer) to a struct field.
+                if (Value->getType()->isPointerTy() && CurrentType->isStructTy()) {
+                    Value = Builder->CreateLoad(CurrentType, Value, "field.load");
+                }
                 Builder->CreateStore(Value, CurrentPtr);
             } else {
                 // Simple variable assignment
