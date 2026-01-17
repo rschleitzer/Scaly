@@ -4108,6 +4108,25 @@ llvm::Expected<PlannedOperand> Planner::collapseOperandSequence(
                     }
                 }
 
+                // Check for 'as' expression after the right operand
+                // 'as' binds tighter than comparison operators, so "x <> y as T"
+                // should be parsed as "x <> (y as T)", not "(x <> y) as T"
+                if (I + 2 < Ops.size()) {
+                    if (std::holds_alternative<PlannedAs>(Ops[I + 2].Expr)) {
+                        // Collapse right operand with 'as' expression
+                        std::vector<PlannedOperand> RightOps;
+                        RightOps.push_back(std::move(Ops[I + 1]));
+                        RightOps.push_back(std::move(Ops[I + 2]));
+                        auto CollapsedRight = collapseOperandSequence(std::move(RightOps));
+                        if (!CollapsedRight) {
+                            return CollapsedRight.takeError();
+                        }
+                        Ops[I + 1] = std::move(*CollapsedRight);
+                        // Remove the consumed 'as' element (RightConsumed stays 1)
+                        Ops.erase(Ops.begin() + I + 2);
+                    }
+                }
+
                 PlannedOperand& Right = Ops[I + 1];
 
                 // Find the operator
