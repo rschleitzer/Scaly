@@ -462,8 +462,6 @@ llvm::Expected<std::unique_ptr<llvm::Module>> Emitter::emit(const Plan &P,
     std::string VerifyError;
     llvm::raw_string_ostream VerifyStream(VerifyError);
     if (llvm::verifyModule(*Module, &VerifyStream)) {
-        // Print the module for debugging
-        Module->print(llvm::errs(), nullptr);
         return llvm::make_error<llvm::StringError>(
             "Module verification failed: " + VerifyError,
             llvm::inconvertibleErrorCode()
@@ -2645,9 +2643,31 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
                 auto ArgVal = emitOperand(Arg);
                 if (!ArgVal)
                     return ArgVal.takeError();
-                Args.push_back(*ArgVal);
-            } else if (Call.MangledName.find("String") != std::string::npos &&
-                       Call.MangledName.find("C1E") != std::string::npos) {
+                llvm::Value *FinalArg = *ArgVal;
+
+                // Coerce argument type to match parameter type if needed
+                if (FuncTy && i + ParamOffset < FuncTy->getNumParams()) {
+                    llvm::Type *ParamTy = FuncTy->getParamType(i + ParamOffset);
+                    llvm::Type *ArgTy = FinalArg->getType();
+
+                    if (ParamTy != ArgTy) {
+                        // Integer type widening (e.g., i32 -> i64)
+                        if (ParamTy->isIntegerTy() && ArgTy->isIntegerTy()) {
+                            unsigned ParamBits = ParamTy->getIntegerBitWidth();
+                            unsigned ArgBits = ArgTy->getIntegerBitWidth();
+                            if (ParamBits > ArgBits) {
+                                // Widen: use sext for signed, zext for unsigned
+                                // Default to sext for safety (int literals are signed)
+                                FinalArg = Builder->CreateSExt(FinalArg, ParamTy);
+                            } else if (ParamBits < ArgBits) {
+                                // Narrow: truncate
+                                FinalArg = Builder->CreateTrunc(FinalArg, ParamTy);
+                            }
+                        }
+                    }
+                }
+
+                Args.push_back(FinalArg);
             }
         }
     }
@@ -5966,8 +5986,6 @@ llvm::Expected<uint64_t> Emitter::jitExecuteRaw(const Plan &P, llvm::Type *Expec
     std::string VerifyError;
     llvm::raw_string_ostream VerifyStream(VerifyError);
     if (llvm::verifyModule(*Module, &VerifyStream)) {
-        // Print the module for debugging
-        Module->print(llvm::errs(), nullptr);
         return llvm::make_error<llvm::StringError>(
             "JIT module verification failed: " + VerifyError,
             llvm::inconvertibleErrorCode()
@@ -6266,7 +6284,6 @@ llvm::Error Emitter::jitExecuteVoid(const Plan &P, llvm::StringRef MangledFuncti
     std::string VerifyError;
     llvm::raw_string_ostream VerifyStream(VerifyError);
     if (llvm::verifyModule(*Module, &VerifyStream)) {
-        Module->print(llvm::errs(), nullptr);
         return llvm::make_error<llvm::StringError>(
             "JIT module verification failed: " + VerifyError,
             llvm::inconvertibleErrorCode()
@@ -6681,7 +6698,6 @@ llvm::Expected<int64_t> Emitter::jitExecuteIntFunction(const Plan &P, llvm::Stri
     std::string VerifyError;
     llvm::raw_string_ostream VerifyStream(VerifyError);
     if (llvm::verifyModule(*Module, &VerifyStream)) {
-        Module->print(llvm::errs(), nullptr);
         return llvm::make_error<llvm::StringError>(
             "JIT module verification failed: " + VerifyError,
             llvm::inconvertibleErrorCode()

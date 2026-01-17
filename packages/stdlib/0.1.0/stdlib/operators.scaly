@@ -28,6 +28,14 @@ define operators
     operator *(left: i32, right: i32) returns i32 intrinsic
     operator /(left: i32, right: i32) returns i32 intrinsic
 
+    ; 32-bit signed integer comparison
+    operator =(left: i32, right: i32) returns bool intrinsic
+    operator <>(left: i32, right: i32) returns bool intrinsic
+    operator <(left: i32, right: i32) returns bool intrinsic
+    operator >(left: i32, right: i32) returns bool intrinsic
+    operator <=(left: i32, right: i32) returns bool intrinsic
+    operator >=(left: i32, right: i32) returns bool intrinsic
+
     ; Floating point arithmetic (f64)
     operator +(left: f64, right: f64) returns f64 intrinsic
     operator -(left: f64, right: f64) returns f64 intrinsic
