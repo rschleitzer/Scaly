@@ -1,0 +1,7 @@
+; AOT Test: Arithmetic expression
+; Expected: 23
+let result 3 + 4 * 5
+if result = 23
+    print("23")
+else
+    print("WRONG")
