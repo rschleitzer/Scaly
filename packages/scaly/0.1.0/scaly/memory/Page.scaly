@@ -19,14 +19,14 @@ define Page
     {
         set current_page: null
         set next_page: null
-        set next_object: this + 1
+        set next_object: this + (1 as size_t)
         set exclusive_pages: PageList()
     }
 
     function allocate(this: Page, size: size_t, align: size_t) returns pointer[void]
     {
         let location next_object as size_t
-        let aligned_location (location + align - 1) & (~(align - 1))
+        let aligned_location (location + align - (1 as size_t)) & (~(align - (1 as size_t)))
         let location_after_page this as size_t + PAGE_SIZE
         let capacity location_after_page - aligned_location
 
@@ -61,7 +61,7 @@ define Page
     function allocate_oversized(this: Page, size: size_t) returns pointer[void]
     {
         ; We allocate oversized objects directly.
-        let address aligned_alloc(PAGE_SIZE,  (size + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1)))
+        let address aligned_alloc(PAGE_SIZE,  (size + PAGE_SIZE - (1 as size_t)) & (~(PAGE_SIZE - (1 as size_t))))
         if address = null
             exit(1)
         var page address as pointer[Page]
@@ -78,7 +78,7 @@ define Page
 
     function get(address: pointer[void]) returns pointer[Page]
     {
-        let mask ~((PAGE_SIZE - 1) as size_t)
+        let mask ~((PAGE_SIZE - (1 as size_t)) as size_t)
         let page (address as size_t & mask) as pointer[Page]
         page
     }
@@ -86,7 +86,7 @@ define Page
     function get_capacity(this: Page, align: size_t) returns size_t
     {
         var location next_object as size_t
-        let aligned_location (location + align - 1) & (~(align - 1))
+        let aligned_location (location + align - (1 as size_t)) & (~(align - (1 as size_t)))
         var location_after_page this as size_t + PAGE_SIZE
         var capacity location_after_page - aligned_location
         capacity

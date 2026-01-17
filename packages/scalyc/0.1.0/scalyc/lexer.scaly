@@ -29,7 +29,7 @@ define InvalidToken()
 define ColonToken()
 define IdentifierToken(name: String)
 define AttributeToken(name: String)
-define PunctuationToken(sign: char)
+define PunctuationToken(sign: u8)
 define LiteralToken(value: Literal)
 
 define Token union (
@@ -88,21 +88,21 @@ define Lexer
         }
 
         ; Attribute (@name)
-        if c = "@" as char
+        if c = "@" as u8
         {
             set token: scan_attribute#()
             return
         }
 
         ; String literal
-        if c = "\"" as char
+        if c = "\"" as u8
         {
             set token: scan_string_literal#()
             return
         }
 
         ; Freeform identifier (single quotes)
-        if c = "'" as char
+        if c = "'" as u8
         {
             set token: scan_freeform_identifier#()
             return
@@ -116,7 +116,7 @@ define Lexer
         }
 
         ; Colon (special - used as separator)
-        if c = ":" as char
+        if c = ":" as u8
         {
             set current: current + 1
             set position: current
@@ -125,9 +125,9 @@ define Lexer
         }
 
         ; Single-line comment
-        if c = ";" as char
+        if c = ";" as u8
         {
-            if current + 1 < source.length() & source.get(current + 1) = "*" as char
+            if current + 1 < source.length() & source.get(current + 1) = "*" as u8
             {
                 handle_multi_line_comment()
                 advance#()
@@ -155,7 +155,7 @@ define Lexer
         }
 
         ; Fragment literal
-        if c = "`" as char
+        if c = "`" as u8
         {
             set token: scan_fragment_literal#()
             return
@@ -171,12 +171,12 @@ define Lexer
         while current < source.length()
         {
             let c source.get(current)
-            if (c = " " as char) | (c = "\t" as char) | (c = "\r" as char)
+            if (c = " " as u8) | (c = "\t" as u8) | (c = "\r" as u8)
             {
                 set current: current + 1
                 continue
             }
-            if skip_linefeed & (c = "\n" as char)
+            if skip_linefeed & (c = "\n" as u8)
             {
                 set current: current + 1
                 continue
@@ -188,7 +188,7 @@ define Lexer
 
     procedure handle_single_line_comment(this: Lexer)
     {
-        while current < source.length() & source.get(current) <> "\n" as char
+        while current < source.length() & source.get(current) <> "\n" as u8
             set current: current + 1
     }
 
@@ -198,13 +198,13 @@ define Lexer
         var nesting_level 1
         while current + 1 < source.length() & nesting_level > 0
         {
-            if source.get(current) = ";" as char & source.get(current + 1) = "*" as char
+            if source.get(current) = ";" as u8 & source.get(current + 1) = "*" as u8
             {
                 set nesting_level: nesting_level + 1
                 set current: current + 2
                 continue
             }
-            if source.get(current) = "*" as char & source.get(current + 1) = ";" as char
+            if source.get(current) = "*" as u8 & source.get(current + 1) = ";" as u8
             {
                 set nesting_level: nesting_level - 1
                 set current: current + 2
@@ -260,9 +260,9 @@ define Lexer
         set current: current + 1  ; Skip opening "
         let start current
 
-        while current < source.length() & source.get(current) <> "\"" as char
+        while current < source.length() & source.get(current) <> "\"" as u8
         {
-            if source.get(current) = "\\" as char
+            if source.get(current) = "\\" as u8
                 set current: current + 1  ; Skip escape
             set current: current + 1
         }
@@ -281,9 +281,9 @@ define Lexer
         set current: current + 1  ; Skip opening '
         let start current
 
-        while current < source.length() & source.get(current) <> "'" as char
+        while current < source.length() & source.get(current) <> "'" as u8
         {
-            if source.get(current) = "\\" as char
+            if source.get(current) = "\\" as u8
                 set current: current + 1  ; Skip escape
             set current: current + 1
         }
@@ -303,7 +303,7 @@ define Lexer
         set current: current + 1  ; Skip opening `
         let start current
 
-        while current < source.length() & source.get(current) <> "`" as char
+        while current < source.length() & source.get(current) <> "`" as u8
             set current: current + 1
 
         let value source.substring(rp, start, current - start)
@@ -320,10 +320,10 @@ define Lexer
         let start current
 
         ; Check for hex literal (0x...)
-        if source.get(current) = "0" as char & current + 1 < source.length()
+        if source.get(current) = "0" as u8 & current + 1 < source.length()
         {
             let next source.get(current + 1)
-            if next = "x" as char | next = "X" as char
+            if next = "x" as u8 | next = "X" as u8
             {
                 set current: current + 2
                 while current < source.length() & is_hex_digit(source.get(current))
@@ -339,7 +339,7 @@ define Lexer
             set current: current + 1
 
         ; Check for decimal point
-        if current < source.length() & source.get(current) = "." as char
+        if current < source.length() & source.get(current) = "." as u8
         {
             set current: current + 1
             while current < source.length() & is_digit(source.get(current))
@@ -349,15 +349,15 @@ define Lexer
             if current < source.length()
             {
                 let exp_char source.get(current)
-                let e_lower: char = "e"
-                if exp_char = e_lower | exp_char = "E" as char
+                let e_lower: u8 = "e" as u8
+                if exp_char = e_lower | exp_char = "E" as u8
                 {
                     set current: current + 1
                     ; Optional sign
                     if current < source.length()
                     {
                         let sign_char source.get(current)
-                        if sign_char = "+" as char | sign_char = "-" as char
+                        if sign_char = "+" as u8 | sign_char = "-" as u8
                             set current: current + 1
                     }
                     while current < source.length() & is_digit(source.get(current))
@@ -402,7 +402,7 @@ define Lexer
         String()
     }
 
-    function parse_punctuation#(rp, this: Lexer, c: char) returns bool
+    function parse_punctuation#(rp, this: Lexer, c: u8) returns bool
     {
         choose token
             when Punctuation: p
@@ -441,71 +441,71 @@ define Lexer
 }
 
 ; Character classification helpers
-function is_identifier_start(c: char) returns bool
-    (c >= "a" as char & c <= "z" as char) | (c >= "A" as char & c <= "Z" as char) | c = "_" as char
+function is_identifier_start(c: u8) returns bool
+    (c >= "a" as u8 & c <= "z" as u8) | (c >= "A" as u8 & c <= "Z" as u8) | c = "_" as u8
 
-function is_identifier_char(c: char) returns bool
+function is_identifier_char(c: u8) returns bool
     is_identifier_start(c) | is_digit(c)
 
-function is_digit(c: char) returns bool
-    c >= "0" as char & c <= "9" as char
+function is_digit(c: u8) returns bool
+    c >= "0" as u8 & c <= "9" as u8
 
-function is_hex_digit(c: char) returns bool
-    is_digit(c) | (c >= "a" as char & c <= "f" as char) | (c >= "A" as char & c <= "F" as char)
+function is_hex_digit(c: u8) returns bool
+    is_digit(c) | (c >= "a" as u8 & c <= "f" as u8) | (c >= "A" as u8 & c <= "F" as u8)
 
-function is_operator_char(c: char) returns bool
-    c = "+" as char | c = "-" as char | c = "*" as char | c = "/" as char | c = "=" as char | c = "<" as char | c = ">" as char | c = "&" as char | c = "|" as char | c = "~" as char | c = "^" as char | c = "%" as char
+function is_operator_char(c: u8) returns bool
+    c = "+" as u8 | c = "-" as u8 | c = "*" as u8 | c = "/" as u8 | c = "=" as u8 | c = "<" as u8 | c = ">" as u8 | c = "&" as u8 | c = "|" as u8 | c = "~" as u8 | c = "^" as u8 | c = "%" as u8
 
-function is_punctuation(c: char) returns bool
-    c = "(" as char | c = ")" as char | c = "[" as char | c = "]" as char | c = "{" as char | c = "}" as char | c = "," as char | c = "." as char
+function is_punctuation(c: u8) returns bool
+    c = "(" as u8 | c = ")" as u8 | c = "[" as u8 | c = "]" as u8 | c = "{" as u8 | c = "}" as u8 | c = "," as u8 | c = "." as u8
 
 ; Test helper classification functions
 function test_helpers() returns int
 {
     ; Test is_identifier_start
-    if ~is_identifier_start("a" as char)
+    if ~is_identifier_start("a" as u8)
         return -1
-    if ~is_identifier_start("Z" as char)
+    if ~is_identifier_start("Z" as u8)
         return -2
-    if ~is_identifier_start("_" as char)
+    if ~is_identifier_start("_" as u8)
         return -3
-    if is_identifier_start("0" as char)
+    if is_identifier_start("0" as u8)
         return -4
-    if is_identifier_start(" " as char)
+    if is_identifier_start(" " as u8)
         return -5
 
     ; Test is_digit
-    if ~is_digit("0" as char)
+    if ~is_digit("0" as u8)
         return -6
-    if ~is_digit("9" as char)
+    if ~is_digit("9" as u8)
         return -7
-    if is_digit("a" as char)
+    if is_digit("a" as u8)
         return -8
 
     ; Test is_hex_digit
-    if ~is_hex_digit("0" as char)
+    if ~is_hex_digit("0" as u8)
         return -9
-    if ~is_hex_digit("a" as char)
+    if ~is_hex_digit("a" as u8)
         return -10
-    if ~is_hex_digit("F" as char)
+    if ~is_hex_digit("F" as u8)
         return -11
-    if is_hex_digit("g" as char)
+    if is_hex_digit("g" as u8)
         return -12
 
     ; Test is_punctuation
-    if ~is_punctuation("(" as char)
+    if ~is_punctuation("(" as u8)
         return -13
-    if ~is_punctuation(")" as char)
+    if ~is_punctuation(")" as u8)
         return -14
-    if is_punctuation(":" as char)
+    if is_punctuation(":" as u8)
         return -15
 
     ; Test is_operator_char
-    if ~is_operator_char("+" as char)
+    if ~is_operator_char("+" as u8)
         return -16
-    if ~is_operator_char("-" as char)
+    if ~is_operator_char("-" as u8)
         return -17
-    if is_operator_char("a" as char)
+    if is_operator_char("a" as u8)
         return -18
 
     0
@@ -526,13 +526,13 @@ function test_string_basics() returns int
     }
 
     ; Check individual characters
-    if get(s, 0) <> "h" as char
+    if get(s, 0) <> "h" as u8
     {
         free(rp as pointer[void])
         return -2
     }
 
-    if get(s, 4) <> "o" as char
+    if get(s, 4) <> "o" as u8
     {
         free(rp as pointer[void])
         return -3

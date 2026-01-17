@@ -4279,6 +4279,30 @@ llvm::Expected<PlannedOperand> Planner::collapseOperandSequence(
                 }
             }
 
+            // String-to-u8 coercion: "a" as u8 -> IntegerConstant (byte value)
+            // This is compile-time conversion with no runtime penalty
+            if (AsExpr->TargetType.Name == "u8") {
+                if (auto* Const = std::get_if<PlannedConstant>(&Left.Expr)) {
+                    if (auto* StrConst = std::get_if<StringConstant>(Const)) {
+                        // For u8, we only support single-byte ASCII characters
+                        if (StrConst->Value.size() == 1) {
+                            uint8_t byteValue = static_cast<uint8_t>(StrConst->Value[0]);
+                            IntegerConstant IntConst;
+                            IntConst.Loc = StrConst->Loc;
+                            IntConst.Value = byteValue;
+                            PlannedOperand NewLeft;
+                            NewLeft.Loc = Left.Loc;
+                            NewLeft.ResultType.Name = "u8";
+                            NewLeft.ResultType.MangledName = "h";
+                            NewLeft.Expr = PlannedConstant{IntConst};
+                            Left = std::move(NewLeft);
+                            I++;
+                            continue;
+                        }
+                    }
+                }
+            }
+
             // The 'as' expression casts the left operand to the target type
             PlannedAs NewAs = *AsExpr;
             NewAs.Value = std::make_shared<PlannedOperand>(std::move(Left));
