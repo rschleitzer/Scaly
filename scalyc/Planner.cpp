@@ -1346,8 +1346,6 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
     if (Struct) {
         for (const auto &Method : Struct->Methods) {
             if (Method.Name == MethodName) {
-                llvm::errs() << "DEBUG lookupMethod: found in Struct->Methods, Method.CanThrow="
-                             << Method.CanThrow << ", Method.Name=" << Method.Name << "\n";
                 MethodMatch Match;
                 Match.Method = nullptr;  // We have the planned version, not the Model version
                 Match.MangledName = Method.MangledName;
@@ -1664,9 +1662,6 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
         for (const auto &Method : Struct->Methods) {
             if (Method.Name == MethodName) {
                 bool isIntrinsicImpl = std::holds_alternative<PlannedIntrinsicImpl>(Method.Impl);
-                llvm::errs() << "DEBUG lookupMethod(overload): found '" << MethodName
-                             << "' in Struct->Methods, Method.CanThrow=" << Method.CanThrow
-                             << " IsIntrinsic=" << isIntrinsicImpl << "\n";
                 MethodMatch Match;
                 Match.Method = nullptr;
                 Match.MangledName = Method.MangledName;
@@ -1718,7 +1713,6 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                     }
                     Candidates.push_back(std::move(Match));
                 } else {
-                    // llvm::errs() << "DEBUG lookupMethod: planDeferredMethod returned nullptr\n";
                 }
             }
         }
@@ -1740,8 +1734,6 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
         for (const auto &Method : Union->Methods) {
             if (Method.Name == MethodName) {
                 bool isIntrinsicImpl = std::holds_alternative<PlannedIntrinsicImpl>(Method.Impl);
-                llvm::errs() << "DEBUG lookupMethod(overload): found '" << MethodName
-                             << "' in Union->Methods, IsIntrinsic=" << isIntrinsicImpl << "\n";
                 MethodMatch Match;
                 Match.Method = nullptr;
                 Match.MangledName = Method.MangledName;
@@ -2454,19 +2446,6 @@ std::optional<Planner::InitializerMatch> Planner::findInitializer(
         !StructIt->second.Initializers.empty()) {
         const PlannedStructure &Struct = StructIt->second;
 
-        // Debug: show what we're looking for
-        if (StructType.Name.find("String") != std::string::npos) {
-            llvm::errs() << "DEBUG findInitializer String: ArgTypes=[";
-            for (size_t i = 0; i < ArgTypes.size(); ++i) {
-                if (i > 0) llvm::errs() << ", ";
-                llvm::errs() << ArgTypes[i].Name;
-                if (!ArgTypes[i].Generics.empty()) {
-                    llvm::errs() << "[" << ArgTypes[i].Generics[0].Name << "]";
-                }
-            }
-            llvm::errs() << "]\n";
-        }
-
         // Search for matching initializer in the cached PlannedStructure
         for (const auto &Init : Struct.Initializers) {
             // Check if parameter count matches
@@ -2487,14 +2466,7 @@ std::optional<Planner::InitializerMatch> Planner::findInitializer(
                 }
             }
 
-            if (StructType.Name.find("String") != std::string::npos) {
-                llvm::errs() << "DEBUG findInitializer String: AllMatch=" << AllMatch
-                             << " Init=" << Init.MangledName << "\n";
-            }
             if (AllMatch) {
-                if (StructType.Name.find("String") != std::string::npos) {
-                    llvm::errs() << "DEBUG findInitializer String: RETURNING " << Init.MangledName << "\n";
-                }
                 InitializerMatch Match;
                 Match.Init = &Init;
                 Match.MangledName = Init.MangledName;
@@ -2504,7 +2476,6 @@ std::optional<Planner::InitializerMatch> Planner::findInitializer(
             }
         }
         // Cache search didn't find a match - fall through to Concept lookup
-        // DEBUG: llvm::errs() << "DEBUG findInitializer: no cache match, falling through to Concept lookup\n";
     }
 
     // Look up the original Concept to find/plan a matching initializer
@@ -2569,7 +2540,6 @@ std::optional<Planner::InitializerMatch> Planner::findInitializer(
                 }
 
                 if (AllMatch) {
-                    // DEBUG: llvm::errs() << "DEBUG findInitializer: AllMatch=true, planning initializer\n";
                     // Found a match - need to actually plan the initializer
                     // so that the Emitter can find it
 
@@ -5196,28 +5166,10 @@ llvm::Expected<PlannedType> Planner::inferExpressionType(const PlannedExpression
 // Cross-Module Concept Lookup
 // ============================================================================
 
-// Helper to log caching Page
-static void debugCachePage(const char* where, const Concept* Conc) {
-    if (Conc->Name == "Page") {
-        llvm::errs() << "DEBUG caching Page at " << where;
-        if (auto* Struct = std::get_if<Structure>(&Conc->Def)) {
-            llvm::errs() << " Members.size=" << Struct->Members.size() << "\n";
-        } else {
-            llvm::errs() << " (not Structure, index=" << Conc->Def.index() << ")\n";
-        }
-    }
-}
-
 const Concept* Planner::lookupConcept(llvm::StringRef Name) {
     // 1. Check flat cache first (most efficient)
     auto CacheIt = Concepts.find(Name.str());
     if (CacheIt != Concepts.end()) {
-        if (Name == "Page") {
-            llvm::errs() << "DEBUG lookupConcept: found 'Page' in cache\n";
-            if (auto* Struct = std::get_if<Structure>(&CacheIt->second->Def)) {
-                llvm::errs() << "  cached Page.Members.size=" << Struct->Members.size() << "\n";
-            }
-        }
         return CacheIt->second;
     }
 
@@ -5330,7 +5282,6 @@ const Concept* Planner::lookupConcept(llvm::StringRef Name) {
                 for (const auto& Member : SubMod.Members) {
                     if (auto* Conc = std::get_if<Concept>(&Member)) {
                         if (Conc->Name == Name) {
-                            debugCachePage("SubMod.Name==Name (line 5276)", Conc);
                             Concepts[Name.str()] = Conc;
                             return Conc;
                         }
@@ -5343,7 +5294,6 @@ const Concept* Planner::lookupConcept(llvm::StringRef Name) {
                 for (const auto& Member : SubMod.Members) {
                     if (auto* Conc = std::get_if<Concept>(&Member)) {
                         if (Conc->Name == Name) {
-                            debugCachePage("!SubMod.Private exports (line 5288)", Conc);
                             Concepts[Name.str()] = Conc;
                             return Conc;
                         }
@@ -7614,10 +7564,6 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                         }
 
                         if (FoundVariant) {
-                            llvm::errs() << "DEBUG variantConstruct: Union=" << UnionName
-                                         << " Variant=" << VariantName
-                                         << " Tag=" << FoundVariant->Tag
-                                         << " TotalVariants=" << Union.Variants.size() << "\n";
                             // Plan the tuple argument
                             Operand ArgsOp = NextOp;
                             ArgsOp.MemberAccess = nullptr;
@@ -7824,14 +7770,6 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
         if (i + 1 < ProcessedOps.size()) {
             const auto &NextOp = ProcessedOps[i + 1];
             if (auto* TypeExpr = std::get_if<Type>(&Op.Expr)) {
-                // Debug output for static method detection
-                if (!TypeExpr->Name.empty() && TypeExpr->Name[0] == "Page") {
-                    llvm::errs() << "DEBUG static method: TypeExpr->Name.size()=" << TypeExpr->Name.size() << "\n";
-                    for (size_t j = 0; j < TypeExpr->Name.size(); j++) {
-                        llvm::errs() << "  Name[" << j << "]=" << TypeExpr->Name[j] << "\n";
-                    }
-                    llvm::errs() << "  NextOp.Expr.index()=" << NextOp.Expr.index() << " (Tuple is index 2)\n";
-                }
                 // Type path with at least 2 segments: Type.method or module.Type.method
                 if (TypeExpr->Name.size() >= 2 && std::holds_alternative<Tuple>(NextOp.Expr)) {
                     const std::string& MethodName = TypeExpr->Name.back();
@@ -7841,25 +7779,10 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                         ? TypeExpr->Name[TypeExpr->Name.size() - 2]
                         : TypeExpr->Name[0];
 
-                    // More debug output
-                    if (TypeName == "Page") {
-                        llvm::errs() << "DEBUG static method: TypeName='" << TypeName << "', MethodName='" << MethodName << "'\n";
-                    }
-
                     // Look up the type as a Concept
                     const Concept* Conc = lookupConcept(TypeName);
-                    if (TypeName == "Page") {
-                        llvm::errs() << "DEBUG static method Page: Conc=" << (Conc ? "found" : "null") << "\n";
-                        if (Conc) {
-                            llvm::errs() << "  Conc->Name=" << Conc->Name << "\n";
-                            llvm::errs() << "  Conc->Def.index()=" << Conc->Def.index() << " (Structure=1)\n";
-                        }
-                    }
                     if (Conc) {
                         if (auto* ModelStruct = std::get_if<Structure>(&Conc->Def)) {
-                            if (TypeName == "Page") {
-                                llvm::errs() << "DEBUG static method: found Structure, Members.size()=" << ModelStruct->Members.size() << "\n";
-                            }
                             // Search for a static method (function without 'this' parameter)
                             const Function* StaticMethod = nullptr;
                             for (const auto& Member : ModelStruct->Members) {
@@ -10045,14 +9968,6 @@ llvm::Expected<PlannedBinding> Planner::planBinding(const Binding &Bind) {
     Result.Loc = Bind.Loc;
     Result.BindingType = Bind.BindingType;
 
-    bool debugBinding = Bind.BindingItem.Name && *Bind.BindingItem.Name == "page";
-    if (debugBinding) {
-        llvm::errs() << "DEBUG planBinding: name='page', Operation.size=" << Bind.Operation.size() << "\n";
-        for (size_t i = 0; i < Bind.Operation.size(); i++) {
-            llvm::errs() << "  Op[" << i << "]: expr index=" << Bind.Operation[i].Expr.index() << "\n";
-        }
-    }
-
     // Filter out control flow statements that were incorrectly parsed into the binding's operation
     // This is a workaround for a parser bug where `var i 1 \n while ...` puts the while in the binding
     std::vector<Operand> FilteredOps;
@@ -10093,20 +10008,10 @@ llvm::Expected<PlannedBinding> Planner::planBinding(const Binding &Bind) {
     // Collapse operand sequence to create PlannedCall structures for operators
     PlannedType StackArrayType;  // For stack array declarations like char[64]
     bool IsStackArrayDecl = false;
-    if (debugBinding) {
-        llvm::errs() << "DEBUG planBinding: ValueOps.size=" << ValueOps.size() << "\n";
-        for (size_t i = 0; i < ValueOps.size(); i++) {
-            llvm::errs() << "  ValueOps[" << i << "]: ResultType=" << ValueOps[i].ResultType.Name << ", Expr.index=" << ValueOps[i].Expr.index() << "\n";
-        }
-    }
     if (!ValueOps.empty()) {
         auto CollapsedOp = collapseOperandSequence(std::move(ValueOps));
         if (!CollapsedOp) {
             return CollapsedOp.takeError();
-        }
-
-        if (debugBinding) {
-            llvm::errs() << "DEBUG planBinding: CollapsedOp ResultType=" << CollapsedOp->ResultType.Name << ", Expr.index=" << CollapsedOp->Expr.index() << "\n";
         }
 
         // Check if this is a stack array type declaration (e.g., char[64])
@@ -10137,20 +10042,10 @@ llvm::Expected<PlannedBinding> Planner::planBinding(const Binding &Bind) {
     }
     // Type inference for bindings without explicit type annotation
     else if (!Result.BindingItem.ItemType && !Result.Operation.empty()) {
-        if (debugBinding) {
-            llvm::errs() << "DEBUG planBinding: inferring type, Result.Operation.size=" << Result.Operation.size() << "\n";
-            if (!Result.Operation.empty()) {
-                llvm::errs() << "  Result.Operation[0].ResultType.Name=" << Result.Operation[0].ResultType.Name << "\n";
-                llvm::errs() << "  Result.Operation[0].Expr.index=" << Result.Operation[0].Expr.index() << "\n";
-            }
-        }
         // Try to infer the type from the initializer expression
         auto SeqType = resolveOperationSequence(Result.Operation);
         if (SeqType) {
             // Successful inference - use the inferred type
-            if (debugBinding) {
-                llvm::errs() << "DEBUG planBinding: inferred type=" << SeqType->Name << "\n";
-            }
             Result.BindingItem.ItemType = std::make_shared<PlannedType>(
                 std::move(*SeqType));
         } else {
@@ -10285,27 +10180,6 @@ llvm::Expected<PlannedIf> Planner::planIf(const If &IfExpr) {
 
     // Plan consequent
     if (IfExpr.Consequent) {
-        // Debug: show what type of statement the parser gave us
-        llvm::errs() << "DEBUG planIf consequent at offset " << IfExpr.Loc.Start << ": ";
-        std::visit([](const auto &S) {
-            using T = std::decay_t<decltype(S)>;
-            if constexpr (std::is_same_v<T, Action>) {
-                llvm::errs() << "Action (Source.size=" << S.Source.size() << ")";
-                if (!S.Source.empty()) {
-                    llvm::errs() << ", first expr type idx=" << S.Source[0].Expr.index();
-                }
-            } else if constexpr (std::is_same_v<T, Binding>) {
-                llvm::errs() << "Binding(" << (S.BindingItem.Name ? *S.BindingItem.Name : "?") << ")";
-            } else if constexpr (std::is_same_v<T, Return>) {
-                llvm::errs() << "Return";
-            } else if constexpr (std::is_same_v<T, Throw>) {
-                llvm::errs() << "Throw";
-            } else {
-                llvm::errs() << "Other";
-            }
-        }, *IfExpr.Consequent);
-        llvm::errs() << "\n";
-
         auto PlannedCons = planStatement(*IfExpr.Consequent);
         if (!PlannedCons) {
             return PlannedCons.takeError();
@@ -10414,17 +10288,11 @@ llvm::Expected<PlannedChoose> Planner::planChoose(const Choose &ChooseExpr) {
     PlannedType ValueType;
     if (!Result.Condition.empty()) {
         const auto &CondExpr = Result.Condition[0].Expr;
-        llvm::errs() << "DEBUG choose: condition expr index=" << CondExpr.index() << "\n";
         if (auto *Call = std::get_if<PlannedCall>(&CondExpr)) {
-            llvm::errs() << "DEBUG choose: found PlannedCall, CanThrow=" << Call->CanThrow
-                         << ", Name=" << Call->Name << "\n";
             if (Call->CanThrow) {
                 IsThrowingCall = true;
                 ThrowsType = Call->ThrowsType;
                 ValueType = Call->ResultType;
-                llvm::errs() << "DEBUG choose: detected throwing call, ThrowsType="
-                             << (ThrowsType ? ThrowsType->Name : "null")
-                             << ", ValueType=" << ValueType.Name << "\n";
             }
         }
     }
@@ -10451,7 +10319,6 @@ llvm::Expected<PlannedChoose> Planner::planChoose(const Choose &ChooseExpr) {
             // Try searching for a key containing FallbackName
             for (const auto &[Key, Val] : InstantiatedUnions) {
                 if (Key.find(FallbackName) != std::string::npos) {
-                    llvm::errs() << "DEBUG choose: found potential match Key='" << Key << "' for FallbackName='" << FallbackName << "'\n";
                     UnionIt = InstantiatedUnions.find(Key);
                     break;
                 }
@@ -10478,9 +10345,6 @@ llvm::Expected<PlannedChoose> Planner::planChoose(const Choose &ChooseExpr) {
 
         // Look up the variant in the union to get its tag
         // We compare by TYPE name since Scaly syntax uses "when TypeName: x"
-        llvm::errs() << "DEBUG choose InstUnion: VariantTypeName='" << VariantTypeName
-                     << "' CondUnion=" << (CondUnion ? "yes" : "no")
-                     << " LookupName='" << LookupName << "' FallbackName='" << FallbackName << "'\n";
         if (CondUnion && !VariantTypeName.empty()) {
             for (size_t i = 0; i < CondUnion->Variants.size(); ++i) {
                 // Check if variant's type matches the type name from the when clause
@@ -10499,11 +10363,7 @@ llvm::Expected<PlannedChoose> Planner::planChoose(const Choose &ChooseExpr) {
                     PW.VariantIndex = CondUnion->Variants[i].Tag;
                     if (CondUnion->Variants[i].VarType) {
                         PW.VariantType = *CondUnion->Variants[i].VarType;
-                        llvm::errs() << "DEBUG choose MATCH: variant '" << CondUnion->Variants[i].Name
-                                     << "' -> type '" << PW.VariantType.Name << "'\n";
                     } else {
-                        llvm::errs() << "DEBUG choose MATCH: variant '" << CondUnion->Variants[i].Name
-                                     << "' (no type)\n";
                     }
                     break;
                 }
@@ -10520,8 +10380,6 @@ llvm::Expected<PlannedChoose> Planner::planChoose(const Choose &ChooseExpr) {
                 CondTypeName = ResultType.Generics[0].Name;
             }
 
-            llvm::errs() << "DEBUG choose fallback: CondTypeName='" << CondTypeName
-                         << "' VariantTypeName='" << VariantTypeName << "'\n";
 
             // Try to find the union definition in Model via lookupConcept
             // First try the full name, then try just the last component (simple name)
@@ -10531,23 +10389,17 @@ llvm::Expected<PlannedChoose> Planner::planChoose(const Choose &ChooseExpr) {
                 size_t lastDot = CondTypeName.rfind('.');
                 if (lastDot != std::string::npos) {
                     std::string SimpleName = CondTypeName.substr(lastDot + 1);
-                    llvm::errs() << "DEBUG choose fallback: trying SimpleName='" << SimpleName << "'\n";
                     CondConc = lookupConcept(SimpleName);
                 }
             }
             if (CondConc) {
-                llvm::errs() << "DEBUG choose fallback: found Concept for '" << CondTypeName << "'\n";
                 if (const Union* Un = std::get_if<Union>(&CondConc->Def)) {
-                    llvm::errs() << "DEBUG choose fallback: is Union with " << Un->Variants.size() << " variants\n";
                     for (size_t j = 0; j < Un->Variants.size(); ++j) {
-                        llvm::errs() << "DEBUG choose fallback:   variant[" << j << "].Name='" << Un->Variants[j].Name << "'\n";
                     }
                     // Search for the variant by name
                     for (size_t i = 0; i < Un->Variants.size(); ++i) {
                         if (Un->Variants[i].Name == VariantTypeName) {
                             PW.VariantIndex = i;
-                            llvm::errs() << "DEBUG choose fallback MATCH: i=" << i
-                                         << " VariantTypeName='" << VariantTypeName << "'\n";
                             if (Un->Variants[i].VarType) {
                                 // Resolve the variant's type
                                 auto ResolvedVarType = resolveType(*Un->Variants[i].VarType, Case.Loc);
@@ -10576,8 +10428,6 @@ llvm::Expected<PlannedChoose> Planner::planChoose(const Choose &ChooseExpr) {
                 PW.VariantIndex = 1;  // Error is second variant in Result[T, E]
                 if (ThrowsType) {
                     PW.VariantType = *ThrowsType;
-                    llvm::errs() << "DEBUG choose: throwing call error variant -> type '"
-                                 << PW.VariantType.Name << "' VariantIndex=" << PW.VariantIndex << "\n";
                 } else {
                     PW.VariantType.Name = "void";
                     PW.VariantType.Loc = Case.Loc;
@@ -10586,21 +10436,16 @@ llvm::Expected<PlannedChoose> Planner::planChoose(const Choose &ChooseExpr) {
                 // Value variant uses the return type
                 PW.VariantIndex = 0;  // Ok is first variant in Result[T, E]
                 PW.VariantType = ValueType;
-                llvm::errs() << "DEBUG choose: throwing call value variant -> type '"
-                             << PW.VariantType.Name << "' VariantIndex=" << PW.VariantIndex << "\n";
             }
         }
 
         // Last resort fallback: resolve the variant path as a type
         if (PW.VariantType.Name.empty()) {
-            llvm::errs() << "DEBUG choose last resort: VariantTypeName='" << VariantTypeName
-                         << "' resolving as type\n";
             auto ResolvedType = resolveTypePath(Case.VariantPath, Case.Loc);
             if (!ResolvedType) {
                 popScope();
                 return ResolvedType.takeError();
             }
-            llvm::errs() << "DEBUG choose last resort: resolved to '" << ResolvedType->Name << "'\n";
             PW.VariantType = std::move(*ResolvedType);
         }
 
@@ -10618,8 +10463,6 @@ llvm::Expected<PlannedChoose> Planner::planChoose(const Choose &ChooseExpr) {
             PW.Consequent = std::make_unique<PlannedStatement>(std::move(*PlannedCons));
         }
 
-        llvm::errs() << "DEBUG planChoose: adding case Name='" << PW.Name
-                     << "' VariantIndex=" << PW.VariantIndex << "\n";
         Result.Cases.push_back(std::move(PW));
     }
 
@@ -11063,7 +10906,6 @@ llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
 
     // Plan throws type
     if (Func.Throws) {
-        llvm::errs() << "DEBUG planFunction: Function '" << Func.Name << "' has Throws annotation\n";
         auto ResolvedThrows = resolveType(*Func.Throws, Func.Loc);
         if (!ResolvedThrows) {
             popScope();
@@ -11072,7 +10914,6 @@ llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
         }
         Result.Throws = std::make_shared<PlannedType>(std::move(*ResolvedThrows));
         Result.CanThrow = true;
-        llvm::errs() << "DEBUG planFunction: Set CanThrow=true for '" << Func.Name << "'\n";
         // Note: The exception page parameter is added by the Emitter, not here.
         // The Emitter checks Func.CanThrow/Func.Throws and adds the parameter.
     }
@@ -11904,7 +11745,6 @@ llvm::Expected<PlannedConcept> Planner::planConcept(const Concept &Conc) {
     Result.Name = Conc.Name;
 
     // Register in symbol table first (needed for recursive types)
-    debugCachePage("planConcept (line 11626)", &Conc);
     Concepts[Conc.Name] = &Conc;
 
     // For generic concepts, create a placeholder - don't fully plan

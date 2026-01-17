@@ -1607,14 +1607,6 @@ llvm::Expected<Structure> Modeler::handleClass(llvm::StringRef Name,
                                                 llvm::StringRef Path,
                                                 const ClassSyntax &Syntax,
                                                 bool Private) {
-    if (Name == "Emitter" || Name == "Page") {
-        llvm::errs() << "DEBUG handleClass " << Name << ": body=" << (Syntax.body ? "yes" : "no")
-                     << " parts=" << (Syntax.structure.parts ? Syntax.structure.parts->size() : 0)
-                     << " file=" << File << "\n";
-        if (Syntax.body && Syntax.body->members) {
-            llvm::errs() << "  body->members.size=" << Syntax.body->members->size() << "\n";
-        }
-    }
     std::vector<Property> Props;
     std::map<std::string, std::shared_ptr<Nameable>> Symbols;
 
@@ -1656,10 +1648,6 @@ llvm::Expected<Structure> Modeler::handleClass(llvm::StringRef Name,
         Deinitializer = std::move(Body->Deinitializer);
         Members = std::move(Body->Members);
         Symbols = std::move(Body->Symbols);
-
-        if (Name == "Page") {
-            llvm::errs() << "DEBUG handleClass Page after body: Members.size=" << Members.size() << "\n";
-        }
     }
 
     return Structure{
@@ -1916,10 +1904,6 @@ llvm::Expected<Module> Modeler::buildReferencedModule(llvm::StringRef Path,
     }
     FilePath += ".scaly";
 
-    if (Name == "Emitter") {
-        llvm::errs() << "DEBUG buildReferencedModule: loading " << FilePath << "\n";
-    }
-
     // Read the file
     auto BufOrErr = llvm::MemoryBuffer::getFile(FilePath);
     if (!BufOrErr) {
@@ -1935,29 +1919,6 @@ llvm::Expected<Module> Modeler::buildReferencedModule(llvm::StringRef Path,
         return llvm::make_error<llvm::StringError>(
             FilePath.str().str() + ": " + llvm::toString(FileResult.takeError()),
             llvm::inconvertibleErrorCode());
-    }
-
-    if (Name == "Emitter" || Name == "Page") {
-        llvm::errs() << "DEBUG buildReferencedModule: parsed " << FilePath
-                     << ", decls=" << (FileResult->declarations ? FileResult->declarations->size() : 0) << "\n";
-        // Check each declaration for the class
-        if (FileResult->declarations) {
-            for (const auto &D : *FileResult->declarations) {
-                if (auto *DefSyn = std::get_if<DefinitionSyntax>(&D.symbol.Value)) {
-                    llvm::errs() << "  Declaration: " << DefSyn->name << "\n";
-                    if (DefSyn->name == Name) {
-                        if (auto *ClassPtr = std::get_if<ClassSyntax>(&DefSyn->concept_.Value)) {
-                            llvm::errs() << "DEBUG buildReferencedModule: found " << Name << " class, body="
-                                         << (ClassPtr->body ? "yes" : "no");
-                            if (ClassPtr->body && ClassPtr->body->members) {
-                                llvm::errs() << " members=" << ClassPtr->body->members->size();
-                            }
-                            llvm::errs() << "\n";
-                        }
-                    }
-                }
-            }
-        }
     }
 
     // Build the module
