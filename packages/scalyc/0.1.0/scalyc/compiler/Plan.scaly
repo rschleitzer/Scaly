@@ -588,6 +588,32 @@ define PlannedModule
 )
 
 ; ============================================================================
+; Method/Operator Resolution Results (for call resolution)
+; ============================================================================
+
+; Result of method lookup
+define MethodMatch
+(
+    method: ref[PlannedFunction]?
+    mangled_name: String
+    return_type: PlannedType
+    parameter_types: ref[Vector[PlannedType]]?
+    requires_page_param: bool
+    can_throw: bool
+    throws_type: ref[PlannedType]?
+    is_intrinsic: bool
+)
+
+; Result of operator lookup
+define OperatorMatch
+(
+    op: ref[PlannedOperator]?
+    mangled_name: String
+    result_type: PlannedType
+    is_intrinsic: bool
+)
+
+; ============================================================================
 ; The Complete Plan
 ; ============================================================================
 
