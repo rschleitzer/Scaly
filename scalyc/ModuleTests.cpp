@@ -312,7 +312,7 @@ static bool runMultiPackageTests(
 // Main Test Runner
 // ============================================================================
 
-bool runModuleTests(bool includeSlowTests) {
+bool runModuleTests() {
     llvm::outs() << "Running Module tests...\n";
     llvm::outs().flush();
 
@@ -326,17 +326,13 @@ bool runModuleTests(bool includeSlowTests) {
         {"Module: scaly.test()", "scaly.test"},
     });
 
-    // Compile scalyc package and run its tests (slow: ~20s for 16k lines)
+    // Compile scalyc package and run its tests
     // This tests the self-hosting compiler modules: lexer, parser, compiler
     // Note: scalyc declares "package scaly 0.1.0", so the Modeler loads scaly automatically
-    if (includeSlowTests) {
-        llvm::outs() << "  Scalyc package tests:\n";
-        runPackageTests(ScalycPackagePath, {
-            {"Module: scalyc.test()", "scalyc.test"},
-        });
-    } else {
-        llvm::outs() << "  (Scalyc package tests skipped - use --slow-tests to include)\n";
-    }
+    llvm::outs() << "  Scalyc package tests:\n";
+    runPackageTests(ScalycPackagePath, {
+        {"Module: scalyc.test()", "scalyc.test"},
+    });
 
     llvm::outs() << "\nModule tests: " << TestsPassed << " passed, "
                  << TestsFailed << " failed\n";

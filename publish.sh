@@ -22,7 +22,7 @@ make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
 
 echo ""
 echo "Running full test suite..."
-./scalyc --test --slow-tests
+./scalyc --test
 
 echo ""
 echo "Testing AOT compilation..."
