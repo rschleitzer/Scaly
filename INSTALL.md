@@ -91,5 +91,4 @@ Options:
   -S              Emit LLVM IR
   -v              Verbose output
   --test          Run test suite
-  --slow-tests    Include slow tests (self-hosted compiler tests)
 ```

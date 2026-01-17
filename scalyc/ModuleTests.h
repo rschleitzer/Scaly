@@ -2,6 +2,6 @@
 
 namespace scaly {
 
-bool runModuleTests(bool includeSlowTests = false);
+bool runModuleTests();
 
 } // namespace scaly

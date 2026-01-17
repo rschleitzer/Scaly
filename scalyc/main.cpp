@@ -64,11 +64,6 @@ static cl::opt<bool> RunTests(
     cl::desc("Run test suite"),
     cl::cat(ScalyCategory));
 
-static cl::opt<bool> SlowTests(
-    "slow-tests",
-    cl::desc("Include slow tests (e.g., scalyc package)"),
-    cl::cat(ScalyCategory));
-
 static cl::opt<std::string> TestName(
     "test-name",
     cl::desc("Run specific test"),
@@ -735,7 +730,7 @@ int main(int argc, char **argv) {
         AllPassed &= scaly::runControlFlowTests();
         std::cout << std::endl << std::flush;
         llvm::outs().flush();
-        AllPassed &= scaly::runModuleTests(SlowTests);
+        AllPassed &= scaly::runModuleTests();
         return AllPassed ? 0 : 1;
     }
 
