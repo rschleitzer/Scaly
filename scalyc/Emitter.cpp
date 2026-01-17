@@ -5708,25 +5708,11 @@ llvm::Error Emitter::emitMainWrapper(const Plan &P) {
         }
     }
 
-    // Return the last value (cast to i32) or 0
-    if (LastValue) {
-        llvm::Value *RetVal = LastValue;
-        // Cast to i32 if needed
-        if (LastValue->getType() != Int32Ty) {
-            if (LastValue->getType()->isIntegerTy()) {
-                RetVal = Builder->CreateIntCast(LastValue, Int32Ty, true, "ret.cast");
-            } else if (LastValue->getType()->isFloatingPointTy()) {
-                RetVal = Builder->CreateFPToSI(LastValue, Int32Ty, "ret.cast");
-            } else {
-                // Non-numeric type, return 0
-                RetVal = llvm::ConstantInt::get(Int32Ty, 0);
-            }
-        }
-        Builder->CreateRet(RetVal);
-    } else {
-        // No return value, return 0
-        Builder->CreateRet(llvm::ConstantInt::get(Int32Ty, 0));
-    }
+    // Programs always return 0 by default (success exit code)
+    // Unlike functions, program top-level statements are executed for side effects
+    // Use explicit "return N" in top-level code to return a specific exit code
+    (void)LastValue;  // Intentionally unused for programs
+    Builder->CreateRet(llvm::ConstantInt::get(Int32Ty, 0));
 
     return llvm::Error::success();
 }
