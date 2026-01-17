@@ -4235,6 +4235,31 @@ llvm::Expected<PlannedOperand> Planner::collapseOperandSequence(
 
         // Handle 'as' expression: value as TargetType
         if (auto* AsExpr = std::get_if<PlannedAs>(&Ops[I].Expr)) {
+            // String-to-char coercion: "a" as char -> CharacterConstant
+            // This is compile-time conversion with no runtime penalty
+            if (AsExpr->TargetType.Name == "char") {
+                if (auto* Const = std::get_if<PlannedConstant>(&Left.Expr)) {
+                    if (auto* StrConst = std::get_if<StringConstant>(Const)) {
+                        // Validate it's a single Unicode code point
+                        int32_t codePoint = decodeUtf8ToCodePoint(StrConst->Value);
+                        if (codePoint >= 0) {
+                            // Convert to CharacterConstant (emitter handles as i32)
+                            CharacterConstant CharConst;
+                            CharConst.Loc = StrConst->Loc;
+                            CharConst.Value = StrConst->Value;
+                            PlannedOperand NewLeft;
+                            NewLeft.Loc = Left.Loc;
+                            NewLeft.ResultType.Name = "char";
+                            NewLeft.ResultType.MangledName = "i";
+                            NewLeft.Expr = PlannedConstant{CharConst};
+                            Left = std::move(NewLeft);
+                            I++;
+                            continue;
+                        }
+                    }
+                }
+            }
+
             // The 'as' expression casts the left operand to the target type
             PlannedAs NewAs = *AsExpr;
             NewAs.Value = std::make_shared<PlannedOperand>(std::move(Left));
