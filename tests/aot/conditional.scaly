@@ -1,0 +1,6 @@
+; AOT Test: If expression
+; Expected: yes
+if true
+    print("yes")
+else
+    print("no")

@@ -15,6 +15,12 @@
 #include "Planner.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/MemoryBuffer.h"
+#include "llvm/Support/FileSystem.h"
+#include "llvm/Support/Path.h"
+#include "llvm/Support/Program.h"
+#include <fstream>
+#include <sstream>
+#include <regex>
 
 namespace scaly {
 
@@ -309,6 +315,185 @@ static bool runMultiPackageTests(
 }
 
 // ============================================================================
+// AOT Test Runner
+// ============================================================================
+
+// Parse expected output from test file comments
+// Format: "; Expected: <expected output>"
+static std::string parseExpectedOutput(llvm::StringRef Source) {
+    std::string Expected;
+    std::regex ExpectedRegex("; Expected: (.*)");
+    std::smatch Match;
+    std::string SourceStr = Source.str();
+    if (std::regex_search(SourceStr, Match, ExpectedRegex)) {
+        Expected = Match[1].str();
+    }
+    return Expected;
+}
+
+// Compile a .scaly file to executable and run it
+static bool runAotTest(llvm::StringRef TestPath) {
+    std::string TestName = llvm::sys::path::stem(TestPath).str();
+
+    // Read source file
+    auto BufOrErr = llvm::MemoryBuffer::getFile(TestPath);
+    if (!BufOrErr) {
+        fail(("AOT: " + TestName).c_str(), "Cannot read test file");
+        return false;
+    }
+
+    std::string Source = (*BufOrErr)->getBuffer().str();
+    std::string Expected = parseExpectedOutput(Source);
+
+    // Parse
+    Parser P(Source);
+    auto ParseResult = P.parseProgram();
+    if (!ParseResult) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ParseResult.takeError();
+        fail(("AOT: " + TestName).c_str(), ErrMsg.c_str());
+        return false;
+    }
+
+    // Model
+    Modeler M(TestPath);
+    auto ModelResult = M.buildProgram(*ParseResult);
+    if (!ModelResult) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << ModelResult.takeError();
+        fail(("AOT: " + TestName).c_str(), ErrMsg.c_str());
+        return false;
+    }
+
+    // Plan
+    Planner Pl(TestPath);
+    auto PlanResult = Pl.plan(*ModelResult);
+    if (!PlanResult) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << PlanResult.takeError();
+        fail(("AOT: " + TestName).c_str(), ErrMsg.c_str());
+        return false;
+    }
+
+    // Create temp directory for output
+    llvm::SmallString<128> TempDir;
+    (void)llvm::sys::fs::current_path(TempDir);
+    llvm::sys::path::append(TempDir, "tests", "aot", "build");
+    (void)llvm::sys::fs::create_directories(TempDir);
+
+    // Emit object file
+    llvm::SmallString<128> ObjPath(TempDir);
+    llvm::sys::path::append(ObjPath, TestName + ".o");
+
+    EmitterConfig Config;
+    Config.EmitDebugInfo = false;
+    Emitter E(Config);
+
+    auto EmitErr = E.emitObjectFile(*PlanResult, TestName, ObjPath.str().str());
+    if (EmitErr) {
+        std::string ErrMsg;
+        llvm::raw_string_ostream OS(ErrMsg);
+        OS << std::move(EmitErr);
+        fail(("AOT: " + TestName).c_str(), ErrMsg.c_str());
+        return false;
+    }
+
+    // Link executable
+    llvm::SmallString<128> ExePath(TempDir);
+    llvm::sys::path::append(ExePath, TestName);
+
+    auto ClangPath = llvm::sys::findProgramByName("clang");
+    if (!ClangPath) {
+        fail(("AOT: " + TestName).c_str(), "clang not found");
+        return false;
+    }
+
+    std::vector<llvm::StringRef> LinkArgs = {
+        *ClangPath,
+        ObjPath,
+        "-o",
+        ExePath
+    };
+
+    std::string LinkErrMsg;
+    int LinkResult = llvm::sys::ExecuteAndWait(
+        *ClangPath, LinkArgs, std::nullopt, {}, 0, 0, &LinkErrMsg);
+
+    if (LinkResult != 0) {
+        fail(("AOT: " + TestName).c_str(), ("Link failed: " + LinkErrMsg).c_str());
+        return false;
+    }
+
+    // Run executable and capture output
+    llvm::SmallString<128> OutputPath(TempDir);
+    llvm::sys::path::append(OutputPath, TestName + ".out");
+
+    std::optional<llvm::StringRef> Redirects[] = {
+        std::nullopt,  // stdin
+        llvm::StringRef(OutputPath),  // stdout
+        std::nullopt   // stderr
+    };
+
+    std::string RunErrMsg;
+    int RunResult = llvm::sys::ExecuteAndWait(
+        ExePath, {ExePath}, std::nullopt, Redirects, 0, 0, &RunErrMsg);
+
+    if (RunResult != 0) {
+        fail(("AOT: " + TestName).c_str(), ("Run failed with exit " + std::to_string(RunResult)).c_str());
+        return false;
+    }
+
+    // Read output
+    auto OutBufOrErr = llvm::MemoryBuffer::getFile(OutputPath);
+    if (!OutBufOrErr) {
+        fail(("AOT: " + TestName).c_str(), "Cannot read output");
+        return false;
+    }
+
+    std::string Actual = (*OutBufOrErr)->getBuffer().str();
+    // Trim trailing newline
+    while (!Actual.empty() && (Actual.back() == '\n' || Actual.back() == '\r')) {
+        Actual.pop_back();
+    }
+
+    // Compare output
+    if (Actual != Expected) {
+        std::string Msg = "Expected '" + Expected + "' but got '" + Actual + "'";
+        fail(("AOT: " + TestName).c_str(), Msg.c_str());
+        return false;
+    }
+
+    pass(("AOT: " + TestName).c_str());
+    return true;
+}
+
+// Run all AOT tests in tests/aot/
+static bool runAotTests() {
+    llvm::outs() << "  AOT compilation tests:\n";
+
+    std::error_code EC;
+    llvm::SmallString<128> AotDir;
+    (void)llvm::sys::fs::current_path(AotDir);
+    llvm::sys::path::append(AotDir, "tests", "aot");
+
+    bool AllPassed = true;
+    for (llvm::sys::fs::directory_iterator DI(AotDir, EC), DE;
+         DI != DE && !EC; DI.increment(EC)) {
+        llvm::StringRef Path = DI->path();
+        if (llvm::sys::path::extension(Path) == ".scaly") {
+            if (!runAotTest(Path)) {
+                AllPassed = false;
+            }
+        }
+    }
+
+    return AllPassed;
+}
+
+// ============================================================================
 // Main Test Runner
 // ============================================================================
 
@@ -333,6 +518,9 @@ bool runModuleTests() {
     runPackageTests(ScalycPackagePath, {
         {"Module: scalyc.test()", "scalyc.test"},
     });
+
+    // Run AOT compilation tests
+    runAotTests();
 
     llvm::outs() << "\nModule tests: " << TestsPassed << " passed, "
                  << TestsFailed << " failed\n";

@@ -1,0 +1,7 @@
+; AOT Test: Let binding
+; Expected: 42
+let x 6 * 7
+if x = 42
+    print("42")
+else
+    print("WRONG")
